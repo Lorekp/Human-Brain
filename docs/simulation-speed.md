@@ -99,9 +99,39 @@ The CUDA artifact was measured on 2026-08-21 with Python 3.11.15 and NumPy
 three runs from `benchmarks/cuda_scaling.py`; reported persistent memory is the
 sum of unique host arrays or allocated device buffers, not a process peak.
 
-## Native sparse recurrent kernel
+## Exact CPU frontier and activity density
 
-The fitted GLIF5 integration loop now runs in a dependency-free Rust `cdylib`.
+Native ABI 3 retains the frozen serial implementation as a correctness oracle,
+adds deterministic Rayon-parallel dense chunks, and adds an exact quiescent
+frontier. The frontier scans every configured cell once per token, then skips a
+cell's zero-to-zero integration only until an afferent or recurrent event can
+change it. It preserves topology, spikes, and all persistent state bytes over
+the registered 64-token comparison.
+
+| Configured cells | Natural-trajectory token/s | Maximum updated cells/token | Dense token/s | Persistent arrays |
+| ---: | ---: | ---: | ---: | ---: |
+| 98,304 | 843.58 | 2,466 (2.51%) | 79.15 | 209.76 MiB |
+| 131,072 | 754.17 | 2,004 (1.53%) | 61.53 | 279.67 MiB |
+| 393,216 | 449.83 | 937 (0.24%) | 25.92 | 838.92 MiB |
+| 1,048,576 | 193.36 | 544 (0.052%) | 3.59 | 2,237.04 MiB |
+
+Configured size is not activity density. Matched seeded states were therefore
+run through both frontier and dense execution at controlled nonquiescent
+fractions; every pair was byte-identical. At 131,072 cells the frontier records
+568.02/176.15/51.50/11.71 tokens/s at 1/5/20/100% updated cells. At 1,048,576
+cells it records 53.25/5.27/3.00/1.41. The CPU >100-token/s claim is therefore
+valid through roughly 5% activity at 131,072 cells, while the million-cell
+193.36-token/s result is explicitly a 0.052%-updated trajectory.
+
+Direct structured builders now produce six million edges at one million cells
+without population-sized candidate rows. Registered construction ranges from
+15.74 seconds for single-scale groups to 48.43 seconds for a 3D volume, with
+linear target-array memory. See `docs/native-scaling-v2.md` for phase timings,
+topology invariants, locked Rayon dependencies, protocols, and artifact hashes.
+
+## Frozen native v1 baseline
+
+The fitted GLIF5 integration loop runs in a Rust `cdylib`.
 Python creates topology and checkpointable NumPy state, then makes one C-ABI
 call per token. All 100 fitted 0.05-ms integration steps, refractory updates,
 eligibility decay, and spike-triggered sparse scatter happen inside that call.
@@ -125,24 +155,23 @@ native sizes, seconds per token scale as `N^0.949`, persistent memory as
 `N^0.997`, and cell-step throughput as `N^0.051`: useful near-linear scaling
 through 98,304 fitted human cells rather than a hundreds-cell ceiling.
 
-The Rust crate has no third-party dependencies. On the recorded Windows host,
-a clean release compile took 1.212 seconds, cached source lookup 1.15 ms, and
-DLL loading 0.48 ms. The content-addressed build is cached outside the package;
-set `HUMANBRAIN_NATIVE_CACHE` to choose its location.
+For the frozen v1 source, a clean release compile took 1.212 seconds, cached
+source lookup 1.15 ms, and DLL loading 0.48 ms. The current ABI 3 crate uses the
+locked Rayon dependency set described in `docs/native-scaling-v2.md`. The
+content-addressed build is cached outside the package; set
+`HUMANBRAIN_NATIVE_CACHE` to choose its location.
 
-The remaining inference bottlenecks are now visible. At 98,304 cells, topology
-construction takes 7.66 seconds in Python while the first simulated token takes
-48.6 ms. The dense token-cell readout is `O(vocabulary*cells)` and accounts for
-192.75 MiB of the 210.79 MiB persistent arrays; sparse recurrent targets and
-weights use 6.75 MiB. Steady execution is a single native fused pass and is
-primarily cell-state memory traffic. Larger runs should next move topology
-construction out of Python and replace or factor the dense readout, then add
-carefully validated native parallelism. Exact ridge learning remains the more
-fundamental `O(N^2)` memory / `O(N^3)` solve limit described below.
+The v1 bottlenecks motivated the current work. At 98,304 cells it spent 7.66
+seconds building topology while the first token took 48.6 ms, and the dense
+token-cell readout accounted for 192.75 MiB of 210.79 MiB persistent arrays.
+ABI 3 and topology protocol v3 now remove the serial integration and candidate
+construction limits. The dense `O(vocabulary*cells)` readout remains the main
+large-model storage/output-computation target. Exact ridge learning remains the
+separate `O(N^2)` memory / `O(N^3)` solve limit described below.
 
-The frozen v1 result therefore does not yet pass the project gate: 98,304 is
-below the required active-cell count and 20.05 tokens/s is below 100. It is the
-bit-exact baseline against which CPU and GPU work is measured.
+The frozen v1 result did not pass the project gate: 98,304 is below the required
+cell count and 20.05 tokens/s is below 100. It remains the bit-exact historical
+baseline against which the current CPU frontier and CUDA paths are measured.
 
 Run the registered native protocol with:
 

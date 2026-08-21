@@ -20,12 +20,12 @@ active synaptic currents during each race. This changes neither simulated spike
 time nor winner; it removes repeated integration of identical subthreshold
 dynamics.
 
-Stateful GLIF5 reservoir tokens use a separate native sparse kernel. Python
-owns tokenization, topology construction, and checkpoint arrays, but one Rust
-C-ABI call advances the entire biological token interval. The kernel applies
-the same human-fitted membrane, adaptive-threshold, after-spike, reset, and
-refractory equations and scatters only emitted spike events over fixed sparse
-edges. It has no ANN runtime or dense cell-by-cell inference matrix.
+Stateful GLIF5 reservoir tokens use separate exact native backends. Python owns
+tokenization, direct sparse-topology construction, and checkpoint arrays, but
+one Rust C-ABI call or one persistent CUDA cooperative launch advances the
+entire biological token interval. Both apply the same human-fitted membrane,
+adaptive-threshold, after-spike, reset, and refractory equations over fixed
+sparse edges. They have no ANN runtime or dense cell-by-cell recurrent matrix.
 
 Readout learning has an explicit seam with two rules. Exact ridge remains the
 default comparison. The scalable `three_factor` rule combines the presynaptic
@@ -51,10 +51,12 @@ and conserves incoming absolute strength after pruning.
 The schedule itself is ordinary orchestration. Persistent state remains on
 cells and synapses: birth order, active mask, cell homeostatic gain, recurrent
 targets/weights, structural score/exposure, and three-factor output weights.
-The checkpoint format stores those arrays. The native transition kernel needs
-no developmental branch because recruitment only changes the sparse arrays it
-already consumes; the Python transition oracle remains bit-exact after both
-recruitment and pruning.
+The checkpoint format stores those arrays. The transition kernels need no
+developmental branch because recruitment changes the sparse arrays they already
+consume. CPU reads the live host arrays; CUDA rebuilds its stable reverse CSR
+and uploads topology/weights at the explicit mutation boundary. Python, CPU,
+and CUDA lifecycle tests remain exact through recruitment, homeostasis,
+pruning, and reset.
 
 The external interface is deliberately small:
 
@@ -98,11 +100,20 @@ claims about brain-scale geometry.
 
 ## Native simulation boundary
 
-The recurrent hot loop is a Rust `cdylib` loaded through a small Python FFI.
-One native call advances the complete token interval, including 100 GLIF5
-steps and sparse recurrent scatter. The Python reference remains executable for
-equivalence tests. Native and reference paths are bit-exact across a 64-token
-sequence for every persistent cell and synapse state array.
+The CPU recurrent hot loop is a Rust `cdylib` loaded through a small Python FFI.
+One native call advances the complete token interval, including 100 GLIF5 steps
+and sparse recurrent scatter. Deterministic dense Rayon chunks serve high
+activity; an exact frontier scans all cells once and skips only provable
+zero-to-zero steps. The CUDA backend instead touches every enabled cell and edge
+inside one cooperative launch. The frozen serial native oracle, optimized CPU,
+and CUDA paths are bit-exact over registered token sequences for every
+persistent cell and synapse state array.
+
+Speed claims are activity-qualified. The exact CPU frontier passes 100 tokens/s
+at 131,072 cells through roughly 5% updated cells, but not at 20%. CUDA passes
+the full-touch gate at 200,000 cells and 144.03 end-to-end tokens/s. Neither
+result is accepted as language capability without responsive-cell, firing,
+state-rank, and held-out prediction measurements.
 
 Inference allocates only linear-sized cell, afferent, and sparse recurrent
 state. It does not allocate the training-only dense ridge statistics. The

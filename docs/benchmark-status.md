@@ -15,7 +15,8 @@ split through mini-swe-agent 2.4.6 and the official cached Docker image
   are 2.98 seconds apart (repository commands run between responses).
 - Official SWE-bench 5.0.2 evaluation: 1 submitted, 1 completed, 1 resolved, no
   infrastructure or ambiguous failure.
-- Project tests after native integration: 46 passed.
+- Combined developmental/native integration: 69 forced-CPU tests and 4 real
+  CUDA tests passed, plus Rust formatting, Clippy, and Cargo tests.
 
 ## Active-cell scaling and dynamics
 
@@ -58,24 +59,42 @@ uniform). At 192 cells, none of the registered single-scale, nested, 2D-sheet,
 or mixed-membership variants beat uniform. Nested groups had slightly higher
 rank (22.02 versus 21.15) but materially lower teacher-forced accuracy (45.44%
 versus 48.83%). Larger, locally learned networks are required before making a
-scale-level grouping claim.
+scale-level grouping claim. Direct protocol-v3 builders now construct grouped,
+1D, 2D, layered, and 3D topologies at one million cells with linear target
+memory, but that is a construction result rather than predictive evidence.
 
 ## Native simulation scaling
 
-The complete recurrent token interval now executes in a Rust native kernel.
-It is bit-exact against the former Python/NumPy loop over 64 tokens. The frozen
-benchmark reports a 6.78x speedup at 1,536 cells and nearly linear scaling:
+The complete recurrent token interval executes outside Python. Native ABI 3 is
+bit-exact against the frozen serial kernel over 64 tokens and selects between
+deterministic dense Rayon chunks and an exact quiescent frontier. The registered
+natural sparse trajectories report:
 
-| Cells | Native tokens/s | Cell-steps/s | Persistent arrays |
-| ---: | ---: | ---: | ---: |
-| 1,536 | 1,045.45 | 160.6M | 3.34 MiB |
-| 6,144 | 301.70 | 185.4M | 13.22 MiB |
-| 24,576 | 82.49 | 202.7M | 52.73 MiB |
-| 98,304 | 20.05 | 197.1M | 210.79 MiB |
+| Configured cells | Frontier tokens/s | Maximum updated cells/token | Dense tokens/s | Persistent arrays |
+| ---: | ---: | ---: | ---: | ---: |
+| 98,304 | 843.58 | 2,466 (2.51%) | 79.15 | 209.76 MiB |
+| 131,072 | 754.17 | 2,004 (1.53%) | 61.53 | 279.67 MiB |
+| 393,216 | 449.83 | 937 (0.24%) | 25.92 | 838.92 MiB |
+| 1,048,576 | 193.36 | 544 (0.052%) | 3.59 | 2,237.04 MiB |
 
-The empirical time exponent is 0.949 and persistent-memory exponent is 0.997.
-This removes Python simulation and inference allocation as the immediate scale
-limit. Exact ridge learning remains quadratic in memory and cubic at solve.
+Controlled-density exactness runs prevent these sparse trajectories from being
+misread. At 131,072 cells the frontier runs at 568.02, 176.15, 51.50, and
+11.71 tokens/s at 1%, 5%, 20%, and 100% updated cells; at 1,048,576 cells the
+rates are 53.25, 5.27, 3.00, and 1.41. CPU therefore passes the >100-token/s
+gate through roughly 5% activity at 131,072 cells, while the million-cell pass
+is explicitly a 0.052%-updated result.
+
+The persistent CUDA path is also exact and does not rely on frontier skipping.
+It touches every enabled cell and all six recurrent edges per cell on every one
+of 100 steps, reaching 263.26 end-to-end tokens/s at 100,000 cells and 144.03
+at 200,000 cells on the RTX 4070 SUPER. Sparse spike counts are reported, so
+this proves the hard simulation-throughput gate rather than useful recruitment.
+
+At one million cells, direct structured builders create six million edges in
+15.74-48.43 seconds with 22.89 MiB target arrays, no self/duplicate edges, and
+measured near-linear time/memory exponents. Exact ridge learning remains
+quadratic in memory and cubic at solve; the dense vocabulary-by-cell readout is
+the next inference/storage bottleneck.
 
 ## Scalable local learning
 
@@ -93,10 +112,11 @@ and a positive size trend, not ridge parity or useful generation.
 
 A separate dataset-free 32-example smoke reaches 98,304 active cells at 9.34
 updates/s with 211.70 MiB peak memory and no ridge arrays, avoiding a
-theoretical 72.00-GiB normal matrix. At that size, topology construction takes
-31.26 seconds while growth takes 3.43 seconds, making construction a measured
-initialization bottleneck. See `docs/local-readout-learning.md` for the rule,
-locality boundary, full comparison, and claim limits.
+theoretical 72.00-GiB normal matrix. In that frozen v1 artifact, topology
+construction took 31.26 seconds while growth took 3.43 seconds. The later
+direct sampler removes that initialization bottleneck without changing this
+capability result. See `docs/local-readout-learning.md` for the rule, locality
+boundary, full comparison, and claim limits.
 
 The accepted patch changes only L031's emitted description, matching the public
 upstream resolution in [SQLFluff PR 1625](https://github.com/sqlfluff/sqlfluff/pull/1625/files).
@@ -228,6 +248,14 @@ not a platform-specific checkout's newline representation.
 | `benchmarks/topology_protocol_v2.json` | `2c182ae8f275b17a91acaffc7831d9aa8ab08172bc5eb2507441fa29b41e5b21` |
 | `artifacts/native_scaling_v1.json` | `591fb2ead4d064163e7023a77e24aede48aad0d65d873d764fc19d33ea9f4251` |
 | `benchmarks/native_scaling_protocol_v1.json` | `fde5bdfd2817008ef105523c01b2c1a09e714ad8cd4664cb2fc6e8dd38497355` |
+| `artifacts/native_scaling_v2.json` | `4bdfbee1c53c57e3842671829a4f903bffa46cc46a0d73b0582a8eccfd2d897b` |
+| `benchmarks/native_scaling_protocol_v2.json` | `ef54dc44a40eb14f23c50ddd85554fe0aec304340eea1513d0546ee2c9404545` |
+| `artifacts/native_activity_density_v1.json` | `a1a95f66a382451d779abd53ed22bcc724c32fdcb7efba3f04026bad2dc15a7b` |
+| `benchmarks/native_activity_density_protocol_v1.json` | `a9e8d8fceaad6b895c9b277342f903e3d709e33454d4fc623e64a6f69105b5a4` |
+| `artifacts/structured_topology_construction_v3.json` | `8280d624662dc3e767517678882edc404ea75f42f772ebfc7d8dccc2d360ac0b` |
+| `benchmarks/structured_topology_protocol_v3.json` | `2e56a4c30a64e2cf23178281c1ae1d052c148f505a49e19a143ad5b82edf702c` |
+| `artifacts/cuda_scaling_v1.json` | `9a41c7241e6256ff128021259fb63c01756e73e87b5c3ff5d721c7bed5f2f09f` |
+| `benchmarks/cuda_scaling_protocol_v1.json` | `42b2e469517c23a54ea74538e165bb62a3cb4590fe58958e5214a8dc07cd7d92` |
 | `artifacts/local_learning_scaling_v1.json` | `0d80c1c209c947000c1d6a6aa823d68cf957ad418a6d0f1b5568f83ae88e0bb7` |
 | `artifacts/local_learning_large_scale_v1.json` | `b93853ab9496694260eed3d0f3c62f1721509176543896b08703f451fdba5c5c` |
 | `artifacts/development_validation_v2.json` | `8e0fbacd8ad1eee42fa481b9b7fcc59f89d9ea83b4f15d65f2b4e16506484d0f` |

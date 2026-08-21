@@ -41,17 +41,20 @@ from 6.25% to 12.76%, and effective state rank from 7.57 to 23.85. Dormant-cell
 controls reproduce the compact circuit exactly, showing that useful active
 dynamics rather than allocation alone cause the gain.
 
-The recurrent token interval now runs in a dependency-free native Rust kernel;
-Python only orchestrates the experiment. A frozen, bit-exact benchmark runs
-1,536 cells at 1,045 tokens/s and scales linearly through 98,304 cells at 20.05
-tokens/s using 210.79 MiB of persistent arrays. Exact ridge consolidation still
-needs an `N x N` normal matrix and an `O(N^3)` solve. The experimental native
-three-factor rule below removes that hidden state and solve; its remaining
-limits are learning quality and the physical `vocabulary x cells` readout.
+The recurrent token interval now runs in native Rust; Python only orchestrates
+the experiment. The current ABI adds deterministic Rayon-parallel dense
+execution and an algebraically exact quiescent-cell frontier. On the registered
+natural sparse trajectory, 131,072 cells run at 754.17 tokens/s and 1,048,576
+cells at 193.36 tokens/s. Those numbers are activity-dependent: the explicit
+density stress at 131,072 cells records 176.15 tokens/s at 5% updated cells and
+51.50 at 20%. Exact ridge consolidation still needs an `N x N` normal matrix
+and an `O(N^3)` solve. The experimental native three-factor rule below removes
+that hidden state and solve; its remaining limits are learning quality and the
+physical `vocabulary x cells` readout.
 For networks of at least 100,000 cells, a persistent-device CUDA backend
 executes the full 100-step token interval in one cooperative launch. CUDA and
 Rust match every mutable state array bit-for-bit; exact large-network
-large-network throughput is registered in `docs/simulation-speed.md`. On the
+throughput is registered in `docs/simulation-speed.md`. On the
 RTX 4070 SUPER, the isolated 200,000-cell run touched 1.2 million recurrent
 edges per biological step at 144.03 end-to-end tokens/s, passing the strict
 size/speed gate. The fixed-input run spiked sparsely, so this is a simulation
@@ -72,13 +75,15 @@ $env:PYTHONPATH = "src"
 .\.venv\Scripts\python.exe -m humanbrain.cli "Human cortical cells " --tokens 24
 ```
 
-The stateful GLIF5 reservoir builds a dependency-free Rust kernel on first use
-and caches the release DLL by source hash. Rust/Cargo is therefore a runtime
-build prerequisite for a source checkout; Python remains orchestration around
-the native cell simulation. Large networks use an NVRTC-compiled CUDA kernel
-when available. Set `HUMANBRAIN_DEVICE` to `auto`, `cpu`, or `cuda`, and set
+The stateful GLIF5 reservoir builds a content-addressed Rust kernel on first use
+and caches the release DLL by source hash. The locked CPU crate uses Rayon for
+deterministic cell chunks, so Rust/Cargo and the locked crates are runtime build
+prerequisites for a source checkout; Python remains orchestration around the
+native cell simulation. Large networks use an NVRTC-compiled CUDA kernel when
+available. Set `HUMANBRAIN_DEVICE` to `auto`, `cpu`, or `cuda`, and set
 `HUMANBRAIN_NATIVE_CACHE` to place compiled caches explicitly. See
-`docs/simulation-speed.md` for the registered CPU and GPU protocols.
+`docs/simulation-speed.md` and `docs/native-scaling-v2.md` for the registered
+CPU and GPU protocols and third-party license details.
 
 An experimental native three-factor readout removes ridge's quadratic growth
 state and cubic solve while leaving ridge as the default comparison. It reached
@@ -89,6 +94,12 @@ accuracy at small sizes and its free-running validation remains weak. See
 
 An explicitly non-capability smoke also exercised online updates at 98,304
 cells with 211.70 MiB peak memory and no quadratic ridge state.
+
+Direct `O(cells * fanout)` builders now construct one-million-cell grouped,
+mixed-membership, 1D, 2D, layered, and 3D circuits with six million edges in
+15.74-48.43 seconds and 22.89 MiB of target arrays. This removes the old
+population-sized candidate-row bottleneck; it does not establish that any
+topology improves prediction.
 
 The three-factor path now also supports genuine developmental training.
 Previously dormant fitted GLIF5 cells can be recruited in deterministic random
