@@ -7,6 +7,7 @@ file is opened. There is no test partition and no post-validation adaptation.
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import gc
 from dataclasses import asdict
 from hashlib import sha256
@@ -355,7 +356,12 @@ def _primary_criteria(
     return results
 
 
-def run(protocol: dict[str, object], protocol_hash: str, output: Path) -> dict[str, object]:
+def run(
+    protocol: dict[str, object],
+    protocol_hash: str,
+    output: Path,
+    execution_scope: str = "primary",
+) -> dict[str, object]:
     data = protocol["data"]
     training_paths = [ROOT / path for path in data["training_files"]]
     validation_path = ROOT / str(data["validation_file"])
@@ -368,6 +374,7 @@ def run(protocol: dict[str, object], protocol_hash: str, output: Path) -> dict[s
         report = {
             "protocol_version": protocol["version"],
             "protocol_sha256": protocol_hash,
+            "execution_scope": execution_scope,
             "selection_partition": "named validation file",
             "test_partition_accessed": False,
             "data": {
@@ -476,15 +483,31 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT / "artifacts" / "development_validation_v2.json",
     )
+    parser.add_argument("--deferred-scale", action="store_true")
     args = parser.parse_args()
     protocol_bytes = args.protocol.read_bytes()
-    report = run(json.loads(protocol_bytes), sha256(protocol_bytes).hexdigest(), args.output)
+    protocol = json.loads(protocol_bytes)
+    execution_scope = "primary"
+    default_output = ROOT / "artifacts" / "development_validation_v2.json"
+    if args.deferred_scale:
+        execution_scope = "post-primary-deferred-scale-diagnostic"
+        protocol = deepcopy(protocol)
+        protocol["model"]["reservoir_cells"] = [
+            int(protocol["deferred_scale"]["reservoir_cells"])
+        ]
+        default_output = ROOT / "artifacts" / "development_scale_6144_v2.json"
+    output = args.output or default_output
+    report = run(
+        protocol,
+        sha256(protocol_bytes).hexdigest(),
+        output,
+        execution_scope,
+    )
     print(
         json.dumps(
             {
-                "output": str(args.output.resolve()),
+                "output": str(output.resolve()),
                 "runs": len(report["runs"]),
                 "complete": report["complete"],
             }
