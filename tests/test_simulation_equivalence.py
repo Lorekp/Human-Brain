@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from humanbrain.cells import AdaptiveGlifPopulation
 from humanbrain.cortex import CellRace, DendriticCortex
+from humanbrain.development import DevelopmentalGrowthConfig, DevelopmentalGrowthController
 from humanbrain.recurrent import (
     RecurrentCellCircuit,
     RecurrentCircuitConfig,
@@ -355,6 +356,54 @@ def test_quiescent_frontier_is_exact_across_activity_densities() -> None:
             strict=True,
         ):
             np.testing.assert_array_equal(actual, expected)
+
+
+def test_native_transition_remains_exact_after_recruitment_and_structural_pruning() -> None:
+    config = RecurrentCircuitConfig(
+        reservoir_cells=48,
+        active_reservoir_cells=16,
+        input_fanout=8,
+        recurrent_fanout=8,
+        token_interval_ms=2.0,
+        input_pulse_ms=1.2,
+        input_current_pa=8_000.0,
+        recurrent_current_pa=325.0,
+        eligibility_tau_ms=40.0,
+        recurrent_topology="uniform_no_self",
+        readout_learning_rule="three_factor",
+        random_seed=29,
+    )
+    development = DevelopmentalGrowthConfig(
+        stage_active_cells=(16, 32, 48),
+        initial_recurrent_fanout=4,
+        final_recurrent_fanout=4,
+        structural_seed=121,
+        homeostatic_scaling=True,
+    )
+    actual = RecurrentCellCircuit(token_cells=37, config=config)
+    expected = RecurrentCellCircuit(token_cells=37, config=config)
+    actual_growth = DevelopmentalGrowthController(actual, development)
+    expected_growth = DevelopmentalGrowthController(expected, development)
+    actual_growth.recruit_to(32)
+    expected_growth.recruit_to(32)
+    actual_growth.structural_score[:] = np.arange(8, dtype=np.float64)[None, :]
+    expected_growth.structural_score[:] = actual_growth.structural_score
+    actual_growth.structural_exposure[actual._recurrent_weights_pa != 0.0] = 1.0
+    expected_growth.structural_exposure[expected._recurrent_weights_pa != 0.0] = 1.0
+    actual_growth.prune_to_final_fanout()
+    expected_growth.prune_to_final_fanout()
+
+    tokens = np.random.default_rng(805).integers(0, actual.token_cells, 32)
+    for token in tokens:
+        step = actual.observe(int(token))
+        expected_spikes = _python_reference_observe(expected, int(token))
+        assert step.reservoir_spikes == expected_spikes
+        np.testing.assert_array_equal(actual._synaptic_current_pa, expected._synaptic_current_pa)
+        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        np.testing.assert_array_equal(
+            actual._reservoir.state.voltage_relative_mv,
+            expected._reservoir.state.voltage_relative_mv,
+        )
 
 
 def test_vectorized_glif_step_matches_original_during_spikes_and_refractory() -> None:

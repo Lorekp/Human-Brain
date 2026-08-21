@@ -36,6 +36,26 @@ reservoir-sized normal matrix or solve. Language-model growth freezes either
 rule before validation and checkpointing. See `docs/local-readout-learning.md`
 for the equation, locality argument, complexity, and recorded limitations.
 
+Developmental growth is an explicit layer over the three-factor rule. A frozen
+schedule recruits a prefix of stable reservoir cell IDs, leaving all unborn
+GLIF5 membrane, after-spike, threshold, synaptic-current, and eligibility state
+at rest. The prefix can be a seeded random permutation or a deterministic wave
+through a six-layer sheet. Recruitment mutates fixed-capacity sparse recurrent
+arrays in place: existing edges persist, new cells grow outgoing edges, old
+cells overgrow edges toward the new cohort, and limited training-time turnover
+replaces the weakest local coactivity traces. Final pruning selects normalized
+pre/post eligibility evidence or a matched random ablation. A homeostatic
+condition scales incoming synapses from postsynaptic activity during training
+and conserves incoming absolute strength after pruning.
+
+The schedule itself is ordinary orchestration. Persistent state remains on
+cells and synapses: birth order, active mask, cell homeostatic gain, recurrent
+targets/weights, structural score/exposure, and three-factor output weights.
+The checkpoint format stores those arrays. The native transition kernel needs
+no developmental branch because recruitment only changes the sparse arrays it
+already consumes; the Python transition oracle remains bit-exact after both
+recruitment and pruning.
+
 The external interface is deliberately small:
 
 ```python
@@ -86,10 +106,11 @@ sequence for every persistent cell and synapse state array.
 
 Inference allocates only linear-sized cell, afferent, and sparse recurrent
 state. It does not allocate the training-only dense ridge statistics. The
-current exact ridge learner is therefore deliberately identified as a separate
-`O(N^2)` memory / `O(N^3)` consolidation bottleneck; replacing it with a local
-plasticity rule is required before learned language scaling can follow the
-98,304-cell simulation result.
+exact ridge learner is therefore deliberately identified as a separate
+`O(N^2)` memory / `O(N^3)` consolidation comparison. The three-factor and
+developmental paths remove that training-state bottleneck, although their
+predictive quality is still below the small ridge model and remains an active
+research target.
 
 ## Current layer
 

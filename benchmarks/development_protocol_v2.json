@@ -1,0 +1,78 @@
+{
+  "version": "human-cell-development-v2",
+  "registered_at": "2026-08-21T19:14:22+02:00",
+  "status": "preregistered-before-first-run",
+  "selection_partition": "named validation file only",
+  "test_partition_locked": true,
+  "data": {
+    "training_files": [
+      "src/humanbrain/cells.py",
+      "src/humanbrain/topology.py",
+      "src/humanbrain/tokenizer.py"
+    ],
+    "validation_file": "src/humanbrain/recurrent_language.py",
+    "training_characters": 384,
+    "validation_characters": 512
+  },
+  "model": {
+    "cell_type": "Allen human-data-fitted GLIF5",
+    "reservoir_cells": [384, 1536],
+    "random_seeds": [17],
+    "growth_epochs": 1,
+    "input_fanout": 32,
+    "overgrowth_recurrent_fanout": 12,
+    "token_interval_ms": 2.0,
+    "input_pulse_ms": 1.2,
+    "input_current_pa": 8000.0,
+    "recurrent_current_pa": 325.0,
+    "eligibility_tau_ms": 40.0,
+    "output_base_current_pa": 700.0,
+    "output_race_ms": 20.0,
+    "local_learning_rate_pa": 64.0,
+    "local_competitive_margin_pa": 64.0,
+    "readout_learning_rule": "three_factor"
+  },
+  "developmental_schedule": {
+    "active_cell_fractions": [0.25, 0.5, 1.0],
+    "initial_recurrent_fanout": 6,
+    "final_recurrent_fanout": 6,
+    "turnover_edges_per_source": 2,
+    "structural_seed_offset": 10000,
+    "homeostatic_scale_bounds": [0.5, 2.0],
+    "stage_boundaries": "equal thirds of the preregistered next-token updates",
+    "structural_score": "per-synapse presynaptic eligibility times postsynaptic eligibility, normalized by exposure",
+    "homeostasis": "training-only postsynaptic activity scaling after each stage and incoming-strength conservation after final pruning"
+  },
+  "conditions": [
+    "full_size_from_start",
+    "staged_layered_activity_homeostatic",
+    "staged_random_order",
+    "staged_random_pruning",
+    "staged_no_homeostasis"
+  ],
+  "evaluation": {
+    "teacher_forced_predictions": 128,
+    "generation_prompt_characters": 64,
+    "generation_target_bytes": 64,
+    "diagnostic_tokens": 96,
+    "adaptation_on_validation": false
+  },
+  "comparison_contract": {
+    "matched_across_conditions": [
+      "training bytes",
+      "attempted next-token updates",
+      "growth epochs",
+      "final active cells",
+      "final recurrent fanout"
+    ],
+    "primary": "compare staged_layered_activity_homeostatic against full_size_from_start at each size",
+    "ordering_ablation": "compare staged_layered_activity_homeostatic against staged_random_order",
+    "selection_ablation": "compare activity pruning against staged_random_pruning",
+    "homeostasis_ablation": "compare staged_layered_activity_homeostatic against staged_no_homeostasis",
+    "claim_limit": "single-seed exploratory validation; no test access and no general developmental superiority claim"
+  },
+  "deferred_scale": {
+    "reservoir_cells": 6144,
+    "reason": "run only after concurrent CPU/GPU speed gates release shared compute; the mechanism uses O(cells*fanout) structural construction"
+  }
+}

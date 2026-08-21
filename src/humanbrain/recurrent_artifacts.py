@@ -15,7 +15,15 @@ from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel
 from humanbrain.tokenizer import BytePhraseTokenizer
 
-FORMAT = "recurrent-human-cell-checkpoint-v2"
+FORMAT = "recurrent-human-cell-checkpoint-v3"
+
+_DEVELOPMENTAL_ARRAYS = {
+    "_development_cell_order": ("development_cell_order", np.int32),
+    "_development_active_mask": ("development_active_mask", np.bool_),
+    "_structural_scores": ("structural_scores", np.float64),
+    "_structural_exposure": ("structural_exposure", np.float64),
+    "_homeostatic_gain": ("homeostatic_gain", np.float64),
+}
 
 
 def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> str:
@@ -32,6 +40,12 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
     elif circuit._normal_matrix is not None or circuit._target_moments is not None:
         raise RuntimeError("local readout must not contain ridge statistics")
     phrase_offsets, phrase_values = _pack_phrases(model._tokenizer.phrases)
+    developmental_arrays_present = [
+        hasattr(circuit, name) for name in _DEVELOPMENTAL_ARRAYS
+    ]
+    if any(developmental_arrays_present) and not all(developmental_arrays_present):
+        raise RuntimeError("developmental checkpoint state is incomplete")
+    developmental_state = all(developmental_arrays_present)
     metadata = {
         "format": FORMAT,
         "training_digest": model.training_digest,
@@ -41,6 +55,8 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
         "circuit_config": asdict(circuit.config),
         "growth_examples": circuit._growth_examples,
         "local_updates": circuit._local_updates,
+        "runtime_active_reservoir_cells": circuit.active_reservoir_cells,
+        "developmental_state": developmental_state,
     }
     arrays = {
         "metadata": np.asarray(json.dumps(metadata, sort_keys=True)),
@@ -56,6 +72,9 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
     if circuit.config.readout_learning_rule == "ridge":
         arrays["normal_matrix"] = circuit._normal_matrix
         arrays["target_moments"] = circuit._target_moments
+    if developmental_state:
+        for attribute, (key, _) in _DEVELOPMENTAL_ARRAYS.items():
+            arrays[key] = getattr(circuit, attribute)
     with path.open("wb") as stream:
         np.savez_compressed(stream, **arrays)
     return sha256(path.read_bytes()).hexdigest()
@@ -107,6 +126,33 @@ def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
                     f"checkpoint array {key} has shape {value.shape}, expected {expected}"
                 )
             setattr(circuit, attribute, value)
+        if bool(metadata["developmental_state"]):
+            developmental_shapes = {
+                "_development_cell_order": (circuit.config.reservoir_cells,),
+                "_development_active_mask": (circuit.config.reservoir_cells,),
+                "_structural_scores": circuit._recurrent_weights_pa.shape,
+                "_structural_exposure": circuit._recurrent_weights_pa.shape,
+                "_homeostatic_gain": (circuit.config.reservoir_cells,),
+            }
+            for attribute, (key, dtype) in _DEVELOPMENTAL_ARRAYS.items():
+                value = np.array(state[key], dtype=dtype, copy=True)
+                expected = developmental_shapes[attribute]
+                if value.shape != expected:
+                    raise ValueError(
+                        f"checkpoint array {key} has shape {value.shape}, expected {expected}"
+                    )
+                setattr(circuit, attribute, value)
+        circuit.active_reservoir_cells = int(metadata["runtime_active_reservoir_cells"])
+        if bool(metadata["developmental_state"]):
+            if int(np.count_nonzero(circuit._development_active_mask)) != (
+                circuit.active_reservoir_cells
+            ):
+                raise ValueError("checkpoint active mask/count mismatch")
+            if not np.array_equal(
+                np.sort(circuit._development_cell_order),
+                np.arange(circuit.config.reservoir_cells, dtype=np.int32),
+            ):
+                raise ValueError("checkpoint developmental cell order is not a permutation")
         circuit._bind_native_kernel()
         circuit._growth_examples = int(metadata["growth_examples"])
         circuit._local_updates = int(metadata["local_updates"])

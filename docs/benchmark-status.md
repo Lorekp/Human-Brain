@@ -162,6 +162,23 @@ after-current encouraged bursting; accuracy fell to 14.39% and whitespace
 collapse remained. That implementation was rejected and removed rather than
 retained as an ornamental biological feature.
 
+## Recurrent developmental-growth gate
+
+The obsolete v1 post-hoc readout-pruning benchmark has been removed. Its
+replacement changes the recurrent circuit during training: dormant fitted
+GLIF5 cells are recruited at 25%, 50%, and 100% of final size; recurrent edges
+overgrow, collect local coactivity evidence, turn over, and mature to the same
+final fanout. Layered versus random birth order, activity versus random
+selection, homeostasis versus no homeostasis, and a full-size-from-start control
+are matched for training bytes and attempted updates.
+
+The v2 protocol freezes 384- and 1,536-cell runs before opening one named
+validation file and explicitly has no test access. It records prediction,
+generation, state-rank/correlation/firing, stage structure, runtime, and memory.
+This section will report the registered artifact without tuning after the
+shared CPU benchmark window is available; 6,144 cells remain a separately
+declared extension rather than an unrecorded exploratory retry.
+
 ## Reproducibility artifacts
 
 Hashes below identify the canonical LF-normalized file bytes stored in Git,

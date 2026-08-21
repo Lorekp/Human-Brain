@@ -90,6 +90,17 @@ accuracy at small sizes and its free-running validation remains weak. See
 An explicitly non-capability smoke also exercised online updates at 98,304
 cells with 211.70 MiB peak memory and no quadratic ridge state.
 
+The three-factor path now also supports genuine developmental training.
+Previously dormant fitted GLIF5 cells can be recruited in deterministic random
+or layered-sheet birth order. Sparse recurrent synapses first overgrow, collect
+local pre/post eligibility evidence during training, and are then selected by
+activity or a matched random ablation. Optional postsynaptic activity scaling
+and post-pruning incoming-strength conservation provide the homeostatic
+condition. This state is checkpointed as cell order/activity and structural
+synapse arrays; it is not post-hoc pruning of a copied readout. The registered
+384/1,536-cell validation gate is documented in
+`docs/developmental-growth.md`.
+
 The same cell circuit drives mini-swe-agent through `HumanCellModel`. A
 frozen, instance-specific episodic checkpoint completed the SQLFluff 1625 dev
 task in seven cell-generated shell actions and passed the official SWE-bench
