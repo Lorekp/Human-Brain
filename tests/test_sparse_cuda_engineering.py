@@ -59,6 +59,9 @@ def test_report_persistence_uses_atomic_replace(
     assert len(replacements) == 1
     assert replacements[0][1] == artifact
     assert json.loads(artifact.read_text(encoding="utf-8"))["status"] == "running"
+    raw = artifact.read_bytes()
+    assert b"\r\n" not in raw
+    assert raw.endswith(b"\n")
     assert not replacements[0][0].exists()
 
 
