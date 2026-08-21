@@ -48,6 +48,10 @@ tokens/s using 210.79 MiB of persistent arrays. Exact ridge consolidation still
 needs an `N x N` normal matrix and an `O(N^3)` solve. The experimental native
 three-factor rule below removes that hidden state and solve; its remaining
 limits are learning quality and the physical `vocabulary x cells` readout.
+For networks of at least 100,000 cells, a persistent-device CUDA backend
+executes the full 100-step token interval in one cooperative launch. CUDA and
+Rust match every mutable state array bit-for-bit; exact large-network
+throughput is registered in `docs/simulation-speed.md`.
 
 Simulation speed is a core capability requirement. The next acceptance gate is
 more than 100,000 **active** fitted human cells at more than 100 end-to-end
@@ -67,9 +71,10 @@ $env:PYTHONPATH = "src"
 The stateful GLIF5 reservoir builds a dependency-free Rust kernel on first use
 and caches the release DLL by source hash. Rust/Cargo is therefore a runtime
 build prerequisite for a source checkout; Python remains orchestration around
-the native cell simulation. Set `HUMANBRAIN_NATIVE_CACHE` to place the compiled
-cache explicitly. The registered sparse benchmark reaches 98,304 cells without
-dense cell-by-cell inference state; see `docs/simulation-speed.md`.
+the native cell simulation. Large networks use an NVRTC-compiled CUDA kernel
+when available. Set `HUMANBRAIN_DEVICE` to `auto`, `cpu`, or `cuda`, and set
+`HUMANBRAIN_NATIVE_CACHE` to place compiled caches explicitly. See
+`docs/simulation-speed.md` for the registered CPU and GPU protocols.
 
 An experimental native three-factor readout removes ridge's quadratic growth
 state and cubic solve while leaving ridge as the default comparison. It reached

@@ -20,7 +20,12 @@ human-brain = "humanbrain.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-humanbrain = ["_native_src/Cargo.toml", "_native_src/Cargo.lock", "_native_src/src/*.rs"]
+humanbrain = [
+    "_native_src/Cargo.toml",
+    "_native_src/Cargo.lock",
+    "_native_src/src/*.rs",
+    "_native_src/src/*.cu",
+]
 
 [tool.pytest.ini_options]
 addopts = "-q"

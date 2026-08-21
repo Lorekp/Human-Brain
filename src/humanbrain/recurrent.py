@@ -11,7 +11,6 @@ from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
 from humanbrain.native import NativeThreeFactorLearner, recurrent_kernel
 from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
 
-
 READOUT_LEARNING_RULES = frozenset({"ridge", "three_factor"})
 
 
@@ -235,6 +234,14 @@ class RecurrentCellCircuit:
     @property
     def observed_tokens(self) -> int:
         return self._observed_tokens
+
+    @property
+    def simulation_backend(self) -> str:
+        return self._native_kernel.backend
+
+    @property
+    def simulation_device(self) -> str:
+        return self._native_kernel.device_name
 
     @property
     def eligibility(self) -> np.ndarray:

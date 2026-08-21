@@ -1,0 +1,43 @@
+{
+  "name": "cuda-sparse-human-cell-scaling-v1",
+  "purpose": "Test the >100,000-active-cell and >100 end-to-end recurrent tokens/s engineering gate on an exact persistent-device CUDA backend.",
+  "cell_counts": [100000, 200000, 1000000],
+  "token_cells": 257,
+  "input_fanout": 32,
+  "recurrent_fanout": 6,
+  "token_interval_ms": 5.0,
+  "integration_dt_ms": 0.05,
+  "token_counts": {
+    "100000": 128,
+    "200000": 64,
+    "1000000": 16
+  },
+  "warmup_tokens": 2,
+  "timing_repeats": 3,
+  "equivalence_cells": 384,
+  "equivalence_tokens": 64,
+  "seed": 1701,
+  "topology": "uniform_no_self",
+  "metrics": [
+    "end_to_end_tokens_per_second",
+    "kernel_tokens_per_second",
+    "cell_steps_per_second",
+    "construction_seconds",
+    "first_token_seconds",
+    "host_persistent_array_mib",
+    "device_persistent_array_mib",
+    "device_to_host_bytes_per_token",
+    "host_to_device_bytes_per_token",
+    "cold_compile_seconds",
+    "cached_build_lookup_seconds",
+    "exact_cpu_equivalence"
+  ],
+  "notes": [
+    "One token is exactly 100 fitted 0.05-ms GLIF5 integration steps.",
+    "One cooperative CUDA launch executes the full token interval.",
+    "Reverse CSR preserves CPU scatter order independently for every postsynaptic cell.",
+    "End-to-end time includes synchronous download of every mutable cell and synapse array.",
+    "The three-factor readout setting prevents allocation of the ridge N-by-N normal matrix.",
+    "Final timing is valid only in an isolated GPU window; utilization snapshots are recorded."
+  ]
+}
