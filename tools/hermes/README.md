@@ -12,16 +12,23 @@ The launcher is intentionally narrower than the Hermes CLI:
 - fixed profile: `humanbrainox`;
 - fixed dedicated board: `human-brain-ox`;
 - fixed provider/model: `nous:stealth/ox-alpha`;
-- at most 128 tasks and at most one `gpu` task;
+- 2–128 tasks (the installed batch API rejects singleton arrays) and at most
+  one `gpu` task;
 - a clean worktree and one exact base SHA across all task rows;
+- the same Git common directory as the tracked launcher (linked Human Brain
+  worktrees are allowed; sibling repositories are not);
+- a 2 MiB UTF-8 prompt envelope, below Hermes' 25 MiB attachment cap;
 - plan-only unless both `-Execute` and `-AuthorizeSourceUpload` are present;
 - one blocked goal card, one joined delegate batch, one `dispatch --max 1`,
-  one retry at most, and no integration action.
+  no automatic retry, and no integration action.
 
-It is pinned to Hermes Agent v0.20.5. The profile, dedicated board, Portal
-authentication, 128-child delegation limit, depth-two worktree isolation, and
-approval policy are installation-owned prerequisites. This launcher reads but
-never changes that global state. It routes the card through an explicit
+It is pinned to Hermes Agent v0.20.5. Before any Git ref or board mutation it
+reads the resolved profile configuration and requires both parent and delegate
+model/provider to be `nous:stealth/ox-alpha`, worktree isolation, enough child
+concurrency for the manifest, at least one spawn level, and disabled subagent
+auto-approval. Portal authentication and the dedicated board remain
+installation-owned prerequisites; the launcher never changes global state. It
+routes the card through an explicit
 `worktree:<validated repository>` workspace and a deterministic local branch
 that is verified at the manifest base SHA; it does not trust mutable project
 routing.
@@ -62,10 +69,15 @@ that the external model may receive source from the allowed public paths:
     -AuthorizeSourceUpload
 ```
 
-The script writes the full parent prompt to a temporary UTF-8 file and creates
-the card initially blocked. It attaches the prompt through Hermes' native
-Kanban attachment command, verifies the stored file's identity and SHA-256,
-then promotes the card only after proving the board has no other ready card.
+The prompt contains a fully materialized delegate array. Every object has
+exactly `goal`, `context`, and `role: "leaf"`; every goal is launcher-owned and
+contains only the validated task ID, while every context repeats the full
+worker contract, immutable run pins, and exact single-task JSON. The script
+writes that prompt to a temporary UTF-8 file and creates the card initially
+blocked. It then proves exactly one non-archived hash-bound card exists,
+attaches the prompt through Hermes' native Kanban attachment command, verifies
+the stored file's identity and SHA-256, and promotes the card only after
+proving the board has no other ready card.
 Immediately before the board-wide `dispatch --max 1`, it rechecks the clean
 base and pinned branch, proves the promoted card is the sole ready card, and
 afterward verifies that Hermes spawned that exact card. No task text is
@@ -73,8 +85,10 @@ evaluated by a shell or placed on the Windows command line, and the temporary
 file is removed. A non-archived deterministic fleet card makes a rerun fail;
 inspect and archive it manually rather than replaying a delegated batch.
 
-These checks narrow trusted-host races but cannot eliminate them if another
-local process mutates Git refs or the board between CLI calls. Likewise,
+Execute mode also takes a nonblocking, board-wide named mutex until dispatch,
+serializing concurrent copies of this launcher. These checks narrow
+trusted-host races but cannot eliminate them if another local program mutates
+Git refs or the board between CLI calls. Likewise,
 `allowed_paths` is an audited worker obligation, not a hard read sandbox:
 worktrees isolate writes and collisions, not confidentiality. Both execution
 switches authorize sending the listed public source to that trusted runtime.

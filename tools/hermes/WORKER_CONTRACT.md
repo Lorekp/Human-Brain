@@ -9,11 +9,14 @@ the diff and reruns the declared gates.
 
 1. Verify that the worktree is clean and that `HEAD` equals every task's
    `base_sha`. Stop on any mismatch.
-2. Launch exactly one `delegate_task` batch containing every manifest task,
-   with `background=true`. Create one leaf child per task. Do not split the
-   batch across calls and do not allow nested delegation.
-3. Put the complete immutable task record in that child's `goal` and `context`.
-   A child has no access to the parent's conversation history.
+2. Pass the launcher's exact pre-materialized delegate array unchanged to one
+   `delegate_task(..., background=true)` call. Do not pass raw manifest rows,
+   split the array across calls, add keys, or allow nested delegation.
+3. Every delegate object has exactly `{goal, context, role: "leaf"}`. Its fixed
+   launcher-owned goal identifies only the validated task ID. Its context
+   contains this complete contract verbatim, the immutable run/routing pins,
+   and that task's exact JSON record. A child has no access to the parent's
+   conversation history.
 4. On Hermes v0.20.5 a Kanban worker joins this requested-background batch
    synchronously and returns its consolidated results in the same parent turn.
    Capture every result before continuing; never issue a second batch or rely
@@ -21,16 +24,20 @@ the diff and reruns the declared gates.
 5. Synthesize the returned evidence into a manifest-hash-named report under
    `tools/hermes/reports/`. Record the manifest hash, base SHA, profile/model,
    parent worktree, every child branch and commit, files, tests, results, and
-   limitations. Commit the report, then include its path and commit SHA in
-   `kanban_complete`.
+   limitations. Commit exactly that report and no other parent change, then
+   include its path and commit SHA in `kanban_complete`.
 6. Never merge, cherry-pick, rebase, push, or auto-approve a child branch.
    Child commits remain proposals for local review.
 
 ## Every child
 
-- Work only in the isolated worktree assigned by Hermes. Before reading source
-  or editing, verify a clean checkout at the task's exact `base_sha`; stop and
-  report a blocker otherwise.
+- Before any source read, file tool, or terminal action, require the exact
+  Hermes-injected `[WORKTREE ISOLATION]` suffix in the leaf goal with a concrete
+  worktree path and dedicated branch. If it is absent, return `blocked`
+  immediately. If present, verify that the current directory equals that path,
+  the current branch equals the suffix branch, `HEAD` equals the task's exact
+  `base_sha`, and the checkout is clean; block before source access on any
+  mismatch.
 - Read or modify only `allowed_paths`, plus this contract and root public
   project metadata needed to run the declared checks. Ask the parent to reject
   the task if its path allowance is insufficient.
