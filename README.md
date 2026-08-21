@@ -135,4 +135,6 @@ headline comparison.
 
 See `docs/architecture.md` for the cell-only contract and
 `docs/benchmark-status.md` for exact artifacts, hashes, and the remaining fair
-Gemma comparison gate.
+Gemma comparison gate. The intermediate family-disjoint coding curriculum and
+the proposed direct cell-to-program decoder are described in
+`docs/research/cell-program-decoding.md`.

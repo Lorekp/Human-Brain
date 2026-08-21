@@ -168,3 +168,11 @@ command selector.
 The current SQLFluff checkpoint is deliberately instance-specific. It is a
 plumbing and capacity demonstration, not the held-out checkpoint required for
 the final Gemma comparison.
+
+The next gate is deliberately smaller than SWE-bench: one frozen generic
+checkpoint must emit one complete function for family-disjoint hidden coding
+tasks. A proposed typed prefix program language would let output cells choose
+semantic program tokens while a frozen deterministic grammar and compiler
+provide syntax-only plumbing—without search, retries, or hidden-test feedback.
+That design boundary is recorded in
+`docs/research/cell-program-decoding.md`; it is not yet a capability result.
