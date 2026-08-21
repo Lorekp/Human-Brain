@@ -188,11 +188,12 @@ def _python_step(circuit: RecurrentCellCircuit, current: np.ndarray) -> np.ndarr
 
 def _python_observe(circuit: RecurrentCellCircuit, token_id: int) -> None:
     afferents = circuit._afferent_targets[token_id]
+    step_current_pa = np.empty_like(circuit._synaptic_current_pa)
     for step in range(circuit._token_steps):
-        np.copyto(circuit._step_current_pa, circuit._synaptic_current_pa)
+        np.copyto(step_current_pa, circuit._synaptic_current_pa)
         if step < circuit._pulse_steps:
-            circuit._step_current_pa[afferents] += circuit.config.input_current_pa
-        spikes = _python_step(circuit, circuit._step_current_pa)
+            step_current_pa[afferents] += circuit.config.input_current_pa
+        spikes = _python_step(circuit, step_current_pa)
         circuit._synaptic_current_pa *= circuit._recurrent_decay
         circuit._eligibility *= circuit._eligibility_decay
         if spikes.any():

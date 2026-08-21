@@ -159,8 +159,15 @@ def build_recurrent_targets(
     if topology == "uniform_no_self":
         targets = np.empty((cell_count, fanout), dtype=np.int32)
         for source in range(cell_count):
-            candidates = np.delete(np.arange(cell_count, dtype=np.int32), source)
-            targets[source] = rng.choice(candidates, fanout, replace=False)
+            # Sampling candidate indices is bit-for-bit identical to sampling
+            # np.delete(arange(cell_count), source), without allocating an
+            # almost-cell-count temporary for every source neuron.
+            row = rng.choice(cell_count - 1, fanout, replace=False).astype(
+                np.int32,
+                copy=False,
+            )
+            row += row >= source
+            targets[source] = row
         return targets
     if topology == "single_scale_groups":
         return _group_targets(cell_count, fanout, rng, nested=False)

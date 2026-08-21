@@ -120,7 +120,6 @@ class RecurrentCellCircuit:
         self.cell_parameters = cell_parameters or AllenGlif5Parameters()
         self._reservoir = AdaptiveGlifPopulation(self.config.reservoir_cells, self.cell_parameters)
         self._synaptic_current_pa = np.zeros(self.config.reservoir_cells, dtype=np.float64)
-        self._step_current_pa = np.empty(self.config.reservoir_cells, dtype=np.float64)
         self._eligibility = np.zeros(self.config.reservoir_cells, dtype=np.float64)
         self._readout_synapses_pa = np.zeros(
             (self.token_cells, self.config.reservoir_cells), dtype=np.float64
@@ -197,7 +196,6 @@ class RecurrentCellCircuit:
             recurrent_weights_pa=self._recurrent_weights_pa,
             synaptic_current_pa=self._synaptic_current_pa,
             eligibility=self._eligibility,
-            step_current_pa=self._step_current_pa,
         )
         self._native_local_learner = (
             NativeThreeFactorLearner(

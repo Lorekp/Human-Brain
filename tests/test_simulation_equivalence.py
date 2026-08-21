@@ -188,12 +188,13 @@ def _vectorized_reference_step(
 def _python_reference_observe(circuit: RecurrentCellCircuit, token_id: int) -> int:
     """Last Python sparse token loop, retained only for equivalence testing."""
     afferents = circuit._afferent_targets[token_id]
+    step_current_pa = np.empty_like(circuit._synaptic_current_pa)
     spike_total = 0
     for step in range(circuit._token_steps):
-        np.copyto(circuit._step_current_pa, circuit._synaptic_current_pa)
+        np.copyto(step_current_pa, circuit._synaptic_current_pa)
         if step < circuit._pulse_steps:
-            circuit._step_current_pa[afferents] += circuit.config.input_current_pa
-        spikes = _vectorized_reference_step(circuit._reservoir, circuit._step_current_pa)
+            step_current_pa[afferents] += circuit.config.input_current_pa
+        spikes = _vectorized_reference_step(circuit._reservoir, step_current_pa)
         circuit._synaptic_current_pa *= circuit._recurrent_decay
         circuit._eligibility *= circuit._eligibility_decay
         if spikes.any():
@@ -251,6 +252,53 @@ def test_native_recurrent_token_loop_is_bit_exact_to_python_reference() -> None:
             actual._reservoir.state.refractory_steps,
             expected._reservoir.state.refractory_steps,
         )
+
+
+def test_fused_parallel_kernel_is_bit_exact_to_native_v1_for_64_tokens() -> None:
+    config = RecurrentCircuitConfig(
+        reservoir_cells=8_192,
+        input_fanout=32,
+        recurrent_fanout=6,
+        token_interval_ms=5.0,
+        input_pulse_ms=1.5,
+        input_current_pa=4_000.0,
+        recurrent_current_pa=325.0,
+        eligibility_tau_ms=40.0,
+        recurrent_topology="uniform_no_self",
+        random_seed=31,
+    )
+    actual = RecurrentCellCircuit(token_cells=67, config=config)
+    expected = RecurrentCellCircuit(token_cells=67, config=config)
+    tokens = np.random.default_rng(8_031).integers(0, actual.token_cells, 64)
+
+    actual_spikes = [actual._native_kernel._observe_parallel(int(token)) for token in tokens]
+    expected_spikes = [
+        expected._native_kernel._observe_reference_v1(int(token)) for token in tokens
+    ]
+
+    assert actual_spikes == expected_spikes
+    np.testing.assert_array_equal(actual._synaptic_current_pa, expected._synaptic_current_pa)
+    np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+    np.testing.assert_array_equal(
+        actual._reservoir.state.voltage_relative_mv,
+        expected._reservoir.state.voltage_relative_mv,
+    )
+    np.testing.assert_array_equal(
+        actual._reservoir.state.after_spike_currents_pa,
+        expected._reservoir.state.after_spike_currents_pa,
+    )
+    np.testing.assert_array_equal(
+        actual._reservoir.state.threshold_spike_mv,
+        expected._reservoir.state.threshold_spike_mv,
+    )
+    np.testing.assert_array_equal(
+        actual._reservoir.state.threshold_voltage_mv,
+        expected._reservoir.state.threshold_voltage_mv,
+    )
+    np.testing.assert_array_equal(
+        actual._reservoir.state.refractory_steps,
+        expected._reservoir.state.refractory_steps,
+    )
 
 
 def test_vectorized_glif_step_matches_original_during_spikes_and_refractory() -> None:

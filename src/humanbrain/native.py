@@ -154,7 +154,7 @@ def _load_library() -> ctypes.CDLL:
 
         library.humanbrain_kernel_abi_version.argtypes = []
         library.humanbrain_kernel_abi_version.restype = ctypes.c_uint32
-        if library.humanbrain_kernel_abi_version() != 2:
+        if library.humanbrain_kernel_abi_version() != 3:
             raise NativeBuildError("native human-cell kernel ABI mismatch")
 
         pointer_args = [
@@ -168,12 +168,11 @@ def _load_library() -> ctypes.CDLL:
             _F64_POINTER,
             _F64_POINTER,
             _I32_POINTER,
-            _I32_POINTER,
             _U8_POINTER,
         ]
         library.humanbrain_glif_step.argtypes = pointer_args
         library.humanbrain_glif_step.restype = ctypes.c_size_t
-        library.humanbrain_observe_token.argtypes = [
+        recurrent_args = [
             ctypes.POINTER(_GlifConfig),
             ctypes.POINTER(_RecurrentConfig),
             _F64_POINTER,
@@ -190,9 +189,22 @@ def _load_library() -> ctypes.CDLL:
             _F64_POINTER,
             _F64_POINTER,
             _F64_POINTER,
+            _U8_POINTER,
+        ]
+        for name in (
+            "humanbrain_observe_token",
+            "humanbrain_observe_token_serial",
+            "humanbrain_observe_token_parallel",
+        ):
+            function = getattr(library, name)
+            function.argtypes = recurrent_args
+            function.restype = ctypes.c_size_t
+        library.humanbrain_observe_token_reference_v1.argtypes = [
+            *recurrent_args[:-2],
+            _F64_POINTER,
             _I32_POINTER,
         ]
-        library.humanbrain_observe_token.restype = ctypes.c_size_t
+        library.humanbrain_observe_token_reference_v1.restype = ctypes.c_size_t
         library.humanbrain_three_factor_update.argtypes = [
             ctypes.c_size_t,
             ctypes.c_size_t,
@@ -264,16 +276,15 @@ class NativeGlifKernel:
         self._library = _load_library()
         self._population = population
         self._config = _glif_config(population)
-        self._spike_indices = np.empty(population.cell_count, dtype=np.int32)
+        self._spike_mask = np.empty(population.cell_count, dtype=np.bool_)
 
     @property
-    def spike_indices(self) -> np.ndarray:
-        return self._spike_indices
+    def spike_mask(self) -> np.ndarray:
+        return self._spike_mask
 
     def step(self, current: np.ndarray) -> np.ndarray:
         population = self._population
         state = population.state
-        spikes = np.empty(population.cell_count, dtype=np.bool_)
         self._library.humanbrain_glif_step(
             ctypes.byref(self._config),
             _f64(population._after_spike_decay),
@@ -285,10 +296,9 @@ class NativeGlifKernel:
             _f64(state.threshold_spike_mv),
             _f64(state.threshold_voltage_mv),
             _i32(state.refractory_steps),
-            _i32(self._spike_indices),
-            spikes.ctypes.data_as(_U8_POINTER),
+            self._spike_mask.ctypes.data_as(_U8_POINTER),
         )
-        return spikes
+        return self._spike_mask
 
 
 class NativeRecurrentKernel:
@@ -312,7 +322,6 @@ class NativeRecurrentKernel:
         recurrent_weights_pa: np.ndarray,
         synaptic_current_pa: np.ndarray,
         eligibility: np.ndarray,
-        step_current_pa: np.ndarray,
     ) -> None:
         self._library = _load_library()
         self._population = population
@@ -339,7 +348,6 @@ class NativeRecurrentKernel:
         for array, name in (
             (synaptic_current_pa, "synaptic current"),
             (eligibility, "eligibility"),
-            (step_current_pa, "step current"),
         ):
             _require_native_array(
                 array,
@@ -366,8 +374,10 @@ class NativeRecurrentKernel:
         self._recurrent_weights_pa = recurrent_weights_pa
         self._synaptic_current_pa = synaptic_current_pa
         self._eligibility = eligibility
-        self._step_current_pa = step_current_pa
-        self._spike_indices = population._native_kernel.spike_indices
+        self._input_scratch = np.empty(input_fanout, dtype=np.float64)
+        self._spike_mask = population._native_kernel.spike_mask
+        self._reference_step_current: np.ndarray | None = None
+        self._reference_spike_indices: np.ndarray | None = None
 
     @property
     def device_name(self) -> str:
@@ -377,11 +387,20 @@ class NativeRecurrentKernel:
         """CPU arrays are the live native state, so no synchronization is needed."""
 
     def observe(self, token_id: int) -> int:
+        return self._observe_with(self._library.humanbrain_observe_token, token_id)
+
+    def _observe_serial(self, token_id: int) -> int:
+        return self._observe_with(self._library.humanbrain_observe_token_serial, token_id)
+
+    def _observe_parallel(self, token_id: int) -> int:
+        return self._observe_with(self._library.humanbrain_observe_token_parallel, token_id)
+
+    def _observe_with(self, function: object, token_id: int) -> int:
         population = self._population
         state = population.state
         afferents = self._afferent_targets[token_id]
         return int(
-            self._library.humanbrain_observe_token(
+            function(
                 ctypes.byref(self._glif_config),
                 ctypes.byref(self._recurrent_config),
                 _f64(population._after_spike_decay),
@@ -397,8 +416,39 @@ class NativeRecurrentKernel:
                 _i32(state.refractory_steps),
                 _f64(self._synaptic_current_pa),
                 _f64(self._eligibility),
-                _f64(self._step_current_pa),
-                _i32(self._spike_indices),
+                _f64(self._input_scratch),
+                self._spike_mask.ctypes.data_as(_U8_POINTER),
+            )
+        )
+
+    def _observe_reference_v1(self, token_id: int) -> int:
+        population = self._population
+        state = population.state
+        afferents = self._afferent_targets[token_id]
+        cells = population.cell_count
+        if self._reference_step_current is None:
+            self._reference_step_current = np.empty(cells, dtype=np.float64)
+            self._reference_spike_indices = np.empty(cells, dtype=np.int32)
+        assert self._reference_spike_indices is not None
+        return int(
+            self._library.humanbrain_observe_token_reference_v1(
+                ctypes.byref(self._glif_config),
+                ctypes.byref(self._recurrent_config),
+                _f64(population._after_spike_decay),
+                _f64(population._after_spike_cut_decay),
+                _f64(population._after_spike_amplitudes_pa),
+                _i32(afferents),
+                _i32(self._recurrent_targets),
+                _f64(self._recurrent_weights_pa),
+                _f64(state.voltage_relative_mv),
+                _f64(state.after_spike_currents_pa),
+                _f64(state.threshold_spike_mv),
+                _f64(state.threshold_voltage_mv),
+                _i32(state.refractory_steps),
+                _f64(self._synaptic_current_pa),
+                _f64(self._eligibility),
+                _f64(self._reference_step_current),
+                _i32(self._reference_spike_indices),
             )
         )
 
