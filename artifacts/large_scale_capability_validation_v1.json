@@ -1,0 +1,190 @@
+{
+  "adaptation_on_validation": false,
+  "complete": false,
+  "environment": {
+    "humanbrain_device_policy": "auto",
+    "numpy": "2.4.6",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "protocol_sha256": "004caa095e796f8671a5989148b881058c0cdc16334101f31de42784fdd84535",
+  "protocol_version": "human-cell-large-scale-capability-v1",
+  "runs": [
+    {
+      "capability": {
+        "free_running": {
+          "accuracy": 0.010416666666666666,
+          "correct": 2,
+          "folds": [
+            {
+              "accuracy": 0.015625,
+              "correct": 1,
+              "exact_prefix_bytes": 0,
+              "file": "src/humanbrain/artifacts.py",
+              "generated_bytes": 64,
+              "generated_preview": "-1}}}}}a}}}}-}}}}}}}a-1}}}}}}}}}}}a-1}}}}}}}}}}-a1}}}}}}}}}-}1}}",
+              "target_bytes": 64
+            },
+            {
+              "accuracy": 0.0,
+              "correct": 0,
+              "exact_prefix_bytes": 0,
+              "file": "src/humanbrain/eval_bridge.py",
+              "generated_bytes": 64,
+              "generated_preview": "importa-1}}}}}}}}}}}}-a1}}}}}}}}}}a-1}}}}}}}}}}}-a1}}}}}}}}-}}a1",
+              "target_bytes": 64
+            },
+            {
+              "accuracy": 0.015625,
+              "correct": 1,
+              "exact_prefix_bytes": 0,
+              "file": "src/humanbrain/swe_model.py",
+              "generated_bytes": 64,
+              "generated_preview": "-1}}}}}}}}}}}a-1}}}}}}}}}}}a-1}}}}}}}}}}}a-1}}}}}}}}}}}-a1}}}}}}",
+              "target_bytes": 64
+            }
+          ],
+          "mean_exact_prefix_bytes": 0,
+          "predictions": 192
+        },
+        "teacher_forced": {
+          "accuracy": 0.17057291666666666,
+          "correct": 131,
+          "folds": [
+            {
+              "accuracy": 0.24609375,
+              "correct": 63,
+              "file": "src/humanbrain/artifacts.py",
+              "mean_spike_time_ms": 4.081054687500001,
+              "predictions": 256,
+              "tokens_per_second": 288.9543475864341,
+              "wall_seconds": 0.8859530999907292
+            },
+            {
+              "accuracy": 0.04296875,
+              "correct": 11,
+              "file": "src/humanbrain/eval_bridge.py",
+              "mean_spike_time_ms": 4.105664062499999,
+              "predictions": 256,
+              "tokens_per_second": 286.1493221066953,
+              "wall_seconds": 0.894637799996417
+            },
+            {
+              "accuracy": 0.22265625,
+              "correct": 57,
+              "file": "src/humanbrain/swe_model.py",
+              "mean_spike_time_ms": 4.128710937499998,
+              "predictions": 256,
+              "tokens_per_second": 296.2486702140949,
+              "wall_seconds": 0.8641388999822084
+            }
+          ],
+          "predictions": 768
+        }
+      },
+      "cells": 6144,
+      "data_track": "fixed_1024",
+      "dynamics": {
+        "effective_state_rank_from_token_gram": 6.7689352793140545,
+        "fixed_sample_cells": 512,
+        "fixed_sample_mean_absolute_cell_correlation": 0.2791676637836251,
+        "maximum_active_eligibility_fraction": 0.94140625,
+        "mean_active_eligibility_fraction": 0.7726186116536458,
+        "mean_firing_hz_per_cell": 14.974466959635416,
+        "reservoir_spikes": 29441,
+        "reservoir_spikes_per_cell_per_token": 0.07487233479817708,
+        "responsive_state_cell_fraction": 0.94140625,
+        "responsive_state_cells": 5784,
+        "spiking_token_fraction": 0.984375,
+        "tokens": 64,
+        "union_active_eligibility_fraction": 0.94140625
+      },
+      "growth_epochs": 2,
+      "input_fanout": 512,
+      "key": "stage=uniform_fixed_data:track=fixed_1024:topology=uniform_no_self:seed=17:cells=6144",
+      "learning": {
+        "afferent_synapses": 131072,
+        "allocated_readout_synapses": 1572864,
+        "applied_local_updates": 1740,
+        "applied_update_fraction": 0.8529411764705882,
+        "attempted_local_updates": 2040,
+        "configured_active_cells": 6144,
+        "nonzero_pacemaker_synapses": 61,
+        "nonzero_readout_synapses": 350326,
+        "nonzero_recurrent_synapses": 36864,
+        "readout_output_cells": 60,
+        "readout_source_cell_fraction": 0.9947916666666666,
+        "readout_source_cells": 6112,
+        "recurrent_synapses": 36864,
+        "ridge_feature_batch_absent": true,
+        "ridge_normal_matrix_absent": true,
+        "ridge_target_moments_absent": true
+      },
+      "performance": {
+        "device_persistent_array_mib": 0.0,
+        "free_running_wall_seconds": 1.8598525999987032,
+        "host_persistent_array_mib": 13.564743041992188,
+        "model_build_and_training_wall_seconds": 16.937260000006063,
+        "simulation_backend": "cpu",
+        "simulation_device": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+        "state_diagnostics_wall_seconds": 0.23343550000572577,
+        "teacher_forced_wall_seconds": 2.6495137000165414,
+        "training_peak_traced_mib": 14.698921203613281
+      },
+      "recurrent_fanout": 6,
+      "seed": 17,
+      "stage": "uniform_fixed_data",
+      "stage_index": 0,
+      "token_cells": 256,
+      "topology": "uniform_no_self",
+      "training_characters": 1024
+    }
+  ],
+  "selection_partition": "validation",
+  "summary": {
+    "complete": false,
+    "completed_runs": 1,
+    "conditions": [
+      {
+        "applied_local_updates_median": 1740.0,
+        "attempted_local_updates_median": 2040.0,
+        "cells": 6144,
+        "complete": false,
+        "completed_seeds": [
+          17
+        ],
+        "data_track": "fixed_1024",
+        "expected_seeds": [
+          17,
+          29,
+          43,
+          59,
+          71
+        ],
+        "free_running_median_accuracy": 0.010416666666666666,
+        "host_persistent_array_mib_median": 13.564743041992188,
+        "mean_firing_hz_per_cell_median": 14.974466959635416,
+        "readout_source_cell_fraction_median": 0.9947916666666666,
+        "responsive_state_fraction_median": 0.94140625,
+        "teacher_forced_median_accuracy": 0.17057291666666666,
+        "topology": "uniform_no_self"
+      }
+    ],
+    "expected_runs": 148,
+    "organization": {
+      "abstract_4d_effects_vs_3d": [],
+      "layered_2d": null,
+      "multiscale_groups": null,
+      "paired_effects_vs_uniform": []
+    },
+    "scale": {
+      "fixed_1024_criterion": null,
+      "fixed_1024_slopes": null,
+      "registered_interpretation": "incomplete",
+      "sqrt_scaled_primary_criterion": null,
+      "sqrt_scaled_slopes": null
+    }
+  },
+  "test_partition_accessed": false,
+  "test_partition_defined": false
+}
