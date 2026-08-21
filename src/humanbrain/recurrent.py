@@ -98,8 +98,11 @@ class RecurrentCellCircuit:
     Token IDs only choose fixed afferent synapses. Context persists in fitted
     membrane voltage, after-spike currents, adaptive thresholds, recurrent
     synaptic current, and an eligibility trace driven by presynaptic spikes.
-    The only learned values are synaptic strengths into output cells. Output is
-    selected by the first adaptive human-fitted cell to cross threshold.
+    The default circuit learns synaptic strengths into output cells. The
+    explicit developmental controller can additionally grow, score, prune, and
+    homeostatically scale the existing sparse recurrent synapses during
+    training. Output is selected by the first adaptive human-fitted cell to
+    cross threshold.
     """
 
     _STATISTICS_BATCH_SIZE = 128

@@ -1,6 +1,7 @@
 {
   "version": "human-cell-development-v2",
   "registered_at": "2026-08-21T19:14:22+02:00",
+  "amended_before_first_run_at": "2026-08-21T19:19:50+02:00",
   "status": "preregistered-before-first-run",
   "selection_partition": "named validation file only",
   "test_partition_locked": true,
@@ -10,14 +11,14 @@
       "src/humanbrain/topology.py",
       "src/humanbrain/tokenizer.py"
     ],
-    "validation_file": "src/humanbrain/recurrent_language.py",
+    "validation_file": "src/humanbrain/recurrent_artifacts.py",
     "training_characters": 384,
     "validation_characters": 512
   },
   "model": {
     "cell_type": "Allen human-data-fitted GLIF5",
     "reservoir_cells": [384, 1536],
-    "random_seeds": [17],
+    "random_seeds": [17, 29, 43],
     "growth_epochs": 1,
     "input_fanout": 32,
     "overgrowth_recurrent_fanout": 12,
@@ -65,11 +66,17 @@
       "final active cells",
       "final recurrent fanout"
     ],
-    "primary": "compare staged_layered_activity_homeostatic against full_size_from_start at each size",
+    "primary": {
+      "comparison": "staged_layered_activity_homeostatic against full_size_from_start at each size",
+      "maximum_teacher_forced_median_drop": 0.01,
+      "minimum_free_running_median_difference": 0.0,
+      "minimum_strict_seed_wins_on_either_endpoint": 2,
+      "pass": "all three numeric requirements hold independently at a cell size"
+    },
     "ordering_ablation": "compare staged_layered_activity_homeostatic against staged_random_order",
     "selection_ablation": "compare activity pruning against staged_random_pruning",
     "homeostasis_ablation": "compare staged_layered_activity_homeostatic against staged_no_homeostasis",
-    "claim_limit": "single-seed exploratory validation; no test access and no general developmental superiority claim"
+    "claim_limit": "three-seed single-file validation; no test access and no general developmental superiority claim"
   },
   "deferred_scale": {
     "reservoir_cells": 6144,

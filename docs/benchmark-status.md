@@ -172,12 +172,16 @@ final fanout. Layered versus random birth order, activity versus random
 selection, homeostasis versus no homeostasis, and a full-size-from-start control
 are matched for training bytes and attempted updates.
 
-The v2 protocol freezes 384- and 1,536-cell runs before opening one named
-validation file and explicitly has no test access. It records prediction,
-generation, state-rank/correlation/firing, stage structure, runtime, and memory.
-This section will report the registered artifact without tuning after the
-shared CPU benchmark window is available; 6,144 cells remain a separately
-declared extension rather than an unrecorded exploratory retry.
+The v2 protocol freezes 384- and 1,536-cell runs over seeds 17, 29, and 43
+before opening the previously unused `recurrent_artifacts.py` validation file;
+it explicitly has no test access. Its numeric primary criterion requires the
+staged condition to stay within one percentage point of full-start median
+teacher-forced accuracy, not lose median free-running accuracy, and record at
+least two of three strict paired-seed wins on either endpoint. It also records
+state-rank/correlation/firing, stage structure, runtime, and memory. This
+section will report the registered artifact without tuning after the shared
+CPU benchmark window is available; 6,144 cells remain a separately declared
+extension rather than an unrecorded exploratory retry.
 
 ## Reproducibility artifacts
 

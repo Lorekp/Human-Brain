@@ -275,6 +275,86 @@ def _summary(runs: list[dict[str, object]]) -> list[dict[str, object]]:
     return summaries
 
 
+def _primary_criteria(
+    runs: list[dict[str, object]],
+    protocol: dict[str, object],
+) -> list[dict[str, object]]:
+    primary = protocol["comparison_contract"]["primary"]
+    required_seeds = {int(value) for value in protocol["model"]["random_seeds"]}
+    results: list[dict[str, object]] = []
+    for cells_value in protocol["model"]["reservoir_cells"]:
+        cells = int(cells_value)
+        baseline = {
+            int(run["seed"]): run
+            for run in runs
+            if int(run["reservoir_cells"]) == cells
+            and run["condition"] == "full_size_from_start"
+        }
+        staged = {
+            int(run["seed"]): run
+            for run in runs
+            if int(run["reservoir_cells"]) == cells
+            and run["condition"] == "staged_layered_activity_homeostatic"
+        }
+        if set(baseline) != required_seeds or set(staged) != required_seeds:
+            results.append({"reservoir_cells": cells, "status": "pending"})
+            continue
+        baseline_teacher = median(
+            float(baseline[seed]["teacher_forced"]["accuracy"])
+            for seed in required_seeds
+        )
+        staged_teacher = median(
+            float(staged[seed]["teacher_forced"]["accuracy"])
+            for seed in required_seeds
+        )
+        baseline_free = median(
+            float(baseline[seed]["free_running"]["accuracy"])
+            for seed in required_seeds
+        )
+        staged_free = median(
+            float(staged[seed]["free_running"]["accuracy"])
+            for seed in required_seeds
+        )
+        teacher_seed_wins = sum(
+            float(staged[seed]["teacher_forced"]["accuracy"])
+            > float(baseline[seed]["teacher_forced"]["accuracy"])
+            for seed in required_seeds
+        )
+        free_seed_wins = sum(
+            float(staged[seed]["free_running"]["accuracy"])
+            > float(baseline[seed]["free_running"]["accuracy"])
+            for seed in required_seeds
+        )
+        teacher_requirement = staged_teacher >= baseline_teacher - float(
+            primary["maximum_teacher_forced_median_drop"]
+        )
+        free_requirement = staged_free - baseline_free >= float(
+            primary["minimum_free_running_median_difference"]
+        )
+        wins_requirement = max(teacher_seed_wins, free_seed_wins) >= int(
+            primary["minimum_strict_seed_wins_on_either_endpoint"]
+        )
+        results.append(
+            {
+                "reservoir_cells": cells,
+                "status": "complete",
+                "baseline_teacher_forced_median_accuracy": baseline_teacher,
+                "staged_teacher_forced_median_accuracy": staged_teacher,
+                "teacher_forced_median_difference": staged_teacher - baseline_teacher,
+                "teacher_requirement_met": teacher_requirement,
+                "baseline_free_running_median_accuracy": baseline_free,
+                "staged_free_running_median_accuracy": staged_free,
+                "free_running_median_difference": staged_free - baseline_free,
+                "free_running_requirement_met": free_requirement,
+                "teacher_forced_strict_seed_wins": teacher_seed_wins,
+                "free_running_strict_seed_wins": free_seed_wins,
+                "seed_win_requirement_met": wins_requirement,
+                "passed": teacher_requirement and free_requirement and wins_requirement,
+            }
+        )
+    return results
+
+
 def run(protocol: dict[str, object], protocol_hash: str, output: Path) -> dict[str, object]:
     data = protocol["data"]
     training_paths = [ROOT / path for path in data["training_files"]]
@@ -360,6 +440,7 @@ def run(protocol: dict[str, object], protocol_hash: str, output: Path) -> dict[s
                 )
                 report["runs"].append(result)
                 report["summary"] = _summary(report["runs"])
+                report["primary_criteria"] = _primary_criteria(report["runs"], protocol)
                 report["complete"] = len(report["runs"]) == len(conditions) * len(sizes) * len(
                     seeds
                 )

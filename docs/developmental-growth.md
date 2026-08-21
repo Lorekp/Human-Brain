@@ -50,10 +50,10 @@ readout synapses are the persistent state.
 
 `benchmarks/development_protocol_v2.json` was registered before its named
 validation run. It has no test partition. Three fixed training files supply 384
-characters; `recurrent_language.py` is the only validation file and is opened
-after each model's learning has frozen.
+characters; the previously unused `recurrent_artifacts.py` is the only
+validation file and is opened after each model's learning has frozen.
 
-At 384 and 1,536 final active cells, one exploratory seed compares five
+At 384 and 1,536 final active cells, three fixed seeds compare five
 conditions with the same bytes, attempted next-token updates, epoch count,
 final active count, and final fanout:
 
@@ -67,9 +67,14 @@ The staged cohorts are 25%, 50%, and 100% of final cells over equal thirds of
 the training updates. Metrics include teacher-forced and free-running byte
 accuracy, effective eligibility-state rank, sampled inter-cell correlation,
 firing rate, stage cell/synapse counts, learned/pruned synapses, wall time, and
-memory. The one-seed result is exploratory; it cannot establish general
-developmental superiority. A 6,144-cell extension is deferred until concurrent
-speed measurements release shared compute.
+memory. Before validation, the primary criterion was fixed independently at
+each size: staged layered/activity/homeostatic growth must lose no more than one
+percentage point of median teacher-forced accuracy, must not lose median
+free-running accuracy, and must strictly beat full-start on at least one of
+those endpoints in at least two of three paired seeds. Rank and firing remain
+secondary diagnostics. The single-file result is still exploratory and cannot
+establish general developmental superiority. A 6,144-cell extension is
+deferred until concurrent speed measurements release shared compute.
 
 Run the frozen gate with:
 
