@@ -1,0 +1,307 @@
+{
+  "protocol": {
+    "cell_counts": [
+      100000,
+      1000000
+    ],
+    "fanout": 6,
+    "name": "direct-structured-topology-construction-v3",
+    "notes": [
+      "This is an explicit structured-topology protocol break from topology v2; prior artifacts remain tied to their original candidate-weighted builders.",
+      "Builders draw directly from micro/meso memberships or bounded coordinate offsets plus sparse long links and never allocate or score N candidates per source.",
+      "Every result is built in a fresh process and checked for fixed degree, range, no self-edge, and no duplicate edge per source."
+    ],
+    "purpose": "Validate deterministic O(cells*fanout) construction for group, mixed-membership, and spatial human-cell architectures.",
+    "seed": 71,
+    "topologies": [
+      "single_scale_groups",
+      "nested_groups",
+      "mixed_membership",
+      "ring_1d",
+      "sheet_2d",
+      "layered_sheet",
+      "volume_3d"
+    ]
+  },
+  "protocol_sha256": "2e56a4c30a64e2cf23178281c1ae1d052c148f505a49e19a143ad5b82edf702c",
+  "results": [
+    {
+      "cells": 100000,
+      "cells_per_second": 66752.73764661729,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 2.288818359375,
+      "private_memory_increment_mib": 2.59765625,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 1.4980658999993466,
+      "self_edges": 0,
+      "structure_invariants": {
+        "same_micro_edge_fraction": 0.8333333333333334
+      },
+      "target_sha256": "2af479f22d4476b50b1b86df7b362e3fdffd1a5f5e5a749ba8e4a05813b5a08b",
+      "topology": "single_scale_groups"
+    },
+    {
+      "cells": 1000000,
+      "cells_per_second": 63544.63083845733,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 22.88818359375,
+      "private_memory_increment_mib": 23.09765625,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 15.736970799975097,
+      "self_edges": 0,
+      "structure_invariants": {
+        "same_micro_edge_fraction": 0.8333333333333334
+      },
+      "target_sha256": "1b01b1c9bb2ef29a781a4b12dc9877063b56418de0fdb9648c6810413e60dd6b",
+      "topology": "single_scale_groups"
+    },
+    {
+      "cells": 100000,
+      "cells_per_second": 54858.96254415484,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 2.288818359375,
+      "private_memory_increment_mib": 1.84765625,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 1.8228562000149395,
+      "self_edges": 0,
+      "structure_invariants": {
+        "same_meso_edge_fraction": 0.8328533333333333,
+        "same_micro_edge_fraction": 0.5
+      },
+      "target_sha256": "2fce9521c0587a1258973421f922cb197f4882518fb1e12bc2fbf353cb5c1908",
+      "topology": "nested_groups"
+    },
+    {
+      "cells": 1000000,
+      "cells_per_second": 54361.40875764484,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 22.88818359375,
+      "private_memory_increment_mib": 23.08984375,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 18.395402599999215,
+      "self_edges": 0,
+      "structure_invariants": {
+        "same_meso_edge_fraction": 0.8333333333333334,
+        "same_micro_edge_fraction": 0.5
+      },
+      "target_sha256": "26c6489da53d92efaa48572c481f6d8f1474bba817666ee136521224c859dd1c",
+      "topology": "nested_groups"
+    },
+    {
+      "cells": 100000,
+      "cells_per_second": 45207.212683901766,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 2.288818359375,
+      "private_memory_increment_mib": 1.9765625,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 2.2120364000147674,
+      "self_edges": 0,
+      "structure_invariants": {
+        "shared_membership_edge_fraction": 0.8348883333333333
+      },
+      "target_sha256": "8a3373e3d77468992303952a50ebfb95f2a2f16120322c7d9c7126d3e990267a",
+      "topology": "mixed_membership"
+    },
+    {
+      "cells": 1000000,
+      "cells_per_second": 58538.59555265111,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 22.88818359375,
+      "private_memory_increment_mib": 23.0859375,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 17.082746700005373,
+      "self_edges": 0,
+      "structure_invariants": {
+        "shared_membership_edge_fraction": 0.8338311666666667
+      },
+      "target_sha256": "79c5af529c520e0c24f96a6c702ec7885b3d63a8a5e4d002db2f1e8b2d187bfb",
+      "topology": "mixed_membership"
+    },
+    {
+      "cells": 100000,
+      "cells_per_second": 55191.25646860068,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 2.288818359375,
+      "private_memory_increment_mib": 2.45703125,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 1.811881200002972,
+      "self_edges": 0,
+      "structure_invariants": {
+        "local_offset_edge_fraction": 1.0,
+        "long_range_edge_fraction": 1.0
+      },
+      "target_sha256": "03c818053e3494a0ae95bd88bb20ac2ea402afb4cad054ab5fbec22b527d87df",
+      "topology": "ring_1d"
+    },
+    {
+      "cells": 1000000,
+      "cells_per_second": 47820.114349019466,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 22.88818359375,
+      "private_memory_increment_mib": 23.08203125,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 20.911702399986098,
+      "self_edges": 0,
+      "structure_invariants": {
+        "local_offset_edge_fraction": 1.0,
+        "long_range_edge_fraction": 1.0
+      },
+      "target_sha256": "a696341280d7efa5e27d4d597a9bbec6f4cd06e40b18e302ce1637396fb7d197",
+      "topology": "ring_1d"
+    },
+    {
+      "cells": 100000,
+      "cells_per_second": 23442.291384687844,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 2.288818359375,
+      "private_memory_increment_mib": 3.33984375,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 4.265794599981746,
+      "self_edges": 0,
+      "structure_invariants": {
+        "local_offset_edge_fraction": 1.0,
+        "long_range_edge_fraction": 1.0
+      },
+      "target_sha256": "ce7e8548b5db6de93d2ed1eef5a2796938aafe7f6f69c6677e489f7888ca1476",
+      "topology": "sheet_2d"
+    },
+    {
+      "cells": 1000000,
+      "cells_per_second": 23489.663219844948,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 22.88818359375,
+      "private_memory_increment_mib": 23.078125,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 42.57191729999613,
+      "self_edges": 0,
+      "structure_invariants": {
+        "local_offset_edge_fraction": 1.0,
+        "long_range_edge_fraction": 1.0
+      },
+      "target_sha256": "ed3b8c372da7a676356ae38f5467d65423bd61f362ed36125be87d7abe7eec88",
+      "topology": "sheet_2d"
+    },
+    {
+      "cells": 100000,
+      "cells_per_second": 32163.69830015352,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 2.288818359375,
+      "private_memory_increment_mib": 2.4453125,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 3.109095200023148,
+      "self_edges": 0,
+      "structure_invariants": {
+        "local_offset_edge_fraction": 1.0,
+        "long_range_edge_fraction": 1.0
+      },
+      "target_sha256": "99b8b473473ae99b6f7fa99b414a4c0467d52415fd3b46436bfe27bac59b6e9c",
+      "topology": "layered_sheet"
+    },
+    {
+      "cells": 1000000,
+      "cells_per_second": 24747.57045056701,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 22.88818359375,
+      "private_memory_increment_mib": 23.078125,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 40.40800700002001,
+      "self_edges": 0,
+      "structure_invariants": {
+        "local_offset_edge_fraction": 1.0,
+        "long_range_edge_fraction": 1.0
+      },
+      "target_sha256": "1368935b3b773e51e7653d8fa1bead685186000d4fd34c360b108f9ab6394ae7",
+      "topology": "layered_sheet"
+    },
+    {
+      "cells": 100000,
+      "cells_per_second": 23706.065459979363,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 2.288818359375,
+      "private_memory_increment_mib": 2.43359375,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 4.21832970000105,
+      "self_edges": 0,
+      "structure_invariants": {
+        "local_offset_edge_fraction": 1.0,
+        "long_range_edge_fraction": 1.0
+      },
+      "target_sha256": "aa070dd3f2c711d60ef4b08e9f1c608e5e3a03d3f0eaf4057f042708bdc82f59",
+      "topology": "volume_3d"
+    },
+    {
+      "cells": 1000000,
+      "cells_per_second": 20646.540170178247,
+      "degree_matched": true,
+      "fanout": 6,
+      "indices_in_range": true,
+      "output_mib": 22.88818359375,
+      "private_memory_increment_mib": 23.09375,
+      "rows_with_duplicate_targets": 0,
+      "seconds": 48.434265099989716,
+      "self_edges": 0,
+      "structure_invariants": {
+        "local_offset_edge_fraction": 1.0,
+        "long_range_edge_fraction": 1.0
+      },
+      "target_sha256": "9d8ff2e8cc16f2332ac4c0a50ed3c0ed57b7ece612a946cc5e79bc8c113eba24",
+      "topology": "volume_3d"
+    }
+  ],
+  "scaling": {
+    "layered_sheet": {
+      "construction_time_exponent": 1.113833410460739,
+      "output_memory_exponent": 1.0000000000000009
+    },
+    "mixed_membership": {
+      "construction_time_exponent": 0.8877654320967269,
+      "output_memory_exponent": 1.0000000000000009
+    },
+    "nested_groups": {
+      "construction_time_exponent": 1.003956887458807,
+      "output_memory_exponent": 1.0000000000000009
+    },
+    "ring_1d": {
+      "construction_time_exponent": 1.06225967092352,
+      "output_memory_exponent": 1.0000000000000009
+    },
+    "sheet_2d": {
+      "construction_time_exponent": 0.9991232696883544,
+      "output_memory_exponent": 1.0000000000000009
+    },
+    "single_scale_groups": {
+      "construction_time_exponent": 1.0213902205634742,
+      "output_memory_exponent": 1.0000000000000009
+    },
+    "volume_3d": {
+      "construction_time_exponent": 1.060012193802546,
+      "output_memory_exponent": 1.0000000000000009
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "direct-structured-topology-construction-v3",
+  "purpose": "Validate deterministic O(cells*fanout) construction for group, mixed-membership, and spatial human-cell architectures.",
+  "cell_counts": [100000, 1000000],
+  "fanout": 6,
+  "seed": 71,
+  "topologies": [
+    "single_scale_groups",
+    "nested_groups",
+    "mixed_membership",
+    "ring_1d",
+    "sheet_2d",
+    "layered_sheet",
+    "volume_3d"
+  ],
+  "notes": [
+    "This is an explicit structured-topology protocol break from topology v2; prior artifacts remain tied to their original candidate-weighted builders.",
+    "Builders draw directly from micro/meso memberships or bounded coordinate offsets plus sparse long links and never allocate or score N candidates per source.",
+    "Every result is built in a fresh process and checked for fixed degree, range, no self-edge, and no duplicate edge per source."
+  ]
+}

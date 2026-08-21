@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from math import ceil
+from math import ceil, gcd
 
 import numpy as np
 
@@ -58,38 +58,173 @@ def _spatial_targets(
     rng: np.random.Generator,
     topology: str,
 ) -> np.ndarray:
-    coordinates = topology_coordinates(cell_count, topology)
     targets = np.empty((cell_count, fanout), dtype=np.int32)
     local_edges = fanout - max(1, round(0.15 * fanout))
     for source in range(cell_count):
-        candidates = np.delete(np.arange(cell_count, dtype=np.int32), source)
-        differences = coordinates[candidates] - coordinates[source]
-        if topology == "ring_1d":
-            differences = np.minimum(np.abs(differences), 1.0 - np.abs(differences))
-        distances = np.linalg.norm(differences, axis=1)
-        scale = float(np.median(distances[distances > 0.0]))
-        local_weights = np.exp(-distances / scale)
-        local = rng.choice(
-            candidates,
-            size=local_edges,
-            replace=False,
-            p=local_weights / local_weights.sum(),
-        )
-        remaining = candidates[~np.isin(candidates, local)]
-        remaining_differences = coordinates[remaining] - coordinates[source]
-        if topology == "ring_1d":
-            remaining_differences = np.minimum(
-                np.abs(remaining_differences), 1.0 - np.abs(remaining_differences)
+        row: list[int] = []
+        used = {source}
+        while len(row) < local_edges:
+            candidate = _local_spatial_candidate(source, cell_count, topology, rng)
+            if candidate not in used:
+                used.add(candidate)
+                row.append(candidate)
+        while len(row) < fanout:
+            candidate = _long_spatial_candidate(
+                source,
+                cell_count,
+                topology,
+                used,
+                rng,
             )
-        remaining_distances = np.linalg.norm(remaining_differences, axis=1)
-        long_range = rng.choice(
-            remaining,
-            size=fanout - local_edges,
-            replace=False,
-            p=remaining_distances / remaining_distances.sum(),
-        )
-        targets[source] = np.concatenate((local, long_range))
+            used.add(candidate)
+            row.append(candidate)
+        targets[source] = row
     return targets
+
+
+def _grid_index_coordinates(index: int, side: int, dimensions: int) -> tuple[int, ...]:
+    coordinates: list[int] = []
+    value = index
+    for _ in range(dimensions):
+        coordinates.append(value % side)
+        value //= side
+    return tuple(coordinates)
+
+
+def _local_spatial_candidate(
+    source: int,
+    cell_count: int,
+    topology: str,
+    rng: np.random.Generator,
+) -> int:
+    if topology == "ring_1d":
+        radius = max(2, round(cell_count**0.25))
+        offset = int(rng.integers(1, radius + 1))
+        if int(rng.integers(0, 2)):
+            offset = -offset
+        return (source + offset) % cell_count
+
+    if topology == "layered_sheet":
+        layers = 6
+        surface_cells = ceil(cell_count / layers)
+        side = ceil(surface_cells**0.5)
+        surface = source // layers
+        x, y = _grid_index_coordinates(surface, side, 2)
+        layer = source % layers
+        while True:
+            dx = int(rng.integers(-2, 3))
+            dy = int(rng.integers(-2, 3))
+            depth = int(rng.integers(-1, 2))
+            if dx == 0 and dy == 0 and depth == 0:
+                continue
+            next_x, next_y, next_layer = x + dx, y + dy, layer + depth
+            if not (0 <= next_x < side and 0 <= next_y < side and 0 <= next_layer < layers):
+                continue
+            candidate = (next_y * side + next_x) * layers + next_layer
+            if candidate < cell_count:
+                return candidate
+
+    dimensions = 2 if topology == "sheet_2d" else 3
+    side = ceil(cell_count ** (1.0 / dimensions))
+    coordinates = _grid_index_coordinates(source, side, dimensions)
+    while True:
+        offsets = tuple(int(rng.integers(-2, 3)) for _ in range(dimensions))
+        if not any(offsets):
+            continue
+        candidate_coordinates = tuple(
+            coordinate + offset for coordinate, offset in zip(coordinates, offsets, strict=True)
+        )
+        if not all(0 <= coordinate < side for coordinate in candidate_coordinates):
+            continue
+        candidate = sum(
+            coordinate * side**dimension
+            for dimension, coordinate in enumerate(candidate_coordinates)
+        )
+        if candidate < cell_count:
+            return candidate
+
+
+def _is_long_range(
+    source: int,
+    candidate: int,
+    cell_count: int,
+    topology: str,
+) -> bool:
+    if topology == "ring_1d":
+        separation = abs(candidate - source)
+        return min(separation, cell_count - separation) >= max(2, cell_count // 4)
+    if topology == "layered_sheet":
+        surface_cells = ceil(cell_count / 6)
+        side = ceil(surface_cells**0.5)
+        source_xy = _grid_index_coordinates(source // 6, side, 2)
+        candidate_xy = _grid_index_coordinates(candidate // 6, side, 2)
+        squared_distance = sum(
+            (left - right) ** 2
+            for left, right in zip(source_xy, candidate_xy, strict=True)
+        )
+        return squared_distance >= max(2, side // 4) ** 2
+    dimensions = 2 if topology == "sheet_2d" else 3
+    side = ceil(cell_count ** (1.0 / dimensions))
+    source_coordinates = _grid_index_coordinates(source, side, dimensions)
+    candidate_coordinates = _grid_index_coordinates(candidate, side, dimensions)
+    squared_distance = sum(
+        (left - right) ** 2
+        for left, right in zip(source_coordinates, candidate_coordinates, strict=True)
+    )
+    return squared_distance >= max(2, side // 4) ** 2
+
+
+def _long_spatial_candidate(
+    source: int,
+    cell_count: int,
+    topology: str,
+    used: set[int],
+    rng: np.random.Generator,
+) -> int:
+    for _ in range(64):
+        candidate = int(rng.integers(0, cell_count))
+        if candidate not in used and _is_long_range(
+            source,
+            candidate,
+            cell_count,
+            topology,
+        ):
+            return candidate
+    # Tiny/incompletely filled grids can have no point beyond the nominal
+    # long-range threshold for a central source. Fall back to a global edge
+    # without ever allocating or scoring a population-sized candidate array.
+    while True:
+        candidate = int(rng.integers(0, cell_count))
+        if candidate not in used:
+            return candidate
+
+
+def _draw_from_ranges(
+    ranges: tuple[tuple[int, int], ...],
+    rng: np.random.Generator,
+) -> int:
+    sizes = tuple(max(0, stop - start) for start, stop in ranges)
+    offset = int(rng.integers(0, sum(sizes)))
+    for (start, _), size in zip(ranges, sizes, strict=True):
+        if offset < size:
+            return start + offset
+        offset -= size
+    raise AssertionError("nonempty ranges must yield a candidate")
+
+
+def _append_from_ranges(
+    row: list[int],
+    used: set[int],
+    ranges: tuple[tuple[int, int], ...],
+    count: int,
+    rng: np.random.Generator,
+) -> None:
+    target_length = len(row) + count
+    while len(row) < target_length:
+        candidate = _draw_from_ranges(ranges, rng)
+        if candidate not in used:
+            used.add(candidate)
+            row.append(candidate)
 
 
 def _group_targets(
@@ -103,16 +238,54 @@ def _group_targets(
     mesogroups = microgroups // 4
     targets = np.empty((cell_count, fanout), dtype=np.int32)
     for source in range(cell_count):
-        candidates = np.delete(np.arange(cell_count, dtype=np.int32), source)
-        same_micro = microgroups[candidates] == microgroups[source]
-        if nested:
-            same_meso = mesogroups[candidates] == mesogroups[source]
-            weights = np.where(same_micro, 16.0, np.where(same_meso, 4.0, 1.0))
-        else:
-            weights = np.where(same_micro, 8.0, 1.0)
-        targets[source] = rng.choice(
-            candidates, size=fanout, replace=False, p=weights / weights.sum()
+        micro = int(microgroups[source])
+        micro_start = micro * micro_size
+        micro_stop = min(cell_count, micro_start + micro_size)
+        row: list[int] = []
+        used = {source}
+        micro_quota = min((fanout + 1) // 2 if nested else fanout - 1, micro_stop - micro_start - 1)
+        _append_from_ranges(
+            row,
+            used,
+            ((micro_start, micro_stop),),
+            micro_quota,
+            rng,
         )
+        if nested:
+            meso = int(mesogroups[source])
+            meso_start = meso * micro_size * 4
+            meso_stop = min(cell_count, meso_start + micro_size * 4)
+            meso_ranges = tuple(
+                interval
+                for interval in (
+                    (meso_start, micro_start),
+                    (micro_stop, meso_stop),
+                )
+                if interval[1] > interval[0]
+            )
+            meso_quota = min(max(1, fanout // 3), sum(stop - start for start, stop in meso_ranges))
+            _append_from_ranges(row, used, meso_ranges, meso_quota, rng)
+            global_ranges = tuple(
+                interval
+                for interval in ((0, meso_start), (meso_stop, cell_count))
+                if interval[1] > interval[0]
+            )
+        else:
+            global_ranges = tuple(
+                interval
+                for interval in ((0, micro_start), (micro_stop, cell_count))
+                if interval[1] > interval[0]
+            )
+        if not global_ranges:
+            global_ranges = ((0, cell_count),)
+        _append_from_ranges(
+            row,
+            used,
+            global_ranges,
+            fanout - len(row),
+            rng,
+        )
+        targets[source] = row
     return targets
 
 
@@ -120,21 +293,40 @@ def _mixed_membership_targets(
     cell_count: int, fanout: int, rng: np.random.Generator
 ) -> np.ndarray:
     group_count = max(4, round(cell_count**0.5))
+    while gcd(5, group_count) != 1:
+        group_count += 1
+    inverse_five = pow(5, -1, group_count)
     primary = np.arange(cell_count) % group_count
     secondary = (np.arange(cell_count) * 5 + 1) % group_count
     targets = np.empty((cell_count, fanout), dtype=np.int32)
     for source in range(cell_count):
-        candidates = np.delete(np.arange(cell_count, dtype=np.int32), source)
-        shared = (
-            (primary[candidates] == primary[source])
-            | (primary[candidates] == secondary[source])
-            | (secondary[candidates] == primary[source])
-            | (secondary[candidates] == secondary[source])
+        source_groups = (int(primary[source]), int(secondary[source]))
+        progressions = tuple(
+            (base, group_count)
+            for group in source_groups
+            for base in (
+                group,
+                ((group - 1) * inverse_five) % group_count,
+            )
         )
-        weights = np.where(shared, 8.0, 1.0)
-        targets[source] = rng.choice(
-            candidates, size=fanout, replace=False, p=weights / weights.sum()
+        row: list[int] = []
+        used = {source}
+        shared_quota = fanout - max(1, fanout // 4)
+        while len(row) < shared_quota:
+            base, step = progressions[int(rng.integers(0, len(progressions)))]
+            progression_size = (cell_count - 1 - base) // step + 1
+            candidate = base + int(rng.integers(0, progression_size)) * step
+            if candidate not in used:
+                used.add(candidate)
+                row.append(candidate)
+        _append_from_ranges(
+            row,
+            used,
+            ((0, cell_count),),
+            fanout - len(row),
+            rng,
         )
+        targets[source] = row
     return targets
 
 
