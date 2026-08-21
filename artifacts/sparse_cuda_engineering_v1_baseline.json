@@ -1,0 +1,321 @@
+{
+  "gpu_after": {
+    "driver_version": "610.62",
+    "memory_total_mib": 12282.0,
+    "memory_used_mib": 2494.0,
+    "name": "NVIDIA GeForce RTX 4070 SUPER",
+    "power_watts": 102.03,
+    "utilization_percent": 74.0
+  },
+  "gpu_before": {
+    "driver_version": "610.62",
+    "memory_total_mib": 12282.0,
+    "memory_used_mib": 2343.0,
+    "name": "NVIDIA GeForce RTX 4070 SUPER",
+    "power_watts": 18.43,
+    "utilization_percent": 31.0
+  },
+  "implementation": {
+    "commit": "de00ad874a487e978f9000da2e275ad0417ce14e",
+    "worktree_clean": true
+  },
+  "label": "baseline",
+  "protocol": {
+    "circuit": {
+      "active_reservoir_cells": 200000,
+      "eligibility_tau_ms": 40.0,
+      "input_current_pa": 4000.0,
+      "input_fanout": 32,
+      "input_pulse_ms": 1.5,
+      "readout_activity_decay": 0.99,
+      "readout_fan_in": 64,
+      "readout_homeostatic_rate": 0.05,
+      "readout_learning_rule": "sparse_three_factor",
+      "readout_structural_grace": 32,
+      "readout_structural_interval": 1,
+      "readout_turnover_probability": 1.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "recurrent_topology": "uniform_no_self",
+      "reservoir_cells": 200000,
+      "seed": 2317,
+      "token_cells": 256,
+      "token_interval_ms": 5.0
+    },
+    "claim_boundary": "This is a synthetic engineering benchmark only. It does not measure language or SWE capability, does not authorize access to held-out data, and is not evidence of biological fidelity.",
+    "data_boundary": {
+      "external_files_opened": false,
+      "generator": "numpy Generator(PCG64(seed + fixed phase offset)).integers",
+      "source": "synthetic_token_ids_only",
+      "text_tokenized": false
+    },
+    "decision_rule": {
+      "exactness_requirement": "Any optimization must retain the registered real-CUDA lifecycle parity gate and must never silently fall back.",
+      "move_sparse_readout_to_cuda_only_if": "The isolated sparse current call or strengthen-minus-observe phase is at least 20% of end-to-end time, or exact hybrid remains below 100 tokens/s after any justified transfer reduction.",
+      "optimize_transfer_if": "The exact host arrays required by sparse current/plasticity are a strict subset of per-token downloads and end-to-end wall time exceeds CUDA-event kernel time by at least 10%.",
+      "state_requirement": "All 200,000 reservoir cells remain active and updated every integration step; no dormant padding may be claimed as simulated work."
+    },
+    "gates": {
+      "minimum_dense_to_sparse_readout_byte_ratio": 100.0,
+      "minimum_inference_tokens_per_second": 100.0,
+      "minimum_reservoir_cells": 100001,
+      "minimum_training_tokens_per_second": 100.0,
+      "required_backend": "cuda"
+    },
+    "purpose": "Measure exact hybrid CUDA-reservoir plus native sparse-output inference and online teaching at 200,000 genuinely active fitted cells, identify the dominant phase, and preserve the >100 end-to-end tokens/s engineering gate.",
+    "registered_at": "2026-08-21T00:00:00+02:00",
+    "required_metrics": [
+      "inference_end_to_end_tokens_per_second",
+      "training_end_to_end_tokens_per_second",
+      "inference_observe_wall_seconds",
+      "inference_race_wall_seconds",
+      "training_observe_wall_seconds",
+      "training_strengthen_wall_seconds",
+      "kernel_tokens_per_second",
+      "construction_seconds",
+      "bootstrap_seconds",
+      "host_persistent_array_mib",
+      "device_persistent_array_mib",
+      "sparse_readout_persistent_bytes",
+      "dense_control_readout_bytes",
+      "dense_to_sparse_readout_byte_ratio",
+      "host_to_device_bytes_per_token",
+      "device_to_host_bytes_per_token",
+      "active_reservoir_cells",
+      "updated_reservoir_cells_per_integration_step",
+      "reservoir_spike_events",
+      "responsive_eligibility_cells",
+      "reservoir_activity_density",
+      "applied_teaching_updates",
+      "structural_recruitments",
+      "structural_deletions",
+      "occupied_output_synapses_per_cell",
+      "backend",
+      "device"
+    ],
+    "status": "preregistered-before-first-200k-timing-run",
+    "timing": {
+      "aggregate": "median",
+      "bootstrap_excluded_from_tps": true,
+      "bootstrap_target": 0,
+      "bootstrap_training_events": 64,
+      "clock": "time.perf_counter_ns for end-to-end and host phases; CUDA events for recurrent kernel",
+      "construction_excluded_from_tps": true,
+      "incremental_persistence": "write the artifact after every completed repeat",
+      "independent_repeats": 3,
+      "inference_definition": "observe(token) plus race(), where race includes sparse fitted-output current and first-spike arbitration",
+      "inference_tokens": 64,
+      "readout_microprofile_calls": 128,
+      "repeat_state": "construct and bootstrap an independent identical circuit for each repeat",
+      "training_definition": "observe(token) plus strengthen(target), where strengthen includes fitted-output race, teaching-evoked target post gate, synapse-local update, homeostasis, and scheduled turnover",
+      "training_tokens": 64,
+      "warmup_excluded_from_tps": true,
+      "warmup_tokens": 4
+    },
+    "version": "sparse-readout-cuda-engineering-v1"
+  },
+  "protocol_sha256": "4e9b61790cd1dfbdbad2309070b22298407a0f73712108cbe3cfc6beb40322ce",
+  "repeats": [
+    {
+      "backend": "cuda",
+      "bootstrap_seconds": 0.5752334,
+      "bootstrap_spike_events": 133,
+      "cell_audit": {
+        "active_reservoir_cells": 200000,
+        "configured_reservoir_cells": 200000,
+        "integration_steps_per_token": 100,
+        "learned_synapses": 127,
+        "occupied_output_synapses_per_cell": 0.49609375,
+        "reservoir_activity_density": 0.00084,
+        "responsive_eligibility_cells": 168,
+        "updated_reservoir_cells_per_integration_step": 200000
+      },
+      "construction_seconds": 2.3784923,
+      "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+      "inference": {
+        "kernel_seconds": 0.357994432926178,
+        "kernel_tokens_per_second": 178.77372973896897,
+        "observe_wall_seconds": 0.4803753,
+        "race_wall_seconds": 0.0223112,
+        "reservoir_spike_events": 167,
+        "tokens": 64,
+        "tokens_per_second": 127.26512028940088,
+        "wall_seconds": 0.5028872
+      },
+      "memory": {
+        "dense_control_readout_bytes": 409600000,
+        "dense_to_sparse_readout_byte_ratio": 389.10505836575874,
+        "device_persistent_array_bytes": 27632828,
+        "device_persistent_array_mib": 26.352718353271484,
+        "host_persistent_array_bytes": 37099184,
+        "host_persistent_array_mib": 35.38053894042969,
+        "sparse_readout_persistent_bytes": 1052672
+      },
+      "repeat": 0,
+      "sparse_current_microprofile": {
+        "calls": 128,
+        "microseconds_per_call": 73.51328125,
+        "output_sha256": "8609b988a5f5e586fcc4d5d679c54edb46fa301cd8cf687f051727048ae1500c",
+        "wall_seconds": 0.0094097
+      },
+      "training": {
+        "applied_teaching_updates": 64,
+        "kernel_seconds": 0.36016905593872073,
+        "kernel_tokens_per_second": 177.69433254945972,
+        "observe_wall_seconds": 0.4732889,
+        "reservoir_spike_events": 168,
+        "strengthen_wall_seconds": 0.034971,
+        "structural_deletions": 0,
+        "structural_recruitments": 64,
+        "tokens": 64,
+        "tokens_per_second": 125.87695920603107,
+        "wall_seconds": 0.508433
+      },
+      "transfer": {
+        "device_to_host_bytes_per_token": 12000008,
+        "host_to_device_bytes_per_token": 0
+      }
+    },
+    {
+      "backend": "cuda",
+      "bootstrap_seconds": 0.515314,
+      "bootstrap_spike_events": 133,
+      "cell_audit": {
+        "active_reservoir_cells": 200000,
+        "configured_reservoir_cells": 200000,
+        "integration_steps_per_token": 100,
+        "learned_synapses": 127,
+        "occupied_output_synapses_per_cell": 0.49609375,
+        "reservoir_activity_density": 0.00084,
+        "responsive_eligibility_cells": 168,
+        "updated_reservoir_cells_per_integration_step": 200000
+      },
+      "construction_seconds": 2.08173,
+      "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+      "inference": {
+        "kernel_seconds": 0.3581968002319336,
+        "kernel_tokens_per_second": 178.67272951226752,
+        "observe_wall_seconds": 0.4888261,
+        "race_wall_seconds": 0.0215485,
+        "reservoir_spike_events": 167,
+        "tokens": 64,
+        "tokens_per_second": 125.34842946252161,
+        "wall_seconds": 0.5105768
+      },
+      "memory": {
+        "dense_control_readout_bytes": 409600000,
+        "dense_to_sparse_readout_byte_ratio": 389.10505836575874,
+        "device_persistent_array_bytes": 27632828,
+        "device_persistent_array_mib": 26.352718353271484,
+        "host_persistent_array_bytes": 37099184,
+        "host_persistent_array_mib": 35.38053894042969,
+        "sparse_readout_persistent_bytes": 1052672
+      },
+      "repeat": 1,
+      "sparse_current_microprofile": {
+        "calls": 128,
+        "microseconds_per_call": 41.8890625,
+        "output_sha256": "8609b988a5f5e586fcc4d5d679c54edb46fa301cd8cf687f051727048ae1500c",
+        "wall_seconds": 0.0053618
+      },
+      "training": {
+        "applied_teaching_updates": 64,
+        "kernel_seconds": 0.37312515306472777,
+        "kernel_tokens_per_second": 171.52421774389896,
+        "observe_wall_seconds": 0.4873167,
+        "reservoir_spike_events": 168,
+        "strengthen_wall_seconds": 0.0391723,
+        "structural_deletions": 0,
+        "structural_recruitments": 64,
+        "tokens": 64,
+        "tokens_per_second": 121.5233867960283,
+        "wall_seconds": 0.5266476
+      },
+      "transfer": {
+        "device_to_host_bytes_per_token": 12000008,
+        "host_to_device_bytes_per_token": 0
+      }
+    },
+    {
+      "backend": "cuda",
+      "bootstrap_seconds": 0.662447,
+      "bootstrap_spike_events": 133,
+      "cell_audit": {
+        "active_reservoir_cells": 200000,
+        "configured_reservoir_cells": 200000,
+        "integration_steps_per_token": 100,
+        "learned_synapses": 127,
+        "occupied_output_synapses_per_cell": 0.49609375,
+        "reservoir_activity_density": 0.00084,
+        "responsive_eligibility_cells": 168,
+        "updated_reservoir_cells_per_integration_step": 200000
+      },
+      "construction_seconds": 2.2227848,
+      "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+      "inference": {
+        "kernel_seconds": 0.35809308862686157,
+        "kernel_tokens_per_second": 178.72447704984603,
+        "observe_wall_seconds": 0.4548991,
+        "race_wall_seconds": 0.0166524,
+        "reservoir_spike_events": 167,
+        "tokens": 64,
+        "tokens_per_second": 135.68302410324122,
+        "wall_seconds": 0.4716876
+      },
+      "memory": {
+        "dense_control_readout_bytes": 409600000,
+        "dense_to_sparse_readout_byte_ratio": 389.10505836575874,
+        "device_persistent_array_bytes": 27632828,
+        "device_persistent_array_mib": 26.352718353271484,
+        "host_persistent_array_bytes": 37099184,
+        "host_persistent_array_mib": 35.38053894042969,
+        "sparse_readout_persistent_bytes": 1052672
+      },
+      "repeat": 2,
+      "sparse_current_microprofile": {
+        "calls": 128,
+        "microseconds_per_call": 70.6328125,
+        "output_sha256": "8609b988a5f5e586fcc4d5d679c54edb46fa301cd8cf687f051727048ae1500c",
+        "wall_seconds": 0.009041
+      },
+      "training": {
+        "applied_teaching_updates": 64,
+        "kernel_seconds": 0.3673403830528259,
+        "kernel_tokens_per_second": 174.2253314708293,
+        "observe_wall_seconds": 0.4701928,
+        "reservoir_spike_events": 168,
+        "strengthen_wall_seconds": 0.0346105,
+        "structural_deletions": 0,
+        "structural_recruitments": 64,
+        "tokens": 64,
+        "tokens_per_second": 126.74188401414519,
+        "wall_seconds": 0.5049633
+      },
+      "transfer": {
+        "device_to_host_bytes_per_token": 12000008,
+        "host_to_device_bytes_per_token": 0
+      }
+    }
+  ],
+  "status": "complete",
+  "summary": {
+    "bootstrap_seconds": 0.5752334,
+    "construction_seconds": 2.2227848,
+    "dense_to_sparse_readout_byte_ratio": 389.10505836575874,
+    "device_persistent_array_mib": 26.352718353271484,
+    "device_to_host_bytes_per_token": 12000008.0,
+    "gates": {
+      "all_pass": true,
+      "inference_over_100_tps": true,
+      "readout_memory_over_100x": true,
+      "training_over_100_tps": true
+    },
+    "host_persistent_array_mib": 35.38053894042969,
+    "host_to_device_bytes_per_token": 0.0,
+    "inference_end_to_end_tokens_per_second": 127.26512028940088,
+    "inference_kernel_tokens_per_second": 178.72447704984603,
+    "sparse_current_microseconds_per_call": 70.6328125,
+    "training_end_to_end_tokens_per_second": 125.87695920603107,
+    "training_kernel_tokens_per_second": 174.2253314708293
+  }
+}
