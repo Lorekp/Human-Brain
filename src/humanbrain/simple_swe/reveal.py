@@ -224,13 +224,10 @@ def _validate_bundle_against_freeze(
         )
 
 
-def _ensure_run_start(
-    ledger: ArtifactLedger,
-    manifest: FreezeManifest,
-    manifest_sha256: str,
-) -> str:
-    events = ledger.verify()
-    run_start_body = {
+def run_start_commitment(
+    manifest: FreezeManifest, manifest_sha256: str
+) -> dict[str, Any]:
+    return {
         "freeze_manifest_sha256": manifest_sha256,
         "checkpoint_sha256": manifest.checkpoint_sha256,
         "checkpoint_state_sha256": manifest.checkpoint_state_sha256,
@@ -238,17 +235,10 @@ def _ensure_run_start(
         "completion_adapter_sha256": manifest.completion_adapter_sha256,
         "compiler_sha256": manifest.compiler_sha256,
     }
-    if not events:
-        ledger.append("run-start", run_start_body)
-        events = ledger.verify()
-    if events[0].kind != "run-start" or events[0].body != run_start_body:
-        raise FreezeIntegrityError("artifact ledger run-start differs from eval freeze")
-    return events[0].file_sha256
 
 
-def _ensure_reveal(ledger: ArtifactLedger, bundle: EvaluationBundle) -> str:
-    events = ledger.verify()
-    reveal_body = {
+def evaluation_reveal_commitment(bundle: EvaluationBundle) -> dict[str, Any]:
+    return {
         "bundle_sha256": bundle.bundle_sha256,
         "eval_seed_sha256": bundle.eval_seed_sha256,
         "task_count": len(bundle.tasks),
@@ -263,6 +253,26 @@ def _ensure_reveal(ledger: ArtifactLedger, bundle: EvaluationBundle) -> str:
             for task in bundle.tasks
         ],
     }
+
+
+def _ensure_run_start(
+    ledger: ArtifactLedger,
+    manifest: FreezeManifest,
+    manifest_sha256: str,
+) -> str:
+    events = ledger.verify()
+    run_start_body = run_start_commitment(manifest, manifest_sha256)
+    if not events:
+        ledger.append("run-start", run_start_body)
+        events = ledger.verify()
+    if events[0].kind != "run-start" or events[0].body != run_start_body:
+        raise FreezeIntegrityError("artifact ledger run-start differs from eval freeze")
+    return events[0].file_sha256
+
+
+def _ensure_reveal(ledger: ArtifactLedger, bundle: EvaluationBundle) -> str:
+    events = ledger.verify()
+    reveal_body = evaluation_reveal_commitment(bundle)
     if len(events) == 1:
         ledger.append("evaluation-revealed", reveal_body)
         events = ledger.verify()
@@ -344,6 +354,8 @@ def reveal_evaluation(
 __all__ = [
     "EvaluationBundle",
     "EvaluationReveal",
+    "evaluation_reveal_commitment",
     "load_evaluation_bundle",
     "reveal_evaluation",
+    "run_start_commitment",
 ]

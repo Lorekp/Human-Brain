@@ -36,9 +36,14 @@ _EXECUTION_MODULES = (
     "humanbrain.tokenizer",
     "humanbrain.topology",
     "humanbrain.simple_swe",
+    "humanbrain.simple_swe._worker",
     "humanbrain.simple_swe.adapter",
+    "humanbrain.simple_swe.artifacts",
     "humanbrain.simple_swe.compiler",
     "humanbrain.simple_swe.freeze",
+    "humanbrain.simple_swe.reveal",
+    "humanbrain.simple_swe.runner",
+    "humanbrain.simple_swe.sandbox",
 )
 
 
