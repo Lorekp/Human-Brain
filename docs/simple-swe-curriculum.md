@@ -89,11 +89,12 @@ The adapter returns:
 - the immutable on-disk checkpoint hash plus learned checkpoint-state hashes
   before and after synthesis.
 
-Raw Python is the current compiler mode. A later deterministic grammar or
-prefix DSL can use the same seam, but its compiler may only translate emitted
-tokens and the public signature. It cannot choose an algorithm, inspect the
-prompt semantics, run tests, search, repair, or retry. The protocol allows one
-192-token sample and zero repairs per task.
+`RawPythonCompiler` is the concrete compiler for this protocol: it returns the
+cell-emitted text unchanged. Replacing it with a deterministic grammar or
+prefix DSL requires a new frozen protocol/compiler identity. Any replacement
+may only translate emitted tokens and the public signature; it cannot choose an
+algorithm, inspect prompt semantics, run tests, search, repair, or retry. The
+protocol allows one 192-token sample and zero repairs per task.
 
 Recurrent inference naturally changes membrane, threshold, and eligibility
 traces. Those transient sequence variables are not checkpointed learned state.
@@ -105,10 +106,10 @@ and sparse-three-factor v3 checkpoint arrays use the same check.
 ## Freeze, reveal, and execution order
 
 1. Freeze one checkpoint, tokenizer, model configuration, completion adapter,
-   compiler factory, protocol, exact Python executable and `-I -S -B` flags,
-   sandbox worker, native simulation artifact (when used), Git HEAD, and Git
-   tree. All installed Human Brain execution modules must resolve under that
-   source root and be Git-tracked.
+   concrete raw-Python compiler, protocol, exact Python executable and
+   `-I -S -B` flags, sandbox worker, native simulation artifact (when used),
+   Git HEAD, and Git tree. All installed Human Brain execution modules must
+   resolve under that source root and be Git-tracked.
 2. Bind the manifest directory as the sole evidence root. Its canonical run
    path is derived from the canonical manifest bytes; alternate bundle, ledger,
    and run-root arguments are not exposed by the production APIs.
@@ -195,10 +196,10 @@ inference.
 
 ## Runtime estimate and remaining environment commitments
 
-Visible train/development generation is sub-second. The 86 focused protocol,
-freeze, adapter, reveal, sandbox, artifact, and runner tests complete in about
-18 seconds on the current workstation. These are harness tests, not capability
-evaluation.
+Visible train/development generation is sub-second. The 91 focused protocol,
+freeze, adapter, reveal, sandbox, artifact, and runner tests complete in roughly
+20 to 30 seconds on the current workstation. These are harness tests, not
+capability evaluation.
 
 Evaluation emits 30 x 192 = 5,760 cell-selected tokens. At the project's target
 100 tokens/s that is about 58 seconds of cell inference. Sandboxed tests add

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Literal, Mapping
 
 
 SCHEMA = "humanbrain.simple-swe-protocol.v1"
@@ -22,6 +22,12 @@ FAILURE_TAXONOMY = (
     "property_failure",
     "harness_error",
     "passed",
+)
+Outcome = Literal[*FAILURE_TAXONOMY]
+WORKER_RESULT_OUTCOMES = tuple(
+    outcome
+    for outcome in FAILURE_TAXONOMY
+    if outcome not in {"format_error", "syntax_error", "policy_violation", "timeout"}
 )
 
 

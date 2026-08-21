@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from hashlib import sha256
 from pathlib import Path
 
 import pytest
+from humanbrain.simple_swe import tasks as task_module
 from humanbrain.simple_swe.protocol import load_protocol
-from humanbrain.simple_swe.tasks import _generate_partition, generate_visible_partition
+from humanbrain.simple_swe.tasks import (
+    _generate_partition,
+    canonical_json_bytes,
+    generate_visible_partition,
+)
 
 PROTOCOL = (
     Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
@@ -27,6 +33,57 @@ def test_train_and_dev_tasks_are_deterministic_and_family_disjoint() -> None:
         task.public.family for task in dev
     )
     assert len({task.public.task_sha256 for task in first_train + dev}) == 117
+
+
+@pytest.mark.parametrize(
+    ("partition", "expected_sha256"),
+    [
+        ("train", "3e79404a50dd4aef23482387c964b2002e1c718fee2112cd9291db30ebe44a44"),
+        ("dev", "11f5b8cfc01a22d72d09fa05084a5041d08c08e48886c5a9dbec40687b944d9a"),
+    ],
+)
+def test_visible_partition_generation_bytes_are_frozen(
+    partition: str, expected_sha256: str
+) -> None:
+    protocol = load_protocol(PROTOCOL)
+    tasks = generate_visible_partition(protocol, partition)
+    payload = canonical_json_bytes([asdict(task) for task in tasks])
+
+    assert sha256(payload).hexdigest() == expected_sha256
+
+
+def test_every_protocol_family_has_one_explicit_builder_registration() -> None:
+    protocol = load_protocol(PROTOCOL)
+    expected_families = {
+        family
+        for partition in protocol.partitions.values()
+        for family in partition.family_quotas
+    }
+    registry = task_module._FAMILY_BUILDERS
+
+    assert set(registry) == expected_families
+    assert len(registry) == 27
+    assert len({id(builder) for builder in registry.values()}) == 26
+    shared_builders = {
+        frozenset(
+            family
+            for family, candidate in registry.items()
+            if candidate is builder
+        )
+        for builder in registry.values()
+    }
+    assert {
+        families for families in shared_builders if len(families) > 1
+    } == {frozenset({"t1_string_filter_class", "t2_filter_then_reverse"})}
+
+
+def test_unknown_task_family_is_rejected_by_the_registry() -> None:
+    protocol = load_protocol(PROTOCOL)
+
+    with pytest.raises(
+        ValueError, match="protocol references unknown task family unknown_family"
+    ):
+        task_module._build_task(protocol, "train", "unknown_family", 0, 123)
 
 
 def test_every_visible_task_has_separate_regression_and_property_tests() -> None:

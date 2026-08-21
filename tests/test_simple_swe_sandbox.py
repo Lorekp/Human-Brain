@@ -7,8 +7,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from humanbrain.simple_swe import sandbox
-from humanbrain.simple_swe.protocol import load_protocol
+from humanbrain.simple_swe import _worker, sandbox
+from humanbrain.simple_swe.protocol import WORKER_RESULT_OUTCOMES, load_protocol
 from humanbrain.simple_swe.sandbox import execute_completion
 from humanbrain.simple_swe.tasks import HiddenCase, PrivateTask, PublicTask
 
@@ -19,6 +19,10 @@ WORKER_SOURCE = Path(sandbox.__file__).with_name("_worker.py").read_bytes()
 WORKER_SHA256 = sha256(WORKER_SOURCE).hexdigest()
 PYTHON_EXECUTABLE = sandbox.resolve_python_executable()
 PYTHON_EXECUTABLE_SHA256 = sha256(PYTHON_EXECUTABLE.read_bytes()).hexdigest()
+
+
+def test_isolated_worker_outcomes_match_parent_domain_taxonomy() -> None:
+    assert _worker.WORKER_RESULT_OUTCOMES == WORKER_RESULT_OUTCOMES
 
 
 def _execute(source, public, private, limits):

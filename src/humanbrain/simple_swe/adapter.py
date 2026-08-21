@@ -10,7 +10,7 @@ from humanbrain.recurrent_language import RecurrentCellLanguageModel
 from humanbrain.simple_swe.compiler import (
     COMPLETION_ADAPTER_ID,
     CompileRequest,
-    create_source_compiler,
+    RawPythonCompiler,
 )
 from humanbrain.simple_swe.freeze import (
     FreezeIntegrityError,
@@ -136,7 +136,7 @@ class CellCompletionAdapter:
         self._protocol_path = Path(protocol_path).resolve()
         self._checkpoint_path = Path(checkpoint_path).resolve()
         self._source_root = Path(source_root).resolve()
-        self._compiler = create_source_compiler()
+        self._compiler = RawPythonCompiler()
         self._protocol = load_protocol(self._protocol_path)
         self._manifest = verify_freeze_manifest(
             manifest_path=self._manifest_path,

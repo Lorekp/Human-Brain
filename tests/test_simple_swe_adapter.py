@@ -11,12 +11,8 @@ from humanbrain.recurrent import RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel, RecurrentModelConfig
 from humanbrain.simple_swe import freeze
 from humanbrain.simple_swe.adapter import CellCompletionAdapter, CompletionRequest
-from humanbrain.simple_swe.compiler import (
-    CompileRequest,
-    RawPythonCompiler,
-    compiler_factory_sha256,
-    create_source_compiler,
-)
+from humanbrain.simple_swe import compiler as compiler_module
+from humanbrain.simple_swe.compiler import CompileRequest, RawPythonCompiler
 from humanbrain.simple_swe.freeze import create_freeze_manifest
 from humanbrain.simple_swe.protocol import load_protocol
 from humanbrain.simple_swe.tasks import PublicTask, canonical_sha256
@@ -149,9 +145,9 @@ def test_adapter_reloads_one_cell_checkpoint_and_audits_exact_emitted_tokens(
     assert sha256(checkpoint.read_bytes()).hexdigest() == first.audit.checkpoint_sha256
 
 
-def test_frozen_compiler_registry_receives_only_emissions_and_signature(
+def test_concrete_raw_python_compiler_receives_only_emissions_and_signature(
 ) -> None:
-    compiler = create_source_compiler()
+    compiler = RawPythonCompiler()
     request = CompileRequest(
         emitted_text="def solve_opaque(value):\n    return value\n",
         emitted_token_ids=tuple(range(load_protocol(PROTOCOL_PATH).max_new_tokens)),
@@ -161,7 +157,12 @@ def test_frozen_compiler_registry_receives_only_emissions_and_signature(
 
     assert type(compiler) is RawPythonCompiler
     assert compiler.compile(request) == request.emitted_text
-    assert compiler.identity.compiler_sha256 == compiler_factory_sha256()
+    assert compiler.identity.compiler_sha256 == sha256(
+        Path(compiler_module.__file__).read_bytes()
+    ).hexdigest()
+    assert not hasattr(compiler_module, "SourceCompiler")
+    assert not hasattr(compiler_module, "create_source_compiler")
+    assert not hasattr(compiler_module, "compiler_factory_sha256")
     assert "compiler" not in inspect.signature(CellCompletionAdapter).parameters
     assert set(vars(request)) == {
         "emitted_text",

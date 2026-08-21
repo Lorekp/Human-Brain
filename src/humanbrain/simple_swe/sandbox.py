@@ -11,9 +11,13 @@ from dataclasses import asdict, dataclass
 from hashlib import sha256
 from pathlib import Path
 from time import perf_counter
-from typing import Literal
+from typing import cast
 
-from humanbrain.simple_swe.protocol import ExecutionLimits
+from humanbrain.simple_swe.protocol import (
+    WORKER_RESULT_OUTCOMES,
+    ExecutionLimits,
+    Outcome,
+)
 from humanbrain.simple_swe.tasks import PrivateTask, PublicTask
 
 SANDBOX_PYTHON_FLAGS = ("-I", "-S", "-B")
@@ -23,21 +27,6 @@ class SandboxConfigurationError(RuntimeError):
     """The frozen Python runtime or required isolation setup is unavailable."""
 
 
-Outcome = Literal[
-    "format_error",
-    "syntax_error",
-    "policy_violation",
-    "signature_error",
-    "timeout",
-    "memory_limit",
-    "runtime_error",
-    "regression_failure",
-    "property_failure",
-    "harness_error",
-    "passed",
-]
-
-
 @dataclass(frozen=True)
 class ExecutionResult:
     outcome: Outcome
@@ -45,6 +34,18 @@ class ExecutionResult:
     wall_seconds: float
     detail: str
     sandboxed: bool
+
+
+@dataclass(frozen=True)
+class _WorkerObservation:
+    stdout: bytes
+    stderr: bytes
+    returncode: int | None
+    timed_out: bool
+
+
+class _SandboxLaunchError(RuntimeError):
+    pass
 
 
 _DENIED_NODES = (
@@ -404,6 +405,133 @@ def _runtime_executable_matches(executable: Path, expected_sha256: str) -> bool:
         return False
 
 
+def _run_worker_process(
+    executable: Path,
+    worker_source: bytes,
+    input_bytes: bytes,
+    limits: ExecutionLimits,
+) -> _WorkerObservation:
+    job: _WindowsJob | None = None
+    with tempfile.TemporaryDirectory(prefix="humanbrain-simple-swe-") as directory:
+        temporary_root = Path(directory)
+        worker = temporary_root / "worker.py"
+        try:
+            worker.write_bytes(worker_source)
+        except OSError as error:
+            raise _SandboxLaunchError(type(error).__name__) from error
+        creation_flags = (
+            getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+        )
+        process: subprocess.Popen[bytes] | None = None
+        try:
+            process = subprocess.Popen(
+                [str(executable), *SANDBOX_PYTHON_FLAGS, str(worker)],
+                cwd=temporary_root,
+                env=_sanitized_environment(temporary_root, limits),
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                creationflags=creation_flags,
+                start_new_session=os.name != "nt",
+            )
+            if os.name == "nt":
+                job = _WindowsJob(limits)
+                job.attach(process)
+        except (OSError, ValueError) as error:
+            if process is not None and process.poll() is None:
+                process.kill()
+                process.wait()
+            if job is not None:
+                job.close()
+            raise _SandboxLaunchError(type(error).__name__) from error
+        try:
+            try:
+                stdout, stderr = process.communicate(
+                    input_bytes,
+                    timeout=limits.wall_seconds,
+                )
+                timed_out = False
+            except subprocess.TimeoutExpired:
+                timed_out = True
+                if job is not None:
+                    job.close()
+                if process.poll() is None:
+                    process.kill()
+                stdout, stderr = process.communicate()
+        finally:
+            if job is not None:
+                job.close()
+        return _WorkerObservation(
+            stdout=stdout,
+            stderr=stderr,
+            returncode=process.returncode,
+            timed_out=timed_out,
+        )
+
+
+def _decode_worker_result(
+    observation: _WorkerObservation,
+    limits: ExecutionLimits,
+    elapsed: float,
+) -> ExecutionResult:
+    if observation.timed_out:
+        return ExecutionResult("timeout", False, elapsed, "wall time exceeded", True)
+    if (
+        len(observation.stdout) > limits.output_bytes
+        or len(observation.stderr) > limits.output_bytes
+    ):
+        return ExecutionResult(
+            "harness_error", False, elapsed, "sandbox output limit exceeded", True
+        )
+    if not observation.stdout:
+        # A Job Object CPU limit terminates the process before the worker can
+        # report. Memory exhaustion normally raises MemoryError in the worker;
+        # unknown abrupt termination stays fail-closed.
+        memory_return_codes = {
+            -1073741801,  # STATUS_NO_MEMORY
+            -1073741523,  # STATUS_COMMITMENT_LIMIT
+        }
+        stderr_text = observation.stderr.decode(
+            "utf-8", errors="ignore"
+        ).lower()
+        if (
+            observation.returncode in memory_return_codes
+            or "memoryerror" in stderr_text
+        ):
+            return ExecutionResult(
+                "memory_limit", False, elapsed, "process memory limit exceeded", True
+            )
+        if elapsed >= limits.cpu_seconds * 0.8:
+            return ExecutionResult("timeout", False, elapsed, "CPU time exceeded", True)
+        return ExecutionResult(
+            "harness_error",
+            False,
+            elapsed,
+            f"sandbox exited without a result ({observation.returncode})",
+            True,
+        )
+    try:
+        response = json.loads(observation.stdout)
+        reported = response["outcome"]
+        reported_detail = str(response.get("detail", ""))
+    except (UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError):
+        return ExecutionResult(
+            "harness_error", False, elapsed, "invalid sandbox result", True
+        )
+    if not isinstance(reported, str) or reported not in WORKER_RESULT_OUTCOMES:
+        return ExecutionResult(
+            "harness_error", False, elapsed, "unknown sandbox outcome", True
+        )
+    outcome = cast(Outcome, reported)
+    return ExecutionResult(
+        outcome,
+        outcome == "passed",
+        elapsed,
+        reported_detail,
+        True,
+    )
+
+
 def execute_completion(
     source: str,
     public: PublicTask,
@@ -455,136 +583,31 @@ def execute_completion(
         return ExecutionResult(
             outcome, False, perf_counter() - started, detail, False
         )
-    job: _WindowsJob | None = None
-    with tempfile.TemporaryDirectory(prefix="humanbrain-simple-swe-") as directory:
-        temporary_root = Path(directory)
-        worker = temporary_root / "worker.py"
-        worker.write_bytes(worker_source)
-        creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-        try:
-            process = subprocess.Popen(
-                [str(executable), *SANDBOX_PYTHON_FLAGS, str(worker)],
-                cwd=temporary_root,
-                env=_sanitized_environment(temporary_root, limits),
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=creation_flags,
-                start_new_session=os.name != "nt",
-            )
-            if os.name == "nt":
-                job = _WindowsJob(limits)
-                job.attach(process)
-        except (OSError, ValueError) as error:
-            if "process" in locals() and process.poll() is None:
-                process.kill()
-                process.wait()
-            if job is not None:
-                job.close()
-            return ExecutionResult(
-                "harness_error",
-                False,
-                perf_counter() - started,
-                f"sandbox unavailable: {type(error).__name__}",
-                False,
-            )
-        try:
-            stdout, stderr = process.communicate(
-                _payload(source, public, private, limits),
-                timeout=limits.wall_seconds,
-            )
-        except subprocess.TimeoutExpired:
-            if job is not None:
-                job.close()
-            if process.poll() is None:
-                process.kill()
-            process.communicate()
-            if not _runtime_executable_matches(
-                executable, python_executable_sha256
-            ):
-                return ExecutionResult(
-                    "harness_error",
-                    False,
-                    perf_counter() - started,
-                    "sandbox Python executable changed during execution",
-                    True,
-                )
-            return ExecutionResult(
-                "timeout",
-                False,
-                perf_counter() - started,
-                "wall time exceeded",
-                True,
-            )
-        finally:
-            if job is not None:
-                job.close()
-        elapsed = perf_counter() - started
-        if not _runtime_executable_matches(executable, python_executable_sha256):
-            return ExecutionResult(
-                "harness_error",
-                False,
-                elapsed,
-                "sandbox Python executable changed during execution",
-                True,
-            )
-        if len(stdout) > limits.output_bytes or len(stderr) > limits.output_bytes:
-            return ExecutionResult(
-                "harness_error", False, elapsed, "sandbox output limit exceeded", True
-            )
-        if not stdout:
-            # A Job Object CPU limit terminates the process before the worker can
-            # report. Memory exhaustion normally raises MemoryError in the worker;
-            # unknown abrupt termination stays fail-closed.
-            memory_return_codes = {
-                -1073741801,  # STATUS_NO_MEMORY
-                -1073741523,  # STATUS_COMMITMENT_LIMIT
-            }
-            stderr_text = stderr.decode("utf-8", errors="ignore").lower()
-            if process.returncode in memory_return_codes or "memoryerror" in stderr_text:
-                return ExecutionResult(
-                    "memory_limit", False, elapsed, "process memory limit exceeded", True
-                )
-            if elapsed >= limits.cpu_seconds * 0.8:
-                return ExecutionResult(
-                    "timeout", False, elapsed, "CPU time exceeded", True
-                )
-            return ExecutionResult(
-                "harness_error",
-                False,
-                elapsed,
-                f"sandbox exited without a result ({process.returncode})",
-                True,
-            )
-        try:
-            response = json.loads(stdout)
-            reported = response["outcome"]
-            reported_detail = str(response.get("detail", ""))
-        except (UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError):
-            return ExecutionResult(
-                "harness_error", False, elapsed, "invalid sandbox result", True
-            )
-        allowed: set[str] = {
-            "signature_error",
-            "timeout",
-            "memory_limit",
-            "runtime_error",
-            "regression_failure",
-            "property_failure",
-            "harness_error",
-            "passed",
-        }
-        if reported not in allowed:
-            return ExecutionResult(
-                "harness_error", False, elapsed, "unknown sandbox outcome", True
-            )
+    try:
+        observation = _run_worker_process(
+            executable,
+            worker_source,
+            _payload(source, public, private, limits),
+            limits,
+        )
+    except _SandboxLaunchError as error:
         return ExecutionResult(
-            reported,
-            reported == "passed",
+            "harness_error",
+            False,
+            perf_counter() - started,
+            f"sandbox unavailable: {error}",
+            False,
+        )
+    elapsed = perf_counter() - started
+    if not _runtime_executable_matches(executable, python_executable_sha256):
+        return ExecutionResult(
+            "harness_error",
+            False,
             elapsed,
-            reported_detail,
+            "sandbox Python executable changed during execution",
             True,
         )
+    return _decode_worker_result(observation, limits, elapsed)
 
 
 __all__ = [

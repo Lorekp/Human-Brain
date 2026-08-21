@@ -13,6 +13,11 @@ from typing import Any
 import numpy as np
 
 from humanbrain.simple_swe.artifacts import atomic_create_bytes
+from humanbrain.simple_swe.compiler import (
+    COMPLETION_ADAPTER_ID,
+    CompilerIdentity,
+    RawPythonCompiler,
+)
 from humanbrain.simple_swe.protocol import ProtocolSpec, load_protocol
 from humanbrain.simple_swe.sandbox import (
     SANDBOX_PYTHON_FLAGS,
@@ -22,13 +27,11 @@ from humanbrain.simple_swe.sandbox import (
 )
 from humanbrain.simple_swe.tasks import canonical_json_bytes, canonical_sha256
 
-SCHEMA = "humanbrain.simple-swe-freeze.v2"
+SCHEMA = "humanbrain.simple-swe-freeze.v3"
 CANONICAL_RUNNER_ID = "humanbrain-simple-swe-sealed-runner-v1"
 SANDBOX_EXECUTOR_ID = "humanbrain-simple-swe-job-sandbox-v1"
 _EXECUTION_COMMITMENT_FIELDS = (
     "evaluation_root",
-    "compiler_factory_id",
-    "compiler_factory_sha256",
     "canonical_runner_id",
     "canonical_runner_sha256",
     "sandbox_executor_id",
@@ -118,8 +121,6 @@ class FreezeManifest:
     evaluation_root: str
     completion_adapter_id: str
     completion_adapter_sha256: str
-    compiler_factory_id: str
-    compiler_factory_sha256: str
     compiler_id: str
     compiler_sha256: str
     compiler_mode: str
@@ -320,21 +321,11 @@ def _module_source_sha256(module_name: str) -> str:
     return sha256(Path(source).read_bytes()).hexdigest()
 
 
-def _completion_identities() -> tuple[object, str, str]:
-    from humanbrain.simple_swe.compiler import (
-        CompilerIdentity,
-        compiler_factory_sha256,
-        create_source_compiler,
-    )
-
-    identity = create_source_compiler().identity
+def _completion_identities() -> tuple[CompilerIdentity, str]:
+    identity = RawPythonCompiler().identity
     if not isinstance(identity, CompilerIdentity):
         raise FreezeIntegrityError("compiler identity has the wrong type")
-    return (
-        identity,
-        _module_source_sha256("humanbrain.simple_swe.adapter"),
-        compiler_factory_sha256(),
-    )
+    return identity, _module_source_sha256("humanbrain.simple_swe.adapter")
 
 
 def _simulation_backend_identity(
@@ -435,12 +426,10 @@ def _verify_simulation_backend_artifact(identity: SimulationBackendIdentity) -> 
 def _inference_config_sha256(
     protocol: ProtocolSpec,
     checkpoint: CheckpointHashes,
-    compiler_identity: object,
+    compiler_identity: CompilerIdentity,
     adapter_sha256: str,
     commitments: dict[str, object],
 ) -> str:
-    from humanbrain.simple_swe.compiler import COMPLETION_ADAPTER_ID, CompilerIdentity
-
     if not isinstance(compiler_identity, CompilerIdentity):
         raise FreezeIntegrityError("compiler identity has the wrong type")
     return canonical_sha256(
@@ -470,13 +459,8 @@ def _execution_components(
     evaluation_root: Path,
     python_executable: str | Path | None,
     backend: SimulationBackendIdentity | None = None,
-) -> tuple[object, str, dict[str, object]]:
-    from humanbrain.simple_swe.compiler import (
-        COMPILER_FACTORY_ID,
-        CompilerIdentity,
-    )
-
-    identity, adapter_sha256, factory_sha256 = _completion_identities()
+) -> tuple[CompilerIdentity, str, dict[str, object]]:
+    identity, adapter_sha256 = _completion_identities()
     if not isinstance(identity, CompilerIdentity):
         raise FreezeIntegrityError("compiler identity has the wrong type")
     executable = resolve_python_executable(python_executable)
@@ -489,8 +473,6 @@ def _execution_components(
     )
     commitments: dict[str, object] = {
         "evaluation_root": str(evaluation_root),
-        "compiler_factory_id": COMPILER_FACTORY_ID,
-        "compiler_factory_sha256": factory_sha256,
         "canonical_runner_id": CANONICAL_RUNNER_ID,
         "canonical_runner_sha256": _module_source_sha256(
             "humanbrain.simple_swe.runner"
@@ -541,11 +523,6 @@ def create_freeze_manifest(
         evaluation_root=output.parent,
         python_executable=python_executable,
     )
-    from humanbrain.simple_swe.compiler import (
-        COMPLETION_ADAPTER_ID,
-        CompilerIdentity,
-    )
-
     if not isinstance(identity, CompilerIdentity):
         raise FreezeIntegrityError("compiler identity has the wrong type")
     manifest = FreezeManifest(
@@ -561,8 +538,6 @@ def create_freeze_manifest(
         evaluation_root=str(output.parent),
         completion_adapter_id=COMPLETION_ADAPTER_ID,
         completion_adapter_sha256=adapter_sha256,
-        compiler_factory_id=str(commitments["compiler_factory_id"]),
-        compiler_factory_sha256=str(commitments["compiler_factory_sha256"]),
         compiler_id=identity.compiler_id,
         compiler_sha256=identity.compiler_sha256,
         compiler_mode=identity.mode,
@@ -694,8 +669,6 @@ def verify_freeze_manifest(
         python_executable=manifest.sandbox_python_executable,
         backend=backend,
     )
-    from humanbrain.simple_swe.compiler import COMPLETION_ADAPTER_ID, CompilerIdentity
-
     if not isinstance(identity, CompilerIdentity):
         raise FreezeIntegrityError("compiler identity has the wrong type")
     if (

@@ -93,7 +93,9 @@ def test_freeze_manifest_commits_clean_source_and_checkpoint_components(
     assert manifest.no_learning_after_freeze is True
     assert manifest.one_checkpoint_for_all_tasks is True
     assert manifest.evaluation_root == str(manifest_path.parent.resolve())
-    assert manifest.compiler_factory_id == "humanbrain-frozen-compiler-registry-v1"
+    assert manifest.compiler_id == "raw-python-cell-emissions-v1"
+    assert not hasattr(manifest, "compiler_factory_id")
+    assert not hasattr(manifest, "compiler_factory_sha256")
     assert manifest.canonical_runner_id == "humanbrain-simple-swe-sealed-runner-v1"
     assert manifest.sandbox_executor_id == "humanbrain-simple-swe-job-sandbox-v1"
     assert manifest.sandbox_python_flags == ("-I", "-S", "-B")

@@ -5,8 +5,20 @@ import json
 import os
 import sys
 
+WORKER_RESULT_OUTCOMES = (
+    "signature_error",
+    "memory_limit",
+    "runtime_error",
+    "regression_failure",
+    "property_failure",
+    "harness_error",
+    "passed",
+)
+
 
 def _emit(outcome: str, detail: str = "") -> None:
+    if outcome not in WORKER_RESULT_OUTCOMES:
+        raise ValueError("unknown worker outcome")
     sys.stdout.write(
         json.dumps(
             {"outcome": outcome, "detail": detail},
