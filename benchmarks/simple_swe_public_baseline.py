@@ -424,7 +424,7 @@ def run(
     train_tasks = generate_visible_partition(task_protocol, "train")
     train_prompts = [task.public.prompt for task in train_tasks]
     runtime = python_runtime_identity(
-        python_executable, task_protocol.raw["execution"]["language"]
+        python_executable, task_protocol.raw["language"]
     )
     worker_path = Path(_worker.__file__).resolve()
     worker_sha256 = _sha256_file(worker_path)
