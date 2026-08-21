@@ -38,7 +38,7 @@ def _validate_sha256(value: str, field: str) -> None:
         raise ValueError(f"{field} must be lowercase SHA-256 hex")
 
 
-def _atomic_create(path: Path, content: bytes) -> None:
+def atomic_create_bytes(path: Path, content: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
         raise FileExistsError(f"immutable artifact already exists: {path}")
@@ -137,8 +137,13 @@ class ArtifactLedger:
             "body_sha256": canonical_sha256(body),
             "body": body,
         }
-        _atomic_create(path, canonical_json_bytes(record))
+        atomic_create_bytes(path, canonical_json_bytes(record))
         return self.verify()[-1]
 
 
-__all__ = ["ArtifactEvent", "ArtifactIntegrityError", "ArtifactLedger"]
+__all__ = [
+    "ArtifactEvent",
+    "ArtifactIntegrityError",
+    "ArtifactLedger",
+    "atomic_create_bytes",
+]
