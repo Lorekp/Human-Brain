@@ -117,10 +117,20 @@ ordering or contact/potential subsets are rejected. Dense `three_factor`
 remains an explicit historical control, not a compatibility implementation of
 the sparse rule.
 
-Sparse readout currently rejects CUDA execution explicitly because exact
-native CUDA parity has not been registered. There is no silent CPU fallback.
-The existing exact CPU recurrent kernel remains the supported backend for this
-lane.
+Sparse readout has a registered exact hybrid CUDA path. The recurrent fitted
+cells advance on the persistent-device CUDA kernel; their eligibility is then
+consumed by the existing native Rust sparse-current and synapse-local
+plasticity kernels. A real-device test asserts `backend == "cuda"` and exact
+CPU parity for observe state and spikes, output current, first-spike race,
+teaching, scheduled turnover, reset, checkpoint load, and post-checkpoint
+continuation. Forced CUDA still fails if no CUDA backend is available; it never
+silently falls back to CPU.
+
+This registration does not imply that sparse current or plasticity runs on the
+GPU, nor is it a capability result. The separate synthetic 200,000-active-cell
+timing protocol in `benchmarks/sparse_cuda_engineering_protocol_v1.json`
+profiles kernel, transfer, fitted-output, and teaching phases before deciding
+whether any additional CUDA work is justified.
 
 ## Diagnostics and claim boundary
 

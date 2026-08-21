@@ -100,9 +100,14 @@ contacts; slow seeded turnover recruits or deletes at most one contact per
 structural event. Checkpoint v3 preserves anatomy, traces, ages, activity, and
 the exact counter-based turnover continuation. The >100k allocation smoke has
 a reachable measured 100x memory criterion, but no capability validation has
-been run. CUDA is explicitly unsupported for this lane until exact parity is
-registered. See `docs/sparse-cell-readout.md` and the frozen
-`benchmarks/sparse_readout_protocol_v1.json` plan.
+been run. A real-device parity gate now registers an exact hybrid execution:
+the reservoir advances on CUDA while sparse fitted-cell current and plasticity
+run in native Rust over the downloaded eligibility state. The test asserts a
+real CUDA backend and exact observe, race, teaching, turnover, reset, and
+checkpoint continuation, so there is no silent CPU fallback. See
+`docs/sparse-cell-readout.md`, the frozen capability plan in
+`benchmarks/sparse_readout_protocol_v1.json`, and the separate synthetic CUDA
+engineering plan in `benchmarks/sparse_cuda_engineering_protocol_v1.json`.
 
 An explicitly non-capability smoke also exercised online updates at 98,304
 cells with 211.70 MiB peak memory and no quadratic ridge state.

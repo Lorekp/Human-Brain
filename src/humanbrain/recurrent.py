@@ -240,17 +240,6 @@ class RecurrentCellCircuit:
             synaptic_current_pa=self._synaptic_current_pa,
             eligibility=self._eligibility,
         )
-        if (
-            self.config.readout_learning_rule == "sparse_three_factor"
-            and self._native_kernel.backend == "cuda"
-        ):
-            close = getattr(self._native_kernel, "close", None)
-            if close is not None:
-                close()
-            raise RuntimeError(
-                "sparse readout CUDA parity is not registered; "
-                "set HUMANBRAIN_DEVICE=cpu"
-            )
         self._native_local_learner = (
             NativeThreeFactorLearner(
                 eligibility=self._eligibility,

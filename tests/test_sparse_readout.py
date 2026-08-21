@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import math
-from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
-import humanbrain.recurrent as recurrent_module
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.readout import SparseCellReadout, SparseReadoutDimensions
 
@@ -747,26 +745,6 @@ def test_full_fan_in_matches_independent_scalar_current_and_update_oracle() -> N
     continued_current = _scalar_sparse_current(circuit)
     np.testing.assert_array_equal(circuit.output_current_pa(), continued_current)
     assert circuit.race().winner == int(np.argmax(continued_current))
-
-
-def test_sparse_readout_rejects_unverified_cuda_execution(monkeypatch) -> None:
-    monkeypatch.setattr(
-        recurrent_module,
-        "recurrent_kernel",
-        lambda *args, **kwargs: SimpleNamespace(backend="cuda"),
-    )
-
-    with pytest.raises(RuntimeError, match="CUDA parity is not registered"):
-        RecurrentCellCircuit(
-            token_cells=3,
-            config=RecurrentCircuitConfig(
-                reservoir_cells=8,
-                input_fanout=2,
-                recurrent_fanout=1,
-                readout_learning_rule="sparse_three_factor",
-                readout_fan_in=2,
-            ),
-        )
 
 
 def test_one_wrong_example_cannot_bypass_structural_recruitment_bound() -> None:
