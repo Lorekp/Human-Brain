@@ -18,15 +18,12 @@ from humanbrain.recurrent import (
     RecurrentCircuitConfig,
     RecurrentRace,
 )
-from humanbrain.recurrent_artifacts import RecurrentCellSynapseState
 
 LAYER0_END_TOKEN = "END"
 LAYER0_TERMINAL_TOKENS = frozenset({"ARG0", "NEG_ONE", "ZERO", "ONE", "TWO"})
 LAYER0_UNARY_TOKENS = frozenset({"ABS"})
 LAYER0_BINARY_TOKENS = frozenset({"ADD", "SUB", "MUL", "MIN", "MAX"})
-LAYER0_EXPRESSION_TOKENS = (
-    LAYER0_TERMINAL_TOKENS | LAYER0_UNARY_TOKENS | LAYER0_BINARY_TOKENS
-)
+LAYER0_EXPRESSION_TOKENS = LAYER0_TERMINAL_TOKENS | LAYER0_UNARY_TOKENS | LAYER0_BINARY_TOKENS
 LAYER0_PROGRAM_TOKEN_ORDER = (
     "ARG0",
     "NEG_ONE",
@@ -65,7 +62,7 @@ class Layer0ProgramFormatError(ValueError):
 class Layer0ProgramGrammar:
     """A bounded, scalar-int prefix grammar used only for syntax masking."""
 
-    max_nodes: int = 9
+    max_nodes: int = 7
 
     def __post_init__(self) -> None:
         if self.max_nodes < 1:
@@ -129,14 +126,11 @@ class Layer0ProgramCompiler:
         emitted = tuple(str(token) for token in tokens)
         if self._grammar.allowed(emitted):
             raise Layer0ProgramFormatError("program is incomplete")
-        expression, next_index = self._parse_expression(
-            emitted, 0, signature.parameter_name
-        )
+        expression, next_index = self._parse_expression(emitted, 0, signature.parameter_name)
         if next_index != len(emitted) - 1 or emitted[next_index] != LAYER0_END_TOKEN:
             raise Layer0ProgramFormatError("invalid program prefix")
         return (
-            f"def {signature.entry_point}({signature.parameter_name}):\n"
-            f"    return {expression}\n"
+            f"def {signature.entry_point}({signature.parameter_name}):\n    return {expression}\n"
         )
 
     def _parse_expression(
@@ -152,9 +146,7 @@ class Layer0ProgramCompiler:
         if token in literals:
             return literals[token], index + 1
         if token == "ABS":
-            operand, next_index = self._parse_expression(
-                tokens, index + 1, parameter_name
-            )
+            operand, next_index = self._parse_expression(tokens, index + 1, parameter_name)
             return f"abs({operand})", next_index
         left, next_index = self._parse_expression(tokens, index + 1, parameter_name)
         right, next_index = self._parse_expression(tokens, next_index, parameter_name)
@@ -274,13 +266,12 @@ class Layer0CellProgramModel:
 
     @property
     def checkpoint_cell_synapse_sha256(self) -> str:
-        return RecurrentCellSynapseState.capture(self._circuit).sha256
+        return self._circuit.cell_synapse_state_sha256
 
     def save(self, path: str | Path) -> str:
-        state = RecurrentCellSynapseState.capture(self._circuit)
-        return state.save_enveloped_checkpoint(
+        return self._circuit.save_cell_synapse_checkpoint(
             Path(path),
-            {
+            envelope={
                 "artifact_format": LAYER0_PROGRAM_CHECKPOINT_FORMAT,
                 "training_digest": self._training_digest,
                 "grammar_max_nodes": self._grammar.max_nodes,
@@ -291,7 +282,7 @@ class Layer0CellProgramModel:
 
     @classmethod
     def load(cls, path: str | Path) -> Layer0CellProgramModel:
-        envelope, state = RecurrentCellSynapseState.load_enveloped_checkpoint(Path(path))
+        envelope, circuit = RecurrentCellCircuit.load_cell_synapse_checkpoint(Path(path))
         if envelope.get("artifact_format") != LAYER0_PROGRAM_CHECKPOINT_FORMAT:
             raise ValueError("unsupported cell-program checkpoint format")
         if tuple(envelope.get("program_token_order", ())) != LAYER0_PROGRAM_TOKEN_ORDER:
@@ -299,7 +290,6 @@ class Layer0CellProgramModel:
         if int(envelope.get("prompt_delimiter_id", -1)) != LAYER0_PROMPT_DELIMITER_ID:
             raise ValueError("cell-program checkpoint delimiter mismatch")
         grammar = Layer0ProgramGrammar(max_nodes=int(envelope["grammar_max_nodes"]))
-        circuit = state.restore()
         return cls(
             grammar=grammar,
             circuit=circuit,
@@ -322,9 +312,7 @@ class Layer0CellProgramModel:
                 json.dumps(tokens, separators=(",", ":")).encode("ascii")
             ).hexdigest()
             allowed_cell_ids = tuple(sorted(_program_token_ids(tuple(allowed_tokens))))
-            race: RecurrentRace = self._circuit.race(
-                allowed_token_ids=allowed_cell_ids
-            )
+            race: RecurrentRace = self._circuit.race(allowed_token_ids=allowed_cell_ids)
             accepted = _PROGRAM_ID_TO_TOKEN[race.winner]
             tokens.append(accepted)
             audits.append(

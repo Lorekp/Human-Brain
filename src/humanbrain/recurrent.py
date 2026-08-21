@@ -2,18 +2,88 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import asdict, dataclass
 from hashlib import sha256
+from pathlib import Path
 
 import numpy as np
 
-from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
+from humanbrain.cells import (
+    ALLEN_GLIF5_CONFIG_SHA256,
+    AdaptiveGlifPopulation,
+    AllenGlif5Parameters,
+)
 from humanbrain.native import NativeThreeFactorLearner, recurrent_kernel
 from humanbrain.readout import SparseCellReadout
+from humanbrain.recurrent_state import RecurrentCellSynapseState
 from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
 
 READOUT_LEARNING_RULES = frozenset({"ridge", "three_factor", "sparse_three_factor"})
+
+_BASE_STATE_ARRAYS = (
+    ("_afferent_targets", "afferent_targets", np.int32),
+    ("_recurrent_targets", "recurrent_targets", np.int32),
+    ("_recurrent_weights_pa", "recurrent_weights_pa", np.float64),
+    ("_output_heterogeneity_pa", "output_heterogeneity_pa", np.float64),
+    ("_pacemaker_synapses_pa", "pacemaker_synapses_pa", np.float64),
+)
+_DEVELOPMENTAL_STATE_ARRAYS = (
+    ("_development_cell_order", "development_cell_order", np.int32),
+    ("_development_active_mask", "development_active_mask", np.bool_),
+    ("_structural_scores", "structural_scores", np.float64),
+    ("_structural_exposure", "structural_exposure", np.float64),
+    ("_homeostatic_gain", "homeostatic_gain", np.float64),
+)
+_SPARSE_READOUT_STATE_ARRAYS = (
+    "readout_potential_sources",
+    "readout_apposition_eligibility",
+    "readout_contact_sources",
+    "readout_contact_weights_pa",
+    "readout_contact_ages",
+    "readout_output_activity_ema",
+    "readout_target_presentations",
+)
+_CELL_SYNAPSE_METADATA_KEYS = (
+    "token_cells",
+    "allen_glif5_config_sha256",
+    "cell_parameters",
+    "circuit_config",
+    "growth_examples",
+    "local_updates",
+    "runtime_active_reservoir_cells",
+    "developmental_state",
+)
+
+
+@dataclass(frozen=True)
+class _ReadoutStateLayout:
+    direct_arrays: tuple[tuple[str, str, object], ...]
+    payload_arrays: tuple[str, ...] = ()
+    sparse: bool = False
+    ridge_statistics: bool = False
+
+
+_READOUT_STATE_LAYOUTS = {
+    "ridge": _ReadoutStateLayout(
+        direct_arrays=(
+            ("_readout_synapses_pa", "readout_synapses_pa", np.float64),
+            ("_normal_matrix", "normal_matrix", np.float64),
+            ("_target_moments", "target_moments", np.float64),
+        ),
+        ridge_statistics=True,
+    ),
+    "three_factor": _ReadoutStateLayout(
+        direct_arrays=(
+            ("_readout_synapses_pa", "readout_synapses_pa", np.float64),
+        ),
+    ),
+    "sparse_three_factor": _ReadoutStateLayout(
+        direct_arrays=(),
+        payload_arrays=_SPARSE_READOUT_STATE_ARRAYS,
+        sparse=True,
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -267,6 +337,244 @@ class RecurrentCellCircuit:
             self._output_unit_voltage,
             self._output_unit_voltage_threshold,
         ) = self._reservoir.compile_resting_response(steps)
+        self._output_unit_spike_gain = (
+            self._output_unit_voltage - self._output_unit_voltage_threshold
+        )
+        if np.any(self._output_unit_spike_gain <= 0.0) or np.any(
+            np.diff(self._output_unit_spike_gain) < 0.0
+        ):
+            raise RuntimeError("compiled resting GLIF5 spike gain must be monotonic")
+
+    def capture_cell_synapse_state(self) -> RecurrentCellSynapseState:
+        """Capture persistent anatomy and learning state owned by this circuit."""
+        if not self.learning_frozen:
+            raise RuntimeError("freeze recurrent readout learning before checkpointing")
+        layout = _READOUT_STATE_LAYOUTS[self.config.readout_learning_rule]
+        if layout.ridge_statistics:
+            self._flush_growth_statistics()
+            if self._normal_matrix is None or self._target_moments is None:
+                raise RuntimeError("cannot checkpoint a recurrent circuit before growth")
+        elif self._normal_matrix is not None or self._target_moments is not None:
+            raise RuntimeError("local readout must not contain ridge statistics")
+
+        developmental_present = tuple(
+            hasattr(self, attribute)
+            for attribute, _, _ in _DEVELOPMENTAL_STATE_ARRAYS
+        )
+        if any(developmental_present) and not all(developmental_present):
+            raise RuntimeError("developmental checkpoint state is incomplete")
+        developmental_state = all(developmental_present)
+        metadata: dict[str, object] = {
+            "token_cells": self.token_cells,
+            "allen_glif5_config_sha256": ALLEN_GLIF5_CONFIG_SHA256,
+            "cell_parameters": asdict(self.cell_parameters),
+            "circuit_config": asdict(self.config),
+            "growth_examples": self._growth_examples,
+            "local_updates": self.local_update_count,
+            "runtime_active_reservoir_cells": self.active_reservoir_cells,
+            "developmental_state": developmental_state,
+        }
+        arrays: dict[str, np.ndarray] = {}
+        for attribute, key, _ in _BASE_STATE_ARRAYS + layout.direct_arrays:
+            value = getattr(self, attribute)
+            if value is None:
+                raise RuntimeError(f"checkpoint state {key} is missing")
+            arrays[key] = value
+
+        if layout.sparse:
+            if self._sparse_readout is None:
+                raise RuntimeError("sparse readout checkpoint state is missing")
+            sparse_arrays = self._sparse_readout.checkpoint_arrays()
+            arrays.update({key: sparse_arrays[key] for key in layout.payload_arrays})
+            metadata["sparse_readout"] = self._sparse_readout.checkpoint_counters()
+        elif self._sparse_readout is not None:
+            raise RuntimeError("dense readout must not contain sparse checkpoint state")
+
+        if developmental_state:
+            for attribute, key, _ in _DEVELOPMENTAL_STATE_ARRAYS:
+                arrays[key] = getattr(self, attribute)
+        return RecurrentCellSynapseState(metadata=metadata, arrays=arrays)
+
+    @property
+    def cell_synapse_state_sha256(self) -> str:
+        """Hash every persistent cell, synapse, topology, and readout array."""
+        return self.capture_cell_synapse_state().sha256
+
+    def save_cell_synapse_checkpoint(
+        self,
+        path: str | Path,
+        *,
+        envelope: Mapping[str, object],
+    ) -> str:
+        """Save circuit-owned persistent state under caller metadata."""
+        return self.capture_cell_synapse_state().save_enveloped_checkpoint(
+            Path(path),
+            envelope,
+        )
+
+    @classmethod
+    def load_cell_synapse_checkpoint(
+        cls,
+        path: str | Path,
+    ) -> tuple[dict[str, object], RecurrentCellCircuit]:
+        """Load one generic state envelope and restore its owning circuit."""
+        envelope, state = RecurrentCellSynapseState.load_enveloped_checkpoint(
+            Path(path)
+        )
+        return envelope, cls.restore_cell_synapse_state(state)
+
+    @classmethod
+    def decode_cell_synapse_state(
+        cls,
+        metadata: Mapping[str, object],
+        arrays: Mapping[str, np.ndarray],
+    ) -> RecurrentCellSynapseState:
+        """Select and copy circuit-owned state out of a larger artifact payload."""
+        _, layout, _, array_names = (
+            cls._validate_cell_synapse_payload(metadata, arrays)
+        )
+        selected_metadata = {key: metadata[key] for key in _CELL_SYNAPSE_METADATA_KEYS}
+        if layout.sparse:
+            selected_metadata["sparse_readout"] = metadata["sparse_readout"]
+        return RecurrentCellSynapseState.copy_payload(
+            selected_metadata,
+            arrays,
+            array_names,
+        )
+
+    @classmethod
+    def restore_cell_synapse_state(
+        cls,
+        state: RecurrentCellSynapseState,
+    ) -> RecurrentCellCircuit:
+        """Restore one validated persistent state into a newly bound circuit."""
+        metadata = state.metadata
+        config, layout, developmental_state, _ = cls._validate_cell_synapse_payload(
+            metadata,
+            state.arrays,
+        )
+        circuit = cls(
+            token_cells=int(metadata["token_cells"]),
+            config=config,
+            cell_parameters=AllenGlif5Parameters(**metadata["cell_parameters"]),
+        )
+        direct_arrays = _BASE_STATE_ARRAYS + layout.direct_arrays
+        for attribute, key, dtype in direct_arrays:
+            existing = getattr(circuit, attribute)
+            if attribute == "_normal_matrix":
+                expected = (
+                    circuit._growth_feature_count,
+                    circuit._growth_feature_count,
+                )
+            elif attribute == "_target_moments":
+                expected = (circuit.token_cells, circuit._growth_feature_count)
+            else:
+                expected = existing.shape
+            value = np.array(state.arrays[key], dtype=dtype, copy=True, order="C")
+            if value.shape != expected:
+                raise ValueError(
+                    f"checkpoint array {key} has shape {value.shape}, expected {expected}"
+                )
+            setattr(circuit, attribute, value)
+
+        if layout.sparse:
+            sparse_counters = metadata["sparse_readout"]
+            assert isinstance(sparse_counters, dict)
+            circuit._sparse_readout = SparseCellReadout.from_checkpoint(
+                output_cells=circuit.token_cells,
+                reservoir_cells=circuit.config.reservoir_cells,
+                fan_in=circuit.config.readout_fan_in,
+                reservoir_eligibility=circuit._eligibility,
+                output_heterogeneity_pa=circuit._output_heterogeneity_pa,
+                pacemaker_synapses_pa=circuit._pacemaker_synapses_pa,
+                arrays=state.arrays,
+                counters=sparse_counters,
+            )
+            if circuit._sparse_readout.applied_updates != int(
+                metadata["local_updates"]
+            ):
+                raise ValueError("sparse checkpoint update counters disagree")
+
+        if developmental_state:
+            developmental_shapes = {
+                "_development_cell_order": (circuit.config.reservoir_cells,),
+                "_development_active_mask": (circuit.config.reservoir_cells,),
+                "_structural_scores": circuit._recurrent_weights_pa.shape,
+                "_structural_exposure": circuit._recurrent_weights_pa.shape,
+                "_homeostatic_gain": (circuit.config.reservoir_cells,),
+            }
+            for attribute, key, dtype in _DEVELOPMENTAL_STATE_ARRAYS:
+                value = np.array(
+                    state.arrays[key],
+                    dtype=dtype,
+                    copy=True,
+                    order="C",
+                )
+                expected = developmental_shapes[attribute]
+                if value.shape != expected:
+                    raise ValueError(
+                        f"checkpoint array {key} has shape {value.shape}, "
+                        f"expected {expected}"
+                    )
+                setattr(circuit, attribute, value)
+
+        circuit.active_reservoir_cells = int(
+            metadata["runtime_active_reservoir_cells"]
+        )
+        if developmental_state:
+            if (
+                int(np.count_nonzero(circuit._development_active_mask))
+                != circuit.active_reservoir_cells
+            ):
+                raise ValueError("checkpoint active mask/count mismatch")
+            if not np.array_equal(
+                np.sort(circuit._development_cell_order),
+                np.arange(circuit.config.reservoir_cells, dtype=np.int32),
+            ):
+                raise ValueError(
+                    "checkpoint developmental cell order is not a permutation"
+                )
+        circuit._bind_native_kernel()
+        circuit._growth_examples = int(metadata["growth_examples"])
+        circuit._local_updates = int(metadata["local_updates"])
+        circuit._learning_frozen = True
+        return circuit
+
+    @staticmethod
+    def _validate_cell_synapse_payload(
+        metadata: Mapping[str, object],
+        arrays: Mapping[str, np.ndarray],
+    ) -> tuple[
+        RecurrentCircuitConfig,
+        _ReadoutStateLayout,
+        bool,
+        tuple[str, ...],
+    ]:
+        missing_metadata = tuple(
+            key for key in _CELL_SYNAPSE_METADATA_KEYS if key not in metadata
+        )
+        if missing_metadata:
+            raise ValueError(f"checkpoint metadata {missing_metadata[0]} is missing")
+        if metadata["allen_glif5_config_sha256"] != ALLEN_GLIF5_CONFIG_SHA256:
+            raise ValueError("checkpoint uses a different adaptive Allen human cell")
+        config_value = metadata["circuit_config"]
+        cell_parameters = metadata["cell_parameters"]
+        if not isinstance(config_value, dict) or not isinstance(cell_parameters, dict):
+            raise ValueError("checkpoint circuit configuration is malformed")
+        config = RecurrentCircuitConfig(**config_value)
+        layout = _READOUT_STATE_LAYOUTS[config.readout_learning_rule]
+        developmental_state = bool(metadata["developmental_state"])
+        array_names = tuple(
+            key for _, key, _ in _BASE_STATE_ARRAYS + layout.direct_arrays
+        ) + layout.payload_arrays
+        if developmental_state:
+            array_names += tuple(key for _, key, _ in _DEVELOPMENTAL_STATE_ARRAYS)
+        missing_arrays = tuple(key for key in array_names if key not in arrays)
+        if missing_arrays:
+            raise ValueError(f"checkpoint array {missing_arrays[0]} is missing")
+        if layout.sparse and not isinstance(metadata.get("sparse_readout"), dict):
+            raise ValueError("sparse checkpoint counters are missing")
+        return config, layout, developmental_state, array_names
 
     @property
     def learned_synapse_count(self) -> int:
@@ -525,11 +833,58 @@ class RecurrentCellCircuit:
         """Race output cells under synaptic current; the first spike is the token."""
         if self._observed_tokens < 1:
             raise RuntimeError("observe context before racing output cells")
-        if allowed_token_ids is not None:
-            return self._race_with_syntax_mask(allowed_token_ids)
-        current = self.output_current_pa()
+        return self._race_output_candidates(
+            self.output_current_pa(),
+            self._normalize_race_candidates(allowed_token_ids),
+        )
+
+    def race_output_current_pa(
+        self,
+        current_pa: Sequence[float] | np.ndarray,
+        allowed_token_ids: Sequence[int] | None = None,
+    ) -> RecurrentRace:
+        """Run the exact fitted-cell race for supplied output-synapse currents.
+
+        This non-mutating seam exposes the cell-dynamics half of ``race`` for
+        independent equivalence tests. Production completion obtains the same
+        currents from ``output_current_pa`` through ``race``.
+        """
+        current = np.asarray(current_pa, dtype=np.float64)
+        if current.shape != (self.token_cells,):
+            raise ValueError("output current must have one value per output cell")
+        if not np.all(np.isfinite(current)):
+            raise ValueError("output current must be finite")
+
+        return self._race_output_candidates(
+            current,
+            self._normalize_race_candidates(allowed_token_ids),
+        )
+
+    def _normalize_race_candidates(
+        self,
+        allowed_token_ids: Sequence[int] | None,
+    ) -> np.ndarray | None:
+        if allowed_token_ids is None:
+            return None
+        allowed_ids = tuple(int(token_id) for token_id in allowed_token_ids)
+        if not allowed_ids:
+            raise ValueError("syntax mask needs at least one allowed output cell")
+        if any(
+            token_id < 0 or token_id >= self.token_cells
+            for token_id in allowed_ids
+        ):
+            raise ValueError("allowed token outside output-cell population")
+        return np.unique(np.asarray(allowed_ids, dtype=np.intp))
+
+    def _race_output_candidates(
+        self,
+        current: np.ndarray,
+        candidates: np.ndarray | None,
+    ) -> RecurrentRace:
+        """Race all cells or one sorted candidate subset through one GLIF core."""
+        candidate_current = current if candidates is None else current[candidates]
         p = self.cell_parameters
-        winning_current = current[int(np.argmax(current))]
+        winning_current = candidate_current[int(np.argmax(candidate_current))]
         winner_voltage = self._output_unit_voltage * winning_current
         winner_threshold = self._output_unit_voltage_threshold * winning_current
         crossing_steps = np.flatnonzero(
@@ -537,9 +892,10 @@ class RecurrentCellCircuit:
         )
         if crossing_steps.size:
             step = int(crossing_steps[0])
-            voltage_at_crossing = self._output_unit_voltage[step] * current
+            voltage_at_crossing = self._output_unit_voltage[step] * candidate_current
             fired = voltage_at_crossing > (
-                p.threshold_inf_relative_mv + self._output_unit_voltage_threshold[step] * current
+                p.threshold_inf_relative_mv
+                + self._output_unit_voltage_threshold[step] * candidate_current
             )
             # Apply the fitted reset on the firing integration bin before
             # reporting its peak, exactly as stepwise simulation does.
@@ -552,80 +908,107 @@ class RecurrentCellCircuit:
                     peak_relative,
                     float(winner_voltage[step - 1]),
                 )
-            winner = int(np.flatnonzero(fired)[0])
+            fired_offsets = np.flatnonzero(fired)
+            winner_offset = int(fired_offsets[0])
+            winner = (
+                winner_offset
+                if candidates is None
+                else int(candidates[winner_offset])
+            )
             co_winners = int(np.count_nonzero(fired))
+            excluded = (
+                ()
+                if candidates is None
+                else self._excluded_before_candidate(
+                    current,
+                    candidates,
+                    winner_step=step,
+                    winner=winner,
+                )
+            )
             return RecurrentRace(
                 winner=winner,
                 spike_time_ms=(step + 1) * p.dt_ms,
                 peak_voltage_mv=max(p.rest_mv, p.rest_mv + peak_relative),
-                active_cells=self.token_cells,
+                active_cells=(
+                    self.token_cells if candidates is None else int(candidates.size)
+                ),
                 simulated_steps=step + 1,
                 simultaneous_spike_candidates=co_winners,
                 discarded_simultaneous_candidates=max(0, co_winners - 1),
+                excluded_token_ids=excluded,
+                output_current_sha256=(
+                    ""
+                    if candidates is None
+                    else sha256(np.ascontiguousarray(current).tobytes()).hexdigest()
+                ),
             )
         raise RuntimeError("output human cells did not spike during the race")
 
-    def _race_with_syntax_mask(
-        self, allowed_token_ids: Sequence[int]
-    ) -> RecurrentRace:
-        """Exclude invalid output cells without changing any allowed-cell current."""
-        allowed_ids = tuple(int(token_id) for token_id in allowed_token_ids)
-        if not allowed_ids:
-            raise ValueError("syntax mask needs at least one allowed output cell")
-        if any(token_id < 0 or token_id >= self.token_cells for token_id in allowed_ids):
-            raise ValueError("allowed token outside output-cell population")
+    def _excluded_before_candidate(
+        self,
+        current: np.ndarray,
+        candidates: np.ndarray,
+        *,
+        winner_step: int,
+        winner: int,
+    ) -> tuple[int, ...]:
+        """Return excluded cells encountered before the accepted deterministic tie."""
+        cell_ids = np.arange(self.token_cells, dtype=np.intp)
         allowed = np.zeros(self.token_cells, dtype=np.bool_)
-        allowed[np.asarray(allowed_ids, dtype=np.intp)] = True
+        allowed[candidates] = True
+        first_steps = self._compiled_first_spike_steps(current)
+        rejected = (~allowed) & (
+            (first_steps < winner_step)
+            | ((first_steps == winner_step) & (cell_ids < winner))
+        )
+        rejected_ids = cell_ids[rejected]
+        if not rejected_ids.size:
+            return ()
+        order = np.lexsort((rejected_ids, first_steps[rejected_ids]))
+        return tuple(int(token_id) for token_id in rejected_ids[order])
 
-        current = self.output_current_pa()
-        current_sha256 = sha256(np.ascontiguousarray(current).tobytes()).hexdigest()
-        p = self.cell_parameters
-        seen_crossing = np.zeros(self.token_cells, dtype=np.bool_)
-        rejected: list[int] = []
-        peak_relative = 0.0
-        for step, (unit_voltage, unit_threshold) in enumerate(
-            zip(
-                self._output_unit_voltage,
-                self._output_unit_voltage_threshold,
-                strict=True,
+    def _compiled_first_spike_steps(self, current: np.ndarray) -> np.ndarray:
+        """Vectorize exact first-spike bins without a steps-by-cells matrix."""
+        step_count = int(self._output_unit_spike_gain.size)
+        result = np.full(current.shape, step_count, dtype=np.intp)
+        positive = current > 0.0
+        if not np.any(positive):
+            return result
+        positive_current = current[positive]
+        target_gain = self.cell_parameters.threshold_inf_relative_mv / positive_current
+        guesses = np.searchsorted(
+            self._output_unit_spike_gain,
+            target_gain,
+            side="right",
+        ).astype(np.intp, copy=False)
+
+        # Division can round at an exact threshold. Recheck the original GLIF
+        # inequality and adjust only boundary guesses, preserving race semantics.
+        while True:
+            in_range = guesses < step_count
+            needs_later = np.zeros(guesses.shape, dtype=np.bool_)
+            needs_later[in_range] = ~(
+                self._output_unit_spike_gain[guesses[in_range]]
+                * positive_current[in_range]
+                > self.cell_parameters.threshold_inf_relative_mv
             )
-        ):
-            voltage = unit_voltage * current
-            crossing = voltage > (p.threshold_inf_relative_mv + unit_threshold * current)
-            new_crossing = crossing & ~seen_crossing
-            allowed_crossing = new_crossing & allowed
-            if np.any(allowed_crossing):
-                winner = int(np.flatnonzero(allowed_crossing)[0])
-                rejected.extend(
-                    int(token_id)
-                    for token_id in np.flatnonzero(new_crossing & ~allowed)
-                    if token_id < winner
-                )
-                allowed_voltage = voltage[allowed].copy()
-                fired_allowed = allowed_crossing[allowed]
-                allowed_voltage[fired_allowed] = (
-                    p.voltage_reset_scale * allowed_voltage[fired_allowed]
-                    + p.voltage_reset_offset_mv
-                )
-                peak_relative = max(peak_relative, float(np.max(allowed_voltage)))
-                co_winners = int(np.count_nonzero(allowed_crossing))
-                return RecurrentRace(
-                    winner=winner,
-                    spike_time_ms=(step + 1) * p.dt_ms,
-                    peak_voltage_mv=max(p.rest_mv, p.rest_mv + peak_relative),
-                    active_cells=int(np.count_nonzero(allowed)),
-                    simulated_steps=step + 1,
-                    simultaneous_spike_candidates=co_winners,
-                    discarded_simultaneous_candidates=max(0, co_winners - 1),
-                    excluded_token_ids=tuple(rejected),
-                    output_current_sha256=current_sha256,
-                )
-            rejected.extend(
-                int(token_id) for token_id in np.flatnonzero(new_crossing & ~allowed)
+            if not np.any(needs_later):
+                break
+            guesses[needs_later] += 1
+        while True:
+            has_previous = guesses > 0
+            previous_crosses = np.zeros(guesses.shape, dtype=np.bool_)
+            previous_crosses[has_previous] = (
+                self._output_unit_spike_gain[guesses[has_previous] - 1]
+                * positive_current[has_previous]
+                > self.cell_parameters.threshold_inf_relative_mv
             )
-            seen_crossing |= new_crossing
-            peak_relative = max(peak_relative, float(np.max(voltage[allowed])))
-        raise RuntimeError("allowed output human cells did not spike during the race")
+            if not np.any(previous_crosses):
+                break
+            guesses[previous_crosses] -= 1
+        result[positive] = guesses
+        return result
 
     def predict_next(self, context: Sequence[int]) -> RecurrentRace:
         """Replay a context through cell state and race output token cells."""

@@ -156,7 +156,8 @@
   "dev_family_commitment": "unseen-generic-primitive-composition-v1",
   "anti_overfit": {
     "protocol_and_implementation_commit_before_dev": true,
-    "public_dev_runs": 1,
+    "public_dev_run_budget": 1,
+    "public_dev_runs_completed": 0,
     "configuration_changes_after_dev": false,
     "all_cases_reported": true,
     "syntax_validity_and_semantic_pass_reported_separately": true,

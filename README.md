@@ -169,4 +169,5 @@ evaluation seed, bundle, or score exists. See
 `docs/research/cell-program-decoding.md` for the proposed typed direct
 cell-to-program decoder. The implemented scalar Layer-0 plumbing slice is
 documented separately in `docs/cell-program-layer0.md`; its public composition
-probe remains unopened and it is not the later typed Simple-SWE DSL.
+definitions were committed and read but have never been executed or scored,
+and it is not the later typed Simple-SWE DSL.

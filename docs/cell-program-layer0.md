@@ -47,9 +47,9 @@ No family-specific operation macro belongs in that primitive set.
   cell-race continuation.
 - `Layer0ProgramCompiler.compile(tokens, signature)` translates exactly one
   complete emitted AST.
-- `RecurrentCellSynapseState` captures, hashes, saves, restores, and validates
-  persistent circuit state across ridge, dense three-factor, sparse
-  three-factor, and developmental anatomy.
+- `RecurrentCellCircuit` owns capture, hashing, saving, restoration, and
+  validation of its persistent circuit state. Exact Layer-0 continuation is
+  tested across ridge, dense three-factor, and sparse three-factor readouts.
 
 The frozen public plumbing protocol pins the ridge learning rule; the module
 does not. A separate unit smoke grows and completes through the existing sparse
@@ -76,10 +76,12 @@ Checkpoint round-trip tests require the exact same continuation and race audit.
 
 [`cell_program_layer0_protocol_v1.json`](../benchmarks/cell_program_layer0_protocol_v1.json)
 freezes the vocabulary, grammar, generic primitives, ridge configuration,
-eight public synthetic training fixtures, and a three-case public composition
-probe. The composition probe is committed but remains unopened. No canonical
-seed is reserved, and no reveal, private task, hidden test, existing evaluation
-artifact, or external model data is used by this slice.
+eight public synthetic training fixtures, and three public composition
+definitions. Those definitions were authored and read during protocol
+validation, but have never been executed or scored. The protocol records a
+one-run public-development budget and zero completed runs separately. No
+canonical seed is reserved, and no reveal, private task, hidden test, existing
+evaluation artifact, or external model data is used by this slice.
 
 The unit/capability smoke is public and synthetic:
 
