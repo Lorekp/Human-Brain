@@ -119,15 +119,16 @@ At each program position:
 1. the cell reservoir and learned sparse contacts produce currents;
 2. the fitted output cells race;
 3. the grammar checks whether the winning token is valid;
-4. if invalid, fixed syntax inhibition suppresses that token for the same
+4. if invalid, the external fixed syntax mask excludes that token for the same
    position and the remaining output cells continue the race; and
 5. the accepted token updates the frozen arity/type stack.
 
 For the first engineering implementation, the grammar stack may be ordinary
 deterministic decoder state, provided it only masks invalid tokens and never
-changes the relative current of valid tokens. A stricter later variant can
-represent grammar states with fixed syntax-cell assemblies. Both variants must
-report how many candidate winners were rejected.
+changes the relative current of valid tokens. This external mask is not called
+biological inhibition because it does not simulate inhibitory cells. A stricter
+later variant can represent grammar states with fixed syntax-cell assemblies.
+Both variants must report how many candidate winners were rejected.
 
 There is no beam search, sampling rerun, program enumeration, compiler error
 repair, or hidden-test feedback.

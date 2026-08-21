@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from hashlib import sha256
 
 import numpy as np
 
@@ -112,6 +113,8 @@ class RecurrentRace:
     simulated_steps: int
     simultaneous_spike_candidates: int = 1
     discarded_simultaneous_candidates: int = 0
+    excluded_token_ids: tuple[int, ...] = ()
+    output_current_sha256: str = ""
 
 
 class RecurrentCellCircuit:
@@ -516,10 +519,14 @@ class RecurrentCellCircuit:
             + self._readout_synapses_pa @ self._eligibility
         )
 
-    def race(self) -> RecurrentRace:
+    def race(
+        self, allowed_token_ids: Sequence[int] | None = None
+    ) -> RecurrentRace:
         """Race output cells under synaptic current; the first spike is the token."""
         if self._observed_tokens < 1:
             raise RuntimeError("observe context before racing output cells")
+        if allowed_token_ids is not None:
+            return self._race_with_syntax_mask(allowed_token_ids)
         current = self.output_current_pa()
         p = self.cell_parameters
         winning_current = current[int(np.argmax(current))]
@@ -557,6 +564,68 @@ class RecurrentCellCircuit:
                 discarded_simultaneous_candidates=max(0, co_winners - 1),
             )
         raise RuntimeError("output human cells did not spike during the race")
+
+    def _race_with_syntax_mask(
+        self, allowed_token_ids: Sequence[int]
+    ) -> RecurrentRace:
+        """Exclude invalid output cells without changing any allowed-cell current."""
+        allowed_ids = tuple(int(token_id) for token_id in allowed_token_ids)
+        if not allowed_ids:
+            raise ValueError("syntax mask needs at least one allowed output cell")
+        if any(token_id < 0 or token_id >= self.token_cells for token_id in allowed_ids):
+            raise ValueError("allowed token outside output-cell population")
+        allowed = np.zeros(self.token_cells, dtype=np.bool_)
+        allowed[np.asarray(allowed_ids, dtype=np.intp)] = True
+
+        current = self.output_current_pa()
+        current_sha256 = sha256(np.ascontiguousarray(current).tobytes()).hexdigest()
+        p = self.cell_parameters
+        seen_crossing = np.zeros(self.token_cells, dtype=np.bool_)
+        rejected: list[int] = []
+        peak_relative = 0.0
+        for step, (unit_voltage, unit_threshold) in enumerate(
+            zip(
+                self._output_unit_voltage,
+                self._output_unit_voltage_threshold,
+                strict=True,
+            )
+        ):
+            voltage = unit_voltage * current
+            crossing = voltage > (p.threshold_inf_relative_mv + unit_threshold * current)
+            new_crossing = crossing & ~seen_crossing
+            allowed_crossing = new_crossing & allowed
+            if np.any(allowed_crossing):
+                winner = int(np.flatnonzero(allowed_crossing)[0])
+                rejected.extend(
+                    int(token_id)
+                    for token_id in np.flatnonzero(new_crossing & ~allowed)
+                    if token_id < winner
+                )
+                allowed_voltage = voltage[allowed].copy()
+                fired_allowed = allowed_crossing[allowed]
+                allowed_voltage[fired_allowed] = (
+                    p.voltage_reset_scale * allowed_voltage[fired_allowed]
+                    + p.voltage_reset_offset_mv
+                )
+                peak_relative = max(peak_relative, float(np.max(allowed_voltage)))
+                co_winners = int(np.count_nonzero(allowed_crossing))
+                return RecurrentRace(
+                    winner=winner,
+                    spike_time_ms=(step + 1) * p.dt_ms,
+                    peak_voltage_mv=max(p.rest_mv, p.rest_mv + peak_relative),
+                    active_cells=int(np.count_nonzero(allowed)),
+                    simulated_steps=step + 1,
+                    simultaneous_spike_candidates=co_winners,
+                    discarded_simultaneous_candidates=max(0, co_winners - 1),
+                    excluded_token_ids=tuple(rejected),
+                    output_current_sha256=current_sha256,
+                )
+            rejected.extend(
+                int(token_id) for token_id in np.flatnonzero(new_crossing & ~allowed)
+            )
+            seen_crossing |= new_crossing
+            peak_relative = max(peak_relative, float(np.max(voltage[allowed])))
+        raise RuntimeError("allowed output human cells did not spike during the race")
 
     def predict_next(self, context: Sequence[int]) -> RecurrentRace:
         """Replay a context through cell state and race output token cells."""

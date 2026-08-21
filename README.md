@@ -166,5 +166,7 @@ stop, sealed production runner, bounded hidden-test executor, and atomic pass@1
 ledger are implemented but deliberately unopened; no canonical freeze,
 evaluation seed, bundle, or score exists. See
 `docs/simple-swe-curriculum.md` for the exact split and claim boundary, and
-`docs/research/cell-program-decoding.md` for the proposed direct
-cell-to-program decoder.
+`docs/research/cell-program-decoding.md` for the proposed typed direct
+cell-to-program decoder. The implemented scalar Layer-0 plumbing slice is
+documented separately in `docs/cell-program-layer0.md`; its public composition
+probe remains unopened and it is not the later typed Simple-SWE DSL.
