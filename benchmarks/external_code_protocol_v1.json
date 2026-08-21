@@ -1,0 +1,22 @@
+{
+  "version": "external-code-v1",
+  "registered_at": "2026-08-21",
+  "purpose": "One-shot domain-shift test. Do not tune the cell model or settings on these results.",
+  "training_corpus": "DeepSim src/deepsim training buckets from code-language-v4",
+  "external_corpus": "Python 3.11 standard library source",
+  "external_files": [
+    "argparse.py",
+    "email/parser.py",
+    "json/decoder.py",
+    "pathlib.py",
+    "urllib/parse.py"
+  ],
+  "max_training_characters_per_file": 4096,
+  "max_predictions_per_file": 1500,
+  "model": {
+    "max_order": 12,
+    "max_phrases": 0,
+    "random_seed": 7
+  },
+  "gate": "cell > bigram, cell >= 95% of same-order backoff and Witten-Bell, every file cell > unigram"
+}

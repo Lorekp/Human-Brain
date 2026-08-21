@@ -1,0 +1,30 @@
+{
+  "version": "code-language-v4-validation-only",
+  "registered_at": "2026-08-21",
+  "supersedes": "code-language-v3 after its single frozen test access",
+  "purpose": "Measure output-equivalent cell-simulation speed work on validation only. The consumed v3 test split is locked.",
+  "test_locked": true,
+  "corpus": "DeepSim src/deepsim Python files excluding __init__.py",
+  "split": {
+    "algorithm": "sha256(relative POSIX path) first 64 bits modulo 10",
+    "bucket_count": 10,
+    "train_buckets": [0, 1, 2, 3, 4, 5, 6],
+    "validation_buckets": [7, 8],
+    "test_buckets": [9]
+  },
+  "max_training_characters_per_file": 4096,
+  "max_predictions_per_file": 1500,
+  "model": {
+    "max_order": 12,
+    "max_phrases": 0,
+    "random_seed": 7
+  },
+  "baselines": [
+    "train-only unigram",
+    "train-only byte bigram with unigram backoff",
+    "train-only conventional longest-match byte n-gram with the cell model's maximum order",
+    "train-only interpolated Witten-Bell byte model with the cell model's maximum order"
+  ],
+  "gate": "cell > bigram, cell >= 95% of same-order backoff and Witten-Bell, every fold cell > unigram",
+  "allowed_change_scope": "forward-Euler execution kernel only; prediction and spike time must remain bit-for-bit equal"
+}

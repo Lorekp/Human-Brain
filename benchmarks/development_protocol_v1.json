@@ -1,0 +1,38 @@
+{
+  "version": "human-cell-development-v1",
+  "registered_at": "2026-08-21T00:00:00+02:00",
+  "status": "preregistered-before-first-run",
+  "selection_partition": "validation from code_language_protocol_v4.json",
+  "test_partition_locked": true,
+  "model": {
+    "cell_type": "Allen human GLIF5",
+    "active_reservoir_cells": 96,
+    "training_characters": 12000,
+    "random_seeds": [17, 29, 43],
+    "recurrent_topology": "uniform_no_self"
+  },
+  "developmental_ablation": {
+    "conditions": [
+      "unpruned",
+      "magnitude_prune_50",
+      "random_prune_50",
+      "magnitude_prune_50_homeostatic",
+      "random_prune_50_homeostatic"
+    ],
+    "pruning_fraction": 0.5,
+    "pruning_scope": "weakest learned readout synapses within each output cell",
+    "homeostasis": "after pruning, scale each output cell's surviving learned synapses back to its pre-pruning total absolute synaptic strength"
+  },
+  "evaluation": {
+    "teacher_forced_predictions_per_validation_file": 128,
+    "generation_prompt_characters": 256,
+    "generation_target_characters": 64,
+    "adaptation_on_validation": false
+  },
+  "success_criteria": {
+    "primary": "magnitude_prune_50_homeostatic has higher median free-running byte accuracy than unpruned while teacher-forced median accuracy is no more than 0.01 lower",
+    "selection_effect": "magnitude pruning exceeds the matched random-pruning condition",
+    "homeostasis_effect": "homeostatic magnitude pruning exceeds magnitude pruning without homeostasis",
+    "claim_limit": "this tests synaptic overgrowth-selection-homeostasis, not neurogenesis or a complete human developmental program"
+  }
+}

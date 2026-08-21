@@ -1,0 +1,48 @@
+model:
+  outputs:
+    - role: assistant
+      content: "[THOUGHT]\nI will inspect L031's implementation and its user-facing description."
+      extra:
+        cost: 0.0
+        actions:
+          - command: "sed -n '1,240p' src/sqlfluff/rules/L031.py"
+    - role: assistant
+      content: "[THOUGHT]\nThe rule intentionally covers aliases in both FROM and JOIN clauses, but its violation text only mentions joins. I will update that source description without changing behavior."
+      extra:
+        cost: 0.0
+        actions:
+          - command: >-
+              python -c 'from pathlib import Path; p=Path("src/sqlfluff/rules/L031.py"); s=p.read_text(); old="description=\"Avoid using aliases in join condition\""; new="description=\"Avoid aliases in from clauses and join conditions.\""; assert s.count(old) == 1; p.write_text(s.replace(old, new, 1))'
+    - role: assistant
+      content: "[THOUGHT]\nI will verify a FROM-only alias still triggers L031 and now reports the accurate description."
+      extra:
+        cost: 0.0
+        actions:
+          - command: |
+              output=$(printf 'SELECT a.id FROM tbl AS a\n' | sqlfluff lint --rules L031 - 2>&1); status=$?
+              printf '%s\n' "$output"
+              test "$status" -eq 65 && printf '%s' "$output" | grep -Fq 'L031 | Avoid aliases in from clauses and join conditions.'
+    - role: assistant
+      content: "[THOUGHT]\nI will run the existing L031 rule tests to confirm behavior is unchanged."
+      extra:
+        cost: 0.0
+        actions:
+          - command: "pytest -q test/rules/std_test.py -k L031"
+    - role: assistant
+      content: "[THOUGHT]\nThe description and behavior are verified; I will create the required source-only patch."
+      extra:
+        cost: 0.0
+        actions:
+          - command: "git diff -- src/sqlfluff/rules/L031.py > patch.txt"
+    - role: assistant
+      content: "[THOUGHT]\nI will inspect the patch before submitting it."
+      extra:
+        cost: 0.0
+        actions:
+          - command: "cat patch.txt"
+    - role: assistant
+      content: "[THOUGHT]\nThe patch contains only the intended source description change; I will submit it now."
+      extra:
+        cost: 0.0
+        actions:
+          - command: "echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && cat patch.txt"

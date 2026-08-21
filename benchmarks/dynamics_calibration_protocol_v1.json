@@ -1,0 +1,31 @@
+{
+  "version": "human-cell-dynamics-calibration-v1",
+  "registered_at": "2026-08-21T00:00:00+02:00",
+  "status": "preregistered-before-first-run",
+  "selection_data": "training partition only",
+  "validation_partition_accessed": false,
+  "test_partition_locked": true,
+  "cell_count": 96,
+  "diagnostic_tokens": 512,
+  "random_seeds": [17, 29, 43],
+  "topology": "uniform_no_self",
+  "configurations": [
+    {"name": "v1_baseline", "input_fanout": 16, "token_interval_ms": 2.0, "input_pulse_ms": 1.2, "input_current_pa": 8000.0, "recurrent_current_pa": 650.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.2},
+    {"name": "lower_input", "input_fanout": 16, "token_interval_ms": 2.0, "input_pulse_ms": 1.2, "input_current_pa": 4000.0, "recurrent_current_pa": 650.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.2},
+    {"name": "low_input", "input_fanout": 16, "token_interval_ms": 2.0, "input_pulse_ms": 1.2, "input_current_pa": 2000.0, "recurrent_current_pa": 650.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.2},
+    {"name": "lower_recurrent", "input_fanout": 16, "token_interval_ms": 2.0, "input_pulse_ms": 1.2, "input_current_pa": 4000.0, "recurrent_current_pa": 325.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.2},
+    {"name": "slow_tokens", "input_fanout": 16, "token_interval_ms": 5.0, "input_pulse_ms": 1.5, "input_current_pa": 4000.0, "recurrent_current_pa": 325.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.2},
+    {"name": "slower_tokens", "input_fanout": 16, "token_interval_ms": 10.0, "input_pulse_ms": 2.0, "input_current_pa": 4000.0, "recurrent_current_pa": 325.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.2},
+    {"name": "sparse_afferent", "input_fanout": 8, "token_interval_ms": 5.0, "input_pulse_ms": 1.5, "input_current_pa": 4000.0, "recurrent_current_pa": 325.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.2},
+    {"name": "very_sparse_afferent", "input_fanout": 4, "token_interval_ms": 5.0, "input_pulse_ms": 1.5, "input_current_pa": 4000.0, "recurrent_current_pa": 325.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.2},
+    {"name": "stronger_inhibition", "input_fanout": 8, "token_interval_ms": 5.0, "input_pulse_ms": 1.5, "input_current_pa": 4000.0, "recurrent_current_pa": 325.0, "eligibility_tau_ms": 80.0, "inhibitory_fraction": 0.3},
+    {"name": "short_eligibility", "input_fanout": 8, "token_interval_ms": 5.0, "input_pulse_ms": 1.5, "input_current_pa": 4000.0, "recurrent_current_pa": 325.0, "eligibility_tau_ms": 40.0, "inhibitory_fraction": 0.2},
+    {"name": "long_eligibility", "input_fanout": 8, "token_interval_ms": 5.0, "input_pulse_ms": 1.5, "input_current_pa": 4000.0, "recurrent_current_pa": 325.0, "eligibility_tau_ms": 120.0, "inhibitory_fraction": 0.2}
+  ],
+  "success_criteria": {
+    "stable_firing": "median mean firing rate is greater than 1 Hz and at most 80 Hz per cell",
+    "independent_state": "median effective state rank exceeds v1_baseline",
+    "selection": "among configurations meeting stable_firing and independent_state, select the highest median effective state rank; break ties by lower mean absolute cell correlation",
+    "prediction_data_guard": "this screen uses training text and no validation prediction metric"
+  }
+}

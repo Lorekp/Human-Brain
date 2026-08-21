@@ -1,0 +1,4 @@
+model:
+  model_name: human-cell-dendritic
+  checkpoint: /mnt/c/Users/laure/Desktop/DeepSim/Human Brain/artifacts/swe_sqlfluff_1625_cells.npz
+  max_new_tokens: 512

@@ -1,0 +1,45 @@
+{
+  "version": "human-cell-dynamics-scaling-v2",
+  "registered_at": "2026-08-21T00:00:00+02:00",
+  "status": "preregistered-before-first-run",
+  "reason": "v1 preserved recurrent connection density and per-edge current simultaneously, causing expected recurrent input per cell to grow with cell count",
+  "selection_partition": "validation from code_language_protocol_v4.json",
+  "test_partition_locked": true,
+  "model": {
+    "cell_type": "Allen human GLIF5",
+    "topology": "uniform_no_self",
+    "random_seeds": [17, 29, 43],
+    "cell_data_pairs": [
+      {"active_cells": 24, "training_characters": 3000},
+      {"active_cells": 48, "training_characters": 6000},
+      {"active_cells": 96, "training_characters": 12000},
+      {"active_cells": 192, "training_characters": 24000},
+      {"active_cells": 384, "training_characters": 48000}
+    ],
+    "input_fanout_rule": "max(4, round(active_cells / 6))",
+    "readout_ridge_rule": "training_characters / 12000",
+    "dynamical_regimes": {
+      "fixed_degree": {
+        "recurrent_fanout_rule": "min(6, active_cells - 1)",
+        "recurrent_current_pa": 650.0
+      },
+      "density_current_normalized": {
+        "recurrent_fanout_rule": "max(2, round(active_cells / 16))",
+        "recurrent_current_rule": "650 * 6 / recurrent_fanout"
+      }
+    }
+  },
+  "evaluation": {
+    "teacher_forced_predictions_per_validation_file": 128,
+    "generation_prompt_characters": 256,
+    "generation_target_characters": 64,
+    "state_diagnostic_tokens": 256,
+    "adaptation_on_validation": false
+  },
+  "success_criteria": {
+    "useful_scaling": "within a dynamical regime, 384-cell median teacher-forced and free-running accuracy both exceed 24-cell medians and effective state rank increases",
+    "stable_dynamics": "median firing rate and mean absolute cell correlation do not grow monotonically into a saturated regime",
+    "architecture_dynamics_explanation": "a normalized regime improves the large-cell endpoint relative to v1's density-plus-fixed-edge-current regime",
+    "claim_limit": "paired growth of cells and data tests a measured engineering regime, not a biological or universal power law"
+  }
+}

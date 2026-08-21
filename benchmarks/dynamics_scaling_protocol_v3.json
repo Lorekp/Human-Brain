@@ -1,0 +1,47 @@
+{
+  "version": "human-cell-calibrated-scaling-v3",
+  "registered_at": "2026-08-21T00:00:00+02:00",
+  "status": "preregistered-before-first-validation-run",
+  "selection_basis": "short_eligibility selected by dynamics_calibration_protocol_v1 using training text only",
+  "selection_artifact_sha256": "0730CAF0B964EF60DBC7F8393F1878FBA3A3E22352A4D974108EDC0A6FFEA091",
+  "selection_partition": "validation from code_language_protocol_v4.json",
+  "test_partition_locked": true,
+  "model": {
+    "cell_type": "Allen human GLIF5",
+    "topology": "uniform_no_self",
+    "random_seeds": [17, 29, 43],
+    "cell_data_pairs": [
+      {"active_cells": 24, "training_characters": 3000},
+      {"active_cells": 48, "training_characters": 6000},
+      {"active_cells": 96, "training_characters": 12000},
+      {"active_cells": 192, "training_characters": 24000},
+      {"active_cells": 384, "training_characters": 48000}
+    ],
+    "dynamical_regimes": {
+      "calibrated_sparse": {
+        "input_fanout_rule": "max(4, round(active_cells / 12))",
+        "recurrent_fanout_rule": "min(6, active_cells - 1)",
+        "token_interval_ms": 5.0,
+        "input_pulse_ms": 1.5,
+        "input_current_pa": 4000.0,
+        "recurrent_current_pa": 325.0,
+        "eligibility_tau_ms": 40.0,
+        "inhibitory_fraction": 0.2,
+        "readout_ridge_rule": "training_characters / 12000"
+      }
+    }
+  },
+  "evaluation": {
+    "teacher_forced_predictions_per_validation_file": 128,
+    "generation_prompt_characters": 256,
+    "generation_target_characters": 64,
+    "state_diagnostic_tokens": 256,
+    "adaptation_on_validation": false
+  },
+  "success_criteria": {
+    "dynamics_transfer": "at 96 cells, median effective state rank exceeds the v2 fixed-degree median and firing remains at most 80 Hz",
+    "prediction_transfer": "at 96 cells, median teacher-forced or free-running validation accuracy exceeds v2 fixed-degree without the other metric falling by more than 0.01",
+    "useful_scaling": "384-cell teacher-forced and free-running medians both exceed 24-cell medians while effective state rank increases",
+    "claim_limit": "all selection came from train-only state dynamics; validation is used once to assess transfer and remains unsuitable as a final held-out claim"
+  }
+}

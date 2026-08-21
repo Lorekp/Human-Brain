@@ -1,0 +1,47 @@
+{
+  "version": "human-cell-scaling-v1",
+  "registered_at": "2026-08-21T00:00:00+02:00",
+  "status": "preregistered-before-first-run",
+  "selection_partition": "validation from code_language_protocol_v4.json",
+  "test_partition_locked": true,
+  "model": {
+    "cell_type": "Allen human GLIF5",
+    "tokenization": "bytes",
+    "growth_epochs": 1,
+    "active_reservoir_cells": [24, 48, 96, 192],
+    "training_characters": [3000, 6000, 12000, 24000],
+    "random_seeds": [17, 29, 43],
+    "input_fanout_rule": "max(4, round(active_cells / 6))",
+    "recurrent_fanout_rule": "max(2, round(active_cells / 16))",
+    "connection_density_scales_with_active_cells": true
+  },
+  "dormant_cell_control": {
+    "allocated_reservoir_cells": [48, 96, 192],
+    "active_reservoir_cells": 24,
+    "training_characters": 24000,
+    "random_seeds": [17, 29, 43]
+  },
+  "evaluation": {
+    "teacher_forced_predictions_per_validation_file": 128,
+    "generation_prompt_characters": 256,
+    "generation_target_characters": 64,
+    "adaptation_on_validation": false
+  },
+  "success_criteria": {
+    "exploratory_cell_scaling": "at each data budget, median validation accuracy at 192 active cells exceeds 24 active cells and at least two of three adjacent median changes are positive",
+    "dormant_negative_control": "allocating dormant cells does not reproduce the fully active 192-cell improvement",
+    "claim_limit": "four sizes can show an improvement trend over the measured range, not establish a universal power law"
+  },
+  "reporting": {
+    "report_every_seed_and_size": true,
+    "report_failures": true,
+    "metrics": [
+      "teacher_forced_accuracy",
+      "free_running_byte_accuracy",
+      "mean_exact_prefix_bytes",
+      "training_wall_seconds",
+      "evaluation_wall_seconds",
+      "learned_synapses"
+    ]
+  }
+}

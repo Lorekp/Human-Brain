@@ -1,0 +1,15 @@
+model:
+  model_name: "openai/gemma-4-12B-it-qat-q4_0"
+  cost_tracking: "ignore_errors"
+  model_kwargs:
+    api_base: "http://127.0.0.1:8081/v1"
+    api_key: "none"
+    custom_llm_provider: "openai"
+    drop_params: true
+    parallel_tool_calls: true
+    max_tokens: 4096
+    temperature: 1.0
+    top_p: 0.95
+    seed: 42
+    extra_body:
+      top_k: 64

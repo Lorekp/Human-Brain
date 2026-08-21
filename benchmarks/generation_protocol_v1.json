@@ -1,0 +1,15 @@
+{
+  "version": "autoregressive-generation-v1-validation-only",
+  "registered_at": "2026-08-21",
+  "purpose": "Development diagnostic for free-running continuation. The code-language test buckets remain locked.",
+  "split": "code-language-v4 validation buckets only",
+  "prompt_characters": 512,
+  "target_characters": 256,
+  "max_training_characters_per_file": 4096,
+  "model": {
+    "max_order": 12,
+    "max_phrases": 0,
+    "random_seed": 7
+  },
+  "gate": "free-running aligned byte accuracy > train-only unigram continuation"
+}
