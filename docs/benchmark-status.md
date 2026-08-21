@@ -245,12 +245,14 @@ execution is paused while the simple software-task curriculum is built. See
 ## Unopened simple software-task gate
 
 The family-disjoint v1 protocol and fail-closed local harness are implemented.
-They freeze the cell checkpoint/source/decoder, create evaluation instances
-only after freeze, seal all 30 cell completions before hidden tests execute,
-and report pass@1 plus the full failure taxonomy. No canonical evaluation seed,
-private bundle, completion set, or score has been created. This is an internal
-development gate because evaluation-family oracle logic is committed; it is not
-a contamination-clean external benchmark. See
+They freeze the cell checkpoint/source/decoder, runtime, native artifact, and
+sandbox worker; reserve and externally anchor one seed before task generation;
+reload/regenerate the canonical bundle; seal all 30 cell completions before
+hidden tests execute; and report pass@1 plus the full failure taxonomy. No
+canonical freeze, evaluation seed, private bundle, completion set, or score has
+been created. Local artifacts are trusted-operator evidence rather than remote
+attestation. This is an internal development gate because evaluation-family
+oracle logic is committed; it is not a contamination-clean external benchmark. See
 `docs/simple-swe-curriculum.md` for the task split and claim boundary.
 
 ## Reproducibility artifacts
@@ -300,7 +302,7 @@ not a platform-specific checkout's newline representation.
 | `benchmarks/development_protocol_v2.json` | `5e3a5131d2ed60877aa19bc8e364f3b32322af74fbe689f061e20eab69f7885a` |
 | `artifacts/large_scale_capability_validation_v1.json` | `633a3cf3d0ae46f7d7e8c8e5ba0a6cd617566aac66844069499c20a102f0c71d` |
 | `benchmarks/large_scale_capability_protocol_v1.json` | `004caa095e796f8671a5989148b881058c0cdc16334101f31de42784fdd84535` |
-| `benchmarks/simple_swe_protocol_v1.json` | `64301e9e597d5deee541fb3de9a498329b0eb68e2ff34c7dcc878db8f3a69acc` |
+| `benchmarks/simple_swe_protocol_v1.json` | `f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2` |
 | `artifacts/swe-dev-gemma/sqlfluff__sqlfluff-1625/sqlfluff__sqlfluff-1625.traj.json` | `d8d1007bc618f5c28794c21327834018a7187f6822b40c775afe8375d7c9b0a3` |
 | Gemma 4 12B QAT Q4_0 GGUF | `93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b` |
 

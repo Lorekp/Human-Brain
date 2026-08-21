@@ -420,6 +420,37 @@ def _anchor_payload(
     }
 
 
+def _validate_external_anchor_body(
+    body: dict[str, Any], expected_payload_sha256: str
+) -> None:
+    expected_fields = {
+        "anchor_payload_sha256",
+        "public_uri",
+        "receipt_sha256",
+        "operator_supplied_receipt",
+        "harness_verified_external_publication",
+    }
+    public_uri = body.get("public_uri")
+    receipt_sha256 = body.get("receipt_sha256")
+    if set(body) != expected_fields:
+        raise FreezeIntegrityError("external anchor fields differ")
+    if body.get("anchor_payload_sha256") != expected_payload_sha256:
+        raise FreezeIntegrityError("external anchor does not commit this eval seed")
+    if not isinstance(public_uri, str) or not public_uri.startswith("https://"):
+        raise FreezeIntegrityError("external anchor lacks a public HTTPS URI")
+    if (
+        not isinstance(receipt_sha256, str)
+        or len(receipt_sha256) != 64
+        or any(char not in "0123456789abcdef" for char in receipt_sha256)
+    ):
+        raise FreezeIntegrityError("external anchor receipt is not lowercase SHA-256")
+    if (
+        body.get("operator_supplied_receipt") is not True
+        or body.get("harness_verified_external_publication") is not False
+    ):
+        raise FreezeIntegrityError("external anchor trust boundary differs")
+
+
 def reserve_evaluation_seed(
     *,
     manifest_path: str | Path,
@@ -508,6 +539,7 @@ def record_external_anchor(
         events = ledger.verify()
     if len(events) < 3 or events[2].kind != "external-anchor-recorded":
         raise FreezeIntegrityError("artifact ledger lacks an external anchor")
+    _validate_external_anchor_body(events[2].body, reservation.anchor_payload_sha256)
     if events[2].body != body:
         raise FreezeIntegrityError("external anchor differs from existing receipt")
     return events[2]
@@ -560,8 +592,7 @@ def reveal_evaluation(
             manifest_sha256, protocol.sha256, run_start, seed_event, seed
         )
     )
-    if anchor.body.get("anchor_payload_sha256") != expected_anchor_sha256:
-        raise FreezeIntegrityError("external anchor does not commit this eval seed")
+    _validate_external_anchor_body(anchor.body, expected_anchor_sha256)
     if paths.bundle_path.exists():
         bundle = load_evaluation_bundle(paths.bundle_path)
     else:

@@ -186,6 +186,27 @@ def test_reveal_stops_until_the_seed_commitment_is_externally_anchored(
     assert not reservation.paths.bundle_path.exists()
 
 
+def test_reveal_rejects_a_direct_anchor_without_a_public_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source, checkpoint, manifest = _frozen_fixture(tmp_path, monkeypatch)
+    arguments = _arguments(source, checkpoint, manifest)
+    reservation = reveal.reserve_evaluation_seed(**arguments)
+    ledger = ArtifactLedger(
+        reservation.paths.ledger_root,
+        protocol_sha256=load_protocol(PROTOCOL).sha256,
+    )
+    ledger.append(
+        "external-anchor-recorded",
+        {"anchor_payload_sha256": reservation.anchor_payload_sha256},
+    )
+
+    with pytest.raises(FreezeIntegrityError, match="anchor fields"):
+        reveal.reveal_evaluation(**arguments)
+
+    assert not reservation.paths.bundle_path.exists()
+
+
 def test_canonical_reveal_api_exposes_no_alternate_bundle_or_ledger_path() -> None:
     reserve_fields = set(inspect.signature(reveal.reserve_evaluation_seed).parameters)
     reveal_fields = set(inspect.signature(reveal.reveal_evaluation).parameters)

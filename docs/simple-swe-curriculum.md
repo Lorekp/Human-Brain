@@ -16,7 +16,7 @@ or general software-engineering performance.
 
 The canonical protocol is
 `benchmarks/simple_swe_protocol_v1.json`, SHA-256
-`64301e9e597d5deee541fb3de9a498329b0eb68e2ff34c7dcc878db8f3a69acc`.
+`f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2`.
 
 ## Established evaluation conventions
 
@@ -97,26 +97,40 @@ and sparse-three-factor v3 checkpoint arrays use the same check.
 ## Freeze, reveal, and execution order
 
 1. Freeze one checkpoint, tokenizer, model configuration, completion adapter,
-   compiler, protocol, Git HEAD, and Git tree. All installed Human Brain
-   execution modules must resolve under that source root and be Git-tracked.
-2. Revalidate a clean source tree and every hash immediately before reveal.
-3. Append the public `run-start` commitment before requesting entropy.
-4. Generate the private evaluation seed and all tasks once, atomically outside
-   the model-visible source tree. Regenerate every task from that seed and
-   require canonical equality before publishing its task/test commitments.
-5. Restore the checkpoint and synthesize exactly one completion for every task.
+   compiler factory, protocol, exact Python executable and `-I -S -B` flags,
+   sandbox worker, native simulation artifact (when used), Git HEAD, and Git
+   tree. All installed Human Brain execution modules must resolve under that
+   source root and be Git-tracked.
+2. Bind the manifest directory as the sole evidence root. Its canonical run
+   path is derived from the canonical manifest bytes; alternate bundle, ledger,
+   and run-root arguments are not exposed by the production APIs.
+3. Revalidate a clean source tree and every hash, then append the public
+   `run-start` commitment before requesting entropy.
+4. Generate and atomically reserve one private 256-bit seed. Append its public
+   hash commitment before generating any evaluation task, then stop.
+5. Publish the returned run-start/seed commitment through an external channel.
+   Only after an operator records a public HTTPS URI and receipt hash may the
+   harness continue. The harness validates that receipt record structurally but
+   does not itself contact or attest the external service.
+6. Generate all tasks once from the reserved seed. Reload the canonical private
+   bundle and regenerate every public/private field in frozen order before
+   publishing task/test commitments.
+7. Restore the checkpoint and synthesize exactly one completion for every task.
    Each completion is an atomic, hash-linked artifact. An interruption resumes
    in fixed order without resampling already committed tasks.
-6. Seal the complete source/token/audit set. Only after this seal may the
-   executor receive private cases. Thus no test outcome can alter a completion.
-7. Run every completion under the frozen Python 3.11 runtime and append all
+8. Seal the complete source/token/audit set. Revalidate the freeze and load one
+   hash-checked immutable worker snapshot. Only after this seal may the executor
+   receive private cases, so no test outcome can alter a completion.
+9. Run every completion under the pre-frozen Python 3.11 runtime and append all
    results before computing pass@1 and tier/taxonomy summaries.
 
 The public artifact ledger is canonical JSON, contiguous, append-only, and
-SHA-256 linked. The private bundle contains the seed and cases; the public
-ledger contains only their commitments. Atomic creation uses a flushed
+SHA-256 linked. The private reservation/bundle contain the seed and cases; the
+public ledger contains only commitments. Atomic creation uses a flushed
 temporary file plus a no-overwrite hard link, so partial files are not treated
-as results.
+as results. The production runner cannot accept an injected adapter, compiler,
+executor, runtime, worker, or in-memory bundle. A separate private test engine
+permanently labels fixture ledgers as dependency-injected and noncanonical.
 
 ## Sandbox and failure reporting
 
@@ -169,7 +183,7 @@ inference.
 
 ## Runtime estimate and remaining environment commitments
 
-Visible train/development generation is sub-second. The 57 focused protocol,
+Visible train/development generation is sub-second. The 75 focused protocol,
 freeze, adapter, reveal, sandbox, artifact, and runner tests complete in about
 18 seconds on the current workstation. These are harness tests, not capability
 evaluation.
@@ -182,11 +196,14 @@ after checkpoint loading and native compilation; reloading a very large
 checkpoint 30 times may dominate. No honest runtime is yet available for a
 100-billion-cell checkpoint.
 
-The runner probes the selected executable itself with isolated Python, enforces
+The freeze probes the selected executable itself with isolated Python, enforces
 the protocol's Python 3.11 major/minor, and records the executable SHA-256,
-implementation, and patch version before private tests execute. It does not
-hash the operating system, Python dependent DLLs, GPU driver, firmware,
-hardware, or prebuilt native cache.
+implementation, patch version, and exact launch flags before the seed exists.
+For a recurrent checkpoint it also records and rehashes the loaded native DLL
+or CUDA CUBIN plus the build source digest and architecture. The loaded cell
+model must report the same backend/device before synthesis. This does not attest
+the operating system, dependent DLLs, CUDA driver/runtime, firmware, hardware,
+or other system libraries.
 
 Git cleanliness includes tracked changes and ordinary untracked files, while
 Git-ignored files are outside the tree commitment. Known execution modules are
@@ -194,6 +211,14 @@ protected by the stronger containment-and-tracked-file check, but ignored data,
 compiler caches, environment variables, and system libraries remain reported
 environment limitations. Production evaluation should record the host and
 native build metadata alongside the ledger.
+
+The one-run guarantee is procedural, not remote attestation. Canonical local
+paths, no-overwrite writes, and an externally anchored seed commitment make
+accidental reruns and ordinary cherry-picking visible, but a trusted operator
+can delete local evidence or create another freeze manifest. The receipt API
+records an operator-supplied publication claim; it does not prove publication.
+Any headline use therefore requires the run-start/seed commitment to be
+published through an independently retained channel before task generation.
 
 ## Work allowed before reveal
 

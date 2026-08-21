@@ -135,6 +135,30 @@ def test_freeze_manifest_cannot_move_to_an_alternate_evidence_root(
         )
 
 
+def test_freeze_manifest_rejects_noncanonical_reformatting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _clean_repository(tmp_path, monkeypatch)
+    checkpoint = _checkpoint(tmp_path)
+    manifest_path = tmp_path / "freeze.json"
+    create_freeze_manifest(
+        protocol_path=PROTOCOL,
+        checkpoint_path=checkpoint,
+        source_root=source,
+        output_path=manifest_path,
+    )
+    payload = json.loads(manifest_path.read_bytes())
+    manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    with pytest.raises(FreezeIntegrityError, match="not canonical JSON"):
+        verify_freeze_manifest(
+            manifest_path=manifest_path,
+            protocol_path=PROTOCOL,
+            checkpoint_path=checkpoint,
+            source_root=source,
+        )
+
+
 def test_verify_freeze_rejects_sandbox_runtime_drift(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

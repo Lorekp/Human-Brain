@@ -174,8 +174,9 @@ checkpoint must emit one complete function for family-disjoint hidden coding
 tasks. A proposed typed prefix program language would let output cells choose
 semantic program tokens while a frozen deterministic grammar and compiler
 provide syntax-only plumbing—without search, retries, or hidden-test feedback.
-The raw-Python/compiled-DSL-agnostic completion seam, freeze/reveal state
-machine, sealed-completion runner, and pass@1 artifact chain are now
-implemented, but the evaluation seed remains unopened. The exact protocol is
+The raw-Python/compiled-DSL-agnostic completion seam,
+freeze/reserve/anchor/reveal state machine, sealed production runner, and
+pass@1 artifact chain are now implemented, but no canonical freeze or
+evaluation seed exists. The exact protocol is
 in `docs/simple-swe-curriculum.md`; the optional typed decoder design is in
 `docs/research/cell-program-decoding.md`. Neither is yet a capability result.

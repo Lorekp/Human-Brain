@@ -608,9 +608,14 @@ def create_freeze_manifest(
 
 def _load_manifest(path: str | Path) -> FreezeManifest:
     try:
-        value = json.loads(Path(path).read_text(encoding="utf-8"))
+        raw = Path(path).read_bytes()
+        value = json.loads(raw)
+        if raw != canonical_json_bytes(value):
+            raise FreezeIntegrityError("freeze manifest is not canonical JSON")
         value["sandbox_python_flags"] = tuple(value["sandbox_python_flags"])
         manifest = FreezeManifest(**value)
+    except FreezeIntegrityError:
+        raise
     except (KeyError, OSError, TypeError, json.JSONDecodeError) as error:
         raise FreezeIntegrityError("freeze manifest is invalid") from error
     if manifest.schema != SCHEMA:
