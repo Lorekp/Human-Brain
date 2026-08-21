@@ -294,6 +294,8 @@ class NativeGlifKernel:
 class NativeRecurrentKernel:
     """One-call native token simulation over sparse recurrent connectivity."""
 
+    backend = "cpu"
+
     def __init__(
         self,
         population: AdaptiveGlifPopulation,
@@ -366,6 +368,13 @@ class NativeRecurrentKernel:
         self._eligibility = eligibility
         self._step_current_pa = step_current_pa
         self._spike_indices = population._native_kernel.spike_indices
+
+    @property
+    def device_name(self) -> str:
+        return platform.processor() or platform.machine()
+
+    def synchronize_from_host(self) -> None:
+        """CPU arrays are the live native state, so no synchronization is needed."""
 
     def observe(self, token_id: int) -> int:
         population = self._population
@@ -470,3 +479,15 @@ class NativeThreeFactorLearner:
         if winner > self._output_cells:
             raise RuntimeError("native local learner rejected its array dimensions")
         return winner
+
+
+def recurrent_kernel(*args: object, **kwargs: object) -> NativeRecurrentKernel:
+    """Create the fastest exact backend suitable for this circuit size."""
+    population = args[0] if args else kwargs.get("population")
+    if population is None:
+        raise TypeError("recurrent kernel requires a cell population")
+    from humanbrain.cuda import CudaRecurrentKernel, should_use_cuda
+
+    if should_use_cuda(population.cell_count):
+        return CudaRecurrentKernel(*args, **kwargs)  # type: ignore[return-value]
+    return NativeRecurrentKernel(*args, **kwargs)
