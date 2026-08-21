@@ -14,6 +14,7 @@ RECURRENT_TOPOLOGIES = frozenset(
         "sheet_2d",
         "layered_sheet",
         "volume_3d",
+        "hypercube_4d",
         "mixed_membership",
     }
 )
@@ -38,6 +39,8 @@ def topology_coordinates(cell_count: int, topology: str) -> np.ndarray:
         return _grid_coordinates(cell_count, 2)
     if topology == "volume_3d":
         return _grid_coordinates(cell_count, 3)
+    if topology == "hypercube_4d":
+        return _grid_coordinates(cell_count, 4)
     if topology == "layered_sheet":
         layers = 6
         surface_cells = ceil(cell_count / layers)
@@ -124,7 +127,11 @@ def _local_spatial_candidate(
             if candidate < cell_count:
                 return candidate
 
-    dimensions = 2 if topology == "sheet_2d" else 3
+    dimensions = {
+        "sheet_2d": 2,
+        "volume_3d": 3,
+        "hypercube_4d": 4,
+    }[topology]
     side = ceil(cell_count ** (1.0 / dimensions))
     coordinates = _grid_index_coordinates(source, side, dimensions)
     while True:
@@ -163,7 +170,11 @@ def _is_long_range(
             for left, right in zip(source_xy, candidate_xy, strict=True)
         )
         return squared_distance >= max(2, side // 4) ** 2
-    dimensions = 2 if topology == "sheet_2d" else 3
+    dimensions = {
+        "sheet_2d": 2,
+        "volume_3d": 3,
+        "hypercube_4d": 4,
+    }[topology]
     side = ceil(cell_count ** (1.0 / dimensions))
     source_coordinates = _grid_index_coordinates(source, side, dimensions)
     candidate_coordinates = _grid_index_coordinates(candidate, side, dimensions)

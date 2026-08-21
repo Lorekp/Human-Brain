@@ -1,0 +1,255 @@
+{
+  "version": "human-cell-large-scale-capability-v1",
+  "registered_at": "2026-08-21T00:00:00+02:00",
+  "status": "preregistered-before-first-validation-run",
+  "objective": "Test cell-count scaling separately from data starvation, then test fixed-budget grouping and spatial organization at genuinely larger active-cell counts.",
+  "claim_boundary": "This is a validation-only recurrent-language capability experiment. It is not a SWE-bench result, not a held-out test claim, and not evidence that the abstract 4D lattice is anatomical.",
+  "execution": {
+    "expected_runs": 148,
+    "resumable": true,
+    "result_dependent_stage_selection": false,
+    "device_policy": "auto",
+    "required_topology_builder": "structured-topology-construction-v3 O(N * fanout) or faster",
+    "stages": [
+      {
+        "name": "uniform_fixed_data",
+        "data_track": "fixed_1024",
+        "topologies": ["uniform_no_self"],
+        "seeds": [17, 29, 43, 59, 71]
+      },
+      {
+        "name": "uniform_sqrt_data",
+        "data_track": "sqrt_scaled",
+        "topologies": ["uniform_no_self"],
+        "seeds": [17, 29, 43, 59, 71]
+      },
+      {
+        "name": "fixed_data_groups",
+        "data_track": "fixed_1024",
+        "topologies": [
+          "single_scale_groups",
+          "nested_groups",
+          "mixed_membership"
+        ],
+        "seeds": [17, 29, 43]
+      },
+      {
+        "name": "fixed_data_geometry",
+        "data_track": "fixed_1024",
+        "topologies": [
+          "random",
+          "ring_1d",
+          "sheet_2d",
+          "layered_sheet",
+          "volume_3d",
+          "hypercube_4d"
+        ],
+        "seeds": [17, 29, 43]
+      }
+    ],
+    "stage_order_is_fixed": true,
+    "incomplete_stage_policy": "Partial artifacts are resumable but support no primary or topology claim. Every frozen stage must eventually run regardless of earlier results."
+  },
+  "data": {
+    "partition": "validation_only_no_test_partition",
+    "test_partition_defined": false,
+    "test_partition_accessed": false,
+    "adaptation_on_validation": false,
+    "training": {
+      "files": [
+        {
+          "path": "src/humanbrain/cells.py",
+          "canonical_lf_bytes": 19934,
+          "canonical_lf_sha256": "e20b2b2fdda67e96754bc4913d4cbacc2ff341dff45af91f3ec17cac1381cc5c"
+        },
+        {
+          "path": "src/humanbrain/language.py",
+          "canonical_lf_bytes": 6059,
+          "canonical_lf_sha256": "790ab0603ddba28718e171ffa195560aef383b79b0156d14d552d674b5f1c29c"
+        },
+        {
+          "path": "src/humanbrain/cortex.py",
+          "canonical_lf_bytes": 10161,
+          "canonical_lf_sha256": "bf13da29cde29592627de65053c6ea66c26f2738ea4877f463c6d340aef982cc"
+        },
+        {
+          "path": "src/humanbrain/tokenizer.py",
+          "canonical_lf_bytes": 3922,
+          "canonical_lf_sha256": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce"
+        }
+      ],
+      "growth_epochs": 2,
+      "tracks": {
+        "fixed_1024": {
+          "justification": "Hold training data exactly fixed to isolate whether additional cells improve capability under the same experience budget.",
+          "characters_per_file_by_cells": {
+            "6144": 256,
+            "24576": 256,
+            "98304": 256,
+            "131072": 256
+          }
+        },
+        "sqrt_scaled": {
+          "justification": "Scale examples with sqrt(N / 6144), rounded to a frozen per-file budget, so larger capacity is less undertrained without making experiment cost grow as N squared.",
+          "characters_per_file_by_cells": {
+            "6144": 256,
+            "24576": 512,
+            "98304": 1024,
+            "131072": 1184
+          }
+        }
+      }
+    },
+    "validation": {
+      "freshness_rule": "These named paths have zero mentions in every artifact and benchmark protocol committed before this v1 registration. No validation metric was observed before registration.",
+      "freshness_audit_base_commit": "339c3befda4187777e375cbfc5c151875c9c6ea8",
+      "freshness_audit_scopes": [
+        "artifacts/**",
+        "benchmarks/*protocol*.json"
+      ],
+      "files": [
+        {
+          "path": "src/humanbrain/artifacts.py",
+          "canonical_lf_bytes": 4656,
+          "canonical_lf_sha256": "1c1ade93fb8e30cb7416370b0f19703c2c6cd523ec90b36d1560dcd8c3c4d48e"
+        },
+        {
+          "path": "src/humanbrain/eval_bridge.py",
+          "canonical_lf_bytes": 8003,
+          "canonical_lf_sha256": "55800a0077981712ca59d52d1c34d27cd0b75240c7f6c728fc1456286182cbd7"
+        },
+        {
+          "path": "src/humanbrain/swe_model.py",
+          "canonical_lf_bytes": 4599,
+          "canonical_lf_sha256": "7ed79302a67a291482489c49500717dfdfd96baf0ef2c31b5614d944d731b555"
+        }
+      ]
+    }
+  },
+  "model": {
+    "cell_type": "Allen human GLIF5 specimen-derived point cells",
+    "active_reservoir_cells": [6144, 24576, 98304, 131072],
+    "all_configured_cells_are_active": true,
+    "tokenizer": "byte tokens only; max_phrases=0",
+    "readout_learning_rule": "three_factor",
+    "local_learning_rate_pa": 16.0,
+    "local_learning_rate_source": "Frozen train-only choice from local-readout-scaling-v1; not recalibrated on this validation cohort.",
+    "local_competitive_margin_pa": 64.0,
+    "ridge_allowed": false,
+    "input_fanout_rule": "max(4, round(active_cells / 12))",
+    "recurrent_fanout": 6,
+    "token_interval_ms": 5.0,
+    "input_pulse_ms": 1.5,
+    "integration_step_ms": 0.05,
+    "input_current_pa": 4000.0,
+    "recurrent_current_pa": 325.0,
+    "eligibility_tau_ms": 40.0,
+    "output_base_current_pa": 700.0,
+    "output_race_ms": 20.0,
+    "inhibitory_fraction": 0.2,
+    "degree_matched_across_topologies": true,
+    "afferent_density_matched_across_sizes": true,
+    "topology_notes": {
+      "random": "Unconstrained long-range control that may include self-edges, retained as the established API defines it.",
+      "uniform_no_self": "Primary long-range baseline with fixed outdegree and no self-edges.",
+      "single_scale_groups": "Single group scale control.",
+      "nested_groups": "Micro- and mesogroup hierarchy.",
+      "mixed_membership": "Overlapping group membership.",
+      "ring_1d": "One-dimensional local lattice with a sparse long edge.",
+      "sheet_2d": "Two-dimensional local lattice with a sparse long edge.",
+      "layered_sheet": "Six-layer two-dimensional sheet with shallow depth.",
+      "volume_3d": "Three-dimensional local lattice with a sparse long edge.",
+      "hypercube_4d": "Abstract four-dimensional functional lattice with a sparse long edge; it is a computational control, not an anatomical claim."
+    }
+  },
+  "evaluation": {
+    "teacher_forced_predictions_per_file": 256,
+    "free_running_prompt_characters_per_file": 128,
+    "free_running_target_bytes_per_file": 64,
+    "state_diagnostic_tokens": 64,
+    "state_correlation_sample_cells": 512,
+    "eligibility_active_epsilon": 1e-12,
+    "responsive_state_std_epsilon": 1e-9,
+    "capability_metrics": [
+      "teacher_forced_byte_accuracy",
+      "free_running_aligned_byte_accuracy",
+      "free_running_exact_prefix_bytes"
+    ],
+    "dynamics_metrics": [
+      "effective_state_rank_from_token_gram",
+      "responsive_state_cell_fraction",
+      "mean_active_eligibility_fraction",
+      "union_active_eligibility_fraction",
+      "reservoir_spikes_per_cell_per_token",
+      "mean_firing_hz_per_cell",
+      "fixed_sample_mean_absolute_cell_correlation"
+    ],
+    "learning_audit": [
+      "attempted_local_updates",
+      "applied_local_updates",
+      "applied_update_fraction",
+      "nonzero_readout_synapses",
+      "readout_source_cells",
+      "readout_source_cell_fraction",
+      "readout_output_cells",
+      "nonzero_pacemaker_synapses",
+      "afferent_synapses",
+      "recurrent_synapses",
+      "ridge_arrays_absent"
+    ],
+    "performance_metrics_are_separate": [
+      "model_build_and_training_wall_seconds",
+      "state_diagnostics_wall_seconds",
+      "teacher_forced_wall_seconds",
+      "free_running_wall_seconds",
+      "host_persistent_array_mib",
+      "device_persistent_array_mib",
+      "training_peak_traced_mib",
+      "simulation_backend",
+      "simulation_device"
+    ]
+  },
+  "analysis": {
+    "primary_track": "sqrt_scaled uniform_no_self",
+    "primary_scale_comparison": "131072 active cells minus 6144 active cells, paired by seeds 17,29,43,59,71",
+    "primary_numeric_criterion": {
+      "teacher_forced_median_absolute_delta_minimum": 0.01,
+      "teacher_forced_positive_seed_directions_minimum": 4,
+      "free_running_median_absolute_delta_minimum": 0.0,
+      "free_running_nonnegative_seed_directions_minimum": 3,
+      "large_model_responsive_state_fraction_minimum": 0.02,
+      "large_model_readout_source_cell_fraction_minimum": 0.02,
+      "large_model_median_firing_hz_per_cell_minimum": 0.5,
+      "large_model_median_firing_hz_per_cell_maximum": 80.0,
+      "interpretation": "All thresholds must pass. Exact one-sided paired sign and sign-flip permutation statistics are reported descriptively, not treated as strong five-seed proof."
+    },
+    "fixed_data_interpretation": {
+      "robust_capacity_scaling": "Primary criterion passes on both sqrt_scaled and fixed_1024 tracks.",
+      "data_starved_capacity": "Primary criterion passes on sqrt_scaled but not fixed_1024.",
+      "no_registered_scale_effect": "Primary criterion fails on sqrt_scaled, regardless of fixed-track behavior."
+    },
+    "confirmatory_organization_criteria": {
+      "multiscale_groups_at_131072": "For nested_groups minus uniform_no_self on fixed_1024, median teacher delta >= 0.005, median free-running delta >= 0, at least 2/3 teacher deltas > 0, and nested median teacher accuracy is not below single_scale_groups.",
+      "layered_2d_at_131072": "For layered_sheet minus uniform_no_self on fixed_1024, median teacher delta >= 0.005, median free-running delta >= 0, at least 2/3 teacher deltas > 0, and layered median teacher accuracy is not below sheet_2d.",
+      "density_guard": "A passing structured condition must retain at least half the baseline responsive-state and readout-source-cell fractions and remain within 0.5 to 80 Hz median firing."
+    },
+    "descriptive_controls": [
+      "single_scale_groups isolates whether hierarchy adds value beyond grouping",
+      "mixed_membership tests overlapping functional groups",
+      "ring_1d, sheet_2d, volume_3d, and hypercube_4d report paired dimensional effects",
+      "hypercube_4d is compared directly with volume_3d and uniform_no_self without anatomical interpretation",
+      "random reports the effect of the established self-edge-permitting long-range sampler"
+    ],
+    "paired_reporting": "For every complete paired comparison report all per-seed deltas, mean, median, range, 95% paired t interval, exact one-sided sign p, and exact one-sided sign-flip permutation p.",
+    "multiple_comparison_policy": "No post-hoc best-topology claim. Only the named scale, multiscale-group, and layered-sheet criteria are confirmatory; all other topology effects are descriptive.",
+    "retuning_policy": "No hyperparameter, file, size, seed, stage, topology, threshold, or metric may change after validation execution starts. Any change requires a new protocol version and the v1 artifact remains reported."
+  },
+  "runtime_estimate": {
+    "basis": "Registered 98,304-cell local learner measured 9.34 attempted examples/s on a shorter-token dynamics protocol; the present 5-ms density-matched protocol may be slower.",
+    "estimated_total_wall_hours": [12, 20],
+    "estimated_fixed_track_minutes_per_98304_or_131072_run": [5, 9],
+    "estimated_sqrt_track_minutes_per_98304_or_131072_run": [18, 35],
+    "host_model_memory_gib_per_largest_run_approximate": [0.28, 0.45],
+    "execution_rule": "Run one resumable stage at a time in the frozen order; resource bounds may stop a stage, but never select later conditions from earlier validation results."
+  }
+}

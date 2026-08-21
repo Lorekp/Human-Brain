@@ -93,10 +93,12 @@ only inside such dynamically matched regimes.
 
 Supported degree-matched topology probes include uniform random connectivity,
 single-scale and nested groups, a 1D ring, a 2D sheet, a six-layer sheet, a 3D
-volume, and overlapping mixed membership. Calibrated validation v2 found only
-the layered sheet met its primary criterion at 96 cells; no structured variant
-beat uniform connectivity at 192 cells. These are diagnostic populations, not
-claims about brain-scale geometry.
+volume, an abstract 4D functional lattice, and overlapping mixed membership.
+The 4D lattice is a computational dimensionality control, not an anatomical
+claim. Calibrated validation v2 found only the layered sheet met its primary
+criterion at 96 cells; no structured variant beat uniform connectivity at 192
+cells. These are diagnostic populations, not claims about brain-scale
+geometry.
 
 ## Native simulation boundary
 

@@ -1,5 +1,9 @@
 import numpy as np
-from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
+from humanbrain.topology import (
+    RECURRENT_TOPOLOGIES,
+    build_recurrent_targets,
+    topology_coordinates,
+)
 
 
 def test_every_topology_is_deterministic_and_degree_matched() -> None:
@@ -127,16 +131,56 @@ def test_spatial_sampler_places_local_offsets_before_sparse_long_links() -> None
     assert np.all(long_separation >= cells // 4)
 
 
-def test_structured_sampler_has_linear_output_memory_at_100k_cells() -> None:
-    cells = 100_003
+def test_hypercube_4d_is_an_abstract_local_lattice_with_sparse_long_links() -> None:
+    cells = 4_096
     fanout = 6
+    side = 8
+    sources = np.arange(cells, dtype=np.int64)
     targets = build_recurrent_targets(
         cells,
         fanout,
-        np.random.default_rng(59),
-        "nested_groups",
+        np.random.default_rng(58),
+        "hypercube_4d",
     )
 
-    assert targets.nbytes == cells * fanout * np.dtype(np.int32).itemsize
-    assert not np.any(targets == np.arange(cells, dtype=np.int32)[:, None])
-    assert np.all(np.diff(np.sort(targets, axis=1), axis=1) != 0)
+    source_coordinates = np.column_stack(
+        [(sources // side**dimension) % side for dimension in range(4)]
+    )
+    local_coordinates = np.stack(
+        [
+            np.column_stack(
+                [
+                    (targets[:, edge] // side**dimension) % side
+                    for dimension in range(4)
+                ]
+            )
+            for edge in range(5)
+        ],
+        axis=1,
+    )
+    long_coordinates = np.column_stack(
+        [(targets[:, 5] // side**dimension) % side for dimension in range(4)]
+    )
+
+    assert topology_coordinates(257, "hypercube_4d").shape == (257, 4)
+    assert np.all(np.abs(local_coordinates - source_coordinates[:, None, :]) <= 2)
+    squared_long_distance = np.square(
+        long_coordinates - source_coordinates
+    ).sum(axis=1)
+    assert np.all(squared_long_distance >= max(2, side // 4) ** 2)
+
+
+def test_structured_sampler_has_linear_output_memory_at_100k_cells() -> None:
+    cells = 100_003
+    fanout = 6
+    for topology in ("nested_groups", "hypercube_4d"):
+        targets = build_recurrent_targets(
+            cells,
+            fanout,
+            np.random.default_rng(59),
+            topology,
+        )
+
+        assert targets.nbytes == cells * fanout * np.dtype(np.int32).itemsize
+        assert not np.any(targets == np.arange(cells, dtype=np.int32)[:, None])
+        assert np.all(np.diff(np.sort(targets, axis=1), axis=1) != 0)
