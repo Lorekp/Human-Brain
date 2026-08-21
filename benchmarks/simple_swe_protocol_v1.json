@@ -1,0 +1,122 @@
+{
+  "schema": "humanbrain.simple-swe-protocol.v1",
+  "protocol_id": "human-cell-simple-swe-v1",
+  "language": "python-3.11",
+  "metric": {
+    "name": "pass@1",
+    "samples_per_task": 1,
+    "decoding": "deterministic-cell-race",
+    "repairs": 0,
+    "test_feedback": false
+  },
+  "prompt_contract": {
+    "response": "one-complete-function",
+    "imports": false,
+    "examples_in_prompt": false,
+    "max_new_tokens": 192
+  },
+  "execution": {
+    "wall_seconds": 2.0,
+    "cpu_seconds": 1,
+    "memory_mib": 256,
+    "processes": 1,
+    "output_bytes": 65536,
+    "python_hash_seed": 0
+  },
+  "hidden_tests": {
+    "fixed_regression_cases_per_task": 4,
+    "property_cases_per_task": 32,
+    "storage": "outside-source-and-model-visible-workspace",
+    "model_feedback": "outcome-only-after-run"
+  },
+  "partitions": {
+    "train": {
+      "seed": 1300781,
+      "tasks": 90,
+      "family_quotas": {
+        "t0_scalar_clamp": 10,
+        "t0_scalar_offset": 10,
+        "t0_scalar_nonnegative": 10,
+        "t1_list_map_add": 10,
+        "t1_list_map_abs": 10,
+        "t1_string_filter_class": 10,
+        "t2_clamp_then_sum": 10,
+        "t2_map_then_count": 10,
+        "t2_filter_then_reverse": 10
+      }
+    },
+    "dev": {
+      "seed": 7100319,
+      "tasks": 27,
+      "family_quotas": {
+        "t0_digit_sum": 3,
+        "t0_stable_parity_select": 3,
+        "t0_longest_character_run": 3,
+        "t1_nonzero_digit_product": 3,
+        "t1_stable_range_select": 3,
+        "t1_longest_target_run": 3,
+        "t2_digit_reduce_mod": 3,
+        "t2_select_then_span": 3,
+        "t2_run_length_signature": 3
+      }
+    },
+    "eval": {
+      "seed_strategy": "post-freeze-256-bit-os-entropy",
+      "tasks": 30,
+      "family_quotas": {
+        "t0_bounded_scalar_classifier": 4,
+        "t0_adjacent_equal_count": 3,
+        "t0_token_boundary_length": 3,
+        "t1_bounded_divisibility_label": 4,
+        "t1_adjacent_differences": 3,
+        "t1_word_length_filter": 3,
+        "t2_clamped_window_sums": 4,
+        "t2_filtered_adjacent_changes": 3,
+        "t2_token_run_signature": 3
+      }
+    }
+  },
+  "freeze": {
+    "one_checkpoint_for_all_tasks": true,
+    "reload_checkpoint_before_each_task": true,
+    "verify_checkpoint_state_before_and_after": true,
+    "learning_during_dev_or_eval": false,
+    "task_specific_replay": false,
+    "require_clean_source_tree": true,
+    "eval_seed_created_after_freeze": true
+  },
+  "reporting": {
+    "failure_taxonomy": [
+      "format_error",
+      "syntax_error",
+      "policy_violation",
+      "signature_error",
+      "timeout",
+      "memory_limit",
+      "runtime_error",
+      "regression_failure",
+      "property_failure",
+      "harness_error",
+      "passed"
+    ],
+    "baselines": "reporting-controls-after-cell-completions-are-sealed"
+  },
+  "conventions": [
+    {
+      "name": "HumanEval",
+      "url": "https://github.com/openai/human-eval",
+      "adopted": "single function completion, evaluator-only executable tests, pass@1"
+    },
+    {
+      "name": "MBPP",
+      "url": "https://github.com/google-research/google-research/tree/master/mbpp",
+      "adopted": "entry-level Python task scale and explicit train/validation/test partitions",
+      "difference": "our private-test variant does not expose MBPP-style assertions in prompts"
+    },
+    {
+      "name": "LiveCodeBench",
+      "url": "https://github.com/LiveCodeBench/LiveCodeBench",
+      "adopted": "post-freeze reveal discipline, no task cherry-picking, objective sandbox execution"
+    }
+  ]
+}
