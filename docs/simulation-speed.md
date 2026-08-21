@@ -38,18 +38,54 @@ observation performs no host-to-device transfer. Reporting this boundary
 separately prevents kernel-only throughput from being mistaken for end-to-end
 throughput.
 
-This follows NVIDIA's documented cooperative-grid synchronization pattern and
-its guidance to keep iterative state on device and use coalesced cell-array
-accesses. The kernel is compiled directly to device code through NVRTC, so it
-does not depend on a host C++ compiler. CPU execution remains the exact backend
-for smaller circuits and systems without CUDA.
+This follows NVIDIA's documented
+[cooperative-grid synchronization](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/cooperative-groups.html)
+pattern and its [best-practices guidance](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/)
+to keep iterative state on device and use coalesced cell-array accesses. The
+kernel is compiled directly to device code through NVRTC, so it does not depend
+on a host C++ compiler. CPU execution remains the exact backend for smaller
+circuits and systems without CUDA.
 
 The registered `benchmarks/cuda_scaling.py` protocol measures 100,000, 200,000,
 and 1,000,000 active cells. It records wall-clock and device-event throughput,
 cell steps, six sparse edges per cell, host/device persistent memory, exact
 transfer bytes, construction/first-token/cold-build time, device identity,
 GPU-utilization snapshots, and equivalence evidence. Final performance numbers
-must come from an isolated GPU window.
+must come from an isolated GPU window. Its end-to-end recurrent-observation
+timing includes device-to-host synchronization but excludes the separate dense
+readout calculation and output-cell race.
+
+The isolated RTX 4070 SUPER run passes the strict size/speed gate at 200,000
+enabled cells. Both completed sizes execute all 100 fitted integration steps,
+touch every enabled cell and every sparse recurrent edge on every
+step, and synchronize all mutable state back to the host:
+
+| Enabled/touched cells | Edges examined/step | End-to-end tokens/s | Kernel tokens/s | Cell-steps/s | Host arrays | Device arrays | D2H/token | Spikes/token | Construct |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 100,000 | 600,000 | 263.26 | 363.07 | 2.633B | 214.05 MiB | 13.19 MiB | 6,000,008 B | 3.3125 | 5.75 s |
+| 200,000 | 1,200,000 | 144.03 | 183.79 | 2.881B | 428.05 MiB | 26.35 MiB | 12,000,008 B | 1.1250 | 52.61 s |
+
+The 200,000-cell result is above both required strict inequalities: more than
+100,000 cells and more than 100 synchronized recurrent observations/s. The
+100,000-cell boundary result is 13.1x faster than the 98,304-cell Rust baseline,
+although it does not satisfy the strict cell-count inequality. Cold NVRTC
+compilation took 0.883 s and a cached lookup 0.255 ms. No host-to-device bytes
+are transferred during a normal token; reset is a separate explicit state
+upload.
+
+The spike counts are deliberately not hidden. Only 424 spikes occurred across
+12.8 million cell-steps at 100,000 cells, and 72 across 6.4 million cell-steps
+at 200,000. Thus this result proves exact large-array simulation throughput,
+not that the present fixed 32-cell afferent fanout recruits a useful fraction of
+the larger brain. Scaling input recruitment, propagation, and state diversity
+without losing throughput remains an architecture/capability requirement.
+
+The registered 1,000,000-cell full-circuit attempt was stopped after a 270 s
+operational bound during construction, before timing. It reached 2,809.24 MiB
+of process-private host memory and 2,709 MiB total observed GPU use; no 1M CUDA
+throughput is claimed. The dense 257-by-reservoir readout and Python topology
+construction, rather than recurrent CUDA state, are now the full-circuit scale
+barriers. The frozen report is `artifacts/cuda_scaling_v1.json`.
 
 ```powershell
 $env:PYTHONPATH=(Resolve-Path 'src').Path
@@ -58,10 +94,10 @@ $env:HUMANBRAIN_DEVICE='cuda'
 python benchmarks\cuda_scaling.py
 ```
 
-Measured on 2026-08-21 with Python 3.11.15 and NumPy 2.4.6 on Windows
-(AMD64 Family 25 Model 97). Results are medians of three runs from
-`benchmarks/simulation_speed.py`; peak memory includes Python and NumPy
-allocations observed by `tracemalloc`.
+The CUDA artifact was measured on 2026-08-21 with Python 3.11.15 and NumPy
+2.4.6 on Windows (AMD64 Family 25 Model 97). Throughput values are medians of
+three runs from `benchmarks/cuda_scaling.py`; reported persistent memory is the
+sum of unique host arrays or allocated device buffers, not a process peak.
 
 ## Native sparse recurrent kernel
 
