@@ -16,7 +16,6 @@ from typing import Literal
 from humanbrain.simple_swe.protocol import ExecutionLimits
 from humanbrain.simple_swe.tasks import PrivateTask, PublicTask
 
-
 Outcome = Literal[
     "format_error",
     "syntax_error",
@@ -81,9 +80,7 @@ def _preflight(
         tree = ast.parse(source, mode="exec")
     except SyntaxError:
         return "syntax_error", "completion is not valid Python"
-    nodes = 0
-    for node in ast.walk(tree):
-        nodes += 1
+    for nodes, node in enumerate(ast.walk(tree), start=1):
         if nodes > limits.max_ast_nodes:
             return "format_error", "completion AST-node limit exceeded"
         if isinstance(node, _DENIED_NODES):
@@ -267,6 +264,14 @@ def _payload(
     ).encode("utf-8")
 
 
+def resolve_python_executable(value: str | Path | None = None) -> Path:
+    """Resolve a direct interpreter, avoiding a venv launcher child process."""
+    if value is not None:
+        return Path(value).resolve()
+    base_executable = getattr(sys, "_base_executable", None)
+    return Path(base_executable or sys.executable).resolve()
+
+
 def execute_completion(
     source: str,
     public: PublicTask,
@@ -294,7 +299,7 @@ def execute_completion(
         return ExecutionResult(
             outcome, False, perf_counter() - started, detail, False
         )
-    executable = Path(python_executable or sys.executable).resolve()
+    executable = resolve_python_executable(python_executable)
     worker_source = Path(__file__).with_name("_worker.py")
     job: _WindowsJob | None = None
     with tempfile.TemporaryDirectory(prefix="humanbrain-simple-swe-") as directory:
@@ -410,4 +415,9 @@ def execute_completion(
         )
 
 
-__all__ = ["ExecutionResult", "Outcome", "execute_completion"]
+__all__ = [
+    "ExecutionResult",
+    "Outcome",
+    "execute_completion",
+    "resolve_python_executable",
+]

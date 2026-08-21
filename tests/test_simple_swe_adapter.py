@@ -4,11 +4,12 @@ import subprocess
 from hashlib import sha256
 from pathlib import Path
 
+import numpy as np
 from humanbrain.language import CellLanguageModel
 from humanbrain.recurrent import RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel, RecurrentModelConfig
 from humanbrain.simple_swe import freeze
-from humanbrain.simple_swe.adapter import CellCompletionAdapter
+from humanbrain.simple_swe.adapter import CellCompletionAdapter, CompletionRequest
 from humanbrain.simple_swe.compiler import (
     CompileRequest,
     CompilerIdentity,
@@ -17,7 +18,6 @@ from humanbrain.simple_swe.compiler import (
 from humanbrain.simple_swe.freeze import create_freeze_manifest
 from humanbrain.simple_swe.protocol import load_protocol
 from humanbrain.simple_swe.tasks import PublicTask, canonical_sha256
-
 
 PROTOCOL_PATH = (
     Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
@@ -80,6 +80,26 @@ def _task() -> PublicTask:
     )
 
 
+def _request() -> CompletionRequest:
+    task = _task()
+    return CompletionRequest(
+        prompt=task.prompt,
+        entry_point=task.entry_point,
+        parameter_names=tuple(task.parameter_names),
+    )
+
+
+def test_completion_request_exposes_only_prompt_and_signature() -> None:
+    request = _request()
+
+    assert set(vars(request)) == {"prompt", "entry_point", "parameter_names"}
+    assert not hasattr(request, "family")
+    assert not hasattr(request, "tier")
+    assert not hasattr(request, "ordinal")
+    assert not hasattr(request, "task_id")
+    assert not hasattr(request, "hidden_test_sha256")
+
+
 def test_adapter_reloads_one_cell_checkpoint_and_audits_exact_emitted_tokens(
     tmp_path: Path, monkeypatch,
 ) -> None:
@@ -100,8 +120,8 @@ def test_adapter_reloads_one_cell_checkpoint_and_audits_exact_emitted_tokens(
         compiler=RawPythonCompiler(),
     )
 
-    first = adapter.synthesize(_task())
-    second = adapter.synthesize(_task())
+    first = adapter.synthesize(_request())
+    second = adapter.synthesize(_request())
 
     assert first.source == first.emitted_text
     expected_tokens = load_protocol(PROTOCOL_PATH).max_new_tokens
@@ -166,7 +186,7 @@ def test_compiler_receives_emissions_and_signature_but_no_prompt_tests_or_tools(
         compiler=compiler,
     )
 
-    completion = adapter.synthesize(_task())
+    completion = adapter.synthesize(_request())
     request = compiler.requests[0]
 
     assert completion.source == "def solve_opaque(value):\n    return 0\n"
@@ -202,7 +222,7 @@ def test_protocol_max_tokens_is_the_adapter_default(tmp_path: Path, monkeypatch)
         source_root=source,
     )
 
-    completion = adapter.synthesize(_task())
+    completion = adapter.synthesize(_request())
 
     assert completion.audit.emitted_token_count == load_protocol(
         PROTOCOL_PATH
@@ -243,7 +263,7 @@ def test_recurrent_adapter_allows_transient_traces_but_preserves_learned_state(
         source_root=source,
     )
 
-    completion = adapter.synthesize(_task())
+    completion = adapter.synthesize(_request())
 
     assert checkpoint.read_bytes() == checkpoint_bytes_before
     assert (
@@ -252,3 +272,54 @@ def test_recurrent_adapter_allows_transient_traces_but_preserves_learned_state(
     )
     restored = RecurrentCellLanguageModel.load(checkpoint)
     assert restored._circuit.learning_frozen is True
+
+
+def test_sparse_three_factor_adapter_preserves_checkpointed_synapse_structure(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = _source_repository(tmp_path, monkeypatch)
+    model = RecurrentCellLanguageModel.grow(
+        ["def solve(value):\n    return value + 1\n"],
+        RecurrentModelConfig(
+            growth_epochs=2,
+            circuit=RecurrentCircuitConfig(
+                reservoir_cells=8,
+                input_fanout=4,
+                recurrent_fanout=2,
+                readout_learning_rule="sparse_three_factor",
+                readout_fan_in=2,
+                readout_structural_interval=2,
+                readout_structural_grace=2,
+                readout_turnover_probability=1.0,
+            ),
+        ),
+    )
+    checkpoint = tmp_path / "generic-sparse-recurrent-cell-checkpoint.npz"
+    model.save(checkpoint)
+    checkpoint_bytes_before = checkpoint.read_bytes()
+    with np.load(checkpoint, allow_pickle=False) as state:
+        assert "readout_synapses_pa" not in state.files
+        assert "readout_contact_sources" in state.files
+        assert "readout_contact_weights_pa" in state.files
+    freeze_path = tmp_path / "freeze.json"
+    create_freeze_manifest(
+        protocol_path=PROTOCOL_PATH,
+        checkpoint_path=checkpoint,
+        source_root=source,
+        output_path=freeze_path,
+    )
+    adapter = CellCompletionAdapter(
+        manifest_path=freeze_path,
+        protocol_path=PROTOCOL_PATH,
+        checkpoint_path=checkpoint,
+        source_root=source,
+    )
+
+    completion = adapter.synthesize(_request())
+
+    assert checkpoint.read_bytes() == checkpoint_bytes_before
+    assert (
+        completion.audit.learned_checkpoint_state_before
+        == completion.audit.learned_checkpoint_state_after
+    )

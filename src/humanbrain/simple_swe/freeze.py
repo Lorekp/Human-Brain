@@ -16,7 +16,6 @@ import numpy as np
 from humanbrain.simple_swe.protocol import ProtocolSpec, load_protocol
 from humanbrain.simple_swe.tasks import canonical_json_bytes, canonical_sha256
 
-
 SCHEMA = "humanbrain.simple-swe-freeze.v1"
 ALLOWED_CHECKPOINT_FORMATS = {
     "human-cell-brain-checkpoint-v1",
@@ -30,6 +29,7 @@ _EXECUTION_MODULES = (
     "humanbrain.cuda",
     "humanbrain.language",
     "humanbrain.native",
+    "humanbrain.readout",
     "humanbrain.recurrent",
     "humanbrain.recurrent_artifacts",
     "humanbrain.recurrent_language",
@@ -148,7 +148,9 @@ def checkpoint_hashes(path: str | Path) -> CheckpointHashes:
                 ).hexdigest(),
             }
     except (OSError, ValueError) as error:
-        raise FreezeIntegrityError("checkpoint cannot be read as an immutable cell state") from error
+        raise FreezeIntegrityError(
+            "checkpoint cannot be read as an immutable cell state"
+        ) from error
 
     volatile_metadata = {
         "training_digest",
@@ -261,7 +263,6 @@ def _outside_source(output_path: Path, source_root: Path) -> None:
 
 def _completion_identities(compiler_identity: object | None) -> tuple[object, str]:
     from humanbrain.simple_swe.compiler import (
-        COMPLETION_ADAPTER_ID,
         CompilerIdentity,
         RawPythonCompiler,
     )

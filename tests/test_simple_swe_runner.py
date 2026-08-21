@@ -7,7 +7,11 @@ from types import SimpleNamespace
 
 import pytest
 from humanbrain.simple_swe import runner
-from humanbrain.simple_swe.adapter import CompletionAudit, SynthesizedCompletion
+from humanbrain.simple_swe.adapter import (
+    CompletionAudit,
+    CompletionRequest,
+    SynthesizedCompletion,
+)
 from humanbrain.simple_swe.artifacts import ArtifactIntegrityError, ArtifactLedger
 from humanbrain.simple_swe.protocol import ProtocolSpec, load_protocol
 from humanbrain.simple_swe.reveal import (
@@ -121,11 +125,12 @@ class FixtureCellAdapter:
         self.fail_on = fail_on
         self.calls: list[str] = []
 
-    def synthesize(self, task: PublicTask) -> SynthesizedCompletion:
-        self.calls.append(task.task_id)
-        if task.task_id == self.fail_on:
+    def synthesize(self, request: CompletionRequest) -> SynthesizedCompletion:
+        self.calls.append(request.entry_point)
+        if request.entry_point == self.fail_on:
             raise RuntimeError("synthetic interruption")
-        source = f"def {task.entry_point}(value):\n    return value + {task.ordinal}\n"
+        ordinal = int(request.entry_point.rsplit("_", 1)[1])
+        source = f"def {request.entry_point}(value):\n    return value + {ordinal}\n"
         emitted_text = source
         token_ids = tuple(range(192))
         return SynthesizedCompletion(
@@ -141,7 +146,7 @@ class FixtureCellAdapter:
                 checkpoint_sha256=CHECKPOINT_SHA256,
                 learned_checkpoint_state_before=CHECKPOINT_STATE_SHA256,
                 learned_checkpoint_state_after=CHECKPOINT_STATE_SHA256,
-                prompt_sha256=sha256(task.prompt.encode("utf-8")).hexdigest(),
+                prompt_sha256=sha256(request.prompt.encode("utf-8")).hexdigest(),
                 emitted_token_ids=token_ids,
                 emitted_token_count=len(token_ids),
                 emitted_token_sha256=canonical_sha256(list(token_ids)),
@@ -188,8 +193,8 @@ def test_all_completions_are_sealed_before_hidden_tests_execute(
         executor=executor,
     )
 
-    assert adapter.calls == [task.public.task_id for task in bundle.tasks]
-    assert executor_calls == adapter.calls
+    assert adapter.calls == [task.public.entry_point for task in bundle.tasks]
+    assert executor_calls == [task.public.task_id for task in bundle.tasks]
     assert summary.task_count == 3
     assert summary.passed == 1
     assert summary.pass_at_1 == pytest.approx(1 / 3)
@@ -225,7 +230,7 @@ def test_interrupted_synthesis_resumes_without_resampling_a_task(
     protocol = load_protocol(PROTOCOL_PATH)
     bundle = _bundle(tmp_path, protocol)
     ledger = _ledger(tmp_path, bundle)
-    interrupted = FixtureCellAdapter(fail_on=bundle.tasks[1].public.task_id)
+    interrupted = FixtureCellAdapter(fail_on=bundle.tasks[1].public.entry_point)
 
     with pytest.raises(RuntimeError, match="synthetic interruption"):
         run_cell_evaluation(
@@ -248,12 +253,12 @@ def test_interrupted_synthesis_resumes_without_resampling_a_task(
     )
 
     assert interrupted.calls == [
-        bundle.tasks[0].public.task_id,
-        bundle.tasks[1].public.task_id,
+        bundle.tasks[0].public.entry_point,
+        bundle.tasks[1].public.entry_point,
     ]
     assert resumed.calls == [
-        bundle.tasks[1].public.task_id,
-        bundle.tasks[2].public.task_id,
+        bundle.tasks[1].public.entry_point,
+        bundle.tasks[2].public.entry_point,
     ]
     assert ledger.verify()[2].file_sha256 == first_completion_sha256
     assert summary.passed == len(bundle.tasks)

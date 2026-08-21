@@ -19,7 +19,16 @@ from humanbrain.simple_swe.freeze import (
     verify_freeze_manifest,
 )
 from humanbrain.simple_swe.protocol import load_protocol
-from humanbrain.simple_swe.tasks import PublicTask, canonical_sha256
+from humanbrain.simple_swe.tasks import canonical_sha256
+
+
+@dataclass(frozen=True)
+class CompletionRequest:
+    """The only public task information available during direct synthesis."""
+
+    prompt: str
+    entry_point: str
+    parameter_names: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -129,7 +138,7 @@ class CellCompletionAdapter:
     def checkpoint_sha256(self) -> str:
         return self._manifest.checkpoint_sha256
 
-    def synthesize(self, task: PublicTask) -> SynthesizedCompletion:
+    def synthesize(self, request: CompletionRequest) -> SynthesizedCompletion:
         manifest = verify_freeze_manifest(
             manifest_path=self._manifest_path,
             protocol_path=self._protocol_path,
@@ -142,15 +151,15 @@ class CellCompletionAdapter:
             raise FreezeIntegrityError("checkpoint state before task differs from freeze")
         model = _load_cell_model(self._checkpoint_path, manifest.checkpoint_format)
         token_ids, emitted_text = _emit_cell_tokens(
-            model, task.prompt, self._protocol.max_new_tokens
+            model, request.prompt, self._protocol.max_new_tokens
         )
-        request = CompileRequest(
+        compile_request = CompileRequest(
             emitted_text=emitted_text,
             emitted_token_ids=token_ids,
-            entry_point=task.entry_point,
-            parameter_names=task.parameter_names,
+            entry_point=request.entry_point,
+            parameter_names=request.parameter_names,
         )
-        source = self._compiler.compile(request)
+        source = self._compiler.compile(compile_request)
         if not isinstance(source, str):
             raise TypeError("deterministic source compiler must return Python text")
         with TemporaryDirectory(prefix="humanbrain-cell-state-audit-") as directory:
@@ -181,7 +190,7 @@ class CellCompletionAdapter:
             checkpoint_sha256=before.checkpoint_sha256,
             learned_checkpoint_state_before=before.checkpoint_state_sha256,
             learned_checkpoint_state_after=after.checkpoint_state_sha256,
-            prompt_sha256=sha256(task.prompt.encode("utf-8")).hexdigest(),
+            prompt_sha256=sha256(request.prompt.encode("utf-8")).hexdigest(),
             emitted_token_ids=token_ids,
             emitted_token_count=len(token_ids),
             emitted_token_sha256=canonical_sha256(list(token_ids)),
@@ -195,6 +204,7 @@ class CellCompletionAdapter:
 __all__ = [
     "CellCompletionAdapter",
     "CompletionAudit",
+    "CompletionRequest",
     "SynthesizedCompletion",
     "completion_adapter_sha256",
 ]

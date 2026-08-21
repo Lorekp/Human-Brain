@@ -3,14 +3,17 @@ from __future__ import annotations
 import json
 import math
 import subprocess
-import sys
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, fields
 from hashlib import sha256
 from pathlib import Path
 from typing import Protocol
 
-from humanbrain.simple_swe.adapter import CompletionAudit, SynthesizedCompletion
+from humanbrain.simple_swe.adapter import (
+    CompletionAudit,
+    CompletionRequest,
+    SynthesizedCompletion,
+)
 from humanbrain.simple_swe.artifacts import (
     ArtifactEvent,
     ArtifactIntegrityError,
@@ -21,14 +24,18 @@ from humanbrain.simple_swe.reveal import (
     EvaluationBundle,
     evaluation_reveal_commitment,
 )
-from humanbrain.simple_swe.sandbox import ExecutionResult, execute_completion
-from humanbrain.simple_swe.tasks import GeneratedTask, PublicTask, canonical_sha256
+from humanbrain.simple_swe.sandbox import (
+    ExecutionResult,
+    execute_completion,
+    resolve_python_executable,
+)
+from humanbrain.simple_swe.tasks import GeneratedTask, canonical_sha256
 
 
 class CompletionAdapter(Protocol):
     checkpoint_sha256: str
 
-    def synthesize(self, task: PublicTask) -> SynthesizedCompletion: ...
+    def synthesize(self, request: CompletionRequest) -> SynthesizedCompletion: ...
 
 
 CompletionExecutor = Callable[..., ExecutionResult]
@@ -429,7 +436,7 @@ def run_cell_evaluation(
     if bundle.protocol_sha256 != protocol.sha256:
         raise ArtifactIntegrityError("runner protocol differs from eval bundle")
     run_start, _revealed = _validate_run_prefix(bundle, adapter, ledger)
-    executable = Path(python_executable or sys.executable).resolve()
+    executable = resolve_python_executable(python_executable)
     runtime_identity = _runtime_identity(executable, protocol.raw.get("language"))
     events = list(ledger.verify())
     position = 2
@@ -454,7 +461,13 @@ def run_cell_evaluation(
             raise ArtifactIntegrityError("artifact ledger interrupted completion order")
         for index in range(len(completion_events), len(bundle.tasks)):
             task = bundle.tasks[index]
-            completion = adapter.synthesize(task.public)
+            completion = adapter.synthesize(
+                CompletionRequest(
+                    prompt=task.public.prompt,
+                    entry_point=task.public.entry_point,
+                    parameter_names=tuple(task.public.parameter_names),
+                )
+            )
             body = _completion_body(index, task, completion)
             _validate_completion_body(
                 body,
