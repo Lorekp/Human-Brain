@@ -144,8 +144,8 @@ permanently labels fixture ledgers as dependency-injected and noncanonical.
 
 Before parsing, the parent bounds source to 16,384 UTF-8 bytes; it also bounds
 the AST to 4,096 nodes. Static policy permits exactly one plain function with
-the requested signature and denies imports, classes, nested functions,
-annotations, and dangerous reflection/I/O built-ins. Attribute access is a
+the requested signature and denies imports, classes, nested functions or
+lambdas, annotations, and dangerous reflection/I/O built-ins. Attribute access is a
 positive allowlist limited to ordinary task-level list/string operations such
 as `append`, `split`, and `join`; frame, traceback, code, generator, coroutine,
 class/MRO, bound-method, globals/locals, and format-string reflection are
@@ -195,7 +195,7 @@ inference.
 
 ## Runtime estimate and remaining environment commitments
 
-Visible train/development generation is sub-second. The 85 focused protocol,
+Visible train/development generation is sub-second. The 86 focused protocol,
 freeze, adapter, reveal, sandbox, artifact, and runner tests complete in about
 18 seconds on the current workstation. These are harness tests, not capability
 evaluation.

@@ -54,6 +54,7 @@ _DENIED_NODES = (
     ast.Global,
     ast.Import,
     ast.ImportFrom,
+    ast.Lambda,
     ast.Nonlocal,
     ast.With,
 )

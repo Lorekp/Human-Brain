@@ -202,6 +202,22 @@ def test_traceback_bound_method_fstring_and_type_reflection_are_denied(
     assert result.sandboxed is False
 
 
+def test_lambda_is_rejected_as_an_anonymous_nested_function(
+    increment_task: tuple[PublicTask, PrivateTask],
+) -> None:
+    public, private = increment_task
+    source = """def solve_increment(value):
+    add_one = lambda item: item + 1
+    return add_one(value)
+"""
+
+    result = _execute(source, public, private, PROTOCOL.execution)
+
+    assert result.outcome == "policy_violation"
+    assert "Lambda" in result.detail
+    assert result.sandboxed is False
+
+
 def test_task_required_string_and_list_attributes_remain_allowlisted(
     increment_task: tuple[PublicTask, PrivateTask],
 ) -> None:
