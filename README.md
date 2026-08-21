@@ -160,6 +160,10 @@ headline comparison.
 
 See `docs/architecture.md` for the cell-only contract and
 `docs/benchmark-status.md` for exact artifacts, hashes, and the remaining fair
-Gemma comparison gate. The intermediate family-disjoint coding curriculum and
-the proposed direct cell-to-program decoder are described in
-`docs/research/cell-program-decoding.md`.
+Gemma comparison gate. The family-disjoint simple software-task protocol,
+cell-only completion adapter, post-freeze reveal, bounded hidden-test runner,
+and atomic pass@1 ledger are implemented but deliberately unopened; no
+canonical evaluation seed or score exists. See
+`docs/simple-swe-curriculum.md` for the exact split and claim boundary, and
+`docs/research/cell-program-decoding.md` for the proposed direct
+cell-to-program decoder.
