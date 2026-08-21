@@ -43,6 +43,45 @@ adapters. They do not get access to branch strengths or choose output tokens.
 Decoding may stop after the first complete bash action, but the action text
 itself is emitted token by token by cell spike races.
 
+## Recurrent scaling layer
+
+The scaling path uses Allen human GLIF5 reservoir cells. Each input token sends
+sparse afferent current into the active population; recurrent spikes propagate
+over a fixed-fanout topology; exponentially decaying eligibility traces carry
+recent cell state into learned output synapses; and the next token is selected
+by a race among GLIF output cells. Dormant allocated cells receive no afferent
+or recurrent drive and cannot contribute eligibility.
+
+The first reservoir regime was pathologically synchronized: 96 cells produced
+only about 1.1 effective state dimensions and fired near 100 Hz. A train-only
+dynamics calibration selected sparse afferents, 5 ms token intervals, lower
+recurrent current, and a 40 ms eligibility trace. At 96 cells this raises
+effective rank to roughly 18-21, reduces mean absolute cell correlation to
+about 0.15, and keeps firing near 12-14 Hz. Cell-count conclusions are made
+only inside such dynamically matched regimes.
+
+Supported degree-matched topology probes include uniform random connectivity,
+single-scale and nested groups, a 1D ring, a 2D sheet, a six-layer sheet, a 3D
+volume, and overlapping mixed membership. Calibrated validation v2 found only
+the layered sheet met its primary criterion at 96 cells; no structured variant
+beat uniform connectivity at 192 cells. These are diagnostic populations, not
+claims about brain-scale geometry.
+
+## Native simulation boundary
+
+The recurrent hot loop is a Rust `cdylib` loaded through a small Python FFI.
+One native call advances the complete token interval, including 100 GLIF5
+steps and sparse recurrent scatter. The Python reference remains executable for
+equivalence tests. Native and reference paths are bit-exact across a 64-token
+sequence for every persistent cell and synapse state array.
+
+Inference allocates only linear-sized cell, afferent, and sparse recurrent
+state. It does not allocate the training-only dense ridge statistics. The
+current exact ridge learner is therefore deliberately identified as a separate
+`O(N^2)` memory / `O(N^3)` consolidation bottleneck; replacing it with a local
+plasticity rule is required before learned language scaling can follow the
+98,304-cell simulation result.
+
 ## Current layer
 
 The first working layer uses Allen Cell Types human specimen `488392806` and

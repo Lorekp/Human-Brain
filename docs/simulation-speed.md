@@ -1,5 +1,14 @@
 # Human-cell simulation performance
 
+Performance is part of the model specification, not an optional deployment
+optimization. The current engineering gate requires more than 100,000 active
+fitted human cells at more than 100 end-to-end recurrent tokens/s while keeping
+the registered 0.05-ms integration step, 5-ms token interval, cellular state,
+sparse recurrent propagation, and cell-derived output. Results from dormant
+padding, shortened simulation, or learned computation outside cells are
+ineligible. Every faster backend must first match the deterministic reference
+state transition.
+
 Measured on 2026-08-21 with Python 3.11.15 and NumPy 2.4.6 on Windows
 (AMD64 Family 25 Model 97). Results are medians of three runs from
 `benchmarks/simulation_speed.py`; peak memory includes Python and NumPy
@@ -45,6 +54,10 @@ primarily cell-state memory traffic. Larger runs should next move topology
 construction out of Python and replace or factor the dense readout, then add
 carefully validated native parallelism. Exact ridge learning remains the more
 fundamental `O(N^2)` memory / `O(N^3)` solve limit described below.
+
+The frozen v1 result therefore does not yet pass the project gate: 98,304 is
+below the required active-cell count and 20.05 tokens/s is below 100. It is the
+bit-exact baseline against which CPU and GPU work is measured.
 
 Run the registered native protocol with:
 

@@ -15,7 +15,67 @@ split through mini-swe-agent 2.4.6 and the official cached Docker image
   are 2.98 seconds apart (repository commands run between responses).
 - Official SWE-bench 5.0.2 evaluation: 1 submitted, 1 completed, 1 resolved, no
   infrastructure or ambiguous failure.
-- Project tests: 35 passed.
+- Project tests after native integration: 46 passed.
+
+## Active-cell scaling and dynamics
+
+The first registered scaling grid varied active cells (24, 48, 96, 192),
+training characters (3k, 6k, 12k, 24k), and three fixed seeds. At 24k
+characters, teacher-forced medians rose monotonically from 15.23% to 22.27%,
+34.11%, and 38.28%. Dormant controls with 24 active cells and up to 192 total
+cells exactly reproduced the compact 24-cell circuit while taking longer.
+
+State diagnostics then exposed the confound: the original network had roughly
+one effective state dimension irrespective of cell count. A train-only
+calibration tested 11 dynamical regimes without using validation predictions.
+The selected sparse/slow/short-trace regime raised median effective rank at 96
+cells from 1.19 to 20.84 while lowering firing from 107.1 Hz to 12.4 Hz and
+absolute cell correlation from 0.833 to 0.133.
+
+With that regime frozen, proportional cell/data scaling produced:
+
+| Active cells | Training chars | Teacher-forced | Free-running | Effective rank |
+| ---: | ---: | ---: | ---: | ---: |
+| 24 | 3,000 | 43.10% | 6.25% | 7.57 |
+| 48 | 6,000 | 47.53% | 6.77% | 11.05 |
+| 96 | 12,000 | 47.27% | 10.16% | 18.03 |
+| 192 | 24,000 | 48.83% | 12.76% | 21.15 |
+| 384 | 48,000 | 49.61% | 12.76% | 23.85 |
+
+This supports a useful-cell scaling effect over the tested diagnostic range,
+not a universal power law. Rank growth is strongly sublinear and free-running
+accuracy plateaus from 192 to 384 cells, identifying redundancy/readout
+learning as the next bottleneck.
+
+## Grouping and spatial topology
+
+Topology v1 used normalized recurrent current but retained the synchronized
+dynamics; every architecture remained near rank 1, so it is recorded only as a
+diagnostic failure. Calibrated v2 degree-matched all variants and used the same
+three seeds. At 96 cells, a six-layer sheet met the preregistered primary
+criterion (47.27% teacher-forced, 10.68% free-running versus 47.27%/10.16% for
+uniform). At 192 cells, none of the registered single-scale, nested, 2D-sheet,
+or mixed-membership variants beat uniform. Nested groups had slightly higher
+rank (22.02 versus 21.15) but materially lower teacher-forced accuracy (45.44%
+versus 48.83%). Larger, locally learned networks are required before making a
+scale-level grouping claim.
+
+## Native simulation scaling
+
+The complete recurrent token interval now executes in a Rust native kernel.
+It is bit-exact against the former Python/NumPy loop over 64 tokens. The frozen
+benchmark reports a 6.78x speedup at 1,536 cells and nearly linear scaling:
+
+| Cells | Native tokens/s | Cell-steps/s | Persistent arrays |
+| ---: | ---: | ---: | ---: |
+| 1,536 | 1,045.45 | 160.6M | 3.34 MiB |
+| 6,144 | 301.70 | 185.4M | 13.22 MiB |
+| 24,576 | 82.49 | 202.7M | 52.73 MiB |
+| 98,304 | 20.05 | 197.1M | 210.79 MiB |
+
+The empirical time exponent is 0.949 and persistent-memory exponent is 0.997.
+This removes Python simulation and inference allocation as the immediate scale
+limit. Exact ridge learning remains quadratic in memory and cubic at solve.
 
 The accepted patch changes only L031's emitted description, matching the public
 upstream resolution in [SQLFluff PR 1625](https://github.com/sqlfluff/sqlfluff/pull/1625/files).
@@ -83,25 +143,37 @@ retained as an ornamental biological feature.
 
 ## Reproducibility artifacts
 
+Hashes below identify the canonical LF-normalized file bytes stored in Git,
+not a platform-specific checkout's newline representation.
+
 | Artifact | SHA-256 |
 | --- | --- |
 | `artifacts/swe_sqlfluff_1625_cells.npz` | `bf54b181ce24ff636d84a3e9a712eaf96caceb1ae343299169727f884f2dda91` |
 | `artifacts/swe-dev-expert/sqlfluff__sqlfluff-1625/teacher.traj.json` | `cae6a4dbe8750a8bfe83db1e04103555a4f657ae6ac960cda1f814e761a34a4f` |
 | `artifacts/swe-dev-cell/sqlfluff__sqlfluff-1625/dendritic-v4.traj.json` | `8d7b7ba5b2911573505110f61cc4a457c9b595abb895ac8b8d21027b225e5cd2` |
 | `artifacts/swe-eval-cell/human-cell-dendritic-episodic-v2.human-cell-sqlfluff-1625-v3.json` | `6a8cfc794732220a26fa9f2f27b9575c36dbfe5ce1580b1000bbdeed430f53b8` |
-| `artifacts/code_language_validation_v3_witten_bell_cells_gain16.json` | `a76ae9575c22f81278071508716fa03dac19b46c9d43a7acc406545740e17366` |
-| `artifacts/code_language_test_v3.json` | `03eb18664a288377dbe240d5d31fc7aff092849be7bdf6ad6d66063b659f68d5` |
+| `artifacts/code_language_validation_v3_witten_bell_cells_gain16.json` | `a27f995af6d72f9f5c7c95f217013a156f09f80593004f62201cced6343796bc` |
+| `artifacts/code_language_test_v3.json` | `adf25d727acfed0ca61754c372a5cdda39560daf009adc1b0524efdfa0f682bb` |
 | `artifacts/code_language_freeze_v3.json` | `39f62eaac24695bdc52bc2682f75e8b598720102e8f8995a955c8b980c9b1834` |
 | `benchmarks/code_language_protocol_v3.json` | `54f07ff3dd4abb141ed4ce6226e0f30ce27ea98faafe7fea7075df2791606d60` |
-| `artifacts/code_language_validation_v4.json` | `9d5d3d148dd9949ea14bcfcf24fd91977948c114c5cd087815180305fd24a335` |
+| `artifacts/code_language_validation_v4.json` | `e8222472ba1cb1f9855e409c0f7a15e77a047725f8c190992f3c757f5ca62e4d` |
 | `benchmarks/code_language_protocol_v4.json` | `9b5543e8d9b201c744a3606c38de7bf32df7f191720c9b307e59186d6affa891` |
-| `artifacts/external_code_test_v1.json` | `6e76e18d4663d9f07c945e60b791dabd57e3137f87b02551fad9f7dca022294f` |
+| `artifacts/external_code_test_v1.json` | `b758421f663c48bc214f633d943237f648ff5d173896ba37c9619d034e2da9d6` |
 | `benchmarks/external_code_protocol_v1.json` | `63069db2fd8d6a3ea3b1cfd211785686cb87e60248fdf4ed95fadab5bf9d9f11` |
-| `artifacts/generation_validation_v1.json` | `2391a947bbb4f66fef330df611ed55e2008c44e785e528dda90bfcd586e4822a` |
-| `artifacts/generation_validation_v1_persistent_asc.json` | `347f168ef3cc367fedf85f4b7d18d2ee04db16d6f26c7dbadb78052c59384d2f` |
+| `artifacts/generation_validation_v1.json` | `555d77f0f41ab874390aa26c8f0c1dba1b62b2fb6bc3eb54e9ac59e14d126654` |
+| `artifacts/generation_validation_v1_persistent_asc.json` | `5c6828be868ad95d45c7a6be7e358f57433b819691431887f6f3ee6f579e20cf` |
 | `benchmarks/generation_protocol_v1.json` | `254754c7464a3b2727aadd51de3f72c597958ff487ebd74aed06ee3ce20d8388` |
-| `artifacts/native_scaling_v1.json` | `54d9bae841901b37a2c72ae10eb458c56d7064ced1e22699f794a8ad5d2bcbeb` |
+| `artifacts/cell_scaling_validation_v1.json` | `dd045ef19bc7069d8624ddf5bf56e9e0b4195f30d423f0984320ec0798ee489d` |
+| `benchmarks/cell_scaling_protocol_v1.json` | `40a24b23334953209182727f108cceb0dd9a3b7c4c43639c228aeedbe6403706` |
+| `artifacts/dynamics_calibration_train_v1.json` | `ca30de2816888cdf23bef612571ebf4369dab460f205353f874f1b6052e9db7f` |
+| `benchmarks/dynamics_calibration_protocol_v1.json` | `0af9ee10a370323b2b6a94e757be0e17e8d8f2392d67e6492428fb89aa5bb06a` |
+| `artifacts/dynamics_scaling_validation_v3.json` | `e3c71ff09627b1cb1b878da57e223ab3fe463528046f32a5f7498c502f11b5b3` |
+| `benchmarks/dynamics_scaling_protocol_v3.json` | `456d04f1d947a37bad9984196ae9f7084f1492bf51ac5fa60ba8aa8865b9d7a9` |
+| `artifacts/topology_validation_v2.json` | `a9abb62c8d9361fe3633de992274467dd55a6491cbd872abb46e5b0d2086f878` |
+| `benchmarks/topology_protocol_v2.json` | `2c182ae8f275b17a91acaffc7831d9aa8ab08172bc5eb2507441fa29b41e5b21` |
+| `artifacts/native_scaling_v1.json` | `591fb2ead4d064163e7023a77e24aede48aad0d65d873d764fc19d33ea9f4251` |
 | `benchmarks/native_scaling_protocol_v1.json` | `fde5bdfd2817008ef105523c01b2c1a09e714ad8cd4664cb2fc6e8dd38497355` |
+| `artifacts/swe-dev-gemma/sqlfluff__sqlfluff-1625/sqlfluff__sqlfluff-1625.traj.json` | `d8d1007bc618f5c28794c21327834018a7187f6822b40c775afe8375d7c9b0a3` |
 | Gemma 4 12B QAT Q4_0 GGUF | `93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b` |
 
 ## Gemma baseline configuration
@@ -131,6 +203,8 @@ natural-language modeling, or parity with a modern LLM.
 The headline gate remains: freeze the cell checkpoint before selecting a
 held-out post-checkpoint cohort; use the same mini-swe-agent templates, action
 limit, Docker images, and compute limits for both models; then report paired
-resolution rates with a 95% confidence interval. Gemma's current one-instance
-development run is also bounded at 100 actions and must finish before even the
-memorized-dev comparison is recorded.
+resolution rates with a 95% confidence interval. The completed one-instance
+Gemma development run exhausted all 100 actions, returned `LimitsExceeded`,
+and produced an empty submission, so it records 0/1 on that development
+instance. That is an honest diagnostic result, not a statistically meaningful
+comparison and not a reason to tune the cell system to this instance.
