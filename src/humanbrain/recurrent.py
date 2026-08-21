@@ -92,6 +92,8 @@ class RecurrentCellCircuit:
     selected by the first adaptive human-fitted cell to cross threshold.
     """
 
+    _STATISTICS_BATCH_SIZE = 128
+
     def __init__(
         self,
         token_cells: int,
@@ -106,18 +108,20 @@ class RecurrentCellCircuit:
             self.config.active_reservoir_cells or self.config.reservoir_cells
         )
         self.cell_parameters = cell_parameters or AllenGlif5Parameters()
-        self._reservoir = AdaptiveGlifPopulation(
-            self.config.reservoir_cells, self.cell_parameters
-        )
+        self._reservoir = AdaptiveGlifPopulation(self.config.reservoir_cells, self.cell_parameters)
         self._synaptic_current_pa = np.zeros(self.config.reservoir_cells, dtype=np.float64)
+        self._step_current_pa = np.empty(self.config.reservoir_cells, dtype=np.float64)
         self._eligibility = np.zeros(self.config.reservoir_cells, dtype=np.float64)
         self._readout_synapses_pa = np.zeros(
             (self.token_cells, self.config.reservoir_cells), dtype=np.float64
         )
         self._pacemaker_synapses_pa = np.zeros(self.token_cells, dtype=np.float64)
         feature_count = self.config.reservoir_cells + 1
-        self._normal_matrix = np.zeros((feature_count, feature_count), dtype=np.float64)
-        self._target_moments = np.zeros((self.token_cells, feature_count), dtype=np.float64)
+        self._normal_matrix: np.ndarray | None = None
+        self._target_moments: np.ndarray | None = None
+        self._feature_batch: np.ndarray | None = None
+        self._growth_feature_count = feature_count
+        self._pending_growth_examples = 0
         self._growth_examples = 0
         self._observed_tokens = 0
 
@@ -142,13 +146,9 @@ class RecurrentCellCircuit:
         )
         signs = np.zeros(self.config.reservoir_cells, dtype=np.float64)
         signs[: self.active_reservoir_cells] = 1.0
-        inhibitory_count = round(
-            self.config.inhibitory_fraction * self.active_reservoir_cells
-        )
+        inhibitory_count = round(self.config.inhibitory_fraction * self.active_reservoir_cells)
         if inhibitory_count:
-            inhibitory = rng.choice(
-                self.active_reservoir_cells, inhibitory_count, replace=False
-            )
+            inhibitory = rng.choice(self.active_reservoir_cells, inhibitory_count, replace=False)
             signs[inhibitory] = -1.0
         self._recurrent_weights_pa = np.repeat(
             (signs * self.config.recurrent_current_pa)[:, None],
@@ -158,6 +158,24 @@ class RecurrentCellCircuit:
         # Tiny fixed heterogeneity avoids artificial simultaneous spikes while
         # remaining several orders below learned and afferent currents.
         self._output_heterogeneity_pa = rng.normal(0.0, 0.01, self.token_cells)
+        self._token_steps = max(
+            1, round(self.config.token_interval_ms / self.cell_parameters.dt_ms)
+        )
+        self._pulse_steps = max(1, round(self.config.input_pulse_ms / self.cell_parameters.dt_ms))
+        self._recurrent_decay = np.exp(-self.cell_parameters.dt_ms / self.config.recurrent_tau_ms)
+        self._eligibility_decay = np.exp(
+            -self.cell_parameters.dt_ms / self.config.eligibility_tau_ms
+        )
+        self._compile_output_race()
+
+    def _compile_output_race(self) -> None:
+        """Compile the exact resting GLIF5 response before its first spike."""
+        p = self.cell_parameters
+        steps = max(1, round(self.config.output_race_ms / p.dt_ms))
+        (
+            self._output_unit_voltage,
+            self._output_unit_voltage_threshold,
+        ) = self._reservoir.compile_resting_response(steps)
 
     @property
     def learned_synapse_count(self) -> int:
@@ -182,23 +200,18 @@ class RecurrentCellCircuit:
         token = int(token_id)
         if not 0 <= token < self.token_cells:
             raise ValueError("token id outside output-cell population")
-        p = self.cell_parameters
         cfg = self.config
-        steps = max(1, round(cfg.token_interval_ms / p.dt_ms))
-        pulse_steps = max(1, round(cfg.input_pulse_ms / p.dt_ms))
-        recurrent_decay = np.exp(-p.dt_ms / cfg.recurrent_tau_ms)
-        eligibility_decay = np.exp(-p.dt_ms / cfg.eligibility_tau_ms)
         afferents = self._afferent_targets[token]
         spike_total = 0
 
-        for step in range(steps):
-            current = self._synaptic_current_pa.copy()
-            if step < pulse_steps:
-                current[afferents] += cfg.input_current_pa
-            spikes = self._reservoir.step(current)
-            self._synaptic_current_pa *= recurrent_decay
-            self._eligibility *= eligibility_decay
-            if np.any(spikes):
+        for step in range(self._token_steps):
+            np.copyto(self._step_current_pa, self._synaptic_current_pa)
+            if step < self._pulse_steps:
+                self._step_current_pa[afferents] += cfg.input_current_pa
+            spikes = self._reservoir.step(self._step_current_pa)
+            self._synaptic_current_pa *= self._recurrent_decay
+            self._eligibility *= self._eligibility_decay
+            if spikes.any():
                 presynaptic = np.flatnonzero(spikes)
                 spike_total += int(presynaptic.size)
                 self._eligibility[presynaptic] += 1.0
@@ -210,8 +223,8 @@ class RecurrentCellCircuit:
         return RecurrentStep(
             token_id=token,
             reservoir_spikes=spike_total,
-            simulated_steps=steps,
-            biological_time_ms=steps * p.dt_ms,
+            simulated_steps=self._token_steps,
+            biological_time_ms=self._token_steps * self.cell_parameters.dt_ms,
         )
 
     def strengthen(self, target_token_id: int) -> None:
@@ -221,17 +234,53 @@ class RecurrentCellCircuit:
             raise ValueError("target token outside output-cell population")
         if self._observed_tokens < 1:
             raise RuntimeError("observe a token before strengthening output synapses")
-        feature = np.empty(self.config.reservoir_cells + 1, dtype=np.float64)
+        self._ensure_growth_storage()
+        assert self._feature_batch is not None
+        assert self._target_moments is not None
+        feature = self._feature_batch[self._pending_growth_examples]
         feature[:-1] = self._eligibility
         feature[-1] = 1.0
-        self._normal_matrix += np.outer(feature, feature)
         self._target_moments[target] += feature
+        self._pending_growth_examples += 1
         self._growth_examples += 1
+        if self._pending_growth_examples == self._STATISTICS_BATCH_SIZE:
+            self._flush_growth_statistics()
+
+    def _ensure_growth_storage(self) -> None:
+        """Allocate dense ridge statistics only when the circuit learns."""
+        if self._normal_matrix is None:
+            self._normal_matrix = np.zeros(
+                (self._growth_feature_count, self._growth_feature_count),
+                dtype=np.float64,
+            )
+        if self._target_moments is None:
+            self._target_moments = np.zeros(
+                (self.token_cells, self._growth_feature_count),
+                dtype=np.float64,
+            )
+        if self._feature_batch is None:
+            self._feature_batch = np.empty(
+                (self._STATISTICS_BATCH_SIZE, self._growth_feature_count),
+                dtype=np.float64,
+            )
+
+    def _flush_growth_statistics(self) -> None:
+        """Accumulate a rank-k batch of cell traces into readout statistics."""
+        if self._pending_growth_examples < 1:
+            return
+        assert self._feature_batch is not None
+        assert self._normal_matrix is not None
+        features = self._feature_batch[: self._pending_growth_examples]
+        self._normal_matrix += features.T @ features
+        self._pending_growth_examples = 0
 
     def _consolidate_readout(self) -> None:
         """Fit output-synapse strengths from accumulated cell traces."""
         if self._growth_examples < 1:
             raise RuntimeError("cannot consolidate without growth examples")
+        self._flush_growth_statistics()
+        assert self._normal_matrix is not None
+        assert self._target_moments is not None
         regularized = self._normal_matrix.copy()
         diagonal = np.diag_indices_from(regularized)
         regularized[diagonal] += self.config.readout_ridge
@@ -271,28 +320,38 @@ class RecurrentCellCircuit:
         if self._observed_tokens < 1:
             raise RuntimeError("observe context before racing output cells")
         current = self.output_current_pa()
-        output = AdaptiveGlifPopulation(self.token_cells, self.cell_parameters)
         p = self.cell_parameters
-        steps = max(1, round(self.config.output_race_ms / p.dt_ms))
-        peak = p.rest_mv
-        for step in range(steps):
-            fired = output.step(current)
-            peak = max(
-                peak,
-                p.rest_mv + float(np.max(output.state.voltage_relative_mv)),
+        winning_current = current[int(np.argmax(current))]
+        winner_voltage = self._output_unit_voltage * winning_current
+        winner_threshold = self._output_unit_voltage_threshold * winning_current
+        crossing_steps = np.flatnonzero(
+            winner_voltage > (p.threshold_inf_relative_mv + winner_threshold)
+        )
+        if crossing_steps.size:
+            step = int(crossing_steps[0])
+            voltage_at_crossing = self._output_unit_voltage[step] * current
+            fired = voltage_at_crossing > (
+                p.threshold_inf_relative_mv + self._output_unit_voltage_threshold[step] * current
             )
-            if np.any(fired):
-                # Fixed heterogeneity makes an exact simultaneous crossing
-                # vanishingly unlikely. Array order is only the final physical
-                # tie-break between spikes in the same 0.05-ms integration bin.
-                winner = int(np.flatnonzero(fired)[0])
-                return RecurrentRace(
-                    winner=winner,
-                    spike_time_ms=(step + 1) * p.dt_ms,
-                    peak_voltage_mv=peak,
-                    active_cells=self.token_cells,
-                    simulated_steps=step + 1,
+            # Apply the fitted reset on the firing integration bin before
+            # reporting its peak, exactly as stepwise simulation does.
+            voltage_at_crossing[fired] = (
+                p.voltage_reset_scale * voltage_at_crossing[fired] + p.voltage_reset_offset_mv
+            )
+            peak_relative = float(np.max(voltage_at_crossing))
+            if step:
+                peak_relative = max(
+                    peak_relative,
+                    float(winner_voltage[step - 1]),
                 )
+            winner = int(np.flatnonzero(fired)[0])
+            return RecurrentRace(
+                winner=winner,
+                spike_time_ms=(step + 1) * p.dt_ms,
+                peak_voltage_mv=max(p.rest_mv, p.rest_mv + peak_relative),
+                active_cells=self.token_cells,
+                simulated_steps=step + 1,
+            )
         raise RuntimeError("output human cells did not spike during the race")
 
     def predict_next(self, context: Sequence[int]) -> RecurrentRace:

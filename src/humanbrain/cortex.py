@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from math import log1p
-from typing import Iterable, Sequence
 
 import numpy as np
 
@@ -81,7 +81,8 @@ class DendriticCortex:
         cell = self.parameters.cell
         self._nmda_decay = np.exp(-cell.dt_ms / self.parameters.tau_nmda_ms)
         self._voltage_step_scale = cell.dt_ms / cell.capacitance_pf
-        self._race_steps = max(1, int(round(self.parameters.race_ms / cell.dt_ms)))
+        self._race_steps = max(1, round(self.parameters.race_ms / cell.dt_ms))
+
         # The fitted GLIF3 membrane and decaying NMDA current are linear before
         # the first spike. Compile their exact forward-Euler unit response once
         # so every race need only scale it for the active synaptic currents.
@@ -90,14 +91,13 @@ class DendriticCortex:
             voltage = 0.0
             current = 1.0
             for step in range(self._race_steps):
-                voltage += self._voltage_step_scale * (
-                    current - cell.leak_ns * voltage
-                )
+                voltage += self._voltage_step_scale * (current - cell.leak_ns * voltage)
                 response[step] = voltage
                 current *= decay
             return response
 
         self._unit_nmda_response = compile_response(self._nmda_decay)
+        self._unit_nmda_peak_step = int(np.argmax(self._unit_nmda_response))
 
     @property
     def branch_count(self) -> int:
@@ -186,20 +186,35 @@ class DendriticCortex:
         for phase_index, phase_drive in enumerate(phases):
             # Allen represents voltage relative to its fitted leak reversal.
             i_nmda = phase_drive * p.branch_current_pa
-            voltage = self._unit_nmda_response[:, None] * i_nmda[None, :]
-            crossings = voltage >= threshold[None, :]
-            crossing_steps = np.flatnonzero(np.any(crossings, axis=1))
-            if crossing_steps.size == 0:
-                peak = max(peak, cell.rest_mv + float(np.max(voltage)))
+            # The fitted membrane is linear before its first spike. Search the
+            # compiled response's monotonic rising limb for each cell's first
+            # crossing without materializing a steps-by-cells matrix.
+            rising_response = self._unit_nmda_response[: self._unit_nmda_peak_step + 1]
+            first_steps = np.searchsorted(
+                rising_response,
+                threshold / i_nmda,
+                side="left",
+            )
+            valid = first_steps < rising_response.size
+            if not valid.any():
+                peak = max(
+                    peak,
+                    cell.rest_mv + float(rising_response[-1] * np.max(i_nmda)),
+                )
                 continue
-            step = int(crossing_steps[0])
-            peak = max(peak, cell.rest_mv + float(np.max(voltage[: step + 1])))
-            indices = np.flatnonzero(crossings[step])
+            step = int(np.min(first_steps[valid]))
+            peak = max(
+                peak,
+                cell.rest_mv + float(self._unit_nmda_response[step] * np.max(i_nmda)),
+            )
+            indices = np.flatnonzero(first_steps == step)
             # Within a sub-millisecond integration bin, the largest threshold
             # crossing is the earlier continuous-time spike. Its fitted reset
             # and basket inhibition suppress every later competitor.
             local = int(
-                indices[np.argmax(voltage[step, indices] - threshold[indices])]
+                indices[
+                    np.argmax(self._unit_nmda_response[step] * i_nmda[indices] - threshold[indices])
+                ]
             )
             elapsed_steps = phase_index * self._race_steps + step + 1
             return CellRace(

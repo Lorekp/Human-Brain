@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict
 from hashlib import sha256
-import json
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +15,6 @@ from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel
 from humanbrain.tokenizer import BytePhraseTokenizer
 
-
 FORMAT = "recurrent-human-cell-checkpoint-v1"
 
 
@@ -24,6 +23,9 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
         raise ValueError("recurrent checkpoint path must end in .npz")
     path.parent.mkdir(parents=True, exist_ok=True)
     circuit = model._circuit
+    circuit._flush_growth_statistics()
+    if circuit._normal_matrix is None or circuit._target_moments is None:
+        raise RuntimeError("cannot checkpoint a recurrent circuit before growth")
     phrase_offsets, phrase_values = _pack_phrases(model._tokenizer.phrases)
     metadata = {
         "format": FORMAT,
@@ -81,10 +83,21 @@ def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
             "_target_moments": ("target_moments", np.float64),
         }
         for attribute, (key, dtype) in arrays.items():
-            expected = getattr(circuit, attribute).shape
+            existing = getattr(circuit, attribute)
+            if existing is None and attribute == "_normal_matrix":
+                expected = (
+                    circuit._growth_feature_count,
+                    circuit._growth_feature_count,
+                )
+            elif existing is None and attribute == "_target_moments":
+                expected = (circuit.token_cells, circuit._growth_feature_count)
+            else:
+                expected = existing.shape
             value = np.array(state[key], dtype=dtype, copy=True)
             if value.shape != expected:
-                raise ValueError(f"checkpoint array {key} has shape {value.shape}, expected {expected}")
+                raise ValueError(
+                    f"checkpoint array {key} has shape {value.shape}, expected {expected}"
+                )
             setattr(circuit, attribute, value)
         circuit._growth_examples = int(metadata["growth_examples"])
     return RecurrentCellLanguageModel(

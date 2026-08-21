@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 import numpy as np
-
 
 ALLEN_MODEL_ID = 503612028
 ALLEN_SPECIMEN_ID = 488392806
@@ -72,7 +71,7 @@ class AllenGlif3Parameters:
         return self.spike_cut_steps * self.dt_ms
 
     @classmethod
-    def from_allen_config(cls, path: str | Path) -> "AllenGlif3Parameters":
+    def from_allen_config(cls, path: str | Path) -> AllenGlif3Parameters:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         expected_methods = {
             "voltage_dynamics_method": "linear_forward_euler",
@@ -90,16 +89,12 @@ class AllenGlif3Parameters:
             rest_mv=rest_mv,
             dt_ms=float(data["dt"]) * 1_000.0,
             capacitance_pf=float(data["C"]) * float(coeffs["C"]) * 1e12,
-            input_resistance_mohm=(
-                float(data["R_input"]) / float(coeffs["G"]) / 1e6
-            ),
-            threshold_relative_mv=(
-                float(data["th_inf"]) * float(coeffs["th_inf"]) * 1_000.0
-            ),
+            input_resistance_mohm=(float(data["R_input"]) / float(coeffs["G"]) / 1e6),
+            threshold_relative_mv=(float(data["th_inf"]) * float(coeffs["th_inf"]) * 1_000.0),
             spike_cut_steps=int(data["spike_cut_length"]),
             after_spike_amplitudes_pa=tuple(
                 float(value) * float(scale) * 1e12
-                for value, scale in zip(data["asc_amp_array"], coeffs["asc_amp_array"])
+                for value, scale in zip(data["asc_amp_array"], coeffs["asc_amp_array"], strict=True)
             ),
             after_spike_taus_ms=tuple(float(value) * 1_000.0 for value in data["asc_tau_array"]),
         )
@@ -166,7 +161,7 @@ class AllenGlif5Parameters:
         return self.spike_cut_steps * self.dt_ms
 
     @classmethod
-    def from_allen_config(cls, path: str | Path) -> "AllenGlif5Parameters":
+    def from_allen_config(cls, path: str | Path) -> AllenGlif5Parameters:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         expected_methods = {
             "voltage_dynamics_method": "linear_forward_euler",
@@ -188,13 +183,11 @@ class AllenGlif5Parameters:
             dt_ms=float(data["dt"]) * 1_000.0,
             capacitance_pf=float(data["C"]) * float(coeffs["C"]) * 1e12,
             input_resistance_mohm=float(data["R_input"]) / float(coeffs["G"]) / 1e6,
-            threshold_inf_relative_mv=(
-                float(data["th_inf"]) * float(coeffs["th_inf"]) * 1_000.0
-            ),
+            threshold_inf_relative_mv=(float(data["th_inf"]) * float(coeffs["th_inf"]) * 1_000.0),
             spike_cut_steps=int(data["spike_cut_length"]),
             after_spike_amplitudes_pa=tuple(
                 float(value) * float(scale) * 1e12
-                for value, scale in zip(data["asc_amp_array"], coeffs["asc_amp_array"])
+                for value, scale in zip(data["asc_amp_array"], coeffs["asc_amp_array"], strict=True)
             ),
             after_spike_taus_ms=tuple(float(value) * 1_000.0 for value in data["asc_tau_array"]),
             voltage_reset_scale=float(voltage_reset["a"]),
@@ -231,6 +224,7 @@ class AdaptiveGlifPopulation:
     def __init__(self, cell_count: int, parameters: AllenGlif5Parameters | None = None) -> None:
         if cell_count < 1:
             raise ValueError("a population needs at least one cell")
+        self._cell_count = int(cell_count)
         self.parameters = parameters or AllenGlif5Parameters()
         self.state = AdaptiveGlifState(
             voltage_relative_mv=np.zeros(cell_count, dtype=np.float64),
@@ -245,47 +239,56 @@ class AdaptiveGlifPopulation:
         # them on the population avoids recomputing exponentials at every
         # 0.05-ms integration step without changing the GLIF5 equations.
         dt_s = self.parameters.dt_ms / 1_000.0
-        leak_per_s = (
-            self.parameters.leak_ns / self.parameters.capacitance_pf * 1_000.0
-        )
+        leak_per_s = self.parameters.leak_ns / self.parameters.capacitance_pf * 1_000.0
         a_voltage = self.parameters.threshold_voltage_coupling_per_s
         b_voltage = self.parameters.threshold_voltage_decay_per_s
-        self._voltage_step_scale = (
-            self.parameters.dt_ms / self.parameters.capacitance_pf
-        )
+        self._voltage_step_scale = self.parameters.dt_ms / self.parameters.capacitance_pf
         self._threshold_phi = a_voltage / (b_voltage - leak_per_s)
         self._threshold_beta_scale = 1.0 / self.parameters.leak_ns
         self._threshold_exp_leak = np.exp(-leak_per_s * dt_s)
         self._threshold_exp_decay = np.exp(-b_voltage * dt_s)
         self._threshold_voltage_ratio = a_voltage / b_voltage
-        self._spike_threshold_decay = np.exp(
-            -self.parameters.threshold_spike_decay_per_s * dt_s
+        # Algebraic coefficients for the Allen three-component threshold
+        # equation. This is the expanded form of the reference expression and
+        # avoids recomputing its shared ``phi * (voltage - beta)`` term.
+        self._threshold_voltage_factor = self._threshold_phi * (
+            self._threshold_exp_leak - self._threshold_exp_decay
         )
-        after_spike_taus_ms = np.asarray(
-            self.parameters.after_spike_taus_ms, dtype=np.float64
+        self._threshold_beta_factor = (
+            -self._threshold_voltage_factor
+            + self._threshold_voltage_ratio * (1.0 - self._threshold_exp_decay)
         )
-        self._after_spike_decay = np.exp(
-            -self.parameters.dt_ms / after_spike_taus_ms
-        )
-        self._after_spike_cut_decay = np.exp(
-            -self.parameters.spike_cut_ms / after_spike_taus_ms
-        )
+        self._spike_threshold_decay = np.exp(-self.parameters.threshold_spike_decay_per_s * dt_s)
+        after_spike_taus_ms = np.asarray(self.parameters.after_spike_taus_ms, dtype=np.float64)
+        self._after_spike_decay = np.exp(-self.parameters.dt_ms / after_spike_taus_ms)
+        self._after_spike_cut_decay = np.exp(-self.parameters.spike_cut_ms / after_spike_taus_ms)
         self._after_spike_amplitudes_pa = np.asarray(
             self.parameters.after_spike_amplitudes_pa, dtype=np.float64
         )
         self._spike_cut_threshold_decay = np.exp(
-            -self.parameters.threshold_spike_decay_per_s
-            * (self.parameters.spike_cut_ms / 1_000.0)
+            -self.parameters.threshold_spike_decay_per_s * (self.parameters.spike_cut_ms / 1_000.0)
         )
+        # Integration workspaces are owned by the population. Reusing them is
+        # important at the fitted 0.05-ms timestep, where allocation overhead
+        # otherwise rivals the cell equations for every biological step.
+        self._work_after_sum = np.empty(cell_count, dtype=np.float64)
+        self._work_total_current = np.empty(cell_count, dtype=np.float64)
+        self._work_next_voltage = np.empty(cell_count, dtype=np.float64)
+        self._work_next_spike_threshold = np.empty(cell_count, dtype=np.float64)
+        self._work_next_after = np.empty_like(self.state.after_spike_currents_pa)
 
     @property
     def cell_count(self) -> int:
-        return self.state.cell_count
+        return self._cell_count
 
     @property
     def threshold_relative_mv(self) -> np.ndarray:
         p = self.parameters
-        return p.threshold_inf_relative_mv + self.state.threshold_spike_mv + self.state.threshold_voltage_mv
+        return (
+            p.threshold_inf_relative_mv
+            + self.state.threshold_spike_mv
+            + self.state.threshold_voltage_mv
+        )
 
     def reset(self) -> None:
         self.state.voltage_relative_mv.fill(0.0)
@@ -293,6 +296,45 @@ class AdaptiveGlifPopulation:
         self.state.threshold_spike_mv.fill(0.0)
         self.state.threshold_voltage_mv.fill(0.0)
         self.state.refractory_steps.fill(0)
+
+    def compile_resting_response(
+        self,
+        step_count: int,
+        current_pa: float = 1.0,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Compile subthreshold voltage and threshold under constant current.
+
+        A resting homogeneous population is linear until its first spike. The
+        returned unit response lets output races scale the fitted cell dynamics
+        across cells without repeatedly integrating identical resting state.
+        """
+        if step_count < 1:
+            raise ValueError("response needs at least one integration step")
+        p = self.parameters
+        voltage = 0.0
+        voltage_threshold = 0.0
+        response_voltage = np.empty(step_count, dtype=np.float64)
+        response_threshold = np.empty(step_count, dtype=np.float64)
+        total_current = float(current_pa)
+        beta = total_current * self._threshold_beta_scale
+        for step in range(step_count):
+            previous_voltage = voltage
+            voltage = previous_voltage + self._voltage_step_scale * (
+                total_current - p.leak_ns * previous_voltage
+            )
+            voltage_threshold = (
+                self._threshold_phi * (previous_voltage - beta) * self._threshold_exp_leak
+                + self._threshold_exp_decay
+                * (
+                    voltage_threshold
+                    - self._threshold_phi * (previous_voltage - beta)
+                    - self._threshold_voltage_ratio * beta
+                )
+                + self._threshold_voltage_ratio * beta
+            )
+            response_voltage[step] = voltage
+            response_threshold[step] = voltage_threshold
+        return response_voltage, response_threshold
 
     def step(self, injected_current_pa: float | Sequence[float] | np.ndarray) -> np.ndarray:
         """Advance one fitted 0.05-ms step and return the cells that spike."""
@@ -304,70 +346,84 @@ class AdaptiveGlifPopulation:
 
         p = self.parameters
         state = self.state
-        spiking = np.zeros(self.cell_count, dtype=bool)
         active = state.refractory_steps == 0
-        state.refractory_steps[~active] -= 1
-        if not np.any(active):
-            return spiking
+        np.subtract(
+            state.refractory_steps,
+            1,
+            out=state.refractory_steps,
+            where=~active,
+        )
+        if not active.any():
+            return active
 
-        rows = np.flatnonzero(active)
-        previous_voltage = state.voltage_relative_mv[rows].copy()
-        previous_after = state.after_spike_currents_pa[rows].copy()
-        total_current = current[rows] + previous_after.sum(axis=1)
+        previous_voltage = state.voltage_relative_mv
+        previous_after = state.after_spike_currents_pa
+        previous_after.sum(axis=1, out=self._work_after_sum)
+        np.add(current, self._work_after_sum, out=self._work_total_current)
+        total_current = self._work_total_current
 
         # Allen evaluates voltage and threshold from the same t0 state, then
         # advances the after-spike currents for t1.
-        next_voltage = previous_voltage + self._voltage_step_scale * (
-            total_current - p.leak_ns * previous_voltage
+        np.multiply(p.leak_ns, previous_voltage, out=self._work_next_voltage)
+        np.subtract(total_current, self._work_next_voltage, out=self._work_next_voltage)
+        np.multiply(
+            self._voltage_step_scale,
+            self._work_next_voltage,
+            out=self._work_next_voltage,
         )
+        np.add(previous_voltage, self._work_next_voltage, out=self._work_next_voltage)
+        next_voltage = self._work_next_voltage
 
         beta = total_current * self._threshold_beta_scale
-        previous_voltage_threshold = state.threshold_voltage_mv[rows]
+        previous_voltage_threshold = state.threshold_voltage_mv
         next_voltage_threshold = (
-            self._threshold_phi
-            * (previous_voltage - beta)
-            * self._threshold_exp_leak
-            + self._threshold_exp_decay
-            * (
-                previous_voltage_threshold
-                - self._threshold_phi * (previous_voltage - beta)
-                - self._threshold_voltage_ratio * beta
-            )
-            + self._threshold_voltage_ratio * beta
+            self._threshold_exp_decay * previous_voltage_threshold
+            + self._threshold_voltage_factor * previous_voltage
+            + self._threshold_beta_factor * beta
         )
-        next_spike_threshold = (
-            state.threshold_spike_mv[rows] * self._spike_threshold_decay
+        np.multiply(
+            state.threshold_spike_mv,
+            self._spike_threshold_decay,
+            out=self._work_next_spike_threshold,
         )
-        next_after = previous_after * self._after_spike_decay
-
-        state.voltage_relative_mv[rows] = next_voltage
-        state.threshold_voltage_mv[rows] = next_voltage_threshold
-        state.threshold_spike_mv[rows] = next_spike_threshold
-        state.after_spike_currents_pa[rows] = next_after
-
-        crossed = next_voltage > (
-            p.threshold_inf_relative_mv + next_voltage_threshold + next_spike_threshold
+        next_spike_threshold = self._work_next_spike_threshold
+        np.multiply(
+            previous_after,
+            self._after_spike_decay,
+            out=self._work_next_after,
         )
-        if not np.any(crossed):
-            return spiking
+        next_after = self._work_next_after
 
-        spike_rows = rows[crossed]
-        spiking[spike_rows] = True
+        np.copyto(state.voltage_relative_mv, next_voltage, where=active)
+        np.copyto(state.threshold_voltage_mv, next_voltage_threshold, where=active)
+        np.copyto(state.threshold_spike_mv, next_spike_threshold, where=active)
+        np.copyto(
+            state.after_spike_currents_pa,
+            next_after,
+            where=active[:, None],
+        )
+
+        crossed = active & (
+            next_voltage
+            > (p.threshold_inf_relative_mv + next_voltage_threshold + next_spike_threshold)
+        )
+        if not crossed.any():
+            return crossed
+
+        spike_rows = np.flatnonzero(crossed)
         state.voltage_relative_mv[spike_rows] = (
-            p.voltage_reset_scale * next_voltage[crossed] + p.voltage_reset_offset_mv
+            p.voltage_reset_scale * next_voltage[spike_rows] + p.voltage_reset_offset_mv
         )
         state.after_spike_currents_pa[spike_rows] = (
-            self._after_spike_amplitudes_pa
-            + next_after[crossed] * self._after_spike_cut_decay
+            self._after_spike_amplitudes_pa + next_after[spike_rows] * self._after_spike_cut_decay
         )
         state.threshold_spike_mv[spike_rows] = (
-            next_spike_threshold[crossed]
-            * self._spike_cut_threshold_decay
+            next_spike_threshold[spike_rows] * self._spike_cut_threshold_decay
             + p.threshold_spike_increment_mv
         )
         # Allen holds the voltage-dependent threshold component during a cut.
         state.refractory_steps[spike_rows] = p.spike_cut_steps
-        return spiking
+        return crossed
 
 
 @dataclass(frozen=True)
@@ -394,7 +450,7 @@ def simulate_glif3_current(
     if np.isscalar(current_pa):
         if duration_ms is None or duration_ms <= 0.0:
             raise ValueError("positive duration_ms is required for scalar current")
-        step_count = max(1, int(round(duration_ms / parameters.dt_ms)))
+        step_count = max(1, round(duration_ms / parameters.dt_ms))
         stimulus = np.full(step_count, float(current_pa), dtype=np.float64)
     else:
         stimulus = np.asarray(current_pa, dtype=np.float64)
@@ -444,7 +500,7 @@ def simulate_glif5_current(
     if np.isscalar(current_pa):
         if duration_ms is None or duration_ms <= 0.0:
             raise ValueError("positive duration_ms is required for scalar current")
-        step_count = max(1, int(round(duration_ms / parameters.dt_ms)))
+        step_count = max(1, round(duration_ms / parameters.dt_ms))
         stimulus = np.full(step_count, float(current_pa), dtype=np.float64)
     else:
         stimulus = np.asarray(current_pa, dtype=np.float64)
