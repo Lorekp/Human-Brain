@@ -108,7 +108,10 @@ def developmental_cell_order(cell_count: int, ordering: str, seed: int) -> np.nd
     layer_rank = np.empty(6, dtype=np.int32)
     layer_rank[layer_wave] = np.arange(6, dtype=np.int32)
     identifiers = np.arange(cell_count, dtype=np.int32)
-    return identifiers[np.lexsort((identifiers, layer_rank[layer], surface_radius))]
+    surface_cell = identifiers // 6
+    return identifiers[
+        np.lexsort((layer_rank[layer], surface_cell, surface_radius))
+    ]
 
 
 class DevelopmentalGrowthController:

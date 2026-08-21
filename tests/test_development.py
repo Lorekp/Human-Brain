@@ -57,6 +57,8 @@ def test_cell_birth_orders_are_deterministic_and_explicitly_different() -> None:
     assert sorted(layered.tolist()) == list(range(96))
     assert sorted(random.tolist()) == list(range(96))
     assert not np.array_equal(layered, random)
+    assert len(set((layered[:6] // 6).tolist())) == 1
+    assert set((layered[:6] % 6).tolist()) == set(range(6))
 
 
 def test_recruitment_keeps_unborn_cells_dormant_then_grows_their_synapses() -> None:
