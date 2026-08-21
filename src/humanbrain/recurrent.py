@@ -239,6 +239,11 @@ class RecurrentCellCircuit:
             recurrent_weights_pa=self._recurrent_weights_pa,
             synaptic_current_pa=self._synaptic_current_pa,
             eligibility=self._eligibility,
+            host_mirror=(
+                "eligibility"
+                if self.config.readout_learning_rule == "sparse_three_factor"
+                else "full"
+            ),
         )
         self._native_local_learner = (
             NativeThreeFactorLearner(
@@ -318,6 +323,10 @@ class RecurrentCellCircuit:
     def synchronize_structure_from_host(self) -> None:
         """Publish in-place afferent, recurrent-topology, and weight mutations."""
         self._native_kernel.synchronize_structure_from_host()
+
+    def synchronize_state_from_device(self) -> None:
+        """Make every mutable fitted-cell array available for host inspection."""
+        self._native_kernel.synchronize_to_host()
 
     def reset_sequence(self) -> None:
         self._reservoir.reset()

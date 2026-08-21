@@ -414,7 +414,10 @@ class NativeRecurrentKernel:
         recurrent_weights_pa: np.ndarray,
         synaptic_current_pa: np.ndarray,
         eligibility: np.ndarray,
+        host_mirror: str = "full",
     ) -> None:
+        if host_mirror not in {"full", "eligibility"}:
+            raise ValueError("host mirror must be 'full' or 'eligibility'")
         self._library = _load_library()
         self._population = population
         cells = population.cell_count
@@ -483,6 +486,9 @@ class NativeRecurrentKernel:
 
     def synchronize_from_host(self) -> None:
         """CPU arrays are the live native state, so no synchronization is needed."""
+
+    def synchronize_to_host(self) -> None:
+        """CPU arrays are already the canonical mutable state."""
 
     def synchronize_structure_from_host(self) -> None:
         """CPU topology and weight arrays are already live native state."""

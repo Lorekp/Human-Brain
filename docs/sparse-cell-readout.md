@@ -126,6 +126,19 @@ teaching, scheduled turnover, reset, checkpoint load, and post-checkpoint
 continuation. Forced CUDA still fails if no CUDA backend is available; it never
 silently falls back to CPU.
 
+Only eligibility and the total spike count cross from device to host after a
+sparse-readout token, because those are the recurrent outputs consumed by the
+fitted-output current and plasticity kernels. At 200,000 GLIF5 cells this is
+1,600,008 bytes/token rather than 12,000,008 bytes/token for all seven mutable
+arrays. The CUDA device remains canonical for voltage, after-spike current,
+adaptive thresholds, refractory state, and recurrent synaptic current between
+tokens. `synchronize_state_from_device()` is the explicit full-state barrier
+for diagnostics; `reset_sequence()` still resets and uploads every mutable
+array. Dense and developmental CUDA lanes retain their full per-token host
+mirror. The real-device parity test exercises sparse current and teaching
+before the diagnostic barrier, then downloads and bit-compares every mutable
+array.
+
 This registration does not imply that sparse current or plasticity runs on the
 GPU, nor is it a capability result. The separate synthetic 200,000-active-cell
 timing protocol in `benchmarks/sparse_cuda_engineering_protocol_v1.json`

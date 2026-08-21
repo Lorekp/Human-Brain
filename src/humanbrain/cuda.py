@@ -360,12 +360,16 @@ class CudaRecurrentKernel:
         recurrent_weights_pa: np.ndarray,
         synaptic_current_pa: np.ndarray,
         eligibility: np.ndarray,
+        host_mirror: str = "full",
     ) -> None:
+        if host_mirror not in {"full", "eligibility"}:
+            raise ValueError("CUDA host mirror must be 'full' or 'eligibility'")
         self._driver = _driver()
         self._driver.make_current()
         self._population = population
         self._synaptic_current_pa = synaptic_current_pa
         self._eligibility = eligibility
+        self._host_mirror = host_mirror
         self._afferent_targets = afferent_targets
         self._recurrent_targets = recurrent_targets
         self._recurrent_weights_pa = recurrent_weights_pa
@@ -467,7 +471,7 @@ class CudaRecurrentKernel:
 
     @property
     def device_to_host_bytes_per_token(self) -> int:
-        mutable = sum(self._arrays[name][1] for name in self._mutable_arrays())
+        mutable = sum(self._arrays[name][1] for name in self._host_mirror_arrays())
         return mutable + ctypes.sizeof(ctypes.c_uint64)
 
     def _allocate_bytes(self, name: str, size: int) -> None:
@@ -559,10 +563,21 @@ class CudaRecurrentKernel:
             "eligibility": self._eligibility,
         }
 
+    def _host_mirror_arrays(self) -> dict[str, np.ndarray]:
+        if self._host_mirror == "eligibility":
+            return {"eligibility": self._eligibility}
+        return self._mutable_arrays()
+
     def synchronize_from_host(self) -> None:
         self._driver.make_current()
         for name, array in self._mutable_arrays().items():
             self._copy_to_device(name, array)
+
+    def synchronize_to_host(self) -> None:
+        """Download every mutable array for explicit state inspection."""
+        self._driver.make_current()
+        for name, array in self._mutable_arrays().items():
+            self._copy_from_device(name, array)
 
     def synchronize_structure_from_host(self) -> None:
         """Rebuild reverse CSR and upload all in-place structural mutations."""
@@ -627,7 +642,7 @@ class CudaRecurrentKernel:
             "measure CUDA token kernel",
         )
         self.last_kernel_milliseconds = float(elapsed.value)
-        for name, array in self._mutable_arrays().items():
+        for name, array in self._host_mirror_arrays().items():
             self._copy_from_device(name, array)
         spikes = np.empty(1, dtype=np.uint64)
         self._copy_from_device("total_spikes", spikes)

@@ -108,6 +108,9 @@ checkpoint continuation, so there is no silent CPU fallback. See
 `docs/sparse-cell-readout.md`, the frozen capability plan in
 `benchmarks/sparse_readout_protocol_v1.json`, and the separate synthetic CUDA
 engineering plan in `benchmarks/sparse_cuda_engineering_protocol_v1.json`.
+Sparse CUDA execution mirrors eligibility plus the spike count after each
+token; call `synchronize_state_from_device()` before inspecting the other
+transient reservoir arrays on the host.
 
 An explicitly non-capability smoke also exercised online updates at 98,304
 cells with 211.70 MiB peak memory and no quadratic ridge state.

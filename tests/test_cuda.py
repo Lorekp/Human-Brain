@@ -29,6 +29,19 @@ def _circuit() -> RecurrentCellCircuit:
     )
 
 
+def _state_arrays(circuit: RecurrentCellCircuit) -> tuple[np.ndarray, ...]:
+    state = circuit._reservoir.state
+    return (
+        circuit._synaptic_current_pa,
+        circuit._eligibility,
+        state.voltage_relative_mv,
+        state.after_spike_currents_pa,
+        state.threshold_spike_mv,
+        state.threshold_voltage_mv,
+        state.refractory_steps,
+    )
+
+
 def _assert_same_state(actual: RecurrentCellCircuit, expected: RecurrentCellCircuit) -> None:
     np.testing.assert_array_equal(actual._synaptic_current_pa, expected._synaptic_current_pa)
     np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
@@ -164,6 +177,10 @@ def test_cuda_token_loop_is_bit_exact_to_cpu_and_reset(
     assert actual.simulation_backend == "cuda"
     assert "NVIDIA" in actual.simulation_device
     assert expected.simulation_backend == "cpu"
+    assert actual._native_kernel.device_to_host_bytes_per_token == (
+        sum(array.nbytes for array in _state_arrays(actual))
+        + np.dtype(np.uint64).itemsize
+    )
 
     tokens = np.random.default_rng(9031).integers(0, actual.token_cells, 64)
     for token in tokens:
@@ -201,23 +218,40 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
         assert expected.simulation_backend == "cpu"
         assert actual.simulation_backend == "cuda"
         assert "NVIDIA" in actual.simulation_device
+        assert actual._native_kernel.device_to_host_bytes_per_token == (
+            actual._eligibility.nbytes + np.dtype(np.uint64).itemsize
+        )
 
-        for token in (97, 98):
-            actual_step = actual.observe(token)
-            expected_step = expected.observe(token)
-            assert actual_step == expected_step
-            _assert_same_state(actual, expected)
-            np.testing.assert_array_equal(
-                actual.output_current_pa(), expected.output_current_pa()
-            )
-            assert actual.race() == expected.race()
+        actual_step = actual.observe(97)
+        expected_step = expected.observe(97)
+        assert actual_step == expected_step
+        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        np.testing.assert_array_equal(
+            actual.output_current_pa(), expected.output_current_pa()
+        )
+        assert actual.race() == expected.race()
 
         target = (expected.race().winner + 1) % expected.token_cells
         actual.strengthen(target)
         expected.strengthen(target)
         _assert_same_sparse_state(actual, expected)
-        np.testing.assert_array_equal(actual.output_current_pa(), expected.output_current_pa())
+        np.testing.assert_array_equal(
+            actual.output_current_pa(), expected.output_current_pa()
+        )
         assert actual.race() == expected.race()
+        actual.synchronize_state_from_device()
+        _assert_same_state(actual, expected)
+
+        actual_step = actual.observe(98)
+        expected_step = expected.observe(98)
+        assert actual_step == expected_step
+        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        np.testing.assert_array_equal(
+            actual.output_current_pa(), expected.output_current_pa()
+        )
+        assert actual.race() == expected.race()
+        actual.synchronize_state_from_device()
+        _assert_same_state(actual, expected)
 
         actual.reset_sequence()
         expected.reset_sequence()
@@ -225,6 +259,8 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
         actual_step = actual.observe(99)
         expected_step = expected.observe(99)
         assert actual_step == expected_step
+        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        actual.synchronize_state_from_device()
         _assert_same_state(actual, expected)
 
         actual.freeze_learning()
@@ -247,8 +283,17 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
         loaded_actual = RecurrentCellLanguageModel.load(actual_path)
         assert loaded_expected._circuit.simulation_backend == "cpu"
         assert loaded_actual._circuit.simulation_backend == "cuda"
+        assert loaded_actual._circuit._native_kernel.device_to_host_bytes_per_token == (
+            loaded_actual._circuit._eligibility.nbytes
+            + np.dtype(np.uint64).itemsize
+        )
 
         assert loaded_actual.predict_next("ab") == loaded_expected.predict_next("ab")
+        np.testing.assert_array_equal(
+            loaded_actual._circuit._eligibility,
+            loaded_expected._circuit._eligibility,
+        )
+        loaded_actual._circuit.synchronize_state_from_device()
         _assert_same_state(loaded_actual._circuit, loaded_expected._circuit)
         _assert_same_sparse_state(loaded_actual._circuit, loaded_expected._circuit)
 

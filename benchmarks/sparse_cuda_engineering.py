@@ -278,6 +278,7 @@ def _run_repeat(protocol: dict[str, Any], repeat: int) -> dict[str, object]:
         readout = circuit._sparse_readout
         assert readout is not None
         cells = circuit.config.reservoir_cells
+        spiking_cells = int(np.count_nonzero(circuit._eligibility))
         dense_bytes = circuit.token_cells * cells * np.dtype(np.float64).itemsize
         host_bytes = _host_persistent_bytes(circuit)
         return {
@@ -312,7 +313,8 @@ def _run_repeat(protocol: dict[str, Any], repeat: int) -> dict[str, object]:
                 "active_reservoir_cells": circuit.active_reservoir_cells,
                 "updated_reservoir_cells_per_integration_step": cells,
                 "integration_steps_per_token": circuit._token_steps,
-                "responsive_eligibility_cells": int(np.count_nonzero(circuit._eligibility)),
+                "responsive_eligibility_cells": spiking_cells,
+                "unique_spiking_reservoir_cells": spiking_cells,
                 "reservoir_activity_density": circuit.reservoir_activity_density,
                 "learned_synapses": circuit.learned_synapse_count,
                 "occupied_output_synapses_per_cell": (
