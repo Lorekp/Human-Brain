@@ -97,9 +97,11 @@ local pre/post eligibility evidence during training, and are then selected by
 activity or a matched random ablation. Optional postsynaptic activity scaling
 and post-pruning incoming-strength conservation provide the homeostatic
 condition. This state is checkpointed as cell order/activity and structural
-synapse arrays; it is not post-hoc pruning of a copied readout. The registered
-384/1,536-cell validation gate is documented in
-`docs/developmental-growth.md`.
+synapse arrays; it is not post-hoc pruning of a copied readout. The frozen
+384/1,536-cell primary gate failed its predictive criterion; an unchanged
+6,144-cell diagnostic still showed state-rank growth and healthier selected
+structure, but staged learning remained worse than full-size-from-start.
+Exact results are in `docs/developmental-growth.md`.
 
 The same cell circuit drives mini-swe-agent through `HumanCellModel`. A
 frozen, instance-specific episodic checkpoint completed the SQLFluff 1625 dev

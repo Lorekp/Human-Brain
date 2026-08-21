@@ -73,12 +73,64 @@ percentage point of median teacher-forced accuracy, must not lose median
 free-running accuracy, and must strictly beat full-start on at least one of
 those endpoints in at least two of three paired seeds. Rank and firing remain
 secondary diagnostics. The single-file result is still exploratory and cannot
-establish general developmental superiority. A 6,144-cell extension is
-deferred until concurrent speed measurements release shared compute.
+establish general developmental superiority. A 6,144-cell post-primary
+extension was declared in the same protocol and ran unchanged only after the
+1,536-cell runtime and memory measurements established that it was safe.
+
+## Frozen results
+
+The primary criterion failed at both registered sizes. At 384 cells, staged
+growth tied full-start teacher forcing but lost 1.5625 percentage points of
+median free-running accuracy and recorded no strict paired-seed win. At 1,536
+cells, it stayed inside the one-point teacher tolerance and tied free running,
+but had only one teacher win and no free-running win. The unchanged 6,144-cell
+post-primary diagnostic also failed: staged teacher forcing was 2.34375 points
+below full-start and had no paired win.
+
+| Final active cells | Condition | Teacher forced | Free running | Effective rank | Mean firing |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 384 | Full from start | 4.69% | 6.25% | 2.031 | 41.57 Hz |
+| 384 | Staged layered/activity/homeostatic | 4.69% | 4.69% | 2.425 | 41.84 Hz |
+| 384 | Staged random order | 4.69% | 4.69% | 2.208 | 44.84 Hz |
+| 384 | Staged random pruning | 4.69% | 4.69% | 1.256 | 80.85 Hz |
+| 384 | Staged without homeostasis | 5.47% | 4.69% | 2.023 | 44.20 Hz |
+| 1,536 | Full from start | 5.47% | 4.69% | 3.576 | 15.13 Hz |
+| 1,536 | Staged layered/activity/homeostatic | 4.69% | 4.69% | 4.055 | 14.98 Hz |
+| 1,536 | Staged random order | 6.25% | 4.69% | 4.244 | 14.72 Hz |
+| 1,536 | Staged random pruning | 4.69% | 4.69% | 1.190 | 65.72 Hz |
+| 1,536 | Staged without homeostasis | 4.69% | 4.69% | 2.626 | 16.63 Hz |
+| 6,144 | Full from start | 8.59% | 4.69% | 5.327 | 3.45 Hz |
+| 6,144 | Staged layered/activity/homeostatic | 6.25% | 4.69% | 5.414 | 3.60 Hz |
+| 6,144 | Staged random order | 7.03% | 4.69% | 5.291 | 3.81 Hz |
+| 6,144 | Staged random pruning | 5.47% | 4.69% | 1.133 | 56.75 Hz |
+| 6,144 | Staged without homeostasis | 6.25% | 4.69% | 4.470 | 3.80 Hz |
+
+Values are three-seed medians. The 6,144-cell full-start teacher score rising
+to 8.59% shows that more cells were not intrinsically harmful. For the staged
+condition, effective rank rose 2.425 → 4.055 → 5.414 and sampled absolute
+correlation fell about 0.458 → 0.380 → 0.327 as cells increased. Predictive
+accuracy did not follow those improved dynamics, so the current limitation is
+the learning/development schedule rather than evidence against scale.
+
+Activity-based structural selection was consistently meaningful: random
+pruning collapsed rank to about 1.1-1.3 and drove firing to 57-81 Hz, while the
+activity-selected condition retained rank 2.4-5.4 and much lower firing.
+Homeostasis also raised staged rank over its no-homeostasis ablation at every
+size. Neither effect delivered the preregistered prediction win, and layered
+birth order did not consistently beat random order.
+
+All conditions received 381 attempted next-token updates and matured to six
+live recurrent edges per active cell. At 6,144 cells this is 36,864 surviving
+and 36,864 final-pruned recurrent synapses. Staged growth retained about
+199,000 nonzero readout synapses versus about 278,000 for full-start because
+late-born cells saw fewer updates; this is a plausible mechanism for the
+predictive loss, not a post-result parameter change. The staged 6,144-cell run
+took a 3.57 s median to train and used 14.77 MiB of persistent arrays.
 
 Run the frozen gate with:
 
 ```powershell
 $env:PYTHONPATH = "src"
 python benchmarks\development_gate.py
+python benchmarks\development_gate.py --deferred-scale
 ```

@@ -1,0 +1,1410 @@
+{
+  "complete": true,
+  "data": {
+    "training": [
+      {
+        "bytes": 19934,
+        "path": "src/humanbrain/cells.py",
+        "sha256": "e20b2b2fdda67e96754bc4913d4cbacc2ff341dff45af91f3ec17cac1381cc5c"
+      },
+      {
+        "bytes": 6623,
+        "path": "src/humanbrain/topology.py",
+        "sha256": "5a5413cd87c8106aa0b812e228e7f6d7dd11d3a3e3c3998b170afc314e82ddb1"
+      },
+      {
+        "bytes": 3922,
+        "path": "src/humanbrain/tokenizer.py",
+        "sha256": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce"
+      }
+    ],
+    "validation": {
+      "bytes": 8163,
+      "path": "src/humanbrain/recurrent_artifacts.py",
+      "sha256": "f84b3b80cf06e649acca5dc3f398b576bc5467a6a4a3381a8a615aec9be4a633"
+    },
+    "validation_path": "src/humanbrain/recurrent_artifacts.py"
+  },
+  "execution_scope": "post-primary-deferred-scale-diagnostic",
+  "primary_criteria": [
+    {
+      "baseline_free_running_median_accuracy": 0.046875,
+      "baseline_teacher_forced_median_accuracy": 0.0859375,
+      "free_running_median_difference": 0.0,
+      "free_running_requirement_met": true,
+      "free_running_strict_seed_wins": 0,
+      "passed": false,
+      "reservoir_cells": 6144,
+      "seed_win_requirement_met": false,
+      "staged_free_running_median_accuracy": 0.046875,
+      "staged_teacher_forced_median_accuracy": 0.0625,
+      "status": "complete",
+      "teacher_forced_median_difference": -0.0234375,
+      "teacher_forced_strict_seed_wins": 0,
+      "teacher_requirement_met": false
+    }
+  ],
+  "protocol_sha256": "5e3a5131d2ed60877aa19bc8e364f3b32322af74fbe689f061e20eab69f7885a",
+  "protocol_version": "human-cell-development-v2",
+  "runs": [
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 6144,
+          "grown_synapses": 73728,
+          "homeostatic_cells_scaled": 6144,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6018072495137198,
+          "mean_activity": 2.0518420136206044,
+          "recruited_cells": 6144,
+          "recurrent_synapses": 73728,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 0,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6898770076597899,
+          "mean_activity": 2.3846451895541514,
+          "recruited_cells": 0,
+          "recurrent_synapses": 73728,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 0,
+          "homeostatic_cells_scaled": 6144,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.8013797101255249,
+          "mean_activity": 2.6427820832643465,
+          "recruited_cells": 0,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "full_size_from_start",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.078125,
+        "correct": 5,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uoe _uoemt puiernft u_aenofr uma-eidt euco_un elrpainsufro mut e",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=17:condition=full_size_from_start",
+      "learned_readout_synapses": 277095,
+      "local_weight_updates": 343,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 19.348471641540527
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 1803,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 5.322739424388743,
+        "mean_absolute_cell_correlation": 0.3289764681294843,
+        "mean_firing_hz_per_cell": 3.4544203016493054,
+        "mean_spikes_per_cell_per_token": 0.006908840603298611,
+        "reservoir_spikes": 4075,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0859375,
+        "correct": 11,
+        "predictions": 128,
+        "tokens_per_second": 601.9498472292217
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.1938926000148058,
+        "teacher_forced": 0.2126423000008799,
+        "training": 3.490385100012645
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1535,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.4629658879992333,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3072,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6423206597089105,
+          "mean_activity": 2.574698830179987,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 1.805337918817347,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_layered_activity_homeostatic",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu uuuuuuuuuuuuuuu uuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=17:condition=staged_layered_activity_homeostatic",
+      "learned_readout_synapses": 199339,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.4346284866333
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 1850,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 5.4141749916560915,
+        "mean_absolute_cell_correlation": 0.32651313036631546,
+        "mean_firing_hz_per_cell": 3.601921929253472,
+        "mean_spikes_per_cell_per_token": 0.007203843858506944,
+        "reservoir_spikes": 4249,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0625,
+        "correct": 8,
+        "predictions": 128,
+        "tokens_per_second": 485.1099664910161
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.22773529999540187,
+        "teacher_forced": 0.26385769998887554,
+        "training": 4.112686300009955
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1535,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.4642823173896522,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3071,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6406192293822643,
+          "mean_activity": 2.5963911359462863,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6144,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5123849633103196,
+          "mean_activity": 1.7840127953097127,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_random_order",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=17:condition=staged_random_order",
+      "learned_readout_synapses": 198925,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.43725299835205
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 1989,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 4.944977971207378,
+        "mean_absolute_cell_correlation": 0.3442042230517134,
+        "mean_firing_hz_per_cell": 3.9003160264756946,
+        "mean_spikes_per_cell_per_token": 0.007800632052951389,
+        "reservoir_spikes": 4601,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0703125,
+        "correct": 9,
+        "predictions": 128,
+        "tokens_per_second": 542.7169086836943
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.22512239997740835,
+        "teacher_forced": 0.23585040000034496,
+        "training": 4.152211900014663
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1535,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.4629658879992333,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3072,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6423206597089105,
+          "mean_activity": 2.574698830179987,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 1.805337918817347,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_random_pruning",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=17:condition=staged_random_pruning",
+      "learned_readout_synapses": 199339,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.43291187286377
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 5563,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 1.136125894727646,
+        "mean_absolute_cell_correlation": 0.8120274798308544,
+        "mean_firing_hz_per_cell": 54.675632052951386,
+        "mean_spikes_per_cell_per_token": 0.10935126410590278,
+        "reservoir_spikes": 64498,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0625,
+        "correct": 8,
+        "predictions": 128,
+        "tokens_per_second": 601.1966631929167
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.20068570002331398,
+        "teacher_forced": 0.21290869999211282,
+        "training": 3.936170899978606
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 0.4629658879992334,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 2.5522437523221835,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 1.8604300492537378,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_no_homeostasis",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.0625,
+        "correct": 4,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuu uuuuuuuuuuuuu uuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=17:condition=staged_no_homeostasis",
+      "learned_readout_synapses": 200155,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.433674812316895
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 1790,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 4.469562846060055,
+        "mean_absolute_cell_correlation": 0.37574855345624303,
+        "mean_firing_hz_per_cell": 3.7400987413194446,
+        "mean_spikes_per_cell_per_token": 0.007480197482638889,
+        "reservoir_spikes": 4412,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.1015625,
+        "correct": 13,
+        "predictions": 128,
+        "tokens_per_second": 612.9041216248492
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.19541720001143403,
+        "teacher_forced": 0.20884180002030917,
+        "training": 3.69303980001132
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 6144,
+          "grown_synapses": 73728,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6094871145434646,
+          "mean_activity": 2.114301490818209,
+          "recruited_cells": 6144,
+          "recurrent_synapses": 73728,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 0,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.746191922166422,
+          "mean_activity": 2.5104367440882327,
+          "recruited_cells": 0,
+          "recurrent_synapses": 73728,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 0,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.8054711847148405,
+          "mean_activity": 2.7207386150114545,
+          "recruited_cells": 0,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "full_size_from_start",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "ttititioui_timfuoir nt eif_aptniuaocue ittr-dlmi tonfru_iuaeittc",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=29:condition=full_size_from_start",
+      "learned_readout_synapses": 278414,
+      "local_weight_updates": 345,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.44650363922119
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 1992,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 5.431989440030626,
+        "mean_absolute_cell_correlation": 0.33283406568105034,
+        "mean_firing_hz_per_cell": 3.7180582682291665,
+        "mean_spikes_per_cell_per_token": 0.007436116536458333,
+        "reservoir_spikes": 4386,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0859375,
+        "correct": 11,
+        "predictions": 128,
+        "tokens_per_second": 395.37094750828766
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.28739119999227114,
+        "teacher_forced": 0.32374660001369193,
+        "training": 3.719748899980914
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1535,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.44129210072702607,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3072,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6379890217944169,
+          "mean_activity": 2.485551156969817,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 1.7866450720969906,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_layered_activity_homeostatic",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "ttttutuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=29:condition=staged_layered_activity_homeostatic",
+      "learned_readout_synapses": 199409,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.4348726272583
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 1871,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 5.312227168606784,
+        "mean_absolute_cell_correlation": 0.32174242900055294,
+        "mean_firing_hz_per_cell": 3.7104288736979165,
+        "mean_spikes_per_cell_per_token": 0.007420857747395833,
+        "reservoir_spikes": 4377,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0625,
+        "correct": 8,
+        "predictions": 128,
+        "tokens_per_second": 664.8238580769269
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.1809330000251066,
+        "teacher_forced": 0.19253219998790883,
+        "training": 3.566804400004912
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1536,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.4854991039890975,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3072,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.653112230207341,
+          "mean_activity": 2.5735847575686592,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6144,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5093305448412356,
+          "mean_activity": 1.7622592472989753,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_random_order",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=29:condition=staged_random_order",
+      "learned_readout_synapses": 198262,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.432278633117676
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 1950,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 5.313165678503691,
+        "mean_absolute_cell_correlation": 0.32464607262558715,
+        "mean_firing_hz_per_cell": 3.80706787109375,
+        "mean_spikes_per_cell_per_token": 0.0076141357421875,
+        "reservoir_spikes": 4491,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0625,
+        "correct": 8,
+        "predictions": 128,
+        "tokens_per_second": 673.7242793786013
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.1663500999857206,
+        "teacher_forced": 0.18998870000359602,
+        "training": 3.2545127000194043
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1535,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.44129210072702607,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3072,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6379890217944169,
+          "mean_activity": 2.485551156969817,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 1.7866450720969906,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_random_pruning",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=29:condition=staged_random_pruning",
+      "learned_readout_synapses": 199409,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.432103157043457
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 5543,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 1.1331410704922384,
+        "mean_absolute_cell_correlation": 0.8296119215682638,
+        "mean_firing_hz_per_cell": 56.75421820746528,
+        "mean_spikes_per_cell_per_token": 0.11350843641493055,
+        "reservoir_spikes": 66950,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0546875,
+        "correct": 7,
+        "predictions": 128,
+        "tokens_per_second": 680.2240275155684
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.17693060002056882,
+        "teacher_forced": 0.18817330000456423,
+        "training": 3.107593299995642
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 0.44129210072702607,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 2.4407453771308267,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 1.8304892041189635,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_no_homeostasis",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.03125,
+        "correct": 2,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "ttuuuutuuuuuuuuuuuuuuuuuuuuuuuuuuuuutuuuuuuuuutuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=29:condition=staged_no_homeostasis",
+      "learned_readout_synapses": 199886,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.431614875793457
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 1752,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 4.657112275449161,
+        "mean_absolute_cell_correlation": 0.3657316648335099,
+        "mean_firing_hz_per_cell": 3.804524739583333,
+        "mean_spikes_per_cell_per_token": 0.007609049479166667,
+        "reservoir_spikes": 4488,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0546875,
+        "correct": 7,
+        "predictions": 128,
+        "tokens_per_second": 699.4734276273649
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.16736750002019107,
+        "teacher_forced": 0.18299480000860058,
+        "training": 3.0927875000052154
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 6144,
+          "grown_synapses": 73728,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6077525044762746,
+          "mean_activity": 2.022580685994655,
+          "recruited_cells": 6144,
+          "recurrent_synapses": 73728,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 0,
+          "homeostatic_cells_scaled": 6144,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.7326920896505146,
+          "mean_activity": 2.4245920660024134,
+          "recruited_cells": 0,
+          "recurrent_synapses": 73728,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 0,
+          "homeostatic_cells_scaled": 6144,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.8018694442449142,
+          "mean_activity": 2.6283479923132327,
+          "recruited_cells": 0,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "full_size_from_start",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "ttuo t_ud-o tfrumn_ teaiunsaf ot teurcul ti_nu-dape t ctrunoat u",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=43:condition=full_size_from_start",
+      "learned_readout_synapses": 277710,
+      "local_weight_updates": 343,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.447030067443848
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 1773,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 5.326691689377724,
+        "mean_absolute_cell_correlation": 0.3369013555228183,
+        "mean_firing_hz_per_cell": 3.3738878038194446,
+        "mean_spikes_per_cell_per_token": 0.006747775607638889,
+        "reservoir_spikes": 3980,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.1171875,
+        "correct": 15,
+        "predictions": 128,
+        "tokens_per_second": 656.3614500427246
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.17702810000628233,
+        "teacher_forced": 0.19501450000097975,
+        "training": 3.1317940000153612
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1536,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.5088312625410754,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3072,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6589380991437597,
+          "mean_activity": 2.788034931279851,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 1.7847248320222482,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_layered_activity_homeostatic",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=43:condition=staged_layered_activity_homeostatic",
+      "learned_readout_synapses": 199099,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.432759284973145
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 1783,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 5.420244677331409,
+        "mean_absolute_cell_correlation": 0.32791922478576807,
+        "mean_firing_hz_per_cell": 3.5688612196180554,
+        "mean_spikes_per_cell_per_token": 0.007137722439236111,
+        "reservoir_spikes": 4210,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.046875,
+        "correct": 6,
+        "predictions": 128,
+        "tokens_per_second": 688.5125975769972
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.18002180001349188,
+        "teacher_forced": 0.18590800001402386,
+        "training": 3.0752610999916214
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1536,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.4709409758132199,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3071,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6113437542352984,
+          "mean_activity": 2.4910718500362115,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5051402846636314,
+          "mean_activity": 1.7234623267502247,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_random_order",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu uuuuu uuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=43:condition=staged_random_order",
+      "learned_readout_synapses": 198275,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.431721687316895
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 1749,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 5.290849919220068,
+        "mean_absolute_cell_correlation": 0.3252847861005065,
+        "mean_firing_hz_per_cell": 3.5383436414930554,
+        "mean_spikes_per_cell_per_token": 0.007076687282986111,
+        "reservoir_spikes": 4174,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.078125,
+        "correct": 10,
+        "predictions": 128,
+        "tokens_per_second": 730.3076535253351
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.17501979999360628,
+        "teacher_forced": 0.17526859999634326,
+        "training": 3.147412999998778
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 1536,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 0.5088312625410754,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 3072,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.6589380991437597,
+          "mean_activity": 2.788034931279851,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 6143,
+          "homeostatic_scale_max": 2.0,
+          "homeostatic_scale_min": 0.5,
+          "mean_activity": 1.7847248320222482,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_random_pruning",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=43:condition=staged_random_pruning",
+      "learned_readout_synapses": 199099,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.43294620513916
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 5572,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 1.125861710874263,
+        "mean_absolute_cell_correlation": 0.8367121421518519,
+        "mean_firing_hz_per_cell": 58.359781901041664,
+        "mean_spikes_per_cell_per_token": 0.11671956380208333,
+        "reservoir_spikes": 68844,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.046875,
+        "correct": 6,
+        "predictions": 128,
+        "tokens_per_second": 581.954941266824
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.22239829998579808,
+        "teacher_forced": 0.21994829998584464,
+        "training": 3.624835199996596
+      }
+    },
+    {
+      "active_cells_by_stage": [
+        {
+          "active_cells": 1536,
+          "grown_synapses": 9216,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 0.5088312625410754,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 9216,
+          "stage": 0,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 0
+        },
+        {
+          "active_cells": 3072,
+          "grown_synapses": 30720,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 2.7757043300113695,
+          "recruited_cells": 1536,
+          "recurrent_synapses": 36864,
+          "stage": 1,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 3072
+        },
+        {
+          "active_cells": 6144,
+          "grown_synapses": 43008,
+          "homeostatic_cells_scaled": 0,
+          "homeostatic_scale_max": 1.0,
+          "homeostatic_scale_min": 1.0,
+          "mean_activity": 1.810950238473212,
+          "recruited_cells": 3072,
+          "recurrent_synapses": 73728,
+          "stage": 2,
+          "training_examples": 127,
+          "turnover_pruned_synapses": 6144
+        }
+      ],
+      "attempted_updates": 381,
+      "condition": "staged_no_homeostasis",
+      "final_pruned_recurrent_synapses": 36864,
+      "final_recurrent_synapses": 36864,
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 1,
+        "generated_bytes": 64,
+        "generated_preview": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "target_bytes": 64
+      },
+      "key": "cells=6144:seed=43:condition=staged_no_homeostasis",
+      "learned_readout_synapses": 199599,
+      "local_weight_updates": 344,
+      "memory_mib": {
+        "persistent_arrays": 14.765914916992188,
+        "training_peak_traced": 17.43235492706299
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 1803,
+        "correlation_measurement": "deterministic sample of 4096 cell pairs",
+        "effective_state_rank": 3.9383367485414165,
+        "mean_absolute_cell_correlation": 0.3993093990205535,
+        "mean_firing_hz_per_cell": 4.048665364583333,
+        "mean_spikes_per_cell_per_token": 0.008097330729166666,
+        "reservoir_spikes": 4776,
+        "tokens": 96
+      },
+      "teacher_forced": {
+        "accuracy": 0.0625,
+        "correct": 8,
+        "predictions": 128,
+        "tokens_per_second": 706.5448686218692
+      },
+      "trained_structural_synapses": 36864,
+      "wall_seconds": {
+        "free_running": 0.17814599999110214,
+        "teacher_forced": 0.18116330000339076,
+        "training": 3.544663099979516
+      }
+    }
+  ],
+  "selection_partition": "named validation file",
+  "summary": [
+    {
+      "condition": "full_size_from_start",
+      "effective_state_rank_median": 5.326691689377724,
+      "free_running_median_accuracy": 0.046875,
+      "mean_firing_hz_per_cell_median": 3.4544203016493054,
+      "reservoir_cells": 6144,
+      "runs": 3,
+      "teacher_forced_median_accuracy": 0.0859375,
+      "training_wall_seconds_median": 3.490385100012645
+    },
+    {
+      "condition": "staged_layered_activity_homeostatic",
+      "effective_state_rank_median": 5.4141749916560915,
+      "free_running_median_accuracy": 0.046875,
+      "mean_firing_hz_per_cell_median": 3.601921929253472,
+      "reservoir_cells": 6144,
+      "runs": 3,
+      "teacher_forced_median_accuracy": 0.0625,
+      "training_wall_seconds_median": 3.566804400004912
+    },
+    {
+      "condition": "staged_no_homeostasis",
+      "effective_state_rank_median": 4.469562846060055,
+      "free_running_median_accuracy": 0.046875,
+      "mean_firing_hz_per_cell_median": 3.804524739583333,
+      "reservoir_cells": 6144,
+      "runs": 3,
+      "teacher_forced_median_accuracy": 0.0625,
+      "training_wall_seconds_median": 3.544663099979516
+    },
+    {
+      "condition": "staged_random_order",
+      "effective_state_rank_median": 5.290849919220068,
+      "free_running_median_accuracy": 0.046875,
+      "mean_firing_hz_per_cell_median": 3.80706787109375,
+      "reservoir_cells": 6144,
+      "runs": 3,
+      "teacher_forced_median_accuracy": 0.0703125,
+      "training_wall_seconds_median": 3.2545127000194043
+    },
+    {
+      "condition": "staged_random_pruning",
+      "effective_state_rank_median": 1.1331410704922384,
+      "free_running_median_accuracy": 0.046875,
+      "mean_firing_hz_per_cell_median": 56.75421820746528,
+      "reservoir_cells": 6144,
+      "runs": 3,
+      "teacher_forced_median_accuracy": 0.0546875,
+      "training_wall_seconds_median": 3.624835199996596
+    }
+  ],
+  "test_partition_accessed": false
+}

@@ -178,10 +178,23 @@ it explicitly has no test access. Its numeric primary criterion requires the
 staged condition to stay within one percentage point of full-start median
 teacher-forced accuracy, not lose median free-running accuracy, and record at
 least two of three strict paired-seed wins on either endpoint. It also records
-state-rank/correlation/firing, stage structure, runtime, and memory. This
-section will report the registered artifact without tuning after the shared
-CPU benchmark window is available; 6,144 cells remain a separately declared
-extension rather than an unrecorded exploratory retry.
+state-rank/correlation/firing, stage structure, runtime, and memory.
+
+The numeric primary failed without retuning. At 384 cells, staged versus
+full-start medians were 4.69% versus 4.69% teacher forced and 4.69% versus
+6.25% free running, with no strict paired-seed win. At 1,536 cells, staged was
+4.69% versus 5.47% teacher forced and tied 4.69% free running; only one of three
+teacher pairs won. The predeclared unchanged 6,144-cell diagnostic was 6.25%
+versus 8.59% teacher forced and tied 4.69% free running, again with no win.
+
+The dynamics tell a narrower positive story. Staged effective rank increased
+from 2.425 to 4.055 to 5.414 over 384, 1,536, and 6,144 cells while sampled
+correlation and firing generally fell. Random pruning collapsed rank near one
+and caused 57-81 Hz firing; activity selection and homeostasis therefore help
+circuit health, but not enough to improve prediction. Full-start teacher
+accuracy reaching 8.59% at 6,144 cells also contradicts a blanket claim that
+larger networks are worse. The present failure is staged learning exposure and
+architecture, not a negative law of scale.
 
 ## Reproducibility artifacts
 
@@ -217,6 +230,9 @@ not a platform-specific checkout's newline representation.
 | `benchmarks/native_scaling_protocol_v1.json` | `fde5bdfd2817008ef105523c01b2c1a09e714ad8cd4664cb2fc6e8dd38497355` |
 | `artifacts/local_learning_scaling_v1.json` | `0d80c1c209c947000c1d6a6aa823d68cf957ad418a6d0f1b5568f83ae88e0bb7` |
 | `artifacts/local_learning_large_scale_v1.json` | `b93853ab9496694260eed3d0f3c62f1721509176543896b08703f451fdba5c5c` |
+| `artifacts/development_validation_v2.json` | `8e0fbacd8ad1eee42fa481b9b7fcc59f89d9ea83b4f15d65f2b4e16506484d0f` |
+| `artifacts/development_scale_6144_v2.json` | `656836961565f3d0259f8a48d630b66b7c674ad6967d9cc2e571a7a2c7a4c592` |
+| `benchmarks/development_protocol_v2.json` | `5e3a5131d2ed60877aa19bc8e364f3b32322af74fbe689f061e20eab69f7885a` |
 | `artifacts/swe-dev-gemma/sqlfluff__sqlfluff-1625/sqlfluff__sqlfluff-1625.traj.json` | `d8d1007bc618f5c28794c21327834018a7187f6822b40c775afe8375d7c9b0a3` |
 | Gemma 4 12B QAT Q4_0 GGUF | `93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b` |
 
