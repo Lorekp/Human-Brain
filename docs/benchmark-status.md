@@ -77,6 +77,27 @@ The empirical time exponent is 0.949 and persistent-memory exponent is 0.997.
 This removes Python simulation and inference allocation as the immediate scale
 limit. Exact ridge learning remains quadratic in memory and cubic at solve.
 
+## Scalable local learning
+
+An experimental native competitive three-factor rule now provides online
+synapse-local readout updates without ridge's normal matrix, target moments,
+batch workspace, or dense solve. The learning rate was selected on a named
+training-only calibration file and frozen before the named validation file was
+opened; neither artifact defines or accesses a test split.
+
+The predictive comparison reaches 6,144 active cells with 13.92 MiB traced
+peak memory. Teacher-forced accuracy rises from 3.91% at 96 cells to 10.16% at
+6,144, but local learning trails ridge substantially at 96 and 384 cells and
+free-running accuracy remains weak. This establishes linear-memory learning
+and a positive size trend, not ridge parity or useful generation.
+
+A separate dataset-free 32-example smoke reaches 98,304 active cells at 9.34
+updates/s with 211.70 MiB peak memory and no ridge arrays, avoiding a
+theoretical 72.00-GiB normal matrix. At that size, topology construction takes
+31.26 seconds while growth takes 3.43 seconds, making construction a measured
+initialization bottleneck. See `docs/local-readout-learning.md` for the rule,
+locality boundary, full comparison, and claim limits.
+
 The accepted patch changes only L031's emitted description, matching the public
 upstream resolution in [SQLFluff PR 1625](https://github.com/sqlfluff/sqlfluff/pull/1625/files).
 The official evaluator applies the patch in Docker and grades FAIL_TO_PASS and
@@ -173,6 +194,8 @@ not a platform-specific checkout's newline representation.
 | `benchmarks/topology_protocol_v2.json` | `2c182ae8f275b17a91acaffc7831d9aa8ab08172bc5eb2507441fa29b41e5b21` |
 | `artifacts/native_scaling_v1.json` | `591fb2ead4d064163e7023a77e24aede48aad0d65d873d764fc19d33ea9f4251` |
 | `benchmarks/native_scaling_protocol_v1.json` | `fde5bdfd2817008ef105523c01b2c1a09e714ad8cd4664cb2fc6e8dd38497355` |
+| `artifacts/local_learning_scaling_v1.json` | `0d80c1c209c947000c1d6a6aa823d68cf957ad418a6d0f1b5568f83ae88e0bb7` |
+| `artifacts/local_learning_large_scale_v1.json` | `b93853ab9496694260eed3d0f3c62f1721509176543896b08703f451fdba5c5c` |
 | `artifacts/swe-dev-gemma/sqlfluff__sqlfluff-1625/sqlfluff__sqlfluff-1625.traj.json` | `d8d1007bc618f5c28794c21327834018a7187f6822b40c775afe8375d7c9b0a3` |
 | Gemma 4 12B QAT Q4_0 GGUF | `93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b` |
 

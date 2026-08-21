@@ -44,9 +44,10 @@ dynamics rather than allocation alone cause the gain.
 The recurrent token interval now runs in a dependency-free native Rust kernel;
 Python only orchestrates the experiment. A frozen, bit-exact benchmark runs
 1,536 cells at 1,045 tokens/s and scales linearly through 98,304 cells at 20.05
-tokens/s using 210.79 MiB of persistent arrays. The remaining scale bottleneck
-is learning: exact ridge consolidation still needs an `N x N` normal matrix and
-an `O(N^3)` solve. A synapse-local, linear-memory learner is the next layer.
+tokens/s using 210.79 MiB of persistent arrays. Exact ridge consolidation still
+needs an `N x N` normal matrix and an `O(N^3)` solve. The experimental native
+three-factor rule below removes that hidden state and solve; its remaining
+limits are learning quality and the physical `vocabulary x cells` readout.
 
 Simulation speed is a core capability requirement. The next acceptance gate is
 more than 100,000 **active** fitted human cells at more than 100 end-to-end
@@ -76,6 +77,7 @@ state and cubic solve while leaving ridge as the default comparison. It reached
 accuracy at small sizes and its free-running validation remains weak. See
 `docs/local-readout-learning.md` and the frozen
 `artifacts/local_learning_scaling_v1.json` report.
+
 An explicitly non-capability smoke also exercised online updates at 98,304
 cells with 211.70 MiB peak memory and no quadratic ridge state.
 

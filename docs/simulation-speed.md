@@ -142,8 +142,8 @@ this speed-only patch would change registered model behavior.
 
 ## Experimental local-learning follow-up
 
-The separate `local-learning` branch adds a native competitive three-factor
-rule without changing ridge as the default. The recorded train-only-calibrated
+The integrated experimental path adds a native competitive three-factor rule
+without changing ridge as the default. The recorded train-only-calibrated
 comparison is `artifacts/local_learning_scaling_v1.json`:
 
 | Cells | Local train | Ridge train | Local peak | Ridge peak | Local persistent | Ridge persistent | Local / ridge teacher-forced | Local / ridge free-running |
