@@ -14,6 +14,9 @@ from typing import Any, Iterable, Mapping
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = ROOT / "src"
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 DEFAULT_EXPERIMENT_PROTOCOL = (
     ROOT / "benchmarks" / "simple_swe_public_baseline_protocol_v1.json"
 )
