@@ -101,6 +101,13 @@ mixed-membership, 1D, 2D, layered, and 3D circuits with six million edges in
 population-sized candidate-row bottleneck; it does not establish that any
 topology improves prediction.
 
+One hundred billion cells is tracked as a long-term distributed architecture
+target, not as a result. Future artifacts must distinguish addressable,
+materialized, updated, and spiking cells; dormant or procedurally described
+cells do not count as active scale. The current memory/throughput bounds and
+the event-driven sharding plan are in
+`docs/research/100-billion-cell-architecture.md`.
+
 The three-factor path now also supports genuine developmental training.
 Previously dormant fitted GLIF5 cells can be recruited in deterministic random
 or layered-sheet birth order. Sparse recurrent synapses first overgrow, collect

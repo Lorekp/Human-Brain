@@ -117,6 +117,16 @@ the full-touch gate at 200,000 cells and 144.03 end-to-end tokens/s. Neither
 result is accepted as language capability without responsive-cell, firing,
 state-rank, and held-out prediction measurements.
 
+The proposed 100-billion-cell scale is an architectural target, not a current
+benchmark claim. Every future scale artifact must separately report
+addressable, materialized, updated, and spiking cells. A procedural address
+space or dormant population receives no capability credit. Reaching that scale
+requires 64-bit cell IDs, procedural immutable topology, sparse learned
+overlays, tile/event frontiers with no population-wide scan, and distributed
+target-owned state. The design, resource extrapolation, and staged acceptance
+gates are recorded in
+`docs/research/100-billion-cell-architecture.md`.
+
 Inference allocates only linear-sized cell, afferent, and sparse recurrent
 state. It does not allocate the training-only dense ridge statistics. The
 exact ridge learner is therefore deliberately identified as a separate
