@@ -248,6 +248,10 @@ class RecurrentCellCircuit:
     def eligibility(self) -> np.ndarray:
         return self._eligibility.copy()
 
+    def synchronize_structure_from_host(self) -> None:
+        """Publish in-place afferent, recurrent-topology, and weight mutations."""
+        self._native_kernel.synchronize_structure_from_host()
+
     def reset_sequence(self) -> None:
         self._reservoir.reset()
         self._synaptic_current_pa.fill(0.0)

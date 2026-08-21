@@ -358,7 +358,7 @@ def test_quiescent_frontier_is_exact_across_activity_densities() -> None:
             np.testing.assert_array_equal(actual, expected)
 
 
-def test_native_transition_remains_exact_after_recruitment_and_structural_pruning() -> None:
+def test_native_transition_remains_exact_after_developmental_mutations_and_reset() -> None:
     config = RecurrentCircuitConfig(
         reservoir_cells=48,
         active_reservoir_cells=16,
@@ -390,20 +390,33 @@ def test_native_transition_remains_exact_after_recruitment_and_structural_prunin
     expected_growth.structural_score[:] = actual_growth.structural_score
     actual_growth.structural_exposure[actual._recurrent_weights_pa != 0.0] = 1.0
     expected_growth.structural_exposure[expected._recurrent_weights_pa != 0.0] = 1.0
+    activity = np.linspace(0.25, 2.0, 32)
+    actual_growth.cell_activity[actual_growth.active_mask] = activity
+    expected_growth.cell_activity[expected_growth.active_mask] = activity
+    actual_growth._stage_examples = expected_growth._stage_examples = 4
+    assert actual_growth.apply_activity_homeostasis() == (
+        expected_growth.apply_activity_homeostasis()
+    )
     actual_growth.prune_to_final_fanout()
     expected_growth.prune_to_final_fanout()
+    np.testing.assert_array_equal(
+        actual._recurrent_weights_pa,
+        expected._recurrent_weights_pa,
+    )
+    actual.reset_sequence()
+    expected.reset_sequence()
 
     tokens = np.random.default_rng(805).integers(0, actual.token_cells, 32)
     for token in tokens:
         step = actual.observe(int(token))
         expected_spikes = _python_reference_observe(expected, int(token))
         assert step.reservoir_spikes == expected_spikes
-        np.testing.assert_array_equal(actual._synaptic_current_pa, expected._synaptic_current_pa)
-        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
-        np.testing.assert_array_equal(
-            actual._reservoir.state.voltage_relative_mv,
-            expected._reservoir.state.voltage_relative_mv,
-        )
+        for actual_array, expected_array in zip(
+            _circuit_state_arrays(actual),
+            _circuit_state_arrays(expected),
+            strict=True,
+        ):
+            np.testing.assert_array_equal(actual_array, expected_array)
 
 
 def test_vectorized_glif_step_matches_original_during_spikes_and_refractory() -> None:

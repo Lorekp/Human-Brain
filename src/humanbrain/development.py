@@ -18,7 +18,6 @@ from humanbrain.recurrent_language import RecurrentCellLanguageModel, RecurrentM
 from humanbrain.tokenizer import BytePhraseTokenizer, TokenizerConfig
 from humanbrain.topology import topology_coordinates
 
-
 CELL_ORDERINGS = frozenset({"random", "layered_prefix"})
 PRUNING_RULES = frozenset({"activity", "random"})
 
@@ -47,7 +46,11 @@ class DevelopmentalGrowthConfig:
             raise ValueError("stage cell counts must fit the reservoir")
         if any(
             right < left
-            for left, right in zip(self.stage_active_cells, self.stage_active_cells[1:])
+            for left, right in zip(
+                self.stage_active_cells,
+                self.stage_active_cells[1:],
+                strict=False,
+            )
         ):
             raise ValueError("stage cell counts must be nondecreasing")
         if self.cell_ordering not in CELL_ORDERINGS:
@@ -202,6 +205,7 @@ class DevelopmentalGrowthController:
         circuit._structural_scores = self.structural_score
         circuit._structural_exposure = self.structural_exposure
         circuit._homeostatic_gain = self.homeostatic_gain
+        circuit.synchronize_structure_from_host()
 
     def _resample_afferents(self) -> None:
         active = self.active_cells
@@ -289,7 +293,6 @@ class DevelopmentalGrowthController:
         turnover = min(self.configuration.turnover_edges_per_source, capacity)
         if turnover and len(newly_active) > turnover:
             weights = self.circuit._recurrent_weights_pa
-            targets = self.circuit._recurrent_targets
             for source_value in old_active:
                 source = int(source_value)
                 occupied = np.flatnonzero(weights[source] != 0.0)

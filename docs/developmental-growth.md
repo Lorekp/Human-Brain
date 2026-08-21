@@ -46,6 +46,13 @@ GLIF5 transitions and later three-factor output updates; the recurrent targets,
 weights, structural scores/exposures, cell order/mask, homeostatic gains, and
 readout synapses are the persistent state.
 
+Structural mutations are published at the end of each recruitment,
+homeostasis, and pruning boundary through
+`RecurrentCellCircuit.synchronize_structure_from_host()`. CPU execution already
+reads the live host arrays. CUDA rebuilds its target-indexed reverse CSR and
+uploads the fixed-size afferent, recurrent-target, and recurrent-weight arrays;
+sequence reset remains a separate mutable cell-state synchronization.
+
 ## Frozen validation design
 
 `benchmarks/development_protocol_v2.json` was registered before its named

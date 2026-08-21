@@ -400,6 +400,9 @@ class NativeRecurrentKernel:
     def synchronize_from_host(self) -> None:
         """CPU arrays are the live native state, so no synchronization is needed."""
 
+    def synchronize_structure_from_host(self) -> None:
+        """CPU topology and weight arrays are already live native state."""
+
     def observe(self, token_id: int) -> int:
         return self._observe_with(self._library.humanbrain_observe_token, token_id)
 

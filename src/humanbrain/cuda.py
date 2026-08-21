@@ -366,6 +366,9 @@ class CudaRecurrentKernel:
         self._population = population
         self._synaptic_current_pa = synaptic_current_pa
         self._eligibility = eligibility
+        self._afferent_targets = afferent_targets
+        self._recurrent_targets = recurrent_targets
+        self._recurrent_weights_pa = recurrent_weights_pa
         self._glif = _glif_config(population)
         self._recurrent = _RecurrentConfig(
             token_steps,
@@ -378,6 +381,7 @@ class CudaRecurrentKernel:
         )
         self._token_cells = int(afferent_targets.shape[0])
         self._input_fanout = input_fanout
+        self._recurrent_fanout = recurrent_fanout
         self._allocations: list[int] = []
         self._arrays: dict[str, tuple[int, int]] = {}
         self._module = ctypes.c_void_p()
@@ -387,17 +391,6 @@ class CudaRecurrentKernel:
         self.last_kernel_milliseconds = 0.0
 
         cells = population.cell_count
-        flat_targets = np.ascontiguousarray(recurrent_targets.reshape(-1), dtype=np.int32)
-        if flat_targets.size > np.iinfo(np.int32).max:
-            raise ValueError("CUDA backend supports at most INT32_MAX recurrent edges")
-        if np.any(flat_targets < 0) or np.any(flat_targets >= cells):
-            raise ValueError("recurrent targets must index reservoir cells")
-        counts = np.bincount(flat_targets, minlength=cells)
-        incoming_offsets = np.empty(cells + 1, dtype=np.int32)
-        incoming_offsets[0] = 0
-        np.cumsum(counts, dtype=np.int64, out=incoming_offsets[1:])
-        incoming_edges = np.argsort(flat_targets, kind="stable").astype(np.int32, copy=False)
-
         build = build_cuda()
         cubin = build.cubin_path.read_bytes()
         cubin_buffer = ctypes.create_string_buffer(cubin)
@@ -437,10 +430,7 @@ class CudaRecurrentKernel:
             "after_decay": population._after_spike_decay,
             "after_cut_decay": population._after_spike_cut_decay,
             "after_amplitudes": population._after_spike_amplitudes_pa,
-            "afferents": afferent_targets,
-            "incoming_offsets": incoming_offsets,
-            "incoming_edges": incoming_edges,
-            "recurrent_weights": recurrent_weights_pa,
+            **self._structure_arrays_from_host(),
         }
         mutables = {
             "voltage": state.voltage_relative_mv,
@@ -512,6 +502,51 @@ class CudaRecurrentKernel:
             f"download CUDA {name}",
         )
 
+    def _structure_arrays_from_host(self) -> dict[str, np.ndarray]:
+        cells = self._population.cell_count
+        expected = (
+            (
+                self._afferent_targets,
+                (self._token_cells, self._input_fanout),
+                np.dtype(np.int32),
+                "afferent targets",
+            ),
+            (
+                self._recurrent_targets,
+                (cells, self._recurrent_fanout),
+                np.dtype(np.int32),
+                "recurrent targets",
+            ),
+            (
+                self._recurrent_weights_pa,
+                (cells, self._recurrent_fanout),
+                np.dtype(np.float64),
+                "recurrent weights",
+            ),
+        )
+        for array, shape, dtype, name in expected:
+            if array.shape != shape or array.dtype != dtype or not array.flags.c_contiguous:
+                raise ValueError(f"{name} must be a contiguous {dtype} array with shape {shape}")
+        if np.any(self._afferent_targets < 0) or np.any(self._afferent_targets >= cells):
+            raise ValueError("afferent targets must index reservoir cells")
+
+        flat_targets = self._recurrent_targets.reshape(-1)
+        if flat_targets.size > np.iinfo(np.int32).max:
+            raise ValueError("CUDA backend supports at most INT32_MAX recurrent edges")
+        if np.any(flat_targets < 0) or np.any(flat_targets >= cells):
+            raise ValueError("recurrent targets must index reservoir cells")
+        counts = np.bincount(flat_targets, minlength=cells)
+        incoming_offsets = np.empty(cells + 1, dtype=np.int32)
+        incoming_offsets[0] = 0
+        incoming_offsets[1:] = np.cumsum(counts, dtype=np.int64)
+        incoming_edges = np.argsort(flat_targets, kind="stable").astype(np.int32, copy=False)
+        return {
+            "afferents": self._afferent_targets,
+            "incoming_offsets": incoming_offsets,
+            "incoming_edges": incoming_edges,
+            "recurrent_weights": self._recurrent_weights_pa,
+        }
+
     def _mutable_arrays(self) -> dict[str, np.ndarray]:
         state = self._population.state
         return {
@@ -527,6 +562,12 @@ class CudaRecurrentKernel:
     def synchronize_from_host(self) -> None:
         self._driver.make_current()
         for name, array in self._mutable_arrays().items():
+            self._copy_to_device(name, array)
+
+    def synchronize_structure_from_host(self) -> None:
+        """Rebuild reverse CSR and upload all in-place structural mutations."""
+        self._driver.make_current()
+        for name, array in self._structure_arrays_from_host().items():
             self._copy_to_device(name, array)
 
     def observe(self, token_id: int) -> int:

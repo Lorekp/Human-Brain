@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from humanbrain.development import (
     DevelopmentalGrowthConfig,
     DevelopmentalGrowthController,
@@ -84,6 +83,32 @@ def test_recruitment_keeps_unborn_cells_dormant_then_grows_their_synapses() -> N
     assert circuit.active_reservoir_cells == 16
     assert np.all(np.count_nonzero(circuit._recurrent_weights_pa[new_cells], axis=1) == 4)
     assert np.all(controller.active_mask[circuit._afferent_targets])
+
+
+def test_every_runtime_structure_mutation_synchronizes_bound_backend(monkeypatch) -> None:
+    circuit = _circuit()
+    synchronize_calls = 0
+    synchronize = circuit.synchronize_structure_from_host
+
+    def record_synchronization() -> None:
+        nonlocal synchronize_calls
+        synchronize_calls += 1
+        synchronize()
+
+    monkeypatch.setattr(circuit, "synchronize_structure_from_host", record_synchronization)
+    controller = DevelopmentalGrowthController(circuit, _development())
+    assert synchronize_calls == 1
+
+    controller.recruit_to(16)
+    assert synchronize_calls == 2
+
+    controller.cell_activity[controller.active_mask] = np.linspace(0.25, 2.0, 16)
+    controller._stage_examples = 1
+    controller.apply_activity_homeostasis()
+    assert synchronize_calls == 3
+
+    controller.prune_to_final_fanout()
+    assert synchronize_calls == 4
 
 
 def test_activity_pruning_selects_trained_structural_synapses() -> None:
