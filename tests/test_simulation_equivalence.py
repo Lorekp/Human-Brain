@@ -115,6 +115,144 @@ def _assert_same_state(
     )
 
 
+def _vectorized_reference_step(
+    population: AdaptiveGlifPopulation,
+    current: np.ndarray,
+) -> np.ndarray:
+    """Last Python/NumPy production step, kept only as a native oracle."""
+    p = population.parameters
+    state = population.state
+    active = state.refractory_steps == 0
+    np.subtract(state.refractory_steps, 1, out=state.refractory_steps, where=~active)
+    if not active.any():
+        return active
+
+    previous_voltage = state.voltage_relative_mv
+    previous_after = state.after_spike_currents_pa
+    previous_after.sum(axis=1, out=population._work_after_sum)
+    np.add(current, population._work_after_sum, out=population._work_total_current)
+    total_current = population._work_total_current
+
+    np.multiply(p.leak_ns, previous_voltage, out=population._work_next_voltage)
+    np.subtract(total_current, population._work_next_voltage, out=population._work_next_voltage)
+    np.multiply(
+        population._voltage_step_scale,
+        population._work_next_voltage,
+        out=population._work_next_voltage,
+    )
+    np.add(previous_voltage, population._work_next_voltage, out=population._work_next_voltage)
+    next_voltage = population._work_next_voltage
+
+    beta = total_current * population._threshold_beta_scale
+    next_voltage_threshold = (
+        population._threshold_exp_decay * state.threshold_voltage_mv
+        + population._threshold_voltage_factor * previous_voltage
+        + population._threshold_beta_factor * beta
+    )
+    np.multiply(
+        state.threshold_spike_mv,
+        population._spike_threshold_decay,
+        out=population._work_next_spike_threshold,
+    )
+    next_spike_threshold = population._work_next_spike_threshold
+    np.multiply(previous_after, population._after_spike_decay, out=population._work_next_after)
+    next_after = population._work_next_after
+
+    np.copyto(state.voltage_relative_mv, next_voltage, where=active)
+    np.copyto(state.threshold_voltage_mv, next_voltage_threshold, where=active)
+    np.copyto(state.threshold_spike_mv, next_spike_threshold, where=active)
+    np.copyto(state.after_spike_currents_pa, next_after, where=active[:, None])
+    crossed = active & (
+        next_voltage
+        > (p.threshold_inf_relative_mv + next_voltage_threshold + next_spike_threshold)
+    )
+    if not crossed.any():
+        return crossed
+
+    spike_rows = np.flatnonzero(crossed)
+    state.voltage_relative_mv[spike_rows] = (
+        p.voltage_reset_scale * next_voltage[spike_rows] + p.voltage_reset_offset_mv
+    )
+    state.after_spike_currents_pa[spike_rows] = (
+        population._after_spike_amplitudes_pa
+        + next_after[spike_rows] * population._after_spike_cut_decay
+    )
+    state.threshold_spike_mv[spike_rows] = (
+        next_spike_threshold[spike_rows] * population._spike_cut_threshold_decay
+        + p.threshold_spike_increment_mv
+    )
+    state.refractory_steps[spike_rows] = p.spike_cut_steps
+    return crossed
+
+
+def _python_reference_observe(circuit: RecurrentCellCircuit, token_id: int) -> int:
+    """Last Python sparse token loop, retained only for equivalence testing."""
+    afferents = circuit._afferent_targets[token_id]
+    spike_total = 0
+    for step in range(circuit._token_steps):
+        np.copyto(circuit._step_current_pa, circuit._synaptic_current_pa)
+        if step < circuit._pulse_steps:
+            circuit._step_current_pa[afferents] += circuit.config.input_current_pa
+        spikes = _vectorized_reference_step(circuit._reservoir, circuit._step_current_pa)
+        circuit._synaptic_current_pa *= circuit._recurrent_decay
+        circuit._eligibility *= circuit._eligibility_decay
+        if spikes.any():
+            presynaptic = np.flatnonzero(spikes)
+            spike_total += int(presynaptic.size)
+            circuit._eligibility[presynaptic] += 1.0
+            targets = circuit._recurrent_targets[presynaptic].reshape(-1)
+            weights = circuit._recurrent_weights_pa[presynaptic].reshape(-1)
+            np.add.at(circuit._synaptic_current_pa, targets, weights)
+    circuit._observed_tokens += 1
+    return spike_total
+
+
+def test_native_recurrent_token_loop_is_bit_exact_to_python_reference() -> None:
+    config = RecurrentCircuitConfig(
+        reservoir_cells=96,
+        active_reservoir_cells=72,
+        input_fanout=8,
+        recurrent_fanout=6,
+        token_interval_ms=5.0,
+        input_pulse_ms=1.5,
+        input_current_pa=4_000.0,
+        recurrent_current_pa=325.0,
+        eligibility_tau_ms=40.0,
+        recurrent_topology="nested_groups",
+        random_seed=29,
+    )
+    actual = RecurrentCellCircuit(token_cells=37, config=config)
+    expected = RecurrentCellCircuit(token_cells=37, config=config)
+    tokens = np.random.default_rng(9031).integers(0, actual.token_cells, 64)
+
+    for token in tokens:
+        step = actual.observe(int(token))
+        expected_spikes = _python_reference_observe(expected, int(token))
+        assert step.reservoir_spikes == expected_spikes
+        np.testing.assert_array_equal(actual._synaptic_current_pa, expected._synaptic_current_pa)
+        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        np.testing.assert_array_equal(
+            actual._reservoir.state.voltage_relative_mv,
+            expected._reservoir.state.voltage_relative_mv,
+        )
+        np.testing.assert_array_equal(
+            actual._reservoir.state.after_spike_currents_pa,
+            expected._reservoir.state.after_spike_currents_pa,
+        )
+        np.testing.assert_array_equal(
+            actual._reservoir.state.threshold_spike_mv,
+            expected._reservoir.state.threshold_spike_mv,
+        )
+        np.testing.assert_array_equal(
+            actual._reservoir.state.threshold_voltage_mv,
+            expected._reservoir.state.threshold_voltage_mv,
+        )
+        np.testing.assert_array_equal(
+            actual._reservoir.state.refractory_steps,
+            expected._reservoir.state.refractory_steps,
+        )
+
+
 def test_vectorized_glif_step_matches_original_during_spikes_and_refractory() -> None:
     actual = AdaptiveGlifPopulation(31)
     expected = AdaptiveGlifPopulation(31)

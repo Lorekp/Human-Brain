@@ -5,6 +5,55 @@ Measured on 2026-08-21 with Python 3.11.15 and NumPy 2.4.6 on Windows
 `benchmarks/simulation_speed.py`; peak memory includes Python and NumPy
 allocations observed by `tracemalloc`.
 
+## Native sparse recurrent kernel
+
+The fitted GLIF5 integration loop now runs in a dependency-free Rust `cdylib`.
+Python creates topology and checkpointable NumPy state, then makes one C-ABI
+call per token. All 100 fitted 0.05-ms integration steps, refractory updates,
+eligibility decay, and spike-triggered sparse scatter happen inside that call.
+The production recurrent path therefore contains no Python simulation loop and
+allocates no dense cell-by-cell connectivity.
+
+`benchmarks/native_scaling.py` uses 257 token cells, fixed 32-cell afferent
+fanout, six recurrent targets per cell, and three timing repeats. Its Python
+reference is the removed production NumPy loop, not a simplified model.
+
+| Reservoir cells | Native tokens/s | Cell-steps/s | Persistent arrays | Recurrent edges |
+| ---: | ---: | ---: | ---: | ---: |
+| 1,536 | 1,045.45 | 160.58M | 3.34 MiB | 9,216 |
+| 6,144 | 301.70 | 185.37M | 13.22 MiB | 36,864 |
+| 24,576 | 82.49 | 202.73M | 52.73 MiB | 147,456 |
+| 98,304 | 20.05 | 197.10M | 210.79 MiB | 589,824 |
+
+At 1,536 cells, the exact Python reference ran at 154.23 tokens/s and 23.69M
+cell-steps/s, so the native token kernel is 6.78x faster. Fitted across all four
+native sizes, seconds per token scale as `N^0.949`, persistent memory as
+`N^0.997`, and cell-step throughput as `N^0.051`: useful near-linear scaling
+through 98,304 fitted human cells rather than a hundreds-cell ceiling.
+
+The Rust crate has no third-party dependencies. On the recorded Windows host,
+a clean release compile took 1.212 seconds, cached source lookup 1.15 ms, and
+DLL loading 0.48 ms. The content-addressed build is cached outside the package;
+set `HUMANBRAIN_NATIVE_CACHE` to choose its location.
+
+The remaining inference bottlenecks are now visible. At 98,304 cells, topology
+construction takes 7.66 seconds in Python while the first simulated token takes
+48.6 ms. The dense token-cell readout is `O(vocabulary*cells)` and accounts for
+192.75 MiB of the 210.79 MiB persistent arrays; sparse recurrent targets and
+weights use 6.75 MiB. Steady execution is a single native fused pass and is
+primarily cell-state memory traffic. Larger runs should next move topology
+construction out of Python and replace or factor the dense readout, then add
+carefully validated native parallelism. Exact ridge learning remains the more
+fundamental `O(N^2)` memory / `O(N^3)` solve limit described below.
+
+Run the registered native protocol with:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'src').Path
+$env:HUMANBRAIN_NATIVE_CACHE=(Resolve-Path '.runtime/native').Path
+python benchmarks\native_scaling.py
+```
+
 ## Before/after results
 
 The baseline is the unmodified Human Brain source used to create the
@@ -63,7 +112,7 @@ python benchmarks\simulation_speed.py --sizes 96,384,768,1536 `
   31 deterministic trained contexts.
 - Batched readout sufficient statistics match sequential outer products within
   `2e-13` relative error; learned coefficients match within `2e-10`.
-- The full suite passes 45 tests. The cell-only architecture, fitted cell
+- The full suite passes 46 tests. The cell-only architecture, fitted cell
   parameters, calibrated biological timing, recurrent topology, and checkpoint
   format are unchanged.
 

@@ -34,6 +34,13 @@ $env:PYTHONPATH = "src"
 .\.venv\Scripts\python.exe -m humanbrain.cli "Human cortical cells " --tokens 24
 ```
 
+The stateful GLIF5 reservoir builds a dependency-free Rust kernel on first use
+and caches the release DLL by source hash. Rust/Cargo is therefore a runtime
+build prerequisite for a source checkout; Python remains orchestration around
+the native cell simulation. Set `HUMANBRAIN_NATIVE_CACHE` to place the compiled
+cache explicitly. The registered sparse benchmark reaches 98,304 cells without
+dense cell-by-cell inference state; see `docs/simulation-speed.md`.
+
 The same cell circuit now drives mini-swe-agent through `HumanCellModel`. A
 frozen, instance-specific episodic checkpoint completed the SQLFluff 1625 dev
 task in seven cell-generated shell actions and passed the official SWE-bench

@@ -99,6 +99,7 @@ def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
                     f"checkpoint array {key} has shape {value.shape}, expected {expected}"
                 )
             setattr(circuit, attribute, value)
+        circuit._bind_native_kernel()
         circuit._growth_examples = int(metadata["growth_examples"])
     return RecurrentCellLanguageModel(
         tokenizer=tokenizer,

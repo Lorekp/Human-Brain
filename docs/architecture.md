@@ -20,6 +20,13 @@ active synaptic currents during each race. This changes neither simulated spike
 time nor winner; it removes repeated integration of identical subthreshold
 dynamics.
 
+Stateful GLIF5 reservoir tokens use a separate native sparse kernel. Python
+owns tokenization, topology construction, and checkpoint arrays, but one Rust
+C-ABI call advances the entire biological token interval. The kernel applies
+the same human-fitted membrane, adaptive-threshold, after-spike, reset, and
+refractory equations and scatters only emitted spike events over fixed sparse
+edges. It has no ANN runtime or dense cell-by-cell inference matrix.
+
 The external interface is deliberately small:
 
 ```python

@@ -1,0 +1,204 @@
+{
+  "native_build": {
+    "cached_build_lookup_seconds": 0.0011546000023372471,
+    "cold_compile_seconds": 1.2124996999918949,
+    "library_load_seconds": 0.00047640001866966486,
+    "source_digest": "de929dd10ea52fb8"
+  },
+  "native_speedup_at_reference_size": 6.778506096849049,
+  "protocol": {
+    "cell_counts": [
+      1536,
+      6144,
+      24576,
+      98304
+    ],
+    "input_fanout": 32,
+    "integration_dt_ms": 0.05,
+    "metrics": [
+      "tokens_per_second",
+      "cell_steps_per_second",
+      "construction_seconds",
+      "first_token_seconds",
+      "persistent_array_mib",
+      "working_set_mib",
+      "peak_working_set_mib",
+      "private_memory_mib",
+      "cold_compile_seconds",
+      "cached_build_lookup_seconds",
+      "library_load_seconds",
+      "runtime_scaling_exponent",
+      "memory_scaling_exponent"
+    ],
+    "name": "native-sparse-human-cell-scaling-v1",
+    "notes": [
+      "One token is exactly 100 fitted 0.05-ms GLIF5 integration steps.",
+      "Reference timing executes the removed Python/NumPy production equations.",
+      "Memory workers are fresh processes so peak working set is size-local.",
+      "Training ridge statistics remain lazy and are excluded from inference."
+    ],
+    "purpose": "Measure exact native-kernel speed and memory scaling without dense N-by-N inference state.",
+    "recurrent_fanout": 6,
+    "reference_cell_count": 1536,
+    "reference_repeats": 3,
+    "reference_token_count": 32,
+    "seed": 17,
+    "timing_repeats": 3,
+    "token_cells": 257,
+    "token_counts": {
+      "1536": 512,
+      "24576": 64,
+      "6144": 256,
+      "98304": 20
+    },
+    "token_interval_ms": 5.0,
+    "topology": "uniform_no_self"
+  },
+  "protocol_sha256": "fde5bdfd2817008ef105523c01b2c1a09e714ad8cd4664cb2fc6e8dd38497355",
+  "python_reference": {
+    "cell_steps_per_second": 23689685.934883066,
+    "cells": 1536,
+    "seconds": 0.20748270000331104,
+    "tokens": 32,
+    "tokens_per_second": 154.22972613856163
+  },
+  "results": [
+    {
+      "after_construction_memory": {
+        "peak_working_set_mib": 35.69140625,
+        "private_memory_mib": 379.26953125,
+        "working_set_mib": 35.69140625
+      },
+      "after_run_memory": {
+        "peak_working_set_mib": 35.9921875,
+        "private_memory_mib": 379.26953125,
+        "working_set_mib": 35.9921875
+      },
+      "baseline_memory": {
+        "peak_working_set_mib": 32.3125,
+        "private_memory_mib": 374.1484375,
+        "working_set_mib": 32.3125
+      },
+      "cell_steps_per_second": 160580680.54204404,
+      "cells": 1536,
+      "construction_seconds": 0.0734154999954626,
+      "first_token_seconds": 0.0010993000178132206,
+      "inference_memory_increment_mib": {
+        "peak_working_set_mib": 3.6796875,
+        "private_memory_mib": 5.12109375,
+        "working_set_mib": 3.6796875
+      },
+      "normal_matrix_allocated": false,
+      "persistent_array_mib": 3.33746337890625,
+      "seconds": 0.48974260000977665,
+      "sparse_recurrent_edges": 9216,
+      "token_steps": 100,
+      "tokens": 512,
+      "tokens_per_second": 1045.4471389455991
+    },
+    {
+      "after_construction_memory": {
+        "peak_working_set_mib": 36.12890625,
+        "private_memory_mib": 388.88671875,
+        "working_set_mib": 35.99609375
+      },
+      "after_run_memory": {
+        "peak_working_set_mib": 36.30859375,
+        "private_memory_mib": 388.88671875,
+        "working_set_mib": 36.30859375
+      },
+      "baseline_memory": {
+        "peak_working_set_mib": 32.3515625,
+        "private_memory_mib": 374.19140625,
+        "working_set_mib": 32.3515625
+      },
+      "cell_steps_per_second": 185367281.69648308,
+      "cells": 6144,
+      "construction_seconds": 0.12571720001869835,
+      "first_token_seconds": 0.002739799994742498,
+      "inference_memory_increment_mib": {
+        "peak_working_set_mib": 3.95703125,
+        "private_memory_mib": 14.6953125,
+        "working_set_mib": 3.95703125
+      },
+      "normal_matrix_allocated": false,
+      "persistent_array_mib": 13.21636962890625,
+      "seconds": 0.8485121999983676,
+      "sparse_recurrent_edges": 36864,
+      "token_steps": 100,
+      "tokens": 256,
+      "tokens_per_second": 301.7045600528696
+    },
+    {
+      "after_construction_memory": {
+        "peak_working_set_mib": 39.2734375,
+        "private_memory_mib": 429.2890625,
+        "working_set_mib": 39.2734375
+      },
+      "after_run_memory": {
+        "peak_working_set_mib": 39.68359375,
+        "private_memory_mib": 429.2890625,
+        "working_set_mib": 39.68359375
+      },
+      "baseline_memory": {
+        "peak_working_set_mib": 32.21484375,
+        "private_memory_mib": 373.84765625,
+        "working_set_mib": 32.21484375
+      },
+      "cell_steps_per_second": 202728134.30629796,
+      "cells": 24576,
+      "construction_seconds": 0.6830098999780603,
+      "first_token_seconds": 0.016160600003786385,
+      "inference_memory_increment_mib": {
+        "peak_working_set_mib": 7.46875,
+        "private_memory_mib": 55.44140625,
+        "working_set_mib": 7.46875
+      },
+      "normal_matrix_allocated": false,
+      "persistent_array_mib": 52.73199462890625,
+      "seconds": 0.7758488999970723,
+      "sparse_recurrent_edges": 147456,
+      "token_steps": 100,
+      "tokens": 64,
+      "tokens_per_second": 82.49028902437254
+    },
+    {
+      "after_construction_memory": {
+        "peak_working_set_mib": 47.828125,
+        "private_memory_mib": 587.04296875,
+        "working_set_mib": 46.32421875
+      },
+      "after_run_memory": {
+        "peak_working_set_mib": 48.7890625,
+        "private_memory_mib": 587.04296875,
+        "working_set_mib": 48.7890625
+      },
+      "baseline_memory": {
+        "peak_working_set_mib": 32.1328125,
+        "private_memory_mib": 373.89453125,
+        "working_set_mib": 32.1328125
+      },
+      "cell_steps_per_second": 197103656.56473878,
+      "cells": 98304,
+      "construction_seconds": 7.6585517000057735,
+      "first_token_seconds": 0.04860840001492761,
+      "inference_memory_increment_mib": {
+        "peak_working_set_mib": 16.65625,
+        "private_memory_mib": 213.1484375,
+        "working_set_mib": 16.65625
+      },
+      "normal_matrix_allocated": false,
+      "persistent_array_mib": 210.79449462890625,
+      "seconds": 0.997485300002154,
+      "sparse_recurrent_edges": 589824,
+      "token_steps": 100,
+      "tokens": 20,
+      "tokens_per_second": 20.050420793125284
+    }
+  ],
+  "scaling": {
+    "cell_step_throughput_exponent": 0.05080641594095391,
+    "persistent_memory_exponent": 0.996958837106685,
+    "seconds_per_token_exponent": 0.9491935840590455
+  }
+}

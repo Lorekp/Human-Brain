@@ -1,9 +1,12 @@
 .hf-cache/
 .models/
+.native-cache/
 .mswea-config/
 .runtime/
+.target/
 .uv-cache/
 .venv/
 __pycache__/
+target/
 *.pyc
 .pytest_cache/

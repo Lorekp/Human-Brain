@@ -9,6 +9,8 @@ from pathlib import Path
 
 import numpy as np
 
+from humanbrain.native import NativeGlifKernel
+
 ALLEN_MODEL_ID = 503612028
 ALLEN_SPECIMEN_ID = 488392806
 ALLEN_CONFIG_SHA256 = "57e20326d27146c3afbd412ca3ba0bcaee67a22f27729292b36666b9ff36c889"
@@ -219,7 +221,7 @@ class AdaptiveGlifState:
 
 
 class AdaptiveGlifPopulation:
-    """Vectorized stateful simulator for homogeneous Allen GLIF5 cells."""
+    """Native stateful simulator for homogeneous Allen GLIF5 cells."""
 
     def __init__(self, cell_count: int, parameters: AllenGlif5Parameters | None = None) -> None:
         if cell_count < 1:
@@ -276,6 +278,7 @@ class AdaptiveGlifPopulation:
         self._work_next_voltage = np.empty(cell_count, dtype=np.float64)
         self._work_next_spike_threshold = np.empty(cell_count, dtype=np.float64)
         self._work_next_after = np.empty_like(self.state.after_spike_currents_pa)
+        self._native_kernel = NativeGlifKernel(self)
 
     @property
     def cell_count(self) -> int:
@@ -343,87 +346,7 @@ class AdaptiveGlifPopulation:
             current = np.full(self.cell_count, float(current), dtype=np.float64)
         if current.shape != (self.cell_count,):
             raise ValueError("injected current must be scalar or one value per cell")
-
-        p = self.parameters
-        state = self.state
-        active = state.refractory_steps == 0
-        np.subtract(
-            state.refractory_steps,
-            1,
-            out=state.refractory_steps,
-            where=~active,
-        )
-        if not active.any():
-            return active
-
-        previous_voltage = state.voltage_relative_mv
-        previous_after = state.after_spike_currents_pa
-        previous_after.sum(axis=1, out=self._work_after_sum)
-        np.add(current, self._work_after_sum, out=self._work_total_current)
-        total_current = self._work_total_current
-
-        # Allen evaluates voltage and threshold from the same t0 state, then
-        # advances the after-spike currents for t1.
-        np.multiply(p.leak_ns, previous_voltage, out=self._work_next_voltage)
-        np.subtract(total_current, self._work_next_voltage, out=self._work_next_voltage)
-        np.multiply(
-            self._voltage_step_scale,
-            self._work_next_voltage,
-            out=self._work_next_voltage,
-        )
-        np.add(previous_voltage, self._work_next_voltage, out=self._work_next_voltage)
-        next_voltage = self._work_next_voltage
-
-        beta = total_current * self._threshold_beta_scale
-        previous_voltage_threshold = state.threshold_voltage_mv
-        next_voltage_threshold = (
-            self._threshold_exp_decay * previous_voltage_threshold
-            + self._threshold_voltage_factor * previous_voltage
-            + self._threshold_beta_factor * beta
-        )
-        np.multiply(
-            state.threshold_spike_mv,
-            self._spike_threshold_decay,
-            out=self._work_next_spike_threshold,
-        )
-        next_spike_threshold = self._work_next_spike_threshold
-        np.multiply(
-            previous_after,
-            self._after_spike_decay,
-            out=self._work_next_after,
-        )
-        next_after = self._work_next_after
-
-        np.copyto(state.voltage_relative_mv, next_voltage, where=active)
-        np.copyto(state.threshold_voltage_mv, next_voltage_threshold, where=active)
-        np.copyto(state.threshold_spike_mv, next_spike_threshold, where=active)
-        np.copyto(
-            state.after_spike_currents_pa,
-            next_after,
-            where=active[:, None],
-        )
-
-        crossed = active & (
-            next_voltage
-            > (p.threshold_inf_relative_mv + next_voltage_threshold + next_spike_threshold)
-        )
-        if not crossed.any():
-            return crossed
-
-        spike_rows = np.flatnonzero(crossed)
-        state.voltage_relative_mv[spike_rows] = (
-            p.voltage_reset_scale * next_voltage[spike_rows] + p.voltage_reset_offset_mv
-        )
-        state.after_spike_currents_pa[spike_rows] = (
-            self._after_spike_amplitudes_pa + next_after[spike_rows] * self._after_spike_cut_decay
-        )
-        state.threshold_spike_mv[spike_rows] = (
-            next_spike_threshold[spike_rows] * self._spike_cut_threshold_decay
-            + p.threshold_spike_increment_mv
-        )
-        # Allen holds the voltage-dependent threshold component during a cut.
-        state.refractory_steps[spike_rows] = p.spike_cut_steps
-        return crossed
+        return self._native_kernel.step(np.ascontiguousarray(current))
 
 
 @dataclass(frozen=True)

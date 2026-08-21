@@ -100,6 +100,8 @@ retained as an ornamental biological feature.
 | `artifacts/generation_validation_v1.json` | `2391a947bbb4f66fef330df611ed55e2008c44e785e528dda90bfcd586e4822a` |
 | `artifacts/generation_validation_v1_persistent_asc.json` | `347f168ef3cc367fedf85f4b7d18d2ee04db16d6f26c7dbadb78052c59384d2f` |
 | `benchmarks/generation_protocol_v1.json` | `254754c7464a3b2727aadd51de3f72c597958ff487ebd74aed06ee3ce20d8388` |
+| `artifacts/native_scaling_v1.json` | `54d9bae841901b37a2c72ae10eb458c56d7064ced1e22699f794a8ad5d2bcbeb` |
+| `benchmarks/native_scaling_protocol_v1.json` | `fde5bdfd2817008ef105523c01b2c1a09e714ad8cd4664cb2fc6e8dd38497355` |
 | Gemma 4 12B QAT Q4_0 GGUF | `93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b` |
 
 ## Gemma baseline configuration

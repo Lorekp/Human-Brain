@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
+from humanbrain.native import NativeRecurrentKernel
 from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
 
 
@@ -167,6 +168,26 @@ class RecurrentCellCircuit:
             -self.cell_parameters.dt_ms / self.config.eligibility_tau_ms
         )
         self._compile_output_race()
+        self._bind_native_kernel()
+
+    def _bind_native_kernel(self) -> None:
+        """Bind native execution to the circuit's current checkpoint arrays."""
+        self._native_kernel = NativeRecurrentKernel(
+            self._reservoir,
+            token_steps=self._token_steps,
+            pulse_steps=self._pulse_steps,
+            input_fanout=self.config.input_fanout,
+            recurrent_fanout=self.config.recurrent_fanout,
+            input_current_pa=self.config.input_current_pa,
+            recurrent_decay=self._recurrent_decay,
+            eligibility_decay=self._eligibility_decay,
+            afferent_targets=self._afferent_targets,
+            recurrent_targets=self._recurrent_targets,
+            recurrent_weights_pa=self._recurrent_weights_pa,
+            synaptic_current_pa=self._synaptic_current_pa,
+            eligibility=self._eligibility,
+            step_current_pa=self._step_current_pa,
+        )
 
     def _compile_output_race(self) -> None:
         """Compile the exact resting GLIF5 response before its first spike."""
@@ -200,24 +221,7 @@ class RecurrentCellCircuit:
         token = int(token_id)
         if not 0 <= token < self.token_cells:
             raise ValueError("token id outside output-cell population")
-        cfg = self.config
-        afferents = self._afferent_targets[token]
-        spike_total = 0
-
-        for step in range(self._token_steps):
-            np.copyto(self._step_current_pa, self._synaptic_current_pa)
-            if step < self._pulse_steps:
-                self._step_current_pa[afferents] += cfg.input_current_pa
-            spikes = self._reservoir.step(self._step_current_pa)
-            self._synaptic_current_pa *= self._recurrent_decay
-            self._eligibility *= self._eligibility_decay
-            if spikes.any():
-                presynaptic = np.flatnonzero(spikes)
-                spike_total += int(presynaptic.size)
-                self._eligibility[presynaptic] += 1.0
-                targets = self._recurrent_targets[presynaptic].reshape(-1)
-                weights = self._recurrent_weights_pa[presynaptic].reshape(-1)
-                np.add.at(self._synaptic_current_pa, targets, weights)
+        spike_total = self._native_kernel.observe(token)
 
         self._observed_tokens += 1
         return RecurrentStep(

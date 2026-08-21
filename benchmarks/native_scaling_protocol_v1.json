@@ -1,0 +1,43 @@
+{
+  "name": "native-sparse-human-cell-scaling-v1",
+  "purpose": "Measure exact native-kernel speed and memory scaling without dense N-by-N inference state.",
+  "cell_counts": [1536, 6144, 24576, 98304],
+  "token_cells": 257,
+  "input_fanout": 32,
+  "recurrent_fanout": 6,
+  "token_interval_ms": 5.0,
+  "integration_dt_ms": 0.05,
+  "token_counts": {
+    "1536": 512,
+    "6144": 256,
+    "24576": 64,
+    "98304": 20
+  },
+  "timing_repeats": 3,
+  "reference_cell_count": 1536,
+  "reference_token_count": 32,
+  "reference_repeats": 3,
+  "seed": 17,
+  "topology": "uniform_no_self",
+  "metrics": [
+    "tokens_per_second",
+    "cell_steps_per_second",
+    "construction_seconds",
+    "first_token_seconds",
+    "persistent_array_mib",
+    "working_set_mib",
+    "peak_working_set_mib",
+    "private_memory_mib",
+    "cold_compile_seconds",
+    "cached_build_lookup_seconds",
+    "library_load_seconds",
+    "runtime_scaling_exponent",
+    "memory_scaling_exponent"
+  ],
+  "notes": [
+    "One token is exactly 100 fitted 0.05-ms GLIF5 integration steps.",
+    "Reference timing executes the removed Python/NumPy production equations.",
+    "Memory workers are fresh processes so peak working set is size-local.",
+    "Training ridge statistics remain lazy and are excluded from inference."
+  ]
+}
