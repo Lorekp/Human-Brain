@@ -1,9 +1,11 @@
 # Large-scale capability protocol v1
 
-This is a preregistered validation experiment, not a result. The runner is
-plan-only unless the caller supplies both `--execute` and the exact SHA-256 of
-`benchmarks/large_scale_capability_protocol_v1.json`. No v1 validation run had
-been executed when the protocol and runner were committed.
+This is a preregistered validation experiment, not a completed result. The
+runner is plan-only unless the caller supplies both `--execute` and the exact
+SHA-256 of `benchmarks/large_scale_capability_protocol_v1.json`. The protocol
+and runner were committed before validation. One subsequent 6,144-cell canary
+is frozen in `artifacts/large_scale_capability_validation_v1.json`; its 1/148
+partial state supports no scale or topology claim.
 
 ## Questions and controls
 

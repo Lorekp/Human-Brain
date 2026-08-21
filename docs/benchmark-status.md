@@ -216,6 +216,32 @@ accuracy reaching 8.59% at 6,144 cells also contradicts a blanket claim that
 larger networks are worse. The present failure is staged learning exposure and
 architecture, not a negative law of scale.
 
+## Registered large-scale capability gate
+
+Large-network construction and simulation are now fast enough to test
+capability without treating speed as capability. Protocol v1 freezes 148
+validation-only runs at 6,144, 24,576, 98,304, and 131,072 cells before any
+result exists. It separates a fixed 1,024-character experience track from a
+square-root-scaled data track, uses five paired seeds for the primary scale
+comparison, and records activity/readout-source density alongside prediction.
+
+The architecture matrix covers uniform and self-edge-permitting random
+controls, single-scale/nested/mixed groups, 1D/2D/layered-2D/3D geometry, and an
+abstract 4D functional lattice. The 4D condition is a computational control,
+not an anatomical claim. No topology may be selected post hoc: only the named
+scale, nested-group, and layered-sheet effects are confirmatory, and every
+stage remains required regardless of earlier results.
+
+The runner is plan-only unless both `--execute` and the exact protocol hash are
+provided. It verifies canonical source hashes and the fresh validation-history
+boundary, writes each run atomically, and resumes only in frozen order. The
+full registered estimate is 12-20 hours. One frozen 6,144-cell canary is now
+recorded: 17.06% teacher-forced accuracy, 1.04% free-running accuracy, 94.14%
+responsive state cells, 14.97 Hz mean firing, and 1,740 applied local updates.
+The 1/148 incomplete artifact supports no scale or topology claim; further
+execution is paused while the simple software-task curriculum is built. See
+`docs/large-scale-capability-v1.md`.
+
 ## Reproducibility artifacts
 
 Hashes below identify the canonical LF-normalized file bytes stored in Git,
@@ -261,6 +287,8 @@ not a platform-specific checkout's newline representation.
 | `artifacts/development_validation_v2.json` | `8e0fbacd8ad1eee42fa481b9b7fcc59f89d9ea83b4f15d65f2b4e16506484d0f` |
 | `artifacts/development_scale_6144_v2.json` | `656836961565f3d0259f8a48d630b66b7c674ad6967d9cc2e571a7a2c7a4c592` |
 | `benchmarks/development_protocol_v2.json` | `5e3a5131d2ed60877aa19bc8e364f3b32322af74fbe689f061e20eab69f7885a` |
+| `artifacts/large_scale_capability_validation_v1.json` | `633a3cf3d0ae46f7d7e8c8e5ba0a6cd617566aac66844069499c20a102f0c71d` |
+| `benchmarks/large_scale_capability_protocol_v1.json` | `004caa095e796f8671a5989148b881058c0cdc16334101f31de42784fdd84535` |
 | `artifacts/swe-dev-gemma/sqlfluff__sqlfluff-1625/sqlfluff__sqlfluff-1625.traj.json` | `d8d1007bc618f5c28794c21327834018a7187f6822b40c775afe8375d7c9b0a3` |
 | Gemma 4 12B QAT Q4_0 GGUF | `93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b` |
 
