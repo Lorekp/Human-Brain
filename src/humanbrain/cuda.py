@@ -360,9 +360,7 @@ class CudaRecurrentKernel:
         recurrent_weights_pa: np.ndarray,
         synaptic_current_pa: np.ndarray,
         eligibility: np.ndarray,
-        step_current_pa: np.ndarray,
     ) -> None:
-        del step_current_pa
         self._driver = _driver()
         self._driver.make_current()
         self._population = population

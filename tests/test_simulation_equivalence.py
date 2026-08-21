@@ -338,6 +338,10 @@ def test_quiescent_frontier_is_exact_across_activity_densities() -> None:
         frontier_spikes = circuit._native_kernel.observe(13)
         frontier_state = tuple(array.copy() for array in _circuit_state_arrays(circuit))
         assert circuit._native_kernel.last_active_cells >= seeded
+        scan_ns, build_ns, step_ns = circuit._native_kernel.last_frontier_profile_ns
+        assert scan_ns > 0
+        assert build_ns >= 0
+        assert step_ns > 0
 
         circuit.reset_sequence()
         circuit._synaptic_current_pa[indices] = 25.0
