@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import subprocess
@@ -21,6 +22,24 @@ ALLOWED_CHECKPOINT_FORMATS = {
     "human-cell-brain-checkpoint-v1",
     "recurrent-human-cell-checkpoint-v3",
 }
+_EXECUTION_MODULES = (
+    "humanbrain",
+    "humanbrain.artifacts",
+    "humanbrain.cells",
+    "humanbrain.cortex",
+    "humanbrain.cuda",
+    "humanbrain.language",
+    "humanbrain.native",
+    "humanbrain.recurrent",
+    "humanbrain.recurrent_artifacts",
+    "humanbrain.recurrent_language",
+    "humanbrain.tokenizer",
+    "humanbrain.topology",
+    "humanbrain.simple_swe",
+    "humanbrain.simple_swe.adapter",
+    "humanbrain.simple_swe.compiler",
+    "humanbrain.simple_swe.freeze",
+)
 
 
 class FreezeIntegrityError(RuntimeError):
@@ -159,8 +178,46 @@ def _git(source_root: Path, *arguments: str) -> bytes:
     return result.stdout
 
 
+def _installed_execution_source_paths() -> tuple[Path, ...]:
+    paths: list[Path] = []
+    for name in _EXECUTION_MODULES:
+        try:
+            module = importlib.import_module(name)
+        except ImportError as error:
+            raise FreezeIntegrityError(
+                f"installed Human Brain execution source cannot load: {name}"
+            ) from error
+        source = getattr(module, "__file__", None)
+        if not source:
+            raise FreezeIntegrityError(
+                f"installed Human Brain execution source has no file: {name}"
+            )
+        paths.append(Path(source).resolve())
+    return tuple(paths)
+
+
+def _require_execution_sources_in_tree(source_root: Path) -> None:
+    root = source_root.resolve()
+    for source_path in _installed_execution_source_paths():
+        try:
+            relative = source_path.relative_to(root)
+        except ValueError as error:
+            raise FreezeIntegrityError(
+                "installed Human Brain execution source is outside source_root: "
+                f"{source_path}"
+            ) from error
+        try:
+            _git(root, "ls-files", "--error-unmatch", "--", relative.as_posix())
+        except FreezeIntegrityError as error:
+            raise FreezeIntegrityError(
+                "installed Human Brain execution source is not Git-tracked: "
+                f"{relative.as_posix()}"
+            ) from error
+
+
 def _clean_source_snapshot(source_root: str | Path) -> tuple[str, str]:
     root = Path(source_root).resolve()
+    _require_execution_sources_in_tree(root)
     status = _git(root, "status", "--porcelain=v1", "--untracked-files=all")
     if status:
         raise FreezeIntegrityError("source tree is dirty; commit or remove every change")

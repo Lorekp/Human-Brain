@@ -31,8 +31,8 @@ class CompletionAudit:
     compiler_mode: str
     compiler_algorithm_source: str
     checkpoint_sha256: str
-    checkpoint_state_before: str
-    checkpoint_state_after: str
+    learned_checkpoint_state_before: str
+    learned_checkpoint_state_after: str
     prompt_sha256: str
     emitted_token_ids: tuple[int, ...]
     emitted_token_count: int
@@ -157,6 +157,10 @@ class CellCompletionAdapter:
             after_path = Path(directory) / "after.npz"
             model.save(after_path)
             after = checkpoint_hashes(after_path)
+        # Checkpoints persist learned cell/synapse structure, configuration, and
+        # tokenizer state. Runtime membrane and eligibility traces are deliberately
+        # absent from both checkpoint formats, so recurrent inference may evolve
+        # those transient traces without weakening this learned-state comparison.
         if after.checkpoint_state_sha256 != before.checkpoint_state_sha256:
             raise FreezeIntegrityError("persistent cell/synapse state changed during synthesis")
         verify_freeze_manifest(
@@ -175,8 +179,8 @@ class CellCompletionAdapter:
             compiler_mode=identity.mode,
             compiler_algorithm_source=identity.algorithm_source,
             checkpoint_sha256=before.checkpoint_sha256,
-            checkpoint_state_before=before.checkpoint_state_sha256,
-            checkpoint_state_after=after.checkpoint_state_sha256,
+            learned_checkpoint_state_before=before.checkpoint_state_sha256,
+            learned_checkpoint_state_after=after.checkpoint_state_sha256,
             prompt_sha256=sha256(task.prompt.encode("utf-8")).hexdigest(),
             emitted_token_ids=token_ids,
             emitted_token_count=len(token_ids),

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from humanbrain.language import CellLanguageModel
+from humanbrain.simple_swe import freeze
 from humanbrain.simple_swe.freeze import (
     FreezeIntegrityError,
     create_freeze_manifest,
@@ -28,15 +29,26 @@ def _git(repository: Path, *arguments: str) -> None:
     )
 
 
-def _clean_repository(root: Path) -> Path:
+def _clean_repository(
+    root: Path, monkeypatch: pytest.MonkeyPatch | None = None
+) -> Path:
     repository = root / "source"
     repository.mkdir()
     _git(repository, "init", "-q")
     _git(repository, "config", "user.email", "simple-swe@example.invalid")
     _git(repository, "config", "user.name", "Simple SWE Test")
     (repository / "model_source.py").write_text("CELL_ONLY = True\n", encoding="utf-8")
-    _git(repository, "add", "model_source.py")
+    installed_source = repository / "src" / "humanbrain" / "execution.py"
+    installed_source.parent.mkdir(parents=True)
+    installed_source.write_text("CELL_EXECUTION = True\n", encoding="utf-8")
+    _git(repository, "add", "model_source.py", "src/humanbrain/execution.py")
     _git(repository, "commit", "-q", "-m", "frozen source")
+    if monkeypatch is not None:
+        monkeypatch.setattr(
+            freeze,
+            "_installed_execution_source_paths",
+            lambda: (installed_source.resolve(),),
+        )
     return repository
 
 
@@ -48,9 +60,9 @@ def _checkpoint(root: Path) -> Path:
 
 
 def test_freeze_manifest_commits_clean_source_and_checkpoint_components(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    source = _clean_repository(tmp_path)
+    source = _clean_repository(tmp_path, monkeypatch)
     checkpoint = _checkpoint(tmp_path)
     manifest_path = tmp_path / "frozen" / "freeze.json"
 
@@ -82,8 +94,10 @@ def test_freeze_manifest_commits_clean_source_and_checkpoint_components(
     assert manifest.one_checkpoint_for_all_tasks is True
 
 
-def test_freeze_rejects_a_dirty_source_tree(tmp_path: Path) -> None:
-    source = _clean_repository(tmp_path)
+def test_freeze_rejects_a_dirty_source_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _clean_repository(tmp_path, monkeypatch)
     checkpoint = _checkpoint(tmp_path)
     (source / "uncommitted.txt").write_text("drift", encoding="utf-8")
 
@@ -96,8 +110,25 @@ def test_freeze_rejects_a_dirty_source_tree(tmp_path: Path) -> None:
         )
 
 
-def test_verify_freeze_rejects_checkpoint_drift(tmp_path: Path) -> None:
+def test_freeze_rejects_an_unrelated_clean_git_repository(tmp_path: Path) -> None:
     source = _clean_repository(tmp_path)
+    checkpoint = _checkpoint(tmp_path)
+
+    with pytest.raises(
+        FreezeIntegrityError, match="installed Human Brain execution source"
+    ):
+        create_freeze_manifest(
+            protocol_path=PROTOCOL,
+            checkpoint_path=checkpoint,
+            source_root=source,
+            output_path=tmp_path / "freeze.json",
+        )
+
+
+def test_verify_freeze_rejects_checkpoint_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _clean_repository(tmp_path, monkeypatch)
     checkpoint = _checkpoint(tmp_path)
     manifest_path = tmp_path / "freeze.json"
     create_freeze_manifest(
@@ -118,8 +149,10 @@ def test_verify_freeze_rejects_checkpoint_drift(tmp_path: Path) -> None:
         )
 
 
-def test_verify_freeze_rejects_source_commit_drift(tmp_path: Path) -> None:
-    source = _clean_repository(tmp_path)
+def test_verify_freeze_rejects_source_commit_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _clean_repository(tmp_path, monkeypatch)
     checkpoint = _checkpoint(tmp_path)
     manifest_path = tmp_path / "freeze.json"
     create_freeze_manifest(
