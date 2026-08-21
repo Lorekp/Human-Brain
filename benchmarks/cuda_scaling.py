@@ -184,15 +184,19 @@ def _run_size(cells: int, tokens: int, protocol: dict[str, object]) -> dict[str,
 
     elapsed_runs: list[float] = []
     kernel_runs: list[float] = []
+    spike_runs: list[int] = []
     for _ in range(int(protocol["timing_repeats"])):
         circuit.reset_sequence()
         kernel_ms = 0.0
+        spikes = 0
         started = time.perf_counter()
         for token in stream:
-            circuit.observe(int(token))
+            step = circuit.observe(int(token))
+            spikes += step.reservoir_spikes
             kernel_ms += kernel.last_kernel_milliseconds
         elapsed_runs.append(time.perf_counter() - started)
         kernel_runs.append(kernel_ms / 1_000.0)
+        spike_runs.append(spikes)
     elapsed = float(np.median(elapsed_runs))
     kernel_seconds = float(np.median(kernel_runs))
     token_steps = circuit._token_steps
@@ -203,6 +207,8 @@ def _run_size(cells: int, tokens: int, protocol: dict[str, object]) -> dict[str,
         "token_steps": token_steps,
         "biological_token_interval_ms": token_steps * circuit.cell_parameters.dt_ms,
         "sparse_recurrent_edges": cells * int(protocol["recurrent_fanout"]),
+        "touched_cells_per_step": cells,
+        "recurrent_edges_examined_per_step": cells * int(protocol["recurrent_fanout"]),
         "construction_seconds": construction_seconds,
         "first_token_seconds": first_token_seconds,
         "first_kernel_milliseconds": first_kernel_ms,
@@ -211,6 +217,9 @@ def _run_size(cells: int, tokens: int, protocol: dict[str, object]) -> dict[str,
         "end_to_end_tokens_per_second": tokens / elapsed,
         "kernel_tokens_per_second": tokens / kernel_seconds,
         "cell_steps_per_second": cells * token_steps * tokens / elapsed,
+        "reservoir_spikes": int(np.median(spike_runs)),
+        "mean_spikes_per_token": float(np.median(spike_runs)) / tokens,
+        "spikes_per_cell_step": float(np.median(spike_runs)) / (cells * token_steps * tokens),
         "host_persistent_array_mib": _persistent_array_mib(circuit),
         "device_persistent_array_mib": kernel.device_bytes / (1024.0 * 1024.0),
         "host_to_device_bytes_per_token": kernel.host_to_device_bytes_per_token,
@@ -235,24 +244,36 @@ def run(
     cells = cell_counts or [int(value) for value in protocol["cell_counts"]]
     previous = os.environ.get("HUMANBRAIN_DEVICE")
     os.environ["HUMANBRAIN_DEVICE"] = "cuda"
+    artifact_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         report = {
             "protocol": protocol,
             "protocol_sha256": hashlib.sha256(protocol_bytes).hexdigest(),
+            "executed_cell_counts": cells,
+            "omitted_protocol_cell_counts": [
+                int(value) for value in protocol["cell_counts"] if int(value) not in cells
+            ],
             "device": cuda_device_name(),
             "gpu_before": _gpu_snapshot(),
             "build": _build_timing(),
             "equivalence": _equivalence(protocol),
-            "results": [
+            "results": [],
+            "gpu_after": None,
+            "complete": False,
+        }
+        for cell_count in cells:
+            report["results"].append(
                 _run_size(
                     cell_count,
                     token_override or int(protocol["token_counts"].get(str(cell_count), 16)),
                     protocol,
                 )
-                for cell_count in cells
-            ],
-            "gpu_after": _gpu_snapshot(),
-        }
+            )
+            artifact_path.write_text(
+                json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
+        report["gpu_after"] = _gpu_snapshot()
+        report["complete"] = True
     finally:
         if previous is None:
             os.environ.pop("HUMANBRAIN_DEVICE", None)
@@ -267,7 +288,6 @@ def run(
             if result["cells"] > 100_000 and result["end_to_end_tokens_per_second"] > 100.0
         ],
     }
-    artifact_path.parent.mkdir(parents=True, exist_ok=True)
     artifact_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return report
 

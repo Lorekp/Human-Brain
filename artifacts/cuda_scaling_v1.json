@@ -1,0 +1,176 @@
+{
+  "build": {
+    "architecture": "sm_89",
+    "cache_identity_equal": true,
+    "cached_build_lookup_seconds": 0.00025469998945482075,
+    "cold_compile_seconds": 0.8830983999941964,
+    "source_digest": "88097d9442201802"
+  },
+  "bounded_failures": [
+    {
+      "cells": 1000000,
+      "status": "construction_timeout",
+      "wall_time_bound_seconds": 270,
+      "phase": "full RecurrentCellCircuit construction before registered timing",
+      "maximum_observed_process_private_memory_mib": 2809.24,
+      "maximum_observed_total_gpu_memory_used_mib": 2709.0,
+      "post_interrupt_total_gpu_memory_used_mib": 2452.0,
+      "tokens_per_second": null,
+      "note": "Stopped at the operational bound; no 1M CUDA throughput claim is made."
+    }
+  ],
+  "complete": true,
+  "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+  "equivalence": {
+    "all_state_arrays_bit_exact": true,
+    "cells": 384,
+    "final_state_sha256": "1a60aa1dbd4096be1e1a2d44b6bc10a4a196a8c6f45b76817b4a2b76cc779d08",
+    "reset_and_repeated_token_exact": true,
+    "spike_totals_exact": true,
+    "tokens": 64
+  },
+  "executed_cell_counts": [
+    100000,
+    200000
+  ],
+  "gate": {
+    "minimum_cells": 100000,
+    "minimum_end_to_end_tokens_per_second": 100.0,
+    "passing_sizes": [
+      200000
+    ]
+  },
+  "gpu_after": {
+    "driver_version": "610.62",
+    "memory_total_mib": 12282.0,
+    "memory_used_mib": 2615.0,
+    "name": "NVIDIA GeForce RTX 4070 SUPER",
+    "power_watts": 95.71,
+    "utilization_percent": 83.0
+  },
+  "gpu_before": {
+    "driver_version": "610.62",
+    "memory_total_mib": 12282.0,
+    "memory_used_mib": 2579.0,
+    "name": "NVIDIA GeForce RTX 4070 SUPER",
+    "power_watts": 14.88,
+    "utilization_percent": 19.0
+  },
+  "omitted_protocol_cell_counts": [
+    1000000
+  ],
+  "protocol": {
+    "cell_counts": [
+      100000,
+      200000,
+      1000000
+    ],
+    "equivalence_cells": 384,
+    "equivalence_tokens": 64,
+    "input_fanout": 32,
+    "integration_dt_ms": 0.05,
+    "metrics": [
+      "end_to_end_tokens_per_second",
+      "kernel_tokens_per_second",
+      "cell_steps_per_second",
+      "reservoir_spikes",
+      "spikes_per_cell_step",
+      "touched_cells_per_step",
+      "recurrent_edges_examined_per_step",
+      "construction_seconds",
+      "first_token_seconds",
+      "host_persistent_array_mib",
+      "device_persistent_array_mib",
+      "device_to_host_bytes_per_token",
+      "host_to_device_bytes_per_token",
+      "cold_compile_seconds",
+      "cached_build_lookup_seconds",
+      "exact_cpu_equivalence"
+    ],
+    "name": "cuda-sparse-human-cell-scaling-v1",
+    "notes": [
+      "One token is exactly 100 fitted 0.05-ms GLIF5 integration steps.",
+      "One cooperative CUDA launch executes the full token interval.",
+      "Every active cell and every reverse-CSR recurrent edge is touched each integration step; spike counts are reported separately.",
+      "Reverse CSR preserves CPU scatter order independently for every postsynaptic cell.",
+      "End-to-end time includes synchronous download of every mutable cell and synapse array.",
+      "Recurrent-observation timing excludes the separate output-cell readout and race.",
+      "The three-factor readout setting prevents allocation of the ridge N-by-N normal matrix.",
+      "Final timing is valid only in an isolated GPU window; utilization snapshots are recorded."
+    ],
+    "purpose": "Test the >100,000-active-cell and >100 end-to-end recurrent tokens/s engineering gate on an exact persistent-device CUDA backend.",
+    "recurrent_fanout": 6,
+    "seed": 1701,
+    "timing_repeats": 3,
+    "token_cells": 257,
+    "token_counts": {
+      "100000": 128,
+      "1000000": 16,
+      "200000": 64
+    },
+    "token_interval_ms": 5.0,
+    "topology": "uniform_no_self",
+    "warmup_tokens": 2
+  },
+  "protocol_sha256": "42b2e469517c23a54ea74538e165bb62a3cb4590fe58958e5214a8dc07cd7d92",
+  "results": [
+    {
+      "active_cells": 100000,
+      "backend": "cuda",
+      "biological_token_interval_ms": 5.0,
+      "cell_steps_per_second": 2632585651.5632577,
+      "cells": 100000,
+      "construction_seconds": 5.750781799986726,
+      "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+      "device_persistent_array_mib": 13.192134857177734,
+      "device_to_host_bytes_per_token": 6000008,
+      "end_to_end_tokens_per_second": 263.2585651563258,
+      "first_kernel_milliseconds": 2.7815680503845215,
+      "first_token_seconds": 0.003971600002842024,
+      "host_persistent_array_mib": 214.04901123046875,
+      "host_to_device_bytes_per_token": 0,
+      "kernel_seconds": 0.3525498881340027,
+      "kernel_tokens_per_second": 363.0691834210645,
+      "mean_spikes_per_token": 3.3125,
+      "normal_matrix_allocated": false,
+      "recurrent_edges_examined_per_step": 600000,
+      "reservoir_spikes": 424,
+      "sparse_recurrent_edges": 600000,
+      "spikes_per_cell_step": 3.3125e-07,
+      "state_sha256": "09ec1308d45ca311f058e5628b167015100ffe120330fa52608624a69c220eea",
+      "timing_seconds": 0.48621400000411086,
+      "token_steps": 100,
+      "tokens": 128,
+      "touched_cells_per_step": 100000
+    },
+    {
+      "active_cells": 200000,
+      "backend": "cuda",
+      "biological_token_interval_ms": 5.0,
+      "cell_steps_per_second": 2880592681.7624135,
+      "cells": 200000,
+      "construction_seconds": 52.607502900005784,
+      "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+      "device_persistent_array_mib": 26.352840423583984,
+      "device_to_host_bytes_per_token": 12000008,
+      "end_to_end_tokens_per_second": 144.02963408812067,
+      "first_kernel_milliseconds": 249.62322998046875,
+      "first_token_seconds": 0.2524316999770235,
+      "host_persistent_array_mib": 428.05352783203125,
+      "host_to_device_bytes_per_token": 0,
+      "kernel_seconds": 0.34822864198684694,
+      "kernel_tokens_per_second": 183.7872945626838,
+      "mean_spikes_per_token": 1.125,
+      "normal_matrix_allocated": false,
+      "recurrent_edges_examined_per_step": 1200000,
+      "reservoir_spikes": 72,
+      "sparse_recurrent_edges": 1200000,
+      "spikes_per_cell_step": 5.625e-08,
+      "state_sha256": "c05e2f639c3afc1b7534b3f37437319749ac58a3c01f60ac410ec9ba54cb2fac",
+      "timing_seconds": 0.4443530000280589,
+      "token_steps": 100,
+      "tokens": 64,
+      "touched_cells_per_step": 200000
+    }
+  ]
+}

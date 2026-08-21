@@ -49,9 +49,13 @@ is addressed on two fronts: a synapse-local learner removes the ridge `N x N`
 normal matrix, while a persistent-device CUDA backend executes a full 100-step
 token interval in one cooperative launch for networks of at least 100,000
 cells. CUDA and Rust match every mutable state array bit-for-bit; exact
-large-network throughput is registered in `docs/simulation-speed.md`.
+large-network throughput is registered in `docs/simulation-speed.md`. On the
+RTX 4070 SUPER, the isolated 200,000-cell run touched 1.2 million recurrent
+edges per biological step at 144.03 end-to-end tokens/s, passing the strict
+size/speed gate. The fixed-input run spiked sparsely, so this is a simulation
+throughput result rather than evidence of useful large-network recruitment.
 
-Simulation speed is a core capability requirement. The next acceptance gate is
+Simulation speed is a core capability requirement. The acceptance gate is
 more than 100,000 **active** fitted human cells at more than 100 end-to-end
 recurrent tokens/s on this workstation. A qualifying run must retain the frozen
 0.05-ms integration step and 5-ms token interval, sparse recurrent propagation,

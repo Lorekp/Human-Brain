@@ -22,6 +22,10 @@
     "end_to_end_tokens_per_second",
     "kernel_tokens_per_second",
     "cell_steps_per_second",
+    "reservoir_spikes",
+    "spikes_per_cell_step",
+    "touched_cells_per_step",
+    "recurrent_edges_examined_per_step",
     "construction_seconds",
     "first_token_seconds",
     "host_persistent_array_mib",
@@ -35,8 +39,10 @@
   "notes": [
     "One token is exactly 100 fitted 0.05-ms GLIF5 integration steps.",
     "One cooperative CUDA launch executes the full token interval.",
+    "Every active cell and every reverse-CSR recurrent edge is touched each integration step; spike counts are reported separately.",
     "Reverse CSR preserves CPU scatter order independently for every postsynaptic cell.",
     "End-to-end time includes synchronous download of every mutable cell and synapse array.",
+    "Recurrent-observation timing excludes the separate output-cell readout and race.",
     "The three-factor readout setting prevents allocation of the ridge N-by-N normal matrix.",
     "Final timing is valid only in an isolated GPU window; utilization snapshots are recorded."
   ]
