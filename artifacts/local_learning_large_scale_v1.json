@@ -1,0 +1,65 @@
+{
+  "measurements": [
+    {
+      "competitive_updates": 32,
+      "learned_readout_synapses": 17623,
+      "memory_mib": {
+        "peak_traced": 53.869056701660156,
+        "persistent_arrays": 52.45060729980469
+      },
+      "normal_matrix_allocated": false,
+      "output_cells": 256,
+      "reservoir_cells": 24576,
+      "ridge_normal_matrix_mib_avoided": 4608.3750076293945,
+      "throughput": {
+        "competitive_updates_per_second": 84.96465470543183,
+        "examples_per_second": 84.96465470543183,
+        "synapse_weight_events": 1572928,
+        "synapse_weight_events_per_second": 4176352.637390796
+      },
+      "training_examples": 32,
+      "wall_seconds": {
+        "construction": 3.4248100999975577,
+        "growth": 0.37662719999207184,
+        "total": 3.8014372999896295
+      }
+    },
+    {
+      "competitive_updates": 32,
+      "learned_readout_synapses": 17837,
+      "memory_mib": {
+        "peak_traced": 211.69594192504883,
+        "persistent_arrays": 209.6693572998047
+      },
+      "normal_matrix_allocated": false,
+      "output_cells": 256,
+      "reservoir_cells": 98304,
+      "ridge_normal_matrix_mib_avoided": 73729.5000076294,
+      "throughput": {
+        "competitive_updates_per_second": 9.342348310235048,
+        "examples_per_second": 9.342348310235048,
+        "synapse_weight_events": 6291520,
+        "synapse_weight_events_per_second": 1836799.101275313
+      },
+      "training_examples": 32,
+      "wall_seconds": {
+        "construction": 31.256931099982467,
+        "growth": 3.425262999982806,
+        "total": 34.68219409996527
+      }
+    }
+  ],
+  "protocol": {
+    "learning_rate_pa": 16.0,
+    "learning_rule": "three_factor",
+    "name": "local-readout-large-scale-smoke-v1",
+    "output_cells": 256,
+    "peak_memory": "Python and NumPy allocations traced by tracemalloc",
+    "purpose": "scale/memory smoke only; fixed synthetic byte-token sequence; no train/calibration/validation/test data and no capability claim",
+    "sizes": [
+      24576,
+      98304
+    ],
+    "training_examples": 32
+  }
+}

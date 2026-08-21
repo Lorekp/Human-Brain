@@ -1,0 +1,312 @@
+{
+  "calibration": {
+    "candidates": [
+      {
+        "accuracy": 0.046875,
+        "evaluation_seconds": 0.01006020000204444,
+        "learning_rate_pa": 16.0,
+        "train_seconds": 0.18069060001289472
+      },
+      {
+        "accuracy": 0.0,
+        "evaluation_seconds": 0.010555599990766495,
+        "learning_rate_pa": 32.0,
+        "train_seconds": 0.12036190001526847
+      },
+      {
+        "accuracy": 0.0,
+        "evaluation_seconds": 0.01142910000635311,
+        "learning_rate_pa": 64.0,
+        "train_seconds": 0.13328540002112277
+      },
+      {
+        "accuracy": 0.0,
+        "evaluation_seconds": 0.013647599989781156,
+        "learning_rate_pa": 128.0,
+        "train_seconds": 0.12880160001805052
+      }
+    ],
+    "reservoir_cells": 96,
+    "selected_learning_rate_pa": 16.0
+  },
+  "measurements": [
+    {
+      "free_running": {
+        "accuracy": 0.140625,
+        "correct": 9,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "fffffffoffffffoffrffoffrff foffffrfof ffofrfffrof ffofffrffof fo",
+        "target_bytes": 64
+      },
+      "growth_examples": 2040,
+      "learned_readout_synapses": 5926,
+      "learning_rate_pa": 16.0,
+      "local_weight_updates": 1876,
+      "memory_mib": {
+        "persistent_arrays": 0.2460174560546875,
+        "training_peak_traced": 1.0030021667480469
+      },
+      "reservoir_cells": 96,
+      "ridge_normal_matrix_allocated": false,
+      "rule": "three_factor",
+      "teacher_forced": {
+        "accuracy": 0.0390625,
+        "correct": 5,
+        "predictions": 128,
+        "tokens_per_second": 10615.799278956856
+      },
+      "wall_seconds": {
+        "free_running_validation": 0.00929119999636896,
+        "teacher_forced_validation": 0.012057500018272549,
+        "train": 0.648101200000383
+      }
+    },
+    {
+      "free_running": {
+        "accuracy": 0.0625,
+        "correct": 4,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "oroorom at emoletdataatcatacataatcsatiita simpcesat\nons\n\nimport ",
+        "target_bytes": 64
+      },
+      "growth_examples": 2040,
+      "learned_readout_synapses": 5952,
+      "learning_rate_pa": null,
+      "local_weight_updates": 0,
+      "memory_mib": {
+        "persistent_arrays": 0.6019821166992188,
+        "training_peak_traced": 1.5019111633300781
+      },
+      "reservoir_cells": 96,
+      "ridge_normal_matrix_allocated": true,
+      "rule": "ridge",
+      "teacher_forced": {
+        "accuracy": 0.3515625,
+        "correct": 45,
+        "predictions": 128,
+        "tokens_per_second": 11054.590666457458
+      },
+      "wall_seconds": {
+        "free_running_validation": 0.009589499997673556,
+        "teacher_forced_validation": 0.011578900011954829,
+        "train": 0.9782262000080664
+      }
+    },
+    {
+      "free_running": {
+        "accuracy": 0.078125,
+        "correct": 5,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "asftasfmrtasfdffrtasdm faostfrasmfrt adfsmtasfrd aftsrmafdt fras",
+        "target_bytes": 64
+      },
+      "growth_examples": 2040,
+      "learned_readout_synapses": 23063,
+      "learning_rate_pa": 16.0,
+      "local_weight_updates": 1876,
+      "memory_mib": {
+        "persistent_arrays": 0.8601531982421875,
+        "training_peak_traced": 1.6181449890136719
+      },
+      "reservoir_cells": 384,
+      "ridge_normal_matrix_allocated": false,
+      "rule": "three_factor",
+      "teacher_forced": {
+        "accuracy": 0.0625,
+        "correct": 8,
+        "predictions": 128,
+        "tokens_per_second": 5264.370082538286
+      },
+      "wall_seconds": {
+        "free_running_validation": 0.021598199993604794,
+        "teacher_forced_validation": 0.02431440001237206,
+        "train": 0.7081754999817349
+      }
+    },
+    {
+      "free_running": {
+        "accuracy": 0.03125,
+        "correct": 2,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "otooims mpens\nria imporimptl import _futuons\nera_se_ gbro\nimport",
+        "target_bytes": 64
+      },
+      "growth_examples": 2040,
+      "learned_readout_synapses": 23746,
+      "learning_rate_pa": null,
+      "local_weight_updates": 0,
+      "memory_mib": {
+        "persistent_arrays": 3.1189498901367188,
+        "training_peak_traced": 6.205746650695801
+      },
+      "reservoir_cells": 384,
+      "ridge_normal_matrix_allocated": true,
+      "rule": "ridge",
+      "teacher_forced": {
+        "accuracy": 0.34375,
+        "correct": 44,
+        "predictions": 128,
+        "tokens_per_second": 5255.292240919569
+      },
+      "wall_seconds": {
+        "free_running_validation": 0.019986100000096485,
+        "teacher_forced_validation": 0.024356400012038648,
+        "train": 1.6376273999921978
+      }
+    },
+    {
+      "free_running": {
+        "accuracy": 0.0625,
+        "correct": 4,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "sasmlsfrtaos\nmpfrt lasimprt aflsde\nr afomtslraimp tasflrf_ortsma",
+        "target_bytes": 64
+      },
+      "growth_examples": 2040,
+      "learned_readout_synapses": 84176,
+      "learning_rate_pa": 16.0,
+      "local_weight_updates": 1861,
+      "memory_mib": {
+        "persistent_arrays": 3.3166961669921875,
+        "training_peak_traced": 4.080005645751953
+      },
+      "reservoir_cells": 1536,
+      "ridge_normal_matrix_allocated": false,
+      "rule": "three_factor",
+      "teacher_forced": {
+        "accuracy": 0.078125,
+        "correct": 10,
+        "predictions": 128,
+        "tokens_per_second": 1792.5840239396764
+      },
+      "wall_seconds": {
+        "free_running_validation": 0.07269120001001284,
+        "teacher_forced_validation": 0.07140529999742284,
+        "train": 1.9566298999998253
+      }
+    },
+    {
+      "free_running": {
+        "accuracy": 0.078125,
+        "correct": 5,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "se_s _eonmitp\"t\"\"elien__f,\n _  \"\"\"or z_\" m  egr_damp iertonta-mn",
+        "target_bytes": 64
+      },
+      "growth_examples": 2040,
+      "learned_readout_synapses": 92070,
+      "learning_rate_pa": null,
+      "local_weight_updates": 0,
+      "memory_mib": {
+        "persistent_arrays": 25.84307098388672,
+        "training_peak_traced": 50.33654499053955
+      },
+      "reservoir_cells": 1536,
+      "ridge_normal_matrix_allocated": true,
+      "rule": "ridge",
+      "teacher_forced": {
+        "accuracy": 0.0859375,
+        "correct": 11,
+        "predictions": 128,
+        "tokens_per_second": 897.9053550375121
+      },
+      "wall_seconds": {
+        "free_running_validation": 0.06865919998381287,
+        "teacher_forced_validation": 0.14255400002002716,
+        "train": 3.913573500001803
+      }
+    },
+    {
+      "free_running": {
+        "accuracy": 0.046875,
+        "correct": 3,
+        "exact_prefix_bytes": 0,
+        "generated_bytes": 64,
+        "generated_preview": "asoss\nmfrtatld asfmtr oacsipt\nrm adafclast oirtsmpraad tas\nfm ci",
+        "target_bytes": 64
+      },
+      "growth_examples": 2040,
+      "learned_readout_synapses": 131876,
+      "learning_rate_pa": 16.0,
+      "local_weight_updates": 1874,
+      "memory_mib": {
+        "persistent_arrays": 13.142868041992188,
+        "training_peak_traced": 13.923206329345703
+      },
+      "reservoir_cells": 6144,
+      "ridge_normal_matrix_allocated": false,
+      "rule": "three_factor",
+      "teacher_forced": {
+        "accuracy": 0.1015625,
+        "correct": 13,
+        "predictions": 128,
+        "tokens_per_second": 499.0093884077844
+      },
+      "wall_seconds": {
+        "free_running_validation": 0.293820599996252,
+        "teacher_forced_validation": 0.2565081999928225,
+        "train": 6.657089799991809
+      }
+    }
+  ],
+  "protocol": {
+    "calibration_characters": 256,
+    "calibration_file": {
+      "bytes": 16747,
+      "path": "src/humanbrain/native.py",
+      "sha256": "8c043cdc1cbdbdae0032b5b522d368345c76152344437e897555a6cebd2e3e1e"
+    },
+    "epochs": 2,
+    "fit_characters": 768,
+    "fit_files": [
+      {
+        "bytes": 20386,
+        "path": "src/humanbrain/cells.py",
+        "sha256": "68b0937032b3ac055f8da1306612ca6a524b147f074e99cbf70c15aef0c7e6ef"
+      },
+      {
+        "bytes": 6794,
+        "path": "src/humanbrain/topology.py",
+        "sha256": "847d5d1ee85d9951b62285c2b6730be2747a722b97c5c02bb8f9b1099ce82f85"
+      },
+      {
+        "bytes": 4040,
+        "path": "src/humanbrain/tokenizer.py",
+        "sha256": "9fed5ddf16d5cab71c5fb25c96778678d25bcd40d5330b1fd29acf83fd241150"
+      }
+    ],
+    "generated_tokens": 64,
+    "name": "local-readout-scaling-v1",
+    "peak_memory": "Python and NumPy allocations traced by tracemalloc",
+    "predictions": 128,
+    "prompt_characters": 64,
+    "ridge_max_size": 1536,
+    "sizes": [
+      96,
+      384,
+      1536,
+      6144
+    ],
+    "split": "fit and learning-rate calibration use named training files only; the learning rate is frozen before named validation is opened; there is no test partition and no test access",
+    "validation_characters": 512,
+    "validation_file": {
+      "bytes": 5985,
+      "path": "src/humanbrain/recurrent_language.py",
+      "sha256": "7f4ef78be606032671e0a5a66e4f19a4bb101434c38f9837aee049bc14cf0bd0"
+    }
+  },
+  "skipped": [
+    {
+      "normal_matrix_mib": 288.09375762939453,
+      "reason": "above explicit ridge-max-size safety limit",
+      "reservoir_cells": 6144,
+      "rule": "ridge"
+    }
+  ]
+}

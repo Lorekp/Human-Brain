@@ -70,6 +70,15 @@ the native cell simulation. Set `HUMANBRAIN_NATIVE_CACHE` to place the compiled
 cache explicitly. The registered sparse benchmark reaches 98,304 cells without
 dense cell-by-cell inference state; see `docs/simulation-speed.md`.
 
+An experimental native three-factor readout removes ridge's quadratic growth
+state and cubic solve while leaving ridge as the default comparison. It reached
+6,144 learning cells with 13.92 MiB traced peak memory, but did not match ridge
+accuracy at small sizes and its free-running validation remains weak. See
+`docs/local-readout-learning.md` and the frozen
+`artifacts/local_learning_scaling_v1.json` report.
+An explicitly non-capability smoke also exercised online updates at 98,304
+cells with 211.70 MiB peak memory and no quadratic ridge state.
+
 The same cell circuit drives mini-swe-agent through `HumanCellModel`. A
 frozen, instance-specific episodic checkpoint completed the SQLFluff 1625 dev
 task in seven cell-generated shell actions and passed the official SWE-bench

@@ -15,7 +15,7 @@ from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel
 from humanbrain.tokenizer import BytePhraseTokenizer
 
-FORMAT = "recurrent-human-cell-checkpoint-v1"
+FORMAT = "recurrent-human-cell-checkpoint-v2"
 
 
 def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> str:
@@ -23,9 +23,14 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
         raise ValueError("recurrent checkpoint path must end in .npz")
     path.parent.mkdir(parents=True, exist_ok=True)
     circuit = model._circuit
-    circuit._flush_growth_statistics()
-    if circuit._normal_matrix is None or circuit._target_moments is None:
-        raise RuntimeError("cannot checkpoint a recurrent circuit before growth")
+    if not circuit.learning_frozen:
+        raise RuntimeError("freeze recurrent readout learning before checkpointing")
+    if circuit.config.readout_learning_rule == "ridge":
+        circuit._flush_growth_statistics()
+        if circuit._normal_matrix is None or circuit._target_moments is None:
+            raise RuntimeError("cannot checkpoint a recurrent circuit before growth")
+    elif circuit._normal_matrix is not None or circuit._target_moments is not None:
+        raise RuntimeError("local readout must not contain ridge statistics")
     phrase_offsets, phrase_values = _pack_phrases(model._tokenizer.phrases)
     metadata = {
         "format": FORMAT,
@@ -35,22 +40,24 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
         "cell_parameters": asdict(circuit.cell_parameters),
         "circuit_config": asdict(circuit.config),
         "growth_examples": circuit._growth_examples,
+        "local_updates": circuit._local_updates,
     }
+    arrays = {
+        "metadata": np.asarray(json.dumps(metadata, sort_keys=True)),
+        "phrase_offsets": phrase_offsets,
+        "phrase_values": phrase_values,
+        "afferent_targets": circuit._afferent_targets,
+        "recurrent_targets": circuit._recurrent_targets,
+        "recurrent_weights_pa": circuit._recurrent_weights_pa,
+        "output_heterogeneity_pa": circuit._output_heterogeneity_pa,
+        "readout_synapses_pa": circuit._readout_synapses_pa,
+        "pacemaker_synapses_pa": circuit._pacemaker_synapses_pa,
+    }
+    if circuit.config.readout_learning_rule == "ridge":
+        arrays["normal_matrix"] = circuit._normal_matrix
+        arrays["target_moments"] = circuit._target_moments
     with path.open("wb") as stream:
-        np.savez_compressed(
-            stream,
-            metadata=np.asarray(json.dumps(metadata, sort_keys=True)),
-            phrase_offsets=phrase_offsets,
-            phrase_values=phrase_values,
-            afferent_targets=circuit._afferent_targets,
-            recurrent_targets=circuit._recurrent_targets,
-            recurrent_weights_pa=circuit._recurrent_weights_pa,
-            output_heterogeneity_pa=circuit._output_heterogeneity_pa,
-            readout_synapses_pa=circuit._readout_synapses_pa,
-            pacemaker_synapses_pa=circuit._pacemaker_synapses_pa,
-            normal_matrix=circuit._normal_matrix,
-            target_moments=circuit._target_moments,
-        )
+        np.savez_compressed(stream, **arrays)
     return sha256(path.read_bytes()).hexdigest()
 
 
@@ -79,9 +86,10 @@ def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
             "_output_heterogeneity_pa": ("output_heterogeneity_pa", np.float64),
             "_readout_synapses_pa": ("readout_synapses_pa", np.float64),
             "_pacemaker_synapses_pa": ("pacemaker_synapses_pa", np.float64),
-            "_normal_matrix": ("normal_matrix", np.float64),
-            "_target_moments": ("target_moments", np.float64),
         }
+        if circuit.config.readout_learning_rule == "ridge":
+            arrays["_normal_matrix"] = ("normal_matrix", np.float64)
+            arrays["_target_moments"] = ("target_moments", np.float64)
         for attribute, (key, dtype) in arrays.items():
             existing = getattr(circuit, attribute)
             if existing is None and attribute == "_normal_matrix":
@@ -101,6 +109,8 @@ def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
             setattr(circuit, attribute, value)
         circuit._bind_native_kernel()
         circuit._growth_examples = int(metadata["growth_examples"])
+        circuit._local_updates = int(metadata["local_updates"])
+        circuit._learning_frozen = True
     return RecurrentCellLanguageModel(
         tokenizer=tokenizer,
         circuit=circuit,

@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 
@@ -59,3 +60,89 @@ def test_growth_result_does_not_depend_on_sequence_order() -> None:
     forward_predictions = [forward.predict_next([token]).winner for token in (1, 2, 4, 5)]
     reverse_predictions = [reverse.predict_next([token]).winner for token in (1, 2, 4, 5)]
     assert forward_predictions == reverse_predictions
+
+
+def test_three_factor_update_uses_trace_competition_and_target_modulation() -> None:
+    learning_rate = 10.0
+    circuit = RecurrentCellCircuit(
+        token_cells=4,
+        config=RecurrentCircuitConfig(
+            reservoir_cells=8,
+            input_fanout=1,
+            recurrent_fanout=1,
+            readout_learning_rule="three_factor",
+            local_learning_rate_pa=learning_rate,
+        ),
+    )
+    circuit._eligibility[:] = (3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    circuit._output_heterogeneity_pa.fill(0.0)
+    circuit._observed_tokens = 1
+
+    circuit.strengthen(2)
+
+    step = learning_rate / np.sqrt(26.0)
+    expected = step * circuit._eligibility
+    np.testing.assert_allclose(circuit._readout_synapses_pa[2], expected)
+    np.testing.assert_allclose(circuit._readout_synapses_pa[0], -expected)
+    assert not circuit._readout_synapses_pa[1].any()
+    assert not circuit._readout_synapses_pa[3].any()
+    np.testing.assert_allclose(
+        circuit._pacemaker_synapses_pa,
+        (-step, 0.0, step, 0.0),
+    )
+    assert circuit.local_update_count == 1
+
+    circuit.strengthen(2)
+    np.testing.assert_allclose(circuit._readout_synapses_pa[2], 2.0 * expected)
+    np.testing.assert_allclose(circuit._readout_synapses_pa[1], -expected)
+    assert circuit.local_update_count == 2
+
+    before = circuit._readout_synapses_pa.copy()
+    circuit.strengthen(2)
+    np.testing.assert_array_equal(circuit._readout_synapses_pa, before)
+    assert circuit.local_update_count == 2
+
+
+def test_three_factor_growth_never_allocates_a_reservoir_normal_matrix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reservoir_cells = 384
+    circuit = RecurrentCellCircuit(
+        token_cells=17,
+        config=RecurrentCircuitConfig(
+            reservoir_cells=reservoir_cells,
+            input_fanout=32,
+            recurrent_fanout=6,
+            recurrent_topology="uniform_no_self",
+            readout_learning_rule="three_factor",
+        ),
+    )
+    original_zeros = np.zeros
+
+    def reject_normal_matrix(shape, *args, **kwargs):
+        assert shape != (reservoir_cells + 1, reservoir_cells + 1)
+        return original_zeros(shape, *args, **kwargs)
+
+    monkeypatch.setattr(np, "zeros", reject_normal_matrix)
+    circuit.grow_sequence([1, 2, 3, 1, 2, 3], epochs=2)
+
+    assert circuit._normal_matrix is None
+    assert circuit._target_moments is None
+    assert circuit._feature_batch is None
+    assert circuit.learned_synapse_count > 0
+
+
+def test_three_factor_local_rule_learns_repeated_next_tokens() -> None:
+    circuit = RecurrentCellCircuit(
+        token_cells=8,
+        config=RecurrentCircuitConfig(
+            reservoir_cells=64,
+            input_fanout=12,
+            recurrent_fanout=4,
+            readout_learning_rule="three_factor",
+        ),
+    )
+    circuit.grow_sequence([1, 2, 3, 1, 2, 3], epochs=12)
+
+    assert circuit.predict_next([1]).winner == 2
+    assert circuit.predict_next([1, 2]).winner == 3

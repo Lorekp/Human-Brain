@@ -1,3 +1,6 @@
+import numpy as np
+import pytest
+
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel, RecurrentModelConfig
 
@@ -125,3 +128,35 @@ def test_recurrent_checkpoint_round_trip(tmp_path) -> None:
     assert loaded.training_digest == model.training_digest
     assert loaded.learned_synapses == model.learned_synapses
     assert loaded.predict_next("cell ") == model.predict_next("cell ")
+
+
+def test_three_factor_checkpoint_contains_synapses_but_no_ridge_state(tmp_path) -> None:
+    model = RecurrentCellLanguageModel.grow(
+        ["abcabcabcabc"],
+        RecurrentModelConfig(
+            growth_epochs=8,
+            circuit=RecurrentCircuitConfig(
+                reservoir_cells=64,
+                input_fanout=12,
+                recurrent_fanout=4,
+                readout_learning_rule="three_factor",
+            ),
+        ),
+    )
+    assert model._circuit.learning_frozen
+    with pytest.raises(RuntimeError, match="frozen"):
+        model._circuit.strengthen(1)
+
+    path = tmp_path / "local-recurrent-cell.npz"
+    model.save(path)
+    with np.load(path, allow_pickle=False) as state:
+        assert "readout_synapses_pa" in state.files
+        assert "pacemaker_synapses_pa" in state.files
+        assert "normal_matrix" not in state.files
+        assert "target_moments" not in state.files
+
+    loaded = RecurrentCellLanguageModel.load(path)
+    assert loaded._circuit.learning_frozen
+    assert loaded._circuit._normal_matrix is None
+    assert loaded._circuit._target_moments is None
+    assert loaded.predict_next("a") == model.predict_next("a")

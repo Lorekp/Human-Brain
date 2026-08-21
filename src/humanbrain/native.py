@@ -154,7 +154,7 @@ def _load_library() -> ctypes.CDLL:
 
         library.humanbrain_kernel_abi_version.argtypes = []
         library.humanbrain_kernel_abi_version.restype = ctypes.c_uint32
-        if library.humanbrain_kernel_abi_version() != 1:
+        if library.humanbrain_kernel_abi_version() != 2:
             raise NativeBuildError("native human-cell kernel ABI mismatch")
 
         pointer_args = [
@@ -193,6 +193,18 @@ def _load_library() -> ctypes.CDLL:
             _I32_POINTER,
         ]
         library.humanbrain_observe_token.restype = ctypes.c_size_t
+        library.humanbrain_three_factor_update.argtypes = [
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_double,
+            ctypes.c_double,
+            _F64_POINTER,
+            _F64_POINTER,
+            _F64_POINTER,
+            _F64_POINTER,
+        ]
+        library.humanbrain_three_factor_update.restype = ctypes.c_size_t
         _LIBRARY = library
         _LIBRARY_PATH = build.library_path
         return library
@@ -380,3 +392,81 @@ class NativeRecurrentKernel:
                 _i32(self._spike_indices),
             )
         )
+
+
+class NativeThreeFactorLearner:
+    """Allocation-free native plasticity over checkpointable synapse arrays."""
+
+    def __init__(
+        self,
+        *,
+        eligibility: np.ndarray,
+        output_heterogeneity_pa: np.ndarray,
+        readout_synapses_pa: np.ndarray,
+        pacemaker_synapses_pa: np.ndarray,
+    ) -> None:
+        self._library = _load_library()
+        output_cells, reservoir_cells = readout_synapses_pa.shape
+        _require_native_array(
+            eligibility,
+            dtype=np.dtype(np.float64),
+            shape=(reservoir_cells,),
+            name="eligibility",
+        )
+        _require_native_array(
+            output_heterogeneity_pa,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells,),
+            name="output heterogeneity",
+        )
+        _require_native_array(
+            readout_synapses_pa,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells, reservoir_cells),
+            name="readout synapses",
+        )
+        _require_native_array(
+            pacemaker_synapses_pa,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells,),
+            name="pacemaker synapses",
+        )
+        self._eligibility = eligibility
+        self._output_heterogeneity_pa = output_heterogeneity_pa
+        self._readout_synapses_pa = readout_synapses_pa
+        self._pacemaker_synapses_pa = pacemaker_synapses_pa
+        self._output_cells = output_cells
+        self._reservoir_cells = reservoir_cells
+
+    def update(
+        self,
+        target_token_id: int,
+        learning_rate_pa: float,
+        competitive_margin_pa: float,
+    ) -> int | None:
+        """Update a margin-violating competitor, or return ``None`` when satisfied."""
+        target = int(target_token_id)
+        if not 0 <= target < self._output_cells:
+            raise ValueError("target token outside output-cell population")
+        if learning_rate_pa <= 0.0:
+            raise ValueError("local learning rate must be positive")
+        if competitive_margin_pa <= 0.0:
+            raise ValueError("competitive margin must be positive")
+        winner = int(
+            self._library.humanbrain_three_factor_update(
+                self._reservoir_cells,
+                self._output_cells,
+                target,
+                learning_rate_pa,
+                competitive_margin_pa,
+                _f64(self._eligibility),
+                _f64(self._output_heterogeneity_pa),
+                _f64(self._readout_synapses_pa),
+                _f64(self._pacemaker_synapses_pa),
+            )
+        )
+        if winner == self._output_cells:
+            return None
+        if winner > self._output_cells:
+            raise RuntimeError("native local learner rejected its array dimensions")
+        return winner
