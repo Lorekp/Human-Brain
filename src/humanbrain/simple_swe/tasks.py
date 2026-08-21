@@ -31,12 +31,14 @@ class PublicTask:
     entry_point: str
     parameter_names: tuple[str, ...]
     prompt: str
+    hidden_test_sha256: str
     task_sha256: str
 
 
 @dataclass(frozen=True)
 class PrivateTask:
     task_id: str
+    public_task_sha256: str
     regression_cases: tuple[HiddenCase, ...]
     property_cases: tuple[HiddenCase, ...]
     test_sha256: str
@@ -108,23 +110,12 @@ def _make_task(
     entry_point = f"solve_{sha256(task_id.encode('utf-8')).hexdigest()[:12]}"
     signature = ", ".join(parameter_names)
     prompt = (
-        "Write exactly one Python function with this signature:\n"
+        "Return exactly one complete Python function. Use only Python built-ins; "
+        "do not emit Markdown, prose, tests, imports, or input/output examples.\n"
+        "Implement this exact task:\n"
         f"def {entry_point}({signature}):\n"
-        f"    {description}\n"
-        "Use only Python built-ins. Return only the complete function definition: "
-        "no Markdown, prose, tests, imports, or input/output examples."
+        f"    \"\"\"{description}\"\"\""
     )
-    public_record = {
-        "task_id": task_id,
-        "partition": partition,
-        "tier": tier,
-        "family": family,
-        "ordinal": ordinal,
-        "entry_point": entry_point,
-        "parameter_names": list(parameter_names),
-        "prompt": prompt,
-    }
-    public = PublicTask(**public_record, task_sha256=canonical_sha256(public_record))
     regressions = tuple(
         HiddenCase(args=tuple(args), expected=oracle(*args), distribution="fixed-regression")
         for args in regression_inputs
@@ -140,11 +131,26 @@ def _make_task(
         "regression_cases": [asdict(case) for case in regressions],
         "property_cases": [asdict(case) for case in properties],
     }
+    test_sha256 = canonical_sha256(private_record)
+    public_record = {
+        "task_id": task_id,
+        "partition": partition,
+        "tier": tier,
+        "family": family,
+        "ordinal": ordinal,
+        "entry_point": entry_point,
+        "parameter_names": list(parameter_names),
+        "prompt": prompt,
+        "hidden_test_sha256": test_sha256,
+    }
+    task_sha256 = canonical_sha256(public_record)
+    public = PublicTask(**public_record, task_sha256=task_sha256)
     private = PrivateTask(
         task_id=task_id,
+        public_task_sha256=task_sha256,
         regression_cases=regressions,
         property_cases=properties,
-        test_sha256=canonical_sha256(private_record),
+        test_sha256=test_sha256,
     )
     return GeneratedTask(public=public, private=private)
 

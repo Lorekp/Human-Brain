@@ -65,6 +65,21 @@ def test_protocol_has_no_eval_seed_and_preregisters_all_eval_families() -> None:
     assert set(protocol.partitions).issuperset({"train", "dev", "eval"})
 
 
+def test_cell_prompt_ends_in_task_specific_information() -> None:
+    protocol = load_protocol(PROTOCOL)
+    tasks = generate_visible_partition(protocol, "dev")
+    first_per_family = {}
+    for task in tasks:
+        first_per_family.setdefault(task.public.family, task)
+    tails = {
+        task.public.prompt.encode("utf-8")[-64:]
+        for task in first_per_family.values()
+    }
+
+    assert len(tails) == len(first_per_family)
+    assert all(b"no Markdown" not in tail for tail in tails)
+
+
 @pytest.mark.parametrize(
     ("path", "weakened"),
     [

@@ -48,6 +48,13 @@ class FreezeManifest:
     model_config_sha256: str
     tokenizer_sha256: str
     checkpoint_bytes: int
+    completion_adapter_id: str
+    completion_adapter_sha256: str
+    compiler_id: str
+    compiler_sha256: str
+    compiler_mode: str
+    compiler_algorithm_source: str
+    inference_config_sha256: str
     source_head: str
     source_tree_sha256: str
     created_utc: str
@@ -190,12 +197,58 @@ def _outside_source(output_path: Path, source_root: Path) -> None:
     )
 
 
+def _completion_identities(compiler_identity: object | None) -> tuple[object, str]:
+    from humanbrain.simple_swe.compiler import (
+        COMPLETION_ADAPTER_ID,
+        CompilerIdentity,
+        RawPythonCompiler,
+    )
+
+    identity = compiler_identity or RawPythonCompiler().identity
+    if not isinstance(identity, CompilerIdentity):
+        raise FreezeIntegrityError("compiler identity has the wrong type")
+    adapter_path = Path(__file__).with_name("adapter.py")
+    if not adapter_path.is_file():
+        raise FreezeIntegrityError("completion adapter source is missing")
+    adapter_sha256 = sha256(adapter_path.read_bytes()).hexdigest()
+    return identity, adapter_sha256
+
+
+def _inference_config_sha256(
+    protocol: ProtocolSpec,
+    checkpoint: CheckpointHashes,
+    compiler_identity: object,
+    adapter_sha256: str,
+) -> str:
+    from humanbrain.simple_swe.compiler import COMPLETION_ADAPTER_ID, CompilerIdentity
+
+    if not isinstance(compiler_identity, CompilerIdentity):
+        raise FreezeIntegrityError("compiler identity has the wrong type")
+    return canonical_sha256(
+        {
+            "protocol_id": protocol.protocol_id,
+            "protocol_sha256": protocol.sha256,
+            "max_new_tokens": protocol.max_new_tokens,
+            "checkpoint_format": checkpoint.checkpoint_format,
+            "model_config_sha256": checkpoint.model_config_sha256,
+            "tokenizer_sha256": checkpoint.tokenizer_sha256,
+            "completion_adapter_id": COMPLETION_ADAPTER_ID,
+            "completion_adapter_sha256": adapter_sha256,
+            "compiler_id": compiler_identity.compiler_id,
+            "compiler_sha256": compiler_identity.compiler_sha256,
+            "compiler_mode": compiler_identity.mode,
+            "compiler_algorithm_source": compiler_identity.algorithm_source,
+        }
+    )
+
+
 def create_freeze_manifest(
     *,
     protocol_path: str | Path,
     checkpoint_path: str | Path,
     source_root: str | Path,
     output_path: str | Path,
+    compiler_identity: object | None = None,
 ) -> FreezeManifest:
     protocol = load_protocol(protocol_path)
     root = Path(source_root).resolve()
@@ -203,6 +256,11 @@ def create_freeze_manifest(
     _outside_source(output, root)
     head, tree_sha256 = _clean_source_snapshot(root)
     checkpoint = checkpoint_hashes(checkpoint_path)
+    identity, adapter_sha256 = _completion_identities(compiler_identity)
+    from humanbrain.simple_swe.compiler import COMPLETION_ADAPTER_ID, CompilerIdentity
+
+    if not isinstance(identity, CompilerIdentity):
+        raise FreezeIntegrityError("compiler identity has the wrong type")
     manifest = FreezeManifest(
         schema=SCHEMA,
         protocol_id=protocol.protocol_id,
@@ -213,6 +271,15 @@ def create_freeze_manifest(
         model_config_sha256=checkpoint.model_config_sha256,
         tokenizer_sha256=checkpoint.tokenizer_sha256,
         checkpoint_bytes=checkpoint.checkpoint_bytes,
+        completion_adapter_id=COMPLETION_ADAPTER_ID,
+        completion_adapter_sha256=adapter_sha256,
+        compiler_id=identity.compiler_id,
+        compiler_sha256=identity.compiler_sha256,
+        compiler_mode=identity.mode,
+        compiler_algorithm_source=identity.algorithm_source,
+        inference_config_sha256=_inference_config_sha256(
+            protocol, checkpoint, identity, adapter_sha256
+        ),
         source_head=head,
         source_tree_sha256=tree_sha256,
         created_utc=datetime.now(UTC).isoformat(),
@@ -253,6 +320,7 @@ def verify_freeze_manifest(
     protocol_path: str | Path,
     checkpoint_path: str | Path,
     source_root: str | Path,
+    compiler_identity: object | None = None,
 ) -> FreezeManifest:
     manifest = _load_manifest(manifest_path)
     protocol: ProtocolSpec = load_protocol(protocol_path)
@@ -277,6 +345,28 @@ def verify_freeze_manifest(
         raise FreezeIntegrityError("tokenizer hash drift after model freeze")
     if current.checkpoint_format != manifest.checkpoint_format:
         raise FreezeIntegrityError("checkpoint format drift after model freeze")
+    identity, adapter_sha256 = _completion_identities(compiler_identity)
+    from humanbrain.simple_swe.compiler import COMPLETION_ADAPTER_ID, CompilerIdentity
+
+    if not isinstance(identity, CompilerIdentity):
+        raise FreezeIntegrityError("compiler identity has the wrong type")
+    if (
+        manifest.completion_adapter_id != COMPLETION_ADAPTER_ID
+        or manifest.completion_adapter_sha256 != adapter_sha256
+    ):
+        raise FreezeIntegrityError("completion adapter identity drift after model freeze")
+    if (
+        manifest.compiler_id != identity.compiler_id
+        or manifest.compiler_sha256 != identity.compiler_sha256
+        or manifest.compiler_mode != identity.mode
+        or manifest.compiler_algorithm_source != identity.algorithm_source
+    ):
+        raise FreezeIntegrityError("source compiler identity drift after model freeze")
+    inference_sha256 = _inference_config_sha256(
+        protocol, current, identity, adapter_sha256
+    )
+    if inference_sha256 != manifest.inference_config_sha256:
+        raise FreezeIntegrityError("inference config hash drift after model freeze")
     return manifest
 
 

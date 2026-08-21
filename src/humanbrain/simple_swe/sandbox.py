@@ -70,14 +70,22 @@ _DENIED_NAMES = {
 }
 
 
-def _preflight(source: str, task: PublicTask) -> tuple[Outcome | None, str]:
+def _preflight(
+    source: str, task: PublicTask, limits: ExecutionLimits
+) -> tuple[Outcome | None, str]:
+    if len(source.encode("utf-8")) > limits.max_completion_bytes:
+        return "format_error", "completion byte limit exceeded"
     if "```" in source:
         return "format_error", "Markdown fences are forbidden"
     try:
         tree = ast.parse(source, mode="exec")
     except SyntaxError:
         return "syntax_error", "completion is not valid Python"
+    nodes = 0
     for node in ast.walk(tree):
+        nodes += 1
+        if nodes > limits.max_ast_nodes:
+            return "format_error", "completion AST-node limit exceeded"
         if isinstance(node, _DENIED_NODES):
             return "policy_violation", f"{type(node).__name__} is forbidden"
         if isinstance(node, ast.Attribute) and node.attr.startswith("_"):
@@ -269,11 +277,19 @@ def execute_completion(
 ) -> ExecutionResult:
     """Execute one pure function without exposing hidden tests to the model."""
     started = perf_counter()
-    if public.task_id != private.task_id:
+    if (
+        public.task_id != private.task_id
+        or private.public_task_sha256 != public.task_sha256
+        or public.hidden_test_sha256 != private.test_sha256
+    ):
         return ExecutionResult(
-            "harness_error", False, perf_counter() - started, "task id mismatch", False
+            "harness_error",
+            False,
+            perf_counter() - started,
+            "public/private task commitment mismatch",
+            False,
         )
-    outcome, detail = _preflight(source, public)
+    outcome, detail = _preflight(source, public, limits)
     if outcome is not None:
         return ExecutionResult(
             outcome, False, perf_counter() - started, detail, False
@@ -343,6 +359,15 @@ def execute_completion(
             # A Job Object CPU limit terminates the process before the worker can
             # report. Memory exhaustion normally raises MemoryError in the worker;
             # unknown abrupt termination stays fail-closed.
+            memory_return_codes = {
+                -1073741801,  # STATUS_NO_MEMORY
+                -1073741523,  # STATUS_COMMITMENT_LIMIT
+            }
+            stderr_text = stderr.decode("utf-8", errors="ignore").lower()
+            if process.returncode in memory_return_codes or "memoryerror" in stderr_text:
+                return ExecutionResult(
+                    "memory_limit", False, elapsed, "process memory limit exceeded", True
+                )
             if elapsed >= limits.cpu_seconds * 0.8:
                 return ExecutionResult(
                     "timeout", False, elapsed, "CPU time exceeded", True

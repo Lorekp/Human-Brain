@@ -32,6 +32,8 @@ class ExecutionLimits:
     memory_mib: int
     processes: int
     output_bytes: int
+    max_completion_bytes: int
+    max_ast_nodes: int
     python_hash_seed: int
 
 
@@ -124,6 +126,8 @@ def _require_invariants(payload: dict[str, Any]) -> None:
             ("reporting", "baselines"),
             "reporting-controls-after-cell-completions-are-sealed",
         ),
+        (("execution", "max_completion_bytes"), 16384),
+        (("execution", "max_ast_nodes"), 4096),
     )
     if payload.get("language") != "python-3.11":
         raise ValueError("protocol invariant language must remain python-3.11")
@@ -174,6 +178,10 @@ def load_protocol(path: str | Path) -> ProtocolSpec:
         memory_mib=_positive_int(execution["memory_mib"], "memory_mib"),
         processes=_positive_int(execution["processes"], "processes"),
         output_bytes=_positive_int(execution["output_bytes"], "output_bytes"),
+        max_completion_bytes=_positive_int(
+            execution["max_completion_bytes"], "max_completion_bytes"
+        ),
+        max_ast_nodes=_positive_int(execution["max_ast_nodes"], "max_ast_nodes"),
         python_hash_seed=int(execution["python_hash_seed"]),
     )
     if limits.wall_seconds <= 0:

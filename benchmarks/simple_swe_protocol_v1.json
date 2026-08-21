@@ -21,6 +21,8 @@
     "memory_mib": 256,
     "processes": 1,
     "output_bytes": 65536,
+    "max_completion_bytes": 16384,
+    "max_ast_nodes": 4096,
     "python_hash_seed": 0
   },
   "hidden_tests": {
