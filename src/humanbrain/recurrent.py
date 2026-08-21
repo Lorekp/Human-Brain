@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
-from humanbrain.native import NativeRecurrentKernel, NativeThreeFactorLearner
+from humanbrain.native import NativeThreeFactorLearner, recurrent_kernel
 from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
 
 
@@ -184,7 +184,7 @@ class RecurrentCellCircuit:
 
     def _bind_native_kernel(self) -> None:
         """Bind native execution to the circuit's current checkpoint arrays."""
-        self._native_kernel = NativeRecurrentKernel(
+        self._native_kernel = recurrent_kernel(
             self._reservoir,
             token_steps=self._token_steps,
             pulse_steps=self._pulse_steps,
@@ -244,6 +244,7 @@ class RecurrentCellCircuit:
         self._reservoir.reset()
         self._synaptic_current_pa.fill(0.0)
         self._eligibility.fill(0.0)
+        self._native_kernel.synchronize_from_host()
         self._observed_tokens = 0
 
     def observe(self, token_id: int) -> RecurrentStep:
