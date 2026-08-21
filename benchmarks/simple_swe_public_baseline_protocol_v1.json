@@ -25,7 +25,8 @@
       "hidden-evaluation"
     ],
     "external_models": false,
-    "language_models": false,
+    "external_pretrained_language_models": false,
+    "cell_language_model_required": true,
     "heuristic_program_synthesis": false,
     "template_answers": false,
     "tool_use_during_synthesis": false
