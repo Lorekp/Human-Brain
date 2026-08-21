@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+import inspect
 import subprocess
 from hashlib import sha256
 from pathlib import Path
 
 import pytest
-
 from humanbrain.language import CellLanguageModel
-from humanbrain.simple_swe import freeze
-from humanbrain.simple_swe import reveal
+from humanbrain.simple_swe import freeze, reveal
 from humanbrain.simple_swe.artifacts import ArtifactLedger
 from humanbrain.simple_swe.freeze import (
     FreezeIntegrityError,
@@ -22,14 +21,7 @@ from humanbrain.simple_swe.tasks import (
     canonical_sha256,
 )
 
-
-PROTOCOL = (
-    Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
-)
-
-
-def _ledger(path: Path) -> ArtifactLedger:
-    return ArtifactLedger(path, protocol_sha256=load_protocol(PROTOCOL).sha256)
+PROTOCOL = Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
 
 
 def _git(repository: Path, *arguments: str) -> None:
@@ -60,9 +52,10 @@ def _frozen_fixture(
         "_installed_execution_source_paths",
         lambda: (installed_source.resolve(),),
     )
-    model = CellLanguageModel.grow(["def identity(value):\n    return value\n"])
     checkpoint = root / "checkpoint.npz"
-    model.save(checkpoint)
+    CellLanguageModel.grow(["def identity(value):\n    return value\n"]).save(
+        checkpoint
+    )
     manifest = root / "freeze.json"
     create_freeze_manifest(
         protocol_path=PROTOCOL,
@@ -73,28 +66,20 @@ def _frozen_fixture(
     return source, checkpoint, manifest
 
 
+def _arguments(source: Path, checkpoint: Path, manifest: Path) -> dict[str, Path]:
+    return {
+        "manifest_path": manifest,
+        "protocol_path": PROTOCOL,
+        "checkpoint_path": checkpoint,
+        "source_root": source,
+    }
+
+
 def _entropy_must_not_run(_count: int) -> bytes:
     raise AssertionError("eval entropy was requested before every precondition passed")
 
 
-def test_reveal_rejects_hidden_bundle_inside_model_workspace_before_entropy(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    source, checkpoint, manifest = _frozen_fixture(tmp_path, monkeypatch)
-    monkeypatch.setattr(reveal.secrets, "token_bytes", _entropy_must_not_run)
-
-    with pytest.raises(FreezeIntegrityError, match="private eval bundle"):
-        reveal.reveal_evaluation(
-            manifest_path=manifest,
-            protocol_path=PROTOCOL,
-            checkpoint_path=checkpoint,
-            source_root=source,
-            private_bundle_path=source / "hidden-tests.json",
-            ledger=_ledger(tmp_path / "public-ledger"),
-        )
-
-
-def test_reveal_revalidates_clean_source_before_entropy(
+def test_reservation_revalidates_clean_source_before_entropy(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     source, checkpoint, manifest = _frozen_fixture(tmp_path, monkeypatch)
@@ -102,34 +87,136 @@ def test_reveal_revalidates_clean_source_before_entropy(
     monkeypatch.setattr(reveal.secrets, "token_bytes", _entropy_must_not_run)
 
     with pytest.raises(FreezeIntegrityError, match="source tree is dirty"):
-        reveal.reveal_evaluation(
-            manifest_path=manifest,
-            protocol_path=PROTOCOL,
-            checkpoint_path=checkpoint,
-            source_root=source,
-            private_bundle_path=tmp_path / "private" / "hidden-tests.json",
-            ledger=_ledger(tmp_path / "public-ledger"),
-        )
+        reveal.reserve_evaluation_seed(**_arguments(source, checkpoint, manifest))
 
 
-def test_reveal_rejects_public_ledger_inside_model_workspace_before_entropy(
+def test_seed_is_persisted_and_committed_before_any_task_generation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     source, checkpoint, manifest = _frozen_fixture(tmp_path, monkeypatch)
+    fixed_seed = sha256(b"fixture immutable eval seed").digest()
+    monkeypatch.setattr(reveal.secrets, "token_bytes", lambda _count: fixed_seed)
+    monkeypatch.setattr(
+        reveal,
+        "_generate_partition",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("tasks generated during seed reservation")
+        ),
+    )
+
+    reservation = reveal.reserve_evaluation_seed(
+        **_arguments(source, checkpoint, manifest)
+    )
+    ledger = ArtifactLedger(
+        reservation.paths.ledger_root,
+        protocol_sha256=load_protocol(PROTOCOL).sha256,
+    )
+
+    assert reservation.eval_seed_sha256 == sha256(fixed_seed).hexdigest()
+    assert reservation.paths.seed_reservation_path.is_file()
+    assert not reservation.paths.bundle_path.exists()
+    assert [event.kind for event in ledger.verify()] == [
+        "run-start",
+        "evaluation-seed-reserved",
+    ]
+    assert ledger.verify()[1].body["evaluation_tasks_generated"] is False
+    assert ledger.verify()[0].body["sandbox_python_flags"] == ["-I", "-S", "-B"]
+    assert ledger.verify()[0].body["production_dependencies_injected"] is False
+
+
+def test_crash_after_seed_reservation_resumes_the_same_seed_without_reroll(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source, checkpoint, manifest = _frozen_fixture(tmp_path, monkeypatch)
+    arguments = _arguments(source, checkpoint, manifest)
+    fixed_seed = sha256(b"crash safe eval seed").digest()
+    entropy_calls = 0
+
+    def entropy(_count: int) -> bytes:
+        nonlocal entropy_calls
+        entropy_calls += 1
+        return fixed_seed
+
+    monkeypatch.setattr(reveal.secrets, "token_bytes", entropy)
+    reservation = reveal.reserve_evaluation_seed(**arguments)
+    reveal.record_external_anchor(
+        **arguments,
+        public_uri="https://example.invalid/simple-swe-anchor",
+        receipt_sha256="a" * 64,
+    )
+    original_generate = reveal._generate_partition
+    monkeypatch.setattr(
+        reveal,
+        "_generate_partition",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("synthetic crash")),
+    )
+
+    with pytest.raises(RuntimeError, match="synthetic crash"):
+        reveal.reveal_evaluation(**arguments)
+
+    assert not reservation.paths.bundle_path.exists()
+    monkeypatch.setattr(reveal.secrets, "token_bytes", _entropy_must_not_run)
+    monkeypatch.setattr(reveal, "_generate_partition", original_generate)
+    revealed = reveal.reveal_evaluation(**arguments)
+
+    assert entropy_calls == 1
+    assert revealed.eval_seed_sha256 == reservation.eval_seed_sha256
+    assert revealed.task_count == 30
+    ledger = ArtifactLedger(
+        revealed.ledger_root, protocol_sha256=load_protocol(PROTOCOL).sha256
+    )
+    assert [event.kind for event in ledger.verify()] == [
+        "run-start",
+        "evaluation-seed-reserved",
+        "external-anchor-recorded",
+        "evaluation-revealed",
+    ]
+
+
+def test_reveal_stops_until_the_seed_commitment_is_externally_anchored(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source, checkpoint, manifest = _frozen_fixture(tmp_path, monkeypatch)
+    arguments = _arguments(source, checkpoint, manifest)
+    reservation = reveal.reserve_evaluation_seed(**arguments)
+
+    with pytest.raises(FreezeIntegrityError, match="externally anchor"):
+        reveal.reveal_evaluation(**arguments)
+
+    assert not reservation.paths.bundle_path.exists()
+
+
+def test_canonical_reveal_api_exposes_no_alternate_bundle_or_ledger_path() -> None:
+    reserve_fields = set(inspect.signature(reveal.reserve_evaluation_seed).parameters)
+    reveal_fields = set(inspect.signature(reveal.reveal_evaluation).parameters)
+
+    assert reserve_fields == {
+        "manifest_path",
+        "protocol_path",
+        "checkpoint_path",
+        "source_root",
+    }
+    assert reveal_fields == reserve_fields
+    assert "private_bundle_path" not in reveal_fields
+    assert "ledger" not in reveal_fields
+
+
+def test_preexisting_canonical_run_registry_is_rejected_before_entropy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source, checkpoint, manifest_path = _frozen_fixture(tmp_path, monkeypatch)
+    manifest = _load_manifest(manifest_path)
+    paths = reveal.canonical_evaluation_paths(manifest_path, manifest)
+    paths.run_root.mkdir(parents=True)
     monkeypatch.setattr(reveal.secrets, "token_bytes", _entropy_must_not_run)
 
-    with pytest.raises(FreezeIntegrityError, match="artifact ledger"):
-        reveal.reveal_evaluation(
-            manifest_path=manifest,
-            protocol_path=PROTOCOL,
-            checkpoint_path=checkpoint,
-            source_root=source,
-            private_bundle_path=tmp_path / "private" / "hidden-tests.json",
-            ledger=_ledger(source / "public-ledger"),
+    with pytest.raises(FreezeIntegrityError, match="predates run-start"):
+        reveal.reserve_evaluation_seed(
+            **_arguments(source, checkpoint, manifest_path)
         )
 
 
-def test_validly_rehashed_task_substitution_cannot_match_the_revealed_seed(
+def test_validly_rehashed_task_substitution_cannot_match_the_reserved_seed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     source, _checkpoint, manifest_path = _frozen_fixture(tmp_path, monkeypatch)
@@ -157,39 +244,6 @@ def test_validly_rehashed_task_substitution_cannot_match_the_revealed_seed(
     bundle = reveal.load_evaluation_bundle(bundle_path)
 
     with pytest.raises(FreezeIntegrityError, match="deterministic eval seed"):
-        reveal._validate_bundle_against_freeze(
+        reveal.validate_evaluation_bundle(
             bundle, protocol, manifest, manifest_sha256
-        )
-
-
-def test_private_bundle_cannot_predate_the_public_run_start_commitment(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    source, checkpoint, manifest_path = _frozen_fixture(tmp_path, monkeypatch)
-    protocol = load_protocol(PROTOCOL)
-    manifest = _load_manifest(manifest_path)
-    manifest_sha256 = sha256(manifest_path.read_bytes()).hexdigest()
-    synthetic_seed = sha256(b"simple-swe-preexisting-bundle-regression").digest()
-    tasks = _generate_partition(
-        protocol,
-        "eval",
-        int.from_bytes(synthetic_seed, byteorder="big", signed=False),
-    )
-    bundle_path = tmp_path / "synthetic-preexisting-bundle.json"
-    bundle_path.write_bytes(
-        canonical_json_bytes(
-            reveal._bundle_payload(
-                protocol, manifest, manifest_sha256, synthetic_seed, tasks
-            )
-        )
-    )
-
-    with pytest.raises(FreezeIntegrityError, match="predates.*run-start"):
-        reveal.reveal_evaluation(
-            manifest_path=manifest_path,
-            protocol_path=PROTOCOL,
-            checkpoint_path=checkpoint,
-            source_root=source,
-            private_bundle_path=bundle_path,
-            ledger=_ledger(tmp_path / "public-ledger"),
         )

@@ -122,6 +122,11 @@ def _require_invariants(payload: dict[str, Any]) -> None:
         (("freeze", "task_specific_replay"), False),
         (("freeze", "require_clean_source_tree"), True),
         (("freeze", "eval_seed_created_after_freeze"), True),
+        (("freeze", "sandbox_runtime_frozen_before_eval_seed"), True),
+        (("freeze", "compiler_registry_frozen"), True),
+        (("freeze", "canonical_runner_only"), True),
+        (("freeze", "eval_seed_reserved_before_task_generation"), True),
+        (("freeze", "external_anchor_before_eval_task_generation"), True),
         (
             ("reporting", "baselines"),
             "reporting-controls-after-cell-completions-are-sealed",

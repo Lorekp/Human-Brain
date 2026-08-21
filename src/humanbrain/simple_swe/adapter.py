@@ -10,11 +10,11 @@ from humanbrain.recurrent_language import RecurrentCellLanguageModel
 from humanbrain.simple_swe.compiler import (
     COMPLETION_ADAPTER_ID,
     CompileRequest,
-    RawPythonCompiler,
-    SourceCompiler,
+    create_source_compiler,
 )
 from humanbrain.simple_swe.freeze import (
     FreezeIntegrityError,
+    FreezeManifest,
     checkpoint_hashes,
     verify_freeze_manifest,
 )
@@ -75,6 +75,19 @@ def _load_cell_model(
     raise FreezeIntegrityError("unsupported cell checkpoint format")
 
 
+def _verify_loaded_backend(
+    model: CellLanguageModel | RecurrentCellLanguageModel,
+    manifest: FreezeManifest,
+) -> None:
+    if isinstance(model, CellLanguageModel):
+        backend, device = "python", "cpu"
+    else:
+        backend = model._circuit.simulation_backend
+        device = model._circuit.simulation_device
+    if backend != manifest.simulation_backend or device != manifest.simulation_device:
+        raise FreezeIntegrityError("loaded cell simulation backend differs from freeze")
+
+
 def _emit_cell_tokens(
     model: CellLanguageModel | RecurrentCellLanguageModel,
     prompt: str,
@@ -118,20 +131,18 @@ class CellCompletionAdapter:
         protocol_path: str | Path,
         checkpoint_path: str | Path,
         source_root: str | Path,
-        compiler: SourceCompiler | None = None,
     ) -> None:
         self._manifest_path = Path(manifest_path).resolve()
         self._protocol_path = Path(protocol_path).resolve()
         self._checkpoint_path = Path(checkpoint_path).resolve()
         self._source_root = Path(source_root).resolve()
-        self._compiler = compiler or RawPythonCompiler()
+        self._compiler = create_source_compiler()
         self._protocol = load_protocol(self._protocol_path)
         self._manifest = verify_freeze_manifest(
             manifest_path=self._manifest_path,
             protocol_path=self._protocol_path,
             checkpoint_path=self._checkpoint_path,
             source_root=self._source_root,
-            compiler_identity=self._compiler.identity,
         )
 
     @property
@@ -144,12 +155,12 @@ class CellCompletionAdapter:
             protocol_path=self._protocol_path,
             checkpoint_path=self._checkpoint_path,
             source_root=self._source_root,
-            compiler_identity=self._compiler.identity,
         )
         before = checkpoint_hashes(self._checkpoint_path)
         if before.checkpoint_state_sha256 != manifest.checkpoint_state_sha256:
             raise FreezeIntegrityError("checkpoint state before task differs from freeze")
         model = _load_cell_model(self._checkpoint_path, manifest.checkpoint_format)
+        _verify_loaded_backend(model, manifest)
         token_ids, emitted_text = _emit_cell_tokens(
             model, request.prompt, self._protocol.max_new_tokens
         )
@@ -177,7 +188,6 @@ class CellCompletionAdapter:
             protocol_path=self._protocol_path,
             checkpoint_path=self._checkpoint_path,
             source_root=self._source_root,
-            compiler_identity=self._compiler.identity,
         )
         identity = self._compiler.identity
         audit = CompletionAudit(

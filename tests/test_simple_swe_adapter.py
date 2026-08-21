@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import subprocess
 from hashlib import sha256
 from pathlib import Path
@@ -12,8 +13,9 @@ from humanbrain.simple_swe import freeze
 from humanbrain.simple_swe.adapter import CellCompletionAdapter, CompletionRequest
 from humanbrain.simple_swe.compiler import (
     CompileRequest,
-    CompilerIdentity,
     RawPythonCompiler,
+    compiler_factory_sha256,
+    create_source_compiler,
 )
 from humanbrain.simple_swe.freeze import create_freeze_manifest
 from humanbrain.simple_swe.protocol import load_protocol
@@ -117,7 +119,6 @@ def test_adapter_reloads_one_cell_checkpoint_and_audits_exact_emitted_tokens(
         protocol_path=PROTOCOL_PATH,
         checkpoint_path=checkpoint,
         source_root=source,
-        compiler=RawPythonCompiler(),
     )
 
     first = adapter.synthesize(_request())
@@ -148,48 +149,20 @@ def test_adapter_reloads_one_cell_checkpoint_and_audits_exact_emitted_tokens(
     assert sha256(checkpoint.read_bytes()).hexdigest() == first.audit.checkpoint_sha256
 
 
-class RecordingCompiler:
-    def __init__(self) -> None:
-        self.identity = CompilerIdentity(
-            compiler_id="fixture-deterministic-prefix-compiler-v1",
-            compiler_sha256="a" * 64,
-            mode="deterministic-prefix-dsl",
-            algorithm_source="emitted-tokens-only",
-        )
-        self.requests: list[CompileRequest] = []
-
-    def compile(self, request: CompileRequest) -> str:
-        self.requests.append(request)
-        parameters = ", ".join(request.parameter_names)
-        return f"def {request.entry_point}({parameters}):\n    return 0\n"
-
-
-def test_compiler_receives_emissions_and_signature_but_no_prompt_tests_or_tools(
-    tmp_path: Path, monkeypatch,
+def test_frozen_compiler_registry_receives_only_emissions_and_signature(
 ) -> None:
-    source = _source_repository(tmp_path, monkeypatch)
-    checkpoint = _checkpoint(tmp_path)
-    freeze_path = tmp_path / "freeze.json"
-    compiler = RecordingCompiler()
-    create_freeze_manifest(
-        protocol_path=PROTOCOL_PATH,
-        checkpoint_path=checkpoint,
-        source_root=source,
-        output_path=freeze_path,
-        compiler_identity=compiler.identity,
-    )
-    adapter = CellCompletionAdapter(
-        manifest_path=freeze_path,
-        protocol_path=PROTOCOL_PATH,
-        checkpoint_path=checkpoint,
-        source_root=source,
-        compiler=compiler,
+    compiler = create_source_compiler()
+    request = CompileRequest(
+        emitted_text="def solve_opaque(value):\n    return value\n",
+        emitted_token_ids=tuple(range(load_protocol(PROTOCOL_PATH).max_new_tokens)),
+        entry_point="solve_opaque",
+        parameter_names=("value",),
     )
 
-    completion = adapter.synthesize(_request())
-    request = compiler.requests[0]
-
-    assert completion.source == "def solve_opaque(value):\n    return 0\n"
+    assert type(compiler) is RawPythonCompiler
+    assert compiler.compile(request) == request.emitted_text
+    assert compiler.identity.compiler_sha256 == compiler_factory_sha256()
+    assert "compiler" not in inspect.signature(CellCompletionAdapter).parameters
     assert set(vars(request)) == {
         "emitted_text",
         "emitted_token_ids",
@@ -202,7 +175,6 @@ def test_compiler_receives_emissions_and_signature_but_no_prompt_tests_or_tools(
     assert not hasattr(request, "private_tests")
     assert not hasattr(request, "filesystem")
     assert not hasattr(request, "tools")
-    assert completion.audit.compiler_sha256 == compiler.identity.compiler_sha256
 
 
 def test_protocol_max_tokens_is_the_adapter_default(tmp_path: Path, monkeypatch) -> None:

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 import subprocess
+from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
-
 from humanbrain.language import CellLanguageModel
 from humanbrain.simple_swe import freeze
 from humanbrain.simple_swe.freeze import (
@@ -13,7 +14,6 @@ from humanbrain.simple_swe.freeze import (
     create_freeze_manifest,
     verify_freeze_manifest,
 )
-
 
 PROTOCOL = (
     Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
@@ -92,6 +92,103 @@ def test_freeze_manifest_commits_clean_source_and_checkpoint_components(
     assert manifest.checkpoint_format == "human-cell-brain-checkpoint-v1"
     assert manifest.no_learning_after_freeze is True
     assert manifest.one_checkpoint_for_all_tasks is True
+    assert manifest.evaluation_root == str(manifest_path.parent.resolve())
+    assert manifest.compiler_factory_id == "humanbrain-frozen-compiler-registry-v1"
+    assert manifest.canonical_runner_id == "humanbrain-simple-swe-sealed-runner-v1"
+    assert manifest.sandbox_executor_id == "humanbrain-simple-swe-job-sandbox-v1"
+    assert manifest.sandbox_python_flags == ("-I", "-S", "-B")
+    assert manifest.sandbox_python_version.startswith("3.11.")
+    assert manifest.simulation_backend == "python"
+    assert manifest.simulation_artifact_sha256 is None
+    assert {
+        "humanbrain.simple_swe.protocol",
+        "humanbrain.simple_swe.tasks",
+        "humanbrain.simple_swe._worker",
+        "humanbrain.simple_swe.runner",
+        "humanbrain.simple_swe.reveal",
+        "humanbrain.simple_swe.artifacts",
+    }.issubset(freeze._EXECUTION_MODULES)
+
+
+def test_freeze_manifest_cannot_move_to_an_alternate_evidence_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _clean_repository(tmp_path, monkeypatch)
+    checkpoint = _checkpoint(tmp_path)
+    manifest_path = tmp_path / "canonical" / "freeze.json"
+    create_freeze_manifest(
+        protocol_path=PROTOCOL,
+        checkpoint_path=checkpoint,
+        source_root=source,
+        output_path=manifest_path,
+    )
+    moved = tmp_path / "alternate" / "freeze.json"
+    moved.parent.mkdir()
+    moved.write_bytes(manifest_path.read_bytes())
+
+    with pytest.raises(FreezeIntegrityError, match="canonical evidence root"):
+        verify_freeze_manifest(
+            manifest_path=moved,
+            protocol_path=PROTOCOL,
+            checkpoint_path=checkpoint,
+            source_root=source,
+        )
+
+
+def test_verify_freeze_rejects_sandbox_runtime_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _clean_repository(tmp_path, monkeypatch)
+    checkpoint = _checkpoint(tmp_path)
+    manifest_path = tmp_path / "freeze.json"
+    create_freeze_manifest(
+        protocol_path=PROTOCOL,
+        checkpoint_path=checkpoint,
+        source_root=source,
+        output_path=manifest_path,
+    )
+    frozen = freeze.python_runtime_identity
+
+    def changed_runtime(executable, language):
+        identity = frozen(executable, language)
+        return {**identity, "executable_sha256": "0" * 64}
+
+    monkeypatch.setattr(freeze, "python_runtime_identity", changed_runtime)
+
+    with pytest.raises(FreezeIntegrityError, match="runtime commitment drift"):
+        verify_freeze_manifest(
+            manifest_path=manifest_path,
+            protocol_path=PROTOCOL,
+            checkpoint_path=checkpoint,
+            source_root=source,
+        )
+
+
+def test_frozen_native_library_bytes_are_rehashed_before_inference(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from humanbrain import native
+
+    monkeypatch.setenv("HUMANBRAIN_DEVICE", "cpu")
+    artifact = tmp_path / "humanbrain-kernel.dll"
+    artifact.write_bytes(b"frozen native kernel")
+    build = SimpleNamespace(source_digest="source-digest", library_path=artifact)
+    monkeypatch.setattr(native, "loaded_build_info", lambda: build)
+    identity = freeze.SimulationBackendIdentity(
+        backend="cpu",
+        device="fixture-cpu",
+        device_policy="cpu",
+        source_digest=build.source_digest,
+        artifact_path=str(artifact.resolve()),
+        artifact_sha256=sha256(artifact.read_bytes()).hexdigest(),
+        architecture=None,
+    )
+
+    freeze._verify_simulation_backend_artifact(identity)
+    artifact.write_bytes(b"tampered native kernel")
+
+    with pytest.raises(FreezeIntegrityError, match="backend artifact drift"):
+        freeze._verify_simulation_backend_artifact(identity)
 
 
 def test_freeze_rejects_a_dirty_source_tree(

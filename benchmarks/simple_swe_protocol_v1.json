@@ -85,7 +85,12 @@
     "learning_during_dev_or_eval": false,
     "task_specific_replay": false,
     "require_clean_source_tree": true,
-    "eval_seed_created_after_freeze": true
+    "eval_seed_created_after_freeze": true,
+    "sandbox_runtime_frozen_before_eval_seed": true,
+    "compiler_registry_frozen": true,
+    "canonical_runner_only": true,
+    "eval_seed_reserved_before_task_generation": true,
+    "external_anchor_before_eval_task_generation": true
   },
   "reporting": {
     "failure_taxonomy": [

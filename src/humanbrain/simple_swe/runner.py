@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import math
-import subprocess
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, fields
 from hashlib import sha256
@@ -10,6 +8,7 @@ from pathlib import Path
 from typing import Protocol
 
 from humanbrain.simple_swe.adapter import (
+    CellCompletionAdapter,
     CompletionAudit,
     CompletionRequest,
     SynthesizedCompletion,
@@ -19,14 +18,27 @@ from humanbrain.simple_swe.artifacts import (
     ArtifactIntegrityError,
     ArtifactLedger,
 )
-from humanbrain.simple_swe.protocol import FAILURE_TAXONOMY, ProtocolSpec
+from humanbrain.simple_swe.freeze import (
+    FreezeIntegrityError,
+    verify_freeze_manifest,
+)
+from humanbrain.simple_swe.protocol import (
+    FAILURE_TAXONOMY,
+    ProtocolSpec,
+    load_protocol,
+)
 from humanbrain.simple_swe.reveal import (
     EvaluationBundle,
+    canonical_evaluation_paths,
     evaluation_reveal_commitment,
+    load_evaluation_bundle,
+    run_start_commitment,
+    validate_evaluation_bundle,
 )
 from humanbrain.simple_swe.sandbox import (
     ExecutionResult,
     execute_completion,
+    load_worker_snapshot,
     resolve_python_executable,
 )
 from humanbrain.simple_swe.tasks import GeneratedTask, canonical_sha256
@@ -52,98 +64,34 @@ class CellEvaluationSummary:
     summary_event_sha256: str
 
 
-def _sha256_file(path: Path) -> str:
-    digest = sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _probe_runtime(executable: Path) -> dict[str, object]:
-    probe = (
-        "import json,sys;"
-        "print(json.dumps({'implementation':sys.implementation.name,"
-        "'version':list(sys.version_info[:3])},sort_keys=True,separators=(',',':')))"
-    )
-    try:
-        result = subprocess.run(
-            [str(executable), "-I", "-S", "-c", probe],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=10.0,
-        )
-        value = json.loads(result.stdout)
-    except (
-        OSError,
-        subprocess.CalledProcessError,
-        subprocess.TimeoutExpired,
-        json.JSONDecodeError,
-    ) as error:
-        raise ArtifactIntegrityError("sandbox Python runtime probe failed") from error
-    if not isinstance(value, dict):
-        raise ArtifactIntegrityError("sandbox Python runtime probe is invalid")
-    return value
-
-
-def _runtime_identity(executable: Path, language: object) -> dict[str, str]:
-    if not executable.is_file():
-        raise ArtifactIntegrityError("sandbox Python executable is not a file")
-    if not isinstance(language, str) or not language.startswith("python-"):
-        raise ArtifactIntegrityError("protocol language runtime is invalid")
-    try:
-        expected = tuple(int(part) for part in language.removeprefix("python-").split("."))
-    except ValueError as error:
-        raise ArtifactIntegrityError("protocol Python version is invalid") from error
-    if len(expected) != 2:
-        raise ArtifactIntegrityError("protocol must freeze Python major/minor")
-    probe = _probe_runtime(executable)
-    implementation = probe.get("implementation")
-    version = probe.get("version")
-    if (
-        not isinstance(implementation, str)
-        or not isinstance(version, list)
-        or len(version) != 3
-        or any(isinstance(part, bool) or not isinstance(part, int) for part in version)
-    ):
-        raise ArtifactIntegrityError("sandbox Python runtime identity is invalid")
-    if tuple(version[:2]) != expected:
-        raise ArtifactIntegrityError(
-            f"sandbox Python must match protocol {language}, got {version[0]}.{version[1]}"
-        )
-    return {
-        "implementation": implementation,
-        "python_version": ".".join(str(part) for part in version),
-        "executable_sha256": _sha256_file(executable),
-    }
-
-
 def _validate_run_prefix(
     bundle: EvaluationBundle,
     adapter: CompletionAdapter,
     ledger: ArtifactLedger,
+    expected_run_start: dict[str, object],
 ) -> tuple[ArtifactEvent, ArtifactEvent]:
     if ledger.protocol_sha256 != bundle.protocol_sha256:
         raise ArtifactIntegrityError("runner ledger protocol differs from eval bundle")
     events = ledger.verify()
-    if len(events) < 2:
+    if len(events) < 4:
         raise ArtifactIntegrityError("evaluation reveal is incomplete")
-    run_start, revealed = events[:2]
-    if run_start.kind != "run-start":
-        raise ArtifactIntegrityError("first artifact is not run-start")
-    required_run_start = {
-        "freeze_manifest_sha256": bundle.freeze_manifest_sha256,
-        "checkpoint_sha256": bundle.checkpoint_sha256,
-        "checkpoint_state_sha256": bundle.checkpoint_state_sha256,
-        "source_head": bundle.source_head,
-    }
-    if any(run_start.body.get(key) != value for key, value in required_run_start.items()):
-        raise ArtifactIntegrityError("run-start differs from eval bundle freeze")
-    for field_name in ("completion_adapter_sha256", "compiler_sha256"):
-        value = run_start.body.get(field_name)
-        if not isinstance(value, str) or len(value) != 64:
-            raise ArtifactIntegrityError(f"run-start lacks {field_name}")
+    run_start, seed_reserved, anchor, revealed = events[:4]
+    if run_start.kind != "run-start" or run_start.body != expected_run_start:
+        raise ArtifactIntegrityError("run-start differs from frozen production mode")
+    if (
+        seed_reserved.kind != "evaluation-seed-reserved"
+        or seed_reserved.body.get("eval_seed_sha256") != bundle.eval_seed_sha256
+        or seed_reserved.body.get("seed_persisted_before_task_generation") is not True
+        or seed_reserved.body.get("evaluation_tasks_generated") is not False
+    ):
+        raise ArtifactIntegrityError("eval seed reservation commitment differs")
+    if (
+        anchor.kind != "external-anchor-recorded"
+        or not isinstance(anchor.body.get("anchor_payload_sha256"), str)
+        or anchor.body.get("operator_supplied_receipt") is not True
+        or anchor.body.get("harness_verified_external_publication") is not False
+    ):
+        raise ArtifactIntegrityError("external anchor commitment differs")
     if adapter.checkpoint_sha256 != bundle.checkpoint_sha256:
         raise ArtifactIntegrityError("completion adapter checkpoint differs from eval bundle")
     if revealed.kind != "evaluation-revealed" or revealed.body != evaluation_reveal_commitment(
@@ -253,6 +201,7 @@ def _completion_seal_body(
     bundle: EvaluationBundle,
     completion_events: list[ArtifactEvent],
     runtime_identity: dict[str, str],
+    run_start: ArtifactEvent,
 ) -> dict[str, object]:
     event_hashes = [event.file_sha256 for event in completion_events]
     return {
@@ -262,6 +211,12 @@ def _completion_seal_body(
         "completion_event_sha256s": event_hashes,
         "completion_set_sha256": canonical_sha256(event_hashes),
         "sandbox_runtime": runtime_identity,
+        "canonical_runner_id": run_start.body["canonical_runner_id"],
+        "canonical_runner_sha256": run_start.body["canonical_runner_sha256"],
+        "sandbox_worker_sha256": run_start.body["sandbox_worker_sha256"],
+        "production_dependencies_injected": run_start.body[
+            "production_dependencies_injected"
+        ],
         "hidden_tests_executed_before_seal": False,
         "private_cases_not_passed_to_adapter": True,
     }
@@ -423,23 +378,26 @@ def _validate_baseline_events(events: list[ArtifactEvent], *, cell_summary_sha25
         names.add(name)
 
 
-def run_cell_evaluation(
+def _run_cell_evaluation_engine(
     *,
     bundle: EvaluationBundle,
     adapter: CompletionAdapter,
     ledger: ArtifactLedger,
     protocol: ProtocolSpec,
-    executor: CompletionExecutor = execute_completion,
-    python_executable: str | Path | None = None,
+    executor: CompletionExecutor,
+    python_executable: Path,
+    runtime_identity: dict[str, str],
+    expected_run_start: dict[str, object],
+    prepare_results: Callable[[], bytes],
 ) -> CellEvaluationSummary:
-    """Seal every direct cell completion before opening any hidden tests."""
+    """Private dependency-injected engine shared by production and focused tests."""
     if bundle.protocol_sha256 != protocol.sha256:
         raise ArtifactIntegrityError("runner protocol differs from eval bundle")
-    run_start, _revealed = _validate_run_prefix(bundle, adapter, ledger)
-    executable = resolve_python_executable(python_executable)
-    runtime_identity = _runtime_identity(executable, protocol.raw.get("language"))
+    run_start, _revealed = _validate_run_prefix(
+        bundle, adapter, ledger, expected_run_start
+    )
     events = list(ledger.verify())
-    position = 2
+    position = 4
     completion_events: list[ArtifactEvent] = []
     while position < len(events) and events[position].kind == "cell-completion":
         index = len(completion_events)
@@ -479,8 +437,10 @@ def run_cell_evaluation(
             )
             completion_events.append(ledger.append("cell-completion", body))
         events = list(ledger.verify())
-        position = 2 + len(completion_events)
-    seal_body = _completion_seal_body(bundle, completion_events, runtime_identity)
+        position = 4 + len(completion_events)
+    seal_body = _completion_seal_body(
+        bundle, completion_events, runtime_identity, run_start
+    )
     if position == len(events):
         seal = ledger.append("cell-completions-sealed", seal_body)
         events = list(ledger.verify())
@@ -489,6 +449,9 @@ def run_cell_evaluation(
         if seal.kind != "cell-completions-sealed" or seal.body != seal_body:
             raise ArtifactIntegrityError("cell completion seal differs")
     position += 1
+    worker_source = prepare_results()
+    if sha256(worker_source).hexdigest() != run_start.body["sandbox_worker_sha256"]:
+        raise ArtifactIntegrityError("prepared sandbox worker differs from run-start")
     result_events: list[ArtifactEvent] = []
     while position < len(events) and events[position].kind == "task-result":
         index = len(result_events)
@@ -514,7 +477,9 @@ def run_cell_evaluation(
                 task.public,
                 task.private,
                 protocol.execution,
-                python_executable=executable,
+                python_executable=python_executable,
+                worker_source=worker_source,
+                worker_sha256=str(run_start.body["sandbox_worker_sha256"]),
             )
             body = _result_body(index, task, completion_events[index], result)
             _validate_result_body(
@@ -525,7 +490,7 @@ def run_cell_evaluation(
             )
             result_events.append(ledger.append("task-result", body))
         events = list(ledger.verify())
-        position = 3 + len(completion_events) + len(result_events)
+        position = 5 + len(completion_events) + len(result_events)
     summary_body = _summary_body(bundle.tasks, result_events, seal)
     if position == len(events):
         summary_event = ledger.append("cell-summary", summary_body)
@@ -537,6 +502,106 @@ def run_cell_evaluation(
     position += 1
     _validate_baseline_events(events[position:], cell_summary_sha256=summary_event.file_sha256)
     return _summary_from_event(summary_event)
+
+
+def _run_cell_evaluation_for_testing(
+    *,
+    bundle: EvaluationBundle,
+    adapter: CompletionAdapter,
+    ledger: ArtifactLedger,
+    protocol: ProtocolSpec,
+    executor: CompletionExecutor = execute_completion,
+    python_executable: str | Path | None = None,
+) -> CellEvaluationSummary:
+    """Run fixture dependencies while permanently labeling their ledger noncanonical."""
+    events = ledger.verify()
+    if not events:
+        raise ArtifactIntegrityError("test engine requires a fixture run-start")
+    expected_run_start = dict(events[0].body)
+    if (
+        expected_run_start.get("canonical_runner_id") != "test-injected-engine-v1"
+        or expected_run_start.get("production_dependencies_injected") is not True
+    ):
+        raise ArtifactIntegrityError("test engine cannot write a canonical ledger")
+    executable = resolve_python_executable(python_executable)
+    worker_sha256 = expected_run_start.get("sandbox_worker_sha256")
+    if not isinstance(worker_sha256, str):
+        raise ArtifactIntegrityError("fixture run-start lacks worker hash")
+    runtime_identity = expected_run_start.get("sandbox_runtime")
+    if not isinstance(runtime_identity, dict) or any(
+        not isinstance(key, str) or not isinstance(value, str)
+        for key, value in runtime_identity.items()
+    ):
+        raise ArtifactIntegrityError("fixture run-start lacks runtime identity")
+    return _run_cell_evaluation_engine(
+        bundle=bundle,
+        adapter=adapter,
+        ledger=ledger,
+        protocol=protocol,
+        executor=executor,
+        python_executable=executable,
+        runtime_identity=runtime_identity,
+        expected_run_start=expected_run_start,
+        prepare_results=lambda: load_worker_snapshot(worker_sha256),
+    )
+
+
+def run_cell_evaluation(
+    *,
+    manifest_path: str | Path,
+    protocol_path: str | Path,
+    checkpoint_path: str | Path,
+    source_root: str | Path,
+) -> CellEvaluationSummary:
+    """Run the sole canonical adapter, bundle, runtime, worker, and executor path."""
+    protocol = load_protocol(protocol_path)
+    manifest = verify_freeze_manifest(
+        manifest_path=manifest_path,
+        protocol_path=protocol_path,
+        checkpoint_path=checkpoint_path,
+        source_root=source_root,
+    )
+    manifest_path = Path(manifest_path).resolve()
+    manifest_sha256 = sha256(manifest_path.read_bytes()).hexdigest()
+    paths = canonical_evaluation_paths(manifest_path, manifest)
+    bundle = load_evaluation_bundle(paths.bundle_path)
+    validate_evaluation_bundle(bundle, protocol, manifest, manifest_sha256)
+    ledger = ArtifactLedger(paths.ledger_root, protocol_sha256=protocol.sha256)
+    expected_run_start = run_start_commitment(manifest, manifest_sha256)
+    adapter = CellCompletionAdapter(
+        manifest_path=manifest_path,
+        protocol_path=protocol_path,
+        checkpoint_path=checkpoint_path,
+        source_root=source_root,
+    )
+
+    def prepare_results() -> bytes:
+        verified = verify_freeze_manifest(
+            manifest_path=manifest_path,
+            protocol_path=protocol_path,
+            checkpoint_path=checkpoint_path,
+            source_root=source_root,
+        )
+        if verified != manifest:
+            raise FreezeIntegrityError("freeze changed at completion seal boundary")
+        return load_worker_snapshot(manifest.sandbox_worker_sha256)
+
+    runtime_identity = {
+        "implementation": manifest.sandbox_python_implementation,
+        "python_version": manifest.sandbox_python_version,
+        "executable_sha256": manifest.sandbox_python_executable_sha256,
+    }
+    return _run_cell_evaluation_engine(
+        bundle=bundle,
+        adapter=adapter,
+        ledger=ledger,
+        protocol=protocol,
+        executor=execute_completion,
+        python_executable=Path(manifest.sandbox_python_executable),
+        runtime_identity=runtime_identity,
+        expected_run_start=expected_run_start,
+        prepare_results=prepare_results,
+    )
 
 
 def record_baseline_control(

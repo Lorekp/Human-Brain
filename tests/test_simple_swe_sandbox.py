@@ -1,18 +1,32 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
-
+from humanbrain.simple_swe import sandbox
 from humanbrain.simple_swe.protocol import load_protocol
 from humanbrain.simple_swe.sandbox import execute_completion
 from humanbrain.simple_swe.tasks import HiddenCase, PrivateTask, PublicTask
 
-
 PROTOCOL = load_protocol(
     Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
 )
+WORKER_SOURCE = Path(sandbox.__file__).with_name("_worker.py").read_bytes()
+WORKER_SHA256 = sha256(WORKER_SOURCE).hexdigest()
+
+
+def _execute(source, public, private, limits):
+    return execute_completion(
+        source,
+        public,
+        private,
+        limits,
+        worker_source=WORKER_SOURCE,
+        worker_sha256=WORKER_SHA256,
+    )
 
 
 @pytest.fixture
@@ -50,7 +64,7 @@ def test_correct_function_passes_in_a_bounded_child_process(
 ) -> None:
     public, private = increment_task
 
-    result = execute_completion(
+    result = _execute(
         "def solve_increment(value):\n    return value + 1\n",
         public,
         private,
@@ -61,6 +75,24 @@ def test_correct_function_passes_in_a_bounded_child_process(
     assert result.passed is True
     assert result.wall_seconds <= PROTOCOL.execution.wall_seconds
     assert result.sandboxed is True
+
+
+def test_worker_snapshot_must_match_the_frozen_hash(
+    increment_task: tuple[PublicTask, PrivateTask],
+) -> None:
+    public, private = increment_task
+
+    result = execute_completion(
+        "def solve_increment(value):\n    return value + 1\n",
+        public,
+        private,
+        PROTOCOL.execution,
+        worker_source=b"tampered worker",
+        worker_sha256=WORKER_SHA256,
+    )
+
+    assert result.outcome == "harness_error"
+    assert result.sandboxed is False
 
 
 @pytest.mark.parametrize(
@@ -78,7 +110,7 @@ def test_completion_is_rejected_before_execution(
 ) -> None:
     public, private = increment_task
 
-    result = execute_completion(source, public, private, PROTOCOL.execution)
+    result = _execute(source, public, private, PROTOCOL.execution)
 
     assert result.outcome == outcome
     assert result.passed is False
@@ -90,13 +122,13 @@ def test_hidden_failures_have_separate_regression_and_property_taxonomy(
 ) -> None:
     public, private = increment_task
 
-    regression = execute_completion(
+    regression = _execute(
         "def solve_increment(value):\n    return value\n",
         public,
         private,
         PROTOCOL.execution,
     )
-    property_only = execute_completion(
+    property_only = _execute(
         "def solve_increment(value):\n    return value + 1 if value in (0, 1) else value\n",
         public,
         private,
@@ -115,19 +147,19 @@ def test_runtime_memory_and_wall_limits_have_stable_taxonomy(
     public, private = increment_task
     short_limits = replace(PROTOCOL.execution, wall_seconds=0.25, cpu_seconds=2)
 
-    runtime = execute_completion(
+    runtime = _execute(
         "def solve_increment(value):\n    return 1 // 0\n",
         public,
         private,
         short_limits,
     )
-    memory = execute_completion(
+    memory = _execute(
         "def solve_increment(value):\n    raise MemoryError\n",
         public,
         private,
         short_limits,
     )
-    timeout = execute_completion(
+    timeout = _execute(
         "def solve_increment(value):\n    while True:\n        pass\n",
         public,
         private,
@@ -147,7 +179,7 @@ def test_real_allocation_over_process_limit_is_memory_failure(
         PROTOCOL.execution, wall_seconds=2.0, cpu_seconds=2, memory_mib=96
     )
 
-    result = execute_completion(
+    result = _execute(
         "def solve_increment(value):\n    return [0] * 50000000\n",
         public,
         private,
@@ -163,7 +195,7 @@ def test_public_and_private_task_commitments_cannot_be_mixed(
     public, private = increment_task
     mismatched = replace(private, test_sha256="different-test-hash")
 
-    result = execute_completion(
+    result = _execute(
         "def solve_increment(value):\n    return value + 1\n",
         public,
         mismatched,
@@ -183,13 +215,13 @@ def test_parent_bounds_completion_bytes_and_ast_nodes_before_child_execution(
         PROTOCOL.execution, max_completion_bytes=4096, max_ast_nodes=8
     )
 
-    too_many_bytes = execute_completion(
+    too_many_bytes = _execute(
         "def solve_increment(value):\n    return value + 1\n",
         public,
         private,
         byte_limits,
     )
-    too_many_nodes = execute_completion(
+    too_many_nodes = _execute(
         "def solve_increment(value):\n    return value + 1 + 2 + 3 + 4\n",
         public,
         private,
@@ -200,3 +232,46 @@ def test_parent_bounds_completion_bytes_and_ast_nodes_before_child_execution(
     assert too_many_bytes.sandboxed is False
     assert too_many_nodes.outcome == "format_error"
     assert too_many_nodes.sandboxed is False
+
+
+def test_runtime_identity_queries_and_hashes_the_selected_python(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    executable = tmp_path / "selected-python.exe"
+    executable.write_bytes(b"fixture-python-binary")
+    commands: list[list[str]] = []
+
+    def fake_run(command, **_kwargs):
+        commands.append(command)
+        return SimpleNamespace(
+            stdout='{"implementation":"cpython","version":[3,11,8]}\n'
+        )
+
+    monkeypatch.setattr(sandbox.subprocess, "run", fake_run)
+
+    identity = sandbox.python_runtime_identity(executable, "python-3.11")
+
+    assert commands[0][0] == str(executable)
+    assert commands[0][1:3] == ["-I", "-S"]
+    assert identity == {
+        "implementation": "cpython",
+        "python_version": "3.11.8",
+        "executable_sha256": sha256(b"fixture-python-binary").hexdigest(),
+    }
+
+
+def test_runtime_identity_rejects_a_different_python_minor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    executable = tmp_path / "selected-python.exe"
+    executable.write_bytes(b"fixture-python-binary")
+    monkeypatch.setattr(
+        sandbox,
+        "_probe_python_runtime",
+        lambda _executable: {"implementation": "cpython", "version": [3, 12, 1]},
+    )
+
+    with pytest.raises(
+        sandbox.SandboxConfigurationError, match=r"python-3.11.*3.12"
+    ):
+        sandbox.python_runtime_identity(executable, "python-3.11")

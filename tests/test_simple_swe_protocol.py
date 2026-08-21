@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
-
 from humanbrain.simple_swe.protocol import load_protocol
-from humanbrain.simple_swe.tasks import generate_visible_partition
-
+from humanbrain.simple_swe.tasks import _generate_partition, generate_visible_partition
 
 PROTOCOL = (
     Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
@@ -80,6 +79,28 @@ def test_cell_prompt_ends_in_task_specific_information() -> None:
     assert all(b"no Markdown" not in tail for tail in tails)
 
 
+def test_entry_points_depend_on_the_unpredictable_partition_seed() -> None:
+    protocol = load_protocol(PROTOCOL)
+    first_seed = int.from_bytes(sha256(b"first hidden eval seed").digest(), "big")
+    second_seed = int.from_bytes(sha256(b"second hidden eval seed").digest(), "big")
+
+    first = _generate_partition(protocol, "eval", first_seed)
+    second = _generate_partition(protocol, "eval", second_seed)
+
+    assert [task.public.task_id for task in first] == [
+        task.public.task_id for task in second
+    ]
+    assert all(
+        left.public.entry_point != right.public.entry_point
+        for left, right in zip(first, second, strict=True)
+    )
+    assert all(
+        task.public.entry_point
+        != f"solve_{sha256(task.public.task_id.encode('utf-8')).hexdigest()[:12]}"
+        for task in first
+    )
+
+
 @pytest.mark.parametrize(
     ("path", "weakened"),
     [
@@ -98,6 +119,11 @@ def test_cell_prompt_ends_in_task_specific_information() -> None:
         (("freeze", "task_specific_replay"), True),
         (("freeze", "require_clean_source_tree"), False),
         (("freeze", "eval_seed_created_after_freeze"), False),
+        (("freeze", "sandbox_runtime_frozen_before_eval_seed"), False),
+        (("freeze", "compiler_registry_frozen"), False),
+        (("freeze", "canonical_runner_only"), False),
+        (("freeze", "eval_seed_reserved_before_task_generation"), False),
+        (("freeze", "external_anchor_before_eval_task_generation"), False),
         (("reporting", "baselines"), "available-during-cell-inference"),
     ],
 )

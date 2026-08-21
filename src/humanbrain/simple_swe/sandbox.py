@@ -4,17 +4,24 @@ import ast
 import ctypes
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
 from dataclasses import asdict, dataclass
+from hashlib import sha256
 from pathlib import Path
 from time import perf_counter
 from typing import Literal
 
 from humanbrain.simple_swe.protocol import ExecutionLimits
 from humanbrain.simple_swe.tasks import PrivateTask, PublicTask
+
+SANDBOX_PYTHON_FLAGS = ("-I", "-S", "-B")
+
+
+class SandboxConfigurationError(RuntimeError):
+    """The frozen Python runtime or required isolation setup is unavailable."""
+
 
 Outcome = Literal[
     "format_error",
@@ -272,6 +279,89 @@ def resolve_python_executable(value: str | Path | None = None) -> Path:
     return Path(base_executable or sys.executable).resolve()
 
 
+def _sha256_file(path: Path) -> str:
+    digest = sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _probe_python_runtime(executable: Path) -> dict[str, object]:
+    probe = (
+        "import json,sys;"
+        "print(json.dumps({'implementation':sys.implementation.name,"
+        "'version':list(sys.version_info[:3])},sort_keys=True,separators=(',',':')))"
+    )
+    try:
+        result = subprocess.run(
+            [str(executable), "-I", "-S", "-c", probe],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10.0,
+        )
+        value = json.loads(result.stdout)
+    except (
+        OSError,
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+        json.JSONDecodeError,
+    ) as error:
+        raise SandboxConfigurationError("sandbox Python runtime probe failed") from error
+    if not isinstance(value, dict):
+        raise SandboxConfigurationError("sandbox Python runtime probe is invalid")
+    return value
+
+
+def python_runtime_identity(
+    executable: str | Path, language: object
+) -> dict[str, str]:
+    resolved = Path(executable).resolve()
+    if not resolved.is_file():
+        raise SandboxConfigurationError("sandbox Python executable is not a file")
+    if not isinstance(language, str) or not language.startswith("python-"):
+        raise SandboxConfigurationError("protocol language runtime is invalid")
+    try:
+        expected = tuple(
+            int(part) for part in language.removeprefix("python-").split(".")
+        )
+    except ValueError as error:
+        raise SandboxConfigurationError("protocol Python version is invalid") from error
+    if len(expected) != 2:
+        raise SandboxConfigurationError("protocol must freeze Python major/minor")
+    probe = _probe_python_runtime(resolved)
+    implementation = probe.get("implementation")
+    version = probe.get("version")
+    if (
+        not isinstance(implementation, str)
+        or not isinstance(version, list)
+        or len(version) != 3
+        or any(isinstance(part, bool) or not isinstance(part, int) for part in version)
+    ):
+        raise SandboxConfigurationError("sandbox Python runtime identity is invalid")
+    if tuple(version[:2]) != expected:
+        raise SandboxConfigurationError(
+            f"sandbox Python must match protocol {language}, got {version[0]}.{version[1]}"
+        )
+    return {
+        "implementation": implementation,
+        "python_version": ".".join(str(part) for part in version),
+        "executable_sha256": _sha256_file(resolved),
+    }
+
+
+def load_worker_snapshot(expected_sha256: str) -> bytes:
+    worker = Path(__file__).with_name("_worker.py")
+    try:
+        source = worker.read_bytes()
+    except OSError as error:
+        raise SandboxConfigurationError("sandbox worker source is unavailable") from error
+    if sha256(source).hexdigest() != expected_sha256:
+        raise SandboxConfigurationError("sandbox worker differs from its freeze")
+    return source
+
+
 def execute_completion(
     source: str,
     public: PublicTask,
@@ -279,6 +369,8 @@ def execute_completion(
     limits: ExecutionLimits,
     *,
     python_executable: str | Path | None = None,
+    worker_source: bytes,
+    worker_sha256: str,
 ) -> ExecutionResult:
     """Execute one pure function without exposing hidden tests to the model."""
     started = perf_counter()
@@ -294,22 +386,33 @@ def execute_completion(
             "public/private task commitment mismatch",
             False,
         )
+    if (
+        not isinstance(worker_source, bytes)
+        or not isinstance(worker_sha256, str)
+        or sha256(worker_source).hexdigest() != worker_sha256
+    ):
+        return ExecutionResult(
+            "harness_error",
+            False,
+            perf_counter() - started,
+            "sandbox worker snapshot differs from its freeze",
+            False,
+        )
     outcome, detail = _preflight(source, public, limits)
     if outcome is not None:
         return ExecutionResult(
             outcome, False, perf_counter() - started, detail, False
         )
     executable = resolve_python_executable(python_executable)
-    worker_source = Path(__file__).with_name("_worker.py")
     job: _WindowsJob | None = None
     with tempfile.TemporaryDirectory(prefix="humanbrain-simple-swe-") as directory:
         temporary_root = Path(directory)
         worker = temporary_root / "worker.py"
-        shutil.copyfile(worker_source, worker)
+        worker.write_bytes(worker_source)
         creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
         try:
             process = subprocess.Popen(
-                [str(executable), "-S", "-B", str(worker)],
+                [str(executable), *SANDBOX_PYTHON_FLAGS, str(worker)],
                 cwd=temporary_root,
                 env=_sanitized_environment(temporary_root, limits),
                 stdin=subprocess.PIPE,
@@ -416,8 +519,12 @@ def execute_completion(
 
 
 __all__ = [
+    "SANDBOX_PYTHON_FLAGS",
     "ExecutionResult",
     "Outcome",
+    "SandboxConfigurationError",
     "execute_completion",
+    "load_worker_snapshot",
+    "python_runtime_identity",
     "resolve_python_executable",
 ]

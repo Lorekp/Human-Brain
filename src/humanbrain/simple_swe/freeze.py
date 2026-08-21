@@ -4,7 +4,6 @@ import importlib
 import json
 import os
 import subprocess
-import tempfile
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -13,10 +12,41 @@ from typing import Any
 
 import numpy as np
 
+from humanbrain.simple_swe.artifacts import atomic_create_bytes
 from humanbrain.simple_swe.protocol import ProtocolSpec, load_protocol
+from humanbrain.simple_swe.sandbox import (
+    SANDBOX_PYTHON_FLAGS,
+    SandboxConfigurationError,
+    python_runtime_identity,
+    resolve_python_executable,
+)
 from humanbrain.simple_swe.tasks import canonical_json_bytes, canonical_sha256
 
-SCHEMA = "humanbrain.simple-swe-freeze.v1"
+SCHEMA = "humanbrain.simple-swe-freeze.v2"
+CANONICAL_RUNNER_ID = "humanbrain-simple-swe-sealed-runner-v1"
+SANDBOX_EXECUTOR_ID = "humanbrain-simple-swe-job-sandbox-v1"
+_EXECUTION_COMMITMENT_FIELDS = (
+    "evaluation_root",
+    "compiler_factory_id",
+    "compiler_factory_sha256",
+    "canonical_runner_id",
+    "canonical_runner_sha256",
+    "sandbox_executor_id",
+    "sandbox_executor_sha256",
+    "sandbox_worker_sha256",
+    "sandbox_python_executable",
+    "sandbox_python_implementation",
+    "sandbox_python_version",
+    "sandbox_python_executable_sha256",
+    "sandbox_python_flags",
+    "simulation_backend",
+    "simulation_device",
+    "simulation_device_policy",
+    "simulation_source_digest",
+    "simulation_artifact_path",
+    "simulation_artifact_sha256",
+    "simulation_architecture",
+)
 ALLOWED_CHECKPOINT_FORMATS = {
     "human-cell-brain-checkpoint-v1",
     "recurrent-human-cell-checkpoint-v3",
@@ -41,9 +71,11 @@ _EXECUTION_MODULES = (
     "humanbrain.simple_swe.artifacts",
     "humanbrain.simple_swe.compiler",
     "humanbrain.simple_swe.freeze",
+    "humanbrain.simple_swe.protocol",
     "humanbrain.simple_swe.reveal",
     "humanbrain.simple_swe.runner",
     "humanbrain.simple_swe.sandbox",
+    "humanbrain.simple_swe.tasks",
 )
 
 
@@ -62,6 +94,17 @@ class CheckpointHashes:
 
 
 @dataclass(frozen=True)
+class SimulationBackendIdentity:
+    backend: str
+    device: str
+    device_policy: str
+    source_digest: str | None
+    artifact_path: str | None
+    artifact_sha256: str | None
+    architecture: str | None
+
+
+@dataclass(frozen=True)
 class FreezeManifest:
     schema: str
     protocol_id: str
@@ -72,12 +115,32 @@ class FreezeManifest:
     model_config_sha256: str
     tokenizer_sha256: str
     checkpoint_bytes: int
+    evaluation_root: str
     completion_adapter_id: str
     completion_adapter_sha256: str
+    compiler_factory_id: str
+    compiler_factory_sha256: str
     compiler_id: str
     compiler_sha256: str
     compiler_mode: str
     compiler_algorithm_source: str
+    canonical_runner_id: str
+    canonical_runner_sha256: str
+    sandbox_executor_id: str
+    sandbox_executor_sha256: str
+    sandbox_worker_sha256: str
+    sandbox_python_executable: str
+    sandbox_python_implementation: str
+    sandbox_python_version: str
+    sandbox_python_executable_sha256: str
+    sandbox_python_flags: tuple[str, ...]
+    simulation_backend: str
+    simulation_device: str
+    simulation_device_policy: str
+    simulation_source_digest: str | None
+    simulation_artifact_path: str | None
+    simulation_artifact_sha256: str | None
+    simulation_architecture: str | None
     inference_config_sha256: str
     source_head: str
     source_tree_sha256: str
@@ -87,6 +150,8 @@ class FreezeManifest:
     verify_state_before_and_after: bool
     no_learning_after_freeze: bool
     no_task_specific_replay: bool
+    one_canonical_evidence_root: bool
+    external_anchor_before_task_generation: bool
 
 
 def _normalized_array_bytes(value: np.ndarray) -> bytes:
@@ -234,21 +299,7 @@ def _clean_source_snapshot(source_root: str | Path) -> tuple[str, str]:
 
 
 def _atomic_create_json(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists():
-        raise FileExistsError(f"immutable artifact already exists: {path}")
-    descriptor, temporary_name = tempfile.mkstemp(
-        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
-    )
-    temporary = Path(temporary_name)
-    try:
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(canonical_json_bytes(payload))
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.link(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    atomic_create_bytes(path, canonical_json_bytes(payload))
 
 
 def _outside_source(output_path: Path, source_root: Path) -> None:
@@ -261,20 +312,124 @@ def _outside_source(output_path: Path, source_root: Path) -> None:
     )
 
 
-def _completion_identities(compiler_identity: object | None) -> tuple[object, str]:
+def _module_source_sha256(module_name: str) -> str:
+    module = importlib.import_module(module_name)
+    source = getattr(module, "__file__", None)
+    if not source:
+        raise FreezeIntegrityError(f"execution module has no source: {module_name}")
+    return sha256(Path(source).read_bytes()).hexdigest()
+
+
+def _completion_identities() -> tuple[object, str, str]:
     from humanbrain.simple_swe.compiler import (
         CompilerIdentity,
-        RawPythonCompiler,
+        compiler_factory_sha256,
+        create_source_compiler,
     )
 
-    identity = compiler_identity or RawPythonCompiler().identity
+    identity = create_source_compiler().identity
     if not isinstance(identity, CompilerIdentity):
         raise FreezeIntegrityError("compiler identity has the wrong type")
-    adapter_path = Path(__file__).with_name("adapter.py")
-    if not adapter_path.is_file():
-        raise FreezeIntegrityError("completion adapter source is missing")
-    adapter_sha256 = sha256(adapter_path.read_bytes()).hexdigest()
-    return identity, adapter_sha256
+    return (
+        identity,
+        _module_source_sha256("humanbrain.simple_swe.adapter"),
+        compiler_factory_sha256(),
+    )
+
+
+def _simulation_backend_identity(
+    checkpoint_path: str | Path, checkpoint_format: str
+) -> SimulationBackendIdentity:
+    policy = os.environ.get("HUMANBRAIN_DEVICE", "auto").strip().lower()
+    if checkpoint_format == "human-cell-brain-checkpoint-v1":
+        return SimulationBackendIdentity(
+            backend="python",
+            device="cpu",
+            device_policy=policy,
+            source_digest=None,
+            artifact_path=None,
+            artifact_sha256=None,
+            architecture=None,
+        )
+    if checkpoint_format != "recurrent-human-cell-checkpoint-v3":
+        raise FreezeIntegrityError("unsupported cell checkpoint format")
+    from humanbrain.recurrent_language import RecurrentCellLanguageModel
+
+    try:
+        model = RecurrentCellLanguageModel.load(checkpoint_path)
+    except (OSError, RuntimeError, ValueError) as error:
+        raise FreezeIntegrityError("simulation backend cannot load checkpoint") from error
+    backend = model._circuit.simulation_backend
+    device = model._circuit.simulation_device
+    if backend == "cpu":
+        from humanbrain.native import loaded_build_info
+
+        build = loaded_build_info()
+        artifact = build.library_path.resolve()
+        architecture = None
+        source_digest = build.source_digest
+    elif backend == "cuda":
+        from humanbrain.cuda import build_cuda
+
+        build = build_cuda()
+        artifact = build.cubin_path.resolve()
+        architecture = build.architecture
+        source_digest = build.source_digest
+    else:
+        raise FreezeIntegrityError(f"unknown recurrent simulation backend: {backend}")
+    if not artifact.is_file():
+        raise FreezeIntegrityError("simulation backend artifact is missing")
+    return SimulationBackendIdentity(
+        backend=backend,
+        device=device,
+        device_policy=policy,
+        source_digest=source_digest,
+        artifact_path=str(artifact),
+        artifact_sha256=sha256(artifact.read_bytes()).hexdigest(),
+        architecture=architecture,
+    )
+
+
+def _verify_simulation_backend_artifact(identity: SimulationBackendIdentity) -> None:
+    policy = os.environ.get("HUMANBRAIN_DEVICE", "auto").strip().lower()
+    if policy != identity.device_policy:
+        raise FreezeIntegrityError("simulation device policy drift after freeze")
+    if identity.backend == "python":
+        if any(
+            value is not None
+            for value in (
+                identity.source_digest,
+                identity.artifact_path,
+                identity.artifact_sha256,
+                identity.architecture,
+            )
+        ):
+            raise FreezeIntegrityError("Python backend has an unexpected native artifact")
+        return
+    if identity.backend == "cpu":
+        from humanbrain.native import loaded_build_info
+
+        build = loaded_build_info()
+        artifact = build.library_path.resolve()
+        current_source_digest = build.source_digest
+        current_architecture = None
+    elif identity.backend == "cuda":
+        from humanbrain.cuda import build_cuda
+
+        build = build_cuda()
+        artifact = build.cubin_path.resolve()
+        current_source_digest = build.source_digest
+        current_architecture = build.architecture
+    else:
+        raise FreezeIntegrityError("unknown frozen simulation backend")
+    if (
+        str(artifact) != identity.artifact_path
+        or current_source_digest != identity.source_digest
+        or current_architecture != identity.architecture
+        or not artifact.is_file()
+        or sha256(artifact.read_bytes()).hexdigest() != identity.artifact_sha256
+    ):
+        raise FreezeIntegrityError("simulation backend artifact drift after freeze")
 
 
 def _inference_config_sha256(
@@ -282,6 +437,7 @@ def _inference_config_sha256(
     checkpoint: CheckpointHashes,
     compiler_identity: object,
     adapter_sha256: str,
+    commitments: dict[str, object],
 ) -> str:
     from humanbrain.simple_swe.compiler import COMPLETION_ADAPTER_ID, CompilerIdentity
 
@@ -301,8 +457,65 @@ def _inference_config_sha256(
             "compiler_sha256": compiler_identity.compiler_sha256,
             "compiler_mode": compiler_identity.mode,
             "compiler_algorithm_source": compiler_identity.algorithm_source,
+            **commitments,
         }
     )
+
+
+def _execution_components(
+    *,
+    protocol: ProtocolSpec,
+    checkpoint_path: str | Path,
+    checkpoint: CheckpointHashes,
+    evaluation_root: Path,
+    python_executable: str | Path | None,
+    backend: SimulationBackendIdentity | None = None,
+) -> tuple[object, str, dict[str, object]]:
+    from humanbrain.simple_swe.compiler import (
+        COMPILER_FACTORY_ID,
+        CompilerIdentity,
+    )
+
+    identity, adapter_sha256, factory_sha256 = _completion_identities()
+    if not isinstance(identity, CompilerIdentity):
+        raise FreezeIntegrityError("compiler identity has the wrong type")
+    executable = resolve_python_executable(python_executable)
+    try:
+        runtime = python_runtime_identity(executable, protocol.raw.get("language"))
+    except SandboxConfigurationError as error:
+        raise FreezeIntegrityError(str(error)) from error
+    selected_backend = backend or _simulation_backend_identity(
+        checkpoint_path, checkpoint.checkpoint_format
+    )
+    commitments: dict[str, object] = {
+        "evaluation_root": str(evaluation_root),
+        "compiler_factory_id": COMPILER_FACTORY_ID,
+        "compiler_factory_sha256": factory_sha256,
+        "canonical_runner_id": CANONICAL_RUNNER_ID,
+        "canonical_runner_sha256": _module_source_sha256(
+            "humanbrain.simple_swe.runner"
+        ),
+        "sandbox_executor_id": SANDBOX_EXECUTOR_ID,
+        "sandbox_executor_sha256": _module_source_sha256(
+            "humanbrain.simple_swe.sandbox"
+        ),
+        "sandbox_worker_sha256": _module_source_sha256(
+            "humanbrain.simple_swe._worker"
+        ),
+        "sandbox_python_executable": str(executable),
+        "sandbox_python_implementation": runtime["implementation"],
+        "sandbox_python_version": runtime["python_version"],
+        "sandbox_python_executable_sha256": runtime["executable_sha256"],
+        "sandbox_python_flags": list(SANDBOX_PYTHON_FLAGS),
+        "simulation_backend": selected_backend.backend,
+        "simulation_device": selected_backend.device,
+        "simulation_device_policy": selected_backend.device_policy,
+        "simulation_source_digest": selected_backend.source_digest,
+        "simulation_artifact_path": selected_backend.artifact_path,
+        "simulation_artifact_sha256": selected_backend.artifact_sha256,
+        "simulation_architecture": selected_backend.architecture,
+    }
+    return identity, adapter_sha256, commitments
 
 
 def create_freeze_manifest(
@@ -311,16 +524,27 @@ def create_freeze_manifest(
     checkpoint_path: str | Path,
     source_root: str | Path,
     output_path: str | Path,
-    compiler_identity: object | None = None,
+    python_executable: str | Path | None = None,
 ) -> FreezeManifest:
     protocol = load_protocol(protocol_path)
     root = Path(source_root).resolve()
     output = Path(output_path).resolve()
+    if output.name != "freeze.json":
+        raise FreezeIntegrityError("canonical freeze manifest must be named freeze.json")
     _outside_source(output, root)
     head, tree_sha256 = _clean_source_snapshot(root)
     checkpoint = checkpoint_hashes(checkpoint_path)
-    identity, adapter_sha256 = _completion_identities(compiler_identity)
-    from humanbrain.simple_swe.compiler import COMPLETION_ADAPTER_ID, CompilerIdentity
+    identity, adapter_sha256, commitments = _execution_components(
+        protocol=protocol,
+        checkpoint_path=checkpoint_path,
+        checkpoint=checkpoint,
+        evaluation_root=output.parent,
+        python_executable=python_executable,
+    )
+    from humanbrain.simple_swe.compiler import (
+        COMPLETION_ADAPTER_ID,
+        CompilerIdentity,
+    )
 
     if not isinstance(identity, CompilerIdentity):
         raise FreezeIntegrityError("compiler identity has the wrong type")
@@ -334,14 +558,38 @@ def create_freeze_manifest(
         model_config_sha256=checkpoint.model_config_sha256,
         tokenizer_sha256=checkpoint.tokenizer_sha256,
         checkpoint_bytes=checkpoint.checkpoint_bytes,
+        evaluation_root=str(output.parent),
         completion_adapter_id=COMPLETION_ADAPTER_ID,
         completion_adapter_sha256=adapter_sha256,
+        compiler_factory_id=str(commitments["compiler_factory_id"]),
+        compiler_factory_sha256=str(commitments["compiler_factory_sha256"]),
         compiler_id=identity.compiler_id,
         compiler_sha256=identity.compiler_sha256,
         compiler_mode=identity.mode,
         compiler_algorithm_source=identity.algorithm_source,
+        canonical_runner_id=str(commitments["canonical_runner_id"]),
+        canonical_runner_sha256=str(commitments["canonical_runner_sha256"]),
+        sandbox_executor_id=str(commitments["sandbox_executor_id"]),
+        sandbox_executor_sha256=str(commitments["sandbox_executor_sha256"]),
+        sandbox_worker_sha256=str(commitments["sandbox_worker_sha256"]),
+        sandbox_python_executable=str(commitments["sandbox_python_executable"]),
+        sandbox_python_implementation=str(
+            commitments["sandbox_python_implementation"]
+        ),
+        sandbox_python_version=str(commitments["sandbox_python_version"]),
+        sandbox_python_executable_sha256=str(
+            commitments["sandbox_python_executable_sha256"]
+        ),
+        sandbox_python_flags=SANDBOX_PYTHON_FLAGS,
+        simulation_backend=str(commitments["simulation_backend"]),
+        simulation_device=str(commitments["simulation_device"]),
+        simulation_device_policy=str(commitments["simulation_device_policy"]),
+        simulation_source_digest=commitments["simulation_source_digest"],
+        simulation_artifact_path=commitments["simulation_artifact_path"],
+        simulation_artifact_sha256=commitments["simulation_artifact_sha256"],
+        simulation_architecture=commitments["simulation_architecture"],
         inference_config_sha256=_inference_config_sha256(
-            protocol, checkpoint, identity, adapter_sha256
+            protocol, checkpoint, identity, adapter_sha256, commitments
         ),
         source_head=head,
         source_tree_sha256=tree_sha256,
@@ -351,6 +599,8 @@ def create_freeze_manifest(
         verify_state_before_and_after=True,
         no_learning_after_freeze=True,
         no_task_specific_replay=True,
+        one_canonical_evidence_root=True,
+        external_anchor_before_task_generation=True,
     )
     _atomic_create_json(output, asdict(manifest))
     return manifest
@@ -359,8 +609,9 @@ def create_freeze_manifest(
 def _load_manifest(path: str | Path) -> FreezeManifest:
     try:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
+        value["sandbox_python_flags"] = tuple(value["sandbox_python_flags"])
         manifest = FreezeManifest(**value)
-    except (OSError, TypeError, json.JSONDecodeError) as error:
+    except (KeyError, OSError, TypeError, json.JSONDecodeError) as error:
         raise FreezeIntegrityError("freeze manifest is invalid") from error
     if manifest.schema != SCHEMA:
         raise FreezeIntegrityError("unsupported freeze manifest schema")
@@ -371,9 +622,18 @@ def _load_manifest(path: str | Path) -> FreezeManifest:
             manifest.verify_state_before_and_after,
             manifest.no_learning_after_freeze,
             manifest.no_task_specific_replay,
+            manifest.one_canonical_evidence_root,
+            manifest.external_anchor_before_task_generation,
         )
     ):
         raise FreezeIntegrityError("freeze manifest weakens a required invariant")
+    if manifest.sandbox_python_flags != SANDBOX_PYTHON_FLAGS:
+        raise FreezeIntegrityError("freeze manifest changed sandbox Python flags")
+    if (
+        manifest.canonical_runner_id != CANONICAL_RUNNER_ID
+        or manifest.sandbox_executor_id != SANDBOX_EXECUTOR_ID
+    ):
+        raise FreezeIntegrityError("freeze manifest changed production execution mode")
     return manifest
 
 
@@ -383,9 +643,12 @@ def verify_freeze_manifest(
     protocol_path: str | Path,
     checkpoint_path: str | Path,
     source_root: str | Path,
-    compiler_identity: object | None = None,
 ) -> FreezeManifest:
-    manifest = _load_manifest(manifest_path)
+    resolved_manifest_path = Path(manifest_path).resolve()
+    manifest = _load_manifest(resolved_manifest_path)
+    canonical_manifest_path = Path(manifest.evaluation_root).resolve() / "freeze.json"
+    if resolved_manifest_path != canonical_manifest_path:
+        raise FreezeIntegrityError("freeze manifest moved from its canonical evidence root")
     protocol: ProtocolSpec = load_protocol(protocol_path)
     if (
         protocol.protocol_id != manifest.protocol_id
@@ -408,7 +671,24 @@ def verify_freeze_manifest(
         raise FreezeIntegrityError("tokenizer hash drift after model freeze")
     if current.checkpoint_format != manifest.checkpoint_format:
         raise FreezeIntegrityError("checkpoint format drift after model freeze")
-    identity, adapter_sha256 = _completion_identities(compiler_identity)
+    backend = SimulationBackendIdentity(
+        backend=manifest.simulation_backend,
+        device=manifest.simulation_device,
+        device_policy=manifest.simulation_device_policy,
+        source_digest=manifest.simulation_source_digest,
+        artifact_path=manifest.simulation_artifact_path,
+        artifact_sha256=manifest.simulation_artifact_sha256,
+        architecture=manifest.simulation_architecture,
+    )
+    _verify_simulation_backend_artifact(backend)
+    identity, adapter_sha256, commitments = _execution_components(
+        protocol=protocol,
+        checkpoint_path=checkpoint_path,
+        checkpoint=current,
+        evaluation_root=canonical_manifest_path.parent,
+        python_executable=manifest.sandbox_python_executable,
+        backend=backend,
+    )
     from humanbrain.simple_swe.compiler import COMPLETION_ADAPTER_ID, CompilerIdentity
 
     if not isinstance(identity, CompilerIdentity):
@@ -425,8 +705,18 @@ def verify_freeze_manifest(
         or manifest.compiler_algorithm_source != identity.algorithm_source
     ):
         raise FreezeIntegrityError("source compiler identity drift after model freeze")
+    frozen_commitments = {
+        name: (
+            list(manifest.sandbox_python_flags)
+            if name == "sandbox_python_flags"
+            else getattr(manifest, name)
+        )
+        for name in _EXECUTION_COMMITMENT_FIELDS
+    }
+    if commitments != frozen_commitments:
+        raise FreezeIntegrityError("frozen execution/runtime commitment drift")
     inference_sha256 = _inference_config_sha256(
-        protocol, current, identity, adapter_sha256
+        protocol, current, identity, adapter_sha256, commitments
     )
     if inference_sha256 != manifest.inference_config_sha256:
         raise FreezeIntegrityError("inference config hash drift after model freeze")

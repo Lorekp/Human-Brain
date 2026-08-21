@@ -1,24 +1,27 @@
 from __future__ import annotations
 
+import inspect
 from dataclasses import asdict
 from hashlib import sha256
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from humanbrain.simple_swe import runner
+from humanbrain.simple_swe import runner, sandbox
 from humanbrain.simple_swe.adapter import (
     CompletionAudit,
     CompletionRequest,
     SynthesizedCompletion,
 )
 from humanbrain.simple_swe.artifacts import ArtifactIntegrityError, ArtifactLedger
+from humanbrain.simple_swe.freeze import FreezeIntegrityError
 from humanbrain.simple_swe.protocol import ProtocolSpec, load_protocol
 from humanbrain.simple_swe.reveal import (
     EvaluationBundle,
     evaluation_reveal_commitment,
 )
 from humanbrain.simple_swe.runner import (
+    _run_cell_evaluation_for_testing,
     record_baseline_control,
     run_cell_evaluation,
 )
@@ -37,15 +40,9 @@ CHECKPOINT_SHA256 = "b" * 64
 CHECKPOINT_STATE_SHA256 = "c" * 64
 COMPILER_SHA256 = "d" * 64
 FREEZE_SHA256 = "e" * 64
-
-
-@pytest.fixture
-def python311_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        runner,
-        "_probe_runtime",
-        lambda _executable: {"implementation": "cpython", "version": [3, 11, 9]},
-    )
+WORKER_SHA256 = sha256(
+    Path(sandbox.__file__).with_name("_worker.py").read_bytes()
+).hexdigest()
 
 
 def _task(index: int, tier: int) -> GeneratedTask:
@@ -112,6 +109,34 @@ def _ledger(tmp_path: Path, bundle: EvaluationBundle) -> ArtifactLedger:
             "source_head": bundle.source_head,
             "completion_adapter_sha256": ADAPTER_SHA256,
             "compiler_sha256": COMPILER_SHA256,
+            "canonical_runner_id": "test-injected-engine-v1",
+            "canonical_runner_sha256": "9" * 64,
+            "sandbox_worker_sha256": WORKER_SHA256,
+            "sandbox_runtime": {
+                "implementation": "cpython",
+                "python_version": "3.11.9",
+                "executable_sha256": "8" * 64,
+            },
+            "production_dependencies_injected": True,
+        },
+    )
+    ledger.append(
+        "evaluation-seed-reserved",
+        {
+            "eval_seed_sha256": bundle.eval_seed_sha256,
+            "seed_reservation_sha256": "7" * 64,
+            "seed_persisted_before_task_generation": True,
+            "evaluation_tasks_generated": False,
+        },
+    )
+    ledger.append(
+        "external-anchor-recorded",
+        {
+            "anchor_payload_sha256": "6" * 64,
+            "public_uri": "https://example.invalid/fixture-anchor",
+            "receipt_sha256": "5" * 64,
+            "operator_supplied_receipt": True,
+            "harness_verified_external_publication": False,
         },
     )
     ledger.append("evaluation-revealed", evaluation_reveal_commitment(bundle))
@@ -159,7 +184,6 @@ class FixtureCellAdapter:
 
 def test_all_completions_are_sealed_before_hidden_tests_execute(
     tmp_path: Path,
-    python311_runtime: None,
 ) -> None:
     protocol = load_protocol(PROTOCOL_PATH)
     bundle = _bundle(tmp_path, protocol)
@@ -168,8 +192,17 @@ def test_all_completions_are_sealed_before_hidden_tests_execute(
     executor_calls: list[str] = []
     outcomes = ("passed", "regression_failure", "syntax_error")
 
-    def executor(source, public, private, limits, *, python_executable=None):
-        del source, limits, python_executable
+    def executor(
+        source,
+        public,
+        private,
+        limits,
+        *,
+        python_executable=None,
+        worker_source=None,
+        worker_sha256=None,
+    ):
+        del source, limits, python_executable, worker_source, worker_sha256
         events = ledger.verify()
         kinds = [event.kind for event in events]
         assert kinds.count("cell-completion") == len(bundle.tasks)
@@ -185,7 +218,7 @@ def test_all_completions_are_sealed_before_hidden_tests_execute(
             sandboxed=True,
         )
 
-    summary = run_cell_evaluation(
+    summary = _run_cell_evaluation_for_testing(
         bundle=bundle,
         adapter=adapter,
         ledger=ledger,
@@ -208,6 +241,8 @@ def test_all_completions_are_sealed_before_hidden_tests_execute(
     }
     assert [event.kind for event in ledger.verify()] == [
         "run-start",
+        "evaluation-seed-reserved",
+        "external-anchor-recorded",
         "evaluation-revealed",
         "cell-completion",
         "cell-completion",
@@ -221,11 +256,11 @@ def test_all_completions_are_sealed_before_hidden_tests_execute(
     seal = next(event for event in ledger.verify() if event.kind == "cell-completions-sealed")
     assert seal.body["hidden_tests_executed_before_seal"] is False
     assert seal.body["private_cases_not_passed_to_adapter"] is True
+    assert seal.body["production_dependencies_injected"] is True
 
 
 def test_interrupted_synthesis_resumes_without_resampling_a_task(
     tmp_path: Path,
-    python311_runtime: None,
 ) -> None:
     protocol = load_protocol(PROTOCOL_PATH)
     bundle = _bundle(tmp_path, protocol)
@@ -233,16 +268,16 @@ def test_interrupted_synthesis_resumes_without_resampling_a_task(
     interrupted = FixtureCellAdapter(fail_on=bundle.tasks[1].public.entry_point)
 
     with pytest.raises(RuntimeError, match="synthetic interruption"):
-        run_cell_evaluation(
+        _run_cell_evaluation_for_testing(
             bundle=bundle,
             adapter=interrupted,
             ledger=ledger,
             protocol=protocol,
         )
-    first_completion_sha256 = ledger.verify()[2].file_sha256
+    first_completion_sha256 = ledger.verify()[4].file_sha256
     resumed = FixtureCellAdapter()
 
-    summary = run_cell_evaluation(
+    summary = _run_cell_evaluation_for_testing(
         bundle=bundle,
         adapter=resumed,
         ledger=ledger,
@@ -260,13 +295,12 @@ def test_interrupted_synthesis_resumes_without_resampling_a_task(
         bundle.tasks[1].public.entry_point,
         bundle.tasks[2].public.entry_point,
     ]
-    assert ledger.verify()[2].file_sha256 == first_completion_sha256
+    assert ledger.verify()[4].file_sha256 == first_completion_sha256
     assert summary.passed == len(bundle.tasks)
 
 
 def test_baseline_controls_cannot_precede_or_change_the_cell_summary(
     tmp_path: Path,
-    python311_runtime: None,
 ) -> None:
     protocol = load_protocol(PROTOCOL_PATH)
     bundle = _bundle(tmp_path, protocol)
@@ -280,7 +314,7 @@ def test_baseline_controls_cannot_precede_or_change_the_cell_summary(
             pass_at_1=1.0,
             report_sha256="2" * 64,
         )
-    summary = run_cell_evaluation(
+    summary = _run_cell_evaluation_for_testing(
         bundle=bundle,
         adapter=FixtureCellAdapter(),
         ledger=ledger,
@@ -307,7 +341,7 @@ def test_baseline_controls_cannot_precede_or_change_the_cell_summary(
         pass_at_1=1.0,
         report_sha256="2" * 64,
     )
-    resumed_summary = run_cell_evaluation(
+    resumed_summary = _run_cell_evaluation_for_testing(
         bundle=bundle,
         adapter=FixtureCellAdapter(),
         ledger=ledger,
@@ -320,40 +354,99 @@ def test_baseline_controls_cannot_precede_or_change_the_cell_summary(
     assert resumed_summary == summary
 
 
-def test_runtime_identity_queries_and_hashes_the_selected_python(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    executable = tmp_path / "selected-python.exe"
-    executable.write_bytes(b"fixture-python-binary")
-    commands: list[list[str]] = []
+def test_canonical_runner_accepts_only_frozen_artifact_paths() -> None:
+    fields = set(inspect.signature(run_cell_evaluation).parameters)
 
-    def fake_run(command, **_kwargs):
-        commands.append(command)
-        return SimpleNamespace(stdout='{"implementation":"cpython","version":[3,11,8]}\n')
-
-    monkeypatch.setattr(runner.subprocess, "run", fake_run)
-
-    identity = runner._runtime_identity(executable, "python-3.11")
-
-    assert commands[0][0] == str(executable)
-    assert commands[0][1:3] == ["-I", "-S"]
-    assert identity == {
-        "implementation": "cpython",
-        "python_version": "3.11.8",
-        "executable_sha256": sha256(b"fixture-python-binary").hexdigest(),
+    assert fields == {
+        "manifest_path",
+        "protocol_path",
+        "checkpoint_path",
+        "source_root",
     }
+    assert "bundle" not in fields
+    assert "adapter" not in fields
+    assert "executor" not in fields
+    assert "python_executable" not in fields
 
 
-def test_runtime_identity_rejects_a_different_python_minor(
+def test_canonical_runner_rejects_an_in_memory_bundle_argument(tmp_path: Path) -> None:
+    protocol = load_protocol(PROTOCOL_PATH)
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'bundle'"):
+        run_cell_evaluation(bundle=_bundle(tmp_path, protocol))  # type: ignore[call-arg]
+
+
+def test_canonical_runner_loads_and_validates_the_bundle_file_before_adapter(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    executable = tmp_path / "selected-python.exe"
-    executable.write_bytes(b"fixture-python-binary")
+    manifest_path = tmp_path / "freeze.json"
+    manifest_path.write_text("{}", encoding="utf-8")
+    bundle_path = tmp_path / "runs" / "private" / "eval-bundle.json"
+    loaded_bundle = object()
+    calls: list[object] = []
+    monkeypatch.setattr(
+        runner, "load_protocol", lambda _path: SimpleNamespace(sha256="a" * 64)
+    )
+    monkeypatch.setattr(
+        runner, "verify_freeze_manifest", lambda **_kwargs: SimpleNamespace()
+    )
     monkeypatch.setattr(
         runner,
-        "_probe_runtime",
-        lambda _executable: {"implementation": "cpython", "version": [3, 12, 1]},
+        "canonical_evaluation_paths",
+        lambda *_args: SimpleNamespace(
+            bundle_path=bundle_path, ledger_root=tmp_path / "ledger"
+        ),
     )
 
-    with pytest.raises(ArtifactIntegrityError, match=r"python-3.11.*3.12"):
-        runner._runtime_identity(executable, "python-3.11")
+    def load_bundle(path):
+        calls.append(Path(path))
+        return loaded_bundle
+
+    def reject_bundle(bundle, *_args):
+        calls.append(bundle)
+        raise FreezeIntegrityError("deterministic bundle validation failed")
+
+    monkeypatch.setattr(runner, "load_evaluation_bundle", load_bundle)
+    monkeypatch.setattr(runner, "validate_evaluation_bundle", reject_bundle)
+    monkeypatch.setattr(
+        runner,
+        "CellCompletionAdapter",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("adapter constructed before bundle validation")
+        ),
+    )
+
+    with pytest.raises(FreezeIntegrityError, match="deterministic bundle validation"):
+        run_cell_evaluation(
+            manifest_path=manifest_path,
+            protocol_path=PROTOCOL_PATH,
+            checkpoint_path=tmp_path / "checkpoint.npz",
+            source_root=tmp_path / "source",
+        )
+
+    assert calls == [bundle_path, loaded_bundle]
+
+
+def test_injected_test_engine_cannot_write_a_canonical_runner_prefix(
+    tmp_path: Path,
+) -> None:
+    protocol = load_protocol(PROTOCOL_PATH)
+    bundle = _bundle(tmp_path, protocol)
+    fixture_ledger = _ledger(tmp_path / "fixture", bundle)
+    canonical_ledger = ArtifactLedger(
+        tmp_path / "canonical-ledger", protocol_sha256=protocol.sha256
+    )
+    for index, event in enumerate(fixture_ledger.verify()):
+        body = dict(event.body)
+        if index == 0:
+            body["canonical_runner_id"] = "humanbrain-simple-swe-sealed-runner-v1"
+            body["production_dependencies_injected"] = False
+        canonical_ledger.append(event.kind, body)
+
+    with pytest.raises(ArtifactIntegrityError, match="cannot write a canonical"):
+        _run_cell_evaluation_for_testing(
+            bundle=bundle,
+            adapter=FixtureCellAdapter(),
+            ledger=canonical_ledger,
+            protocol=protocol,
+        )
