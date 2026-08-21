@@ -1,0 +1,127 @@
+{
+  "schema": "human-cell-simple-swe-public-development-baseline-protocol-v1",
+  "protocol_id": "human-cell-simple-swe-public-development-baseline-v1",
+  "status": "noncanonical-public-development-only",
+  "cell_source_commit": "28ac90871ea4b21bb6a0704ef6e534949127f352",
+  "task_protocol": {
+    "path": "benchmarks/simple_swe_protocol_v1.json",
+    "sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2",
+    "partitions": [
+      "train",
+      "dev"
+    ]
+  },
+  "scope": {
+    "allowed_task_api": "humanbrain.simple_swe.tasks.generate_visible_partition",
+    "forbidden_partitions": [
+      "eval"
+    ],
+    "forbidden_artifact_classes": [
+      "canonical",
+      "evaluation-bundle",
+      "freeze-manifest",
+      "private-seed",
+      "reveal",
+      "hidden-evaluation"
+    ],
+    "external_models": false,
+    "language_models": false,
+    "heuristic_program_synthesis": false,
+    "template_answers": false,
+    "tool_use_during_synthesis": false
+  },
+  "training": {
+    "partition": "train",
+    "texts": "each generated train PublicTask.prompt exactly once, as a separate sequence",
+    "solutions": false,
+    "test_cases": false,
+    "expected_outputs": false,
+    "epochs": 1
+  },
+  "candidates": [
+    {
+      "candidate_id": "prompt-only-order-8",
+      "model_class": "humanbrain.language.CellLanguageModel",
+      "model_config": {
+        "max_order": 8,
+        "max_phrases": 512,
+        "min_phrase_frequency": 2,
+        "random_seed": 7
+      }
+    },
+    {
+      "candidate_id": "prompt-only-order-64",
+      "model_class": "humanbrain.language.CellLanguageModel",
+      "model_config": {
+        "max_order": 64,
+        "max_phrases": 2048,
+        "min_phrase_frequency": 2,
+        "random_seed": 7
+      }
+    }
+  ],
+  "selection": {
+    "partition": "train",
+    "maximize_lexicographically": [
+      "passed",
+      "semantic_test_reached",
+      "exact_signature_reached",
+      "parsed_python"
+    ],
+    "final_tiebreak": "candidate_id ascending",
+    "development_is_opened_after_selection": true,
+    "development_does_not_change_selection": true
+  },
+  "synthesis": {
+    "mode": "raw emitted Python",
+    "max_new_tokens": 192,
+    "stop_sequence": null,
+    "compiler": "humanbrain.simple_swe.compiler.RawPythonCompiler",
+    "compiler_adds_algorithmic_content": false,
+    "fresh_checkpoint_reload_before_development": true
+  },
+  "scoring": {
+    "partitions": [
+      "train",
+      "dev"
+    ],
+    "tasks": "all generated tasks in each named partition",
+    "sandbox": "humanbrain.simple_swe.sandbox.execute_completion",
+    "outcome_groups": {
+      "syntax": [
+        "syntax_error"
+      ],
+      "format": [
+        "format_error"
+      ],
+      "policy": [
+        "policy_violation"
+      ],
+      "signature": [
+        "signature_error"
+      ],
+      "runtime": [
+        "runtime_error",
+        "memory_limit",
+        "timeout",
+        "harness_error"
+      ],
+      "assertion": [
+        "regression_failure",
+        "property_failure"
+      ],
+      "passed": [
+        "passed"
+      ]
+    }
+  },
+  "reporting": {
+    "artifact": "artifacts/simple_swe_public_baseline_v1.json",
+    "artifact_status": "noncanonical-public-development-only",
+    "record_checkpoint_hash_and_configuration": true,
+    "record_per_task_outcomes": true,
+    "record_cell_activity": true,
+    "record_inference_and_sandbox_speed": true,
+    "record_exact_command": true
+  }
+}
