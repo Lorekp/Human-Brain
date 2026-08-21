@@ -5,7 +5,6 @@ from __future__ import annotations
 import ctypes
 import hashlib
 import os
-import platform
 import tempfile
 import threading
 from dataclasses import dataclass
@@ -61,7 +60,11 @@ def _load_system_library(windows_pattern: str, unix_name: str) -> ctypes.CDLL:
 
 class _CudaDriver:
     def __init__(self) -> None:
-        self.library = _load_system_library("nvcuda.dll", "libcuda.so.1") if os.name != "nt" else ctypes.WinDLL("nvcuda.dll")
+        self.library = (
+            _load_system_library("nvcuda.dll", "libcuda.so.1")
+            if os.name != "nt"
+            else ctypes.WinDLL("nvcuda.dll")
+        )
         library = self.library
         library.cuInit.argtypes = [ctypes.c_uint]
         library.cuInit.restype = ctypes.c_int
@@ -159,7 +162,9 @@ class _CudaDriver:
             return
         detail = ctypes.c_char_p()
         self.library.cuGetErrorString(status, ctypes.byref(detail))
-        message = detail.value.decode("utf-8", errors="replace") if detail.value else f"status {status}"
+        message = (
+            detail.value.decode("utf-8", errors="replace") if detail.value else f"status {status}"
+        )
         raise NativeBuildError(f"{operation}: {message}")
 
     def make_current(self) -> None:
@@ -267,8 +272,7 @@ class _Nvrtc:
                 log = ctypes.create_string_buffer(log_size.value or 1)
                 self.library.nvrtcGetProgramLog(program, log)
                 raise NativeBuildError(
-                    "CUDA kernel compilation failed: "
-                    + log.value.decode("utf-8", errors="replace")
+                    "CUDA kernel compilation failed: " + log.value.decode("utf-8", errors="replace")
                 )
             cubin_size = ctypes.c_size_t()
             if self.library.nvrtcGetCUBINSize(program, ctypes.byref(cubin_size)) != self.SUCCESS:
@@ -423,8 +427,12 @@ class CudaRecurrentKernel:
         self._block_count = int(active_blocks.value) * multiprocessors
         if self._block_count <= 0:
             raise NativeBuildError("CUDA cooperative kernel has zero active blocks")
-        self._driver.check(library.cuEventCreate(ctypes.byref(self._start_event), 0), "create CUDA event")
-        self._driver.check(library.cuEventCreate(ctypes.byref(self._stop_event), 0), "create CUDA event")
+        self._driver.check(
+            library.cuEventCreate(ctypes.byref(self._start_event), 0), "create CUDA event"
+        )
+        self._driver.check(
+            library.cuEventCreate(ctypes.byref(self._stop_event), 0), "create CUDA event"
+        )
 
         state = population.state
         constants = {
@@ -465,6 +473,15 @@ class CudaRecurrentKernel:
     def device_bytes(self) -> int:
         return sum(size for _, size in self._arrays.values())
 
+    @property
+    def host_to_device_bytes_per_token(self) -> int:
+        return 0
+
+    @property
+    def device_to_host_bytes_per_token(self) -> int:
+        mutable = sum(self._arrays[name][1] for name in self._mutable_arrays())
+        return mutable + ctypes.sizeof(ctypes.c_uint64)
+
     def _allocate_bytes(self, name: str, size: int) -> None:
         pointer = ctypes.c_uint64()
         self._driver.check(
@@ -486,18 +503,14 @@ class CudaRecurrentKernel:
         if int(array.nbytes) != size:
             raise ValueError(f"{name} byte size changed after CUDA binding")
         self._driver.check(
-            self._driver.library.cuMemcpyHtoD_v2(
-                pointer, ctypes.c_void_p(array.ctypes.data), size
-            ),
+            self._driver.library.cuMemcpyHtoD_v2(pointer, ctypes.c_void_p(array.ctypes.data), size),
             f"upload CUDA {name}",
         )
 
     def _copy_from_device(self, name: str, array: np.ndarray) -> None:
         pointer, size = self._arrays[name]
         self._driver.check(
-            self._driver.library.cuMemcpyDtoH_v2(
-                ctypes.c_void_p(array.ctypes.data), pointer, size
-            ),
+            self._driver.library.cuMemcpyDtoH_v2(ctypes.c_void_p(array.ctypes.data), pointer, size),
             f"download CUDA {name}",
         )
 
@@ -523,7 +536,9 @@ class CudaRecurrentKernel:
             raise ValueError("token id outside CUDA afferent population")
         self._driver.make_current()
         afferent_base, _ = self._arrays["afferents"]
-        afferent_pointer = afferent_base + token_id * self._input_fanout * np.dtype(np.int32).itemsize
+        afferent_pointer = (
+            afferent_base + token_id * self._input_fanout * np.dtype(np.int32).itemsize
+        )
         values: list[object] = [
             self._glif,
             self._recurrent,
@@ -569,9 +584,7 @@ class CudaRecurrentKernel:
         self._driver.check(library.cuEventSynchronize(self._stop_event), "wait for CUDA token")
         elapsed = ctypes.c_float()
         self._driver.check(
-            library.cuEventElapsedTime(
-                ctypes.byref(elapsed), self._start_event, self._stop_event
-            ),
+            library.cuEventElapsedTime(ctypes.byref(elapsed), self._start_event, self._stop_event),
             "measure CUDA token kernel",
         )
         self.last_kernel_milliseconds = float(elapsed.value)

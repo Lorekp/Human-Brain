@@ -9,6 +9,55 @@ padding, shortened simulation, or learned computation outside cells are
 ineligible. Every faster backend must first match the deterministic reference
 state transition.
 
+## Large-network CUDA backend
+
+Circuits with at least 100,000 reservoir cells now select a persistent-device
+CUDA backend when a cooperative-launch NVIDIA device and NVRTC are available.
+`HUMANBRAIN_DEVICE=cpu` forces Rust, `HUMANBRAIN_DEVICE=cuda` requires CUDA and
+raises instead of falling back, and `auto` is the default. The selected backend
+and physical device are observable through `simulation_backend` and
+`simulation_device` on `RecurrentCellCircuit`.
+
+One cooperative kernel launch performs the complete 100-step token interval.
+Threads traverse contiguous cell-state arrays with grid-stride loops; two
+grid-wide barriers per biological step separate fitted GLIF5 integration from
+synaptic propagation. Construction converts outgoing sparse targets to a
+stable reverse-CSR view. Each postsynaptic thread therefore accumulates active
+incoming weights in the same `(presynaptic cell, edge)` order as the Rust
+scatter, avoiding nondeterministic floating-point atomics. NVRTC compiles with
+fused multiply-add disabled and precise division/square-root settings. A
+64-token test compares every mutable cell/synapse array and spike count
+bit-for-bit against Rust, then verifies reset synchronization and repeated-token
+persistence.
+
+Device state persists between tokens. The current exact public-state contract
+downloads voltage, both after-spike channels, both thresholds, refractory
+state, synaptic current, eligibility, and the spike total after every token.
+That is 60 bytes per cell plus eight bytes device-to-host per token; steady
+observation performs no host-to-device transfer. Reporting this boundary
+separately prevents kernel-only throughput from being mistaken for end-to-end
+throughput.
+
+This follows NVIDIA's documented cooperative-grid synchronization pattern and
+its guidance to keep iterative state on device and use coalesced cell-array
+accesses. The kernel is compiled directly to device code through NVRTC, so it
+does not depend on a host C++ compiler. CPU execution remains the exact backend
+for smaller circuits and systems without CUDA.
+
+The registered `benchmarks/cuda_scaling.py` protocol measures 100,000, 200,000,
+and 1,000,000 active cells. It records wall-clock and device-event throughput,
+cell steps, six sparse edges per cell, host/device persistent memory, exact
+transfer bytes, construction/first-token/cold-build time, device identity,
+GPU-utilization snapshots, and equivalence evidence. Final performance numbers
+must come from an isolated GPU window.
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'src').Path
+$env:HUMANBRAIN_NATIVE_CACHE=(Resolve-Path '.runtime/native').Path
+$env:HUMANBRAIN_DEVICE='cuda'
+python benchmarks\cuda_scaling.py
+```
+
 Measured on 2026-08-21 with Python 3.11.15 and NumPy 2.4.6 on Windows
 (AMD64 Family 25 Model 97). Results are medians of three runs from
 `benchmarks/simulation_speed.py`; peak memory includes Python and NumPy
