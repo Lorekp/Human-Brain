@@ -1,0 +1,37 @@
+{
+  "name": "exact-native-human-cell-scaling-v2",
+  "purpose": "Measure exact quiescent-frontier and dense SIMD CPU simulation at 100k to one million configured active human cells.",
+  "cell_counts": [98304, 131072, 393216, 1048576],
+  "token_cells": 257,
+  "input_fanout": 32,
+  "recurrent_fanout": 6,
+  "token_interval_ms": 5.0,
+  "integration_dt_ms": 0.05,
+  "frontier_token_counts": {
+    "98304": 64,
+    "131072": 48,
+    "393216": 24,
+    "1048576": 12
+  },
+  "dense_token_counts": {
+    "98304": 8,
+    "131072": 6,
+    "393216": 3,
+    "1048576": 1
+  },
+  "timing_repeats": 3,
+  "dense_worker_threads": 5,
+  "equivalence_cells": 98304,
+  "equivalence_tokens": 64,
+  "seed": 17,
+  "topology": "uniform_no_self",
+  "notes": [
+    "Every configured reservoir cell is active and reachable; no dormant-cell padding is used.",
+    "One token is exactly 100 fitted 0.05-ms GLIF5 integration steps.",
+    "The exact frontier scans all cell state once per token and skips only cells whose complete checkpointable state and incoming current are exactly zero.",
+    "Dense serial and deterministic five-thread SIMD timings update every cell on every integration step.",
+    "The optimized and frozen-v1 kernels consume separately constructed but seed-identical topology arrays for the 64-token bit-exact check.",
+    "uniform_no_self preserves the registered v1 seeded topology while avoiding its per-source population-sized temporary.",
+    "Training statistics are lazy; local readout arrays remain included in persistent-array memory."
+  ]
+}

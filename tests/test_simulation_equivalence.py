@@ -208,6 +208,19 @@ def _python_reference_observe(circuit: RecurrentCellCircuit, token_id: int) -> i
     return spike_total
 
 
+def _circuit_state_arrays(circuit: RecurrentCellCircuit) -> tuple[np.ndarray, ...]:
+    state = circuit._reservoir.state
+    return (
+        circuit._synaptic_current_pa,
+        circuit._eligibility,
+        state.voltage_relative_mv,
+        state.after_spike_currents_pa,
+        state.threshold_spike_mv,
+        state.threshold_voltage_mv,
+        state.refractory_steps,
+    )
+
+
 def test_native_recurrent_token_loop_is_bit_exact_to_python_reference() -> None:
     config = RecurrentCircuitConfig(
         reservoir_cells=96,
@@ -299,6 +312,45 @@ def test_fused_parallel_kernel_is_bit_exact_to_native_v1_for_64_tokens() -> None
         actual._reservoir.state.refractory_steps,
         expected._reservoir.state.refractory_steps,
     )
+
+
+def test_quiescent_frontier_is_exact_across_activity_densities() -> None:
+    config = RecurrentCircuitConfig(
+        reservoir_cells=4_096,
+        input_fanout=32,
+        recurrent_fanout=6,
+        token_interval_ms=5.0,
+        input_pulse_ms=1.5,
+        input_current_pa=4_000.0,
+        recurrent_current_pa=325.0,
+        eligibility_tau_ms=40.0,
+        recurrent_topology="uniform_no_self",
+        random_seed=47,
+    )
+    circuit = RecurrentCellCircuit(token_cells=67, config=config)
+
+    for density in (0.01, 0.2, 1.0):
+        seeded = max(1, round(config.reservoir_cells * density))
+        indices = np.arange(seeded, dtype=np.intp) * config.reservoir_cells // seeded
+        circuit.reset_sequence()
+        circuit._synaptic_current_pa[indices] = 25.0
+        circuit._eligibility[indices] = 0.5
+        frontier_spikes = circuit._native_kernel.observe(13)
+        frontier_state = tuple(array.copy() for array in _circuit_state_arrays(circuit))
+        assert circuit._native_kernel.last_active_cells >= seeded
+
+        circuit.reset_sequence()
+        circuit._synaptic_current_pa[indices] = 25.0
+        circuit._eligibility[indices] = 0.5
+        dense_spikes = circuit._native_kernel._observe_parallel(13)
+
+        assert frontier_spikes == dense_spikes
+        for actual, expected in zip(
+            _circuit_state_arrays(circuit),
+            frontier_state,
+            strict=True,
+        ):
+            np.testing.assert_array_equal(actual, expected)
 
 
 def test_vectorized_glif_step_matches_original_during_spikes_and_refractory() -> None:

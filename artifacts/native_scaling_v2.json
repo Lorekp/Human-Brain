@@ -1,0 +1,265 @@
+{
+  "equivalence": {
+    "cells": 98304,
+    "maximum_updated_cells": 2619,
+    "optimized_state_sha256": "1cd1c50a5cab36b828a63e8ee25c9ec0f46ce71f854b7124d17add1b88c23366",
+    "optimized_tokens_per_second": 789.594136163531,
+    "persistent_state_bit_exact": true,
+    "reference_state_sha256": "1cd1c50a5cab36b828a63e8ee25c9ec0f46ce71f854b7124d17add1b88c23366",
+    "reference_v1_tokens_per_second": 17.696514889788645,
+    "speedup": 44.618623558424346,
+    "spike_counts_equal": true,
+    "tokens": 64,
+    "topology_arrays_equal": true
+  },
+  "protocol": {
+    "cell_counts": [
+      98304,
+      131072,
+      393216,
+      1048576
+    ],
+    "dense_token_counts": {
+      "1048576": 1,
+      "131072": 6,
+      "393216": 3,
+      "98304": 8
+    },
+    "dense_worker_threads": 5,
+    "equivalence_cells": 98304,
+    "equivalence_tokens": 64,
+    "frontier_token_counts": {
+      "1048576": 12,
+      "131072": 48,
+      "393216": 24,
+      "98304": 64
+    },
+    "input_fanout": 32,
+    "integration_dt_ms": 0.05,
+    "name": "exact-native-human-cell-scaling-v2",
+    "notes": [
+      "Every configured reservoir cell is active and reachable; no dormant-cell padding is used.",
+      "One token is exactly 100 fitted 0.05-ms GLIF5 integration steps.",
+      "The exact frontier scans all cell state once per token and skips only cells whose complete checkpointable state and incoming current are exactly zero.",
+      "Dense serial and deterministic five-thread SIMD timings update every cell on every integration step.",
+      "The optimized and frozen-v1 kernels consume separately constructed but seed-identical topology arrays for the 64-token bit-exact check.",
+      "uniform_no_self preserves the registered v1 seeded topology while avoiding its per-source population-sized temporary.",
+      "Training statistics are lazy; local readout arrays remain included in persistent-array memory."
+    ],
+    "purpose": "Measure exact quiescent-frontier and dense SIMD CPU simulation at 100k to one million configured active human cells.",
+    "recurrent_fanout": 6,
+    "seed": 17,
+    "timing_repeats": 3,
+    "token_cells": 257,
+    "token_interval_ms": 5.0,
+    "topology": "uniform_no_self"
+  },
+  "protocol_sha256": "ef54dc44a40eb14f23c50ddd85554fe0aec304340eea1513d0546ee2c9404545",
+  "results": [
+    {
+      "after_construction_memory": {
+        "peak_working_set_mib": 53.828125,
+        "private_memory_mib": 589.62890625,
+        "working_set_mib": 53.828125
+      },
+      "after_run_memory": {
+        "peak_working_set_mib": 56.12890625,
+        "private_memory_mib": 589.9140625,
+        "working_set_mib": 56.12890625
+      },
+      "baseline_memory": {
+        "peak_working_set_mib": 39.16796875,
+        "private_memory_mib": 377.58984375,
+        "working_set_mib": 38.8359375
+      },
+      "configured_active_cells": 98304,
+      "construction_seconds": 0.8379232999868691,
+      "dense_parallel": {
+        "actual_cell_steps_per_second": 778073160.2049414,
+        "seconds": 0.1010742999787908,
+        "tokens": 8,
+        "tokens_per_second": 79.14969484506646
+      },
+      "dense_parallel_speedup": 1.4706280431531857,
+      "dense_serial": {
+        "actual_cell_steps_per_second": 529075427.21453094,
+        "seconds": 0.1486426999908872,
+        "tokens": 8,
+        "tokens_per_second": 53.82033561345733
+      },
+      "frontier": {
+        "configured_cell_step_equivalents_per_second": 8292722018.614992,
+        "first_token_updated_cells": 32,
+        "last_token_updated_cells": 2466,
+        "maximum_updated_cells": 2466,
+        "median_frontier_build_microseconds": 8.45,
+        "median_frontier_steps_microseconds": 910.9,
+        "median_full_state_scan_microseconds": 374.55,
+        "seconds": 0.07586720000836067,
+        "tokens": 64,
+        "tokens_per_second": 843.5793069066357
+      },
+      "normal_matrix_allocated": false,
+      "persistent_array_mib": 209.76324462890625,
+      "private_memory_increment_mib": 212.32421875,
+      "rayon_threads": 5,
+      "sparse_recurrent_edges": 589824,
+      "token_steps": 100
+    },
+    {
+      "after_construction_memory": {
+        "peak_working_set_mib": 53.15625,
+        "private_memory_mib": 659.3359375,
+        "working_set_mib": 51.98046875
+      },
+      "after_run_memory": {
+        "peak_working_set_mib": 59.8046875,
+        "private_memory_mib": 659.62109375,
+        "working_set_mib": 59.8046875
+      },
+      "baseline_memory": {
+        "peak_working_set_mib": 39.390625,
+        "private_memory_mib": 377.67578125,
+        "working_set_mib": 39.0234375
+      },
+      "configured_active_cells": 131072,
+      "construction_seconds": 0.9757116000109818,
+      "dense_parallel": {
+        "actual_cell_steps_per_second": 806446386.4465969,
+        "seconds": 0.09751819999655709,
+        "tokens": 6,
+        "tokens_per_second": 61.5269765050199
+      },
+      "dense_parallel_speedup": 1.8683937973199019,
+      "dense_serial": {
+        "actual_cell_steps_per_second": 431625489.01810503,
+        "seconds": 0.18220239999936894,
+        "tokens": 6,
+        "tokens_per_second": 32.93041145462838
+      },
+      "frontier": {
+        "configured_cell_step_equivalents_per_second": 9885014706.546192,
+        "first_token_updated_cells": 32,
+        "last_token_updated_cells": 2004,
+        "maximum_updated_cells": 2004,
+        "median_frontier_build_microseconds": 5.1,
+        "median_frontier_steps_microseconds": 536.0,
+        "median_full_state_scan_microseconds": 476.5,
+        "seconds": 0.06364639999810606,
+        "tokens": 48,
+        "tokens_per_second": 754.1667714344935
+      },
+      "normal_matrix_allocated": false,
+      "persistent_array_mib": 279.66949462890625,
+      "private_memory_increment_mib": 281.9453125,
+      "rayon_threads": 5,
+      "sparse_recurrent_edges": 786432,
+      "token_steps": 100
+    },
+    {
+      "after_construction_memory": {
+        "peak_working_set_mib": 75.05859375,
+        "private_memory_mib": 1221.1875,
+        "working_set_mib": 69.12890625
+      },
+      "after_run_memory": {
+        "peak_working_set_mib": 93.0546875,
+        "private_memory_mib": 1221.46484375,
+        "working_set_mib": 93.0546875
+      },
+      "baseline_memory": {
+        "peak_working_set_mib": 39.37109375,
+        "private_memory_mib": 377.66015625,
+        "working_set_mib": 39.0078125
+      },
+      "configured_active_cells": 393216,
+      "construction_seconds": 3.0952042999851983,
+      "dense_parallel": {
+        "actual_cell_steps_per_second": 1019077994.9316231,
+        "seconds": 0.11575639998773113,
+        "tokens": 3,
+        "tokens_per_second": 25.916493604828467
+      },
+      "dense_parallel_speedup": 2.490546527191095,
+      "dense_serial": {
+        "actual_cell_steps_per_second": 409178460.9544984,
+        "seconds": 0.28829669998958707,
+        "tokens": 3,
+        "tokens_per_second": 10.405946374371807
+      },
+      "frontier": {
+        "configured_cell_step_equivalents_per_second": 17688164325.272034,
+        "first_token_updated_cells": 32,
+        "last_token_updated_cells": 937,
+        "maximum_updated_cells": 937,
+        "median_frontier_build_microseconds": 3.9,
+        "median_frontier_steps_microseconds": 310.2,
+        "median_full_state_scan_microseconds": 1807.55,
+        "seconds": 0.053353099996456876,
+        "tokens": 24,
+        "tokens_per_second": 449.8332805702727
+      },
+      "normal_matrix_allocated": false,
+      "persistent_array_mib": 838.9194946289062,
+      "private_memory_increment_mib": 843.8046875,
+      "rayon_threads": 5,
+      "sparse_recurrent_edges": 2359296,
+      "token_steps": 100
+    },
+    {
+      "after_construction_memory": {
+        "peak_working_set_mib": 130.71875,
+        "private_memory_mib": 2624.19921875,
+        "working_set_mib": 113.17578125
+      },
+      "after_run_memory": {
+        "peak_working_set_mib": 175.98046875,
+        "private_memory_mib": 2624.78125,
+        "working_set_mib": 175.98046875
+      },
+      "baseline_memory": {
+        "peak_working_set_mib": 39.1640625,
+        "private_memory_mib": 377.49609375,
+        "working_set_mib": 38.75390625
+      },
+      "configured_active_cells": 1048576,
+      "construction_seconds": 8.701856699975906,
+      "dense_parallel": {
+        "actual_cell_steps_per_second": 376726086.9760855,
+        "seconds": 0.27833910001209006,
+        "tokens": 1,
+        "tokens_per_second": 3.5927399346931983
+      },
+      "dense_parallel_speedup": 1.4146460198411008,
+      "dense_serial": {
+        "actual_cell_steps_per_second": 266304136.6478386,
+        "seconds": 0.3937512999982573,
+        "tokens": 1,
+        "tokens_per_second": 2.5396741547378405
+      },
+      "frontier": {
+        "configured_cell_step_equivalents_per_second": 20275430664.487442,
+        "first_token_updated_cells": 32,
+        "last_token_updated_cells": 544,
+        "maximum_updated_cells": 544,
+        "median_frontier_build_microseconds": 4.95,
+        "median_frontier_steps_microseconds": 412.5,
+        "median_full_state_scan_microseconds": 5356.1,
+        "seconds": 0.0620599000249058,
+        "tokens": 12,
+        "tokens_per_second": 193.3615747879738
+      },
+      "normal_matrix_allocated": false,
+      "persistent_array_mib": 2237.0444946289062,
+      "private_memory_increment_mib": 2247.28515625,
+      "rayon_threads": 5,
+      "sparse_recurrent_edges": 6291456,
+      "token_steps": 100
+    }
+  ],
+  "scaling": {
+    "dense_parallel_seconds_per_token_exponent": 1.2577264955956808,
+    "frontier_seconds_per_token_exponent": 0.6110916760957683,
+    "persistent_memory_exponent": 0.9999199028389673
+  }
+}

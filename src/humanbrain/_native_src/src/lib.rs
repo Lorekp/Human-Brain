@@ -5,9 +5,8 @@
 //! checkpointable source of truth and are mutated in place.
 
 use rayon::prelude::*;
-use std::slice;
+use std::{slice, time::Instant};
 
-const PARALLEL_MIN_CELLS: usize = 32_768;
 const MIN_PARALLEL_CHUNK_CELLS: usize = 4_096;
 
 #[repr(C)]
@@ -522,9 +521,144 @@ fn recurrent_step_parallel(
 
 #[derive(Clone, Copy)]
 enum Execution {
-    Auto,
     Serial,
     Parallel,
+    Frontier,
+}
+
+#[allow(clippy::too_many_arguments)]
+fn observe_token_frontier(
+    glif: &GlifConfig,
+    recurrent: &RecurrentConfig,
+    after_decay: &[f64],
+    after_cut_decay: &[f64],
+    after_amplitudes: &[f64],
+    afferents: &[i32],
+    targets: &[i32],
+    weights: &[f64],
+    voltage: &mut [f64],
+    after: &mut [f64],
+    threshold_spike: &mut [f64],
+    threshold_voltage: &mut [f64],
+    refractory: &mut [i32],
+    synaptic_current: &mut [f64],
+    eligibility: &mut [f64],
+    input_scratch: &mut [f64],
+    spike_mask: &mut [u8],
+    active_indices: &mut [i32],
+    active_mask: &mut [u8],
+) -> (usize, usize, u64, u64, u64) {
+    let cells = glif.cell_count;
+    let channels = glif.after_channel_count;
+    let scan_started = Instant::now();
+    active_mask.fill(0);
+    let mut active_count = 0usize;
+    for cell in 0..cells {
+        let after_offset = cell * channels;
+        let mut active = voltage[cell] != 0.0
+            || threshold_spike[cell] != 0.0
+            || threshold_voltage[cell] != 0.0
+            || refractory[cell] != 0
+            || synaptic_current[cell] != 0.0
+            || eligibility[cell] != 0.0;
+        if !active {
+            for channel in 0..channels {
+                active |= after[after_offset + channel] != 0.0;
+            }
+        }
+        if active {
+            active_mask[cell] = 1;
+            active_indices[active_count] = cell as i32;
+            active_count += 1;
+        }
+    }
+    let scan_nanoseconds = scan_started.elapsed().as_nanos() as u64;
+    let build_started = Instant::now();
+    for &target in afferents {
+        let target = target as usize;
+        if active_mask[target] == 0 {
+            active_mask[target] = 1;
+            active_indices[active_count] = target as i32;
+            active_count += 1;
+        }
+    }
+    active_indices[..active_count].sort_unstable();
+    let build_nanoseconds = build_started.elapsed().as_nanos() as u64;
+
+    let steps_started = Instant::now();
+    let mut total_spikes = 0usize;
+    for step in 0..recurrent.token_steps {
+        let pulse_active = step < recurrent.pulse_steps;
+        if pulse_active {
+            for (slot, &target) in afferents.iter().enumerate() {
+                let target = target as usize;
+                input_scratch[slot] = synaptic_current[target];
+                synaptic_current[target] += recurrent.input_current_pa;
+            }
+        }
+
+        let step_active_count = active_count;
+        for &cell in &active_indices[..step_active_count] {
+            let cell = cell as usize;
+            recurrent_cell_chunk_scalar(
+                glif,
+                after_decay,
+                after_cut_decay,
+                after_amplitudes,
+                recurrent.recurrent_decay,
+                recurrent.eligibility_decay,
+                &mut voltage[cell..cell + 1],
+                &mut after[cell * channels..(cell + 1) * channels],
+                &mut threshold_spike[cell..cell + 1],
+                &mut threshold_voltage[cell..cell + 1],
+                &mut refractory[cell..cell + 1],
+                &mut synaptic_current[cell..cell + 1],
+                &mut eligibility[cell..cell + 1],
+                &mut spike_mask[cell..cell + 1],
+            );
+        }
+
+        if pulse_active {
+            for slot in (0..afferents.len()).rev() {
+                synaptic_current[afferents[slot] as usize] = input_scratch[slot];
+            }
+            for (slot, &target) in afferents.iter().enumerate() {
+                if afferents[..slot].contains(&target) {
+                    continue;
+                }
+                synaptic_current[target as usize] *= recurrent.recurrent_decay;
+            }
+        }
+
+        for slot in 0..step_active_count {
+            let presynaptic = active_indices[slot] as usize;
+            if spike_mask[presynaptic] == 0 {
+                continue;
+            }
+            total_spikes += 1;
+            eligibility[presynaptic] += 1.0;
+            let edge_offset = presynaptic * recurrent.recurrent_fanout;
+            for edge in 0..recurrent.recurrent_fanout {
+                let target = targets[edge_offset + edge] as usize;
+                synaptic_current[target] += weights[edge_offset + edge];
+                if active_mask[target] == 0 {
+                    active_mask[target] = 1;
+                    active_indices[active_count] = target as i32;
+                    active_count += 1;
+                }
+            }
+        }
+        if active_count != step_active_count {
+            active_indices[..active_count].sort_unstable();
+        }
+    }
+    (
+        total_spikes,
+        active_count,
+        scan_nanoseconds,
+        build_nanoseconds,
+        steps_started.elapsed().as_nanos() as u64,
+    )
 }
 
 /// Advance a population by exactly one fitted integration step.
@@ -755,6 +889,12 @@ unsafe fn observe_token_optimized(
     eligibility: *mut f64,
     input_scratch: *mut f64,
     spike_mask: *mut u8,
+    active_indices: *mut i32,
+    active_mask: *mut u8,
+    active_count_out: *mut usize,
+    scan_nanoseconds_out: *mut u64,
+    build_nanoseconds_out: *mut u64,
+    step_nanoseconds_out: *mut u64,
     execution: Execution,
 ) -> usize {
     if glif_config.is_null() || recurrent_config.is_null() {
@@ -779,12 +919,47 @@ unsafe fn observe_token_optimized(
     let eligibility = slice::from_raw_parts_mut(eligibility, cells);
     let input_scratch = slice::from_raw_parts_mut(input_scratch, recurrent.input_fanout);
     let spike_mask = slice::from_raw_parts_mut(spike_mask, cells);
+    let active_indices = slice::from_raw_parts_mut(active_indices, cells);
+    let active_mask = slice::from_raw_parts_mut(active_mask, cells);
+
+    if matches!(execution, Execution::Frontier) {
+        let (total_spikes, active_count, scan_ns, build_ns, step_ns) = observe_token_frontier(
+            glif,
+            recurrent,
+            after_decay,
+            after_cut_decay,
+            after_amplitudes,
+            afferents,
+            targets,
+            weights,
+            voltage,
+            after,
+            threshold_spike,
+            threshold_voltage,
+            refractory,
+            synaptic_current,
+            eligibility,
+            input_scratch,
+            spike_mask,
+            active_indices,
+            active_mask,
+        );
+        *active_count_out = active_count;
+        *scan_nanoseconds_out = scan_ns;
+        *build_nanoseconds_out = build_ns;
+        *step_nanoseconds_out = step_ns;
+        return total_spikes;
+    }
 
     let use_parallel = match execution {
-        Execution::Auto => cells >= PARALLEL_MIN_CELLS && rayon::current_num_threads() > 1,
         Execution::Serial => false,
         Execution::Parallel => rayon::current_num_threads() > 1,
+        Execution::Frontier => unreachable!(),
     };
+    *active_count_out = cells;
+    *scan_nanoseconds_out = 0;
+    *build_nanoseconds_out = 0;
+    *step_nanoseconds_out = 0;
     let mut total_spikes = 0usize;
     for step in 0..recurrent.token_steps {
         let pulse_active = step < recurrent.pulse_steps;
@@ -866,6 +1041,11 @@ unsafe fn observe_token_optimized(
 
 macro_rules! optimized_observe_export {
     ($name:ident, $execution:expr) => {
+        /// Advance one token through the selected exact execution strategy.
+        ///
+        /// # Safety
+        /// Every pointer must address a contiguous array of the length encoded
+        /// by the configs; mutable state and workspace arrays must not alias.
         #[no_mangle]
         #[allow(clippy::too_many_arguments)]
         pub unsafe extern "C" fn $name(
@@ -886,6 +1066,12 @@ macro_rules! optimized_observe_export {
             eligibility: *mut f64,
             input_scratch: *mut f64,
             spike_mask: *mut u8,
+            active_indices: *mut i32,
+            active_mask: *mut u8,
+            active_count_out: *mut usize,
+            scan_nanoseconds_out: *mut u64,
+            build_nanoseconds_out: *mut u64,
+            step_nanoseconds_out: *mut u64,
         ) -> usize {
             observe_token_optimized(
                 glif_config,
@@ -905,13 +1091,19 @@ macro_rules! optimized_observe_export {
                 eligibility,
                 input_scratch,
                 spike_mask,
+                active_indices,
+                active_mask,
+                active_count_out,
+                scan_nanoseconds_out,
+                build_nanoseconds_out,
+                step_nanoseconds_out,
                 $execution,
             )
         }
     };
 }
 
-optimized_observe_export!(humanbrain_observe_token, Execution::Auto);
+optimized_observe_export!(humanbrain_observe_token, Execution::Frontier);
 optimized_observe_export!(humanbrain_observe_token_serial, Execution::Serial);
 optimized_observe_export!(humanbrain_observe_token_parallel, Execution::Parallel);
 

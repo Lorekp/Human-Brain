@@ -1,0 +1,24 @@
+{
+  "name": "exact-native-frontier-density-v1",
+  "purpose": "Stress the exact quiescent frontier from sparse to fully nonzero human-cell state.",
+  "cell_counts": [131072, 1048576],
+  "densities": [0.01, 0.05, 0.2, 1.0],
+  "token_cells": 257,
+  "input_fanout": 32,
+  "recurrent_fanout": 6,
+  "token_interval_ms": 5.0,
+  "integration_dt_ms": 0.05,
+  "timing_repeats": 3,
+  "dense_worker_threads": 5,
+  "seed": 17,
+  "topology": "uniform_no_self",
+  "token_id": 13,
+  "seeded_synaptic_current_pa": 25.0,
+  "seeded_eligibility": 0.5,
+  "notes": [
+    "Every configured reservoir cell remains reachable; density denotes cells seeded with nonzero synaptic current and eligibility immediately before a timed token.",
+    "Seeded indices are deterministic and evenly distributed across the population.",
+    "Preparation and reset are outside the timed interval; full state scanning, frontier construction, 100 fitted integration steps, and Python-to-native dispatch are inside.",
+    "Each frontier result is compared byte-for-byte by SHA-256 with deterministic five-thread dense SIMD from the identical seeded state."
+  ]
+}

@@ -26,6 +26,8 @@ _LIBRARY_PATH: Path | None = None
 _F64_POINTER = ctypes.POINTER(ctypes.c_double)
 _I32_POINTER = ctypes.POINTER(ctypes.c_int32)
 _U8_POINTER = ctypes.POINTER(ctypes.c_uint8)
+_SIZE_POINTER = ctypes.POINTER(ctypes.c_size_t)
+_U64_POINTER = ctypes.POINTER(ctypes.c_uint64)
 
 
 class NativeBuildError(RuntimeError):
@@ -190,6 +192,12 @@ def _load_library() -> ctypes.CDLL:
             _F64_POINTER,
             _F64_POINTER,
             _U8_POINTER,
+            _I32_POINTER,
+            _U8_POINTER,
+            _SIZE_POINTER,
+            _U64_POINTER,
+            _U64_POINTER,
+            _U64_POINTER,
         ]
         for name in (
             "humanbrain_observe_token",
@@ -200,7 +208,7 @@ def _load_library() -> ctypes.CDLL:
             function.argtypes = recurrent_args
             function.restype = ctypes.c_size_t
         library.humanbrain_observe_token_reference_v1.argtypes = [
-            *recurrent_args[:-2],
+            *recurrent_args[:-8],
             _F64_POINTER,
             _I32_POINTER,
         ]
@@ -376,6 +384,12 @@ class NativeRecurrentKernel:
         self._eligibility = eligibility
         self._input_scratch = np.empty(input_fanout, dtype=np.float64)
         self._spike_mask = population._native_kernel.spike_mask
+        self._active_indices = np.empty(cells, dtype=np.int32)
+        self._active_mask = np.empty(cells, dtype=np.bool_)
+        self._active_count = ctypes.c_size_t()
+        self._scan_nanoseconds = ctypes.c_uint64()
+        self._frontier_build_nanoseconds = ctypes.c_uint64()
+        self._step_nanoseconds = ctypes.c_uint64()
         self._reference_step_current: np.ndarray | None = None
         self._reference_spike_indices: np.ndarray | None = None
 
@@ -394,6 +408,18 @@ class NativeRecurrentKernel:
 
     def _observe_parallel(self, token_id: int) -> int:
         return self._observe_with(self._library.humanbrain_observe_token_parallel, token_id)
+
+    @property
+    def last_active_cells(self) -> int:
+        return int(self._active_count.value)
+
+    @property
+    def last_frontier_profile_ns(self) -> tuple[int, int, int]:
+        return (
+            int(self._scan_nanoseconds.value),
+            int(self._frontier_build_nanoseconds.value),
+            int(self._step_nanoseconds.value),
+        )
 
     def _observe_with(self, function: object, token_id: int) -> int:
         population = self._population
@@ -418,6 +444,12 @@ class NativeRecurrentKernel:
                 _f64(self._eligibility),
                 _f64(self._input_scratch),
                 self._spike_mask.ctypes.data_as(_U8_POINTER),
+                _i32(self._active_indices),
+                self._active_mask.ctypes.data_as(_U8_POINTER),
+                ctypes.byref(self._active_count),
+                ctypes.byref(self._scan_nanoseconds),
+                ctypes.byref(self._frontier_build_nanoseconds),
+                ctypes.byref(self._step_nanoseconds),
             )
         )
 
