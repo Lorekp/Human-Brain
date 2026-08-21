@@ -59,6 +59,7 @@ class RecurrentCellLanguageModel:
         )
         for text in corpus:
             circuit.grow_sequence(tokenizer.encode(text), epochs=cfg.growth_epochs)
+        circuit.freeze_learning()
         digest = sha256()
         for text in corpus:
             raw = text.encode("utf-8")

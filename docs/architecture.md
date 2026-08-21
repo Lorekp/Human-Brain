@@ -27,6 +27,15 @@ the same human-fitted membrane, adaptive-threshold, after-spike, reset, and
 refractory equations and scatters only emitted spike events over fixed sparse
 edges. It has no ANN runtime or dense cell-by-cell inference matrix.
 
+Readout learning has an explicit seam with two rules. Exact ridge remains the
+default comparison. The scalable `three_factor` rule combines the presynaptic
+reservoir eligibility trace, the active postsynaptic output-cell competitor,
+and a signed target neuromodulatory signal. Its native update changes only the
+target and competitor synapses, stores no optimizer state, and requires no
+reservoir-sized normal matrix or solve. Language-model growth freezes either
+rule before validation and checkpointing. See `docs/local-readout-learning.md`
+for the equation, locality argument, complexity, and recorded limitations.
+
 The external interface is deliberately small:
 
 ```python

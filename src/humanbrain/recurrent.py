@@ -8,8 +8,11 @@ from dataclasses import dataclass
 import numpy as np
 
 from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
-from humanbrain.native import NativeRecurrentKernel
+from humanbrain.native import NativeRecurrentKernel, NativeThreeFactorLearner
 from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
+
+
+READOUT_LEARNING_RULES = frozenset({"ridge", "three_factor"})
 
 
 @dataclass(frozen=True)
@@ -28,6 +31,9 @@ class RecurrentCircuitConfig:
     output_race_ms: float = 30.0
     readout_ridge: float = 1.0
     output_synapse_gain_pa: float = 1_600.0
+    readout_learning_rule: str = "ridge"
+    local_learning_rate_pa: float = 64.0
+    local_competitive_margin_pa: float = 64.0
     inhibitory_fraction: float = 0.2
     random_seed: int = 17
     recurrent_topology: str = "random"
@@ -53,6 +59,8 @@ class RecurrentCircuitConfig:
             self.output_race_ms,
             self.readout_ridge,
             self.output_synapse_gain_pa,
+            self.local_learning_rate_pa,
+            self.local_competitive_margin_pa,
         )
         if any(value <= 0.0 for value in positive):
             raise ValueError("circuit time, current, and plasticity values must be positive")
@@ -62,6 +70,8 @@ class RecurrentCircuitConfig:
             raise ValueError("inhibitory fraction must be in [0, 1)")
         if self.recurrent_topology not in RECURRENT_TOPOLOGIES:
             raise ValueError("unknown recurrent topology")
+        if self.readout_learning_rule not in READOUT_LEARNING_RULES:
+            raise ValueError("unknown readout learning rule")
         if self.recurrent_topology != "random" and self.recurrent_fanout >= active_cells:
             raise ValueError("non-random topology must exclude self-connections")
 
@@ -124,7 +134,9 @@ class RecurrentCellCircuit:
         self._growth_feature_count = feature_count
         self._pending_growth_examples = 0
         self._growth_examples = 0
+        self._local_updates = 0
         self._observed_tokens = 0
+        self._learning_frozen = False
 
         rng = np.random.default_rng(self.config.random_seed)
         self._afferent_targets = np.empty(
@@ -188,6 +200,16 @@ class RecurrentCellCircuit:
             eligibility=self._eligibility,
             step_current_pa=self._step_current_pa,
         )
+        self._native_local_learner = (
+            NativeThreeFactorLearner(
+                eligibility=self._eligibility,
+                output_heterogeneity_pa=self._output_heterogeneity_pa,
+                readout_synapses_pa=self._readout_synapses_pa,
+                pacemaker_synapses_pa=self._pacemaker_synapses_pa,
+            )
+            if self.config.readout_learning_rule == "three_factor"
+            else None
+        )
 
     def _compile_output_race(self) -> None:
         """Compile the exact resting GLIF5 response before its first spike."""
@@ -201,6 +223,14 @@ class RecurrentCellCircuit:
     @property
     def learned_synapse_count(self) -> int:
         return int(np.count_nonzero(self._readout_synapses_pa))
+
+    @property
+    def learning_frozen(self) -> bool:
+        return self._learning_frozen
+
+    @property
+    def local_update_count(self) -> int:
+        return self._local_updates
 
     @property
     def observed_tokens(self) -> int:
@@ -232,12 +262,25 @@ class RecurrentCellCircuit:
         )
 
     def strengthen(self, target_token_id: int) -> None:
-        """Accumulate spike-driven sufficient statistics for consolidation."""
+        """Apply the configured readout plasticity rule after one observation."""
         target = int(target_token_id)
         if not 0 <= target < self.token_cells:
             raise ValueError("target token outside output-cell population")
         if self._observed_tokens < 1:
             raise RuntimeError("observe a token before strengthening output synapses")
+        if self._learning_frozen:
+            raise RuntimeError("readout learning is frozen")
+        self._growth_examples += 1
+        if self.config.readout_learning_rule == "three_factor":
+            assert self._native_local_learner is not None
+            winner = self._native_local_learner.update(
+                target,
+                self.config.local_learning_rate_pa,
+                self.config.local_competitive_margin_pa,
+            )
+            self._local_updates += int(winner is not None)
+            return
+
         self._ensure_growth_storage()
         assert self._feature_batch is not None
         assert self._target_moments is not None
@@ -246,7 +289,6 @@ class RecurrentCellCircuit:
         feature[-1] = 1.0
         self._target_moments[target] += feature
         self._pending_growth_examples += 1
-        self._growth_examples += 1
         if self._pending_growth_examples == self._STATISTICS_BATCH_SIZE:
             self._flush_growth_statistics()
 
@@ -280,6 +322,8 @@ class RecurrentCellCircuit:
 
     def _consolidate_readout(self) -> None:
         """Fit output-synapse strengths from accumulated cell traces."""
+        if self.config.readout_learning_rule != "ridge":
+            return
         if self._growth_examples < 1:
             raise RuntimeError("cannot consolidate without growth examples")
         self._flush_growth_statistics()
@@ -296,8 +340,19 @@ class RecurrentCellCircuit:
         self._readout_synapses_pa[:] = coefficients[:, :-1] * gain
         self._pacemaker_synapses_pa[:] = coefficients[:, -1] * gain
 
+    def freeze_learning(self) -> None:
+        """Finalize any deferred rule state and disable further plasticity."""
+        if self._learning_frozen:
+            return
+        if self._growth_examples < 1:
+            raise RuntimeError("cannot freeze readout before growth")
+        self._consolidate_readout()
+        self._learning_frozen = True
+
     def grow_sequence(self, token_ids: Sequence[int], epochs: int = 1) -> None:
         """Replay a sequence and grow synapses from cell eligibility traces."""
+        if self._learning_frozen:
+            raise RuntimeError("readout learning is frozen")
         ids = [int(token_id) for token_id in token_ids]
         if len(ids) < 2:
             raise ValueError("growth sequence needs at least two tokens")
@@ -308,7 +363,8 @@ class RecurrentCellCircuit:
             for index in range(len(ids) - 1):
                 self.observe(ids[index])
                 self.strengthen(ids[index + 1])
-        self._consolidate_readout()
+        if self.config.readout_learning_rule == "ridge":
+            self._consolidate_readout()
 
     def output_current_pa(self) -> np.ndarray:
         """Read the current delivered by all learned output synapses."""

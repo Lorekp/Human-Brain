@@ -112,7 +112,7 @@ python benchmarks\simulation_speed.py --sizes 96,384,768,1536 `
   31 deterministic trained contexts.
 - Batched readout sufficient statistics match sequential outer products within
   `2e-13` relative error; learned coefficients match within `2e-10`.
-- The full suite passes 46 tests. The cell-only architecture, fitted cell
+- The full suite passes 50 tests. The cell-only architecture, fitted cell
   parameters, calibrated biological timing, recurrent topology, and checkpoint
   format are unchanged.
 
@@ -126,3 +126,35 @@ matrix and uses an `O(N^3)` dense solve. That is now the dominant obstacle to
 networks much larger than a few thousand learning cells. Replacing it requires
 a separately validated local or iterative learning rule; changing that rule in
 this speed-only patch would change registered model behavior.
+
+## Experimental local-learning follow-up
+
+The separate `local-learning` branch adds a native competitive three-factor
+rule without changing ridge as the default. The recorded train-only-calibrated
+comparison is `artifacts/local_learning_scaling_v1.json`:
+
+| Cells | Local train | Ridge train | Local peak | Ridge peak | Local persistent | Ridge persistent | Local / ridge teacher-forced | Local / ridge free-running |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 96 | 0.648 s | 0.978 s | 1.00 MiB | 1.50 MiB | 0.25 MiB | 0.60 MiB | 3.91% / 35.16% | 14.06% / 6.25% |
+| 384 | 0.708 s | 1.638 s | 1.62 MiB | 6.21 MiB | 0.86 MiB | 3.12 MiB | 6.25% / 34.38% | 7.81% / 3.13% |
+| 1,536 | 1.957 s | 3.914 s | 4.08 MiB | 50.34 MiB | 3.32 MiB | 25.84 MiB | 7.81% / 8.59% | 6.25% / 7.81% |
+| 6,144 | 6.657 s | skipped | 13.92 MiB | skipped | 13.14 MiB | skipped | 10.16% / n/a | 4.69% / n/a |
+
+Ridge at 6,144 was excluded by the protocol's safety limit: the normal matrix
+alone would occupy 288.09 MiB before its copy and cubic solve. The local run
+allocated no normal matrix at any size. Scaling is demonstrated; accuracy
+parity and useful free-running generation are not. See
+`docs/local-readout-learning.md` for rule details and integration.
+
+A separate fixed-sequence smoke makes no accuracy claim and touches no dataset:
+
+| Cells | Construct | 32-example growth | Examples/updates per s | Synapse-weight events/s | Peak | Persistent | Ridge normal matrix avoided |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 24,576 | 3.425 s | 0.377 s | 84.96 | 4.18M | 53.87 MiB | 52.45 MiB | 4.50 GiB |
+| 98,304 | 31.257 s | 3.425 s | 9.34 | 1.84M | 211.70 MiB | 209.67 MiB | 72.00 GiB |
+
+Both runs applied 32 competitive updates and asserted that the normal matrix,
+target moments, and batch workspace remained absent. The frozen report is
+`artifacts/local_learning_large_scale_v1.json`. At 98,304 cells, Python
+topology construction (31.26 s) is now much slower than local growth (3.43 s),
+so moving construction into the native module is the next clear speed target.
