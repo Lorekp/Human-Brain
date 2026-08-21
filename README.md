@@ -111,6 +111,11 @@ engineering plan in `benchmarks/sparse_cuda_engineering_protocol_v1.json`.
 Sparse CUDA execution mirrors eligibility plus the spike count after each
 token; call `synchronize_state_from_device()` before inspecting the other
 transient reservoir arrays on the host.
+On the registered 200,000-active-cell synthetic timing, this cut device-to-host
+traffic from 12,000,008 to 1,600,008 bytes/token and raised median end-to-end
+inference from 127.27 to 158.18 tokens/s and online teaching from 125.88 to
+150.00 tokens/s. Both runs are engineering-only artifacts; no capability data
+was opened.
 
 An explicitly non-capability smoke also exercised online updates at 98,304
 cells with 211.70 MiB peak memory and no quadratic ridge state.

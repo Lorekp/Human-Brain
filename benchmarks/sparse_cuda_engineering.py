@@ -278,6 +278,9 @@ def _run_repeat(protocol: dict[str, Any], repeat: int) -> dict[str, object]:
         readout = circuit._sparse_readout
         assert readout is not None
         cells = circuit.config.reservoir_cells
+        # The measured phase starts from reset and eligibility has a positive
+        # finite decay, so nonzero traces are the exact spiking-cell union for
+        # this registered short run (not a general lifetime spike counter).
         spiking_cells = int(np.count_nonzero(circuit._eligibility))
         dense_bytes = circuit.token_cells * cells * np.dtype(np.float64).itemsize
         host_bytes = _host_persistent_bytes(circuit)

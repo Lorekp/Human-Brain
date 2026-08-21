@@ -250,9 +250,9 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
             actual.output_current_pa(), expected.output_current_pa()
         )
         assert actual.race() == expected.race()
-        actual.synchronize_state_from_device()
-        _assert_same_state(actual, expected)
 
+        # Reset must overwrite and upload every stale host mirror without a
+        # diagnostic device-to-host barrier first.
         actual.reset_sequence()
         expected.reset_sequence()
         _assert_same_state(actual, expected)

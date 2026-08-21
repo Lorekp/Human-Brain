@@ -139,11 +139,60 @@ mirror. The real-device parity test exercises sparse current and teaching
 before the diagnostic barrier, then downloads and bit-compares every mutable
 array.
 
+A source-wide post-`observe()` consumer audit found that sparse production
+paths proceed only through `race()`, `strengthen()`, the public eligibility
+snapshot, or the eligibility-based activity diagnostic. Sparse current and
+teaching both consume that mirrored eligibility array. No production caller
+reads host voltage, after-spike current, threshold, refractory, or recurrent
+synaptic current after a sparse CUDA observe. Developmental growth explicitly
+rejects any rule other than dense `three_factor`, so its plasticity recorder
+retains the full mirror. Recurrent checkpoints persist topology and long-term
+readout anatomy, not transient reservoir state.
+
 This registration does not imply that sparse current or plasticity runs on the
 GPU, nor is it a capability result. The separate synthetic 200,000-active-cell
 timing protocol in `benchmarks/sparse_cuda_engineering_protocol_v1.json`
 profiles kernel, transfer, fitted-output, and teaching phases before deciding
 whether any additional CUDA work is justified.
+
+### Registered 200,000-cell engineering result
+
+The unchanged protocol SHA-256
+`4e9b61790cd1dfbdbad2309070b22298407a0f73712108cbe3cfc6beb40322ce`
+ran three independent synthetic repeats on an NVIDIA GeForce RTX 4070 SUPER.
+Both measured implementations were committed and clean before execution.
+
+| Median metric | Full mutable mirror | Eligibility mirror |
+| --- | ---: | ---: |
+| implementation | `de00ad8` | `14bc5df` |
+| inference tokens/s | 127.265 | 158.177 |
+| online-teaching tokens/s | 125.877 | 149.996 |
+| inference kernel tokens/s | 178.724 | 186.150 |
+| device-to-host bytes/token | 12,000,008 | 1,600,008 |
+| host-to-device bytes/token | 0 | 0 |
+| construction seconds | 2.223 | 2.796 |
+| host persistent arrays | 35.381 MiB | 35.381 MiB |
+| device persistent arrays | 26.353 MiB | 26.353 MiB |
+
+The transfer volume fell 7.5x (86.67%). End-to-end inference improved 24.29%
+and teaching improved 19.16%. Sparse current itself was only 70.6 microseconds
+per call in the baseline median, below 1% of inference time, so the registered
+decision rule does not justify moving fitted-output current or plasticity onto
+CUDA.
+
+The final run configured, activated, and updated all 200,000 reservoir cells
+on each of 100 integration steps/token: no dormant padding was counted. It
+reported 167 inference and 168 training spike events across 64 measured tokens,
+with 168 unique training-sequence spiking cells and reservoir activity density
+0.00084. Online teaching applied 64 updates and 64 recruitments with zero
+deletions. The sparse readout occupied 1,052,672 bytes versus 409,600,000 bytes
+for the dense control, a 389.105x ratio. These low activity counts are reported
+as an architecture diagnostic, not hidden behind the updated-cell count.
+
+The immutable reports are
+`artifacts/sparse_cuda_engineering_v1_baseline.json` and
+`artifacts/sparse_cuda_engineering_v1_optimized.json`. They contain no text,
+held-out examples, prediction accuracy, or other capability result.
 
 ## Diagnostics and claim boundary
 
