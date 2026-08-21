@@ -122,6 +122,34 @@ def _write_fake_hermes(tmp_path: Path) -> tuple[Path, Path, Path]:
     return fake, capture, prompt_capture
 
 
+def _assert_installed_file_redactor_is_identity(prompt_path: Path) -> None:
+    hermes = shutil.which("hermes")
+    if hermes is None:
+        return
+    hermes_executable = Path(hermes).resolve()
+    hermes_root = hermes_executable.parents[2]
+    hermes_python = hermes_executable.parent / "python.exe"
+    check = subprocess.run(
+        [
+            str(hermes_python),
+            "-c",
+            (
+                "from pathlib import Path; "
+                "from agent.redact import redact_sensitive_text; "
+                "p=Path(__import__('sys').argv[1]); "
+                "s=p.read_text(encoding='utf-8'); "
+                "raise SystemExit(0 if redact_sensitive_text(s, file_read=True)==s else 1)"
+            ),
+            str(prompt_path),
+        ],
+        cwd=hermes_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert check.returncode == 0, check.stdout + check.stderr
+
+
 @pytest.mark.parametrize("authorization", [(), ("-Execute",), ("-AuthorizeSourceUpload",)])
 def test_any_missing_authorization_is_plan_only_and_never_invokes_hermes(
     tmp_path: Path, authorization: tuple[str, ...]
@@ -211,6 +239,8 @@ def test_single_task_manifest_fails_before_hermes(tmp_path: Path) -> None:
         ({"public_source_only": False}, "public_source_only"),
         ({"resource_class": "tpu"}, "resource_class"),
         ({"allowed_paths": ["../Fly Brain/private.txt"]}, "allowed_paths"),
+        ({"allowed_paths": ["logs/run_evaluation"]}, "allowed_paths"),
+        ({"allowed_paths": ["logs/run_evaluation/results.json"]}, "allowed_paths"),
         ({"base_sha": "0" * 40}, "base_sha"),
     ],
 )
@@ -361,8 +391,9 @@ def test_large_delegate_context_is_line_safe_and_reconstructable(tmp_path: Path)
         "--- BEGIN LINE-SAFE DELEGATE RECORDS ---", 1
     )[1].split("--- END LINE-SAFE DELEGATE RECORDS ---", 1)[0]
     records = json.loads(records_json)
-    assert list(records[0]) == ["goal", "context_chunks", "role"]
-    reconstructed_context = "".join(records[0]["context_chunks"])
+    assert list(records[0]) == ["goal_json", "context_json_chunks", "role"]
+    assert json.loads(records[0]["goal_json"]).startswith("Complete Human Brain")
+    reconstructed_context = json.loads("".join(records[0]["context_json_chunks"]))
     assert len(reconstructed_context) > 100_000
     child_task_json = reconstructed_context.split(
         "--- BEGIN EXACT IMMUTABLE TASK JSON ---", 1
@@ -370,11 +401,58 @@ def test_large_delegate_context_is_line_safe_and_reconstructable(tmp_path: Path)
     assert json.loads(child_task_json) == large_task
 
 
+def test_128_minimal_tasks_fit_the_prompt_envelope(tmp_path: Path) -> None:
+    repo, base_sha = _clean_repository(tmp_path)
+    tasks = [
+        _task_record(base_sha, id=f"fleet-task-{index}")
+        for index in range(1, 129)
+    ]
+    manifest = _write_tasks(tmp_path, tasks)
+    manifest_hash = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    fake_hermes, capture, prompt_capture = _write_fake_hermes(tmp_path)
+    env = os.environ | {
+        "HERMES_FAKE_CAPTURE": str(capture),
+        "HERMES_FAKE_PROMPT_CAPTURE": str(prompt_capture),
+        "HERMES_FAKE_REPOSITORY": str(repo),
+        "HERMES_FAKE_ATTACHMENT_NAME": f"human-brain-ox-fleet-prompt-{manifest_hash[:12]}.md",
+        "HERMES_FAKE_PROMOTED": str(tmp_path / "promoted.txt"),
+        "HERMES_FAKE_CREATED": str(tmp_path / "created.json"),
+    }
+
+    result = _run(
+        "-ManifestPath",
+        str(manifest),
+        "-RepositoryPath",
+        str(repo),
+        "-HermesExecutable",
+        str(fake_hermes),
+        "-Execute",
+        "-AuthorizeSourceUpload",
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    attached_prompt = prompt_capture.read_text(encoding="utf-8")
+    assert len(attached_prompt.encode("utf-8")) <= 2 * 1024 * 1024
+    records_json = attached_prompt.split(
+        "--- BEGIN LINE-SAFE DELEGATE RECORDS ---", 1
+    )[1].split("--- END LINE-SAFE DELEGATE RECORDS ---", 1)[0]
+    records = json.loads(records_json)
+    assert len(records) == 128
+    assert all(
+        json.loads(record["goal_json"])
+        and json.loads("".join(record["context_json_chunks"]))
+        for record in records
+    )
+    _assert_installed_file_redactor_is_identity(prompt_capture)
+
+
 @pytest.mark.parametrize(
     "objective",
     [
         "Inspect ../Fly Brain and compare its implementation.",
         "Read .runtime/private-eval.json before proposing the change.",
+        "Inspect logs/run_evaluation before proposing the change.",
     ],
 )
 def test_forbidden_project_or_private_runtime_reference_fails_closed(
@@ -641,17 +719,20 @@ def test_existing_ready_card_blocks_board_wide_dispatch(tmp_path: Path) -> None:
 
 
 def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
-    repo, base_sha = _clean_repository(tmp_path)
+    token_shaped_fixture = "sk-abcdefghijklmno"
+    repo, base_sha = _clean_repository(tmp_path, token_shaped_fixture)
     injection_marker = tmp_path / "shell-interpolation-must-not-run.txt"
     objective = (
         'Audit this literal input; Set-Content -LiteralPath "'
         + str(injection_marker)
-        + '" -Value pwned; $(Write-Output injected); preserve <multi word>, {multi word}, and Unicode 🧠 café'
+        + '" -Value pwned; $(Write-Output injected); preserve <multi word>, '
+        + "{multi word}, Unicode 🧠 café, and fake fixture "
+        + token_shaped_fixture
     )
     task = _task_record(base_sha, objective=objective)
     companion_task = _task_record(
         base_sha,
-        id="verify-fleet-contract",
+        id=token_shaped_fixture,
         title="Verify the public worker contract",
         objective="Independently verify the bounded public-source acceptance evidence.",
     )
@@ -730,9 +811,12 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
     body_index = create.index("--body") + 1
     body = create[body_index]
     assert body == (
-        f"Read the attached {attachment_name} before acting. "
-        f"Its declared manifest SHA-256 is {manifest_hash}. "
-        "Stop if the attachment is missing or disagrees with this card."
+        f"Read and verify attached {attachment_name} for manifest {manifest_hash}; "
+        "stop if it is missing or mismatched. Completion requires exactly one "
+        "joined delegate_task batch for all 2 tasks, capture all 2 results, verify "
+        "the evidence, commit exactly one hash-named report under "
+        "tools/hermes/reports/ and no other parent change, then kanban_complete "
+        "with the report path and commit SHA."
     )
     assert create == [
         "--profile",
@@ -865,9 +949,10 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "--json",
     ]
     attached_prompt = prompt_capture.read_text(encoding="utf-8")
-    assert "Set-Content -LiteralPath" in attached_prompt
-    assert injection_marker.name in attached_prompt
-    assert "$(Write-Output injected)" in attached_prompt
+    assert "Set-Content -LiteralPath" not in attached_prompt
+    assert injection_marker.name not in attached_prompt
+    assert "$(Write-Output injected)" not in attached_prompt
+    assert token_shaped_fixture not in attached_prompt
     assert "delegate_task" in attached_prompt
     assert "background=true" in attached_prompt
     assert max(map(len, attached_prompt.splitlines())) <= 1_800
@@ -875,11 +960,14 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "--- BEGIN LINE-SAFE DELEGATE RECORDS ---", 1
     )[1].split("--- END LINE-SAFE DELEGATE RECORDS ---", 1)[0]
     records = json.loads(records_json)
-    assert all(list(record) == ["goal", "context_chunks", "role"] for record in records)
+    assert all(
+        list(record) == ["goal_json", "context_json_chunks", "role"]
+        for record in records
+    )
     delegates = [
         {
-            "goal": record["goal"],
-            "context": "".join(record["context_chunks"]),
+            "goal": json.loads(record["goal_json"]),
+            "context": json.loads("".join(record["context_json_chunks"])),
             "role": record["role"],
         }
         for record in records
@@ -899,6 +987,7 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         assert json.loads(child_task_json) == expected_task
         assert CONTRACT.read_text(encoding="utf-8") in delegate["context"]
         assert "[WORKTREE ISOLATION]" in delegate["context"]
+    assert "🧠" in delegates[0]["context"]
     assert "<multi word>" not in delegates[0]["goal"]
     assert "{multi word}" not in delegates[0]["goal"]
     child_context = delegates[0]["context"]
@@ -916,3 +1005,13 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
     assert "humanbrainox" in result.stdout
     assert "nous:stealth/ox-alpha" in result.stdout
     assert "t_mock-card" in result.stdout
+    _assert_installed_file_redactor_is_identity(prompt_capture)
+
+
+def test_manifest_identity_is_derived_from_one_immutable_byte_snapshot() -> None:
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert "$manifestBytes = [System.IO.File]::ReadAllBytes" in launcher
+    assert "Read-TaskManifest -Content $manifestText" in launcher
+    assert "Get-Sha256Hex -Bytes $manifestBytes" in launcher
+    assert "[System.IO.File]::ReadAllLines" not in launcher

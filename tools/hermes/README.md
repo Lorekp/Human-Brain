@@ -18,8 +18,9 @@ The launcher is intentionally narrower than the Hermes CLI:
 - the same Git common directory as the tracked launcher (linked Human Brain
   worktrees are allowed; sibling repositories are not);
 - a 2 MiB UTF-8 prompt envelope, below Hermes' 25 MiB attachment cap;
-- a 1,800-character physical-line envelope with lossless 700-character context
-  chunks, so Hermes can paginate the attachment without truncating a record;
+- a 1,800-character physical-line envelope with lossless 700-character JSON
+  lexical chunks, so Hermes can paginate without truncation or secret-redactor
+  substitution;
 - plan-only unless both `-Execute` and `-AuthorizeSourceUpload` are present;
 - one blocked goal card, one joined delegate batch, one `dispatch --max 1`,
   no automatic retry, and no integration action.
@@ -74,12 +75,17 @@ that the external model may receive source from the allowed public paths:
 ```
 
 The prompt contains fully materialized, line-safe delegate records. Every goal
-is launcher-owned and contains only the validated task ID. Concatenating a
-record's `context_chunks` with no separator losslessly recovers the full worker
-contract, immutable run pins, and exact single-task JSON. The parent must read
-the attachment through EOF with line-offset pagination and construct exactly
-`goal`, recovered `context`, and `role: "leaf"` before its one batch call. The script
-writes that prompt to a temporary UTF-8 file and creates the card initially
+is launcher-owned and contains only the validated task ID. A record's
+`goal_json` is a raw JSON string literal; concatenating its
+`context_json_chunks` with no separator produces another. The parent uses both
+literals directly as structured tool-call value syntax, so JSON argument
+parsing recovers the exact goal, full worker contract, immutable run pins, and
+single-task JSON without sending plaintext through `read_file` again. The
+parent must not print or read back recovered text. It constructs exactly
+`goal`, `context`, and `role: "leaf"` before its one batch call. The script
+derives manifest parsing and identity
+from one immutable UTF-8 byte snapshot, writes the prompt to a temporary UTF-8
+file, and creates the card initially
 blocked. It then proves exactly one non-archived hash-bound card exists,
 attaches the prompt through Hermes' native Kanban attachment command, verifies
 the stored file's identity and SHA-256, and promotes the card only after

@@ -9,12 +9,17 @@ the diff and reruns the declared gates.
 
 1. Verify that the worktree is clean and that `HEAD` equals every task's
    `base_sha`. Stop on any mismatch.
-2. Read the attached prompt through EOF using line-offset pagination. For each
-   line-safe record, concatenate `context_chunks` in order with no separator,
-   then construct exactly `{goal, context, role: "leaf"}`. Pass all reconstructed
-   objects to one `delegate_task(..., background=true)` call. Do not pass raw
-   manifest rows, retain `context_chunks`, split the batch, add keys, or allow
-   nested delegation.
+2. Read the attached prompt through EOF using line-offset pagination. In each
+   line-safe record, `goal_json` is one raw JSON string literal. Concatenate
+   `context_json_chunks` in order with no separator to obtain a second raw JSON
+   string literal. Use both directly as the `goal` and `context` value syntax
+   so JSON argument parsing, not file output, recovers the exact plaintext.
+   Construct exactly
+   `{goal, context, role: "leaf"}` and pass all reconstructed objects to one
+   `delegate_task(..., background=true)` call. Do not print or read back
+   recovered text, pass raw manifest rows, retain
+   `goal_json`/`context_json_chunks`, split the batch, add keys, or allow nested
+   delegation.
 3. Each fixed launcher-owned goal identifies only the validated task ID. Each
    reconstructed context contains this complete contract verbatim, the
    immutable run/routing pins, and that task's exact JSON record. A child has
