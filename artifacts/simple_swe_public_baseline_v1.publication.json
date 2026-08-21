@@ -1,0 +1,25 @@
+{
+  "changed_fields": [
+    "checkpoint.path",
+    "command.argv",
+    "command.cwd",
+    "command.portable_command",
+    "command.windows_command_line",
+    "experiment_protocol.path",
+    "publication",
+    "runtime.executable",
+    "runtime.executable_basename",
+    "runtime.worker_path",
+    "schema",
+    "task_protocol.path"
+  ],
+  "metrics_and_results_unchanged": true,
+  "portable_payload_sha256": "6cb971c5407bdaf4cca4ade574c135cea8531ca6538d5874ed6f3b685b6cf801",
+  "published_artifact_sha256": "524c9df0971b1684e22398866fef0108f48fd40ab3fe8caeb221196c1e753f8b",
+  "publisher_sha256": "7a094aeb87cc508337adc030bdba18692ecd99a7b6f42b6507b03848cbc7d345",
+  "raw_archive_sha256": "bbfa23cde2ce7d8bbf01119e7b253cd1d28282d9fada9b3c551edcb2c4e44900",
+  "raw_artifact_sha256": "bbfa23cde2ce7d8bbf01119e7b253cd1d28282d9fada9b3c551edcb2c4e44900",
+  "schema": "human-cell-simple-swe-public-development-baseline-publication-record-v1",
+  "timings": "measured and environment-dependent; values preserved verbatim",
+  "transform_id": "portable-public-evidence-v1"
+}

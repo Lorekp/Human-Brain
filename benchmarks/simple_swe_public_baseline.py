@@ -20,8 +20,36 @@ if str(SOURCE_ROOT) not in sys.path:
 DEFAULT_EXPERIMENT_PROTOCOL = (
     ROOT / "benchmarks" / "simple_swe_public_baseline_protocol_v1.json"
 )
+CHECKED_IN_EVIDENCE = ROOT / "artifacts" / "simple_swe_public_baseline_v1.json"
+DEFAULT_RUNTIME_DIRECTORY = ROOT / ".runtime" / "simple-swe-public-baseline-v1"
+DEFAULT_RAW_OUTPUT = DEFAULT_RUNTIME_DIRECTORY / "raw-result.json"
 EXPECTED_SCHEMA = "human-cell-simple-swe-public-development-baseline-protocol-v1"
 EXPECTED_STATUS = "noncanonical-public-development-only"
+FROZEN_EXPERIMENT_PROTOCOL_SHA256 = (
+    "f0218de25bf852286396c2bfd9adf13ee50d29f153df5b46a6d2fefc20ee1c59"
+)
+REGISTERED_CANDIDATES = (
+    {
+        "candidate_id": "prompt-only-order-8",
+        "model_class": "humanbrain.language.CellLanguageModel",
+        "model_config": {
+            "max_order": 8,
+            "max_phrases": 512,
+            "min_phrase_frequency": 2,
+            "random_seed": 7,
+        },
+    },
+    {
+        "candidate_id": "prompt-only-order-64",
+        "model_class": "humanbrain.language.CellLanguageModel",
+        "model_config": {
+            "max_order": 64,
+            "max_phrases": 2048,
+            "min_phrase_frequency": 2,
+            "random_seed": 7,
+        },
+    },
+)
 OUTCOME_GROUPS = {
     "syntax": frozenset({"syntax_error"}),
     "format": frozenset({"format_error"}),
@@ -62,8 +90,38 @@ def _canonical_json_bytes(value: object) -> bytes:
     ).encode("utf-8")
 
 
-def _load_experiment_protocol(path: Path) -> dict[str, Any]:
+def validate_registered_candidates(candidates: object) -> None:
+    if not isinstance(candidates, list) or len(candidates) != 2:
+        raise ValueError("protocol must contain exactly two registered candidates")
+    if _canonical_json_bytes(candidates) != _canonical_json_bytes(
+        list(REGISTERED_CANDIDATES)
+    ):
+        raise ValueError("registered candidate IDs or configurations differ")
+
+
+def load_frozen_experiment_protocol(
+    path: Path, *, repository_root: Path = ROOT
+) -> dict[str, Any]:
+    resolved = path.resolve()
+    root = repository_root.resolve()
+    try:
+        relative = resolved.relative_to(root).as_posix()
+    except ValueError as error:
+        raise ValueError("experiment protocol must be inside its Git repository") from error
     raw = path.read_bytes()
+    committed = subprocess.run(
+        ["git", "show", f"HEAD:{relative}"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    if committed.returncode != 0:
+        raise ValueError("experiment protocol has no readable Git blob at HEAD")
+    if raw != committed.stdout:
+        raise ValueError("experiment protocol differs from its Git blob at HEAD")
+    protocol_sha256 = sha256(raw).hexdigest()
+    if protocol_sha256 != FROZEN_EXPERIMENT_PROTOCOL_SHA256:
+        raise ValueError("experiment protocol SHA-256 is not the registered value")
     payload = json.loads(raw)
     if not isinstance(payload, dict) or payload.get("schema") != EXPECTED_SCHEMA:
         raise ValueError("unsupported public baseline protocol")
@@ -96,22 +154,15 @@ def _load_experiment_protocol(path: Path) -> dict[str, Any]:
         for name in ("solutions", "test_cases", "expected_outputs")
     ):
         raise ValueError("training may not consume solutions or grading data")
-    candidates = payload.get("candidates")
-    if not isinstance(candidates, list) or not candidates:
-        raise ValueError("at least one fixed candidate is required")
-    candidate_ids = [candidate.get("candidate_id") for candidate in candidates]
-    if any(not isinstance(candidate_id, str) or not candidate_id for candidate_id in candidate_ids):
-        raise ValueError("candidate IDs must be non-empty strings")
-    if len(set(candidate_ids)) != len(candidate_ids):
-        raise ValueError("candidate IDs must be unique")
+    validate_registered_candidates(payload.get("candidates"))
     configured_groups = payload.get("scoring", {}).get("outcome_groups")
     expected_groups = {name: sorted(values) for name, values in OUTCOME_GROUPS.items()}
     if not isinstance(configured_groups, dict) or {
         name: sorted(values) for name, values in configured_groups.items()
     } != expected_groups:
         raise ValueError("outcome taxonomy differs from the runner")
-    payload["_sha256"] = sha256(raw).hexdigest()
-    payload["_path"] = str(path.resolve())
+    payload["_sha256"] = protocol_sha256
+    payload["_path"] = str(resolved)
     return payload
 
 
@@ -382,6 +433,24 @@ def _git_head() -> str:
     ).stdout.strip()
 
 
+def _repo_relative(path: Path) -> str:
+    return path.resolve().relative_to(ROOT).as_posix()
+
+
+def _resolve_raw_output(output_path: Path | None, runtime_directory: Path) -> Path:
+    destination = (
+        output_path.resolve()
+        if output_path is not None
+        else (runtime_directory.resolve() / "raw-result.json")
+    )
+    if destination == CHECKED_IN_EVIDENCE.resolve():
+        raise ValueError(
+            "the capability runner cannot overwrite checked-in evidence; "
+            "publish a frozen raw runtime result with the evidence publisher"
+        )
+    return destination
+
+
 def _last_commit_for_path(path: Path) -> str:
     return subprocess.run(
         ["git", "log", "-1", "--format=%H", "--", str(path.relative_to(ROOT))],
@@ -408,7 +477,9 @@ def run(
     )
     from humanbrain.simple_swe.tasks import generate_visible_partition
 
-    experiment = _load_experiment_protocol(experiment_protocol_path.resolve())
+    experiment = load_frozen_experiment_protocol(
+        experiment_protocol_path.resolve(), repository_root=ROOT
+    )
     _verify_cell_source(experiment["cell_source_commit"])
     task_protocol_declaration = experiment["task_protocol"]
     task_protocol_path = (ROOT / task_protocol_declaration["path"]).resolve()
@@ -601,8 +672,7 @@ def run(
         },
         "development": development,
     }
-    destination = output_path or (ROOT / experiment["reporting"]["artifact"])
-    destination = destination.resolve()
+    destination = _resolve_raw_output(output_path, runtime_directory)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
     temporary.write_bytes(
@@ -622,12 +692,28 @@ def main() -> None:
     )
     parser.add_argument("--python-executable", type=Path, default=Path(sys.executable))
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--plan", action="store_true")
     parser.add_argument(
         "--runtime-directory",
         type=Path,
-        default=ROOT / ".runtime" / "simple-swe-public-baseline-v1",
+        default=DEFAULT_RUNTIME_DIRECTORY,
     )
     args = parser.parse_args()
+    destination = _resolve_raw_output(args.output, args.runtime_directory)
+    if args.plan:
+        load_frozen_experiment_protocol(args.protocol.resolve(), repository_root=ROOT)
+        print(
+            json.dumps(
+                {
+                    "checked_in_evidence": _repo_relative(CHECKED_IN_EVIDENCE),
+                    "raw_output": _repo_relative(destination),
+                    "would_overwrite_checked_in_evidence": False,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return
     artifact = run(
         experiment_protocol_path=args.protocol,
         python_executable=args.python_executable.resolve(),
