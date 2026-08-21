@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from dataclasses import replace
 from hashlib import sha256
 from pathlib import Path
@@ -16,6 +17,8 @@ PROTOCOL = load_protocol(
 )
 WORKER_SOURCE = Path(sandbox.__file__).with_name("_worker.py").read_bytes()
 WORKER_SHA256 = sha256(WORKER_SOURCE).hexdigest()
+PYTHON_EXECUTABLE = sandbox.resolve_python_executable()
+PYTHON_EXECUTABLE_SHA256 = sha256(PYTHON_EXECUTABLE.read_bytes()).hexdigest()
 
 
 def _execute(source, public, private, limits):
@@ -24,6 +27,8 @@ def _execute(source, public, private, limits):
         public,
         private,
         limits,
+        python_executable=PYTHON_EXECUTABLE,
+        python_executable_sha256=PYTHON_EXECUTABLE_SHA256,
         worker_source=WORKER_SOURCE,
         worker_sha256=WORKER_SHA256,
     )
@@ -87,12 +92,129 @@ def test_worker_snapshot_must_match_the_frozen_hash(
         public,
         private,
         PROTOCOL.execution,
+        python_executable=PYTHON_EXECUTABLE,
+        python_executable_sha256=PYTHON_EXECUTABLE_SHA256,
         worker_source=b"tampered worker",
         worker_sha256=WORKER_SHA256,
     )
 
     assert result.outcome == "harness_error"
     assert result.sandboxed is False
+
+
+def test_replaced_runtime_fails_closed_after_the_completion_seal(
+    tmp_path: Path,
+    increment_task: tuple[PublicTask, PrivateTask],
+) -> None:
+    public, private = increment_task
+    runtime = tmp_path / PYTHON_EXECUTABLE.name
+    shutil.copyfile(PYTHON_EXECUTABLE, runtime)
+    frozen_sha256 = sha256(runtime.read_bytes()).hexdigest()
+    runtime.write_bytes(b"replacement after completion seal")
+
+    result = execute_completion(
+        "def solve_increment(value):\n    return value + 1\n",
+        public,
+        private,
+        PROTOCOL.execution,
+        python_executable=runtime,
+        python_executable_sha256=frozen_sha256,
+        worker_source=WORKER_SOURCE,
+        worker_sha256=WORKER_SHA256,
+    )
+
+    assert result.outcome == "harness_error"
+    assert result.detail == "sandbox Python executable differs from its freeze"
+    assert result.sandboxed is False
+
+
+def test_generator_frame_escape_is_rejected_before_hidden_execution(
+    increment_task: tuple[PublicTask, PrivateTask],
+) -> None:
+    public, private = increment_task
+    exploit = """def solve_increment(value):
+    g = (g.gi_frame.f_back.f_back.f_locals for _ in [0])
+    worker_locals = list(g)[0]
+    payload = worker_locals["payload"]
+    for case in payload["regression_cases"] + payload["property_cases"]:
+        if case["args"][0] == value:
+            return case["expected"]
+    return 0
+"""
+
+    result = _execute(exploit, public, private, PROTOCOL.execution)
+
+    assert result.outcome == "policy_violation"
+    assert any(
+        attribute in result.detail
+        for attribute in ("gi_frame", "f_back", "f_locals")
+    )
+    assert result.sandboxed is False
+
+
+def test_string_format_attribute_lookup_is_not_allowlisted(
+    increment_task: tuple[PublicTask, PrivateTask],
+) -> None:
+    public, private = increment_task
+
+    result = _execute(
+        'def solve_increment(value):\n    return "{0.__class__}".format(value)\n',
+        public,
+        private,
+        PROTOCOL.execution,
+    )
+
+    assert result.outcome == "policy_violation"
+    assert "format" in result.detail
+    assert result.sandboxed is False
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        """def solve_increment(value):
+    try:
+        return 1 // 0
+    except Exception as error:
+        return error.__traceback__.tb_frame.f_back.f_locals["payload"]
+""",
+        """def solve_increment(value):
+    method = [].append
+    return method.__self__
+""",
+        """def solve_increment(value):
+    generator = (value for _ in [0])
+    return f"{generator.gi_frame}"
+""",
+        """def solve_increment(value):
+    return Exception.mro()
+""",
+    ],
+)
+def test_traceback_bound_method_fstring_and_type_reflection_are_denied(
+    increment_task: tuple[PublicTask, PrivateTask], source: str
+) -> None:
+    public, private = increment_task
+
+    result = _execute(source, public, private, PROTOCOL.execution)
+
+    assert result.outcome == "policy_violation"
+    assert result.sandboxed is False
+
+
+def test_task_required_string_and_list_attributes_remain_allowlisted(
+    increment_task: tuple[PublicTask, PrivateTask],
+) -> None:
+    public, private = increment_task
+    source = """def solve_increment(value):
+    parts = "a b".split()
+    parts.append("")
+    return value + len("".join(parts)) - 1
+"""
+
+    result = _execute(source, public, private, PROTOCOL.execution)
+
+    assert result.outcome == "passed"
 
 
 @pytest.mark.parametrize(

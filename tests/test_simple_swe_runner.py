@@ -98,9 +98,14 @@ def _bundle(tmp_path: Path, protocol: ProtocolSpec) -> EvaluationBundle:
     )
 
 
-def _ledger(tmp_path: Path, bundle: EvaluationBundle) -> ArtifactLedger:
+def _ledger(
+    tmp_path: Path,
+    bundle: EvaluationBundle,
+    *,
+    anchor_payload_sha256: str | None = None,
+) -> ArtifactLedger:
     ledger = ArtifactLedger(tmp_path / "ledger", protocol_sha256=bundle.protocol_sha256)
-    ledger.append(
+    run_start = ledger.append(
         "run-start",
         {
             "freeze_manifest_sha256": bundle.freeze_manifest_sha256,
@@ -120,7 +125,7 @@ def _ledger(tmp_path: Path, bundle: EvaluationBundle) -> ArtifactLedger:
             "production_dependencies_injected": True,
         },
     )
-    ledger.append(
+    seed_reserved = ledger.append(
         "evaluation-seed-reserved",
         {
             "eval_seed_sha256": bundle.eval_seed_sha256,
@@ -129,10 +134,24 @@ def _ledger(tmp_path: Path, bundle: EvaluationBundle) -> ArtifactLedger:
             "evaluation_tasks_generated": False,
         },
     )
+    expected_anchor_payload_sha256 = canonical_sha256(
+        {
+            "freeze_manifest_sha256": bundle.freeze_manifest_sha256,
+            "protocol_sha256": bundle.protocol_sha256,
+            "run_start_event_sha256": run_start.file_sha256,
+            "seed_event_sha256": seed_reserved.file_sha256,
+            "eval_seed_sha256": bundle.eval_seed_sha256,
+            "seed_reservation_sha256": seed_reserved.body[
+                "seed_reservation_sha256"
+            ],
+        }
+    )
     ledger.append(
         "external-anchor-recorded",
         {
-            "anchor_payload_sha256": "6" * 64,
+            "anchor_payload_sha256": (
+                anchor_payload_sha256 or expected_anchor_payload_sha256
+            ),
             "public_uri": "https://example.invalid/fixture-anchor",
             "receipt_sha256": "5" * 64,
             "operator_supplied_receipt": True,
@@ -201,8 +220,10 @@ def test_all_completions_are_sealed_before_hidden_tests_execute(
         python_executable=None,
         worker_source=None,
         worker_sha256=None,
+        python_executable_sha256=None,
     ):
         del source, limits, python_executable, worker_source, worker_sha256
+        assert python_executable_sha256 == "8" * 64
         events = ledger.verify()
         kinds = [event.kind for event in events]
         assert kinds.count("cell-completion") == len(bundle.tasks)
@@ -257,6 +278,13 @@ def test_all_completions_are_sealed_before_hidden_tests_execute(
     assert seal.body["hidden_tests_executed_before_seal"] is False
     assert seal.body["private_cases_not_passed_to_adapter"] is True
     assert seal.body["production_dependencies_injected"] is True
+    result_events = [
+        event for event in ledger.verify() if event.kind == "task-result"
+    ]
+    assert all(
+        event.body["sandbox_python_executable_sha256"] == "8" * 64
+        for event in result_events
+    )
 
 
 def test_interrupted_synthesis_resumes_without_resampling_a_task(
@@ -448,5 +476,21 @@ def test_injected_test_engine_cannot_write_a_canonical_runner_prefix(
             bundle=bundle,
             adapter=FixtureCellAdapter(),
             ledger=canonical_ledger,
+            protocol=protocol,
+        )
+
+
+def test_runner_rejects_a_hash_linked_anchor_not_bound_to_the_reserved_seed(
+    tmp_path: Path,
+) -> None:
+    protocol = load_protocol(PROTOCOL_PATH)
+    bundle = _bundle(tmp_path, protocol)
+    ledger = _ledger(tmp_path, bundle, anchor_payload_sha256="6" * 64)
+
+    with pytest.raises(ArtifactIntegrityError, match="does not commit this eval seed"):
+        _run_cell_evaluation_for_testing(
+            bundle=bundle,
+            adapter=FixtureCellAdapter(),
+            ledger=ledger,
             protocol=protocol,
         )

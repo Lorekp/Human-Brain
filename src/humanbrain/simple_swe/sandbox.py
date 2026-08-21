@@ -74,6 +74,34 @@ _DENIED_NAMES = {
     "vars",
     "__import__",
 }
+_ALLOWED_ATTRIBUTES = frozenset(
+    {
+        "append",
+        "count",
+        "endswith",
+        "find",
+        "index",
+        "isalnum",
+        "isalpha",
+        "isdecimal",
+        "isdigit",
+        "islower",
+        "isspace",
+        "isupper",
+        "join",
+        "lower",
+        "lstrip",
+        "pop",
+        "replace",
+        "reverse",
+        "rfind",
+        "rstrip",
+        "split",
+        "startswith",
+        "strip",
+        "upper",
+    }
+)
 
 
 def _preflight(
@@ -92,8 +120,8 @@ def _preflight(
             return "format_error", "completion AST-node limit exceeded"
         if isinstance(node, _DENIED_NODES):
             return "policy_violation", f"{type(node).__name__} is forbidden"
-        if isinstance(node, ast.Attribute) and node.attr.startswith("_"):
-            return "policy_violation", "private or dunder attribute access is forbidden"
+        if isinstance(node, ast.Attribute) and node.attr not in _ALLOWED_ATTRIBUTES:
+            return "policy_violation", f"attribute {node.attr!r} is not allowlisted"
         if isinstance(node, ast.Name) and (
             node.id in _DENIED_NAMES or node.id.startswith("__")
         ):
@@ -362,6 +390,19 @@ def load_worker_snapshot(expected_sha256: str) -> bytes:
     return source
 
 
+def _runtime_executable_matches(executable: Path, expected_sha256: str) -> bool:
+    if (
+        not isinstance(expected_sha256, str)
+        or len(expected_sha256) != 64
+        or any(char not in "0123456789abcdef" for char in expected_sha256)
+    ):
+        return False
+    try:
+        return executable.is_file() and _sha256_file(executable) == expected_sha256
+    except OSError:
+        return False
+
+
 def execute_completion(
     source: str,
     public: PublicTask,
@@ -369,6 +410,7 @@ def execute_completion(
     limits: ExecutionLimits,
     *,
     python_executable: str | Path | None = None,
+    python_executable_sha256: str,
     worker_source: bytes,
     worker_sha256: str,
 ) -> ExecutionResult:
@@ -398,12 +440,20 @@ def execute_completion(
             "sandbox worker snapshot differs from its freeze",
             False,
         )
+    executable = resolve_python_executable(python_executable)
+    if not _runtime_executable_matches(executable, python_executable_sha256):
+        return ExecutionResult(
+            "harness_error",
+            False,
+            perf_counter() - started,
+            "sandbox Python executable differs from its freeze",
+            False,
+        )
     outcome, detail = _preflight(source, public, limits)
     if outcome is not None:
         return ExecutionResult(
             outcome, False, perf_counter() - started, detail, False
         )
-    executable = resolve_python_executable(python_executable)
     job: _WindowsJob | None = None
     with tempfile.TemporaryDirectory(prefix="humanbrain-simple-swe-") as directory:
         temporary_root = Path(directory)
@@ -448,6 +498,16 @@ def execute_completion(
             if process.poll() is None:
                 process.kill()
             process.communicate()
+            if not _runtime_executable_matches(
+                executable, python_executable_sha256
+            ):
+                return ExecutionResult(
+                    "harness_error",
+                    False,
+                    perf_counter() - started,
+                    "sandbox Python executable changed during execution",
+                    True,
+                )
             return ExecutionResult(
                 "timeout",
                 False,
@@ -459,6 +519,14 @@ def execute_completion(
             if job is not None:
                 job.close()
         elapsed = perf_counter() - started
+        if not _runtime_executable_matches(executable, python_executable_sha256):
+            return ExecutionResult(
+                "harness_error",
+                False,
+                elapsed,
+                "sandbox Python executable changed during execution",
+                True,
+            )
         if len(stdout) > limits.output_bytes or len(stderr) > limits.output_bytes:
             return ExecutionResult(
                 "harness_error", False, elapsed, "sandbox output limit exceeded", True

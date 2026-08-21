@@ -31,9 +31,11 @@ from humanbrain.simple_swe.reveal import (
     EvaluationBundle,
     canonical_evaluation_paths,
     evaluation_reveal_commitment,
+    external_anchor_payload_sha256,
     load_evaluation_bundle,
     run_start_commitment,
     validate_evaluation_bundle,
+    validate_external_anchor_body,
 )
 from humanbrain.simple_swe.sandbox import (
     ExecutionResult,
@@ -85,13 +87,26 @@ def _validate_run_prefix(
         or seed_reserved.body.get("evaluation_tasks_generated") is not False
     ):
         raise ArtifactIntegrityError("eval seed reservation commitment differs")
+    seed_reservation_sha256 = seed_reserved.body.get("seed_reservation_sha256")
     if (
         anchor.kind != "external-anchor-recorded"
-        or not isinstance(anchor.body.get("anchor_payload_sha256"), str)
-        or anchor.body.get("operator_supplied_receipt") is not True
-        or anchor.body.get("harness_verified_external_publication") is not False
+        or not isinstance(seed_reservation_sha256, str)
+        or len(seed_reservation_sha256) != 64
+        or any(char not in "0123456789abcdef" for char in seed_reservation_sha256)
     ):
         raise ArtifactIntegrityError("external anchor commitment differs")
+    expected_anchor_sha256 = external_anchor_payload_sha256(
+        manifest_sha256=bundle.freeze_manifest_sha256,
+        protocol_sha256=bundle.protocol_sha256,
+        run_start_event_sha256=run_start.file_sha256,
+        seed_event_sha256=seed_reserved.file_sha256,
+        eval_seed_sha256=bundle.eval_seed_sha256,
+        seed_reservation_sha256=seed_reservation_sha256,
+    )
+    try:
+        validate_external_anchor_body(anchor.body, expected_anchor_sha256)
+    except FreezeIntegrityError as error:
+        raise ArtifactIntegrityError(str(error)) from error
     if adapter.checkpoint_sha256 != bundle.checkpoint_sha256:
         raise ArtifactIntegrityError("completion adapter checkpoint differs from eval bundle")
     if revealed.kind != "evaluation-revealed" or revealed.body != evaluation_reveal_commitment(
@@ -227,6 +242,7 @@ def _result_body(
     task: GeneratedTask,
     completion_event: ArtifactEvent,
     result: ExecutionResult,
+    python_executable_sha256: str,
 ) -> dict[str, object]:
     return {
         "task_index": index,
@@ -234,6 +250,7 @@ def _result_body(
         "task_sha256": task.public.task_sha256,
         "test_sha256": task.private.test_sha256,
         "completion_event_sha256": completion_event.file_sha256,
+        "sandbox_python_executable_sha256": python_executable_sha256,
         "outcome": result.outcome,
         "passed": result.passed,
         "wall_seconds": result.wall_seconds,
@@ -248,6 +265,7 @@ def _validate_result_body(
     index: int,
     task: GeneratedTask,
     completion_event: ArtifactEvent,
+    python_executable_sha256: str,
 ) -> None:
     expected_keys = {
         "task_index",
@@ -255,6 +273,7 @@ def _validate_result_body(
         "task_sha256",
         "test_sha256",
         "completion_event_sha256",
+        "sandbox_python_executable_sha256",
         "outcome",
         "passed",
         "wall_seconds",
@@ -269,6 +288,7 @@ def _validate_result_body(
         "task_sha256": task.public.task_sha256,
         "test_sha256": task.private.test_sha256,
         "completion_event_sha256": completion_event.file_sha256,
+        "sandbox_python_executable_sha256": python_executable_sha256,
     }
     if any(body.get(key) != value for key, value in expected.items()):
         raise ArtifactIntegrityError("task result commitment differs")
@@ -393,6 +413,13 @@ def _run_cell_evaluation_engine(
     """Private dependency-injected engine shared by production and focused tests."""
     if bundle.protocol_sha256 != protocol.sha256:
         raise ArtifactIntegrityError("runner protocol differs from eval bundle")
+    python_executable_sha256 = runtime_identity.get("executable_sha256")
+    if (
+        not isinstance(python_executable_sha256, str)
+        or len(python_executable_sha256) != 64
+        or any(char not in "0123456789abcdef" for char in python_executable_sha256)
+    ):
+        raise ArtifactIntegrityError("runner runtime executable hash is invalid")
     run_start, _revealed = _validate_run_prefix(
         bundle, adapter, ledger, expected_run_start
     )
@@ -463,6 +490,7 @@ def _run_cell_evaluation_engine(
             index=index,
             task=bundle.tasks[index],
             completion_event=completion_events[index],
+            python_executable_sha256=python_executable_sha256,
         )
         result_events.append(event)
         position += 1
@@ -478,15 +506,23 @@ def _run_cell_evaluation_engine(
                 task.private,
                 protocol.execution,
                 python_executable=python_executable,
+                python_executable_sha256=python_executable_sha256,
                 worker_source=worker_source,
                 worker_sha256=str(run_start.body["sandbox_worker_sha256"]),
             )
-            body = _result_body(index, task, completion_events[index], result)
+            body = _result_body(
+                index,
+                task,
+                completion_events[index],
+                result,
+                python_executable_sha256,
+            )
             _validate_result_body(
                 body,
                 index=index,
                 task=task,
                 completion_event=completion_events[index],
+                python_executable_sha256=python_executable_sha256,
             )
             result_events.append(ledger.append("task-result", body))
         events = list(ledger.verify())

@@ -72,6 +72,14 @@ control plane, and performs a deterministic race among simulated human cells
 for every emitted token. The cell model and synthesis request have no
 filesystem, shell, network, tool, private-test, or feedback interface.
 
+The trusted evaluator process has already loaded the private bundle while it
+synthesizes completions; this is not process isolation between harness and
+adapter. The frozen, hash-checked adapter receives only the minimal public
+request and does not inspect caller state. A hostile replacement adapter or
+same-process debugger is outside this local trusted-code threat model. Stronger
+defense in depth would synthesize from a public projection in a separate
+process and deserialize private cases only after the completion seal.
+
 The adapter returns:
 
 - final Python source;
@@ -137,8 +145,12 @@ permanently labels fixture ledgers as dependency-injected and noncanonical.
 Before parsing, the parent bounds source to 16,384 UTF-8 bytes; it also bounds
 the AST to 4,096 nodes. Static policy permits exactly one plain function with
 the requested signature and denies imports, classes, nested functions,
-annotations, private/dunder attributes, and dangerous reflection/I/O built-ins.
-The child receives restricted built-ins and no task-visible paths.
+annotations, and dangerous reflection/I/O built-ins. Attribute access is a
+positive allowlist limited to ordinary task-level list/string operations such
+as `append`, `split`, and `join`; frame, traceback, code, generator, coroutine,
+class/MRO, bound-method, globals/locals, and format-string reflection are
+rejected before child execution. The child receives restricted built-ins and
+no task-visible paths.
 
 Each task is limited to two seconds wall time, one second CPU, 256 MiB process
 memory, one process, and 65,536 output bytes. On Windows, the child blocks on
@@ -183,7 +195,7 @@ inference.
 
 ## Runtime estimate and remaining environment commitments
 
-Visible train/development generation is sub-second. The 75 focused protocol,
+Visible train/development generation is sub-second. The 85 focused protocol,
 freeze, adapter, reveal, sandbox, artifact, and runner tests complete in about
 18 seconds on the current workstation. These are harness tests, not capability
 evaluation.
@@ -204,6 +216,12 @@ or CUDA CUBIN plus the build source digest and architecture. The loaded cell
 model must report the same backend/device before synthesis. This does not attest
 the operating system, dependent DLLs, CUDA driver/runtime, firmware, hardware,
 or other system libraries.
+
+The sandbox executor receives the frozen executable SHA-256, verifies the file
+immediately before every launch and after every child completes, and records
+that hash in each result commitment. This closes ordinary replacement after the
+completion seal; a privileged attacker racing file replacement between a hash
+and process creation remains inside the trusted-operator limitation.
 
 Git cleanliness includes tracked changes and ordinary untracked files, while
 Git-ignored files are outside the tree commitment. Known execution modules are

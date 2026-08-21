@@ -207,6 +207,19 @@ def test_reveal_rejects_a_direct_anchor_without_a_public_receipt(
     assert not reservation.paths.bundle_path.exists()
 
 
+def test_external_anchor_requires_a_nonempty_https_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source, checkpoint, manifest = _frozen_fixture(tmp_path, monkeypatch)
+
+    with pytest.raises(ValueError, match="public HTTPS URI"):
+        reveal.record_external_anchor(
+            **_arguments(source, checkpoint, manifest),
+            public_uri="https://",
+            receipt_sha256="a" * 64,
+        )
+
+
 def test_canonical_reveal_api_exposes_no_alternate_bundle_or_ledger_path() -> None:
     reserve_fields = set(inspect.signature(reveal.reserve_evaluation_seed).parameters)
     reveal_fields = set(inspect.signature(reveal.reveal_evaluation).parameters)

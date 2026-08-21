@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from humanbrain.simple_swe.artifacts import (
     ArtifactEvent,
@@ -420,7 +421,38 @@ def _anchor_payload(
     }
 
 
-def _validate_external_anchor_body(
+def external_anchor_payload_sha256(
+    *,
+    manifest_sha256: str,
+    protocol_sha256: str,
+    run_start_event_sha256: str,
+    seed_event_sha256: str,
+    eval_seed_sha256: str,
+    seed_reservation_sha256: str,
+) -> str:
+    return canonical_sha256(
+        {
+            "freeze_manifest_sha256": manifest_sha256,
+            "protocol_sha256": protocol_sha256,
+            "run_start_event_sha256": run_start_event_sha256,
+            "seed_event_sha256": seed_event_sha256,
+            "eval_seed_sha256": eval_seed_sha256,
+            "seed_reservation_sha256": seed_reservation_sha256,
+        }
+    )
+
+
+def _is_public_https_uri(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return False
+    return parsed.scheme == "https" and bool(parsed.netloc)
+
+
+def validate_external_anchor_body(
     body: dict[str, Any], expected_payload_sha256: str
 ) -> None:
     expected_fields = {
@@ -436,7 +468,7 @@ def _validate_external_anchor_body(
         raise FreezeIntegrityError("external anchor fields differ")
     if body.get("anchor_payload_sha256") != expected_payload_sha256:
         raise FreezeIntegrityError("external anchor does not commit this eval seed")
-    if not isinstance(public_uri, str) or not public_uri.startswith("https://"):
+    if not _is_public_https_uri(public_uri):
         raise FreezeIntegrityError("external anchor lacks a public HTTPS URI")
     if (
         not isinstance(receipt_sha256, str)
@@ -510,18 +542,18 @@ def record_external_anchor(
     receipt_sha256: str,
 ) -> ArtifactEvent:
     """Record an operator-supplied public anchor receipt; perform no network I/O."""
+    if not _is_public_https_uri(public_uri):
+        raise ValueError("external anchor must have a public HTTPS URI")
+    if len(receipt_sha256) != 64 or any(
+        char not in "0123456789abcdef" for char in receipt_sha256
+    ):
+        raise ValueError("external anchor receipt must be lowercase SHA-256")
     reservation = reserve_evaluation_seed(
         manifest_path=manifest_path,
         protocol_path=protocol_path,
         checkpoint_path=checkpoint_path,
         source_root=source_root,
     )
-    if not public_uri.startswith("https://"):
-        raise ValueError("external anchor must have a public HTTPS URI")
-    if len(receipt_sha256) != 64 or any(
-        char not in "0123456789abcdef" for char in receipt_sha256
-    ):
-        raise ValueError("external anchor receipt must be lowercase SHA-256")
     protocol = load_protocol(protocol_path)
     ledger = ArtifactLedger(
         reservation.paths.ledger_root, protocol_sha256=protocol.sha256
@@ -539,7 +571,7 @@ def record_external_anchor(
         events = ledger.verify()
     if len(events) < 3 or events[2].kind != "external-anchor-recorded":
         raise FreezeIntegrityError("artifact ledger lacks an external anchor")
-    _validate_external_anchor_body(events[2].body, reservation.anchor_payload_sha256)
+    validate_external_anchor_body(events[2].body, reservation.anchor_payload_sha256)
     if events[2].body != body:
         raise FreezeIntegrityError("external anchor differs from existing receipt")
     return events[2]
@@ -587,12 +619,15 @@ def reveal_evaluation(
     if len(events) < 3 or events[2].kind != "external-anchor-recorded":
         raise FreezeIntegrityError("externally anchor eval seed before task generation")
     anchor = events[2]
-    expected_anchor_sha256 = canonical_sha256(
-        _anchor_payload(
-            manifest_sha256, protocol.sha256, run_start, seed_event, seed
-        )
+    expected_anchor_sha256 = external_anchor_payload_sha256(
+        manifest_sha256=manifest_sha256,
+        protocol_sha256=protocol.sha256,
+        run_start_event_sha256=run_start.file_sha256,
+        seed_event_sha256=seed_event.file_sha256,
+        eval_seed_sha256=seed.seed_sha256,
+        seed_reservation_sha256=seed.file_sha256,
     )
-    _validate_external_anchor_body(anchor.body, expected_anchor_sha256)
+    validate_external_anchor_body(anchor.body, expected_anchor_sha256)
     if paths.bundle_path.exists():
         bundle = load_evaluation_bundle(paths.bundle_path)
     else:
@@ -632,10 +667,12 @@ __all__ = [
     "EvaluationSeedReservation",
     "canonical_evaluation_paths",
     "evaluation_reveal_commitment",
+    "external_anchor_payload_sha256",
     "load_evaluation_bundle",
     "record_external_anchor",
     "reserve_evaluation_seed",
     "reveal_evaluation",
     "run_start_commitment",
     "validate_evaluation_bundle",
+    "validate_external_anchor_body",
 ]
