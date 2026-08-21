@@ -1,0 +1,229 @@
+{
+  "version": "human-cell-sparse-output-readout-v1",
+  "registered_at": "2026-08-21T00:00:00+02:00",
+  "status": "preregistered-before-first-capability-run",
+  "objective": "Test whether bounded explicit output-cell contacts remove vocabulary-times-reservoir scaling without hiding a classifier, then measure capability only after mechanics and hyperparameters are frozen.",
+  "claim_boundary": "No capability or held-out result has been run for this protocol. Mechanics, allocation, and tiny exactness tests are not evidence of language, SWE, inhibitory winner-take-all, e-prop equivalence, or human anatomical fidelity.",
+  "execution_lock": {
+    "capability_execution_allowed": false,
+    "unlock_requirements": [
+      "commit the implementation and this protocol",
+      "commit a runner that verifies this protocol hash and every external file hash",
+      "pass all mechanics, native, checkpoint, and allocation gates",
+      "record the train-only selected configuration before opening the one-access cohort"
+    ],
+    "result_dependent_stage_selection": false,
+    "retuning_after_external_access": false
+  },
+  "data": {
+    "selection_partition": {
+      "role": "train-only calibration and ablations",
+      "files": [
+        "src/humanbrain/cells.py",
+        "src/humanbrain/topology.py",
+        "src/humanbrain/tokenizer.py"
+      ],
+      "growth_characters_per_file": 4096,
+      "growth_epochs": 2,
+      "selection_may_use_prediction_metrics": true
+    },
+    "one_access_confirmation": {
+      "role": "external validation after every selection is frozen",
+      "corpus": "CPython 3.11.15 standard-library source",
+      "previous_external_v1_files_excluded": [
+        "argparse.py",
+        "email/parser.py",
+        "json/decoder.py",
+        "pathlib.py",
+        "urllib/parse.py"
+      ],
+      "files": [
+        {
+          "path": "ast.py",
+          "bytes": 61444,
+          "sha256": "c513073798bdbf3cdef09327d0d2d381a53213a13a4ba3f02729695327539406"
+        },
+        {
+          "path": "inspect.py",
+          "bytes": 123419,
+          "sha256": "7a134c67f2256307547f2f0b81eb6f89b652c078ab22e59c062770ba9736c6ff"
+        },
+        {
+          "path": "shutil.py",
+          "bytes": 56517,
+          "sha256": "aa2c11b95294111edddfeb02f9082ec7c4c21060d87f6857364b5bb95fb94e09"
+        },
+        {
+          "path": "textwrap.py",
+          "bytes": 19718,
+          "sha256": "62867e40cdea6669b361f72af4d7daf0359f207c92cbeddfc7c7506397c1f31c"
+        },
+        {
+          "path": "zipfile.py",
+          "bytes": 94447,
+          "sha256": "8c6c3a7bea4909a66f6014a38a405a1103f0a5ebb14f8a4fa0433b72f99bf49b"
+        }
+      ],
+      "maximum_predictions_per_file": 512,
+      "adaptation_or_turnover_on_confirmation": false,
+      "access_policy": "Run every frozen condition once and report all files and seeds. Any later design change requires v2 and these v1 results remain visible."
+    }
+  },
+  "model": {
+    "cell_type": "Allen human-data-fitted GLIF5",
+    "tokenizer": "byte tokens only; max_phrases=0",
+    "topology": "uniform_no_self",
+    "reservoir_cells": [384, 1536, 6144],
+    "random_seeds": [17, 29, 43],
+    "input_fanout_rule": "max(4, round(reservoir_cells / 12))",
+    "recurrent_fanout": 6,
+    "token_interval_ms": 5.0,
+    "input_pulse_ms": 1.5,
+    "integration_step_ms": 0.05,
+    "input_current_pa": 4000.0,
+    "recurrent_current_pa": 325.0,
+    "eligibility_tau_ms": 40.0,
+    "output_base_current_pa": 700.0,
+    "output_race_ms": 20.0,
+    "inhibitory_fraction": 0.2,
+    "sparse_rule": {
+      "readout_learning_rule": "sparse_three_factor",
+      "candidate_factor": 4,
+      "fan_in_selection_grid": [32, 64, 128, 256],
+      "learning_rate_pa_selection_grid": [8.0, 16.0, 32.0],
+      "structural_interval": 16,
+      "structural_grace": 32,
+      "turnover_probability": 0.1,
+      "homeostatic_rate": 0.05,
+      "activity_decay": 0.99,
+      "maximum_recruitments_per_structural_event": 1,
+      "maximum_deletions_per_structural_event": 1,
+      "structural_schedule_semantics": "Scheduled per-target maintenance runs on correct and wrong presentations; recruitment is not coupled to an error event."
+    },
+    "controls": [
+      "dense native three_factor historical control",
+      "sparse K=N independent scalar/local-rule oracle at tiny N",
+      "untrained sparse anatomy and pacemaker-only controls"
+    ]
+  },
+  "selection": {
+    "scope": "Only fan-in and learning rate may be selected from the declared grid, using the named training files and three paired seeds at 384 cells.",
+    "ordering": [
+      "reject any condition failing exactness, bounded-growth, Dale-sign, or finite-state gates",
+      "maximize median train-only teacher-forced byte accuracy",
+      "break ties by median train-only free-running aligned byte accuracy",
+      "break remaining ties by lower actual sparse-readout bytes"
+    ],
+    "freeze_record": "Record selected K, learning rate, protocol SHA-256, implementation commit, and complete train-only grid before external access.",
+    "no_validation_selection": true
+  },
+  "required_mechanics": {
+    "storage": [
+      "C fixed potential IDs and traces per output",
+      "exactly K capacity IDs/weights/ages per output",
+      "capacity IDs sorted unique and a subset of potential IDs",
+      "zero weight means vacant and functional learning skips it",
+      "no dense vocabulary-times-reservoir array"
+    ],
+    "exactness": [
+      "ascending scalar current equality",
+      "K=N candidate and contact IDs equal arange(N)",
+      "K=N current, winner, update count, weights, race, reset, and continuation equality",
+      "checkpoint v3 exact next teaching and counter-based turnover continuation",
+      "malformed candidate order and contact subsets rejected"
+    ],
+    "native_and_sign": [
+      "no Python simulation hot loop",
+      "all rates, gates, and decays validated before FFI",
+      "all excitatory readout weights finite and nonnegative",
+      "CUDA rejected unless a separate exact-parity gate is registered"
+    ]
+  },
+  "preregistered_ablations": {
+    "locality_and_timing": [
+      "pre without post",
+      "post/modulator without pre",
+      "expired eligibility window",
+      "unrelated output-row perturbation",
+      "global top-eligible selection as explicitly nonlocal engineering control"
+    ],
+    "finite_difference": {
+      "states": ["rest", "post-reset", "adapted-threshold", "nonzero recurrent eligibility"],
+      "procedure": "On one fitted cell and a tiny circuit, central-difference the target response with respect to each occupied input and compare direction and normalized error with the local pre-times-post trace.",
+      "reporting": "Report correlation, sign agreement, and relative error for every state. Do not call the trace e-prop-equivalent from analogy alone."
+    },
+    "dale_and_competition": [
+      "production nonnegative excitatory weights",
+      "isolated signed-weight diagnostic that can never be promoted to production",
+      "current first-spike arbitration co-winner report",
+      "future explicit shared-inhibitory-cell circuit with remove-inhibition control before any inhibitory WTA claim"
+    ],
+    "turnover_and_homeostasis": [
+      "no structural turnover",
+      "geometry-matched uniform random reactivation",
+      "age-qualified low-weight deletion only",
+      "coactivity-biased seeded stochastic reactivation",
+      "top-eligible RigL-like reactivation as engineering-only control",
+      "candidate ratios C/K of 2, 4, and 8",
+      "immediate versus slow structural clocks",
+      "homeostatic scaling removed"
+    ],
+    "execution_note": "Ablation mechanisms not present in the committed implementation must be added and frozen before any capability execution; no post-result condition may be added."
+  },
+  "evaluation": {
+    "capability_metrics": [
+      "teacher_forced_byte_accuracy",
+      "free_running_aligned_byte_accuracy",
+      "free_running_exact_prefix_bytes"
+    ],
+    "cell_and_learning_audit": [
+      "attempted_teaching_events",
+      "applied_teaching_events",
+      "structural_recruitments",
+      "structural_deletions",
+      "occupied_output_synapses_per_token_cell",
+      "potential_appositions_per_token_cell",
+      "reservoir_activity_density",
+      "simultaneous_spike_candidate_rate",
+      "discarded_simultaneous_candidates",
+      "mean_fitted_cell_race_latency_ms",
+      "nonnegative_weight_violations"
+    ],
+    "resource_metrics": [
+      "sparse_readout_persistent_bytes",
+      "dense_control_readout_bytes",
+      "measured_memory_ratio",
+      "training_tokens_per_second",
+      "inference_tokens_per_second",
+      "simulation_backend",
+      "simulation_device"
+    ]
+  },
+  "engineering_gate": {
+    "capability_claim_allowed": false,
+    "allocation_case": {
+      "reservoir_cells": 200000,
+      "output_cells": 256,
+      "fan_in": 64,
+      "minimum_dense_to_actual_sparse_readout_byte_ratio": 100.0
+    },
+    "selected_fan_in_memory_case": {
+      "reservoir_cells": 262144,
+      "output_cells": 256,
+      "fan_in": "train-only selected K",
+      "minimum_dense_to_actual_sparse_readout_byte_ratio": 100.0
+    },
+    "throughput_case": {
+      "reservoir_cells": 200000,
+      "minimum_end_to_end_tokens_per_second": 100.0,
+      "rule": "Report CPU sparse-readout throughput honestly. CUDA cannot qualify until exact sparse-readout parity is separately registered."
+    }
+  },
+  "analysis": {
+    "primary_comparison": "paired sparse minus dense-three-factor change at 6144 cells on the untouched external cohort",
+    "scale_check": "report every seed and size; larger is beneficial only if both capability and responsive/activity diagnostics avoid collapse",
+    "memory_interpretation": "Use actual serialized/persistent array bytes. The ratio is a function of N and selected K; do not claim 100x at every calibratable size.",
+    "multiple_comparison_policy": "Only the frozen selected sparse condition versus the dense historical control is confirmatory. All mechanism and C/K lanes are descriptive ablations.",
+    "failure_policy": "Report a failed external, scaling, memory, or throughput criterion without retuning v1."
+  }
+}

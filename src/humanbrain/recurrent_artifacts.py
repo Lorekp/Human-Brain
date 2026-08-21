@@ -11,6 +11,7 @@ import numpy as np
 
 from humanbrain.artifacts import _pack_phrases, _unpack_phrases
 from humanbrain.cells import ALLEN_GLIF5_CONFIG_SHA256, AllenGlif5Parameters
+from humanbrain.readout import SparseCellReadout
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel
 from humanbrain.tokenizer import BytePhraseTokenizer
@@ -54,10 +55,17 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
         "cell_parameters": asdict(circuit.cell_parameters),
         "circuit_config": asdict(circuit.config),
         "growth_examples": circuit._growth_examples,
-        "local_updates": circuit._local_updates,
+        "local_updates": circuit.local_update_count,
         "runtime_active_reservoir_cells": circuit.active_reservoir_cells,
         "developmental_state": developmental_state,
     }
+    sparse_readout = circuit._sparse_readout
+    if circuit.config.readout_learning_rule == "sparse_three_factor":
+        if sparse_readout is None:
+            raise RuntimeError("sparse readout checkpoint state is missing")
+        metadata["sparse_readout"] = sparse_readout.checkpoint_counters()
+    elif sparse_readout is not None:
+        raise RuntimeError("dense readout must not contain sparse checkpoint state")
     arrays = {
         "metadata": np.asarray(json.dumps(metadata, sort_keys=True)),
         "phrase_offsets": phrase_offsets,
@@ -66,9 +74,14 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
         "recurrent_targets": circuit._recurrent_targets,
         "recurrent_weights_pa": circuit._recurrent_weights_pa,
         "output_heterogeneity_pa": circuit._output_heterogeneity_pa,
-        "readout_synapses_pa": circuit._readout_synapses_pa,
         "pacemaker_synapses_pa": circuit._pacemaker_synapses_pa,
     }
+    if sparse_readout is None:
+        if circuit._readout_synapses_pa is None:
+            raise RuntimeError("dense readout checkpoint state is missing")
+        arrays["readout_synapses_pa"] = circuit._readout_synapses_pa
+    else:
+        arrays.update(sparse_readout.checkpoint_arrays())
     if circuit.config.readout_learning_rule == "ridge":
         arrays["normal_matrix"] = circuit._normal_matrix
         arrays["target_moments"] = circuit._target_moments
@@ -103,9 +116,10 @@ def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
             "_recurrent_targets": ("recurrent_targets", np.int32),
             "_recurrent_weights_pa": ("recurrent_weights_pa", np.float64),
             "_output_heterogeneity_pa": ("output_heterogeneity_pa", np.float64),
-            "_readout_synapses_pa": ("readout_synapses_pa", np.float64),
             "_pacemaker_synapses_pa": ("pacemaker_synapses_pa", np.float64),
         }
+        if circuit.config.readout_learning_rule != "sparse_three_factor":
+            arrays["_readout_synapses_pa"] = ("readout_synapses_pa", np.float64)
         if circuit.config.readout_learning_rule == "ridge":
             arrays["_normal_matrix"] = ("normal_matrix", np.float64)
             arrays["_target_moments"] = ("target_moments", np.float64)
@@ -126,6 +140,24 @@ def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
                     f"checkpoint array {key} has shape {value.shape}, expected {expected}"
                 )
             setattr(circuit, attribute, value)
+        if circuit.config.readout_learning_rule == "sparse_three_factor":
+            sparse_counters = metadata.get("sparse_readout")
+            if not isinstance(sparse_counters, dict):
+                raise ValueError("sparse checkpoint counters are missing")
+            circuit._sparse_readout = SparseCellReadout.from_checkpoint(
+                output_cells=circuit.token_cells,
+                reservoir_cells=circuit.config.reservoir_cells,
+                fan_in=circuit.config.readout_fan_in,
+                reservoir_eligibility=circuit._eligibility,
+                output_heterogeneity_pa=circuit._output_heterogeneity_pa,
+                pacemaker_synapses_pa=circuit._pacemaker_synapses_pa,
+                arrays=state,
+                counters=sparse_counters,
+            )
+            if circuit._sparse_readout.applied_updates != int(
+                metadata["local_updates"]
+            ):
+                raise ValueError("sparse checkpoint update counters disagree")
         if bool(metadata["developmental_state"]):
             developmental_shapes = {
                 "_development_cell_order": (circuit.config.reservoir_cells,),

@@ -92,6 +92,18 @@ accuracy at small sizes and its free-running validation remains weak. See
 `docs/local-readout-learning.md` and the frozen
 `artifacts/local_learning_scaling_v1.json` report.
 
+A new `sparse_three_factor` mechanics lane also removes that local rule's
+remaining dense `vocabulary x reservoir` readout. Each fitted output cell owns
+`K` explicit nonnegative contact-capacity slots plus a fixed `C <= 4K` pool of
+potential appositions. Native pre-times-post learning changes only occupied
+contacts; slow seeded turnover recruits or deletes at most one contact per
+structural event. Checkpoint v3 preserves anatomy, traces, ages, activity, and
+the exact counter-based turnover continuation. The >100k allocation smoke has
+a reachable measured 100x memory criterion, but no capability validation has
+been run. CUDA is explicitly unsupported for this lane until exact parity is
+registered. See `docs/sparse-cell-readout.md` and the frozen
+`benchmarks/sparse_readout_protocol_v1.json` plan.
+
 An explicitly non-capability smoke also exercised online updates at 98,304
 cells with 211.70 MiB peak memory and no quadratic ridge state.
 

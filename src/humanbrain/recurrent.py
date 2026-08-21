@@ -9,9 +9,10 @@ import numpy as np
 
 from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
 from humanbrain.native import NativeThreeFactorLearner, recurrent_kernel
+from humanbrain.readout import SparseCellReadout
 from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
 
-READOUT_LEARNING_RULES = frozenset({"ridge", "three_factor"})
+READOUT_LEARNING_RULES = frozenset({"ridge", "three_factor", "sparse_three_factor"})
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,12 @@ class RecurrentCircuitConfig:
     readout_ridge: float = 1.0
     output_synapse_gain_pa: float = 1_600.0
     readout_learning_rule: str = "ridge"
+    readout_fan_in: int = 64
+    readout_structural_interval: int = 16
+    readout_structural_grace: int = 32
+    readout_turnover_probability: float = 0.1
+    readout_homeostatic_rate: float = 0.05
+    readout_activity_decay: float = 0.99
     local_learning_rate_pa: float = 64.0
     local_competitive_margin_pa: float = 64.0
     inhibitory_fraction: float = 0.2
@@ -71,6 +78,19 @@ class RecurrentCircuitConfig:
             raise ValueError("unknown recurrent topology")
         if self.readout_learning_rule not in READOUT_LEARNING_RULES:
             raise ValueError("unknown readout learning rule")
+        if self.readout_learning_rule == "sparse_three_factor" and not (
+            1 <= self.readout_fan_in <= self.reservoir_cells
+        ):
+            raise ValueError("readout fan-in must fit the reservoir")
+        if self.readout_learning_rule == "sparse_three_factor":
+            if self.readout_structural_interval < 1 or self.readout_structural_grace < 1:
+                raise ValueError("sparse structural clocks must be positive")
+            if not 0.0 <= self.readout_turnover_probability <= 1.0:
+                raise ValueError("readout turnover probability must be in [0, 1]")
+            if self.readout_homeostatic_rate < 0.0:
+                raise ValueError("readout homeostatic rate must be nonnegative")
+            if not 0.0 < self.readout_activity_decay < 1.0:
+                raise ValueError("readout activity decay must be in (0, 1)")
         if self.recurrent_topology != "random" and self.recurrent_fanout >= active_cells:
             raise ValueError("non-random topology must exclude self-connections")
 
@@ -90,6 +110,8 @@ class RecurrentRace:
     peak_voltage_mv: float
     active_cells: int
     simulated_steps: int
+    simultaneous_spike_candidates: int = 1
+    discarded_simultaneous_candidates: int = 0
 
 
 class RecurrentCellCircuit:
@@ -124,8 +146,13 @@ class RecurrentCellCircuit:
         self._reservoir = AdaptiveGlifPopulation(self.config.reservoir_cells, self.cell_parameters)
         self._synaptic_current_pa = np.zeros(self.config.reservoir_cells, dtype=np.float64)
         self._eligibility = np.zeros(self.config.reservoir_cells, dtype=np.float64)
-        self._readout_synapses_pa = np.zeros(
-            (self.token_cells, self.config.reservoir_cells), dtype=np.float64
+        sparse_readout = self.config.readout_learning_rule == "sparse_three_factor"
+        self._readout_synapses_pa = (
+            None
+            if sparse_readout
+            else np.zeros(
+                (self.token_cells, self.config.reservoir_cells), dtype=np.float64
+            )
         )
         self._pacemaker_synapses_pa = np.zeros(self.token_cells, dtype=np.float64)
         feature_count = self.config.reservoir_cells + 1
@@ -172,6 +199,19 @@ class RecurrentCellCircuit:
         # Tiny fixed heterogeneity avoids artificial simultaneous spikes while
         # remaining several orders below learned and afferent currents.
         self._output_heterogeneity_pa = rng.normal(0.0, 0.01, self.token_cells)
+        self._sparse_readout = (
+            SparseCellReadout.create(
+                output_cells=self.token_cells,
+                reservoir_cells=self.config.reservoir_cells,
+                fan_in=self.config.readout_fan_in,
+                rng=rng,
+                reservoir_eligibility=self._eligibility,
+                output_heterogeneity_pa=self._output_heterogeneity_pa,
+                pacemaker_synapses_pa=self._pacemaker_synapses_pa,
+            )
+            if sparse_readout
+            else None
+        )
         self._token_steps = max(
             1, round(self.config.token_interval_ms / self.cell_parameters.dt_ms)
         )
@@ -200,6 +240,17 @@ class RecurrentCellCircuit:
             synaptic_current_pa=self._synaptic_current_pa,
             eligibility=self._eligibility,
         )
+        if (
+            self.config.readout_learning_rule == "sparse_three_factor"
+            and self._native_kernel.backend == "cuda"
+        ):
+            close = getattr(self._native_kernel, "close", None)
+            if close is not None:
+                close()
+            raise RuntimeError(
+                "sparse readout CUDA parity is not registered; "
+                "set HUMANBRAIN_DEVICE=cpu"
+            )
         self._native_local_learner = (
             NativeThreeFactorLearner(
                 eligibility=self._eligibility,
@@ -222,6 +273,10 @@ class RecurrentCellCircuit:
 
     @property
     def learned_synapse_count(self) -> int:
+        if self.config.readout_learning_rule == "sparse_three_factor":
+            assert self._sparse_readout is not None
+            return self._sparse_readout.active_synapse_count
+        assert self._readout_synapses_pa is not None
         return int(np.count_nonzero(self._readout_synapses_pa))
 
     @property
@@ -230,7 +285,30 @@ class RecurrentCellCircuit:
 
     @property
     def local_update_count(self) -> int:
+        if self.config.readout_learning_rule == "sparse_three_factor":
+            assert self._sparse_readout is not None
+            return self._sparse_readout.applied_updates
         return self._local_updates
+
+    @property
+    def structural_recruitment_count(self) -> int:
+        if self._sparse_readout is None:
+            return 0
+        return self._sparse_readout.structural_recruitments
+
+    @property
+    def structural_deletion_count(self) -> int:
+        if self._sparse_readout is None:
+            return 0
+        return self._sparse_readout.structural_deletions
+
+    @property
+    def occupied_output_synapses_per_cell(self) -> float:
+        return self.learned_synapse_count / self.token_cells
+
+    @property
+    def reservoir_activity_density(self) -> float:
+        return float(np.count_nonzero(self._eligibility)) / self.config.reservoir_cells
 
     @property
     def observed_tokens(self) -> int:
@@ -284,6 +362,54 @@ class RecurrentCellCircuit:
         if self._learning_frozen:
             raise RuntimeError("readout learning is frozen")
         self._growth_examples += 1
+        if self.config.readout_learning_rule == "sparse_three_factor":
+            assert self._sparse_readout is not None
+            race = self.race()
+            current = self.output_current_pa()
+            self._last_output_winner = race.winner
+            if race.winner == target:
+                self._last_teaching_current_pa = float(current[target])
+                self._last_teaching_spike_time_ms = race.spike_time_ms
+            else:
+                teaching_current = float(
+                    current[target] + self.config.output_synapse_gain_pa
+                )
+                p = self.cell_parameters
+                teaching_voltage = self._output_unit_voltage * teaching_current
+                teaching_threshold = (
+                    p.threshold_inf_relative_mv
+                    + self._output_unit_voltage_threshold * teaching_current
+                )
+                crossing = np.flatnonzero(teaching_voltage > teaching_threshold)
+                if not crossing.size:
+                    raise RuntimeError("teaching current did not evoke an output-cell spike")
+                self._last_teaching_current_pa = teaching_current
+                self._last_teaching_spike_time_ms = (int(crossing[0]) + 1) * p.dt_ms
+            self._sparse_readout.teach(
+                target=target,
+                winner=race.winner,
+                learning_rate_pa=self.config.local_learning_rate_pa,
+                maximum_weight_pa=self.config.output_synapse_gain_pa,
+                trace_decay=np.exp(
+                    -self.config.token_interval_ms / self.config.eligibility_tau_ms
+                ),
+                target_post_gate=1.0,
+                winner_post_gate=1.0,
+                activity_decay=self.config.readout_activity_decay,
+            )
+            presentation = self._sparse_readout.advance_target(target)
+            if presentation % self.config.readout_structural_interval == 0:
+                self._sparse_readout.turnover(
+                    output=target,
+                    structural_event=presentation // self.config.readout_structural_interval,
+                    random_seed=self.config.random_seed,
+                    minimum_age=self.config.readout_structural_grace,
+                    turnover_probability=self.config.readout_turnover_probability,
+                    learning_rate_pa=self.config.local_learning_rate_pa,
+                    maximum_weight_pa=self.config.output_synapse_gain_pa,
+                    homeostatic_rate=self.config.readout_homeostatic_rate,
+                )
+            return
         if self.config.readout_learning_rule == "three_factor":
             assert self._native_local_learner is not None
             winner = self._native_local_learner.update(
@@ -381,6 +507,10 @@ class RecurrentCellCircuit:
 
     def output_current_pa(self) -> np.ndarray:
         """Read the current delivered by all learned output synapses."""
+        if self.config.readout_learning_rule == "sparse_three_factor":
+            assert self._sparse_readout is not None
+            return self._sparse_readout.current(self.config.output_base_current_pa)
+        assert self._readout_synapses_pa is not None
         return (
             self.config.output_base_current_pa
             + self._pacemaker_synapses_pa
@@ -418,12 +548,15 @@ class RecurrentCellCircuit:
                     float(winner_voltage[step - 1]),
                 )
             winner = int(np.flatnonzero(fired)[0])
+            co_winners = int(np.count_nonzero(fired))
             return RecurrentRace(
                 winner=winner,
                 spike_time_ms=(step + 1) * p.dt_ms,
                 peak_voltage_mv=max(p.rest_mv, p.rest_mv + peak_relative),
                 active_cells=self.token_cells,
                 simulated_steps=step + 1,
+                simultaneous_spike_candidates=co_winners,
+                discarded_simultaneous_candidates=max(0, co_winners - 1),
             )
         raise RuntimeError("output human cells did not spike during the race")
 

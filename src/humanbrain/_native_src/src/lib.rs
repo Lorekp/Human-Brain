@@ -870,6 +870,343 @@ pub unsafe extern "C" fn humanbrain_three_factor_update(
     winner
 }
 
+/// Sum currents from a bounded set of explicit output-cell contacts.
+///
+/// # Safety
+/// Every pointer must address a contiguous array with the encoded dimensions.
+/// Contact source indices must be in `0..cell_count`, and mutable output must
+/// not alias any input array.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn humanbrain_sparse_readout_current(
+    cell_count: usize,
+    output_count: usize,
+    fan_in: usize,
+    base_current_pa: f64,
+    eligibility: *const f64,
+    output_heterogeneity_pa: *const f64,
+    contact_sources: *const i32,
+    contact_weights_pa: *const f64,
+    pacemaker_synapses_pa: *const f64,
+    output_current_pa: *mut f64,
+) {
+    let eligibility = slice::from_raw_parts(eligibility, cell_count);
+    let heterogeneity = slice::from_raw_parts(output_heterogeneity_pa, output_count);
+    let sources = slice::from_raw_parts(contact_sources, output_count * fan_in);
+    let weights = slice::from_raw_parts(contact_weights_pa, output_count * fan_in);
+    let pacemaker = slice::from_raw_parts(pacemaker_synapses_pa, output_count);
+    let output_current = slice::from_raw_parts_mut(output_current_pa, output_count);
+
+    for output in 0..output_count {
+        let mut current = base_current_pa;
+        current += pacemaker[output];
+        current += heterogeneity[output];
+        let offset = output * fan_in;
+        for slot in 0..fan_in {
+            let source = sources[offset + slot] as usize;
+            current += weights[offset + slot] * eligibility[source];
+        }
+        output_current[output] = current;
+    }
+}
+
+/// Apply a supervised three-factor event to bounded output-cell contacts.
+///
+/// The stored apposition trace is pre x post: reservoir eligibility supplies
+/// the presynaptic term and an actual natural/teacher-evoked output spike
+/// supplies the postsynaptic gate. Signed cell-level modulators change only
+/// existing contacts, whose excitatory strengths remain nonnegative.
+///
+/// # Safety
+/// Every pointer must address a contiguous array with the encoded dimensions.
+/// Potential/contact sources must be sorted, unique, in range, and each contact
+/// source must occur in its output cell's potential-apposition row.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn humanbrain_sparse_three_factor_update(
+    cell_count: usize,
+    output_count: usize,
+    candidate_count: usize,
+    fan_in: usize,
+    target: usize,
+    winner: usize,
+    learning_rate_pa: f64,
+    maximum_weight_pa: f64,
+    trace_decay: f64,
+    target_post_gate: f64,
+    winner_post_gate: f64,
+    reservoir_eligibility: *const f64,
+    potential_sources: *const i32,
+    apposition_eligibility: *mut f64,
+    contact_sources: *const i32,
+    contact_weights_pa: *mut f64,
+    contact_ages: *mut u32,
+    pacemaker_synapses_pa: *mut f64,
+    output_activity_ema: *mut f64,
+    activity_decay: f64,
+) -> usize {
+    if output_count < 2
+        || target >= output_count
+        || winner >= output_count
+        || !learning_rate_pa.is_finite()
+        || learning_rate_pa <= 0.0
+        || !maximum_weight_pa.is_finite()
+        || maximum_weight_pa <= 0.0
+        || !trace_decay.is_finite()
+        || !(0.0..=1.0).contains(&trace_decay)
+        || !target_post_gate.is_finite()
+        || !(0.0..=1.0).contains(&target_post_gate)
+        || !winner_post_gate.is_finite()
+        || !(0.0..=1.0).contains(&winner_post_gate)
+        || !activity_decay.is_finite()
+        || !(0.0..1.0).contains(&activity_decay)
+    {
+        return output_count + 1;
+    }
+    let reservoir_trace = slice::from_raw_parts(reservoir_eligibility, cell_count);
+    let potential = slice::from_raw_parts(potential_sources, output_count * candidate_count);
+    let apposition =
+        slice::from_raw_parts_mut(apposition_eligibility, output_count * candidate_count);
+    let contacts = slice::from_raw_parts(contact_sources, output_count * fan_in);
+    let weights = slice::from_raw_parts_mut(contact_weights_pa, output_count * fan_in);
+    let ages = slice::from_raw_parts_mut(contact_ages, output_count * fan_in);
+    let pacemaker = slice::from_raw_parts_mut(pacemaker_synapses_pa, output_count);
+    let output_activity = slice::from_raw_parts_mut(output_activity_ema, output_count);
+
+    for age in ages.iter_mut() {
+        *age = age.saturating_add(1);
+    }
+    for activity in output_activity.iter_mut() {
+        *activity *= activity_decay;
+    }
+    output_activity[target] += (1.0 - activity_decay) * target_post_gate;
+    if winner != target {
+        output_activity[winner] += (1.0 - activity_decay) * winner_post_gate;
+    }
+
+    for trace in apposition.iter_mut() {
+        *trace *= trace_decay;
+    }
+    let add_post_event = |output: usize, gate: f64, apposition: &mut [f64]| {
+        let offset = output * candidate_count;
+        for candidate in 0..candidate_count {
+            let source = potential[offset + candidate] as usize;
+            apposition[offset + candidate] += reservoir_trace[source] * gate;
+        }
+    };
+    add_post_event(target, target_post_gate, apposition);
+    if winner != target {
+        add_post_event(winner, winner_post_gate, apposition);
+    }
+    if winner == target {
+        return output_count;
+    }
+
+    let mut update_contacts = |output: usize, modulation: f64| {
+        let potential_offset = output * candidate_count;
+        let contact_offset = output * fan_in;
+        let mut candidate = 0usize;
+        for slot in 0..fan_in {
+            let weight = &mut weights[contact_offset + slot];
+            if *weight == 0.0 {
+                continue;
+            }
+            let source = contacts[contact_offset + slot];
+            while potential[potential_offset + candidate] < source {
+                candidate += 1;
+            }
+            let trace = apposition[potential_offset + candidate];
+            *weight =
+                (*weight + learning_rate_pa * modulation * trace).clamp(0.0, maximum_weight_pa);
+        }
+        pacemaker[output] = (pacemaker[output]
+            + learning_rate_pa
+                * modulation
+                * if modulation > 0.0 {
+                    target_post_gate
+                } else {
+                    winner_post_gate
+                })
+        .clamp(0.0, maximum_weight_pa);
+    };
+    update_contacts(target, 1.0);
+    update_contacts(winner, -1.0);
+    winner
+}
+
+fn sparse_turnover_uniform(seed: u64, event: u64, output: usize, stream: usize) -> f64 {
+    let mut value = seed
+        ^ event.wrapping_mul(0x9e37_79b9_7f4a_7c15)
+        ^ (output as u64).wrapping_mul(0xbf58_476d_1ce4_e5b9)
+        ^ (stream as u64).wrapping_mul(0x94d0_49bb_1331_11eb);
+    value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    value ^= value >> 31;
+    ((value >> 11) as f64) * (1.0 / ((1u64 << 53) as f64))
+}
+
+/// Run one slow, bounded structural/homeostatic update for one output cell.
+///
+/// Return bits: 1 = recruited one local potential apposition, 2 = deleted one
+/// age-qualified contact. No call can recruit or delete more than one contact.
+///
+/// # Safety
+/// Array dimensions and sorted/unique/subset invariants are the same as for
+/// `humanbrain_sparse_three_factor_update`; contact arrays must be mutable.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn humanbrain_sparse_structural_turnover(
+    output_count: usize,
+    candidate_count: usize,
+    fan_in: usize,
+    output: usize,
+    structural_event: u64,
+    random_seed: u64,
+    minimum_age: u32,
+    turnover_probability: f64,
+    learning_rate_pa: f64,
+    maximum_weight_pa: f64,
+    homeostatic_rate: f64,
+    potential_sources: *const i32,
+    apposition_eligibility: *const f64,
+    contact_sources: *mut i32,
+    contact_weights_pa: *mut f64,
+    contact_ages: *mut u32,
+    output_activity_ema: *const f64,
+) -> u32 {
+    if output >= output_count
+        || fan_in == 0
+        || candidate_count < fan_in
+        || !turnover_probability.is_finite()
+        || !(0.0..=1.0).contains(&turnover_probability)
+        || !learning_rate_pa.is_finite()
+        || learning_rate_pa <= 0.0
+        || !maximum_weight_pa.is_finite()
+        || maximum_weight_pa <= 0.0
+        || !homeostatic_rate.is_finite()
+        || homeostatic_rate < 0.0
+    {
+        return 4;
+    }
+    let potential = slice::from_raw_parts(potential_sources, output_count * candidate_count);
+    let apposition = slice::from_raw_parts(apposition_eligibility, output_count * candidate_count);
+    let contacts = slice::from_raw_parts_mut(contact_sources, output_count * fan_in);
+    let weights = slice::from_raw_parts_mut(contact_weights_pa, output_count * fan_in);
+    let ages = slice::from_raw_parts_mut(contact_ages, output_count * fan_in);
+    let activity = slice::from_raw_parts(output_activity_ema, output_count);
+    let potential_offset = output * candidate_count;
+    let contact_offset = output * fan_in;
+    let row_sources = &mut contacts[contact_offset..contact_offset + fan_in];
+    let row_weights = &mut weights[contact_offset..contact_offset + fan_in];
+    let row_ages = &mut ages[contact_offset..contact_offset + fan_in];
+
+    let target_activity = 1.0 / output_count as f64;
+    let homeostatic_scale = (homeostatic_rate * (target_activity - activity[output])).exp();
+    for weight in row_weights.iter_mut() {
+        if *weight > 0.0 {
+            *weight = (*weight * homeostatic_scale).clamp(0.0, maximum_weight_pa);
+        }
+    }
+
+    let mut vacancy = row_weights.iter().position(|&weight| weight == 0.0);
+    let mut deleted = false;
+    if vacancy.is_none() {
+        for slot in 0..fan_in {
+            if row_ages[slot] < minimum_age {
+                continue;
+            }
+            let weakness = 1.0 - (row_weights[slot] / maximum_weight_pa).clamp(0.0, 1.0);
+            let hazard = turnover_probability * weakness;
+            if sparse_turnover_uniform(random_seed, structural_event, output, slot) < hazard {
+                vacancy = Some(slot);
+                row_weights[slot] = 0.0;
+                row_ages[slot] = 0;
+                deleted = true;
+                break;
+            }
+        }
+    }
+    let Some(vacancy) = vacancy else {
+        return 0;
+    };
+
+    let is_available = |source: i32| match row_sources.binary_search(&source) {
+        Ok(slot) => slot == vacancy,
+        Err(_) => true,
+    };
+    let mut positive_total = 0.0;
+    let mut available = 0usize;
+    for candidate in 0..candidate_count {
+        let source = potential[potential_offset + candidate];
+        if is_available(source) {
+            positive_total += apposition[potential_offset + candidate].max(0.0);
+            available += 1;
+        }
+    }
+    if available == 0 {
+        return if deleted { 2 } else { 0 };
+    }
+    let use_uniform = positive_total == 0.0;
+    let total = if use_uniform {
+        available as f64
+    } else {
+        positive_total
+    };
+    let mut draw = sparse_turnover_uniform(
+        random_seed ^ 0xa076_1d64_78bd_642f,
+        structural_event,
+        output,
+        fan_in,
+    ) * total;
+    let mut selected_candidate = None;
+    let mut last_selectable_candidate = None;
+    for candidate in 0..candidate_count {
+        let source = potential[potential_offset + candidate];
+        if !is_available(source) {
+            continue;
+        }
+        let score = if use_uniform {
+            1.0
+        } else {
+            apposition[potential_offset + candidate].max(0.0)
+        };
+        if score > 0.0 {
+            last_selectable_candidate = Some(candidate);
+        }
+        if draw < score {
+            selected_candidate = Some(candidate);
+            break;
+        }
+        draw -= score;
+    }
+    let candidate = selected_candidate.unwrap_or_else(|| {
+        last_selectable_candidate.expect("selectable candidate total was checked")
+    });
+    let new_source = potential[potential_offset + candidate];
+    let new_weight = (learning_rate_pa * apposition[potential_offset + candidate].max(1.0))
+        .clamp(0.0, maximum_weight_pa);
+
+    for slot in vacancy..fan_in - 1 {
+        row_sources[slot] = row_sources[slot + 1];
+        row_weights[slot] = row_weights[slot + 1];
+        row_ages[slot] = row_ages[slot + 1];
+    }
+    let shortened = fan_in - 1;
+    let mut insertion = 0usize;
+    while insertion < shortened && row_sources[insertion] < new_source {
+        insertion += 1;
+    }
+    for slot in (insertion..shortened).rev() {
+        row_sources[slot + 1] = row_sources[slot];
+        row_weights[slot + 1] = row_weights[slot];
+        row_ages[slot + 1] = row_ages[slot];
+    }
+    row_sources[insertion] = new_source;
+    row_weights[insertion] = new_weight;
+    row_ages[insertion] = 0;
+    1 | if deleted { 2 } else { 0 }
+}
+
 #[allow(clippy::too_many_arguments)]
 unsafe fn observe_token_optimized(
     glif_config: *const GlifConfig,

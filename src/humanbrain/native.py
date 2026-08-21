@@ -25,6 +25,7 @@ _LIBRARY_PATH: Path | None = None
 
 _F64_POINTER = ctypes.POINTER(ctypes.c_double)
 _I32_POINTER = ctypes.POINTER(ctypes.c_int32)
+_U32_POINTER = ctypes.POINTER(ctypes.c_uint32)
 _U8_POINTER = ctypes.POINTER(ctypes.c_uint8)
 _SIZE_POINTER = ctypes.POINTER(ctypes.c_size_t)
 _U64_POINTER = ctypes.POINTER(ctypes.c_uint64)
@@ -225,6 +226,62 @@ def _load_library() -> ctypes.CDLL:
             _F64_POINTER,
         ]
         library.humanbrain_three_factor_update.restype = ctypes.c_size_t
+        library.humanbrain_sparse_readout_current.argtypes = [
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_double,
+            _F64_POINTER,
+            _F64_POINTER,
+            _I32_POINTER,
+            _F64_POINTER,
+            _F64_POINTER,
+            _F64_POINTER,
+        ]
+        library.humanbrain_sparse_readout_current.restype = None
+        library.humanbrain_sparse_three_factor_update.argtypes = [
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.c_double,
+            _F64_POINTER,
+            _I32_POINTER,
+            _F64_POINTER,
+            _I32_POINTER,
+            _F64_POINTER,
+            _U32_POINTER,
+            _F64_POINTER,
+            _F64_POINTER,
+            ctypes.c_double,
+        ]
+        library.humanbrain_sparse_three_factor_update.restype = ctypes.c_size_t
+        library.humanbrain_sparse_structural_turnover.argtypes = [
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_size_t,
+            ctypes.c_uint64,
+            ctypes.c_uint64,
+            ctypes.c_uint32,
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.c_double,
+            _I32_POINTER,
+            _F64_POINTER,
+            _I32_POINTER,
+            _F64_POINTER,
+            _U32_POINTER,
+            _F64_POINTER,
+        ]
+        library.humanbrain_sparse_structural_turnover.restype = ctypes.c_uint32
         _LIBRARY = library
         _LIBRARY_PATH = build.library_path
         return library
@@ -245,6 +302,10 @@ def _i32(array: np.ndarray) -> _I32_POINTER:
     return array.ctypes.data_as(_I32_POINTER)
 
 
+def _u32(array: np.ndarray) -> _U32_POINTER:
+    return array.ctypes.data_as(_U32_POINTER)
+
+
 def _require_native_array(
     array: np.ndarray,
     *,
@@ -254,6 +315,29 @@ def _require_native_array(
 ) -> None:
     if array.dtype != dtype or array.shape != shape or not array.flags.c_contiguous:
         raise ValueError(f"{name} must be a contiguous {dtype} array with shape {shape}")
+
+
+def _finite_scalar(name: str, value: float) -> float:
+    scalar = float(value)
+    if not np.isfinite(scalar):
+        raise ValueError(f"{name} must be finite")
+    return scalar
+
+
+def _positive_scalar(name: str, value: float) -> float:
+    scalar = _finite_scalar(name, value)
+    if scalar <= 0.0:
+        raise ValueError(f"{name} must be positive")
+    return scalar
+
+
+def _unit_interval(name: str, value: float, *, open_interval: bool = False) -> float:
+    scalar = _finite_scalar(name, value)
+    valid = 0.0 < scalar < 1.0 if open_interval else 0.0 <= scalar <= 1.0
+    if not valid:
+        interval = "(0, 1)" if open_interval else "[0, 1]"
+        raise ValueError(f"{name} must be in {interval}")
+    return scalar
 
 
 def _glif_config(population: AdaptiveGlifPopulation) -> _GlifConfig:
@@ -564,6 +648,232 @@ class NativeThreeFactorLearner:
         if winner > self._output_cells:
             raise RuntimeError("native local learner rejected its array dimensions")
         return winner
+
+
+class NativeSparseCellReadout:
+    """Native current summation over explicit bounded output-cell contacts."""
+
+    def __init__(
+        self,
+        *,
+        eligibility: np.ndarray,
+        output_heterogeneity_pa: np.ndarray,
+        potential_sources: np.ndarray,
+        apposition_eligibility: np.ndarray,
+        contact_sources: np.ndarray,
+        contact_weights_pa: np.ndarray,
+        contact_ages: np.ndarray,
+        pacemaker_synapses_pa: np.ndarray,
+        output_activity_ema: np.ndarray,
+    ) -> None:
+        self._library = _load_library()
+        output_cells, fan_in = contact_sources.shape
+        if potential_sources.shape[0] != output_cells:
+            raise ValueError("potential appositions need one row per output cell")
+        candidate_count = potential_sources.shape[1]
+        if apposition_eligibility.shape != (output_cells, candidate_count):
+            raise ValueError("potential sources and apposition traces must have equal shape")
+        if contact_weights_pa.shape != (output_cells, fan_in):
+            raise ValueError("sparse contact sources and weights must have equal shape")
+        reservoir_cells = eligibility.shape[0]
+        _require_native_array(
+            eligibility,
+            dtype=np.dtype(np.float64),
+            shape=(reservoir_cells,),
+            name="eligibility",
+        )
+        _require_native_array(
+            output_heterogeneity_pa,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells,),
+            name="output heterogeneity",
+        )
+        _require_native_array(
+            potential_sources,
+            dtype=np.dtype(np.int32),
+            shape=(output_cells, candidate_count),
+            name="potential apposition sources",
+        )
+        _require_native_array(
+            apposition_eligibility,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells, candidate_count),
+            name="apposition eligibility",
+        )
+        _require_native_array(
+            contact_sources,
+            dtype=np.dtype(np.int32),
+            shape=(output_cells, fan_in),
+            name="sparse contact sources",
+        )
+        _require_native_array(
+            contact_weights_pa,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells, fan_in),
+            name="sparse contact weights",
+        )
+        _require_native_array(
+            contact_ages,
+            dtype=np.dtype(np.uint32),
+            shape=(output_cells, fan_in),
+            name="sparse contact ages",
+        )
+        _require_native_array(
+            output_activity_ema,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells,),
+            name="output activity",
+        )
+        _require_native_array(
+            pacemaker_synapses_pa,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells,),
+            name="pacemaker synapses",
+        )
+        if np.any(potential_sources < 0) or np.any(potential_sources >= reservoir_cells):
+            raise ValueError("potential appositions must index reservoir cells")
+        if np.any(contact_sources < 0) or np.any(contact_sources >= reservoir_cells):
+            raise ValueError("sparse contacts must index reservoir cells")
+        self._eligibility = eligibility
+        self._output_heterogeneity_pa = output_heterogeneity_pa
+        self._potential_sources = potential_sources
+        self._apposition_eligibility = apposition_eligibility
+        self._contact_sources = contact_sources
+        self._contact_weights_pa = contact_weights_pa
+        self._contact_ages = contact_ages
+        self._pacemaker_synapses_pa = pacemaker_synapses_pa
+        self._output_activity_ema = output_activity_ema
+        self._current_pa = np.empty(output_cells, dtype=np.float64)
+        self._output_cells = output_cells
+        self._reservoir_cells = reservoir_cells
+        self._fan_in = fan_in
+        self._candidate_count = candidate_count
+
+    def current(self, base_current_pa: float) -> np.ndarray:
+        base_current_pa = _finite_scalar("base current", base_current_pa)
+        self._library.humanbrain_sparse_readout_current(
+            self._reservoir_cells,
+            self._output_cells,
+            self._fan_in,
+            base_current_pa,
+            _f64(self._eligibility),
+            _f64(self._output_heterogeneity_pa),
+            _i32(self._contact_sources),
+            _f64(self._contact_weights_pa),
+            _f64(self._pacemaker_synapses_pa),
+            _f64(self._current_pa),
+        )
+        return self._current_pa.copy()
+
+    def update(
+        self,
+        *,
+        target: int,
+        winner: int,
+        learning_rate_pa: float,
+        maximum_weight_pa: float,
+        trace_decay: float,
+        target_post_gate: float,
+        winner_post_gate: float,
+        activity_decay: float,
+    ) -> int | None:
+        target = int(target)
+        winner = int(winner)
+        if not 0 <= target < self._output_cells:
+            raise ValueError("target token outside output-cell population")
+        if not 0 <= winner < self._output_cells:
+            raise ValueError("winner outside output-cell population")
+        learning_rate_pa = _positive_scalar("learning rate", learning_rate_pa)
+        maximum_weight_pa = _positive_scalar("maximum weight", maximum_weight_pa)
+        trace_decay = _unit_interval("trace decay", trace_decay)
+        target_post_gate = _unit_interval("target post gate", target_post_gate)
+        winner_post_gate = _unit_interval("winner post gate", winner_post_gate)
+        activity_decay = _unit_interval(
+            "activity decay", activity_decay, open_interval=True
+        )
+        result = int(
+            self._library.humanbrain_sparse_three_factor_update(
+                self._reservoir_cells,
+                self._output_cells,
+                self._candidate_count,
+                self._fan_in,
+                target,
+                winner,
+                learning_rate_pa,
+                maximum_weight_pa,
+                trace_decay,
+                target_post_gate,
+                winner_post_gate,
+                _f64(self._eligibility),
+                _i32(self._potential_sources),
+                _f64(self._apposition_eligibility),
+                _i32(self._contact_sources),
+                _f64(self._contact_weights_pa),
+                _u32(self._contact_ages),
+                _f64(self._pacemaker_synapses_pa),
+                _f64(self._output_activity_ema),
+                activity_decay,
+            )
+        )
+        if result == self._output_cells:
+            return None
+        if result > self._output_cells:
+            raise RuntimeError("native sparse learner rejected its dimensions")
+        return result
+
+    def turnover(
+        self,
+        *,
+        output: int,
+        structural_event: int,
+        random_seed: int,
+        minimum_age: int,
+        turnover_probability: float,
+        learning_rate_pa: float,
+        maximum_weight_pa: float,
+        homeostatic_rate: float,
+    ) -> tuple[bool, bool]:
+        output = int(output)
+        structural_event = int(structural_event)
+        minimum_age = int(minimum_age)
+        if not 0 <= output < self._output_cells:
+            raise ValueError("turnover output outside output-cell population")
+        if structural_event < 0:
+            raise ValueError("structural event must be nonnegative")
+        if minimum_age < 0 or minimum_age > np.iinfo(np.uint32).max:
+            raise ValueError("minimum age must fit uint32")
+        turnover_probability = _unit_interval(
+            "turnover probability", turnover_probability
+        )
+        learning_rate_pa = _positive_scalar("learning rate", learning_rate_pa)
+        maximum_weight_pa = _positive_scalar("maximum weight", maximum_weight_pa)
+        homeostatic_rate = _finite_scalar("homeostatic rate", homeostatic_rate)
+        if homeostatic_rate < 0.0:
+            raise ValueError("homeostatic rate must be nonnegative")
+        result = int(
+            self._library.humanbrain_sparse_structural_turnover(
+                self._output_cells,
+                self._candidate_count,
+                self._fan_in,
+                output,
+                structural_event,
+                int(random_seed) & ((1 << 64) - 1),
+                minimum_age,
+                turnover_probability,
+                learning_rate_pa,
+                maximum_weight_pa,
+                homeostatic_rate,
+                _i32(self._potential_sources),
+                _f64(self._apposition_eligibility),
+                _i32(self._contact_sources),
+                _f64(self._contact_weights_pa),
+                _u32(self._contact_ages),
+                _f64(self._output_activity_ema),
+            )
+        )
+        if result > 3:
+            raise RuntimeError("native sparse turnover rejected its dimensions")
+        return bool(result & 1), bool(result & 2)
 
 
 def recurrent_kernel(*args: object, **kwargs: object) -> NativeRecurrentKernel:
