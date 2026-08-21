@@ -9,14 +9,16 @@ the diff and reruns the declared gates.
 
 1. Verify that the worktree is clean and that `HEAD` equals every task's
    `base_sha`. Stop on any mismatch.
-2. Pass the launcher's exact pre-materialized delegate array unchanged to one
-   `delegate_task(..., background=true)` call. Do not pass raw manifest rows,
-   split the array across calls, add keys, or allow nested delegation.
-3. Every delegate object has exactly `{goal, context, role: "leaf"}`. Its fixed
-   launcher-owned goal identifies only the validated task ID. Its context
-   contains this complete contract verbatim, the immutable run/routing pins,
-   and that task's exact JSON record. A child has no access to the parent's
-   conversation history.
+2. Read the attached prompt through EOF using line-offset pagination. For each
+   line-safe record, concatenate `context_chunks` in order with no separator,
+   then construct exactly `{goal, context, role: "leaf"}`. Pass all reconstructed
+   objects to one `delegate_task(..., background=true)` call. Do not pass raw
+   manifest rows, retain `context_chunks`, split the batch, add keys, or allow
+   nested delegation.
+3. Each fixed launcher-owned goal identifies only the validated task ID. Each
+   reconstructed context contains this complete contract verbatim, the
+   immutable run/routing pins, and that task's exact JSON record. A child has
+   no access to the parent's conversation history.
 4. On Hermes v0.20.5 a Kanban worker joins this requested-background batch
    synchronously and returns its consolidated results in the same parent turn.
    Capture every result before continuing; never issue a second batch or rely

@@ -18,6 +18,8 @@ The launcher is intentionally narrower than the Hermes CLI:
 - the same Git common directory as the tracked launcher (linked Human Brain
   worktrees are allowed; sibling repositories are not);
 - a 2 MiB UTF-8 prompt envelope, below Hermes' 25 MiB attachment cap;
+- a 1,800-character physical-line envelope with lossless 700-character context
+  chunks, so Hermes can paginate the attachment without truncating a record;
 - plan-only unless both `-Execute` and `-AuthorizeSourceUpload` are present;
 - one blocked goal card, one joined delegate batch, one `dispatch --max 1`,
   no automatic retry, and no integration action.
@@ -26,7 +28,9 @@ It is pinned to Hermes Agent v0.20.5. Before any Git ref or board mutation it
 reads the resolved profile configuration and requires both parent and delegate
 model/provider to be `nous:stealth/ox-alpha`, worktree isolation, enough child
 concurrency for the manifest, at least one spawn level, and disabled subagent
-auto-approval. Portal authentication and the dedicated board remain
+auto-approval. It also requires the resolved tool-output line/byte budgets and
+`file_read_max_chars` to accommodate the observed longest prompt line. Portal
+authentication and the dedicated board remain
 installation-owned prerequisites; the launcher never changes global state. It
 routes the card through an explicit
 `worktree:<validated repository>` workspace and a deterministic local branch
@@ -69,10 +73,12 @@ that the external model may receive source from the allowed public paths:
     -AuthorizeSourceUpload
 ```
 
-The prompt contains a fully materialized delegate array. Every object has
-exactly `goal`, `context`, and `role: "leaf"`; every goal is launcher-owned and
-contains only the validated task ID, while every context repeats the full
-worker contract, immutable run pins, and exact single-task JSON. The script
+The prompt contains fully materialized, line-safe delegate records. Every goal
+is launcher-owned and contains only the validated task ID. Concatenating a
+record's `context_chunks` with no separator losslessly recovers the full worker
+contract, immutable run pins, and exact single-task JSON. The parent must read
+the attachment through EOF with line-offset pagination and construct exactly
+`goal`, recovered `context`, and `role: "leaf"` before its one batch call. The script
 writes that prompt to a temporary UTF-8 file and creates the card initially
 blocked. It then proves exactly one non-archived hash-bound card exists,
 attaches the prompt through Hermes' native Kanban attachment command, verifies

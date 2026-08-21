@@ -108,7 +108,7 @@ def _write_fake_hermes(tmp_path: Path) -> tuple[Path, Path, Path]:
         "if ($args -contains '--version') { Write-Output 'Hermes Agent v0.20.5 (test)'; return }\n"
         "$scriptArgs = @($args)\n"
         "function Value-After([string]$flag) { $i = [Array]::IndexOf($scriptArgs, $flag); if ($i -lt 0) { return $null }; return $scriptArgs[$i + 1] }\n"
-        "if ($args -contains 'config') { $key = Value-After 'get'; if ($key -eq 'model') { if ($env:HERMES_FAKE_CONFIG_DRIFT -eq 'model') { Write-Output '{\"default\":\"wrong-model\",\"provider\":\"nous\"}' } else { Write-Output '{\"default\":\"stealth/ox-alpha\",\"provider\":\"nous\"}' }; return }; if ($key -eq 'delegation') { $isolation = $true; if ($env:HERMES_FAKE_CONFIG_DRIFT -eq 'isolation') { $isolation = $false }; [ordered]@{ model='stealth/ox-alpha'; provider='nous'; max_concurrent_children=128; max_spawn_depth=2; subagent_auto_approve=$false; worktree_isolation=$isolation } | ConvertTo-Json -Compress; return }; throw 'unexpected config key' }\n"
+        "if ($args -contains 'config') { $key = Value-After 'get'; if ($key -eq 'model') { if ($env:HERMES_FAKE_CONFIG_DRIFT -eq 'model') { Write-Output '{\"default\":\"wrong-model\",\"provider\":\"nous\"}' } else { Write-Output '{\"default\":\"stealth/ox-alpha\",\"provider\":\"nous\"}' }; return }; if ($key -eq 'delegation') { $isolation = $true; if ($env:HERMES_FAKE_CONFIG_DRIFT -eq 'isolation') { $isolation = $false }; [ordered]@{ model='stealth/ox-alpha'; provider='nous'; max_concurrent_children=128; max_spawn_depth=2; subagent_auto_approve=$false; worktree_isolation=$isolation } | ConvertTo-Json -Compress; return }; if ($key -eq 'tool_output') { $lineLength = 2000; if ($env:HERMES_FAKE_CONFIG_DRIFT -eq 'line-length') { $lineLength = 500 }; [ordered]@{ max_bytes=50000; max_lines=2000; max_line_length=$lineLength } | ConvertTo-Json -Compress; return }; if ($key -eq 'file_read_max_chars') { Write-Output '100000'; return }; throw 'unexpected config key' }\n"
         "if ($args -contains 'create') { $createIndex = [Array]::IndexOf($args, 'create'); $card = [ordered]@{ id='t_mock-card'; title=$args[$createIndex + 1]; body=(Value-After '--body'); assignee=(Value-After '--assignee'); status='blocked'; workspace_kind='worktree'; workspace_path=$env:HERMES_FAKE_REPOSITORY; branch_name=(Value-After '--branch'); project_id='p_board-inherited'; created_by='human-brain-fleet'; max_retries=1; model_override=(Value-After '--model'); provider_override=(Value-After '--provider') }; $cardJson = $card | ConvertTo-Json -Compress; if (-not [string]::IsNullOrWhiteSpace($env:HERMES_FAKE_CREATED)) { [System.IO.File]::WriteAllText($env:HERMES_FAKE_CREATED, $cardJson) }; Write-Output $cardJson; return }\n"
         "$attachIndex = [Array]::IndexOf($args, 'attach')\n"
         "if ($attachIndex -ge 0) { [System.IO.File]::Copy($args[$attachIndex + 2], $env:HERMES_FAKE_PROMPT_CAPTURE, $true); Write-Output 'Attached prompt'; return }\n"
@@ -322,6 +322,54 @@ def test_oversized_aggregate_prompt_fails_before_git_or_hermes(tmp_path: Path) -
     assert _git(repo, "status", "--porcelain", "--untracked-files=all") == ""
 
 
+def test_large_delegate_context_is_line_safe_and_reconstructable(tmp_path: Path) -> None:
+    repo, base_sha = _clean_repository(tmp_path)
+    large_task = _task_record(
+        base_sha,
+        acceptance=["reproducible public evidence " + ("x" * 1_850)] * 55,
+    )
+    companion_task = _task_record(base_sha, id="verify-fleet-contract")
+    manifest = _write_tasks(tmp_path, [large_task, companion_task])
+    manifest_hash = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    fake_hermes, capture, prompt_capture = _write_fake_hermes(tmp_path)
+    env = os.environ | {
+        "HERMES_FAKE_CAPTURE": str(capture),
+        "HERMES_FAKE_PROMPT_CAPTURE": str(prompt_capture),
+        "HERMES_FAKE_REPOSITORY": str(repo),
+        "HERMES_FAKE_ATTACHMENT_NAME": f"human-brain-ox-fleet-prompt-{manifest_hash[:12]}.md",
+        "HERMES_FAKE_PROMOTED": str(tmp_path / "promoted.txt"),
+        "HERMES_FAKE_CREATED": str(tmp_path / "created.json"),
+    }
+
+    result = _run(
+        "-ManifestPath",
+        str(manifest),
+        "-RepositoryPath",
+        str(repo),
+        "-HermesExecutable",
+        str(fake_hermes),
+        "-Execute",
+        "-AuthorizeSourceUpload",
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    attached_prompt = prompt_capture.read_text(encoding="utf-8")
+    assert len(attached_prompt) > 100_000
+    assert max(map(len, attached_prompt.splitlines())) <= 1_800
+    records_json = attached_prompt.split(
+        "--- BEGIN LINE-SAFE DELEGATE RECORDS ---", 1
+    )[1].split("--- END LINE-SAFE DELEGATE RECORDS ---", 1)[0]
+    records = json.loads(records_json)
+    assert list(records[0]) == ["goal", "context_chunks", "role"]
+    reconstructed_context = "".join(records[0]["context_chunks"])
+    assert len(reconstructed_context) > 100_000
+    child_task_json = reconstructed_context.split(
+        "--- BEGIN EXACT IMMUTABLE TASK JSON ---", 1
+    )[1].split("--- END EXACT IMMUTABLE TASK JSON ---", 1)[0]
+    assert json.loads(child_task_json) == large_task
+
+
 @pytest.mark.parametrize(
     "objective",
     [
@@ -412,7 +460,13 @@ def test_repository_must_share_launcher_git_common_directory(tmp_path: Path) -> 
     assert not capture.exists()
 
 
-def test_profile_config_drift_fails_before_git_or_board_mutation(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("drift", "message"),
+    [("isolation", "profile configuration"), ("line-length", "read configuration")],
+)
+def test_profile_config_drift_fails_before_git_or_board_mutation(
+    tmp_path: Path, drift: str, message: str
+) -> None:
     repo, base_sha = _clean_repository(tmp_path)
     manifest = _write_manifest(tmp_path, base_sha)
     fake_hermes, capture, prompt_capture = _write_fake_hermes(tmp_path)
@@ -420,7 +474,7 @@ def test_profile_config_drift_fails_before_git_or_board_mutation(tmp_path: Path)
     env = os.environ | {
         "HERMES_FAKE_CAPTURE": str(capture),
         "HERMES_FAKE_PROMPT_CAPTURE": str(prompt_capture),
-        "HERMES_FAKE_CONFIG_DRIFT": "isolation",
+        "HERMES_FAKE_CONFIG_DRIFT": drift,
     }
 
     result = _run(
@@ -436,7 +490,7 @@ def test_profile_config_drift_fails_before_git_or_board_mutation(tmp_path: Path)
     )
 
     assert result.returncode != 0
-    assert "profile configuration" in (result.stdout + result.stderr)
+    assert message in (result.stdout + result.stderr)
     assert _git(repo, "for-each-ref", "--format=%(refname) %(objectname)") == refs_before
     assert _git(repo, "status", "--porcelain", "--untracked-files=all") == ""
 
@@ -564,6 +618,15 @@ def test_existing_ready_card_blocks_board_wide_dispatch(tmp_path: Path) -> None:
         ["--profile", "humanbrainox", "--version"],
         ["--profile", "humanbrainox", "config", "get", "model", "--json"],
         ["--profile", "humanbrainox", "config", "get", "delegation", "--json"],
+        ["--profile", "humanbrainox", "config", "get", "tool_output", "--json"],
+        [
+            "--profile",
+            "humanbrainox",
+            "config",
+            "get",
+            "file_read_max_chars",
+            "--json",
+        ],
         [
             "--profile",
             "humanbrainox",
@@ -583,7 +646,7 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
     objective = (
         'Audit this literal input; Set-Content -LiteralPath "'
         + str(injection_marker)
-        + '" -Value pwned; $(Write-Output injected); preserve <multi word> and {multi word}'
+        + '" -Value pwned; $(Write-Output injected); preserve <multi word>, {multi word}, and Unicode 🧠 café'
     )
     task = _task_record(base_sha, objective=objective)
     companion_task = _task_record(
@@ -640,6 +703,22 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
     assert calls[3] == [
         "--profile",
         "humanbrainox",
+        "config",
+        "get",
+        "tool_output",
+        "--json",
+    ]
+    assert calls[4] == [
+        "--profile",
+        "humanbrainox",
+        "config",
+        "get",
+        "file_read_max_chars",
+        "--json",
+    ]
+    assert calls[5] == [
+        "--profile",
+        "humanbrainox",
         "kanban",
         "--board",
         "human-brain-ox",
@@ -647,7 +726,7 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "--archived",
         "--json",
     ]
-    create = calls[4]
+    create = calls[6]
     body_index = create.index("--body") + 1
     body = create[body_index]
     assert body == (
@@ -690,7 +769,7 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "blocked",
         "--json",
     ]
-    assert calls[5] == [
+    assert calls[7] == [
         "--profile",
         "humanbrainox",
         "kanban",
@@ -700,7 +779,7 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "--archived",
         "--json",
     ]
-    assert calls[6] == [
+    assert calls[8] == [
         "--profile",
         "humanbrainox",
         "kanban",
@@ -710,7 +789,7 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "t_mock-card",
         "--json",
     ]
-    attach = calls[7]
+    attach = calls[9]
     prompt_path = Path(attach[7])
     normalized_attach = attach.copy()
     normalized_attach[7] = "<PROMPT_FILE>"
@@ -731,7 +810,7 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "human-brain-fleet",
     ]
     assert not prompt_path.exists()
-    assert calls[8] == [
+    assert calls[10] == [
         "--profile",
         "humanbrainox",
         "kanban",
@@ -739,28 +818,6 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "human-brain-ox",
         "attachments",
         "t_mock-card",
-        "--json",
-    ]
-    assert calls[9] == [
-        "--profile",
-        "humanbrainox",
-        "kanban",
-        "--board",
-        "human-brain-ox",
-        "list",
-        "--status",
-        "ready",
-        "--json",
-    ]
-    assert calls[10] == [
-        "--profile",
-        "humanbrainox",
-        "kanban",
-        "--board",
-        "human-brain-ox",
-        "promote",
-        "t_mock-card",
-        f"verified fleet prompt {manifest_hash}",
         "--json",
     ]
     assert calls[11] == [
@@ -780,6 +837,28 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
         "kanban",
         "--board",
         "human-brain-ox",
+        "promote",
+        "t_mock-card",
+        f"verified fleet prompt {manifest_hash}",
+        "--json",
+    ]
+    assert calls[13] == [
+        "--profile",
+        "humanbrainox",
+        "kanban",
+        "--board",
+        "human-brain-ox",
+        "list",
+        "--status",
+        "ready",
+        "--json",
+    ]
+    assert calls[14] == [
+        "--profile",
+        "humanbrainox",
+        "kanban",
+        "--board",
+        "human-brain-ox",
         "dispatch",
         "--max",
         "1",
@@ -791,10 +870,20 @@ def test_authorized_execute_uses_exact_safe_hermes_argv(tmp_path: Path) -> None:
     assert "$(Write-Output injected)" in attached_prompt
     assert "delegate_task" in attached_prompt
     assert "background=true" in attached_prompt
-    delegate_json = attached_prompt.split(
-        "--- BEGIN EXACT DELEGATE TASK ARRAY ---", 1
-    )[1].split("--- END EXACT DELEGATE TASK ARRAY ---", 1)[0]
-    delegates = json.loads(delegate_json)
+    assert max(map(len, attached_prompt.splitlines())) <= 1_800
+    records_json = attached_prompt.split(
+        "--- BEGIN LINE-SAFE DELEGATE RECORDS ---", 1
+    )[1].split("--- END LINE-SAFE DELEGATE RECORDS ---", 1)[0]
+    records = json.loads(records_json)
+    assert all(list(record) == ["goal", "context_chunks", "role"] for record in records)
+    delegates = [
+        {
+            "goal": record["goal"],
+            "context": "".join(record["context_chunks"]),
+            "role": record["role"],
+        }
+        for record in records
+    ]
     assert len(delegates) == 2
     for delegate, expected_task in zip(delegates, [task, companion_task], strict=True):
         assert list(delegate) == ["goal", "context", "role"]
