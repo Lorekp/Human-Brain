@@ -71,11 +71,22 @@ def _run_one(
     source_dir: Path,
 ) -> dict[str, object]:
     evaluation_protocol = protocol["evaluation"]
+    dynamics = protocol["model"]["dynamics"]
     train_texts = _bounded_corpus(train_paths, training_characters)
-    recurrent_fanout = max(2, round(cell_count / 16))
+    recurrent_fanout = min(int(dynamics["recurrent_fanout"]), cell_count - 1)
+    input_fanout = max(
+        int(dynamics["minimum_input_fanout"]),
+        round(cell_count / float(dynamics["input_fanout_divisor"])),
+    )
     circuit = replace(
         _circuit_config(cell_count, cell_count, seed),
-        recurrent_current_pa=650.0 * 6 / recurrent_fanout,
+        input_fanout=input_fanout,
+        recurrent_fanout=recurrent_fanout,
+        token_interval_ms=float(dynamics["token_interval_ms"]),
+        input_pulse_ms=float(dynamics["input_pulse_ms"]),
+        input_current_pa=float(dynamics["input_current_pa"]),
+        recurrent_current_pa=float(dynamics["recurrent_current_pa"]),
+        eligibility_tau_ms=float(dynamics["eligibility_tau_ms"]),
         readout_ridge=training_characters / 12_000,
         recurrent_topology=topology,
     )
@@ -144,6 +155,8 @@ def _run_one(
         "active_cells": cell_count,
         "training_characters": training_characters,
         "recurrent_edges": cell_count * circuit.recurrent_fanout,
+        "input_fanout": circuit.input_fanout,
+        "recurrent_fanout": circuit.recurrent_fanout,
         "learned_synapses": model.learned_synapses,
         "training_wall_seconds": training_seconds,
         "evaluation_wall_seconds": evaluation_seconds,
@@ -321,12 +334,12 @@ def main() -> None:
     parser.add_argument(
         "--protocol",
         type=Path,
-        default=ROOT / "benchmarks" / "topology_protocol_v1.json",
+        default=ROOT / "benchmarks" / "topology_protocol_v2.json",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT / "artifacts" / "topology_validation_v1.json",
+        default=ROOT / "artifacts" / "topology_validation_v2.json",
     )
     parser.add_argument("--limit-runs", type=int)
     args = parser.parse_args()

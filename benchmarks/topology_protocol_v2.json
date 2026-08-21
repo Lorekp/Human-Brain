@@ -1,0 +1,74 @@
+{
+  "version": "human-cell-calibrated-topology-v2",
+  "registered_at": "2026-08-21T00:00:00+02:00",
+  "status": "registered-before-v2-first-run-after-v1-exploration",
+  "selection_partition": "validation from code_language_protocol_v4.json",
+  "test_partition_locked": true,
+  "model": {
+    "cell_type": "Allen human GLIF5",
+    "calibration_source": "dynamics_calibration_train_v1.json; train-only selection short_eligibility",
+    "random_seeds": [17, 29, 43],
+    "architecture_cases": [
+      {
+        "active_reservoir_cells": 96,
+        "training_characters": 12000,
+        "topologies": [
+          "random",
+          "uniform_no_self",
+          "single_scale_groups",
+          "nested_groups",
+          "ring_1d",
+          "sheet_2d",
+          "layered_sheet",
+          "volume_3d",
+          "mixed_membership"
+        ]
+      },
+      {
+        "active_reservoir_cells": 192,
+        "training_characters": 24000,
+        "topologies": [
+          "uniform_no_self",
+          "single_scale_groups",
+          "nested_groups",
+          "sheet_2d",
+          "mixed_membership"
+        ]
+      }
+    ],
+    "comparison_baseline": "uniform_no_self",
+    "dynamics": {
+      "minimum_input_fanout": 4,
+      "input_fanout_divisor": 12,
+      "recurrent_fanout": 6,
+      "token_interval_ms": 5.0,
+      "input_pulse_ms": 1.5,
+      "input_current_pa": 4000.0,
+      "recurrent_current_pa": 325.0,
+      "eligibility_tau_ms": 40.0
+    },
+    "readout_ridge_rule": "training_characters / 12000",
+    "degree_matched": true,
+    "current_budget_matched": true
+  },
+  "evaluation": {
+    "teacher_forced_predictions_per_validation_file": 128,
+    "generation_prompt_characters": 256,
+    "generation_target_characters": 64,
+    "state_diagnostic_tokens": 256,
+    "state_diagnostics": [
+      "effective_state_rank",
+      "mean_absolute_cell_correlation",
+      "mean_spikes_per_cell_per_token",
+      "mean_firing_hz_per_cell"
+    ],
+    "adaptation_on_validation": false
+  },
+  "success_criteria": {
+    "primary": "median free-running byte accuracy exceeds uniform_no_self while median teacher-forced accuracy is no more than 0.01 below uniform_no_self",
+    "secondary": "median exact-prefix length exceeds uniform_no_self; effective state rank rises or cell correlation falls without pathological firing",
+    "group_claim": "single-scale or nested groups meet the primary criterion at both 96 and 192 cells",
+    "spatial_claim": "a spatial topology meets the primary criterion at 96 cells and sheet_2d replicates at 192 cells",
+    "claim_limit": "v2 topology families use dynamics chosen without validation predictions, but the v2 topology set follows v1 validation exploration and is confirmatory only within these sizes; larger-N confirmation waits for simulator speed work"
+  }
+}

@@ -1,0 +1,46 @@
+2026-08-21 14:46:05,130 - INFO - Creating container for sqlfluff__sqlfluff-1625...
+2026-08-21 14:46:05,222 - INFO - Container for sqlfluff__sqlfluff-1625 created: f6437e9a9f409d3060104aa647db2f1bca214504c62405f6f895d0847bca7d9e
+2026-08-21 14:46:05,562 - INFO - Container for sqlfluff__sqlfluff-1625 started: f6437e9a9f409d3060104aa647db2f1bca214504c62405f6f895d0847bca7d9e
+2026-08-21 14:46:05,564 - INFO - Intermediate patch for sqlfluff__sqlfluff-1625 written to logs/run_evaluation/human-cell-sqlfluff-1625-v2/human-cell-dendritic-episodic-v1/sqlfluff__sqlfluff-1625/patch.diff, now applying to container...
+2026-08-21 14:46:05,728 - INFO - >>>>> Applied Patch:
+Checking patch src/sqlfluff/rules/L031.py...
+Applied patch src/sqlfluff/rules/L031.py cleanly.
+
+2026-08-21 14:46:05,997 - INFO - Git diff before:
+diff --git a/src/sqlfluff/rules/L031.py b/src/sqlfluff/rules/L031.py
+index 838c6ce5d..7f7f44822 100644
+--- a/src/sqlfluff/rules/L031.py
++++ b/src/sqlfluff/rules/L031.py
+@@ -61,6 +61,8 @@ class Rule_L031(BaseRule):
+ 
+             if not from_clause_segment:
+                 return None
++            if next(from_clause_segment.recursive_crawl("join_clause"), None) is None:
++                return None
+ 
+             from_expression = from_clause_segment.get_child("from_expression")
+             from_expression_element = None
+2026-08-21 14:46:05,999 - INFO - Eval script for sqlfluff__sqlfluff-1625 written to logs/run_evaluation/human-cell-sqlfluff-1625-v2/human-cell-dendritic-episodic-v1/sqlfluff__sqlfluff-1625/eval.sh; copying to container...
+2026-08-21 14:46:15,180 - INFO - Test runtime: 9.10 seconds
+2026-08-21 14:46:15,192 - INFO - Test output for sqlfluff__sqlfluff-1625 written to logs/run_evaluation/human-cell-sqlfluff-1625-v2/human-cell-dendritic-episodic-v1/sqlfluff__sqlfluff-1625/test_output.txt
+2026-08-21 14:46:15,258 - INFO - Git diff after:
+diff --git a/src/sqlfluff/rules/L031.py b/src/sqlfluff/rules/L031.py
+index 838c6ce5d..7f7f44822 100644
+--- a/src/sqlfluff/rules/L031.py
++++ b/src/sqlfluff/rules/L031.py
+@@ -61,6 +61,8 @@ class Rule_L031(BaseRule):
+ 
+             if not from_clause_segment:
+                 return None
++            if next(from_clause_segment.recursive_crawl("join_clause"), None) is None:
++                return None
+ 
+             from_expression = from_clause_segment.get_child("from_expression")
+             from_expression_element = None
+2026-08-21 14:46:15,258 - INFO - Grading answer for sqlfluff__sqlfluff-1625...
+2026-08-21 14:46:15,302 - INFO - report: {'sqlfluff__sqlfluff-1625': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': False, 'infra_failure': False, 'tests_status': {'FAIL_TO_PASS': {'success': [], 'failure': ['test/cli/commands_test.py::test__cli__command_directed']}, 'PASS_TO_PASS': {'success': ['test/cli/commands_test.py::test__cli__command_dialect', 'test/cli/commands_test.py::test__cli__command_dialect_legacy', 'test/cli/commands_test.py::test__cli__command_lint_stdin[command0]', 'test/cli/commands_test.py::test__cli__command_lint_stdin[command1]', 'test/cli/commands_test.py::test__cli__command_lint_stdin[command2]', 'test/cli/commands_test.py::test__cli__command_lint_stdin[command3]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command0]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command1]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command2]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command3]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command4]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command5]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command6]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command7]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command8]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command9]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command10]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command11]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command12]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command13]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command14]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command15]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command16]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command17]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command18]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command19]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command20]', 'test/cli/commands_test.py::test__cli__command_lint_parse[command21]', 'test/cli/commands_test.py::test__cli__command_lint_parse_with_retcode[command0-1]', 'test/cli/commands_test.py::test__cli__command_lint_parse_with_retcode[command1-1]', 'test/cli/commands_test.py::test__cli__command_lint_parse_with_retcode[command2-1]', 'test/cli/commands_test.py::test__cli__command_lint_warning_explicit_file_ignored', 'test/cli/commands_test.py::test__cli__command_lint_skip_ignore_files', 'test/cli/commands_test.py::test__cli__command_versioning', 'test/cli/commands_test.py::test__cli__command_version', 'test/cli/commands_test.py::test__cli__command_rules', 'test/cli/commands_test.py::test__cli__command_dialects', 'test/cli/commands_test.py::test__cli__command__fix[L001-test/fixtures/linter/indentation_errors.sql]', 'test/cli/commands_test.py::test__cli__command__fix[L008-test/fixtures/linter/whitespace_errors.sql]', 'test/cli/commands_test.py::test__cli__command__fix[L008-test/fixtures/linter/indentation_errors.sql]', 'test/cli/commands_test.py::test__cli__command__fix[L003-test/fixtures/linter/indentation_error_hard.sql]', 'test/cli/commands_test.py::test__cli__command_fix_stdin[select', 'test/cli/commands_test.py::test__cli__command_fix_stdin[', 'test/cli/commands_test.py::test__cli__command_fix_stdin[SELECT', 'test/cli/commands_test.py::test__cli__command_fix_stdin_logging_to_stderr', 'test/cli/commands_test.py::test__cli__command_fix_stdin_safety', 'test/cli/commands_test.py::test__cli__command_fix_stdin_error_exit_code[create', 'test/cli/commands_test.py::test__cli__command_fix_stdin_error_exit_code[select', 'test/cli/commands_test.py::test__cli__command__fix_no_force[L001-test/fixtures/linter/indentation_errors.sql-y-0-0]', 'test/cli/commands_test.py::test__cli__command__fix_no_force[L001-test/fixtures/linter/indentation_errors.sql-n-65-1]', 'test/cli/commands_test.py::test__cli__command_parse_serialize_from_stdin[yaml]', 'test/cli/commands_test.py::test__cli__command_parse_serialize_from_stdin[json]', 'test/cli/commands_test.py::test__cli__command_lint_serialize_from_stdin[select', 'test/cli/commands_test.py::test__cli__command_lint_serialize_from_stdin[SElect', 'test/cli/commands_test.py::test__cli__command_fail_nice_not_found[command0]', 'test/cli/commands_test.py::test__cli__command_fail_nice_not_found[command1]', 'test/cli/commands_test.py::test__cli__command_lint_serialize_multiple_files[yaml]', 'test/cli/commands_test.py::test__cli__command_lint_serialize_multiple_files[json]', 'test/cli/commands_test.py::test__cli__command_lint_serialize_multiple_files[github-annotation]', 'test/cli/commands_test.py::test__cli__command_lint_serialize_github_annotation', 'test/cli/commands_test.py::test___main___help', 'test/cli/commands_test.py::test_encoding[utf-8-ascii]', 'test/cli/commands_test.py::test_encoding[utf-8-sig-UTF-8-SIG]', 'test/cli/commands_test.py::test_encoding[utf-32-UTF-32]'], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for sqlfluff__sqlfluff-1625: resolved: False
+2026-08-21 14:46:15,305 - INFO - Attempting to stop container sweb.eval.sqlfluff__sqlfluff-1625.human-cell-sqlfluff-1625-v2...
+2026-08-21 14:46:30,551 - INFO - Container sweb.eval.sqlfluff__sqlfluff-1625.human-cell-sqlfluff-1625-v2 stopped successfully.
+2026-08-21 14:46:30,552 - INFO - Attempting to remove container sweb.eval.sqlfluff__sqlfluff-1625.human-cell-sqlfluff-1625-v2...
+2026-08-21 14:46:30,589 - INFO - Container sweb.eval.sqlfluff__sqlfluff-1625.human-cell-sqlfluff-1625-v2 removed successfully.

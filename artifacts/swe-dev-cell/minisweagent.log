@@ -1,0 +1,7 @@
+2026-08-21 12:23:56,253 - minisweagent - INFO - Loading dataset princeton-nlp/SWE-Bench_Lite, split dev...
+2026-08-21 12:23:58,859 - minisweagent - INFO - Instance filter: 23 -> 1 instances
+2026-08-21 12:23:58,860 - minisweagent - INFO - Running on 1 instances...
+2026-08-21 12:23:58,861 - minisweagent - INFO - Building agent config from specs: ['swebench.yaml', 'model.checkpoint=/mnt/c/Users/laure/Desktop/DeepSim/Human Brain/artifacts/agent_canary.npz', 'model.max_new_tokens=84']
+2026-08-21 12:23:58,957 - minisweagent.environment - DEBUG - Starting container with command: docker run -d --name minisweagent-c272dc7d -w /testbed --rm docker.io/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-1625:latest sleep 2h
+2026-08-21 12:24:49,830 - minisweagent.environment - INFO - Started container minisweagent-c272dc7d with ID 41fede38daee77e4eb90f0d6db83f4962dacc09b667293f1ff3937f3d3c5e326
+2026-08-21 12:25:29,579 - minisweagent - INFO - Saved trajectory to '/mnt/c/Users/laure/Desktop/DeepSim/Human Brain/artifacts/swe-dev-cell/sqlfluff__sqlfluff-1625/sqlfluff__sqlfluff-1625.traj.json'

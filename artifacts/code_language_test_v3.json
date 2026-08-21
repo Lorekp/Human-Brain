@@ -1,0 +1,181 @@
+{
+  "protocol_version": "code-language-v3",
+  "protocol": "path-hash split; bounded train-only file prefixes; frozen model; file-disjoint teacher-forced byte prediction; no test-time growth",
+  "split": "test",
+  "source_dir": "C:\\Users\\laure\\Desktop\\DeepSim\\src\\deepsim",
+  "model_training_digest": "80f27c8adce36d483fc8765a0d17974905927f21f69744f383ad58cdeb0e1352",
+  "training": {
+    "files": [
+      "_canonical.py",
+      "artifacts/store.py",
+      "calibration/_admission.py",
+      "calibration/engine.py",
+      "calibration/model.py",
+      "compliance/inventory.py",
+      "control_plane/model.py",
+      "control_plane/service.py",
+      "control_plane/worker.py",
+      "errors.py",
+      "evidence/evaluator.py",
+      "policy/_codec.py",
+      "policy/model.py",
+      "policy/runtime.py",
+      "scenarios/cart_pole.py",
+      "simulation/_adapter.py",
+      "simulation/hardware/_mujoco_native.py",
+      "simulation/hardware/model.py",
+      "simulation/hardware/replay.py",
+      "simulation/hardware/runtime.py",
+      "simulation/mjwarp/adapter.py",
+      "simulation/runtime.py",
+      "world/_artifact.py",
+      "world/compiler.py",
+      "world/model.py"
+    ],
+    "characters": 91703,
+    "vocabulary_size": 256,
+    "grown_branches": 347008
+  },
+  "partition_counts": {
+    "train": 25,
+    "validation": 6,
+    "test": 3
+  },
+  "evaluated_files": [
+    {
+      "file": "evidence/model.py",
+      "sha256": "4eb94163404e4de6e081c944dfb86ab67221506b478f86a4f1f20d002ea8c6d0",
+      "cell": {
+        "predictions": 1500,
+        "correct": 1233,
+        "accuracy": 0.822,
+        "mean_spike_time_ms": 4.630700000000027,
+        "wall_seconds": 1.4169026000017766,
+        "tokens_per_second": 1058.647221056775
+      },
+      "unigram": {
+        "token": 32,
+        "correct": 158,
+        "accuracy": 0.10533333333333333
+      },
+      "bigram": {
+        "correct": 330,
+        "accuracy": 0.22
+      },
+      "variable_order": {
+        "max_order": 12,
+        "correct": 1226,
+        "accuracy": 0.8173333333333334
+      },
+      "witten_bell": {
+        "max_order": 12,
+        "correct": 1232,
+        "accuracy": 0.8213333333333334
+      },
+      "beats_unigram": true,
+      "beats_bigram": true
+    },
+    {
+      "file": "learning/model.py",
+      "sha256": "e50e98b7b3ada7a725eeaa63da8d2993a5f16beb61acd49c48f5c019e8d1d13f",
+      "cell": {
+        "predictions": 1500,
+        "correct": 1239,
+        "accuracy": 0.826,
+        "mean_spike_time_ms": 4.624633333333377,
+        "wall_seconds": 1.6363134999992326,
+        "tokens_per_second": 916.6947531757842
+      },
+      "unigram": {
+        "token": 32,
+        "correct": 288,
+        "accuracy": 0.192
+      },
+      "bigram": {
+        "correct": 478,
+        "accuracy": 0.31866666666666665
+      },
+      "variable_order": {
+        "max_order": 12,
+        "correct": 1236,
+        "accuracy": 0.824
+      },
+      "witten_bell": {
+        "max_order": 12,
+        "correct": 1240,
+        "accuracy": 0.8266666666666667
+      },
+      "beats_unigram": true,
+      "beats_bigram": true
+    },
+    {
+      "file": "simulation/mujoco/native.py",
+      "sha256": "fc77814545cc2997b20bcf88f69006ecef1d741d00ebbc3155cfab36fd45f7b2",
+      "cell": {
+        "predictions": 1500,
+        "correct": 1417,
+        "accuracy": 0.9446666666666667,
+        "mean_spike_time_ms": 3.9595333333333547,
+        "wall_seconds": 1.4918447000090964,
+        "tokens_per_second": 1005.4665877693931
+      },
+      "unigram": {
+        "token": 32,
+        "correct": 309,
+        "accuracy": 0.206
+      },
+      "bigram": {
+        "correct": 539,
+        "accuracy": 0.35933333333333334
+      },
+      "variable_order": {
+        "max_order": 12,
+        "correct": 1416,
+        "accuracy": 0.944
+      },
+      "witten_bell": {
+        "max_order": 12,
+        "correct": 1416,
+        "accuracy": 0.944
+      },
+      "beats_unigram": true,
+      "beats_bigram": true
+    }
+  ],
+  "aggregate": {
+    "cell": {
+      "predictions": 4500,
+      "correct": 3889,
+      "micro_accuracy": 0.8642222222222222,
+      "macro_accuracy": 0.8642222222222222
+    },
+    "unigram": {
+      "predictions": 4500,
+      "correct": 755,
+      "micro_accuracy": 0.16777777777777778,
+      "macro_accuracy": 0.16777777777777778
+    },
+    "bigram": {
+      "predictions": 4500,
+      "correct": 1347,
+      "micro_accuracy": 0.29933333333333334,
+      "macro_accuracy": 0.2993333333333333
+    },
+    "variable_order": {
+      "predictions": 4500,
+      "correct": 3878,
+      "micro_accuracy": 0.8617777777777778,
+      "macro_accuracy": 0.8617777777777778
+    },
+    "witten_bell": {
+      "predictions": 4500,
+      "correct": 3888,
+      "micro_accuracy": 0.864,
+      "macro_accuracy": 0.864
+    }
+  },
+  "gate": {
+    "criteria": "cell micro accuracy > bigram, at least 95% of same-order conventional backoff and Witten-Bell accuracy, and every fold cell accuracy > unigram",
+    "pass": true
+  }
+}

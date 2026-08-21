@@ -1,0 +1,13 @@
+{
+  "model_id": 523000114,
+  "model_name": "5 LIF-R-ASC + Threshold Adaptation (LIF-R-ASC-A)_H16.06.004.01.05.02",
+  "model_template_id": 395310498,
+  "specimen_id": 508378649,
+  "specimen_name": "H16.06.004.01.05.02",
+  "species": "Homo sapiens",
+  "structure": "middle temporal gyrus",
+  "hemisphere": "right",
+  "donor_sex": "M",
+  "well_known_file_id": 568808790,
+  "source": "https://api.brain-map.org/api/v2/data/query.json?criteria=model::NeuronalModel,rma::criteria,[id$eq523000114],rma::include,specimen(donor,structure),neuronal_model_template,well_known_files"
+}

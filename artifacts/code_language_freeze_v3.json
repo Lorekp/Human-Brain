@@ -1,0 +1,31 @@
+{
+  "protocol_version": "code-language-v3",
+  "freeze_date": "2026-08-21",
+  "test_accesses": 1,
+  "selection_rule": "All model and circuit choices were selected on the validation split before the single test run.",
+  "frozen_files": {
+    "src/humanbrain/cortex.py": "88076ce8070cacf62f93773ae049067778dc43912f86353133960959f864f352",
+    "benchmarks/language_gate.py": "b3b33f9f8cf5a3dcd35f36c3195fb1c0dd008478def3bbf27f5858762329d8e5",
+    "benchmarks/code_language_protocol_v3.json": "54f07ff3dd4abb141ed4ce6226e0f30ce27ea98faafe7fea7075df2791606d60",
+    "artifacts/code_language_validation_v3_witten_bell_cells_gain16.json": "a76ae9575c22f81278071508716fa03dac19b46c9d43a7acc406545740e17366",
+    "artifacts/code_language_test_v3.json": "03eb18664a288377dbe240d5d31fc7aff092849be7bdf6ad6d66063b659f68d5"
+  },
+  "validation": {
+    "files": 6,
+    "predictions": 8773,
+    "cell_correct": 7045,
+    "cell_accuracy": 0.8030320300923287,
+    "bigram_accuracy": 0.3208708537558418,
+    "witten_bell_accuracy": 0.8038299327482047,
+    "cell_tokens_per_second": 987.11
+  },
+  "test": {
+    "files": 3,
+    "predictions": 4500,
+    "cell_correct": 3889,
+    "cell_accuracy": 0.8642222222222222,
+    "bigram_accuracy": 0.29933333333333334,
+    "witten_bell_accuracy": 0.864,
+    "cell_tokens_per_second": 990.08
+  }
+}

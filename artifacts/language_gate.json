@@ -1,0 +1,26 @@
+{
+  "protocol": "train on every Python file except the named held-out file; byte tokens; teacher forcing",
+  "source_dir": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\src\\humanbrain",
+  "held_out": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\src\\humanbrain\\cli.py",
+  "train_files": [
+    "__init__.py",
+    "cells.py",
+    "cortex.py",
+    "language.py",
+    "tokenizer.py"
+  ],
+  "cell": {
+    "predictions": 962,
+    "correct": 495,
+    "accuracy": 0.5145530145530145,
+    "mean_spike_time_ms": 3.06455301455301,
+    "wall_seconds": 0.5411329000198748,
+    "tokens_per_second": 1777.7518239321016
+  },
+  "unigram": {
+    "token": 32,
+    "correct": 120,
+    "accuracy": 0.12474012474012475
+  },
+  "pass": true
+}

@@ -1,0 +1,7 @@
+{
+  "sqlfluff__sqlfluff-1625": {
+    "model_name_or_path": "human-cell-recurrent",
+    "instance_id": "sqlfluff__sqlfluff-1625",
+    "model_patch": ""
+  }
+}

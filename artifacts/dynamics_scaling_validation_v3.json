@@ -1,0 +1,2193 @@
+{
+  "complete": true,
+  "protocol_sha256": "456d04f1d947a37bad9984196ae9f7084f1492bf51ac5fa60ba8aa8865b9d7a9",
+  "protocol_version": "human-cell-calibrated-scaling-v3",
+  "runs": [
+    {
+      "active_cells": 24,
+      "free_running": {
+        "accuracy": 0.059895833333333336,
+        "correct": 23,
+        "folds": [
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.03125,
+            "correct": 2,
+            "exact_prefix_bytes": 0,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.0,
+        "predictions": 384
+      },
+      "input_fanout": 4,
+      "key": "regime=calibrated_sparse:cells=24:data=3000:seed=17",
+      "learned_synapses": 1152,
+      "readout_condition_number": 1146.127625744313,
+      "readout_ridge": 0.25,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 24,
+        "effective_state_rank": 7.569896135005408,
+        "mean_absolute_cell_correlation": 0.24033269335058394,
+        "mean_firing_hz_per_cell": 31.380208333333332,
+        "mean_spikes_per_cell_per_token": 0.15690104166666666,
+        "reservoir_spikes": 964,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.4309895833333333,
+        "correct": 331,
+        "folds": [
+          {
+            "accuracy": 0.453125,
+            "correct": 58,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.044921874999999,
+            "predictions": 128,
+            "tokens_per_second": 131.56480090657473,
+            "wall_seconds": 0.9729045999993104
+          },
+          {
+            "accuracy": 0.4609375,
+            "correct": 59,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.082421874999998,
+            "predictions": 128,
+            "tokens_per_second": 127.24365101707508,
+            "wall_seconds": 1.0059440999757499
+          },
+          {
+            "accuracy": 0.3984375,
+            "correct": 51,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.087890625000004,
+            "predictions": 128,
+            "tokens_per_second": 124.65597871661679,
+            "wall_seconds": 1.0268259999866132
+          },
+          {
+            "accuracy": 0.390625,
+            "correct": 50,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.025390624999998,
+            "predictions": 128,
+            "tokens_per_second": 131.4446111930584,
+            "wall_seconds": 0.9737941999919713
+          },
+          {
+            "accuracy": 0.484375,
+            "correct": 62,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.0726562500000005,
+            "predictions": 128,
+            "tokens_per_second": 123.84329875387974,
+            "wall_seconds": 1.0335641999845393
+          },
+          {
+            "accuracy": 0.3984375,
+            "correct": 51,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.1312500000000005,
+            "predictions": 128,
+            "tokens_per_second": 132.86106759875935,
+            "wall_seconds": 0.9634123999858275
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 3000,
+      "training_characters_used": 3000,
+      "training_wall_seconds": 9.355759400001261,
+      "wall_seconds": 13.702663500007475
+    },
+    {
+      "active_cells": 24,
+      "free_running": {
+        "accuracy": 0.0625,
+        "correct": 24,
+        "folds": [
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.09375,
+            "correct": 6,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 0,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.03125,
+            "correct": 2,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0,
+            "correct": 0,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.0,
+        "predictions": 384
+      },
+      "input_fanout": 4,
+      "key": "regime=calibrated_sparse:cells=24:data=3000:seed=29",
+      "learned_synapses": 1152,
+      "readout_condition_number": 1016.4222861625262,
+      "readout_ridge": 0.25,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 24,
+        "effective_state_rank": 9.155101839325921,
+        "mean_absolute_cell_correlation": 0.20214717106245456,
+        "mean_firing_hz_per_cell": 29.850260416666668,
+        "mean_spikes_per_cell_per_token": 0.14925130208333334,
+        "reservoir_spikes": 917,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.4244791666666667,
+        "correct": 326,
+        "folds": [
+          {
+            "accuracy": 0.3828125,
+            "correct": 49,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.090234375000002,
+            "predictions": 128,
+            "tokens_per_second": 130.74230680998642,
+            "wall_seconds": 0.9790251000085846
+          },
+          {
+            "accuracy": 0.46875,
+            "correct": 60,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.029687499999999,
+            "predictions": 128,
+            "tokens_per_second": 128.90269266716442,
+            "wall_seconds": 0.9929970999946818
+          },
+          {
+            "accuracy": 0.421875,
+            "correct": 54,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.164453124999998,
+            "predictions": 128,
+            "tokens_per_second": 128.59427271278687,
+            "wall_seconds": 0.9953786999976728
+          },
+          {
+            "accuracy": 0.390625,
+            "correct": 50,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.080859375000002,
+            "predictions": 128,
+            "tokens_per_second": 130.7252555485936,
+            "wall_seconds": 0.9791527999914251
+          },
+          {
+            "accuracy": 0.46875,
+            "correct": 60,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.042187499999998,
+            "predictions": 128,
+            "tokens_per_second": 129.53681178120007,
+            "wall_seconds": 0.9881361000007018
+          },
+          {
+            "accuracy": 0.4140625,
+            "correct": 53,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.192187499999998,
+            "predictions": 128,
+            "tokens_per_second": 131.06829569453635,
+            "wall_seconds": 0.9765901000064332
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 3000,
+      "training_characters_used": 3000,
+      "training_wall_seconds": 8.864513899985468,
+      "wall_seconds": 13.567187200009357
+    },
+    {
+      "active_cells": 24,
+      "free_running": {
+        "accuracy": 0.06510416666666667,
+        "correct": 25,
+        "folds": [
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 0,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.0,
+        "predictions": 384
+      },
+      "input_fanout": 4,
+      "key": "regime=calibrated_sparse:cells=24:data=3000:seed=43",
+      "learned_synapses": 1152,
+      "readout_condition_number": 1356.648734841286,
+      "readout_ridge": 0.25,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 24,
+        "effective_state_rank": 4.743471574976539,
+        "mean_absolute_cell_correlation": 0.3139735161183232,
+        "mean_firing_hz_per_cell": 32.45442708333333,
+        "mean_spikes_per_cell_per_token": 0.16227213541666666,
+        "reservoir_spikes": 997,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.4401041666666667,
+        "correct": 338,
+        "folds": [
+          {
+            "accuracy": 0.40625,
+            "correct": 52,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.04453125,
+            "predictions": 128,
+            "tokens_per_second": 124.01212955123907,
+            "wall_seconds": 1.0321570999803953
+          },
+          {
+            "accuracy": 0.5,
+            "correct": 64,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.200000000000001,
+            "predictions": 128,
+            "tokens_per_second": 132.08904080670908,
+            "wall_seconds": 0.9690433000214398
+          },
+          {
+            "accuracy": 0.421875,
+            "correct": 54,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.2132812500000005,
+            "predictions": 128,
+            "tokens_per_second": 123.33718826249351,
+            "wall_seconds": 1.0378054000029806
+          },
+          {
+            "accuracy": 0.4140625,
+            "correct": 53,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.1355468749999975,
+            "predictions": 128,
+            "tokens_per_second": 128.87193462312655,
+            "wall_seconds": 0.9932340999948792
+          },
+          {
+            "accuracy": 0.5078125,
+            "correct": 65,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.122265625000001,
+            "predictions": 128,
+            "tokens_per_second": 131.3122328915069,
+            "wall_seconds": 0.9747759000165388
+          },
+          {
+            "accuracy": 0.390625,
+            "correct": 50,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.2710937499999995,
+            "predictions": 128,
+            "tokens_per_second": 129.11873637904785,
+            "wall_seconds": 0.9913356000033673
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 3000,
+      "training_characters_used": 3000,
+      "training_wall_seconds": 9.18659659998957,
+      "wall_seconds": 13.636522899992997
+    },
+    {
+      "active_cells": 48,
+      "free_running": {
+        "accuracy": 0.0546875,
+        "correct": 21,
+        "folds": [
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 1,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.16666666666666666,
+        "predictions": 384
+      },
+      "input_fanout": 4,
+      "key": "regime=calibrated_sparse:cells=48:data=6000:seed=17",
+      "learned_synapses": 3168,
+      "readout_condition_number": 906.7989914326921,
+      "readout_ridge": 0.5,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 48,
+        "effective_state_rank": 7.767615840023874,
+        "mean_absolute_cell_correlation": 0.2304025537707914,
+        "mean_firing_hz_per_cell": 15.234375,
+        "mean_spikes_per_cell_per_token": 0.076171875,
+        "reservoir_spikes": 936,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.4596354166666667,
+        "correct": 353,
+        "folds": [
+          {
+            "accuracy": 0.4375,
+            "correct": 56,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.348828125,
+            "predictions": 128,
+            "tokens_per_second": 119.87291597893386,
+            "wall_seconds": 1.0677974999998696
+          },
+          {
+            "accuracy": 0.5390625,
+            "correct": 69,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.406640624999999,
+            "predictions": 128,
+            "tokens_per_second": 125.21997872836519,
+            "wall_seconds": 1.0222011000150815
+          },
+          {
+            "accuracy": 0.421875,
+            "correct": 54,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.376562499999998,
+            "predictions": 128,
+            "tokens_per_second": 125.61362994457266,
+            "wall_seconds": 1.0189976999827195
+          },
+          {
+            "accuracy": 0.390625,
+            "correct": 50,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.409374999999998,
+            "predictions": 128,
+            "tokens_per_second": 125.79167679695945,
+            "wall_seconds": 1.0175554000015836
+          },
+          {
+            "accuracy": 0.484375,
+            "correct": 62,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.392968750000003,
+            "predictions": 128,
+            "tokens_per_second": 121.1465460553819,
+            "wall_seconds": 1.0565715999982785
+          },
+          {
+            "accuracy": 0.484375,
+            "correct": 62,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.3820312500000025,
+            "predictions": 128,
+            "tokens_per_second": 111.95162290435708,
+            "wall_seconds": 1.1433510000060778
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 6000,
+      "training_characters_used": 6000,
+      "training_wall_seconds": 18.489652399992337,
+      "wall_seconds": 14.336261999997078
+    },
+    {
+      "active_cells": 48,
+      "free_running": {
+        "accuracy": 0.06770833333333333,
+        "correct": 26,
+        "folds": [
+          {
+            "accuracy": 0.03125,
+            "correct": 2,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.09375,
+            "correct": 6,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.09375,
+            "correct": 6,
+            "exact_prefix_bytes": 1,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.3333333333333333,
+        "predictions": 384
+      },
+      "input_fanout": 4,
+      "key": "regime=calibrated_sparse:cells=48:data=6000:seed=29",
+      "learned_synapses": 3168,
+      "readout_condition_number": 832.4732325114122,
+      "readout_ridge": 0.5,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 48,
+        "effective_state_rank": 13.954474036970844,
+        "mean_absolute_cell_correlation": 0.16523501292342582,
+        "mean_firing_hz_per_cell": 13.8671875,
+        "mean_spikes_per_cell_per_token": 0.0693359375,
+        "reservoir_spikes": 852,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.5013020833333334,
+        "correct": 385,
+        "folds": [
+          {
+            "accuracy": 0.4453125,
+            "correct": 57,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.2242187499999995,
+            "predictions": 128,
+            "tokens_per_second": 124.97507821338698,
+            "wall_seconds": 1.0242041999881621
+          },
+          {
+            "accuracy": 0.5234375,
+            "correct": 67,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.329296875000002,
+            "predictions": 128,
+            "tokens_per_second": 126.4089786718207,
+            "wall_seconds": 1.0125862999993842
+          },
+          {
+            "accuracy": 0.515625,
+            "correct": 66,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.334374999999999,
+            "predictions": 128,
+            "tokens_per_second": 120.59996220013771,
+            "wall_seconds": 1.061360199993942
+          },
+          {
+            "accuracy": 0.4765625,
+            "correct": 61,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.259765625000001,
+            "predictions": 128,
+            "tokens_per_second": 119.46452267659971,
+            "wall_seconds": 1.0714478000008967
+          },
+          {
+            "accuracy": 0.5390625,
+            "correct": 69,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.262109374999998,
+            "predictions": 128,
+            "tokens_per_second": 127.0593541893831,
+            "wall_seconds": 1.0074031999974977
+          },
+          {
+            "accuracy": 0.5078125,
+            "correct": 65,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.241406249999998,
+            "predictions": 128,
+            "tokens_per_second": 127.45972372306146,
+            "wall_seconds": 1.0042388000001665
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 6000,
+      "training_characters_used": 6000,
+      "training_wall_seconds": 18.867784700007178,
+      "wall_seconds": 14.03508359999978
+    },
+    {
+      "active_cells": 48,
+      "free_running": {
+        "accuracy": 0.07552083333333333,
+        "correct": 29,
+        "folds": [
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 1,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.09375,
+            "correct": 6,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.015625,
+            "correct": 1,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 1,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.5,
+        "predictions": 384
+      },
+      "input_fanout": 4,
+      "key": "regime=calibrated_sparse:cells=48:data=6000:seed=43",
+      "learned_synapses": 3168,
+      "readout_condition_number": 1742.6539258204205,
+      "readout_ridge": 0.5,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 47,
+        "effective_state_rank": 11.052264346230613,
+        "mean_absolute_cell_correlation": 0.19100542755629996,
+        "mean_firing_hz_per_cell": 12.516276041666666,
+        "mean_spikes_per_cell_per_token": 0.06258138020833333,
+        "reservoir_spikes": 769,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.4752604166666667,
+        "correct": 365,
+        "folds": [
+          {
+            "accuracy": 0.5,
+            "correct": 64,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.393749999999996,
+            "predictions": 128,
+            "tokens_per_second": 123.41541358240315,
+            "wall_seconds": 1.0371476000000257
+          },
+          {
+            "accuracy": 0.5234375,
+            "correct": 67,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.400781250000002,
+            "predictions": 128,
+            "tokens_per_second": 125.62814070132085,
+            "wall_seconds": 1.0188800000178162
+          },
+          {
+            "accuracy": 0.4375,
+            "correct": 56,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.531640624999999,
+            "predictions": 128,
+            "tokens_per_second": 124.69113373049534,
+            "wall_seconds": 1.0265364999941085
+          },
+          {
+            "accuracy": 0.40625,
+            "correct": 52,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.280468749999998,
+            "predictions": 128,
+            "tokens_per_second": 126.15934773184887,
+            "wall_seconds": 1.014589900005376
+          },
+          {
+            "accuracy": 0.4921875,
+            "correct": 63,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.395703124999998,
+            "predictions": 128,
+            "tokens_per_second": 122.65330921011514,
+            "wall_seconds": 1.0435919000010472
+          },
+          {
+            "accuracy": 0.4921875,
+            "correct": 63,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.359765624999998,
+            "predictions": 128,
+            "tokens_per_second": 122.7573173201544,
+            "wall_seconds": 1.042707699991297
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 6000,
+      "training_characters_used": 6000,
+      "training_wall_seconds": 18.49563640000997,
+      "wall_seconds": 14.105208499997389
+    },
+    {
+      "active_cells": 96,
+      "free_running": {
+        "accuracy": 0.1015625,
+        "correct": 39,
+        "folds": [
+          {
+            "accuracy": 0.1875,
+            "correct": 12,
+            "exact_prefix_bytes": 1,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.09375,
+            "correct": 6,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.140625,
+            "correct": 9,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.8333333333333334,
+        "predictions": 384
+      },
+      "input_fanout": 8,
+      "key": "regime=calibrated_sparse:cells=96:data=12000:seed=17",
+      "learned_synapses": 7680,
+      "readout_condition_number": 2881.4479858532286,
+      "readout_ridge": 1.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 96,
+        "effective_state_rank": 18.02937560649013,
+        "mean_absolute_cell_correlation": 0.15429014344546454,
+        "mean_firing_hz_per_cell": 12.980143229166666,
+        "mean_spikes_per_cell_per_token": 0.06490071614583333,
+        "reservoir_spikes": 1595,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.4674479166666667,
+        "correct": 359,
+        "folds": [
+          {
+            "accuracy": 0.4375,
+            "correct": 56,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.333984375000001,
+            "predictions": 128,
+            "tokens_per_second": 120.93796081119771,
+            "wall_seconds": 1.0583938999916427
+          },
+          {
+            "accuracy": 0.5078125,
+            "correct": 65,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.273046874999998,
+            "predictions": 128,
+            "tokens_per_second": 122.17317054244572,
+            "wall_seconds": 1.0476932000019588
+          },
+          {
+            "accuracy": 0.4921875,
+            "correct": 63,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.537109374999999,
+            "predictions": 128,
+            "tokens_per_second": 120.94233734019353,
+            "wall_seconds": 1.058355599991046
+          },
+          {
+            "accuracy": 0.3828125,
+            "correct": 49,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.433203124999999,
+            "predictions": 128,
+            "tokens_per_second": 120.8196290368073,
+            "wall_seconds": 1.0594304999976885
+          },
+          {
+            "accuracy": 0.5,
+            "correct": 64,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.398046874999999,
+            "predictions": 128,
+            "tokens_per_second": 112.13189093089618,
+            "wall_seconds": 1.14151290000882
+          },
+          {
+            "accuracy": 0.484375,
+            "correct": 62,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.420312500000001,
+            "predictions": 128,
+            "tokens_per_second": 120.66669859235597,
+            "wall_seconds": 1.0607732000062242
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 12000,
+      "training_characters_used": 12000,
+      "training_wall_seconds": 39.71501479999279,
+      "wall_seconds": 15.013526900002034
+    },
+    {
+      "active_cells": 96,
+      "free_running": {
+        "accuracy": 0.11197916666666667,
+        "correct": 43,
+        "folds": [
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.1875,
+            "correct": 12,
+            "exact_prefix_bytes": 0,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.140625,
+            "correct": 9,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.140625,
+            "correct": 9,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.5,
+        "predictions": 384
+      },
+      "input_fanout": 8,
+      "key": "regime=calibrated_sparse:cells=96:data=12000:seed=29",
+      "learned_synapses": 7680,
+      "readout_condition_number": 5016.293556391851,
+      "readout_ridge": 1.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 94,
+        "effective_state_rank": 18.3073919461283,
+        "mean_absolute_cell_correlation": 0.15439482139640626,
+        "mean_firing_hz_per_cell": 11.71875,
+        "mean_spikes_per_cell_per_token": 0.05859375,
+        "reservoir_spikes": 1440,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.5065104166666666,
+        "correct": 389,
+        "folds": [
+          {
+            "accuracy": 0.46875,
+            "correct": 60,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.537109375,
+            "predictions": 128,
+            "tokens_per_second": 122.35250214926901,
+            "wall_seconds": 1.0461575999797788
+          },
+          {
+            "accuracy": 0.5390625,
+            "correct": 69,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.430468749999999,
+            "predictions": 128,
+            "tokens_per_second": 117.6405388580764,
+            "wall_seconds": 1.0880602999823168
+          },
+          {
+            "accuracy": 0.5546875,
+            "correct": 71,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.514453125000002,
+            "predictions": 128,
+            "tokens_per_second": 122.48065427660833,
+            "wall_seconds": 1.0450629999977536
+          },
+          {
+            "accuracy": 0.4296875,
+            "correct": 55,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.501562499999999,
+            "predictions": 128,
+            "tokens_per_second": 122.37958302921555,
+            "wall_seconds": 1.045926100021461
+          },
+          {
+            "accuracy": 0.5390625,
+            "correct": 69,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.461718750000002,
+            "predictions": 128,
+            "tokens_per_second": 124.09527997032679,
+            "wall_seconds": 1.031465499982005
+          },
+          {
+            "accuracy": 0.5078125,
+            "correct": 65,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.442578125000002,
+            "predictions": 128,
+            "tokens_per_second": 123.56776035883915,
+            "wall_seconds": 1.0358689000131562
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 12000,
+      "training_characters_used": 12000,
+      "training_wall_seconds": 40.222907999996096,
+      "wall_seconds": 14.641905299999053
+    },
+    {
+      "active_cells": 96,
+      "free_running": {
+        "accuracy": 0.078125,
+        "correct": 30,
+        "folds": [
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.0,
+            "correct": 0,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.140625,
+            "correct": 9,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 1,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.8333333333333334,
+        "predictions": 384
+      },
+      "input_fanout": 8,
+      "key": "regime=calibrated_sparse:cells=96:data=12000:seed=43",
+      "learned_synapses": 7680,
+      "readout_condition_number": 22079.275307790715,
+      "readout_ridge": 1.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 95,
+        "effective_state_rank": 12.541070098563429,
+        "mean_absolute_cell_correlation": 0.19279372038632703,
+        "mean_firing_hz_per_cell": 14.436848958333334,
+        "mean_spikes_per_cell_per_token": 0.07218424479166667,
+        "reservoir_spikes": 1774,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.47265625,
+        "correct": 363,
+        "folds": [
+          {
+            "accuracy": 0.4609375,
+            "correct": 59,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.531640625000001,
+            "predictions": 128,
+            "tokens_per_second": 120.72205369354253,
+            "wall_seconds": 1.060286799998721
+          },
+          {
+            "accuracy": 0.5,
+            "correct": 64,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.4273437499999995,
+            "predictions": 128,
+            "tokens_per_second": 121.97500789131752,
+            "wall_seconds": 1.0493953000113834
+          },
+          {
+            "accuracy": 0.46875,
+            "correct": 60,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.5132812499999995,
+            "predictions": 128,
+            "tokens_per_second": 122.66310023619924,
+            "wall_seconds": 1.0435086000070442
+          },
+          {
+            "accuracy": 0.421875,
+            "correct": 54,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.464062500000001,
+            "predictions": 128,
+            "tokens_per_second": 122.62218342475559,
+            "wall_seconds": 1.0438568000099622
+          },
+          {
+            "accuracy": 0.53125,
+            "correct": 68,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.425000000000001,
+            "predictions": 128,
+            "tokens_per_second": 123.52371071368857,
+            "wall_seconds": 1.0362383000028785
+          },
+          {
+            "accuracy": 0.453125,
+            "correct": 58,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.447656250000002,
+            "predictions": 128,
+            "tokens_per_second": 122.39318063331012,
+            "wall_seconds": 1.0458099000097718
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 12000,
+      "training_characters_used": 12000,
+      "training_wall_seconds": 39.65765829998418,
+      "wall_seconds": 14.613149899989367
+    },
+    {
+      "active_cells": 192,
+      "free_running": {
+        "accuracy": 0.12760416666666666,
+        "correct": 49,
+        "folds": [
+          {
+            "accuracy": 0.03125,
+            "correct": 2,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.1875,
+            "correct": 12,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.140625,
+            "correct": 9,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.171875,
+            "correct": 11,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.125,
+            "correct": 8,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.6666666666666666,
+        "predictions": 384
+      },
+      "input_fanout": 16,
+      "key": "regime=calibrated_sparse:cells=192:data=24000:seed=17",
+      "learned_synapses": 16896,
+      "readout_condition_number": 11239.026195818564,
+      "readout_ridge": 2.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 182,
+        "effective_state_rank": 20.134099523622645,
+        "mean_absolute_cell_correlation": 0.15114789427413994,
+        "mean_firing_hz_per_cell": 11.24267578125,
+        "mean_spikes_per_cell_per_token": 0.05621337890625,
+        "reservoir_spikes": 2763,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.4700520833333333,
+        "correct": 361,
+        "folds": [
+          {
+            "accuracy": 0.3984375,
+            "correct": 51,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.41484375,
+            "predictions": 128,
+            "tokens_per_second": 113.70912778790913,
+            "wall_seconds": 1.125679199991282
+          },
+          {
+            "accuracy": 0.4765625,
+            "correct": 61,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.348046875000002,
+            "predictions": 128,
+            "tokens_per_second": 109.43630810962414,
+            "wall_seconds": 1.1696301000192761
+          },
+          {
+            "accuracy": 0.453125,
+            "correct": 58,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.504296874999997,
+            "predictions": 128,
+            "tokens_per_second": 116.187475024813,
+            "wall_seconds": 1.1016678000160027
+          },
+          {
+            "accuracy": 0.4296875,
+            "correct": 55,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.432421874999998,
+            "predictions": 128,
+            "tokens_per_second": 113.02396320207785,
+            "wall_seconds": 1.1325031999731436
+          },
+          {
+            "accuracy": 0.5390625,
+            "correct": 69,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.546093750000002,
+            "predictions": 128,
+            "tokens_per_second": 110.21769717292554,
+            "wall_seconds": 1.161338000005344
+          },
+          {
+            "accuracy": 0.5234375,
+            "correct": 67,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.486718750000002,
+            "predictions": 128,
+            "tokens_per_second": 111.20238007931009,
+            "wall_seconds": 1.1510544999910053
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 24000,
+      "training_characters_used": 23539,
+      "training_wall_seconds": 96.61135330001707,
+      "wall_seconds": 16.033660699991742
+    },
+    {
+      "active_cells": 192,
+      "free_running": {
+        "accuracy": 0.109375,
+        "correct": 42,
+        "folds": [
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 1,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.015625,
+            "correct": 1,
+            "exact_prefix_bytes": 0,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.140625,
+            "correct": 9,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.203125,
+            "correct": 13,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.140625,
+            "correct": 9,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.09375,
+            "correct": 6,
+            "exact_prefix_bytes": 1,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 1.0,
+        "predictions": 384
+      },
+      "input_fanout": 16,
+      "key": "regime=calibrated_sparse:cells=192:data=24000:seed=29",
+      "learned_synapses": 16896,
+      "readout_condition_number": 37939.47970142891,
+      "readout_ridge": 2.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 185,
+        "effective_state_rank": 21.153431387292546,
+        "mean_absolute_cell_correlation": 0.15033713073573854,
+        "mean_firing_hz_per_cell": 13.8916015625,
+        "mean_spikes_per_cell_per_token": 0.0694580078125,
+        "reservoir_spikes": 3414,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.50390625,
+        "correct": 387,
+        "folds": [
+          {
+            "accuracy": 0.421875,
+            "correct": 54,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.404687499999999,
+            "predictions": 128,
+            "tokens_per_second": 112.42539520863389,
+            "wall_seconds": 1.138532800017856
+          },
+          {
+            "accuracy": 0.515625,
+            "correct": 66,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.575781249999999,
+            "predictions": 128,
+            "tokens_per_second": 114.39151622226781,
+            "wall_seconds": 1.1189641000237316
+          },
+          {
+            "accuracy": 0.546875,
+            "correct": 70,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.5988281249999945,
+            "predictions": 128,
+            "tokens_per_second": 111.32584823642847,
+            "wall_seconds": 1.1497778999910224
+          },
+          {
+            "accuracy": 0.4453125,
+            "correct": 57,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.378124999999998,
+            "predictions": 128,
+            "tokens_per_second": 111.3670813891694,
+            "wall_seconds": 1.1493521999800578
+          },
+          {
+            "accuracy": 0.59375,
+            "correct": 76,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.515234375,
+            "predictions": 128,
+            "tokens_per_second": 113.90621336111235,
+            "wall_seconds": 1.1237315000034869
+          },
+          {
+            "accuracy": 0.5,
+            "correct": 64,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.510937500000002,
+            "predictions": 128,
+            "tokens_per_second": 114.74783043752424,
+            "wall_seconds": 1.115489499992691
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 24000,
+      "training_characters_used": 23539,
+      "training_wall_seconds": 96.43770249999943,
+      "wall_seconds": 16.000576299993554
+    },
+    {
+      "active_cells": 192,
+      "free_running": {
+        "accuracy": 0.12760416666666666,
+        "correct": 49,
+        "folds": [
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 2,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 1,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.078125,
+            "correct": 5,
+            "exact_prefix_bytes": 0,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.203125,
+            "correct": 13,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.171875,
+            "correct": 11,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.125,
+            "correct": 8,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 1.0,
+        "predictions": 384
+      },
+      "input_fanout": 16,
+      "key": "regime=calibrated_sparse:cells=192:data=24000:seed=43",
+      "learned_synapses": 16896,
+      "readout_condition_number": 19462.602477482025,
+      "readout_ridge": 2.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 185,
+        "effective_state_rank": 22.22066055051701,
+        "mean_absolute_cell_correlation": 0.14494782701345385,
+        "mean_firing_hz_per_cell": 13.594563802083334,
+        "mean_spikes_per_cell_per_token": 0.06797281901041667,
+        "reservoir_spikes": 3341,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.48828125,
+        "correct": 375,
+        "folds": [
+          {
+            "accuracy": 0.4140625,
+            "correct": 53,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.430078124999999,
+            "predictions": 128,
+            "tokens_per_second": 118.67818463042254,
+            "wall_seconds": 1.0785470000118949
+          },
+          {
+            "accuracy": 0.53125,
+            "correct": 68,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.526562499999999,
+            "predictions": 128,
+            "tokens_per_second": 118.91714420307973,
+            "wall_seconds": 1.0763796999817714
+          },
+          {
+            "accuracy": 0.5234375,
+            "correct": 67,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.5152343749999995,
+            "predictions": 128,
+            "tokens_per_second": 116.53484724431466,
+            "wall_seconds": 1.0983838999818545
+          },
+          {
+            "accuracy": 0.421875,
+            "correct": 54,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.4957031249999995,
+            "predictions": 128,
+            "tokens_per_second": 116.10881972632262,
+            "wall_seconds": 1.1024140999943484
+          },
+          {
+            "accuracy": 0.5546875,
+            "correct": 71,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.510546875000001,
+            "predictions": 128,
+            "tokens_per_second": 111.10127401984101,
+            "wall_seconds": 1.1521019999927375
+          },
+          {
+            "accuracy": 0.484375,
+            "correct": 62,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.451171874999998,
+            "predictions": 128,
+            "tokens_per_second": 115.02029344248572,
+            "wall_seconds": 1.1128471000120044
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 24000,
+      "training_characters_used": 23539,
+      "training_wall_seconds": 94.47127579999506,
+      "wall_seconds": 15.410544999991544
+    },
+    {
+      "active_cells": 384,
+      "free_running": {
+        "accuracy": 0.12239583333333333,
+        "correct": 47,
+        "folds": [
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 0,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.125,
+            "correct": 8,
+            "exact_prefix_bytes": 1,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.09375,
+            "correct": 6,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.171875,
+            "correct": 11,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.171875,
+            "correct": 11,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.125,
+            "correct": 8,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 0.8333333333333334,
+        "predictions": 384
+      },
+      "input_fanout": 32,
+      "key": "regime=calibrated_sparse:cells=384:data=48000:seed=17",
+      "learned_synapses": 34560,
+      "readout_condition_number": 60308.25176127422,
+      "readout_ridge": 4.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 17,
+      "state_diagnostics": {
+        "active_state_columns": 373,
+        "effective_state_rank": 24.190512714793503,
+        "mean_absolute_cell_correlation": 0.1467404770814836,
+        "mean_firing_hz_per_cell": 14.347330729166666,
+        "mean_spikes_per_cell_per_token": 0.07173665364583333,
+        "reservoir_spikes": 7052,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.4947916666666667,
+        "correct": 380,
+        "folds": [
+          {
+            "accuracy": 0.421875,
+            "correct": 54,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.281250000000002,
+            "predictions": 128,
+            "tokens_per_second": 108.74661791525811,
+            "wall_seconds": 1.177048100013053
+          },
+          {
+            "accuracy": 0.453125,
+            "correct": 58,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.209765625,
+            "predictions": 128,
+            "tokens_per_second": 110.60126997787383,
+            "wall_seconds": 1.1573104000126477
+          },
+          {
+            "accuracy": 0.515625,
+            "correct": 66,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.357812500000002,
+            "predictions": 128,
+            "tokens_per_second": 105.49989932026553,
+            "wall_seconds": 1.213271300017368
+          },
+          {
+            "accuracy": 0.46875,
+            "correct": 60,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.309765624999999,
+            "predictions": 128,
+            "tokens_per_second": 107.12834519669228,
+            "wall_seconds": 1.1948285000107717
+          },
+          {
+            "accuracy": 0.6015625,
+            "correct": 77,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.30859375,
+            "predictions": 128,
+            "tokens_per_second": 94.64724012436044,
+            "wall_seconds": 1.352390199986985
+          },
+          {
+            "accuracy": 0.5078125,
+            "correct": 65,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.4218749999999964,
+            "predictions": 128,
+            "tokens_per_second": 100.01377533521405,
+            "wall_seconds": 1.2798236999951769
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 48000,
+      "training_characters_used": 45355,
+      "training_wall_seconds": 245.9338142000197,
+      "wall_seconds": 17.54910679999739
+    },
+    {
+      "active_cells": 384,
+      "free_running": {
+        "accuracy": 0.14322916666666666,
+        "correct": 55,
+        "folds": [
+          {
+            "accuracy": 0.046875,
+            "correct": 3,
+            "exact_prefix_bytes": 1,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.171875,
+            "correct": 11,
+            "exact_prefix_bytes": 1,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.15625,
+            "correct": 10,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.15625,
+            "correct": 10,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.171875,
+            "correct": 11,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.15625,
+            "correct": 10,
+            "exact_prefix_bytes": 1,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 1.1666666666666667,
+        "predictions": 384
+      },
+      "input_fanout": 32,
+      "key": "regime=calibrated_sparse:cells=384:data=48000:seed=29",
+      "learned_synapses": 34560,
+      "readout_condition_number": 82631.14626554269,
+      "readout_ridge": 4.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 29,
+      "state_diagnostics": {
+        "active_state_columns": 371,
+        "effective_state_rank": 23.849419062361406,
+        "mean_absolute_cell_correlation": 0.14478774943813386,
+        "mean_firing_hz_per_cell": 13.389078776041666,
+        "mean_spikes_per_cell_per_token": 0.06694539388020833,
+        "reservoir_spikes": 6581,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.5,
+        "correct": 384,
+        "folds": [
+          {
+            "accuracy": 0.4296875,
+            "correct": 55,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.3738281249999975,
+            "predictions": 128,
+            "tokens_per_second": 92.53426334111334,
+            "wall_seconds": 1.3832714000018314
+          },
+          {
+            "accuracy": 0.546875,
+            "correct": 70,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.3644531250000025,
+            "predictions": 128,
+            "tokens_per_second": 75.62123732726732,
+            "wall_seconds": 1.6926461999828462
+          },
+          {
+            "accuracy": 0.5546875,
+            "correct": 71,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.4261718750000005,
+            "predictions": 128,
+            "tokens_per_second": 82.2716434844959,
+            "wall_seconds": 1.5558215999917593
+          },
+          {
+            "accuracy": 0.421875,
+            "correct": 54,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.401562500000001,
+            "predictions": 128,
+            "tokens_per_second": 92.38340672754715,
+            "wall_seconds": 1.3855302000010852
+          },
+          {
+            "accuracy": 0.5546875,
+            "correct": 71,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.362109375000001,
+            "predictions": 128,
+            "tokens_per_second": 101.18543479799936,
+            "wall_seconds": 1.2650042000168469
+          },
+          {
+            "accuracy": 0.4921875,
+            "correct": 63,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.3984375,
+            "predictions": 128,
+            "tokens_per_second": 86.80589699659758,
+            "wall_seconds": 1.474554199987324
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 48000,
+      "training_characters_used": 45355,
+      "training_wall_seconds": 230.4231820999994,
+      "wall_seconds": 20.97964089998277
+    },
+    {
+      "active_cells": 384,
+      "free_running": {
+        "accuracy": 0.12760416666666666,
+        "correct": 49,
+        "folds": [
+          {
+            "accuracy": 0.0625,
+            "correct": 4,
+            "exact_prefix_bytes": 1,
+            "file": "calibration/artifacts.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 1,
+            "file": "learning/ppo.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 1,
+            "file": "policy/compiler.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.203125,
+            "correct": 13,
+            "exact_prefix_bytes": 0,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.171875,
+            "correct": 11,
+            "exact_prefix_bytes": 3,
+            "file": "simulation/model.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          },
+          {
+            "accuracy": 0.109375,
+            "correct": 7,
+            "exact_prefix_bytes": 0,
+            "file": "world/fixtures.py",
+            "generated_bytes": 64,
+            "target_bytes": 64
+          }
+        ],
+        "mean_exact_prefix_bytes": 1.0,
+        "predictions": 384
+      },
+      "input_fanout": 32,
+      "key": "regime=calibrated_sparse:cells=384:data=48000:seed=43",
+      "learned_synapses": 34560,
+      "readout_condition_number": 50261.045327306594,
+      "readout_ridge": 4.0,
+      "recurrent_current_pa": 325.0,
+      "recurrent_fanout": 6,
+      "regime": "calibrated_sparse",
+      "seed": 43,
+      "state_diagnostics": {
+        "active_state_columns": 377,
+        "effective_state_rank": 23.079050435195764,
+        "mean_absolute_cell_correlation": 0.1475724716282937,
+        "mean_firing_hz_per_cell": 15.142822265625,
+        "mean_spikes_per_cell_per_token": 0.075714111328125,
+        "reservoir_spikes": 7443,
+        "tokens": 256
+      },
+      "teacher_forced": {
+        "accuracy": 0.49609375,
+        "correct": 381,
+        "folds": [
+          {
+            "accuracy": 0.4453125,
+            "correct": 57,
+            "file": "calibration/artifacts.py",
+            "mean_spike_time_ms": 6.294921875000001,
+            "predictions": 128,
+            "tokens_per_second": 87.77846689957202,
+            "wall_seconds": 1.4582164000021294
+          },
+          {
+            "accuracy": 0.4609375,
+            "correct": 59,
+            "file": "learning/ppo.py",
+            "mean_spike_time_ms": 6.314843750000001,
+            "predictions": 128,
+            "tokens_per_second": 89.88089307071415,
+            "wall_seconds": 1.4241068999981508
+          },
+          {
+            "accuracy": 0.53125,
+            "correct": 68,
+            "file": "policy/compiler.py",
+            "mean_spike_time_ms": 6.425390625000002,
+            "predictions": 128,
+            "tokens_per_second": 95.3868746320187,
+            "wall_seconds": 1.341903699998511
+          },
+          {
+            "accuracy": 0.46875,
+            "correct": 60,
+            "file": "simulation/hardware/_sensor_corruption.py",
+            "mean_spike_time_ms": 6.264453125000002,
+            "predictions": 128,
+            "tokens_per_second": 91.21133209554824,
+            "wall_seconds": 1.4033344000054058
+          },
+          {
+            "accuracy": 0.578125,
+            "correct": 74,
+            "file": "simulation/model.py",
+            "mean_spike_time_ms": 6.366015625,
+            "predictions": 128,
+            "tokens_per_second": 93.14230331939896,
+            "wall_seconds": 1.3742413000145461
+          },
+          {
+            "accuracy": 0.4921875,
+            "correct": 63,
+            "file": "world/fixtures.py",
+            "mean_spike_time_ms": 6.379687499999997,
+            "predictions": 128,
+            "tokens_per_second": 89.86917435268282,
+            "wall_seconds": 1.4242926000151783
+          }
+        ],
+        "predictions": 768
+      },
+      "training_characters_budget": 48000,
+      "training_characters_used": 45355,
+      "training_wall_seconds": 306.10680830001365,
+      "wall_seconds": 20.62495470000431
+    }
+  ],
+  "selection_partition": "validation",
+  "summary": {
+    "curves": [
+      {
+        "active_cells": 24,
+        "effective_state_rank_median": 7.569896135005408,
+        "free_running_median_accuracy": 0.0625,
+        "mean_absolute_cell_correlation_median": 0.24033269335058394,
+        "mean_firing_hz_per_cell_median": 31.380208333333332,
+        "regime": "calibrated_sparse",
+        "teacher_forced_median_accuracy": 0.4309895833333333,
+        "training_characters": 3000
+      },
+      {
+        "active_cells": 48,
+        "effective_state_rank_median": 11.052264346230613,
+        "free_running_median_accuracy": 0.06770833333333333,
+        "mean_absolute_cell_correlation_median": 0.19100542755629996,
+        "mean_firing_hz_per_cell_median": 13.8671875,
+        "regime": "calibrated_sparse",
+        "teacher_forced_median_accuracy": 0.4752604166666667,
+        "training_characters": 6000
+      },
+      {
+        "active_cells": 96,
+        "effective_state_rank_median": 18.02937560649013,
+        "free_running_median_accuracy": 0.1015625,
+        "mean_absolute_cell_correlation_median": 0.15439482139640626,
+        "mean_firing_hz_per_cell_median": 12.980143229166666,
+        "regime": "calibrated_sparse",
+        "teacher_forced_median_accuracy": 0.47265625,
+        "training_characters": 12000
+      },
+      {
+        "active_cells": 192,
+        "effective_state_rank_median": 21.153431387292546,
+        "free_running_median_accuracy": 0.12760416666666666,
+        "mean_absolute_cell_correlation_median": 0.15033713073573854,
+        "mean_firing_hz_per_cell_median": 13.594563802083334,
+        "regime": "calibrated_sparse",
+        "teacher_forced_median_accuracy": 0.48828125,
+        "training_characters": 24000
+      },
+      {
+        "active_cells": 384,
+        "effective_state_rank_median": 23.849419062361406,
+        "free_running_median_accuracy": 0.12760416666666666,
+        "mean_absolute_cell_correlation_median": 0.1467404770814836,
+        "mean_firing_hz_per_cell_median": 14.347330729166666,
+        "regime": "calibrated_sparse",
+        "teacher_forced_median_accuracy": 0.49609375,
+        "training_characters": 48000
+      }
+    ]
+  },
+  "test_partition_accessed": false
+}

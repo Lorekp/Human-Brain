@@ -1,0 +1,85 @@
+{
+  "protocol_version": "autoregressive-generation-v1-validation-only",
+  "protocol": "train-only growth; validation prompt; 256 free-running cell tokens; no teacher forcing or adaptation",
+  "model_training_digest": "80f27c8adce36d483fc8765a0d17974905927f21f69744f383ad58cdeb0e1352",
+  "evaluated_files": [
+    {
+      "file": "calibration/artifacts.py",
+      "target_bytes": 256,
+      "generated_bytes": 256,
+      "correct": 26,
+      "accuracy": 0.1015625,
+      "exact_prefix_bytes": 1,
+      "unigram_correct": 26,
+      "unigram_accuracy": 0.1015625,
+      "generated_preview": "                                                                                                                                                                "
+    },
+    {
+      "file": "learning/ppo.py",
+      "target_bytes": 256,
+      "generated_bytes": 256,
+      "correct": 34,
+      "accuracy": 0.1328125,
+      "exact_prefix_bytes": 22,
+      "unigram_correct": 30,
+      "unigram_accuracy": 0.1171875,
+      "generated_preview": "n.model import (\n    Activation,\n    DenseLayer,\n    PolicyDefinition,\n    base_calibration_snapshot\": calibration variable initial value must lie strictly incr"
+    },
+    {
+      "file": "policy/compiler.py",
+      "target_bytes": 256,
+      "generated_bytes": 256,
+      "correct": 54,
+      "accuracy": 0.2109375,
+      "exact_prefix_bytes": 13,
+      "unigram_correct": 43,
+      "unigram_accuracy": 0.16796875,
+      "generated_preview": "rtifact_store.put(\n                                                                                                                                             "
+    },
+    {
+      "file": "simulation/hardware/_sensor_corruption.py",
+      "target_bytes": 256,
+      "generated_bytes": 256,
+      "correct": 19,
+      "accuracy": 0.07421875,
+      "exact_prefix_bytes": 2,
+      "unigram_correct": 75,
+      "unigram_accuracy": 0.29296875,
+      "generated_preview": "on: float\n\n\n@dataclass(frozen=True, slots=True)\nclass CalibrationSnapshot,\n    DCMotorActuatorDefinition,\n    base_calibration_snapshot\": calibration variable i"
+    },
+    {
+      "file": "simulation/model.py",
+      "target_bytes": 256,
+      "generated_bytes": 256,
+      "correct": 60,
+      "accuracy": 0.234375,
+      "exact_prefix_bytes": 6,
+      "unigram_correct": 55,
+      "unigram_accuracy": 0.21484375,
+      "generated_preview": "_world,\n                                                                                                                                                        "
+    },
+    {
+      "file": "world/fixtures.py",
+      "target_bytes": 256,
+      "generated_bytes": 256,
+      "correct": 28,
+      "accuracy": 0.109375,
+      "exact_prefix_bytes": 17,
+      "unigram_correct": 40,
+      "unigram_accuracy": 0.15625,
+      "generated_preview": "nanceRecord,\n    WorldDefinition,\n    base_calibration_snapshot\": calibration variable initial value must lie strictly increasing\")\n\n\n@dataclass(frozen=True, sl"
+    }
+  ],
+  "aggregate": {
+    "predictions": 1536,
+    "correct": 221,
+    "accuracy": 0.14388020833333334,
+    "unigram_correct": 269,
+    "unigram_accuracy": 0.17513020833333334,
+    "mean_exact_prefix_bytes": 10.166666666666666
+  },
+  "gate": {
+    "criteria": "free-running aligned byte accuracy > train-only unigram continuation",
+    "pass": false
+  }
+}
