@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -41,6 +42,9 @@ def test_every_visible_task_has_separate_regression_and_property_tests() -> None
         assert "Example" not in task.public.prompt
         assert task.private.test_sha256 not in task.public.prompt
         assert {case.distribution for case in task.private.property_cases}
+        assert task.public.family.removeprefix(f"t{task.public.tier}_") not in (
+            task.public.entry_point
+        )
 
 
 def test_eval_tasks_cannot_be_materialized_by_the_visible_generator() -> None:
@@ -59,3 +63,46 @@ def test_protocol_has_no_eval_seed_and_preregisters_all_eval_families() -> None:
     assert evaluation.task_count == 30
     assert sum(evaluation.family_quotas.values()) == 30
     assert set(protocol.partitions).issuperset({"train", "dev", "eval"})
+
+
+@pytest.mark.parametrize(
+    ("path", "weakened"),
+    [
+        (("metric", "samples_per_task"), 2),
+        (("metric", "decoding"), "external-model"),
+        (("metric", "repairs"), 1),
+        (("metric", "test_feedback"), True),
+        (("prompt_contract", "response"), "markdown"),
+        (("prompt_contract", "imports"), True),
+        (("prompt_contract", "examples_in_prompt"), True),
+        (("hidden_tests", "storage"), "source-tree"),
+        (("freeze", "one_checkpoint_for_all_tasks"), False),
+        (("freeze", "reload_checkpoint_before_each_task"), False),
+        (("freeze", "verify_checkpoint_state_before_and_after"), False),
+        (("freeze", "learning_during_dev_or_eval"), True),
+        (("freeze", "task_specific_replay"), True),
+        (("freeze", "require_clean_source_tree"), False),
+        (("freeze", "eval_seed_created_after_freeze"), False),
+        (("reporting", "baselines"), "available-during-cell-inference"),
+    ],
+)
+def test_protocol_rejects_weakened_anti_leakage_invariants(
+    tmp_path: Path, path: tuple[str, str], weakened: object
+) -> None:
+    payload = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    payload[path[0]][path[1]] = weakened
+    candidate = tmp_path / "weakened.json"
+    candidate.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="invariant"):
+        load_protocol(candidate)
+
+
+def test_protocol_rejects_incomplete_failure_taxonomy(tmp_path: Path) -> None:
+    payload = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    payload["reporting"]["failure_taxonomy"].remove("property_failure")
+    candidate = tmp_path / "weakened.json"
+    candidate.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="failure taxonomy"):
+        load_protocol(candidate)

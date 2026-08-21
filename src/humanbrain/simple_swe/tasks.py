@@ -15,7 +15,7 @@ Oracle = Callable[..., JsonValue]
 
 
 @dataclass(frozen=True)
-class TestCase:
+class HiddenCase:
     args: tuple[JsonValue, ...]
     expected: JsonValue
     distribution: str
@@ -37,8 +37,8 @@ class PublicTask:
 @dataclass(frozen=True)
 class PrivateTask:
     task_id: str
-    regression_cases: tuple[TestCase, ...]
-    property_cases: tuple[TestCase, ...]
+    regression_cases: tuple[HiddenCase, ...]
+    property_cases: tuple[HiddenCase, ...]
     test_sha256: str
 
 
@@ -104,8 +104,8 @@ def _make_task(
     property_inputs: Sequence[tuple[tuple[JsonValue, ...], str]],
 ) -> GeneratedTask:
     tier = int(family[1])
-    safe_family = family.removeprefix(f"t{tier}_")
-    entry_point = f"solve_{safe_family}_{ordinal:03d}"
+    task_id = f"simple-swe-v1/{partition}/tier-{tier}/{family}/{ordinal:03d}"
+    entry_point = f"solve_{sha256(task_id.encode('utf-8')).hexdigest()[:12]}"
     signature = ", ".join(parameter_names)
     prompt = (
         "Write exactly one Python function with this signature:\n"
@@ -114,7 +114,6 @@ def _make_task(
         "Use only Python built-ins. Return only the complete function definition: "
         "no Markdown, prose, tests, imports, or input/output examples."
     )
-    task_id = f"simple-swe-v1/{partition}/tier-{tier}/{family}/{ordinal:03d}"
     public_record = {
         "task_id": task_id,
         "partition": partition,
@@ -127,11 +126,11 @@ def _make_task(
     }
     public = PublicTask(**public_record, task_sha256=canonical_sha256(public_record))
     regressions = tuple(
-        TestCase(args=tuple(args), expected=oracle(*args), distribution="fixed-regression")
+        HiddenCase(args=tuple(args), expected=oracle(*args), distribution="fixed-regression")
         for args in regression_inputs
     )
     properties = tuple(
-        TestCase(args=tuple(args), expected=oracle(*args), distribution=distribution)
+        HiddenCase(args=tuple(args), expected=oracle(*args), distribution=distribution)
         for args, distribution in property_inputs
     )
     private_record = {

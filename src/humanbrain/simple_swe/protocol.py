@@ -10,6 +10,19 @@ from typing import Any, Mapping
 
 SCHEMA = "humanbrain.simple-swe-protocol.v1"
 PARTITIONS = ("train", "dev", "eval")
+FAILURE_TAXONOMY = (
+    "format_error",
+    "syntax_error",
+    "policy_violation",
+    "signature_error",
+    "timeout",
+    "memory_limit",
+    "runtime_error",
+    "regression_failure",
+    "property_failure",
+    "harness_error",
+    "passed",
+)
 
 
 @dataclass(frozen=True)
@@ -85,6 +98,46 @@ def _partition(name: str, value: object) -> PartitionSpec:
     )
 
 
+def _require_invariants(payload: dict[str, Any]) -> None:
+    required: tuple[tuple[tuple[str, str], object], ...] = (
+        (("metric", "name"), "pass@1"),
+        (("metric", "samples_per_task"), 1),
+        (("metric", "decoding"), "deterministic-cell-race"),
+        (("metric", "repairs"), 0),
+        (("metric", "test_feedback"), False),
+        (("prompt_contract", "response"), "one-complete-function"),
+        (("prompt_contract", "imports"), False),
+        (("prompt_contract", "examples_in_prompt"), False),
+        (
+            ("hidden_tests", "storage"),
+            "outside-source-and-model-visible-workspace",
+        ),
+        (("hidden_tests", "model_feedback"), "outcome-only-after-run"),
+        (("freeze", "one_checkpoint_for_all_tasks"), True),
+        (("freeze", "reload_checkpoint_before_each_task"), True),
+        (("freeze", "verify_checkpoint_state_before_and_after"), True),
+        (("freeze", "learning_during_dev_or_eval"), False),
+        (("freeze", "task_specific_replay"), False),
+        (("freeze", "require_clean_source_tree"), True),
+        (("freeze", "eval_seed_created_after_freeze"), True),
+        (
+            ("reporting", "baselines"),
+            "reporting-controls-after-cell-completions-are-sealed",
+        ),
+    )
+    if payload.get("language") != "python-3.11":
+        raise ValueError("protocol invariant language must remain python-3.11")
+    for (section, field), expected in required:
+        value = payload.get(section)
+        if not isinstance(value, dict) or value.get(field) != expected:
+            raise ValueError(f"protocol invariant {section}.{field} was weakened")
+    reporting = payload.get("reporting")
+    if not isinstance(reporting, dict) or tuple(
+        reporting.get("failure_taxonomy", ())
+    ) != FAILURE_TAXONOMY:
+        raise ValueError("protocol failure taxonomy differs from v1")
+
+
 def load_protocol(path: str | Path) -> ProtocolSpec:
     resolved = Path(path).resolve()
     payload_bytes = resolved.read_bytes()
@@ -94,6 +147,7 @@ def load_protocol(path: str | Path) -> ProtocolSpec:
         raise ValueError("simple-SWE protocol is not valid JSON") from error
     if not isinstance(payload, dict) or payload.get("schema") != SCHEMA:
         raise ValueError("unsupported simple-SWE protocol schema")
+    _require_invariants(payload)
     protocol_id = payload.get("protocol_id")
     if not isinstance(protocol_id, str) or not protocol_id:
         raise ValueError("protocol_id must be a non-empty string")
