@@ -868,7 +868,7 @@ class RecurrentCellCircuit:
             return None
         allowed_ids = tuple(int(token_id) for token_id in allowed_token_ids)
         if not allowed_ids:
-            raise ValueError("syntax mask needs at least one allowed output cell")
+            raise ValueError("candidate set needs at least one allowed output cell")
         if any(
             token_id < 0 or token_id >= self.token_cells
             for token_id in allowed_ids
