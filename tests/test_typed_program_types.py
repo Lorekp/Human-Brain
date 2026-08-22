@@ -1,9 +1,41 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 from dataclasses import asdict
+from pathlib import Path
 
 import pytest
 from humanbrain.typed_program import ProgramParameter, ProgramType, TypedSignature
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_lightweight_type_import_excludes_simulator_dependencies_and_preserves_facade() -> None:
+    probe = "\n".join(
+        (
+            "import sys",
+            f"sys.path.insert(0, {str(ROOT / 'src')!r})",
+            "from humanbrain import typed_program_types",
+            "forbidden = sorted(name for name in sys.modules if "
+            "name == 'numpy' or name.startswith('numpy.') or "
+            "name == 'humanbrain.recurrent' or name.startswith('humanbrain.recurrent.') or "
+            "name.startswith('humanbrain._native'))",
+            "if forbidden: raise AssertionError(forbidden)",
+            "from humanbrain import typed_program",
+            "assert typed_program.ProgramType is typed_program_types.ProgramType",
+            "assert typed_program.ProgramParameter is typed_program_types.ProgramParameter",
+            "assert typed_program.TypedSignature is typed_program_types.TypedSignature",
+        )
+    )
+
+    subprocess.run(
+        [sys.executable, "-I", "-c", probe],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
 
 def test_typed_signature_strictly_round_trips_its_canonical_record() -> None:
