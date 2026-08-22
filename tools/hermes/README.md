@@ -7,6 +7,13 @@ synchronously inside the Kanban worker, so the parent captures all child
 results in the same turn, writes a hash-named committed report, and leaves
 every child branch unmerged for local review.
 
+This is an external-source delegation boundary, not a general task runner.
+Execute mode may send the explicitly allowed public source paths to the pinned
+external model. Dry-run is the default; source upload requires a second,
+separate authorization switch.
+
+## Fixed safety model
+
 The launcher is intentionally narrower than the Hermes CLI:
 
 - fixed profile: `humanbrainox`;
@@ -37,6 +44,19 @@ routes the card through an explicit
 `worktree:<validated repository>` workspace and a deterministic local branch
 that is verified at the manifest base SHA; it does not trust mutable project
 routing.
+
+## Prerequisites
+
+- Hermes Agent exactly `v0.20.5`, authenticated through the installation-owned
+  portal;
+- the `humanbrainox` profile and `human-brain-ox` board configured as described
+  above;
+- a clean Human Brain worktree at one immutable base commit; and
+- a manifest outside the repository containing 2–128 reviewed tasks.
+
+The launcher validates these conditions. It never repairs global Hermes
+configuration, authenticates the portal, merges a worker branch, or retries a
+failed fleet automatically.
 
 ## Prepare and review a manifest
 
