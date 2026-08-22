@@ -109,6 +109,42 @@
       "volume_3d": 9
     }
   },
+  "implementation_sources": {
+    "bundle_format": "sha256-canonical-json-path-size-raw-sha256-v1",
+    "files": [
+      {
+        "path": "benchmarks/procedural_address_space.py",
+        "size_bytes": 27483,
+        "sha256": "9cd0fc4b3ee83da4444d4715b2ad33be56132f5f88fc49e35e8359326cbba52d"
+      },
+      {
+        "path": "src/humanbrain/human_cell_identity.py",
+        "size_bytes": 1447,
+        "sha256": "0050670ce4976c6163bc652eb33846d7118d6e2ca047eeeda1cf334efb8cc6f9"
+      },
+      {
+        "path": "src/humanbrain/procedural_topology.py",
+        "size_bytes": 30672,
+        "sha256": "30f704f5721e7c8c92902006f28ccb7b0a73b79a7dd9b62e5e91b7c2ab4c69bb"
+      },
+      {
+        "path": "src/humanbrain/scale_accounting.py",
+        "size_bytes": 13895,
+        "sha256": "a0a9e70769e24f918889395d0f5a729e12d3aef08a9bcbd70692a2bf8589e57d"
+      },
+      {
+        "path": "src/humanbrain/simple_swe/artifacts.py",
+        "size_bytes": 6863,
+        "sha256": "a3e74dd5855796726152376308e3cdd11fe736406652bf1b06c0f33b8a7bc332"
+      },
+      {
+        "path": "src/humanbrain/simple_swe/tasks.py",
+        "size_bytes": 34963,
+        "sha256": "d247bb1a81dca47846a787292a8a3f29c01938771070517b6fa35c9d8f7eed23"
+      }
+    ],
+    "bundle_sha256": "d555681e516e01632d0465d3935f3957e345fc987218351c9a891fde1f1e4b2a"
+  },
   "cell_counts": [1000000, 1000000000, 100000000000],
   "fanout": 6,
   "seed": 71,
@@ -181,6 +217,8 @@
   "notes": [
     "This v2 protocol is an explicit break from v1. There is no compatibility mode or fallback.",
     "The immutable v1 evidence and its FAIL interpretation remain untouched.",
+    "The declared implementation source bundle is validated before workers, attested by every worker, and revalidated with the clean starting HEAD immediately before publication.",
+    "The mixed-membership-distinct claim is evaluated from every sampled mixed-membership descriptor, reported separately, and included in the Gate 2 decision.",
     "The 4D hypercube is an abstract functional lattice, not an anatomical claim."
   ]
 }

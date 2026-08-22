@@ -481,7 +481,7 @@ updated cells must not be slower or less exact merely because its IDs are wider.
 Gate 4 proves that the headline address range is not hiding an `O(N_cfg)` scan.
 Gate 8, not Gate 2, tests whether scale improves capability.
 
-### Counter64-v1 Gate 1/2 engineering protocol
+### Procedural v2 Gate 1/2 engineering protocol
 
 The staged CPU scalar implementation lives behind one small seam:
 `TopologyManifest` declares a contiguous uint64 GID range and
@@ -493,16 +493,26 @@ mixed-membership, 1D, 2D, layered, 3D, and abstract-4D policies without a
 topology-name switch in either public query.
 
 This is an explicit protocol break from the prior NumPy global-RNG arrays. The
-only supported version is `random123-philox2x64-10-v1`; there is no legacy seed
-mode or compatibility fallback. Its Philox-2x64-10 constants, numeric word
-order, counter packing, topology streams, purpose streams, bounded rejection,
-and the official Random123
+only executable version is `random123-philox2x64-10-v2`; there is no legacy seed
+mode, compatibility fallback, or v1 execution path. The v1 protocol and
+[`procedural_address_space_v1.json`](../../artifacts/procedural_address_space_v1.json)
+are immutable historical evidence. Their recorded outcome remains **FAIL** and
+must not be rerun, rewritten, or reinterpreted. All future procedural
+address-space execution is governed only by
+[`procedural_address_space_protocol_v2.json`](../../benchmarks/procedural_address_space_protocol_v2.json).
+
+The v2 Philox-2x64-10 constants, numeric word order, counter packing, topology
+streams, purpose streams, bounded rejection, and the official Random123
 [implementation](https://github.com/DEShawResearch/random123/blob/main/include/Random123/philox.h)
 and [known-answer vectors](https://github.com/DEShawResearch/random123/blob/main/tests/kat_vectors)
 are pinned in
-[`procedural_address_space_protocol_v1.json`](../../benchmarks/procedural_address_space_protocol_v1.json).
+[`procedural_address_space_protocol_v2.json`](../../benchmarks/procedural_address_space_protocol_v2.json).
 The scalar implementation is checked against the same official vectors and a
 frozen materialized all-row reference for every topology on a small graph.
+The protocol also pins an exact six-file raw-byte implementation bundle,
+including the runner, oracle, identity, accounting, and atomic-publication
+sources. A changed path, size, file SHA-256, or canonical bundle SHA-256 rejects
+execution before any worker launches.
 
 Each descriptor reports exact integer lattice coordinates or group/layer
 memberships only where the topology defines them. `outgoing_connectivity_role`
@@ -512,6 +522,10 @@ same pinned Allen human GLIF5 model `523000114`, specimen `508378649`, and
 configuration SHA-256
 `69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149`.
 The 4D coordinate system is labeled abstract rather than anatomical.
+For every sampled mixed-membership descriptor, v2 explicitly checks that the
+`primary` and `secondary` group IDs differ. Each mixed-topology result reports
+the sampled count and pass/fail value; the parent aggregates that claim and
+includes it independently in the Gate 2 decision.
 
 For a row of fanout `F`, each slot performs at most 128 counter candidates. If
 those candidates are rejected, one row-level fallback cursor advances without
@@ -533,9 +547,16 @@ resident simulation, or capability result.
 
 Invoking the runner without flags only prints the plan, hypotheses, and raw
 protocol SHA-256. Execution requires both `--execute` and
-`--confirm-protocol-sha <exact raw protocol SHA-256>`. Before any git or worker
-subprocess starts, the runner checks that exact confirmation and refuses an
-existing artifact destination; the final write also uses exclusive-create mode.
+`--confirm-protocol-sha <exact raw v2 protocol SHA-256>`. The current exact v2
+raw protocol SHA-256 is
+`cb3c66402c9d1b88a4a6bf804bf232d7cba2741d4bc469af32a97bad53f40139`.
+Before any worker starts, the runner validates that protocol, its complete
+implementation contract, and its source bundle, then records the official
+Philox known-answer tests and frozen small reference. Every internal worker must
+receive the validated source-bundle hash and return the same attestation. The
+parent verifies each result. Immediately before same-directory, non-overwriting
+atomic publication, the parent rechecks a clean worktree, the exact starting
+HEAD, and the source-bundle hash; any drift leaves no final artifact.
 
 ## Ordered path
 
