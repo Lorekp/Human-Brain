@@ -531,6 +531,12 @@ and mutable edge records are zero, and generated edges count only the 72
 returned/examined base edges. It reports no token throughput, GPU result,
 resident simulation, or capability result.
 
+Invoking the runner without flags only prints the plan, hypotheses, and raw
+protocol SHA-256. Execution requires both `--execute` and
+`--confirm-protocol-sha <exact raw protocol SHA-256>`. Before any git or worker
+subprocess starts, the runner checks that exact confirmation and refuses an
+existing artifact destination; the final write also uses exclusive-create mode.
+
 ## Ordered path
 
 1. Add the scale/event counters and ban unqualified “active” in benchmark claims.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 import gc
 import hashlib
 import json
@@ -46,6 +47,48 @@ def _canonical_bytes(value: object) -> bytes:
         separators=(",", ":"),
         ensure_ascii=True,
     ).encode("ascii")
+
+
+def _load_protocol() -> tuple[bytes, dict[str, object], str]:
+    protocol_bytes = PROTOCOL_PATH.read_bytes()
+    protocol_sha256 = hashlib.sha256(protocol_bytes).hexdigest()
+    protocol = json.loads(protocol_bytes)
+    if not isinstance(protocol, dict):
+        raise TypeError("benchmark protocol must be a JSON object")
+    if protocol["topology_protocol"] != TOPOLOGY_PROTOCOL:
+        raise ValueError("benchmark and topology protocol versions differ")
+    return protocol_bytes, protocol, protocol_sha256
+
+
+def _require_protocol_confirmation(
+    confirmed_protocol_sha: str | None,
+    protocol_sha256: str,
+) -> None:
+    if confirmed_protocol_sha != protocol_sha256:
+        raise ValueError(
+            "protocol SHA-256 confirmation must exactly equal the raw protocol "
+            f"SHA-256 {protocol_sha256}"
+        )
+
+
+def _execution_plan(artifact_path: Path) -> dict[str, object]:
+    _, protocol, protocol_sha256 = _load_protocol()
+    return {
+        "will_execute": False,
+        "protocol_sha256": protocol_sha256,
+        "artifact_path": str(artifact_path),
+        "artifact_already_exists": artifact_path.exists(),
+        "required_flags": [
+            "--execute",
+            "--confirm-protocol-sha",
+            protocol_sha256,
+        ],
+        "hypotheses": protocol["hypotheses"],
+        "evidence_scope": (
+            "CPU scalar address/query-only engineering evidence; no resident, "
+            "updated, spiking, token-throughput, GPU, or capability claim"
+        ),
+    }
 
 
 def _query_topology(
@@ -256,11 +299,17 @@ def _scaling_summary(
     return summary
 
 
-def run(artifact_path: Path) -> dict[str, object]:
-    protocol_bytes = PROTOCOL_PATH.read_bytes()
-    protocol = json.loads(protocol_bytes)
-    if protocol["topology_protocol"] != TOPOLOGY_PROTOCOL:
-        raise ValueError("benchmark and topology protocol versions differ")
+def run(
+    artifact_path: Path,
+    *,
+    confirmed_protocol_sha: str,
+) -> dict[str, object]:
+    _, protocol, protocol_sha256 = _load_protocol()
+    _require_protocol_confirmation(confirmed_protocol_sha, protocol_sha256)
+    if artifact_path.exists():
+        raise FileExistsError(
+            f"engineering runner refuses to overwrite artifact: {artifact_path}"
+        )
     dirty = subprocess.check_output(
         ["git", "status", "--porcelain"], cwd=ROOT, text=True
     )
@@ -277,6 +326,8 @@ def run(artifact_path: Path) -> dict[str, object]:
                 str(Path(__file__).resolve()),
                 "--worker",
                 str(cell_count),
+                "--confirm-protocol-sha",
+                protocol_sha256,
             ],
             cwd=ROOT,
             check=True,
@@ -293,7 +344,7 @@ def run(artifact_path: Path) -> dict[str, object]:
     all_rows = [row for worker in workers for row in worker["results"]]
     artifact: dict[str, object] = {
         "protocol": protocol,
-        "protocol_sha256": hashlib.sha256(protocol_bytes).hexdigest(),
+        "protocol_sha256": protocol_sha256,
         "git_commit": git_commit,
         "evidence_scope": (
             "CPU scalar address/query-only engineering evidence; no resident, "
@@ -310,26 +361,42 @@ def run(artifact_path: Path) -> dict[str, object]:
         ),
     }
     artifact_path.parent.mkdir(parents=True, exist_ok=True)
-    artifact_path.write_text(
-        json.dumps(artifact, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    with artifact_path.open("x", encoding="utf-8") as artifact_file:
+        artifact_file.write(json.dumps(artifact, indent=2, sort_keys=True) + "\n")
     artifact["artifact_sha256"] = hashlib.sha256(
         artifact_path.read_bytes()
     ).hexdigest()
     return artifact
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--artifact", type=Path, default=DEFAULT_ARTIFACT)
-    parser.add_argument("--worker", type=int)
-    args = parser.parse_args()
-    protocol = json.loads(PROTOCOL_PATH.read_text(encoding="utf-8"))
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--execute", action="store_true")
+    mode.add_argument("--worker", type=int, help=argparse.SUPPRESS)
+    parser.add_argument("--confirm-protocol-sha")
+    args = parser.parse_args(argv)
     if args.worker is not None:
+        _, protocol, protocol_sha256 = _load_protocol()
+        _require_protocol_confirmation(args.confirm_protocol_sha, protocol_sha256)
         print(json.dumps(_worker(args.worker, protocol), sort_keys=True))
-    else:
-        print(json.dumps(run(args.artifact), indent=2, sort_keys=True))
+        return
+    if not args.execute:
+        print(json.dumps(_execution_plan(args.artifact), indent=2, sort_keys=True))
+        return
+    if args.confirm_protocol_sha is None:
+        parser.error("--execute requires --confirm-protocol-sha")
+    print(
+        json.dumps(
+            run(
+                args.artifact,
+                confirmed_protocol_sha=args.confirm_protocol_sha,
+            ),
+            indent=2,
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":

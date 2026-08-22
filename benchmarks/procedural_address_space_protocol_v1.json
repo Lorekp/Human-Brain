@@ -157,6 +157,13 @@
     "checksum": "SHA-256 of canonical JSON descriptor and target records.",
     "hardware_scope": "CPU scalar only"
   },
+  "execution_guard": {
+    "default_mode": "Print the plan and raw protocol SHA-256; do not start a worker or write an artifact.",
+    "required_execution_flags": ["--execute", "--confirm-protocol-sha", "<exact raw protocol SHA-256>"],
+    "confirmation_rule": "The supplied confirmation must exactly equal SHA-256 of the raw protocol file bytes.",
+    "artifact_policy": "Refuse before subprocess launch if the destination exists, then use exclusive-create mode for the final write.",
+    "guard_order": "Protocol confirmation and destination nonexistence are checked before git subprocesses, worker subprocesses, or artifact writes."
+  },
   "acceptance": {
     "maximum_fixed_query_time_or_memory_ratio": 2.0,
     "ratio_definition": "For each topology and metric, max over N divided by min over N across 10^6, 10^9, and 10^11.",
