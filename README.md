@@ -134,10 +134,40 @@ interfaces work but held-out composition does not.
 - [Layer-0 scalar plumbing](docs/cell-program-layer0.md) is implemented but
   has not been executed or scored against its public composition definitions.
 - [Typed composition A012](docs/typed-composition-a012-v1.md) specifies the
-  unexecuted incompatible v4 A0/A1/A2 increment; the obsolete Layer-1 v3
-  TRAIN/DEV loaders and CLIs are retired, with their exact protocols,
-  artifacts, evidence, and reports kept as historical records anchored to
-  their original commits.
+  v4 A0/A1/A2 increment; the obsolete Layer-1 v3 TRAIN/DEV loaders and CLIs
+  are retired, with their exact protocols, artifacts, evidence, and reports
+  kept as historical records anchored to their original commits.
+- [Typed composition A012 sealed result](docs/typed-composition-a012-v1-results.md)
+  records the one-shot execution: all 16 production integrity gates passed;
+  prompt-last framing raised prompt-trace retention ~13,000x (0.00007 to
+  0.939), but A2 was ineligible at 128 cells (TRAIN replay 40/42,
+  calibration replay 0/18). The cohort is permanently spent.
+- [A013 scale ladder](docs/typed-composition-a013-ladder-v1.md) (draft)
+  preregisters a dose-response ladder — N=128 bridge arm with local
+  three-factor readout, arms spanning 1e6 to max-feasible configured cells,
+  an A1 framing control, capacity gates reported separately from
+  generalization gates, and a run hold until sizes are frozen from measured
+  cost curves. Ridge readout is retired for large arms: it is O(N^2)
+  memory / O(N^3) solve and was already excluded at 6,144 cells.
+
+## Research directions
+
+- [Biology-of-learning fusion survey](docs/research/a013-biology-learning-fusion.md)
+  maps real plasticity mechanisms onto the implemented equations and finds the
+  sparse three-factor rule already in the codebase (dormant during the sealed
+  run). Ranked proposals: error-gated (RPE-style) three-factor plasticity,
+  rest-phase replay consolidation, homeostatic margin normalization with
+  critical-period scheduling — each with a decisive preregistrable experiment.
+- Regioned architecture, representation choice, teaching-process matrix, and
+  the cognitive-property roadmap are under active design on
+  `codex/a013-cognition-design` (see `docs/research/a013-*.md` as they land).
+- [Indicator assessment instrument](docs/indicator-assessment/RUBRIC.md)
+  tracks architectural similarity to consciousness-science indicator sets
+  (RPT/GWT/HOT/AST/PP/AE families) across model versions using strictly
+  categorical levels — ABSENT / PARTIAL / PRESENT / UNCERTAIN — as an
+  early-warning review tool. It produces no numeric scores and makes no
+  claims about subjective experience; indicator presence is evidence about
+  architecture, not about consciousness.
 
 ## Data and provenance
 
