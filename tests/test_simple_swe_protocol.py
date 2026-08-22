@@ -92,8 +92,8 @@ def test_train_and_dev_tasks_are_deterministic_and_family_disjoint() -> None:
 @pytest.mark.parametrize(
     ("partition", "expected_sha256"),
     [
-        ("train", "3e79404a50dd4aef23482387c964b2002e1c718fee2112cd9291db30ebe44a44"),
-        ("dev", "11f5b8cfc01a22d72d09fa05084a5041d08c08e48886c5a9dbec40687b944d9a"),
+        ("train", "630feb71737bf67e990499dfc2aaa279f2caacc6282cf1a8ff2bf4160d73a666"),
+        ("dev", "4006db794aad2de59be21d1148413bc1ddf50e2de1abc401fce6e6c3314e9235"),
     ],
 )
 def test_visible_partition_generation_bytes_are_frozen(
@@ -106,29 +106,17 @@ def test_visible_partition_generation_bytes_are_frozen(
     assert sha256(payload).hexdigest() == expected_sha256
 
 
-def test_every_protocol_family_has_one_explicit_builder_registration() -> None:
+def test_every_protocol_family_has_one_explicit_callable_registration() -> None:
     protocol = load_protocol(PROTOCOL)
     expected_families = {
         family
         for partition in protocol.partitions.values()
         for family in partition.family_quotas
     }
-    registry = task_module._FAMILY_BUILDERS
+    registry = family_callable_types()
 
     assert set(registry) == expected_families
     assert len(registry) == 27
-    assert len({id(builder) for builder in registry.values()}) == 26
-    shared_builders = {
-        frozenset(
-            family
-            for family, candidate in registry.items()
-            if candidate is builder
-        )
-        for builder in registry.values()
-    }
-    assert {
-        families for families in shared_builders if len(families) > 1
-    } == {frozenset({"t1_string_filter_class", "t2_filter_then_reverse"})}
 
 
 def test_unknown_task_family_is_rejected_by_the_registry() -> None:
@@ -153,8 +141,11 @@ def test_every_visible_task_has_separate_regression_and_property_tests() -> None
         assert task.private.test_sha256 not in task.public.prompt
         assert {case.distribution for case in task.private.property_cases}
         assert task.public.family.removeprefix(f"t{task.public.tier}_") not in (
-            task.public.entry_point
+            task.public.signature.entry_point
         )
+        assert CallableType(
+            task.public.signature.parameters, task.public.signature.result
+        ) == family_callable_types()[task.public.family]
 
 
 def test_eval_tasks_cannot_be_materialized_by_the_visible_generator() -> None:
@@ -202,11 +193,11 @@ def test_entry_points_depend_on_the_unpredictable_partition_seed() -> None:
         task.public.task_id for task in second
     ]
     assert all(
-        left.public.entry_point != right.public.entry_point
+        left.public.signature.entry_point != right.public.signature.entry_point
         for left, right in zip(first, second, strict=True)
     )
     assert all(
-        task.public.entry_point
+        task.public.signature.entry_point
         != f"solve_{sha256(task.public.task_id.encode('utf-8')).hexdigest()[:12]}"
         for task in first
     )
