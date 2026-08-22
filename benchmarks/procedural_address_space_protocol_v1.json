@@ -1,0 +1,183 @@
+{
+  "name": "procedural-address-space-v1",
+  "purpose": "Gate 1 and Gate 2 CPU scalar engineering evidence for deterministic uint64 cell and immutable base-edge address queries.",
+  "topology_protocol": "random123-philox2x64-10-v1",
+  "cell_counts": [1000000, 1000000000, 100000000000],
+  "fanout": 6,
+  "seed": 71,
+  "topologies": [
+    "random",
+    "uniform_no_self",
+    "single_scale_groups",
+    "nested_groups",
+    "mixed_membership",
+    "ring_1d",
+    "sheet_2d",
+    "layered_sheet",
+    "volume_3d",
+    "hypercube_4d"
+  ],
+  "valid_gids_by_cell_count": {
+    "1000000": [
+      0,
+      1,
+      71,
+      142857,
+      250000,
+      333333,
+      499999,
+      500000,
+      524287,
+      750000,
+      999998,
+      999999
+    ],
+    "1000000000": [
+      0,
+      1,
+      71,
+      142857142,
+      250000000,
+      333333333,
+      499999999,
+      500000000,
+      536870911,
+      750000000,
+      999999998,
+      999999999
+    ],
+    "100000000000": [
+      0,
+      1,
+      71,
+      4294967295,
+      4294967296,
+      4294967297,
+      14285714285,
+      33333333333,
+      50000000000,
+      75000000000,
+      99999999998,
+      99999999999
+    ]
+  },
+  "invalid_gids_by_cell_count": {
+    "1000000": [-1, 1000000, 1000001, 18446744073709551616],
+    "1000000000": [-1, 1000000000, 1000000001, 18446744073709551616],
+    "100000000000": [-1, 100000000000, 100000000001, 18446744073709551616]
+  },
+  "fixed_work_per_topology": {
+    "valid_cell_descriptor_queries": 12,
+    "valid_base_edge_row_queries": 12,
+    "invalid_cell_queries": 4,
+    "invalid_base_edge_queries": 4,
+    "returned_or_examined_base_edges": 72
+  },
+  "counter_rng": {
+    "variant": "D. E. Shaw Research Random123 Philox2x64_R<10>",
+    "reference_implementation": "https://github.com/DEShawResearch/random123/blob/main/include/Random123/philox.h",
+    "known_answer_source": "https://github.com/DEShawResearch/random123/blob/main/tests/kat_vectors",
+    "rounds": 10,
+    "multiplier_hex": "d2b74407b1ce6e93",
+    "weyl_hex": "9e3779b97f4a7c15",
+    "numeric_word_order": ["v[0]", "v[1]"],
+    "endianness": "Counters, keys, and results are numeric uint64 v[0],v[1] words, not byte strings; frozen target-GID reference serialization is unsigned 8-byte little-endian.",
+    "edge_counter_words": [
+      "source_gid",
+      "(edge_slot << 16) | (purpose << 8) | attempt"
+    ],
+    "edge_key": "(manifest_seed + topology_stream_id * 0x9e3779b97f4a7c15) modulo 2^64",
+    "role_counter_words": ["source_gid", "00000000524f4c45"],
+    "role_key": "manifest_seed",
+    "topology_stream_ids": {
+      "random": 1,
+      "uniform_no_self": 2,
+      "single_scale_groups": 3,
+      "nested_groups": 4,
+      "mixed_membership": 5,
+      "ring_1d": 6,
+      "sheet_2d": 7,
+      "layered_sheet": 8,
+      "volume_3d": 9,
+      "hypercube_4d": 10
+    },
+    "purpose_ids": {
+      "global": 1,
+      "single_micro": 2,
+      "single_outside": 3,
+      "nested_micro": 4,
+      "nested_meso": 5,
+      "nested_outside": 6,
+      "mixed_shared": 7,
+      "mixed_global": 8,
+      "ring_local": 9,
+      "ring_long": 10,
+      "grid_local_dimension_base": 11,
+      "layered_dx": 15,
+      "layered_dy": 16,
+      "layered_depth": 17,
+      "layered_long": 18,
+      "grid_long": 20,
+      "global_fallback": 255
+    },
+    "known_answer_vectors": [
+      {
+        "counter_hex": ["0000000000000000", "0000000000000000"],
+        "key_hex": "0000000000000000",
+        "result_hex": ["ca00a0459843d731", "66c24222c9a845b5"]
+      },
+      {
+        "counter_hex": ["243f6a8885a308d3", "13198a2e03707344"],
+        "key_hex": "a4093822299f31d0",
+        "result_hex": ["0a5e742c2997341c", "b0f883d38000de5d"]
+      }
+    ]
+  },
+  "sampling_without_replacement": {
+    "range_mapping": "floor(random_uint64 * candidate_count / 2^64)",
+    "candidate_attempts_per_slot": 128,
+    "rejections": ["self target", "duplicate target", "out-of-grid local target", "insufficient long-range distance"],
+    "fallback": "Map the row-level Philox counter [source_gid, (0 << 16) | (255 << 8) | 0] to one global start GID, then advance one wrapped cursor shared by all edge slots; the cursor is never reset or revisited.",
+    "fallback_work_bound": "Across the whole row, at most fanout + 1 fallback GIDs and at most 129*fanout + 1 total candidates are examined because the used set contains only the source plus earlier targets."
+  },
+  "descriptor_contract": {
+    "role": "reservoir",
+    "cell_type": "adaptive_glif5",
+    "outgoing_connectivity_role": "One deterministic inhibitory label when the topology-independent Philox role word is below floor(2^64/5), otherwise excitatory.",
+    "wiring_role_caveat": "Dale-like outgoing wiring metadata only; it does not claim distinct inhibitory dynamics or molecular E/I biology.",
+    "intrinsic_model_id": 523000114,
+    "specimen_id": 508378649,
+    "intrinsic_model_config_sha256": "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149",
+    "intrinsic_model_scope": "Every descriptor uses the same pinned Allen human GLIF5 intrinsic fit."
+  },
+  "measurement": {
+    "process_isolation": "One fresh subprocess per configured cell count; all topology families run inside that subprocess.",
+    "time": "perf_counter_ns for construction and each fixed descriptor-plus-edge-row query; report median and maximum query latency.",
+    "memory": "tracemalloc peak Python allocation bytes during manifest construction and fixed queries; not RSS or resident cell state.",
+    "checksum": "SHA-256 of canonical JSON descriptor and target records.",
+    "hardware_scope": "CPU scalar only"
+  },
+  "acceptance": {
+    "maximum_fixed_query_time_or_memory_ratio": 2.0,
+    "ratio_definition": "For each topology and metric, max over N divided by min over N across 10^6, 10^9, and 10^11.",
+    "no_material_scale_slope": "Operationalized by both fixed-query-time and traced-memory max/min ratios being at most 2.0; log-log slopes are reported descriptively.",
+    "required_invariants": [
+      "Every valid descriptor and base-edge row query succeeds.",
+      "Every invalid descriptor and base-edge row query raises TypeError or ValueError.",
+      "Every row has six in-range targets with no self target and no duplicate target.",
+      "The 100-billion case samples GIDs immediately below, at, and above 2^32.",
+      "Every ScaleAccounting record reports configured=addressable=N and resident=updated=spiking=0.",
+      "Configured base edges equal N*fanout; resident and mutable edges are zero; generated edges equal exactly 72 examined returned edges."
+    ]
+  },
+  "hypotheses": [
+    "All valid, invalid, fixed-fanout, range, no-self, and no-duplicate invariants pass for every topology and configured count.",
+    "For each topology, fixed-query median time and traced peak bytes each have max/min ratio at most 2.0 across 10^6, 10^9, and 10^11 configured IDs.",
+    "No result reports resident, updated, or spiking cells, cell-step work, delivered events, token throughput, GPU evidence, or capability evidence."
+  ],
+  "notes": [
+    "This is an explicit protocol break from the legacy NumPy global-RNG materialized arrays. There is no compatibility version, fallback, or claim of exact legacy seeded rows.",
+    "The artifact is address/query-only engineering evidence. It is not a resident or updated simulation and must not report tokens per second.",
+    "The 4D hypercube is an abstract functional lattice, not an anatomical claim."
+  ]
+}

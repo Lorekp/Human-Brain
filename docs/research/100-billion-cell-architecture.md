@@ -481,6 +481,56 @@ updated cells must not be slower or less exact merely because its IDs are wider.
 Gate 4 proves that the headline address range is not hiding an `O(N_cfg)` scan.
 Gate 8, not Gate 2, tests whether scale improves capability.
 
+### Counter64-v1 Gate 1/2 engineering protocol
+
+The staged CPU scalar implementation lives behind one small seam:
+`TopologyManifest` declares a contiguous uint64 GID range and
+`ProceduralTopology` exposes `describe_cell(gid)` and `base_edges(gid)`.
+Constructing a manifest or oracle does not iterate over the configured range and
+does not allocate a GID array, owner array, topology array, or membership bitset.
+The private topology-spec table selects all ten established random, grouped,
+mixed-membership, 1D, 2D, layered, 3D, and abstract-4D policies without a
+topology-name switch in either public query.
+
+This is an explicit protocol break from the prior NumPy global-RNG arrays. The
+only supported version is `random123-philox2x64-10-v1`; there is no legacy seed
+mode or compatibility fallback. Its Philox-2x64-10 constants, numeric word
+order, counter packing, topology streams, purpose streams, bounded rejection,
+and the official Random123
+[implementation](https://github.com/DEShawResearch/random123/blob/main/include/Random123/philox.h)
+and [known-answer vectors](https://github.com/DEShawResearch/random123/blob/main/tests/kat_vectors)
+are pinned in
+[`procedural_address_space_protocol_v1.json`](../../benchmarks/procedural_address_space_protocol_v1.json).
+The scalar implementation is checked against the same official vectors and a
+frozen materialized all-row reference for every topology on a small graph.
+
+Each descriptor reports exact integer lattice coordinates or group/layer
+memberships only where the topology defines them. `outgoing_connectivity_role`
+is deterministic Dale-like source-polarity metadata. It is not distinct
+inhibitory dynamics or molecular E/I biology: every descriptor identifies the
+same pinned Allen human GLIF5 model `523000114`, specimen `508378649`, and
+configuration SHA-256
+`69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149`.
+The 4D coordinate system is labeled abstract rather than anatomical.
+
+For a row of fanout `F`, each slot performs at most 128 counter candidates. If
+those candidates are rejected, one row-level fallback cursor advances without
+resetting or revisiting a GID. Across the entire row it examines at most `F+1`
+fallback GIDs: each rejected fallback GID is either the source or one of at most
+`F` already selected targets. The worst-case row bound is therefore at most
+`129F+1` candidate examinations and `O(F)` memory, independent of configured
+`N`. Tests force every normal candidate to collide while increasing fanout and
+enforce that bound.
+
+The frozen engineering run uses `N = 10^6, 10^9, 10^11`, fanout six, twelve
+fixed valid queries and four invalid queries per topology, including GIDs
+immediately below, at, and above `2^32` in the 100-billion case. Its artifact is
+strictly address/query evidence: `configured = addressable = N`, resident,
+updated, and spiking counts are zero, configured base edges are `N*6`, resident
+and mutable edge records are zero, and generated edges count only the 72
+returned/examined base edges. It reports no token throughput, GPU result,
+resident simulation, or capability result.
+
 ## Ordered path
 
 1. Add the scale/event counters and ban unqualified “active” in benchmark claims.
