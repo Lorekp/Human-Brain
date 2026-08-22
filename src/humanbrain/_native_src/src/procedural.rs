@@ -6,7 +6,24 @@
 //! dense runtime exists only as a small-domain exactness oracle.
 
 use super::GlifConfig;
-use std::{cmp::Ordering, collections::BTreeSet, mem::size_of, ptr, slice};
+use std::{
+    alloc::{alloc, Layout},
+    cmp::Ordering,
+    collections::{HashMap, HashSet},
+    mem::size_of,
+    ptr, slice,
+};
+
+unsafe fn allocate_owned<T>(value: T) -> *mut T {
+    let raw = alloc(Layout::new::<T>()) as *mut T;
+    if raw.is_null() {
+        drop(value);
+        ptr::null_mut()
+    } else {
+        raw.write(value);
+        raw
+    }
+}
 
 const PHILOX_M2X64_0: u64 = 0xD2B74407B1CE6E93;
 const PHILOX_W64_0: u64 = 0x9E3779B97F4A7C15;
@@ -26,6 +43,14 @@ pub const PROCEDURAL_EVENT_CAPACITY: u32 = 3;
 pub const PROCEDURAL_DUPLICATE_EVENT: u32 = 4;
 pub const PROCEDURAL_POISONED: u32 = 5;
 pub const PROCEDURAL_STEP_OVERFLOW: u32 = 6;
+pub const PROCEDURAL_SNAPSHOT_CAPACITY: u32 = 7;
+pub const PROCEDURAL_ALLOCATION: u32 = 8;
+pub const PROCEDURAL_SPIKE_CAPACITY: u32 = 9;
+pub const PROCEDURAL_DISTINCT_CAPACITY: u32 = 10;
+
+const SEEN_RESIDENT: u8 = 1;
+const SEEN_UPDATED: u8 = 2;
+const SEEN_SPIKING: u8 = 4;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -35,6 +60,8 @@ pub struct ProceduralConfig {
     pub seed: u64,
     pub resident_capacity: usize,
     pub event_capacity: usize,
+    pub spike_capacity: usize,
+    pub interval_distinct_capacity: usize,
     pub recurrent_weight_pa: f64,
     pub recurrent_delay_steps: u64,
     pub recurrent_decay: f64,
@@ -214,6 +241,11 @@ fn bounded_index(word: u64, size: u64) -> u64 {
 }
 
 #[inline]
+fn fallback_candidate(start: u64, offset: u64, configured_cells: u64) -> u64 {
+    ((start as u128 + offset as u128) % configured_cells as u128) as u64
+}
+
+#[inline]
 fn counter_words(
     config: &ProceduralConfig,
     source: u64,
@@ -228,23 +260,32 @@ fn counter_words(
     philox2x64_10(source, context, key)
 }
 
-fn generated_targets(config: &ProceduralConfig, source: u64) -> Vec<u64> {
-    let mut used = Vec::with_capacity(config.fanout as usize + 1);
-    used.push(source);
+fn fill_targets_with<C>(
+    config: &ProceduralConfig,
+    source: u64,
+    targets: &mut Vec<u64>,
+    used: &mut HashSet<u64>,
+    mut candidate_for: C,
+) -> Result<u64, u32>
+where
+    C: FnMut(&ProceduralConfig, u64, u64, u64) -> u64,
+{
+    let fanout = config.fanout as usize;
+    if targets.capacity() < fanout || used.capacity() < fanout.saturating_add(1) {
+        return Err(PROCEDURAL_ALLOCATION);
+    }
+    targets.clear();
+    used.clear();
+    used.insert(source);
     let fallback_word = counter_words(config, source, 0, GLOBAL_FALLBACK_PURPOSE_ID, 0).0;
     let fallback_start = bounded_index(fallback_word, config.configured_cells);
     let mut fallback_offset = 0u64;
-    let mut targets = Vec::with_capacity(config.fanout as usize);
+    let mut candidate_examinations = 0u64;
     for slot in 0..config.fanout {
         let mut selected = None;
         for attempt in 0..MAX_CANDIDATE_ATTEMPTS {
-            let word = counter_words(config, source, slot, GLOBAL_PURPOSE_ID, attempt).0;
-            let candidate = bounded_index(word, config.configured_cells - 1);
-            let candidate = if candidate < source {
-                candidate
-            } else {
-                candidate + 1
-            };
+            let candidate = candidate_for(config, source, slot, attempt);
+            candidate_examinations += 1;
             if !used.contains(&candidate) {
                 selected = Some(candidate);
                 break;
@@ -253,19 +294,118 @@ fn generated_targets(config: &ProceduralConfig, source: u64) -> Vec<u64> {
         if selected.is_none() {
             while fallback_offset <= config.fanout {
                 let candidate =
-                    fallback_start.wrapping_add(fallback_offset) % config.configured_cells;
+                    fallback_candidate(fallback_start, fallback_offset, config.configured_cells);
                 fallback_offset += 1;
+                candidate_examinations += 1;
                 if !used.contains(&candidate) {
                     selected = Some(candidate);
                     break;
                 }
             }
         }
-        let target = selected.expect("fanout below population guarantees a target");
-        used.push(target);
+        let Some(target) = selected else {
+            return Err(PROCEDURAL_INVALID);
+        };
+        if used.len() >= used.capacity() || targets.len() >= fanout {
+            return Err(PROCEDURAL_ALLOCATION);
+        }
+        used.insert(target);
         targets.push(target);
     }
-    targets
+    Ok(candidate_examinations)
+}
+
+fn reserved_vec<T>(capacity: usize) -> Result<Vec<T>, u32> {
+    let mut values = Vec::new();
+    values
+        .try_reserve_exact(capacity)
+        .map_err(|_| PROCEDURAL_ALLOCATION)?;
+    Ok(values)
+}
+
+fn push_bounded<T>(
+    values: &mut Vec<T>,
+    value: T,
+    logical_capacity: usize,
+    error: u32,
+) -> Result<(), u32> {
+    if values.len() >= logical_capacity || values.len() >= values.capacity() {
+        return Err(error);
+    }
+    values.push(value);
+    Ok(())
+}
+
+struct RuntimeScratch {
+    submitted_events: Vec<ProceduralEventRecord>,
+    event_work: Vec<ProceduralEventRecord>,
+    step_spikes: Vec<u64>,
+    row_targets: Vec<u64>,
+    row_used: HashSet<u64>,
+    interval_ids: HashMap<u64, u8>,
+}
+
+impl RuntimeScratch {
+    fn try_new(config: &ProceduralConfig) -> Result<Self, u32> {
+        let fanout = usize::try_from(config.fanout).map_err(|_| PROCEDURAL_ALLOCATION)?;
+        let row_members = fanout.checked_add(1).ok_or(PROCEDURAL_ALLOCATION)?;
+        let mut row_used = HashSet::new();
+        row_used
+            .try_reserve(row_members)
+            .map_err(|_| PROCEDURAL_ALLOCATION)?;
+        let mut interval_ids = HashMap::new();
+        interval_ids
+            .try_reserve(config.interval_distinct_capacity)
+            .map_err(|_| PROCEDURAL_ALLOCATION)?;
+        Ok(Self {
+            submitted_events: reserved_vec(config.event_capacity)?,
+            event_work: reserved_vec(config.event_capacity)?,
+            step_spikes: reserved_vec(config.resident_capacity)?,
+            row_targets: reserved_vec(fanout)?,
+            row_used,
+            interval_ids,
+        })
+    }
+
+    fn mark_interval(&mut self, gid: u64, flag: u8, logical_capacity: usize) -> Result<(), u32> {
+        if let Some(flags) = self.interval_ids.get_mut(&gid) {
+            *flags |= flag;
+            return Ok(());
+        }
+        if self.interval_ids.len() >= logical_capacity
+            || self.interval_ids.len() >= self.interval_ids.capacity()
+        {
+            return Err(PROCEDURAL_DISTINCT_CAPACITY);
+        }
+        self.interval_ids.insert(gid, flag);
+        Ok(())
+    }
+
+    fn payload_bytes(&self) -> usize {
+        self.submitted_events.capacity() * size_of::<ProceduralEventRecord>()
+            + self.event_work.capacity() * size_of::<ProceduralEventRecord>()
+            + self.step_spikes.capacity() * size_of::<u64>()
+            + self.row_targets.capacity() * size_of::<u64>()
+            + self.row_used.capacity() * size_of::<u64>()
+            + self.interval_ids.capacity() * size_of::<(u64, u8)>()
+    }
+}
+
+struct DenseScratch {
+    submitted_events: Vec<ProceduralEventRecord>,
+    event_work: Vec<ProceduralEventRecord>,
+    step_spikes: Vec<u64>,
+}
+
+impl DenseScratch {
+    fn try_new(config: &ProceduralConfig) -> Result<Self, u32> {
+        let cells = usize::try_from(config.configured_cells).map_err(|_| PROCEDURAL_ALLOCATION)?;
+        Ok(Self {
+            submitted_events: reserved_vec(config.event_capacity)?,
+            event_work: reserved_vec(config.event_capacity)?,
+            step_spikes: reserved_vec(cells)?,
+        })
+    }
 }
 
 #[inline]
@@ -409,6 +549,7 @@ pub struct ProceduralRuntime {
     residents: Vec<CellState>,
     pending: Vec<ProceduralEventRecord>,
     last_spikes: Vec<ProceduralSpikeRecord>,
+    scratch: RuntimeScratch,
     counters: ProceduralCounters,
     poisoned: u32,
 }
@@ -420,20 +561,25 @@ impl ProceduralRuntime {
         after_decay: [f64; 2],
         after_cut_decay: [f64; 2],
         after_amplitudes: [f64; 2],
-    ) -> Self {
-        Self {
+    ) -> Result<Self, u32> {
+        let residents = reserved_vec(config.resident_capacity)?;
+        let pending = reserved_vec(config.event_capacity)?;
+        let last_spikes = reserved_vec(config.spike_capacity)?;
+        let scratch = RuntimeScratch::try_new(&config)?;
+        Ok(Self {
             glif,
             config,
             after_decay,
             after_cut_decay,
             after_amplitudes,
             current_step: 0,
-            residents: Vec::new(),
-            pending: Vec::new(),
-            last_spikes: Vec::new(),
+            residents,
+            pending,
+            last_spikes,
+            scratch,
             counters: ProceduralCounters::default(),
             poisoned: PROCEDURAL_OK,
-        }
+        })
     }
 
     fn payload_bytes(&self) -> usize {
@@ -441,6 +587,7 @@ impl ProceduralRuntime {
             + self.residents.capacity() * size_of::<CellState>()
             + self.pending.capacity() * size_of::<ProceduralEventRecord>()
             + self.last_spikes.capacity() * size_of::<ProceduralSpikeRecord>()
+            + self.scratch.payload_bytes()
     }
 
     fn poison(&mut self, code: u32) -> u32 {
@@ -453,11 +600,7 @@ impl ProceduralRuntime {
         self.residents.binary_search_by_key(&gid, |state| state.gid)
     }
 
-    fn apply_event(
-        &mut self,
-        event: ProceduralEventRecord,
-        resident_distinct: &mut BTreeSet<u64>,
-    ) -> Result<(), u32> {
+    fn apply_event(&mut self, event: ProceduralEventRecord) -> Result<(), u32> {
         let current = canonical_zero(event.current_pa);
         match self.resident_index(event.target_gid) {
             Ok(index) => {
@@ -471,25 +614,27 @@ impl ProceduralRuntime {
                 if self.residents.len() == self.config.resident_capacity {
                     return Err(PROCEDURAL_RESIDENT_CAPACITY);
                 }
-                self.residents
-                    .try_reserve_exact(1)
-                    .map_err(|_| PROCEDURAL_RESIDENT_CAPACITY)?;
+                if self.residents.len() == self.residents.capacity() {
+                    return Err(PROCEDURAL_ALLOCATION);
+                }
+                self.scratch.mark_interval(
+                    event.target_gid,
+                    SEEN_RESIDENT,
+                    self.config.interval_distinct_capacity,
+                )?;
                 let mut state = CellState::canonical_rest(event.target_gid);
                 state.synaptic_current = current;
                 self.residents.insert(insertion, state);
-                resident_distinct.insert(event.target_gid);
             }
         }
         Ok(())
     }
 
     fn append_events(&mut self, events: &[ProceduralEventRecord]) -> Result<(), u32> {
-        if self.pending.len().saturating_add(events.len()) > self.config.event_capacity {
+        if events.len() > self.config.event_capacity {
             return Err(PROCEDURAL_EVENT_CAPACITY);
         }
-        self.pending
-            .try_reserve_exact(events.len())
-            .map_err(|_| PROCEDURAL_EVENT_CAPACITY)?;
+        self.scratch.submitted_events.clear();
         for event in events {
             if event.due_step < self.current_step
                 || event.target_gid >= self.config.configured_cells
@@ -501,16 +646,74 @@ impl ProceduralRuntime {
             }
             let mut canonical = *event;
             canonical.current_pa = canonical_zero(canonical.current_pa);
-            self.pending.push(canonical);
+            push_bounded(
+                &mut self.scratch.submitted_events,
+                canonical,
+                self.config.event_capacity,
+                PROCEDURAL_EVENT_CAPACITY,
+            )?;
         }
-        self.pending.sort_by(event_order);
+        self.scratch.submitted_events.sort_unstable_by(event_order);
         if self
-            .pending
+            .scratch
+            .submitted_events
             .windows(2)
             .any(|pair| same_event_key(&pair[0], &pair[1]))
         {
             return Err(PROCEDURAL_DUPLICATE_EVENT);
         }
+        let mut pending_index = 0usize;
+        let mut submitted_index = 0usize;
+        while pending_index < self.pending.len()
+            && submitted_index < self.scratch.submitted_events.len()
+        {
+            match event_order(
+                &self.pending[pending_index],
+                &self.scratch.submitted_events[submitted_index],
+            ) {
+                Ordering::Less => pending_index += 1,
+                Ordering::Greater => submitted_index += 1,
+                Ordering::Equal => return Err(PROCEDURAL_DUPLICATE_EVENT),
+            }
+        }
+        let merged_len = self
+            .pending
+            .len()
+            .checked_add(self.scratch.submitted_events.len())
+            .ok_or(PROCEDURAL_EVENT_CAPACITY)?;
+        if merged_len > self.config.event_capacity {
+            return Err(PROCEDURAL_EVENT_CAPACITY);
+        }
+        self.scratch.event_work.clear();
+        pending_index = 0;
+        submitted_index = 0;
+        while pending_index < self.pending.len()
+            || submitted_index < self.scratch.submitted_events.len()
+        {
+            let take_pending = submitted_index == self.scratch.submitted_events.len()
+                || (pending_index < self.pending.len()
+                    && event_order(
+                        &self.pending[pending_index],
+                        &self.scratch.submitted_events[submitted_index],
+                    ) == Ordering::Less);
+            let event = if take_pending {
+                let event = self.pending[pending_index];
+                pending_index += 1;
+                event
+            } else {
+                let event = self.scratch.submitted_events[submitted_index];
+                submitted_index += 1;
+                event
+            };
+            push_bounded(
+                &mut self.scratch.event_work,
+                event,
+                self.config.event_capacity,
+                PROCEDURAL_EVENT_CAPACITY,
+            )?;
+        }
+        std::mem::swap(&mut self.pending, &mut self.scratch.event_work);
+        self.scratch.event_work.clear();
         Ok(())
     }
 
@@ -522,14 +725,24 @@ impl ProceduralRuntime {
             return self.poison(PROCEDURAL_STEP_OVERFLOW);
         }
         if let Err(code) = self.append_events(events) {
-            return self.poison(code);
+            return if code == PROCEDURAL_DUPLICATE_EVENT {
+                code
+            } else {
+                self.poison(code)
+            };
         }
 
         self.last_spikes.clear();
-        let mut resident_distinct = BTreeSet::new();
-        resident_distinct.extend(self.residents.iter().map(|state| state.gid));
-        let mut updated_distinct = BTreeSet::new();
-        let mut spiking_distinct = BTreeSet::new();
+        self.scratch.interval_ids.clear();
+        for state in &self.residents {
+            if let Err(code) = self.scratch.mark_interval(
+                state.gid,
+                SEEN_RESIDENT,
+                self.config.interval_distinct_capacity,
+            ) {
+                return self.poison(code);
+            }
+        }
         let mut resident_peak = self.residents.len();
         let mut queue_peak = self.pending.len();
         let mut cell_steps = 0u64;
@@ -546,22 +759,43 @@ impl ProceduralRuntime {
             {
                 return self.poison(PROCEDURAL_INVALID);
             }
-            let due: Vec<_> = self.pending.drain(..due_count).collect();
-            for event in due {
-                delivered_events += 1;
-                if let Err(code) = self.apply_event(event, &mut resident_distinct) {
+            self.scratch.event_work.clear();
+            for event in &self.pending[..due_count] {
+                if let Err(code) = push_bounded(
+                    &mut self.scratch.event_work,
+                    *event,
+                    self.config.event_capacity,
+                    PROCEDURAL_EVENT_CAPACITY,
+                ) {
                     return self.poison(code);
                 }
             }
+            for index in 0..self.scratch.event_work.len() {
+                let event = self.scratch.event_work[index];
+                delivered_events = match delivered_events.checked_add(1) {
+                    Some(value) => value,
+                    None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
+                };
+                if let Err(code) = self.apply_event(event) {
+                    return self.poison(code);
+                }
+            }
+            drop(self.pending.drain(..due_count));
             resident_peak = resident_peak.max(self.residents.len());
 
-            let mut step_spikes = Vec::new();
+            self.scratch.step_spikes.clear();
             cell_steps = match cell_steps.checked_add(self.residents.len() as u64) {
                 Some(value) => value,
                 None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
             };
             for state in &mut self.residents {
-                updated_distinct.insert(state.gid);
+                if let Err(code) = self.scratch.mark_interval(
+                    state.gid,
+                    SEEN_UPDATED,
+                    self.config.interval_distinct_capacity,
+                ) {
+                    return self.poison(code);
+                }
                 if sparse_cell_step(
                     &self.glif,
                     &self.after_decay,
@@ -571,27 +805,49 @@ impl ProceduralRuntime {
                     self.config.eligibility_decay,
                     state,
                 ) {
-                    step_spikes.push(state.gid);
-                    spiking_distinct.insert(state.gid);
-                    self.last_spikes.push(ProceduralSpikeRecord {
-                        step: self.current_step,
-                        gid: state.gid,
-                    });
+                    if let Err(code) = self.scratch.mark_interval(
+                        state.gid,
+                        SEEN_SPIKING,
+                        self.config.interval_distinct_capacity,
+                    ) {
+                        return self.poison(code);
+                    }
+                    if let Err(code) = push_bounded(
+                        &mut self.scratch.step_spikes,
+                        state.gid,
+                        self.config.resident_capacity,
+                        PROCEDURAL_RESIDENT_CAPACITY,
+                    ) {
+                        return self.poison(code);
+                    }
+                    if let Err(code) = push_bounded(
+                        &mut self.last_spikes,
+                        ProceduralSpikeRecord {
+                            step: self.current_step,
+                            gid: state.gid,
+                        },
+                        self.config.spike_capacity,
+                        PROCEDURAL_SPIKE_CAPACITY,
+                    ) {
+                        return self.poison(code);
+                    }
                 }
             }
 
-            let generated_this_step =
-                match step_spikes.len().checked_mul(self.config.fanout as usize) {
-                    Some(value) => value,
-                    None => return self.poison(PROCEDURAL_EVENT_CAPACITY),
-                };
+            let generated_this_step = match self
+                .scratch
+                .step_spikes
+                .len()
+                .checked_mul(self.config.fanout as usize)
+            {
+                Some(value) => value,
+                None => return self.poison(PROCEDURAL_EVENT_CAPACITY),
+            };
             if self.pending.len().saturating_add(generated_this_step) > self.config.event_capacity {
                 return self.poison(PROCEDURAL_EVENT_CAPACITY);
             }
-            if self.pending.try_reserve_exact(generated_this_step).is_err() {
-                return self.poison(PROCEDURAL_EVENT_CAPACITY);
-            }
-            for source in step_spikes {
+            for spike_index in 0..self.scratch.step_spikes.len() {
+                let source = self.scratch.step_spikes[spike_index];
                 let due_step = match self
                     .current_step
                     .checked_add(self.config.recurrent_delay_steps)
@@ -600,21 +856,47 @@ impl ProceduralRuntime {
                     None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
                 };
                 let weight = source_weight(&self.config, source);
-                for (slot, target) in generated_targets(&self.config, source)
-                    .into_iter()
-                    .enumerate()
-                {
-                    self.pending.push(ProceduralEventRecord {
+                if let Err(code) = fill_targets_with(
+                    &self.config,
+                    source,
+                    &mut self.scratch.row_targets,
+                    &mut self.scratch.row_used,
+                    |config, source, slot, attempt| {
+                        let word =
+                            counter_words(config, source, slot, GLOBAL_PURPOSE_ID, attempt).0;
+                        let candidate = bounded_index(word, config.configured_cells - 1);
+                        if candidate < source {
+                            candidate
+                        } else {
+                            candidate + 1
+                        }
+                    },
+                ) {
+                    return self.poison(code);
+                }
+                for slot in 0..self.scratch.row_targets.len() {
+                    let event = ProceduralEventRecord {
                         due_step,
-                        target_gid: target,
+                        target_gid: self.scratch.row_targets[slot],
                         source_gid: source,
                         edge_slot: slot as u64,
                         current_pa: weight,
-                    });
-                    generated_edges += 1;
+                    };
+                    if let Err(code) = push_bounded(
+                        &mut self.pending,
+                        event,
+                        self.config.event_capacity,
+                        PROCEDURAL_EVENT_CAPACITY,
+                    ) {
+                        return self.poison(code);
+                    }
+                    generated_edges = match generated_edges.checked_add(1) {
+                        Some(value) => value,
+                        None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
+                    };
                 }
             }
-            self.pending.sort_by(event_order);
+            self.pending.sort_unstable_by(event_order);
             if self
                 .pending
                 .windows(2)
@@ -627,12 +909,30 @@ impl ProceduralRuntime {
             self.current_step += 1;
         }
 
+        let resident_distinct = self
+            .scratch
+            .interval_ids
+            .values()
+            .filter(|flags| **flags & SEEN_RESIDENT != 0)
+            .count();
+        let updated_distinct = self
+            .scratch
+            .interval_ids
+            .values()
+            .filter(|flags| **flags & SEEN_UPDATED != 0)
+            .count();
+        let spiking_distinct = self
+            .scratch
+            .interval_ids
+            .values()
+            .filter(|flags| **flags & SEEN_SPIKING != 0)
+            .count();
         self.counters = ProceduralCounters {
             current_step: self.current_step,
             resident_peak,
-            resident_distinct: resident_distinct.len(),
-            updated_distinct: updated_distinct.len(),
-            spiking_distinct: spiking_distinct.len(),
+            resident_distinct,
+            updated_distinct,
+            spiking_distinct,
             cell_step_evaluations: cell_steps,
             spike_events: self.last_spikes.len() as u64,
             generated_edges,
@@ -659,17 +959,16 @@ pub struct DenseReference {
     cells: Vec<CellState>,
     pending: Vec<ProceduralEventRecord>,
     last_spikes: Vec<ProceduralSpikeRecord>,
+    scratch: DenseScratch,
     poisoned: u32,
 }
 
 impl DenseReference {
     fn append_events(&mut self, events: &[ProceduralEventRecord]) -> Result<(), u32> {
-        if self.pending.len().saturating_add(events.len()) > self.config.event_capacity {
+        if events.len() > self.config.event_capacity {
             return Err(PROCEDURAL_EVENT_CAPACITY);
         }
-        self.pending
-            .try_reserve_exact(events.len())
-            .map_err(|_| PROCEDURAL_EVENT_CAPACITY)?;
+        self.scratch.submitted_events.clear();
         for event in events {
             if event.due_step < self.current_step
                 || event.target_gid >= self.config.configured_cells
@@ -681,16 +980,76 @@ impl DenseReference {
             }
             let mut canonical = *event;
             canonical.current_pa = canonical_zero(canonical.current_pa);
-            self.pending.push(canonical);
+            push_bounded(
+                &mut self.scratch.submitted_events,
+                canonical,
+                self.config.event_capacity,
+                PROCEDURAL_EVENT_CAPACITY,
+            )?;
         }
-        self.pending.sort_by(dense_event_order);
+        self.scratch
+            .submitted_events
+            .sort_unstable_by(dense_event_order);
         if self
-            .pending
+            .scratch
+            .submitted_events
             .windows(2)
             .any(|pair| same_dense_event_key(&pair[0], &pair[1]))
         {
             return Err(PROCEDURAL_DUPLICATE_EVENT);
         }
+        let mut pending_index = 0usize;
+        let mut submitted_index = 0usize;
+        while pending_index < self.pending.len()
+            && submitted_index < self.scratch.submitted_events.len()
+        {
+            match dense_event_order(
+                &self.pending[pending_index],
+                &self.scratch.submitted_events[submitted_index],
+            ) {
+                Ordering::Less => pending_index += 1,
+                Ordering::Greater => submitted_index += 1,
+                Ordering::Equal => return Err(PROCEDURAL_DUPLICATE_EVENT),
+            }
+        }
+        let merged_len = self
+            .pending
+            .len()
+            .checked_add(self.scratch.submitted_events.len())
+            .ok_or(PROCEDURAL_EVENT_CAPACITY)?;
+        if merged_len > self.config.event_capacity {
+            return Err(PROCEDURAL_EVENT_CAPACITY);
+        }
+        self.scratch.event_work.clear();
+        pending_index = 0;
+        submitted_index = 0;
+        while pending_index < self.pending.len()
+            || submitted_index < self.scratch.submitted_events.len()
+        {
+            let take_pending = submitted_index == self.scratch.submitted_events.len()
+                || (pending_index < self.pending.len()
+                    && dense_event_order(
+                        &self.pending[pending_index],
+                        &self.scratch.submitted_events[submitted_index],
+                    ) == Ordering::Less);
+            let event = if take_pending {
+                let event = self.pending[pending_index];
+                pending_index += 1;
+                event
+            } else {
+                let event = self.scratch.submitted_events[submitted_index];
+                submitted_index += 1;
+                event
+            };
+            push_bounded(
+                &mut self.scratch.event_work,
+                event,
+                self.config.event_capacity,
+                PROCEDURAL_EVENT_CAPACITY,
+            )?;
+        }
+        std::mem::swap(&mut self.pending, &mut self.scratch.event_work);
+        self.scratch.event_work.clear();
         Ok(())
     }
 
@@ -703,7 +1062,9 @@ impl DenseReference {
             return self.poisoned;
         }
         if let Err(code) = self.append_events(events) {
-            self.poisoned = code;
+            if code != PROCEDURAL_DUPLICATE_EVENT {
+                self.poisoned = code;
+            }
             return code;
         }
         self.last_spikes.clear();
@@ -718,12 +1079,26 @@ impl DenseReference {
                 self.poisoned = PROCEDURAL_INVALID;
                 return self.poisoned;
             }
-            let due: Vec<_> = self.pending.drain(..due_count).collect();
-            for event in due {
+            self.scratch.event_work.clear();
+            for event in &self.pending[..due_count] {
+                if let Err(code) = push_bounded(
+                    &mut self.scratch.event_work,
+                    *event,
+                    self.config.event_capacity,
+                    PROCEDURAL_EVENT_CAPACITY,
+                ) {
+                    self.poisoned = code;
+                    return code;
+                }
+            }
+            for index in 0..self.scratch.event_work.len() {
+                let event = self.scratch.event_work[index];
                 let cell = &mut self.cells[event.target_gid as usize];
                 cell.synaptic_current = canonical_zero(cell.synaptic_current + event.current_pa);
             }
-            let mut step_spikes = Vec::new();
+            drop(self.pending.drain(..due_count));
+            self.scratch.step_spikes.clear();
+            let dense_cell_count = self.cells.len();
             for cell in &mut self.cells {
                 if dense_cell_step(
                     &self.glif,
@@ -734,14 +1109,35 @@ impl DenseReference {
                     self.config.eligibility_decay,
                     cell,
                 ) {
-                    step_spikes.push(cell.gid);
-                    self.last_spikes.push(ProceduralSpikeRecord {
-                        step: self.current_step,
-                        gid: cell.gid,
-                    });
+                    if let Err(code) = push_bounded(
+                        &mut self.scratch.step_spikes,
+                        cell.gid,
+                        dense_cell_count,
+                        PROCEDURAL_RESIDENT_CAPACITY,
+                    ) {
+                        self.poisoned = code;
+                        return code;
+                    }
+                    if let Err(code) = push_bounded(
+                        &mut self.last_spikes,
+                        ProceduralSpikeRecord {
+                            step: self.current_step,
+                            gid: cell.gid,
+                        },
+                        self.config.spike_capacity,
+                        PROCEDURAL_SPIKE_CAPACITY,
+                    ) {
+                        self.poisoned = code;
+                        return code;
+                    }
                 }
             }
-            let generated = match step_spikes.len().checked_mul(self.config.fanout as usize) {
+            let generated = match self
+                .scratch
+                .step_spikes
+                .len()
+                .checked_mul(self.config.fanout as usize)
+            {
                 Some(value) => value,
                 None => {
                     self.poisoned = PROCEDURAL_EVENT_CAPACITY;
@@ -752,11 +1148,8 @@ impl DenseReference {
                 self.poisoned = PROCEDURAL_EVENT_CAPACITY;
                 return self.poisoned;
             }
-            if self.pending.try_reserve_exact(generated).is_err() {
-                self.poisoned = PROCEDURAL_EVENT_CAPACITY;
-                return self.poisoned;
-            }
-            for source in step_spikes {
+            for spike_index in 0..self.scratch.step_spikes.len() {
+                let source = self.scratch.step_spikes[spike_index];
                 let due_step = match self
                     .current_step
                     .checked_add(self.config.recurrent_delay_steps)
@@ -769,16 +1162,25 @@ impl DenseReference {
                 };
                 let offset = source as usize * self.config.fanout as usize;
                 for slot in 0..self.config.fanout as usize {
-                    self.pending.push(ProceduralEventRecord {
+                    let event = ProceduralEventRecord {
                         due_step,
                         target_gid: self.targets[offset + slot],
                         source_gid: source,
                         edge_slot: slot as u64,
                         current_pa: self.weights[offset + slot],
-                    });
+                    };
+                    if let Err(code) = push_bounded(
+                        &mut self.pending,
+                        event,
+                        self.config.event_capacity,
+                        PROCEDURAL_EVENT_CAPACITY,
+                    ) {
+                        self.poisoned = code;
+                        return code;
+                    }
                 }
             }
-            self.pending.sort_by(dense_event_order);
+            self.pending.sort_unstable_by(dense_event_order);
             if self
                 .pending
                 .windows(2)
@@ -799,8 +1201,12 @@ fn valid_common(glif: &GlifConfig, config: &ProceduralConfig) -> bool {
         && config.fanout >= 1
         && config.fanout < config.configured_cells
         && config.fanout < (1u64 << 48)
+        && usize::try_from(config.fanout).is_ok()
         && config.resident_capacity >= 1
+        && config.resident_capacity as u128 <= config.configured_cells as u128
         && config.event_capacity >= 1
+        && config.spike_capacity >= 1
+        && config.interval_distinct_capacity >= config.resident_capacity
         && config.recurrent_weight_pa.is_finite()
         && config.recurrent_weight_pa > 0.0
         && config.recurrent_delay_steps >= 1
@@ -857,9 +1263,10 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_create(
     else {
         return ptr::null_mut();
     };
-    Box::into_raw(Box::new(ProceduralRuntime::new(
-        glif, config, decay, cut, amplitudes,
-    )))
+    let Ok(runtime) = ProceduralRuntime::new(glif, config, decay, cut, amplitudes) else {
+        return ptr::null_mut();
+    };
+    allocate_owned(runtime)
 }
 
 #[no_mangle]
@@ -911,14 +1318,26 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_counts(
 pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
     runtime: *const ProceduralRuntime,
     residents: *mut ProceduralResidentRecord,
+    resident_capacity: usize,
     pending: *mut ProceduralEventRecord,
+    pending_capacity: usize,
     spikes: *mut ProceduralSpikeRecord,
+    spike_capacity: usize,
     counters: *mut ProceduralCounters,
 ) -> u32 {
     if runtime.is_null() || counters.is_null() {
         return PROCEDURAL_INVALID;
     }
     let runtime = &*runtime;
+    if (residents.is_null() && resident_capacity != 0)
+        || (!residents.is_null() && resident_capacity < runtime.residents.len())
+        || (pending.is_null() && pending_capacity != 0)
+        || (!pending.is_null() && pending_capacity < runtime.pending.len())
+        || (spikes.is_null() && spike_capacity != 0)
+        || (!spikes.is_null() && spike_capacity < runtime.last_spikes.len())
+    {
+        return PROCEDURAL_SNAPSHOT_CAPACITY;
+    }
     if !residents.is_null() {
         for (index, state) in runtime.residents.iter().enumerate() {
             *residents.add(index) = state.record();
@@ -965,32 +1384,62 @@ pub unsafe extern "C" fn humanbrain_dense_reference_create(
     let Some(edge_count) = cells.checked_mul(config.fanout as usize) else {
         return ptr::null_mut();
     };
-    let targets = slice::from_raw_parts(targets, edge_count).to_vec();
-    let weights = slice::from_raw_parts(weights, edge_count).to_vec();
-    if targets
+    let target_slice = slice::from_raw_parts(targets, edge_count);
+    let weight_slice = slice::from_raw_parts(weights, edge_count);
+    if target_slice
         .iter()
         .any(|target| *target >= config.configured_cells)
-        || weights.iter().any(|weight| !weight.is_finite())
+        || weight_slice.iter().any(|weight| !weight.is_finite())
     {
         return ptr::null_mut();
     }
-    let cells = (0..config.configured_cells)
-        .map(CellState::canonical_rest)
-        .collect();
-    Box::into_raw(Box::new(DenseReference {
+    let Ok(mut owned_targets) = reserved_vec(edge_count) else {
+        return ptr::null_mut();
+    };
+    owned_targets.extend_from_slice(target_slice);
+    let Ok(mut owned_weights) = reserved_vec(edge_count) else {
+        return ptr::null_mut();
+    };
+    owned_weights.extend_from_slice(weight_slice);
+    let Ok(mut dense_cells) = reserved_vec(cells) else {
+        return ptr::null_mut();
+    };
+    for gid in 0..config.configured_cells {
+        if push_bounded(
+            &mut dense_cells,
+            CellState::canonical_rest(gid),
+            cells,
+            PROCEDURAL_ALLOCATION,
+        )
+        .is_err()
+        {
+            return ptr::null_mut();
+        }
+    }
+    let Ok(pending) = reserved_vec(config.event_capacity) else {
+        return ptr::null_mut();
+    };
+    let Ok(last_spikes) = reserved_vec(config.spike_capacity) else {
+        return ptr::null_mut();
+    };
+    let Ok(scratch) = DenseScratch::try_new(&config) else {
+        return ptr::null_mut();
+    };
+    allocate_owned(DenseReference {
         glif,
         config,
         after_decay: decay,
         after_cut_decay: cut,
         after_amplitudes: amplitudes,
-        targets,
-        weights,
+        targets: owned_targets,
+        weights: owned_weights,
         current_step: 0,
-        cells,
-        pending: Vec::new(),
-        last_spikes: Vec::new(),
+        cells: dense_cells,
+        pending,
+        last_spikes,
+        scratch,
         poisoned: PROCEDURAL_OK,
-    }))
+    })
 }
 
 #[no_mangle]
@@ -1039,8 +1488,11 @@ pub unsafe extern "C" fn humanbrain_dense_reference_counts(
 pub unsafe extern "C" fn humanbrain_dense_reference_snapshot(
     runtime: *const DenseReference,
     cells: *mut ProceduralResidentRecord,
+    cell_capacity: usize,
     pending: *mut ProceduralEventRecord,
+    pending_capacity: usize,
     spikes: *mut ProceduralSpikeRecord,
+    spike_capacity: usize,
     current_step: *mut u64,
     poison_code: *mut u32,
 ) -> u32 {
@@ -1048,6 +1500,15 @@ pub unsafe extern "C" fn humanbrain_dense_reference_snapshot(
         return PROCEDURAL_INVALID;
     }
     let runtime = &*runtime;
+    if (cells.is_null() && cell_capacity != 0)
+        || (!cells.is_null() && cell_capacity < runtime.cells.len())
+        || (pending.is_null() && pending_capacity != 0)
+        || (!pending.is_null() && pending_capacity < runtime.pending.len())
+        || (spikes.is_null() && spike_capacity != 0)
+        || (!spikes.is_null() && spike_capacity < runtime.last_spikes.len())
+    {
+        return PROCEDURAL_SNAPSHOT_CAPACITY;
+    }
     if !cells.is_null() {
         for (index, state) in runtime.cells.iter().enumerate() {
             *cells.add(index) = state.record();
@@ -1066,4 +1527,103 @@ pub unsafe extern "C" fn humanbrain_dense_reference_snapshot(
     *current_step = runtime.current_step;
     *poison_code = runtime.poisoned;
     PROCEDURAL_OK
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        fallback_candidate, fill_targets_with, humanbrain_procedural_runtime_create, GlifConfig,
+        ProceduralConfig,
+    };
+    use std::collections::HashSet;
+
+    #[test]
+    fn fallback_candidate_matches_widened_counter64_oracle_across_u64_wrap() {
+        assert_eq!(fallback_candidate(u64::MAX - 1, 3, u64::MAX), 2);
+    }
+
+    #[test]
+    fn collision_heavy_row_matches_oracle_order_and_linear_work_bound() {
+        let config = ProceduralConfig {
+            configured_cells: 66,
+            fanout: 64,
+            seed: 71,
+            resident_capacity: 8,
+            event_capacity: 128,
+            spike_capacity: 128,
+            interval_distinct_capacity: 136,
+            recurrent_weight_pa: 325.0,
+            recurrent_delay_steps: 1,
+            recurrent_decay: 0.5,
+            eligibility_decay: 0.5,
+        };
+        let mut targets = Vec::new();
+        targets.try_reserve_exact(64).unwrap();
+        let mut used = HashSet::new();
+        used.try_reserve(65).unwrap();
+
+        let work = fill_targets_with(&config, 0, &mut targets, &mut used, |_, source, _, _| {
+            source
+        })
+        .unwrap();
+
+        assert_eq!(
+            targets,
+            [
+                57, 58, 59, 60, 61, 62, 63, 64, 65, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+                15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+                36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55,
+            ]
+        );
+        assert_eq!(work, 8_257);
+        assert!(work <= 129 * config.fanout + 1);
+    }
+
+    #[test]
+    fn impossible_preallocation_fails_at_the_raw_creation_seam_without_abort() {
+        let glif = GlifConfig {
+            cell_count: 1,
+            after_channel_count: 2,
+            spike_cut_steps: 1,
+            leak_ns: 1.0,
+            voltage_step_scale: 1.0,
+            threshold_beta_scale: 1.0,
+            threshold_exp_decay: 0.5,
+            threshold_voltage_factor: 1.0,
+            threshold_beta_factor: 1.0,
+            spike_threshold_decay: 0.5,
+            threshold_inf_relative_mv: 1.0,
+            voltage_reset_scale: 1.0,
+            voltage_reset_offset_mv: 1.0,
+            spike_cut_threshold_decay: 0.5,
+            threshold_spike_increment_mv: 1.0,
+        };
+        let config = ProceduralConfig {
+            configured_cells: u64::MAX,
+            fanout: 1,
+            seed: 71,
+            resident_capacity: usize::MAX,
+            event_capacity: 1,
+            spike_capacity: 1,
+            interval_distinct_capacity: usize::MAX,
+            recurrent_weight_pa: 1.0,
+            recurrent_delay_steps: 1,
+            recurrent_decay: 0.5,
+            eligibility_decay: 0.5,
+        };
+        let decay = [0.5, 0.5];
+        let amplitudes = [0.0, 0.0];
+
+        let runtime = unsafe {
+            humanbrain_procedural_runtime_create(
+                &glif,
+                &config,
+                decay.as_ptr(),
+                decay.as_ptr(),
+                amplitudes.as_ptr(),
+            )
+        };
+
+        assert!(runtime.is_null());
+    }
 }

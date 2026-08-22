@@ -9,6 +9,7 @@ import platform
 import subprocess
 import tempfile
 import threading
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -19,6 +20,20 @@ if TYPE_CHECKING:
     from humanbrain.cells import AdaptiveGlifPopulation
 
 _SOURCE_ROOT = Path(__file__).with_name("_native_src")
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+_PROCEDURAL_RUNTIME_SOURCE_PATHS = (
+    "data/allen/523000114_neuron_config.json",
+    "src/humanbrain/_native_src/Cargo.lock",
+    "src/humanbrain/_native_src/Cargo.toml",
+    "src/humanbrain/_native_src/src/lib.rs",
+    "src/humanbrain/_native_src/src/procedural.rs",
+    "src/humanbrain/cells.py",
+    "src/humanbrain/human_cell_identity.py",
+    "src/humanbrain/native.py",
+    "src/humanbrain/procedural_runtime.py",
+    "src/humanbrain/procedural_topology.py",
+    "src/humanbrain/scale_accounting.py",
+)
 _BUILD_LOCK = threading.Lock()
 _LIBRARY: ctypes.CDLL | None = None
 _LIBRARY_PATH: Path | None = None
@@ -73,18 +88,63 @@ class NativeBuildInfo:
     library_path: Path
 
 
-def _source_digest() -> str:
+def _framed_sha256(namespace: str, entries: Iterable[tuple[str, bytes]]) -> str:
     digest = hashlib.sha256()
+    namespace_bytes = namespace.encode("utf-8")
+    digest.update(len(namespace_bytes).to_bytes(8, "big"))
+    digest.update(namespace_bytes)
+    for name, payload in entries:
+        name_bytes = name.encode("utf-8")
+        digest.update(len(name_bytes).to_bytes(8, "big"))
+        digest.update(name_bytes)
+        digest.update(len(payload).to_bytes(8, "big"))
+        digest.update(payload)
+    return digest.hexdigest()
+
+
+def _source_digest() -> str:
     source_paths = (
         _SOURCE_ROOT / "Cargo.toml",
         _SOURCE_ROOT / "Cargo.lock",
         *sorted((_SOURCE_ROOT / "src").glob("*.rs")),
     )
-    for path in source_paths:
-        digest.update(path.read_bytes())
-    digest.update(platform.system().encode("ascii"))
-    digest.update(platform.machine().encode("ascii"))
-    return digest.hexdigest()[:16]
+    entries = [
+        (path.relative_to(_SOURCE_ROOT).as_posix(), path.read_bytes())
+        for path in source_paths
+    ]
+    entries.extend(
+        (
+            ("@platform/system", platform.system().encode("ascii")),
+            ("@platform/machine", platform.machine().encode("ascii")),
+        )
+    )
+    return _framed_sha256("humanbrain-native-cache-v2", entries)[:16]
+
+
+def procedural_runtime_source_manifest(
+    repository_root: Path = _REPOSITORY_ROOT,
+) -> tuple[dict[str, str | int], ...]:
+    records: list[dict[str, str | int]] = []
+    for relative_path in _PROCEDURAL_RUNTIME_SOURCE_PATHS:
+        payload = (repository_root / relative_path).read_bytes()
+        records.append(
+            {
+                "path": relative_path,
+                "size": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+            }
+        )
+    return tuple(records)
+
+
+def procedural_runtime_source_bundle_sha256(
+    repository_root: Path = _REPOSITORY_ROOT,
+) -> str:
+    entries = (
+        (relative_path, (repository_root / relative_path).read_bytes())
+        for relative_path in _PROCEDURAL_RUNTIME_SOURCE_PATHS
+    )
+    return _framed_sha256("humanbrain-procedural-runtime-source-v1", entries)
 
 
 def _library_filename() -> str:
@@ -342,21 +402,22 @@ def _unit_interval(name: str, value: float, *, open_interval: bool = False) -> f
 
 def _glif_config(population: AdaptiveGlifPopulation) -> _GlifConfig:
     parameters = population.parameters
+    constants = population.constants
     return _GlifConfig(
         population.cell_count,
         population.state.after_spike_currents_pa.shape[1],
         parameters.spike_cut_steps,
         parameters.leak_ns,
-        population._voltage_step_scale,
-        population._threshold_beta_scale,
-        population._threshold_exp_decay,
-        population._threshold_voltage_factor,
-        population._threshold_beta_factor,
-        population._spike_threshold_decay,
+        constants.voltage_step_scale,
+        constants.threshold_beta_scale,
+        constants.threshold_exp_decay,
+        constants.threshold_voltage_factor,
+        constants.threshold_beta_factor,
+        constants.spike_threshold_decay,
         parameters.threshold_inf_relative_mv,
         parameters.voltage_reset_scale,
         parameters.voltage_reset_offset_mv,
-        population._spike_cut_threshold_decay,
+        constants.spike_cut_threshold_decay,
         parameters.threshold_spike_increment_mv,
     )
 
@@ -379,9 +440,9 @@ class NativeGlifKernel:
         state = population.state
         self._library.humanbrain_glif_step(
             ctypes.byref(self._config),
-            _f64(population._after_spike_decay),
-            _f64(population._after_spike_cut_decay),
-            _f64(population._after_spike_amplitudes_pa),
+            _f64(population.constants.after_spike_decay),
+            _f64(population.constants.after_spike_cut_decay),
+            _f64(population.constants.after_spike_amplitudes_pa),
             _f64(current),
             _f64(state.voltage_relative_mv),
             _f64(state.after_spike_currents_pa),
@@ -522,9 +583,9 @@ class NativeRecurrentKernel:
             function(
                 ctypes.byref(self._glif_config),
                 ctypes.byref(self._recurrent_config),
-                _f64(population._after_spike_decay),
-                _f64(population._after_spike_cut_decay),
-                _f64(population._after_spike_amplitudes_pa),
+                _f64(population.constants.after_spike_decay),
+                _f64(population.constants.after_spike_cut_decay),
+                _f64(population.constants.after_spike_amplitudes_pa),
                 _i32(afferents),
                 _i32(self._recurrent_targets),
                 _f64(self._recurrent_weights_pa),
@@ -559,9 +620,9 @@ class NativeRecurrentKernel:
             self._library.humanbrain_observe_token_reference_v1(
                 ctypes.byref(self._glif_config),
                 ctypes.byref(self._recurrent_config),
-                _f64(population._after_spike_decay),
-                _f64(population._after_spike_cut_decay),
-                _f64(population._after_spike_amplitudes_pa),
+                _f64(population.constants.after_spike_decay),
+                _f64(population.constants.after_spike_cut_decay),
+                _f64(population.constants.after_spike_amplitudes_pa),
                 _i32(afferents),
                 _i32(self._recurrent_targets),
                 _f64(self._recurrent_weights_pa),

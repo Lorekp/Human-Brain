@@ -38,23 +38,24 @@ def _reference_step(
     previous_voltage = state.voltage_relative_mv[rows].copy()
     previous_after = state.after_spike_currents_pa[rows].copy()
     total_current = current[rows] + previous_after.sum(axis=1)
-    next_voltage = previous_voltage + population._voltage_step_scale * (
+    constants = population.constants
+    next_voltage = previous_voltage + constants.voltage_step_scale * (
         total_current - p.leak_ns * previous_voltage
     )
-    beta = total_current * population._threshold_beta_scale
+    beta = total_current * constants.threshold_beta_scale
     previous_voltage_threshold = state.threshold_voltage_mv[rows]
     next_voltage_threshold = (
-        population._threshold_phi * (previous_voltage - beta) * population._threshold_exp_leak
-        + population._threshold_exp_decay
+        constants.threshold_phi * (previous_voltage - beta) * constants.threshold_exp_leak
+        + constants.threshold_exp_decay
         * (
             previous_voltage_threshold
-            - population._threshold_phi * (previous_voltage - beta)
-            - population._threshold_voltage_ratio * beta
+            - constants.threshold_phi * (previous_voltage - beta)
+            - constants.threshold_voltage_ratio * beta
         )
-        + population._threshold_voltage_ratio * beta
+        + constants.threshold_voltage_ratio * beta
     )
-    next_spike_threshold = state.threshold_spike_mv[rows] * population._spike_threshold_decay
-    next_after = previous_after * population._after_spike_decay
+    next_spike_threshold = state.threshold_spike_mv[rows] * constants.spike_threshold_decay
+    next_after = previous_after * constants.after_spike_decay
     state.voltage_relative_mv[rows] = next_voltage
     state.threshold_voltage_mv[rows] = next_voltage_threshold
     state.threshold_spike_mv[rows] = next_spike_threshold
@@ -71,11 +72,11 @@ def _reference_step(
         p.voltage_reset_scale * next_voltage[crossed] + p.voltage_reset_offset_mv
     )
     state.after_spike_currents_pa[spike_rows] = (
-        population._after_spike_amplitudes_pa
-        + next_after[crossed] * population._after_spike_cut_decay
+        constants.after_spike_amplitudes_pa
+        + next_after[crossed] * constants.after_spike_cut_decay
     )
     state.threshold_spike_mv[spike_rows] = (
-        next_spike_threshold[crossed] * population._spike_cut_threshold_decay
+        next_spike_threshold[crossed] * constants.spike_cut_threshold_decay
         + p.threshold_spike_increment_mv
     )
     state.refractory_steps[spike_rows] = p.spike_cut_steps
@@ -136,27 +137,28 @@ def _vectorized_reference_step(
 
     np.multiply(p.leak_ns, previous_voltage, out=population._work_next_voltage)
     np.subtract(total_current, population._work_next_voltage, out=population._work_next_voltage)
+    constants = population.constants
     np.multiply(
-        population._voltage_step_scale,
+        constants.voltage_step_scale,
         population._work_next_voltage,
         out=population._work_next_voltage,
     )
     np.add(previous_voltage, population._work_next_voltage, out=population._work_next_voltage)
     next_voltage = population._work_next_voltage
 
-    beta = total_current * population._threshold_beta_scale
+    beta = total_current * constants.threshold_beta_scale
     next_voltage_threshold = (
-        population._threshold_exp_decay * state.threshold_voltage_mv
-        + population._threshold_voltage_factor * previous_voltage
-        + population._threshold_beta_factor * beta
+        constants.threshold_exp_decay * state.threshold_voltage_mv
+        + constants.threshold_voltage_factor * previous_voltage
+        + constants.threshold_beta_factor * beta
     )
     np.multiply(
         state.threshold_spike_mv,
-        population._spike_threshold_decay,
+        constants.spike_threshold_decay,
         out=population._work_next_spike_threshold,
     )
     next_spike_threshold = population._work_next_spike_threshold
-    np.multiply(previous_after, population._after_spike_decay, out=population._work_next_after)
+    np.multiply(previous_after, constants.after_spike_decay, out=population._work_next_after)
     next_after = population._work_next_after
 
     np.copyto(state.voltage_relative_mv, next_voltage, where=active)
@@ -175,11 +177,11 @@ def _vectorized_reference_step(
         p.voltage_reset_scale * next_voltage[spike_rows] + p.voltage_reset_offset_mv
     )
     state.after_spike_currents_pa[spike_rows] = (
-        population._after_spike_amplitudes_pa
-        + next_after[spike_rows] * population._after_spike_cut_decay
+        constants.after_spike_amplitudes_pa
+        + next_after[spike_rows] * constants.after_spike_cut_decay
     )
     state.threshold_spike_mv[spike_rows] = (
-        next_spike_threshold[spike_rows] * population._spike_cut_threshold_decay
+        next_spike_threshold[spike_rows] * constants.spike_cut_threshold_decay
         + p.threshold_spike_increment_mv
     )
     state.refractory_steps[spike_rows] = p.spike_cut_steps

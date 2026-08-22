@@ -127,6 +127,7 @@ def _python_step(circuit: RecurrentCellCircuit, current: np.ndarray) -> np.ndarr
     """Removed Python/NumPy production cell step, used only as timing oracle."""
     population = circuit._reservoir
     p = population.parameters
+    constants = population.constants
     state = population.state
     active = state.refractory_steps == 0
     np.subtract(state.refractory_steps, 1, out=state.refractory_steps, where=~active)
@@ -140,25 +141,25 @@ def _python_step(circuit: RecurrentCellCircuit, current: np.ndarray) -> np.ndarr
     np.multiply(p.leak_ns, previous_voltage, out=population._work_next_voltage)
     np.subtract(total_current, population._work_next_voltage, out=population._work_next_voltage)
     np.multiply(
-        population._voltage_step_scale,
+        constants.voltage_step_scale,
         population._work_next_voltage,
         out=population._work_next_voltage,
     )
     np.add(previous_voltage, population._work_next_voltage, out=population._work_next_voltage)
     next_voltage = population._work_next_voltage
-    beta = total_current * population._threshold_beta_scale
+    beta = total_current * constants.threshold_beta_scale
     next_voltage_threshold = (
-        population._threshold_exp_decay * state.threshold_voltage_mv
-        + population._threshold_voltage_factor * previous_voltage
-        + population._threshold_beta_factor * beta
+        constants.threshold_exp_decay * state.threshold_voltage_mv
+        + constants.threshold_voltage_factor * previous_voltage
+        + constants.threshold_beta_factor * beta
     )
     np.multiply(
         state.threshold_spike_mv,
-        population._spike_threshold_decay,
+        constants.spike_threshold_decay,
         out=population._work_next_spike_threshold,
     )
     next_spike_threshold = population._work_next_spike_threshold
-    np.multiply(previous_after, population._after_spike_decay, out=population._work_next_after)
+    np.multiply(previous_after, constants.after_spike_decay, out=population._work_next_after)
     next_after = population._work_next_after
     np.copyto(state.voltage_relative_mv, next_voltage, where=active)
     np.copyto(state.threshold_voltage_mv, next_voltage_threshold, where=active)
@@ -175,11 +176,11 @@ def _python_step(circuit: RecurrentCellCircuit, current: np.ndarray) -> np.ndarr
         p.voltage_reset_scale * next_voltage[spike_rows] + p.voltage_reset_offset_mv
     )
     state.after_spike_currents_pa[spike_rows] = (
-        population._after_spike_amplitudes_pa
-        + next_after[spike_rows] * population._after_spike_cut_decay
+        constants.after_spike_amplitudes_pa
+        + next_after[spike_rows] * constants.after_spike_cut_decay
     )
     state.threshold_spike_mv[spike_rows] = (
-        next_spike_threshold[spike_rows] * population._spike_cut_threshold_decay
+        next_spike_threshold[spike_rows] * constants.spike_cut_threshold_decay
         + p.threshold_spike_increment_mv
     )
     state.refractory_steps[spike_rows] = p.spike_cut_steps

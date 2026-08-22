@@ -19,12 +19,13 @@ from __future__ import annotations
 import ctypes
 import math
 import sys
+import threading
 from dataclasses import dataclass
 from typing import Final, Sequence
 
 import numpy as np
 
-from humanbrain.cells import AllenGlif5Parameters
+from humanbrain.cells import AllenGlif5Parameters, FittedGlif5Constants
 from humanbrain.native import _F64_POINTER, _GlifConfig, _load_library
 from humanbrain.procedural_topology import (
     ProceduralTopology,
@@ -46,6 +47,9 @@ from humanbrain.scale_accounting import (
 _UINT64_MAX: Final = (1 << 64) - 1
 _MAX_RESIDENT_CAPACITY: Final = sys.maxsize // 128
 _MAX_EVENT_CAPACITY: Final = sys.maxsize // 64
+_MAX_SPIKE_CAPACITY: Final = sys.maxsize // 16
+_MAX_DISTINCT_CAPACITY: Final = sys.maxsize // 16
+_MAX_FANOUT_CAPACITY: Final = sys.maxsize // 32
 _DENSE_REFERENCE_MAX_CELLS: Final = 65_536
 _SUPPORTED_TOPOLOGY: Final = "uniform_no_self"
 
@@ -57,6 +61,10 @@ _STATUS_NAMES: Final = {
     4: "duplicate canonical event key",
     5: "runtime is poisoned after an earlier failure",
     6: "uint64 biological-step counter overflow",
+    7: "snapshot destination capacity is insufficient",
+    8: "native bounded allocation failed",
+    9: "interval spike capacity exhausted",
+    10: "interval distinct-cell capacity exhausted",
 }
 
 
@@ -93,6 +101,8 @@ class ProceduralRuntimeConfig:
     manifest: TopologyManifest
     resident_capacity: int
     event_capacity: int
+    spike_capacity: int
+    interval_distinct_capacity: int
     recurrent_weight_pa: float
     recurrent_delay_steps: int
     recurrent_tau_ms: float = 8.0
@@ -109,9 +119,19 @@ class ProceduralRuntimeConfig:
             )
         if self.manifest.cell_count > _UINT64_MAX:
             raise ValueError("runtime cell_count must fit uint64")
+        if self.manifest.fanout > _MAX_FANOUT_CAPACITY:
+            raise ValueError(
+                f"runtime fanout must be at most {_MAX_FANOUT_CAPACITY}"
+            )
         for name, value, maximum in (
             ("resident_capacity", self.resident_capacity, _MAX_RESIDENT_CAPACITY),
             ("event_capacity", self.event_capacity, _MAX_EVENT_CAPACITY),
+            ("spike_capacity", self.spike_capacity, _MAX_SPIKE_CAPACITY),
+            (
+                "interval_distinct_capacity",
+                self.interval_distinct_capacity,
+                _MAX_DISTINCT_CAPACITY,
+            ),
         ):
             if type(value) is not int:
                 raise TypeError(f"{name} must be an exact integer")
@@ -119,6 +139,10 @@ class ProceduralRuntimeConfig:
                 raise ValueError(f"{name} must be in [1, {maximum}]")
         if self.resident_capacity > self.manifest.cell_count:
             raise ValueError("resident_capacity cannot exceed configured cells")
+        if self.interval_distinct_capacity < self.resident_capacity:
+            raise ValueError(
+                "interval_distinct_capacity cannot be below resident_capacity"
+            )
         _positive_finite("recurrent_weight_pa", self.recurrent_weight_pa)
         delay = _exact_uint64("recurrent_delay_steps", self.recurrent_delay_steps)
         if delay == 0:
@@ -200,6 +224,8 @@ class ProceduralAdvance:
     retained_nonzero_cells: int
     resident_capacity: int
     event_capacity: int
+    spike_capacity: int
+    interval_distinct_capacity: int
     capacity_overflowed: bool
     configured_ids_scanned: int
 
@@ -217,6 +243,8 @@ class _NativeProceduralConfig(ctypes.Structure):
         ("seed", ctypes.c_uint64),
         ("resident_capacity", ctypes.c_size_t),
         ("event_capacity", ctypes.c_size_t),
+        ("spike_capacity", ctypes.c_size_t),
+        ("interval_distinct_capacity", ctypes.c_size_t),
         ("recurrent_weight_pa", ctypes.c_double),
         ("recurrent_delay_steps", ctypes.c_uint64),
         ("recurrent_decay", ctypes.c_double),
@@ -312,8 +340,11 @@ def _procedural_library() -> ctypes.CDLL:
     library.humanbrain_procedural_runtime_snapshot.argtypes = [
         void_pointer,
         resident_pointer,
+        ctypes.c_size_t,
         event_pointer,
+        ctypes.c_size_t,
         spike_pointer,
+        ctypes.c_size_t,
         ctypes.POINTER(_NativeCounters),
     ]
     library.humanbrain_procedural_runtime_snapshot.restype = ctypes.c_uint32
@@ -347,8 +378,11 @@ def _procedural_library() -> ctypes.CDLL:
     library.humanbrain_dense_reference_snapshot.argtypes = [
         void_pointer,
         resident_pointer,
+        ctypes.c_size_t,
         event_pointer,
+        ctypes.c_size_t,
         spike_pointer,
+        ctypes.c_size_t,
         ctypes.POINTER(ctypes.c_uint64),
         ctypes.POINTER(ctypes.c_uint32),
     ]
@@ -360,56 +394,30 @@ def _procedural_library() -> ctypes.CDLL:
 def _native_parameters(
 ) -> tuple[_GlifConfig, np.ndarray, np.ndarray, np.ndarray]:
     parameters = AllenGlif5Parameters()
-    dt_s = parameters.dt_ms / 1_000.0
-    leak_per_s = parameters.leak_ns / parameters.capacitance_pf * 1_000.0
-    a_voltage = parameters.threshold_voltage_coupling_per_s
-    b_voltage = parameters.threshold_voltage_decay_per_s
-    threshold_phi = a_voltage / (b_voltage - leak_per_s)
-    threshold_beta_scale = 1.0 / parameters.leak_ns
-    threshold_exp_leak = np.exp(-leak_per_s * dt_s)
-    threshold_exp_decay = np.exp(-b_voltage * dt_s)
-    threshold_voltage_ratio = a_voltage / b_voltage
-    threshold_voltage_factor = threshold_phi * (
-        threshold_exp_leak - threshold_exp_decay
-    )
-    threshold_beta_factor = (
-        -threshold_voltage_factor
-        + threshold_voltage_ratio * (1.0 - threshold_exp_decay)
-    )
-    spike_threshold_decay = np.exp(
-        -parameters.threshold_spike_decay_per_s * dt_s
-    )
-    after_taus = np.asarray(parameters.after_spike_taus_ms, dtype=np.float64)
-    after_decay = np.ascontiguousarray(
-        np.exp(-parameters.dt_ms / after_taus), dtype=np.float64
-    )
-    after_cut_decay = np.ascontiguousarray(
-        np.exp(-parameters.spike_cut_ms / after_taus), dtype=np.float64
-    )
-    after_amplitudes = np.ascontiguousarray(
-        parameters.after_spike_amplitudes_pa, dtype=np.float64
-    )
+    constants = FittedGlif5Constants.from_parameters(parameters)
     glif = _GlifConfig(
         1,
-        2,
+        len(constants.after_spike_decay),
         parameters.spike_cut_steps,
         parameters.leak_ns,
-        parameters.dt_ms / parameters.capacitance_pf,
-        threshold_beta_scale,
-        threshold_exp_decay,
-        threshold_voltage_factor,
-        threshold_beta_factor,
-        spike_threshold_decay,
+        constants.voltage_step_scale,
+        constants.threshold_beta_scale,
+        constants.threshold_exp_decay,
+        constants.threshold_voltage_factor,
+        constants.threshold_beta_factor,
+        constants.spike_threshold_decay,
         parameters.threshold_inf_relative_mv,
         parameters.voltage_reset_scale,
         parameters.voltage_reset_offset_mv,
-        np.exp(
-            -parameters.threshold_spike_decay_per_s
-            * (parameters.spike_cut_ms / 1_000.0)
-        ),
+        constants.spike_cut_threshold_decay,
         parameters.threshold_spike_increment_mv,
     )
-    return glif, after_decay, after_cut_decay, after_amplitudes
+    return (
+        glif,
+        constants.after_spike_decay,
+        constants.after_spike_cut_decay,
+        constants.after_spike_amplitudes_pa,
+    )
 
 
 def _native_runtime_config(config: ProceduralRuntimeConfig) -> _NativeProceduralConfig:
@@ -420,6 +428,8 @@ def _native_runtime_config(config: ProceduralRuntimeConfig) -> _NativeProcedural
         config.manifest.seed,
         config.resident_capacity,
         config.event_capacity,
+        config.spike_capacity,
+        config.interval_distinct_capacity,
         config.recurrent_weight_pa,
         config.recurrent_delay_steps,
         np.exp(-parameters.dt_ms / config.recurrent_tau_ms),
@@ -501,6 +511,8 @@ class NativeProceduralRuntime:
     def __init__(self, config: ProceduralRuntimeConfig) -> None:
         if not isinstance(config, ProceduralRuntimeConfig):
             raise TypeError("config must be a ProceduralRuntimeConfig")
+        self._operation_lock = threading.RLock()
+        self._handle: int | None = None
         self.config = config
         self._library = _procedural_library()
         (
@@ -522,31 +534,42 @@ class NativeProceduralRuntime:
         self._current_step = 0
 
     def __enter__(self) -> NativeProceduralRuntime:
-        self._require_open()
-        return self
+        with self._operation_lock:
+            self._require_open()
+            return self
 
     def __exit__(self, *_: object) -> None:
         self.close()
 
     def __del__(self) -> None:
-        handle = getattr(self, "_handle", None)
-        if handle:
-            self._library.humanbrain_procedural_runtime_destroy(handle)
-            self._handle = None
+        try:
+            self.close()
+        except Exception:
+            pass
 
     def _require_open(self) -> None:
         if not self._handle:
             raise RuntimeError("procedural runtime is closed")
 
     def close(self) -> None:
-        if self._handle:
-            self._library.humanbrain_procedural_runtime_destroy(self._handle)
-            self._handle = None
+        with self._operation_lock:
+            handle = self._handle
+            if handle:
+                self._handle = None
+                self._library.humanbrain_procedural_runtime_destroy(handle)
 
     def advance(
         self,
         step_count: int,
         events: Sequence[ProceduralInputEvent] = (),
+    ) -> ProceduralAdvance:
+        with self._operation_lock:
+            return self._advance_locked(step_count, events)
+
+    def _advance_locked(
+        self,
+        step_count: int,
+        events: Sequence[ProceduralInputEvent],
     ) -> ProceduralAdvance:
         self._require_open()
         steps = _exact_uint64("step_count", step_count)
@@ -626,6 +649,8 @@ class NativeProceduralRuntime:
             retained_nonzero_cells=int(counters.retained_nonzero_cells),
             resident_capacity=self.config.resident_capacity,
             event_capacity=self.config.event_capacity,
+            spike_capacity=self.config.spike_capacity,
+            interval_distinct_capacity=self.config.interval_distinct_capacity,
             capacity_overflowed=False,
             configured_ids_scanned=int(counters.configured_ids_scanned),
         )
@@ -664,8 +689,11 @@ class NativeProceduralRuntime:
             self._library.humanbrain_procedural_runtime_snapshot(
                 self._handle,
                 resident_records,
+                0 if resident_records is None else len(resident_records),
                 pending_records,
+                0 if pending_records is None else len(pending_records),
                 spike_records,
+                0 if spike_records is None else len(spike_records),
                 ctypes.byref(counters),
             )
         )
@@ -696,9 +724,10 @@ class NativeProceduralRuntime:
         return snapshot, counters
 
     def snapshot(self) -> ProceduralSnapshot:
-        self._require_open()
-        snapshot, _ = self._read_snapshot(include_state=True)
-        return snapshot
+        with self._operation_lock:
+            self._require_open()
+            snapshot, _ = self._read_snapshot(include_state=True)
+            return snapshot
 
 
 class NativeDenseProceduralReference:
@@ -712,6 +741,8 @@ class NativeDenseProceduralReference:
     ) -> None:
         if not isinstance(config, ProceduralRuntimeConfig):
             raise TypeError("config must be a ProceduralRuntimeConfig")
+        self._operation_lock = threading.RLock()
+        self._handle: int | None = None
         cells = config.manifest.cell_count
         if cells > _DENSE_REFERENCE_MAX_CELLS:
             raise ValueError(
@@ -781,31 +812,42 @@ class NativeDenseProceduralReference:
         return cls(config, targets, weights)
 
     def __enter__(self) -> NativeDenseProceduralReference:
-        self._require_open()
-        return self
+        with self._operation_lock:
+            self._require_open()
+            return self
 
     def __exit__(self, *_: object) -> None:
         self.close()
 
     def __del__(self) -> None:
-        handle = getattr(self, "_handle", None)
-        if handle:
-            self._library.humanbrain_dense_reference_destroy(handle)
-            self._handle = None
+        try:
+            self.close()
+        except Exception:
+            pass
 
     def _require_open(self) -> None:
         if not self._handle:
             raise RuntimeError("dense procedural reference is closed")
 
     def close(self) -> None:
-        if self._handle:
-            self._library.humanbrain_dense_reference_destroy(self._handle)
-            self._handle = None
+        with self._operation_lock:
+            handle = self._handle
+            if handle:
+                self._handle = None
+                self._library.humanbrain_dense_reference_destroy(handle)
 
     def advance(
         self,
         step_count: int,
         events: Sequence[ProceduralInputEvent] = (),
+    ) -> tuple[ProceduralSpike, ...]:
+        with self._operation_lock:
+            return self._advance_locked(step_count, events)
+
+    def _advance_locked(
+        self,
+        step_count: int,
+        events: Sequence[ProceduralInputEvent],
     ) -> tuple[ProceduralSpike, ...]:
         self._require_open()
         steps = _exact_uint64("step_count", step_count)
@@ -828,57 +870,61 @@ class NativeDenseProceduralReference:
         return self.snapshot().spikes
 
     def snapshot(self) -> ProceduralSnapshot:
-        self._require_open()
-        cell_count = ctypes.c_size_t()
-        pending_count = ctypes.c_size_t()
-        spike_count = ctypes.c_size_t()
-        status = int(
-            self._library.humanbrain_dense_reference_counts(
-                self._handle,
-                ctypes.byref(cell_count),
-                ctypes.byref(pending_count),
-                ctypes.byref(spike_count),
+        with self._operation_lock:
+            self._require_open()
+            cell_count = ctypes.c_size_t()
+            pending_count = ctypes.c_size_t()
+            spike_count = ctypes.c_size_t()
+            status = int(
+                self._library.humanbrain_dense_reference_counts(
+                    self._handle,
+                    ctypes.byref(cell_count),
+                    ctypes.byref(pending_count),
+                    ctypes.byref(spike_count),
+                )
             )
-        )
-        if status != 0:
-            raise ProceduralRuntimeError(status)
-        cells = (_NativeResident * cell_count.value)()
-        pending = (
-            (_NativeEvent * pending_count.value)() if pending_count.value else None
-        )
-        spikes = (_NativeSpike * spike_count.value)() if spike_count.value else None
-        current_step = ctypes.c_uint64()
-        poison = ctypes.c_uint32()
-        status = int(
-            self._library.humanbrain_dense_reference_snapshot(
-                self._handle,
-                cells,
-                pending,
-                spikes,
-                ctypes.byref(current_step),
-                ctypes.byref(poison),
+            if status != 0:
+                raise ProceduralRuntimeError(status)
+            cells = (_NativeResident * cell_count.value)()
+            pending = (
+                (_NativeEvent * pending_count.value)() if pending_count.value else None
             )
-        )
-        if status != 0:
-            raise ProceduralRuntimeError(status)
-        overflow = int(poison.value)
-        return ProceduralSnapshot(
-            current_step=int(current_step.value),
-            residents=tuple(_resident(record) for record in cells),
-            pending_events=(
-                tuple(_event(record) for record in pending)
-                if pending is not None
-                else ()
-            ),
-            spikes=(
-                tuple(_spike(record) for record in spikes)
-                if spikes is not None
-                else ()
-            ),
-            poisoned=overflow != 0,
-            overflow_reason=_STATUS_NAMES.get(overflow) if overflow else None,
-            native_payload_bytes=0,
-        )
+            spikes = (_NativeSpike * spike_count.value)() if spike_count.value else None
+            current_step = ctypes.c_uint64()
+            poison = ctypes.c_uint32()
+            status = int(
+                self._library.humanbrain_dense_reference_snapshot(
+                    self._handle,
+                    cells,
+                    len(cells),
+                    pending,
+                    0 if pending is None else len(pending),
+                    spikes,
+                    0 if spikes is None else len(spikes),
+                    ctypes.byref(current_step),
+                    ctypes.byref(poison),
+                )
+            )
+            if status != 0:
+                raise ProceduralRuntimeError(status)
+            overflow = int(poison.value)
+            return ProceduralSnapshot(
+                current_step=int(current_step.value),
+                residents=tuple(_resident(record) for record in cells),
+                pending_events=(
+                    tuple(_event(record) for record in pending)
+                    if pending is not None
+                    else ()
+                ),
+                spikes=(
+                    tuple(_spike(record) for record in spikes)
+                    if spikes is not None
+                    else ()
+                ),
+                poisoned=overflow != 0,
+                overflow_reason=_STATUS_NAMES.get(overflow) if overflow else None,
+                native_payload_bytes=0,
+            )
 
 
 __all__ = [

@@ -558,6 +558,28 @@ parent verifies each result. Immediately before same-directory, non-overwriting
 atomic publication, the parent rechecks a clean worktree, the exact starting
 HEAD, and the source-bundle hash; any drift leaves no final artifact.
 
+### Native active-working-set correctness slice
+
+The first runtime-procedural vertical slice now keeps sparse fitted GLIF5 cell
+state, queued events, returned spikes, one topology row, and interval-distinct
+accounting in explicitly bounded native storage. Its production bound is
+`O(R_capacity + Q_capacity + S_capacity + F + D_capacity)`, independent of
+configured `N`; construction and fixed-work tests at one million and 100
+billion configured identities allocate and scan no per-configured-ID structure.
+Counter64-v2 targets are regenerated only for spiking sources with set-backed
+row membership and widened fallback arithmetic.
+
+All reusable hot-loop scratch is fallibly reserved at construction. Exhausting
+resident, event, spike, distinct-ID, or allocation capacity is a deterministic
+fail-stop, not a spill path. Nonzero exponential tails may retain touched cells
+until exact cancellation or floating-point underflow, so this slice does not
+claim a bounded steady-state resident population. Its payload-byte counter
+includes logical vector/set/map capacities but not allocator metadata or hash
+control bytes. The independently implemented dense/native small reference and
+adversarial ordering, delay, quiescence, zero, underflow, duplicate, capacity,
+and concurrency tests establish correctness only. No material Gate-3 timing or
+100-billion-active capability run is implied.
+
 ## Ordered path
 
 1. Add the scale/event counters and ban unqualified “active” in benchmark claims.

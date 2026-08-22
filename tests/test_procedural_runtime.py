@@ -1,13 +1,20 @@
 from __future__ import annotations
 
+import ctypes
+import hashlib
 import json
 import math
 import struct
+import threading
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Callable
 
 import numpy as np
 import pytest
 
+import humanbrain.native as native_module
+import humanbrain.procedural_runtime as procedural_runtime_module
 from humanbrain.cells import AdaptiveGlifPopulation
 from humanbrain.procedural_runtime import (
     NativeDenseProceduralReference,
@@ -16,8 +23,37 @@ from humanbrain.procedural_runtime import (
     ProceduralResidentState,
     ProceduralRuntimeConfig,
     ProceduralRuntimeError,
+    ProceduralSnapshot,
 )
 from humanbrain.procedural_topology import ProceduralTopology, TopologyManifest
+
+
+class _NativeBoundaryProxy:
+    def __init__(
+        self,
+        real: object,
+        replacements: dict[str, Callable[..., object]],
+    ) -> None:
+        self._real = real
+        self._replacements = replacements
+
+    def __getattr__(self, name: str) -> object:
+        replacement = self._replacements.get(name)
+        return replacement if replacement is not None else getattr(self._real, name)
+
+
+def _thread_call(function: Callable[[], object]) -> tuple[threading.Thread, SimpleNamespace]:
+    outcome = SimpleNamespace(value=None, error=None)
+
+    def invoke() -> None:
+        try:
+            outcome.value = function()
+        except BaseException as error:  # surfaced deterministically in the caller
+            outcome.error = error
+
+    thread = threading.Thread(target=invoke)
+    thread.start()
+    return thread, outcome
 
 
 def _runtime_config(cell_count: int) -> ProceduralRuntimeConfig:
@@ -30,6 +66,8 @@ def _runtime_config(cell_count: int) -> ProceduralRuntimeConfig:
         ),
         resident_capacity=8,
         event_capacity=32,
+        spike_capacity=32,
+        interval_distinct_capacity=40,
         recurrent_weight_pa=325.0,
         recurrent_delay_steps=1,
     )
@@ -74,6 +112,325 @@ def test_empty_native_advance_keeps_100_billion_cells_implicit() -> None:
     assert accounting["memory"]["host_bytes"] < 64 * 1024
 
 
+def test_advance_and_snapshot_are_serialized_per_runtime_instance() -> None:
+    runtime = NativeProceduralRuntime(_runtime_config(17))
+    real_library = runtime._library
+    advance_entered = threading.Event()
+    release_advance = threading.Event()
+    counts_entered = threading.Event()
+
+    def blocking_advance(*args: object) -> object:
+        advance_entered.set()
+        assert release_advance.wait(2.0)
+        return real_library.humanbrain_procedural_runtime_advance(*args)
+
+    def observed_counts(*args: object) -> object:
+        counts_entered.set()
+        return real_library.humanbrain_procedural_runtime_counts(*args)
+
+    runtime._library = _NativeBoundaryProxy(
+        real_library,
+        {
+            "humanbrain_procedural_runtime_advance": blocking_advance,
+            "humanbrain_procedural_runtime_counts": observed_counts,
+        },
+    )
+    advance_thread, advance_outcome = _thread_call(lambda: runtime.advance(1))
+    assert advance_entered.wait(2.0)
+    snapshot_thread, snapshot_outcome = _thread_call(runtime.snapshot)
+    try:
+        assert not counts_entered.wait(0.1)
+    finally:
+        release_advance.set()
+        advance_thread.join(2.0)
+        snapshot_thread.join(2.0)
+        runtime.close()
+
+    assert not advance_thread.is_alive()
+    assert not snapshot_thread.is_alive()
+    assert advance_outcome.error is None
+    assert snapshot_outcome.error is None
+    assert snapshot_outcome.value.current_step == 1
+
+
+@pytest.mark.parametrize("inflight_operation", ("advance", "snapshot"))
+def test_close_waits_for_each_inflight_runtime_operation(
+    inflight_operation: str,
+) -> None:
+    runtime = NativeProceduralRuntime(_runtime_config(17))
+    real_library = runtime._library
+    operation_entered = threading.Event()
+    release_operation = threading.Event()
+    destroy_entered = threading.Event()
+    deferred_destroy: list[object] = []
+
+    def blocking_call(function: Callable[..., object]) -> Callable[..., object]:
+        def invoke(*args: object) -> object:
+            operation_entered.set()
+            assert release_operation.wait(2.0)
+            return function(*args)
+
+        return invoke
+
+    def observed_destroy(handle: object) -> None:
+        destroy_entered.set()
+        if release_operation.is_set():
+            real_library.humanbrain_procedural_runtime_destroy(handle)
+        else:
+            deferred_destroy.append(handle)
+
+    replacements: dict[str, Callable[..., object]] = {
+        "humanbrain_procedural_runtime_destroy": observed_destroy,
+    }
+    operation: Callable[[], object]
+    if inflight_operation == "advance":
+        replacements["humanbrain_procedural_runtime_advance"] = blocking_call(
+            real_library.humanbrain_procedural_runtime_advance
+        )
+        operation = lambda: runtime.advance(1)
+    else:
+        replacements["humanbrain_procedural_runtime_counts"] = blocking_call(
+            real_library.humanbrain_procedural_runtime_counts
+        )
+        operation = runtime.snapshot
+    runtime._library = _NativeBoundaryProxy(real_library, replacements)
+
+    operation_thread, operation_outcome = _thread_call(operation)
+    assert operation_entered.wait(2.0)
+    close_thread, close_outcome = _thread_call(runtime.close)
+    try:
+        assert not destroy_entered.wait(0.1)
+    finally:
+        release_operation.set()
+        operation_thread.join(2.0)
+        close_thread.join(2.0)
+        for handle in deferred_destroy:
+            real_library.humanbrain_procedural_runtime_destroy(handle)
+
+    assert not operation_thread.is_alive()
+    assert not close_thread.is_alive()
+    assert operation_outcome.error is None
+    assert close_outcome.error is None
+    runtime.close()  # idempotent
+
+
+def test_dense_advance_and_snapshot_are_serialized_per_instance() -> None:
+    runtime = NativeDenseProceduralReference.materialized(_runtime_config(17))
+    real_library = runtime._library
+    advance_entered = threading.Event()
+    release_advance = threading.Event()
+    counts_entered = threading.Event()
+
+    def blocking_advance(*args: object) -> object:
+        advance_entered.set()
+        assert release_advance.wait(2.0)
+        return real_library.humanbrain_dense_reference_advance(*args)
+
+    def observed_counts(*args: object) -> object:
+        counts_entered.set()
+        return real_library.humanbrain_dense_reference_counts(*args)
+
+    runtime._library = _NativeBoundaryProxy(
+        real_library,
+        {
+            "humanbrain_dense_reference_advance": blocking_advance,
+            "humanbrain_dense_reference_counts": observed_counts,
+        },
+    )
+    advance_thread, advance_outcome = _thread_call(lambda: runtime.advance(1))
+    assert advance_entered.wait(2.0)
+    snapshot_thread, snapshot_outcome = _thread_call(runtime.snapshot)
+    try:
+        assert not counts_entered.wait(0.1)
+    finally:
+        release_advance.set()
+        advance_thread.join(2.0)
+        snapshot_thread.join(2.0)
+        runtime.close()
+
+    assert not advance_thread.is_alive()
+    assert not snapshot_thread.is_alive()
+    assert advance_outcome.error is None
+    assert snapshot_outcome.error is None
+    assert snapshot_outcome.value.current_step == 1
+
+
+@pytest.mark.parametrize("inflight_operation", ("advance", "snapshot"))
+def test_dense_close_waits_for_each_inflight_operation_and_is_idempotent(
+    inflight_operation: str,
+) -> None:
+    runtime = NativeDenseProceduralReference.materialized(_runtime_config(17))
+    real_library = runtime._library
+    operation_entered = threading.Event()
+    release_operation = threading.Event()
+    destroy_entered = threading.Event()
+    deferred_destroy: list[object] = []
+
+    def blocking_call(function: Callable[..., object]) -> Callable[..., object]:
+        def invoke(*args: object) -> object:
+            operation_entered.set()
+            assert release_operation.wait(2.0)
+            return function(*args)
+
+        return invoke
+
+    def observed_destroy(handle: object) -> None:
+        destroy_entered.set()
+        if release_operation.is_set():
+            real_library.humanbrain_dense_reference_destroy(handle)
+        else:
+            deferred_destroy.append(handle)
+
+    replacements: dict[str, Callable[..., object]] = {
+        "humanbrain_dense_reference_destroy": observed_destroy,
+    }
+    operation: Callable[[], object]
+    if inflight_operation == "advance":
+        replacements["humanbrain_dense_reference_advance"] = blocking_call(
+            real_library.humanbrain_dense_reference_advance
+        )
+        operation = lambda: runtime.advance(1)
+    else:
+        replacements["humanbrain_dense_reference_counts"] = blocking_call(
+            real_library.humanbrain_dense_reference_counts
+        )
+        operation = runtime.snapshot
+    runtime._library = _NativeBoundaryProxy(real_library, replacements)
+
+    operation_thread, operation_outcome = _thread_call(operation)
+    assert operation_entered.wait(2.0)
+    close_thread, close_outcome = _thread_call(runtime.close)
+    try:
+        assert not destroy_entered.wait(0.1)
+    finally:
+        release_operation.set()
+        operation_thread.join(2.0)
+        close_thread.join(2.0)
+        for handle in deferred_destroy:
+            real_library.humanbrain_dense_reference_destroy(handle)
+
+    assert not operation_thread.is_alive()
+    assert not close_thread.is_alive()
+    assert operation_outcome.error is None
+    assert close_outcome.error is None
+    runtime.close()
+
+
+@pytest.mark.parametrize("undersized", ("residents", "pending", "spikes"))
+def test_native_snapshot_rejects_every_undersized_destination_before_writes(
+    undersized: str,
+) -> None:
+    runtime = NativeProceduralRuntime(_runtime_config(17))
+    try:
+        runtime.advance(1, (ProceduralInputEvent(0, 5, 0, 0, 150_000.0),))
+        resident_count = ctypes.c_size_t()
+        pending_count = ctypes.c_size_t()
+        spike_count = ctypes.c_size_t()
+        status = runtime._library.humanbrain_procedural_runtime_counts(
+            runtime._handle,
+            ctypes.byref(resident_count),
+            ctypes.byref(pending_count),
+            ctypes.byref(spike_count),
+        )
+        assert status == 0
+        assert resident_count.value > 0
+        assert pending_count.value > 0
+        assert spike_count.value > 0
+
+        residents = (
+            procedural_runtime_module._NativeResident * resident_count.value
+        )()
+        pending = (procedural_runtime_module._NativeEvent * pending_count.value)()
+        spikes = (procedural_runtime_module._NativeSpike * spike_count.value)()
+        counters = procedural_runtime_module._NativeCounters()
+        counters.current_step = (1 << 64) - 1
+        before = (bytes(residents), bytes(pending), bytes(spikes), bytes(counters))
+        capacities = {
+            "residents": resident_count.value,
+            "pending": pending_count.value,
+            "spikes": spike_count.value,
+        }
+        capacities[undersized] -= 1
+
+        status = runtime._library.humanbrain_procedural_runtime_snapshot(
+            runtime._handle,
+            residents,
+            capacities["residents"],
+            pending,
+            capacities["pending"],
+            spikes,
+            capacities["spikes"],
+            ctypes.byref(counters),
+        )
+
+        assert status == 7
+        assert (bytes(residents), bytes(pending), bytes(spikes), bytes(counters)) == before
+        assert runtime.snapshot().poisoned is False
+    finally:
+        runtime.close()
+
+
+@pytest.mark.parametrize("undersized", ("cells", "pending", "spikes"))
+def test_dense_snapshot_rejects_every_undersized_destination_before_writes(
+    undersized: str,
+) -> None:
+    runtime = NativeDenseProceduralReference.materialized(_runtime_config(17))
+    try:
+        runtime.advance(1, (ProceduralInputEvent(0, 5, 0, 0, 150_000.0),))
+        cell_count = ctypes.c_size_t()
+        pending_count = ctypes.c_size_t()
+        spike_count = ctypes.c_size_t()
+        status = runtime._library.humanbrain_dense_reference_counts(
+            runtime._handle,
+            ctypes.byref(cell_count),
+            ctypes.byref(pending_count),
+            ctypes.byref(spike_count),
+        )
+        assert status == 0
+        cells = (procedural_runtime_module._NativeResident * cell_count.value)()
+        pending = (procedural_runtime_module._NativeEvent * pending_count.value)()
+        spikes = (procedural_runtime_module._NativeSpike * spike_count.value)()
+        current_step = ctypes.c_uint64((1 << 64) - 1)
+        poison = ctypes.c_uint32(0xFFFF_FFFF)
+        before = (
+            bytes(cells),
+            bytes(pending),
+            bytes(spikes),
+            bytes(current_step),
+            bytes(poison),
+        )
+        capacities = {
+            "cells": cell_count.value,
+            "pending": pending_count.value,
+            "spikes": spike_count.value,
+        }
+        capacities[undersized] -= 1
+
+        status = runtime._library.humanbrain_dense_reference_snapshot(
+            runtime._handle,
+            cells,
+            capacities["cells"],
+            pending,
+            capacities["pending"],
+            spikes,
+            capacities["spikes"],
+            ctypes.byref(current_step),
+            ctypes.byref(poison),
+        )
+
+        assert status == 7
+        assert (
+            bytes(cells),
+            bytes(pending),
+            bytes(spikes),
+            bytes(current_step),
+            bytes(poison),
+        ) == before
+        assert runtime.snapshot().poisoned is False
+    finally:
+        runtime.close()
+
+
 def _state_bits(state: ProceduralResidentState) -> bytes:
     return struct.pack(
         "<Qdddddidd",
@@ -96,6 +453,18 @@ def _event_bits(event: ProceduralInputEvent) -> bytes:
         event.source_gid,
         event.edge_slot,
         event.current_pa,
+    )
+
+
+def _snapshot_bits(snapshot: ProceduralSnapshot) -> tuple[object, ...]:
+    return (
+        snapshot.current_step,
+        tuple(map(_state_bits, snapshot.residents)),
+        tuple(map(_event_bits, snapshot.pending_events)),
+        snapshot.spikes,
+        snapshot.poisoned,
+        snapshot.overflow_reason,
+        snapshot.native_payload_bytes,
     )
 
 
@@ -152,6 +521,8 @@ def test_dense_oracle_preserves_the_existing_native_allen_glif5_transition(
         manifest=TopologyManifest(17, 2, "uniform_no_self", 71),
         resident_capacity=17,
         event_capacity=64,
+        spike_capacity=64,
+        interval_distinct_capacity=81,
         recurrent_weight_pa=325.0,
         recurrent_delay_steps=1,
     )
@@ -182,6 +553,21 @@ def test_dense_oracle_preserves_the_existing_native_allen_glif5_transition(
     assert bool(expected_spikes[5]) is (current_pa == 150_000.0)
 
 
+def test_fitted_glif_constants_are_shared_by_population_and_procedural_ffi() -> None:
+    population = AdaptiveGlifPopulation(1)
+    constants = population.constants
+    glif, after_decay, after_cut_decay, after_amplitudes = (
+        procedural_runtime_module._native_parameters()
+    )
+
+    assert bytes(glif) == bytes(
+        native_module._glif_config(population)
+    )
+    assert after_decay.tobytes() == constants.after_spike_decay.tobytes()
+    assert after_cut_decay.tobytes() == constants.after_spike_cut_decay.tobytes()
+    assert after_amplitudes.tobytes() == constants.after_spike_amplitudes_pa.tobytes()
+
+
 @pytest.mark.parametrize("recurrent_delay_steps", (1, 2, 3))
 def test_sparse_runtime_is_bit_exact_to_independent_dense_native_reference(
     recurrent_delay_steps: int,
@@ -190,6 +576,8 @@ def test_sparse_runtime_is_bit_exact_to_independent_dense_native_reference(
         manifest=TopologyManifest(17, 4, "uniform_no_self", 71),
         resident_capacity=17,
         event_capacity=4_096,
+        spike_capacity=4_096,
+        interval_distinct_capacity=4_113,
         recurrent_weight_pa=325.0,
         recurrent_delay_steps=recurrent_delay_steps,
         recurrent_tau_ms=0.05 / math.log(2.0),
@@ -275,6 +663,8 @@ def test_high_uint64_spike_expands_the_counter64_v2_source_row() -> None:
         ),
         resident_capacity=8,
         event_capacity=64,
+        spike_capacity=64,
+        interval_distinct_capacity=72,
         recurrent_weight_pa=325.0,
         recurrent_delay_steps=3,
     )
@@ -300,6 +690,30 @@ def test_high_uint64_spike_expands_the_counter64_v2_source_row() -> None:
     assert any(target > 0xFFFF_FFFF for target in actual.values())
 
 
+def test_collision_heavy_native_row_matches_counter64_oracle_in_slot_order() -> None:
+    config = ProceduralRuntimeConfig(
+        manifest=TopologyManifest(129, 128, "uniform_no_self", 1),
+        resident_capacity=1,
+        event_capacity=128,
+        spike_capacity=1,
+        interval_distinct_capacity=129,
+        recurrent_weight_pa=325.0,
+        recurrent_delay_steps=1,
+    )
+    with NativeProceduralRuntime(config) as runtime:
+        runtime.advance(1, (ProceduralInputEvent(0, 0, 1, 0, 150_000.0),))
+        pending = runtime.snapshot().pending_events
+
+    actual = tuple(
+        event.target_gid for event in sorted(pending, key=lambda event: event.edge_slot)
+    )
+    expected = tuple(
+        edge.target_gid for edge in ProceduralTopology(config.manifest).base_edges(0)
+    )
+    assert actual == expected
+    assert len(set(actual)) == config.manifest.fanout
+
+
 def test_native_work_and_allocation_do_not_scale_with_configured_address_count() -> None:
     observations: list[tuple[int, int, int, int]] = []
     for cell_count in (1_000_000, 100_000_000_000):
@@ -307,6 +721,8 @@ def test_native_work_and_allocation_do_not_scale_with_configured_address_count()
             manifest=TopologyManifest(cell_count, 2, "uniform_no_self", 71),
             resident_capacity=8,
             event_capacity=32,
+            spike_capacity=32,
+            interval_distinct_capacity=40,
             recurrent_weight_pa=325.0,
             recurrent_delay_steps=1,
         )
@@ -331,11 +747,25 @@ def test_native_work_and_allocation_do_not_scale_with_configured_address_count()
     assert observations[0][3] < 64 * 1024
 
 
+def test_native_scratch_payload_is_stable_across_repeated_bounded_workloads() -> None:
+    config = _runtime_config(17)
+    with NativeProceduralRuntime(config) as runtime:
+        runtime.advance(1, (ProceduralInputEvent(0, 5, 0, 0, 1.0),))
+        first_payload = runtime.snapshot().native_payload_bytes
+        runtime.advance(1, (ProceduralInputEvent(1, 6, 0, 0, 1.0),))
+        second_payload = runtime.snapshot().native_payload_bytes
+
+    assert first_payload == second_payload
+    assert first_payload > 0
+
+
 def test_resident_capacity_overflow_is_deterministic_and_fail_stop() -> None:
     config = ProceduralRuntimeConfig(
         manifest=TopologyManifest(17, 2, "uniform_no_self", 71),
         resident_capacity=1,
         event_capacity=8,
+        spike_capacity=8,
+        interval_distinct_capacity=9,
         recurrent_weight_pa=325.0,
         recurrent_delay_steps=1,
     )
@@ -369,6 +799,8 @@ def test_generated_event_capacity_overflow_is_deterministic_and_fail_stop() -> N
         manifest=TopologyManifest(17, 2, "uniform_no_self", 71),
         resident_capacity=2,
         event_capacity=1,
+        spike_capacity=1,
+        interval_distinct_capacity=3,
         recurrent_weight_pa=325.0,
         recurrent_delay_steps=1,
     )
@@ -389,6 +821,65 @@ def test_generated_event_capacity_overflow_is_deterministic_and_fail_stop() -> N
     assert snapshot.poisoned is True
 
 
+def test_interval_distinct_capacity_is_deterministic_and_fail_stop() -> None:
+    config = ProceduralRuntimeConfig(
+        manifest=TopologyManifest(17, 2, "uniform_no_self", 71),
+        resident_capacity=1,
+        event_capacity=2,
+        spike_capacity=1,
+        interval_distinct_capacity=1,
+        recurrent_weight_pa=325.0,
+        recurrent_delay_steps=1,
+        recurrent_tau_ms=0.05 / math.log(2.0),
+    )
+    events = (
+        ProceduralInputEvent(0, 2, 0, 0, 5e-324),
+        ProceduralInputEvent(1, 3, 0, 1, 5e-324),
+    )
+
+    with NativeProceduralRuntime(config) as runtime:
+        with pytest.raises(
+            ProceduralRuntimeError, match="distinct-cell capacity exhausted"
+        ) as error:
+            runtime.advance(2, events)
+        snapshot = runtime.snapshot()
+
+    assert error.value.status == 10
+    assert snapshot.current_step == 1
+    assert snapshot.poisoned is True
+    assert snapshot.residents == ()
+
+
+@pytest.mark.parametrize("adapter", ("sparse", "dense"))
+def test_cross_call_duplicate_event_is_rejected_transactionally_without_poison(
+    adapter: str,
+) -> None:
+    config = _runtime_config(17)
+    runtime = (
+        NativeProceduralRuntime(config)
+        if adapter == "sparse"
+        else NativeDenseProceduralReference.materialized(config)
+    )
+    event = ProceduralInputEvent(5, 7, 3, 1, 11.0)
+    try:
+        runtime.advance(1, (event,))
+        before = runtime.snapshot()
+
+        with pytest.raises(
+            ProceduralRuntimeError, match="duplicate canonical event key"
+        ) as error:
+            runtime.advance(1, (event,))
+
+        after = runtime.snapshot()
+        assert error.value.status == 4
+        assert _snapshot_bits(after) == _snapshot_bits(before)
+        assert after.poisoned is False
+        runtime.advance(1)
+        assert runtime.snapshot().current_step == 2
+    finally:
+        runtime.close()
+
+
 @pytest.mark.parametrize(
     ("field", "value", "error"),
     (
@@ -397,6 +888,10 @@ def test_generated_event_capacity_overflow_is_deterministic_and_fail_stop() -> N
         ("resident_capacity", 18, ValueError),
         ("event_capacity", False, TypeError),
         ("event_capacity", 0, ValueError),
+        ("spike_capacity", True, TypeError),
+        ("spike_capacity", 0, ValueError),
+        ("interval_distinct_capacity", False, TypeError),
+        ("interval_distinct_capacity", 7, ValueError),
         ("recurrent_delay_steps", 0, ValueError),
         ("recurrent_delay_steps", 1 << 64, ValueError),
         ("recurrent_weight_pa", float("inf"), ValueError),
@@ -414,6 +909,8 @@ def test_runtime_config_rejects_every_invalid_native_bound(
         "manifest": TopologyManifest(17, 2, "uniform_no_self", 71),
         "resident_capacity": 8,
         "event_capacity": 32,
+        "spike_capacity": 32,
+        "interval_distinct_capacity": 40,
         "recurrent_weight_pa": 325.0,
         "recurrent_delay_steps": 1,
     }
@@ -429,6 +926,8 @@ def test_runtime_rejects_non_uint64_manifest_and_non_uniform_slice() -> None:
             manifest=TopologyManifest(1 << 64, 1, "uniform_no_self", 71),
             resident_capacity=1,
             event_capacity=1,
+            spike_capacity=1,
+            interval_distinct_capacity=2,
             recurrent_weight_pa=325.0,
             recurrent_delay_steps=1,
         )
@@ -437,6 +936,8 @@ def test_runtime_rejects_non_uint64_manifest_and_non_uniform_slice() -> None:
             manifest=TopologyManifest(17, 2, "ring_1d", 71),
             resident_capacity=1,
             event_capacity=1,
+            spike_capacity=1,
+            interval_distinct_capacity=2,
             recurrent_weight_pa=325.0,
             recurrent_delay_steps=1,
         )
@@ -473,16 +974,41 @@ def test_event_and_advance_validation_complete_before_ffi() -> None:
 
 
 def test_gate3_slice_protocol_keeps_material_timing_frozen() -> None:
-    protocol = json.loads(
-        Path("benchmarks/procedural_runtime_gate3_slice_protocol_v1.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    protocol_path = Path("benchmarks/procedural_runtime_gate3_slice_protocol_v1.json")
+    protocol_bytes = protocol_path.read_bytes()
+    protocol = json.loads(protocol_bytes)
 
     assert protocol["name"] == "procedural-runtime-gate3-slice-v1"
     assert protocol["baseline_commit"] == "8291fe1a0039db7141817c438854a1817a0a8300"
     assert protocol["topology_protocol"] == "random123-philox2x64-10-v2"
     assert protocol["supported_topologies"] == ["uniform_no_self"]
+    assert protocol["public_seam"]["raw_ffi_lifetime"] == (
+        "Raw C handles require external lifetime synchronization. A NULL/0 "
+        "destination pair explicitly omits that output; every supplied destination "
+        "capacity is validated before any destination write."
+    )
+    assert protocol["determinism"]["duplicate_event_keys"] == (
+        "Duplicate canonical keys in a submitted input-event batch or the already "
+        "queued frontier are rejected before native simulation-state mutation; "
+        "runtime remains unpoisoned."
+    )
+    assert protocol["resource_gate"]["sparse_memory_bound"] == (
+        "O(R_capacity + Q_capacity + S_capacity + F + D_capacity), "
+        "independent of N_configured"
+    )
+    assert protocol["source_binding"]["framing"] == (
+        "humanbrain-procedural-runtime-source-v1: ordered UTF-8 path length/path "
+        "plus uint64 byte length/raw bytes"
+    )
+    assert protocol["source_binding"]["files"] == list(
+        native_module.procedural_runtime_source_manifest()
+    )
+    assert protocol["source_binding"]["bundle_sha256"] == (
+        native_module.procedural_runtime_source_bundle_sha256()
+    )
+    assert hashlib.sha256(protocol_bytes).hexdigest() == (
+        "956af3c85d610637c40212275b19a10173114f30bbc12067714480f313dfc3f4"
+    )
     assert protocol["timing"]["status"] == "frozen-pending-explicit-approval"
     assert protocol["timing"]["executed"] is False
     assert protocol["claims"]["speed"] is None
@@ -494,3 +1020,37 @@ def test_gate3_slice_protocol_keeps_material_timing_frozen() -> None:
         "DEV/SWE/canonical/private evaluation",
         "Fly Brain",
     ]
+
+
+def test_native_source_digest_frames_paths_lengths_and_bytes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    for root in (first, second):
+        (root / "src").mkdir(parents=True)
+    (first / "Cargo.toml").write_bytes(b"a")
+    (first / "Cargo.lock").write_bytes(b"bc")
+    (first / "src" / "x.rs").write_bytes(b"")
+    (second / "Cargo.toml").write_bytes(b"ab")
+    (second / "Cargo.lock").write_bytes(b"c")
+    (second / "src" / "y.rs").write_bytes(b"")
+
+    monkeypatch.setattr(native_module, "_SOURCE_ROOT", first)
+    first_digest = native_module._source_digest()
+    monkeypatch.setattr(native_module, "_SOURCE_ROOT", second)
+    second_digest = native_module._source_digest()
+
+    assert b"".join(
+        path.read_bytes()
+        for path in (first / "Cargo.toml", first / "Cargo.lock", first / "src/x.rs")
+    ) == b"".join(
+        path.read_bytes()
+        for path in (
+            second / "Cargo.toml",
+            second / "Cargo.lock",
+            second / "src/y.rs",
+        )
+    )
+    assert first_digest != second_digest

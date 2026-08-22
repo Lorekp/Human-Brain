@@ -431,9 +431,9 @@ class CudaRecurrentKernel:
 
         state = population.state
         constants = {
-            "after_decay": population._after_spike_decay,
-            "after_cut_decay": population._after_spike_cut_decay,
-            "after_amplitudes": population._after_spike_amplitudes_pa,
+            "after_decay": population.constants.after_spike_decay,
+            "after_cut_decay": population.constants.after_spike_cut_decay,
+            "after_amplitudes": population.constants.after_spike_amplitudes_pa,
             **self._structure_arrays_from_host(),
         }
         mutables = {

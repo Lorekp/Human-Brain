@@ -208,6 +208,81 @@ class AllenGlif5Parameters:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class FittedGlif5Constants:
+    """One immutable translation of fitted GLIF5 parameters into step constants."""
+
+    voltage_step_scale: float
+    threshold_phi: float
+    threshold_beta_scale: float
+    threshold_exp_leak: float
+    threshold_exp_decay: float
+    threshold_voltage_ratio: float
+    threshold_voltage_factor: float
+    threshold_beta_factor: float
+    spike_threshold_decay: float
+    after_spike_decay: np.ndarray
+    after_spike_cut_decay: np.ndarray
+    after_spike_amplitudes_pa: np.ndarray
+    spike_cut_threshold_decay: float
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: AllenGlif5Parameters
+    ) -> FittedGlif5Constants:
+        dt_s = parameters.dt_ms / 1_000.0
+        leak_per_s = parameters.leak_ns / parameters.capacitance_pf * 1_000.0
+        a_voltage = parameters.threshold_voltage_coupling_per_s
+        b_voltage = parameters.threshold_voltage_decay_per_s
+        threshold_phi = a_voltage / (b_voltage - leak_per_s)
+        threshold_exp_leak = np.exp(-leak_per_s * dt_s)
+        threshold_exp_decay = np.exp(-b_voltage * dt_s)
+        threshold_voltage_ratio = a_voltage / b_voltage
+        threshold_voltage_factor = threshold_phi * (
+            threshold_exp_leak - threshold_exp_decay
+        )
+        threshold_beta_factor = (
+            -threshold_voltage_factor
+            + threshold_voltage_ratio * (1.0 - threshold_exp_decay)
+        )
+        after_taus = np.asarray(parameters.after_spike_taus_ms, dtype=np.float64)
+        after_spike_decay = np.ascontiguousarray(
+            np.exp(-parameters.dt_ms / after_taus), dtype=np.float64
+        )
+        after_spike_cut_decay = np.ascontiguousarray(
+            np.exp(-parameters.spike_cut_ms / after_taus), dtype=np.float64
+        )
+        after_spike_amplitudes_pa = np.ascontiguousarray(
+            parameters.after_spike_amplitudes_pa, dtype=np.float64
+        )
+        for values in (
+            after_spike_decay,
+            after_spike_cut_decay,
+            after_spike_amplitudes_pa,
+        ):
+            values.setflags(write=False)
+        return cls(
+            voltage_step_scale=parameters.dt_ms / parameters.capacitance_pf,
+            threshold_phi=threshold_phi,
+            threshold_beta_scale=1.0 / parameters.leak_ns,
+            threshold_exp_leak=threshold_exp_leak,
+            threshold_exp_decay=threshold_exp_decay,
+            threshold_voltage_ratio=threshold_voltage_ratio,
+            threshold_voltage_factor=threshold_voltage_factor,
+            threshold_beta_factor=threshold_beta_factor,
+            spike_threshold_decay=np.exp(
+                -parameters.threshold_spike_decay_per_s * dt_s
+            ),
+            after_spike_decay=after_spike_decay,
+            after_spike_cut_decay=after_spike_cut_decay,
+            after_spike_amplitudes_pa=after_spike_amplitudes_pa,
+            spike_cut_threshold_decay=np.exp(
+                -parameters.threshold_spike_decay_per_s
+                * (parameters.spike_cut_ms / 1_000.0)
+            ),
+        )
+
+
 @dataclass
 class AdaptiveGlifState:
     """All persistent state of a population of adaptive human-fitted cells."""
@@ -240,39 +315,7 @@ class AdaptiveGlifPopulation:
             threshold_voltage_mv=np.zeros(cell_count, dtype=np.float64),
             refractory_steps=np.zeros(cell_count, dtype=np.int32),
         )
-        # These factors depend only on the fitted cell parameters.  Keeping
-        # them on the population avoids recomputing exponentials at every
-        # 0.05-ms integration step without changing the GLIF5 equations.
-        dt_s = self.parameters.dt_ms / 1_000.0
-        leak_per_s = self.parameters.leak_ns / self.parameters.capacitance_pf * 1_000.0
-        a_voltage = self.parameters.threshold_voltage_coupling_per_s
-        b_voltage = self.parameters.threshold_voltage_decay_per_s
-        self._voltage_step_scale = self.parameters.dt_ms / self.parameters.capacitance_pf
-        self._threshold_phi = a_voltage / (b_voltage - leak_per_s)
-        self._threshold_beta_scale = 1.0 / self.parameters.leak_ns
-        self._threshold_exp_leak = np.exp(-leak_per_s * dt_s)
-        self._threshold_exp_decay = np.exp(-b_voltage * dt_s)
-        self._threshold_voltage_ratio = a_voltage / b_voltage
-        # Algebraic coefficients for the Allen three-component threshold
-        # equation. This is the expanded form of the reference expression and
-        # avoids recomputing its shared ``phi * (voltage - beta)`` term.
-        self._threshold_voltage_factor = self._threshold_phi * (
-            self._threshold_exp_leak - self._threshold_exp_decay
-        )
-        self._threshold_beta_factor = (
-            -self._threshold_voltage_factor
-            + self._threshold_voltage_ratio * (1.0 - self._threshold_exp_decay)
-        )
-        self._spike_threshold_decay = np.exp(-self.parameters.threshold_spike_decay_per_s * dt_s)
-        after_spike_taus_ms = np.asarray(self.parameters.after_spike_taus_ms, dtype=np.float64)
-        self._after_spike_decay = np.exp(-self.parameters.dt_ms / after_spike_taus_ms)
-        self._after_spike_cut_decay = np.exp(-self.parameters.spike_cut_ms / after_spike_taus_ms)
-        self._after_spike_amplitudes_pa = np.asarray(
-            self.parameters.after_spike_amplitudes_pa, dtype=np.float64
-        )
-        self._spike_cut_threshold_decay = np.exp(
-            -self.parameters.threshold_spike_decay_per_s * (self.parameters.spike_cut_ms / 1_000.0)
-        )
+        self.constants = FittedGlif5Constants.from_parameters(self.parameters)
         # Integration workspaces are owned by the population. Reusing them is
         # important at the fitted 0.05-ms timestep, where allocation overhead
         # otherwise rivals the cell equations for every biological step.
@@ -322,21 +365,24 @@ class AdaptiveGlifPopulation:
         response_voltage = np.empty(step_count, dtype=np.float64)
         response_threshold = np.empty(step_count, dtype=np.float64)
         total_current = float(current_pa)
-        beta = total_current * self._threshold_beta_scale
+        constants = self.constants
+        beta = total_current * constants.threshold_beta_scale
         for step in range(step_count):
             previous_voltage = voltage
-            voltage = previous_voltage + self._voltage_step_scale * (
+            voltage = previous_voltage + constants.voltage_step_scale * (
                 total_current - p.leak_ns * previous_voltage
             )
             voltage_threshold = (
-                self._threshold_phi * (previous_voltage - beta) * self._threshold_exp_leak
-                + self._threshold_exp_decay
+                constants.threshold_phi
+                * (previous_voltage - beta)
+                * constants.threshold_exp_leak
+                + constants.threshold_exp_decay
                 * (
                     voltage_threshold
-                    - self._threshold_phi * (previous_voltage - beta)
-                    - self._threshold_voltage_ratio * beta
+                    - constants.threshold_phi * (previous_voltage - beta)
+                    - constants.threshold_voltage_ratio * beta
                 )
-                + self._threshold_voltage_ratio * beta
+                + constants.threshold_voltage_ratio * beta
             )
             response_voltage[step] = voltage
             response_threshold[step] = voltage_threshold
