@@ -9,14 +9,68 @@ import pytest
 from humanbrain.simple_swe import tasks as task_module
 from humanbrain.simple_swe.protocol import load_protocol
 from humanbrain.simple_swe.tasks import (
+    CallableType,
     _generate_partition,
     canonical_json_bytes,
+    family_callable_types,
     generate_visible_partition,
 )
+from humanbrain.typed_program import ProgramParameter, ProgramType
 
 PROTOCOL = (
     Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
 )
+
+
+def _unary_callable(
+    parameter_name: str, parameter_type: ProgramType, result: ProgramType
+) -> CallableType:
+    return CallableType(
+        parameters=(ProgramParameter(parameter_name, parameter_type),),
+        result=result,
+    )
+
+
+def test_every_family_exposes_one_explicit_callable_type() -> None:
+    integer = ProgramType.Int()
+    string = ProgramType.String()
+    integers = ProgramType.List(integer)
+    strings = ProgramType.List(string)
+    expected = {
+        "t0_scalar_clamp": _unary_callable("n", integer, integer),
+        "t0_scalar_offset": _unary_callable("n", integer, integer),
+        "t0_scalar_nonnegative": _unary_callable("n", integer, integer),
+        "t1_list_map_add": _unary_callable("values", integers, integers),
+        "t1_list_map_abs": _unary_callable("values", integers, integers),
+        "t1_string_filter_class": _unary_callable("text", string, string),
+        "t2_filter_then_reverse": _unary_callable("text", string, string),
+        "t2_clamp_then_sum": _unary_callable("values", integers, integer),
+        "t2_map_then_count": _unary_callable("values", integers, integer),
+        "t0_digit_sum": _unary_callable("n", integer, integer),
+        "t0_stable_parity_select": _unary_callable("values", integers, integers),
+        "t0_longest_character_run": _unary_callable("text", string, integer),
+        "t1_nonzero_digit_product": _unary_callable("n", integer, integer),
+        "t1_stable_range_select": _unary_callable("values", integers, integers),
+        "t1_longest_target_run": _unary_callable("text", string, integer),
+        "t2_digit_reduce_mod": _unary_callable("n", integer, integer),
+        "t2_select_then_span": _unary_callable("values", integers, integer),
+        "t2_run_length_signature": _unary_callable("text", string, integers),
+        "t0_bounded_scalar_classifier": _unary_callable("n", integer, integer),
+        "t0_adjacent_equal_count": _unary_callable("values", integers, integer),
+        "t0_token_boundary_length": _unary_callable("text", string, integer),
+        "t1_bounded_divisibility_label": _unary_callable("n", integer, string),
+        "t1_adjacent_differences": _unary_callable("values", integers, integers),
+        "t1_word_length_filter": _unary_callable("text", string, strings),
+        "t2_clamped_window_sums": _unary_callable("values", integers, integers),
+        "t2_filtered_adjacent_changes": _unary_callable("values", integers, integer),
+        "t2_token_run_signature": _unary_callable("text", string, integers),
+    }
+
+    observed = family_callable_types()
+
+    assert observed == expected
+    with pytest.raises(TypeError):
+        observed["unknown"] = _unary_callable("value", integer, integer)  # type: ignore[index]
 
 
 def test_train_and_dev_tasks_are_deterministic_and_family_disjoint() -> None:

@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import json
 import random
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from functools import partial
 from hashlib import sha256
+from types import MappingProxyType
 from typing import Callable, Sequence, TypeAlias
 
 from humanbrain.simple_swe.protocol import ProtocolSpec
+from humanbrain.typed_program import ProgramParameter, ProgramType, TypedSignature
 
 
 JsonScalar: TypeAlias = None | bool | int | float | str
@@ -22,6 +25,32 @@ class HiddenCase:
     distribution: str
 
 
+@dataclass(frozen=True, slots=True)
+class CallableType:
+    """One name-independent callable type shared by a Simple-SWE family."""
+
+    parameters: tuple[ProgramParameter, ...]
+    result: ProgramType
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.parameters, tuple) or not all(
+            isinstance(parameter, ProgramParameter) for parameter in self.parameters
+        ):
+            raise TypeError("callable parameters must be ProgramParameter values")
+        names = tuple(parameter.name for parameter in self.parameters)
+        if len(names) != len(set(names)):
+            raise ValueError("callable parameter names must be unique")
+        if not isinstance(self.result, ProgramType):
+            raise TypeError("callable result must be a ProgramType")
+
+    def bind(self, entry_point: str) -> TypedSignature:
+        return TypedSignature(
+            entry_point=entry_point,
+            parameters=self.parameters,
+            result=self.result,
+        )
+
+
 @dataclass(frozen=True)
 class PublicTask:
     task_id: str
@@ -29,11 +58,14 @@ class PublicTask:
     tier: int
     family: str
     ordinal: int
-    entry_point: str
-    parameter_names: tuple[str, ...]
+    signature: TypedSignature
     prompt: str
     hidden_test_sha256: str
     task_sha256: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.signature, TypedSignature):
+            raise TypeError("public task signature must be typed")
 
 
 @dataclass(frozen=True)
@@ -97,11 +129,10 @@ def _property_inputs(
 
 def _make_task(
     *,
-    entry_point_nonce: bytes,
     partition: str,
     family: str,
     ordinal: int,
-    parameter_names: tuple[str, ...],
+    signature: TypedSignature,
     description: str,
     oracle: Oracle,
     regression_inputs: Sequence[tuple[JsonValue, ...]],
@@ -109,16 +140,13 @@ def _make_task(
 ) -> GeneratedTask:
     tier = int(family[1])
     task_id = f"simple-swe-v1/{partition}/tier-{tier}/{family}/{ordinal:03d}"
-    entry_point_digest = sha256(
-        b"simple-swe-entry-point-v1\0" + entry_point_nonce
-    ).hexdigest()
-    entry_point = f"solve_{entry_point_digest[:16]}"
-    signature = ", ".join(parameter_names)
+    parameter_names = tuple(parameter.name for parameter in signature.parameters)
+    python_parameters = ", ".join(parameter_names)
     prompt = (
         "Return exactly one complete Python function. Use only Python built-ins; "
         "do not emit Markdown, prose, tests, imports, or input/output examples.\n"
         "Implement this exact task:\n"
-        f"def {entry_point}({signature}):\n"
+        f"def {signature.entry_point}({python_parameters}):\n"
         f"    \"\"\"{description}\"\"\""
     )
     regressions = tuple(
@@ -131,8 +159,7 @@ def _make_task(
     )
     private_record = {
         "task_id": task_id,
-        "entry_point": entry_point,
-        "parameter_names": list(parameter_names),
+        "signature": signature.to_record(),
         "regression_cases": [asdict(case) for case in regressions],
         "property_cases": [asdict(case) for case in properties],
     }
@@ -143,13 +170,22 @@ def _make_task(
         "tier": tier,
         "family": family,
         "ordinal": ordinal,
-        "entry_point": entry_point,
-        "parameter_names": list(parameter_names),
+        "signature": signature.to_record(),
         "prompt": prompt,
         "hidden_test_sha256": test_sha256,
     }
     task_sha256 = canonical_sha256(public_record)
-    public = PublicTask(**public_record, task_sha256=task_sha256)
+    public = PublicTask(
+        task_id=task_id,
+        partition=partition,
+        tier=tier,
+        family=family,
+        ordinal=ordinal,
+        signature=signature,
+        prompt=prompt,
+        hidden_test_sha256=test_sha256,
+        task_sha256=task_sha256,
+    )
     private = PrivateTask(
         task_id=task_id,
         public_task_sha256=task_sha256,
@@ -187,7 +223,6 @@ def _build_scalar_clamp(
         partition=partition,
         family=family,
         ordinal=ordinal,
-        parameter_names=("n",),
         description=f"Return n limited to the inclusive range {-limit} through {limit}.",
         oracle=oracle,
         regression_inputs=regressions,
@@ -216,7 +251,6 @@ def _build_scalar_offset(
         partition=partition,
         family=family,
         ordinal=ordinal,
-        parameter_names=("n",),
         description=f"Return n plus the fixed offset {delta}.",
         oracle=oracle,
         regression_inputs=regressions,
@@ -244,7 +278,6 @@ def _build_scalar_nonnegative(
         partition=partition,
         family=family,
         ordinal=ordinal,
-        parameter_names=("n",),
         description="Return n when it is nonnegative, otherwise return zero.",
         oracle=oracle,
         regression_inputs=regressions,
@@ -273,7 +306,6 @@ def _build_list_map_add(
         partition=partition,
         family=family,
         ordinal=ordinal,
-        parameter_names=("values",),
         description=f"Return a new list with {delta} added to every integer in values.",
         oracle=oracle,
         regression_inputs=regressions,
@@ -301,7 +333,6 @@ def _build_list_map_abs(
         partition=partition,
         family=family,
         ordinal=ordinal,
-        parameter_names=("values",),
         description="Return a new list containing the absolute value of each integer in values.",
         oracle=oracle,
         regression_inputs=regressions,
@@ -340,7 +371,6 @@ def _build_string_filter(
         partition=partition,
         family=family,
         ordinal=ordinal,
-        parameter_names=("text",),
         description=f"Keep only {label} from text {action}; return the resulting string.",
         oracle=oracle,
         regression_inputs=regressions,
@@ -369,7 +399,6 @@ def _build_clamp_then_sum(
         partition=partition,
         family=family,
         ordinal=ordinal,
-        parameter_names=("values",),
         description=f"Limit every integer to {-limit} through {limit}, then return their sum.",
         oracle=oracle,
         regression_inputs=regressions,
@@ -399,7 +428,6 @@ def _build_map_then_count(
         partition=partition,
         family=family,
         ordinal=ordinal,
-        parameter_names=("values",),
         description=f"Add {delta} to each integer and count results strictly greater than {threshold}.",
         oracle=oracle,
         regression_inputs=regressions,
@@ -424,7 +452,7 @@ def _build_digit_sum(
         property_count,
     )
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("n",),
+        partition=partition, family=family, ordinal=ordinal,
         description="Return the sum of the decimal digits of the absolute value of n.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -443,7 +471,7 @@ def _build_stable_parity_select(
     regressions = (([],), ([0],), ([1],), ([-3, -2, -1, 0, 1, 2, 3],))
     properties = _property_inputs(rng, (([],), ([-80, 80],), ([parity] * 18,)), lambda r: (_random_int_list(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("values",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Return the integers whose remainder modulo 2 is {parity}, preserving order.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -468,7 +496,7 @@ def _build_longest_character_run(
     regressions = (("",), ("a",), ("ab",), ("aaabbcccc",))
     properties = _property_inputs(rng, (("",), ("a" * 36,), ("abab" * 9,)), lambda r: (_random_text(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("text",),
+        partition=partition, family=family, ordinal=ordinal,
         description="Return the length of the longest consecutive run of one identical character; return zero for empty text.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -491,7 +519,7 @@ def _build_nonzero_digit_product(
     regressions = ((0,), (7,), (-204,), (909,))
     properties = _property_inputs(rng, ((0,), (-100000,), (999999,)), lambda r: (r.randint(-999999, 999999),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("n",),
+        partition=partition, family=family, ordinal=ordinal,
         description="Multiply the nonzero decimal digits of abs(n); return zero when there are no nonzero digits.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -511,7 +539,7 @@ def _build_stable_range_select(
     regressions = (([],), ([lower - 1, lower],), ([upper, upper + 1],), ([-20, 0, 20],))
     properties = _property_inputs(rng, (([],), ([lower, upper] * 9,), ([-80, 80],)), lambda r: (_random_int_list(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("values",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Keep integers in the inclusive range {lower} through {upper}, preserving order.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -535,7 +563,7 @@ def _build_longest_target_run(
     regressions = (("",), (target,), (target * 4,), (f"x{target}{target}x",))
     properties = _property_inputs(rng, (("",), (target * 36,), ((target + "x") * 18,)), lambda r: (_random_text(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("text",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Return the longest consecutive run of the character {target!r}; return zero if absent.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -554,7 +582,7 @@ def _build_digit_reduce_mod(
     regressions = ((0,), (modulus,), (-42,), (999,))
     properties = _property_inputs(rng, ((0,), (-999999,), (999999,)), lambda r: (r.randint(-999999, 999999),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("n",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Sum the decimal digits of abs(n), then return that sum modulo {modulus}.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -575,7 +603,7 @@ def _build_select_then_span(
     regressions = (([],), ([parity],), ([0, 1],), ([-9, -2, 4, 7],))
     properties = _property_inputs(rng, (([],), ([parity] * 18,), ([-80, 80],)), lambda r: (_random_int_list(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("values",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Select integers with remainder {parity} modulo 2 and return max minus min; return zero if none.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -600,7 +628,7 @@ def _build_run_length_signature(
     regressions = (("",), ("a",), ("ab",), ("aaabbc",))
     properties = _property_inputs(rng, (("",), ("a" * 36,), ("ab" * 18,)), lambda r: (_random_text(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("text",),
+        partition=partition, family=family, ordinal=ordinal,
         description="Return a list with the lengths of consecutive identical-character runs, in order.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -619,7 +647,7 @@ def _build_bounded_scalar_classifier(
     regressions = ((-limit - 1,), (-limit,), (limit,), (limit + 1,))
     properties = _property_inputs(rng, ((-100,), (0,), (100,)), lambda r: (r.randint(-100, 100),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("n",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Return -1 below {-limit}, 1 above {limit}, and 0 inside that inclusive band.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -637,7 +665,7 @@ def _build_adjacent_equal_count(
     regressions = (([],), ([1],), ([1, 1],), ([1, 1, 2, 2, 2],))
     properties = _property_inputs(rng, (([],), ([0] * 18,), (list(range(18)),)), lambda r: (_random_int_list(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("values",),
+        partition=partition, family=family, ordinal=ordinal,
         description="Count adjacent pairs of equal integers; overlapping pairs each count once.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -657,7 +685,7 @@ def _build_token_boundary_length(
     regressions = (("",), ("a",), ("a bb",), ("  aa   bbb  ",))
     properties = _property_inputs(rng, (("",), (" " * 36,), ("aa " * 18,)), lambda r: (_random_tokens(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("text",),
+        partition=partition, family=family, ordinal=ordinal,
         description="Split on whitespace and return first-word length plus last-word length; return zero when no words exist.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -677,7 +705,7 @@ def _build_bounded_divisibility_label(
     regressions = ((-bound - 1,), (0,), (divisor,), (bound + 1,))
     properties = _property_inputs(rng, ((-100,), (0,), (100,)), lambda r: (r.randint(-100, 100),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("n",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Return 'out' when abs(n) exceeds {bound}; otherwise return 'divisible' when n is divisible by {divisor}, else 'other'.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -695,7 +723,7 @@ def _build_adjacent_differences(
     regressions = (([],), ([1],), ([1, 3],), ([4, 1, 1, -2],))
     properties = _property_inputs(rng, (([],), ([0] * 18,), ([-80, 80],)), lambda r: (_random_int_list(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("values",),
+        partition=partition, family=family, ordinal=ordinal,
         description="Return a list of next value minus current value for every adjacent pair.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -715,7 +743,7 @@ def _build_word_length_filter(
     regressions = (("",), ("a bb ccc",), ("   aa   bbb ",), ("xxxxxxxx short",))
     properties = _property_inputs(rng, (("",), (" " * 36,), ("aa " * 18,)), lambda r: (_random_tokens(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("text",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Split on whitespace and return words whose lengths are from {lower} through {upper}, preserving order.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -737,7 +765,7 @@ def _build_clamped_window_sums(
     regressions = (([],), ([1] * (width - 1),), ([1] * width,), ([-80, 0, 80, 1, 2, 3],))
     properties = _property_inputs(rng, (([],), ([0] * 18,), ([-80, 80],)), lambda r: (_random_int_list(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("values",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Limit values to {-limit} through {limit}, then return sums of every consecutive window of width {width}; return an empty list if too short.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -758,7 +786,7 @@ def _build_filtered_adjacent_changes(
     regressions = (([],), ([bound + 1],), ([1, 1, 2],), ([-80, -1, 1, 80],))
     properties = _property_inputs(rng, (([],), ([0] * 18,), ([-80, 80],)), lambda r: (_random_int_list(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("values",),
+        partition=partition, family=family, ordinal=ordinal,
         description=f"Discard integers with abs(value) greater than {bound}, then count changes between adjacent retained values.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
@@ -786,41 +814,130 @@ def _build_token_run_signature(
     regressions = (("",), ("aa",), ("aa aa b",), ("x x x b b x",))
     properties = _property_inputs(rng, (("",), ("aa " * 18,), ("aa b " * 9,)), lambda r: (_random_tokens(r),), property_count)
     return make_task(
-        partition=partition, family=family, ordinal=ordinal, parameter_names=("text",),
+        partition=partition, family=family, ordinal=ordinal,
         description="Split on whitespace and return the lengths of consecutive runs of identical tokens.",
         oracle=oracle, regression_inputs=regressions, property_inputs=properties,
     )
 
 
-_FAMILY_BUILDERS: dict[str, FamilyBuilder] = {
-    "t0_scalar_clamp": _build_scalar_clamp,
-    "t0_scalar_offset": _build_scalar_offset,
-    "t0_scalar_nonnegative": _build_scalar_nonnegative,
-    "t1_list_map_add": _build_list_map_add,
-    "t1_list_map_abs": _build_list_map_abs,
-    "t1_string_filter_class": _build_string_filter,
-    "t2_filter_then_reverse": _build_string_filter,
-    "t2_clamp_then_sum": _build_clamp_then_sum,
-    "t2_map_then_count": _build_map_then_count,
-    "t0_digit_sum": _build_digit_sum,
-    "t0_stable_parity_select": _build_stable_parity_select,
-    "t0_longest_character_run": _build_longest_character_run,
-    "t1_nonzero_digit_product": _build_nonzero_digit_product,
-    "t1_stable_range_select": _build_stable_range_select,
-    "t1_longest_target_run": _build_longest_target_run,
-    "t2_digit_reduce_mod": _build_digit_reduce_mod,
-    "t2_select_then_span": _build_select_then_span,
-    "t2_run_length_signature": _build_run_length_signature,
-    "t0_bounded_scalar_classifier": _build_bounded_scalar_classifier,
-    "t0_adjacent_equal_count": _build_adjacent_equal_count,
-    "t0_token_boundary_length": _build_token_boundary_length,
-    "t1_bounded_divisibility_label": _build_bounded_divisibility_label,
-    "t1_adjacent_differences": _build_adjacent_differences,
-    "t1_word_length_filter": _build_word_length_filter,
-    "t2_clamped_window_sums": _build_clamped_window_sums,
-    "t2_filtered_adjacent_changes": _build_filtered_adjacent_changes,
-    "t2_token_run_signature": _build_token_run_signature,
+@dataclass(frozen=True, slots=True)
+class _FamilySpec:
+    builder: FamilyBuilder
+    callable_type: CallableType
+
+
+def _unary_callable(
+    parameter_name: str, parameter_type: ProgramType, result: ProgramType
+) -> CallableType:
+    return CallableType(
+        parameters=(ProgramParameter(parameter_name, parameter_type),),
+        result=result,
+    )
+
+
+_INT = ProgramType.Int()
+_STRING = ProgramType.String()
+_INT_LIST = ProgramType.List(_INT)
+_STRING_LIST = ProgramType.List(_STRING)
+
+_FAMILY_SPECS: dict[str, _FamilySpec] = {
+    "t0_scalar_clamp": _FamilySpec(
+        _build_scalar_clamp, _unary_callable("n", _INT, _INT)
+    ),
+    "t0_scalar_offset": _FamilySpec(
+        _build_scalar_offset, _unary_callable("n", _INT, _INT)
+    ),
+    "t0_scalar_nonnegative": _FamilySpec(
+        _build_scalar_nonnegative, _unary_callable("n", _INT, _INT)
+    ),
+    "t1_list_map_add": _FamilySpec(
+        _build_list_map_add, _unary_callable("values", _INT_LIST, _INT_LIST)
+    ),
+    "t1_list_map_abs": _FamilySpec(
+        _build_list_map_abs, _unary_callable("values", _INT_LIST, _INT_LIST)
+    ),
+    "t1_string_filter_class": _FamilySpec(
+        _build_string_filter, _unary_callable("text", _STRING, _STRING)
+    ),
+    "t2_filter_then_reverse": _FamilySpec(
+        _build_string_filter, _unary_callable("text", _STRING, _STRING)
+    ),
+    "t2_clamp_then_sum": _FamilySpec(
+        _build_clamp_then_sum, _unary_callable("values", _INT_LIST, _INT)
+    ),
+    "t2_map_then_count": _FamilySpec(
+        _build_map_then_count, _unary_callable("values", _INT_LIST, _INT)
+    ),
+    "t0_digit_sum": _FamilySpec(
+        _build_digit_sum, _unary_callable("n", _INT, _INT)
+    ),
+    "t0_stable_parity_select": _FamilySpec(
+        _build_stable_parity_select,
+        _unary_callable("values", _INT_LIST, _INT_LIST),
+    ),
+    "t0_longest_character_run": _FamilySpec(
+        _build_longest_character_run, _unary_callable("text", _STRING, _INT)
+    ),
+    "t1_nonzero_digit_product": _FamilySpec(
+        _build_nonzero_digit_product, _unary_callable("n", _INT, _INT)
+    ),
+    "t1_stable_range_select": _FamilySpec(
+        _build_stable_range_select,
+        _unary_callable("values", _INT_LIST, _INT_LIST),
+    ),
+    "t1_longest_target_run": _FamilySpec(
+        _build_longest_target_run, _unary_callable("text", _STRING, _INT)
+    ),
+    "t2_digit_reduce_mod": _FamilySpec(
+        _build_digit_reduce_mod, _unary_callable("n", _INT, _INT)
+    ),
+    "t2_select_then_span": _FamilySpec(
+        _build_select_then_span, _unary_callable("values", _INT_LIST, _INT)
+    ),
+    "t2_run_length_signature": _FamilySpec(
+        _build_run_length_signature,
+        _unary_callable("text", _STRING, _INT_LIST),
+    ),
+    "t0_bounded_scalar_classifier": _FamilySpec(
+        _build_bounded_scalar_classifier, _unary_callable("n", _INT, _INT)
+    ),
+    "t0_adjacent_equal_count": _FamilySpec(
+        _build_adjacent_equal_count, _unary_callable("values", _INT_LIST, _INT)
+    ),
+    "t0_token_boundary_length": _FamilySpec(
+        _build_token_boundary_length, _unary_callable("text", _STRING, _INT)
+    ),
+    "t1_bounded_divisibility_label": _FamilySpec(
+        _build_bounded_divisibility_label, _unary_callable("n", _INT, _STRING)
+    ),
+    "t1_adjacent_differences": _FamilySpec(
+        _build_adjacent_differences,
+        _unary_callable("values", _INT_LIST, _INT_LIST),
+    ),
+    "t1_word_length_filter": _FamilySpec(
+        _build_word_length_filter,
+        _unary_callable("text", _STRING, _STRING_LIST),
+    ),
+    "t2_clamped_window_sums": _FamilySpec(
+        _build_clamped_window_sums,
+        _unary_callable("values", _INT_LIST, _INT_LIST),
+    ),
+    "t2_filtered_adjacent_changes": _FamilySpec(
+        _build_filtered_adjacent_changes,
+        _unary_callable("values", _INT_LIST, _INT),
+    ),
+    "t2_token_run_signature": _FamilySpec(
+        _build_token_run_signature,
+        _unary_callable("text", _STRING, _INT_LIST),
+    ),
 }
+
+
+def family_callable_types() -> Mapping[str, CallableType]:
+    """Return the immutable public callable type for every frozen task family."""
+    return MappingProxyType(
+        {family: specification.callable_type for family, specification in _FAMILY_SPECS.items()}
+    )
 
 
 def _build_task(
@@ -832,14 +949,22 @@ def _build_task(
 ) -> GeneratedTask:
     rng = random.Random(_task_seed(root_seed, partition, family, ordinal))
     property_count = protocol.property_cases_per_task
+    specification = _FAMILY_SPECS.get(family)
+    if specification is None:
+        raise ValueError(f"protocol references unknown task family {family}")
     entry_point_nonce = sha256(
         f"{root_seed}:{partition}:{family}:{ordinal}:entry-point-v1".encode("ascii")
     ).digest()
-    make_task = partial(_make_task, entry_point_nonce=entry_point_nonce)
-    builder = _FAMILY_BUILDERS.get(family)
-    if builder is None:
-        raise ValueError(f"protocol references unknown task family {family}")
-    return builder(rng, property_count, make_task, partition, family, ordinal)
+    entry_point_digest = sha256(
+        b"simple-swe-entry-point-v1\0" + entry_point_nonce
+    ).hexdigest()
+    signature = specification.callable_type.bind(
+        f"solve_{entry_point_digest[:16]}"
+    )
+    make_task = partial(_make_task, signature=signature)
+    return specification.builder(
+        rng, property_count, make_task, partition, family, ordinal
+    )
 
 
 def _generate_partition(
