@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import copy
 import json
+from collections.abc import Sequence
 from hashlib import sha256
 
 import humanbrain.typed_program as typed_program
 import pytest
+from humanbrain.cells import AllenGlif5Parameters
 from humanbrain.typed_program import (
     Example,
     FrozenCheckpoint,
@@ -36,6 +38,200 @@ def _replace_nested(record: object, path: tuple[str | int, ...], value: object) 
     for part in path[:-1]:
         cursor = cursor[part]  # type: ignore[index]
     cursor[path[-1]] = value  # type: ignore[index]
+
+
+def test_frozen_checkpoint_can_only_be_constructed_from_raw_bytes() -> None:
+    with pytest.raises(TypeError, match="from_bytes"):
+        FrozenCheckpoint(
+            sha256="0" * 64,
+            training_digest="0" * 64,
+            training_input_sha256=("0" * 64,),
+            cell_synapse_sha256="0" * 64,
+            protocol_sha256="0" * 64,
+            _bytes=b"{}",
+        )
+
+
+def test_complete_rejects_checkpoint_subclasses_before_virtual_dispatch() -> None:
+    class ForgedCheckpoint(FrozenCheckpoint):
+        def _validated_payload(self) -> object:
+            raise AssertionError("forged checkpoint method was dispatched")
+
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    forged = object.__new__(ForgedCheckpoint)
+
+    with pytest.raises(TypeError, match="exact FrozenCheckpoint"):
+        complete(forged, "Return the integer.", signature)
+
+
+def test_complete_rejects_forged_checkpoint_derived_fields() -> None:
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    checkpoint = grow(
+        Layer1Protocol(),
+        (
+            Example(
+                prompt="Return the integer.",
+                signature=signature,
+                teacher_tokens=("variable-0",),
+            ),
+        ),
+    )
+    forged = FrozenCheckpoint.from_bytes(checkpoint.to_bytes())
+    object.__setattr__(forged, "training_digest", "0" * 64)
+
+    with pytest.raises(ValueError, match="derived fields do not match"):
+        complete(forged, "Return the integer.", signature)
+
+
+def test_complete_rejects_noncanonical_checkpoint_bytes() -> None:
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    checkpoint = grow(
+        Layer1Protocol(),
+        (
+            Example(
+                prompt="Return the integer.",
+                signature=signature,
+                teacher_tokens=("variable-0",),
+            ),
+        ),
+    )
+    forged = FrozenCheckpoint.from_bytes(checkpoint.to_bytes())
+    noncanonical = b" " + checkpoint.to_bytes()
+    object.__setattr__(forged, "_bytes", noncanonical)
+    object.__setattr__(forged, "sha256", sha256(noncanonical).hexdigest())
+
+    with pytest.raises(ValueError, match="not canonically encoded"):
+        complete(forged, "Return the integer.", signature)
+
+
+def test_growth_rejects_too_many_examples_before_materializing_them() -> None:
+    protocol = Layer1Protocol()
+
+    class OversizedExamples(Sequence[Example]):
+        def __len__(self) -> int:
+            return protocol.max_training_examples + 1
+
+        def __getitem__(self, index: int) -> Example:
+            raise AssertionError(f"oversized examples were materialized at index {index}")
+
+    assert protocol.max_training_examples == 256
+    with pytest.raises(ValueError, match="at most 256"):
+        grow(protocol, OversizedExamples())
+
+
+def test_checkpoint_byte_limit_is_enforced_before_json_validation() -> None:
+    protocol = Layer1Protocol()
+    oversized_json_string = b'"' + (b"x" * protocol.max_checkpoint_bytes) + b'"'
+
+    assert protocol.max_checkpoint_bytes == 2_097_152
+    with pytest.raises(ValueError, match="exceeds the 2097152-byte protocol limit"):
+        FrozenCheckpoint.from_bytes(oversized_json_string)
+
+
+def test_protocol_commits_growth_and_complete_pinned_human_cell_identity() -> None:
+    protocol = Layer1Protocol()
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    checkpoint = grow(
+        protocol,
+        (
+            Example(
+                prompt="Return the integer.",
+                signature=signature,
+                teacher_tokens=("variable-0",),
+            ),
+        ),
+    )
+    record = json.loads(checkpoint.to_bytes().decode("utf-8"))
+    expected_parameters = {
+        "after_spike_amplitudes_pa": [-41.71849286427266, -63.68622662400284],
+        "after_spike_taus_ms": [100.0, 33.33333333333334],
+        "capacitance_pf": 263.16486906079916,
+        "dt_ms": 0.05,
+        "input_resistance_mohm": 298.63483359781054,
+        "model_id": 523000114,
+        "rest_mv": -70.5407829284668,
+        "specimen_id": 508378649,
+        "spike_cut_steps": 113,
+        "threshold_inf_relative_mv": 23.806910928976624,
+        "threshold_spike_decay_per_s": 92.14596727562302,
+        "threshold_spike_increment_mv": 2.5455720316895298,
+        "threshold_voltage_coupling_per_s": 6.503496294985007,
+        "threshold_voltage_decay_per_s": 19.773561643976418,
+        "voltage_reset_offset_mv": -39.60700777695478,
+        "voltage_reset_scale": 1.669558016548051,
+    }
+
+    assert protocol.protocol_version == "humanbrain-layer1-typed-program-v2"
+    assert protocol.growth_epochs == 3
+    assert protocol.allen_glif5_config_sha256 == (
+        "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149"
+    )
+    assert protocol.allen_glif5_parameters == AllenGlif5Parameters()
+    assert record["format"] == protocol.protocol_version
+    assert record["protocol"]["growth_epochs"] == 3
+    assert record["protocol"]["allen_glif5_config_sha256"] == (
+        protocol.allen_glif5_config_sha256
+    )
+    assert record["protocol"]["allen_glif5_parameters"] == expected_parameters
+    assert record["protocol"]["max_training_examples"] == 256
+    assert record["protocol"]["max_checkpoint_bytes"] == 2_097_152
+
+
+def test_completion_restores_exactly_one_recurrent_circuit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    checkpoint = grow(
+        Layer1Protocol(),
+        (
+            Example(
+                prompt="Return the integer.",
+                signature=signature,
+                teacher_tokens=("variable-0",),
+            ),
+        ),
+    )
+    restore = typed_program.RecurrentCellCircuit.restore_cell_synapse_state.__func__
+    construction_count = 0
+
+    def counted_restore(
+        cls: type[typed_program.RecurrentCellCircuit],
+        state: object,
+    ) -> typed_program.RecurrentCellCircuit:
+        nonlocal construction_count
+        construction_count += 1
+        return restore(cls, state)
+
+    monkeypatch.setattr(
+        typed_program.RecurrentCellCircuit,
+        "restore_cell_synapse_state",
+        classmethod(counted_restore),
+    )
+
+    completion = complete(checkpoint, "Return the integer.", signature)
+
+    assert completion.program.tokens == ("variable-0",)
+    assert construction_count == 1
 
 
 def test_layer1_int_program_grows_completes_and_compiles_through_cell_races() -> None:
@@ -105,6 +301,9 @@ def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
     valid_record = json.loads(checkpoint.to_bytes().decode("utf-8"))
 
     array_name = valid_record["circuit"]["arrays"][0]["name"]
+    array_data = valid_record["circuit"]["arrays"][0]["data"]
+    changed_array_data = ("A" if array_data[0] != "A" else "B") + array_data[1:]
+    input_digest = valid_record["training_input_sha256"][0]
     mutations = (
         (
             "object dtype",
@@ -129,6 +328,12 @@ def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
             ("circuit", "arrays", 0, "data"),
             "",
             "byte length does not match the protocol",
+        ),
+        (
+            "same-length array corruption",
+            ("circuit", "arrays", 0, "data"),
+            changed_array_data,
+            "cell/synapse state digest mismatch",
         ),
         (
             "wrong circuit config",
@@ -171,6 +376,12 @@ def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
             ("training_input_sha256",),
             [],
             "at least one training input digest",
+        ),
+        (
+            "too much training provenance",
+            ("training_input_sha256",),
+            [input_digest] * 257,
+            "at most 256 training input digests",
         ),
     )
 

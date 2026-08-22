@@ -315,7 +315,7 @@ class _FrozenCheckpointPayload:
     protocol_json: bytes
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class FrozenCheckpoint:
     """Immutable Layer-1 state restored into a new circuit for each completion."""
 
@@ -326,10 +326,36 @@ class FrozenCheckpoint:
     protocol_sha256: str
     _bytes: bytes = field(repr=False, compare=False)
 
+    def __init__(self, *_args: object, **_kwargs: object) -> None:
+        raise TypeError("FrozenCheckpoint must be constructed with from_bytes")
+
     def to_bytes(self) -> bytes:
-        if sha256(self._bytes).hexdigest() != self.sha256:
-            raise ValueError("frozen checkpoint byte digest mismatch")
+        self._validated_payload()
         return self._bytes
+
+    def _validated_payload(self) -> _FrozenCheckpointPayload:
+        if type(self._bytes) is not bytes:
+            raise ValueError("frozen checkpoint payload is not raw bytes")
+        payload = _decode_checkpoint_bytes(self._bytes)
+        if _checkpoint_bytes(payload) != self._bytes:
+            raise ValueError("frozen checkpoint is not canonically encoded")
+        expected = (
+            sha256(self._bytes).hexdigest(),
+            payload.training_digest,
+            payload.training_input_sha256,
+            payload.circuit.sha256,
+            sha256(payload.protocol_json).hexdigest(),
+        )
+        actual = (
+            self.sha256,
+            self.training_digest,
+            self.training_input_sha256,
+            self.cell_synapse_sha256,
+            self.protocol_sha256,
+        )
+        if actual != expected:
+            raise ValueError("frozen checkpoint derived fields do not match its bytes")
+        return payload
 
     @classmethod
     def from_bytes(cls, value: bytes) -> FrozenCheckpoint:
@@ -338,14 +364,22 @@ class FrozenCheckpoint:
         payload = _decode_checkpoint_bytes(value)
         if _checkpoint_bytes(payload) != value:
             raise ValueError("frozen checkpoint is not canonically encoded")
-        return cls(
-            sha256=sha256(value).hexdigest(),
-            training_digest=payload.training_digest,
-            training_input_sha256=payload.training_input_sha256,
-            cell_synapse_sha256=payload.circuit.sha256,
-            protocol_sha256=sha256(payload.protocol_json).hexdigest(),
-            _bytes=value,
+        checkpoint = object.__new__(cls)
+        object.__setattr__(checkpoint, "sha256", sha256(value).hexdigest())
+        object.__setattr__(checkpoint, "training_digest", payload.training_digest)
+        object.__setattr__(
+            checkpoint,
+            "training_input_sha256",
+            payload.training_input_sha256,
         )
+        object.__setattr__(checkpoint, "cell_synapse_sha256", payload.circuit.sha256)
+        object.__setattr__(
+            checkpoint,
+            "protocol_sha256",
+            sha256(payload.protocol_json).hexdigest(),
+        )
+        object.__setattr__(checkpoint, "_bytes", value)
+        return checkpoint
 
 
 @dataclass(frozen=True, slots=True)
@@ -430,11 +464,14 @@ _CIRCUIT_CONFIG = RecurrentCircuitConfig(
     random_seed=17,
 )
 _GROWTH_EPOCHS = 3
+_MAX_TRAINING_EXAMPLES = 256
+_MAX_CHECKPOINT_BYTES = 2_097_152
 _MAX_PROGRAM_TOKENS = 128
 _MAX_AST_NODES = 64
 _MAX_AST_DEPTH = 16
-_PROTOCOL_VERSION = "humanbrain-layer1-typed-program-v1"
+_PROTOCOL_VERSION = "humanbrain-layer1-typed-program-v2"
 _COMPILER_ID = "humanbrain-structural-python-ast-v1"
+_ALLEN_GLIF5_PARAMETERS = AllenGlif5Parameters()
 
 _FROZEN_CIRCUIT_METADATA_KEYS = frozenset(
     {
@@ -449,7 +486,7 @@ _FROZEN_CIRCUIT_METADATA_KEYS = frozenset(
     }
 )
 _EXPECTED_CELL_PARAMETERS = json.loads(
-    _canonical_json(asdict(AllenGlif5Parameters())).decode("utf-8")
+    _canonical_json(asdict(_ALLEN_GLIF5_PARAMETERS)).decode("utf-8")
 )
 _EXPECTED_CIRCUIT_CONFIG = json.loads(_canonical_json(asdict(_CIRCUIT_CONFIG)).decode("utf-8"))
 
@@ -540,6 +577,11 @@ class Layer1Protocol:
     compiler_id: str = _COMPILER_ID
     primitive_table_sha256: str = _PRIMITIVE_TABLE_SHA256
     circuit_config_sha256: str = _CIRCUIT_CONFIG_SHA256
+    growth_epochs: int = _GROWTH_EPOCHS
+    allen_glif5_config_sha256: str = ALLEN_GLIF5_CONFIG_SHA256
+    allen_glif5_parameters: AllenGlif5Parameters = _ALLEN_GLIF5_PARAMETERS
+    max_training_examples: int = _MAX_TRAINING_EXAMPLES
+    max_checkpoint_bytes: int = _MAX_CHECKPOINT_BYTES
     literal_digit_bound: int = _LITERAL_DIGITS
     max_ast_nodes: int = _MAX_AST_NODES
     max_ast_depth: int = _MAX_AST_DEPTH
@@ -551,6 +593,11 @@ class Layer1Protocol:
             _COMPILER_ID,
             _PRIMITIVE_TABLE_SHA256,
             _CIRCUIT_CONFIG_SHA256,
+            _GROWTH_EPOCHS,
+            ALLEN_GLIF5_CONFIG_SHA256,
+            _ALLEN_GLIF5_PARAMETERS,
+            _MAX_TRAINING_EXAMPLES,
+            _MAX_CHECKPOINT_BYTES,
             _LITERAL_DIGITS,
             _MAX_AST_NODES,
             _MAX_AST_DEPTH,
@@ -561,6 +608,11 @@ class Layer1Protocol:
             self.compiler_id,
             self.primitive_table_sha256,
             self.circuit_config_sha256,
+            self.growth_epochs,
+            self.allen_glif5_config_sha256,
+            self.allen_glif5_parameters,
+            self.max_training_examples,
+            self.max_checkpoint_bytes,
             self.literal_digit_bound,
             self.max_ast_nodes,
             self.max_ast_depth,
@@ -579,6 +631,11 @@ def _protocol_json(protocol: Layer1Protocol) -> bytes:
             "primitive_table_sha256": protocol.primitive_table_sha256,
             "circuit_config": asdict(_CIRCUIT_CONFIG),
             "circuit_config_sha256": protocol.circuit_config_sha256,
+            "growth_epochs": protocol.growth_epochs,
+            "allen_glif5_config_sha256": protocol.allen_glif5_config_sha256,
+            "allen_glif5_parameters": asdict(protocol.allen_glif5_parameters),
+            "max_training_examples": protocol.max_training_examples,
+            "max_checkpoint_bytes": protocol.max_checkpoint_bytes,
             "literal_digit_bound": protocol.literal_digit_bound,
             "max_ast_nodes": protocol.max_ast_nodes,
             "max_ast_depth": protocol.max_ast_depth,
@@ -927,15 +984,23 @@ def _freeze_circuit(circuit: RecurrentCellCircuit) -> _FrozenCircuitState:
     )
 
 
+def _fixed_layout_circuit_sha256(frozen: _FrozenCircuitState) -> str:
+    digest = sha256(frozen.metadata_json)
+    for item in frozen.arrays:
+        digest.update(item.name.encode("ascii"))
+        digest.update(item.dtype.encode("ascii"))
+        digest.update(json.dumps(item.shape).encode("ascii"))
+        digest.update(item.data)
+    return digest.hexdigest()
+
+
 def _restore_circuit(frozen: _FrozenCircuitState) -> RecurrentCellCircuit:
     metadata = json.loads(frozen.metadata_json.decode("utf-8"))
     arrays = {
-        item.name: np.frombuffer(item.data, dtype=np.dtype(item.dtype)).copy().reshape(item.shape)
+        item.name: np.frombuffer(item.data, dtype=np.dtype(item.dtype)).reshape(item.shape)
         for item in frozen.arrays
     }
     state = RecurrentCellSynapseState(metadata=metadata, arrays=arrays)
-    if state.sha256 != frozen.sha256:
-        raise ValueError("frozen checkpoint cell/synapse state digest mismatch")
     return RecurrentCellCircuit.restore_cell_synapse_state(state)
 
 
@@ -985,7 +1050,8 @@ def _validate_frozen_circuit_metadata(value: object) -> Mapping[str, object]:
         and metadata["allen_glif5_config_sha256"] == ALLEN_GLIF5_CONFIG_SHA256
         and _canonical_json(metadata["cell_parameters"])
         == _canonical_json(_EXPECTED_CELL_PARAMETERS)
-        and _canonical_json(metadata["circuit_config"]) == _canonical_json(_EXPECTED_CIRCUIT_CONFIG)
+        and _canonical_json(metadata["circuit_config"])
+        == _canonical_json(_EXPECTED_CIRCUIT_CONFIG)
         and type(metadata["growth_examples"]) is int
         and metadata["growth_examples"] > 0
         and type(metadata["local_updates"]) is int
@@ -1031,6 +1097,10 @@ def _validate_frozen_array_headers(
 
 
 def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
+    if len(value) > _MAX_CHECKPOINT_BYTES:
+        raise ValueError(
+            f"frozen checkpoint exceeds the {_MAX_CHECKPOINT_BYTES}-byte protocol limit"
+        )
     try:
         decoded = json.loads(value.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -1054,12 +1124,22 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
     if protocol_json != _protocol_json(Layer1Protocol()):
         raise ValueError("frozen checkpoint protocol commitments do not match")
     training_digest = _digest_text(record["training_digest"], "training digest")
+    input_hash_values = _record_sequence(
+        record["training_input_sha256"],
+        "training input digests",
+    )
+    input_hash_count = len(input_hash_values)
+    if input_hash_count == 0:
+        raise ValueError("frozen checkpoint needs at least one training input digest")
+    if input_hash_count > _MAX_TRAINING_EXAMPLES:
+        raise ValueError(
+            f"frozen checkpoint permits at most {_MAX_TRAINING_EXAMPLES} "
+            "training input digests"
+        )
     input_hashes = tuple(
         _digest_text(item, "training input digest")
-        for item in _record_sequence(record["training_input_sha256"], "training input digests")
+        for item in input_hash_values
     )
-    if not input_hashes:
-        raise ValueError("frozen checkpoint needs at least one training input digest")
     circuit_record = _strict_record(
         record["circuit"],
         frozenset({"metadata", "arrays", "sha256"}),
@@ -1093,11 +1173,10 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
         arrays=tuple(arrays),
         sha256=_digest_text(circuit_record["sha256"], "cell/synapse digest"),
     )
-    # All allocation-driving fields were checked against fixed protocol values
-    # before this first NumPy buffer view or recurrent circuit construction.
-    restored = _restore_circuit(circuit)
-    if restored.cell_synapse_state_sha256 != circuit.sha256:
-        raise ValueError("frozen circuit restore changed its persistent digest")
+    # Fixed layout lets us validate raw array bytes without a NumPy view or
+    # recurrent-circuit construction. Completion performs the sole restore.
+    if _fixed_layout_circuit_sha256(circuit) != circuit.sha256:
+        raise ValueError("frozen checkpoint cell/synapse state digest mismatch")
     return _FrozenCheckpointPayload(
         circuit=circuit,
         training_digest=training_digest,
@@ -1110,9 +1189,18 @@ def grow(protocol: Layer1Protocol, examples: Sequence[Example]) -> FrozenCheckpo
     """Fit one Layer-1 recurrent cell circuit and freeze its persistent state."""
     if type(protocol) is not Layer1Protocol:
         raise TypeError("grow requires the fixed Layer1Protocol")
+    if isinstance(examples, (str, bytes, bytearray)) or not isinstance(examples, Sequence):
+        raise TypeError("Layer-1 growth examples must be an ordered sequence")
+    example_count = len(examples)
+    if example_count > protocol.max_training_examples:
+        raise ValueError(
+            f"Layer-1 growth accepts at most {protocol.max_training_examples} examples"
+        )
     corpus = tuple(examples)
     if not corpus:
         raise ValueError("at least one public Layer-1 growth example is required")
+    if len(corpus) != example_count:
+        raise ValueError("Layer-1 growth examples changed while being materialized")
     if not all(isinstance(example, Example) for example in corpus):
         raise TypeError("Layer-1 growth examples must be Example values")
 
@@ -1125,7 +1213,7 @@ def grow(protocol: Layer1Protocol, examples: Sequence[Example]) -> FrozenCheckpo
         input_bytes = _token_stream_bytes(input_ids)
         input_hashes.append(sha256(input_bytes).hexdigest())
         teacher_ids = _program_token_ids(example.teacher_tokens)
-        circuit.grow_sequence((*input_ids, *teacher_ids), epochs=_GROWTH_EPOCHS)
+        circuit.grow_sequence((*input_ids, *teacher_ids), epochs=protocol.growth_epochs)
         digest.update(input_bytes)
         digest.update(_token_stream_bytes(teacher_ids))
     circuit.freeze_learning()
@@ -1144,12 +1232,20 @@ def complete(
     typed_signature: TypedSignature,
 ) -> Completion:
     """Restore, observe exactly prompt+signature+delimiter, and emit one program."""
-    if not isinstance(checkpoint, FrozenCheckpoint):
-        raise TypeError("complete requires a FrozenCheckpoint")
+    if type(checkpoint) is not FrozenCheckpoint:
+        raise TypeError("complete requires an exact FrozenCheckpoint")
     if not isinstance(typed_signature, TypedSignature):
         raise TypeError("complete requires a TypedSignature")
-    checkpoint_bytes = checkpoint.to_bytes()
-    payload = _decode_checkpoint_bytes(checkpoint_bytes)
+    payload = checkpoint._validated_payload()
+    checkpoint_bytes = checkpoint._bytes
+    checkpoint_identity = (
+        checkpoint.sha256,
+        checkpoint.training_digest,
+        checkpoint.training_input_sha256,
+        checkpoint.cell_synapse_sha256,
+        checkpoint.protocol_sha256,
+        checkpoint_bytes,
+    )
     circuit = _restore_circuit(payload.circuit)
     before = circuit.cell_synapse_state_sha256
     if before != checkpoint.cell_synapse_sha256:
@@ -1193,7 +1289,14 @@ def complete(
     after = circuit.cell_synapse_state_sha256
     if after != before:
         raise PersistentStateChangedError("completion changed frozen cell/synapse state")
-    if checkpoint.to_bytes() != checkpoint_bytes:
+    if (
+        checkpoint.sha256,
+        checkpoint.training_digest,
+        checkpoint.training_input_sha256,
+        checkpoint.cell_synapse_sha256,
+        checkpoint.protocol_sha256,
+        checkpoint._bytes,
+    ) != checkpoint_identity:
         raise PersistentStateChangedError("completion changed supplied checkpoint bytes")
     return Completion(
         program=Program(emitted, typed_signature),
