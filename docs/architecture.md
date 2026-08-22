@@ -171,14 +171,17 @@ the final Gemma comparison.
 
 The next gate is deliberately smaller than SWE-bench: one frozen generic
 checkpoint must emit one complete function for family-disjoint hidden coding
-tasks. A proposed typed prefix program language would let output cells choose
-semantic program tokens while a frozen deterministic grammar and compiler
-provide syntax-only plumbing—without search, retries, or hidden-test feedback.
+tasks. The implemented Layer-1 typed prefix language lets recurrent fitted-cell
+output races choose semantic program tokens while a frozen deterministic
+grammar and compiler provide syntax-only plumbing—without search, retries, or
+hidden-test feedback. Its smallest public train-only curriculum is
+preregistered but has not been materially run; see
+`docs/typed-program-public-curriculum.md`.
 The raw-Python/compiled-DSL-agnostic completion seam,
 freeze/reserve/anchor/reveal state machine, sealed production runner, and
 pass@1 artifact chain are now implemented, but no canonical freeze or
 evaluation seed exists. The exact protocol is
-in `docs/simple-swe-curriculum.md`; the optional typed decoder design is in
+in `docs/simple-swe-curriculum.md`; the broader typed decoder design is in
 `docs/research/cell-program-decoding.md`. Before that freeze, the public
 task/request projection now binds explicit parameter and result types in one
 immutable typed signature without exposing family or private-test metadata.

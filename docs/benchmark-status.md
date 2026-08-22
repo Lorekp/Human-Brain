@@ -258,6 +258,18 @@ signatures and was introduced before any canonical freeze, so no evaluation
 artifact required migration. See
 `docs/simple-swe-curriculum.md` for the task split and claim boundary.
 
+## Preregistered typed-program public TRAIN curriculum
+
+The Layer-1 recurrent fitted-cell train-only protocol is frozen at raw SHA-256
+`1ed77f9fa2395f6be8bed74648dc9d3de3027e367e626e427e56de912f4ed191`.
+It defines three public TRAIN programs, nine public semantic cases, and two
+teacher-free family/template/literal-disjoint public development definitions.
+The guarded runner plans by default and has not executed the material TRAIN
+run. Consequently there is no checkpoint, evidence directory, development
+completion, development run, or generalization result. See
+`docs/typed-program-public-curriculum.md` for exact tokens, cases, gates, and
+claim boundaries.
+
 ## Reproducibility artifacts
 
 Hashes below identify the canonical LF-normalized file bytes stored in Git,
@@ -265,6 +277,7 @@ not a platform-specific checkout's newline representation.
 
 | Artifact | SHA-256 |
 | --- | --- |
+| `benchmarks/typed_program_public_train_protocol_v1.json` | `1ed77f9fa2395f6be8bed74648dc9d3de3027e367e626e427e56de912f4ed191` |
 | `artifacts/swe_sqlfluff_1625_cells.npz` | `bf54b181ce24ff636d84a3e9a712eaf96caceb1ae343299169727f884f2dda91` |
 | `artifacts/swe-dev-expert/sqlfluff__sqlfluff-1625/teacher.traj.json` | `cae6a4dbe8750a8bfe83db1e04103555a4f657ae6ac960cda1f814e761a34a4f` |
 | `artifacts/swe-dev-cell/sqlfluff__sqlfluff-1625/dendritic-v4.traj.json` | `8d7b7ba5b2911573505110f61cc4a457c9b595abb895ac8b8d21027b225e5cd2` |
