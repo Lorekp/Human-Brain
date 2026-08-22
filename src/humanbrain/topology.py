@@ -19,6 +19,13 @@ RECURRENT_TOPOLOGIES = frozenset(
     }
 )
 
+# At and above this population size, uniform_no_self switches to the vectorized
+# O(cells * fanout) builder. Below it the legacy row-at-a-time sampler keeps
+# its exact registered seeded streams (pinned by test_uniform_sampling_
+# preserves_legacy_seeded_targets). The threshold matches the CUDA engineering
+# scale boundary where Python-loop construction otherwise dominates wall time.
+_UNIFORM_NO_SELF_VECTOR_MIN_CELLS = 100_000
+
 
 def _grid_coordinates(cell_count: int, dimensions: int) -> np.ndarray:
     side = ceil(cell_count ** (1.0 / dimensions))
@@ -341,6 +348,62 @@ def _mixed_membership_targets(
     return targets
 
 
+def _uniform_no_self_vectorized(
+    cell_count: int,
+    fanout: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """O(cell_count * fanout) uniform self-excluding targets for large populations.
+
+    Draws ``fanout`` i.i.d. candidates per source row and redraws whole rows
+    whose candidate set contains a duplicate value until every row holds
+    distinct targets. Conditioning i.i.d. rows on distinctness stays uniform,
+    matching the legacy per-row sampler's distribution, and convergence is
+    geometric because duplicates need fanout**2 << cell_count collisions.
+    Rows then apply the identical candidate-to-target map as the legacy path:
+    candidate c in [0, cell_count - 2] becomes c + (c >= source), which equals
+    sampling from the population with the source neuron removed.
+    """
+    population = cell_count - 1
+    candidates = rng.integers(0, population, size=(cell_count, fanout))
+    for _ in range(64):
+        ordered = np.sort(candidates, axis=1)
+        adjacent_equal = np.zeros(candidates.shape, dtype=bool)
+        adjacent_equal[:, 1:] = ordered[:, 1:] == ordered[:, :-1]
+        conflicted_rows = np.flatnonzero(adjacent_equal.any(axis=1))
+        if conflicted_rows.size == 0:
+            sources = np.arange(cell_count, dtype=np.int64)[:, None]
+            return (candidates + (candidates >= sources)).astype(
+                np.int32, copy=False
+            )
+        candidates[conflicted_rows] = rng.integers(
+            0, population, size=(int(conflicted_rows.size), fanout)
+        )
+    # Unreachable in practice (each round succeeds with overwhelming
+    # probability); fall back to the exact legacy sampler rather than risk an
+    # infinite loop.
+    return build_recurrent_targets_legacy_uniform_no_self(cell_count, fanout, rng)
+
+
+def build_recurrent_targets_legacy_uniform_no_self(
+    cell_count: int,
+    fanout: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    targets = np.empty((cell_count, fanout), dtype=np.int32)
+    for source in range(cell_count):
+        # Sampling candidate indices is bit-for-bit identical to sampling
+        # np.delete(arange(cell_count), source), without allocating an
+        # almost-cell-count temporary for every source neuron.
+        row = rng.choice(cell_count - 1, fanout, replace=False).astype(
+            np.int32,
+            copy=False,
+        )
+        row += row >= source
+        targets[source] = row
+    return targets
+
+
 def build_recurrent_targets(
     cell_count: int,
     fanout: int,
@@ -360,18 +423,13 @@ def build_recurrent_targets(
     if fanout >= cell_count:
         raise ValueError("non-random topology requires room to exclude self-connections")
     if topology == "uniform_no_self":
-        targets = np.empty((cell_count, fanout), dtype=np.int32)
-        for source in range(cell_count):
-            # Sampling candidate indices is bit-for-bit identical to sampling
-            # np.delete(arange(cell_count), source), without allocating an
-            # almost-cell-count temporary for every source neuron.
-            row = rng.choice(cell_count - 1, fanout, replace=False).astype(
-                np.int32,
-                copy=False,
-            )
-            row += row >= source
-            targets[source] = row
-        return targets
+        if cell_count >= _UNIFORM_NO_SELF_VECTOR_MIN_CELLS:
+            return _uniform_no_self_vectorized(cell_count, fanout, rng)
+        return build_recurrent_targets_legacy_uniform_no_self(
+            cell_count,
+            fanout,
+            rng,
+        )
     if topology == "single_scale_groups":
         return _group_targets(cell_count, fanout, rng, nested=False)
     if topology == "nested_groups":
