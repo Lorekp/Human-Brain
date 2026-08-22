@@ -7,6 +7,8 @@ import hashlib
 import json
 import os
 import platform
+import re
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -39,6 +41,31 @@ _PROCEDURAL_RUNTIME_SOURCE_PATHS = (
 _BUILD_LOCK = threading.Lock()
 _LIBRARY: ctypes.CDLL | None = None
 _LIBRARY_PATH: Path | None = None
+_LOADED_BUILD_PLAN: _NativeBuildPlan | None = None
+_TARGET_ROOT_PLACEHOLDER = "@HUMANBRAIN_NATIVE_TARGET_ROOT@"
+_BUILD_CONTROL_ENVIRONMENT = (
+    "CARGO_BUILD_RUSTFLAGS",
+    "CARGO_BUILD_RUSTC",
+    "CARGO_BUILD_TARGET",
+    "CARGO_ENCODED_RUSTFLAGS",
+    "CARGO_HOME",
+    "CARGO_TARGET_DIR",
+    "RUSTC",
+    "RUSTFLAGS",
+    "RUSTUP_TOOLCHAIN",
+)
+_PASSTHROUGH_BUILD_ENVIRONMENT = (
+    "COMSPEC",
+    "INCLUDE",
+    "LIB",
+    "LIBPATH",
+    "PATH",
+    "PATHEXT",
+    "SYSTEMDRIVE",
+    "SYSTEMROOT",
+    "TEMP",
+    "TMP",
+)
 
 _F64_POINTER = ctypes.POINTER(ctypes.c_double)
 _I32_POINTER = ctypes.POINTER(ctypes.c_int32)
@@ -88,6 +115,7 @@ class _RecurrentConfig(ctypes.Structure):
 class NativeBuildInfo:
     source_digest: str
     library_path: Path
+    build_plan: _NativeBuildPlan
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +132,47 @@ class NativeLibraryIdentity:
             "binary_size": self.binary_size,
             "source_digest": self.source_digest,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class _NativeToolchain:
+    cargo_path: str
+    cargo_binary_sha256: str
+    cargo_version: str
+    cargo_discovery_path: str
+    cargo_discovery_sha256: str
+    rustc_path: str
+    rustc_binary_sha256: str
+    rustc_version: str
+    rustc_discovery_path: str
+    rustc_discovery_sha256: str
+    sysroot: str
+    target_triple: str
+    native_cfg: str
+    target_cpus: str
+    linker_path: str
+    linker_binary_sha256: str
+    sdk_identity_sha256: str
+    sdk_environment: tuple[tuple[str, str], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _NativeBuildPlan:
+    source_digest: str
+    command: tuple[str, ...]
+    cwd: Path
+    environment: tuple[tuple[str, str], ...]
+    target_triple: str
+    library_relative_path: Path
+    toolchain_identity_sha256: str
+    sdk_identity_sha256: str
+
+    def materialize_environment(self, target_root: Path) -> dict[str, str]:
+        environment = dict(self.environment)
+        if environment.get("CARGO_TARGET_DIR") != _TARGET_ROOT_PLACEHOLDER:
+            raise NativeBuildError("native build plan target placeholder differs")
+        environment["CARGO_TARGET_DIR"] = str(target_root.resolve())
+        return environment
 
 
 def _framed_sha256(namespace: str, entries: Iterable[tuple[str, bytes]]) -> str:
@@ -140,15 +209,309 @@ def _native_build_input_manifest(
     )
 
 
+def _sha256_file(path: Path, label: str) -> str:
+    digest = hashlib.sha256()
+    byte_count = 0
+    try:
+        with path.open("rb") as handle:
+            while True:
+                chunk = handle.read(1024 * 1024)
+                if not chunk:
+                    break
+                byte_count += len(chunk)
+                if byte_count > 512 * 1024 * 1024:
+                    raise NativeBuildError(f"{label} exceeds the identity byte limit")
+                digest.update(chunk)
+    except OSError as error:
+        raise NativeBuildError(f"{label} cannot be read for identity") from error
+    if byte_count == 0:
+        raise NativeBuildError(f"{label} is empty")
+    return digest.hexdigest()
+
+
+def _probe_tool(
+    command: tuple[str, ...],
+    *,
+    cwd: Path,
+    environment: dict[str, str],
+) -> str:
+    try:
+        completed = subprocess.run(
+            list(command),
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+            env=environment,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise NativeBuildError("native toolchain identity probe failed") from error
+    output = completed.stdout
+    if completed.returncode != 0 or not output.strip():
+        detail = completed.stderr.strip() or output.strip() or "no probe output"
+        raise NativeBuildError(f"native toolchain identity probe failed: {detail}")
+    if len(output.encode("utf-8")) > 256 * 1024:
+        raise NativeBuildError("native toolchain identity probe output is oversized")
+    return output.strip()
+
+
+def _ambient_value(name: str) -> str | None:
+    for key, value in os.environ.items():
+        if key.upper() == name:
+            return value
+    return None
+
+
+def _base_tool_environment() -> dict[str, str]:
+    environment: dict[str, str] = {}
+    for name in _PASSTHROUGH_BUILD_ENVIRONMENT:
+        value = _ambient_value(name)
+        if value is not None:
+            environment[name] = value
+    return environment
+
+
+def _reject_build_control_environment() -> None:
+    present = tuple(
+        name for name in _BUILD_CONTROL_ENVIRONMENT if _ambient_value(name) is not None
+    )
+    if present:
+        raise NativeBuildError(
+            "ambient native build control is forbidden: " + ", ".join(present)
+        )
+
+
+def _cargo_home() -> Path:
+    return (Path.home() / ".cargo").resolve()
+
+
+def _reject_cargo_configuration(source_root: Path, cargo_home: Path) -> None:
+    candidates: list[Path] = []
+    for ancestor in (source_root.resolve(), *source_root.resolve().parents):
+        candidates.extend((ancestor / ".cargo" / "config", ancestor / ".cargo" / "config.toml"))
+    candidates.extend((cargo_home / "config", cargo_home / "config.toml"))
+    if any(path.is_file() for path in candidates):
+        raise NativeBuildError(
+            "hierarchical Cargo configuration is forbidden for the native cache"
+        )
+
+
+def _windows_sdk_identity() -> tuple[str, tuple[tuple[str, str], ...]]:
+    if os.name != "nt":
+        digest = _framed_sha256(
+            "humanbrain-native-platform-sdk-v1",
+            (("platform", platform.platform().encode("utf-8")),),
+        )
+        return digest, ()
+    program_files_x86 = _ambient_value("PROGRAMFILES(X86)") or r"C:\Program Files (x86)"
+    sdk_root = Path(program_files_x86) / "Windows Kits" / "10"
+    library_root = sdk_root / "Lib"
+    versions = sorted(
+        (
+            path
+            for path in library_root.iterdir()
+            if path.is_dir()
+            and (path / "um" / "x64" / "kernel32.lib").is_file()
+            and (path / "ucrt" / "x64" / "ucrt.lib").is_file()
+        ),
+        key=lambda path: path.name,
+    )
+    if not versions:
+        raise NativeBuildError("Windows SDK identity cannot be discovered")
+    sdk_version_root = versions[-1]
+    selected_libraries = (
+        sdk_version_root / "um" / "x64" / "kernel32.lib",
+        sdk_version_root / "um" / "x64" / "advapi32.lib",
+        sdk_version_root / "um" / "x64" / "bcrypt.lib",
+        sdk_version_root / "um" / "x64" / "userenv.lib",
+        sdk_version_root / "um" / "x64" / "ws2_32.lib",
+        sdk_version_root / "ucrt" / "x64" / "ucrt.lib",
+    )
+    entries: list[tuple[str, bytes]] = [
+        ("sdk-root", str(sdk_root.resolve()).encode("utf-8")),
+        ("sdk-version", sdk_version_root.name.encode("ascii")),
+    ]
+    for library in selected_libraries:
+        entries.append(
+            (
+                library.relative_to(sdk_root).as_posix(),
+                _sha256_file(library, "Windows SDK library").encode("ascii"),
+            )
+        )
+    identity = _framed_sha256("humanbrain-native-windows-sdk-v1", entries)
+    environment = (
+        ("WindowsSdkDir", str(sdk_root.resolve()) + os.sep),
+        ("WindowsSDKVersion", sdk_version_root.name + os.sep),
+    )
+    return identity, environment
+
+
+def _discover_native_toolchain(source_root: Path) -> _NativeToolchain:
+    # Rustup discovery needs its user-profile state. Its selected proxy bytes,
+    # sysroot, concrete tool bytes, and every probe output are bound below; the
+    # inherited discovery environment is not passed to the Cargo build.
+    probe_environment = os.environ.copy()
+    rustc_discovery = shutil.which("rustc", path=probe_environment.get("PATH"))
+    cargo_discovery = shutil.which("cargo", path=probe_environment.get("PATH"))
+    if rustc_discovery is None or cargo_discovery is None:
+        raise NativeBuildError("Cargo and rustc are required for the native kernel")
+    rustc_discovery_path = Path(rustc_discovery).resolve()
+    cargo_discovery_path = Path(cargo_discovery).resolve()
+    sysroot = Path(
+        _probe_tool(
+            (str(rustc_discovery_path), "--print", "sysroot"),
+            cwd=source_root,
+            environment=probe_environment,
+        )
+    ).resolve()
+    executable_suffix = ".exe" if os.name == "nt" else ""
+    rustc_path = (sysroot / "bin" / f"rustc{executable_suffix}").resolve()
+    cargo_path = (sysroot / "bin" / f"cargo{executable_suffix}").resolve()
+    if not rustc_path.is_file():
+        rustc_path = rustc_discovery_path
+    if not cargo_path.is_file():
+        cargo_path = cargo_discovery_path
+    target_triple = _probe_tool(
+        (str(rustc_path), "--print", "host-tuple"),
+        cwd=source_root,
+        environment=probe_environment,
+    )
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+", target_triple):
+        raise NativeBuildError("rustc host target identity is invalid")
+    linker_path = (
+        sysroot
+        / "lib"
+        / "rustlib"
+        / target_triple
+        / "bin"
+        / f"rust-lld{executable_suffix}"
+    ).resolve()
+    if not linker_path.is_file():
+        raise NativeBuildError("the pinned rust-lld linker cannot be discovered")
+    sdk_identity, sdk_environment = _windows_sdk_identity()
+    return _NativeToolchain(
+        cargo_path=str(cargo_path),
+        cargo_binary_sha256=_sha256_file(cargo_path, "Cargo executable"),
+        cargo_version=_probe_tool(
+            (str(cargo_path), "-vV"), cwd=source_root, environment=probe_environment
+        ),
+        cargo_discovery_path=str(cargo_discovery_path),
+        cargo_discovery_sha256=_sha256_file(
+            cargo_discovery_path, "Cargo discovery executable"
+        ),
+        rustc_path=str(rustc_path),
+        rustc_binary_sha256=_sha256_file(rustc_path, "rustc executable"),
+        rustc_version=_probe_tool(
+            (str(rustc_path), "-vV"), cwd=source_root, environment=probe_environment
+        ),
+        rustc_discovery_path=str(rustc_discovery_path),
+        rustc_discovery_sha256=_sha256_file(
+            rustc_discovery_path, "rustc discovery executable"
+        ),
+        sysroot=str(sysroot),
+        target_triple=target_triple,
+        native_cfg=_probe_tool(
+            (str(rustc_path), "--print", "cfg", "-Ctarget-cpu=native"),
+            cwd=source_root,
+            environment=probe_environment,
+        ),
+        target_cpus=_probe_tool(
+            (str(rustc_path), "--print", "target-cpus"),
+            cwd=source_root,
+            environment=probe_environment,
+        ),
+        linker_path=str(linker_path),
+        linker_binary_sha256=_sha256_file(linker_path, "rust-lld executable"),
+        sdk_identity_sha256=sdk_identity,
+        sdk_environment=sdk_environment,
+    )
+
+
+def _toolchain_entries(toolchain: _NativeToolchain) -> tuple[tuple[str, bytes], ...]:
+    record = {
+        field: getattr(toolchain, field)
+        for field in toolchain.__dataclass_fields__
+        if field != "sdk_environment"
+    }
+    record["sdk_environment"] = list(toolchain.sdk_environment)
+    return (("@toolchain", json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")),)
+
+
+def _native_build_plan(source_root: Path | None = None) -> _NativeBuildPlan:
+    _reject_build_control_environment()
+    root = (_SOURCE_ROOT if source_root is None else source_root).resolve()
+    cargo_home = _cargo_home()
+    _reject_cargo_configuration(root, cargo_home)
+    toolchain = _discover_native_toolchain(root)
+    command = (
+        toolchain.cargo_path,
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        str(root / "Cargo.toml"),
+        "--target",
+        toolchain.target_triple,
+    )
+    environment = _base_tool_environment()
+    environment.update(dict(toolchain.sdk_environment))
+    environment.update(
+        {
+            "CARGO_BUILD_RUSTC": toolchain.rustc_path,
+            "CARGO_ENCODED_RUSTFLAGS": "\x1f".join(
+                (
+                    "-Ctarget-cpu=native",
+                    f"-Clinker={toolchain.linker_path}",
+                    f"--remap-path-prefix={root}=/humanbrain/native-src",
+                )
+            ),
+            "CARGO_HOME": str(cargo_home),
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": _TARGET_ROOT_PLACEHOLDER,
+            "CARGO_TERM_COLOR": "never",
+            "RUSTC": toolchain.rustc_path,
+            "RUSTC_WRAPPER": "",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "SOURCE_DATE_EPOCH": "0",
+        }
+    )
+    ordered_environment = tuple(sorted(environment.items()))
+    command_bytes = json.dumps(command, separators=(",", ":")).encode("utf-8")
+    environment_bytes = json.dumps(
+        ordered_environment, separators=(",", ":")
+    ).encode("utf-8")
+    toolchain_entries = _toolchain_entries(toolchain)
+    toolchain_identity = _framed_sha256(
+        "humanbrain-native-toolchain-v1", toolchain_entries
+    )
+    digest = _framed_sha256(
+        "humanbrain-native-cache-v4-effective-build-plan",
+        (
+            *_native_build_input_manifest(root),
+            ("@plan/cwd", str(root).encode("utf-8")),
+            ("@plan/command", command_bytes),
+            ("@plan/environment", environment_bytes),
+            *toolchain_entries,
+        ),
+    )
+    return _NativeBuildPlan(
+        source_digest=digest,
+        command=command,
+        cwd=root,
+        environment=ordered_environment,
+        target_triple=toolchain.target_triple,
+        library_relative_path=(
+            Path(toolchain.target_triple) / "release" / _library_filename()
+        ),
+        toolchain_identity_sha256=toolchain_identity,
+        sdk_identity_sha256=toolchain.sdk_identity_sha256,
+    )
+
+
 def _source_digest(source_root: Path | None = None) -> str:
-    target_entries = (
-        ("@platform/system", platform.system().encode("ascii")),
-        ("@platform/machine", platform.machine().encode("ascii")),
-    )
-    return _framed_sha256(
-        "humanbrain-native-cache-v3-complete-build-inputs",
-        (*_native_build_input_manifest(source_root), *target_entries),
-    )
+    return _native_build_plan(source_root).source_digest
 
 
 def procedural_runtime_source_manifest(
@@ -253,7 +616,11 @@ def _attested_library_identity(
     source_digest: str,
 ) -> NativeLibraryIdentity:
     resolved = library_path.resolve()
-    if len(resolved.parents) < 2 or resolved.parents[1].name != source_digest:
+    if (
+        len(resolved.parents) < 3
+        or resolved.parent.name != "release"
+        or resolved.parents[2].name != source_digest
+    ):
         raise NativeBuildError("native library is outside its source-addressed cache")
     manifest_path = _identity_manifest_path(resolved)
     try:
@@ -296,37 +663,28 @@ def _attested_library_identity(
 
 def build_native(cache_root: str | Path | None = None, *, force: bool = False) -> NativeBuildInfo:
     """Build the Rust kernel into a content-addressed cache and return its path."""
-    source_digest = _source_digest()
+    plan = _native_build_plan()
+    source_digest = plan.source_digest
     root = Path(cache_root) if cache_root is not None else _default_cache_root()
     target_root = root / source_digest
-    library_path = target_root / "release" / _library_filename()
+    library_path = target_root / plan.library_relative_path
     if library_path.is_file() and not force:
         _attested_library_identity(library_path, source_digest)
-        return NativeBuildInfo(source_digest, library_path)
+        return NativeBuildInfo(source_digest, library_path, plan)
 
     target_root.mkdir(parents=True, exist_ok=True)
-    environment = os.environ.copy()
-    environment["CARGO_TARGET_DIR"] = str(target_root)
-    existing_flags = environment.get("RUSTFLAGS", "").strip()
-    native_flag = "-C target-cpu=native"
-    environment["RUSTFLAGS"] = f"{existing_flags} {native_flag}".strip()
-    command = [
-        "cargo",
-        "build",
-        "--release",
-        "--locked",
-        "--manifest-path",
-        str(_SOURCE_ROOT / "Cargo.toml"),
-    ]
+    environment = plan.materialize_environment(target_root)
     try:
         completed = subprocess.run(
-            command,
+            list(plan.command),
             check=False,
             capture_output=True,
             text=True,
             env=environment,
+            cwd=plan.cwd,
+            timeout=600,
         )
-    except OSError as error:
+    except (OSError, subprocess.TimeoutExpired) as error:
         raise NativeBuildError("Rust Cargo is required to build the human-cell kernel") from error
     if completed.returncode != 0 or not library_path.is_file():
         detail = completed.stderr.strip() or completed.stdout.strip() or "Cargo produced no library"
@@ -334,11 +692,11 @@ def build_native(cache_root: str | Path | None = None, *, force: bool = False) -
     identity = _hash_native_library(library_path, source_digest)
     _publish_identity_manifest(library_path, identity)
     _attested_library_identity(library_path, source_digest)
-    return NativeBuildInfo(source_digest, library_path)
+    return NativeBuildInfo(source_digest, library_path, plan)
 
 
 def _load_library() -> ctypes.CDLL:
-    global _LIBRARY, _LIBRARY_PATH
+    global _LIBRARY, _LIBRARY_PATH, _LOADED_BUILD_PLAN
     if _LIBRARY is not None:
         return _LIBRARY
     with _BUILD_LOCK:
@@ -489,21 +847,30 @@ def _load_library() -> ctypes.CDLL:
             raise NativeBuildError("native library bytes changed while loading")
         _LIBRARY = library
         _LIBRARY_PATH = build.library_path
+        _LOADED_BUILD_PLAN = build.build_plan
         return library
 
 
 def loaded_build_info() -> NativeBuildInfo:
     """Return the source digest and loaded library path, building if necessary."""
     loaded_library_identity()
-    assert _LIBRARY_PATH is not None
-    return NativeBuildInfo(_source_digest(), _LIBRARY_PATH)
+    assert _LIBRARY_PATH is not None and _LOADED_BUILD_PLAN is not None
+    return NativeBuildInfo(
+        _LOADED_BUILD_PLAN.source_digest,
+        _LIBRARY_PATH,
+        _LOADED_BUILD_PLAN,
+    )
 
 
 def loaded_library_identity() -> NativeLibraryIdentity:
     """Rehash and verify the exact source-addressed library loaded by this process."""
     _load_library()
-    assert _LIBRARY_PATH is not None
-    return _attested_library_identity(_LIBRARY_PATH, _source_digest())
+    if _LIBRARY_PATH is None or type(_LOADED_BUILD_PLAN) is not _NativeBuildPlan:
+        raise NativeBuildError("loaded native build plan identity is unavailable")
+    return _attested_library_identity(
+        _LIBRARY_PATH,
+        _LOADED_BUILD_PLAN.source_digest,
+    )
 
 
 def _f64(array: np.ndarray) -> _F64_POINTER:

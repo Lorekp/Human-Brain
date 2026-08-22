@@ -10,7 +10,10 @@ future-cohort execution is on hold
 **Retired evidence:** public DEV v1; it will never be rerun or used for tuning
 
 **Raw protocol SHA-256:**
-`13a3b443b253d61cb0f221c3522b5bb95c012502965b22d97ea0e63fe1686136`
+`43c4953c39490d6d2fa333f82443e93dbb3f3bb37e24f786c9438c048ebc05fd`
+
+**Reviewed source-bundle SHA-256:**
+`4b863f558e3e5da8cbb67fc0155d5c1fab48ee4541a0d12a6e8973d57ed4138a`
 
 ## Decision
 
@@ -227,23 +230,53 @@ later hypothesis requires a new protocol and a wholly fresh cohort.
 ## Execution and resource contract
 
 The runner is plan-by-default. Planning only validates and hashes the protocol
-and source bundle. Material execution additionally requires `--execute`, a
+and source bundle. Every source read is bounded to 1 MiB, with an 8 MiB
+aggregate bound and a size-plus-one refusal check. The plan mechanically
+requires every imported local runtime module, including package `__init__.py`,
+to occur in the bundle. Material execution derives the repository root from
+those actually imported modules and rejects any different root or protocol
+before evidence, model construction, or native execution. It additionally
+requires `--execute`, a
 unique `--run-id`, the exact lowercase raw protocol SHA-256, and the exact
 reviewed source-bundle SHA-256 printed by the pinned plan.
-It exclusively creates the run directory and every record; an existing path is
-a terminal refusal. It writes checkpoints as they finish, seals all completions
-before scoring, preserves a terminal failure record on any exception, verifies
-source and checkpoint bytes again at the end, and never resumes or overwrites.
+It publishes every record from a complete, fsynced same-directory temporary by
+an atomic exclusive hard link, then removes the temporary; an existing path is
+a terminal refusal and no partial final record becomes visible. It writes
+checkpoints as they finish, seals all completions before scoring, preserves a
+terminal failure record on any exception without masking the original error,
+verifies source and checkpoint bytes again at the end, and never resumes or
+overwrites.
 The 128-cell comparison rejects a forced CUDA backend so all three lanes use
-the same native CPU path. The native loader frames and hashes `Cargo.toml`,
-`Cargo.lock`, an optional `build.rs`, and every recursive `src/**/*.rs` input in
-normalized relative-path order into a full SHA-256 cache address. It attests
-that content-addressed cache with a
-canonical integrity manifest; execution rehashes the actually loaded
+the same native CPU path. Before even consulting the cache, the native loader
+constructs one immutable build plan. It frames `Cargo.toml`, `Cargo.lock`, an
+optional `build.rs`, and every recursive `src/**/*.rs` input in normalized
+relative-path order together with the fixed working directory, command,
+controlled child environment, exact encoded Rust flags, explicit host target,
+and explicit `rust-lld`. Hierarchical Cargo configuration and ambient
+Cargo/rustc/target/flag controls are rejected; wrappers are reset. Exact
+Cargo/rustc discovery and concrete executable hashes and version probes,
+sysroot/host/native-CPU probe output, linker bytes, and the selected host SDK
+identity rotate the full SHA-256 cache address. That same plan, without
+re-reading ambient build choices, drives the Cargo subprocess. The loader
+attests the content-addressed cache with a canonical integrity manifest;
+execution rehashes the actually loaded
 binary before the first model construction, after every lane, and immediately
 before final publication. Evidence persists the portable pre/post source/cache
 digest, binary size, and SHA-256, never an absolute machine path. A missing,
 stale, or byte-mismatched cache manifest fails closed.
+
+This closes the reviewed stale-cache/config/flag/tool-selection hole; it is not
+a claim of fully hermetic Rust compilation. Mutable registry source trees,
+compiler shared libraries and the complete SDK archive closure, microcode or
+hypervisor changes behind `target-cpu=native`, and probe-to-build TOCTOU remain
+external limitations. The exact executed library bytes are still attested.
+
+Evidence also records Python implementation/version, NumPy version, and OS
+system/release/machine. For each lane it records grow wall/process nanoseconds,
+completion-and-sealing wall/process nanoseconds, checkpoint byte size, and exact
+completion/race counts. These observations do not participate in A2 eligibility
+and use no `tracemalloc`; only the private, forcibly ineligible synthetic seam
+accepts an injected clock.
 
 The old v1 measurement (651 sequence tokens, three presentations) took 0.770 s
 wall and 3.469 s process for growth. Linear token-event scaling predicts about
@@ -271,8 +304,10 @@ source-bundle, and commit hashes are reported.
 - `benchmarks/typed_composition_protocol_v1.json`: raw public commitments.
 - `benchmarks/typed_composition.py`: plan-by-default CLI.
 - focused tests cover subtraction, checkpoint v4 integrity, lane call/state
-  parity, identifier leakage, exact arithmetic, source binding, sealing order,
-  A2 gates, and synthetic failure preservation without capability training.
+  parity, identifier leakage, exact arithmetic, imported-checkout/source
+  binding and bounded reads, durable exclusive evidence, native build identity,
+  sealing order, non-gating telemetry, A2 gates, and synthetic failure
+  preservation without capability training.
 
 Checkpoint v3 is deliberately unsupported; there is no compatibility loader or
 fallback. The retired v1 artifacts remain historical evidence only.

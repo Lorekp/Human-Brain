@@ -33,7 +33,6 @@ def main(argv: list[str] | None = None) -> int:
         if arguments.run_id is None:
             parser.error("--execute requires a unique --run-id")
         evaluation = execute_protocol(
-            ROOT,
             PROTOCOL,
             evidence_root=EVIDENCE_ROOT,
             run_id=arguments.run_id,

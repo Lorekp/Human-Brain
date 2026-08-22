@@ -6,7 +6,11 @@ import base64
 import json
 import math
 import os
+import platform
 import re
+import sys
+import tempfile
+import time
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass
@@ -15,9 +19,18 @@ from pathlib import Path
 
 import numpy as np
 
+import humanbrain as humanbrain_package
+from humanbrain import cells as cells_runtime
 from humanbrain import cuda as cuda_runtime
+from humanbrain import human_cell_identity as human_cell_identity_runtime
 from humanbrain import native as native_runtime
+from humanbrain import readout as readout_runtime
+from humanbrain import recurrent as recurrent_runtime
+from humanbrain import recurrent_state as recurrent_state_runtime
+from humanbrain import topology as topology_runtime
+from humanbrain import typed_composition as typed_composition_runtime
 from humanbrain import typed_program
+from humanbrain import typed_program_types as typed_program_types_runtime
 from humanbrain.typed_composition import (
     CompositionProtocol,
     CompositionTask,
@@ -42,6 +55,26 @@ class ProtocolConfirmationError(RuntimeError):
 
 class EvidenceExistsError(RuntimeError):
     """An exclusive evidence path already exists."""
+
+
+_MAX_SOURCE_FILE_BYTES = 1024 * 1024
+_MAX_SOURCE_BUNDLE_BYTES = 8 * 1024 * 1024
+_PROTOCOL_RELATIVE_PATH = Path("benchmarks/typed_composition_protocol_v1.json")
+_LOCAL_RUNTIME_MODULES = (
+    sys.modules[__name__],
+    humanbrain_package,
+    cells_runtime,
+    cuda_runtime,
+    human_cell_identity_runtime,
+    native_runtime,
+    readout_runtime,
+    recurrent_runtime,
+    recurrent_state_runtime,
+    topology_runtime,
+    typed_composition_runtime,
+    typed_program,
+    typed_program_types_runtime,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +106,18 @@ class ScoredEvaluation:
     a2_eligible: bool
 
 
+@dataclass(frozen=True, slots=True)
+class _ExecutionClock:
+    wall_ns: Callable[[], int]
+    process_ns: Callable[[], int]
+
+
+_SYSTEM_CLOCK = _ExecutionClock(
+    wall_ns=time.perf_counter_ns,
+    process_ns=time.process_time_ns,
+)
+
+
 def _canonical_json(value: object) -> bytes:
     return json.dumps(
         value,
@@ -100,6 +145,61 @@ def _resolved_source(root: Path, relative_path: str) -> Path:
     return resolved
 
 
+def _required_local_source_paths(root: Path) -> tuple[str, ...]:
+    """Return imported local Python sources relative to their one checkout."""
+    resolved_root = root.resolve()
+    paths: list[str] = []
+    for module in _LOCAL_RUNTIME_MODULES:
+        module_path_value = getattr(module, "__file__", None)
+        if not isinstance(module_path_value, str):
+            raise RuntimeError("typed-composition runtime module has no source path")
+        module_path = Path(module_path_value).resolve()
+        try:
+            relative = module_path.relative_to(resolved_root)
+        except ValueError as error:
+            raise RuntimeError(
+                "typed-composition runtime modules come from different checkouts"
+            ) from error
+        if module_path.suffix != ".py" or not module_path.is_file():
+            raise RuntimeError("typed-composition runtime module is not a Python source file")
+        paths.append(relative.as_posix())
+    if len(paths) != len(set(paths)):
+        raise RuntimeError("typed-composition runtime source registry contains duplicates")
+    return tuple(sorted(paths))
+
+
+def _production_repository_root() -> Path:
+    package_path = Path(humanbrain_package.__file__).resolve()
+    root = package_path.parents[2]
+    if package_path != root / "src" / "humanbrain" / "__init__.py":
+        raise RuntimeError("imported humanbrain package has an unexpected repository layout")
+    _required_local_source_paths(root)
+    return root
+
+
+def _require_production_checkout(root: Path, protocol_path: Path) -> None:
+    imported_root = _production_repository_root()
+    expected_protocol = (imported_root / _PROTOCOL_RELATIVE_PATH).resolve()
+    if root.resolve() != imported_root or protocol_path.resolve() != expected_protocol:
+        raise ValueError("production execution must use the imported repository checkout")
+
+
+def _bounded_source_bytes(source: Path, aggregate_remaining: int) -> bytes:
+    if aggregate_remaining <= 0:
+        raise ValueError("source bundle exceeds the aggregate byte limit")
+    read_limit = min(_MAX_SOURCE_FILE_BYTES, aggregate_remaining)
+    try:
+        with source.open("rb") as handle:
+            raw = handle.read(read_limit + 1)
+    except OSError as error:
+        raise ValueError(f"source bundle file cannot be read: {source.name}") from error
+    if len(raw) > _MAX_SOURCE_FILE_BYTES:
+        raise ValueError("source bundle file exceeds the per-file byte limit")
+    if len(raw) > aggregate_remaining:
+        raise ValueError("source bundle exceeds the aggregate byte limit")
+    return raw
+
+
 def build_execution_plan(root: Path, protocol_path: Path) -> dict[str, object]:
     """Return a byte-bindable no-execution plan for the exact local sources."""
     if not isinstance(root, Path) or not isinstance(protocol_path, Path):
@@ -114,10 +214,19 @@ def build_execution_plan(root: Path, protocol_path: Path) -> dict[str, object]:
     )
     if missing_native_paths:
         raise ValueError("source bundle omits a native Cargo build input")
+    missing_local_paths = tuple(
+        path
+        for path in _required_local_source_paths(root)
+        if path not in protocol.source_bundle_paths
+    )
+    if missing_local_paths:
+        raise ValueError("source bundle omits a transitive local runtime source")
     bundle: list[dict[str, object]] = []
+    aggregate_bytes = 0
     for relative_path in protocol.source_bundle_paths:
         source = _resolved_source(root, relative_path)
-        raw = source.read_bytes()
+        raw = _bounded_source_bytes(source, _MAX_SOURCE_BUNDLE_BYTES - aggregate_bytes)
+        aggregate_bytes += len(raw)
         bundle.append(
             {
                 "path": relative_path,
@@ -135,6 +244,11 @@ def build_execution_plan(root: Path, protocol_path: Path) -> dict[str, object]:
         "base_commit": protocol.base_commit,
         "source_bundle": bundle,
         "source_bundle_sha256": bundle_sha256,
+        "source_bundle_limits": {
+            "maximum_file_bytes": _MAX_SOURCE_FILE_BYTES,
+            "maximum_aggregate_bytes": _MAX_SOURCE_BUNDLE_BYTES,
+            "actual_aggregate_bytes": aggregate_bytes,
+        },
         "lanes": [
             {
                 "lane": lane.lane,
@@ -203,6 +317,25 @@ def _require_cpu_runtime_backend() -> dict[str, object]:
         "reservoir_cells": reservoir_cells,
         "cuda_minimum_cells": cuda_minimum_cells,
     }
+
+
+def _runtime_provenance() -> dict[str, object]:
+    return {
+        "python_implementation": platform.python_implementation(),
+        "python_version": platform.python_version(),
+        "numpy_version": np.__version__,
+        "os": {
+            "system": platform.system(),
+            "release": platform.release(),
+            "machine": platform.machine(),
+        },
+    }
+
+
+def _elapsed_ns(start: int, finish: int, label: str) -> int:
+    if type(start) is not int or type(finish) is not int or finish < start:
+        raise RuntimeError(f"{label} clock did not return monotonic integer nanoseconds")
+    return finish - start
 
 
 def _validate_checkpoint_accounting(
@@ -315,8 +448,7 @@ def create_evidence_run(
         raise EvidenceExistsError(f"evidence run already exists: {run_id}") from error
     plan_path = run_directory / "000-plan.json"
     try:
-        with plan_path.open("xb") as handle:
-            handle.write(plan_bytes)
+        _write_new(plan_path, plan_bytes)
     except FileExistsError as error:
         wrapped = EvidenceExistsError("initial evidence record already exists")
         _terminal_failure(run_directory, wrapped)
@@ -371,21 +503,60 @@ def seal_all_lane_completions(
     complete_fn: Callable[[object, str, object], Completion] = complete,  # type: ignore[assignment]
 ) -> tuple[SealedCompletion, ...]:
     """Complete and byte-seal every lane before any scoring function is called."""
+    sealed, _measurements = _seal_all_lane_completions(
+        protocol,
+        checkpoints,
+        complete_fn=complete_fn,
+        clock=_SYSTEM_CLOCK,
+    )
+    return sealed
+
+
+def _seal_all_lane_completions(
+    protocol: CompositionProtocol,
+    checkpoints: Mapping[str, object],
+    *,
+    complete_fn: Callable[[object, str, object], Completion],
+    clock: _ExecutionClock,
+) -> tuple[tuple[SealedCompletion, ...], dict[str, dict[str, int]]]:
     if tuple(checkpoints) != tuple(lane.lane for lane in protocol.lanes):
         raise ValueError("checkpoints must be ordered exactly A0, A1, and A2")
     tasks = (*protocol.train_tasks, *protocol.calibration_tasks)
     requests = tuple(task.completion_request() for task in tasks)
     raw_seals: list[tuple[bytes, str]] = []
+    measurements: dict[str, dict[str, int]] = {}
     for lane in protocol.lanes:
         checkpoint = checkpoints[lane.lane]
         if getattr(checkpoint, "lane", None) != lane.lane:
             raise ValueError("checkpoint lane differs from its sealed lane")
+        wall_start = clock.wall_ns()
+        process_start = clock.process_ns()
+        completion_count = 0
+        race_count = 0
         for request in requests:
             # This call is the model boundary. Do not add a task, label, case,
             # family, template, ordinal, or evidence identifier to it.
             completion = complete_fn(checkpoint, request.prompt, request.signature)
             record_bytes = _canonical_json(_completion_record(completion))
             raw_seals.append((record_bytes, sha256(record_bytes).hexdigest()))
+            completion_count += 1
+            race_count += len(completion.races)
+        process_finish = clock.process_ns()
+        wall_finish = clock.wall_ns()
+        measurements[lane.lane] = {
+            "completion_sealing_wall_ns": _elapsed_ns(
+                wall_start,
+                wall_finish,
+                "completion wall",
+            ),
+            "completion_sealing_process_ns": _elapsed_ns(
+                process_start,
+                process_finish,
+                "completion process",
+            ),
+            "completion_count": completion_count,
+            "race_count": race_count,
+        }
 
     # Trusted evidence identities are attached only after every model call has
     # returned and every raw completion record has been byte-sealed.
@@ -407,7 +578,7 @@ def seal_all_lane_completions(
                     sha256=record_sha256,
                 )
             )
-    return tuple(sealed)
+    return tuple(sealed), measurements
 
 
 def a2_is_eligible(lane: str, metrics: A2EligibilityMetrics) -> bool:
@@ -899,12 +1070,43 @@ def score_sealed_completions(
     return ScoredEvaluation(record=record, a2_metrics=metrics, a2_eligible=eligible)
 
 
+def _write_temp_fully(file_descriptor: int, value: bytes) -> None:
+    remaining = memoryview(value)
+    while remaining:
+        written = os.write(file_descriptor, remaining)
+        if written <= 0:
+            raise OSError("evidence temporary write made no progress")
+        remaining = remaining[written:]
+    os.fsync(file_descriptor)
+
+
 def _write_new(path: Path, value: bytes) -> None:
+    if type(value) is not bytes:
+        raise TypeError("evidence value must be exact bytes")
+    file_descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        dir=path.parent,
+    )
+    temporary_path = Path(temporary_name)
     try:
-        with path.open("xb") as handle:
-            handle.write(value)
-    except FileExistsError as error:
-        raise EvidenceExistsError(f"evidence target already exists: {path.name}") from error
+        try:
+            _write_temp_fully(file_descriptor, value)
+        except BaseException:
+            with suppress(OSError):
+                os.close(file_descriptor)
+            raise
+        else:
+            os.close(file_descriptor)
+        try:
+            os.link(temporary_path, path)
+        except FileExistsError as error:
+            raise EvidenceExistsError(
+                f"evidence target already exists: {path.name}"
+            ) from error
+    finally:
+        with suppress(OSError):
+            temporary_path.unlink(missing_ok=True)
 
 
 def _terminal_failure(run_directory: Path, error: BaseException) -> None:
@@ -931,10 +1133,15 @@ def _execute_protocol(
     grow_fn: Callable[[Layer1Protocol, tuple[object, ...]], object],
     complete_fn: Callable[[object, str, object], Completion],
     synthetic_test_only: bool,
+    clock: _ExecutionClock = _SYSTEM_CLOCK,
 ) -> ScoredEvaluation:
     """Shared implementation; injected dependencies are always marked synthetic."""
     if not synthetic_test_only and (grow_fn is not grow or complete_fn is not complete):
         raise TypeError("production execution requires fixed public grow and complete")
+    if not synthetic_test_only and clock is not _SYSTEM_CLOCK:
+        raise TypeError("production execution requires the system execution clock")
+    if not synthetic_test_only:
+        _require_production_checkout(root, protocol_path)
     protocol = load_composition_protocol(protocol_path)
     validate_execution_confirmation(protocol, confirmation)
     plan = build_execution_plan(root, protocol_path)
@@ -947,6 +1154,8 @@ def _execute_protocol(
     execution_plan["confirmed_protocol_sha256"] = confirmation
     execution_plan["confirmed_source_bundle_sha256"] = source_bundle_confirmation
     execution_plan["runtime_backend"] = runtime_backend
+    runtime_provenance = _runtime_provenance()
+    execution_plan["runtime_provenance"] = runtime_provenance
     execution_plan["run_id"] = run_id
     plan_bytes = _canonical_json(execution_plan)
     run_directory = create_evidence_run(evidence_root, run_id, plan_bytes)
@@ -956,6 +1165,7 @@ def _execute_protocol(
     checkpoint_hashes: dict[str, str] = {}
     checkpoint_cell_synapse_hashes: dict[str, str] = {}
     checkpoint_accounting: dict[str, dict[str, int]] = {}
+    performance_lanes: dict[str, dict[str, int]] = {}
     native_library_identity_before: dict[str, int | str] | None = None
     native_library_identity_after: dict[str, int | str] | None = None
     try:
@@ -972,7 +1182,11 @@ def _execute_protocol(
             )
         examples = tuple(protocol.training_examples())
         for lane in protocol.lanes:
+            grow_wall_start = clock.wall_ns()
+            grow_process_start = clock.process_ns()
             checkpoint = grow_fn(Layer1Protocol.for_lane(lane.lane), examples)
+            grow_process_finish = clock.process_ns()
+            grow_wall_finish = clock.wall_ns()
             if not synthetic_test_only and type(checkpoint) is not FrozenCheckpoint:
                 raise TypeError("production growth must return an exact FrozenCheckpoint")
             if not synthetic_test_only:
@@ -993,6 +1207,19 @@ def _execute_protocol(
             if getattr(checkpoint, "sha256", None) != raw_sha256:
                 raise ValueError("checkpoint SHA-256 differs from its raw bytes")
             checkpoint_bytes[lane.lane] = raw
+            performance_lanes[lane.lane] = {
+                "grow_wall_ns": _elapsed_ns(
+                    grow_wall_start,
+                    grow_wall_finish,
+                    "grow wall",
+                ),
+                "grow_process_ns": _elapsed_ns(
+                    grow_process_start,
+                    grow_process_finish,
+                    "grow process",
+                ),
+                "checkpoint_bytes": len(raw),
+            }
             checkpoint_hashes[lane.lane] = raw_sha256
             cell_synapse_sha256 = getattr(checkpoint, "cell_synapse_sha256", None)
             if (
@@ -1006,11 +1233,14 @@ def _execute_protocol(
 
         # This phase completes every lane and cohort. No task label or semantic
         # case is inspected until the returned byte seals are all present.
-        sealed = seal_all_lane_completions(
+        sealed, completion_measurements = _seal_all_lane_completions(
             protocol,
             checkpoints,
             complete_fn=complete_fn,
+            clock=clock,
         )
+        for lane, lane_measurements in completion_measurements.items():
+            performance_lanes[lane].update(lane_measurements)
         sealed_record = {
             "event": "all-completions-sealed",
             "scoring_started": False,
@@ -1075,6 +1305,11 @@ def _execute_protocol(
         evaluation.record["runtime_backend"] = runtime_backend
         evaluation.record["native_library_identity_before"] = native_library_identity_before
         evaluation.record["native_library_identity_after"] = native_library_identity_after
+        evaluation.record["runtime_provenance"] = runtime_provenance
+        evaluation.record["performance_measurements"] = {
+            "capability_gating": False,
+            "lanes": performance_lanes,
+        }
         evaluation.record["checkpoint_raw_bytes_unchanged"] = True
         evaluation.record["checkpoint_accounting"] = checkpoint_accounting
         evaluation.record["observation_and_strengthen_accounting_passed"] = True
@@ -1111,7 +1346,6 @@ def _execute_protocol(
 
 
 def execute_protocol(
-    root: Path,
     protocol_path: Path,
     *,
     evidence_root: Path,
@@ -1120,6 +1354,8 @@ def execute_protocol(
     source_bundle_confirmation: str | None,
 ) -> ScoredEvaluation:
     """Execute the exact public learner and decoder once into exclusive evidence."""
+    root = _production_repository_root()
+    _require_production_checkout(root, protocol_path)
     return _execute_protocol(
         root,
         protocol_path,
@@ -1143,6 +1379,7 @@ def _execute_protocol_synthetic(
     source_bundle_confirmation: str | None,
     grow_fn: Callable[[Layer1Protocol, tuple[object, ...]], object],
     complete_fn: Callable[[object, str, object], Completion] = complete,  # type: ignore[assignment]
+    clock: _ExecutionClock = _SYSTEM_CLOCK,
 ) -> ScoredEvaluation:
     """Exercise failure/evidence plumbing; results are forcibly ineligible."""
     return _execute_protocol(
@@ -1155,4 +1392,5 @@ def _execute_protocol_synthetic(
         grow_fn=grow_fn,
         complete_fn=complete_fn,
         synthetic_test_only=True,
+        clock=clock,
     )

@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64
 import inspect
 import json
+import os
+import platform
 import struct
 from dataclasses import replace
 from hashlib import sha256
@@ -12,6 +14,7 @@ from types import SimpleNamespace
 import pytest
 from humanbrain import native as native_runtime
 from humanbrain import typed_program
+from humanbrain import typed_composition_runner as runner
 from humanbrain.typed_composition import CompletionRequest, load_composition_protocol
 from humanbrain.typed_composition_runner import (
     A2EligibilityMetrics,
@@ -47,6 +50,13 @@ def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution(
     assert len(plan["source_bundle_sha256"]) == 64
     assert tuple(item["path"] for item in plan["source_bundle"]) == (protocol.source_bundle_paths)
     assert all(len(item["sha256"]) == 64 for item in plan["source_bundle"])
+    assert plan["source_bundle_limits"] == {
+        "maximum_file_bytes": 1024 * 1024,
+        "maximum_aggregate_bytes": 8 * 1024 * 1024,
+        "actual_aggregate_bytes": sum(
+            item["byte_count"] for item in plan["source_bundle"]
+        ),
+    }
     expected_native_inputs = {
         f"src/humanbrain/_native_src/{relative_path}"
         for relative_path, _payload in native_runtime._native_build_input_manifest()
@@ -79,6 +89,72 @@ def test_plan_fails_if_any_discovered_native_cargo_input_is_unbound(
         build_execution_plan(ROOT, PROTOCOL_PATH)
 
 
+def test_plan_binds_every_transitive_local_runtime_module() -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+
+    required = runner._required_local_source_paths(ROOT)
+
+    assert "src/humanbrain/__init__.py" in required
+    assert set(required) <= set(protocol.source_bundle_paths)
+
+
+def test_plan_fails_if_a_transitive_local_runtime_module_is_unbound(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    synthetic_module = SimpleNamespace(
+        __name__="humanbrain.procedural_runtime",
+        __file__=str(ROOT / "src" / "humanbrain" / "procedural_runtime.py"),
+    )
+    monkeypatch.setattr(
+        runner,
+        "_LOCAL_RUNTIME_MODULES",
+        (*runner._LOCAL_RUNTIME_MODULES, synthetic_module),
+    )
+
+    with pytest.raises(ValueError, match="transitive local runtime source"):
+        build_execution_plan(ROOT, PROTOCOL_PATH)
+
+
+def test_source_bundle_reads_are_bounded_before_evidence_or_model_calls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    oversized = tmp_path / "oversized.py"
+    oversized.write_bytes(b"x" * (runner._MAX_SOURCE_FILE_BYTES + 1))
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    grow_called = False
+
+    def forbidden_grow(_protocol: object, _examples: object) -> object:
+        nonlocal grow_called
+        grow_called = True
+        raise AssertionError("grow must not be reached")
+
+    monkeypatch.setattr(runner, "_resolved_source", lambda _root, _relative: oversized)
+
+    with pytest.raises(ValueError, match="source bundle file exceeds"):
+        _execute_protocol_synthetic(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=tmp_path / "evidence",
+            run_id="oversized-source",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation="not-reached",
+            grow_fn=forbidden_grow,
+        )
+
+    assert grow_called is False
+    assert not (tmp_path / "evidence").exists()
+
+
+def test_source_bundle_aggregate_read_limit_is_enforced(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runner, "_MAX_SOURCE_BUNDLE_BYTES", 1)
+
+    with pytest.raises(ValueError, match="aggregate byte limit"):
+        build_execution_plan(ROOT, PROTOCOL_PATH)
+
+
 def test_execution_needs_the_exact_raw_protocol_sha_and_a_new_evidence_target(
     tmp_path: Path,
 ) -> None:
@@ -105,18 +181,58 @@ def test_execution_needs_the_exact_raw_protocol_sha_and_a_new_evidence_target(
         create_evidence_run(tmp_path, "synthetic-boundary-test", b"{}")
 
 
+def test_evidence_publication_is_durable_exclusive_and_never_truncated(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "record.json"
+    original_write = os.write
+
+    def short_write(fd: int, value: bytes | memoryview) -> int:
+        return original_write(fd, bytes(value[:2]))
+
+    monkeypatch.setattr(os, "write", short_write)
+    runner._write_new(target, b"complete-record")
+    assert target.read_bytes() == b"complete-record"
+    assert not tuple(tmp_path.glob(".*.tmp"))
+
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._write_new(target, b"replacement")
+    assert target.read_bytes() == b"complete-record"
+    assert not tuple(tmp_path.glob(".*.tmp"))
+
+
+def test_interrupted_evidence_temp_never_publishes_a_partial_record(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "record.json"
+
+    def interrupted(fd: int, value: bytes) -> None:
+        os.write(fd, value[:3])
+        os.fsync(fd)
+        raise OSError("synthetic interruption")
+
+    monkeypatch.setattr(runner, "_write_temp_fully", interrupted)
+    with pytest.raises(OSError, match="synthetic interruption"):
+        runner._write_new(target, b"complete-record")
+
+    assert not target.exists()
+    assert not tuple(tmp_path.glob(".*.tmp"))
+
+
 def test_initial_plan_write_failure_preserves_a_terminal_record(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    original_open = Path.open
+    original_link = os.link
 
-    def fail_initial_plan(path: Path, *args: object, **kwargs: object) -> object:
-        if path.name == "000-plan.json":
+    def fail_initial_plan(source: object, target: object, *args: object, **kwargs: object) -> object:
+        if Path(target).name == "000-plan.json":
             raise OSError("synthetic initial plan write failure")
-        return original_open(path, *args, **kwargs)
+        return original_link(source, target, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "open", fail_initial_plan)
+    monkeypatch.setattr(os, "link", fail_initial_plan)
 
     with pytest.raises(OSError, match="synthetic initial plan write failure"):
         create_evidence_run(tmp_path, "plan-write-failure", b"{}")
@@ -132,16 +248,14 @@ def test_terminal_record_write_failure_never_masks_the_original_error(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    original_open = Path.open
-
-    def fail_both_records(path: Path, *args: object, **kwargs: object) -> object:
-        if path.name == "000-plan.json":
+    def fail_both_records(source: object, target: object, *args: object, **kwargs: object) -> object:
+        if Path(target).name == "000-plan.json":
             raise OSError("original plan failure")
-        if path.name == "999-terminal-failure.json":
+        if Path(target).name == "999-terminal-failure.json":
             raise PermissionError("secondary terminal failure")
-        return original_open(path, *args, **kwargs)
+        raise AssertionError("unexpected evidence target")
 
-    monkeypatch.setattr(Path, "open", fail_both_records)
+    monkeypatch.setattr(os, "link", fail_both_records)
 
     with pytest.raises(OSError, match="original plan failure"):
         create_evidence_run(tmp_path, "double-write-failure", b"{}")
@@ -152,7 +266,45 @@ def test_public_executor_has_no_injectable_learner_or_decoder() -> None:
 
     assert "grow_fn" not in parameters
     assert "complete_fn" not in parameters
+    assert "root" not in parameters
     assert "source_bundle_confirmation" in parameters
+
+
+def test_public_executor_rejects_a_protocol_from_another_checkout_before_evidence(
+    tmp_path: Path,
+) -> None:
+    copied_protocol = tmp_path / PROTOCOL_PATH.name
+    copied_protocol.write_bytes(PROTOCOL_PATH.read_bytes())
+
+    with pytest.raises(ValueError, match="imported repository checkout"):
+        execute_protocol(
+            copied_protocol,
+            evidence_root=tmp_path / "evidence",
+            run_id="wrong-checkout",
+            confirmation="not-reached",
+            source_bundle_confirmation="not-reached",
+        )
+
+    assert not (tmp_path / "evidence").exists()
+
+
+def test_private_production_executor_also_rejects_a_foreign_root_before_evidence(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValueError, match="imported repository checkout"):
+        _execute_protocol(
+            tmp_path,
+            PROTOCOL_PATH,
+            evidence_root=tmp_path / "evidence",
+            run_id="wrong-private-root",
+            confirmation="not-reached",
+            source_bundle_confirmation="not-reached",
+            grow_fn=runner.grow,
+            complete_fn=runner.complete,
+            synthetic_test_only=False,
+        )
+
+    assert not (tmp_path / "evidence").exists()
 
 
 def test_runtime_backend_is_frozen_to_the_same_native_cpu_path_for_all_lanes(
@@ -176,7 +328,13 @@ def test_loaded_native_identity_is_portable_and_rehashes_the_attested_binary(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source_digest = "0" * 64
-    library_path = tmp_path / source_digest / "release" / "humanbrain_kernel.dll"
+    library_path = (
+        tmp_path
+        / source_digest
+        / "x86_64-pc-windows-msvc"
+        / "release"
+        / "humanbrain_kernel.dll"
+    )
     library_path.parent.mkdir(parents=True)
     binary = b"synthetic-native-library"
     library_path.write_bytes(binary)
@@ -192,7 +350,11 @@ def test_loaded_native_identity_is_portable_and_rehashes_the_attested_binary(
     )
     monkeypatch.setattr(native_runtime, "_LIBRARY", object())
     monkeypatch.setattr(native_runtime, "_LIBRARY_PATH", library_path)
-    monkeypatch.setattr(native_runtime, "_source_digest", lambda: source_digest)
+    monkeypatch.setattr(
+        native_runtime,
+        "_LOADED_BUILD_PLAN",
+        replace(native_runtime._native_build_plan(), source_digest=source_digest),
+    )
 
     identity = native_runtime.loaded_library_identity()
 
@@ -502,6 +664,142 @@ def test_synthetic_execution_failure_is_preserved_and_cannot_resume(
             source_bundle_confirmation=source_bundle_sha256,
             grow_fn=failing_grow,
         )
+
+
+def test_synthetic_execution_records_non_gating_lane_costs_and_runtime_provenance(
+    tmp_path: Path,
+) -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    source_bundle_sha256 = build_execution_plan(ROOT, PROTOCOL_PATH)["source_bundle_sha256"]
+    task_by_request = {
+        (task.prompt, task.signature): task
+        for task in (*protocol.train_tasks, *protocol.calibration_tasks)
+    }
+
+    class StepClock:
+        def __init__(self) -> None:
+            self.wall_value = 0
+            self.process_value = 0
+
+        def wall_ns(self) -> int:
+            value = self.wall_value
+            self.wall_value += 10
+            return value
+
+        def process_ns(self) -> int:
+            value = self.process_value
+            self.process_value += 3
+            return value
+
+    class Checkpoint:
+        def __init__(self, layer_protocol: object, examples: tuple[object, ...]) -> None:
+            self.lane = layer_protocol.lane
+            digest = sha256()
+            input_hashes: list[str] = []
+            sequence_counts: list[int] = []
+            teacher_counts: list[int] = []
+            for example in examples:
+                input_ids = typed_program._model_input(
+                    example.prompt,
+                    example.signature,
+                    framing_order=layer_protocol.framing_order,
+                )
+                teacher_ids = typed_program._program_token_ids(example.teacher_tokens)
+                input_bytes = typed_program._token_stream_bytes(input_ids)
+                input_hashes.append(sha256(input_bytes).hexdigest())
+                sequence_counts.append(len(input_ids) + len(teacher_ids))
+                teacher_counts.append(len(teacher_ids))
+                digest.update(input_bytes)
+                digest.update(typed_program._token_stream_bytes(teacher_ids))
+            self.training_digest = digest.hexdigest()
+            self.training_input_sha256 = tuple(input_hashes)
+            self.training_sequence_token_counts = tuple(sequence_counts)
+            self.training_teacher_token_counts = tuple(teacher_counts)
+            self.protocol_sha256 = sha256(
+                typed_program._protocol_json(layer_protocol)
+            ).hexdigest()
+            self.cell_synapse_sha256 = sha256(
+                ("cells-" + self.lane).encode("ascii")
+            ).hexdigest()
+            self.sha256 = sha256(self.to_bytes()).hexdigest()
+
+        def to_bytes(self) -> bytes:
+            return ("checkpoint-" + self.lane).encode("ascii")
+
+    def synthetic_complete(
+        checkpoint: Checkpoint,
+        prompt: str,
+        signature: object,
+    ) -> Completion:
+        task = task_by_request[(prompt, signature)]
+        return Completion(
+            program=Program(task.teacher_tokens, task.signature),
+            races=(),
+            prompt_sha256=sha256(prompt.encode("utf-8")).hexdigest(),
+            model_input_sha256=sha256(
+                typed_program._token_stream_bytes(
+                    typed_program._model_input(
+                        prompt,
+                        task.signature,
+                        framing_order=typed_program.Layer1Protocol.for_lane(
+                            checkpoint.lane
+                        ).framing_order,
+                    )
+                )
+            ).hexdigest(),
+            checkpoint_sha256=checkpoint.sha256,
+            checkpoint_cell_synapse_before=checkpoint.cell_synapse_sha256,
+            checkpoint_cell_synapse_after=checkpoint.cell_synapse_sha256,
+        )
+
+    evaluation = _execute_protocol_synthetic(
+        ROOT,
+        PROTOCOL_PATH,
+        evidence_root=tmp_path / "evidence",
+        run_id="synthetic-measurements",
+        confirmation=protocol.raw_sha256,
+        source_bundle_confirmation=source_bundle_sha256,
+        grow_fn=lambda layer, examples: Checkpoint(layer, examples),
+        complete_fn=synthetic_complete,
+        clock=runner._ExecutionClock(
+            wall_ns=StepClock().wall_ns,
+            process_ns=StepClock().process_ns,
+        ),
+    )
+
+    measurements = evaluation.record["performance_measurements"]
+    assert measurements["capability_gating"] is False
+    for lane in ("A0", "A1", "A2"):
+        lane_measurement = measurements["lanes"][lane]
+        assert lane_measurement == {
+            "grow_process_ns": 3,
+            "grow_wall_ns": 10,
+            "checkpoint_bytes": len(("checkpoint-" + lane).encode("ascii")),
+            "completion_sealing_process_ns": 3,
+            "completion_sealing_wall_ns": 10,
+            "completion_count": 60,
+            "race_count": 0,
+        }
+    provenance = evaluation.record["runtime_provenance"]
+    assert provenance["python_implementation"]
+    assert provenance["python_version"]
+    assert provenance["numpy_version"]
+    assert provenance["os"] == {
+        "machine": platform.machine(),
+        "release": platform.release(),
+        "system": platform.system(),
+    }
+    assert evaluation.a2_eligible is False
+    persisted = json.loads(
+        (
+            tmp_path
+            / "evidence"
+            / "synthetic-measurements"
+            / "030-evaluation.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert persisted["performance_measurements"] == measurements
+    assert persisted["runtime_provenance"] == provenance
 
 
 def test_checkpoint_accounting_binds_exact_inputs_observations_and_strengthens() -> None:

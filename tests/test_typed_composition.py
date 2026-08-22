@@ -16,7 +16,7 @@ from humanbrain.typed_composition import (
 
 ROOT = Path(__file__).parents[1]
 PROTOCOL_PATH = ROOT / "benchmarks" / "typed_composition_protocol_v1.json"
-EXPECTED_PROTOCOL_SHA256 = "13a3b443b253d61cb0f221c3522b5bb95c012502965b22d97ea0e63fe1686136"
+EXPECTED_PROTOCOL_SHA256 = "43c4953c39490d6d2fa333f82443e93dbb3f3bb37e24f786c9438c048ebc05fd"
 
 
 def _canonical_json(value: object) -> bytes:
