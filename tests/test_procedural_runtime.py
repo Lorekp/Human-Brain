@@ -112,6 +112,44 @@ def test_empty_native_advance_keeps_100_billion_cells_implicit() -> None:
     assert accounting["memory"]["host_bytes"] < 64 * 1024
 
 
+def test_native_call_timing_covers_only_the_single_advance_ffi_call(
+    monkeypatch,
+) -> None:
+    runtime = NativeProceduralRuntime(_runtime_config(17))
+    real_library = runtime._library
+    calls: list[str] = []
+    ticks = iter((1_000, 1_037))
+
+    def timed_clock() -> int:
+        calls.append("clock")
+        return next(ticks)
+
+    def observed_advance(*args: object) -> object:
+        calls.append("ffi-advance")
+        return real_library.humanbrain_procedural_runtime_advance(*args)
+
+    def observed_counts(*args: object) -> object:
+        calls.append("ffi-counts")
+        return real_library.humanbrain_procedural_runtime_counts(*args)
+
+    monkeypatch.setattr(procedural_runtime_module, "perf_counter_ns", timed_clock)
+    runtime._library = _NativeBoundaryProxy(
+        real_library,
+        {
+            "humanbrain_procedural_runtime_advance": observed_advance,
+            "humanbrain_procedural_runtime_counts": observed_counts,
+        },
+    )
+    try:
+        result = runtime.advance(1)
+    finally:
+        runtime.close()
+
+    assert result.native_call_ns == 37
+    assert type(result.native_call_ns) is int
+    assert calls == ["clock", "ffi-advance", "clock", "ffi-counts"]
+
+
 def test_advance_and_snapshot_are_serialized_per_runtime_instance() -> None:
     runtime = NativeProceduralRuntime(_runtime_config(17))
     real_library = runtime._library
@@ -1171,7 +1209,7 @@ def test_gate3_slice_protocol_keeps_material_timing_frozen() -> None:
         native_module.procedural_runtime_source_bundle_sha256()
     )
     assert hashlib.sha256(protocol_bytes).hexdigest() == (
-        "149fb0abd56dad3550092b33abf99ff6cf2fc1c0cf528a32a9b5b3eee57228f1"
+        "ea658704a9a2ec06425c7dbffa78924a82c5e4de1c59902050a1f9c9a5fb5bc2"
     )
     assert protocol["timing"]["status"] == "frozen-pending-explicit-approval"
     assert protocol["timing"]["executed"] is False

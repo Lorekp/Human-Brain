@@ -21,6 +21,7 @@ import math
 import sys
 import threading
 from dataclasses import dataclass
+from time import perf_counter_ns
 from typing import Final, Sequence
 
 import numpy as np
@@ -221,6 +222,7 @@ class ProceduralSnapshot:
 class ProceduralAdvance:
     spikes: tuple[ProceduralSpike, ...]
     accounting: ScaleAccounting
+    native_call_ns: int
     retained_nonzero_cells: int
     resident_capacity: int
     event_capacity: int
@@ -578,6 +580,7 @@ class NativeProceduralRuntime:
         if self._current_step + steps > _UINT64_MAX:
             raise ValueError("advance would overflow the uint64 biological-step counter")
         native_events = _event_batch(self.config, self._current_step, events)
+        native_call_start = perf_counter_ns()
         status = int(
             self._library.humanbrain_procedural_runtime_advance(
                 self._handle,
@@ -586,6 +589,7 @@ class NativeProceduralRuntime:
                 0 if native_events is None else len(native_events),
             )
         )
+        native_call_ns = perf_counter_ns() - native_call_start
         if status != 0:
             raise ProceduralRuntimeError(status)
         start_step = self._current_step
@@ -646,6 +650,7 @@ class NativeProceduralRuntime:
         return ProceduralAdvance(
             spikes=snapshot.spikes,
             accounting=accounting,
+            native_call_ns=native_call_ns,
             retained_nonzero_cells=int(counters.retained_nonzero_cells),
             resident_capacity=self.config.resident_capacity,
             event_capacity=self.config.event_capacity,

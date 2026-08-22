@@ -76,8 +76,14 @@ Each successful advance returns canonical configured/addressable/resident/
 updated/spiking counts, real cell-step and spike work, configured/resident/
 mutable/generated edge counts, delivered events and queue peak, and exact
 accounted native payload bytes. Analytic catch-ups are always zero. The
-additional `configured_ids_scanned` counter is zero because no production loop
-iterates the address range.
+`configured_ids_scanned` API field is a fixed structural sentinel, not an
+empirical scan measurement. The no-configured-population-loop claim instead
+rests on the source-bound implementation and static regression tests.
+
+Successful advances also return `native_call_ns`, an integer host-wall
+`perf_counter_ns` observation immediately around exactly one native C ABI
+advance call. It includes the ABI crossing and Rust execution; it is not a GPU
+or device-kernel timer and, by itself, supports no speed statement.
 
 The public configuration explicitly bounds residents `R_capacity`, queued
 events `Q_capacity`, returned spikes `S_capacity`, and distinct interval GIDs

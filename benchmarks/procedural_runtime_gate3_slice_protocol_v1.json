@@ -107,9 +107,9 @@
     ],
     "fixed_workload": true,
     "required": [
-      "identical cell-step, generated-edge, and configured-ID-scan counters",
+      "identical cell-step and generated-edge counters",
       "identical accounted native payload bytes",
-      "configured_ids_scanned equals zero",
+      "source-bound implementation proof and a static regression forbid configured-population allocation or iteration; configured_ids_scanned is not empirical evidence",
       "no array, loop, mask, owner table, or topology materialization proportional to configured cells"
     ],
     "sparse_memory_bound": "O(R_capacity + Q_capacity + S_capacity + F + D_capacity), independent of N_configured",
@@ -145,6 +145,7 @@
       "sent_bytes_by_shard_pair"
     ],
     "runtime_extensions": [
+      "native_call_ns",
       "configured_ids_scanned",
       "retained_nonzero_cells",
       "capacity_overflowed",
@@ -198,8 +199,8 @@
       },
       {
         "path": "src/humanbrain/procedural_runtime.py",
-        "size": 34630,
-        "sha256": "6e61b316ff4586a26c75e5b29d51b3dc316bce3da998c7d55546164b36ca4139"
+        "size": 34839,
+        "sha256": "aaaa788596c30684b7d47034cda9b5fea9fd6c0ac162ec3ba79066dbd306a689"
       },
       {
         "path": "src/humanbrain/procedural_topology.py",
@@ -212,13 +213,13 @@
         "sha256": "a0a9e70769e24f918889395d0f5a729e12d3aef08a9bcbd70692a2bf8589e57d"
       }
     ],
-    "bundle_sha256": "0e52a1578631c36758dfee89f76e2460856eed99ee722d6c3c41491fcfa8fbf0"
+    "bundle_sha256": "326b6bfa763814dfb0745d46ce1c0c6c5b4e0e8f8f57cdc43bee3920210eea38"
   },
   "timing": {
     "status": "frozen-pending-explicit-approval",
     "executed": false,
     "material_gate": "A separately approved run must retain the research Gate-3 conditions: 200k resident and fully updated cells, exact parity, and greater than 100 end-to-end tokens/s on the same RTX 4070 SUPER.",
-    "rule": "Correctness/resource tests authorize no speed statement. Timing thresholds cannot be added or weakened after observing a material run."
+    "rule": "native_call_ns is an integer perf_counter_ns host-wall observation around exactly one C ABI advance call, not a GPU/device kernel timer. Correctness/resource tests authorize no speed statement. Timing thresholds cannot be added or weakened after observing a material run."
   },
   "claims": {
     "correctness": "The implemented uniform-no-self vertical slice exactly simulates a reported sparse resident/updated subset inside a uint64 procedural address space.",

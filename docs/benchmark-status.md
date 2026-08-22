@@ -118,6 +118,22 @@ direct sampler removes that initialization bottleneck without changing this
 capability result. See `docs/local-readout-learning.md` for the rule, locality
 boundary, full comparison, and claim limits.
 
+## Preregistered procedural working-set profile
+
+A CPU-only source-bound profile is implemented but remains unexecuted. It fixes
+quiet and deterministic driven workloads at configured address counts of one
+million and 100 billion while holding `R/Q/S/F/D` capacities constant. The
+driven counter64 rows are mechanically derived and collision-free at both
+sizes before timing; the material order contains 32 fresh subprocesses.
+
+The profile reports exact `ScaleAccounting`, native payload, host process-memory
+observations, and separate native-C-call and public-advance timing. Conservative
+cross-size gates cap both median timing ratios at 3.0 and the private-memory
+delta difference at 16 MiB. It makes no resident-100-billion, updated-100-billion,
+throughput, GPU, or capability claim. The plan is nonwriting; the one-shot
+evidence root, exact protocol/source hashes, clean HEAD, and loaded native-binary
+identity are all fail-closed. See `docs/procedural-runtime-profile-v1.md`.
+
 The accepted patch changes only L031's emitted description, matching the public
 upstream resolution in [SQLFluff PR 1625](https://github.com/sqlfluff/sqlfluff/pull/1625/files).
 The official evaluator applies the patch in Docker and grades FAIL_TO_PASS and
@@ -303,6 +319,8 @@ not a platform-specific checkout's newline representation.
 
 | Artifact | SHA-256 |
 | --- | --- |
+| `benchmarks/procedural_runtime_gate3_slice_protocol_v1.json` | `ea658704a9a2ec06425c7dbffa78924a82c5e4de1c59902050a1f9c9a5fb5bc2` |
+| `benchmarks/procedural_runtime_profile_protocol_v1.json` | `a9639593cb38dfdced12dc0cb0618e712cdec20f7f373d1aec2a7ead497a9533` |
 | `benchmarks/typed_program_public_train_protocol_v1.json` | `1ed77f9fa2395f6be8bed74648dc9d3de3027e367e626e427e56de912f4ed191` |
 | `artifacts/typed_program_public_train_v1/checkpoint.json` | `0c2c4fd3e16ab978ae6e25a16beab9d1c84ae867f63bffdad3745c07b68dcb9d` |
 | `artifacts/typed_program_public_train_v1/evidence/005-summary.json` | `71133044d55e48a3bbe5cb147a33ce2f543e0a0dad855ae11e2e1b140b6b02d7` |
