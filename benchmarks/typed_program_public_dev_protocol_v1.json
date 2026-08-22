@@ -1,0 +1,253 @@
+{
+  "schema": "humanbrain-public-typed-program-dev-protocol-v1",
+  "protocol_id": "humanbrain-public-typed-program-dev-v1",
+  "status": "preregistered-not-executed",
+  "source_commit": "1ae5418b92e81dc48c6a2e36fb8822ceec7ce202",
+  "scope": {
+    "operation": "public-development-one-shot",
+    "claim": "two public teacher-free development tasks; no broad generalization claim",
+    "primary_metric": "exact semantic pass@1 reported as an integer from 0 through 2",
+    "promotion_milestone": "at least 1 of 2 tasks passes semantics with valid syntax and compilation and no boundary violations"
+  },
+  "train_inputs": {
+    "artifact_commit": "8291fe1a0039db7141817c438854a1817a0a8300",
+    "protocol": {
+      "path": "benchmarks/typed_program_public_train_protocol_v1.json",
+      "raw_sha256": "1ed77f9fa2395f6be8bed74648dc9d3de3027e367e626e427e56de912f4ed191",
+      "git_blob": "afdacef6f9d53a1e16b76155d8accc3a1ecf9e46"
+    },
+    "checkpoint": {
+      "path": "artifacts/typed_program_public_train_v1/checkpoint.json",
+      "raw_sha256": "0c2c4fd3e16ab978ae6e25a16beab9d1c84ae867f63bffdad3745c07b68dcb9d",
+      "cell_synapse_sha256": "86b40631c49db55124dff3212645dc571555c5939fc4004a5d94c54b49e99779",
+      "git_blob": "430faa1221c7721d97f43a9c311671e30bb65317"
+    },
+    "train_summary": {
+      "path": "artifacts/typed_program_public_train_v1/evidence/005-summary.json",
+      "raw_sha256": "71133044d55e48a3bbe5cb147a33ce2f543e0a0dad855ae11e2e1b140b6b02d7",
+      "git_blob": "5ec6d687ed62aeb674231941c7ac52591d6f980f"
+    },
+    "artifact_files": [
+      {
+        "path": "artifacts/typed_program_public_train_v1/checkpoint.json",
+        "raw_sha256": "0c2c4fd3e16ab978ae6e25a16beab9d1c84ae867f63bffdad3745c07b68dcb9d",
+        "git_blob": "430faa1221c7721d97f43a9c311671e30bb65317"
+      },
+      {
+        "path": "artifacts/typed_program_public_train_v1/evidence/000-run-start.json",
+        "raw_sha256": "79dff01017e63072a3d32eb38d3a2435d1cfd9b008eae5501e55612a2be64b1d",
+        "git_blob": "41571c9002570095383fdb85f8a036dc364d18de"
+      },
+      {
+        "path": "artifacts/typed_program_public_train_v1/evidence/001-training.json",
+        "raw_sha256": "926daebc386eac7e13c77dcb1746d8e8e920f2c7716b6040d10faa9330195daf",
+        "git_blob": "da307535dbd6404342a1cd29f401907d2dd67787"
+      },
+      {
+        "path": "artifacts/typed_program_public_train_v1/evidence/002-train_int_identity.json",
+        "raw_sha256": "6e223fed4fc66c7932ad4f3c1ac0ca590ac8e1ec0ce565c79eb08a8456f8cdeb",
+        "git_blob": "1b484988e065ecf9f6e6cdfba90967f741a31d96"
+      },
+      {
+        "path": "artifacts/typed_program_public_train_v1/evidence/003-train_int_add_negative_two.json",
+        "raw_sha256": "c10f903fc114e988ab6c3a78338bf04bf9531f0c20b8ce61f902664b8b29812d",
+        "git_blob": "2e880f281d84ec4f3113ac32ec0753dfaf570342"
+      },
+      {
+        "path": "artifacts/typed_program_public_train_v1/evidence/004-train_list_map_add_positive_three.json",
+        "raw_sha256": "9df04197196402cde5762c1222f8f6dd631682b2d30a89234ec69241e8b6cdce",
+        "git_blob": "ba64c3e702c9e00e3dc693fb7c3642cd0e64cd1b"
+      },
+      {
+        "path": "artifacts/typed_program_public_train_v1/evidence/005-summary.json",
+        "raw_sha256": "71133044d55e48a3bbe5cb147a33ce2f543e0a0dad855ae11e2e1b140b6b02d7",
+        "git_blob": "5ec6d687ed62aeb674231941c7ac52591d6f980f"
+      }
+    ],
+    "source": {
+      "commit": "1ae5418b92e81dc48c6a2e36fb8822ceec7ce202",
+      "files": [
+        {
+          "path": "benchmarks/typed_program_public_train.py",
+          "raw_sha256": "c45dbc15f55b7ad8a8c4dd971c46096b48f4488f935f962eb503412d1c499bc1",
+          "git_blob": "8d8b6aed9958b70a7d5583ffab1f8b61315766c6"
+        },
+        {
+          "path": "src/humanbrain/typed_curriculum.py",
+          "raw_sha256": "d171f12aca180f87295468ef282b10d267dddd5f1f8265ba353dc3a1bb4eb8e6",
+          "git_blob": "c680b488a5bb2a5e970e244244af5da03d1808c0"
+        },
+        {
+          "path": "src/humanbrain/typed_program.py",
+          "raw_sha256": "447570e75264bb4419cd725f6a7508f92236088299a4d8fd9742f8ee334a819b",
+          "git_blob": "93e1bb1c8d426d3dade24b7cbd5d201243998ba6"
+        },
+        {
+          "path": "src/humanbrain/typed_program_types.py",
+          "raw_sha256": "5f06a43bc771a8d61881d7ebf7c7decefcadbe245d77ce10640dbfff5174d099",
+          "git_blob": "5c94b46ec632702bdf062c3104d4c1bb013e38c5"
+        }
+      ]
+    }
+  },
+  "fixed_configuration": {
+    "module": "humanbrain.typed_program",
+    "completion": "humanbrain.typed_program.complete",
+    "cell_path": "recurrent-fitted-cell-only",
+    "checkpoint_count": 1,
+    "checkpoint_restore_attempts_per_task": 1,
+    "completion_attempts_per_task": 1,
+    "task_count": 2,
+    "seed_options": 0,
+    "configuration_options": 0,
+    "max_output_tokens": 128
+  },
+  "development": {
+    "partition": "development",
+    "teacher_programs_present": false,
+    "completion_opened": false,
+    "run_count": 0,
+    "tasks": [
+      {
+        "task_id": "dev_int_two_stage_offset",
+        "family_id": "int_two_stage_signed_add",
+        "template_id": "compose_two_scalar_offsets",
+        "prompt": "Add seven to the integer, then subtract four.",
+        "signature": {
+          "entry_point": "two_stage_offset",
+          "parameters": [
+            {
+              "name": "value",
+              "type": {"constructor": "Int", "arguments": []}
+            }
+          ],
+          "result": {"constructor": "Int", "arguments": []}
+        },
+        "literals": [7, -4],
+        "semantic_cases": [
+          {"case_id": "negative", "arguments": [-8], "expected": -5},
+          {"case_id": "zero", "arguments": [0], "expected": 3},
+          {"case_id": "positive", "arguments": [11], "expected": 14}
+        ]
+      },
+      {
+        "task_id": "dev_list_two_stage_map_offset",
+        "family_id": "list_two_stage_map_signed_add",
+        "template_id": "compose_two_offsets_inside_map",
+        "prompt": "For every integer, subtract six and then add eight.",
+        "signature": {
+          "entry_point": "two_stage_map_offset",
+          "parameters": [
+            {
+              "name": "items",
+              "type": {
+                "constructor": "List",
+                "arguments": [{"constructor": "Int", "arguments": []}]
+              }
+            }
+          ],
+          "result": {
+            "constructor": "List",
+            "arguments": [{"constructor": "Int", "arguments": []}]
+          }
+        },
+        "literals": [-6, 8],
+        "semantic_cases": [
+          {"case_id": "empty", "arguments": [[]], "expected": []},
+          {"case_id": "mixed", "arguments": [[-5, 0, 7]], "expected": [-3, 2, 9]},
+          {"case_id": "signed", "arguments": [[10, -11]], "expected": [12, -9]}
+        ]
+      }
+    ]
+  },
+  "execution": {
+    "authorization": "require --execute and the exact raw DEV protocol SHA-256",
+    "attempts": "one fresh checkpoint restore attempt and, after a valid restore, one completion attempt per task; no retry or replacement",
+    "task_failure_policy": "record every task in protocol order even after an earlier task fails",
+    "prerequisite_gates": [
+      "development_protocol_identity",
+      "train_protocol_identity",
+      "train_source_identity",
+      "checkpoint_identity",
+      "evidence_nonexistence",
+      "teacher_free_definition"
+    ],
+    "task_gates": [
+      "fresh_restore_and_attempt_accounting",
+      "teacher_free_label_boundary",
+      "typed_lowering",
+      "syntax",
+      "compile",
+      "semantics",
+      "prompt_identity",
+      "signature_identity",
+      "checkpoint_raw_immutability",
+      "checkpoint_cell_synapse_immutability",
+      "cell_race_audit",
+      "timing_memory_accounting"
+    ],
+    "run_gates": [
+      "all_tasks_recorded",
+      "pass_at_1_accounting",
+      "evidence_accounting",
+      "timing_memory_accounting"
+    ]
+  },
+  "memorization_control": {
+    "method": "compare each returned token stream with the three public TRAIN teacher token streams",
+    "model_calls": 0,
+    "categories": [
+      "exact public TRAIN-label replay",
+      "not exact public TRAIN-label replay"
+    ],
+    "interpretation": "not exact public TRAIN-label replay does not establish broad generalization"
+  },
+  "reporting": {
+    "evidence_directory": "artifacts/typed_program_public_dev_v1/evidence",
+    "incremental": true,
+    "nonoverwriting": true,
+    "all_tasks_recorded": true,
+    "report_all_failures": true,
+    "pass_at_1_range": [0, 2],
+    "promotion_semantic_passes_required": 1,
+    "promotion_task_count": 2,
+    "measurements": [
+      "wall_time_ns",
+      "process_time_ns",
+      "tracemalloc_current_bytes",
+      "tracemalloc_peak_bytes",
+      "checkpoint_bytes",
+      "evidence_bytes",
+      "checkpoint_restore_attempts",
+      "completion_attempts",
+      "completion_tokens",
+      "cell_races"
+    ]
+  },
+  "expected_cost": {
+    "plan_model_calls": 0,
+    "plan_wall_time": "under 1 second",
+    "execution_warm_wall_time": "1-3 minutes",
+    "execution_cold_wall_time": "up to 10 minutes",
+    "process_memory": "under 512 MiB",
+    "status": "planning estimates; not measured results"
+  },
+  "prohibitions": [
+    "teacher programs for development tasks",
+    "retraining",
+    "tuning",
+    "retries",
+    "alternate checkpoints",
+    "alternate configurations",
+    "alternate seeds",
+    "search",
+    "repair",
+    "fallback execution paths",
+    "Simple-SWE",
+    "canonical evaluation",
+    "private evaluation",
+    "external language models",
+    "additional model calls for the memorization control",
+    "development execution before explicit authorization"
+  ]
+}

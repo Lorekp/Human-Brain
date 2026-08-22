@@ -111,3 +111,9 @@ This protocol performs no tuning, alternate configuration or seed, retry,
 search, test feedback, Simple-SWE development/evaluation, canonical
 freeze/reveal/private operation, external language-model call, Fly Brain
 operation, or benchmark execution.
+
+The separately hash-locked one-shot runner for the two existing teacher-free
+development definitions is now preregistered in
+[`typed-program-public-dev-gate-v1.md`](typed-program-public-dev-gate-v1.md).
+That DEV gate remains unexecuted; no development score is added to this TRAIN
+record.
