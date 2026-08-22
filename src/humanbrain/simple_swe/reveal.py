@@ -28,8 +28,9 @@ from humanbrain.simple_swe.tasks import (
     canonical_json_bytes,
     canonical_sha256,
 )
+from humanbrain.typed_program import TypedSignature
 
-BUNDLE_SCHEMA = "humanbrain.simple-swe-private-eval-bundle.v2"
+BUNDLE_SCHEMA = "humanbrain.simple-swe-private-eval-bundle.v3"
 SEED_SCHEMA = "humanbrain.simple-swe-private-seed-reservation.v1"
 
 
@@ -113,7 +114,12 @@ def _case(value: dict[str, Any]) -> HiddenCase:
 
 def _task(value: dict[str, Any]) -> GeneratedTask:
     public_value = dict(value["public"])
-    public_value["parameter_names"] = tuple(public_value["parameter_names"])
+    try:
+        public_value["signature"] = TypedSignature.from_record(
+            public_value["signature"]
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise FreezeIntegrityError("public task signature is invalid") from error
     public = PublicTask(**public_value)
     private_value = value["private"]
     private = PrivateTask(
@@ -125,8 +131,7 @@ def _task(value: dict[str, Any]) -> GeneratedTask:
     )
     private_record = {
         "task_id": private.task_id,
-        "entry_point": public.entry_point,
-        "parameter_names": list(public.parameter_names),
+        "signature": public.signature.to_record(),
         "regression_cases": [asdict(case) for case in private.regression_cases],
         "property_cases": [asdict(case) for case in private.property_cases],
     }
@@ -138,8 +143,7 @@ def _task(value: dict[str, Any]) -> GeneratedTask:
         "tier": public.tier,
         "family": public.family,
         "ordinal": public.ordinal,
-        "entry_point": public.entry_point,
-        "parameter_names": list(public.parameter_names),
+        "signature": public.signature.to_record(),
         "prompt": public.prompt,
         "hidden_test_sha256": public.hidden_test_sha256,
     }
