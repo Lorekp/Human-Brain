@@ -105,6 +105,15 @@ def build_execution_plan(root: Path, protocol_path: Path) -> dict[str, object]:
     if not isinstance(root, Path) or not isinstance(protocol_path, Path):
         raise TypeError("plan root and protocol path must be Paths")
     protocol = load_composition_protocol(protocol_path)
+    native_build_paths = tuple(
+        f"src/humanbrain/_native_src/{relative_path}"
+        for relative_path, _payload in native_runtime._native_build_input_manifest()
+    )
+    missing_native_paths = tuple(
+        path for path in native_build_paths if path not in protocol.source_bundle_paths
+    )
+    if missing_native_paths:
+        raise ValueError("source bundle omits a native Cargo build input")
     bundle: list[dict[str, object]] = []
     for relative_path in protocol.source_bundle_paths:
         source = _resolved_source(root, relative_path)

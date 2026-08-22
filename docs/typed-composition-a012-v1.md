@@ -3,12 +3,14 @@
 **Status:** implemented and frozen for review; material TRAIN, calibration, and
 future-cohort execution is on hold
 
-**Design base:** `9ee5fb7fa1277001c1a8e386d6ddfcdb3250923d`
+**Failure-analysis base:** `9ee5fb7fa1277001c1a8e386d6ddfcdb3250923d`
+
+**Implementation base:** `a33d2ffd52e3365fb9e4f93c052453cd55ec8189`
 
 **Retired evidence:** public DEV v1; it will never be rerun or used for tuning
 
 **Raw protocol SHA-256:**
-`408e8d598f0742aec3735900b79eec6d62af100c3940476ce04c41b8465725eb`
+`13a3b443b253d61cb0f221c3522b5bb95c012502965b22d97ea0e63fe1686136`
 
 ## Decision
 
@@ -233,8 +235,11 @@ a terminal refusal. It writes checkpoints as they finish, seals all completions
 before scoring, preserves a terminal failure record on any exception, verifies
 source and checkpoint bytes again at the end, and never resumes or overwrites.
 The 128-cell comparison rejects a forced CUDA backend so all three lanes use
-the same native CPU path. The native loader attests its content-addressed cache
-with a canonical integrity manifest; execution rehashes the actually loaded
+the same native CPU path. The native loader frames and hashes `Cargo.toml`,
+`Cargo.lock`, an optional `build.rs`, and every recursive `src/**/*.rs` input in
+normalized relative-path order into a full SHA-256 cache address. It attests
+that content-addressed cache with a
+canonical integrity manifest; execution rehashes the actually loaded
 binary before the first model construction, after every lane, and immediately
 before final publication. Evidence persists the portable pre/post source/cache
 digest, binary size, and SHA-256, never an absolute machine path. A missing,

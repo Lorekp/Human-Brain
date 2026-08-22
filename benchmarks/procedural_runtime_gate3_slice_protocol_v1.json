@@ -193,8 +193,8 @@
       },
       {
         "path": "src/humanbrain/native.py",
-        "size": 34986,
-        "sha256": "93e030cc7f4cbdb83fe41ee93943cc6ad8bb3fc1d69f630d0c3d3a51a6a27f93"
+        "size": 40734,
+        "sha256": "4cc83a452b1060ba2ecc4c266c5f45e112f8ed9b78d04cdf77c83f531eb84a9f"
       },
       {
         "path": "src/humanbrain/procedural_runtime.py",
@@ -212,7 +212,7 @@
         "sha256": "a0a9e70769e24f918889395d0f5a729e12d3aef08a9bcbd70692a2bf8589e57d"
       }
     ],
-    "bundle_sha256": "8d82ba31eb27c38a711d9181ef93176300e383360b12495e5c11538407d258cc"
+    "bundle_sha256": "0e52a1578631c36758dfee89f76e2460856eed99ee722d6c3c41491fcfa8fbf0"
   },
   "timing": {
     "status": "frozen-pending-explicit-approval",

@@ -1,6 +1,6 @@
 {
   "protocol_id": "humanbrain-typed-composition-a012-v1",
-  "base_commit": "9ee5fb7fa1277001c1a8e386d6ddfcdb3250923d",
+  "base_commit": "a33d2ffd52e3365fb9e4f93c052453cd55ec8189",
   "corpus_passes": 3,
   "identifier": {
     "algorithm": "sha256-domain-nul-u16be-mod-alphabet",
@@ -157,13 +157,14 @@
     "src/humanbrain/_native_src/Cargo.toml",
     "src/humanbrain/_native_src/Cargo.lock",
     "src/humanbrain/_native_src/src/lib.rs",
+    "src/humanbrain/_native_src/src/procedural.rs",
     "src/humanbrain/_native_src/src/cuda.cu"
   ],
   "execution": {
     "default_mode": "plan",
     "execute_requires": "--execute --confirm-protocol-sha256 EXACT_RAW_SHA256 --confirm-source-bundle-sha256 EXACT_REVIEWED_SOURCE_BUNDLE_SHA256 --run-id UNIQUE_ID",
     "runtime_backend": "native CPU for all three 128-cell lanes; HUMANBRAIN_DEVICE=cuda is rejected",
-    "runtime_binary_evidence": "hash the exact loaded source-addressed native library after every lane and after all completions; require byte identity",
+    "runtime_binary_evidence": "hash every framed Cargo build input into a full SHA-256 cache address and hash the exact loaded source-addressed native library after every lane and after all completions; require source/cache and binary byte identity",
     "evidence_mode": "exclusive create; refuse if the run directory or any evidence target exists",
     "failure_policy": "preserve every partial artifact and terminal failure record",
     "resume_policy": "no resume and no rerun under the same run identifier",

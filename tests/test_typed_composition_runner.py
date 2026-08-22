@@ -47,6 +47,11 @@ def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution(
     assert len(plan["source_bundle_sha256"]) == 64
     assert tuple(item["path"] for item in plan["source_bundle"]) == (protocol.source_bundle_paths)
     assert all(len(item["sha256"]) == 64 for item in plan["source_bundle"])
+    expected_native_inputs = {
+        f"src/humanbrain/_native_src/{relative_path}"
+        for relative_path, _payload in native_runtime._native_build_input_manifest()
+    }
+    assert expected_native_inputs <= set(protocol.source_bundle_paths)
     assert plan["execution_requirements"] == {
         "protocol_confirmation": "exact raw protocol SHA-256",
         "source_bundle_confirmation": "exact reviewed source-bundle SHA-256",
@@ -58,6 +63,20 @@ def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution(
     assert plan["run_hold"].startswith("No material TRAIN")
     assert plan["future_cohort"]["seed_exists"] is False
     assert plan["future_cohort"]["generated"] is False
+
+
+def test_plan_fails_if_any_discovered_native_cargo_input_is_unbound(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = native_runtime._native_build_input_manifest()
+    monkeypatch.setattr(
+        native_runtime,
+        "_native_build_input_manifest",
+        lambda: (*manifest, ("src/new_kernel.rs", b"synthetic")),
+    )
+
+    with pytest.raises(ValueError, match="omits a native Cargo build input"):
+        build_execution_plan(ROOT, PROTOCOL_PATH)
 
 
 def test_execution_needs_the_exact_raw_protocol_sha_and_a_new_evidence_target(
@@ -156,7 +175,7 @@ def test_loaded_native_identity_is_portable_and_rehashes_the_attested_binary(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    source_digest = "0123456789abcdef"
+    source_digest = "0" * 64
     library_path = tmp_path / source_digest / "release" / "humanbrain_kernel.dll"
     library_path.parent.mkdir(parents=True)
     binary = b"synthetic-native-library"

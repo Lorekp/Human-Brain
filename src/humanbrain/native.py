@@ -120,23 +120,35 @@ def _framed_sha256(namespace: str, entries: Iterable[tuple[str, bytes]]) -> str:
     return digest.hexdigest()
 
 
-def _source_digest() -> str:
-    source_paths = (
-        _SOURCE_ROOT / "Cargo.toml",
-        _SOURCE_ROOT / "Cargo.lock",
-        *sorted((_SOURCE_ROOT / "src").glob("*.rs")),
+def _native_build_input_manifest(
+    source_root: Path | None = None,
+) -> tuple[tuple[str, bytes], ...]:
+    """Return every Cargo build input in normalized relative-path order."""
+    root = _SOURCE_ROOT if source_root is None else source_root
+    paths = [root / "Cargo.toml", root / "Cargo.lock"]
+    build_script = root / "build.rs"
+    if build_script.is_file():
+        paths.append(build_script)
+    paths.extend(
+        path
+        for path in (root / "src").rglob("*.rs")
+        if path.is_file()
     )
-    entries = [
-        (path.relative_to(_SOURCE_ROOT).as_posix(), path.read_bytes())
-        for path in source_paths
-    ]
-    entries.extend(
-        (
-            ("@platform/system", platform.system().encode("ascii")),
-            ("@platform/machine", platform.machine().encode("ascii")),
-        )
+    ordered = sorted(paths, key=lambda path: path.relative_to(root).as_posix())
+    return tuple(
+        (path.relative_to(root).as_posix(), path.read_bytes()) for path in ordered
     )
-    return _framed_sha256("humanbrain-native-cache-v2", entries)[:16]
+
+
+def _source_digest(source_root: Path | None = None) -> str:
+    target_entries = (
+        ("@platform/system", platform.system().encode("ascii")),
+        ("@platform/machine", platform.machine().encode("ascii")),
+    )
+    return _framed_sha256(
+        "humanbrain-native-cache-v3-complete-build-inputs",
+        (*_native_build_input_manifest(source_root), *target_entries),
+    )
 
 
 def procedural_runtime_source_manifest(
