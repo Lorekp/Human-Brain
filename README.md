@@ -133,6 +133,16 @@ cells do not count as active scale. The current memory/throughput bounds and
 the event-driven sharding plan are in
 `docs/research/100-billion-cell-architecture.md`.
 
+The first source-driven runtime slice now executes `uniform_no_self`
+counter64-v2 rows over a bounded sparse resident/event frontier in native Rust.
+Small dense/native oracle tests cover exact Allen GLIF5 state, deterministic
+event order and delays, signed-zero/underflow eviction, capacity failure, and
+uint64 IDs. Fixed-work accounting is invariant between one million and 100
+billion configured identities. This is correctness and address-space evidence,
+not the material 200,000-cell Gate-3 speed result or a capability result; timing
+remains frozen pending explicit approval. See
+`docs/procedural-runtime-gate3-slice.md`.
+
 The three-factor path now also supports genuine developmental training.
 Previously dormant fitted GLIF5 cells can be recruited in deterministic random
 or layered-sheet birth order. Sparse recurrent synapses first overgrow, collect

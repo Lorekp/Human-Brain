@@ -1,0 +1,146 @@
+{
+  "name": "procedural-runtime-gate3-slice-v1",
+  "protocol_version": 1,
+  "baseline_commit": "8291fe1a0039db7141817c438854a1817a0a8300",
+  "purpose": "Correctness and resource-bound protocol for the smallest source-driven procedural active-working-set runtime slice. This is not the material 200k Gate-3 performance run.",
+  "public_seam": {
+    "module": "humanbrain.procedural_runtime",
+    "production_adapter": "NativeProceduralRuntime",
+    "oracle_adapter": "NativeDenseProceduralReference",
+    "operations": [
+      "advance(step_count, events)",
+      "snapshot()",
+      "close()"
+    ],
+    "python_role": "Validate and marshal one batch per advance; no per-cell or per-step simulation."
+  },
+  "topology_protocol": "random123-philox2x64-10-v2",
+  "supported_topologies": [
+    "uniform_no_self"
+  ],
+  "gid": {
+    "width_bits": 64,
+    "runtime_max_configured_cells": 18446744073709551615,
+    "source_gid_semantics": "Configured source-cell identity used for event provenance and deterministic ordering; no sentinel is defined."
+  },
+  "cell_model": {
+    "model_id": 523000114,
+    "specimen_id": 508378649,
+    "config_sha256": "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149",
+    "integration_step_ms": 0.05,
+    "mutable_fields": [
+      "voltage_relative_mv",
+      "after_spike_current_0_pa",
+      "after_spike_current_1_pa",
+      "threshold_spike_mv",
+      "threshold_voltage_mv",
+      "refractory_steps",
+      "synaptic_current_pa",
+      "eligibility"
+    ]
+  },
+  "determinism": {
+    "event_order": [
+      "due_step",
+      "target_gid",
+      "source_gid",
+      "edge_slot"
+    ],
+    "resident_update_order": "ascending gid",
+    "spike_expansion_order": "ascending source gid, then ascending edge slot",
+    "minimum_delay_steps": 1,
+    "duplicate_event_keys": "reject before FFI; runtime remains unpoisoned",
+    "floating_point_rule": "No reassociation, tolerance, or analytic catch-up. Signed zero is canonicalized to positive zero at every event/state write boundary in both adapters."
+  },
+  "residency": {
+    "activation": "A due nonzero event materializes its target immediately before that step's GLIF5 update.",
+    "eviction": "After a real fixed-step update, evict only if all eight mutable fields are bitwise canonical positive zero/integer zero.",
+    "future_events": "A future queued event does not force residency before it is due.",
+    "nonzero_tails": "Nonzero exponential tails remain resident and updated until exact underflow or cancellation produces canonical zero.",
+    "capacity_failure": "Resident or event capacity exhaustion poisons the runtime. No spill, tolerance eviction, dense fallback, or compatibility path exists."
+  },
+  "exactness_gate": {
+    "dense_reference_max_cells": 65536,
+    "comparison": "Bit-exact bytes for every cell field, pending event, and spike after every advance.",
+    "cases": [
+      "counter64-v2 rows above and below 2^32",
+      "shuffled same-step events",
+      "fixed canonical cancellation order",
+      "recurrent delays 1, 2, and 3",
+      "quiescent and multi-call continuation",
+      "positive and negative zero canonicalization",
+      "exact underflow eviction",
+      "recurrent spike-generated events",
+      "resident and event capacity fail-stop"
+    ]
+  },
+  "resource_gate": {
+    "configured_counts": [
+      1000000,
+      100000000000
+    ],
+    "fixed_workload": true,
+    "required": [
+      "identical cell-step, generated-edge, and configured-ID-scan counters",
+      "identical accounted native payload bytes",
+      "configured_ids_scanned equals zero",
+      "no array, loop, mask, owner table, or topology materialization proportional to configured cells"
+    ],
+    "sparse_memory_bound": "O(R_capacity + Q + S + F), independent of N_configured",
+    "sparse_work_bound": "Per interval, O(T*R + event sorting and bounded sorted-resident insertion + S*bounded_counter64_row_generation); never O(N_configured).",
+    "dense_oracle_exclusion": "The explicitly named small dense oracle allocates O(N_small) and is never the production adapter."
+  },
+  "accounting": {
+    "cells": [
+      "configured",
+      "addressable",
+      "resident_peak",
+      "resident_distinct",
+      "updated_distinct",
+      "spiking_distinct"
+    ],
+    "work": [
+      "cell_step_evaluations",
+      "spike_events",
+      "analytic_catchups",
+      "analytic_step_equivalents"
+    ],
+    "edges": [
+      "configured",
+      "resident",
+      "mutable",
+      "generated"
+    ],
+    "events": [
+      "delivered",
+      "queue_peak",
+      "sent_bytes_by_shard_pair"
+    ],
+    "runtime_extensions": [
+      "configured_ids_scanned",
+      "retained_nonzero_cells",
+      "capacity_overflowed"
+    ],
+    "memory": "Exact native runtime struct plus persistent Vec allocation capacities at the interval end; dense oracle and temporary interval scratch are excluded from this persistent-payload field."
+  },
+  "timing": {
+    "status": "frozen-pending-explicit-approval",
+    "executed": false,
+    "material_gate": "A separately approved run must retain the research Gate-3 conditions: 200k resident and fully updated cells, exact parity, and greater than 100 end-to-end tokens/s on the same RTX 4070 SUPER.",
+    "rule": "Correctness/resource tests authorize no speed statement. Timing thresholds cannot be added or weakened after observing a material run."
+  },
+  "claims": {
+    "correctness": "The implemented uniform-no-self vertical slice exactly simulates a reported sparse resident/updated subset inside a uint64 procedural address space.",
+    "speed": null,
+    "capability": null,
+    "bounded_steady_state": null,
+    "100_billion_updated_cells": null
+  },
+  "forbidden_runs": [
+    "material timing",
+    "Gate-3 timing sweep",
+    "GPU test",
+    "DEV/SWE/canonical/private evaluation",
+    "Fly Brain"
+  ]
+}

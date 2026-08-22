@@ -7,9 +7,12 @@
 use rayon::prelude::*;
 use std::{slice, time::Instant};
 
+mod procedural;
+
 const MIN_PARALLEL_CHUNK_CELLS: usize = 4_096;
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct GlifConfig {
     pub cell_count: usize,
     pub after_channel_count: usize,

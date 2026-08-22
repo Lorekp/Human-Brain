@@ -1,0 +1,1069 @@
+//! Source-driven procedural execution over a bounded sparse working set.
+//!
+//! This module deliberately has no operation proportional to the configured
+//! address range. The sparse runtime stores only bounded resident state,
+//! pending events, and spikes produced by the most recent advance. A separate
+//! dense runtime exists only as a small-domain exactness oracle.
+
+use super::GlifConfig;
+use std::{cmp::Ordering, collections::BTreeSet, mem::size_of, ptr, slice};
+
+const PHILOX_M2X64_0: u64 = 0xD2B74407B1CE6E93;
+const PHILOX_W64_0: u64 = 0x9E3779B97F4A7C15;
+const PHILOX_ROUNDS: usize = 10;
+const UNIFORM_NO_SELF_STREAM_ID: u64 = 2;
+const GLOBAL_PURPOSE_ID: u64 = 1;
+const GLOBAL_FALLBACK_PURPOSE_ID: u64 = 255;
+const ROLE_COUNTER_WORD: u64 = 0x524F4C45;
+const MAX_CANDIDATE_ATTEMPTS: u64 = 128;
+
+type CommonConfiguration = (GlifConfig, ProceduralConfig, [f64; 2], [f64; 2], [f64; 2]);
+
+pub const PROCEDURAL_OK: u32 = 0;
+pub const PROCEDURAL_INVALID: u32 = 1;
+pub const PROCEDURAL_RESIDENT_CAPACITY: u32 = 2;
+pub const PROCEDURAL_EVENT_CAPACITY: u32 = 3;
+pub const PROCEDURAL_DUPLICATE_EVENT: u32 = 4;
+pub const PROCEDURAL_POISONED: u32 = 5;
+pub const PROCEDURAL_STEP_OVERFLOW: u32 = 6;
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct ProceduralConfig {
+    pub configured_cells: u64,
+    pub fanout: u64,
+    pub seed: u64,
+    pub resident_capacity: usize,
+    pub event_capacity: usize,
+    pub recurrent_weight_pa: f64,
+    pub recurrent_delay_steps: u64,
+    pub recurrent_decay: f64,
+    pub eligibility_decay: f64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct ProceduralEventRecord {
+    pub due_step: u64,
+    pub target_gid: u64,
+    pub source_gid: u64,
+    pub edge_slot: u64,
+    pub current_pa: f64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct ProceduralResidentRecord {
+    pub gid: u64,
+    pub voltage_relative_mv: f64,
+    pub after_spike_current_0_pa: f64,
+    pub after_spike_current_1_pa: f64,
+    pub threshold_spike_mv: f64,
+    pub threshold_voltage_mv: f64,
+    pub refractory_steps: i32,
+    pub synaptic_current_pa: f64,
+    pub eligibility: f64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct ProceduralSpikeRecord {
+    pub step: u64,
+    pub gid: u64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct ProceduralCounters {
+    pub current_step: u64,
+    pub resident_peak: usize,
+    pub resident_distinct: usize,
+    pub updated_distinct: usize,
+    pub spiking_distinct: usize,
+    pub cell_step_evaluations: u64,
+    pub spike_events: u64,
+    pub generated_edges: u64,
+    pub delivered_events: u64,
+    pub configured_ids_scanned: u64,
+    pub queue_peak: usize,
+    pub native_payload_bytes: usize,
+    pub retained_nonzero_cells: usize,
+    pub overflow_code: u32,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct CellState {
+    gid: u64,
+    voltage: f64,
+    after: [f64; 2],
+    threshold_spike: f64,
+    threshold_voltage: f64,
+    refractory: i32,
+    synaptic_current: f64,
+    eligibility: f64,
+}
+
+impl CellState {
+    fn canonical_rest(gid: u64) -> Self {
+        Self {
+            gid,
+            voltage: 0.0,
+            after: [0.0, 0.0],
+            threshold_spike: 0.0,
+            threshold_voltage: 0.0,
+            refractory: 0,
+            synaptic_current: 0.0,
+            eligibility: 0.0,
+        }
+    }
+
+    fn is_canonical_rest(&self) -> bool {
+        self.voltage.to_bits() == 0
+            && self.after[0].to_bits() == 0
+            && self.after[1].to_bits() == 0
+            && self.threshold_spike.to_bits() == 0
+            && self.threshold_voltage.to_bits() == 0
+            && self.refractory == 0
+            && self.synaptic_current.to_bits() == 0
+            && self.eligibility.to_bits() == 0
+    }
+
+    fn record(&self) -> ProceduralResidentRecord {
+        ProceduralResidentRecord {
+            gid: self.gid,
+            voltage_relative_mv: self.voltage,
+            after_spike_current_0_pa: self.after[0],
+            after_spike_current_1_pa: self.after[1],
+            threshold_spike_mv: self.threshold_spike,
+            threshold_voltage_mv: self.threshold_voltage,
+            refractory_steps: self.refractory,
+            synaptic_current_pa: self.synaptic_current,
+            eligibility: self.eligibility,
+        }
+    }
+}
+
+#[inline]
+fn canonical_zero(value: f64) -> f64 {
+    if value == 0.0 {
+        0.0
+    } else {
+        value
+    }
+}
+
+#[inline]
+fn event_order(left: &ProceduralEventRecord, right: &ProceduralEventRecord) -> Ordering {
+    (
+        left.due_step,
+        left.target_gid,
+        left.source_gid,
+        left.edge_slot,
+    )
+        .cmp(&(
+            right.due_step,
+            right.target_gid,
+            right.source_gid,
+            right.edge_slot,
+        ))
+}
+
+#[inline]
+fn same_event_key(left: &ProceduralEventRecord, right: &ProceduralEventRecord) -> bool {
+    event_order(left, right) == Ordering::Equal
+}
+
+#[inline]
+fn dense_event_order(left: &ProceduralEventRecord, right: &ProceduralEventRecord) -> Ordering {
+    left.due_step
+        .cmp(&right.due_step)
+        .then_with(|| left.target_gid.cmp(&right.target_gid))
+        .then_with(|| left.source_gid.cmp(&right.source_gid))
+        .then_with(|| left.edge_slot.cmp(&right.edge_slot))
+}
+
+#[inline]
+fn same_dense_event_key(left: &ProceduralEventRecord, right: &ProceduralEventRecord) -> bool {
+    left.due_step == right.due_step
+        && left.target_gid == right.target_gid
+        && left.source_gid == right.source_gid
+        && left.edge_slot == right.edge_slot
+}
+
+#[inline]
+fn philox2x64_10(counter_0: u64, counter_1: u64, key: u64) -> (u64, u64) {
+    let mut left = counter_0;
+    let mut right = counter_1;
+    let mut round_key = key;
+    for round_index in 0..PHILOX_ROUNDS {
+        let product = (PHILOX_M2X64_0 as u128) * (left as u128);
+        let high = (product >> 64) as u64;
+        let low = product as u64;
+        left = high ^ round_key ^ right;
+        right = low;
+        if round_index != PHILOX_ROUNDS - 1 {
+            round_key = round_key.wrapping_add(PHILOX_W64_0);
+        }
+    }
+    (left, right)
+}
+
+#[inline]
+fn bounded_index(word: u64, size: u64) -> u64 {
+    (((word as u128) * (size as u128)) >> 64) as u64
+}
+
+#[inline]
+fn counter_words(
+    config: &ProceduralConfig,
+    source: u64,
+    slot: u64,
+    purpose: u64,
+    attempt: u64,
+) -> (u64, u64) {
+    let context = (slot << 16) | (purpose << 8) | attempt;
+    let key = config
+        .seed
+        .wrapping_add(UNIFORM_NO_SELF_STREAM_ID.wrapping_mul(PHILOX_W64_0));
+    philox2x64_10(source, context, key)
+}
+
+fn generated_targets(config: &ProceduralConfig, source: u64) -> Vec<u64> {
+    let mut used = Vec::with_capacity(config.fanout as usize + 1);
+    used.push(source);
+    let fallback_word = counter_words(config, source, 0, GLOBAL_FALLBACK_PURPOSE_ID, 0).0;
+    let fallback_start = bounded_index(fallback_word, config.configured_cells);
+    let mut fallback_offset = 0u64;
+    let mut targets = Vec::with_capacity(config.fanout as usize);
+    for slot in 0..config.fanout {
+        let mut selected = None;
+        for attempt in 0..MAX_CANDIDATE_ATTEMPTS {
+            let word = counter_words(config, source, slot, GLOBAL_PURPOSE_ID, attempt).0;
+            let candidate = bounded_index(word, config.configured_cells - 1);
+            let candidate = if candidate < source {
+                candidate
+            } else {
+                candidate + 1
+            };
+            if !used.contains(&candidate) {
+                selected = Some(candidate);
+                break;
+            }
+        }
+        if selected.is_none() {
+            while fallback_offset <= config.fanout {
+                let candidate =
+                    fallback_start.wrapping_add(fallback_offset) % config.configured_cells;
+                fallback_offset += 1;
+                if !used.contains(&candidate) {
+                    selected = Some(candidate);
+                    break;
+                }
+            }
+        }
+        let target = selected.expect("fanout below population guarantees a target");
+        used.push(target);
+        targets.push(target);
+    }
+    targets
+}
+
+#[inline]
+fn source_weight(config: &ProceduralConfig, source: u64) -> f64 {
+    let role_word = philox2x64_10(source, ROLE_COUNTER_WORD, config.seed).0;
+    let inhibitory_threshold = ((1u128 << 64) / 5) as u64;
+    let inhibitory = role_word < inhibitory_threshold;
+    if inhibitory {
+        -config.recurrent_weight_pa
+    } else {
+        config.recurrent_weight_pa
+    }
+}
+
+#[inline]
+fn sparse_cell_step(
+    glif: &GlifConfig,
+    after_decay: &[f64; 2],
+    after_cut_decay: &[f64; 2],
+    after_amplitudes: &[f64; 2],
+    recurrent_decay: f64,
+    eligibility_decay: f64,
+    state: &mut CellState,
+) -> bool {
+    let mut crossed = false;
+    if state.refractory != 0 {
+        state.refractory -= 1;
+    } else {
+        let after_sum = state.after[0] + state.after[1];
+        let total_current = state.synaptic_current + after_sum;
+        let previous_voltage = state.voltage;
+        let leak = glif.leak_ns * previous_voltage;
+        let voltage_delta = glif.voltage_step_scale * (total_current - leak);
+        let next_voltage = previous_voltage + voltage_delta;
+        let beta = total_current * glif.threshold_beta_scale;
+        let voltage_term = glif.threshold_voltage_factor * previous_voltage;
+        let beta_term = glif.threshold_beta_factor * beta;
+        let decayed_voltage_threshold = glif.threshold_exp_decay * state.threshold_voltage;
+        let next_voltage_threshold = decayed_voltage_threshold + voltage_term + beta_term;
+        let next_spike_threshold = state.threshold_spike * glif.spike_threshold_decay;
+        let next_after_0 = state.after[0] * after_decay[0];
+        let next_after_1 = state.after[1] * after_decay[1];
+
+        state.voltage = canonical_zero(next_voltage);
+        state.threshold_voltage = canonical_zero(next_voltage_threshold);
+        state.threshold_spike = canonical_zero(next_spike_threshold);
+        state.after[0] = canonical_zero(next_after_0);
+        state.after[1] = canonical_zero(next_after_1);
+        let total_threshold =
+            glif.threshold_inf_relative_mv + next_voltage_threshold + next_spike_threshold;
+        crossed = next_voltage > total_threshold;
+        if crossed {
+            state.voltage = canonical_zero(
+                glif.voltage_reset_scale * next_voltage + glif.voltage_reset_offset_mv,
+            );
+            state.after[0] =
+                canonical_zero(after_amplitudes[0] + next_after_0 * after_cut_decay[0]);
+            state.after[1] =
+                canonical_zero(after_amplitudes[1] + next_after_1 * after_cut_decay[1]);
+            state.threshold_spike = canonical_zero(
+                next_spike_threshold * glif.spike_cut_threshold_decay
+                    + glif.threshold_spike_increment_mv,
+            );
+            state.refractory = glif.spike_cut_steps;
+        }
+    }
+    state.synaptic_current = canonical_zero(state.synaptic_current * recurrent_decay);
+    state.eligibility = canonical_zero(state.eligibility * eligibility_decay);
+    if crossed {
+        state.eligibility = canonical_zero(state.eligibility + 1.0);
+    }
+    crossed
+}
+
+#[inline]
+fn dense_cell_step(
+    glif: &GlifConfig,
+    after_decay: &[f64; 2],
+    after_cut_decay: &[f64; 2],
+    after_amplitudes: &[f64; 2],
+    recurrent_decay: f64,
+    eligibility_decay: f64,
+    state: &mut CellState,
+) -> bool {
+    // Intentionally separate from sparse_cell_step: this is the small dense
+    // native oracle, not an alternate traversal of the sparse implementation.
+    let mut spiked = false;
+    if state.refractory > 0 {
+        state.refractory -= 1;
+    } else {
+        let asc = state.after[0] + state.after[1];
+        let current = state.synaptic_current + asc;
+        let old_voltage = state.voltage;
+        let new_voltage =
+            old_voltage + glif.voltage_step_scale * (current - glif.leak_ns * old_voltage);
+        let beta = current * glif.threshold_beta_scale;
+        let new_voltage_threshold = glif.threshold_exp_decay * state.threshold_voltage
+            + glif.threshold_voltage_factor * old_voltage
+            + glif.threshold_beta_factor * beta;
+        let new_spike_threshold = state.threshold_spike * glif.spike_threshold_decay;
+        let new_after = [
+            state.after[0] * after_decay[0],
+            state.after[1] * after_decay[1],
+        ];
+        state.voltage = canonical_zero(new_voltage);
+        state.threshold_voltage = canonical_zero(new_voltage_threshold);
+        state.threshold_spike = canonical_zero(new_spike_threshold);
+        state.after = [canonical_zero(new_after[0]), canonical_zero(new_after[1])];
+        spiked = new_voltage
+            > glif.threshold_inf_relative_mv + new_voltage_threshold + new_spike_threshold;
+        if spiked {
+            state.voltage = canonical_zero(
+                glif.voltage_reset_scale * new_voltage + glif.voltage_reset_offset_mv,
+            );
+            state.after = [
+                canonical_zero(after_amplitudes[0] + new_after[0] * after_cut_decay[0]),
+                canonical_zero(after_amplitudes[1] + new_after[1] * after_cut_decay[1]),
+            ];
+            state.threshold_spike = canonical_zero(
+                new_spike_threshold * glif.spike_cut_threshold_decay
+                    + glif.threshold_spike_increment_mv,
+            );
+            state.refractory = glif.spike_cut_steps;
+        }
+    }
+    state.synaptic_current = canonical_zero(state.synaptic_current * recurrent_decay);
+    state.eligibility = canonical_zero(state.eligibility * eligibility_decay);
+    if spiked {
+        state.eligibility = canonical_zero(state.eligibility + 1.0);
+    }
+    spiked
+}
+
+pub struct ProceduralRuntime {
+    glif: GlifConfig,
+    config: ProceduralConfig,
+    after_decay: [f64; 2],
+    after_cut_decay: [f64; 2],
+    after_amplitudes: [f64; 2],
+    current_step: u64,
+    residents: Vec<CellState>,
+    pending: Vec<ProceduralEventRecord>,
+    last_spikes: Vec<ProceduralSpikeRecord>,
+    counters: ProceduralCounters,
+    poisoned: u32,
+}
+
+impl ProceduralRuntime {
+    fn new(
+        glif: GlifConfig,
+        config: ProceduralConfig,
+        after_decay: [f64; 2],
+        after_cut_decay: [f64; 2],
+        after_amplitudes: [f64; 2],
+    ) -> Self {
+        Self {
+            glif,
+            config,
+            after_decay,
+            after_cut_decay,
+            after_amplitudes,
+            current_step: 0,
+            residents: Vec::new(),
+            pending: Vec::new(),
+            last_spikes: Vec::new(),
+            counters: ProceduralCounters::default(),
+            poisoned: PROCEDURAL_OK,
+        }
+    }
+
+    fn payload_bytes(&self) -> usize {
+        size_of::<Self>()
+            + self.residents.capacity() * size_of::<CellState>()
+            + self.pending.capacity() * size_of::<ProceduralEventRecord>()
+            + self.last_spikes.capacity() * size_of::<ProceduralSpikeRecord>()
+    }
+
+    fn poison(&mut self, code: u32) -> u32 {
+        self.poisoned = code;
+        self.counters.overflow_code = code;
+        code
+    }
+
+    fn resident_index(&self, gid: u64) -> Result<usize, usize> {
+        self.residents.binary_search_by_key(&gid, |state| state.gid)
+    }
+
+    fn apply_event(
+        &mut self,
+        event: ProceduralEventRecord,
+        resident_distinct: &mut BTreeSet<u64>,
+    ) -> Result<(), u32> {
+        let current = canonical_zero(event.current_pa);
+        match self.resident_index(event.target_gid) {
+            Ok(index) => {
+                let value = self.residents[index].synaptic_current + current;
+                self.residents[index].synaptic_current = canonical_zero(value);
+            }
+            Err(insertion) => {
+                if current.to_bits() == 0 {
+                    return Ok(());
+                }
+                if self.residents.len() == self.config.resident_capacity {
+                    return Err(PROCEDURAL_RESIDENT_CAPACITY);
+                }
+                self.residents
+                    .try_reserve_exact(1)
+                    .map_err(|_| PROCEDURAL_RESIDENT_CAPACITY)?;
+                let mut state = CellState::canonical_rest(event.target_gid);
+                state.synaptic_current = current;
+                self.residents.insert(insertion, state);
+                resident_distinct.insert(event.target_gid);
+            }
+        }
+        Ok(())
+    }
+
+    fn append_events(&mut self, events: &[ProceduralEventRecord]) -> Result<(), u32> {
+        if self.pending.len().saturating_add(events.len()) > self.config.event_capacity {
+            return Err(PROCEDURAL_EVENT_CAPACITY);
+        }
+        self.pending
+            .try_reserve_exact(events.len())
+            .map_err(|_| PROCEDURAL_EVENT_CAPACITY)?;
+        for event in events {
+            if event.due_step < self.current_step
+                || event.target_gid >= self.config.configured_cells
+                || event.source_gid >= self.config.configured_cells
+                || event.edge_slot >= self.config.fanout
+                || !event.current_pa.is_finite()
+            {
+                return Err(PROCEDURAL_INVALID);
+            }
+            let mut canonical = *event;
+            canonical.current_pa = canonical_zero(canonical.current_pa);
+            self.pending.push(canonical);
+        }
+        self.pending.sort_by(event_order);
+        if self
+            .pending
+            .windows(2)
+            .any(|pair| same_event_key(&pair[0], &pair[1]))
+        {
+            return Err(PROCEDURAL_DUPLICATE_EVENT);
+        }
+        Ok(())
+    }
+
+    fn advance(&mut self, step_count: u64, events: &[ProceduralEventRecord]) -> u32 {
+        if self.poisoned != PROCEDURAL_OK {
+            return PROCEDURAL_POISONED;
+        }
+        if step_count == 0 || self.current_step.checked_add(step_count).is_none() {
+            return self.poison(PROCEDURAL_STEP_OVERFLOW);
+        }
+        if let Err(code) = self.append_events(events) {
+            return self.poison(code);
+        }
+
+        self.last_spikes.clear();
+        let mut resident_distinct = BTreeSet::new();
+        resident_distinct.extend(self.residents.iter().map(|state| state.gid));
+        let mut updated_distinct = BTreeSet::new();
+        let mut spiking_distinct = BTreeSet::new();
+        let mut resident_peak = self.residents.len();
+        let mut queue_peak = self.pending.len();
+        let mut cell_steps = 0u64;
+        let mut generated_edges = 0u64;
+        let mut delivered_events = 0u64;
+
+        for _ in 0..step_count {
+            let due_count = self
+                .pending
+                .partition_point(|event| event.due_step <= self.current_step);
+            if self.pending[..due_count]
+                .iter()
+                .any(|event| event.due_step != self.current_step)
+            {
+                return self.poison(PROCEDURAL_INVALID);
+            }
+            let due: Vec<_> = self.pending.drain(..due_count).collect();
+            for event in due {
+                delivered_events += 1;
+                if let Err(code) = self.apply_event(event, &mut resident_distinct) {
+                    return self.poison(code);
+                }
+            }
+            resident_peak = resident_peak.max(self.residents.len());
+
+            let mut step_spikes = Vec::new();
+            cell_steps = match cell_steps.checked_add(self.residents.len() as u64) {
+                Some(value) => value,
+                None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
+            };
+            for state in &mut self.residents {
+                updated_distinct.insert(state.gid);
+                if sparse_cell_step(
+                    &self.glif,
+                    &self.after_decay,
+                    &self.after_cut_decay,
+                    &self.after_amplitudes,
+                    self.config.recurrent_decay,
+                    self.config.eligibility_decay,
+                    state,
+                ) {
+                    step_spikes.push(state.gid);
+                    spiking_distinct.insert(state.gid);
+                    self.last_spikes.push(ProceduralSpikeRecord {
+                        step: self.current_step,
+                        gid: state.gid,
+                    });
+                }
+            }
+
+            let generated_this_step =
+                match step_spikes.len().checked_mul(self.config.fanout as usize) {
+                    Some(value) => value,
+                    None => return self.poison(PROCEDURAL_EVENT_CAPACITY),
+                };
+            if self.pending.len().saturating_add(generated_this_step) > self.config.event_capacity {
+                return self.poison(PROCEDURAL_EVENT_CAPACITY);
+            }
+            if self.pending.try_reserve_exact(generated_this_step).is_err() {
+                return self.poison(PROCEDURAL_EVENT_CAPACITY);
+            }
+            for source in step_spikes {
+                let due_step = match self
+                    .current_step
+                    .checked_add(self.config.recurrent_delay_steps)
+                {
+                    Some(value) => value,
+                    None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
+                };
+                let weight = source_weight(&self.config, source);
+                for (slot, target) in generated_targets(&self.config, source)
+                    .into_iter()
+                    .enumerate()
+                {
+                    self.pending.push(ProceduralEventRecord {
+                        due_step,
+                        target_gid: target,
+                        source_gid: source,
+                        edge_slot: slot as u64,
+                        current_pa: weight,
+                    });
+                    generated_edges += 1;
+                }
+            }
+            self.pending.sort_by(event_order);
+            if self
+                .pending
+                .windows(2)
+                .any(|pair| same_event_key(&pair[0], &pair[1]))
+            {
+                return self.poison(PROCEDURAL_DUPLICATE_EVENT);
+            }
+            queue_peak = queue_peak.max(self.pending.len());
+            self.residents.retain(|state| !state.is_canonical_rest());
+            self.current_step += 1;
+        }
+
+        self.counters = ProceduralCounters {
+            current_step: self.current_step,
+            resident_peak,
+            resident_distinct: resident_distinct.len(),
+            updated_distinct: updated_distinct.len(),
+            spiking_distinct: spiking_distinct.len(),
+            cell_step_evaluations: cell_steps,
+            spike_events: self.last_spikes.len() as u64,
+            generated_edges,
+            delivered_events,
+            configured_ids_scanned: 0,
+            queue_peak,
+            native_payload_bytes: self.payload_bytes(),
+            retained_nonzero_cells: self.residents.len(),
+            overflow_code: PROCEDURAL_OK,
+        };
+        PROCEDURAL_OK
+    }
+}
+
+pub struct DenseReference {
+    glif: GlifConfig,
+    config: ProceduralConfig,
+    after_decay: [f64; 2],
+    after_cut_decay: [f64; 2],
+    after_amplitudes: [f64; 2],
+    targets: Vec<u64>,
+    weights: Vec<f64>,
+    current_step: u64,
+    cells: Vec<CellState>,
+    pending: Vec<ProceduralEventRecord>,
+    last_spikes: Vec<ProceduralSpikeRecord>,
+    poisoned: u32,
+}
+
+impl DenseReference {
+    fn append_events(&mut self, events: &[ProceduralEventRecord]) -> Result<(), u32> {
+        if self.pending.len().saturating_add(events.len()) > self.config.event_capacity {
+            return Err(PROCEDURAL_EVENT_CAPACITY);
+        }
+        self.pending
+            .try_reserve_exact(events.len())
+            .map_err(|_| PROCEDURAL_EVENT_CAPACITY)?;
+        for event in events {
+            if event.due_step < self.current_step
+                || event.target_gid >= self.config.configured_cells
+                || event.source_gid >= self.config.configured_cells
+                || event.edge_slot >= self.config.fanout
+                || !event.current_pa.is_finite()
+            {
+                return Err(PROCEDURAL_INVALID);
+            }
+            let mut canonical = *event;
+            canonical.current_pa = canonical_zero(canonical.current_pa);
+            self.pending.push(canonical);
+        }
+        self.pending.sort_by(dense_event_order);
+        if self
+            .pending
+            .windows(2)
+            .any(|pair| same_dense_event_key(&pair[0], &pair[1]))
+        {
+            return Err(PROCEDURAL_DUPLICATE_EVENT);
+        }
+        Ok(())
+    }
+
+    fn advance(&mut self, step_count: u64, events: &[ProceduralEventRecord]) -> u32 {
+        if self.poisoned != PROCEDURAL_OK {
+            return PROCEDURAL_POISONED;
+        }
+        if step_count == 0 || self.current_step.checked_add(step_count).is_none() {
+            self.poisoned = PROCEDURAL_STEP_OVERFLOW;
+            return self.poisoned;
+        }
+        if let Err(code) = self.append_events(events) {
+            self.poisoned = code;
+            return code;
+        }
+        self.last_spikes.clear();
+        for _ in 0..step_count {
+            let due_count = self
+                .pending
+                .partition_point(|event| event.due_step <= self.current_step);
+            if self.pending[..due_count]
+                .iter()
+                .any(|event| event.due_step != self.current_step)
+            {
+                self.poisoned = PROCEDURAL_INVALID;
+                return self.poisoned;
+            }
+            let due: Vec<_> = self.pending.drain(..due_count).collect();
+            for event in due {
+                let cell = &mut self.cells[event.target_gid as usize];
+                cell.synaptic_current = canonical_zero(cell.synaptic_current + event.current_pa);
+            }
+            let mut step_spikes = Vec::new();
+            for cell in &mut self.cells {
+                if dense_cell_step(
+                    &self.glif,
+                    &self.after_decay,
+                    &self.after_cut_decay,
+                    &self.after_amplitudes,
+                    self.config.recurrent_decay,
+                    self.config.eligibility_decay,
+                    cell,
+                ) {
+                    step_spikes.push(cell.gid);
+                    self.last_spikes.push(ProceduralSpikeRecord {
+                        step: self.current_step,
+                        gid: cell.gid,
+                    });
+                }
+            }
+            let generated = match step_spikes.len().checked_mul(self.config.fanout as usize) {
+                Some(value) => value,
+                None => {
+                    self.poisoned = PROCEDURAL_EVENT_CAPACITY;
+                    return self.poisoned;
+                }
+            };
+            if self.pending.len().saturating_add(generated) > self.config.event_capacity {
+                self.poisoned = PROCEDURAL_EVENT_CAPACITY;
+                return self.poisoned;
+            }
+            if self.pending.try_reserve_exact(generated).is_err() {
+                self.poisoned = PROCEDURAL_EVENT_CAPACITY;
+                return self.poisoned;
+            }
+            for source in step_spikes {
+                let due_step = match self
+                    .current_step
+                    .checked_add(self.config.recurrent_delay_steps)
+                {
+                    Some(value) => value,
+                    None => {
+                        self.poisoned = PROCEDURAL_STEP_OVERFLOW;
+                        return self.poisoned;
+                    }
+                };
+                let offset = source as usize * self.config.fanout as usize;
+                for slot in 0..self.config.fanout as usize {
+                    self.pending.push(ProceduralEventRecord {
+                        due_step,
+                        target_gid: self.targets[offset + slot],
+                        source_gid: source,
+                        edge_slot: slot as u64,
+                        current_pa: self.weights[offset + slot],
+                    });
+                }
+            }
+            self.pending.sort_by(dense_event_order);
+            if self
+                .pending
+                .windows(2)
+                .any(|pair| same_dense_event_key(&pair[0], &pair[1]))
+            {
+                self.poisoned = PROCEDURAL_DUPLICATE_EVENT;
+                return self.poisoned;
+            }
+            self.current_step += 1;
+        }
+        PROCEDURAL_OK
+    }
+}
+
+fn valid_common(glif: &GlifConfig, config: &ProceduralConfig) -> bool {
+    glif.after_channel_count == 2
+        && config.configured_cells >= 2
+        && config.fanout >= 1
+        && config.fanout < config.configured_cells
+        && config.fanout < (1u64 << 48)
+        && config.resident_capacity >= 1
+        && config.event_capacity >= 1
+        && config.recurrent_weight_pa.is_finite()
+        && config.recurrent_weight_pa > 0.0
+        && config.recurrent_delay_steps >= 1
+        && config.recurrent_decay.is_finite()
+        && config.recurrent_decay > 0.0
+        && config.recurrent_decay < 1.0
+        && config.eligibility_decay.is_finite()
+        && config.eligibility_decay > 0.0
+        && config.eligibility_decay < 1.0
+}
+
+unsafe fn read_common(
+    glif: *const GlifConfig,
+    config: *const ProceduralConfig,
+    after_decay: *const f64,
+    after_cut_decay: *const f64,
+    after_amplitudes: *const f64,
+) -> Option<CommonConfiguration> {
+    if glif.is_null()
+        || config.is_null()
+        || after_decay.is_null()
+        || after_cut_decay.is_null()
+        || after_amplitudes.is_null()
+    {
+        return None;
+    }
+    let glif = *glif;
+    let config = *config;
+    let decay = [*after_decay, *after_decay.add(1)];
+    let cut = [*after_cut_decay, *after_cut_decay.add(1)];
+    let amplitudes = [*after_amplitudes, *after_amplitudes.add(1)];
+    if !valid_common(&glif, &config)
+        || decay
+            .iter()
+            .chain(cut.iter())
+            .any(|value| !value.is_finite() || *value <= 0.0 || *value >= 1.0)
+        || amplitudes.iter().any(|value| !value.is_finite())
+    {
+        return None;
+    }
+    Some((glif, config, decay, cut, amplitudes))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_procedural_runtime_create(
+    glif: *const GlifConfig,
+    config: *const ProceduralConfig,
+    after_decay: *const f64,
+    after_cut_decay: *const f64,
+    after_amplitudes: *const f64,
+) -> *mut ProceduralRuntime {
+    let Some((glif, config, decay, cut, amplitudes)) =
+        read_common(glif, config, after_decay, after_cut_decay, after_amplitudes)
+    else {
+        return ptr::null_mut();
+    };
+    Box::into_raw(Box::new(ProceduralRuntime::new(
+        glif, config, decay, cut, amplitudes,
+    )))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_procedural_runtime_destroy(runtime: *mut ProceduralRuntime) {
+    if !runtime.is_null() {
+        drop(Box::from_raw(runtime));
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_procedural_runtime_advance(
+    runtime: *mut ProceduralRuntime,
+    step_count: u64,
+    events: *const ProceduralEventRecord,
+    event_count: usize,
+) -> u32 {
+    if runtime.is_null() || (event_count != 0 && events.is_null()) {
+        return PROCEDURAL_INVALID;
+    }
+    let events = if event_count == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(events, event_count)
+    };
+    (*runtime).advance(step_count, events)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_procedural_runtime_counts(
+    runtime: *const ProceduralRuntime,
+    resident_count: *mut usize,
+    pending_count: *mut usize,
+    spike_count: *mut usize,
+) -> u32 {
+    if runtime.is_null()
+        || resident_count.is_null()
+        || pending_count.is_null()
+        || spike_count.is_null()
+    {
+        return PROCEDURAL_INVALID;
+    }
+    *resident_count = (*runtime).residents.len();
+    *pending_count = (*runtime).pending.len();
+    *spike_count = (*runtime).last_spikes.len();
+    PROCEDURAL_OK
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
+    runtime: *const ProceduralRuntime,
+    residents: *mut ProceduralResidentRecord,
+    pending: *mut ProceduralEventRecord,
+    spikes: *mut ProceduralSpikeRecord,
+    counters: *mut ProceduralCounters,
+) -> u32 {
+    if runtime.is_null() || counters.is_null() {
+        return PROCEDURAL_INVALID;
+    }
+    let runtime = &*runtime;
+    if !residents.is_null() {
+        for (index, state) in runtime.residents.iter().enumerate() {
+            *residents.add(index) = state.record();
+        }
+    }
+    if !pending.is_null() {
+        ptr::copy_nonoverlapping(runtime.pending.as_ptr(), pending, runtime.pending.len());
+    }
+    if !spikes.is_null() {
+        ptr::copy_nonoverlapping(
+            runtime.last_spikes.as_ptr(),
+            spikes,
+            runtime.last_spikes.len(),
+        );
+    }
+    let mut snapshot = runtime.counters;
+    snapshot.current_step = runtime.current_step;
+    snapshot.native_payload_bytes = runtime.payload_bytes();
+    snapshot.retained_nonzero_cells = runtime.residents.len();
+    snapshot.overflow_code = runtime.poisoned;
+    *counters = snapshot;
+    PROCEDURAL_OK
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_dense_reference_create(
+    glif: *const GlifConfig,
+    config: *const ProceduralConfig,
+    after_decay: *const f64,
+    after_cut_decay: *const f64,
+    after_amplitudes: *const f64,
+    targets: *const u64,
+    weights: *const f64,
+) -> *mut DenseReference {
+    let Some((glif, config, decay, cut, amplitudes)) =
+        read_common(glif, config, after_decay, after_cut_decay, after_amplitudes)
+    else {
+        return ptr::null_mut();
+    };
+    if targets.is_null() || weights.is_null() || config.configured_cells > usize::MAX as u64 {
+        return ptr::null_mut();
+    }
+    let cells = config.configured_cells as usize;
+    let Some(edge_count) = cells.checked_mul(config.fanout as usize) else {
+        return ptr::null_mut();
+    };
+    let targets = slice::from_raw_parts(targets, edge_count).to_vec();
+    let weights = slice::from_raw_parts(weights, edge_count).to_vec();
+    if targets
+        .iter()
+        .any(|target| *target >= config.configured_cells)
+        || weights.iter().any(|weight| !weight.is_finite())
+    {
+        return ptr::null_mut();
+    }
+    let cells = (0..config.configured_cells)
+        .map(CellState::canonical_rest)
+        .collect();
+    Box::into_raw(Box::new(DenseReference {
+        glif,
+        config,
+        after_decay: decay,
+        after_cut_decay: cut,
+        after_amplitudes: amplitudes,
+        targets,
+        weights,
+        current_step: 0,
+        cells,
+        pending: Vec::new(),
+        last_spikes: Vec::new(),
+        poisoned: PROCEDURAL_OK,
+    }))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_dense_reference_destroy(runtime: *mut DenseReference) {
+    if !runtime.is_null() {
+        drop(Box::from_raw(runtime));
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_dense_reference_advance(
+    runtime: *mut DenseReference,
+    step_count: u64,
+    events: *const ProceduralEventRecord,
+    event_count: usize,
+) -> u32 {
+    if runtime.is_null() || (event_count != 0 && events.is_null()) {
+        return PROCEDURAL_INVALID;
+    }
+    let events = if event_count == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(events, event_count)
+    };
+    (*runtime).advance(step_count, events)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_dense_reference_counts(
+    runtime: *const DenseReference,
+    cell_count: *mut usize,
+    pending_count: *mut usize,
+    spike_count: *mut usize,
+) -> u32 {
+    if runtime.is_null() || cell_count.is_null() || pending_count.is_null() || spike_count.is_null()
+    {
+        return PROCEDURAL_INVALID;
+    }
+    *cell_count = (*runtime).cells.len();
+    *pending_count = (*runtime).pending.len();
+    *spike_count = (*runtime).last_spikes.len();
+    PROCEDURAL_OK
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_dense_reference_snapshot(
+    runtime: *const DenseReference,
+    cells: *mut ProceduralResidentRecord,
+    pending: *mut ProceduralEventRecord,
+    spikes: *mut ProceduralSpikeRecord,
+    current_step: *mut u64,
+    poison_code: *mut u32,
+) -> u32 {
+    if runtime.is_null() || current_step.is_null() || poison_code.is_null() {
+        return PROCEDURAL_INVALID;
+    }
+    let runtime = &*runtime;
+    if !cells.is_null() {
+        for (index, state) in runtime.cells.iter().enumerate() {
+            *cells.add(index) = state.record();
+        }
+    }
+    if !pending.is_null() {
+        ptr::copy_nonoverlapping(runtime.pending.as_ptr(), pending, runtime.pending.len());
+    }
+    if !spikes.is_null() {
+        ptr::copy_nonoverlapping(
+            runtime.last_spikes.as_ptr(),
+            spikes,
+            runtime.last_spikes.len(),
+        );
+    }
+    *current_step = runtime.current_step;
+    *poison_code = runtime.poisoned;
+    PROCEDURAL_OK
+}

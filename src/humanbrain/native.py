@@ -78,7 +78,7 @@ def _source_digest() -> str:
     source_paths = (
         _SOURCE_ROOT / "Cargo.toml",
         _SOURCE_ROOT / "Cargo.lock",
-        _SOURCE_ROOT / "src/lib.rs",
+        *sorted((_SOURCE_ROOT / "src").glob("*.rs")),
     )
     for path in source_paths:
         digest.update(path.read_bytes())
