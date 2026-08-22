@@ -9,6 +9,7 @@ from hashlib import sha256
 import humanbrain.typed_program as typed_program
 import pytest
 from humanbrain.cells import AllenGlif5Parameters
+from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY
 from humanbrain.typed_program import (
     Example,
     FrozenCheckpoint,
@@ -295,9 +296,7 @@ def test_protocol_commits_growth_and_complete_pinned_human_cell_identity() -> No
 
     assert protocol.protocol_version == "humanbrain-layer1-typed-program-v3"
     assert protocol.growth_epochs == 3
-    assert protocol.allen_glif5_config_sha256 == (
-        "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149"
-    )
+    assert protocol.allen_glif5_config_sha256 == HUMAN_GLIF5_IDENTITY.config_sha256
     assert protocol.allen_glif5_parameters == AllenGlif5Parameters()
     assert record["format"] == protocol.protocol_version
     assert record["protocol"]["growth_epochs"] == 3

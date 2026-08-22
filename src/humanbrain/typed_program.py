@@ -16,7 +16,8 @@ from itertools import islice
 
 import numpy as np
 
-from humanbrain.cells import ALLEN_GLIF5_CONFIG_SHA256, AllenGlif5Parameters
+from humanbrain.cells import AllenGlif5Parameters
+from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig, RecurrentRace
 from humanbrain.recurrent_state import RecurrentCellSynapseState
 from humanbrain.typed_program_types import (
@@ -424,7 +425,7 @@ class Layer1Protocol:
     primitive_table_sha256: str = _PRIMITIVE_TABLE_SHA256
     circuit_config_sha256: str = _CIRCUIT_CONFIG_SHA256
     growth_epochs: int = _GROWTH_EPOCHS
-    allen_glif5_config_sha256: str = ALLEN_GLIF5_CONFIG_SHA256
+    allen_glif5_config_sha256: str = HUMAN_GLIF5_IDENTITY.config_sha256
     allen_glif5_parameters: AllenGlif5Parameters = _ALLEN_GLIF5_PARAMETERS
     max_training_examples: int = _MAX_TRAINING_EXAMPLES
     max_checkpoint_bytes: int = _MAX_CHECKPOINT_BYTES
@@ -440,7 +441,7 @@ class Layer1Protocol:
             _PRIMITIVE_TABLE_SHA256,
             _CIRCUIT_CONFIG_SHA256,
             _GROWTH_EPOCHS,
-            ALLEN_GLIF5_CONFIG_SHA256,
+            HUMAN_GLIF5_IDENTITY.config_sha256,
             _ALLEN_GLIF5_PARAMETERS,
             _MAX_TRAINING_EXAMPLES,
             _MAX_CHECKPOINT_BYTES,
@@ -896,7 +897,8 @@ def _validate_frozen_circuit_metadata(value: object) -> Mapping[str, object]:
     fixed_values_match = (
         type(metadata["token_cells"]) is int
         and metadata["token_cells"] == _TOKEN_CELL_COUNT
-        and metadata["allen_glif5_config_sha256"] == ALLEN_GLIF5_CONFIG_SHA256
+        and metadata["allen_glif5_config_sha256"]
+        == HUMAN_GLIF5_IDENTITY.config_sha256
         and _canonical_json(metadata["cell_parameters"])
         == _canonical_json(_EXPECTED_CELL_PARAMETERS)
         and _canonical_json(metadata["circuit_config"])
