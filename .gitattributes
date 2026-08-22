@@ -1,3 +1,4 @@
+.gitattributes text eol=lf
 *.json text eol=lf
 artifacts/procedural_address_space_v1.json binary
 *.md text eol=lf
@@ -6,3 +7,5 @@ artifacts/procedural_address_space_v1.json binary
 *.toml text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
+src/humanbrain/_native_src/Cargo.lock text eol=lf
+src/humanbrain/_native_src/vendor/** -text -whitespace

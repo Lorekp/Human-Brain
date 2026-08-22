@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 _SOURCE_ROOT = Path(__file__).with_name("_native_src")
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 _PROCEDURAL_RUNTIME_SOURCE_PATHS = (
+    ".gitattributes",
     "data/allen/523000114_neuron_config.json",
     "src/humanbrain/_native_src/Cargo.lock",
     "src/humanbrain/_native_src/Cargo.toml",
@@ -43,6 +44,14 @@ _LIBRARY: ctypes.CDLL | None = None
 _LIBRARY_PATH: Path | None = None
 _LOADED_BUILD_PLAN: _NativeBuildPlan | None = None
 _TARGET_ROOT_PLACEHOLDER = "@HUMANBRAIN_NATIVE_TARGET_ROOT@"
+_MAX_NATIVE_SOURCE_FILE_BYTES = 1024 * 1024
+_MAX_NATIVE_SOURCE_BUNDLE_BYTES = 8 * 1024 * 1024
+_MAX_TARGET_LIBRARY_FILE_BYTES = 128 * 1024 * 1024
+_MAX_TARGET_LIBRARY_BUNDLE_BYTES = 512 * 1024 * 1024
+_VENDORED_CARGO_CONFIG = (
+    b'[source.crates-io]\nreplace-with = "vendored-sources"\n\n'
+    b'[source.vendored-sources]\ndirectory = "vendor"\n'
+)
 _BUILD_CONTROL_ENVIRONMENT = (
     "CARGO_BUILD_RUSTFLAGS",
     "CARGO_BUILD_RUSTC",
@@ -148,6 +157,8 @@ class _NativeToolchain:
     rustc_discovery_sha256: str
     sysroot: str
     target_triple: str
+    target_library_directory: str
+    target_library_manifest_sha256: str
     native_cfg: str
     target_cpus: str
     linker_path: str
@@ -189,27 +200,83 @@ def _framed_sha256(namespace: str, entries: Iterable[tuple[str, bytes]]) -> str:
     return digest.hexdigest()
 
 
-def _native_build_input_manifest(
+def _native_build_input_paths(
     source_root: Path | None = None,
-) -> tuple[tuple[str, bytes], ...]:
-    """Return every Cargo build input in normalized relative-path order."""
-    root = _SOURCE_ROOT if source_root is None else source_root
-    paths = [root / "Cargo.toml", root / "Cargo.lock"]
+) -> tuple[tuple[str, Path], ...]:
+    """Return normalized POSIX-relative paths in byte-stable sorted order, unread."""
+    root = (_SOURCE_ROOT if source_root is None else source_root).resolve()
+    paths = [
+        root / "Cargo.toml",
+        root / "Cargo.lock",
+        root / ".cargo" / "config.toml",
+    ]
     build_script = root / "build.rs"
     if build_script.is_file():
         paths.append(build_script)
-    paths.extend(
-        path
-        for path in (root / "src").rglob("*.rs")
-        if path.is_file()
-    )
+    for tree in (root / "src", root / "vendor"):
+        if not tree.is_dir():
+            raise NativeBuildError(f"native build input tree is missing: {tree.name}")
+        paths.extend(path for path in tree.rglob("*") if path.is_file())
     ordered = sorted(paths, key=lambda path: path.relative_to(root).as_posix())
-    return tuple(
-        (path.relative_to(root).as_posix(), path.read_bytes()) for path in ordered
-    )
+    records: list[tuple[str, Path]] = []
+    for path in ordered:
+        if path.is_symlink():
+            raise NativeBuildError("native build inputs cannot be symbolic links")
+        resolved = path.resolve()
+        try:
+            relative_path = resolved.relative_to(root).as_posix()
+        except ValueError as error:
+            raise NativeBuildError("native build input escapes its source root") from error
+        records.append((relative_path, resolved))
+    return tuple(records)
 
 
-def _sha256_file(path: Path, label: str) -> str:
+def _bounded_file_payload(path: Path, label: str, maximum_bytes: int) -> bytes:
+    try:
+        stated_size = path.stat().st_size
+        if stated_size > maximum_bytes:
+            raise NativeBuildError(f"{label} exceeds the identity byte limit")
+        with path.open("rb") as handle:
+            payload = handle.read(maximum_bytes + 1)
+    except OSError as error:
+        raise NativeBuildError(f"{label} cannot be read for identity") from error
+    if len(payload) > maximum_bytes:
+        raise NativeBuildError(f"{label} exceeds the identity byte limit")
+    return payload
+
+
+def _native_build_input_manifest(
+    source_root: Path | None = None,
+) -> tuple[tuple[str, bytes], ...]:
+    """Read the complete Cargo source manifest under strict byte bounds."""
+    paths = _native_build_input_paths(source_root)
+    try:
+        stated_total = sum(path.stat().st_size for _name, path in paths)
+    except OSError as error:
+        raise NativeBuildError("native build input cannot be sized") from error
+    if stated_total > _MAX_NATIVE_SOURCE_BUNDLE_BYTES:
+        raise NativeBuildError("native build inputs exceed the aggregate byte limit")
+    manifest: list[tuple[str, bytes]] = []
+    actual_total = 0
+    for name, path in paths:
+        payload = _bounded_file_payload(
+            path,
+            "native build input",
+            _MAX_NATIVE_SOURCE_FILE_BYTES,
+        )
+        actual_total += len(payload)
+        if actual_total > _MAX_NATIVE_SOURCE_BUNDLE_BYTES:
+            raise NativeBuildError("native build inputs exceed the aggregate byte limit")
+        manifest.append((name, payload))
+    return tuple(manifest)
+
+
+def _sha256_file_with_size(
+    path: Path,
+    label: str,
+    *,
+    maximum_bytes: int = 512 * 1024 * 1024,
+) -> tuple[str, int]:
     digest = hashlib.sha256()
     byte_count = 0
     try:
@@ -219,14 +286,59 @@ def _sha256_file(path: Path, label: str) -> str:
                 if not chunk:
                     break
                 byte_count += len(chunk)
-                if byte_count > 512 * 1024 * 1024:
+                if byte_count > maximum_bytes:
                     raise NativeBuildError(f"{label} exceeds the identity byte limit")
                 digest.update(chunk)
     except OSError as error:
         raise NativeBuildError(f"{label} cannot be read for identity") from error
     if byte_count == 0:
         raise NativeBuildError(f"{label} is empty")
-    return digest.hexdigest()
+    return digest.hexdigest(), byte_count
+
+
+def _sha256_file(path: Path, label: str) -> str:
+    return _sha256_file_with_size(path, label)[0]
+
+
+def _target_library_manifest_sha256(target_library_directory: Path) -> str:
+    """Hash every concrete regular file in rustc's selected target libdir."""
+    root = target_library_directory.resolve()
+    if not root.is_dir():
+        raise NativeBuildError("rustc target library directory cannot be discovered")
+    paths = sorted(
+        (path for path in root.rglob("*") if path.is_file()),
+        key=lambda path: path.relative_to(root).as_posix(),
+    )
+    if not paths:
+        raise NativeBuildError("rustc target library directory is empty")
+    try:
+        stated_total = sum(path.stat().st_size for path in paths)
+    except OSError as error:
+        raise NativeBuildError("rustc target library input cannot be sized") from error
+    if stated_total > _MAX_TARGET_LIBRARY_BUNDLE_BYTES:
+        raise NativeBuildError("rustc target libraries exceed the aggregate byte limit")
+    entries: list[tuple[str, bytes]] = []
+    actual_total = 0
+    for path in paths:
+        digest, byte_count = _sha256_file_with_size(
+            path,
+            "rustc target library",
+            maximum_bytes=_MAX_TARGET_LIBRARY_FILE_BYTES,
+        )
+        actual_total += byte_count
+        if actual_total > _MAX_TARGET_LIBRARY_BUNDLE_BYTES:
+            raise NativeBuildError("rustc target libraries exceed the aggregate byte limit")
+        entries.append(
+            (
+                path.relative_to(root).as_posix(),
+                json.dumps(
+                    {"byte_count": byte_count, "sha256": digest},
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("ascii"),
+            )
+        )
+    return _framed_sha256("humanbrain-rust-target-libraries-v1", entries)
 
 
 def _probe_tool(
@@ -288,7 +400,16 @@ def _cargo_home() -> Path:
 
 def _reject_cargo_configuration(source_root: Path, cargo_home: Path) -> None:
     candidates: list[Path] = []
-    for ancestor in (source_root.resolve(), *source_root.resolve().parents):
+    source_config = source_root / ".cargo" / "config.toml"
+    if _bounded_file_payload(
+        source_config,
+        "vendored Cargo configuration",
+        len(_VENDORED_CARGO_CONFIG),
+    ) != _VENDORED_CARGO_CONFIG:
+        raise NativeBuildError("vendored Cargo configuration differs")
+    if (source_root / ".cargo" / "config").exists():
+        raise NativeBuildError("legacy source-root Cargo configuration is forbidden")
+    for ancestor in source_root.resolve().parents:
         candidates.extend((ancestor / ".cargo" / "config", ancestor / ".cargo" / "config.toml"))
     candidates.extend((cargo_home / "config", cargo_home / "config.toml"))
     if any(path.is_file() for path in candidates):
@@ -389,6 +510,26 @@ def _discover_native_toolchain(source_root: Path) -> _NativeToolchain:
     ).resolve()
     if not linker_path.is_file():
         raise NativeBuildError("the pinned rust-lld linker cannot be discovered")
+    target_library_directory = Path(
+        _probe_tool(
+            (
+                str(rustc_path),
+                "--print",
+                "target-libdir",
+                "--target",
+                target_triple,
+            ),
+            cwd=source_root,
+            environment=probe_environment,
+        )
+    ).resolve()
+    try:
+        target_library_directory.relative_to(sysroot)
+    except ValueError as error:
+        raise NativeBuildError("rustc target library directory is outside its sysroot") from error
+    target_library_manifest = _target_library_manifest_sha256(
+        target_library_directory
+    )
     sdk_identity, sdk_environment = _windows_sdk_identity()
     return _NativeToolchain(
         cargo_path=str(cargo_path),
@@ -411,6 +552,8 @@ def _discover_native_toolchain(source_root: Path) -> _NativeToolchain:
         ),
         sysroot=str(sysroot),
         target_triple=target_triple,
+        target_library_directory=str(target_library_directory),
+        target_library_manifest_sha256=target_library_manifest,
         native_cfg=_probe_tool(
             (str(rustc_path), "--print", "cfg", "-Ctarget-cpu=native"),
             cwd=source_root,
@@ -441,6 +584,7 @@ def _toolchain_entries(toolchain: _NativeToolchain) -> tuple[tuple[str, bytes], 
 def _native_build_plan(source_root: Path | None = None) -> _NativeBuildPlan:
     _reject_build_control_environment()
     root = (_SOURCE_ROOT if source_root is None else source_root).resolve()
+    native_build_inputs = _native_build_input_manifest(root)
     cargo_home = _cargo_home()
     _reject_cargo_configuration(root, cargo_home)
     toolchain = _discover_native_toolchain(root)
@@ -449,6 +593,7 @@ def _native_build_plan(source_root: Path | None = None) -> _NativeBuildPlan:
         "build",
         "--release",
         "--locked",
+        "--offline",
         "--manifest-path",
         str(root / "Cargo.toml"),
         "--target",
@@ -484,12 +629,12 @@ def _native_build_plan(source_root: Path | None = None) -> _NativeBuildPlan:
     ).encode("utf-8")
     toolchain_entries = _toolchain_entries(toolchain)
     toolchain_identity = _framed_sha256(
-        "humanbrain-native-toolchain-v1", toolchain_entries
+        "humanbrain-native-toolchain-v2", toolchain_entries
     )
     digest = _framed_sha256(
-        "humanbrain-native-cache-v4-effective-build-plan",
+        "humanbrain-native-cache-v5-vendored-target-libraries",
         (
-            *_native_build_input_manifest(root),
+            *native_build_inputs,
             ("@plan/cwd", str(root).encode("utf-8")),
             ("@plan/command", command_bytes),
             ("@plan/environment", environment_bytes),
@@ -517,9 +662,9 @@ def _source_digest(source_root: Path | None = None) -> str:
 def procedural_runtime_source_manifest(
     repository_root: Path = _REPOSITORY_ROOT,
 ) -> tuple[dict[str, str | int], ...]:
+    payloads = _procedural_runtime_source_payloads(repository_root)
     records: list[dict[str, str | int]] = []
-    for relative_path in _PROCEDURAL_RUNTIME_SOURCE_PATHS:
-        payload = (repository_root / relative_path).read_bytes()
+    for relative_path, payload in payloads:
         records.append(
             {
                 "path": relative_path,
@@ -533,11 +678,37 @@ def procedural_runtime_source_manifest(
 def procedural_runtime_source_bundle_sha256(
     repository_root: Path = _REPOSITORY_ROOT,
 ) -> str:
-    entries = (
-        (relative_path, (repository_root / relative_path).read_bytes())
-        for relative_path in _PROCEDURAL_RUNTIME_SOURCE_PATHS
+    return _framed_sha256(
+        "humanbrain-procedural-runtime-source-v1",
+        _procedural_runtime_source_payloads(repository_root),
     )
-    return _framed_sha256("humanbrain-procedural-runtime-source-v1", entries)
+
+
+def _procedural_runtime_source_paths(repository_root: Path) -> tuple[str, ...]:
+    native_root = repository_root / "src" / "humanbrain" / "_native_src"
+    native_paths = (
+        f"src/humanbrain/_native_src/{relative_path}"
+        for relative_path, _path in _native_build_input_paths(native_root)
+    )
+    return tuple(dict.fromkeys((*_PROCEDURAL_RUNTIME_SOURCE_PATHS, *native_paths)))
+
+
+def _procedural_runtime_source_payloads(
+    repository_root: Path,
+) -> tuple[tuple[str, bytes], ...]:
+    payloads: list[tuple[str, bytes]] = []
+    aggregate = 0
+    for relative_path in _procedural_runtime_source_paths(repository_root):
+        payload = _bounded_file_payload(
+            repository_root / relative_path,
+            "procedural runtime source",
+            _MAX_NATIVE_SOURCE_FILE_BYTES,
+        )
+        aggregate += len(payload)
+        if aggregate > _MAX_NATIVE_SOURCE_BUNDLE_BYTES:
+            raise NativeBuildError("procedural runtime sources exceed the aggregate byte limit")
+        payloads.append((relative_path, payload))
+    return tuple(payloads)
 
 
 def _library_filename() -> str:
@@ -665,7 +836,9 @@ def build_native(cache_root: str | Path | None = None, *, force: bool = False) -
     """Build the Rust kernel into a content-addressed cache and return its path."""
     plan = _native_build_plan()
     source_digest = plan.source_digest
-    root = Path(cache_root) if cache_root is not None else _default_cache_root()
+    root = (
+        Path(cache_root) if cache_root is not None else _default_cache_root()
+    ).resolve()
     target_root = root / source_digest
     library_path = target_root / plan.library_relative_path
     if library_path.is_file() and not force:

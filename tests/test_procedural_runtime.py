@@ -1167,11 +1167,24 @@ def test_gate3_slice_protocol_keeps_material_timing_frozen() -> None:
     assert protocol["source_binding"]["files"] == list(
         native_module.procedural_runtime_source_manifest()
     )
+    bound_paths = {item["path"] for item in protocol["source_binding"]["files"]}
+    assert ".gitattributes" in bound_paths
+    assert {
+        f"src/humanbrain/_native_src/{relative_path}"
+        for relative_path, _path in native_module._native_build_input_paths()
+    } <= bound_paths
     assert protocol["source_binding"]["bundle_sha256"] == (
         native_module.procedural_runtime_source_bundle_sha256()
     )
+    assert protocol["source_binding"]["limits"] == {
+        "maximum_file_bytes": native_module._MAX_NATIVE_SOURCE_FILE_BYTES,
+        "maximum_aggregate_bytes": native_module._MAX_NATIVE_SOURCE_BUNDLE_BYTES,
+        "actual_aggregate_bytes": sum(
+            int(item["size"]) for item in protocol["source_binding"]["files"]
+        ),
+    }
     assert hashlib.sha256(protocol_bytes).hexdigest() == (
-        "2bae6bfba802309add863fd9961f3ef03f5ed2186a718983f758fa8eb7936e96"
+        "e7abed3046571a74794c10b3e6c5a94ac7c56c1b2bacf3c8319f0a53345f697b"
     )
     assert protocol["timing"]["status"] == "frozen-pending-explicit-approval"
     assert protocol["timing"]["executed"] is False
@@ -1186,14 +1199,16 @@ def test_gate3_slice_protocol_keeps_material_timing_frozen() -> None:
     ]
 
 
-def test_native_source_digest_frames_paths_lengths_and_bytes(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_native_source_digest_frames_paths_lengths_and_bytes(tmp_path: Path) -> None:
     first = tmp_path / "first"
     second = tmp_path / "second"
     for root in (first, second):
         (root / "src").mkdir(parents=True)
+        (root / "vendor").mkdir()
+        (root / ".cargo").mkdir()
+        (root / ".cargo" / "config.toml").write_bytes(
+            native_module._VENDORED_CARGO_CONFIG
+        )
     (first / "Cargo.toml").write_bytes(b"a")
     (first / "Cargo.lock").write_bytes(b"bc")
     (first / "src" / "x.rs").write_bytes(b"")
@@ -1201,17 +1216,27 @@ def test_native_source_digest_frames_paths_lengths_and_bytes(
     (second / "Cargo.lock").write_bytes(b"c")
     (second / "src" / "y.rs").write_bytes(b"")
 
-    monkeypatch.setattr(native_module, "_SOURCE_ROOT", first)
-    first_digest = native_module._source_digest()
-    monkeypatch.setattr(native_module, "_SOURCE_ROOT", second)
-    second_digest = native_module._source_digest()
+    first_digest = native_module._framed_sha256(
+        "native-source-boundary-test",
+        native_module._native_build_input_manifest(first),
+    )
+    second_digest = native_module._framed_sha256(
+        "native-source-boundary-test",
+        native_module._native_build_input_manifest(second),
+    )
 
     assert b"".join(
         path.read_bytes()
-        for path in (first / "Cargo.toml", first / "Cargo.lock", first / "src/x.rs")
+        for path in (
+            first / ".cargo/config.toml",
+            first / "Cargo.toml",
+            first / "Cargo.lock",
+            first / "src/x.rs",
+        )
     ) == b"".join(
         path.read_bytes()
         for path in (
+            second / ".cargo/config.toml",
             second / "Cargo.toml",
             second / "Cargo.lock",
             second / "src/y.rs",

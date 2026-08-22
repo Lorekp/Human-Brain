@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import ctypes
 import json
 import math
 import os
@@ -34,6 +35,7 @@ from humanbrain import typed_program_types as typed_program_types_runtime
 from humanbrain.typed_composition import (
     CompositionProtocol,
     CompositionTask,
+    LaneCommitment,
     load_composition_protocol,
 )
 from humanbrain.typed_program import (
@@ -59,6 +61,8 @@ class EvidenceExistsError(RuntimeError):
 
 _MAX_SOURCE_FILE_BYTES = 1024 * 1024
 _MAX_SOURCE_BUNDLE_BYTES = 8 * 1024 * 1024
+_MOVEFILE_WRITE_THROUGH = 0x00000008
+_WINDOWS_ALREADY_EXISTS = frozenset({80, 183})
 _PROTOCOL_RELATIVE_PATH = Path("benchmarks/typed_composition_protocol_v1.json")
 _LOCAL_RUNTIME_MODULES = (
     sys.modules[__name__],
@@ -110,6 +114,26 @@ class ScoredEvaluation:
 class _ExecutionClock:
     wall_ns: Callable[[], int]
     process_ns: Callable[[], int]
+
+
+@dataclass(frozen=True, slots=True)
+class _ExecutionRun:
+    protocol: CompositionProtocol
+    plan: dict[str, object]
+    runtime_backend: dict[str, object]
+    runtime_provenance: dict[str, object]
+    run_directory: Path
+
+
+@dataclass(frozen=True, slots=True)
+class _TrainedLanes:
+    checkpoint_bytes: dict[str, bytes]
+    checkpoints: dict[str, object]
+    checkpoint_hashes: dict[str, str]
+    checkpoint_cell_synapse_hashes: dict[str, str]
+    checkpoint_accounting: dict[str, dict[str, int]]
+    performance_lanes: dict[str, dict[str, int]]
+    native_library_identity_before: dict[str, int | str] | None
 
 
 _SYSTEM_CLOCK = _ExecutionClock(
@@ -207,7 +231,7 @@ def build_execution_plan(root: Path, protocol_path: Path) -> dict[str, object]:
     protocol = load_composition_protocol(protocol_path)
     native_build_paths = tuple(
         f"src/humanbrain/_native_src/{relative_path}"
-        for relative_path, _payload in native_runtime._native_build_input_manifest()
+        for relative_path, _path in native_runtime._native_build_input_paths()
     )
     missing_native_paths = tuple(
         path for path in native_build_paths if path not in protocol.source_bundle_paths
@@ -440,16 +464,20 @@ def create_evidence_run(
         raise ValueError("run id must be a safe one-to-sixty-four character identifier")
     if type(plan_bytes) is not bytes:
         raise TypeError("plan bytes must be raw bytes")
-    evidence_root.mkdir(parents=True, exist_ok=True)
+    evidence_root = _durably_create_missing_directories(evidence_root)
     run_directory = evidence_root / run_id
     try:
-        run_directory.mkdir(exist_ok=False)
-    except FileExistsError as error:
+        _create_new_directory(run_directory)
+    except EvidenceExistsError as error:
         raise EvidenceExistsError(f"evidence run already exists: {run_id}") from error
+    except BaseException as error:
+        if run_directory.is_dir():
+            _terminal_failure(run_directory, error)
+        raise
     plan_path = run_directory / "000-plan.json"
     try:
         _write_new(plan_path, plan_bytes)
-    except FileExistsError as error:
+    except EvidenceExistsError as error:
         wrapped = EvidenceExistsError("initial evidence record already exists")
         _terminal_failure(run_directory, wrapped)
         raise wrapped from error
@@ -831,14 +859,22 @@ def _direct_trace_retention(protocol: CompositionProtocol) -> dict[str, object]:
     return result
 
 
-def score_sealed_completions(
+@dataclass(frozen=True, slots=True)
+class _LaneScore:
+    record: dict[str, object]
+    integrity_passed: bool
+    a2_decisions: tuple[tuple[tuple[int, ...], bytes, int], ...]
+    a2_train_margins: tuple[float, ...]
+    train_replay_tasks: int
+    train_cases: int
+    calibration_replay_tasks: int
+    calibration_cases: int
+
+
+def _decode_sealed_records(
     protocol: CompositionProtocol,
     sealed: tuple[SealedCompletion, ...],
-    *,
-    checkpoint_sha256s: Mapping[str, str],
-    checkpoint_cell_synapse_sha256s: Mapping[str, str],
-) -> ScoredEvaluation:
-    """Score labels and semantics only after the caller has sealed all lanes."""
+) -> tuple[dict[tuple[str, str], dict[str, object]], bool]:
     expected_total = len(protocol.lanes) * (
         len(protocol.train_tasks) + len(protocol.calibration_tasks)
     )
@@ -847,31 +883,34 @@ def score_sealed_completions(
         for lane in protocol.lanes
         for task in (*protocol.train_tasks, *protocol.calibration_tasks)
     )
-    sequence_ok = (
+    integrity = (
         len(sealed) == expected_total
-        and tuple(item.sequence_number for item in sealed) == tuple(range(1, expected_total + 1))
-        and tuple((item.lane, item.cohort, item.task_id) for item in sealed) == expected_sequence
+        and tuple(item.sequence_number for item in sealed)
+        == tuple(range(1, expected_total + 1))
+        and tuple((item.lane, item.cohort, item.task_id) for item in sealed)
+        == expected_sequence
     )
     decoded: dict[tuple[str, str], dict[str, object]] = {}
-    seal_integrity = sequence_ok
     for item in sealed:
         key = (item.lane, item.task_id)
         if key in decoded:
-            seal_integrity = False
+            integrity = False
             continue
         try:
             decoded[key] = _decode_sealed(item)
         except ValueError:
-            seal_integrity = False
+            integrity = False
+    return decoded, integrity
 
-    lane_records: dict[str, object] = {}
-    a2_train_replay = 0
-    a2_train_cases = 0
-    a2_calibration_replay = 0
-    a2_calibration_cases = 0
+
+def _checkpoint_maps_are_valid(
+    protocol: CompositionProtocol,
+    checkpoint_sha256s: Mapping[str, str],
+    checkpoint_cell_synapse_sha256s: Mapping[str, str],
+) -> bool:
     expected_lanes = tuple(lane.lane for lane in protocol.lanes)
     digest_pattern = re.compile(r"[0-9a-f]{64}")
-    checkpoint_maps_ok = (
+    return (
         tuple(checkpoint_sha256s) == expected_lanes
         and tuple(checkpoint_cell_synapse_sha256s) == expected_lanes
         and all(
@@ -882,137 +921,145 @@ def score_sealed_completions(
             )
         )
     )
-    common_integrity = seal_integrity and checkpoint_maps_ok
+
+
+def _score_lane_records(
+    protocol: CompositionProtocol,
+    lane: LaneCommitment,
+    decoded: Mapping[tuple[str, str], dict[str, object]],
+    checkpoint_sha256s: Mapping[str, str],
+    checkpoint_cell_synapse_sha256s: Mapping[str, str],
+) -> _LaneScore:
+    train_replay = 0
+    train_cases = 0
+    calibration_replay = 0
+    calibration_cases = 0
+    lane_integrity = True
+    lane_checkpoint_hashes: set[str] = set()
     a2_decisions: list[tuple[tuple[int, ...], bytes, int]] = []
     a2_train_margins: list[float] = []
-
-    for lane in protocol.lanes:
-        train_replay = 0
-        train_cases = 0
-        calibration_replay = 0
-        calibration_cases = 0
-        lane_integrity = True
-        lane_checkpoint_hashes: set[str] = set()
-        for task in (*protocol.train_tasks, *protocol.calibration_tasks):
-            record = decoded.get((lane.lane, task.task_id))
-            if record is None or frozenset(record) != frozenset(
-                {
-                    "program",
-                    "races",
-                    "prompt_sha256",
-                    "model_input_sha256",
-                    "checkpoint_sha256",
-                    "checkpoint_cell_synapse_before",
-                    "checkpoint_cell_synapse_after",
-                }
-            ):
-                lane_integrity = False
-                continue
-            program = record.get("program")
-            if not isinstance(program, dict) or frozenset(program) != frozenset(
-                {"tokens", "signature", "sha256"}
-            ):
-                lane_integrity = False
-                continue
-            token_values = program.get("tokens")
-            if not isinstance(token_values, list) or not all(
-                isinstance(token, str) for token in token_values
-            ):
-                lane_integrity = False
-                continue
-            tokens = tuple(token_values)
-            try:
-                expected_program_sha256 = Program(tokens, task.signature).sha256
-            except (TypeError, ValueError):
-                lane_integrity = False
-                continue
-            signature_ok = program.get("signature") == task.signature.to_record()
-            program_digest_ok = program.get("sha256") == expected_program_sha256
-            prompt_ok = (
-                record.get("prompt_sha256") == sha256(task.prompt.encode("utf-8")).hexdigest()
-            )
-            layer_protocol = Layer1Protocol.for_lane(lane.lane)
-            expected_model_input_sha256 = sha256(
-                typed_program._token_stream_bytes(
-                    typed_program._model_input(
-                        task.prompt,
-                        task.signature,
-                        framing_order=layer_protocol.framing_order,
-                    )
+    digest_pattern = re.compile(r"[0-9a-f]{64}")
+    for task in (*protocol.train_tasks, *protocol.calibration_tasks):
+        record = decoded.get((lane.lane, task.task_id))
+        if record is None or frozenset(record) != frozenset(
+            {
+                "program",
+                "races",
+                "prompt_sha256",
+                "model_input_sha256",
+                "checkpoint_sha256",
+                "checkpoint_cell_synapse_before",
+                "checkpoint_cell_synapse_after",
+            }
+        ):
+            lane_integrity = False
+            continue
+        program = record.get("program")
+        if not isinstance(program, dict) or frozenset(program) != frozenset(
+            {"tokens", "signature", "sha256"}
+        ):
+            lane_integrity = False
+            continue
+        token_values = program.get("tokens")
+        if not isinstance(token_values, list) or not all(
+            isinstance(token, str) for token in token_values
+        ):
+            lane_integrity = False
+            continue
+        tokens = tuple(token_values)
+        try:
+            expected_program_sha256 = Program(tokens, task.signature).sha256
+        except (TypeError, ValueError):
+            lane_integrity = False
+            continue
+        signature_ok = program.get("signature") == task.signature.to_record()
+        program_digest_ok = program.get("sha256") == expected_program_sha256
+        prompt_ok = record.get("prompt_sha256") == sha256(
+            task.prompt.encode("utf-8")
+        ).hexdigest()
+        layer_protocol = Layer1Protocol.for_lane(lane.lane)
+        expected_model_input_sha256 = sha256(
+            typed_program._token_stream_bytes(
+                typed_program._model_input(
+                    task.prompt,
+                    task.signature,
+                    framing_order=layer_protocol.framing_order,
                 )
-            ).hexdigest()
-            model_input_ok = record.get("model_input_sha256") == expected_model_input_sha256
-            before = record.get("checkpoint_cell_synapse_before")
-            after = record.get("checkpoint_cell_synapse_after")
-            checkpoint_hash = record.get("checkpoint_sha256")
-            if (
-                isinstance(checkpoint_hash, str)
-                and digest_pattern.fullmatch(checkpoint_hash) is not None
+            )
+        ).hexdigest()
+        model_input_ok = record.get("model_input_sha256") == expected_model_input_sha256
+        before = record.get("checkpoint_cell_synapse_before")
+        after = record.get("checkpoint_cell_synapse_after")
+        checkpoint_hash = record.get("checkpoint_sha256")
+        if (
+            isinstance(checkpoint_hash, str)
+            and digest_pattern.fullmatch(checkpoint_hash) is not None
+        ):
+            lane_checkpoint_hashes.add(checkpoint_hash)
+        checkpoint_ok = (
+            isinstance(before, str)
+            and digest_pattern.fullmatch(before) is not None
+            and before == after
+            and isinstance(checkpoint_hash, str)
+            and digest_pattern.fullmatch(checkpoint_hash) is not None
+            and checkpoint_hash == checkpoint_sha256s.get(lane.lane)
+            and before == checkpoint_cell_synapse_sha256s.get(lane.lane)
+        )
+        race_ok, race_values = _race_integrity(
+            record.get("races"),
+            tokens,
+            task.signature,
+        )
+        lane_integrity &= (
+            signature_ok
+            and program_digest_ok
+            and prompt_ok
+            and model_input_ok
+            and checkpoint_ok
+            and race_ok
+        )
+        replay = tokens == task.teacher_tokens
+        semantic_passes = _run_semantic_cases(task, tokens)
+        if task.cohort == "TRAIN":
+            train_replay += int(replay)
+            train_cases += semantic_passes
+        else:
+            calibration_replay += int(replay)
+            calibration_cases += semantic_passes
+
+        if lane.lane == "A2" and replay and race_ok:
+            for target_token, race_value in zip(
+                task.teacher_tokens,
+                race_values,
+                strict=True,
             ):
-                lane_checkpoint_hashes.add(checkpoint_hash)
-            checkpoint_ok = (
-                isinstance(before, str)
-                and digest_pattern.fullmatch(before) is not None
-                and before == after
-                and isinstance(checkpoint_hash, str)
-                and digest_pattern.fullmatch(checkpoint_hash) is not None
-                and checkpoint_hash == checkpoint_sha256s.get(lane.lane)
-                and before == checkpoint_cell_synapse_sha256s.get(lane.lane)
-            )
-            race_ok, race_values = _race_integrity(
-                record.get("races"),
-                tokens,
-                task.signature,
-            )
-            lane_integrity &= (
-                signature_ok
-                and program_digest_ok
-                and prompt_ok
-                and model_input_ok
-                and checkpoint_ok
-                and race_ok
-            )
-            replay = tokens == task.teacher_tokens
-            semantic_passes = _run_semantic_cases(task, tokens)
-            if task.cohort == "TRAIN":
-                train_replay += int(replay)
-                train_cases += semantic_passes
-            else:
-                calibration_replay += int(replay)
-                calibration_cases += semantic_passes
+                target = typed_program._TOKEN_TO_ID[target_token]
+                allowed = race_value["allowed"]
+                currents = race_value["currents"]
+                eligibility = race_value["eligibility"]
+                assert isinstance(allowed, tuple)
+                assert isinstance(currents, tuple)
+                assert isinstance(eligibility, bytes)
+                a2_decisions.append((allowed, eligibility, target))
+                if task.cohort == "TRAIN" and len(allowed) > 1:
+                    if target not in allowed:
+                        lane_integrity = False
+                        continue
+                    target_index = allowed.index(target)
+                    alternatives = [
+                        current
+                        for index, current in enumerate(currents)
+                        if index != target_index
+                    ]
+                    margin = float(currents[target_index]) - max(alternatives)
+                    if math.isfinite(margin):
+                        a2_train_margins.append(margin)
+                    else:
+                        lane_integrity = False
 
-            if lane.lane == "A2" and replay and race_ok:
-                for target_token, race_value in zip(
-                    task.teacher_tokens,
-                    race_values,
-                    strict=True,
-                ):
-                    target = typed_program._TOKEN_TO_ID[target_token]
-                    allowed = race_value["allowed"]
-                    currents = race_value["currents"]
-                    eligibility = race_value["eligibility"]
-                    assert isinstance(allowed, tuple)
-                    assert isinstance(currents, tuple)
-                    assert isinstance(eligibility, bytes)
-                    a2_decisions.append((allowed, eligibility, target))
-                    if task.cohort == "TRAIN" and len(allowed) > 1:
-                        if target not in allowed:
-                            lane_integrity = False
-                            continue
-                        target_index = allowed.index(target)
-                        alternatives = [
-                            current
-                            for index, current in enumerate(currents)
-                            if index != target_index
-                        ]
-                        margin = float(currents[target_index]) - max(alternatives)
-                        if math.isfinite(margin):
-                            a2_train_margins.append(margin)
-                        else:
-                            lane_integrity = False
-
-        lane_integrity &= len(lane_checkpoint_hashes) == 1
-        lane_records[lane.lane] = {
+    lane_integrity &= len(lane_checkpoint_hashes) == 1
+    return _LaneScore(
+        record={
             "diagnostic_only": lane.diagnostic_only,
             "eligible_lane": lane.eligible,
             "train_replay_tasks": train_replay,
@@ -1020,33 +1067,53 @@ def score_sealed_completions(
             "calibration_replay_tasks": calibration_replay,
             "calibration_cases": calibration_cases,
             "integrity_passed": lane_integrity,
-        }
-        common_integrity &= lane_integrity
-        if lane.lane == "A2":
-            a2_train_replay = train_replay
-            a2_train_cases = train_cases
-            a2_calibration_replay = calibration_replay
-            a2_calibration_cases = calibration_cases
+        },
+        integrity_passed=lane_integrity,
+        a2_decisions=tuple(a2_decisions),
+        a2_train_margins=tuple(a2_train_margins),
+        train_replay_tasks=train_replay,
+        train_cases=train_cases,
+        calibration_replay_tasks=calibration_replay,
+        calibration_cases=calibration_cases,
+    )
 
+
+def _aggregate_lane_scores(
+    protocol: CompositionProtocol,
+    sealed_count: int,
+    decoded: Mapping[tuple[str, str], dict[str, object]],
+    *,
+    seal_integrity: bool,
+    checkpoint_maps_ok: bool,
+    lane_scores: Mapping[str, _LaneScore],
+) -> ScoredEvaluation:
+    lane_records = {lane: score.record for lane, score in lane_scores.items()}
+    common_integrity = (
+        seal_integrity
+        and checkpoint_maps_ok
+        and all(score.integrity_passed for score in lane_scores.values())
+    )
+    a2_score = lane_scores["A2"]
     collision_groups: dict[tuple[tuple[int, ...], bytes], set[int]] = {}
-    for allowed, eligibility, target in a2_decisions:
+    for allowed, eligibility, target in a2_score.a2_decisions:
         collision_groups.setdefault((allowed, eligibility), set()).add(target)
     collision_count = sum(len(targets) > 1 for targets in collision_groups.values())
-    minimum_margin = min(a2_train_margins) if a2_train_margins else 0.0
+    margins = a2_score.a2_train_margins
+    minimum_margin = min(margins) if margins else 0.0
     metrics = A2EligibilityMetrics(
-        train_replay_tasks=a2_train_replay,
-        train_cases=a2_train_cases,
-        calibration_replay_tasks=a2_calibration_replay,
-        calibration_cases=a2_calibration_cases,
+        train_replay_tasks=a2_score.train_replay_tasks,
+        train_cases=a2_score.train_cases,
+        calibration_replay_tasks=a2_score.calibration_replay_tasks,
+        calibration_cases=a2_score.calibration_cases,
         common_integrity_gates_passed=common_integrity,
         decision_collision_count=collision_count,
-        competitive_train_margin_count=len(a2_train_margins),
+        competitive_train_margin_count=len(margins),
         minimum_train_target_margin_pa=minimum_margin,
     )
     eligible = a2_is_eligible("A2", metrics)
     record = {
         "protocol_sha256": protocol.raw_sha256,
-        "sealed_completion_count": len(sealed),
+        "sealed_completion_count": sealed_count,
         "all_completions_sealed_before_scoring": True,
         "lanes": lane_records,
         "a2_eligibility": {
@@ -1059,7 +1126,7 @@ def score_sealed_completions(
             "decision_collision_count": metrics.decision_collision_count,
             "competitive_train_margin_count": metrics.competitive_train_margin_count,
             "minimum_train_target_margin_pa": metrics.minimum_train_target_margin_pa,
-            "target_margin_distribution": _aggregate(a2_train_margins),
+            "target_margin_distribution": _aggregate(margins),
         },
         "diagnostics": {
             "state_separation": _state_separation(protocol, decoded),
@@ -1070,6 +1137,40 @@ def score_sealed_completions(
     return ScoredEvaluation(record=record, a2_metrics=metrics, a2_eligible=eligible)
 
 
+def score_sealed_completions(
+    protocol: CompositionProtocol,
+    sealed: tuple[SealedCompletion, ...],
+    *,
+    checkpoint_sha256s: Mapping[str, str],
+    checkpoint_cell_synapse_sha256s: Mapping[str, str],
+) -> ScoredEvaluation:
+    """Score labels and semantics only after the caller has sealed all lanes."""
+    decoded, seal_integrity = _decode_sealed_records(protocol, sealed)
+    checkpoint_maps_ok = _checkpoint_maps_are_valid(
+        protocol,
+        checkpoint_sha256s,
+        checkpoint_cell_synapse_sha256s,
+    )
+    lane_scores = {
+        lane.lane: _score_lane_records(
+            protocol,
+            lane,
+            decoded,
+            checkpoint_sha256s,
+            checkpoint_cell_synapse_sha256s,
+        )
+        for lane in protocol.lanes
+    }
+    return _aggregate_lane_scores(
+        protocol,
+        len(sealed),
+        decoded,
+        seal_integrity=seal_integrity,
+        checkpoint_maps_ok=checkpoint_maps_ok,
+        lane_scores=lane_scores,
+    )
+
+
 def _write_temp_fully(file_descriptor: int, value: bytes) -> None:
     remaining = memoryview(value)
     while remaining:
@@ -1078,6 +1179,109 @@ def _write_temp_fully(file_descriptor: int, value: bytes) -> None:
             raise OSError("evidence temporary write made no progress")
         remaining = remaining[written:]
     os.fsync(file_descriptor)
+
+
+def _sync_posix_directory(directory: Path) -> None:
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    try:
+        file_descriptor = os.open(directory, flags)
+    except OSError as error:
+        raise OSError(f"cannot open directory for durable metadata: {directory}") from error
+    try:
+        os.fsync(file_descriptor)
+    finally:
+        os.close(file_descriptor)
+
+
+def _move_file_ex(source: Path, target: Path, flags: int) -> int:
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    move_file_ex = kernel32.MoveFileExW
+    move_file_ex.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32)
+    move_file_ex.restype = ctypes.c_int
+    if move_file_ex(str(source), str(target), flags):
+        return 0
+    return ctypes.get_last_error()
+
+
+def _windows_move_new(source: Path, target: Path) -> None:
+    # Resolve only the parents.  Following the final target component would let
+    # an existing reparse point redirect this preflight away from MoveFileExW,
+    # whose no-replace result is the authority for exclusive publication.
+    if source.parent.resolve() != target.parent.resolve():
+        raise ValueError("durable Windows publication requires one resolved parent")
+    error_code = _move_file_ex(source, target, _MOVEFILE_WRITE_THROUGH)
+    if error_code == 0:
+        return
+    if error_code in _WINDOWS_ALREADY_EXISTS:
+        raise EvidenceExistsError(f"evidence target already exists: {target.name}")
+    raise ctypes.WinError(error_code)
+
+
+def _publish_posix_new(temporary_path: Path, target: Path) -> None:
+    try:
+        os.link(temporary_path, target)
+    except FileExistsError as error:
+        raise EvidenceExistsError(
+            f"evidence target already exists: {target.name}"
+        ) from error
+    try:
+        temporary_path.unlink()
+    except OSError as unlink_error:
+        try:
+            _sync_posix_directory(target.parent)
+        except OSError as sync_error:
+            unlink_error.add_note(
+                f"parent-directory sync also failed: {type(sync_error).__name__}: {sync_error}"
+            )
+        raise
+    _sync_posix_directory(target.parent)
+
+
+def _publish_new(temporary_path: Path, target: Path) -> None:
+    if os.name == "nt":
+        _windows_move_new(temporary_path, target)
+        return
+    _publish_posix_new(temporary_path, target)
+
+
+def _create_new_directory(path: Path) -> None:
+    if not path.parent.is_dir():
+        raise OSError(f"durable directory parent does not exist: {path.parent}")
+    if os.name == "nt":
+        temporary_path = Path(
+            tempfile.mkdtemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+        )
+        try:
+            _windows_move_new(temporary_path, path)
+        finally:
+            with suppress(OSError):
+                temporary_path.rmdir()
+        return
+    try:
+        path.mkdir(exist_ok=False)
+    except FileExistsError as error:
+        raise EvidenceExistsError(f"evidence directory already exists: {path.name}") from error
+    _sync_posix_directory(path.parent)
+
+
+def _durably_create_missing_directories(path: Path) -> Path:
+    resolved = path.resolve()
+    missing: list[Path] = []
+    cursor = resolved
+    while not cursor.exists():
+        missing.append(cursor)
+        parent = cursor.parent
+        if parent == cursor:
+            raise OSError("no existing ancestor for durable evidence directory")
+        cursor = parent
+    if not cursor.is_dir():
+        raise NotADirectoryError(f"evidence ancestor is not a directory: {cursor}")
+    for directory in reversed(missing):
+        # A component observed missing must be created by this call.  Accepting
+        # a racing winner could return before that winner durably publishes the
+        # directory entry, so a collision is an indeterminate failure.
+        _create_new_directory(directory)
+    return resolved
 
 
 def _write_new(path: Path, value: bytes) -> None:
@@ -1098,12 +1302,7 @@ def _write_new(path: Path, value: bytes) -> None:
             raise
         else:
             os.close(file_descriptor)
-        try:
-            os.link(temporary_path, path)
-        except FileExistsError as error:
-            raise EvidenceExistsError(
-                f"evidence target already exists: {path.name}"
-            ) from error
+        _publish_new(temporary_path, path)
     finally:
         with suppress(OSError):
             temporary_path.unlink(missing_ok=True)
@@ -1122,6 +1321,272 @@ def _terminal_failure(run_directory: Path, error: BaseException) -> None:
         _write_new(run_directory / "999-terminal-failure.json", _canonical_json(record))
 
 
+def _preflight_execution(
+    root: Path,
+    protocol_path: Path,
+    *,
+    evidence_root: Path,
+    run_id: str,
+    confirmation: str | None,
+    source_bundle_confirmation: str | None,
+    grow_fn: Callable[[Layer1Protocol, tuple[object, ...]], object],
+    complete_fn: Callable[[object, str, object], Completion],
+    synthetic_test_only: bool,
+    clock: _ExecutionClock,
+) -> _ExecutionRun:
+    if not synthetic_test_only and (grow_fn is not grow or complete_fn is not complete):
+        raise TypeError("production execution requires fixed public grow and complete")
+    if not synthetic_test_only and clock is not _SYSTEM_CLOCK:
+        raise TypeError("production execution requires the system execution clock")
+    if not synthetic_test_only:
+        _require_production_checkout(root, protocol_path)
+    protocol = load_composition_protocol(protocol_path)
+    validate_execution_confirmation(protocol, confirmation)
+    plan = build_execution_plan(root, protocol_path)
+    validate_source_bundle_confirmation(plan, source_bundle_confirmation)
+    runtime_backend = _require_cpu_runtime_backend()
+    runtime_provenance = _runtime_provenance()
+    execution_plan = {
+        **plan,
+        "mode": "synthetic-test" if synthetic_test_only else "execute",
+        "material_execution_authorized": not synthetic_test_only,
+        "synthetic_test_only": synthetic_test_only,
+        "confirmed_protocol_sha256": confirmation,
+        "confirmed_source_bundle_sha256": source_bundle_confirmation,
+        "runtime_backend": runtime_backend,
+        "runtime_provenance": runtime_provenance,
+        "run_id": run_id,
+    }
+    run_directory = create_evidence_run(
+        evidence_root,
+        run_id,
+        _canonical_json(execution_plan),
+    )
+    return _ExecutionRun(
+        protocol=protocol,
+        plan=plan,
+        runtime_backend=runtime_backend,
+        runtime_provenance=runtime_provenance,
+        run_directory=run_directory,
+    )
+
+
+def _train_execution_lanes(
+    run: _ExecutionRun,
+    *,
+    grow_fn: Callable[[Layer1Protocol, tuple[object, ...]], object],
+    synthetic_test_only: bool,
+    clock: _ExecutionClock,
+) -> _TrainedLanes:
+    checkpoint_bytes: dict[str, bytes] = {}
+    checkpoints: dict[str, object] = {}
+    checkpoint_hashes: dict[str, str] = {}
+    checkpoint_cell_synapse_hashes: dict[str, str] = {}
+    checkpoint_accounting: dict[str, dict[str, int]] = {}
+    performance_lanes: dict[str, dict[str, int]] = {}
+    native_library_identity_before: dict[str, int | str] | None = None
+    if not synthetic_test_only:
+        native_library_identity_before = native_runtime.loaded_library_identity().to_record()
+        _write_new(
+            run.run_directory / "005-native-library-before.json",
+            _canonical_json(
+                {
+                    "event": "native-library-identity-before-model",
+                    "identity": native_library_identity_before,
+                }
+            ),
+        )
+    examples = tuple(run.protocol.training_examples())
+    for lane in run.protocol.lanes:
+        grow_wall_start = clock.wall_ns()
+        grow_process_start = clock.process_ns()
+        checkpoint = grow_fn(Layer1Protocol.for_lane(lane.lane), examples)
+        grow_process_finish = clock.process_ns()
+        grow_wall_finish = clock.wall_ns()
+        if not synthetic_test_only and type(checkpoint) is not FrozenCheckpoint:
+            raise TypeError("production growth must return an exact FrozenCheckpoint")
+        if not synthetic_test_only:
+            current_native_identity = native_runtime.loaded_library_identity().to_record()
+            if current_native_identity != native_library_identity_before:
+                raise RuntimeError("loaded native CPU library changed between lanes")
+        if getattr(checkpoint, "lane", None) != lane.lane:
+            raise ValueError("grown checkpoint lane differs from requested lane")
+        checkpoint_accounting[lane.lane] = _validate_checkpoint_accounting(
+            run.protocol,
+            lane.lane,
+            checkpoint,
+        )
+        raw = checkpoint.to_bytes()  # type: ignore[attr-defined]
+        if type(raw) is not bytes:
+            raise TypeError("checkpoint serialization must return exact bytes")
+        raw_sha256 = sha256(raw).hexdigest()
+        if getattr(checkpoint, "sha256", None) != raw_sha256:
+            raise ValueError("checkpoint SHA-256 differs from its raw bytes")
+        checkpoint_bytes[lane.lane] = raw
+        performance_lanes[lane.lane] = {
+            "grow_wall_ns": _elapsed_ns(grow_wall_start, grow_wall_finish, "grow wall"),
+            "grow_process_ns": _elapsed_ns(
+                grow_process_start,
+                grow_process_finish,
+                "grow process",
+            ),
+            "checkpoint_bytes": len(raw),
+        }
+        checkpoint_hashes[lane.lane] = raw_sha256
+        cell_synapse_sha256 = getattr(checkpoint, "cell_synapse_sha256", None)
+        if (
+            not isinstance(cell_synapse_sha256, str)
+            or re.fullmatch(r"[0-9a-f]{64}", cell_synapse_sha256) is None
+        ):
+            raise ValueError("checkpoint cell/synapse SHA-256 is invalid")
+        checkpoint_cell_synapse_hashes[lane.lane] = cell_synapse_sha256
+        checkpoints[lane.lane] = checkpoint
+        _write_new(run.run_directory / f"010-checkpoint-{lane.lane}.json", raw)
+    return _TrainedLanes(
+        checkpoint_bytes=checkpoint_bytes,
+        checkpoints=checkpoints,
+        checkpoint_hashes=checkpoint_hashes,
+        checkpoint_cell_synapse_hashes=checkpoint_cell_synapse_hashes,
+        checkpoint_accounting=checkpoint_accounting,
+        performance_lanes=performance_lanes,
+        native_library_identity_before=native_library_identity_before,
+    )
+
+
+def _seal_execution_lanes(
+    run: _ExecutionRun,
+    trained: _TrainedLanes,
+    *,
+    complete_fn: Callable[[object, str, object], Completion],
+    clock: _ExecutionClock,
+) -> tuple[SealedCompletion, ...]:
+    # No task label or semantic case is inspected until all raw seals exist.
+    sealed, completion_measurements = _seal_all_lane_completions(
+        run.protocol,
+        trained.checkpoints,
+        complete_fn=complete_fn,
+        clock=clock,
+    )
+    for lane, lane_measurements in completion_measurements.items():
+        trained.performance_lanes[lane].update(lane_measurements)
+    sealed_record = {
+        "event": "all-completions-sealed",
+        "scoring_started": False,
+        "count": len(sealed),
+        "items": [
+            {
+                "sequence_number": item.sequence_number,
+                "lane": item.lane,
+                "cohort": item.cohort,
+                "task_id": item.task_id,
+                "record_base64": base64.b64encode(item.record_bytes).decode("ascii"),
+                "sha256": item.sha256,
+            }
+            for item in sealed
+        ],
+    }
+    _write_new(
+        run.run_directory / "020-sealed-completions.json",
+        _canonical_json(sealed_record),
+    )
+    for lane, checkpoint in trained.checkpoints.items():
+        if checkpoint.to_bytes() != trained.checkpoint_bytes[lane]:  # type: ignore[attr-defined]
+            raise RuntimeError("completion changed checkpoint raw bytes")
+        if (
+            sha256(trained.checkpoint_bytes[lane]).hexdigest()
+            != trained.checkpoint_hashes[lane]
+        ):
+            raise RuntimeError("checkpoint raw-byte digest changed")
+    return sealed
+
+
+def _publish_execution_evaluation(
+    root: Path,
+    protocol_path: Path,
+    run: _ExecutionRun,
+    trained: _TrainedLanes,
+    sealed: tuple[SealedCompletion, ...],
+    *,
+    synthetic_test_only: bool,
+) -> ScoredEvaluation:
+    evaluation = score_sealed_completions(
+        run.protocol,
+        sealed,
+        checkpoint_sha256s=trained.checkpoint_hashes,
+        checkpoint_cell_synapse_sha256s=trained.checkpoint_cell_synapse_hashes,
+    )
+    if synthetic_test_only:
+        evaluation.record["synthetic_test_only"] = True
+        evaluation.record["a2_eligibility"]["eligible"] = False  # type: ignore[index]
+        evaluation = ScoredEvaluation(
+            record=evaluation.record,
+            a2_metrics=evaluation.a2_metrics,
+            a2_eligible=False,
+        )
+    after_plan = build_execution_plan(root, protocol_path)
+    if (
+        after_plan["protocol_sha256"] != run.plan["protocol_sha256"]
+        or after_plan["source_bundle_sha256"] != run.plan["source_bundle_sha256"]
+    ):
+        raise RuntimeError("protocol or source bundle changed during execution")
+    native_library_identity_after: dict[str, int | str] | None = None
+    if not synthetic_test_only:
+        native_library_identity_after = native_runtime.loaded_library_identity().to_record()
+        if native_library_identity_after != trained.native_library_identity_before:
+            raise RuntimeError("loaded native CPU library bytes changed during execution")
+        _write_new(
+            run.run_directory / "025-native-library-after.json",
+            _canonical_json(
+                {
+                    "event": "native-library-identity-before-publish",
+                    "identity": native_library_identity_after,
+                }
+            ),
+        )
+    evaluation.record["source_bundle_sha256"] = run.plan["source_bundle_sha256"]
+    evaluation.record["source_bundle_unchanged"] = True
+    evaluation.record["runtime_backend"] = run.runtime_backend
+    evaluation.record["native_library_identity_before"] = (
+        trained.native_library_identity_before
+    )
+    evaluation.record["native_library_identity_after"] = native_library_identity_after
+    evaluation.record["runtime_provenance"] = run.runtime_provenance
+    evaluation.record["performance_measurements"] = {
+        "capability_gating": False,
+        "lanes": trained.performance_lanes,
+    }
+    evaluation.record["checkpoint_raw_bytes_unchanged"] = True
+    evaluation.record["checkpoint_accounting"] = trained.checkpoint_accounting
+    evaluation.record["observation_and_strengthen_accounting_passed"] = True
+    evaluation.record["exclusive_evidence_creation"] = True
+    _write_new(
+        run.run_directory / "030-evaluation.json",
+        _canonical_json(evaluation.record),
+    )
+    summary = {
+        "event": "terminal-summary",
+        "protocol_sha256": run.protocol.raw_sha256,
+        "source_bundle_sha256": run.plan["source_bundle_sha256"],
+        "synthetic_test_only": synthetic_test_only,
+        "native_library_sha256": (
+            None
+            if native_library_identity_after is None
+            else native_library_identity_after["binary_sha256"]
+        ),
+        "a2_eligible": evaluation.a2_eligible,
+        "a0_eligible": False,
+        "a1_eligible": False,
+        "future_cohort_generated": False,
+        "resume_allowed": False,
+        "rerun_same_run_id_allowed": False,
+    }
+    _write_new(
+        run.run_directory / "999-terminal-summary.json",
+        _canonical_json(summary),
+    )
+    return evaluation
+
+
 def _execute_protocol(
     root: Path,
     protocol_path: Path,
@@ -1135,215 +1600,43 @@ def _execute_protocol(
     synthetic_test_only: bool,
     clock: _ExecutionClock = _SYSTEM_CLOCK,
 ) -> ScoredEvaluation:
-    """Shared implementation; injected dependencies are always marked synthetic."""
-    if not synthetic_test_only and (grow_fn is not grow or complete_fn is not complete):
-        raise TypeError("production execution requires fixed public grow and complete")
-    if not synthetic_test_only and clock is not _SYSTEM_CLOCK:
-        raise TypeError("production execution requires the system execution clock")
-    if not synthetic_test_only:
-        _require_production_checkout(root, protocol_path)
-    protocol = load_composition_protocol(protocol_path)
-    validate_execution_confirmation(protocol, confirmation)
-    plan = build_execution_plan(root, protocol_path)
-    validate_source_bundle_confirmation(plan, source_bundle_confirmation)
-    runtime_backend = _require_cpu_runtime_backend()
-    execution_plan = dict(plan)
-    execution_plan["mode"] = "synthetic-test" if synthetic_test_only else "execute"
-    execution_plan["material_execution_authorized"] = not synthetic_test_only
-    execution_plan["synthetic_test_only"] = synthetic_test_only
-    execution_plan["confirmed_protocol_sha256"] = confirmation
-    execution_plan["confirmed_source_bundle_sha256"] = source_bundle_confirmation
-    execution_plan["runtime_backend"] = runtime_backend
-    runtime_provenance = _runtime_provenance()
-    execution_plan["runtime_provenance"] = runtime_provenance
-    execution_plan["run_id"] = run_id
-    plan_bytes = _canonical_json(execution_plan)
-    run_directory = create_evidence_run(evidence_root, run_id, plan_bytes)
-
-    checkpoint_bytes: dict[str, bytes] = {}
-    checkpoints: dict[str, object] = {}
-    checkpoint_hashes: dict[str, str] = {}
-    checkpoint_cell_synapse_hashes: dict[str, str] = {}
-    checkpoint_accounting: dict[str, dict[str, int]] = {}
-    performance_lanes: dict[str, dict[str, int]] = {}
-    native_library_identity_before: dict[str, int | str] | None = None
-    native_library_identity_after: dict[str, int | str] | None = None
+    """Run the explicit preflight, train, seal, and publish phases once."""
+    run = _preflight_execution(
+        root,
+        protocol_path,
+        evidence_root=evidence_root,
+        run_id=run_id,
+        confirmation=confirmation,
+        source_bundle_confirmation=source_bundle_confirmation,
+        grow_fn=grow_fn,
+        complete_fn=complete_fn,
+        synthetic_test_only=synthetic_test_only,
+        clock=clock,
+    )
     try:
-        if not synthetic_test_only:
-            native_library_identity_before = native_runtime.loaded_library_identity().to_record()
-            _write_new(
-                run_directory / "005-native-library-before.json",
-                _canonical_json(
-                    {
-                        "event": "native-library-identity-before-model",
-                        "identity": native_library_identity_before,
-                    }
-                ),
-            )
-        examples = tuple(protocol.training_examples())
-        for lane in protocol.lanes:
-            grow_wall_start = clock.wall_ns()
-            grow_process_start = clock.process_ns()
-            checkpoint = grow_fn(Layer1Protocol.for_lane(lane.lane), examples)
-            grow_process_finish = clock.process_ns()
-            grow_wall_finish = clock.wall_ns()
-            if not synthetic_test_only and type(checkpoint) is not FrozenCheckpoint:
-                raise TypeError("production growth must return an exact FrozenCheckpoint")
-            if not synthetic_test_only:
-                current_native_identity = native_runtime.loaded_library_identity().to_record()
-                if current_native_identity != native_library_identity_before:
-                    raise RuntimeError("loaded native CPU library changed between lanes")
-            if getattr(checkpoint, "lane", None) != lane.lane:
-                raise ValueError("grown checkpoint lane differs from requested lane")
-            checkpoint_accounting[lane.lane] = _validate_checkpoint_accounting(
-                protocol,
-                lane.lane,
-                checkpoint,
-            )
-            raw = checkpoint.to_bytes()  # type: ignore[attr-defined]
-            if type(raw) is not bytes:
-                raise TypeError("checkpoint serialization must return exact bytes")
-            raw_sha256 = sha256(raw).hexdigest()
-            if getattr(checkpoint, "sha256", None) != raw_sha256:
-                raise ValueError("checkpoint SHA-256 differs from its raw bytes")
-            checkpoint_bytes[lane.lane] = raw
-            performance_lanes[lane.lane] = {
-                "grow_wall_ns": _elapsed_ns(
-                    grow_wall_start,
-                    grow_wall_finish,
-                    "grow wall",
-                ),
-                "grow_process_ns": _elapsed_ns(
-                    grow_process_start,
-                    grow_process_finish,
-                    "grow process",
-                ),
-                "checkpoint_bytes": len(raw),
-            }
-            checkpoint_hashes[lane.lane] = raw_sha256
-            cell_synapse_sha256 = getattr(checkpoint, "cell_synapse_sha256", None)
-            if (
-                not isinstance(cell_synapse_sha256, str)
-                or re.fullmatch(r"[0-9a-f]{64}", cell_synapse_sha256) is None
-            ):
-                raise ValueError("checkpoint cell/synapse SHA-256 is invalid")
-            checkpoint_cell_synapse_hashes[lane.lane] = cell_synapse_sha256
-            checkpoints[lane.lane] = checkpoint
-            _write_new(run_directory / f"010-checkpoint-{lane.lane}.json", raw)
-
-        # This phase completes every lane and cohort. No task label or semantic
-        # case is inspected until the returned byte seals are all present.
-        sealed, completion_measurements = _seal_all_lane_completions(
-            protocol,
-            checkpoints,
+        trained = _train_execution_lanes(
+            run,
+            grow_fn=grow_fn,
+            synthetic_test_only=synthetic_test_only,
+            clock=clock,
+        )
+        sealed = _seal_execution_lanes(
+            run,
+            trained,
             complete_fn=complete_fn,
             clock=clock,
         )
-        for lane, lane_measurements in completion_measurements.items():
-            performance_lanes[lane].update(lane_measurements)
-        sealed_record = {
-            "event": "all-completions-sealed",
-            "scoring_started": False,
-            "count": len(sealed),
-            "items": [
-                {
-                    "sequence_number": item.sequence_number,
-                    "lane": item.lane,
-                    "cohort": item.cohort,
-                    "task_id": item.task_id,
-                    "record_base64": base64.b64encode(item.record_bytes).decode("ascii"),
-                    "sha256": item.sha256,
-                }
-                for item in sealed
-            ],
-        }
-        _write_new(
-            run_directory / "020-sealed-completions.json",
-            _canonical_json(sealed_record),
-        )
-
-        for lane, checkpoint in checkpoints.items():
-            if checkpoint.to_bytes() != checkpoint_bytes[lane]:  # type: ignore[attr-defined]
-                raise RuntimeError("completion changed checkpoint raw bytes")
-            if sha256(checkpoint_bytes[lane]).hexdigest() != checkpoint_hashes[lane]:
-                raise RuntimeError("checkpoint raw-byte digest changed")
-        evaluation = score_sealed_completions(
-            protocol,
+        return _publish_execution_evaluation(
+            root,
+            protocol_path,
+            run,
+            trained,
             sealed,
-            checkpoint_sha256s=checkpoint_hashes,
-            checkpoint_cell_synapse_sha256s=checkpoint_cell_synapse_hashes,
+            synthetic_test_only=synthetic_test_only,
         )
-        if synthetic_test_only:
-            evaluation.record["synthetic_test_only"] = True
-            evaluation.record["a2_eligibility"]["eligible"] = False  # type: ignore[index]
-            evaluation = ScoredEvaluation(
-                record=evaluation.record,
-                a2_metrics=evaluation.a2_metrics,
-                a2_eligible=False,
-            )
-        after_plan = build_execution_plan(root, protocol_path)
-        if (
-            after_plan["protocol_sha256"] != plan["protocol_sha256"]
-            or after_plan["source_bundle_sha256"] != plan["source_bundle_sha256"]
-        ):
-            raise RuntimeError("protocol or source bundle changed during execution")
-        if not synthetic_test_only:
-            native_library_identity_after = native_runtime.loaded_library_identity().to_record()
-            if native_library_identity_after != native_library_identity_before:
-                raise RuntimeError("loaded native CPU library bytes changed during execution")
-            _write_new(
-                run_directory / "025-native-library-after.json",
-                _canonical_json(
-                    {
-                        "event": "native-library-identity-before-publish",
-                        "identity": native_library_identity_after,
-                    }
-                ),
-            )
-        evaluation.record["source_bundle_sha256"] = plan["source_bundle_sha256"]
-        evaluation.record["source_bundle_unchanged"] = True
-        evaluation.record["runtime_backend"] = runtime_backend
-        evaluation.record["native_library_identity_before"] = native_library_identity_before
-        evaluation.record["native_library_identity_after"] = native_library_identity_after
-        evaluation.record["runtime_provenance"] = runtime_provenance
-        evaluation.record["performance_measurements"] = {
-            "capability_gating": False,
-            "lanes": performance_lanes,
-        }
-        evaluation.record["checkpoint_raw_bytes_unchanged"] = True
-        evaluation.record["checkpoint_accounting"] = checkpoint_accounting
-        evaluation.record["observation_and_strengthen_accounting_passed"] = True
-        evaluation.record["exclusive_evidence_creation"] = True
-        _write_new(
-            run_directory / "030-evaluation.json",
-            _canonical_json(evaluation.record),
-        )
-        summary = {
-            "event": "terminal-summary",
-            "protocol_sha256": protocol.raw_sha256,
-            "source_bundle_sha256": plan["source_bundle_sha256"],
-            "synthetic_test_only": synthetic_test_only,
-            "native_library_sha256": (
-                None
-                if native_library_identity_after is None
-                else native_library_identity_after["binary_sha256"]
-            ),
-            "a2_eligible": evaluation.a2_eligible,
-            "a0_eligible": False,
-            "a1_eligible": False,
-            "future_cohort_generated": False,
-            "resume_allowed": False,
-            "rerun_same_run_id_allowed": False,
-        }
-        _write_new(
-            run_directory / "999-terminal-summary.json",
-            _canonical_json(summary),
-        )
-        return evaluation
     except BaseException as error:
-        _terminal_failure(run_directory, error)
+        _terminal_failure(run.run_directory, error)
         raise
-
 
 def execute_protocol(
     protocol_path: Path,

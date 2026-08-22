@@ -157,14 +157,19 @@
     "framing": "humanbrain-procedural-runtime-source-v1: ordered UTF-8 path length/path plus uint64 byte length/raw bytes",
     "files": [
       {
+        "path": ".gitattributes",
+        "size": 308,
+        "sha256": "811d29f78494fd04b5e7dd6421aec21b30aeddbe39287a9dbea32b62a906b6e6"
+      },
+      {
         "path": "data/allen/523000114_neuron_config.json",
         "size": 1378,
         "sha256": "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149"
       },
       {
         "path": "src/humanbrain/_native_src/Cargo.lock",
-        "size": 1628,
-        "sha256": "1b9e6d141a5643e629ccd7ee2c61132e6d37cfae88c6d2ebaab568100948636d"
+        "size": 1567,
+        "sha256": "ae53a3bba536f33dea7f8e543cc226aa9583d0bc0365ea03ecf8b40eb89a2d1a"
       },
       {
         "path": "src/humanbrain/_native_src/Cargo.toml",
@@ -193,8 +198,8 @@
       },
       {
         "path": "src/humanbrain/native.py",
-        "size": 53792,
-        "sha256": "6c4da9771b717f90fdbe13352f2c4cb999408c471bbae937300b54c07311c9d1"
+        "size": 60658,
+        "sha256": "0431f67e5fd7b175dd6668b82be8cf5aaab34c67bd4a877fd962d0b416b2ee16"
       },
       {
         "path": "src/humanbrain/procedural_runtime.py",
@@ -210,9 +215,1314 @@
         "path": "src/humanbrain/scale_accounting.py",
         "size": 13895,
         "sha256": "a0a9e70769e24f918889395d0f5a729e12d3aef08a9bcbd70692a2bf8589e57d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/.cargo/config.toml",
+        "size": 101,
+        "sha256": "77e9219c27274120197571fd165cbe4121963b5ad3bc0b20b383c86ef0ce6c2b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/src/cuda.cu",
+        "size": 6911,
+        "sha256": "b73256637b414e42229258e2ae3b4e520783af409e27e70f9108ff8fda9ae50f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/.cargo-checksum.json",
+        "size": 1168,
+        "sha256": "6af57df6112e1f3c73f827bc046cf3c60948531a4a861abf60061df4924a327f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/.cargo_vcs_info.json",
+        "size": 109,
+        "sha256": "d9ccc496cf1bd0f02d77bac0221c8ff040efca5156f835d0adf491d8ebdb89ca"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/CHANGELOG.md",
+        "size": 3764,
+        "sha256": "0291dc92112ba4d6fe899162cded7f2b7150ed2d06d23e08e5d02a0b53a469f8"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/Cargo.toml",
+        "size": 1875,
+        "sha256": "93550ef824cb400b7a92af6b2ebe9ef24aa5a37567d80be5e4ba149bdc651be1"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/Cargo.toml.orig",
+        "size": 1088,
+        "sha256": "2b164c815b5ae4e596a6dc8b5f7b99b9eed7681d8b3372267638ac0d73ddcbc5"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/LICENSE-APACHE",
+        "size": 10847,
+        "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/LICENSE-MIT",
+        "size": 1099,
+        "sha256": "5734ed989dfca1f625b40281ee9f4530f91b2411ec01cb748223e7eb87e201ab"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/README.md",
+        "size": 1674,
+        "sha256": "86445da156ad68ea1d1f2dc49a3cef942ccc377ff56316aefe89732ded763aba"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/src/deque.rs",
+        "size": 73725,
+        "sha256": "f3c0f92946eb0f71a42a5de2549cf2da137f0a07f31b79def69451fd85c15776"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/src/lib.rs",
+        "size": 3964,
+        "sha256": "3427a4468253e91e09b264e1f8fd6fc67cfda54be5aecbd38f1b0cb7e0d928de"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/tests/fifo.rs",
+        "size": 8682,
+        "sha256": "3d98e0d4ca7cfddf10708b71642cf1ff05543d067ad837e48401d63cc31c0a18"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/tests/injector.rs",
+        "size": 9505,
+        "sha256": "859a0e6fd306e844e8fd660104a994aa894a165f20fa326f4b807e660eaf7878"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/tests/lifo.rs",
+        "size": 8767,
+        "sha256": "57abdb3fc5920a422f785ba308b658bdc5400947532eeffb799f2395a2061549"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/tests/steal.rs",
+        "size": 4358,
+        "sha256": "cdf588cc13eeb275ef1231eb18e3245faca7a2d054fa6527bfdba2a34bc8f7bf"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/.cargo-checksum.json",
+        "size": 2272,
+        "sha256": "f1cb812cf016f98812fc39ae7d4e1257ab17a82ba5a2970d24eb4ee25152ab70"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/.cargo_vcs_info.json",
+        "size": 109,
+        "sha256": "419f1b11148246c8db81f32a3476d51490dd1d5251d343c42a3a66c4b7c4638c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/CHANGELOG.md",
+        "size": 6051,
+        "sha256": "4c9eb194b40755d85bc51cad9d1b8ccec3136e0abacf364c6e579128c8632aab"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/Cargo.lock",
+        "size": 9952,
+        "sha256": "877dfecb029677e7c4f08c55f171c77a81f8572ace18110450611aa58faedc8a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/Cargo.toml",
+        "size": 2052,
+        "sha256": "aa33b807f5f74c0336045aecd27e90f9f4c8e0fceceb3967fdc154237b76c3a6"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/Cargo.toml.orig",
+        "size": 2078,
+        "sha256": "09f371f8080f375812e8c8a9ead76bb33d85c25e8bacd8c8803eef3f30d047ac"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/LICENSE-APACHE",
+        "size": 10847,
+        "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/LICENSE-MIT",
+        "size": 1099,
+        "sha256": "5734ed989dfca1f625b40281ee9f4530f91b2411ec01cb748223e7eb87e201ab"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/README.md",
+        "size": 2086,
+        "sha256": "6ba897c52496a66705df72da33dea5f6e0ce5caa87c4ff073b0faf4e05516dad"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/benches/defer.rs",
+        "size": 1537,
+        "sha256": "c330b704d96b2ad1aed29f72c37a99da534adef8cb06a3976d5f93bf567abb20"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/benches/flush.rs",
+        "size": 1040,
+        "sha256": "0389ac6c473632f0e93c962f223404cc360257f6699b4ec90b9b3be16bb6d74f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/benches/pin.rs",
+        "size": 575,
+        "sha256": "2f649a5153745c7930efdb32a52f9dc522f7b8cf548a251c5e2c82ee25dc3fff"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/build.rs",
+        "size": 443,
+        "sha256": "e40cf96d7d7b1650f9f53a3f578633a178324dbea1d905b3f71a75b45d3982a1"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/examples/sanitize.rs",
+        "size": 1783,
+        "sha256": "a39d1635fa61e643e59192d7a63becc97ff81f03c1f4e03d38cedefb1525026a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/atomic.rs",
+        "size": 54957,
+        "sha256": "d738c357e6cc2ddc0b744117e98c21362097ffa5cab1e268df090b7c09c7534d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/collector.rs",
+        "size": 12263,
+        "sha256": "12c6a00496fd702facaff3efdc993f326049d2bbb21fb2c9db1b8ffe6f54cf69"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/default.rs",
+        "size": 2516,
+        "sha256": "a153392422d2a473afb01873d83c8d92f34a3bab5dde2f3743d916acce36f9b9"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/deferred.rs",
+        "size": 4149,
+        "sha256": "5ad2032c40f96e32f3bab367c843c3091c4300402e938217d2706070f20c6811"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/epoch.rs",
+        "size": 5440,
+        "sha256": "65d910a683413a8939a4c3c2dfd88a5e05b6f4e8f7a26a0abdaed775c7d9e1f2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/guard.rs",
+        "size": 19543,
+        "sha256": "555bb756fe0c422d7f778121226834158cd143c664211a955662c789c867d6d1"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/internal.rs",
+        "size": 22152,
+        "sha256": "75db50474a2b17c1808746917299fe9bba6657c6d409ada1794c596d8dc0961f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/lib.rs",
+        "size": 6516,
+        "sha256": "4c7266a7f5f480aed776a78fe221d95e712731527555b78270eda0f44c4ebb44"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/sync/list.rs",
+        "size": 16141,
+        "sha256": "6950177b01fa6f51d3f4ca22f3ce4e77143eed28bec04579ecc8a8599ab17031"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/sync/mod.rs",
+        "size": 154,
+        "sha256": "326e32489d467e974c441120640a8338aa55da55c24b20276075ce9053997326"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/sync/once_lock.rs",
+        "size": 2523,
+        "sha256": "aa8f957604d1119c4fc7038a18c14a6281230e81005f31201c099acff284ad4b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/src/sync/queue.rs",
+        "size": 14160,
+        "sha256": "0324e9b07dfd0f76ba0058395a4b9ae4b4a6e5ab0aec41d98edab7864bac3157"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-epoch/tests/loom.rs",
+        "size": 4626,
+        "sha256": "db772f4478966de6ec98774ca4093171dc942da635822a0d2d3257d31188cb9b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/.cargo-checksum.json",
+        "size": 2785,
+        "sha256": "fb0bcca6beaf4ad7d645bca253392d6cdabe9c455b4ce3c0b4df3f3f2ca0a8eb"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/.cargo_vcs_info.json",
+        "size": 109,
+        "sha256": "d43f49dbbe655cb91dcd62c862552f2ca4520eaff2e4bee391e01b0df968e358"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/CHANGELOG.md",
+        "size": 7509,
+        "sha256": "366caba01b88f421c71b97f61b9806abbf05e1ba0d24e4bf034191c1f8aa03b8"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/Cargo.toml",
+        "size": 2007,
+        "sha256": "961aa297754d8fdbae9e23d15bbbcfdcd2b50b2db56becddb84e8cba4f730713"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/Cargo.toml.orig",
+        "size": 1456,
+        "sha256": "6697cafee3a273f8c04e25c8606621b2fff8a779e3e1d01f9c08d225a0f36fc5"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/LICENSE-APACHE",
+        "size": 10847,
+        "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/LICENSE-MIT",
+        "size": 1099,
+        "sha256": "5734ed989dfca1f625b40281ee9f4530f91b2411ec01cb748223e7eb87e201ab"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/README.md",
+        "size": 3147,
+        "sha256": "3c82bbb994f54ab76a9ed30a42dfd095c6e636258d379b9be3fbf66324310e71"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/benches/atomic_cell.rs",
+        "size": 3236,
+        "sha256": "c927eb3cd1e5ecc4b91adbc3bde98af15ffab4086190792ba64d5cde0e24df3d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/build-common.rs",
+        "size": 482,
+        "sha256": "502cb7494549bed6fa10ac7bea36e880eeb60290dc69b679ac5c92b376469562"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/build.rs",
+        "size": 1709,
+        "sha256": "7a7f9e56ea7fb4f78c4e532b84b9d27be719d600e85eaeb3a2f4b79a4f0b419c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/no_atomic.rs",
+        "size": 218,
+        "sha256": "fc1baa4489d9842988bacaaa545a7d7d0e2f8b93cfa0b7d1ae31f21256e4cb0a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/atomic/atomic_cell.rs",
+        "size": 39547,
+        "sha256": "6d8b83b65c73644abc10ec88a1442c8db531ae140de79197901510fcaea45966"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/atomic/consume.rs",
+        "size": 3736,
+        "sha256": "381c2a8b13312ca0525d53ca1b7d0d4f525ddb154951fa3e216b061ad22012ff"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/atomic/mod.rs",
+        "size": 1307,
+        "sha256": "712e2337e710c07116e977154ea4247a1c065bf5599e6bf368138e715b403f6d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/atomic/seq_lock.rs",
+        "size": 2995,
+        "sha256": "27182e6b87a9db73c5f6831759f8625f9fcdec3c2828204c444aef04f427735a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/atomic/seq_lock_wide.rs",
+        "size": 5389,
+        "sha256": "9888dd03116bb89ca36d4ab8d5a0b5032107a2983a7eb8024454263b09080088"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/backoff.rs",
+        "size": 8361,
+        "sha256": "8715f0303ec91d1847c8ac3fc24bcc002a22a7284ade610e5eff4181f85827c7"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/cache_padded.rs",
+        "size": 7563,
+        "sha256": "b6ff04ecf6de9124c0069c014d35f37de543cff1c4bfc1f260586aa49a5af6d8"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/lib.rs",
+        "size": 3513,
+        "sha256": "060dabc6dc07de92a7afa57dcbc47222a95ef5819d543ad854858c3b329d6637"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/sync/mod.rs",
+        "size": 564,
+        "sha256": "eca73c04f821859b8434d2b93db87d160dc6a3f65498ca201cd40d732ca4c134"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/sync/once_lock.rs",
+        "size": 2523,
+        "sha256": "aa8f957604d1119c4fc7038a18c14a6281230e81005f31201c099acff284ad4b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/sync/parker.rs",
+        "size": 13020,
+        "sha256": "698996e7530da1f3815df11c89df7d916155229cbfd022cccbd555f1d1d31985"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/sync/sharded_lock.rs",
+        "size": 20583,
+        "sha256": "f96d536f5622fe2a0a0f7d8117be31e4b1ed607544c52c7e2ffcd1f51a6b93a1"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/sync/wait_group.rs",
+        "size": 3766,
+        "sha256": "3e339aab014f50e214fea535c841755113ea058153378ed54e50a4acb403c937"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/src/thread.rs",
+        "size": 19232,
+        "sha256": "04610787ba88f1f59549874a13fc037f2dcf4d8b5f1daaf08378f05c2b3c0039"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/tests/atomic_cell.rs",
+        "size": 9446,
+        "sha256": "716c864d4e103039dc5cd8bf6110da4cbabafc7e4e03819aa197828e8fb0a9c7"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/tests/cache_padded.rs",
+        "size": 2345,
+        "sha256": "1bfaff8354c8184e1ee1f902881ca9400b60effb273b0d3f752801a483d2b66d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/tests/parker.rs",
+        "size": 889,
+        "sha256": "6def4721287d9d70b1cfd63ebb34e1c83fbb3376edbad2bc8aac6ef69dd99d20"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/tests/sharded_lock.rs",
+        "size": 6250,
+        "sha256": "314adeb8a651a28935f7a49c9a261b8fa1fd82bf6a16c865a5aced6216d7e40b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/tests/thread.rs",
+        "size": 5132,
+        "sha256": "9a7d7d3028c552fd834c68598b04a1cc252a816bc20ab62cec060d6cd09cab10"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/crossbeam-utils/tests/wait_group.rs",
+        "size": 1459,
+        "sha256": "2a41533a5f7f113d19cd2bdafcc2abf86509109652274156efdd74abd00896b6"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/.cargo-checksum.json",
+        "size": 1295,
+        "sha256": "3d387382da9c1d42320bafa55ba2f70e4c557c4a762f8302d2674e15fff5abd0"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/.cargo_vcs_info.json",
+        "size": 94,
+        "sha256": "462b70d06428b7927f88df0d18077c00ecc5047e71696b603d150c892e2b7f05"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/.github/workflows/ci.yml",
+        "size": 2688,
+        "sha256": "61f45870b649e78d7737f558a92b0090d3046ea5948763b968d7c8dbab7148b5"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/Cargo.lock",
+        "size": 2664,
+        "sha256": "50bb8686db35351937aa61e7a23a5adf737102e6161ee6174838c246257ae9dc"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/Cargo.toml",
+        "size": 1505,
+        "sha256": "ece83a8afa697f4be29d0953ab8df176711a789bb337bb6c2a7c473c9795326b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/Cargo.toml.orig",
+        "size": 879,
+        "sha256": "3ceee6b20d6fa5273c50f853c3458f02d527e474902c0519fb615a2f2d1f6c64"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/LICENSE-APACHE",
+        "size": 10847,
+        "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/LICENSE-MIT",
+        "size": 1043,
+        "sha256": "7576269ea71f767b99297934c0b2367532690f8c4badc695edf8e04ab6a1e545"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/README-crates.io.md",
+        "size": 441,
+        "sha256": "b775991a01ab4a0a8de6169f597775319d9ce8178f5c74ccdc634f13a286b20c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/README.rst",
+        "size": 5566,
+        "sha256": "17bae4fef2d0d47c4e2971683947153b17f2e237ddcdca4e717cbe6543fcd102"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/src/into_either.rs",
+        "size": 2088,
+        "sha256": "0477f226bbba78ef017de08b87d421d3cd99fbc95b90ba4e6e3e803e3d15254e"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/src/iterator.rs",
+        "size": 7435,
+        "sha256": "3dd8a1255e1448eeee20b24de849523a13ca0d3c178b81d1d5adc6220ca692c4"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/src/lib.rs",
+        "size": 52285,
+        "sha256": "df570c5dc36f9539611c7702d58d1490133a3c86daa6a347f17582285250c059"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/src/serde_untagged.rs",
+        "size": 2040,
+        "sha256": "5f7a4035ca164125a433f42ac0949185d1732e2fcf5b1ac6dfca1e5aede439bb"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/either/src/serde_untagged_optional.rs",
+        "size": 2184,
+        "sha256": "ba5d6c2213388b69e127e763b6e394de6388bdd682ffb5d5696b068f1938ec79"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/.cargo-checksum.json",
+        "size": 3841,
+        "sha256": "dddb9c53dff2c0f01a5298758e4c8dd9538813f31d8e1d36562e5cd57e9bd231"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/.cargo_vcs_info.json",
+        "size": 104,
+        "sha256": "c6bfcaeeeb689844bb154055fe696ced313b9b5f3523528346dbbe46806c35dd"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/Cargo.lock",
+        "size": 7901,
+        "sha256": "e30b2aa3d7e6f59dda0ef717580cec3d787d3f13a0cd3da46969874736e48684"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/Cargo.toml",
+        "size": 1937,
+        "sha256": "ab50ad4709436f6bda04e5345444f1197b1eda2bd3b49f9412c0cb318111b5a2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/Cargo.toml.orig",
+        "size": 878,
+        "sha256": "2fb5b9f5a2ec91a1e3f2d9c26cf611bb5a9eeb30fcccb68cf6d087ad522176ab"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/LICENSE-APACHE",
+        "size": 10847,
+        "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/LICENSE-MIT",
+        "size": 1071,
+        "sha256": "0621878e61f0d0fda054bcbe02df75192c28bde1ecc8289cbd86aeba2dd72720"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/README.md",
+        "size": 781,
+        "sha256": "37a9a028cb507dbaebe7bb60fce9194f0f5b51fb3a52b2ac616969cf6ff4ef95"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/build.rs",
+        "size": 278,
+        "sha256": "fa31cb198b772600d100a7c403ddedccef637d2e6b2da431fa7f02ca41307fc6"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/broadcast/mod.rs",
+        "size": 5385,
+        "sha256": "850859640276aefefba3493ad6f07a3122b869c64fd617212f2c1e178f3c39ee"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/broadcast/test.rs",
+        "size": 8487,
+        "sha256": "fe50fc868e67d855a9f71e078b0c3a7780e789652abb4b586accb4ccf035e872"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/compile_fail/mod.rs",
+        "size": 163,
+        "sha256": "4d70256295bd64691a8c1994b323559cda1888e85f0b45ca55711541c257dcb6"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/compile_fail/quicksort_race1.rs",
+        "size": 535,
+        "sha256": "35f498cda38f4eb6e00117f78ed68e0fe5a3fa61c25303d9c08a19bda345bc6c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/compile_fail/quicksort_race2.rs",
+        "size": 534,
+        "sha256": "cbb40030c7867cae34bb373b6ec5d97c2ac6de39bc917f47879b30eb423924bc"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/compile_fail/quicksort_race3.rs",
+        "size": 535,
+        "sha256": "8403643e64c969306b1a9b1243378e6ccdd313b57e1878dbd31393618082fd35"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/compile_fail/rc_return.rs",
+        "size": 234,
+        "sha256": "197894803d8df58fc8005d90c86b90cd98f1972f1a4b57438516a565df35903f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/compile_fail/rc_upvar.rs",
+        "size": 131,
+        "sha256": "42d110429621f407ef0dada1306dab116583d2c782a99894204dd8e0ccd2312f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/compile_fail/scope_join_bad.rs",
+        "size": 376,
+        "sha256": "892959949f77cadfc07458473e7a290301182027ca64428df5a8ce887be0892b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/job.rs",
+        "size": 7571,
+        "sha256": "06de0c2add2e303b6383bf11f5f0d75775c1efe6aa7bc16de3992117f1012f09"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/join/mod.rs",
+        "size": 6899,
+        "sha256": "0d1d6ba860c65fd991a81459110dfb9ca03e590d830b515e5afc9c7b6bae6b08"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/join/test.rs",
+        "size": 4195,
+        "sha256": "b853c3b99a1cca585069c0ccc9eb3f962533d5b3c7875dba6b905aae3880c473"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/latch.rs",
+        "size": 15054,
+        "sha256": "e749d6d15e685ca164cd7f2dcad6b2701ae04bc53cb5144be0c43f012406eddd"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/lib.rs",
+        "size": 32356,
+        "sha256": "5da845890b55010d8f5e243ac9d112c60c710a0f412dce8ebf6f8b6987bd261c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/private.rs",
+        "size": 886,
+        "sha256": "152f6d65ce4741616a1dec796b9442f78a018d38bb040f76c4cd85008333a3bb"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/registry.rs",
+        "size": 34919,
+        "sha256": "61674f4cdf39edb26df75435de6925d54c5f864f9e1dcd0fb114ad2cc553a1d7"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/scope/mod.rs",
+        "size": 29571,
+        "sha256": "b7720b853328173764b33e2d866c33c49148d777254a8d4a51e766b692537914"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/scope/test.rs",
+        "size": 19092,
+        "sha256": "f358307efb3c0f5dbd8a7f7380aaf23603aae946bf2eb01f8adc35122e6b46d0"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/sleep/README.md",
+        "size": 10950,
+        "sha256": "8790c7795d1a37e0c3016d4ac220ff2fc37f3995d2b5f251bbcb2216362fb9cd"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/sleep/counters.rs",
+        "size": 9580,
+        "sha256": "3e7880534822abbbd59210c378ca611b75759e8b566b167263fd843cd638dd22"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/sleep/mod.rs",
+        "size": 11973,
+        "sha256": "937bf9fc0610bf526522e6ef2efeca9b75f65d87cfaf69375277e161a4130e5e"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/spawn/mod.rs",
+        "size": 6267,
+        "sha256": "3520ce5822787a592e5c7da9d0dd8a4a4d9eb08235e598ab63a50bf43fef56f4"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/spawn/test.rs",
+        "size": 8014,
+        "sha256": "b4850681aa5ff607d927b1d3f4ba2b4a3199ddaa283a95ea44547b997cf17e61"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/test.rs",
+        "size": 6347,
+        "sha256": "b82d95f84314305ff3268d341f731851e4d33fc895c34219ed8ff08b8d864575"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/thread_pool/mod.rs",
+        "size": 18720,
+        "sha256": "f071a1bc766cde10ec844cc3b53e53479c3f1ade97ceaff1cc9e3f9913ade9f3"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/thread_pool/test.rs",
+        "size": 13447,
+        "sha256": "e9377afa0d5727a9f6874b5abf4589403d8dc8938e4e2c5dc26be4106daa77b9"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/src/unwind.rs",
+        "size": 939,
+        "sha256": "7baa4511467d008b14856ea8de7ced92b9251c9df4854f69c81f7efc3cf0cd6c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/tests/double_init_fail.rs",
+        "size": 474,
+        "sha256": "8c208ce45e83ab1dfc5890353d5b2f06fc8005684ae622827a65d05abb35a072"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/tests/init_zero_threads.rs",
+        "size": 242,
+        "sha256": "5c7f7e0e13e9ead3733253e30d6b52ac5ee66fd6c105999d096bdf31cfccaf95"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/tests/scope_join.rs",
+        "size": 917,
+        "sha256": "56f570c4b6a01704aacf93e7f17f89fe0f40f46ed6f9ede517abfe9adaf91f83"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/tests/scoped_threadpool.rs",
+        "size": 3380,
+        "sha256": "24d1293fe65ad5f194bbff9d1ef0486c3440d0a3783f04eaaaae4929adef5cb8"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/tests/simple_panic.rs",
+        "size": 140,
+        "sha256": "916d40d36c1a0fad3e1dfb31550f0672641feab4b03d480f039143dbe2f2445f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/tests/stack_overflow_crash.rs",
+        "size": 2234,
+        "sha256": "87b962c66f301ac44f808d992d4e8b861305db0c282f256761a5075c9f018243"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon-core/tests/use_current_thread.rs",
+        "size": 1878,
+        "sha256": "552ec922f123aafdaeafef8f31c802781ebed16bf35cb5eac128bef0c29199cc"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/.cargo-checksum.json",
+        "size": 11432,
+        "sha256": "8b791b649f5836af3f951fe3276d0975018f37c62cd81e28e4bb481c0be8a642"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/.cargo_vcs_info.json",
+        "size": 94,
+        "sha256": "42c572ec636a8257d2f1017b0d83d234c2835b5ba7ca40375eeddd311ae071f9"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/Cargo.lock",
+        "size": 7629,
+        "sha256": "ef6c4aa754fdb92783965ad5b80f35a1a06d57e5660adc83882cbcf29a417977"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/Cargo.toml",
+        "size": 2358,
+        "sha256": "bcc6eda50025991d8db6ccaaad2e26477072a359762451a4e55a7e700ad0e42d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/Cargo.toml.orig",
+        "size": 1512,
+        "sha256": "730637d19a4ae811bae3f60000a6cceb5f052b1fd5e76946459ef5b31ecdf399"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/FAQ.md",
+        "size": 9247,
+        "sha256": "3b47ed781d832942f5f45db9acbf102df41b401111b6fd5303af911101746449"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/LICENSE-APACHE",
+        "size": 10847,
+        "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/LICENSE-MIT",
+        "size": 1071,
+        "sha256": "0621878e61f0d0fda054bcbe02df75192c28bde1ecc8289cbd86aeba2dd72720"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/README.md",
+        "size": 5732,
+        "sha256": "9bd7b1a9b53023afc7220db62f6b7f580f56f2d2d98b521b07569749bfea6329"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/RELEASES.md",
+        "size": 37217,
+        "sha256": "3120f4b516120b1a6fd005916d914a639f21bbf3b66e524aa05339a4345a85e8"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/array.rs",
+        "size": 2143,
+        "sha256": "e3889df405f6cb773cebe0205fb53256775cc6dc1c99d409a940cd48b8cf3bfd"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/collections/binary_heap.rs",
+        "size": 2966,
+        "sha256": "dcfaa5b7c3d658ad8894c8c1269bb11b517ad2fe76b1c9771666f15cdba10b1a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/collections/btree_map.rs",
+        "size": 1473,
+        "sha256": "9d723cdf69698c7def1e495ba179c62200166b9a3ba16ec849c893f99081eb55"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/collections/btree_set.rs",
+        "size": 1051,
+        "sha256": "ee251d95a8226dff2eb087965804dac388c502f730d48587f054ad45a81c1c06"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/collections/hash_map.rs",
+        "size": 2130,
+        "sha256": "19b55af98d8f93375148b2d66d249054d85e0db6ac0c33a273281140b0f61965"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/collections/hash_set.rs",
+        "size": 1671,
+        "sha256": "3b267e2bf9d2a10e0bea43d183729f41d1cc45c6691daf5850a40f0c67271e30"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/collections/linked_list.rs",
+        "size": 1308,
+        "sha256": "e6e450293666386fc140ced0ffc1717464e162394b2af8706ad9b76a0f0d43d3"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/collections/mod.rs",
+        "size": 2615,
+        "sha256": "07a4a9c3c627ab8c181cf30b334c78c633c752bd7984593ecc52e13168f58249"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/collections/vec_deque.rs",
+        "size": 3949,
+        "sha256": "29d7d9e9ee23c3e218eeaa6dddef32d0da1b5f7ce003209029b42151d8902d5a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/compile_fail/cannot_collect_filtermap_data.rs",
+        "size": 332,
+        "sha256": "f76e6727ae8bd0dc8fff5f4a79df3fc598daf5d7371bdf8b2e730fba4ba82719"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/compile_fail/cannot_zip_filtered_data.rs",
+        "size": 330,
+        "sha256": "3588fcf72e804ea867ea525b6dfa7a3d45fe14e28088e849fa9ddb029acc8a7a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/compile_fail/cell_par_iter.rs",
+        "size": 264,
+        "sha256": "ebf8804993c103f9d8228aba0bb2a5f0aadb957de9f1eb59cf546dbace285201"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/compile_fail/mod.rs",
+        "size": 188,
+        "sha256": "2c346e4b52941fe0ac2667eeb753c0c21a1f998a544bb9d9167f200caba0a7bb"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/compile_fail/must_use.rs",
+        "size": 3191,
+        "sha256": "39ab32af552c2b35e67593b54da146d8edd8e022dbadcf7a81983983a065bbc2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/compile_fail/no_send_par_iter.rs",
+        "size": 864,
+        "sha256": "b241446439c659f35060df12ba91590ea4267f373ddc688e4ffc203321db24b3"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/compile_fail/rc_par_iter.rs",
+        "size": 325,
+        "sha256": "938776b08612e35c85b99962024d54af5a8c87d45a050a76375d16ef6fe4299f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/delegate.rs",
+        "size": 2995,
+        "sha256": "aad2a11998240fb7dd96bd054b588cac469df3b716b8dffb05239102b6507d05"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/blocks.rs",
+        "size": 3815,
+        "sha256": "0f0dce562c879f47eb5c2e24a41943c216c56268af68e8e0b22f74928ffe46e1"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/chain.rs",
+        "size": 6676,
+        "sha256": "63bbeb40c7f5a472184efe15a42fdcb7bd08122bbb8533aced5acb926e894ce2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/chunks.rs",
+        "size": 5163,
+        "sha256": "03c70c4d71e69bc2721f9549c3451154593690f55baae76370bf8fd5b818e595"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/cloned.rs",
+        "size": 4830,
+        "sha256": "474a33608dd1c4e65c1121837d546dfe2922328ad512d2ad3c56eb3c9016d022"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/collect/consumer.rs",
+        "size": 6129,
+        "sha256": "8c47eb678385a245897b6bf24329a41cfc9d12c6db1875a25f1a0bbf19e868e1"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/collect/mod.rs",
+        "size": 4255,
+        "sha256": "c0338cdcd3a7e45dc4476a208d8bd26fed9049e33e3995591059914b46971393"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/collect/test.rs",
+        "size": 13488,
+        "sha256": "734e105f777de9d5e12cb103dac3a728d3d8e3a201f4f3f765c026d99d93376f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/copied.rs",
+        "size": 4816,
+        "sha256": "572fede95761180c4e42f377f05a3a67fd6a700b66488d563c7feb30e569e36a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/empty.rs",
+        "size": 2223,
+        "sha256": "5b39bb26be7735b320da72264ffe3678c2c9f813aa8efe0b25c3deae1722bfb0"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/enumerate.rs",
+        "size": 3343,
+        "sha256": "41f517a1ad788dd82ac8dc75d90339a2203d647b8adb8b1b8b4d7c2527886e26"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/extend.rs",
+        "size": 15905,
+        "sha256": "7f1d1f4e90f046ef2fd35736850aab0c1a92395cf83175f93f6bdac74c48f5b3"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/filter.rs",
+        "size": 3374,
+        "sha256": "1440688f50004c466d1ba1f3c4bd6ffefbc9614a7fc53e7c4c28efdc61cbf29a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/filter_map.rs",
+        "size": 3582,
+        "sha256": "8048566363eb2b2b87244cef2a1505bc288d962a9d3e7918b44a1b03c038e5fe"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/find.rs",
+        "size": 2727,
+        "sha256": "896ddb05b2fa7368462e0ff2a73982ced5f93266c0e0e8c27bb3fc4ec737af21"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/find_first_last/mod.rs",
+        "size": 7325,
+        "sha256": "2dfd1e960f3c0e5aa003fea8a31433dbaef270117de91733b4a0cd096a9935f5"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/find_first_last/test.rs",
+        "size": 3882,
+        "sha256": "890034e32485971e8a39d4004f1bf730ac6bbd4190ae3780d6542707a4ce4abc"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/flat_map.rs",
+        "size": 3826,
+        "sha256": "8ce5f09aa573e42af379cf7e271c7f28f8e841b8c8db6934c7f247bb2ee7c2fb"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/flat_map_iter.rs",
+        "size": 3619,
+        "sha256": "db0ba448895fae8f404083d2a00f867fe72b350f6a93f5140d49f76f5e9c5f8b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/flatten.rs",
+        "size": 3180,
+        "sha256": "945265a13b9f83e73b0ac188bf89fbe6ba851d6e1ec4dd3cb05c2bccdf22f28b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/flatten_iter.rs",
+        "size": 2901,
+        "sha256": "e7a5fd5a9d206d78b7579b5f8f390af079c70acbc1665cfe60df70d81c9067bb"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/fold.rs",
+        "size": 6777,
+        "sha256": "109d175087df6b6f419d486ad2883c3c5571e5421184f667fee972cf6df2c980"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/fold_chunks.rs",
+        "size": 6077,
+        "sha256": "567c7bc65ec4d2355ae7f65aca975bccc2f4c1b2aeaf8bbe7cf7876f62b3e211"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/fold_chunks_with.rs",
+        "size": 6063,
+        "sha256": "49a1d2fd8a1864773b7c72ba572c573d9fcae03ff145203f9f7692d8d9db9be6"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/for_each.rs",
+        "size": 1416,
+        "sha256": "7af0e21ed8479eec65831d1409f61a88d45a31764f2385ec759eda1a46d388b2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/from_par_iter.rs",
+        "size": 7620,
+        "sha256": "140df213a38d4fc4b61b21fcf7e0b1153da7e04eb6ed95f00cd47269691380bc"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/inspect.rs",
+        "size": 5963,
+        "sha256": "9cd0304be9dfef02fbecb240cfea2c0549a0c45f5f7e18d3a16deefc88ecf038"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/interleave.rs",
+        "size": 8741,
+        "sha256": "ad4b282a9793292a0166bac5568abaf5f62f75068a6a8710e837f885484fb2f3"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/interleave_shortest.rs",
+        "size": 2129,
+        "sha256": "ecb777284b0f06771082079792379998106dc00ed4c02b2b9722e81b5decf980"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/intersperse.rs",
+        "size": 10118,
+        "sha256": "2df834a436d307541f28e26c9f7aea83f072b08b4517b79c4e53bc5c27a47857"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/len.rs",
+        "size": 5942,
+        "sha256": "a47a96f49be5569b54701e8911a4273edca1b665b60e68f20b6c6ea5d51f594e"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/map.rs",
+        "size": 5832,
+        "sha256": "ef57c66e90421096a4cf971a014bb0c109a888b946ab4c3a24960a976339a1aa"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/map_with.rs",
+        "size": 13955,
+        "sha256": "33ede9b43a30210c1e7e962f040a57625514ad0cfee2a41d967265b88e5bd49b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/mod.rs",
+        "size": 121119,
+        "sha256": "2d011a9262aef7231d8fb8ed1129b9e13a041ca26565f0a8cdc46fdcde91b50c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/multizip.rs",
+        "size": 8883,
+        "sha256": "330634cc61a2f1f3138d67608e27d853e5f7b43921094dbfe38a7fd807c39bbc"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/noop.rs",
+        "size": 1074,
+        "sha256": "5be6332ddfbb8fdbae1ffdb00983950a8b37a295bcb58e9a265b33806ee504e6"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/once.rs",
+        "size": 1679,
+        "sha256": "b6c4ac9654210a8c55ddf6e56080370154f6b9df3c06312ebafcb5e4d60fa34b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/panic_fuse.rs",
+        "size": 7581,
+        "sha256": "fceff8a02a67ea90bb182127e5ea99c372be629d0aabc5d8366e771c4a4b8c30"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/par_bridge.rs",
+        "size": 5631,
+        "sha256": "ba4457370b5f1c53ce02c1512604d29849a82d741f02780eeccfe6c32ef7a18c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/plumbing/README.md",
+        "size": 13535,
+        "sha256": "da11d90143745b30efe99934bb5d8267d7b205c8096d0936ddb1bbba0b13ea17"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/plumbing/mod.rs",
+        "size": 18379,
+        "sha256": "c03482b78af72212b795df90fa5d3af2c49fa0fd1a08addcaeb02a730db1918a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/positions.rs",
+        "size": 3298,
+        "sha256": "639a68213d2a3e48f802102fd3ba09d5dcc69dd96dbb7d0dd0fe09c74533ff87"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/product.rs",
+        "size": 2229,
+        "sha256": "eaddbf216b068d33cb92f594cf57522f6ea1e2d7699887a086484843bdec3585"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/reduce.rs",
+        "size": 2315,
+        "sha256": "2f5d6e07d7c0de2360505fa5d9198c31fd43ba7e58a6ec40f79edec19319e502"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/repeat.rs",
+        "size": 7677,
+        "sha256": "ff800e82304ed0ab1101ac0f21177eba04b498cdb3f99117d28d29e702cb4c3e"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/rev.rs",
+        "size": 2660,
+        "sha256": "954d71773e366d7139d71a2468c3079cf26a711f6c39dcf8c25518ff5773cabe"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/skip.rs",
+        "size": 2358,
+        "sha256": "177755cf51a78ed8ea546fea8b064d1af0c2dd39ddc932351920b0dbc5b8fc74"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/skip_any.rs",
+        "size": 3198,
+        "sha256": "0ff1ea2751da6f29af8a0de14464e9c1ceff07d22498f8320c99803f6000eed3"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/skip_any_while.rs",
+        "size": 3997,
+        "sha256": "8f334f7e1774cb4a4cc591d6dcf80544c1088347df6bcd5f71b576e168aa16e6"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/splitter.rs",
+        "size": 5484,
+        "sha256": "775f11fe4ddf7066426da90a41de90e35bf5686dfba4b2d9105f2e9ce2c6f41e"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/step_by.rs",
+        "size": 3225,
+        "sha256": "ed8384ea24606d324ec630a381e50eeee1404a9d75d76c447328c2d059b6898b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/sum.rs",
+        "size": 2010,
+        "sha256": "073a886b8d6b0d7ca5621449a20e9980c90c6d39de56f074371fb075d9df2bed"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/take.rs",
+        "size": 1927,
+        "sha256": "5579efee3552bb841b1d9e0577802b8921bf1d75889efa58665130628466f94a"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/take_any.rs",
+        "size": 3286,
+        "sha256": "e6f3100c7d5712ebe81bbe17d6d1647881167100525c2f10038b2c727202747f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/take_any_while.rs",
+        "size": 4059,
+        "sha256": "4716f032b223c064ea27317b9f028b42f53d171f13e859c8177217636c94056d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/test.rs",
+        "size": 65300,
+        "sha256": "c825efce0b9374dab30474d59a9d2b710b22597e4d90e93daf2fd1491b60e86f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/try_fold.rs",
+        "size": 7107,
+        "sha256": "dcd0c27b0183c8046e7443afaf3a874c60f26bb5b56c5d637e0871ab44c37215"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/try_reduce.rs",
+        "size": 3244,
+        "sha256": "12317a649f777e76e6ae610d205104d7946fbe45804fbf1caa0843118531baed"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/try_reduce_with.rs",
+        "size": 3410,
+        "sha256": "9171563fc22110d7a359f19de7ca66a6823d8f712099d05d01560795781fdeec"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/unzip.rs",
+        "size": 13564,
+        "sha256": "9534982854873517e66b7387160cbb66c78004dcbb3ed0e7904e464dbc7b6649"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/update.rs",
+        "size": 7528,
+        "sha256": "4fbaed7dac25fb42ed6a3eb0d9521fb2435413532b243594ae89f87a7d174976"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/walk_tree.rs",
+        "size": 13831,
+        "sha256": "aca6d5b34993e54fb247f3e22b44bf2f3c69b262ab1b5a5d572d71ae4ec7eeb1"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/while_some.rs",
+        "size": 3638,
+        "sha256": "8f3276171ee6f21ceec84e9788300afad2f694a2957702f389470904485de32b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/zip.rs",
+        "size": 3716,
+        "sha256": "116f65704f553bfa570017ec6ce702d1d9932dc7a7334b4c2ad294ce4aaa3af7"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/iter/zip_eq.rs",
+        "size": 1549,
+        "sha256": "35e9fc4eb305e06dd45c1c38dd52cb2b750f69601c9263566674b682c6fe7246"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/lib.rs",
+        "size": 5711,
+        "sha256": "40b39bfb9a469f8a4d78d0833166e7ce2b89bbd9cf199e5dac86ad5e6301d16d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/math.rs",
+        "size": 882,
+        "sha256": "4462c9edacd456834fe3fd39fc4f53d9187107934069ce7c1e81622672c82763"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/option.rs",
+        "size": 4822,
+        "sha256": "2ec9b7dc5d94e81cbd4ca6611ac3a6242e47e760f8961680b5cc5ef5f4eff97b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/par_either.rs",
+        "size": 1904,
+        "sha256": "afa4b04ba6ea1d37aed2d68eca44d7ba0d1d09ea985c9091540dd8d3c51974f1"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/prelude.rs",
+        "size": 744,
+        "sha256": "b1af578abff57f9c8a285c39e3793125cf40d9901d0f2a4f0c5f1bb9252a08de"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/private.rs",
+        "size": 886,
+        "sha256": "152f6d65ce4741616a1dec796b9442f78a018d38bb040f76c4cd85008333a3bb"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/range.rs",
+        "size": 14067,
+        "sha256": "e60c755faaff73ea5fa85e401a71efe60a12a036e33c105a9ac8e475744f2d58"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/range_inclusive.rs",
+        "size": 12013,
+        "sha256": "da0dc1191f554fa9ccd0a360660514ff2ce7d94f1ec25a7356bfedb12084641e"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/result.rs",
+        "size": 3321,
+        "sha256": "ab80ce9f0b19d0a375e0de91d1c79a926fa3cf43ad151d2ceebb7ecfbcf79e95"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/slice/chunk_by.rs",
+        "size": 6653,
+        "sha256": "b75999500ba13dee5d2b78ea026b66b564768874127397177681177fb52b5657"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/slice/chunks.rs",
+        "size": 10243,
+        "sha256": "0f20d0afa6f6fe2b6a65cb67d6460ee89b5b3bfc69ebbc5d91388e101b11201f"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/slice/mod.rs",
+        "size": 39196,
+        "sha256": "59a08f86184d01c276e921996943114d35eeacde68950e84ccadfd1957dae713"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/slice/rchunks.rs",
+        "size": 10392,
+        "sha256": "c3267e21a0a20593f61b7d381050a205aca22f3f78c1ff7483d057f7d2736121"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/slice/sort.rs",
+        "size": 65428,
+        "sha256": "780813f9f2b740e261b9a7032fc4ab661772284464d834f47c0abbb4fa29a422"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/slice/test.rs",
+        "size": 7225,
+        "sha256": "5f38a9552c08a6db0e2a523dfe018992e3590a17f95203722a07ffa6e5405e17"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/slice/windows.rs",
+        "size": 3684,
+        "sha256": "f2506ea36905e56f37afdf9bdce7b32565ba06827a59c4489553df747107e3a4"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/split_producer.rs",
+        "size": 4681,
+        "sha256": "b2633e62bf87ccdc81d0d738de8f184f5892129fc31e81bc891e978b7179e695"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/str.rs",
+        "size": 29581,
+        "sha256": "1e2df4342a535c278cc801028a7e384ba8c46911d2d733cf5849c9e4a0df6e86"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/string.rs",
+        "size": 1266,
+        "sha256": "6691dd31264bd93a0528fc584585415c12f56cfb4baebbfd31ea2f1b21550f77"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/src/vec.rs",
+        "size": 8512,
+        "sha256": "a482c3eb267921d515e3089ceb67a6357921b0d781a3e9a313ddb38c34783018"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/chars.rs",
+        "size": 1069,
+        "sha256": "6e1aeda8aa604f15965aa3c735da07f2145bd06079abb684b70598c86d99a263"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/clones.rs",
+        "size": 5883,
+        "sha256": "071a28cd27715691b2eb4e1ac2f7dc0e7b3ec6626be2493cfc1103fde7d7f622"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/collect.rs",
+        "size": 3380,
+        "sha256": "6ca03103e97936bed1d7b844e6e792cc2bf845d442567c29e224b9635c6b895b"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/cross-pool.rs",
+        "size": 912,
+        "sha256": "d2ce3b9013f77c955aa02313b27436c5bf760ab0e6a1e7d768effae69b5bdbfe"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/debug.rs",
+        "size": 6299,
+        "sha256": "6eaa5ac5c6e0bc713cffd9ef8756eba325d5afd418ce56d88a080f028215d854"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/drain_vec.rs",
+        "size": 962,
+        "sha256": "305ca40ba41ed3b459a334386cd742c66586d62aadfb624278aabdf10b872a12"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/intersperse.rs",
+        "size": 1413,
+        "sha256": "bda4fb2179086e32c77c8293b9bb85d55509c282441837ba1849c2d3aa3186a7"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/issue671-unzip.rs",
+        "size": 353,
+        "sha256": "d5eb38d8a6d8f66fdf1c40293abbf58f3ac42b5acfc5dca62b02c7ace5bfc1a4"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/issue671.rs",
+        "size": 317,
+        "sha256": "52914cac517074deaedcb81bd76b867f0b99cc7b65c3e01cfe12dc9fe38c0266"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/iter_panic.rs",
+        "size": 1689,
+        "sha256": "2ca857b37b740528b2e8395b479a409227383b46e0ed012286dcdd1330dacd70"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/named-threads.rs",
+        "size": 652,
+        "sha256": "f1df1f522e81c63ad3e02be7e4107daba1d8c1e8f4fd93e0b144910134ea330d"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/octillion.rs",
+        "size": 4491,
+        "sha256": "756d3789300d6eb4d5f7690937e06f87714b6b0a62ac812f72b622bb6974ccd2"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/par_bridge_recursion.rs",
+        "size": 925,
+        "sha256": "6e7030de6d97d1db1c335f676dd2a6348cde2873520df290c4a16bf949c06f00"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/producer_split_at.rs",
+        "size": 9411,
+        "sha256": "0a9b824d2c1012b978cffe58786a3df88c6a2deb76e1f99520237d7c90c1c1a3"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/sort-panic-safe.rs",
+        "size": 4753,
+        "sha256": "27199d55ca4c6b57ac7af121713a1abbc0c93071722539202f359bbecf777a6c"
+      },
+      {
+        "path": "src/humanbrain/_native_src/vendor/rayon/tests/str.rs",
+        "size": 4429,
+        "sha256": "7155d4a3ae920eb37d40cc58d538052302cfb45517dbafec685b414305e2c98f"
       }
     ],
-    "bundle_sha256": "0a5aaa22bdf805190a4513f316022b67a1bb135462c6c795b75dd0f15637474a"
+    "bundle_sha256": "f2227f8127a0dbefc8105cebbf49fd98c4c2e05e88230752567f8c0926707f86",
+    "limits": {
+      "maximum_file_bytes": 1048576,
+      "maximum_aggregate_bytes": 8388608,
+      "actual_aggregate_bytes": 2124187
+    }
   },
   "timing": {
     "status": "frozen-pending-explicit-approval",

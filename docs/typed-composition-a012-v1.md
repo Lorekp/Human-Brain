@@ -10,10 +10,16 @@ future-cohort execution is on hold
 **Retired evidence:** public DEV v1; it will never be rerun or used for tuning
 
 **Raw protocol SHA-256:**
-`43c4953c39490d6d2fa333f82443e93dbb3f3bb37e24f786c9438c048ebc05fd`
+`d91517ee7b7f900da2bd8246e051c562f5a0568a6b3fe2b71b7262b1fab052b2`
 
 **Reviewed source-bundle SHA-256:**
-`4b863f558e3e5da8cbb67fc0155d5c1fab48ee4541a0d12a6e8973d57ed4138a`
+`1bb28d3414e7036227c0215d6b1a4509ac033e1b860a84bb7327b53774535fb9`
+
+**Held procedural Gate-3 raw protocol SHA-256:**
+`e7abed3046571a74794c10b3e6c5a94ac7c56c1b2bacf3c8319f0a53345f697b`
+
+**Held procedural Gate-3 source-bundle SHA-256:**
+`f2227f8127a0dbefc8105cebbf49fd98c4c2e05e88230752567f8c0926707f86`
 
 ## Decision
 
@@ -230,18 +236,24 @@ later hypothesis requires a new protocol and a wholly fresh cohort.
 ## Execution and resource contract
 
 The runner is plan-by-default. Planning only validates and hashes the protocol
-and source bundle. Every source read is bounded to 1 MiB, with an 8 MiB
+and 280-file source bundle. Every source read is bounded to 1 MiB, with an 8 MiB
 aggregate bound and a size-plus-one refusal check. The plan mechanically
 requires every imported local runtime module, including package `__init__.py`,
-to occur in the bundle. Material execution derives the repository root from
+and all 264 native build inputs to occur in the bundle. Material execution derives the repository root from
 those actually imported modules and rejects any different root or protocol
 before evidence, model construction, or native execution. It additionally
 requires `--execute`, a
 unique `--run-id`, the exact lowercase raw protocol SHA-256, and the exact
 reviewed source-bundle SHA-256 printed by the pinned plan.
-It publishes every record from a complete, fsynced same-directory temporary by
-an atomic exclusive hard link, then removes the temporary; an existing path is
-a terminal refusal and no partial final record becomes visible. It writes
+Every missing evidence-root component and the run directory are created
+durably and exclusively: POSIX uses `mkdir` plus parent-directory `fsync`, while
+Windows moves a same-parent temporary directory with `MoveFileExW` using
+`MOVEFILE_WRITE_THROUGH` and no replace flag. Each complete, fsynced record is
+then published exclusively: POSIX uses a hard link plus parent-directory
+`fsync`; Windows uses the same write-through, no-replace move. An existing path
+is a terminal refusal. If a durability primitive fails after the target becomes
+visible, the immutable partial is preserved and the call fails rather than
+claim success. The runner writes
 checkpoints as they finish, seals all completions before scoring, preserves a
 terminal failure record on any exception without masking the original error,
 verifies source and checkpoint bytes again at the end, and never resumes or
@@ -249,14 +261,20 @@ overwrites.
 The 128-cell comparison rejects a forced CUDA backend so all three lanes use
 the same native CPU path. Before even consulting the cache, the native loader
 constructs one immutable build plan. It frames `Cargo.toml`, `Cargo.lock`, an
-optional `build.rs`, and every recursive `src/**/*.rs` input in normalized
-relative-path order together with the fixed working directory, command,
-controlled child environment, exact encoded Rust flags, explicit host target,
-and explicit `rust-lld`. Hierarchical Cargo configuration and ambient
-Cargo/rustc/target/flag controls are rejected; wrappers are reset. Exact
-Cargo/rustc discovery and concrete executable hashes and version probes,
-sysroot/host/native-CPU probe output, linker bytes, and the selected host SDK
-identity rotate the full SHA-256 cache address. That same plan, without
+optional `build.rs`, every recursive regular `src` file, the exact Cargo source
+replacement config, and all 258 regular files from six locked vendored crates
+in normalized relative-path order. Native-source reads are bounded to 1 MiB
+per file and 8 MiB aggregate before cache reuse. The plan also binds the fixed
+working directory, command, controlled child environment, exact encoded Rust
+flags, explicit host target, and explicit `rust-lld`. Ancestor and Cargo-home
+configuration plus ambient Cargo/rustc/target/flag controls are rejected;
+wrappers are reset, and Cargo receives literal `--locked --offline` with no
+registry fallback. Exact Cargo/rustc discovery and concrete executable hashes
+and version probes, sysroot/host/native-CPU probe output, linker bytes, and the
+selected host SDK identity rotate the full SHA-256 cache address. A separately
+bounded, sorted, framed manifest hashes every regular file in the exact target
+library directory reported by the selected rustc for that target, including
+relative path, byte count, and content SHA-256. That same plan, without
 re-reading ambient build choices, drives the Cargo subprocess. The loader
 attests the content-addressed cache with a canonical integrity manifest;
 execution rehashes the actually loaded
@@ -265,11 +283,18 @@ before final publication. Evidence persists the portable pre/post source/cache
 digest, binary size, and SHA-256, never an absolute machine path. A missing,
 stale, or byte-mismatched cache manifest fails closed.
 
-This closes the reviewed stale-cache/config/flag/tool-selection hole; it is not
-a claim of fully hermetic Rust compilation. Mutable registry source trees,
-compiler shared libraries and the complete SDK archive closure, microcode or
-hypervisor changes behind `target-cpu=native`, and probe-to-build TOCTOU remain
-external limitations. The exact executed library bytes are still attested.
+Checkout byte policy is part of both reviewed source closures: `.gitattributes`
+and native `Cargo.lock` are fixed to LF, while every vendored path is `-text` so
+Git cannot rewrite checksum-covered bytes. Vendored upstream whitespace is left
+byte-exact and excluded from local whitespace policy. A regression rehashes every file in
+all six vendored crates against its `.cargo-checksum.json` record.
+
+This closes the reviewed stale-cache/config/flag/tool-selection, mutable
+registry-source, and unbound sysroot-target-library holes; it is not a claim of
+fully hermetic Rust compilation. Compiler shared libraries and the complete SDK
+archive closure, microcode or hypervisor changes behind `target-cpu=native`,
+and source/toolchain probe-to-build TOCTOU remain external limitations. The
+exact executed library bytes are still attested.
 
 Evidence also records Python implementation/version, NumPy version, and OS
 system/release/machine. For each lane it records grow wall/process nanoseconds,
@@ -300,7 +325,10 @@ source-bundle, and commit hashes are reported.
 - `src/humanbrain/typed_composition_runner.py`: plan/source binding, exclusive
   evidence, seal-before-score boundary, diagnostics, and exact eligibility gate.
 - `src/humanbrain/native.py`: reusable portable loaded-library identity,
-  source-addressed cache attestation, and exact pre/post binary rehash.
+  bounded vendored-source and rustc target-library identity, source-addressed
+  cache attestation, and exact pre/post binary rehash.
+- `src/humanbrain/_native_src/vendor` and `.cargo/config.toml`: the exact locked
+  Rayon dependency closure and Cargo source replacement; no registry fallback.
 - `benchmarks/typed_composition_protocol_v1.json`: raw public commitments.
 - `benchmarks/typed_composition.py`: plan-by-default CLI.
 - focused tests cover subtraction, checkpoint v4 integrity, lane call/state

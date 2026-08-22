@@ -59,9 +59,10 @@ def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution(
     }
     expected_native_inputs = {
         f"src/humanbrain/_native_src/{relative_path}"
-        for relative_path, _payload in native_runtime._native_build_input_manifest()
+        for relative_path, _path in native_runtime._native_build_input_paths()
     }
     assert expected_native_inputs <= set(protocol.source_bundle_paths)
+    assert ".gitattributes" in protocol.source_bundle_paths
     assert plan["execution_requirements"] == {
         "protocol_confirmation": "exact raw protocol SHA-256",
         "source_bundle_confirmation": "exact reviewed source-bundle SHA-256",
@@ -78,15 +79,28 @@ def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution(
 def test_plan_fails_if_any_discovered_native_cargo_input_is_unbound(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    manifest = native_runtime._native_build_input_manifest()
+    paths = native_runtime._native_build_input_paths()
     monkeypatch.setattr(
         native_runtime,
-        "_native_build_input_manifest",
-        lambda: (*manifest, ("src/new_kernel.rs", b"synthetic")),
+        "_native_build_input_paths",
+        lambda: (*paths, ("src/new_kernel.rs", Path("synthetic"))),
     )
 
     with pytest.raises(ValueError, match="omits a native Cargo build input"):
         build_execution_plan(ROOT, PROTOCOL_PATH)
+
+
+def test_plan_discovers_native_paths_without_reading_native_payloads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def forbidden_manifest(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("planning must not read native build payloads twice")
+
+    monkeypatch.setattr(native_runtime, "_native_build_input_manifest", forbidden_manifest)
+
+    plan = build_execution_plan(ROOT, PROTOCOL_PATH)
+
+    assert plan["material_execution_authorized"] is False
 
 
 def test_plan_binds_every_transitive_local_runtime_module() -> None:
@@ -146,6 +160,41 @@ def test_source_bundle_reads_are_bounded_before_evidence_or_model_calls(
     assert not (tmp_path / "evidence").exists()
 
 
+def test_oversized_native_source_is_refused_before_evidence_model_or_cache_reuse(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    oversized = tmp_path / "oversized-native.rs"
+    oversized.write_bytes(b"x" * (runner._MAX_SOURCE_FILE_BYTES + 1))
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    native_relative = "src/humanbrain/_native_src/src/lib.rs"
+    original_resolved_source = runner._resolved_source
+
+    def resolved_source(root: Path, relative_path: str) -> Path:
+        if relative_path == native_relative:
+            return oversized
+        return original_resolved_source(root, relative_path)
+
+    def forbidden(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("oversized native input must fail before execution")
+
+    monkeypatch.setattr(runner, "_resolved_source", resolved_source)
+    monkeypatch.setattr(native_runtime, "build_native", forbidden)
+
+    with pytest.raises(ValueError, match="source bundle file exceeds"):
+        _execute_protocol_synthetic(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=tmp_path / "evidence",
+            run_id="oversized-native-source",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation="not-reached",
+            grow_fn=forbidden,
+        )
+
+    assert not (tmp_path / "evidence").exists()
+
+
 def test_source_bundle_aggregate_read_limit_is_enforced(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -181,7 +230,7 @@ def test_execution_needs_the_exact_raw_protocol_sha_and_a_new_evidence_target(
         create_evidence_run(tmp_path, "synthetic-boundary-test", b"{}")
 
 
-def test_evidence_publication_is_durable_exclusive_and_never_truncated(
+def test_evidence_publication_handles_short_writes_and_is_exclusive(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -195,11 +244,191 @@ def test_evidence_publication_is_durable_exclusive_and_never_truncated(
     runner._write_new(target, b"complete-record")
     assert target.read_bytes() == b"complete-record"
     assert not tuple(tmp_path.glob(".*.tmp"))
-
     with pytest.raises(EvidenceExistsError, match="already exists"):
         runner._write_new(target, b"replacement")
     assert target.read_bytes() == b"complete-record"
     assert not tuple(tmp_path.glob(".*.tmp"))
+
+
+def test_missing_parents_run_directory_and_publications_use_durable_primitives_in_order(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    evidence_root = tmp_path / "artifacts" / "typed" / "evidence"
+    calls: list[tuple[str, Path]] = []
+    original_create = runner._create_new_directory
+    original_publish = runner._publish_new
+
+    def record_create(path: Path) -> None:
+        calls.append(("directory", path.resolve()))
+        original_create(path)
+
+    def record_publish(temporary: Path, target: Path) -> None:
+        calls.append(("publish", target.resolve()))
+        original_publish(temporary, target)
+
+    monkeypatch.setattr(runner, "_create_new_directory", record_create)
+    monkeypatch.setattr(runner, "_publish_new", record_publish)
+
+    run_directory = create_evidence_run(evidence_root, "durable-order", b"{}")
+    runner._write_new(run_directory / "010-record.json", b"record")
+
+    assert calls == [
+        ("directory", (tmp_path / "artifacts").resolve()),
+        ("directory", (tmp_path / "artifacts" / "typed").resolve()),
+        ("directory", evidence_root.resolve()),
+        ("directory", run_directory.resolve()),
+        ("publish", (run_directory / "000-plan.json").resolve()),
+        ("publish", (run_directory / "010-record.json").resolve()),
+    ]
+
+
+def test_missing_evidence_component_race_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    evidence_root = tmp_path / "raced-parent" / "evidence"
+    original_create = runner._create_new_directory
+
+    def lose_first_creation_race(path: Path) -> None:
+        if path.name == "raced-parent":
+            path.mkdir()
+        original_create(path)
+
+    monkeypatch.setattr(runner, "_create_new_directory", lose_first_creation_race)
+
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._durably_create_missing_directories(evidence_root)
+
+    assert (tmp_path / "raced-parent").is_dir()
+    assert not evidence_root.exists()
+
+
+def test_publication_durability_failure_is_fail_closed_and_never_claims_success(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "record.json"
+
+    original_publish = runner._publish_new
+
+    def fail_after_publish(temporary: Path, published: Path) -> None:
+        original_publish(temporary, published)
+        raise OSError("synthetic directory flush failure")
+
+    monkeypatch.setattr(runner, "_publish_new", fail_after_publish)
+
+    with pytest.raises(OSError, match="synthetic directory flush failure"):
+        runner._write_new(target, b"complete-record")
+
+    # The exclusive publication is immutable partial evidence, but the failed call
+    # cannot be mistaken for a durable success claim.
+    assert target.read_bytes() == b"complete-record"
+    assert not tuple(tmp_path.glob(".*.tmp"))
+    monkeypatch.setattr(runner, "_publish_new", original_publish)
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._write_new(target, b"retry")
+
+
+def test_run_directory_durability_failure_preserves_the_original_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = 0
+    original_create = runner._create_new_directory
+
+    def fail_after_create(path: Path) -> None:
+        nonlocal calls
+        calls += 1
+        original_create(path)
+        if path.name == "directory-flush-failure":
+            raise OSError("original run-directory flush failure")
+
+    monkeypatch.setattr(runner, "_create_new_directory", fail_after_create)
+
+    with pytest.raises(OSError, match="original run-directory flush failure"):
+        create_evidence_run(tmp_path, "directory-flush-failure", b"{}")
+
+    assert calls >= 1
+    assert not (tmp_path / "directory-flush-failure" / "000-plan.json").exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows MoveFileExW contract")
+def test_windows_publication_uses_write_through_without_replace_and_maps_exists(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[Path, Path, int]] = []
+
+    def fake_move(source: Path, target: Path, flags: int) -> int:
+        calls.append((source, target, flags))
+        return 183
+
+    source = tmp_path / "source.tmp"
+    target = tmp_path / "target.json"
+    source.write_bytes(b"record")
+    monkeypatch.setattr(runner, "_move_file_ex", fake_move)
+
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._windows_move_new(source, target)
+
+    assert calls == [(source, target, runner._MOVEFILE_WRITE_THROUGH)]
+    assert runner._MOVEFILE_WRITE_THROUGH == 0x8
+
+    monkeypatch.setattr(runner, "_move_file_ex", lambda *_args: 5)
+    with pytest.raises(OSError, match="WinError 5"):
+        runner._windows_move_new(source, target)
+
+
+def test_windows_publication_does_not_resolve_the_final_target_component(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source.tmp"
+    target = tmp_path / "existing-reparse-point"
+    original_resolve = Path.resolve
+
+    def guarded_resolve(path: Path, *args: object, **kwargs: object) -> Path:
+        if path == target:
+            raise AssertionError("exclusive publication followed the final target")
+        return original_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", guarded_resolve)
+    monkeypatch.setattr(runner, "_move_file_ex", lambda *_args: 183)
+
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._windows_move_new(source, target)
+
+
+def test_posix_publication_unlink_failure_syncs_parent_and_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source.tmp"
+    target = tmp_path / "target.json"
+    source.write_bytes(b"immutable record")
+    calls: list[str] = []
+    original_unlink = Path.unlink
+
+    def fail_source_unlink(path: Path, *args: object, **kwargs: object) -> None:
+        if path == source:
+            calls.append("unlink")
+            raise OSError("synthetic unlink failure")
+        original_unlink(path, *args, **kwargs)
+
+    def record_sync(directory: Path) -> None:
+        assert directory == tmp_path
+        calls.append("sync")
+
+    monkeypatch.setattr(Path, "unlink", fail_source_unlink)
+    monkeypatch.setattr(runner, "_sync_posix_directory", record_sync)
+
+    with pytest.raises(OSError, match="synthetic unlink failure"):
+        runner._publish_posix_new(source, target)
+
+    assert calls == ["unlink", "sync"]
+    assert source.read_bytes() == b"immutable record"
+    assert target.read_bytes() == b"immutable record"
 
 
 def test_interrupted_evidence_temp_never_publishes_a_partial_record(
@@ -225,14 +454,14 @@ def test_initial_plan_write_failure_preserves_a_terminal_record(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    original_link = os.link
+    original_publish = runner._publish_new
 
-    def fail_initial_plan(source: object, target: object, *args: object, **kwargs: object) -> object:
+    def fail_initial_plan(source: Path, target: Path) -> None:
         if Path(target).name == "000-plan.json":
             raise OSError("synthetic initial plan write failure")
-        return original_link(source, target, *args, **kwargs)
+        original_publish(source, target)
 
-    monkeypatch.setattr(os, "link", fail_initial_plan)
+    monkeypatch.setattr(runner, "_publish_new", fail_initial_plan)
 
     with pytest.raises(OSError, match="synthetic initial plan write failure"):
         create_evidence_run(tmp_path, "plan-write-failure", b"{}")
@@ -248,14 +477,14 @@ def test_terminal_record_write_failure_never_masks_the_original_error(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def fail_both_records(source: object, target: object, *args: object, **kwargs: object) -> object:
+    def fail_both_records(_source: Path, target: Path) -> None:
         if Path(target).name == "000-plan.json":
             raise OSError("original plan failure")
         if Path(target).name == "999-terminal-failure.json":
             raise PermissionError("secondary terminal failure")
         raise AssertionError("unexpected evidence target")
 
-    monkeypatch.setattr(os, "link", fail_both_records)
+    monkeypatch.setattr(runner, "_publish_new", fail_both_records)
 
     with pytest.raises(OSError, match="original plan failure"):
         create_evidence_run(tmp_path, "double-write-failure", b"{}")

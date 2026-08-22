@@ -23,8 +23,11 @@ where = ["src"]
 humanbrain = [
     "_native_src/Cargo.toml",
     "_native_src/Cargo.lock",
+    "_native_src/.cargo/config.toml",
     "_native_src/src/*.rs",
     "_native_src/src/*.cu",
+    "_native_src/vendor/**/*",
+    "_native_src/vendor/**/.*",
 ]
 
 [tool.pytest.ini_options]
