@@ -12,6 +12,17 @@ from pathlib import Path
 from time import perf_counter
 
 import numpy as np
+from humanbrain.scale_accounting import (
+    CellCounts,
+    EdgeCounts,
+    EventCounts,
+    MeasurementInterval,
+    MemoryCounts,
+    ScaleAccounting,
+    ScaleClaim,
+    ShardMemory,
+    WorkCounts,
+)
 from humanbrain.topology import build_recurrent_targets
 from native_scaling import _process_memory
 
@@ -127,6 +138,57 @@ def _worker(
     seconds = perf_counter() - started
     after = _process_memory()
     sources = np.arange(cells, dtype=np.int32)[:, None]
+    edge_records = cells * fanout
+    scale_accounting = ScaleAccounting(
+        claim=ScaleClaim(
+            label="materialized topology construction",
+            text=(
+                "Configured edges were generated into resident host target records; "
+                "no cell dynamics ran."
+            ),
+        ),
+        interval=MeasurementInterval(
+            name="topology construction",
+            start_step=0,
+            step_count=0,
+            biological_step_seconds=None,
+            wall_seconds=seconds,
+        ),
+        cells=CellCounts(
+            configured=cells,
+            addressable=0,
+            resident_peak=0,
+            resident_distinct=0,
+            updated_distinct=0,
+            spiking_distinct=0,
+        ),
+        work=WorkCounts(
+            cell_step_evaluations=0,
+            spike_events=0,
+            analytic_catchups=0,
+            analytic_step_equivalents=0,
+        ),
+        edges=EdgeCounts(
+            configured=edge_records,
+            resident=edge_records,
+            mutable=0,
+            generated=edge_records,
+        ),
+        events=EventCounts(
+            delivered=0,
+            queue_peak=0,
+            sent_bytes_by_shard_pair=(),
+        ),
+        memory=MemoryCounts(
+            bytes_by_shard=(
+                ShardMemory(
+                    shard="process-0",
+                    host_bytes=int(targets.nbytes),
+                    device_bytes=0,
+                ),
+            )
+        ),
+    )
     return {
         "cells": cells,
         "topology": topology,
@@ -145,6 +207,7 @@ def _worker(
             np.count_nonzero(np.any(np.diff(np.sort(targets, axis=1), axis=1) == 0, axis=1))
         ),
         "structure_invariants": _structure_invariants(targets, topology),
+        "scale_accounting": scale_accounting.to_dict(),
     }
 
 
