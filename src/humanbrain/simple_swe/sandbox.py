@@ -131,7 +131,7 @@ def _preflight(
     if len(tree.body) != 1 or not isinstance(tree.body[0], ast.FunctionDef):
         return "format_error", "completion must contain exactly one function"
     function = tree.body[0]
-    if function.name != task.entry_point:
+    if function.name != task.signature.entry_point:
         return "signature_error", "entry-point name differs from the task"
     if function.decorator_list or function.returns is not None:
         return "signature_error", "decorators and annotations are forbidden"
@@ -146,7 +146,9 @@ def _preflight(
         or any(argument.annotation is not None for argument in arguments.args)
     ):
         return "signature_error", "entry point must use the exact plain signature"
-    if tuple(argument.arg for argument in arguments.args) != task.parameter_names:
+    if tuple(argument.arg for argument in arguments.args) != tuple(
+        parameter.name for parameter in task.signature.parameters
+    ):
         return "signature_error", "entry-point parameters differ from the task"
     nested_functions = [
         node for node in ast.walk(function) if isinstance(node, ast.FunctionDef)
@@ -286,7 +288,7 @@ def _payload(
     return json.dumps(
         {
             "source": source,
-            "entry_point": public.entry_point,
+            "entry_point": public.signature.entry_point,
             "regression_cases": [asdict(case) for case in private.regression_cases],
             "property_cases": [asdict(case) for case in private.property_cases],
             "limits": {

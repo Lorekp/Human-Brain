@@ -11,6 +11,7 @@ from humanbrain.simple_swe import _worker, sandbox
 from humanbrain.simple_swe.protocol import WORKER_RESULT_OUTCOMES, load_protocol
 from humanbrain.simple_swe.sandbox import execute_completion
 from humanbrain.simple_swe.tasks import HiddenCase, PrivateTask, PublicTask
+from humanbrain.typed_program import ProgramParameter, ProgramType, TypedSignature
 
 PROTOCOL = load_protocol(
     Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
@@ -46,8 +47,11 @@ def increment_task() -> tuple[PublicTask, PrivateTask]:
         tier=0,
         family="fixture_increment",
         ordinal=0,
-        entry_point="solve_increment",
-        parameter_names=("value",),
+        signature=TypedSignature(
+            entry_point="solve_increment",
+            parameters=(ProgramParameter("value", ProgramType.Int()),),
+            result=ProgramType.Int(),
+        ),
         prompt="Return value plus one.",
         hidden_test_sha256="fixture-test-hash",
         task_sha256="fixture-task-hash",
