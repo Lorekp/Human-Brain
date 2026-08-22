@@ -87,10 +87,11 @@ Python function.
 
 ### Input
 
-The task prompt is tokenized deterministically. No hand-written semantic parser
-extracts operation labels. Training examples contain the prompt followed by a
-program delimiter and the teacher DSL sequence. At inference, the same frozen
-prompt serializer ends at the delimiter.
+The task prompt is tokenized deterministically and paired with the public
+`TypedSignature`; no hand-written semantic parser extracts operation labels or
+callable types. Training examples contain the prompt and signature followed by
+a program delimiter and the teacher DSL sequence. At inference, the same frozen
+serializer ends at the delimiter.
 
 ### State and reusable assemblies
 
@@ -139,8 +140,8 @@ The proposed stable boundaries are:
 
 - ProgramGrammar.allowed(prefix) returns the set of syntax/type-valid next DSL
   tokens;
-- CellProgramModel.complete(prompt) returns accepted cell-race tokens plus a
-  full race/mask audit;
+- CellProgramModel.complete(prompt, signature) returns accepted cell-race
+  tokens plus a full race/mask audit;
 - ProgramCompiler.compile(tokens, signature) returns one Python function or a
   deterministic format failure;
 - SimpleSWECompletionAdapter restores and hashes the checkpoint, calls the

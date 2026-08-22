@@ -252,7 +252,10 @@ hidden tests execute; and report pass@1 plus the full failure taxonomy. No
 canonical freeze, evaluation seed, private bundle, completion set, or score has
 been created. Local artifacts are trusted-operator evidence rather than remote
 attestation. This is an internal development gate because evaluation-family
-oracle logic is committed; it is not a contamination-clean external benchmark. See
+oracle logic is committed; it is not a contamination-clean external benchmark.
+The breaking v3 task/bundle schema now carries explicit typed callable
+signatures and was introduced before any canonical freeze, so no evaluation
+artifact required migration. See
 `docs/simple-swe-curriculum.md` for the task split and claim boundary.
 
 ## Reproducibility artifacts

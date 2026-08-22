@@ -179,7 +179,10 @@ freeze/reserve/anchor/reveal state machine, sealed production runner, and
 pass@1 artifact chain are now implemented, but no canonical freeze or
 evaluation seed exists. The exact protocol is
 in `docs/simple-swe-curriculum.md`; the optional typed decoder design is in
-`docs/research/cell-program-decoding.md`. The implemented scalar-only Layer-0
+`docs/research/cell-program-decoding.md`. Before that freeze, the public
+task/request projection now binds explicit parameter and result types in one
+immutable typed signature without exposing family or private-test metadata.
+The implemented scalar-only Layer-0
 plumbing and its committed-and-read but unexecuted and unscored public
 composition definitions are in `docs/cell-program-layer0.md`.
 Layer 0 is not a held-out capability result or the future typed DSL.

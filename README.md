@@ -167,7 +167,9 @@ ledger are implemented but deliberately unopened; no canonical freeze,
 evaluation seed, bundle, or score exists. See
 `docs/simple-swe-curriculum.md` for the exact split and claim boundary, and
 `docs/research/cell-program-decoding.md` for the proposed typed direct
-cell-to-program decoder. The implemented scalar Layer-0 plumbing slice is
-documented separately in `docs/cell-program-layer0.md`; its public composition
-definitions were committed and read but have never been executed or scored,
-and it is not the later typed Simple-SWE DSL.
+cell-to-program decoder. The public task/request seam already carries an
+explicit recursive typed signature; this pre-evaluation schema work is not
+itself the typed decoder or a capability run. The implemented scalar Layer-0
+plumbing slice is documented separately in `docs/cell-program-layer0.md`; its
+public composition definitions were committed and read but have never been
+executed or scored, and it is not the later typed Simple-SWE DSL.

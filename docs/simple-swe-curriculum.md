@@ -14,6 +14,13 @@ comparison. It asks a cell simulation to emit one complete Python function per
 task. It is not a claim of LeetCode, HumanEval, MBPP, LiveCodeBench, SWE-bench,
 or general software-engineering performance.
 
+No canonical cell checkpoint or freeze manifest exists yet. The public task
+schema therefore makes one deliberate pre-evaluation breaking change: callable
+types are now explicit and the private evaluation bundle schema is v3. There is
+no legacy flat-signature decoder or migration path. Checked public-baseline
+evidence remains an immutable historical result reproducible at its recorded
+source commit; it was not rerun for this schema change.
+
 The canonical protocol is
 `benchmarks/simple_swe_protocol_v1.json`, SHA-256
 `f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2`.
@@ -65,12 +72,36 @@ there is no best-seed, best-task, or best-checkpoint selection.
 
 ## Cell-only completion boundary
 
-The cell model's immutable synthesis request contains only a public prompt and
-signature. The evaluator-side adapter restores the same checkpoint before
+The cell model's immutable synthesis request contains exactly a public prompt
+and one `TypedSignature`. The signature contains the opaque entry point, an
+ordered tuple of named `ProgramParameter` values, and an explicit result type.
+Its recursive public type vocabulary is `Int`, `Bool`, `Char`, `String`,
+`List[T]`, and `Pair[A, B]`. The evaluator-side adapter restores the same checkpoint before
 every task, verifies checkpoint/source commitments through its own filesystem
 control plane, and performs a deterministic race among simulated human cells
 for every emitted token. The cell model and synthesis request have no
 filesystem, shell, network, tool, private-test, or feedback interface.
+
+The request also has no task ID, partition, family, tier, ordinal, hidden-test
+commitment, or private cases. A single immutable family registry owns the
+name-independent callable types; it binds the seed-derived entry point once
+when constructing a public task. `family_callable_types()` exposes a read-only
+projection for protocol inspection, but the runner projects only the prompt
+and bound signature into synthesis. The model never derives a type from prompt
+wording, the opaque entry point, or a family label.
+
+The v1 top-level callable types are frozen as follows:
+
+| Callable type | Families |
+| --- | --- |
+| `Int -> Int` | scalar clamp, scalar offset, scalar nonnegative, digit sum, nonzero digit product, digit reduce modulo, bounded scalar classifier |
+| `Int -> String` | bounded divisibility label |
+| `List[Int] -> List[Int]` | list map-add, list map-absolute, stable parity/range selection, adjacent differences, clamped window sums |
+| `List[Int] -> Int` | clamp-then-sum, map-then-count, select-then-span, adjacent-equal count, filtered adjacent changes |
+| `String -> String` | character-class filter, filter-then-reverse |
+| `String -> Int` | longest character run, longest target run, token-boundary length |
+| `String -> List[Int]` | character run-length signature, token run-length signature |
+| `String -> List[String]` | word-length filter |
 
 The trusted evaluator process has already loaded the private bundle while it
 synthesizes completions; this is not process isolation between harness and
