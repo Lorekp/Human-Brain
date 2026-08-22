@@ -36,19 +36,21 @@ _SCHEMA = "humanbrain-public-typed-program-dev-protocol-v1"
 _PROTOCOL_ID = "humanbrain-public-typed-program-dev-v1"
 _STATUS = "preregistered-not-executed"
 _SOURCE_COMMIT = "1ae5418b92e81dc48c6a2e36fb8822ceec7ce202"
-_MAX_PROTOCOL_BYTES = 131_072
 FROZEN_PUBLIC_DEV_GATE_SHA256 = "c7be743617c5fbc090891275f77a636bf1a7a6a89d27a1d1e7cf0e889d19ae56"
+_PUBLIC_DEV_PROTOCOL_BYTES = 9_704
 _TRAIN_PROTOCOL_FILENAME = "typed_program_public_train_protocol_v1.json"
 _TRAIN_ARTIFACT_COMMIT = "8291fe1a0039db7141817c438854a1817a0a8300"
 _TRAIN_PROTOCOL_RELATIVE_PATH = Path("benchmarks/typed_program_public_train_protocol_v1.json")
 _TRAIN_PROTOCOL_SHA256 = "1ed77f9fa2395f6be8bed74648dc9d3de3027e367e626e427e56de912f4ed191"
 _TRAIN_PROTOCOL_GIT_BLOB = "afdacef6f9d53a1e16b76155d8accc3a1ecf9e46"
+_TRAIN_PROTOCOL_BYTES = 7_690
 _TRAIN_CHECKPOINT_RELATIVE_PATH = Path("artifacts/typed_program_public_train_v1/checkpoint.json")
 _TRAIN_CHECKPOINT_RAW_SHA256 = "0c2c4fd3e16ab978ae6e25a16beab9d1c84ae867f63bffdad3745c07b68dcb9d"
 _TRAIN_CHECKPOINT_CELL_SYNAPSE_SHA256 = (
     "86b40631c49db55124dff3212645dc571555c5939fc4004a5d94c54b49e99779"
 )
 _TRAIN_CHECKPOINT_GIT_BLOB = "430faa1221c7721d97f43a9c311671e30bb65317"
+_TRAIN_CHECKPOINT_BYTES = 986_677
 _TRAIN_SUMMARY_RELATIVE_PATH = Path(
     "artifacts/typed_program_public_train_v1/evidence/005-summary.json"
 )
@@ -60,21 +62,25 @@ _TRAIN_ARTIFACT_FILE_IDENTITIES = (
         _TRAIN_CHECKPOINT_RELATIVE_PATH,
         _TRAIN_CHECKPOINT_RAW_SHA256,
         _TRAIN_CHECKPOINT_GIT_BLOB,
+        _TRAIN_CHECKPOINT_BYTES,
     ),
     (
         Path("artifacts/typed_program_public_train_v1/evidence/000-run-start.json"),
         "79dff01017e63072a3d32eb38d3a2435d1cfd9b008eae5501e55612a2be64b1d",
         "41571c9002570095383fdb85f8a036dc364d18de",
+        494,
     ),
     (
         Path("artifacts/typed_program_public_train_v1/evidence/001-training.json"),
         "926daebc386eac7e13c77dcb1746d8e8e920f2c7716b6040d10faa9330195daf",
         "da307535dbd6404342a1cd29f401907d2dd67787",
+        1_000,
     ),
     (
         Path("artifacts/typed_program_public_train_v1/evidence/002-train_int_identity.json"),
         "6e223fed4fc66c7932ad4f3c1ac0ca590ac8e1ec0ce565c79eb08a8456f8cdeb",
         "1b484988e065ecf9f6e6cdfba90967f741a31d96",
+        3_082,
     ),
     (
         Path(
@@ -82,6 +88,7 @@ _TRAIN_ARTIFACT_FILE_IDENTITIES = (
         ),
         "c10f903fc114e988ab6c3a78338bf04bf9531f0c20b8ce61f902664b8b29812d",
         "2e880f281d84ec4f3113ac32ec0753dfaf570342",
+        4_928,
     ),
     (
         Path(
@@ -90,11 +97,13 @@ _TRAIN_ARTIFACT_FILE_IDENTITIES = (
         ),
         "9df04197196402cde5762c1222f8f6dd631682b2d30a89234ec69241e8b6cdce",
         "ba64c3e702c9e00e3dc693fb7c3642cd0e64cd1b",
+        6_027,
     ),
     (
         _TRAIN_SUMMARY_RELATIVE_PATH,
         _TRAIN_SUMMARY_RAW_SHA256,
         _TRAIN_SUMMARY_GIT_BLOB,
+        2_336,
     ),
 )
 _SOURCE_FILE_IDENTITIES = (
@@ -102,21 +111,25 @@ _SOURCE_FILE_IDENTITIES = (
         Path("benchmarks/typed_program_public_train.py"),
         "c45dbc15f55b7ad8a8c4dd971c46096b48f4488f935f962eb503412d1c499bc1",
         "8d8b6aed9958b70a7d5583ffab1f8b61315766c6",
+        421,
     ),
     (
         Path("src/humanbrain/typed_curriculum.py"),
         "d171f12aca180f87295468ef282b10d267dddd5f1f8265ba353dc3a1bb4eb8e6",
         "c680b488a5bb2a5e970e244244af5da03d1808c0",
+        49_661,
     ),
     (
         Path("src/humanbrain/typed_program.py"),
         "447570e75264bb4419cd725f6a7508f92236088299a4d8fd9742f8ee334a819b",
         "93e1bb1c8d426d3dade24b7cbd5d201243998ba6",
+        49_243,
     ),
     (
         Path("src/humanbrain/typed_program_types.py"),
         "5f06a43bc771a8d61881d7ebf7c7decefcadbe245d77ce10640dbfff5174d099",
         "5c94b46ec632702bdf062c3104d4c1bb013e38c5",
+        6_527,
     ),
 )
 _PREREQUISITE_GATES = (
@@ -221,15 +234,17 @@ class PublicDevGate:
     train_protocol_relative_path: Path
     train_protocol_sha256: str
     train_protocol_git_blob: str
+    train_protocol_byte_count: int
     checkpoint_relative_path: Path
     checkpoint_raw_sha256: str
     checkpoint_cell_synapse_sha256: str
     checkpoint_git_blob: str
+    checkpoint_byte_count: int
     train_summary_relative_path: Path
     train_summary_raw_sha256: str
     train_summary_git_blob: str
-    train_artifact_file_identities: tuple[tuple[Path, str, str], ...]
-    source_file_identities: tuple[tuple[Path, str, str], ...]
+    train_artifact_file_identities: tuple[tuple[Path, str, str, int], ...]
+    source_file_identities: tuple[tuple[Path, str, str, int], ...]
     evidence_relative_directory: Path
 
 
@@ -285,13 +300,33 @@ def _task_record(task: DevelopmentTask) -> dict[str, object]:
     }
 
 
+def _read_exact_file_bytes(
+    path: Path,
+    *,
+    expected_bytes: int,
+    label: str,
+    display_path: Path | None = None,
+) -> bytes:
+    """Read one committed file with an exact-size plus-one allocation bound."""
+    suffix = "" if display_path is None else f": {display_path}"
+    try:
+        with path.open("rb") as stream:
+            raw = stream.read(expected_bytes + 1)
+    except OSError as error:
+        raise ValueError(f"{label} is unavailable{suffix}") from error
+    if len(raw) != expected_bytes:
+        raise ValueError(f"{label} size changed{suffix}")
+    return raw
+
+
 def load_public_dev_gate(path: str | Path) -> PublicDevGate:
     """Load the frozen teacher-free DEV definition without executing it."""
     protocol_path = Path(path)
-    with protocol_path.open("rb") as stream:
-        raw = stream.read(_MAX_PROTOCOL_BYTES + 1)
-    if len(raw) > _MAX_PROTOCOL_BYTES:
-        raise ValueError("public DEV protocol exceeds its byte limit")
+    raw = _read_exact_file_bytes(
+        protocol_path,
+        expected_bytes=_PUBLIC_DEV_PROTOCOL_BYTES,
+        label="public DEV protocol",
+    )
     raw_sha256 = sha256(raw).hexdigest()
     if raw_sha256 != FROZEN_PUBLIC_DEV_GATE_SHA256:
         raise ValueError("public DEV protocol raw SHA-256 is not preregistered")
@@ -356,7 +391,9 @@ def load_public_dev_gate(path: str | Path) -> PublicDevGate:
                 "raw_sha256": raw_sha256,
                 "git_blob": git_blob,
             }
-            for relative_path, raw_sha256, git_blob in (_TRAIN_ARTIFACT_FILE_IDENTITIES)
+            for relative_path, raw_sha256, git_blob, _expected_bytes in (
+                _TRAIN_ARTIFACT_FILE_IDENTITIES
+            )
         ],
         "source": {
             "commit": _SOURCE_COMMIT,
@@ -366,7 +403,9 @@ def load_public_dev_gate(path: str | Path) -> PublicDevGate:
                     "raw_sha256": raw_sha256,
                     "git_blob": git_blob,
                 }
-                for relative_path, raw_sha256, git_blob in _SOURCE_FILE_IDENTITIES
+                for relative_path, raw_sha256, git_blob, _expected_bytes in (
+                    _SOURCE_FILE_IDENTITIES
+                )
             ],
         },
     }
@@ -417,7 +456,15 @@ def load_public_dev_gate(path: str | Path) -> PublicDevGate:
     ) != ("development", False, False, 0):
         raise ValueError("development must remain teacher-free, unopened, and unrun")
 
-    train = load_public_curriculum(protocol_path.with_name(_TRAIN_PROTOCOL_FILENAME))
+    train_protocol_path = protocol_path.with_name(_TRAIN_PROTOCOL_FILENAME)
+    train_protocol_bytes = _read_exact_file_bytes(
+        train_protocol_path,
+        expected_bytes=_TRAIN_PROTOCOL_BYTES,
+        label="public TRAIN protocol",
+    )
+    if sha256(train_protocol_bytes).hexdigest() != _TRAIN_PROTOCOL_SHA256:
+        raise ValueError("TRAIN protocol identity changed")
+    train = load_public_curriculum(train_protocol_path)
     if train.raw_sha256 != _TRAIN_PROTOCOL_SHA256:
         raise ValueError("TRAIN protocol identity changed")
     expected_tasks = [_task_record(task) for task in train.development_tasks]
@@ -536,10 +583,12 @@ def load_public_dev_gate(path: str | Path) -> PublicDevGate:
         train_protocol_relative_path=_TRAIN_PROTOCOL_RELATIVE_PATH,
         train_protocol_sha256=_TRAIN_PROTOCOL_SHA256,
         train_protocol_git_blob=_TRAIN_PROTOCOL_GIT_BLOB,
+        train_protocol_byte_count=_TRAIN_PROTOCOL_BYTES,
         checkpoint_relative_path=_TRAIN_CHECKPOINT_RELATIVE_PATH,
         checkpoint_raw_sha256=_TRAIN_CHECKPOINT_RAW_SHA256,
         checkpoint_cell_synapse_sha256=_TRAIN_CHECKPOINT_CELL_SYNAPSE_SHA256,
         checkpoint_git_blob=_TRAIN_CHECKPOINT_GIT_BLOB,
+        checkpoint_byte_count=_TRAIN_CHECKPOINT_BYTES,
         train_summary_relative_path=_TRAIN_SUMMARY_RELATIVE_PATH,
         train_summary_raw_sha256=_TRAIN_SUMMARY_RAW_SHA256,
         train_summary_git_blob=_TRAIN_SUMMARY_GIT_BLOB,
@@ -551,23 +600,26 @@ def load_public_dev_gate(path: str | Path) -> PublicDevGate:
 
 def _checked_file_bytes(
     *,
-    gate: PublicDevGate,
     dependencies: _RunDependencies,
     relative_path: Path,
+    expected_commit: str,
     expected_raw_sha256: str,
     expected_git_blob: str,
+    expected_bytes: int,
 ) -> bytes:
     path = dependencies.repository_root / relative_path
-    try:
-        raw = path.read_bytes()
-    except OSError as error:
-        raise ValueError(f"checked TRAIN input is unavailable: {relative_path}") from error
+    raw = _read_exact_file_bytes(
+        path,
+        expected_bytes=expected_bytes,
+        label="checked TRAIN input",
+        display_path=relative_path,
+    )
     if sha256(raw).hexdigest() != expected_raw_sha256:
         raise ValueError(f"checked TRAIN input bytes changed: {relative_path}")
     try:
         actual_blob = dependencies.git_blob_at_commit(
             dependencies.repository_root,
-            gate.train_artifact_commit,
+            expected_commit,
             relative_path,
         )
     except (OSError, subprocess.SubprocessError) as error:
@@ -649,35 +701,46 @@ def _preflight_train_inputs(
         != dependencies.protocol_path.with_name(_TRAIN_PROTOCOL_FILENAME).resolve()
     ):
         raise ValueError("TRAIN protocol path is not fixed to the checked source root")
-    if load_public_curriculum(train_path).raw_sha256 != gate.train_protocol_sha256:
-        raise ValueError("TRAIN protocol identity changed")
     _checked_file_bytes(
-        gate=gate,
         dependencies=dependencies,
         relative_path=gate.train_protocol_relative_path,
+        expected_commit=gate.train_artifact_commit,
         expected_raw_sha256=gate.train_protocol_sha256,
         expected_git_blob=gate.train_protocol_git_blob,
+        expected_bytes=gate.train_protocol_byte_count,
     )
-    for relative_path, expected_sha256, expected_git_blob in gate.source_file_identities:
+    if load_public_curriculum(train_path).raw_sha256 != gate.train_protocol_sha256:
+        raise ValueError("TRAIN protocol identity changed")
+    for (
+        relative_path,
+        expected_sha256,
+        expected_git_blob,
+        expected_bytes,
+    ) in gate.source_file_identities:
         _checked_file_bytes(
-            gate=gate,
             dependencies=dependencies,
             relative_path=relative_path,
+            expected_commit=gate.source_commit,
             expected_raw_sha256=expected_sha256,
             expected_git_blob=expected_git_blob,
+            expected_bytes=expected_bytes,
         )
     artifact_bytes: dict[Path, bytes] = {}
-    for relative_path, expected_sha256, expected_git_blob in gate.train_artifact_file_identities:
+    for (
+        relative_path,
+        expected_sha256,
+        expected_git_blob,
+        expected_bytes,
+    ) in gate.train_artifact_file_identities:
         artifact_bytes[relative_path] = _checked_file_bytes(
-            gate=gate,
             dependencies=dependencies,
             relative_path=relative_path,
+            expected_commit=gate.train_artifact_commit,
             expected_raw_sha256=expected_sha256,
             expected_git_blob=expected_git_blob,
+            expected_bytes=expected_bytes,
         )
     checkpoint_bytes = artifact_bytes[gate.checkpoint_relative_path]
-    if len(checkpoint_bytes) > 2_097_152:
-        raise ValueError("checked TRAIN checkpoint exceeds the fixed byte limit")
     if _checkpoint_cell_synapse_sha256(checkpoint_bytes) != (gate.checkpoint_cell_synapse_sha256):
         raise ValueError("checked TRAIN checkpoint cell-state identity changed")
     summary_bytes = artifact_bytes[gate.train_summary_relative_path]
@@ -737,7 +800,9 @@ def _plan(gate: PublicDevGate) -> dict[str, object]:
                     "path": relative_path.as_posix(),
                     "raw_sha256": raw_sha256,
                 }
-                for relative_path, raw_sha256, git_blob in gate.source_file_identities
+                for relative_path, raw_sha256, git_blob, _expected_bytes in (
+                    gate.source_file_identities
+                )
             ],
         },
         "train_artifact_commit": gate.train_artifact_commit,
@@ -1076,9 +1141,14 @@ def _audit_completion(
 
     race_passed, race_reports = _race_audit(completion)
     try:
+        checkpoint_file_bytes = _read_exact_file_bytes(
+            checkpoint_path,
+            expected_bytes=gate.checkpoint_byte_count,
+            label="checked TRAIN checkpoint immutability input",
+        )
         raw_checkpoint_passed = (
             checkpoint.to_bytes() == checkpoint_bytes  # type: ignore[attr-defined]
-            and checkpoint_path.read_bytes() == checkpoint_bytes
+            and checkpoint_file_bytes == checkpoint_bytes
             and sha256(checkpoint_bytes).hexdigest() == gate.checkpoint_raw_sha256
             and completion.checkpoint_sha256 == gate.checkpoint_raw_sha256
             and checkpoint.sha256 == gate.checkpoint_raw_sha256  # type: ignore[attr-defined]

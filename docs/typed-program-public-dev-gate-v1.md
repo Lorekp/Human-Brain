@@ -32,6 +32,12 @@ source files, and all seven committed TRAIN artifact files. It also validates
 the TRAIN summary as a successful 3/3 TRAIN result with no prior DEV opening,
 and checks the checkpoint's embedded cell/synapse identity without restoring
 it. A dirty, missing, relocated, uncommitted, or mismatched input fails closed.
+Every direct read is capped at the committed byte count plus one before the
+bytes are allocated or parsed, and the exact committed count is then required.
+Source blobs are queried at the frozen source commit; the TRAIN protocol and
+artifact blobs are queried at the committed TRAIN artifact commit. The
+986,677-byte checkpoint uses the same 986,678-byte bounded read during both
+preflight and each later raw-immutability audit.
 
 ## Public teacher-free tasks
 

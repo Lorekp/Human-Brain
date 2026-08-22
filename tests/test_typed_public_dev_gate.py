@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import io
 import json
+import tracemalloc
 from hashlib import sha256
 from pathlib import Path
 
@@ -17,6 +19,13 @@ from humanbrain.typed_public_dev_gate import (
 )
 
 PROTOCOL = Path(__file__).parents[1] / "benchmarks" / "typed_program_public_dev_protocol_v1.json"
+
+
+def _fixed_size_json(value: object) -> bytes:
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    expected_bytes = PROTOCOL.stat().st_size
+    assert len(raw) <= expected_bytes
+    return raw + (b" " * (expected_bytes - len(raw)))
 
 
 def test_public_dev_gate_exposes_only_the_two_teacher_free_definitions() -> None:
@@ -40,7 +49,7 @@ def test_loader_rejects_a_changed_task_gate_even_with_a_matching_raw_hash(
 ) -> None:
     modified = json.loads(PROTOCOL.read_text(encoding="utf-8"))
     modified["execution"]["task_gates"].remove("semantics")
-    raw = json.dumps(modified, sort_keys=True).encode("utf-8")
+    raw = _fixed_size_json(modified)
     path = tmp_path / PROTOCOL.name
     path.write_bytes(raw)
     (tmp_path / "typed_program_public_train_protocol_v1.json").write_bytes(
@@ -62,7 +71,7 @@ def test_loader_rejects_changed_train_inputs_even_with_a_matching_raw_hash(
 ) -> None:
     modified = json.loads(PROTOCOL.read_text(encoding="utf-8"))
     modified["train_inputs"]["checkpoint"]["raw_sha256"] = "0" * 64
-    raw = json.dumps(modified, sort_keys=True).encode("utf-8")
+    raw = _fixed_size_json(modified)
     path = tmp_path / PROTOCOL.name
     path.write_bytes(raw)
     (tmp_path / "typed_program_public_train_protocol_v1.json").write_bytes(
@@ -84,7 +93,7 @@ def test_loader_rejects_changed_reporting_even_with_a_matching_raw_hash(
 ) -> None:
     modified = json.loads(PROTOCOL.read_text(encoding="utf-8"))
     modified["reporting"]["promotion_semantic_passes_required"] = 2
-    raw = json.dumps(modified, sort_keys=True).encode("utf-8")
+    raw = _fixed_size_json(modified)
     path = tmp_path / PROTOCOL.name
     path.write_bytes(raw)
     (tmp_path / "typed_program_public_train_protocol_v1.json").write_bytes(
@@ -100,7 +109,7 @@ def test_loader_rejects_changed_reporting_even_with_a_matching_raw_hash(
         load_public_dev_gate(path)
 
 
-def test_protocol_reads_are_bounded_before_json_allocation(
+def test_protocol_reads_use_exact_max_plus_one_before_json_allocation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     real_open = Path.open
@@ -128,7 +137,7 @@ def test_protocol_reads_are_bounded_before_json_allocation(
 
     load_public_dev_gate(PROTOCOL)
 
-    assert read_sizes == [131_073, 131_073]
+    assert read_sizes == [9_705, 7_691, 131_073]
 
 
 def test_runner_is_a_source_checked_nonwriting_plan_by_default(
@@ -612,6 +621,255 @@ def test_plan_rejects_a_mismatched_committed_git_blob_before_runtime(
     assert not (tmp_path / "artifacts").exists()
 
 
+def test_plan_queries_each_checked_file_at_its_declared_commit_and_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    production = typed_public_dev_gate._production_dependencies()
+    gate = load_public_dev_gate(PROTOCOL)
+    expected_blobs = {
+        gate.train_protocol_relative_path: gate.train_protocol_git_blob,
+        **{
+            relative_path: git_blob
+            for relative_path, _raw_sha256, git_blob, _expected_bytes in (
+                gate.source_file_identities
+            )
+        },
+        **{
+            relative_path: git_blob
+            for relative_path, _raw_sha256, git_blob, _expected_bytes in (
+                gate.train_artifact_file_identities
+            )
+        },
+    }
+    calls: list[tuple[str, Path]] = []
+
+    def fake_git_blob(_root: Path, commit: str, relative_path: Path) -> str:
+        calls.append((commit, relative_path))
+        return expected_blobs[relative_path]
+
+    def unexpected_call(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("plan mode opened the DEV runtime")
+
+    monkeypatch.setattr(
+        typed_public_dev_gate,
+        "_production_dependencies",
+        lambda: typed_public_dev_gate._RunDependencies(
+            repository_root=production.repository_root,
+            evidence_repository_root=tmp_path,
+            protocol_path=production.protocol_path,
+            complete=unexpected_call,
+            restore_checkpoint=unexpected_call,
+            git_blob_at_commit=fake_git_blob,
+        ),
+    )
+
+    assert run(()) == 0
+    capsys.readouterr()
+    assert calls == [
+        (gate.train_artifact_commit, gate.train_protocol_relative_path),
+        *[
+            (gate.source_commit, relative_path)
+            for relative_path, _raw_sha256, _git_blob, _expected_bytes in (
+                gate.source_file_identities
+            )
+        ],
+        *[
+            (gate.train_artifact_commit, relative_path)
+            for relative_path, _raw_sha256, _git_blob, _expected_bytes in (
+                gate.train_artifact_file_identities
+            )
+        ],
+    ]
+    assert not (tmp_path / "artifacts").exists()
+
+
+def test_plan_fails_closed_when_the_declared_source_commit_is_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    production = typed_public_dev_gate._production_dependencies()
+    gate = load_public_dev_gate(PROTOCOL)
+    calls: list[tuple[str, Path]] = []
+
+    def fake_git_blob(_root: Path, commit: str, relative_path: Path) -> str:
+        calls.append((commit, relative_path))
+        if commit == gate.source_commit:
+            raise OSError("fixture source commit is unavailable")
+        assert relative_path == gate.train_protocol_relative_path
+        return gate.train_protocol_git_blob
+
+    def unexpected_call(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("unavailable source commit reached the DEV runtime")
+
+    monkeypatch.setattr(
+        typed_public_dev_gate,
+        "_production_dependencies",
+        lambda: typed_public_dev_gate._RunDependencies(
+            repository_root=production.repository_root,
+            evidence_repository_root=tmp_path,
+            protocol_path=production.protocol_path,
+            complete=unexpected_call,
+            restore_checkpoint=unexpected_call,
+            git_blob_at_commit=fake_git_blob,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="checked TRAIN Git blob is unavailable"):
+        run(())
+    assert calls == [
+        (gate.train_artifact_commit, gate.train_protocol_relative_path),
+        (gate.source_commit, gate.source_file_identities[0][0]),
+    ]
+    assert not (tmp_path / "artifacts").exists()
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "expected_bytes", "error"),
+    [
+        (
+            Path("benchmarks/typed_program_public_dev_protocol_v1.json"),
+            9_704,
+            "public DEV protocol size changed",
+        ),
+        (
+            Path("benchmarks/typed_program_public_train_protocol_v1.json"),
+            7_690,
+            "public TRAIN protocol size changed",
+        ),
+        (
+            Path("src/humanbrain/typed_program.py"),
+            49_243,
+            "checked TRAIN input size changed",
+        ),
+        (
+            Path("artifacts/typed_program_public_train_v1/checkpoint.json"),
+            986_677,
+            "checked TRAIN input size changed",
+        ),
+    ],
+)
+def test_execute_rejects_oversized_committed_inputs_after_one_bounded_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    relative_path: Path,
+    expected_bytes: int,
+    error: str,
+) -> None:
+    production = typed_public_dev_gate._production_dependencies()
+    gate = load_public_dev_gate(PROTOCOL)
+    target_path = (production.repository_root / relative_path).resolve()
+    raw_target = target_path.read_bytes()
+    assert len(raw_target) == expected_bytes
+    read_sizes: list[int] = []
+    real_open = Path.open
+    expected_blobs = {
+        gate.train_protocol_relative_path: gate.train_protocol_git_blob,
+        **{
+            path: git_blob
+            for path, _raw_sha256, git_blob, _expected_bytes in (gate.source_file_identities)
+        },
+        **{
+            path: git_blob
+            for path, _raw_sha256, git_blob, _expected_bytes in (
+                gate.train_artifact_file_identities
+            )
+        },
+    }
+
+    def bounded_open(path: Path, *args: object, **kwargs: object) -> object:
+        if path.resolve() == target_path:
+
+            class OversizedReader(io.BytesIO):
+                def read(self, size: int = -1) -> bytes:
+                    read_sizes.append(size)
+                    return super().read(size)
+
+            return OversizedReader(raw_target + b"x")
+        return real_open(path, *args, **kwargs)
+
+    def unexpected_call(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("oversized committed input reached the DEV runtime")
+
+    monkeypatch.setattr(Path, "open", bounded_open)
+    monkeypatch.setattr(
+        typed_public_dev_gate,
+        "_production_dependencies",
+        lambda: typed_public_dev_gate._RunDependencies(
+            repository_root=production.repository_root,
+            evidence_repository_root=tmp_path,
+            protocol_path=production.protocol_path,
+            complete=unexpected_call,
+            restore_checkpoint=unexpected_call,
+            git_blob_at_commit=lambda _root, _commit, path: expected_blobs[path],
+        ),
+    )
+
+    with pytest.raises(ValueError, match=error):
+        run(("--execute", "--protocol-sha256", FROZEN_PUBLIC_DEV_GATE_SHA256))
+
+    assert read_sizes == [expected_bytes + 1]
+    assert not (tmp_path / "artifacts").exists()
+
+
+def test_execute_bounds_checkpoint_preflight_and_later_immutability_reads(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    production = typed_public_dev_gate._production_dependencies()
+    checkpoint_path = (
+        production.repository_root
+        / "artifacts"
+        / "typed_program_public_train_v1"
+        / "checkpoint.json"
+    ).resolve()
+    raw_checkpoint = checkpoint_path.read_bytes()
+    read_sizes: list[int] = []
+    real_open = Path.open
+
+    class TrackedReader:
+        def __init__(self, stream: object) -> None:
+            self._stream = stream
+
+        def __enter__(self) -> TrackedReader:
+            self._stream.__enter__()  # type: ignore[attr-defined]
+            return self
+
+        def __exit__(self, *args: object) -> object:
+            return self._stream.__exit__(*args)  # type: ignore[attr-defined]
+
+        def read(self, size: int = -1) -> bytes:
+            read_sizes.append(size)
+            return self._stream.read(size)  # type: ignore[attr-defined,no-any-return]
+
+    def tracked_open(path: Path, *args: object, **kwargs: object) -> object:
+        stream = real_open(path, *args, **kwargs)
+        if path.resolve() == checkpoint_path:
+            return TrackedReader(stream)
+        return stream
+
+    def forbidden_read_bytes(_path: Path) -> bytes:
+        raise AssertionError("checkpoint validation used Path.read_bytes")
+
+    monkeypatch.setattr(Path, "open", tracked_open)
+    monkeypatch.setattr(Path, "read_bytes", forbidden_read_bytes)
+    monkeypatch.setattr(
+        typed_public_dev_gate,
+        "_production_dependencies",
+        lambda: typed_public_dev_gate._RunDependencies(
+            repository_root=production.repository_root,
+            evidence_repository_root=tmp_path,
+            protocol_path=production.protocol_path,
+            complete=_fake_dev_completion,
+            restore_checkpoint=lambda raw: _FakeCheckpoint(raw),
+        ),
+    )
+
+    assert run(("--execute", "--protocol-sha256", FROZEN_PUBLIC_DEV_GATE_SHA256)) == 0
+    assert read_sizes == [len(raw_checkpoint) + 1] * 3
+
+
 @pytest.mark.parametrize(
     "arguments",
     [
@@ -627,6 +885,62 @@ def test_public_runner_has_no_relocation_selection_or_seed_options(
 ) -> None:
     with pytest.raises(SystemExit):
         run(arguments)
+
+
+def test_execute_preserves_preexisting_tracemalloc(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    production = typed_public_dev_gate._production_dependencies()
+    was_tracing = tracemalloc.is_tracing()
+    if not was_tracing:
+        tracemalloc.start()
+    try:
+        monkeypatch.setattr(
+            typed_public_dev_gate,
+            "_production_dependencies",
+            lambda: typed_public_dev_gate._RunDependencies(
+                repository_root=production.repository_root,
+                evidence_repository_root=tmp_path,
+                protocol_path=production.protocol_path,
+                complete=_fake_dev_completion,
+                restore_checkpoint=lambda raw: _FakeCheckpoint(raw),
+            ),
+        )
+
+        assert run(("--execute", "--protocol-sha256", FROZEN_PUBLIC_DEV_GATE_SHA256)) == 0
+        assert tracemalloc.is_tracing()
+    finally:
+        if not was_tracing and tracemalloc.is_tracing():
+            tracemalloc.stop()
+
+
+def test_execute_stops_runner_owned_tracemalloc(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    production = typed_public_dev_gate._production_dependencies()
+    was_tracing = tracemalloc.is_tracing()
+    if was_tracing:
+        tracemalloc.stop()
+    try:
+        monkeypatch.setattr(
+            typed_public_dev_gate,
+            "_production_dependencies",
+            lambda: typed_public_dev_gate._RunDependencies(
+                repository_root=production.repository_root,
+                evidence_repository_root=tmp_path,
+                protocol_path=production.protocol_path,
+                complete=_fake_dev_completion,
+                restore_checkpoint=lambda raw: _FakeCheckpoint(raw),
+            ),
+        )
+
+        assert run(("--execute", "--protocol-sha256", FROZEN_PUBLIC_DEV_GATE_SHA256)) == 0
+        assert not tracemalloc.is_tracing()
+    finally:
+        if was_tracing and not tracemalloc.is_tracing():
+            tracemalloc.start()
 
 
 def test_timing_accounting_boundary_controls_promotion(
