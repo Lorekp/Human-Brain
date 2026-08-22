@@ -20,6 +20,7 @@ from humanbrain.simple_swe.freeze import (
 )
 from humanbrain.simple_swe.protocol import load_protocol
 from humanbrain.simple_swe.tasks import canonical_sha256
+from humanbrain.typed_program import TypedSignature
 
 
 @dataclass(frozen=True)
@@ -27,8 +28,11 @@ class CompletionRequest:
     """The only public task information available during direct synthesis."""
 
     prompt: str
-    entry_point: str
-    parameter_names: tuple[str, ...]
+    signature: TypedSignature
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.signature, TypedSignature):
+            raise TypeError("completion request signature must be typed")
 
 
 @dataclass(frozen=True)
