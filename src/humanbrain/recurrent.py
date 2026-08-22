@@ -10,10 +10,10 @@ from pathlib import Path
 import numpy as np
 
 from humanbrain.cells import (
-    ALLEN_GLIF5_CONFIG_SHA256,
     AdaptiveGlifPopulation,
     AllenGlif5Parameters,
 )
+from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY
 from humanbrain.native import NativeThreeFactorLearner, recurrent_kernel
 from humanbrain.readout import SparseCellReadout
 from humanbrain.recurrent_state import RecurrentCellSynapseState
@@ -366,7 +366,7 @@ class RecurrentCellCircuit:
         developmental_state = all(developmental_present)
         metadata: dict[str, object] = {
             "token_cells": self.token_cells,
-            "allen_glif5_config_sha256": ALLEN_GLIF5_CONFIG_SHA256,
+            "allen_glif5_config_sha256": HUMAN_GLIF5_IDENTITY.config_sha256,
             "cell_parameters": asdict(self.cell_parameters),
             "circuit_config": asdict(self.config),
             "growth_examples": self._growth_examples,
@@ -555,7 +555,10 @@ class RecurrentCellCircuit:
         )
         if missing_metadata:
             raise ValueError(f"checkpoint metadata {missing_metadata[0]} is missing")
-        if metadata["allen_glif5_config_sha256"] != ALLEN_GLIF5_CONFIG_SHA256:
+        if (
+            metadata["allen_glif5_config_sha256"]
+            != HUMAN_GLIF5_IDENTITY.config_sha256
+        ):
             raise ValueError("checkpoint uses a different adaptive Allen human cell")
         config_value = metadata["circuit_config"]
         cell_parameters = metadata["cell_parameters"]

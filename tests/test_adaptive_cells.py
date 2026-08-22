@@ -7,6 +7,7 @@ from humanbrain.cells import (
     AllenGlif5Parameters,
     simulate_glif5_current,
 )
+from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,8 +17,8 @@ ALLEN_GLIF5_CONFIG = ROOT / "data" / "allen" / "523000114_neuron_config.json"
 def test_adaptive_cell_parameters_match_pinned_allen_human_artifact() -> None:
     loaded = AllenGlif5Parameters.from_allen_config(ALLEN_GLIF5_CONFIG)
     assert loaded == AllenGlif5Parameters()
-    assert loaded.model_id == 523000114
-    assert loaded.specimen_id == 508378649
+    assert loaded.model_id == HUMAN_GLIF5_IDENTITY.model_id
+    assert loaded.specimen_id == HUMAN_GLIF5_IDENTITY.specimen_id
     assert np.isclose(loaded.membrane_tau_ms, 78.59019688076135)
 
 

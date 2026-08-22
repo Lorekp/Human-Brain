@@ -9,14 +9,11 @@ from pathlib import Path
 
 import numpy as np
 
+from humanbrain.human_cell_identity import (
+    HUMAN_GLIF3_IDENTITY,
+    HUMAN_GLIF5_IDENTITY,
+)
 from humanbrain.native import NativeGlifKernel
-
-ALLEN_MODEL_ID = 503612028
-ALLEN_SPECIMEN_ID = 488392806
-ALLEN_CONFIG_SHA256 = "57e20326d27146c3afbd412ca3ba0bcaee67a22f27729292b36666b9ff36c889"
-ALLEN_GLIF5_MODEL_ID = 523000114
-ALLEN_GLIF5_SPECIMEN_ID = 508378649
-ALLEN_GLIF5_CONFIG_SHA256 = "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149"
 
 
 @dataclass(frozen=True)
@@ -29,8 +26,8 @@ class AllenGlif3Parameters:
     and spike-cut refractory interval.
     """
 
-    model_id: int = ALLEN_MODEL_ID
-    specimen_id: int = ALLEN_SPECIMEN_ID
+    model_id: int = HUMAN_GLIF3_IDENTITY.model_id
+    specimen_id: int = HUMAN_GLIF3_IDENTITY.specimen_id
     rest_mv: float = -69.04794057210288
     dt_ms: float = 0.05
     capacitance_pf: float = 164.528173438895
@@ -47,7 +44,10 @@ class AllenGlif3Parameters:
     )
 
     def __post_init__(self) -> None:
-        if self.model_id != ALLEN_MODEL_ID or self.specimen_id != ALLEN_SPECIMEN_ID:
+        if (
+            self.model_id != HUMAN_GLIF3_IDENTITY.model_id
+            or self.specimen_id != HUMAN_GLIF3_IDENTITY.specimen_id
+        ):
             raise ValueError("unrecognized Allen human-cell provenance")
         if self.dt_ms <= 0.0 or self.capacitance_pf <= 0.0 or self.input_resistance_mohm <= 0.0:
             raise ValueError("GLIF time and passive parameters must be positive")
@@ -112,8 +112,8 @@ class AllenGlif5Parameters:
     state. The equations follow the AllenSDK ``three_components_exact`` model.
     """
 
-    model_id: int = ALLEN_GLIF5_MODEL_ID
-    specimen_id: int = ALLEN_GLIF5_SPECIMEN_ID
+    model_id: int = HUMAN_GLIF5_IDENTITY.model_id
+    specimen_id: int = HUMAN_GLIF5_IDENTITY.specimen_id
     rest_mv: float = -70.5407829284668
     dt_ms: float = 0.05
     capacitance_pf: float = 263.16486906079916
@@ -133,7 +133,10 @@ class AllenGlif5Parameters:
     threshold_voltage_decay_per_s: float = 19.773561643976418
 
     def __post_init__(self) -> None:
-        if self.model_id != ALLEN_GLIF5_MODEL_ID or self.specimen_id != ALLEN_GLIF5_SPECIMEN_ID:
+        if (
+            self.model_id != HUMAN_GLIF5_IDENTITY.model_id
+            or self.specimen_id != HUMAN_GLIF5_IDENTITY.specimen_id
+        ):
             raise ValueError("unrecognized adaptive Allen human-cell provenance")
         positive = (
             self.dt_ms,

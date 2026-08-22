@@ -1,0 +1,186 @@
+{
+  "name": "procedural-address-space-v2",
+  "benchmark_protocol_version": 2,
+  "purpose": "Future CPU scalar address/query engineering runs after the immutable v1 evidence failure; this protocol is not itself a rerun.",
+  "implementation_contract": {
+    "candidate_attempts_per_slot": 128,
+    "descriptor_cell_type": "adaptive_glif5",
+    "descriptor_role": "reservoir",
+    "edge_slot_cardinality": 281474976710656,
+    "gid_width_bits": 64,
+    "human_cell_identity": {
+      "config_sha256": "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149",
+      "model_id": 523000114,
+      "model_name": "5 LIF-R-ASC + Threshold Adaptation (LIF-R-ASC-A)_H16.06.004.01.05.02",
+      "region": "middle temporal gyrus",
+      "species": "Homo sapiens",
+      "specimen_id": 508378649
+    },
+    "inhibitory_role_fraction": {
+      "denominator": 5,
+      "numerator": 1
+    },
+    "maximum_cell_count": 18446744073709551616,
+    "maximum_fanout": 281474976710655,
+    "maximum_seed": 18446744073709551615,
+    "minimum_cell_count": 2,
+    "minimum_fanout": 1,
+    "mixed_membership_rule": "primary-plus-positive-quotient-offset-v2",
+    "philox": {
+      "known_answer_vectors": [
+        {
+          "counter_hex": [
+            "0000000000000000",
+            "0000000000000000"
+          ],
+          "key_hex": "0000000000000000",
+          "result_hex": [
+            "ca00a0459843d731",
+            "66c24222c9a845b5"
+          ]
+        },
+        {
+          "counter_hex": [
+            "243f6a8885a308d3",
+            "13198a2e03707344"
+          ],
+          "key_hex": "a4093822299f31d0",
+          "result_hex": [
+            "0a5e742c2997341c",
+            "b0f883d38000de5d"
+          ]
+        }
+      ],
+      "multiplier_hex": "d2b74407b1ce6e93",
+      "rounds": 10,
+      "variant": "D. E. Shaw Research Random123 Philox2x64_R<10>",
+      "weyl_hex": "9e3779b97f4a7c15"
+    },
+    "purpose_ids": {
+      "global": 1,
+      "global_fallback": 255,
+      "grid_local_dimension_base": 11,
+      "grid_long": 20,
+      "layered_depth": 17,
+      "layered_dx": 15,
+      "layered_dy": 16,
+      "layered_long": 18,
+      "mixed_global": 8,
+      "mixed_shared": 7,
+      "nested_meso": 5,
+      "nested_micro": 4,
+      "nested_outside": 6,
+      "ring_local": 9,
+      "ring_long": 10,
+      "single_micro": 2,
+      "single_outside": 3
+    },
+    "role_counter_word_hex": "00000000524f4c45",
+    "small_materialized_reference": {
+      "byte_order": "little",
+      "cell_count": 17,
+      "fanout": 4,
+      "seed": 71,
+      "sha256": "ba55ded147218d524bf4d004d97a97f42d3471c3079ad110fa4a0451f4f92b60"
+    },
+    "topology_names": [
+      "random",
+      "uniform_no_self",
+      "single_scale_groups",
+      "nested_groups",
+      "mixed_membership",
+      "ring_1d",
+      "sheet_2d",
+      "layered_sheet",
+      "volume_3d",
+      "hypercube_4d"
+    ],
+    "topology_protocol": "random123-philox2x64-10-v2",
+    "topology_stream_ids": {
+      "hypercube_4d": 10,
+      "layered_sheet": 8,
+      "mixed_membership": 5,
+      "nested_groups": 4,
+      "random": 1,
+      "ring_1d": 6,
+      "sheet_2d": 7,
+      "single_scale_groups": 3,
+      "uniform_no_self": 2,
+      "volume_3d": 9
+    }
+  },
+  "cell_counts": [1000000, 1000000000, 100000000000],
+  "fanout": 6,
+  "seed": 71,
+  "valid_gids_by_cell_count": {
+    "1000000": [
+      0,
+      1,
+      71,
+      142857,
+      250000,
+      333333,
+      499999,
+      500000,
+      524287,
+      750000,
+      999998,
+      999999
+    ],
+    "1000000000": [
+      0,
+      1,
+      71,
+      142857142,
+      250000000,
+      333333333,
+      499999999,
+      500000000,
+      536870911,
+      750000000,
+      999999998,
+      999999999
+    ],
+    "100000000000": [
+      0,
+      1,
+      71,
+      4294967295,
+      4294967296,
+      4294967297,
+      14285714285,
+      33333333333,
+      50000000000,
+      75000000000,
+      99999999998,
+      99999999999
+    ]
+  },
+  "invalid_gids_by_cell_count": {
+    "1000000": [-1, 1000000, 1000001, 18446744073709551616],
+    "1000000000": [-1, 1000000000, 1000000001, 18446744073709551616],
+    "100000000000": [-1, 100000000000, 100000000001, 18446744073709551616]
+  },
+  "acceptance": {
+    "maximum_fixed_query_time_or_memory_ratio": 2.0,
+    "required_valid_queries_per_topology": 12,
+    "required_invalid_queries_per_topology": 4,
+    "required_returned_edges_per_topology": 72
+  },
+  "publication": {
+    "artifact_kind": "procedural-address-space-evidence",
+    "artifact_schema": "humanbrain.canonical-json-artifact.v1",
+    "policy": "Same-directory fsynced temporary file followed by non-overwriting atomic hard-link publication; the canonical envelope persists its payload SHA-256."
+  },
+  "evidence_scope": "CPU scalar address/query-only engineering evidence; no resident, updated, spiking, token-throughput, GPU, or capability claim",
+  "hypotheses": [
+    "All valid, invalid, fixed-fanout, range, no-self, no-duplicate, and mixed-membership-distinct invariants pass for every topology and configured count.",
+    "For each topology, fixed-query median time and traced peak bytes each have max/min ratio at most 2.0 across 10^6, 10^9, and 10^11 configured IDs.",
+    "No result reports resident, updated, or spiking cells, cell-step work, delivered events, token throughput, GPU evidence, or capability evidence."
+  ],
+  "notes": [
+    "This v2 protocol is an explicit break from v1. There is no compatibility mode or fallback.",
+    "The immutable v1 evidence and its FAIL interpretation remain untouched.",
+    "The 4D hypercube is an abstract functional lattice, not an anatomical claim."
+  ]
+}

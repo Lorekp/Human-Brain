@@ -3,27 +3,87 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import gcd
+from hashlib import sha256
 from types import MappingProxyType
 from typing import Callable
+
+from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY, HumanCellIdentity
 
 
 _UINT64_MASK = (1 << 64) - 1
 _UINT64_CARDINALITY = 1 << 64
+_GID_WIDTH_BITS = 64
+_MIN_CELL_COUNT = 2
+_MIN_FANOUT = 1
 _MAX_EDGE_SLOTS = 1 << 48
 _PHILOX_M2X64_0 = 0xD2B74407B1CE6E93
 _PHILOX_W64_0 = 0x9E3779B97F4A7C15
+_PHILOX_ROUNDS = 10
 _MAX_CANDIDATE_ATTEMPTS = 128
-TOPOLOGY_PROTOCOL = "random123-philox2x64-10-v1"
+_ROLE_COUNTER_WORD = 0x524F4C45
+_INHIBITORY_ROLE_NUMERATOR = 1
+_INHIBITORY_ROLE_DENOMINATOR = 5
+_DESCRIPTOR_ROLE = "reservoir"
+_DESCRIPTOR_CELL_TYPE = "adaptive_glif5"
+_REFERENCE_BYTE_ORDER = "little"
+_PURPOSE_IDS = MappingProxyType(
+    {
+        "global": 1,
+        "single_micro": 2,
+        "single_outside": 3,
+        "nested_micro": 4,
+        "nested_meso": 5,
+        "nested_outside": 6,
+        "mixed_shared": 7,
+        "mixed_global": 8,
+        "ring_local": 9,
+        "ring_long": 10,
+        "grid_local_dimension_base": 11,
+        "layered_dx": 15,
+        "layered_dy": 16,
+        "layered_depth": 17,
+        "layered_long": 18,
+        "grid_long": 20,
+        "global_fallback": 255,
+    }
+)
+_MIXED_MEMBERSHIP_RULE = "primary-plus-positive-quotient-offset-v2"
+_SMALL_REFERENCE_CELL_COUNT = 17
+_SMALL_REFERENCE_FANOUT = 4
+_SMALL_REFERENCE_SEED = 71
+_SMALL_REFERENCE_SHA256 = (
+    "ba55ded147218d524bf4d004d97a97f42d3471c3079ad110fa4a0451f4f92b60"
+)
+_PHILOX_KNOWN_ANSWERS = (
+    (
+        (0x0000000000000000, 0x0000000000000000),
+        0x0000000000000000,
+        (0xCA00A0459843D731, 0x66C24222C9A845B5),
+    ),
+    (
+        (0x243F6A8885A308D3, 0x13198A2E03707344),
+        0xA4093822299F31D0,
+        (0x0A5E742C2997341C, 0xB0F883D38000DE5D),
+    ),
+)
+TOPOLOGY_PROTOCOL = "random123-philox2x64-10-v2"
 
 __all__ = [
     "BaseEdge",
     "CellDescriptor",
-    "IntrinsicModelIdentity",
     "ProceduralTopology",
     "TOPOLOGY_PROTOCOL",
+    "TopologyImplementationCheck",
     "TopologyManifest",
+    "topology_implementation_contract",
+    "verify_topology_implementation",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class TopologyImplementationCheck:
+    philox_known_answers: tuple[dict[str, object], ...]
+    materialized_reference: dict[str, object]
 
 
 def _require_exact_int(owner: str, value: object, *, minimum: int, maximum: int) -> int:
@@ -48,13 +108,13 @@ class TopologyManifest:
         _require_exact_int(
             "manifest.cell_count",
             self.cell_count,
-            minimum=2,
+            minimum=_MIN_CELL_COUNT,
             maximum=_UINT64_CARDINALITY,
         )
         _require_exact_int(
             "manifest.fanout",
             self.fanout,
-            minimum=1,
+            minimum=_MIN_FANOUT,
             maximum=min(self.cell_count - 1, _MAX_EDGE_SLOTS - 1),
         )
         _require_exact_int(
@@ -78,32 +138,7 @@ class TopologyManifest:
 
     @property
     def gid_width_bits(self) -> int:
-        return 64
-
-
-@dataclass(frozen=True, slots=True)
-class IntrinsicModelIdentity:
-    model_id: int
-    specimen_id: int
-    model_name: str
-    species: str
-    structure: str
-    config_sha256: str
-
-
-_PINNED_HUMAN_GLIF5 = IntrinsicModelIdentity(
-    model_id=523000114,
-    specimen_id=508378649,
-    model_name=(
-        "5 LIF-R-ASC + Threshold Adaptation "
-        "(LIF-R-ASC-A)_H16.06.004.01.05.02"
-    ),
-    species="Homo sapiens",
-    structure="middle temporal gyrus",
-    config_sha256=(
-        "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149"
-    ),
-)
+        return _GID_WIDTH_BITS
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,7 +153,7 @@ class CellDescriptor:
     coordinate_system: str | None
     groups: tuple[tuple[str, int], ...]
     layer: int | None
-    intrinsic_model: IntrinsicModelIdentity
+    intrinsic_model: HumanCellIdentity
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,10 +208,17 @@ def _micro_count(manifest: TopologyManifest) -> int:
 
 
 def _mixed_group_count(manifest: TopologyManifest) -> int:
-    count = min(manifest.cell_count, max(2, _ceil_root(manifest.cell_count, 2)))
-    if gcd(5, count) == 1:
-        return count
-    return count + 1 if count < manifest.cell_count else count - 1
+    return min(manifest.cell_count, max(2, _ceil_root(manifest.cell_count, 2)))
+
+
+def _mixed_memberships(manifest: TopologyManifest, gid: int) -> tuple[int, int]:
+    """Return two distinct deterministic groups for every valid address."""
+
+    group_count = _mixed_group_count(manifest)
+    primary = gid % group_count
+    secondary_offset = 1 + (gid // group_count) % (group_count - 1)
+    secondary = (primary + secondary_offset) % group_count
+    return primary, secondary
 
 
 _DescriptorFields = tuple[
@@ -201,12 +243,12 @@ def _nested_group_descriptor(manifest: TopologyManifest, gid: int) -> _Descripto
 
 
 def _mixed_descriptor(manifest: TopologyManifest, gid: int) -> _DescriptorFields:
-    group_count = _mixed_group_count(manifest)
+    primary, secondary = _mixed_memberships(manifest, gid)
     return (
         None,
         (
-            ("primary", gid % group_count),
-            ("secondary", (gid * 5 + 1) % group_count),
+            ("primary", primary),
+            ("secondary", secondary),
         ),
         None,
     )
@@ -320,7 +362,9 @@ def _build_edges_with_stats(
 
     used = {source}
     edges: list[BaseEdge] = []
-    fallback_word, _ = _counter_words(oracle, source, 0, 255, 0)
+    fallback_word, _ = _counter_words(
+        oracle, source, 0, _PURPOSE_IDS["global_fallback"], 0
+    )
     fallback_start = _bounded_index(fallback_word, oracle.manifest.cell_count)
     fallback_offset = 0
     candidate_examinations = 0
@@ -364,7 +408,7 @@ def _global_edges(oracle: "ProceduralTopology", source: int) -> tuple[BaseEdge, 
     def candidate(
         inner: "ProceduralTopology", gid: int, slot: int, attempt: int
     ) -> int:
-        return _global_candidate(inner, gid, slot, 1, attempt)
+        return _global_candidate(inner, gid, slot, _PURPOSE_IDS["global"], attempt)
 
     return _build_edges(oracle, source, candidate)
 
@@ -388,7 +432,12 @@ def _single_group_edges(
     def candidate(
         inner: "ProceduralTopology", gid: int, slot: int, attempt: int
     ) -> int | None:
-        word, _ = _counter_words(inner, gid, slot, 2 if slot < local_slots else 3, attempt)
+        purpose = (
+            _PURPOSE_IDS["single_micro"]
+            if slot < local_slots
+            else _PURPOSE_IDS["single_outside"]
+        )
+        word, _ = _counter_words(inner, gid, slot, purpose, attempt)
         ranges = ((micro_start, micro_stop),) if slot < local_slots else outside
         return _ranges_candidate(ranges, gid, word)
 
@@ -435,13 +484,13 @@ def _nested_group_edges(
     ) -> int | None:
         if slot < micro_slots:
             ranges = ((micro_start, micro_stop),)
-            purpose = 4
+            purpose = _PURPOSE_IDS["nested_micro"]
         elif slot < micro_slots + meso_slots:
             ranges = meso_ranges
-            purpose = 5
+            purpose = _PURPOSE_IDS["nested_meso"]
         else:
             ranges = outside
-            purpose = 6
+            purpose = _PURPOSE_IDS["nested_outside"]
         word, _ = _counter_words(inner, gid, slot, purpose, attempt)
         return _ranges_candidate(ranges, gid, word)
 
@@ -453,15 +502,19 @@ def _mixed_membership_edges(
 ) -> tuple[BaseEdge, ...]:
     manifest = oracle.manifest
     group_count = _mixed_group_count(manifest)
-    memberships = (source % group_count, (source * 5 + 1) % group_count)
+    memberships = _mixed_memberships(manifest, source)
     shared_slots = manifest.fanout - max(1, manifest.fanout // 4)
 
     def candidate(
         inner: "ProceduralTopology", gid: int, slot: int, attempt: int
     ) -> int | None:
         if slot >= shared_slots:
-            return _global_candidate(inner, gid, slot, 8, attempt)
-        membership_word, member_word = _counter_words(inner, gid, slot, 7, attempt)
+            return _global_candidate(
+                inner, gid, slot, _PURPOSE_IDS["mixed_global"], attempt
+            )
+        membership_word, member_word = _counter_words(
+            inner, gid, slot, _PURPOSE_IDS["mixed_shared"], attempt
+        )
         membership = memberships[_bounded_index(membership_word, len(memberships))]
         return _progression_candidate(
             membership,
@@ -482,12 +535,16 @@ def _ring_edges(oracle: "ProceduralTopology", source: int) -> tuple[BaseEdge, ..
         inner: "ProceduralTopology", gid: int, slot: int, attempt: int
     ) -> int | None:
         if slot < local_slots:
-            distance_word, sign_word = _counter_words(inner, gid, slot, 9, attempt)
+            distance_word, sign_word = _counter_words(
+                inner, gid, slot, _PURPOSE_IDS["ring_local"], attempt
+            )
             distance = 1 + _bounded_index(distance_word, radius)
             if sign_word & 1:
                 distance = -distance
             return (gid + distance) % manifest.cell_count
-        proposed = _global_candidate(inner, gid, slot, 10, attempt)
+        proposed = _global_candidate(
+            inner, gid, slot, _PURPOSE_IDS["ring_long"], attempt
+        )
         separation = abs(proposed - gid)
         cyclic = min(separation, manifest.cell_count - separation)
         return proposed if cyclic >= max(2, manifest.cell_count // 4) else None
@@ -511,7 +568,13 @@ def _grid_edges(
         if slot < local_slots:
             offsets = tuple(
                 _bounded_index(
-                    _counter_words(inner, gid, slot, 11 + dimension, attempt)[0],
+                    _counter_words(
+                        inner,
+                        gid,
+                        slot,
+                        _PURPOSE_IDS["grid_local_dimension_base"] + dimension,
+                        attempt,
+                    )[0],
                     5,
                 )
                 - 2
@@ -532,7 +595,9 @@ def _grid_edges(
                 for dimension, coordinate in enumerate(coordinates)
             )
             return proposed if proposed < manifest.cell_count else None
-        proposed = _global_candidate(inner, gid, slot, 20, attempt)
+        proposed = _global_candidate(
+            inner, gid, slot, _PURPOSE_IDS["grid_long"], attempt
+        )
         target_coordinates = _grid_coordinates(proposed, side, dimensions)
         squared_distance = sum(
             (left - right) ** 2
@@ -574,10 +639,23 @@ def _layered_edges(
         inner: "ProceduralTopology", gid: int, slot: int, attempt: int
     ) -> int | None:
         if slot < local_slots:
-            dx = _bounded_index(_counter_words(inner, gid, slot, 15, attempt)[0], 5) - 2
-            dy = _bounded_index(_counter_words(inner, gid, slot, 16, attempt)[0], 5) - 2
+            dx = _bounded_index(
+                _counter_words(
+                    inner, gid, slot, _PURPOSE_IDS["layered_dx"], attempt
+                )[0],
+                5,
+            ) - 2
+            dy = _bounded_index(
+                _counter_words(
+                    inner, gid, slot, _PURPOSE_IDS["layered_dy"], attempt
+                )[0],
+                5,
+            ) - 2
             depth = _bounded_index(
-                _counter_words(inner, gid, slot, 17, attempt)[0], 3
+                _counter_words(
+                    inner, gid, slot, _PURPOSE_IDS["layered_depth"], attempt
+                )[0],
+                3,
             ) - 1
             if dx == 0 and dy == 0 and depth == 0:
                 return None
@@ -586,7 +664,9 @@ def _layered_edges(
                 return None
             proposed = (y * side + x) * layers + layer
             return proposed if proposed < manifest.cell_count else None
-        proposed = _global_candidate(inner, gid, slot, 18, attempt)
+        proposed = _global_candidate(
+            inner, gid, slot, _PURPOSE_IDS["layered_long"], attempt
+        )
         target_surface = proposed // layers
         target_x, target_y = _grid_coordinates(target_surface, side, 2)
         squared_distance = (source_x - target_x) ** 2 + (source_y - target_y) ** 2
@@ -662,22 +742,28 @@ class ProceduralTopology:
     def describe_cell(self, gid: int) -> CellDescriptor:
         self._validate_gid(gid)
         coordinates, groups, layer = self._spec.describe(self.manifest, gid)
-        role_word, _ = _philox2x64_10(gid, 0x524F4C45, self.manifest.seed)
+        role_word, _ = _philox2x64_10(
+            gid, _ROLE_COUNTER_WORD, self.manifest.seed
+        )
         outgoing_role = (
             "inhibitory"
-            if role_word < _UINT64_CARDINALITY // 5
+            if role_word
+            < (
+                _UINT64_CARDINALITY * _INHIBITORY_ROLE_NUMERATOR
+                // _INHIBITORY_ROLE_DENOMINATOR
+            )
             else "excitatory"
         )
         return CellDescriptor(
             gid=gid,
-            role="reservoir",
-            cell_type="adaptive_glif5",
+            role=_DESCRIPTOR_ROLE,
+            cell_type=_DESCRIPTOR_CELL_TYPE,
             outgoing_connectivity_role=outgoing_role,
             coordinates=coordinates,
             coordinate_system=self._spec.coordinate_system,
             groups=groups,
             layer=layer,
-            intrinsic_model=_PINNED_HUMAN_GLIF5,
+            intrinsic_model=HUMAN_GLIF5_IDENTITY,
         )
 
     def base_edges(self, gid: int) -> tuple[BaseEdge, ...]:
@@ -704,11 +790,117 @@ def _philox2x64_10(counter_0: int, counter_1: int, key: int) -> tuple[int, int]:
     left = counter_0 & _UINT64_MASK
     right = counter_1 & _UINT64_MASK
     round_key = key & _UINT64_MASK
-    for round_index in range(10):
+    for round_index in range(_PHILOX_ROUNDS):
         product = _PHILOX_M2X64_0 * left
         high = product >> 64
         low = product & _UINT64_MASK
         left, right = (high ^ round_key ^ right) & _UINT64_MASK, low
-        if round_index != 9:
+        if round_index != _PHILOX_ROUNDS - 1:
             round_key = (round_key + _PHILOX_W64_0) & _UINT64_MASK
     return left, right
+
+
+def _small_materialized_reference_sha256() -> str:
+    digest = sha256()
+    for topology in _TOPOLOGY_SPECS:
+        digest.update(topology.encode("ascii"))
+        digest.update(b"\0")
+        oracle = ProceduralTopology(
+            TopologyManifest(
+                _SMALL_REFERENCE_CELL_COUNT,
+                _SMALL_REFERENCE_FANOUT,
+                topology,
+                _SMALL_REFERENCE_SEED,
+            )
+        )
+        for gid in range(_SMALL_REFERENCE_CELL_COUNT):
+            for edge in oracle.base_edges(gid):
+                digest.update(edge.target_gid.to_bytes(8, _REFERENCE_BYTE_ORDER))
+    return digest.hexdigest()
+
+
+def topology_implementation_contract() -> dict[str, object]:
+    """Return every implementation fact duplicated by the v2 benchmark protocol."""
+
+    return {
+        "topology_protocol": TOPOLOGY_PROTOCOL,
+        "gid_width_bits": _GID_WIDTH_BITS,
+        "minimum_cell_count": _MIN_CELL_COUNT,
+        "maximum_cell_count": _UINT64_CARDINALITY,
+        "minimum_fanout": _MIN_FANOUT,
+        "edge_slot_cardinality": _MAX_EDGE_SLOTS,
+        "maximum_fanout": _MAX_EDGE_SLOTS - 1,
+        "maximum_seed": _UINT64_MASK,
+        "topology_names": list(_TOPOLOGY_SPECS),
+        "topology_stream_ids": {
+            name: spec.stream_id for name, spec in _TOPOLOGY_SPECS.items()
+        },
+        "philox": {
+            "variant": "D. E. Shaw Research Random123 Philox2x64_R<10>",
+            "rounds": _PHILOX_ROUNDS,
+            "multiplier_hex": f"{_PHILOX_M2X64_0:016x}",
+            "weyl_hex": f"{_PHILOX_W64_0:016x}",
+            "known_answer_vectors": [
+                {
+                    "counter_hex": [f"{word:016x}" for word in counter],
+                    "key_hex": f"{key:016x}",
+                    "result_hex": [f"{word:016x}" for word in expected],
+                }
+                for counter, key, expected in _PHILOX_KNOWN_ANSWERS
+            ],
+        },
+        "purpose_ids": dict(_PURPOSE_IDS),
+        "candidate_attempts_per_slot": _MAX_CANDIDATE_ATTEMPTS,
+        "role_counter_word_hex": f"{_ROLE_COUNTER_WORD:016x}",
+        "inhibitory_role_fraction": {
+            "numerator": _INHIBITORY_ROLE_NUMERATOR,
+            "denominator": _INHIBITORY_ROLE_DENOMINATOR,
+        },
+        "descriptor_role": _DESCRIPTOR_ROLE,
+        "descriptor_cell_type": _DESCRIPTOR_CELL_TYPE,
+        "human_cell_identity": HUMAN_GLIF5_IDENTITY.to_record(),
+        "mixed_membership_rule": _MIXED_MEMBERSHIP_RULE,
+        "small_materialized_reference": {
+            "cell_count": _SMALL_REFERENCE_CELL_COUNT,
+            "fanout": _SMALL_REFERENCE_FANOUT,
+            "seed": _SMALL_REFERENCE_SEED,
+            "byte_order": _REFERENCE_BYTE_ORDER,
+            "sha256": _SMALL_REFERENCE_SHA256,
+        },
+    }
+
+
+def verify_topology_implementation() -> TopologyImplementationCheck:
+    """Execute the official counter KAT and the frozen v2 topology reference."""
+
+    answer_records: list[dict[str, object]] = []
+    for counter, key, expected in _PHILOX_KNOWN_ANSWERS:
+        actual = _philox2x64_10(counter[0], counter[1], key)
+        passed = actual == expected
+        answer_records.append(
+            {
+                "counter_hex": tuple(f"{word:016x}" for word in counter),
+                "key_hex": f"{key:016x}",
+                "expected_hex": tuple(f"{word:016x}" for word in expected),
+                "actual_hex": tuple(f"{word:016x}" for word in actual),
+                "passed": passed,
+            }
+        )
+        if not passed:
+            raise RuntimeError("Philox2x64-10 known-answer self-check failed")
+
+    reference_sha256 = _small_materialized_reference_sha256()
+    reference_passed = reference_sha256 == _SMALL_REFERENCE_SHA256
+    if not reference_passed:
+        raise RuntimeError("small materialized topology reference self-check failed")
+    return TopologyImplementationCheck(
+        philox_known_answers=tuple(answer_records),
+        materialized_reference={
+            "cell_count": _SMALL_REFERENCE_CELL_COUNT,
+            "fanout": _SMALL_REFERENCE_FANOUT,
+            "seed": _SMALL_REFERENCE_SEED,
+            "byte_order": _REFERENCE_BYTE_ORDER,
+            "sha256": reference_sha256,
+            "passed": reference_passed,
+        },
+    )

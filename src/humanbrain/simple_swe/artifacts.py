@@ -13,6 +13,7 @@ from humanbrain.simple_swe.tasks import canonical_json_bytes, canonical_sha256
 
 
 SCHEMA = "humanbrain.simple-swe-artifact-event.v1"
+CANONICAL_JSON_ARTIFACT_SCHEMA = "humanbrain.canonical-json-artifact.v1"
 GENESIS_SHA256 = "0" * 64
 _KIND = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 
@@ -31,6 +32,13 @@ class ArtifactEvent:
     body: dict[str, Any]
     file_sha256: str
     path: Path
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalJsonPublication:
+    path: Path
+    payload_sha256: str
+    file_sha256: str
 
 
 def _validate_sha256(value: str, field: str) -> None:
@@ -54,6 +62,37 @@ def atomic_create_bytes(path: Path, content: bytes) -> None:
         os.link(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def atomic_create_canonical_json(
+    path: Path,
+    *,
+    kind: str,
+    payload: dict[str, Any],
+) -> CanonicalJsonPublication:
+    """Publish one canonical JSON envelope through the atomic-create seam.
+
+    The final path becomes visible only after the complete, fsynced same-directory
+    temporary file exists. The embedded payload digest is durable evidence rather
+    than a hash returned only to the caller.
+    """
+
+    if not _KIND.fullmatch(kind):
+        raise ValueError("artifact kind must be lowercase kebab-case")
+    payload_sha256 = canonical_sha256(payload)
+    record = {
+        "schema": CANONICAL_JSON_ARTIFACT_SCHEMA,
+        "kind": kind,
+        "payload_sha256": payload_sha256,
+        "payload": payload,
+    }
+    content = canonical_json_bytes(record)
+    atomic_create_bytes(path, content)
+    return CanonicalJsonPublication(
+        path=path,
+        payload_sha256=payload_sha256,
+        file_sha256=sha256(content).hexdigest(),
+    )
 
 
 class ArtifactLedger:
@@ -145,5 +184,8 @@ __all__ = [
     "ArtifactEvent",
     "ArtifactIntegrityError",
     "ArtifactLedger",
+    "CANONICAL_JSON_ARTIFACT_SCHEMA",
+    "CanonicalJsonPublication",
     "atomic_create_bytes",
+    "atomic_create_canonical_json",
 ]

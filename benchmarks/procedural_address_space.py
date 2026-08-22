@@ -12,17 +12,19 @@ import subprocess
 import sys
 import tracemalloc
 from dataclasses import asdict
-from math import log10
+from math import isfinite, log10
 from pathlib import Path
 from time import perf_counter, perf_counter_ns
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+import humanbrain.procedural_topology as procedural_topology_module
 from humanbrain.procedural_topology import (
-    TOPOLOGY_PROTOCOL,
     ProceduralTopology,
     TopologyManifest,
+    topology_implementation_contract,
+    verify_topology_implementation,
 )
 from humanbrain.scale_accounting import (
     CellCounts,
@@ -35,9 +37,37 @@ from humanbrain.scale_accounting import (
     ShardMemory,
     WorkCounts,
 )
+from humanbrain.simple_swe.artifacts import (
+    CANONICAL_JSON_ARTIFACT_SCHEMA,
+    atomic_create_canonical_json,
+)
 
-PROTOCOL_PATH = ROOT / "benchmarks/procedural_address_space_protocol_v1.json"
-DEFAULT_ARTIFACT = ROOT / "artifacts/procedural_address_space_v1.json"
+BENCHMARK_PROTOCOL_VERSION = 2
+PROTOCOL_PATH = ROOT / "benchmarks/procedural_address_space_protocol_v2.json"
+DEFAULT_ARTIFACT = ROOT / "artifacts/procedural_address_space_v2.json"
+ARTIFACT_KIND = "procedural-address-space-evidence"
+PUBLICATION_POLICY = (
+    "Same-directory fsynced temporary file followed by non-overwriting atomic "
+    "hard-link publication; the canonical envelope persists its payload SHA-256."
+)
+_PROTOCOL_KEYS = frozenset(
+    {
+        "name",
+        "benchmark_protocol_version",
+        "purpose",
+        "implementation_contract",
+        "cell_counts",
+        "fanout",
+        "seed",
+        "valid_gids_by_cell_count",
+        "invalid_gids_by_cell_count",
+        "acceptance",
+        "publication",
+        "evidence_scope",
+        "hypotheses",
+        "notes",
+    }
+)
 
 
 def _canonical_bytes(value: object) -> bytes:
@@ -49,14 +79,135 @@ def _canonical_bytes(value: object) -> bytes:
     ).encode("ascii")
 
 
+def _require_exact_int(value: object, field: str, *, minimum: int) -> int:
+    if type(value) is not int or value < minimum:
+        raise ValueError(f"protocol {field} must be an integer >= {minimum}")
+    return value
+
+
+def validate_protocol(protocol: dict[str, object]) -> None:
+    """Validate the entire v2 runner schema and every implementation duplicate."""
+
+    if set(protocol) != _PROTOCOL_KEYS:
+        raise ValueError("benchmark protocol fields differ from v2")
+    if protocol["name"] != "procedural-address-space-v2":
+        raise ValueError("benchmark protocol name differs from v2")
+    if protocol["benchmark_protocol_version"] != BENCHMARK_PROTOCOL_VERSION:
+        raise ValueError("benchmark protocol version differs from v2")
+    if protocol["implementation_contract"] != topology_implementation_contract():
+        raise ValueError("benchmark implementation contract differs from runtime")
+    if protocol["publication"] != {
+        "artifact_kind": ARTIFACT_KIND,
+        "artifact_schema": CANONICAL_JSON_ARTIFACT_SCHEMA,
+        "policy": PUBLICATION_POLICY,
+    }:
+        raise ValueError("benchmark publication contract differs from runtime")
+
+    cell_counts_value = protocol["cell_counts"]
+    if not isinstance(cell_counts_value, list) or not cell_counts_value:
+        raise ValueError("protocol cell_counts must be a non-empty array")
+    cell_counts = tuple(
+        _require_exact_int(value, "cell_counts[]", minimum=2)
+        for value in cell_counts_value
+    )
+    if len(set(cell_counts)) != len(cell_counts):
+        raise ValueError("protocol cell_counts must be unique")
+    fanout = _require_exact_int(protocol["fanout"], "fanout", minimum=1)
+    seed = _require_exact_int(protocol["seed"], "seed", minimum=0)
+
+    valid_by_count = protocol["valid_gids_by_cell_count"]
+    invalid_by_count = protocol["invalid_gids_by_cell_count"]
+    if not isinstance(valid_by_count, dict) or not isinstance(invalid_by_count, dict):
+        raise ValueError("protocol gid maps must be objects")
+    expected_count_keys = {str(cell_count) for cell_count in cell_counts}
+    if set(valid_by_count) != expected_count_keys or set(invalid_by_count) != expected_count_keys:
+        raise ValueError("protocol gid maps must exactly cover cell_counts")
+
+    acceptance = protocol["acceptance"]
+    if not isinstance(acceptance, dict) or set(acceptance) != {
+        "maximum_fixed_query_time_or_memory_ratio",
+        "required_valid_queries_per_topology",
+        "required_invalid_queries_per_topology",
+        "required_returned_edges_per_topology",
+    }:
+        raise ValueError("protocol acceptance contract is malformed")
+    maximum_ratio = acceptance["maximum_fixed_query_time_or_memory_ratio"]
+    if (
+        type(maximum_ratio) not in {int, float}
+        or not isfinite(float(maximum_ratio))
+        or float(maximum_ratio) <= 0.0
+    ):
+        raise ValueError("protocol maximum ratio must be positive")
+    required_valid = _require_exact_int(
+        acceptance["required_valid_queries_per_topology"],
+        "required_valid_queries_per_topology",
+        minimum=1,
+    )
+    required_invalid = _require_exact_int(
+        acceptance["required_invalid_queries_per_topology"],
+        "required_invalid_queries_per_topology",
+        minimum=1,
+    )
+    required_edges = _require_exact_int(
+        acceptance["required_returned_edges_per_topology"],
+        "required_returned_edges_per_topology",
+        minimum=1,
+    )
+    if required_edges != required_valid * fanout:
+        raise ValueError("protocol returned-edge count differs from query work")
+
+    topology_names = topology_implementation_contract()["topology_names"]
+    for cell_count in cell_counts:
+        for topology in topology_names:
+            TopologyManifest(cell_count, fanout, topology, seed)
+        valid = valid_by_count[str(cell_count)]
+        invalid = invalid_by_count[str(cell_count)]
+        if not isinstance(valid, list) or len(valid) != required_valid:
+            raise ValueError("protocol valid GID work differs from acceptance")
+        if not isinstance(invalid, list) or len(invalid) != required_invalid:
+            raise ValueError("protocol invalid GID work differs from acceptance")
+        if any(type(gid) is not int or not 0 <= gid < cell_count for gid in valid):
+            raise ValueError("protocol valid GID is outside its address range")
+        if any(type(gid) is not int or 0 <= gid < cell_count for gid in invalid):
+            raise ValueError("protocol invalid GID falls inside its address range")
+
+    for field in ("purpose", "evidence_scope"):
+        if not isinstance(protocol[field], str) or not protocol[field].strip():
+            raise ValueError(f"protocol {field} must be non-empty text")
+    for field in ("hypotheses", "notes"):
+        value = protocol[field]
+        if (
+            not isinstance(value, list)
+            or not value
+            or any(not isinstance(item, str) or not item.strip() for item in value)
+        ):
+            raise ValueError(f"protocol {field} must be non-empty text entries")
+
+
+def topology_implementation_preflight() -> dict[str, object]:
+    """Run and record implementation self-checks before any benchmark worker."""
+
+    check = verify_topology_implementation()
+    source_path = Path(procedural_topology_module.__file__).resolve()
+    canonical_source = source_path.read_bytes().replace(b"\r\n", b"\n")
+    return {
+        "philox_known_answers": list(check.philox_known_answers),
+        "small_materialized_reference": check.materialized_reference,
+        "implementation_source": {
+            "path": source_path.relative_to(ROOT).as_posix(),
+            "canonical_lf_bytes": len(canonical_source),
+            "canonical_lf_sha256": hashlib.sha256(canonical_source).hexdigest(),
+        },
+    }
+
+
 def _load_protocol() -> tuple[bytes, dict[str, object], str]:
     protocol_bytes = PROTOCOL_PATH.read_bytes()
     protocol_sha256 = hashlib.sha256(protocol_bytes).hexdigest()
     protocol = json.loads(protocol_bytes)
     if not isinstance(protocol, dict):
         raise TypeError("benchmark protocol must be a JSON object")
-    if protocol["topology_protocol"] != TOPOLOGY_PROTOCOL:
-        raise ValueError("benchmark and topology protocol versions differ")
+    validate_protocol(protocol)
     return protocol_bytes, protocol, protocol_sha256
 
 
@@ -242,6 +393,9 @@ def _worker(cell_count: int, protocol: dict[str, object]) -> dict[str, object]:
     key = str(cell_count)
     valid_gids = tuple(int(value) for value in valid_by_count[key])
     invalid_gids = tuple(int(value) for value in invalid_by_count[key])
+    implementation_contract = protocol["implementation_contract"]
+    if not isinstance(implementation_contract, dict):
+        raise TypeError("protocol implementation contract must be an object")
     return {
         "cell_count": cell_count,
         "results": [
@@ -253,7 +407,7 @@ def _worker(cell_count: int, protocol: dict[str, object]) -> dict[str, object]:
                 valid_gids=valid_gids,
                 invalid_gids=invalid_gids,
             )
-            for topology in protocol["topologies"]
+            for topology in implementation_contract["topology_names"]
         ],
     }
 
@@ -310,6 +464,7 @@ def run(
         raise FileExistsError(
             f"engineering runner refuses to overwrite artifact: {artifact_path}"
         )
+    preflight = topology_implementation_preflight()
     dirty = subprocess.check_output(
         ["git", "status", "--porcelain"], cwd=ROOT, text=True
     )
@@ -335,21 +490,23 @@ def run(
             text=True,
         )
         workers.append(json.loads(completed.stdout))
-    topologies = [str(value) for value in protocol["topologies"]]
+    implementation_contract = protocol["implementation_contract"]
+    if not isinstance(implementation_contract, dict):
+        raise TypeError("protocol implementation contract must be an object")
+    topologies = [str(value) for value in implementation_contract["topology_names"]]
     scaling = _scaling_summary(
         workers,
         topologies,
         float(protocol["acceptance"]["maximum_fixed_query_time_or_memory_ratio"]),
     )
     all_rows = [row for worker in workers for row in worker["results"]]
-    artifact: dict[str, object] = {
+    artifact_payload: dict[str, object] = {
+        "benchmark_protocol_version": BENCHMARK_PROTOCOL_VERSION,
         "protocol": protocol,
         "protocol_sha256": protocol_sha256,
         "git_commit": git_commit,
-        "evidence_scope": (
-            "CPU scalar address/query-only engineering evidence; no resident, "
-            "updated, spiking, token-throughput, GPU, or capability claim"
-        ),
+        "preflight": preflight,
+        "evidence_scope": protocol["evidence_scope"],
         "workers": workers,
         "scaling": scaling,
         "gate_2_pass": (
@@ -360,13 +517,15 @@ def run(
             )
         ),
     }
-    artifact_path.parent.mkdir(parents=True, exist_ok=True)
-    with artifact_path.open("x", encoding="utf-8") as artifact_file:
-        artifact_file.write(json.dumps(artifact, indent=2, sort_keys=True) + "\n")
-    artifact["artifact_sha256"] = hashlib.sha256(
-        artifact_path.read_bytes()
-    ).hexdigest()
-    return artifact
+    atomic_create_canonical_json(
+        artifact_path,
+        kind=ARTIFACT_KIND,
+        payload=artifact_payload,
+    )
+    persisted = json.loads(artifact_path.read_bytes())
+    if not isinstance(persisted, dict):
+        raise AssertionError("published artifact envelope must be an object")
+    return persisted
 
 
 def main(argv: Sequence[str] | None = None) -> None:

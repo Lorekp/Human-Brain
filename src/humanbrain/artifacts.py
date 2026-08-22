@@ -9,8 +9,9 @@ from pathlib import Path
 
 import numpy as np
 
-from humanbrain.cells import ALLEN_CONFIG_SHA256, AllenGlif3Parameters
+from humanbrain.cells import AllenGlif3Parameters
 from humanbrain.cortex import DendriticCortex, HumanCellParameters
+from humanbrain.human_cell_identity import HUMAN_GLIF3_IDENTITY
 from humanbrain.language import CellLanguageModel
 from humanbrain.tokenizer import BytePhraseTokenizer
 
@@ -54,7 +55,7 @@ def save_checkpoint(model: CellLanguageModel, path: Path) -> str:
         "cell_count": model._cortex.cell_count,
         "max_order": model._cortex.max_order,
         "grown_transitions": model._cortex.grown_transitions,
-        "allen_config_sha256": ALLEN_CONFIG_SHA256,
+        "allen_config_sha256": HUMAN_GLIF3_IDENTITY.config_sha256,
         "parameters": asdict(model._cortex.parameters),
     }
     with path.open("wb") as stream:
@@ -78,7 +79,7 @@ def load_checkpoint(path: Path) -> CellLanguageModel:
         metadata = json.loads(str(state["metadata"]))
         if metadata.get("format") != FORMAT:
             raise ValueError("unsupported cell checkpoint format")
-        if metadata.get("allen_config_sha256") != ALLEN_CONFIG_SHA256:
+        if metadata.get("allen_config_sha256") != HUMAN_GLIF3_IDENTITY.config_sha256:
             raise ValueError("checkpoint uses a different Allen human cell")
         cell_data = metadata["parameters"].pop("cell")
         parameters = HumanCellParameters(

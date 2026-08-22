@@ -1,6 +1,5 @@
 from dataclasses import FrozenInstanceError
 import gc
-from hashlib import sha256
 import tracemalloc
 
 import pytest
@@ -10,8 +9,10 @@ from humanbrain.procedural_topology import (
     TOPOLOGY_PROTOCOL,
     TopologyManifest,
     _build_edges_with_stats,
-    _philox2x64_10,
+    topology_implementation_contract,
+    verify_topology_implementation,
 )
+from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY
 
 
 TOPOLOGIES = (
@@ -29,15 +30,24 @@ TOPOLOGIES = (
 
 
 def test_philox2x64_10_matches_random123_known_answers() -> None:
-    assert _philox2x64_10(0, 0, 0) == (
-        0xCA00A0459843D731,
-        0x66C24222C9A845B5,
+    result = verify_topology_implementation()
+
+    assert result.philox_known_answers == (
+        {
+            "counter_hex": ("0000000000000000", "0000000000000000"),
+            "key_hex": "0000000000000000",
+            "expected_hex": ("ca00a0459843d731", "66c24222c9a845b5"),
+            "actual_hex": ("ca00a0459843d731", "66c24222c9a845b5"),
+            "passed": True,
+        },
+        {
+            "counter_hex": ("243f6a8885a308d3", "13198a2e03707344"),
+            "key_hex": "a4093822299f31d0",
+            "expected_hex": ("0a5e742c2997341c", "b0f883d38000de5d"),
+            "actual_hex": ("0a5e742c2997341c", "b0f883d38000de5d"),
+            "passed": True,
+        },
     )
-    assert _philox2x64_10(
-        0x243F6A8885A308D3,
-        0x13198A2E03707344,
-        0xA4093822299F31D0,
-    ) == (0x0A5E742C2997341C, 0xB0F883D38000DE5D)
 
 
 def test_manifest_is_an_immutable_uint64_address_range() -> None:
@@ -61,6 +71,15 @@ def test_manifest_is_an_immutable_uint64_address_range() -> None:
         seed=(1 << 64) - 1,
     )
     assert boundary.gid_range == (0, 1 << 64)
+
+    with pytest.raises(ValueError, match="unsupported topology protocol"):
+        TopologyManifest(
+            17,
+            4,
+            "random",
+            71,
+            protocol="random123-philox2x64-10-v1",
+        )
     oracle = ProceduralTopology(manifest)
     with pytest.raises(AttributeError):
         oracle.manifest = boundary  # type: ignore[misc]
@@ -79,13 +98,7 @@ def test_every_topology_returns_a_truthful_pinned_human_cell_descriptor() -> Non
         assert descriptor.role == "reservoir"
         assert descriptor.cell_type == "adaptive_glif5"
         assert descriptor.outgoing_connectivity_role in {"excitatory", "inhibitory"}
-        assert descriptor.intrinsic_model.model_id == 523000114
-        assert descriptor.intrinsic_model.specimen_id == 508378649
-        assert descriptor.intrinsic_model.species == "Homo sapiens"
-        assert descriptor.intrinsic_model.structure == "middle temporal gyrus"
-        assert descriptor.intrinsic_model.config_sha256 == (
-            "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149"
-        )
+        assert descriptor.intrinsic_model == HUMAN_GLIF5_IDENTITY
     assert len({descriptor.intrinsic_model for descriptor in descriptors.values()}) == 1
 
     assert descriptors["random"].coordinates is None
@@ -94,7 +107,7 @@ def test_every_topology_returns_a_truthful_pinned_human_cell_descriptor() -> Non
     assert descriptors["nested_groups"].groups == (("micro", 1), ("meso", 0))
     assert descriptors["mixed_membership"].groups == (
         ("primary", 36),
-        ("secondary", 53),
+        ("secondary", 38),
     )
     assert descriptors["ring_1d"].coordinates == (100,)
     assert descriptors["sheet_2d"].coordinates == (36, 1)
@@ -105,6 +118,50 @@ def test_every_topology_returns_a_truthful_pinned_human_cell_descriptor() -> Non
     assert descriptors["hypercube_4d"].coordinate_system == (
         "abstract_hypercube_4d_integer_lattice"
     )
+
+
+def test_mixed_membership_is_distinct_for_every_gid_in_exhaustive_small_domain() -> None:
+    for cell_count in range(2, 513):
+        oracle = ProceduralTopology(
+            TopologyManifest(
+                cell_count,
+                min(6, cell_count - 1),
+                "mixed_membership",
+                71,
+            )
+        )
+        for gid in range(cell_count):
+            groups = dict(oracle.describe_cell(gid).groups)
+            assert groups["primary"] != groups["secondary"], (cell_count, gid)
+
+
+def test_mixed_membership_edges_use_the_same_groups_as_descriptors() -> None:
+    for cell_count in range(8, 129):
+        oracle = ProceduralTopology(
+            TopologyManifest(cell_count, 2, "mixed_membership", 71)
+        )
+        for gid in range(cell_count):
+            source_groups = frozenset(dict(oracle.describe_cell(gid).groups).values())
+            shared_target = oracle.base_edges(gid)[0].target_gid
+            target_primary = dict(oracle.describe_cell(shared_target).groups)["primary"]
+            assert target_primary in source_groups, (cell_count, gid, shared_target)
+
+
+@pytest.mark.parametrize(
+    "cell_count",
+    [1_000_000, 1_000_000_000, 100_000_000_000, 1 << 64],
+)
+def test_mixed_membership_is_distinct_at_large_address_boundaries(
+    cell_count: int,
+) -> None:
+    oracle = ProceduralTopology(
+        TopologyManifest(cell_count, 6, "mixed_membership", 71)
+    )
+    for gid in (0, 1, (1 << 32) - 1, 1 << 32, cell_count - 2, cell_count - 1):
+        if gid >= cell_count:
+            continue
+        groups = dict(oracle.describe_cell(gid).groups)
+        assert groups["primary"] != groups["secondary"]
 
 
 def test_every_topology_has_order_independent_uint64_base_edge_queries() -> None:
@@ -276,28 +333,28 @@ def test_manifest_construction_and_one_query_have_bounded_traced_memory() -> Non
     assert abs(hundred_billion_peak - million_peak) < 8 * 1024
 
 
-def test_all_small_rows_match_the_frozen_counter64_v1_materialized_reference() -> None:
-    reference_sha256 = {
-        "random": "c7e96790156c726c6d0d7412d80546aabc6ed9d990863e6fd9c1867fc94a151d",
-        "uniform_no_self": "0a2f5d4f240459f65b6ce7414614f6e8fbb59bcc2310b367a2703aa8fae0a266",
-        "single_scale_groups": "bea4cfc6226a11b89f02b1484aa4dc214eab501ab39c716984d1cf318fb1a073",
-        "nested_groups": "0030325506ce3546751b17938fd3e8b06b7caf1fc775f3e07f6e6b81249e2c69",
-        "mixed_membership": "a2cf5068be0e017ec98e6a17368831542b058b2f5d491907c7ec8aab9d658b25",
-        "ring_1d": "49b241759469282d8c8c60c65cb93f0f9076767aed42fe23c509d596a2fd7ac3",
-        "sheet_2d": "708071ffa9165652c10b3c6a0eb14b32fa22ee2b9d230466cf9f5739e0f36097",
-        "layered_sheet": "7f6019dc550aedbd0dff1b3ffc8f93669d67b7b041654195c76106695ca3ceca",
-        "volume_3d": "4aecf094940249c57b89df0cbf8f08d39f3af0656e8dc897afe4bc3cd5d18c84",
-        "hypercube_4d": "c299aff7b52a3b5a068171d9eeea4eee8ad28e0fb076837693dd5b43acfd3b6c",
+def test_all_small_rows_match_the_frozen_counter64_v2_materialized_reference() -> None:
+    result = verify_topology_implementation()
+
+    assert result.materialized_reference == {
+        "cell_count": 17,
+        "fanout": 4,
+        "seed": 71,
+        "byte_order": "little",
+        "sha256": "ba55ded147218d524bf4d004d97a97f42d3471c3079ad110fa4a0451f4f92b60",
+        "passed": True,
     }
 
-    for topology, expected_sha256 in reference_sha256.items():
-        oracle = ProceduralTopology(TopologyManifest(17, 4, topology, 71))
-        materialized = b"".join(
-            edge.target_gid.to_bytes(8, "little")
-            for gid in range(17)
-            for edge in oracle.base_edges(gid)
-        )
-        assert sha256(materialized).hexdigest() == expected_sha256
+
+def test_topology_implementation_contract_is_a_complete_v2_record() -> None:
+    contract = topology_implementation_contract()
+
+    assert contract["topology_protocol"] == "random123-philox2x64-10-v2"
+    assert contract["topology_names"] == list(TOPOLOGIES)
+    assert contract["human_cell_identity"] == HUMAN_GLIF5_IDENTITY.to_record()
+    assert contract["mixed_membership_rule"] == (
+        "primary-plus-positive-quotient-offset-v2"
+    )
 
 
 @pytest.mark.parametrize("fanout", (1, 8, 64, 257))

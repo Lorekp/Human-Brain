@@ -4,6 +4,7 @@ import numpy as np
 
 from humanbrain.cells import AllenGlif3Parameters, simulate_glif3_current
 from humanbrain.cortex import DendriticCortex, HumanCellParameters
+from humanbrain.human_cell_identity import HUMAN_GLIF3_IDENTITY
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +15,8 @@ def test_language_cell_parameters_match_pinned_allen_human_artifact() -> None:
     params = HumanCellParameters()
     loaded = AllenGlif3Parameters.from_allen_config(ALLEN_CONFIG)
     assert params.cell == loaded
+    assert loaded.model_id == HUMAN_GLIF3_IDENTITY.model_id
+    assert loaded.specimen_id == HUMAN_GLIF3_IDENTITY.specimen_id
     assert np.isclose(params.cell.rest_mv, -69.04794057210288)
     assert np.isclose(params.cell.membrane_tau_ms, 19.424743742156274)
     assert params.tau_nmda_ms == 35.0
@@ -96,4 +99,3 @@ def test_compiled_membrane_response_matches_stepwise_euler_race() -> None:
     race = cortex.race([5, 2])
     assert expected is not None
     assert (race.winner, race.spike_time_ms) == expected
-
