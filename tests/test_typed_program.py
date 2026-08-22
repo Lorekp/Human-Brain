@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import copy
 import json
 from collections.abc import Sequence
@@ -40,12 +41,29 @@ def _replace_nested(record: object, path: tuple[str | int, ...], value: object) 
     cursor[path[-1]] = value  # type: ignore[index]
 
 
+def _rehash_checkpoint_circuit(record: dict[str, object]) -> None:
+    circuit = record["circuit"]
+    assert isinstance(circuit, dict)
+    metadata = circuit["metadata"]
+    arrays = circuit["arrays"]
+    assert isinstance(arrays, list)
+    digest = sha256(_canonical_checkpoint_bytes(metadata))
+    for item in arrays:
+        assert isinstance(item, dict)
+        digest.update(str(item["name"]).encode("ascii"))
+        digest.update(str(item["dtype"]).encode("ascii"))
+        digest.update(json.dumps(tuple(item["shape"])).encode("ascii"))
+        digest.update(base64.b64decode(str(item["data"]), validate=True))
+    circuit["sha256"] = digest.hexdigest()
+
+
 def test_frozen_checkpoint_can_only_be_constructed_from_raw_bytes() -> None:
     with pytest.raises(TypeError, match="from_bytes"):
         FrozenCheckpoint(
             sha256="0" * 64,
             training_digest="0" * 64,
             training_input_sha256=("0" * 64,),
+            training_sequence_token_counts=(2,),
             cell_synapse_sha256="0" * 64,
             protocol_sha256="0" * 64,
             _bytes=b"{}",
@@ -90,6 +108,12 @@ def test_complete_rejects_forged_checkpoint_derived_fields() -> None:
     with pytest.raises(ValueError, match="derived fields do not match"):
         complete(forged, "Return the integer.", signature)
 
+    forged_counts = FrozenCheckpoint.from_bytes(checkpoint.to_bytes())
+    object.__setattr__(forged_counts, "training_sequence_token_counts", (2,))
+
+    with pytest.raises(ValueError, match="derived fields do not match"):
+        complete(forged_counts, "Return the integer.", signature)
+
 
 def test_complete_rejects_noncanonical_checkpoint_bytes() -> None:
     signature = TypedSignature(
@@ -116,19 +140,32 @@ def test_complete_rejects_noncanonical_checkpoint_bytes() -> None:
         complete(forged, "Return the integer.", signature)
 
 
-def test_growth_rejects_too_many_examples_before_materializing_them() -> None:
+def test_growth_caps_materialization_without_trusting_sequence_length(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     protocol = Layer1Protocol()
 
-    class OversizedExamples(Sequence[Example]):
+    def forbidden_model_or_circuit_work(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("oversized corpus reached model or circuit work")
+
+    monkeypatch.setattr(typed_program, "_model_input", forbidden_model_or_circuit_work)
+    monkeypatch.setattr(
+        typed_program,
+        "RecurrentCellCircuit",
+        forbidden_model_or_circuit_work,
+    )
+
+    class UnboundedExamples(Sequence[Example]):
         def __len__(self) -> int:
-            return protocol.max_training_examples + 1
+            raise AssertionError("growth trusted the sequence length")
 
         def __getitem__(self, index: int) -> Example:
-            raise AssertionError(f"oversized examples were materialized at index {index}")
+            if index > protocol.max_training_examples:
+                raise AssertionError(f"growth read past bounded sentinel at index {index}")
+            return object()  # type: ignore[return-value]
 
-    assert protocol.max_training_examples == 256
     with pytest.raises(ValueError, match="at most 256"):
-        grow(protocol, OversizedExamples())
+        grow(protocol, UnboundedExamples())
 
 
 def test_checkpoint_byte_limit_is_enforced_before_json_validation() -> None:
@@ -138,6 +175,85 @@ def test_checkpoint_byte_limit_is_enforced_before_json_validation() -> None:
     assert protocol.max_checkpoint_bytes == 2_097_152
     with pytest.raises(ValueError, match="exceeds the 2097152-byte protocol limit"):
         FrozenCheckpoint.from_bytes(oversized_json_string)
+
+
+def test_checkpoint_records_sequences_separately_from_cell_presentations() -> None:
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    checkpoint = grow(
+        Layer1Protocol(),
+        (
+            Example(
+                prompt="Return the integer.",
+                signature=signature,
+                teacher_tokens=("variable-0",),
+            ),
+        ),
+    )
+    record = json.loads(checkpoint.to_bytes().decode("utf-8"))
+
+    assert record["format"] == "humanbrain-layer1-typed-program-v3"
+    assert record["training_sequence_token_counts"] == [170]
+    assert checkpoint.training_sequence_token_counts == (170,)
+    assert record["circuit"]["metadata"]["growth_examples"] == 507
+
+
+def test_checkpoint_v3_requires_the_exact_sequence_count_field() -> None:
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    checkpoint = grow(
+        Layer1Protocol(),
+        (
+            Example(
+                prompt="Return the integer.",
+                signature=signature,
+                teacher_tokens=("variable-0",),
+            ),
+        ),
+    )
+    valid_record = json.loads(checkpoint.to_bytes().decode("utf-8"))
+    missing = copy.deepcopy(valid_record)
+    del missing["training_sequence_token_counts"]
+    extra = copy.deepcopy(valid_record)
+    extra["training_sequence_lengths"] = [170]
+    legacy = copy.deepcopy(valid_record)
+    legacy["format"] = "humanbrain-layer1-typed-program-v2"
+
+    for malformed in (missing, extra):
+        with pytest.raises(ValueError, match="must contain exactly"):
+            FrozenCheckpoint.from_bytes(_canonical_checkpoint_bytes(malformed))
+    with pytest.raises(ValueError, match="unsupported frozen checkpoint format"):
+        FrozenCheckpoint.from_bytes(_canonical_checkpoint_bytes(legacy))
+
+
+def test_checkpoint_rejects_hash_consistent_growth_count_forgery() -> None:
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    checkpoint = grow(
+        Layer1Protocol(),
+        (
+            Example(
+                prompt="Return the integer.",
+                signature=signature,
+                teacher_tokens=("variable-0",),
+            ),
+        ),
+    )
+    forged = json.loads(checkpoint.to_bytes().decode("utf-8"))
+    forged["circuit"]["metadata"]["growth_examples"] = 1_000_000
+    _rehash_checkpoint_circuit(forged)
+
+    with pytest.raises(ValueError, match="growth count differs from training sequence tokens"):
+        FrozenCheckpoint.from_bytes(_canonical_checkpoint_bytes(forged))
 
 
 def test_protocol_commits_growth_and_complete_pinned_human_cell_identity() -> None:
@@ -177,7 +293,7 @@ def test_protocol_commits_growth_and_complete_pinned_human_cell_identity() -> No
         "voltage_reset_scale": 1.669558016548051,
     }
 
-    assert protocol.protocol_version == "humanbrain-layer1-typed-program-v2"
+    assert protocol.protocol_version == "humanbrain-layer1-typed-program-v3"
     assert protocol.growth_epochs == 3
     assert protocol.allen_glif5_config_sha256 == (
         "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149"
@@ -304,6 +420,7 @@ def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
     array_data = valid_record["circuit"]["arrays"][0]["data"]
     changed_array_data = ("A" if array_data[0] != "A" else "B") + array_data[1:]
     input_digest = valid_record["training_input_sha256"][0]
+    sequence_token_count = valid_record["training_sequence_token_counts"][0]
     mutations = (
         (
             "object dtype",
@@ -383,6 +500,36 @@ def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
             [input_digest] * 257,
             "at most 256 training input digests",
         ),
+        (
+            "empty training sequence counts",
+            ("training_sequence_token_counts",),
+            [],
+            "at least one training sequence token count",
+        ),
+        (
+            "too many training sequence counts",
+            ("training_sequence_token_counts",),
+            [sequence_token_count] * 257,
+            "at most 256 training sequence token counts",
+        ),
+        (
+            "noninteger training sequence count",
+            ("training_sequence_token_counts",),
+            [True],
+            "must be integers",
+        ),
+        (
+            "one-token training sequence",
+            ("training_sequence_token_counts",),
+            [1],
+            "at least two tokens",
+        ),
+        (
+            "sequence count missing its input digest",
+            ("training_sequence_token_counts",),
+            [sequence_token_count, sequence_token_count],
+            "one count per training input digest",
+        ),
     )
 
     def forbidden_restore(*_args: object, **_kwargs: object) -> object:
@@ -442,6 +589,8 @@ def test_checkpoint_round_trip_preserves_framed_prompt_signature_audit() -> None
     assert restored == checkpoint
     assert restored.to_bytes() == checkpoint.to_bytes()
     assert restored.training_input_sha256 == (sha256(framed_bytes).hexdigest(),)
+    assert restored.training_sequence_token_counts == (299,)
+    assert record["training_sequence_token_counts"] == [299]
     assert restored.training_input_sha256 != (sha256(unframed_bytes).hexdigest(),)
     completion = complete(restored, signature_text, signature)
     assert completion.model_input_sha256 == restored.training_input_sha256[0]

@@ -12,6 +12,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from hashlib import sha256
+from itertools import islice
 
 import numpy as np
 
@@ -148,6 +149,7 @@ class _FrozenCheckpointPayload:
     circuit: _FrozenCircuitState
     training_digest: str
     training_input_sha256: tuple[str, ...]
+    training_sequence_token_counts: tuple[int, ...]
     protocol_json: bytes
 
 
@@ -158,6 +160,7 @@ class FrozenCheckpoint:
     sha256: str
     training_digest: str
     training_input_sha256: tuple[str, ...]
+    training_sequence_token_counts: tuple[int, ...]
     cell_synapse_sha256: str
     protocol_sha256: str
     _bytes: bytes = field(repr=False, compare=False)
@@ -179,6 +182,7 @@ class FrozenCheckpoint:
             sha256(self._bytes).hexdigest(),
             payload.training_digest,
             payload.training_input_sha256,
+            payload.training_sequence_token_counts,
             payload.circuit.sha256,
             sha256(payload.protocol_json).hexdigest(),
         )
@@ -186,6 +190,7 @@ class FrozenCheckpoint:
             self.sha256,
             self.training_digest,
             self.training_input_sha256,
+            self.training_sequence_token_counts,
             self.cell_synapse_sha256,
             self.protocol_sha256,
         )
@@ -207,6 +212,11 @@ class FrozenCheckpoint:
             checkpoint,
             "training_input_sha256",
             payload.training_input_sha256,
+        )
+        object.__setattr__(
+            checkpoint,
+            "training_sequence_token_counts",
+            payload.training_sequence_token_counts,
         )
         object.__setattr__(checkpoint, "cell_synapse_sha256", payload.circuit.sha256)
         object.__setattr__(
@@ -305,7 +315,7 @@ _MAX_CHECKPOINT_BYTES = 2_097_152
 _MAX_PROGRAM_TOKENS = 128
 _MAX_AST_NODES = 64
 _MAX_AST_DEPTH = 16
-_PROTOCOL_VERSION = "humanbrain-layer1-typed-program-v2"
+_PROTOCOL_VERSION = "humanbrain-layer1-typed-program-v3"
 _COMPILER_ID = "humanbrain-structural-python-ast-v1"
 _ALLEN_GLIF5_PARAMETERS = AllenGlif5Parameters()
 
@@ -847,6 +857,9 @@ def _checkpoint_bytes(payload: _FrozenCheckpointPayload) -> bytes:
             "protocol": json.loads(payload.protocol_json.decode("utf-8")),
             "training_digest": payload.training_digest,
             "training_input_sha256": list(payload.training_input_sha256),
+            "training_sequence_token_counts": list(
+                payload.training_sequence_token_counts
+            ),
             "circuit": {
                 "metadata": json.loads(payload.circuit.metadata_json.decode("utf-8")),
                 "arrays": [
@@ -949,6 +962,7 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
                 "protocol",
                 "training_digest",
                 "training_input_sha256",
+                "training_sequence_token_counts",
                 "circuit",
             }
         ),
@@ -976,12 +990,44 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
         _digest_text(item, "training input digest")
         for item in input_hash_values
     )
+    sequence_token_count_values = _record_sequence(
+        record["training_sequence_token_counts"],
+        "training sequence token counts",
+    )
+    sequence_count = len(sequence_token_count_values)
+    if sequence_count == 0:
+        raise ValueError(
+            "frozen checkpoint needs at least one training sequence token count"
+        )
+    if sequence_count > _MAX_TRAINING_EXAMPLES:
+        raise ValueError(
+            f"frozen checkpoint permits at most {_MAX_TRAINING_EXAMPLES} "
+            "training sequence token counts"
+        )
+    if not all(type(item) is int for item in sequence_token_count_values):
+        raise ValueError("training sequence token counts must be integers")
+    sequence_token_counts = tuple(int(item) for item in sequence_token_count_values)
+    if any(count < 2 for count in sequence_token_counts):
+        raise ValueError("each training sequence must contain at least two tokens")
+    if sequence_count != input_hash_count:
+        raise ValueError(
+            "frozen checkpoint needs one count per training input digest"
+        )
     circuit_record = _strict_record(
         record["circuit"],
         frozenset({"metadata", "arrays", "sha256"}),
         "frozen circuit record",
     )
     metadata = _validate_frozen_circuit_metadata(circuit_record["metadata"])
+    # The recurrent counter records supervised next-token presentations, not
+    # the number of top-level training sequences.
+    expected_growth_examples = _GROWTH_EPOCHS * sum(
+        count - 1 for count in sequence_token_counts
+    )
+    if metadata["growth_examples"] != expected_growth_examples:
+        raise ValueError(
+            "frozen checkpoint growth count differs from training sequence tokens"
+        )
     array_records = _validate_frozen_array_headers(circuit_record["arrays"])
     arrays: list[_FrozenArray] = []
     for array_record in array_records:
@@ -1017,6 +1063,7 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
         circuit=circuit,
         training_digest=training_digest,
         training_input_sha256=input_hashes,
+        training_sequence_token_counts=sequence_token_counts,
         protocol_json=protocol_json,
     )
 
@@ -1027,29 +1074,29 @@ def grow(protocol: Layer1Protocol, examples: Sequence[Example]) -> FrozenCheckpo
         raise TypeError("grow requires the fixed Layer1Protocol")
     if isinstance(examples, (str, bytes, bytearray)) or not isinstance(examples, Sequence):
         raise TypeError("Layer-1 growth examples must be an ordered sequence")
-    example_count = len(examples)
-    if example_count > protocol.max_training_examples:
+    corpus = tuple(islice(examples, protocol.max_training_examples + 1))
+    if len(corpus) > protocol.max_training_examples:
         raise ValueError(
             f"Layer-1 growth accepts at most {protocol.max_training_examples} examples"
         )
-    corpus = tuple(examples)
     if not corpus:
         raise ValueError("at least one public Layer-1 growth example is required")
-    if len(corpus) != example_count:
-        raise ValueError("Layer-1 growth examples changed while being materialized")
     if not all(isinstance(example, Example) for example in corpus):
         raise TypeError("Layer-1 growth examples must be Example values")
 
     circuit = RecurrentCellCircuit(token_cells=_TOKEN_CELL_COUNT, config=_CIRCUIT_CONFIG)
     digest = sha256()
     input_hashes: list[str] = []
+    sequence_token_counts: list[int] = []
     for example in corpus:
         _validate_program(example.teacher_tokens, example.signature)
         input_ids = _model_input(example.prompt, example.signature)
         input_bytes = _token_stream_bytes(input_ids)
         input_hashes.append(sha256(input_bytes).hexdigest())
         teacher_ids = _program_token_ids(example.teacher_tokens)
-        circuit.grow_sequence((*input_ids, *teacher_ids), epochs=protocol.growth_epochs)
+        training_ids = (*input_ids, *teacher_ids)
+        sequence_token_counts.append(len(training_ids))
+        circuit.grow_sequence(training_ids, epochs=protocol.growth_epochs)
         digest.update(input_bytes)
         digest.update(_token_stream_bytes(teacher_ids))
     circuit.freeze_learning()
@@ -1057,6 +1104,7 @@ def grow(protocol: Layer1Protocol, examples: Sequence[Example]) -> FrozenCheckpo
         circuit=_freeze_circuit(circuit),
         training_digest=digest.hexdigest(),
         training_input_sha256=tuple(input_hashes),
+        training_sequence_token_counts=tuple(sequence_token_counts),
         protocol_json=_protocol_json(protocol),
     )
     return FrozenCheckpoint.from_bytes(_checkpoint_bytes(payload))
@@ -1078,6 +1126,7 @@ def complete(
         checkpoint.sha256,
         checkpoint.training_digest,
         checkpoint.training_input_sha256,
+        checkpoint.training_sequence_token_counts,
         checkpoint.cell_synapse_sha256,
         checkpoint.protocol_sha256,
         checkpoint_bytes,
@@ -1129,6 +1178,7 @@ def complete(
         checkpoint.sha256,
         checkpoint.training_digest,
         checkpoint.training_input_sha256,
+        checkpoint.training_sequence_token_counts,
         checkpoint.cell_synapse_sha256,
         checkpoint.protocol_sha256,
         checkpoint._bytes,
