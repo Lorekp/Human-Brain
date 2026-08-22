@@ -111,8 +111,10 @@ class ProgramRaceAudit:
     simulated_steps: int
     prefix_sha256: str
     allowed_cell_ids: tuple[int, ...]
+    allowed_output_currents_pa: tuple[float, ...]
     excluded_cell_ids: tuple[int, ...]
     output_current_sha256: str
+    eligibility_bytes: bytes = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,6 +153,7 @@ class _FrozenCheckpointPayload:
     training_digest: str
     training_input_sha256: tuple[str, ...]
     training_sequence_token_counts: tuple[int, ...]
+    training_teacher_token_counts: tuple[int, ...]
     protocol_json: bytes
 
 
@@ -158,10 +161,12 @@ class _FrozenCheckpointPayload:
 class FrozenCheckpoint:
     """Immutable Layer-1 state restored into a new circuit for each completion."""
 
+    lane: str
     sha256: str
     training_digest: str
     training_input_sha256: tuple[str, ...]
     training_sequence_token_counts: tuple[int, ...]
+    training_teacher_token_counts: tuple[int, ...]
     cell_synapse_sha256: str
     protocol_sha256: str
     _bytes: bytes = field(repr=False, compare=False)
@@ -180,18 +185,22 @@ class FrozenCheckpoint:
         if _checkpoint_bytes(payload) != self._bytes:
             raise ValueError("frozen checkpoint is not canonically encoded")
         expected = (
+            json.loads(payload.protocol_json.decode("utf-8"))["lane"],
             sha256(self._bytes).hexdigest(),
             payload.training_digest,
             payload.training_input_sha256,
             payload.training_sequence_token_counts,
+            payload.training_teacher_token_counts,
             payload.circuit.sha256,
             sha256(payload.protocol_json).hexdigest(),
         )
         actual = (
+            self.lane,
             self.sha256,
             self.training_digest,
             self.training_input_sha256,
             self.training_sequence_token_counts,
+            self.training_teacher_token_counts,
             self.cell_synapse_sha256,
             self.protocol_sha256,
         )
@@ -207,6 +216,11 @@ class FrozenCheckpoint:
         if _checkpoint_bytes(payload) != value:
             raise ValueError("frozen checkpoint is not canonically encoded")
         checkpoint = object.__new__(cls)
+        object.__setattr__(
+            checkpoint,
+            "lane",
+            json.loads(payload.protocol_json.decode("utf-8"))["lane"],
+        )
         object.__setattr__(checkpoint, "sha256", sha256(value).hexdigest())
         object.__setattr__(checkpoint, "training_digest", payload.training_digest)
         object.__setattr__(
@@ -218,6 +232,11 @@ class FrozenCheckpoint:
             checkpoint,
             "training_sequence_token_counts",
             payload.training_sequence_token_counts,
+        )
+        object.__setattr__(
+            checkpoint,
+            "training_teacher_token_counts",
+            payload.training_teacher_token_counts,
         )
         object.__setattr__(checkpoint, "cell_synapse_sha256", payload.circuit.sha256)
         object.__setattr__(
@@ -277,9 +296,10 @@ _LITERAL_DIGITS = 4
 # its type/role fields drive typed-hole masking and parsing; and its lowering
 # field drives structural Python emission.
 _PRIMITIVE_SPECS = (
-    _PrimitiveSpec("prompt-signature-delimiter", "input-delimiter"),
+    _PrimitiveSpec("context-delimiter", "input-delimiter"),
     _PrimitiveSpec("input-delimiter", "input-delimiter"),
     _PrimitiveSpec("add", "operation", _INT, (_INT, _INT), "add"),
+    _PrimitiveSpec("subtract", "operation", _INT, (_INT, _INT), "subtract"),
     _PrimitiveSpec(
         "map",
         "operation",
@@ -300,7 +320,7 @@ if len(_SPEC_BY_TOKEN) != len(_PRIMITIVE_SPECS):
     raise RuntimeError("primitive tokens must be unique")
 _TOKEN_TO_ID = {spec.token: 256 + index for index, spec in enumerate(_PRIMITIVE_SPECS)}
 _ID_TO_SPEC = {_TOKEN_TO_ID[spec.token]: spec for spec in _PRIMITIVE_SPECS}
-_PROMPT_SIGNATURE_DELIMITER_ID = _TOKEN_TO_ID["prompt-signature-delimiter"]
+_CONTEXT_DELIMITER_ID = _TOKEN_TO_ID["context-delimiter"]
 _INPUT_DELIMITER_ID = _TOKEN_TO_ID["input-delimiter"]
 _TOKEN_CELL_COUNT = 256 + len(_PRIMITIVE_SPECS)
 
@@ -316,7 +336,16 @@ _MAX_CHECKPOINT_BYTES = 2_097_152
 _MAX_PROGRAM_TOKENS = 128
 _MAX_AST_NODES = 64
 _MAX_AST_DEPTH = 16
-_PROTOCOL_VERSION = "humanbrain-layer1-typed-program-v3"
+_PROTOCOL_VERSION = "humanbrain-layer1-typed-program-v4"
+_A0_FRAMING_ORDER = "prompt/context-delimiter/canonical-signature/input-delimiter"
+_A1_FRAMING_ORDER = "canonical-signature/context-delimiter/prompt/input-delimiter"
+_ALL_TRANSITION_SUPERVISION = "all-next-token-targets"
+_PROGRAM_ONLY_SUPERVISION = "program-token-targets-only"
+_LANE_COMMITMENTS = {
+    "A0": (_A0_FRAMING_ORDER, _ALL_TRANSITION_SUPERVISION),
+    "A1": (_A1_FRAMING_ORDER, _ALL_TRANSITION_SUPERVISION),
+    "A2": (_A1_FRAMING_ORDER, _PROGRAM_ONLY_SUPERVISION),
+}
 _COMPILER_ID = "humanbrain-structural-python-ast-v1"
 _ALLEN_GLIF5_PARAMETERS = AllenGlif5Parameters()
 
@@ -420,11 +449,14 @@ _CIRCUIT_CONFIG_SHA256 = sha256(_canonical_json(asdict(_CIRCUIT_CONFIG))).hexdig
 class Layer1Protocol:
     """Fixed, auditable commitments for the Layer-1 language and fitted circuit."""
 
+    lane: str = "A2"
     protocol_version: str = _PROTOCOL_VERSION
     compiler_id: str = _COMPILER_ID
     primitive_table_sha256: str = _PRIMITIVE_TABLE_SHA256
     circuit_config_sha256: str = _CIRCUIT_CONFIG_SHA256
     growth_epochs: int = _GROWTH_EPOCHS
+    framing_order: str = _A1_FRAMING_ORDER
+    supervision_scope: str = _PROGRAM_ONLY_SUPERVISION
     allen_glif5_config_sha256: str = HUMAN_GLIF5_IDENTITY.config_sha256
     allen_glif5_parameters: AllenGlif5Parameters = _ALLEN_GLIF5_PARAMETERS
     max_training_examples: int = _MAX_TRAINING_EXAMPLES
@@ -434,13 +466,31 @@ class Layer1Protocol:
     max_ast_depth: int = _MAX_AST_DEPTH
     max_output_tokens: int = _MAX_PROGRAM_TOKENS
 
+    @classmethod
+    def for_lane(cls, lane: str) -> Layer1Protocol:
+        """Construct one of the two diagnostic lanes or sole eligible A2 lane."""
+        if lane not in _LANE_COMMITMENTS:
+            raise ValueError("Layer-1 lane must be exactly A0, A1, or A2")
+        framing_order, supervision_scope = _LANE_COMMITMENTS[lane]
+        return cls(
+            lane=lane,
+            framing_order=framing_order,
+            supervision_scope=supervision_scope,
+        )
+
     def __post_init__(self) -> None:
+        if self.lane not in _LANE_COMMITMENTS:
+            raise ValueError("Layer-1 lane must be exactly A0, A1, or A2")
+        expected_framing, expected_supervision = _LANE_COMMITMENTS[self.lane]
         expected = (
+            self.lane,
             _PROTOCOL_VERSION,
             _COMPILER_ID,
             _PRIMITIVE_TABLE_SHA256,
             _CIRCUIT_CONFIG_SHA256,
             _GROWTH_EPOCHS,
+            expected_framing,
+            expected_supervision,
             HUMAN_GLIF5_IDENTITY.config_sha256,
             _ALLEN_GLIF5_PARAMETERS,
             _MAX_TRAINING_EXAMPLES,
@@ -451,11 +501,14 @@ class Layer1Protocol:
             _MAX_PROGRAM_TOKENS,
         )
         actual = (
+            self.lane,
             self.protocol_version,
             self.compiler_id,
             self.primitive_table_sha256,
             self.circuit_config_sha256,
             self.growth_epochs,
+            self.framing_order,
+            self.supervision_scope,
             self.allen_glif5_config_sha256,
             self.allen_glif5_parameters,
             self.max_training_examples,
@@ -472,6 +525,7 @@ class Layer1Protocol:
 def _protocol_json(protocol: Layer1Protocol) -> bytes:
     return _canonical_json(
         {
+            "lane": protocol.lane,
             "protocol_version": protocol.protocol_version,
             "compiler_id": protocol.compiler_id,
             "primitive_table": _primitive_table_record(),
@@ -479,6 +533,8 @@ def _protocol_json(protocol: Layer1Protocol) -> bytes:
             "circuit_config": asdict(_CIRCUIT_CONFIG),
             "circuit_config_sha256": protocol.circuit_config_sha256,
             "growth_epochs": protocol.growth_epochs,
+            "framing_order": protocol.framing_order,
+            "supervision_scope": protocol.supervision_scope,
             "allen_glif5_config_sha256": protocol.allen_glif5_config_sha256,
             "allen_glif5_parameters": asdict(protocol.allen_glif5_parameters),
             "max_training_examples": protocol.max_training_examples,
@@ -798,15 +854,31 @@ def _signature_bytes(signature: TypedSignature) -> bytes:
     return _canonical_json(signature.to_record())
 
 
-def _model_input(prompt: str, signature: TypedSignature) -> tuple[int, ...]:
+def _model_input(
+    prompt: str,
+    signature: TypedSignature,
+    *,
+    framing_order: str = _A1_FRAMING_ORDER,
+) -> tuple[int, ...]:
     if not isinstance(prompt, str) or not prompt:
         raise ValueError("completion prompt must be a non-empty string")
-    return (
-        *prompt.encode("utf-8"),
-        _PROMPT_SIGNATURE_DELIMITER_ID,
-        *_signature_bytes(signature),
-        _INPUT_DELIMITER_ID,
-    )
+    prompt_ids = tuple(prompt.encode("utf-8"))
+    signature_ids = _signature_bytes(signature)
+    if framing_order == _A0_FRAMING_ORDER:
+        return (
+            *prompt_ids,
+            _CONTEXT_DELIMITER_ID,
+            *signature_ids,
+            _INPUT_DELIMITER_ID,
+        )
+    if framing_order == _A1_FRAMING_ORDER:
+        return (
+            *signature_ids,
+            _CONTEXT_DELIMITER_ID,
+            *prompt_ids,
+            _INPUT_DELIMITER_ID,
+        )
+    raise ValueError("unsupported Layer-1 framing order")
 
 
 def _token_stream_bytes(token_ids: Sequence[int]) -> bytes:
@@ -858,9 +930,8 @@ def _checkpoint_bytes(payload: _FrozenCheckpointPayload) -> bytes:
             "protocol": json.loads(payload.protocol_json.decode("utf-8")),
             "training_digest": payload.training_digest,
             "training_input_sha256": list(payload.training_input_sha256),
-            "training_sequence_token_counts": list(
-                payload.training_sequence_token_counts
-            ),
+            "training_sequence_token_counts": list(payload.training_sequence_token_counts),
+            "training_teacher_token_counts": list(payload.training_teacher_token_counts),
             "circuit": {
                 "metadata": json.loads(payload.circuit.metadata_json.decode("utf-8")),
                 "arrays": [
@@ -897,12 +968,10 @@ def _validate_frozen_circuit_metadata(value: object) -> Mapping[str, object]:
     fixed_values_match = (
         type(metadata["token_cells"]) is int
         and metadata["token_cells"] == _TOKEN_CELL_COUNT
-        and metadata["allen_glif5_config_sha256"]
-        == HUMAN_GLIF5_IDENTITY.config_sha256
+        and metadata["allen_glif5_config_sha256"] == HUMAN_GLIF5_IDENTITY.config_sha256
         and _canonical_json(metadata["cell_parameters"])
         == _canonical_json(_EXPECTED_CELL_PARAMETERS)
-        and _canonical_json(metadata["circuit_config"])
-        == _canonical_json(_EXPECTED_CIRCUIT_CONFIG)
+        and _canonical_json(metadata["circuit_config"]) == _canonical_json(_EXPECTED_CIRCUIT_CONFIG)
         and type(metadata["growth_examples"]) is int
         and metadata["growth_examples"] > 0
         and type(metadata["local_updates"]) is int
@@ -965,6 +1034,7 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
                 "training_digest",
                 "training_input_sha256",
                 "training_sequence_token_counts",
+                "training_teacher_token_counts",
                 "circuit",
             }
         ),
@@ -972,8 +1042,18 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
     )
     if record["format"] != _PROTOCOL_VERSION:
         raise ValueError("unsupported frozen checkpoint format")
-    protocol_json = _canonical_json(record["protocol"])
-    if protocol_json != _protocol_json(Layer1Protocol()):
+    protocol_record = record["protocol"]
+    if not isinstance(protocol_record, Mapping):
+        raise ValueError("frozen checkpoint protocol must be a record")
+    lane = protocol_record.get("lane")
+    if not isinstance(lane, str):
+        raise ValueError("frozen checkpoint protocol lane must be text")
+    try:
+        protocol = Layer1Protocol.for_lane(lane)
+    except ValueError as error:
+        raise ValueError("frozen checkpoint protocol lane is unsupported") from error
+    protocol_json = _canonical_json(protocol_record)
+    if protocol_json != _protocol_json(protocol):
         raise ValueError("frozen checkpoint protocol commitments do not match")
     training_digest = _digest_text(record["training_digest"], "training digest")
     input_hash_values = _record_sequence(
@@ -985,22 +1065,16 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
         raise ValueError("frozen checkpoint needs at least one training input digest")
     if input_hash_count > _MAX_TRAINING_EXAMPLES:
         raise ValueError(
-            f"frozen checkpoint permits at most {_MAX_TRAINING_EXAMPLES} "
-            "training input digests"
+            f"frozen checkpoint permits at most {_MAX_TRAINING_EXAMPLES} training input digests"
         )
-    input_hashes = tuple(
-        _digest_text(item, "training input digest")
-        for item in input_hash_values
-    )
+    input_hashes = tuple(_digest_text(item, "training input digest") for item in input_hash_values)
     sequence_token_count_values = _record_sequence(
         record["training_sequence_token_counts"],
         "training sequence token counts",
     )
     sequence_count = len(sequence_token_count_values)
     if sequence_count == 0:
-        raise ValueError(
-            "frozen checkpoint needs at least one training sequence token count"
-        )
+        raise ValueError("frozen checkpoint needs at least one training sequence token count")
     if sequence_count > _MAX_TRAINING_EXAMPLES:
         raise ValueError(
             f"frozen checkpoint permits at most {_MAX_TRAINING_EXAMPLES} "
@@ -1012,24 +1086,49 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
     if any(count < 2 for count in sequence_token_counts):
         raise ValueError("each training sequence must contain at least two tokens")
     if sequence_count != input_hash_count:
+        raise ValueError("frozen checkpoint needs one count per training input digest")
+    teacher_token_count_values = _record_sequence(
+        record["training_teacher_token_counts"],
+        "training teacher token counts",
+    )
+    teacher_count = len(teacher_token_count_values)
+    if teacher_count == 0:
+        raise ValueError("frozen checkpoint needs at least one training teacher token count")
+    if teacher_count > _MAX_TRAINING_EXAMPLES:
         raise ValueError(
-            "frozen checkpoint needs one count per training input digest"
+            f"frozen checkpoint permits at most {_MAX_TRAINING_EXAMPLES} "
+            "training teacher token counts"
         )
+    if not all(type(item) is int for item in teacher_token_count_values):
+        raise ValueError("training teacher token counts must be integers")
+    teacher_token_counts = tuple(int(item) for item in teacher_token_count_values)
+    if any(count < 1 for count in teacher_token_counts):
+        raise ValueError("each training teacher must contain at least one token")
+    if teacher_count != input_hash_count:
+        raise ValueError("frozen checkpoint needs one teacher count per training input digest")
+    if any(
+        teacher_count >= sequence_count
+        for teacher_count, sequence_count in zip(
+            teacher_token_counts, sequence_token_counts, strict=True
+        )
+    ):
+        raise ValueError("training teacher count must be smaller than sequence count")
     circuit_record = _strict_record(
         record["circuit"],
         frozenset({"metadata", "arrays", "sha256"}),
         "frozen circuit record",
     )
     metadata = _validate_frozen_circuit_metadata(circuit_record["metadata"])
-    # The recurrent counter records supervised next-token presentations, not
-    # the number of top-level training sequences.
-    expected_growth_examples = _GROWTH_EPOCHS * sum(
-        count - 1 for count in sequence_token_counts
-    )
-    if metadata["growth_examples"] != expected_growth_examples:
-        raise ValueError(
-            "frozen checkpoint growth count differs from training sequence tokens"
+    # Only program tokens are supervised. Context and prefix tokens are still
+    # observed, but their next-token transitions never become readout labels.
+    if protocol.supervision_scope == _PROGRAM_ONLY_SUPERVISION:
+        expected_growth_examples = _GROWTH_EPOCHS * sum(teacher_token_counts)
+    else:
+        expected_growth_examples = _GROWTH_EPOCHS * sum(
+            count - 1 for count in sequence_token_counts
         )
+    if metadata["growth_examples"] != expected_growth_examples:
+        raise ValueError("frozen checkpoint growth count differs from teacher token targets")
     array_records = _validate_frozen_array_headers(circuit_record["arrays"])
     arrays: list[_FrozenArray] = []
     for array_record in array_records:
@@ -1066,12 +1165,13 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
         training_digest=training_digest,
         training_input_sha256=input_hashes,
         training_sequence_token_counts=sequence_token_counts,
+        training_teacher_token_counts=teacher_token_counts,
         protocol_json=protocol_json,
     )
 
 
 def grow(protocol: Layer1Protocol, examples: Sequence[Example]) -> FrozenCheckpoint:
-    """Fit one Layer-1 recurrent cell circuit and freeze its persistent state."""
+    """Fit one Layer-1 circuit from public program-token targets and freeze it."""
     if type(protocol) is not Layer1Protocol:
         raise TypeError("grow requires the fixed Layer1Protocol")
     if isinstance(examples, (str, bytes, bytearray)) or not isinstance(examples, Sequence):
@@ -1090,23 +1190,45 @@ def grow(protocol: Layer1Protocol, examples: Sequence[Example]) -> FrozenCheckpo
     digest = sha256()
     input_hashes: list[str] = []
     sequence_token_counts: list[int] = []
+    teacher_token_counts: list[int] = []
+    prepared_sequences: list[tuple[tuple[int, ...], tuple[int, ...]]] = []
     for example in corpus:
         _validate_program(example.teacher_tokens, example.signature)
-        input_ids = _model_input(example.prompt, example.signature)
+        input_ids = _model_input(
+            example.prompt,
+            example.signature,
+            framing_order=protocol.framing_order,
+        )
         input_bytes = _token_stream_bytes(input_ids)
         input_hashes.append(sha256(input_bytes).hexdigest())
         teacher_ids = _program_token_ids(example.teacher_tokens)
         training_ids = (*input_ids, *teacher_ids)
         sequence_token_counts.append(len(training_ids))
-        circuit.grow_sequence(training_ids, epochs=protocol.growth_epochs)
+        teacher_token_counts.append(len(teacher_ids))
+        prepared_sequences.append((input_ids, teacher_ids))
         digest.update(input_bytes)
         digest.update(_token_stream_bytes(teacher_ids))
+
+    # Each epoch is one complete, ordered corpus pass. Every input and emitted
+    # prefix token advances the same recurrent states as ordinary next-token
+    # replay; strengthen is called only when the next token is a program token.
+    for _ in range(protocol.growth_epochs):
+        for input_ids, teacher_ids in prepared_sequences:
+            training_ids = (*input_ids, *teacher_ids)
+            circuit.reset_sequence()
+            for index, observed_token_id in enumerate(training_ids[:-1]):
+                circuit.observe(observed_token_id)
+                if protocol.supervision_scope == _ALL_TRANSITION_SUPERVISION or index + 1 >= len(
+                    input_ids
+                ):
+                    circuit.strengthen(training_ids[index + 1])
     circuit.freeze_learning()
     payload = _FrozenCheckpointPayload(
         circuit=_freeze_circuit(circuit),
         training_digest=digest.hexdigest(),
         training_input_sha256=tuple(input_hashes),
         training_sequence_token_counts=tuple(sequence_token_counts),
+        training_teacher_token_counts=tuple(teacher_token_counts),
         protocol_json=_protocol_json(protocol),
     )
     return FrozenCheckpoint.from_bytes(_checkpoint_bytes(payload))
@@ -1125,10 +1247,12 @@ def complete(
     payload = checkpoint._validated_payload()
     checkpoint_bytes = checkpoint._bytes
     checkpoint_identity = (
+        checkpoint.lane,
         checkpoint.sha256,
         checkpoint.training_digest,
         checkpoint.training_input_sha256,
         checkpoint.training_sequence_token_counts,
+        checkpoint.training_teacher_token_counts,
         checkpoint.cell_synapse_sha256,
         checkpoint.protocol_sha256,
         checkpoint_bytes,
@@ -1137,7 +1261,12 @@ def complete(
     before = circuit.cell_synapse_state_sha256
     if before != checkpoint.cell_synapse_sha256:
         raise ValueError("restored checkpoint cell/synapse digest mismatch")
-    input_ids = _model_input(prompt, typed_signature)
+    protocol_record = json.loads(payload.protocol_json.decode("utf-8"))
+    input_ids = _model_input(
+        prompt,
+        typed_signature,
+        framing_order=str(protocol_record["framing_order"]),
+    )
     circuit.reset_sequence()
     for token_id in input_ids:
         circuit.observe(token_id)
@@ -1151,6 +1280,11 @@ def complete(
             raise ProgramFormatError("typed hole has no inhabiting primitive")
         allowed_cell_ids = tuple(_TOKEN_TO_ID[spec.token] for spec in allowed_specs)
         prefix_sha256 = sha256(_canonical_json(tokens)).hexdigest()
+        eligibility_bytes = circuit.eligibility.astype("<f8", copy=False).tobytes(order="C")
+        output_current_pa = circuit.output_current_pa()
+        allowed_output_currents_pa = tuple(
+            float(output_current_pa[cell_id]) for cell_id in allowed_cell_ids
+        )
         race: RecurrentRace = circuit.race(allowed_token_ids=allowed_cell_ids)
         accepted = _ID_TO_SPEC[race.winner]
         state.consume(accepted)
@@ -1163,8 +1297,10 @@ def complete(
                 simulated_steps=race.simulated_steps,
                 prefix_sha256=prefix_sha256,
                 allowed_cell_ids=allowed_cell_ids,
+                allowed_output_currents_pa=allowed_output_currents_pa,
                 excluded_cell_ids=race.excluded_token_ids,
                 output_current_sha256=race.output_current_sha256,
+                eligibility_bytes=eligibility_bytes,
             )
         )
         circuit.observe(race.winner)
@@ -1177,10 +1313,12 @@ def complete(
     if after != before:
         raise PersistentStateChangedError("completion changed frozen cell/synapse state")
     if (
+        checkpoint.lane,
         checkpoint.sha256,
         checkpoint.training_digest,
         checkpoint.training_input_sha256,
         checkpoint.training_sequence_token_counts,
+        checkpoint.training_teacher_token_counts,
         checkpoint.cell_synapse_sha256,
         checkpoint.protocol_sha256,
         checkpoint._bytes,
@@ -1225,6 +1363,12 @@ def _lower_expression(
         return ast.BinOp(
             left=_lower_expression(expression.children[0], environment, context),
             op=ast.Add(),
+            right=_lower_expression(expression.children[1], environment, context),
+        )
+    if lowering == "subtract":
+        return ast.BinOp(
+            left=_lower_expression(expression.children[0], environment, context),
+            op=ast.Sub(),
             right=_lower_expression(expression.children[1], environment, context),
         )
     if lowering == "map":

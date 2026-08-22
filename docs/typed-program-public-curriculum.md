@@ -1,6 +1,13 @@
 # Typed program public TRAIN curriculum v1
 
-**Status:** preregistered and implemented; material TRAIN run not executed
+**Status:** executed once; live v1 runner retired by Layer-1 v4
+
+The frozen protocol, checkpoint, evidence, and result report remain immutable
+historical records. The v1 loader and execution CLI were removed when the
+incompatible Layer-1 v4 checkpoint contract replaced v3; the commits named in
+the result report are the reproducibility anchors. The current unexecuted
+increment is specified in
+[`typed-composition-a012-v1.md`](typed-composition-a012-v1.md).
 
 This is the smallest public train-only curriculum around
 `humanbrain.typed_program`. It exercises only the fitted recurrent-cell path.
@@ -46,17 +53,15 @@ its semantic cases against model output. The protocol therefore records zero
 development runs and an unopened completion state. Nothing in this slice is a
 development or held-out score.
 
-## Runner contract
+## Historical runner contract
 
-The checked-in runner is plan-only by default:
-
-```powershell
-python benchmarks/typed_program_public_train.py
-```
-
-Planning validates the frozen raw protocol and prints the TRAIN counts without
-writing an artifact. It also fails if the fixed artifact root, checkpoint, or
-incremental evidence directory already exists.
+The retired v1 runner validated the frozen raw protocol and printed the TRAIN
+counts without writing an artifact in its plan mode. It also failed if the
+fixed artifact root, checkpoint, or incremental evidence directory already
+existed. There is deliberately no Layer-1 v3 compatibility loader or live v1
+CLI at current HEAD. Reproducing the historical executable requires checking
+out the source commit bound by the result report; the preserved current-tree
+artifacts are records, not executable inputs to v4.
 
 The production module pins the repository root and protocol path from its own
 installed source location. The CLI has no protocol, repository-root,
@@ -65,10 +70,8 @@ evidence. Tests relocate the runner only by replacing one private dependency
 set that also supplies fake growth, restoration, and completion functions; that
 seam is not part of the production interface.
 
-A material run is intentionally not performed here. A later explicitly
-authorized invocation must supply both `--execute` and the exact lowercase raw
-protocol SHA through `--protocol-sha256`. No other seed, configuration,
-checkpoint path, evidence path, or partition switch exists.
+The one material run was executed under the exact raw protocol SHA. No second
+run, resume, or reconstruction under v4 is permitted.
 
 On execution, the runner must:
 
@@ -112,8 +115,8 @@ search, test feedback, Simple-SWE development/evaluation, canonical
 freeze/reveal/private operation, external language-model call, Fly Brain
 operation, or benchmark execution.
 
-The separately hash-locked one-shot runner for the two existing teacher-free
-development definitions is now preregistered in
+The separately hash-locked one-shot gate for the two teacher-free development
+definitions is recorded in
 [`typed-program-public-dev-gate-v1.md`](typed-program-public-dev-gate-v1.md).
-That DEV gate remains unexecuted; no development score is added to this TRAIN
-record.
+It was executed once and failed 0/2; it is retired and will never be rerun or
+used for tuning.

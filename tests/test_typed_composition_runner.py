@@ -1,0 +1,683 @@
+from __future__ import annotations
+
+import base64
+import inspect
+import json
+import struct
+from dataclasses import replace
+from hashlib import sha256
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+from humanbrain import native as native_runtime
+from humanbrain import typed_program
+from humanbrain.typed_composition import CompletionRequest, load_composition_protocol
+from humanbrain.typed_composition_runner import (
+    A2EligibilityMetrics,
+    EvidenceExistsError,
+    ProtocolConfirmationError,
+    _execute_protocol,
+    _execute_protocol_synthetic,
+    _race_integrity,
+    _require_cpu_runtime_backend,
+    _validate_checkpoint_accounting,
+    a2_is_eligible,
+    build_execution_plan,
+    create_evidence_run,
+    execute_protocol,
+    score_sealed_completions,
+    seal_all_lane_completions,
+    validate_execution_confirmation,
+    validate_source_bundle_confirmation,
+)
+from humanbrain.typed_program import Completion, Program, ProgramRaceAudit
+
+ROOT = Path(__file__).parents[1]
+PROTOCOL_PATH = ROOT / "benchmarks" / "typed_composition_protocol_v1.json"
+
+
+def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution() -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    plan = build_execution_plan(ROOT, PROTOCOL_PATH)
+
+    assert plan["mode"] == "plan"
+    assert plan["material_execution_authorized"] is False
+    assert plan["protocol_sha256"] == protocol.raw_sha256
+    assert len(plan["source_bundle_sha256"]) == 64
+    assert tuple(item["path"] for item in plan["source_bundle"]) == (protocol.source_bundle_paths)
+    assert all(len(item["sha256"]) == 64 for item in plan["source_bundle"])
+    assert plan["execution_requirements"] == {
+        "protocol_confirmation": "exact raw protocol SHA-256",
+        "source_bundle_confirmation": "exact reviewed source-bundle SHA-256",
+        "evidence": "exclusive nonoverwrite creation",
+        "resume": False,
+        "rerun_same_run_id": False,
+        "preserve_failure": True,
+    }
+    assert plan["run_hold"].startswith("No material TRAIN")
+    assert plan["future_cohort"]["seed_exists"] is False
+    assert plan["future_cohort"]["generated"] is False
+
+
+def test_execution_needs_the_exact_raw_protocol_sha_and_a_new_evidence_target(
+    tmp_path: Path,
+) -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+
+    for confirmation in (None, "0" * 64, protocol.raw_sha256.upper()):
+        with pytest.raises(ProtocolConfirmationError, match="exact raw protocol SHA-256"):
+            validate_execution_confirmation(protocol, confirmation)
+    validate_execution_confirmation(protocol, protocol.raw_sha256)
+
+    plan = build_execution_plan(ROOT, PROTOCOL_PATH)
+    for confirmation in (None, "0" * 64, str(plan["source_bundle_sha256"]).upper()):
+        with pytest.raises(
+            ProtocolConfirmationError,
+            match="exact reviewed source-bundle SHA-256",
+        ):
+            validate_source_bundle_confirmation(plan, confirmation)
+    validate_source_bundle_confirmation(plan, str(plan["source_bundle_sha256"]))
+
+    evidence = create_evidence_run(tmp_path, "synthetic-boundary-test", b"{}")
+    assert evidence.is_dir()
+    assert (evidence / "000-plan.json").read_bytes() == b"{}"
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        create_evidence_run(tmp_path, "synthetic-boundary-test", b"{}")
+
+
+def test_initial_plan_write_failure_preserves_a_terminal_record(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_open = Path.open
+
+    def fail_initial_plan(path: Path, *args: object, **kwargs: object) -> object:
+        if path.name == "000-plan.json":
+            raise OSError("synthetic initial plan write failure")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", fail_initial_plan)
+
+    with pytest.raises(OSError, match="synthetic initial plan write failure"):
+        create_evidence_run(tmp_path, "plan-write-failure", b"{}")
+
+    terminal = tmp_path / "plan-write-failure" / "999-terminal-failure.json"
+    record = json.loads(terminal.read_text(encoding="utf-8"))
+    assert record["error_type"] == "OSError"
+    assert record["partial_evidence_preserved"] is True
+    assert record["resume_allowed"] is False
+
+
+def test_terminal_record_write_failure_never_masks_the_original_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_open = Path.open
+
+    def fail_both_records(path: Path, *args: object, **kwargs: object) -> object:
+        if path.name == "000-plan.json":
+            raise OSError("original plan failure")
+        if path.name == "999-terminal-failure.json":
+            raise PermissionError("secondary terminal failure")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", fail_both_records)
+
+    with pytest.raises(OSError, match="original plan failure"):
+        create_evidence_run(tmp_path, "double-write-failure", b"{}")
+
+
+def test_public_executor_has_no_injectable_learner_or_decoder() -> None:
+    parameters = inspect.signature(execute_protocol).parameters
+
+    assert "grow_fn" not in parameters
+    assert "complete_fn" not in parameters
+    assert "source_bundle_confirmation" in parameters
+
+
+def test_runtime_backend_is_frozen_to_the_same_native_cpu_path_for_all_lanes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("HUMANBRAIN_DEVICE", raising=False)
+    assert _require_cpu_runtime_backend() == {
+        "requested_device": "auto",
+        "resolved_backend": "native-cpu",
+        "reservoir_cells": 128,
+        "cuda_minimum_cells": 100_000,
+    }
+
+    monkeypatch.setenv("HUMANBRAIN_DEVICE", "cuda")
+    with pytest.raises(RuntimeError, match="native CPU backend"):
+        _require_cpu_runtime_backend()
+
+
+def test_loaded_native_identity_is_portable_and_rehashes_the_attested_binary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_digest = "0123456789abcdef"
+    library_path = tmp_path / source_digest / "release" / "humanbrain_kernel.dll"
+    library_path.parent.mkdir(parents=True)
+    binary = b"synthetic-native-library"
+    library_path.write_bytes(binary)
+    identity_record = {
+        "binary_sha256": sha256(binary).hexdigest(),
+        "binary_size": len(binary),
+        "source_digest": source_digest,
+    }
+    manifest_path = library_path.with_name(library_path.name + ".identity.json")
+    manifest_path.write_text(
+        json.dumps(identity_record, sort_keys=True, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(native_runtime, "_LIBRARY", object())
+    monkeypatch.setattr(native_runtime, "_LIBRARY_PATH", library_path)
+    monkeypatch.setattr(native_runtime, "_source_digest", lambda: source_digest)
+
+    identity = native_runtime.loaded_library_identity()
+
+    assert identity.to_record() == {
+        "binary_sha256": sha256(binary).hexdigest(),
+        "binary_size": 24,
+        "source_digest": source_digest,
+    }
+    assert "path" not in identity.to_record()
+
+    library_path.write_bytes(b"corrupted-native-library")
+    with pytest.raises(native_runtime.NativeBuildError, match="integrity"):
+        native_runtime.loaded_library_identity()
+
+    manifest_path.unlink()
+    with pytest.raises(native_runtime.NativeBuildError, match="no readable integrity manifest"):
+        native_runtime.loaded_library_identity()
+
+
+def test_internal_executor_cannot_mark_injected_dependencies_as_production(
+    tmp_path: Path,
+) -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+
+    with pytest.raises(TypeError, match="fixed public grow and complete"):
+        _execute_protocol(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=tmp_path / "evidence",
+            run_id="injected-production",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation="not-consulted-before-fixed-dependency-check",
+            grow_fn=lambda _protocol, _examples: object(),
+            complete_fn=lambda _checkpoint, _prompt, _signature: object(),
+            synthetic_test_only=False,
+        )
+
+    assert not (tmp_path / "evidence").exists()
+
+
+def test_all_lane_completions_are_sealed_before_labels_or_cases_are_needed() -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    task_by_request = {
+        (task.prompt, task.signature): task
+        for task in (*protocol.train_tasks, *protocol.calibration_tasks)
+    }
+    calls: list[tuple[str, str, object]] = []
+
+    class Checkpoint:
+        def __init__(self, lane: str) -> None:
+            self.lane = lane
+
+    def fake_complete(
+        checkpoint: Checkpoint,
+        prompt: str,
+        signature: object,
+    ) -> Completion:
+        # The test oracle remains outside the call boundary. Production passes
+        # exactly these three values and never a task, teacher, case, or family.
+        calls.append((checkpoint.lane, prompt, signature))
+        task = task_by_request[(prompt, signature)]
+        marker = checkpoint.lane.encode("ascii").hex().ljust(64, "0")
+        return Completion(
+            program=Program(task.teacher_tokens, task.signature),
+            races=(),
+            prompt_sha256=marker,
+            model_input_sha256=marker,
+            checkpoint_sha256=marker,
+            checkpoint_cell_synapse_before=marker,
+            checkpoint_cell_synapse_after=marker,
+        )
+
+    checkpoints = {lane.lane: Checkpoint(lane.lane) for lane in protocol.lanes}
+    sealed = seal_all_lane_completions(
+        protocol,
+        checkpoints,
+        complete_fn=fake_complete,
+    )
+
+    assert len(calls) == 3 * (42 + 18)
+    assert len(sealed) == len(calls)
+    assert tuple(item.sequence_number for item in sealed) == tuple(range(1, 181))
+    assert all(item.record_bytes.startswith(b"{") for item in sealed)
+    assert all(len(item.sha256) == 64 for item in sealed)
+    assert tuple((item.lane, item.cohort) for item in sealed[:2]) == (
+        ("A0", "TRAIN"),
+        ("A0", "TRAIN"),
+    )
+
+
+def test_trusted_task_metadata_is_attached_only_after_every_raw_completion_seal() -> None:
+    signature = typed_program.TypedSignature(
+        entry_point="q_bcdfghjkl",
+        parameters=(typed_program.ProgramParameter("datum", typed_program.ProgramType.Int()),),
+        result=typed_program.ProgramType.Int(),
+    )
+    calls: list[str] = []
+    expected_calls = 6
+
+    class Task:
+        def __init__(self, name: str, cohort: str) -> None:
+            self.name = name
+            self._cohort = cohort
+
+        def completion_request(self) -> CompletionRequest:
+            return CompletionRequest(prompt=self.name, signature=signature)
+
+        @property
+        def cohort(self) -> str:
+            assert len(calls) == expected_calls
+            return self._cohort
+
+        @property
+        def task_id(self) -> str:
+            assert len(calls) == expected_calls
+            return self.name
+
+    lanes = tuple(SimpleNamespace(lane=lane) for lane in ("A0", "A1", "A2"))
+    protocol = SimpleNamespace(
+        lanes=lanes,
+        train_tasks=(Task("train-one", "TRAIN"),),
+        calibration_tasks=(Task("calibration-one", "CALIBRATION"),),
+    )
+    checkpoints = {lane.lane: SimpleNamespace(lane=lane.lane) for lane in lanes}
+
+    def fake_complete(checkpoint: object, prompt: str, typed_signature: object) -> Completion:
+        calls.append(prompt)
+        marker = sha256(checkpoint.lane.encode("ascii")).hexdigest()
+        return Completion(
+            program=Program(("variable-0",), typed_signature),
+            races=(),
+            prompt_sha256=sha256(prompt.encode("utf-8")).hexdigest(),
+            model_input_sha256=marker,
+            checkpoint_sha256=marker,
+            checkpoint_cell_synapse_before=marker,
+            checkpoint_cell_synapse_after=marker,
+        )
+
+    sealed = seal_all_lane_completions(
+        protocol,
+        checkpoints,
+        complete_fn=fake_complete,
+    )
+
+    assert len(calls) == expected_calls
+    assert (
+        tuple((item.cohort, item.task_id) for item in sealed)
+        == (
+            ("TRAIN", "train-one"),
+            ("CALIBRATION", "calibration-one"),
+        )
+        * 3
+    )
+
+
+def test_a2_is_the_only_lane_and_only_exact_capability_gate_can_make_it_eligible() -> None:
+    passing = A2EligibilityMetrics(
+        train_replay_tasks=42,
+        train_cases=126,
+        calibration_replay_tasks=18,
+        calibration_cases=54,
+        common_integrity_gates_passed=True,
+        decision_collision_count=0,
+        competitive_train_margin_count=1,
+        minimum_train_target_margin_pa=0.001,
+    )
+    assert a2_is_eligible("A0", passing) is False
+    assert a2_is_eligible("A1", passing) is False
+    assert a2_is_eligible("A2", passing) is True
+
+    failing_variants = (
+        replace(passing, train_replay_tasks=41),
+        replace(passing, train_cases=125),
+        replace(passing, calibration_replay_tasks=17),
+        replace(passing, calibration_cases=53),
+        replace(passing, common_integrity_gates_passed=False),
+        replace(passing, decision_collision_count=1),
+        replace(passing, competitive_train_margin_count=0),
+        replace(passing, minimum_train_target_margin_pa=0.0),
+        replace(passing, minimum_train_target_margin_pa=float("nan")),
+    )
+    assert all(not a2_is_eligible("A2", metrics) for metrics in failing_variants)
+
+
+def test_race_integrity_binds_typed_state_winner_prefix_and_physical_values() -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    task = next(task for task in protocol.train_tasks if len(task.teacher_tokens) == 1)
+    state = typed_program._TypedHoleState(task.signature)
+    allowed = tuple(typed_program._TOKEN_TO_ID[spec.token] for spec in state.allowed())
+    winner = typed_program._TOKEN_TO_ID[task.teacher_tokens[0]]
+    eligibility = struct.pack("<128d", *([1.0] * 128))
+    race = {
+        "accepted_token": task.teacher_tokens[0],
+        "winner_cell_id": winner,
+        "spike_time_ms": 1.0,
+        "simulated_steps": 1,
+        "prefix_sha256": sha256(b"[]").hexdigest(),
+        "allowed_cell_ids": list(allowed),
+        "allowed_output_currents_pa": [2.0 if cell_id == winner else 1.0 for cell_id in allowed],
+        "excluded_cell_ids": [],
+        "output_current_sha256": "7" * 64,
+        "eligibility_f64le_base64": base64.b64encode(eligibility).decode("ascii"),
+        "eligibility_sha256": sha256(eligibility).hexdigest(),
+    }
+
+    assert _race_integrity([race], task.teacher_tokens, task.signature)[0] is True
+
+    invalid_records: list[dict[str, object]] = []
+    wrong_winner = dict(race)
+    wrong_winner["winner_cell_id"] = next(cell for cell in allowed if cell != winner)
+    invalid_records.append(wrong_winner)
+    wrong_prefix = dict(race)
+    wrong_prefix["prefix_sha256"] = "0" * 64
+    invalid_records.append(wrong_prefix)
+    wrong_allowed = dict(race)
+    wrong_allowed["allowed_cell_ids"] = list(reversed(allowed))
+    invalid_records.append(wrong_allowed)
+    no_spike = dict(race)
+    no_spike["spike_time_ms"] = 0.0
+    invalid_records.append(no_spike)
+    no_steps = dict(race)
+    no_steps["simulated_steps"] = 0
+    invalid_records.append(no_steps)
+    bad_current_digest = dict(race)
+    bad_current_digest["output_current_sha256"] = "G" * 64
+    invalid_records.append(bad_current_digest)
+    nonfinite_eligibility = struct.pack("<128d", float("nan"), *([1.0] * 127))
+    bad_eligibility = dict(race)
+    bad_eligibility["eligibility_f64le_base64"] = base64.b64encode(nonfinite_eligibility).decode(
+        "ascii"
+    )
+    bad_eligibility["eligibility_sha256"] = sha256(nonfinite_eligibility).hexdigest()
+    invalid_records.append(bad_eligibility)
+
+    assert all(
+        not _race_integrity([invalid], task.teacher_tokens, task.signature)[0]
+        for invalid in invalid_records
+    )
+
+
+def test_synthetic_execution_failure_is_preserved_and_cannot_resume(
+    tmp_path: Path,
+) -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    source_bundle_sha256 = build_execution_plan(ROOT, PROTOCOL_PATH)["source_bundle_sha256"]
+
+    class FakeCheckpoint:
+        def __init__(self, layer_protocol: object, examples: tuple[object, ...]) -> None:
+            self.lane = layer_protocol.lane
+            digest = sha256()
+            input_hashes: list[str] = []
+            sequence_counts: list[int] = []
+            teacher_counts: list[int] = []
+            for example in examples:
+                input_ids = typed_program._model_input(
+                    example.prompt,
+                    example.signature,
+                    framing_order=layer_protocol.framing_order,
+                )
+                teacher_ids = typed_program._program_token_ids(example.teacher_tokens)
+                input_bytes = typed_program._token_stream_bytes(input_ids)
+                input_hashes.append(sha256(input_bytes).hexdigest())
+                sequence_counts.append(len(input_ids) + len(teacher_ids))
+                teacher_counts.append(len(teacher_ids))
+                digest.update(input_bytes)
+                digest.update(typed_program._token_stream_bytes(teacher_ids))
+            self.training_digest = digest.hexdigest()
+            self.training_input_sha256 = tuple(input_hashes)
+            self.training_sequence_token_counts = tuple(sequence_counts)
+            self.training_teacher_token_counts = tuple(teacher_counts)
+            self.protocol_sha256 = sha256(typed_program._protocol_json(layer_protocol)).hexdigest()
+            self.cell_synapse_sha256 = sha256(("cells-" + self.lane).encode("ascii")).hexdigest()
+            self.sha256 = sha256(self.to_bytes()).hexdigest()
+
+        def to_bytes(self) -> bytes:
+            return ("checkpoint-" + self.lane).encode("ascii")
+
+    def failing_grow(layer_protocol: object, examples: object) -> FakeCheckpoint:
+        lane = layer_protocol.lane
+        if lane == "A1":
+            raise RuntimeError("synthetic grow failure")
+        return FakeCheckpoint(layer_protocol, tuple(examples))
+
+    evidence_root = tmp_path / "evidence"
+    with pytest.raises(RuntimeError, match="synthetic grow failure"):
+        _execute_protocol_synthetic(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=evidence_root,
+            run_id="synthetic-failure",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation=source_bundle_sha256,
+            grow_fn=failing_grow,
+        )
+
+    run_directory = evidence_root / "synthetic-failure"
+    assert (run_directory / "000-plan.json").is_file()
+    assert (run_directory / "010-checkpoint-A0.json").is_file()
+    assert (run_directory / "999-terminal-failure.json").is_file()
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        _execute_protocol_synthetic(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=evidence_root,
+            run_id="synthetic-failure",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation=source_bundle_sha256,
+            grow_fn=failing_grow,
+        )
+
+
+def test_checkpoint_accounting_binds_exact_inputs_observations_and_strengthens() -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    lane = typed_program.Layer1Protocol.for_lane("A2")
+    digest = sha256()
+    input_hashes: list[str] = []
+    sequence_counts: list[int] = []
+    teacher_counts: list[int] = []
+    for task in protocol.train_tasks:
+        input_ids = typed_program._model_input(
+            task.prompt,
+            task.signature,
+            framing_order=lane.framing_order,
+        )
+        teacher_ids = typed_program._program_token_ids(task.teacher_tokens)
+        input_bytes = typed_program._token_stream_bytes(input_ids)
+        input_hashes.append(sha256(input_bytes).hexdigest())
+        sequence_counts.append(len(input_ids) + len(teacher_ids))
+        teacher_counts.append(len(teacher_ids))
+        digest.update(input_bytes)
+        digest.update(typed_program._token_stream_bytes(teacher_ids))
+    checkpoint = SimpleNamespace(
+        lane="A2",
+        training_digest=digest.hexdigest(),
+        training_input_sha256=tuple(input_hashes),
+        training_sequence_token_counts=tuple(sequence_counts),
+        training_teacher_token_counts=tuple(teacher_counts),
+        protocol_sha256=sha256(typed_program._protocol_json(lane)).hexdigest(),
+    )
+
+    accounting = _validate_checkpoint_accounting(protocol, "A2", checkpoint)
+
+    assert accounting == {
+        "training_sequences": 42,
+        "teacher_targets_per_pass": 272,
+        "framing_tokens_per_pass": 8_484,
+        "observations_per_pass": 8_714,
+        "corpus_passes": 3,
+        "observation_calls": 26_142,
+        "strengthen_calls": 816,
+    }
+
+    checkpoint.training_sequence_token_counts = tuple(sequence_counts[:-1])
+    with pytest.raises(ValueError, match="accounting"):
+        _validate_checkpoint_accounting(protocol, "A2", checkpoint)
+
+
+def test_synthetic_perfect_seals_pass_exact_a2_gate_without_material_training() -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    task_by_request = {
+        (task.prompt, task.signature): task
+        for task in (*protocol.train_tasks, *protocol.calibration_tasks)
+    }
+
+    class Checkpoint:
+        def __init__(self, lane: str) -> None:
+            self.lane = lane
+            self.sha256 = sha256(lane.encode("ascii")).hexdigest()
+            self.cell_synapse_sha256 = sha256((lane + "-cells").encode()).hexdigest()
+
+    def perfect_completion(
+        checkpoint: Checkpoint,
+        prompt: str,
+        signature: object,
+    ) -> Completion:
+        task = task_by_request[(prompt, signature)]
+        state = typed_program._TypedHoleState(task.signature)
+        prefix: list[str] = []
+        races: list[ProgramRaceAudit] = []
+        lane_offset = {"A0": 0, "A1": 10_000, "A2": 20_000}[checkpoint.lane]
+        for position, token in enumerate(task.teacher_tokens):
+            allowed = tuple(typed_program._TOKEN_TO_ID[spec.token] for spec in state.allowed())
+            winner = typed_program._TOKEN_TO_ID[token]
+            currents = tuple(2.0 if cell == winner else 1.0 for cell in allowed)
+            value = float(lane_offset + task.opaque_ordinal * 100 + position + 1)
+            races.append(
+                ProgramRaceAudit(
+                    accepted_token=token,
+                    winner_cell_id=winner,
+                    spike_time_ms=1.0,
+                    simulated_steps=1,
+                    prefix_sha256=sha256(
+                        json.dumps(prefix, separators=(",", ":")).encode()
+                    ).hexdigest(),
+                    allowed_cell_ids=allowed,
+                    allowed_output_currents_pa=currents,
+                    excluded_cell_ids=(),
+                    output_current_sha256="7" * 64,
+                    eligibility_bytes=struct.pack("<128d", *([value] * 128)),
+                )
+            )
+            state.consume(typed_program._SPEC_BY_TOKEN[token])
+            prefix.append(token)
+        return Completion(
+            program=Program(task.teacher_tokens, task.signature),
+            races=tuple(races),
+            prompt_sha256=sha256(prompt.encode()).hexdigest(),
+            model_input_sha256=sha256(
+                typed_program._token_stream_bytes(
+                    typed_program._model_input(
+                        prompt,
+                        task.signature,
+                        framing_order=typed_program.Layer1Protocol.for_lane(
+                            checkpoint.lane
+                        ).framing_order,
+                    )
+                )
+            ).hexdigest(),
+            checkpoint_sha256=checkpoint.sha256,
+            checkpoint_cell_synapse_before=checkpoint.cell_synapse_sha256,
+            checkpoint_cell_synapse_after=checkpoint.cell_synapse_sha256,
+        )
+
+    checkpoints = {lane.lane: Checkpoint(lane.lane) for lane in protocol.lanes}
+    sealed = seal_all_lane_completions(
+        protocol,
+        checkpoints,
+        complete_fn=perfect_completion,
+    )
+    checkpoint_hashes = {lane: checkpoint.sha256 for lane, checkpoint in checkpoints.items()}
+    checkpoint_cell_hashes = {
+        lane: checkpoint.cell_synapse_sha256 for lane, checkpoint in checkpoints.items()
+    }
+    evaluation = score_sealed_completions(
+        protocol,
+        sealed,
+        checkpoint_sha256s=checkpoint_hashes,
+        checkpoint_cell_synapse_sha256s=checkpoint_cell_hashes,
+    )
+
+    assert evaluation.a2_eligible is True
+    assert evaluation.a2_metrics.train_replay_tasks == 42
+    assert evaluation.a2_metrics.train_cases == 126
+    assert evaluation.a2_metrics.calibration_replay_tasks == 18
+    assert evaluation.a2_metrics.calibration_cases == 54
+    assert evaluation.a2_metrics.decision_collision_count == 0
+    assert evaluation.a2_metrics.competitive_train_margin_count > 0
+    assert evaluation.a2_metrics.minimum_train_target_margin_pa == 1.0
+
+    def replace_record(
+        item_index: int,
+        mutate: object,
+    ) -> tuple[object, ...]:
+        items = list(sealed)
+        record = json.loads(items[item_index].record_bytes.decode("utf-8"))
+        mutate(record)
+        raw = json.dumps(
+            record,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+        items[item_index] = replace(
+            items[item_index],
+            record_bytes=raw,
+            sha256=sha256(raw).hexdigest(),
+        )
+        return tuple(items)
+
+    bad_model_input = replace_record(
+        0,
+        lambda record: record.__setitem__("model_input_sha256", "0" * 64),
+    )
+    bad_program_digest = replace_record(
+        0,
+        lambda record: record["program"].__setitem__("sha256", "0" * 64),
+    )
+    bad_outer_cohort = list(sealed)
+    bad_outer_cohort[0] = replace(bad_outer_cohort[0], cohort="CALIBRATION")
+
+    bad_expected_cell_hashes = dict(checkpoint_cell_hashes)
+    bad_expected_cell_hashes["A0"] = "0" * 64
+    common_arguments = {
+        "checkpoint_sha256s": checkpoint_hashes,
+        "checkpoint_cell_synapse_sha256s": checkpoint_cell_hashes,
+    }
+    assert (
+        score_sealed_completions(protocol, bad_model_input, **common_arguments).a2_eligible is False
+    )
+    assert (
+        score_sealed_completions(protocol, bad_program_digest, **common_arguments).a2_eligible
+        is False
+    )
+    assert (
+        score_sealed_completions(protocol, tuple(bad_outer_cohort), **common_arguments).a2_eligible
+        is False
+    )
+    assert (
+        score_sealed_completions(
+            protocol,
+            sealed,
+            checkpoint_sha256s=checkpoint_hashes,
+            checkpoint_cell_synapse_sha256s=bad_expected_cell_hashes,
+        ).a2_eligible
+        is False
+    )

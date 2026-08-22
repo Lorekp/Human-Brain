@@ -289,6 +289,13 @@ tasks compiled, but both emitted the exact one-token TRAIN identity stream
 `variable-0`; five of six semantic cases failed. No retry, tuning, growth, or
 replacement occurred. See `docs/typed-program-public-dev-v1-results.md`.
 
+The live TRAIN-v1 and DEV-v1 loaders, runners, CLIs, and execution-only tests
+were retired when incompatible Layer-1 v4 replaced v3. The byte-exact
+protocols, checkpoint, evidence, and result reports above remain historical
+records, and their bound commits remain the reproducibility anchors. DEV v1 is
+retired permanently and is not a tuning set. The unexecuted v4 A0/A1/A2 stage
+is frozen in `docs/typed-composition-a012-v1.md`.
+
 ## Reproducibility artifacts
 
 Hashes below identify the canonical LF-normalized file bytes stored in Git,

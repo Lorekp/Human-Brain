@@ -188,6 +188,10 @@ teacher-free public DEV gate honestly scored 0/2: both unseen prompts emitted
 the one-token TRAIN identity program `variable-0`. This is memorization and a
 failure of prompt-conditioned composition, not generalization. See
 `docs/typed-program-public-dev-v1-results.md` for the immutable result.
+The obsolete Layer-1 v3 TRAIN/DEV loaders and CLIs are retired; their exact
+protocols, artifacts, evidence, and reports remain historical records anchored
+to their original commits. The unexecuted incompatible v4 A0/A1/A2 increment
+is specified in `docs/typed-composition-a012-v1.md`.
 The implemented scalar Layer-0 plumbing slice is documented separately in
 `docs/cell-program-layer0.md`; its public composition definitions were
 committed and read but have never been executed or scored.

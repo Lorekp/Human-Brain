@@ -1,0 +1,174 @@
+{
+  "protocol_id": "humanbrain-typed-composition-a012-v1",
+  "base_commit": "9ee5fb7fa1277001c1a8e386d6ddfcdb3250923d",
+  "corpus_passes": 3,
+  "identifier": {
+    "algorithm": "sha256-domain-nul-u16be-mod-alphabet",
+    "domain": "humanbrain/typed-composition/v1/entry-point",
+    "alphabet": "bcdfghjklmnpqrstvwxyz",
+    "prefix": "q_",
+    "body_length": 9
+  },
+  "task_order_domain": "humanbrain/typed-composition/v1/task-order",
+  "literals": [-9, -7, -5, -3, -1, 0, 2, 4, 6, 8],
+  "calibration_literals": [-7, -1, 2, 8],
+  "templates": {
+    "scalar_add": {
+      "even": "For an integer, add {k}.",
+      "odd": "Increase an integer by {k}."
+    },
+    "scalar_input_minus_literal": {
+      "even": "For an integer, subtract {k}.",
+      "odd": "Decrease an integer by {k}."
+    },
+    "scalar_literal_minus_input": {
+      "even": "Subtract an integer from {k}.",
+      "odd": "Compute {k} minus an integer."
+    },
+    "list_add": {
+      "even": "Add {k} to each integer in the list.",
+      "odd": "Increase every integer in the list by {k}."
+    }
+  },
+  "identity_prompts": {
+    "train_scalar": "Preserve the supplied integer unchanged.",
+    "train_list": "Pass through the supplied integer list unchanged.",
+    "calibration_scalar": "Keep the given integer exactly as it is.",
+    "calibration_list": "Keep every integer in the given list as it is."
+  },
+  "lanes": [
+    {
+      "lane": "A0",
+      "diagnostic_only": true,
+      "eligible": false,
+      "framing_order": "prompt/context-delimiter/canonical-signature/input-delimiter",
+      "supervision_scope": "all-next-token-targets"
+    },
+    {
+      "lane": "A1",
+      "diagnostic_only": true,
+      "eligible": false,
+      "framing_order": "canonical-signature/context-delimiter/prompt/input-delimiter",
+      "supervision_scope": "all-next-token-targets"
+    },
+    {
+      "lane": "A2",
+      "diagnostic_only": false,
+      "eligible": true,
+      "framing_order": "canonical-signature/context-delimiter/prompt/input-delimiter",
+      "supervision_scope": "program-token-targets-only"
+    }
+  ],
+  "expected_accounting": {
+    "train_task_count": 42,
+    "calibration_task_count": 18,
+    "train_case_count": 126,
+    "calibration_case_count": 54,
+    "teacher_targets_per_pass": 272,
+    "framing_tokens_per_pass": 8484,
+    "observations_per_pass": 8714,
+    "corpus_passes": 3,
+    "a2_strengthen_calls": 816,
+    "a0_a1_strengthen_calls": 26142,
+    "observation_calls_per_lane": 26142
+  },
+  "diagnostics": {
+    "state_sample": "the exact 128-float64 eligibility vector immediately before each emitted-token race",
+    "state_bytes": "little-endian IEEE-754 float64 C-order bytes; exactly 1024 bytes per sample",
+    "first_decision_pair_set": "all unordered TRAIN task pairs with the same typed result and different first teacher token",
+    "state_separation_formula": "1-cosine(e_i,e_j); both-zero=0 and exactly-one-zero=1",
+    "state_separation_aggregation": "report count, minimum, p10, median, and mean separately for Int and List[Int] pairs",
+    "state_separation_hypothesis": "A1 exceeds A0 at p10 and median in both type strata; diagnostic only and never an A2 veto",
+    "fading_pair_set": "the final committed raw prompt byte of every TRAIN task paired with its first program-token decision",
+    "fading_formula": "direct eligibility retention exp(-(token_distance*5ms)/80ms)",
+    "fading_aggregation": "report the exact token-distance set plus count, minimum, p10, median, and mean retention separately for Int and List[Int] tasks",
+    "fading_hypothesis": "A1 direct retention exceeds A0 at p10 and median in both type strata; diagnostic only and never an A2 veto",
+    "prompt_last_temporal_distance_tokens": {
+      "A0_Int": 153,
+      "A0_List_Int": 227,
+      "A1_Int": 1,
+      "A1_List_Int": 1,
+      "A2_Int": 1,
+      "A2_List_Int": 1
+    },
+    "prompt_last_temporal_distance_ms": {
+      "A0_Int": 765,
+      "A0_List_Int": 1135,
+      "A1_Int": 5,
+      "A1_List_Int": 5,
+      "A2_Int": 5,
+      "A2_List_Int": 5
+    },
+    "target_margin_pair_set": "every competitive TRAIN teacher position in a sealed A2 exact-replay completion",
+    "target_margin_formula": "current(expected target)-max current(other allowed target), in pA",
+    "target_margin_aggregation": "report count, minimum, p10, median, and mean; minimum must be strictly positive"
+  },
+  "eligibility_gates": {
+    "completion_phase": "seal all A0, A1, and A2 TRAIN and calibration completions before any label, case, family, or template scoring",
+    "a2_train_replay": "42/42 tasks",
+    "a2_train_cases": "126/126 cases",
+    "a2_calibration_replay": "18/18 tasks",
+    "a2_calibration_cases": "54/54 cases",
+    "decision_collision": "reject if exact eligibility bytes repeat for the same allowed-cell set at decisions with different expected targets",
+    "target_margin": "all competitive TRAIN A2 target margins are finite and strictly positive",
+    "mandatory_common": [
+      "protocol-integrity",
+      "source-bundle-integrity",
+      "cell-race-integrity",
+      "checkpoint-cell-synapse-immutability",
+      "checkpoint-raw-byte-immutability",
+      "completion-attempt-accounting",
+      "observation-and-strengthen-accounting",
+      "exclusive-evidence-creation"
+    ]
+  },
+  "future_cohort": {
+    "generated": false,
+    "task_count": 16,
+    "factor_counts": {
+      "map_input_minus_literal": 6,
+      "map_literal_minus_input": 6,
+      "scalar_subtract_controls": 2,
+      "map_add_controls": 2
+    },
+    "forbidden_sources": ["DEV-v1", "hidden", "canonical", "Fly-Brain"],
+    "seed_creation_preconditions": [
+      "A2 passes every frozen TRAIN and calibration capability and integrity gate",
+      "this protocol and its complete source bundle are committed and reviewed",
+      "a new public seed is generated once and anchored before any task bytes are materialized",
+      "no benchmark result or task label is used to choose, retry, repair, or resume the cohort"
+    ]
+  },
+  "source_bundle_paths": [
+    "benchmarks/typed_composition_protocol_v1.json",
+    "benchmarks/typed_composition.py",
+    "src/humanbrain/typed_composition.py",
+    "src/humanbrain/typed_composition_runner.py",
+    "src/humanbrain/typed_program.py",
+    "src/humanbrain/typed_program_types.py",
+    "src/humanbrain/recurrent.py",
+    "src/humanbrain/recurrent_state.py",
+    "src/humanbrain/cells.py",
+    "src/humanbrain/human_cell_identity.py",
+    "src/humanbrain/native.py",
+    "src/humanbrain/readout.py",
+    "src/humanbrain/topology.py",
+    "src/humanbrain/cuda.py",
+    "src/humanbrain/_native_src/Cargo.toml",
+    "src/humanbrain/_native_src/Cargo.lock",
+    "src/humanbrain/_native_src/src/lib.rs",
+    "src/humanbrain/_native_src/src/cuda.cu"
+  ],
+  "execution": {
+    "default_mode": "plan",
+    "execute_requires": "--execute --confirm-protocol-sha256 EXACT_RAW_SHA256 --confirm-source-bundle-sha256 EXACT_REVIEWED_SOURCE_BUNDLE_SHA256 --run-id UNIQUE_ID",
+    "runtime_backend": "native CPU for all three 128-cell lanes; HUMANBRAIN_DEVICE=cuda is rejected",
+    "runtime_binary_evidence": "hash the exact loaded source-addressed native library after every lane and after all completions; require byte identity",
+    "evidence_mode": "exclusive create; refuse if the run directory or any evidence target exists",
+    "failure_policy": "preserve every partial artifact and terminal failure record",
+    "resume_policy": "no resume and no rerun under the same run identifier",
+    "development_policy": "DEV-v1 is retired and must never be rerun or used for tuning",
+    "selection_policy": "A0 and A1 are diagnostic only; A2 is the sole eligible lane; no winner selection among trained variants",
+    "run_hold": "No material TRAIN, calibration, or future-cohort execution is authorized by this protocol freeze."
+  }
+}

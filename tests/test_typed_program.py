@@ -65,6 +65,7 @@ def test_frozen_checkpoint_can_only_be_constructed_from_raw_bytes() -> None:
             training_digest="0" * 64,
             training_input_sha256=("0" * 64,),
             training_sequence_token_counts=(2,),
+            training_teacher_token_counts=(1,),
             cell_synapse_sha256="0" * 64,
             protocol_sha256="0" * 64,
             _bytes=b"{}",
@@ -114,6 +115,12 @@ def test_complete_rejects_forged_checkpoint_derived_fields() -> None:
 
     with pytest.raises(ValueError, match="derived fields do not match"):
         complete(forged_counts, "Return the integer.", signature)
+
+    forged_teacher_counts = FrozenCheckpoint.from_bytes(checkpoint.to_bytes())
+    object.__setattr__(forged_teacher_counts, "training_teacher_token_counts", (2,))
+
+    with pytest.raises(ValueError, match="derived fields do not match"):
+        complete(forged_teacher_counts, "Return the integer.", signature)
 
 
 def test_complete_rejects_noncanonical_checkpoint_bytes() -> None:
@@ -196,13 +203,96 @@ def test_checkpoint_records_sequences_separately_from_cell_presentations() -> No
     )
     record = json.loads(checkpoint.to_bytes().decode("utf-8"))
 
-    assert record["format"] == "humanbrain-layer1-typed-program-v3"
+    assert record["format"] == "humanbrain-layer1-typed-program-v4"
     assert record["training_sequence_token_counts"] == [170]
+    assert record["training_teacher_token_counts"] == [1]
     assert checkpoint.training_sequence_token_counts == (170,)
-    assert record["circuit"]["metadata"]["growth_examples"] == 507
+    assert checkpoint.training_teacher_token_counts == (1,)
+    assert record["circuit"]["metadata"]["growth_examples"] == 3
 
 
-def test_checkpoint_v3_requires_the_exact_sequence_count_field() -> None:
+def test_a0_a1_a2_freeze_only_preregistered_framing_and_target_differences() -> None:
+    a0 = Layer1Protocol.for_lane("A0")
+    a1 = Layer1Protocol.for_lane("A1")
+    a2 = Layer1Protocol.for_lane("A2")
+
+    assert a0.lane == "A0"
+    assert a0.framing_order == "prompt/context-delimiter/canonical-signature/input-delimiter"
+    assert a0.supervision_scope == "all-next-token-targets"
+    assert a1.lane == "A1"
+    assert a1.framing_order == a2.framing_order
+    assert a1.supervision_scope == "all-next-token-targets"
+    assert a2.lane == "A2"
+    assert a2.supervision_scope == "program-token-targets-only"
+
+    a0_record = json.loads(typed_program._protocol_json(a0).decode("utf-8"))
+    a1_record = json.loads(typed_program._protocol_json(a1).decode("utf-8"))
+    a2_record = json.loads(typed_program._protocol_json(a2).decode("utf-8"))
+    for record in (a0_record, a1_record, a2_record):
+        record.pop("lane")
+        record.pop("framing_order")
+        record.pop("supervision_scope")
+    assert a0_record == a1_record == a2_record
+
+
+def test_a1_and_a2_observe_identical_states_but_a2_strengthens_only_program_targets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signature = TypedSignature(
+        entry_point="q_bcdfghjkl",
+        parameters=(ProgramParameter("datum", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    example = Example(
+        prompt="Increase an integer by 2.",
+        signature=signature,
+        teacher_tokens=("add", "variable-0", "integer", "+", "2", "end"),
+    )
+    original_observe = typed_program.RecurrentCellCircuit.observe
+    original_strengthen = typed_program.RecurrentCellCircuit.strengthen
+    lane_calls: dict[str, tuple[list[int], list[bytes], list[int]]] = {}
+
+    for lane in ("A1", "A2"):
+        observed: list[int] = []
+        state_bytes: list[bytes] = []
+        strengthened: list[int] = []
+
+        def observe(
+            circuit: typed_program.RecurrentCellCircuit,
+            token_id: int,
+            observed: list[int] = observed,
+            state_bytes: list[bytes] = state_bytes,
+        ) -> object:
+            step = original_observe(circuit, token_id)
+            observed.append(token_id)
+            state_bytes.append(circuit.eligibility.tobytes())
+            return step
+
+        def strengthen(
+            circuit: typed_program.RecurrentCellCircuit,
+            target_token_id: int,
+            strengthened: list[int] = strengthened,
+        ) -> None:
+            strengthened.append(target_token_id)
+            original_strengthen(circuit, target_token_id)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(typed_program.RecurrentCellCircuit, "observe", observe)
+            patch.setattr(typed_program.RecurrentCellCircuit, "strengthen", strengthen)
+            checkpoint = grow(Layer1Protocol.for_lane(lane), (example,))
+        lane_calls[lane] = (observed, state_bytes, strengthened)
+        assert checkpoint.lane == lane
+
+    a1_observed, a1_states, a1_strengthened = lane_calls["A1"]
+    a2_observed, a2_states, a2_strengthened = lane_calls["A2"]
+    assert a1_observed == a2_observed
+    assert a1_states == a2_states
+    assert len(a1_strengthened) == len(a1_observed)
+    assert len(a2_strengthened) == 3 * len(example.teacher_tokens)
+    assert a2_strengthened == list(typed_program._program_token_ids(example.teacher_tokens)) * 3
+
+
+def test_checkpoint_v4_requires_exact_sequence_and_teacher_count_fields() -> None:
     signature = TypedSignature(
         entry_point="identity",
         parameters=(ProgramParameter("value", ProgramType.Int()),),
@@ -221,12 +311,14 @@ def test_checkpoint_v3_requires_the_exact_sequence_count_field() -> None:
     valid_record = json.loads(checkpoint.to_bytes().decode("utf-8"))
     missing = copy.deepcopy(valid_record)
     del missing["training_sequence_token_counts"]
+    missing_teacher = copy.deepcopy(valid_record)
+    del missing_teacher["training_teacher_token_counts"]
     extra = copy.deepcopy(valid_record)
     extra["training_sequence_lengths"] = [170]
     legacy = copy.deepcopy(valid_record)
-    legacy["format"] = "humanbrain-layer1-typed-program-v2"
+    legacy["format"] = "humanbrain-layer1-typed-program-v3"
 
-    for malformed in (missing, extra):
+    for malformed in (missing, missing_teacher, extra):
         with pytest.raises(ValueError, match="must contain exactly"):
             FrozenCheckpoint.from_bytes(_canonical_checkpoint_bytes(malformed))
     with pytest.raises(ValueError, match="unsupported frozen checkpoint format"):
@@ -253,7 +345,7 @@ def test_checkpoint_rejects_hash_consistent_growth_count_forgery() -> None:
     forged["circuit"]["metadata"]["growth_examples"] = 1_000_000
     _rehash_checkpoint_circuit(forged)
 
-    with pytest.raises(ValueError, match="growth count differs from training sequence tokens"):
+    with pytest.raises(ValueError, match="growth count differs from teacher token targets"):
         FrozenCheckpoint.from_bytes(_canonical_checkpoint_bytes(forged))
 
 
@@ -294,15 +386,13 @@ def test_protocol_commits_growth_and_complete_pinned_human_cell_identity() -> No
         "voltage_reset_scale": 1.669558016548051,
     }
 
-    assert protocol.protocol_version == "humanbrain-layer1-typed-program-v3"
+    assert protocol.protocol_version == "humanbrain-layer1-typed-program-v4"
     assert protocol.growth_epochs == 3
     assert protocol.allen_glif5_config_sha256 == HUMAN_GLIF5_IDENTITY.config_sha256
     assert protocol.allen_glif5_parameters == AllenGlif5Parameters()
     assert record["format"] == protocol.protocol_version
     assert record["protocol"]["growth_epochs"] == 3
-    assert record["protocol"]["allen_glif5_config_sha256"] == (
-        protocol.allen_glif5_config_sha256
-    )
+    assert record["protocol"]["allen_glif5_config_sha256"] == (protocol.allen_glif5_config_sha256)
     assert record["protocol"]["allen_glif5_parameters"] == expected_parameters
     assert record["protocol"]["max_training_examples"] == 256
     assert record["protocol"]["max_checkpoint_bytes"] == 2_097_152
@@ -365,6 +455,11 @@ def test_layer1_int_program_grows_completes_and_compiles_through_cell_races() ->
 
     assert completion.program.tokens == teacher
     assert completion.race_count == len(teacher)
+    assert all(len(race.eligibility_bytes) == 128 * 8 for race in completion.races)
+    assert all(
+        len(race.allowed_output_currents_pa) == len(race.allowed_cell_ids)
+        for race in completion.races
+    )
     assert completion.prompt_sha256 == sha256(b"Increment the integer.").hexdigest()
     assert compile(completion.program).source == ("def increment(value):\n    return value + 1\n")
 
@@ -400,6 +495,26 @@ def test_generic_map_composes_a_typed_binder_and_list_argument() -> None:
     )
 
 
+def test_subtract_is_a_general_binary_int_primitive_with_literal_operand_order() -> None:
+    signature = TypedSignature(
+        entry_point="difference",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+
+    input_first = Program(
+        ("subtract", "variable-0", "integer", "+", "7", "end"),
+        signature,
+    )
+    literal_first = Program(
+        ("subtract", "integer", "+", "7", "end", "variable-0"),
+        signature,
+    )
+
+    assert compile(input_first).source == "def difference(value):\n    return value - 7\n"
+    assert compile(literal_first).source == "def difference(value):\n    return 7 - value\n"
+
+
 def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -420,6 +535,7 @@ def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
     changed_array_data = ("A" if array_data[0] != "A" else "B") + array_data[1:]
     input_digest = valid_record["training_input_sha256"][0]
     sequence_token_count = valid_record["training_sequence_token_counts"][0]
+    teacher_token_count = valid_record["training_teacher_token_counts"][0]
     mutations = (
         (
             "object dtype",
@@ -529,6 +645,42 @@ def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
             [sequence_token_count, sequence_token_count],
             "one count per training input digest",
         ),
+        (
+            "empty training teacher counts",
+            ("training_teacher_token_counts",),
+            [],
+            "at least one training teacher token count",
+        ),
+        (
+            "too many training teacher counts",
+            ("training_teacher_token_counts",),
+            [teacher_token_count] * 257,
+            "at most 256 training teacher token counts",
+        ),
+        (
+            "noninteger training teacher count",
+            ("training_teacher_token_counts",),
+            [True],
+            "must be integers",
+        ),
+        (
+            "empty teacher token stream",
+            ("training_teacher_token_counts",),
+            [0],
+            "at least one token",
+        ),
+        (
+            "teacher count missing its input digest",
+            ("training_teacher_token_counts",),
+            [teacher_token_count, teacher_token_count],
+            "one teacher count per training input digest",
+        ),
+        (
+            "teacher consumes the entire sequence",
+            ("training_teacher_token_counts",),
+            [sequence_token_count],
+            "smaller than sequence count",
+        ),
     )
 
     def forbidden_restore(*_args: object, **_kwargs: object) -> object:
@@ -568,13 +720,13 @@ def test_checkpoint_round_trip_preserves_framed_prompt_signature_audit() -> None
     restored = FrozenCheckpoint.from_bytes(checkpoint.to_bytes())
     record = json.loads(restored.to_bytes().decode("utf-8"))
     token_order = tuple(item["token"] for item in record["protocol"]["primitive_table"])
-    prompt_signature_delimiter = 256 + token_order.index("prompt-signature-delimiter")
+    context_delimiter = 256 + token_order.index("context-delimiter")
     input_delimiter = 256 + token_order.index("input-delimiter")
     signature_bytes = _canonical_checkpoint_bytes(signature.to_record())
     framed_ids = (
-        *signature_text.encode("utf-8"),
-        prompt_signature_delimiter,
         *signature_bytes,
+        context_delimiter,
+        *signature_text.encode("utf-8"),
         input_delimiter,
     )
     framed_bytes = b"".join(token_id.to_bytes(2, "big") for token_id in framed_ids)
@@ -589,7 +741,9 @@ def test_checkpoint_round_trip_preserves_framed_prompt_signature_audit() -> None
     assert restored.to_bytes() == checkpoint.to_bytes()
     assert restored.training_input_sha256 == (sha256(framed_bytes).hexdigest(),)
     assert restored.training_sequence_token_counts == (299,)
+    assert restored.training_teacher_token_counts == (1,)
     assert record["training_sequence_token_counts"] == [299]
+    assert record["training_teacher_token_counts"] == [1]
     assert restored.training_input_sha256 != (sha256(unframed_bytes).hexdigest(),)
     completion = complete(restored, signature_text, signature)
     assert completion.model_input_sha256 == restored.training_input_sha256[0]

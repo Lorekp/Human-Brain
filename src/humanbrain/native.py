@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import ctypes
 import hashlib
+import json
 import os
 import platform
 import subprocess
 import tempfile
 import threading
 from collections.abc import Iterable
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -88,6 +90,22 @@ class NativeBuildInfo:
     library_path: Path
 
 
+@dataclass(frozen=True, slots=True)
+class NativeLibraryIdentity:
+    """Portable identity of the exact attested native bytes in this process."""
+
+    source_digest: str
+    binary_size: int
+    binary_sha256: str
+
+    def to_record(self) -> dict[str, int | str]:
+        return {
+            "binary_sha256": self.binary_sha256,
+            "binary_size": self.binary_size,
+            "source_digest": self.source_digest,
+        }
+
+
 def _framed_sha256(namespace: str, entries: Iterable[tuple[str, bytes]]) -> str:
     digest = hashlib.sha256()
     namespace_bytes = namespace.encode("utf-8")
@@ -162,6 +180,108 @@ def _default_cache_root() -> Path:
     return Path(tempfile.gettempdir()) / "humanbrain-native"
 
 
+def _identity_manifest_path(library_path: Path) -> Path:
+    return library_path.with_name(library_path.name + ".identity.json")
+
+
+def _hash_native_library(
+    library_path: Path,
+    source_digest: str,
+) -> NativeLibraryIdentity:
+    digest = hashlib.sha256()
+    binary_size = 0
+    try:
+        with library_path.open("rb") as handle:
+            while True:
+                chunk = handle.read(1024 * 1024)
+                if not chunk:
+                    break
+                binary_size += len(chunk)
+                digest.update(chunk)
+    except OSError as error:
+        raise NativeBuildError("native library bytes cannot be read") from error
+    if binary_size == 0:
+        raise NativeBuildError("native library is empty")
+    return NativeLibraryIdentity(
+        source_digest=source_digest,
+        binary_size=binary_size,
+        binary_sha256=digest.hexdigest(),
+    )
+
+
+def _identity_bytes(identity: NativeLibraryIdentity) -> bytes:
+    return json.dumps(
+        identity.to_record(),
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def _publish_identity_manifest(
+    library_path: Path,
+    identity: NativeLibraryIdentity,
+) -> None:
+    manifest = _identity_manifest_path(library_path)
+    temporary = manifest.with_name(f".{manifest.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(_identity_bytes(identity))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, manifest)
+    except OSError as error:
+        with suppress(OSError):
+            temporary.unlink(missing_ok=True)
+        raise NativeBuildError("native identity manifest cannot be published") from error
+
+
+def _attested_library_identity(
+    library_path: Path,
+    source_digest: str,
+) -> NativeLibraryIdentity:
+    resolved = library_path.resolve()
+    if len(resolved.parents) < 2 or resolved.parents[1].name != source_digest:
+        raise NativeBuildError("native library is outside its source-addressed cache")
+    manifest_path = _identity_manifest_path(resolved)
+    try:
+        with manifest_path.open("rb") as handle:
+            raw_manifest = handle.read(4097)
+    except OSError as error:
+        raise NativeBuildError("native library has no readable integrity manifest") from error
+    if len(raw_manifest) > 4096:
+        raise NativeBuildError("native library integrity manifest is oversized")
+    try:
+        record = json.loads(raw_manifest.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise NativeBuildError("native library integrity manifest is invalid") from error
+    if not isinstance(record, dict) or frozenset(record) != frozenset(
+        {"source_digest", "binary_size", "binary_sha256"}
+    ):
+        raise NativeBuildError("native library integrity manifest fields differ")
+    if (
+        not isinstance(record["source_digest"], str)
+        or record["source_digest"] != source_digest
+        or type(record["binary_size"]) is not int
+        or record["binary_size"] <= 0
+        or not isinstance(record["binary_sha256"], str)
+        or len(record["binary_sha256"]) != 64
+        or any(character not in "0123456789abcdef" for character in record["binary_sha256"])
+    ):
+        raise NativeBuildError("native library integrity manifest values differ")
+    expected = NativeLibraryIdentity(
+        source_digest=record["source_digest"],
+        binary_size=record["binary_size"],
+        binary_sha256=record["binary_sha256"],
+    )
+    if raw_manifest != _identity_bytes(expected):
+        raise NativeBuildError("native library integrity manifest is not canonical")
+    actual = _hash_native_library(resolved, source_digest)
+    if actual != expected:
+        raise NativeBuildError("native library integrity check failed")
+    return actual
+
+
 def build_native(cache_root: str | Path | None = None, *, force: bool = False) -> NativeBuildInfo:
     """Build the Rust kernel into a content-addressed cache and return its path."""
     source_digest = _source_digest()
@@ -169,6 +289,7 @@ def build_native(cache_root: str | Path | None = None, *, force: bool = False) -
     target_root = root / source_digest
     library_path = target_root / "release" / _library_filename()
     if library_path.is_file() and not force:
+        _attested_library_identity(library_path, source_digest)
         return NativeBuildInfo(source_digest, library_path)
 
     target_root.mkdir(parents=True, exist_ok=True)
@@ -198,6 +319,9 @@ def build_native(cache_root: str | Path | None = None, *, force: bool = False) -
     if completed.returncode != 0 or not library_path.is_file():
         detail = completed.stderr.strip() or completed.stdout.strip() or "Cargo produced no library"
         raise NativeBuildError(f"native human-cell kernel build failed: {detail}")
+    identity = _hash_native_library(library_path, source_digest)
+    _publish_identity_manifest(library_path, identity)
+    _attested_library_identity(library_path, source_digest)
     return NativeBuildInfo(source_digest, library_path)
 
 
@@ -209,6 +333,10 @@ def _load_library() -> ctypes.CDLL:
         if _LIBRARY is not None:
             return _LIBRARY
         build = build_native()
+        identity_before_load = _attested_library_identity(
+            build.library_path,
+            build.source_digest,
+        )
         try:
             library = ctypes.CDLL(str(build.library_path))
         except OSError as error:
@@ -342,6 +470,11 @@ def _load_library() -> ctypes.CDLL:
             _F64_POINTER,
         ]
         library.humanbrain_sparse_structural_turnover.restype = ctypes.c_uint32
+        if (
+            _attested_library_identity(build.library_path, build.source_digest)
+            != identity_before_load
+        ):
+            raise NativeBuildError("native library bytes changed while loading")
         _LIBRARY = library
         _LIBRARY_PATH = build.library_path
         return library
@@ -349,9 +482,16 @@ def _load_library() -> ctypes.CDLL:
 
 def loaded_build_info() -> NativeBuildInfo:
     """Return the source digest and loaded library path, building if necessary."""
-    _load_library()
+    loaded_library_identity()
     assert _LIBRARY_PATH is not None
     return NativeBuildInfo(_source_digest(), _LIBRARY_PATH)
+
+
+def loaded_library_identity() -> NativeLibraryIdentity:
+    """Rehash and verify the exact source-addressed library loaded by this process."""
+    _load_library()
+    assert _LIBRARY_PATH is not None
+    return _attested_library_identity(_LIBRARY_PATH, _source_digest())
 
 
 def _f64(array: np.ndarray) -> _F64_POINTER:
@@ -855,9 +995,7 @@ class NativeSparseCellReadout:
         trace_decay = _unit_interval("trace decay", trace_decay)
         target_post_gate = _unit_interval("target post gate", target_post_gate)
         winner_post_gate = _unit_interval("winner post gate", winner_post_gate)
-        activity_decay = _unit_interval(
-            "activity decay", activity_decay, open_interval=True
-        )
+        activity_decay = _unit_interval("activity decay", activity_decay, open_interval=True)
         result = int(
             self._library.humanbrain_sparse_three_factor_update(
                 self._reservoir_cells,
@@ -909,9 +1047,7 @@ class NativeSparseCellReadout:
             raise ValueError("structural event must be nonnegative")
         if minimum_age < 0 or minimum_age > np.iinfo(np.uint32).max:
             raise ValueError("minimum age must fit uint32")
-        turnover_probability = _unit_interval(
-            "turnover probability", turnover_probability
-        )
+        turnover_probability = _unit_interval("turnover probability", turnover_probability)
         learning_rate_pa = _positive_scalar("learning rate", learning_rate_pa)
         maximum_weight_pa = _positive_scalar("maximum weight", maximum_weight_pa)
         homeostatic_rate = _finite_scalar("homeostatic rate", homeostatic_rate)

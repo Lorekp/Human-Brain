@@ -1,6 +1,13 @@
 # Typed-program public DEV gate v1
 
-**Status:** executed once; promotion failed at 0/2 pass@1
+**Status:** executed once; promotion failed at 0/2 pass@1; live runner retired
+
+The raw protocols, committed TRAIN artifact, DEV evidence, and result report
+remain immutable historical records. Layer-1 v4 deliberately removed the v3
+checkpoint loader and both v1 execution CLIs. The bound historical commits are
+the reproducibility anchors; DEV v1 will never be rerun or used for tuning.
+The current unexecuted increment is specified in
+[`typed-composition-a012-v1.md`](typed-composition-a012-v1.md).
 
 This is the one-shot public development gate for the frozen typed-program
 TRAIN result. It opens exactly the two teacher-free development definitions
@@ -49,21 +56,13 @@ preflight and each later raw-immutability audit.
 The DEV protocol contains no teacher-token field. Its loader requires these
 records to equal the two validated definitions from the TRAIN protocol.
 
-## Runner contract
+## Historical runner contract
 
-The public runner is a plan by default:
-
-```powershell
-python benchmarks/typed_program_public_dev.py
-```
-
-Planning makes zero checkpoint restores and zero completion calls, writes
-nothing, and rejects an existing fixed DEV evidence root. The only authorized
-execution form is:
-
-```powershell
-python benchmarks/typed_program_public_dev.py --execute --protocol-sha256 c7be743617c5fbc090891275f77a636bf1a7a6a89d27a1d1e7cf0e889d19ae56
-```
+The retired public runner was a plan by default. Planning made zero checkpoint
+restores and zero completion calls, wrote nothing, and rejected an existing
+fixed DEV evidence root. Its one authorized execution required `--execute`
+plus the exact raw protocol SHA. There is deliberately no current command that
+loads or executes this Layer-1 v3 record.
 
 That command was executed exactly once on 2026-08-22. It used the fixed
 evidence directory

@@ -174,9 +174,11 @@ checkpoint must emit one complete function for family-disjoint hidden coding
 tasks. The implemented Layer-1 typed prefix language lets recurrent fitted-cell
 output races choose semantic program tokens while a frozen deterministic
 grammar and compiler provide syntax-only plumbing—without search, retries, or
-hidden-test feedback. Its smallest public train-only curriculum is
-preregistered but has not been materially run; see
-`docs/typed-program-public-curriculum.md`.
+hidden-test feedback. The historical v1 TRAIN/DEV executables were retired
+after the immutable 0/2 DEV result; their protocols and evidence remain frozen
+and their bound commits are the reproducibility anchors. The incompatible v4
+A0/A1/A2 increment is preregistered but has not been materially run; see
+`docs/typed-composition-a012-v1.md`.
 The raw-Python/compiled-DSL-agnostic completion seam,
 freeze/reserve/anchor/reveal state machine, sealed production runner, and
 pass@1 artifact chain are now implemented, but no canonical freeze or
