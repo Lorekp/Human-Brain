@@ -169,9 +169,12 @@ evaluation seed, bundle, or score exists. See
 `docs/research/cell-program-decoding.md` for the proposed typed direct
 cell-to-program decoder. The recurrent fitted-cell Layer-1 grow/complete/
 compile seam is implemented, and its smallest public train-only curriculum is
-preregistered in `docs/typed-program-public-curriculum.md`. The material TRAIN
-run has not been executed; the two teacher-free, family/template/literal-
-disjoint public development definitions remain completion-unopened and unrun.
+documented in `docs/typed-program-public-curriculum.md`. Its one material TRAIN
+run exactly replayed all three public labels, but the subsequent frozen,
+teacher-free public DEV gate honestly scored 0/2: both unseen prompts emitted
+the one-token TRAIN identity program `variable-0`. This is memorization and a
+failure of prompt-conditioned composition, not generalization. See
+`docs/typed-program-public-dev-v1-results.md` for the immutable result.
 The implemented scalar Layer-0 plumbing slice is documented separately in
 `docs/cell-program-layer0.md`; its public composition definitions were
 committed and read but have never been executed or scored.

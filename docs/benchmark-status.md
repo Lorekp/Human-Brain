@@ -271,24 +271,23 @@ completion attempts. The model exactly replayed all 16 public teacher tokens,
 with 16/16 valid fitted-cell races and every registered task/accounting gate
 passed. The complete run took 1,102,609,000 ns wall time and 3,781,250,000 ns
 process time; summary traced memory was 3,295,589 current and 7,506,071 peak
-bytes. Development completion remained unopened with run count zero.
+bytes. Development completion remained unopened during that TRAIN run.
 
-This is **memorization only, not generalization**. The next step is a separate
-one-shot teacher-free public development run from the frozen checkpoint, with
-no growth, retry, tuning, or replacement. See
+This is **memorization only, not generalization**. See
 `docs/typed-program-public-train-v1-results.md` for the exact evidence hashes,
 metrics, gates, and claim boundary, and
 `docs/typed-program-public-curriculum.md` for the preregistered protocol.
 
-That next step is now preregistered and implemented, but remains unexecuted.
+The separate teacher-free public DEV step was then executed exactly once.
 The exact public DEV protocol SHA-256 is
 `c7be743617c5fbc090891275f77a636bf1a7a6a89d27a1d1e7cf0e889d19ae56`.
 It binds the committed TRAIN artifact at
 `8291fe1a0039db7141817c438854a1817a0a8300`, opens only the two existing
 teacher-free public definitions, and reports exact pass@1 from 0 through 2
-with every failure. Promotion requires at least 1/2 tasks to pass semantics,
-syntax, and compilation without a boundary violation; that milestone is not a
-broad-generalization claim. See `docs/typed-program-public-dev-gate-v1.md`.
+with every failure. The frozen result was **0/2**, so promotion failed. Both
+tasks compiled, but both emitted the exact one-token TRAIN identity stream
+`variable-0`; five of six semantic cases failed. No retry, tuning, growth, or
+replacement occurred. See `docs/typed-program-public-dev-v1-results.md`.
 
 ## Reproducibility artifacts
 
@@ -301,6 +300,7 @@ not a platform-specific checkout's newline representation.
 | `artifacts/typed_program_public_train_v1/checkpoint.json` | `0c2c4fd3e16ab978ae6e25a16beab9d1c84ae867f63bffdad3745c07b68dcb9d` |
 | `artifacts/typed_program_public_train_v1/evidence/005-summary.json` | `71133044d55e48a3bbe5cb147a33ce2f543e0a0dad855ae11e2e1b140b6b02d7` |
 | `benchmarks/typed_program_public_dev_protocol_v1.json` | `c7be743617c5fbc090891275f77a636bf1a7a6a89d27a1d1e7cf0e889d19ae56` |
+| `artifacts/typed_program_public_dev_v1/evidence/003-summary.json` | `9cf93dfa9412af9a2b7b347ef3bc4878b4fa96d76b8fe48aa7b50fea7bd47e09` |
 | `artifacts/swe_sqlfluff_1625_cells.npz` | `bf54b181ce24ff636d84a3e9a712eaf96caceb1ae343299169727f884f2dda91` |
 | `artifacts/swe-dev-expert/sqlfluff__sqlfluff-1625/teacher.traj.json` | `cae6a4dbe8750a8bfe83db1e04103555a4f657ae6ac960cda1f814e761a34a4f` |
 | `artifacts/swe-dev-cell/sqlfluff__sqlfluff-1625/dendritic-v4.traj.json` | `8d7b7ba5b2911573505110f61cc4a457c9b595abb895ac8b8d21027b225e5cd2` |

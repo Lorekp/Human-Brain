@@ -1,6 +1,6 @@
 # Typed-program public DEV gate v1
 
-**Status:** preregistered and implemented; DEV has not been executed
+**Status:** executed once; promotion failed at 0/2 pass@1
 
 This is the one-shot public development gate for the frozen typed-program
 TRAIN result. It opens exactly the two teacher-free development definitions
@@ -65,8 +65,8 @@ execution form is:
 python benchmarks/typed_program_public_dev.py --execute --protocol-sha256 c7be743617c5fbc090891275f77a636bf1a7a6a89d27a1d1e7cf0e889d19ae56
 ```
 
-That command is preregistered here but was not run in this work. An authorized
-run uses the fixed evidence directory
+That command was executed exactly once on 2026-08-22. It used the fixed
+evidence directory
 `artifacts/typed_program_public_dev_v1/evidence`. If its parent exists, the run
 stops. Otherwise it writes only these canonical JSON records:
 
@@ -107,7 +107,7 @@ The primary result is exact semantic pass@1 as an integer from 0 through 2.
 Every failed or not-run gate, completion exception, and failed semantic case is
 reported. There are no retries, replacement attempts, or alternate scores.
 
-The preregistered promotion milestone is at least 1/2 tasks with semantics,
+The preregistered promotion milestone was at least 1/2 tasks with semantics,
 syntax, and compilation all valid and no recorded boundary violation. Meeting
 that small milestone would justify the next capability experiment only. It
 must not be reported as broad generalization.
@@ -119,14 +119,15 @@ does not prove non-memorization or generalization.
 
 ## Expected cost and exclusions
 
-Planning is expected to finish in under one second with zero model calls. An
-authorized execution is estimated at 1–3 minutes with a warm native cache and
-up to 10 minutes for a cold native build, using under 512 MiB process memory.
-These are planning estimates, not measurements.
+Planning was expected to finish in under one second with zero model calls. The
+single execution measured 298,252,300 ns wall time, 234,375,000 ns process
+time, and 7,382,637 peak traced bytes.
 
 This gate performs no teacher-program access, retraining, tuning, retries,
 alternate checkpoint/configuration/seed, search, repair, fallback, Simple-SWE,
 canonical or private evaluation, external language-model call, or additional
 memorization-control completion. Its tests use injected fake restore and
 completion adapters; no real DEV completion was performed while implementing
-or verifying the gate.
+or verifying the gate. The later material result is reported separately in
+`docs/typed-program-public-dev-v1-results.md`; it was not rerun during the
+independent evidence audit.
