@@ -1,0 +1,226 @@
+{
+  "name": "procedural-runtime-profile-v1",
+  "protocol_version": 1,
+  "baseline_commit": "a33d2ffd52e3365fb9e4f93c052453cd55ec8189",
+  "purpose": "A future bounded CPU engineering profile of whether native source-driven work and storage stay dependent on R/Q/S/F/D rather than configured address-space N. This protocol is not evidence that 100 billion cells are resident, updated, or capable.",
+  "execution": {
+    "backend": "cpu-native-rust",
+    "configured_cells": [1000000, 100000000000],
+    "repetitions_per_condition": 8,
+    "fresh_subprocess_per_row": true,
+    "worker_order": [
+      {"ordinal": 0, "repetition": 0, "case": "quiet", "configured_cells": 1000000},
+      {"ordinal": 1, "repetition": 0, "case": "driven", "configured_cells": 1000000},
+      {"ordinal": 2, "repetition": 0, "case": "driven", "configured_cells": 100000000000},
+      {"ordinal": 3, "repetition": 0, "case": "quiet", "configured_cells": 100000000000},
+      {"ordinal": 4, "repetition": 1, "case": "driven", "configured_cells": 1000000},
+      {"ordinal": 5, "repetition": 1, "case": "quiet", "configured_cells": 100000000000},
+      {"ordinal": 6, "repetition": 1, "case": "quiet", "configured_cells": 1000000},
+      {"ordinal": 7, "repetition": 1, "case": "driven", "configured_cells": 100000000000},
+      {"ordinal": 8, "repetition": 2, "case": "quiet", "configured_cells": 100000000000},
+      {"ordinal": 9, "repetition": 2, "case": "driven", "configured_cells": 100000000000},
+      {"ordinal": 10, "repetition": 2, "case": "driven", "configured_cells": 1000000},
+      {"ordinal": 11, "repetition": 2, "case": "quiet", "configured_cells": 1000000},
+      {"ordinal": 12, "repetition": 3, "case": "driven", "configured_cells": 100000000000},
+      {"ordinal": 13, "repetition": 3, "case": "quiet", "configured_cells": 1000000},
+      {"ordinal": 14, "repetition": 3, "case": "quiet", "configured_cells": 100000000000},
+      {"ordinal": 15, "repetition": 3, "case": "driven", "configured_cells": 1000000},
+      {"ordinal": 16, "repetition": 4, "case": "quiet", "configured_cells": 1000000},
+      {"ordinal": 17, "repetition": 4, "case": "quiet", "configured_cells": 100000000000},
+      {"ordinal": 18, "repetition": 4, "case": "driven", "configured_cells": 100000000000},
+      {"ordinal": 19, "repetition": 4, "case": "driven", "configured_cells": 1000000},
+      {"ordinal": 20, "repetition": 5, "case": "driven", "configured_cells": 1000000},
+      {"ordinal": 21, "repetition": 5, "case": "driven", "configured_cells": 100000000000},
+      {"ordinal": 22, "repetition": 5, "case": "quiet", "configured_cells": 1000000},
+      {"ordinal": 23, "repetition": 5, "case": "quiet", "configured_cells": 100000000000},
+      {"ordinal": 24, "repetition": 6, "case": "quiet", "configured_cells": 100000000000},
+      {"ordinal": 25, "repetition": 6, "case": "quiet", "configured_cells": 1000000},
+      {"ordinal": 26, "repetition": 6, "case": "driven", "configured_cells": 1000000},
+      {"ordinal": 27, "repetition": 6, "case": "driven", "configured_cells": 100000000000},
+      {"ordinal": 28, "repetition": 7, "case": "driven", "configured_cells": 100000000000},
+      {"ordinal": 29, "repetition": 7, "case": "driven", "configured_cells": 1000000},
+      {"ordinal": 30, "repetition": 7, "case": "quiet", "configured_cells": 100000000000},
+      {"ordinal": 31, "repetition": 7, "case": "quiet", "configured_cells": 1000000}
+    ],
+    "timed_regions": {
+      "native_call_ns": "Host perf_counter_ns immediately around the single C ABI humanbrain_procedural_runtime_advance call; includes ABI plus Rust advance and excludes event validation/marshalling, native construction/build/import, snapshot, and ScaleAccounting.",
+      "e2e_ns": "Host perf_counter_ns immediately around one public runtime.advance call; event construction, native construction/build/import, memory observation, and result validation are outside the interval."
+    }
+  },
+  "runtime": {
+    "topology_protocol": "random123-philox2x64-10-v2",
+    "topology": "uniform_no_self",
+    "seed": 71,
+    "resident_capacity": 96,
+    "event_capacity": 96,
+    "spike_capacity": 32,
+    "fanout": 4,
+    "interval_distinct_capacity": 96,
+    "recurrent_weight_pa": 325.0,
+    "recurrent_delay_steps": 1,
+    "cost_model": "O(T*R + event sorting/merging/delivery + S*F row generation) work and O(R_capacity + Q_capacity + S_capacity + F + D_capacity) storage, with configured N retained only as uint64 address metadata."
+  },
+  "workloads": {
+    "quiet": {
+      "step_count": 65536,
+      "external_events_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e936ba84165dc6d1be0bbf3",
+      "event_count": 0,
+      "expected": {
+        "resident_peak": 0,
+        "resident_distinct": 0,
+        "updated_distinct": 0,
+        "spiking_distinct": 0,
+        "cell_step_evaluations": 0,
+        "spike_events": 0,
+        "generated_edges": 0,
+        "delivered_events": 0,
+        "queue_peak": 0,
+        "retained_nonzero_cells": 0
+      }
+    },
+    "driven": {
+      "step_count": 256,
+      "current_pa": 150000.0,
+      "source_gids": [11, 101, 1009, 10007, 50021, 70117, 90001, 123457, 234569, 345679, 456791, 567899, 678913, 789923, 890987, 999983],
+      "external_events_sha256": "1307653946f13a353f821023dfbe8b76f237913c580bac1465dd75cc486c334d",
+      "event_count": 16,
+      "topology_derivations": {
+        "1000000": {
+          "ordered_rows_sha256": "61bad86f26cb36f6e4c3d291b9475ff9ef0cd71e4b08a66a63c53e247f8f6873",
+          "target_union_sha256": "ab80f09192b785f0f2062720124be638459716fbef587763b5f4ebeecddcbebe",
+          "target_union_size": 64,
+          "source_and_target_union_size": 80
+        },
+        "100000000000": {
+          "ordered_rows_sha256": "ac8e1bf43541476c1647d942132569e03c1d62fa5f09f63d791101a9deed8e87",
+          "target_union_sha256": "5b2fa611999461482ab0c5d899960a2ca079651cea2360d7cca00f34268df7b9",
+          "target_union_size": 64,
+          "source_and_target_union_size": 80
+        }
+      },
+      "expected": {
+        "resident_peak": 80,
+        "resident_distinct": 80,
+        "updated_distinct": 80,
+        "spiking_distinct": 16,
+        "cell_step_evaluations": 20416,
+        "spike_events": 16,
+        "generated_edges": 64,
+        "delivered_events": 80,
+        "queue_peak": 64,
+        "retained_nonzero_cells": 80
+      }
+    }
+  },
+  "acceptance": {
+    "exact_expected_accounting_every_row": true,
+    "exact_cross_n_workload_counter_equality": true,
+    "exact_cross_n_native_payload_equality": true,
+    "zero_capacity_overflow": true,
+    "zero_device_bytes": true,
+    "native_call_within_e2e": true,
+    "maximum_cross_n_median_native_call_ratio": 3.0,
+    "maximum_cross_n_median_e2e_ratio": 3.0,
+    "maximum_cross_n_median_private_delta_difference_bytes": 16777216
+  },
+  "reporting": {
+    "raw_rows": true,
+    "scale_accounting": true,
+    "native_payload_bytes": true,
+    "process_memory_observations": ["before_runtime", "after_construction", "after_advance"],
+    "timing_observations": ["native_call_ns", "e2e_ns"],
+    "environment_and_build_identity_outside_timed_regions": true,
+    "incremental": true,
+    "nonoverwriting": true,
+    "resume": false,
+    "rerun": false,
+    "retune": false
+  },
+  "implementation_invariants": {
+    "configured_population_scan_or_allocation": "Forbidden in the production adapter; source review and static regression tests bind construction to R/Q/S/F/D capacities. The configured_ids_scanned field is not treated as an empirical measurement.",
+    "dense_reference_in_timed_worker": false,
+    "gpu_calls": false
+  },
+  "source_binding": {
+    "framing": "humanbrain-procedural-runtime-profile-source-v1",
+    "paths": [
+      "benchmarks/native_scaling.py",
+      "benchmarks/procedural_runtime_profile.py",
+      "data/allen/523000114_neuron_config.json",
+      "pyproject.toml",
+      "src/humanbrain/_native_src/Cargo.lock",
+      "src/humanbrain/_native_src/Cargo.toml",
+      "src/humanbrain/_native_src/src/lib.rs",
+      "src/humanbrain/_native_src/src/procedural.rs",
+      "src/humanbrain/__init__.py",
+      "src/humanbrain/cells.py",
+      "src/humanbrain/human_cell_identity.py",
+      "src/humanbrain/native.py",
+      "src/humanbrain/procedural_runtime.py",
+      "src/humanbrain/procedural_topology.py",
+      "src/humanbrain/readout.py",
+      "src/humanbrain/recurrent.py",
+      "src/humanbrain/recurrent_state.py",
+      "src/humanbrain/scale_accounting.py",
+      "src/humanbrain/simple_swe/__init__.py",
+      "src/humanbrain/simple_swe/artifacts.py",
+      "src/humanbrain/simple_swe/protocol.py",
+      "src/humanbrain/simple_swe/tasks.py",
+      "src/humanbrain/topology.py",
+      "src/humanbrain/typed_program_types.py"
+    ],
+    "files": [
+      {"path": "benchmarks/native_scaling.py", "size_bytes": 14951, "sha256": "fc028e03c1653c22ca1e5dcf1441264d96f262ef5315d40deb9a7aed76d57dbf"},
+      {"path": "benchmarks/procedural_runtime_profile.py", "size_bytes": 60211, "sha256": "ffadb3f2cb7c88a255f5fad4f17eae9e14da887dd55ff9aa6d51f2801912aee7"},
+      {"path": "data/allen/523000114_neuron_config.json", "size_bytes": 1378, "sha256": "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149"},
+      {"path": "pyproject.toml", "size_bytes": 713, "sha256": "61d1884ad15ec65298ed7fa07a6d63147181dced1ca4066115fb709fd880d36c"},
+      {"path": "src/humanbrain/_native_src/Cargo.lock", "size_bytes": 1628, "sha256": "1b9e6d141a5643e629ccd7ee2c61132e6d37cfae88c6d2ebaab568100948636d"},
+      {"path": "src/humanbrain/_native_src/Cargo.toml", "size_bytes": 245, "sha256": "12e29c007cbbdc7f42b3fcc439a5292922bcbca281a8561a5e809d971cff4706"},
+      {"path": "src/humanbrain/_native_src/src/lib.rs", "size_bytes": 54216, "sha256": "d5d1da772e47e71e24f788bb2aa018dee8cd440270878d0ccd4b83e8eed5e9d8"},
+      {"path": "src/humanbrain/_native_src/src/procedural.rs", "size_bytes": 56843, "sha256": "416e7f19c42664f03eb4a8aab13f5744305774f95762a98a92cb98f3f672db37"},
+      {"path": "src/humanbrain/__init__.py", "size_bytes": 923, "sha256": "9019d88aa76d762c8fe7a63339f53f7e73849fa2a6658a8a762354eeb2cc67d7"},
+      {"path": "src/humanbrain/cells.py", "size_bytes": 21020, "sha256": "20f3e4301fed026daf0752bedcc800503efd9d75770240d837659a63b7911fc5"},
+      {"path": "src/humanbrain/human_cell_identity.py", "size_bytes": 1447, "sha256": "0050670ce4976c6163bc652eb33846d7118d6e2ca047eeeda1cf334efb8cc6f9"},
+      {"path": "src/humanbrain/native.py", "size_bytes": 40734, "sha256": "4cc83a452b1060ba2ecc4c266c5f45e112f8ed9b78d04cdf77c83f531eb84a9f"},
+      {"path": "src/humanbrain/procedural_runtime.py", "size_bytes": 34839, "sha256": "aaaa788596c30684b7d47034cda9b5fea9fd6c0ac162ec3ba79066dbd306a689"},
+      {"path": "src/humanbrain/procedural_topology.py", "size_bytes": 30672, "sha256": "30f704f5721e7c8c92902006f28ccb7b0a73b79a7dd9b62e5e91b7c2ab4c69bb"},
+      {"path": "src/humanbrain/readout.py", "size_bytes": 14320, "sha256": "74e777cf4815815a0723993b2bbf245f2b890d8f12d3411e13a00c3ca5e7da88"},
+      {"path": "src/humanbrain/recurrent.py", "size_bytes": 44100, "sha256": "27edd41f3397bc2d4263f764502e485953a6efc0c03fc73f784d77c2ff58cfd8"},
+      {"path": "src/humanbrain/recurrent_state.py", "size_bytes": 3527, "sha256": "eca7a0db39eba1baa07fbeed0d65c80b5ac6af1293092971e14b17d18efe8bb6"},
+      {"path": "src/humanbrain/scale_accounting.py", "size_bytes": 13895, "sha256": "a0a9e70769e24f918889395d0f5a729e12d3aef08a9bcbd70692a2bf8589e57d"},
+      {"path": "src/humanbrain/simple_swe/__init__.py", "size_bytes": 452, "sha256": "3e4bf0bd52a53306c55e8dc2b3de7e2ac41a861d2472e939497baae21a80b9ce"},
+      {"path": "src/humanbrain/simple_swe/artifacts.py", "size_bytes": 6863, "sha256": "a3e74dd5855796726152376308e3cdd11fe736406652bf1b06c0f33b8a7bc332"},
+      {"path": "src/humanbrain/simple_swe/protocol.py", "size_bytes": 8794, "sha256": "22993997004a156b7d94b8d79198deae3e2f71f04d1aebc9740b342c0aa94849"},
+      {"path": "src/humanbrain/simple_swe/tasks.py", "size_bytes": 34963, "sha256": "d247bb1a81dca47846a787292a8a3f29c01938771070517b6fa35c9d8f7eed23"},
+      {"path": "src/humanbrain/topology.py", "size_bytes": 13214, "sha256": "d12b7199523ce769c202557fe2a4135cc87fc1082e830579e4ce20f731e147a0"},
+      {"path": "src/humanbrain/typed_program_types.py", "size_bytes": 6527, "sha256": "5f06a43bc771a8d61881d7ebf7c7decefcadbe245d77ce10640dbfff5174d099"}
+    ],
+    "bundle_sha256": "71a8a0172485ff351e10e0d8577b242b2ef04b2b97868637e3c75bdb51159439"
+  },
+  "publication": {
+    "evidence_root": "artifacts/procedural_runtime_profile_v1",
+    "evidence_directory": "artifacts/procedural_runtime_profile_v1/evidence",
+    "artifact_kind": "procedural-runtime-profile-record",
+    "policy": "Create the fixed root exclusively after all authorization/source/cleanliness guards. Commit one independent per-row worker capability hash in the atomic immutable run-start, pass each raw capability only through its fresh child's environment, and require the live parent plus exact prior evidence prefix before native loading. Retain and recheck every publisher-returned artifact SHA-256 before workers and after every final success or failure publication. Existing or interrupted evidence forbids resume, overwrite, alternate-path rerun, or retuning."
+  },
+  "evidence_scope": "CPU-only bounded native procedural working-set engineering observations at configured N=10^6 and N=10^11; no GPU, throughput, capability, SWE, or 100-billion-resident/updated-cell evidence",
+  "claims": {
+    "hypothesis": "With identical R/Q/S/F/D and externally injected workload, workload counters, native payload, and host timings should not materially depend on configured address-space N.",
+    "speed": null,
+    "throughput": null,
+    "capability": null,
+    "resident_100_billion_cells": null,
+    "updated_100_billion_cells": null
+  },
+  "forbidden_runs": [
+    "GPU",
+    "capability",
+    "DEV/SWE/canonical/private evaluation",
+    "Fly Brain"
+  ],
+  "status": {
+    "executed": false,
+    "material_profile_artifact": null,
+    "execution_requires_separate_explicit_hold_release": true
+  }
+}
