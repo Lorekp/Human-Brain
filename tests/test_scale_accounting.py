@@ -261,6 +261,20 @@ def test_accounting_rejects_unqualified_active_claim_language(
         )
 
 
+@pytest.mark.parametrize("text", ("", "   "))
+def test_accounting_rejects_empty_claim_text(text: str) -> None:
+    with pytest.raises(ValueError, match="claim.text.*non-empty"):
+        ScaleAccounting(
+            claim=ScaleClaim("scale result", text),
+            interval=MeasurementInterval("sample", 0, 0, None, 0.1),
+            cells=CellCounts(0, 0, 0, 0, 0, 0),
+            work=WorkCounts(0, 0, 0, 0),
+            edges=EdgeCounts(0, 0, 0, 0),
+            events=EventCounts(0, 0, ()),
+            memory=MemoryCounts(()),
+        )
+
+
 def test_accounting_allows_explicitly_qualified_active_claim_language() -> None:
     accounting = ScaleAccounting(
         claim=ScaleClaim(
@@ -301,6 +315,15 @@ def test_accounting_rejects_inconsistent_cell_work_relations(
         _accounting(cells=cells, work=work)
 
 
+def test_analytic_step_equivalents_are_optional() -> None:
+    accounting = _accounting(
+        cells=CellCounts(2, 2, 2, 2, 1, 0),
+        work=WorkCounts(0, 0, 1, None),
+    )
+
+    assert accounting.to_dict()["work"]["analytic_step_equivalents"] is None
+
+
 def test_accounting_rejects_dynamic_work_outside_a_step_interval() -> None:
     with pytest.raises(ValueError, match="step_count"):
         _accounting(
@@ -310,14 +333,17 @@ def test_accounting_rejects_dynamic_work_outside_a_step_interval() -> None:
         )
 
 
-def test_accounting_rejects_more_resident_than_configured_base_edges() -> None:
-    with pytest.raises(ValueError, match="resident.*configured"):
-        _accounting(edges=EdgeCounts(configured=3, resident=4, mutable=7, generated=8))
+def test_edge_counter_categories_are_not_assumed_to_be_subsets() -> None:
+    accounting = _accounting(
+        edges=EdgeCounts(configured=0, resident=2, mutable=3, generated=8)
+    )
 
-
-def test_accounting_rejects_more_mutable_than_resident_edge_records() -> None:
-    with pytest.raises(ValueError, match="mutable.*resident"):
-        _accounting(edges=EdgeCounts(configured=3, resident=2, mutable=3, generated=8))
+    assert accounting.to_dict()["edges"] == {
+        "configured": 0,
+        "resident": 2,
+        "mutable": 3,
+        "generated": 8,
+    }
 
 
 @pytest.mark.parametrize(

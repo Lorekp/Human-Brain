@@ -94,7 +94,7 @@ class WorkCounts:
     cell_step_evaluations: int
     spike_events: int
     analytic_catchups: int
-    analytic_step_equivalents: int
+    analytic_step_equivalents: int | None
 
     def __post_init__(self) -> None:
         _require_counts(
@@ -102,8 +102,12 @@ class WorkCounts:
             cell_step_evaluations=self.cell_step_evaluations,
             spike_events=self.spike_events,
             analytic_catchups=self.analytic_catchups,
-            analytic_step_equivalents=self.analytic_step_equivalents,
         )
+        if self.analytic_step_equivalents is not None:
+            _require_counts(
+                "work",
+                analytic_step_equivalents=self.analytic_step_equivalents,
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,10 +224,8 @@ class ScaleAccounting:
     memory: MemoryCounts
 
     def __post_init__(self) -> None:
-        if not isinstance(self.claim.label, str):
-            raise TypeError("claim.label must be a string")
-        if not self.claim.label.strip():
-            raise ValueError("claim.label must be a non-empty string")
+        _require_label("claim", "label", self.claim.label)
+        _require_label("claim", "text", self.claim.text)
         _reject_unqualified_active("label", self.claim.label)
         _reject_unqualified_active("text", self.claim.text)
 
@@ -299,12 +301,14 @@ class ScaleAccounting:
             raise ValueError(
                 "spiking_distinct and spike_events must describe the same spikes"
             )
-        if work.analytic_step_equivalents < work.analytic_catchups or (
-            work.analytic_catchups == 0 and work.analytic_step_equivalents != 0
+        equivalents = work.analytic_step_equivalents
+        if equivalents is not None and (
+            equivalents < work.analytic_catchups
+            or (work.analytic_catchups == 0 and equivalents != 0)
         ):
             raise ValueError(
-                "analytic_step_equivalents must be zero without analytic_catchups "
-                "and at least analytic_catchups otherwise"
+                "reported analytic_step_equivalents must be zero without "
+                "analytic_catchups and at least analytic_catchups otherwise"
             )
         if interval.step_count == 0 and (
             update_operations != 0
@@ -315,15 +319,6 @@ class ScaleAccounting:
                 "step_count must be nonzero when dynamic work or event delivery is "
                 "reported"
             )
-        if self.edges.resident > self.edges.configured:
-            raise ValueError(
-                "resident base-edge records cannot exceed configured base edges"
-            )
-        if self.edges.mutable > self.edges.resident:
-            raise ValueError(
-                "mutable edge records cannot exceed resident edge records"
-            )
-
     def to_dict(self) -> dict[str, object]:
         traffic = sorted(
             self.events.sent_bytes_by_shard_pair,
