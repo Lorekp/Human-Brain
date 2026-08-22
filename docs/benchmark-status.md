@@ -1,6 +1,6 @@
 # Benchmark status
 
-Status date: 2026-08-21
+Status date: 2026-08-22
 
 ## What has passed
 
@@ -258,17 +258,27 @@ signatures and was introduced before any canonical freeze, so no evaluation
 artifact required migration. See
 `docs/simple-swe-curriculum.md` for the task split and claim boundary.
 
-## Preregistered typed-program public TRAIN curriculum
+## Typed-program public TRAIN curriculum
 
-The Layer-1 recurrent fitted-cell train-only protocol is frozen at raw SHA-256
-`1ed77f9fa2395f6be8bed74648dc9d3de3027e367e626e427e56de912f4ed191`.
-It defines three public TRAIN programs, nine public semantic cases, and two
-teacher-free family/template/literal-disjoint public development definitions.
-The guarded runner plans by default and has not executed the material TRAIN
-run. Consequently there is no checkpoint, evidence directory, development
-completion, development run, or generalization result. See
-`docs/typed-program-public-curriculum.md` for exact tokens, cases, gates, and
-claim boundaries.
+The preregistered Layer-1 recurrent fitted-cell TRAIN run completed once from
+source commit `1ae5418b92e81dc48c6a2e36fb8822ceec7ce202` under raw protocol
+SHA-256 `1ed77f9fa2395f6be8bed74648dc9d3de3027e367e626e427e56de912f4ed191`.
+One growth attempt produced one 986,677-byte checkpoint with raw SHA-256
+`0c2c4fd3e16ab978ae6e25a16beab9d1c84ae867f63bffdad3745c07b68dcb9d`.
+
+All 3/3 TRAIN tasks and 9/9 public semantic cases passed on their sole
+completion attempts. The model exactly replayed all 16 public teacher tokens,
+with 16/16 valid fitted-cell races and every registered task/accounting gate
+passed. The complete run took 1,102,609,000 ns wall time and 3,781,250,000 ns
+process time; summary traced memory was 3,295,589 current and 7,506,071 peak
+bytes. Development completion remained unopened with run count zero.
+
+This is **memorization only, not generalization**. The next step is a separate
+one-shot teacher-free public development run from the frozen checkpoint, with
+no growth, retry, tuning, or replacement. See
+`docs/typed-program-public-train-v1-results.md` for the exact evidence hashes,
+metrics, gates, and claim boundary, and
+`docs/typed-program-public-curriculum.md` for the preregistered protocol.
 
 ## Reproducibility artifacts
 
@@ -278,6 +288,8 @@ not a platform-specific checkout's newline representation.
 | Artifact | SHA-256 |
 | --- | --- |
 | `benchmarks/typed_program_public_train_protocol_v1.json` | `1ed77f9fa2395f6be8bed74648dc9d3de3027e367e626e427e56de912f4ed191` |
+| `artifacts/typed_program_public_train_v1/checkpoint.json` | `0c2c4fd3e16ab978ae6e25a16beab9d1c84ae867f63bffdad3745c07b68dcb9d` |
+| `artifacts/typed_program_public_train_v1/evidence/005-summary.json` | `71133044d55e48a3bbe5cb147a33ce2f543e0a0dad855ae11e2e1b140b6b02d7` |
 | `artifacts/swe_sqlfluff_1625_cells.npz` | `bf54b181ce24ff636d84a3e9a712eaf96caceb1ae343299169727f884f2dda91` |
 | `artifacts/swe-dev-expert/sqlfluff__sqlfluff-1625/teacher.traj.json` | `cae6a4dbe8750a8bfe83db1e04103555a4f657ae6ac960cda1f814e761a34a4f` |
 | `artifacts/swe-dev-cell/sqlfluff__sqlfluff-1625/dendritic-v4.traj.json` | `8d7b7ba5b2911573505110f61cc4a457c9b595abb895ac8b8d21027b225e5cd2` |
