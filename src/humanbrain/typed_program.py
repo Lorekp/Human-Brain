@@ -1119,8 +1119,8 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
         "frozen circuit record",
     )
     metadata = _validate_frozen_circuit_metadata(circuit_record["metadata"])
-    # Only program tokens are supervised. Context and prefix tokens are still
-    # observed, but their next-token transitions never become readout labels.
+    # A2 supervises only teacher-forced program-token decisions.
+    # A0 and A1 supervise every next-token transition in the framed sequence.
     if protocol.supervision_scope == _PROGRAM_ONLY_SUPERVISION:
         expected_growth_examples = _GROWTH_EPOCHS * sum(teacher_token_counts)
     else:
@@ -1128,7 +1128,10 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
             count - 1 for count in sequence_token_counts
         )
     if metadata["growth_examples"] != expected_growth_examples:
-        raise ValueError("frozen checkpoint growth count differs from teacher token targets")
+        raise ValueError(
+            "frozen checkpoint growth count differs from the lane's supervised "
+            "transition count"
+        )
     array_records = _validate_frozen_array_headers(circuit_record["arrays"])
     arrays: list[_FrozenArray] = []
     for array_record in array_records:
@@ -1171,7 +1174,7 @@ def _decode_checkpoint_bytes(value: bytes) -> _FrozenCheckpointPayload:
 
 
 def grow(protocol: Layer1Protocol, examples: Sequence[Example]) -> FrozenCheckpoint:
-    """Fit one Layer-1 circuit from public program-token targets and freeze it."""
+    """Fit and freeze one Layer-1 circuit under its lane supervision contract."""
     if type(protocol) is not Layer1Protocol:
         raise TypeError("grow requires the fixed Layer1Protocol")
     if isinstance(examples, (str, bytes, bytearray)) or not isinstance(examples, Sequence):
@@ -1209,9 +1212,9 @@ def grow(protocol: Layer1Protocol, examples: Sequence[Example]) -> FrozenCheckpo
         digest.update(input_bytes)
         digest.update(_token_stream_bytes(teacher_ids))
 
-    # Each epoch is one complete, ordered corpus pass. Every input and emitted
-    # prefix token advances the same recurrent states as ordinary next-token
-    # replay; strengthen is called only when the next token is a program token.
+    # Each epoch is one complete, ordered corpus pass. Every lane observes the
+    # same input and emitted-prefix states. A0/A1 strengthen every transition;
+    # A2 strengthens only teacher-forced program-token decisions.
     for _ in range(protocol.growth_epochs):
         for input_ids, teacher_ids in prepared_sequences:
             training_ids = (*input_ids, *teacher_ids)

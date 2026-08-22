@@ -345,7 +345,10 @@ def test_checkpoint_rejects_hash_consistent_growth_count_forgery() -> None:
     forged["circuit"]["metadata"]["growth_examples"] = 1_000_000
     _rehash_checkpoint_circuit(forged)
 
-    with pytest.raises(ValueError, match="growth count differs from teacher token targets"):
+    with pytest.raises(
+        ValueError,
+        match="growth count differs from the lane's supervised transition count",
+    ):
         FrozenCheckpoint.from_bytes(_canonical_checkpoint_bytes(forged))
 
 

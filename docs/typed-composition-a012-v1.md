@@ -10,16 +10,16 @@ future-cohort execution is on hold
 **Retired evidence:** public DEV v1; it will never be rerun or used for tuning
 
 **Raw protocol SHA-256:**
-`d91517ee7b7f900da2bd8246e051c562f5a0568a6b3fe2b71b7262b1fab052b2`
+`2d41d366611c6217dd8a14411b68bc03be1cafb4572e41f3c5a77da326cda412`
 
 **Reviewed source-bundle SHA-256:**
-`1bb28d3414e7036227c0215d6b1a4509ac033e1b860a84bb7327b53774535fb9`
+`5b52e830f75688b396070819faabd0dec57d75053f1631622acda33341bd674d`
 
 **Held procedural Gate-3 raw protocol SHA-256:**
-`e7abed3046571a74794c10b3e6c5a94ac7c56c1b2bacf3c8319f0a53345f697b`
+`930969d4ca266eb80ec996da08add6893aea42d0cd94db9c4f4a7137000bb19e`
 
 **Held procedural Gate-3 source-bundle SHA-256:**
-`f2227f8127a0dbefc8105cebbf49fd98c4c2e05e88230752567f8c0926707f86`
+`8777b30fbcec0191eb72a2203f756a0073936baac763d93265cb70ac94ac2e52`
 
 ## Decision
 
@@ -30,7 +30,7 @@ comparison over the same 128-cell fitted GLIF5 reservoir and ridge readout:
 | --- | --- | --- | --- |
 | A0 | prompt, context delimiter, canonical opaque signature, input delimiter | every next-token transition | diagnostic only |
 | A1 | canonical opaque signature, context delimiter, prompt, input delimiter | every next-token transition | diagnostic only |
-| A2 | exactly the A1 observation stream | program-token targets only | sole eligible lane |
+| A2 | exactly the A1 observation stream | program-token targets only | sole capability candidate |
 
 A0 preserves the failed v1 framing/readout-learning pattern inside the new
 balanced corpus. A1 tests the representation hypothesis that putting prompt
@@ -174,7 +174,8 @@ positive. After seals exist, the scorer also groups decisions by exact
 expected targets. This is an exact-byte state-collision check, not a hash-only
 proxy.
 
-A2 is eligible only if all of the following pass together:
+The terminal authority may assert A2 eligibility only if all of the following
+pass together:
 
 - 42/42 TRAIN label replay and 126/126 TRAIN cases;
 - 18/18 calibration label replay and 54/54 calibration cases;
@@ -183,10 +184,15 @@ A2 is eligible only if all of the following pass together:
   trained target margin;
 - protocol/source integrity, one valid cell race per emitted token, raw
   checkpoint and cell/synapse immutability, completion-attempt accounting,
-  exact observation/strengthen accounting, and exclusive evidence creation.
+  exact observation/strengthen accounting, and the one-shot exclusive
+  protocol/cohort attempt claim.
 
 A0 and A1 are diagnostic even if they score perfectly. There is no trained
-variant selection and no calibration-driven hyperparameter choice.
+variant selection and no calibration-driven hyperparameter choice. The public
+seal/score seam returns semantic and physical diagnostics only; it cannot mint
+eligibility. Final A2 eligibility exists only at the complete production
+execution boundary after every protocol, source, native, accounting, race,
+immutability, and exclusive-attempt gate has passed.
 
 ## Cheap falsification gates before any larger brain
 
@@ -239,25 +245,64 @@ The runner is plan-by-default. Planning only validates and hashes the protocol
 and 280-file source bundle. Every source read is bounded to 1 MiB, with an 8 MiB
 aggregate bound and a size-plus-one refusal check. The plan mechanically
 requires every imported local runtime module, including package `__init__.py`,
-and all 264 native build inputs to occur in the bundle. Material execution derives the repository root from
-those actually imported modules and rejects any different root or protocol
-before evidence, model construction, or native execution. It additionally
-requires `--execute`, a
-unique `--run-id`, the exact lowercase raw protocol SHA-256, and the exact
-reviewed source-bundle SHA-256 printed by the pinned plan.
-Every missing evidence-root component and the run directory are created
-durably and exclusively: POSIX uses `mkdir` plus parent-directory `fsync`, while
-Windows moves a same-parent temporary directory with `MoveFileExW` using
-`MOVEFILE_WRITE_THROUGH` and no replace flag. Each complete, fsynced record is
-then published exclusively: POSIX uses a hard link plus parent-directory
-`fsync`; Windows uses the same write-through, no-replace move. An existing path
-is a terminal refusal. If a durability primitive fails after the target becomes
-visible, the immutable partial is preserved and the call fails rather than
-claim success. The runner writes
-checkpoints as they finish, seals all completions before scoring, preserves a
-terminal failure record on any exception without masking the original error,
-verifies source and checkpoint bytes again at the end, and never resumes or
-overwrites.
+and all 264 native build inputs to occur in the bundle. Material execution
+derives the repository root from those actually imported modules and rejects
+any different root or protocol before evidence, model construction, or native
+execution. It additionally requires `--execute`, a metadata `--run-id`, the
+exact lowercase raw protocol SHA-256, and the exact reviewed source-bundle
+SHA-256 printed by the pinned plan. Invalid metadata or confirmation is rejected
+before spending the cohort. The caller cannot choose a production evidence
+root. As the first production side effect, material execution directly creates
+the fixed `artifacts/.typed_composition_a012_v1.claimed` file with exclusive
+create semantics and fsyncs its fixed bytes. This permanent spent marker has no
+run-ID, protocol-hash, or evidence-root input; the run ID is metadata stored
+only inside `000-plan.json`. After that claim, the runner creates the single
+fixed `artifacts/typed_composition_a012_v1` evidence directory. Thus
+interruption, success, or failure permanently spends this frozen
+protocol/cohort, and neither an alternate run ID nor a changed protocol hash
+can rerun it. The tracked `artifacts` parent, fixed attempt, deterministic
+`.claiming` staging name, and `.claimed`, `.invalid`, and `.complete` authority
+markers are protected namespaces. They and every record are repeatedly required
+to be real filesystem objects, never a symlink, junction, other Windows reparse
+point, or physical path alias. POSIX creates the evidence directory with `mkdir`
+plus parent-directory `fsync`. Windows first creates the deterministic
+`.typed_composition_a012_v1.claiming` directory and then moves it to the fixed
+evidence name with same-parent `MoveFileExW`, `MOVEFILE_WRITE_THROUGH`, and no
+replace flag. The durable `.claimed` marker and either visible Windows name
+independently refuse every later attempt, including a pre-move or otherwise
+indeterminate interruption. Each complete, fsynced record is then published
+exclusively: POSIX uses a hard link plus parent-directory `fsync`; Windows uses
+the same write-through, no-replace move. An existing path is a terminal refusal.
+Every exception after exclusive creation of `.claimed`, including a marker
+write/fsync/readback error, first publishes the durable parent-side `.invalid`
+poison marker and then best-effort in-directory terminal-failure diagnostics.
+This remains fail-closed even when a colliding or restored attempt directory is
+not writable. If a durability primitive fails after the target becomes visible,
+the immutable partial is preserved and the call fails rather than claim success.
+The runner writes checkpoints as they finish, seals all completions before
+scoring, verifies source, native, checkpoint, namespace, and evidence bytes
+again at the end, and never resumes or overwrites.
+
+`030-evaluation.json` is diagnostics-only: it contains no eligibility result.
+The sole final eligibility authority is the canonical
+`999-terminal-summary.json` envelope. It explicitly conjoins protocol
+confirmation/immutability, source confirmation/immutability, the fixed attempt,
+native backend and binary identity, checkpoint identity/raw/cell-synapse and
+accounting, observation/strengthen and completion-attempt accounting, race and
+seal integrity, the exact preterminal file set/digests, and absence of terminal
+failure. After durably publishing the summary, the runner privately re-reads
+every bound record while `.complete` is still absent. Only after that full
+verification succeeds does it publish and fsync the exact parent-side
+`.complete` marker as the final commit action and immediately return the
+preconstructed result. Thus no public eligibility authority exists during a
+fallible post-summary check. The public loader repeats the evidence checks,
+recomputes A2 capability
+and execution gates, requires the current pinned protocol/source hashes, and
+accepts only the exact `.claimed` plus `.complete` marker state with no
+`.invalid`, `.claiming`, or terminal-failure record. A summary whose preterminal
+evidence changed is likewise invalid. The CLI prints both diagnostics and this
+verified terminal summary and derives its exit status from the terminal value
+only.
 The 128-cell comparison rejects a forced CUDA backend so all three lanes use
 the same native CPU path. Before even consulting the cache, the native loader
 constructs one immutable build plan. It frames `Cargo.toml`, `Cargo.lock`, an
@@ -267,17 +312,18 @@ in normalized relative-path order. Native-source reads are bounded to 1 MiB
 per file and 8 MiB aggregate before cache reuse. The plan also binds the fixed
 working directory, command, controlled child environment, exact encoded Rust
 flags, explicit host target, and explicit `rust-lld`. Ancestor and Cargo-home
-configuration plus ambient Cargo/rustc/target/flag controls are rejected;
-wrappers are reset, and Cargo receives literal `--locked --offline` with no
-registry fallback. Exact Cargo/rustc discovery and concrete executable hashes
-and version probes, sysroot/host/native-CPU probe output, linker bytes, and the
-selected host SDK identity rotate the full SHA-256 cache address. A separately
-bounded, sorted, framed manifest hashes every regular file in the exact target
-library directory reported by the selected rustc for that target, including
-relative path, byte count, and content SHA-256. That same plan, without
-re-reading ambient build choices, drives the Cargo subprocess. The loader
-attests the content-addressed cache with a canonical integrity manifest;
-execution rehashes the actually loaded
+configuration plus ambient Cargo/rustc/target/flag controls are rejected; an
+empty native `[workspace]` prevents Cargo from inheriting any ancestor
+workspace even when the checkout is nested below one. Wrappers are reset, and
+Cargo receives literal `--locked --offline` with no registry fallback. Exact
+Cargo/rustc discovery and concrete executable hashes and version probes,
+sysroot/host/native-CPU probe output, linker bytes, and the selected host SDK
+identity rotate the full SHA-256 cache address. A separately bounded, sorted,
+framed manifest hashes every regular file in the exact target library directory
+reported by the selected rustc for that target, including relative path, byte
+count, and content SHA-256. That same plan, without re-reading ambient build
+choices, drives the Cargo subprocess. The loader attests the content-addressed
+cache with a canonical integrity manifest; execution rehashes the actually loaded
 binary before the first model construction, after every lane, and immediately
 before final publication. Evidence persists the portable pre/post source/cache
 digest, binary size, and SHA-256, never an absolute machine path. A missing,
@@ -295,6 +341,12 @@ fully hermetic Rust compilation. Compiler shared libraries and the complete SDK
 archive closure, microcode or hypervisor changes behind `target-cpu=native`,
 and source/toolchain probe-to-build TOCTOU remain external limitations. The
 exact executed library bytes are still attested.
+
+Likewise, portable path checks cannot eliminate a hostile local administrator's
+handle-level rename/reparse race between checks. The execution contract assumes
+a trusted host/storage stack, repeats lexical no-link checks at every material
+phase, binds the immutable evidence envelope, and fails closed on every detected
+alias, mutation, collision, or indeterminate durability result.
 
 Evidence also records Python implementation/version, NumPy version, and OS
 system/release/machine. For each lane it records grow wall/process nanoseconds,
@@ -323,7 +375,9 @@ source-bundle, and commit hashes are reported.
 - `src/humanbrain/typed_composition.py`: frozen factor generator, opaque IDs,
   metadata-stripped requests, future commitments, and mechanical accounting.
 - `src/humanbrain/typed_composition_runner.py`: plan/source binding, exclusive
-  evidence, seal-before-score boundary, diagnostics, and exact eligibility gate.
+  one-shot protocol/cohort evidence, seal-before-score boundary, public
+  diagnostics, production-owned exact eligibility gate, and the sole terminal
+  authority loader.
 - `src/humanbrain/native.py`: reusable portable loaded-library identity,
   bounded vendored-source and rustc target-library identity, source-addressed
   cache attestation, and exact pre/post binary rehash.

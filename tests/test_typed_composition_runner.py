@@ -1,23 +1,26 @@
 from __future__ import annotations
 
 import base64
+import ctypes
 import inspect
 import json
 import os
 import platform
 import struct
-from dataclasses import replace
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import fields, replace
 from hashlib import sha256
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 from humanbrain import native as native_runtime
-from humanbrain import typed_program
 from humanbrain import typed_composition_runner as runner
+from humanbrain import typed_program
 from humanbrain.typed_composition import CompletionRequest, load_composition_protocol
 from humanbrain.typed_composition_runner import (
-    A2EligibilityMetrics,
+    A2CapabilityMetrics,
     EvidenceExistsError,
     ProtocolConfirmationError,
     _execute_protocol,
@@ -25,7 +28,6 @@ from humanbrain.typed_composition_runner import (
     _race_integrity,
     _require_cpu_runtime_backend,
     _validate_checkpoint_accounting,
-    a2_is_eligible,
     build_execution_plan,
     create_evidence_run,
     execute_protocol,
@@ -66,14 +68,48 @@ def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution(
     assert plan["execution_requirements"] == {
         "protocol_confirmation": "exact raw protocol SHA-256",
         "source_bundle_confirmation": "exact reviewed source-bundle SHA-256",
-        "evidence": "exclusive nonoverwrite creation",
+        "evidence": "one durable exclusive protocol/cohort attempt",
         "resume": False,
-        "rerun_same_run_id": False,
+        "rerun_same_protocol_cohort": False,
         "preserve_failure": True,
     }
     assert plan["run_hold"].startswith("No material TRAIN")
     assert plan["future_cohort"]["seed_exists"] is False
     assert plan["future_cohort"]["generated"] is False
+
+
+def test_persisted_production_plan_accepts_only_the_execute_overrides() -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    current_plan = build_execution_plan(ROOT, PROTOCOL_PATH)
+    (
+        _protocol,
+        prepared_plan,
+        _backend,
+        _provenance,
+        execution_plan_bytes,
+    ) = runner._prepare_execution_inputs(
+        ROOT,
+        PROTOCOL_PATH,
+        run_id="metadata-only",
+        confirmation=protocol.raw_sha256,
+        source_bundle_confirmation=current_plan["source_bundle_sha256"],
+        synthetic_test_only=False,
+    )
+    execution_plan = json.loads(execution_plan_bytes)
+
+    assert prepared_plan == current_plan
+    assert current_plan["mode"] == "plan"
+    assert current_plan["material_execution_authorized"] is False
+    assert execution_plan["mode"] == "execute"
+    assert execution_plan["material_execution_authorized"] is True
+    assert runner._production_execution_plan_evidence_passes(
+        execution_plan,
+        current_plan,
+    )
+    assert not runner._production_execution_plan_evidence_passes(
+        current_plan,
+        current_plan,
+    )
 
 
 def test_plan_fails_if_any_discovered_native_cargo_input_is_unbound(
@@ -496,7 +532,344 @@ def test_public_executor_has_no_injectable_learner_or_decoder() -> None:
     assert "grow_fn" not in parameters
     assert "complete_fn" not in parameters
     assert "root" not in parameters
+    assert "evidence_root" not in parameters
     assert "source_bundle_confirmation" in parameters
+
+    private_parameters = inspect.signature(_execute_protocol).parameters
+    assert "grow_fn" not in private_parameters
+    assert "complete_fn" not in private_parameters
+    assert "evidence_root" not in private_parameters
+    assert "synthetic_test_only" not in private_parameters
+
+    production_claimed_parameters = inspect.signature(
+        runner._execute_production_claimed_run
+    ).parameters
+    assert tuple(production_claimed_parameters) == ("run",)
+    assert tuple(inspect.signature(runner._train_production_execution_lanes).parameters) == (
+        "run",
+    )
+    assert tuple(inspect.signature(runner._seal_production_execution_lanes).parameters) == (
+        "run",
+        "trained",
+    )
+    assert tuple(
+        inspect.signature(runner._publish_production_execution_evaluation).parameters
+    ) == ("run", "trained", "sealed")
+    with pytest.raises(TypeError, match="exact production execution run"):
+        runner._execute_production_claimed_run(object())
+
+
+def test_lower_execution_helpers_reject_injected_production_operations() -> None:
+    production_run = object.__new__(runner._ProductionExecutionRun)
+
+    with pytest.raises(TypeError, match="production learner is hard-wired"):
+        runner._train_execution_lanes(
+            production_run,
+            grow_fn=lambda _protocol, _tasks: object(),
+            clock=runner._SYSTEM_CLOCK,
+        )
+    with pytest.raises(TypeError, match="production decoder is hard-wired"):
+        runner._seal_execution_lanes(
+            production_run,
+            object(),
+            complete_fn=lambda _checkpoint, _prompt, _signature: object(),
+            clock=runner._SYSTEM_CLOCK,
+        )
+    with pytest.raises(TypeError, match="exact synthetic execution run"):
+        runner._publish_synthetic_execution_evaluation(
+            production_run,
+            object(),
+            (),
+        )
+
+
+def test_protocol_attempt_is_spent_across_distinct_run_ids(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "artifacts").mkdir()
+
+    run_directory = runner._claim_production_attempt(tmp_path)
+
+    assert run_directory == tmp_path / "artifacts" / "typed_composition_a012_v1"
+    assert runner._production_attempt_claim_marker(tmp_path).read_bytes() == (
+        runner._PRODUCTION_CLAIM_MARKER_BYTES
+    )
+    assert not runner._production_attempt_invalid_marker(tmp_path).exists()
+    assert not runner._production_attempt_complete_marker(tmp_path).exists()
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._claim_production_attempt(tmp_path)
+
+
+def test_claim_write_interruption_poisoned_after_exclusive_marker_creation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "artifacts").mkdir()
+    original_write = runner._write_temp_fully
+    write_calls = 0
+
+    def fail_first_marker_write(file_descriptor: int, value: bytes) -> None:
+        nonlocal write_calls
+        write_calls += 1
+        if write_calls == 1:
+            raise OSError("synthetic claim-marker write interruption")
+        original_write(file_descriptor, value)
+
+    monkeypatch.setattr(runner, "_write_temp_fully", fail_first_marker_write)
+
+    with pytest.raises(OSError, match="claim-marker write interruption"):
+        runner._claim_production_attempt(tmp_path)
+
+    assert os.path.lexists(runner._production_attempt_claim_marker(tmp_path))
+    assert runner._production_attempt_invalid_marker(tmp_path).read_bytes() == (
+        runner._PRODUCTION_INVALID_MARKER_BYTES
+    )
+    assert not runner._production_attempt_directory(tmp_path).exists()
+    assert not runner._production_attempt_complete_marker(tmp_path).exists()
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._claim_production_attempt(tmp_path)
+
+
+def test_fixed_production_attempt_claim_is_atomic_under_concurrency(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "artifacts").mkdir()
+
+    def claim() -> Path | type[BaseException]:
+        try:
+            return runner._claim_production_attempt(tmp_path)
+        except BaseException as error:
+            return type(error)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        outcomes = tuple(executor.map(lambda _index: claim(), range(2)))
+
+    assert outcomes.count(tmp_path / "artifacts" / "typed_composition_a012_v1") == 1
+    assert outcomes.count(EvidenceExistsError) == 1
+
+
+def test_preexisting_attempt_collision_is_itself_permanently_spent(
+    tmp_path: Path,
+) -> None:
+    artifacts = tmp_path / "artifacts"
+    artifacts.mkdir()
+    colliding_attempt = artifacts / "typed_composition_a012_v1"
+    colliding_attempt.mkdir()
+
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._claim_production_attempt(tmp_path)
+
+    marker = runner._production_attempt_claim_marker(tmp_path)
+    assert marker.read_bytes() == runner._PRODUCTION_CLAIM_MARKER_BYTES
+    assert runner._production_attempt_invalid_marker(tmp_path).read_bytes() == (
+        runner._PRODUCTION_INVALID_MARKER_BYTES
+    )
+    assert not runner._production_attempt_complete_marker(tmp_path).exists()
+    assert (colliding_attempt / "999-terminal-failure.json").is_file()
+    (colliding_attempt / "999-terminal-failure.json").unlink()
+    colliding_attempt.rmdir()
+    staging = runner._production_attempt_staging_directory(tmp_path)
+    if staging.exists():
+        for child in staging.iterdir():
+            child.unlink()
+        staging.rmdir()
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._claim_production_attempt(tmp_path)
+
+
+def test_preexisting_staging_collision_is_rejected_after_permanent_claim(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "artifacts").mkdir()
+    staging = runner._production_attempt_staging_directory(tmp_path)
+    staging.mkdir()
+
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._claim_production_attempt(tmp_path)
+
+    assert runner._production_attempt_claim_marker(tmp_path).read_bytes() == (
+        runner._PRODUCTION_CLAIM_MARKER_BYTES
+    )
+    assert runner._production_attempt_invalid_marker(tmp_path).read_bytes() == (
+        runner._PRODUCTION_INVALID_MARKER_BYTES
+    )
+    assert not runner._production_attempt_complete_marker(tmp_path).exists()
+    assert (staging / "999-terminal-failure.json").is_file()
+    assert not runner._production_attempt_directory(tmp_path).exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows durable-claim contract")
+def test_windows_pre_move_interruption_permanently_spends_the_fixed_attempt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    artifacts = tmp_path / "artifacts"
+    artifacts.mkdir()
+    move_calls = 0
+    original_move = runner._windows_move_new
+
+    def interrupt_before_move(source: Path, target: Path) -> None:
+        nonlocal move_calls
+        if target.name == "typed_composition_a012_v1":
+            move_calls += 1
+            raise OSError("synthetic pre-move interruption")
+        original_move(source, target)
+
+    monkeypatch.setattr(runner, "_windows_move_new", interrupt_before_move)
+
+    with pytest.raises(OSError, match="pre-move interruption"):
+        runner._claim_production_attempt(tmp_path)
+
+    staging = runner._production_attempt_staging_directory(tmp_path)
+    marker = runner._production_attempt_claim_marker(tmp_path)
+    assert marker.read_bytes() == runner._PRODUCTION_CLAIM_MARKER_BYTES
+    assert runner._production_attempt_invalid_marker(tmp_path).read_bytes() == (
+        runner._PRODUCTION_INVALID_MARKER_BYTES
+    )
+    assert not runner._production_attempt_complete_marker(tmp_path).exists()
+    assert staging.is_dir()
+    assert (staging / "999-terminal-failure.json").is_file()
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._claim_production_attempt(tmp_path)
+    assert move_calls == 1
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows indeterminate-move contract")
+def test_windows_post_move_error_seals_the_visible_canonical_attempt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "artifacts").mkdir()
+    original_move = runner._windows_move_new
+
+    def move_then_fail(source: Path, target: Path) -> None:
+        original_move(source, target)
+        if target.name == "typed_composition_a012_v1":
+            raise OSError("synthetic post-move durability error")
+
+    monkeypatch.setattr(runner, "_windows_move_new", move_then_fail)
+
+    with pytest.raises(OSError, match="post-move durability error"):
+        runner._claim_production_attempt(tmp_path)
+
+    attempt = tmp_path / "artifacts" / "typed_composition_a012_v1"
+    assert runner._production_attempt_invalid_marker(tmp_path).read_bytes() == (
+        runner._PRODUCTION_INVALID_MARKER_BYTES
+    )
+    assert not runner._production_attempt_complete_marker(tmp_path).exists()
+    assert (attempt / "999-terminal-failure.json").is_file()
+    with pytest.raises(EvidenceExistsError, match="already exists"):
+        runner._claim_production_attempt(tmp_path)
+
+
+def test_fixed_production_attempt_rejects_a_symlinked_namespace(
+    tmp_path: Path,
+) -> None:
+    redirected = tmp_path / "redirected-artifacts"
+    redirected.mkdir()
+    try:
+        (tmp_path / "artifacts").symlink_to(redirected, target_is_directory=True)
+    except OSError as error:
+        pytest.skip(f"directory symlink creation unavailable: {error}")
+
+    with pytest.raises(OSError, match="symbolic link or reparse point"):
+        runner._claim_production_attempt(tmp_path)
+
+    assert not (redirected / "typed_composition_a012_v1").exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows junction contract")
+def test_fixed_production_attempt_rejects_a_windows_junction(
+    tmp_path: Path,
+) -> None:
+    redirected = tmp_path / "redirected-artifacts"
+    redirected.mkdir()
+    junction = tmp_path / "artifacts"
+    completed = subprocess.run(
+        ["cmd.exe", "/d", "/c", "mklink", "/J", str(junction), str(redirected)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if completed.returncode != 0:
+        pytest.skip(f"junction creation unavailable: {completed.stderr or completed.stdout}")
+
+    with pytest.raises(OSError, match="symbolic link or reparse point"):
+        runner._claim_production_attempt(tmp_path)
+
+    assert not (redirected / "typed_composition_a012_v1").exists()
+
+
+def test_production_preflight_validates_before_claim_and_seals_post_claim_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    source_sha256 = build_execution_plan(ROOT, PROTOCOL_PATH)["source_bundle_sha256"]
+    claimed = tmp_path / "attempt"
+    events: list[str] = []
+
+    def fake_claim(_root: Path) -> Path:
+        events.append("claim")
+        claimed.mkdir()
+        return claimed
+
+    original_write_new = runner._write_new
+
+    def fail_initial_plan(path: Path, value: bytes) -> None:
+        events.append(path.name)
+        if path.name == "000-plan.json":
+            raise OSError("synthetic production plan interruption")
+        original_write_new(path, value)
+
+    def fake_invalidate(_root: Path) -> None:
+        events.append("invalid")
+
+    monkeypatch.setattr(runner, "_claim_production_attempt", fake_claim)
+    monkeypatch.setattr(
+        runner,
+        "_verify_production_attempt_namespace",
+        lambda _root, _run: None,
+    )
+    monkeypatch.setattr(runner, "_write_new", fail_initial_plan)
+    monkeypatch.setattr(
+        runner,
+        "_durably_invalidate_production_attempt",
+        fake_invalidate,
+    )
+
+    with pytest.raises(ProtocolConfirmationError):
+        runner._preflight_production_execution(
+            ROOT,
+            PROTOCOL_PATH,
+            run_id="bad-confirmation",
+            confirmation="0" * 64,
+            source_bundle_confirmation=source_sha256,
+        )
+    assert events == []
+
+    with pytest.raises(ProtocolConfirmationError):
+        runner._preflight_production_execution(
+            ROOT,
+            PROTOCOL_PATH,
+            run_id="bad-source-confirmation",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation="0" * 64,
+        )
+    assert events == []
+
+    with pytest.raises(OSError, match="production plan interruption"):
+        runner._preflight_production_execution(
+            ROOT,
+            PROTOCOL_PATH,
+            run_id="post-claim-interruption",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation=source_sha256,
+        )
+
+    assert events[:3] == ["claim", "000-plan.json", "invalid"]
+    assert (claimed / "999-terminal-failure.json").is_file()
 
 
 def test_public_executor_rejects_a_protocol_from_another_checkout_before_evidence(
@@ -508,7 +881,6 @@ def test_public_executor_rejects_a_protocol_from_another_checkout_before_evidenc
     with pytest.raises(ValueError, match="imported repository checkout"):
         execute_protocol(
             copied_protocol,
-            evidence_root=tmp_path / "evidence",
             run_id="wrong-checkout",
             confirmation="not-reached",
             source_bundle_confirmation="not-reached",
@@ -524,16 +896,93 @@ def test_private_production_executor_also_rejects_a_foreign_root_before_evidence
         _execute_protocol(
             tmp_path,
             PROTOCOL_PATH,
-            evidence_root=tmp_path / "evidence",
             run_id="wrong-private-root",
             confirmation="not-reached",
             source_bundle_confirmation="not-reached",
-            grow_fn=runner.grow,
-            complete_fn=runner.complete,
-            synthetic_test_only=False,
         )
 
     assert not (tmp_path / "evidence").exists()
+
+
+def test_synthetic_executor_cannot_create_or_descend_into_production_claim(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    source_sha256 = build_execution_plan(ROOT, PROTOCOL_PATH)["source_bundle_sha256"]
+    create_calls: list[tuple[object, ...]] = []
+
+    def forbidden_create(*args: object, **_kwargs: object) -> Path:
+        create_calls.append(args)
+        raise AssertionError("synthetic seam reached evidence creation")
+
+    monkeypatch.setattr(runner, "create_evidence_run", forbidden_create)
+    canonical_attempt = ROOT / "artifacts" / "typed_composition_a012_v1"
+    canonical_marker = ROOT / "artifacts" / ".typed_composition_a012_v1.claimed"
+    invalid_marker = ROOT / "artifacts" / ".typed_composition_a012_v1.invalid"
+    complete_marker = ROOT / "artifacts" / ".typed_composition_a012_v1.complete"
+
+    for evidence_root, run_id in (
+        (canonical_attempt.parent, canonical_attempt.name),
+        (canonical_attempt, "synthetic-child"),
+        (canonical_attempt.with_name(canonical_attempt.name + "."), "synthetic-child"),
+        (canonical_marker, "synthetic-child"),
+        (invalid_marker, "synthetic-child"),
+        (complete_marker, "synthetic-child"),
+    ):
+        with pytest.raises(ValueError, match="production attempt namespace"):
+            runner._preflight_synthetic_execution(
+                ROOT,
+                PROTOCOL_PATH,
+                evidence_root=evidence_root,
+                run_id=run_id,
+                confirmation=protocol.raw_sha256,
+                source_bundle_confirmation=source_sha256,
+            )
+
+    assert create_calls == []
+
+    with pytest.raises(ValueError, match="run id"):
+        runner._preflight_synthetic_execution(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=canonical_attempt.parent,
+            run_id="typed_composition_a012_v1.",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation=source_sha256,
+        )
+    assert create_calls == []
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows 8.3 alias contract")
+def test_synthetic_executor_rejects_short_path_alias_of_production_artifacts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    artifacts = ROOT / "artifacts"
+    buffer = ctypes.create_unicode_buffer(32768)
+    length = ctypes.windll.kernel32.GetShortPathNameW(  # type: ignore[attr-defined]
+        str(artifacts),
+        buffer,
+        len(buffer),
+    )
+    if length == 0 or Path(buffer.value) == artifacts:
+        pytest.skip("a distinct Windows 8.3 alias is unavailable")
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    source_sha256 = build_execution_plan(ROOT, PROTOCOL_PATH)["source_bundle_sha256"]
+    monkeypatch.setattr(
+        runner,
+        "create_evidence_run",
+        lambda *_args, **_kwargs: pytest.fail("alias reached evidence creation"),
+    )
+
+    with pytest.raises(ValueError, match="production attempt namespace"):
+        runner._preflight_synthetic_execution(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=Path(buffer.value),
+            run_id="typed_composition_a012_v1",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation=source_sha256,
+        )
 
 
 def test_runtime_backend_is_frozen_to_the_same_native_cpu_path_for_all_lanes(
@@ -601,27 +1050,6 @@ def test_loaded_native_identity_is_portable_and_rehashes_the_attested_binary(
     manifest_path.unlink()
     with pytest.raises(native_runtime.NativeBuildError, match="no readable integrity manifest"):
         native_runtime.loaded_library_identity()
-
-
-def test_internal_executor_cannot_mark_injected_dependencies_as_production(
-    tmp_path: Path,
-) -> None:
-    protocol = load_composition_protocol(PROTOCOL_PATH)
-
-    with pytest.raises(TypeError, match="fixed public grow and complete"):
-        _execute_protocol(
-            ROOT,
-            PROTOCOL_PATH,
-            evidence_root=tmp_path / "evidence",
-            run_id="injected-production",
-            confirmation=protocol.raw_sha256,
-            source_bundle_confirmation="not-consulted-before-fixed-dependency-check",
-            grow_fn=lambda _protocol, _examples: object(),
-            complete_fn=lambda _checkpoint, _prompt, _signature: object(),
-            synthetic_test_only=False,
-        )
-
-    assert not (tmp_path / "evidence").exists()
 
 
 def test_all_lane_completions_are_sealed_before_labels_or_cases_are_needed() -> None:
@@ -739,8 +1167,8 @@ def test_trusted_task_metadata_is_attached_only_after_every_raw_completion_seal(
     )
 
 
-def test_a2_is_the_only_lane_and_only_exact_capability_gate_can_make_it_eligible() -> None:
-    passing = A2EligibilityMetrics(
+def test_a2_is_the_only_lane_that_can_pass_the_exact_capability_diagnostics() -> None:
+    passing = A2CapabilityMetrics(
         train_replay_tasks=42,
         train_cases=126,
         calibration_replay_tasks=18,
@@ -750,9 +1178,9 @@ def test_a2_is_the_only_lane_and_only_exact_capability_gate_can_make_it_eligible
         competitive_train_margin_count=1,
         minimum_train_target_margin_pa=0.001,
     )
-    assert a2_is_eligible("A0", passing) is False
-    assert a2_is_eligible("A1", passing) is False
-    assert a2_is_eligible("A2", passing) is True
+    assert runner._a2_capability_gates_pass("A0", passing) is False
+    assert runner._a2_capability_gates_pass("A1", passing) is False
+    assert runner._a2_capability_gates_pass("A2", passing) is True
 
     failing_variants = (
         replace(passing, train_replay_tasks=41),
@@ -765,7 +1193,352 @@ def test_a2_is_the_only_lane_and_only_exact_capability_gate_can_make_it_eligible
         replace(passing, minimum_train_target_margin_pa=0.0),
         replace(passing, minimum_train_target_margin_pa=float("nan")),
     )
-    assert all(not a2_is_eligible("A2", metrics) for metrics in failing_variants)
+    assert all(
+        not runner._a2_capability_gates_pass("A2", metrics)
+        for metrics in failing_variants
+    )
+
+
+def test_terminal_eligibility_conjoins_every_authenticated_production_gate() -> None:
+    metrics = A2CapabilityMetrics(
+        train_replay_tasks=42,
+        train_cases=126,
+        calibration_replay_tasks=18,
+        calibration_cases=54,
+        common_integrity_gates_passed=True,
+        decision_collision_count=0,
+        competitive_train_margin_count=1,
+        minimum_train_target_margin_pa=0.001,
+    )
+    passing = runner._ProductionExecutionGates(
+        protocol_confirmation_passed=True,
+        protocol_unchanged=True,
+        source_bundle_confirmation_passed=True,
+        source_bundle_unchanged=True,
+        fixed_attempt_claim_passed=True,
+        native_backend_passed=True,
+        native_library_identity_passed=True,
+        checkpoint_raw_bytes_passed=True,
+        checkpoint_identity_passed=True,
+        checkpoint_cell_synapse_passed=True,
+        checkpoint_accounting_passed=True,
+        observation_strengthen_accounting_passed=True,
+        completion_attempt_accounting_passed=True,
+        race_integrity_passed=True,
+        seal_integrity_passed=True,
+        preterminal_evidence_passed=True,
+        terminal_failure_absent=True,
+    )
+
+    assert runner._terminal_a2_eligibility(metrics, passing) is True
+    for gate in fields(passing):
+        assert (
+            runner._terminal_a2_eligibility(
+                metrics,
+                replace(passing, **{gate.name: False}),
+            )
+            is False
+        ), gate.name
+    assert (
+        runner._terminal_a2_eligibility(
+            replace(metrics, train_replay_tasks=41),
+            passing,
+        )
+        is False
+    )
+
+
+def test_terminal_boundary_gates_are_derived_from_live_claim_and_evidence(
+    tmp_path: Path,
+) -> None:
+    artifacts = tmp_path / "artifacts"
+    artifacts.mkdir()
+    attempt = artifacts / "typed_composition_a012_v1"
+    attempt.mkdir()
+    runner._create_durable_claim_marker(
+        runner._production_attempt_claim_marker(tmp_path)
+    )
+    claim_identity = runner._plain_directory_identity(attempt)
+
+    assert runner._production_attempt_claim_passes(
+        tmp_path,
+        attempt,
+        claim_identity,
+    )
+    replaced = artifacts / "replaced-attempt"
+    attempt.rename(replaced)
+    attempt.mkdir()
+    assert not runner._production_attempt_claim_passes(
+        tmp_path,
+        attempt,
+        claim_identity,
+    )
+
+    expected_records = {"000-plan.json": b"{}\n"}
+    (attempt / "000-plan.json").write_bytes(expected_records["000-plan.json"])
+    assert runner._preterminal_evidence_passes(attempt, expected_records)
+    (attempt / "000-plan.json").write_bytes(b'{"changed":true}\n')
+    assert not runner._preterminal_evidence_passes(attempt, expected_records)
+
+    assert runner._terminal_failure_absent(attempt)
+    (attempt / "999-terminal-failure.json").write_bytes(b"{}\n")
+    assert not runner._terminal_failure_absent(attempt)
+
+
+def test_production_attempt_loader_requires_completion_and_rejects_invalidation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "artifacts").mkdir()
+    attempt = runner._claim_production_attempt(tmp_path)
+    identity = runner._plain_directory_identity(attempt)
+    monkeypatch.setattr(runner, "_production_repository_root", lambda: tmp_path)
+
+    assert runner._production_attempt_claim_passes(tmp_path, attempt, identity)
+    assert not runner._loaded_production_attempt_passes(attempt)
+
+    runner._durably_complete_production_attempt(tmp_path)
+
+    assert not runner._production_attempt_claim_passes(tmp_path, attempt, identity)
+    assert runner._production_attempt_claim_passes(
+        tmp_path,
+        attempt,
+        identity,
+        allow_completed=True,
+    )
+    assert runner._loaded_production_attempt_passes(attempt)
+
+    runner._record_production_terminal_failure(
+        tmp_path,
+        attempt,
+        RuntimeError("synthetic post-completion failure"),
+    )
+
+    assert not runner._production_attempt_claim_passes(
+        tmp_path,
+        attempt,
+        identity,
+        allow_completed=True,
+    )
+    assert not runner._loaded_production_attempt_passes(attempt)
+    assert (attempt / "999-terminal-failure.json").is_file()
+
+
+def test_attempt_state_helpers_recheck_poison_after_marker_reads(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    claim_root = tmp_path / "claim-root"
+    load_root = tmp_path / "load-root"
+    for root in (claim_root, load_root):
+        (root / "artifacts").mkdir(parents=True)
+    claimed_attempt = runner._claim_production_attempt(claim_root)
+    loaded_attempt = runner._claim_production_attempt(load_root)
+    runner._durably_complete_production_attempt(load_root)
+    claimed_identity = runner._plain_directory_identity(claimed_attempt)
+    original_read = runner._read_bounded_plain_regular_file
+    poison_after_read = {
+        runner._production_attempt_claim_marker(claim_root): claim_root,
+        runner._production_attempt_claim_marker(load_root): load_root,
+    }
+
+    def read_then_poison(path: Path, *, maximum_bytes: int) -> bytes:
+        value = original_read(path, maximum_bytes=maximum_bytes)
+        root = poison_after_read.pop(path, None)
+        if root is not None:
+            runner._durably_invalidate_production_attempt(root)
+        return value
+
+    monkeypatch.setattr(runner, "_read_bounded_plain_regular_file", read_then_poison)
+
+    assert not runner._production_attempt_claim_passes(
+        claim_root,
+        claimed_attempt,
+        claimed_identity,
+    )
+    monkeypatch.setattr(runner, "_production_repository_root", lambda: load_root)
+    assert not runner._loaded_production_attempt_passes(loaded_attempt)
+
+
+def test_complete_marker_is_the_final_production_commit_action() -> None:
+    source = inspect.getsource(runner._publish_execution_evaluation)
+
+    result_offset = source.index("result = ScoredEvaluation")
+    summary_offset = source.index('"999-terminal-summary.json"')
+    verify_offset = source.index("_verify_precommit_terminal_authority")
+    complete_offset = source.index("_durably_complete_production_attempt")
+    return_offset = source.rindex("return result")
+
+    assert result_offset < summary_offset < verify_offset < complete_offset < return_offset
+
+
+def test_private_terminal_replay_passes_precommit_while_public_replay_waits(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "artifacts").mkdir()
+    attempt = runner._claim_production_attempt(tmp_path)
+    metrics = A2CapabilityMetrics(
+        train_replay_tasks=42,
+        train_cases=126,
+        calibration_replay_tasks=18,
+        calibration_cases=54,
+        common_integrity_gates_passed=True,
+        decision_collision_count=0,
+        competitive_train_margin_count=1,
+        minimum_train_target_margin_pa=0.001,
+    )
+    gates = runner._ProductionExecutionGates(
+        **{name: True for name in runner._ProductionExecutionGates.__dataclass_fields__}
+    )
+    metrics_record = {
+        name: getattr(metrics, name) for name in metrics.__dataclass_fields__
+    }
+    diagnostics_record = {
+        "a2_capability_diagnostics": {
+            **metrics_record,
+            "target_margin_distribution": [],
+        }
+    }
+    expected_names = (
+        "000-plan.json",
+        "005-native-library-before.json",
+        "010-checkpoint-A0.json",
+        "010-checkpoint-A1.json",
+        "010-checkpoint-A2.json",
+        "020-sealed-completions.json",
+        "025-native-library-after.json",
+        "030-evaluation.json",
+    )
+    expected_records = {
+        name: (
+            runner._canonical_json(diagnostics_record)
+            if name == "030-evaluation.json"
+            else runner._canonical_json({"synthetic_record": name})
+        )
+        for name in expected_names
+    }
+    for name, raw in expected_records.items():
+        (attempt / name).write_bytes(raw)
+    summary = {
+        "event": "terminal-summary",
+        "authority": "sole-final-eligibility-record",
+        "protocol_sha256": "1" * 64,
+        "source_bundle_sha256": "2" * 64,
+        "synthetic_test_only": False,
+        "native_library_sha256": "3" * 64,
+        "production_execution_gates": gates.to_record(),
+        "all_production_execution_gates_passed": True,
+        "a2_capability_metrics": metrics_record,
+        "a2_capability_gates_passed": True,
+        "preterminal_evidence_sha256": {
+            name: sha256(raw).hexdigest() for name, raw in expected_records.items()
+        },
+        "a2_eligible": True,
+        "a0_eligible": False,
+        "a1_eligible": False,
+        "future_cohort_generated": False,
+        "resume_allowed": False,
+        "rerun_attempt_allowed": False,
+    }
+    summary_bytes = runner._canonical_json(summary)
+    (attempt / "999-terminal-summary.json").write_bytes(summary_bytes)
+    run = runner._ProductionExecutionRun(
+        root=tmp_path,
+        protocol_path=tmp_path / "protocol.json",
+        protocol=object(),  # type: ignore[arg-type]
+        plan={},
+        runtime_backend={},
+        runtime_provenance={},
+        run_directory=attempt,
+        execution_plan_bytes=expected_records["000-plan.json"],
+        confirmed_protocol_sha256=None,
+        confirmed_source_bundle_sha256=None,
+        claimed_directory_identity=runner._plain_directory_identity(attempt),
+    )
+    replay_contexts: list[runner._ProductionExecutionRun | None] = []
+
+    def fake_rederive(
+        _run_directory: Path,
+        _terminal: object,
+        _diagnostics: object,
+        _hashes: object,
+        _expected_names: object,
+        *,
+        precommit_run: runner._ProductionExecutionRun | None = None,
+    ) -> tuple[A2CapabilityMetrics, runner._ProductionExecutionGates]:
+        replay_contexts.append(precommit_run)
+        return metrics, gates
+
+    monkeypatch.setattr(runner, "_production_repository_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        runner,
+        "_rederive_production_terminal_evidence",
+        fake_rederive,
+    )
+
+    assert tuple(inspect.signature(runner._load_authoritative_terminal_summary).parameters) == (
+        "run_directory",
+    )
+    assert tuple(
+        inspect.signature(runner._verify_precommit_terminal_authority).parameters
+    ) == ("run", "expected_summary", "expected_preterminal_records")
+    assert (
+        runner._verify_precommit_terminal_authority(
+            run,
+            summary_bytes,
+            expected_records,
+        )
+        is None
+    )
+    assert not runner._production_attempt_complete_marker(tmp_path).exists()
+    with pytest.raises(RuntimeError, match="completion authority changed"):
+        runner._load_authoritative_terminal_summary(attempt)
+
+    runner._durably_complete_production_attempt(tmp_path)
+
+    assert runner._load_authoritative_terminal_summary(attempt) == summary
+    assert replay_contexts == [run, None, None]
+
+
+def test_public_production_loader_rechecks_invalidation_after_plan_rebuild(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "artifacts").mkdir()
+    attempt = runner._claim_production_attempt(tmp_path)
+    runner._durably_complete_production_attempt(tmp_path)
+    terminal = {
+        "synthetic_test_only": False,
+        "protocol_sha256": "1" * 64,
+        "source_bundle_sha256": "2" * 64,
+    }
+
+    monkeypatch.setattr(runner, "_production_repository_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        runner,
+        "_load_authoritative_terminal_summary",
+        lambda run_directory: (
+            terminal
+            if runner._loaded_production_attempt_passes(run_directory)
+            else pytest.fail("initial authority state did not pass")
+        ),
+    )
+
+    def invalidate_during_plan_rebuild(_root: Path, _protocol_path: Path) -> dict[str, str]:
+        runner._durably_invalidate_production_attempt(tmp_path)
+        return {
+            "protocol_sha256": terminal["protocol_sha256"],
+            "source_bundle_sha256": terminal["source_bundle_sha256"],
+        }
+
+    monkeypatch.setattr(runner, "build_execution_plan", invalidate_during_plan_rebuild)
+
+    with pytest.raises(RuntimeError, match="changed during final load"):
+        runner.load_production_terminal_summary()
+
+    assert runner._production_attempt_invalid_marker(tmp_path).is_file()
+    assert not runner._loaded_production_attempt_passes(attempt)
 
 
 def test_race_integrity_binds_typed_state_winner_prefix_and_physical_values() -> None:
@@ -897,6 +1670,7 @@ def test_synthetic_execution_failure_is_preserved_and_cannot_resume(
 
 def test_synthetic_execution_records_non_gating_lane_costs_and_runtime_provenance(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     protocol = load_composition_protocol(PROTOCOL_PATH)
     source_bundle_sha256 = build_execution_plan(ROOT, PROTOCOL_PATH)["source_bundle_sha256"]
@@ -1029,6 +1803,114 @@ def test_synthetic_execution_records_non_gating_lane_costs_and_runtime_provenanc
     )
     assert persisted["performance_measurements"] == measurements
     assert persisted["runtime_provenance"] == provenance
+    assert "a2_eligibility" not in persisted
+    assert "a2_eligible" not in persisted
+    assert "eligible" not in persisted
+    assert '"eligible"' not in json.dumps(persisted, sort_keys=True)
+    assert "a2_eligib" not in json.dumps(persisted, sort_keys=True)
+    assert evaluation.terminal_summary["a2_eligible"] is False
+
+    completed_run = tmp_path / "evidence" / "synthetic-measurements"
+    summary_path = completed_run / "999-terminal-summary.json"
+    original_summary = summary_path.read_bytes()
+    forged_summary = json.loads(original_summary)
+    forged_summary["a2_capability_metrics"]["train_replay_tasks"] -= 1
+    summary_path.write_bytes(runner._canonical_json(forged_summary))
+    with pytest.raises(RuntimeError, match="metrics differ from diagnostics evidence"):
+        runner._load_authoritative_terminal_summary(completed_run)
+    summary_path.write_bytes(original_summary)
+
+    original_write_new = runner._write_new
+
+    def interrupt_terminal_summary(path: Path, value: bytes) -> None:
+        if path.name == "999-terminal-summary.json":
+            raise OSError("synthetic terminal-summary interruption")
+        original_write_new(path, value)
+
+    monkeypatch.setattr(runner, "_write_new", interrupt_terminal_summary)
+    interrupted_run = tmp_path / "evidence" / "synthetic-terminal-interruption"
+    with pytest.raises(OSError, match="terminal-summary interruption"):
+        _execute_protocol_synthetic(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=tmp_path / "evidence",
+            run_id="synthetic-terminal-interruption",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation=source_bundle_sha256,
+            grow_fn=lambda layer, examples: Checkpoint(layer, examples),
+            complete_fn=synthetic_complete,
+            clock=runner._ExecutionClock(
+                wall_ns=StepClock().wall_ns,
+                process_ns=StepClock().process_ns,
+            ),
+        )
+
+    interrupted_diagnostics = json.loads(
+        (interrupted_run / "030-evaluation.json").read_text(encoding="utf-8")
+    )
+    assert "a2_eligibility" not in interrupted_diagnostics
+    assert "a2_eligible" not in interrupted_diagnostics
+    assert "eligible" not in interrupted_diagnostics
+    assert '"eligible"' not in json.dumps(interrupted_diagnostics, sort_keys=True)
+    assert "a2_eligib" not in json.dumps(interrupted_diagnostics, sort_keys=True)
+    assert not (interrupted_run / "999-terminal-summary.json").exists()
+    assert (interrupted_run / "999-terminal-failure.json").is_file()
+
+    def fail_after_terminal_publication(path: Path, value: bytes) -> None:
+        original_write_new(path, value)
+        if path.name == "999-terminal-summary.json":
+            raise OSError("synthetic post-publication flush failure")
+
+    monkeypatch.setattr(runner, "_write_new", fail_after_terminal_publication)
+    indeterminate_run = tmp_path / "evidence" / "synthetic-terminal-indeterminate"
+    with pytest.raises(OSError, match="post-publication flush failure"):
+        _execute_protocol_synthetic(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=tmp_path / "evidence",
+            run_id="synthetic-terminal-indeterminate",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation=source_bundle_sha256,
+            grow_fn=lambda layer, examples: Checkpoint(layer, examples),
+            complete_fn=synthetic_complete,
+            clock=runner._ExecutionClock(
+                wall_ns=StepClock().wall_ns,
+                process_ns=StepClock().process_ns,
+            ),
+        )
+
+    assert (indeterminate_run / "999-terminal-summary.json").is_file()
+    assert (indeterminate_run / "999-terminal-failure.json").is_file()
+    with pytest.raises(RuntimeError, match="invalidated by terminal failure"):
+        runner._load_authoritative_terminal_summary(indeterminate_run)
+
+    mutated_run = tmp_path / "evidence" / "synthetic-preterminal-mutation"
+
+    def mutate_after_terminal_publication(path: Path, value: bytes) -> None:
+        original_write_new(path, value)
+        if path.name == "999-terminal-summary.json":
+            (mutated_run / "030-evaluation.json").write_bytes(b"mutated")
+
+    monkeypatch.setattr(runner, "_write_new", mutate_after_terminal_publication)
+    with pytest.raises(RuntimeError, match="evidence record byte count changed"):
+        _execute_protocol_synthetic(
+            ROOT,
+            PROTOCOL_PATH,
+            evidence_root=tmp_path / "evidence",
+            run_id="synthetic-preterminal-mutation",
+            confirmation=protocol.raw_sha256,
+            source_bundle_confirmation=source_bundle_sha256,
+            grow_fn=lambda layer, examples: Checkpoint(layer, examples),
+            complete_fn=synthetic_complete,
+            clock=runner._ExecutionClock(
+                wall_ns=StepClock().wall_ns,
+                process_ns=StepClock().process_ns,
+            ),
+        )
+
+    assert (mutated_run / "999-terminal-failure.json").is_file()
+    with pytest.raises(RuntimeError, match="invalidated by terminal failure"):
+        runner._load_authoritative_terminal_summary(mutated_run)
 
 
 def test_checkpoint_accounting_binds_exact_inputs_observations_and_strengthens() -> None:
@@ -1077,7 +1959,7 @@ def test_checkpoint_accounting_binds_exact_inputs_observations_and_strengthens()
         _validate_checkpoint_accounting(protocol, "A2", checkpoint)
 
 
-def test_synthetic_perfect_seals_pass_exact_a2_gate_without_material_training() -> None:
+def test_public_scoring_reports_a2_diagnostics_without_minting_eligibility() -> None:
     protocol = load_composition_protocol(PROTOCOL_PATH)
     task_by_request = {
         (task.prompt, task.signature): task
@@ -1153,21 +2035,23 @@ def test_synthetic_perfect_seals_pass_exact_a2_gate_without_material_training() 
     checkpoint_cell_hashes = {
         lane: checkpoint.cell_synapse_sha256 for lane, checkpoint in checkpoints.items()
     }
-    evaluation = score_sealed_completions(
+    diagnostics = score_sealed_completions(
         protocol,
         sealed,
         checkpoint_sha256s=checkpoint_hashes,
         checkpoint_cell_synapse_sha256s=checkpoint_cell_hashes,
     )
 
-    assert evaluation.a2_eligible is True
-    assert evaluation.a2_metrics.train_replay_tasks == 42
-    assert evaluation.a2_metrics.train_cases == 126
-    assert evaluation.a2_metrics.calibration_replay_tasks == 18
-    assert evaluation.a2_metrics.calibration_cases == 54
-    assert evaluation.a2_metrics.decision_collision_count == 0
-    assert evaluation.a2_metrics.competitive_train_margin_count > 0
-    assert evaluation.a2_metrics.minimum_train_target_margin_pa == 1.0
+    assert not hasattr(diagnostics, "a2_eligible")
+    assert "a2_eligibility" not in diagnostics.record
+    assert "eligible" not in diagnostics.record["a2_capability_diagnostics"]
+    assert diagnostics.a2_metrics.train_replay_tasks == 42
+    assert diagnostics.a2_metrics.train_cases == 126
+    assert diagnostics.a2_metrics.calibration_replay_tasks == 18
+    assert diagnostics.a2_metrics.calibration_cases == 54
+    assert diagnostics.a2_metrics.decision_collision_count == 0
+    assert diagnostics.a2_metrics.competitive_train_margin_count > 0
+    assert diagnostics.a2_metrics.minimum_train_target_margin_pa == 1.0
 
     def replace_record(
         item_index: int,
@@ -1207,23 +2091,18 @@ def test_synthetic_perfect_seals_pass_exact_a2_gate_without_material_training() 
         "checkpoint_sha256s": checkpoint_hashes,
         "checkpoint_cell_synapse_sha256s": checkpoint_cell_hashes,
     }
-    assert (
-        score_sealed_completions(protocol, bad_model_input, **common_arguments).a2_eligible is False
-    )
-    assert (
-        score_sealed_completions(protocol, bad_program_digest, **common_arguments).a2_eligible
-        is False
-    )
-    assert (
-        score_sealed_completions(protocol, tuple(bad_outer_cohort), **common_arguments).a2_eligible
-        is False
-    )
-    assert (
-        score_sealed_completions(
-            protocol,
-            sealed,
-            checkpoint_sha256s=checkpoint_hashes,
-            checkpoint_cell_synapse_sha256s=bad_expected_cell_hashes,
-        ).a2_eligible
-        is False
-    )
+    assert not score_sealed_completions(
+        protocol, bad_model_input, **common_arguments
+    ).a2_metrics.common_integrity_gates_passed
+    assert not score_sealed_completions(
+        protocol, bad_program_digest, **common_arguments
+    ).a2_metrics.common_integrity_gates_passed
+    assert not score_sealed_completions(
+        protocol, tuple(bad_outer_cohort), **common_arguments
+    ).a2_metrics.common_integrity_gates_passed
+    assert not score_sealed_completions(
+        protocol,
+        sealed,
+        checkpoint_sha256s=checkpoint_hashes,
+        checkpoint_cell_synapse_sha256s=bad_expected_cell_hashes,
+    ).a2_metrics.common_integrity_gates_passed

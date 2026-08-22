@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
+import subprocess
 import tomllib
 from dataclasses import replace
 from pathlib import Path
@@ -50,6 +52,46 @@ def test_package_data_declares_config_and_recursive_vendored_inputs() -> None:
     assert "_native_src/.cargo/config.toml" in patterns
     assert "_native_src/vendor/**/*" in patterns
     assert "_native_src/vendor/**/.*" in patterns
+
+
+def test_native_manifest_remains_its_own_workspace_under_a_hostile_parent(
+    tmp_path: Path,
+) -> None:
+    cargo = shutil.which("cargo")
+    assert cargo is not None
+    hostile_parent = tmp_path / "hostile-workspace"
+    nested_native = hostile_parent / "nested" / "native"
+    nested_native.mkdir(parents=True)
+    (hostile_parent / "Cargo.toml").write_text(
+        '[workspace]\nresolver = "2"\nmembers = []\n',
+        encoding="utf-8",
+    )
+    copied_manifest = nested_native / "Cargo.toml"
+    copied_manifest.write_bytes(
+        (ROOT / "src" / "humanbrain" / "_native_src" / "Cargo.toml").read_bytes()
+    )
+    (nested_native / "src").mkdir()
+    (nested_native / "src" / "lib.rs").write_text("", encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            cargo,
+            "locate-project",
+            "--workspace",
+            "--manifest-path",
+            str(copied_manifest),
+            "--message-format",
+            "plain",
+        ],
+        cwd=hostile_parent,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert Path(completed.stdout.strip()).resolve() == copied_manifest.resolve()
 
 
 def test_native_lock_and_vendored_checksum_bytes_have_stable_checkout_policy() -> None:

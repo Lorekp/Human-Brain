@@ -173,8 +173,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/Cargo.toml",
-        "size": 245,
-        "sha256": "12e29c007cbbdc7f42b3fcc439a5292922bcbca281a8561a5e809d971cff4706"
+        "size": 258,
+        "sha256": "52a689b90c0936d59828c2d61c7d220a6b981596170264d1489e9541ac2e3bb8"
       },
       {
         "path": "src/humanbrain/_native_src/src/lib.rs",
@@ -1517,11 +1517,11 @@
         "sha256": "7155d4a3ae920eb37d40cc58d538052302cfb45517dbafec685b414305e2c98f"
       }
     ],
-    "bundle_sha256": "f2227f8127a0dbefc8105cebbf49fd98c4c2e05e88230752567f8c0926707f86",
+    "bundle_sha256": "8777b30fbcec0191eb72a2203f756a0073936baac763d93265cb70ac94ac2e52",
     "limits": {
       "maximum_file_bytes": 1048576,
       "maximum_aggregate_bytes": 8388608,
-      "actual_aggregate_bytes": 2124187
+      "actual_aggregate_bytes": 2124200
     }
   },
   "timing": {

@@ -135,7 +135,8 @@
       "checkpoint-raw-byte-immutability",
       "completion-attempt-accounting",
       "observation-and-strengthen-accounting",
-      "exclusive-evidence-creation"
+      "exclusive-protocol-cohort-attempt",
+      "terminal-evidence-envelope-integrity"
     ]
   },
   "future_cohort": {
@@ -444,18 +445,19 @@
   ],
   "execution": {
     "default_mode": "plan",
-    "execute_requires": "--execute --confirm-protocol-sha256 EXACT_RAW_SHA256 --confirm-source-bundle-sha256 EXACT_REVIEWED_SOURCE_BUNDLE_SHA256 --run-id UNIQUE_ID",
+    "execute_requires": "--execute --confirm-protocol-sha256 EXACT_RAW_SHA256 --confirm-source-bundle-sha256 EXACT_REVIEWED_SOURCE_BUNDLE_SHA256 --run-id METADATA_ID",
     "runtime_backend": "native CPU for all three 128-cell lanes; HUMANBRAIN_DEVICE=cuda is rejected",
     "production_checkout": "derive the repository root from every imported local runtime module and require this exact checkout/protocol before evidence, model construction, or native execution",
     "source_read_limits": "size+1 reads; at most 1048576 bytes per file and 8388608 bytes for the complete reviewed source bundle, including the vendored Cargo closure",
     "runtime_binary_evidence": "one immutable native build plan drives both the full SHA-256 cache address and literal Cargo --locked --offline subprocess: complete bounded Cargo sources plus exact vendored dependencies/config, config-free ancestors and Cargo home, controlled environment and encoded flags, explicit host target/rust-lld, exact cargo/rustc/proxy/linker bytes and versions, native CPU probes, a bounded framed manifest of every regular selected rustc target-libdir file, and host SDK identity; hash and size the exact loaded binary before/after",
     "runtime_provenance_evidence": "persist Python implementation/version, NumPy version, OS system/release/machine, and portable native source/cache digest plus binary size/SHA-256",
     "performance_evidence": "record per-lane grow wall/process nanoseconds, completion-and-sealing wall/process nanoseconds, checkpoint bytes, completion count, and race count; these measurements never affect capability eligibility",
-    "evidence_mode": "durably create every missing evidence namespace component and the exclusive run directory (POSIX mkdir plus parent fsync; Windows same-parent temporary directory plus MoveFileExW WRITE_THROUGH without replace); publish each fsynced temporary record exclusively (POSIX hard link plus parent fsync; Windows MoveFileExW WRITE_THROUGH without replace); preserve indeterminate partials and refuse overwrite",
-    "failure_policy": "preserve every partial artifact and terminal failure record",
-    "resume_policy": "no resume and no rerun under the same run identifier",
+    "evidence_mode": "after validating the metadata run ID and exact protocol/source confirmations, atomically create and fsync the direct final-name artifacts/.typed_composition_a012_v1.claimed file as the first production side effect and permanent exclusive spent marker; ownership begins immediately after exclusive open, before marker write/fsync/readback; the claim is independent of metadata run ID and has no protocol-hash or caller-selected evidence-root input; then create the single fixed artifacts/typed_composition_a012_v1 evidence directory (POSIX mkdir plus parent fsync; Windows deterministic .typed_composition_a012_v1.claiming directory plus same-parent MoveFileExW WRITE_THROUGH without replace), with either Windows pre-move/indeterminate namespace permanently refusing every later attempt; protect the fixed attempt, claiming staging name, and claimed, invalid, and complete markers from every symlink/reparse or physical-alias path; publish each fsynced temporary record exclusively, preserve indeterminate partials, and refuse overwrite",
+    "failure_policy": "after exclusive creation of the claimed marker, every exception first durably publishes the parent-side .typed_composition_a012_v1.invalid poison marker before best-effort in-directory terminal-failure diagnostics; preserve every partial artifact; neither an unwritable stale envelope nor a terminal summary can be authoritative when invalid is present",
+    "resume_policy": "no resume and no second attempt of this protocol/cohort under any run identifier after success or failure",
     "development_policy": "DEV-v1 is retired and must never be rerun or used for tuning",
-    "selection_policy": "A0 and A1 are diagnostic only; A2 is the sole eligible lane; no winner selection among trained variants",
+    "selection_policy": "A0 and A1 are diagnostic only; A2 is the sole capability candidate; public sealing/scoring and every preterminal evidence record return diagnostics only; the verified 999-terminal-summary.json envelope is the sole eligibility authority after explicitly conjoining every production gate and rebinding every preterminal digest; no winner selection among trained variants",
+    "terminal_authority": "after durable 999-terminal-summary.json publication, privately re-read and verify the complete terminal envelope while the complete marker remains absent; preconstruct the return value, then exclusively publish and fsync the fixed parent-side .typed_composition_a012_v1.complete marker as the final commit action and immediately return without fallible post-commit work; accept the summary only through the fixed production loader with exact claimed and complete marker bytes, absent invalid and claiming markers, exact canonical schema, no terminal-failure record, exact immutable file set, every preterminal SHA-256 reverified, and plan/native/checkpoint/accounting/sealed-completion/diagnostics evidence parsed under byte bounds to rederive current protocol/source equality, exact capability metrics, every authenticated production gate, and terminal eligibility",
     "run_hold": "No material TRAIN, calibration, or future-cohort execution is authorized by this protocol freeze."
   }
 }

@@ -16,7 +16,7 @@ from humanbrain.typed_composition import (
 
 ROOT = Path(__file__).parents[1]
 PROTOCOL_PATH = ROOT / "benchmarks" / "typed_composition_protocol_v1.json"
-EXPECTED_PROTOCOL_SHA256 = "d91517ee7b7f900da2bd8246e051c562f5a0568a6b3fe2b71b7262b1fab052b2"
+EXPECTED_PROTOCOL_SHA256 = "2d41d366611c6217dd8a14411b68bc03be1cafb4572e41f3c5a77da326cda412"
 
 
 def _canonical_json(value: object) -> bytes:
@@ -172,4 +172,30 @@ def test_future_cohort_is_committed_but_has_no_seed_or_generated_tasks() -> None
         "hidden",
         "canonical",
         "Fly-Brain",
+    )
+
+
+def test_protocol_spends_the_cohort_once_and_reserves_eligibility_for_execution() -> None:
+    record = json.loads(PROTOCOL_PATH.read_text(encoding="utf-8"))
+
+    assert record["execution"]["resume_policy"] == (
+        "no resume and no second attempt of this protocol/cohort under any run "
+        "identifier after success or failure"
+    )
+    assert "independent of metadata run ID" in record["execution"]["evidence_mode"]
+    assert ".typed_composition_a012_v1.claimed" in (
+        record["execution"]["evidence_mode"]
+    )
+    assert ".typed_composition_a012_v1.claiming" in (
+        record["execution"]["evidence_mode"]
+    )
+    assert "public sealing/scoring and every preterminal evidence record" in (
+        record["execution"]["selection_policy"]
+    )
+    assert record["eligibility_gates"]["mandatory_common"][-2:] == [
+        "exclusive-protocol-cohort-attempt",
+        "terminal-evidence-envelope-integrity",
+    ]
+    assert "sole eligibility authority" in (
+        record["execution"]["selection_policy"]
     )
