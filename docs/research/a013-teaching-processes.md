@@ -13,6 +13,16 @@ supervision per lane (all-transition A0/A1, program-only A2). Result at N=128:
 TRAIN replay 40/42 (capacity shortfall), calibration 0/18 (no transfer),
 margins strong where committed (median 726 pA) — task-specific saturation.
 
+Feature-space fact (verified, recurrent.py:231): the ridge feature vector is
+exactly `[eligibility vector; bias]` — `feature_count = reservoir_cells + 1`.
+There are NO token-identity features in the readout itself. Token specificity
+enters only through which cells the fixed random fanout excites. Consequence:
+the readout's capacity ceiling is set by how linearly separable different
+tasks are within one shared eligibility geometry — under explicit token
+identities with near-null state separation (~0.001), tasks collide in feature
+space. This sharpens T1/T2 below: adding data cannot help once features
+collide; changing the code geometry can.
+
 ## Axis matrix
 
 | # | Axis | Mechanism hypothesis (code-cited) | Capacity effect | Generalization effect | Cost | Decisive experiment |

@@ -63,7 +63,27 @@ skills durable; homeostasis prevents the strong-margins-no-transfer pathology
 observed in the sealed run. Each is an engineering property with a test, not a
 philosophical stance.
 
-## Decisive experiments (preregistrable)
+## Why regions matter functionally: trace-horizon arithmetic
+
+Verified decay horizons (time for each GLIF5 mutable field to decay from
+order-1 magnitude to float64 subnormal at dt=0.05 ms, tau per cells.py):
+
+| field | tau | horizon |
+|---|---|---|
+| voltage | 20 ms | ~15 s |
+| ASC1 / ASC2 | 200 ms | ~150 s |
+| threshold adder | 10 ms | ~7.5 s |
+| eligibility | 80 ms | ~60 s |
+
+Consequence: ALL fast traces die within seconds to minutes of biological
+time. Any skill requiring longer-range binding (multi-step tasks, cross-task
+structure) cannot live in cell state — it must live in SYNAPTIC weights
+(grown structure) or in externally refreshed re-entry. This is the physical
+argument for Region E forming persistent assembly codebooks (weights) rather
+than relying on transient activation, and it bounds workspace broadcast
+intervals: re-injection must occur within the ~15 s voltage horizon to bind.
+
+
 
 - Codes experiment: explicit vs random-distributed vs similarity-projected at
   matched N/teaching; gate = calibration-transfer separation (representation
