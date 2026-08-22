@@ -7,12 +7,12 @@ from pathlib import Path
 
 import pytest
 from humanbrain.simple_swe import tasks as task_module
+from humanbrain.simple_swe import family_callable_types
 from humanbrain.simple_swe.protocol import load_protocol
 from humanbrain.simple_swe.tasks import (
     CallableType,
     _generate_partition,
     canonical_json_bytes,
-    family_callable_types,
     generate_visible_partition,
 )
 from humanbrain.typed_program import ProgramParameter, ProgramType
