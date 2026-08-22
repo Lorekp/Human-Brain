@@ -1,8 +1,10 @@
-//! Native sparse simulation kernel for the fitted human Allen GLIF5 cells.
+//! Native simulation kernels for the fitted human Allen GLIF5 cells.
 //!
 //! The public surface is deliberately a small C ABI so Python remains
-//! orchestration only. The kernel owns no state: NumPy arrays remain the
-//! checkpointable source of truth and are mutated in place.
+//! orchestration only. The established GLIF and recurrent entry points are
+//! stateless kernels over caller-owned NumPy arrays. The procedural entry points
+//! instead return opaque handles that own bounded cell, event, spike, and scratch
+//! state until explicit destruction.
 
 use rayon::prelude::*;
 use std::{slice, time::Instant};

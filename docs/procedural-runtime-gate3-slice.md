@@ -52,6 +52,16 @@ is exhausted, the runtime becomes poisoned and reports the failure; it never
 spills into a dense or approximate path. Snapshot-buffer and duplicate-input
 validation failures are non-poisoning.
 
+Returned-spike capacity exhaustion reports native status `9` and poisons the
+handle. A spike-generated event key that collides with an already queued key
+reports status `4` and also poisons the handle; by contrast, status `4` for a
+duplicate submitted input is rejected before simulation-state mutation and is
+non-poisoning. Any later operation on a poisoned handle reports status `5`.
+Neither fail-stop path commits the in-progress biological step or publishes its
+work as completed-interval counters. Bounded in-progress cell, event, and spike
+state remains deterministic and snapshot-visible; the runtime does not claim
+transactional rollback after step execution has begun.
+
 The runtime stores no base-edge records. Each spiking source regenerates its
 counter64-v2 row, applies the source's deterministic Dale-like sign, and queues
 fixed-delay events. Row membership uses a reusable bounded hash set while target

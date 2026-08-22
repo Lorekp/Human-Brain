@@ -468,6 +468,45 @@ def _snapshot_bits(snapshot: ProceduralSnapshot) -> tuple[object, ...]:
     )
 
 
+def _native_counter_snapshot(
+    runtime: NativeProceduralRuntime,
+) -> procedural_runtime_module._NativeCounters:
+    counters = procedural_runtime_module._NativeCounters()
+    status = runtime._library.humanbrain_procedural_runtime_snapshot(
+        runtime._handle,
+        None,
+        0,
+        None,
+        0,
+        None,
+        0,
+        ctypes.byref(counters),
+    )
+    assert status == 0
+    return counters
+
+
+def _committed_counter_values(
+    counters: procedural_runtime_module._NativeCounters,
+) -> tuple[int, ...]:
+    return tuple(
+        int(getattr(counters, field))
+        for field in (
+            "current_step",
+            "resident_peak",
+            "resident_distinct",
+            "updated_distinct",
+            "spiking_distinct",
+            "cell_step_evaluations",
+            "spike_events",
+            "generated_edges",
+            "delivered_events",
+            "configured_ids_scanned",
+            "queue_peak",
+        )
+    )
+
+
 def _is_canonical_rest(state: ProceduralResidentState) -> bool:
     values = (
         state.voltage_relative_mv,
@@ -821,6 +860,116 @@ def test_generated_event_capacity_overflow_is_deterministic_and_fail_stop() -> N
     assert snapshot.poisoned is True
 
 
+def test_spike_capacity_exhaustion_is_exact_deterministic_fail_stop() -> None:
+    config = ProceduralRuntimeConfig(
+        manifest=TopologyManifest(17, 2, "uniform_no_self", 71),
+        resident_capacity=2,
+        event_capacity=8,
+        spike_capacity=1,
+        interval_distinct_capacity=4,
+        recurrent_weight_pa=325.0,
+        recurrent_delay_steps=1,
+    )
+    events = (
+        ProceduralInputEvent(0, 2, 0, 0, 150_000.0),
+        ProceduralInputEvent(0, 3, 1, 1, 150_000.0),
+    )
+
+    def fail_once() -> tuple[int, int, ProceduralSnapshot, bytes, tuple[int, ...], int]:
+        with NativeProceduralRuntime(config) as runtime:
+            with pytest.raises(
+                ProceduralRuntimeError, match="interval spike capacity exhausted"
+            ) as first:
+                runtime.advance(1, tuple(reversed(events)))
+            snapshot = runtime.snapshot()
+            counters = _native_counter_snapshot(runtime)
+            with pytest.raises(
+                ProceduralRuntimeError, match="runtime is poisoned"
+            ) as second:
+                runtime.advance(1)
+        return (
+            first.value.status,
+            second.value.status,
+            snapshot,
+            bytes(counters),
+            _committed_counter_values(counters),
+            int(counters.overflow_code),
+        )
+
+    first = fail_once()
+    second = fail_once()
+
+    assert first[0:2] == (9, 5)
+    assert first[4] == (0,) * 11
+    assert first[5] == 9
+    assert first[2].current_step == 0
+    assert first[2].poisoned is True
+    assert first[2].overflow_reason == "interval spike capacity exhausted"
+    assert _snapshot_bits(first[2]) == _snapshot_bits(second[2])
+    assert first[3:] == second[3:]
+
+
+def test_generated_recurrent_key_collision_is_exact_deterministic_fail_stop() -> None:
+    config = _runtime_config(17)
+    source_gid = 2
+    edge = ProceduralTopology(config.manifest).base_edges(source_gid)[0]
+    collision_key = (1, edge.target_gid, source_gid, edge.edge_slot)
+    events = (
+        ProceduralInputEvent(*collision_key, 1.0),
+        ProceduralInputEvent(0, source_gid, 0, 1, 150_000.0),
+    )
+
+    def fail_once() -> tuple[int, int, ProceduralSnapshot, bytes, tuple[int, ...], int]:
+        with NativeProceduralRuntime(config) as runtime:
+            with pytest.raises(
+                ProceduralRuntimeError, match="duplicate canonical event key"
+            ) as first:
+                runtime.advance(1, tuple(reversed(events)))
+            snapshot = runtime.snapshot()
+            counters = _native_counter_snapshot(runtime)
+            with pytest.raises(
+                ProceduralRuntimeError, match="runtime is poisoned"
+            ) as second:
+                runtime.advance(1)
+        return (
+            first.value.status,
+            second.value.status,
+            snapshot,
+            bytes(counters),
+            _committed_counter_values(counters),
+            int(counters.overflow_code),
+        )
+
+    first = fail_once()
+    second = fail_once()
+
+    matching_keys = [
+        (
+            event.due_step,
+            event.target_gid,
+            event.source_gid,
+            event.edge_slot,
+        )
+        for event in first[2].pending_events
+        if (
+            event.due_step,
+            event.target_gid,
+            event.source_gid,
+            event.edge_slot,
+        )
+        == collision_key
+    ]
+    assert first[0:2] == (4, 5)
+    assert first[4] == (0,) * 11
+    assert first[5] == 4
+    assert first[2].current_step == 0
+    assert first[2].poisoned is True
+    assert first[2].overflow_reason == "duplicate canonical event key"
+    assert len(matching_keys) == 2
+    assert _snapshot_bits(first[2]) == _snapshot_bits(second[2])
+    assert first[3:] == second[3:]
+
+
 def test_interval_distinct_capacity_is_deterministic_and_fail_stop() -> None:
     config = ProceduralRuntimeConfig(
         manifest=TopologyManifest(17, 2, "uniform_no_self", 71),
@@ -996,6 +1145,21 @@ def test_gate3_slice_protocol_keeps_material_timing_frozen() -> None:
         "O(R_capacity + Q_capacity + S_capacity + F + D_capacity), "
         "independent of N_configured"
     )
+    assert {
+        "returned-spike capacity exhaustion before step commit",
+        "spike-generated event-key collision after mutation is fail-stop",
+    } <= set(protocol["exactness_gate"]["cases"])
+    assert protocol["residency"]["fail_stop_statuses"] == {
+        "submitted_duplicate_input": {"status": 4, "poisons": False},
+        "returned_spike_capacity": {"status": 9, "poisons": True},
+        "spike_generated_event_key_collision": {"status": 4, "poisons": True},
+        "poisoned_followup": {"status": 5},
+    }
+    assert protocol["residency"]["failed_step_commit"] == (
+        "The biological step and completed-interval counters remain at the last "
+        "completed boundary. Bounded in-progress state is deterministic and "
+        "snapshot-visible; rollback is not claimed."
+    )
     assert protocol["source_binding"]["framing"] == (
         "humanbrain-procedural-runtime-source-v1: ordered UTF-8 path length/path "
         "plus uint64 byte length/raw bytes"
@@ -1007,7 +1171,7 @@ def test_gate3_slice_protocol_keeps_material_timing_frozen() -> None:
         native_module.procedural_runtime_source_bundle_sha256()
     )
     assert hashlib.sha256(protocol_bytes).hexdigest() == (
-        "956af3c85d610637c40212275b19a10173114f30bbc12067714480f313dfc3f4"
+        "0b1715cb34ca6a3286f9ef3e4a4d29e102ffce79e76140bfc70aba844809bd15"
     )
     assert protocol["timing"]["status"] == "frozen-pending-explicit-approval"
     assert protocol["timing"]["executed"] is False

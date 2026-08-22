@@ -59,7 +59,25 @@
     "eviction": "After a real fixed-step update, evict only if all eight mutable fields are bitwise canonical positive zero/integer zero.",
     "future_events": "A future queued event does not force residency before it is due.",
     "nonzero_tails": "Nonzero exponential tails remain resident and updated until exact underflow or cancellation produces canonical zero.",
-    "capacity_failure": "Resident, event, returned-spike, interval-distinct, bounded-allocation, or spike-generated event-key collision failure is deterministic and fail-stop. Submitted duplicate-input and snapshot-buffer validation remain non-poisoning. No spill, tolerance eviction, dense fallback, or compatibility path exists."
+    "capacity_failure": "Resident, event, returned-spike, interval-distinct, bounded-allocation, or spike-generated event-key collision failure is deterministic and fail-stop. Submitted duplicate-input and snapshot-buffer validation remain non-poisoning. No spill, tolerance eviction, dense fallback, or compatibility path exists.",
+    "fail_stop_statuses": {
+      "submitted_duplicate_input": {
+        "status": 4,
+        "poisons": false
+      },
+      "returned_spike_capacity": {
+        "status": 9,
+        "poisons": true
+      },
+      "spike_generated_event_key_collision": {
+        "status": 4,
+        "poisons": true
+      },
+      "poisoned_followup": {
+        "status": 5
+      }
+    },
+    "failed_step_commit": "The biological step and completed-interval counters remain at the last completed boundary. Bounded in-progress state is deterministic and snapshot-visible; rollback is not claimed."
   },
   "exactness_gate": {
     "dense_reference_max_cells": 65536,
@@ -74,6 +92,8 @@
       "exact underflow eviction",
       "recurrent spike-generated events",
       "resident, event, spike, and interval-distinct capacity fail-stop",
+      "returned-spike capacity exhaustion before step commit",
+      "spike-generated event-key collision after mutation is fail-stop",
       "cross-call duplicate rejection without mutation or poison",
       "advance/snapshot/close thread overlap",
       "all-before-write sparse and dense snapshot capacity validation",
@@ -153,8 +173,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/lib.rs",
-        "size": 54078,
-        "sha256": "b3730c7fbec7ac389b0442993ac93a051025ada2fb0cfb092446911873d134aa"
+        "size": 54216,
+        "sha256": "d5d1da772e47e71e24f788bb2aa018dee8cd440270878d0ccd4b83e8eed5e9d8"
       },
       {
         "path": "src/humanbrain/_native_src/src/procedural.rs",
@@ -192,7 +212,7 @@
         "sha256": "a0a9e70769e24f918889395d0f5a729e12d3aef08a9bcbd70692a2bf8589e57d"
       }
     ],
-    "bundle_sha256": "bb0eeb4d8f596869714948507409428653810c3687108b9eef0eddefcf12416b"
+    "bundle_sha256": "8d82ba31eb27c38a711d9181ef93176300e383360b12495e5c11538407d258cc"
   },
   "timing": {
     "status": "frozen-pending-explicit-approval",
