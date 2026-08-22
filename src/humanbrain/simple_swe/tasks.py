@@ -840,7 +840,7 @@ _STRING = ProgramType.String()
 _INT_LIST = ProgramType.List(_INT)
 _STRING_LIST = ProgramType.List(_STRING)
 
-_FAMILY_SPECS: dict[str, _FamilySpec] = {
+_FAMILY_SPECS: Mapping[str, _FamilySpec] = MappingProxyType({
     "t0_scalar_clamp": _FamilySpec(
         _build_scalar_clamp, _unary_callable("n", _INT, _INT)
     ),
@@ -930,7 +930,7 @@ _FAMILY_SPECS: dict[str, _FamilySpec] = {
         _build_token_run_signature,
         _unary_callable("text", _STRING, _INT_LIST),
     ),
-}
+})
 
 
 def family_callable_types() -> Mapping[str, CallableType]:
