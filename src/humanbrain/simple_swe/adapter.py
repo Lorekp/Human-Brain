@@ -171,8 +171,10 @@ class CellCompletionAdapter:
         compile_request = CompileRequest(
             emitted_text=emitted_text,
             emitted_token_ids=token_ids,
-            entry_point=request.entry_point,
-            parameter_names=request.parameter_names,
+            entry_point=request.signature.entry_point,
+            parameter_names=tuple(
+                parameter.name for parameter in request.signature.parameters
+            ),
         )
         source = self._compiler.compile(compile_request)
         if not isinstance(source, str):
