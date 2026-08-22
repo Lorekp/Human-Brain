@@ -258,8 +258,10 @@ def _run_task(
         CompileRequest(
             emitted_text=emitted_text,
             emitted_token_ids=token_ids,
-            entry_point=task.public.entry_point,
-            parameter_names=task.public.parameter_names,
+            entry_point=task.public.signature.entry_point,
+            parameter_names=tuple(
+                parameter.name for parameter in task.public.signature.parameters
+            ),
         )
     )
     result = execute_completion(

@@ -86,11 +86,15 @@ def test_completion_request_exposes_only_prompt_and_signature() -> None:
     assert request.signature == _signature()
     assert request.signature.parameters[0].type == ProgramType.Int()
     assert request.signature.result == ProgramType.Int()
+    assert not hasattr(request, "partition")
     assert not hasattr(request, "family")
     assert not hasattr(request, "tier")
     assert not hasattr(request, "ordinal")
     assert not hasattr(request, "task_id")
     assert not hasattr(request, "hidden_test_sha256")
+    assert not hasattr(request, "private")
+    assert not hasattr(request, "regression_cases")
+    assert not hasattr(request, "property_cases")
 
 
 def test_adapter_reloads_one_cell_checkpoint_and_audits_exact_emitted_tokens(

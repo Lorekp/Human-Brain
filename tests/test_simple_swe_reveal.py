@@ -281,3 +281,33 @@ def test_validly_rehashed_task_substitution_cannot_match_the_reserved_seed(
         reveal.validate_evaluation_bundle(
             bundle, protocol, manifest, manifest_sha256
         )
+
+
+def test_typed_signature_is_bound_by_both_task_commitments(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source, _checkpoint, manifest_path = _frozen_fixture(tmp_path, monkeypatch)
+    protocol = load_protocol(PROTOCOL)
+    manifest = _load_manifest(manifest_path)
+    manifest_sha256 = sha256(manifest_path.read_bytes()).hexdigest()
+    synthetic_seed = sha256(b"simple-swe-signature-commitment-regression").digest()
+    tasks = _generate_partition(
+        protocol,
+        "eval",
+        int.from_bytes(synthetic_seed, byteorder="big", signed=False),
+    )
+    payload = reveal._bundle_payload(
+        protocol, manifest, manifest_sha256, synthetic_seed, tasks
+    )
+    substituted_public = payload["tasks"][0]["public"]
+    substituted_private = payload["tasks"][0]["private"]
+    substituted_public["signature"]["result"]["constructor"] = "String"
+    public_record = dict(substituted_public)
+    public_record.pop("task_sha256")
+    substituted_public["task_sha256"] = canonical_sha256(public_record)
+    substituted_private["public_task_sha256"] = substituted_public["task_sha256"]
+    bundle_path = tmp_path / "synthetic-signature-substitution.json"
+    bundle_path.write_bytes(canonical_json_bytes(payload))
+
+    with pytest.raises(FreezeIntegrityError, match="hidden-test commitment"):
+        reveal.load_evaluation_bundle(bundle_path)

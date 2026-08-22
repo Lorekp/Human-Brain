@@ -936,7 +936,10 @@ _FAMILY_SPECS: dict[str, _FamilySpec] = {
 def family_callable_types() -> Mapping[str, CallableType]:
     """Return the immutable public callable type for every frozen task family."""
     return MappingProxyType(
-        {family: specification.callable_type for family, specification in _FAMILY_SPECS.items()}
+        {
+            family: specification.callable_type
+            for family, specification in _FAMILY_SPECS.items()
+        }
     )
 
 
