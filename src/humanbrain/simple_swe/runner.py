@@ -449,8 +449,7 @@ def _run_cell_evaluation_engine(
             completion = adapter.synthesize(
                 CompletionRequest(
                     prompt=task.public.prompt,
-                    entry_point=task.public.entry_point,
-                    parameter_names=tuple(task.public.parameter_names),
+                    signature=task.public.signature,
                 )
             )
             body = _completion_body(index, task, completion)

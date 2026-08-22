@@ -33,6 +33,7 @@ from humanbrain.simple_swe.tasks import (
     PublicTask,
     canonical_sha256,
 )
+from humanbrain.typed_program import ProgramParameter, ProgramType, TypedSignature
 
 PROTOCOL_PATH = Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
 ADAPTER_SHA256 = "a" * 64
@@ -48,12 +49,16 @@ WORKER_SHA256 = sha256(
 def _task(index: int, tier: int) -> GeneratedTask:
     task_id = f"fixture/eval/{index:03d}"
     entry_point = f"solve_{index:03d}"
+    signature = TypedSignature(
+        entry_point=entry_point,
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
     regressions = (HiddenCase(args=(0,), expected=index, distribution="fixed-regression"),)
     properties = (HiddenCase(args=(7,), expected=7 + index, distribution="edge-distribution"),)
     private_record = {
         "task_id": task_id,
-        "entry_point": entry_point,
-        "parameter_names": ["value"],
+        "signature": signature.to_record(),
         "regression_cases": [asdict(case) for case in regressions],
         "property_cases": [asdict(case) for case in properties],
     }
@@ -64,14 +69,23 @@ def _task(index: int, tier: int) -> GeneratedTask:
         "tier": tier,
         "family": f"fixture_t{tier}",
         "ordinal": index,
-        "entry_point": entry_point,
-        "parameter_names": ["value"],
+        "signature": signature.to_record(),
         "prompt": f"def {entry_point}(value): Return value plus {index}.",
         "hidden_test_sha256": test_sha256,
     }
     task_sha256 = canonical_sha256(public_record)
     return GeneratedTask(
-        public=PublicTask(**public_record, task_sha256=task_sha256),
+        public=PublicTask(
+            task_id=task_id,
+            partition="eval",
+            tier=tier,
+            family=f"fixture_t{tier}",
+            ordinal=index,
+            signature=signature,
+            prompt=f"def {entry_point}(value): Return value plus {index}.",
+            hidden_test_sha256=test_sha256,
+            task_sha256=task_sha256,
+        ),
         private=PrivateTask(
             task_id=task_id,
             public_task_sha256=task_sha256,
@@ -170,11 +184,12 @@ class FixtureCellAdapter:
         self.calls: list[str] = []
 
     def synthesize(self, request: CompletionRequest) -> SynthesizedCompletion:
-        self.calls.append(request.entry_point)
-        if request.entry_point == self.fail_on:
+        entry_point = request.signature.entry_point
+        self.calls.append(entry_point)
+        if entry_point == self.fail_on:
             raise RuntimeError("synthetic interruption")
-        ordinal = int(request.entry_point.rsplit("_", 1)[1])
-        source = f"def {request.entry_point}(value):\n    return value + {ordinal}\n"
+        ordinal = int(entry_point.rsplit("_", 1)[1])
+        source = f"def {entry_point}(value):\n    return value + {ordinal}\n"
         emitted_text = source
         token_ids = tuple(range(192))
         return SynthesizedCompletion(
@@ -247,7 +262,9 @@ def test_all_completions_are_sealed_before_hidden_tests_execute(
         executor=executor,
     )
 
-    assert adapter.calls == [task.public.entry_point for task in bundle.tasks]
+    assert adapter.calls == [
+        task.public.signature.entry_point for task in bundle.tasks
+    ]
     assert executor_calls == [task.public.task_id for task in bundle.tasks]
     assert summary.task_count == 3
     assert summary.passed == 1
@@ -293,7 +310,9 @@ def test_interrupted_synthesis_resumes_without_resampling_a_task(
     protocol = load_protocol(PROTOCOL_PATH)
     bundle = _bundle(tmp_path, protocol)
     ledger = _ledger(tmp_path, bundle)
-    interrupted = FixtureCellAdapter(fail_on=bundle.tasks[1].public.entry_point)
+    interrupted = FixtureCellAdapter(
+        fail_on=bundle.tasks[1].public.signature.entry_point
+    )
 
     with pytest.raises(RuntimeError, match="synthetic interruption"):
         _run_cell_evaluation_for_testing(
@@ -316,12 +335,12 @@ def test_interrupted_synthesis_resumes_without_resampling_a_task(
     )
 
     assert interrupted.calls == [
-        bundle.tasks[0].public.entry_point,
-        bundle.tasks[1].public.entry_point,
+        bundle.tasks[0].public.signature.entry_point,
+        bundle.tasks[1].public.signature.entry_point,
     ]
     assert resumed.calls == [
-        bundle.tasks[1].public.entry_point,
-        bundle.tasks[2].public.entry_point,
+        bundle.tasks[1].public.signature.entry_point,
+        bundle.tasks[2].public.signature.entry_point,
     ]
     assert ledger.verify()[4].file_sha256 == first_completion_sha256
     assert summary.passed == len(bundle.tasks)
