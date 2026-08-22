@@ -32,6 +32,44 @@ from humanbrain.typed_program import TypedSignature
 
 BUNDLE_SCHEMA = "humanbrain.simple-swe-private-eval-bundle.v3"
 SEED_SCHEMA = "humanbrain.simple-swe-private-seed-reservation.v1"
+_BUNDLE_FIELDS = frozenset(
+    {
+        "schema",
+        "protocol_id",
+        "protocol_sha256",
+        "freeze_manifest_sha256",
+        "checkpoint_sha256",
+        "checkpoint_state_sha256",
+        "source_head",
+        "eval_seed_hex",
+        "eval_seed_sha256",
+        "tasks",
+    }
+)
+_TASK_WRAPPER_FIELDS = frozenset({"public", "private"})
+_PUBLIC_TASK_FIELDS = frozenset(
+    {
+        "task_id",
+        "partition",
+        "tier",
+        "family",
+        "ordinal",
+        "signature",
+        "prompt",
+        "hidden_test_sha256",
+        "task_sha256",
+    }
+)
+_PRIVATE_TASK_FIELDS = frozenset(
+    {
+        "task_id",
+        "public_task_sha256",
+        "regression_cases",
+        "property_cases",
+        "test_sha256",
+    }
+)
+_HIDDEN_CASE_FIELDS = frozenset({"args", "expected", "distribution"})
 
 
 @dataclass(frozen=True)
@@ -87,6 +125,14 @@ class _PrivateSeedReservation:
     file_sha256: str
 
 
+def _strict_bundle_record(
+    value: object, fields: frozenset[str], label: str
+) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != fields:
+        raise FreezeIntegrityError(f"private eval {label} fields differ")
+    return value
+
+
 def canonical_evaluation_paths(
     manifest_path: str | Path, manifest: FreezeManifest
 ) -> EvaluationPaths:
@@ -104,7 +150,8 @@ def canonical_evaluation_paths(
     )
 
 
-def _case(value: dict[str, Any]) -> HiddenCase:
+def _case(value: object) -> HiddenCase:
+    value = _strict_bundle_record(value, _HIDDEN_CASE_FIELDS, "hidden case")
     return HiddenCase(
         args=tuple(value["args"]),
         expected=value["expected"],
@@ -112,8 +159,12 @@ def _case(value: dict[str, Any]) -> HiddenCase:
     )
 
 
-def _task(value: dict[str, Any]) -> GeneratedTask:
-    public_value = dict(value["public"])
+def _task(value: object) -> GeneratedTask:
+    value = _strict_bundle_record(value, _TASK_WRAPPER_FIELDS, "task wrapper")
+    raw_public = _strict_bundle_record(
+        value["public"], _PUBLIC_TASK_FIELDS, "public task"
+    )
+    public_value = dict(raw_public)
     try:
         public_value["signature"] = TypedSignature.from_record(
             public_value["signature"]
@@ -121,7 +172,9 @@ def _task(value: dict[str, Any]) -> GeneratedTask:
     except (KeyError, TypeError, ValueError) as error:
         raise FreezeIntegrityError("public task signature is invalid") from error
     public = PublicTask(**public_value)
-    private_value = value["private"]
+    private_value = _strict_bundle_record(
+        value["private"], _PRIVATE_TASK_FIELDS, "private task"
+    )
     private = PrivateTask(
         task_id=str(private_value["task_id"]),
         public_task_sha256=str(private_value["public_task_sha256"]),
@@ -167,7 +220,8 @@ def load_evaluation_bundle(path: str | Path) -> EvaluationBundle:
         raise FreezeIntegrityError("private eval bundle is not JSON") from error
     if raw != canonical_json_bytes(payload):
         raise FreezeIntegrityError("private eval bundle is not canonical")
-    if not isinstance(payload, dict) or payload.get("schema") != BUNDLE_SCHEMA:
+    payload = _strict_bundle_record(payload, _BUNDLE_FIELDS, "bundle")
+    if payload["schema"] != BUNDLE_SCHEMA:
         raise FreezeIntegrityError("private eval bundle schema differs")
     seed_hex = payload.get("eval_seed_hex")
     if not isinstance(seed_hex, str) or len(seed_hex) != 64:
