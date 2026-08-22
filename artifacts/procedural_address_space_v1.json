@@ -1,0 +1,2351 @@
+{
+  "evidence_scope": "CPU scalar address/query-only engineering evidence; no resident, updated, spiking, token-throughput, GPU, or capability claim",
+  "gate_2_pass": false,
+  "git_commit": "d25d35e3253e4d7c7d21425328c0a7033a585a3c",
+  "protocol": {
+    "acceptance": {
+      "maximum_fixed_query_time_or_memory_ratio": 2.0,
+      "no_material_scale_slope": "Operationalized by both fixed-query-time and traced-memory max/min ratios being at most 2.0; log-log slopes are reported descriptively.",
+      "ratio_definition": "For each topology and metric, max over N divided by min over N across 10^6, 10^9, and 10^11.",
+      "required_invariants": [
+        "Every valid descriptor and base-edge row query succeeds.",
+        "Every invalid descriptor and base-edge row query raises TypeError or ValueError.",
+        "Every row has six in-range targets with no self target and no duplicate target.",
+        "The 100-billion case samples GIDs immediately below, at, and above 2^32.",
+        "Every ScaleAccounting record reports configured=addressable=N and resident=updated=spiking=0.",
+        "Configured base edges equal N*fanout; resident and mutable edges are zero; generated edges equal exactly 72 examined returned edges."
+      ]
+    },
+    "cell_counts": [
+      1000000,
+      1000000000,
+      100000000000
+    ],
+    "counter_rng": {
+      "edge_counter_words": [
+        "source_gid",
+        "(edge_slot << 16) | (purpose << 8) | attempt"
+      ],
+      "edge_key": "(manifest_seed + topology_stream_id * 0x9e3779b97f4a7c15) modulo 2^64",
+      "endianness": "Counters, keys, and results are numeric uint64 v[0],v[1] words, not byte strings; frozen target-GID reference serialization is unsigned 8-byte little-endian.",
+      "known_answer_source": "https://github.com/DEShawResearch/random123/blob/main/tests/kat_vectors",
+      "known_answer_vectors": [
+        {
+          "counter_hex": [
+            "0000000000000000",
+            "0000000000000000"
+          ],
+          "key_hex": "0000000000000000",
+          "result_hex": [
+            "ca00a0459843d731",
+            "66c24222c9a845b5"
+          ]
+        },
+        {
+          "counter_hex": [
+            "243f6a8885a308d3",
+            "13198a2e03707344"
+          ],
+          "key_hex": "a4093822299f31d0",
+          "result_hex": [
+            "0a5e742c2997341c",
+            "b0f883d38000de5d"
+          ]
+        }
+      ],
+      "multiplier_hex": "d2b74407b1ce6e93",
+      "numeric_word_order": [
+        "v[0]",
+        "v[1]"
+      ],
+      "purpose_ids": {
+        "global": 1,
+        "global_fallback": 255,
+        "grid_local_dimension_base": 11,
+        "grid_long": 20,
+        "layered_depth": 17,
+        "layered_dx": 15,
+        "layered_dy": 16,
+        "layered_long": 18,
+        "mixed_global": 8,
+        "mixed_shared": 7,
+        "nested_meso": 5,
+        "nested_micro": 4,
+        "nested_outside": 6,
+        "ring_local": 9,
+        "ring_long": 10,
+        "single_micro": 2,
+        "single_outside": 3
+      },
+      "reference_implementation": "https://github.com/DEShawResearch/random123/blob/main/include/Random123/philox.h",
+      "role_counter_words": [
+        "source_gid",
+        "00000000524f4c45"
+      ],
+      "role_key": "manifest_seed",
+      "rounds": 10,
+      "topology_stream_ids": {
+        "hypercube_4d": 10,
+        "layered_sheet": 8,
+        "mixed_membership": 5,
+        "nested_groups": 4,
+        "random": 1,
+        "ring_1d": 6,
+        "sheet_2d": 7,
+        "single_scale_groups": 3,
+        "uniform_no_self": 2,
+        "volume_3d": 9
+      },
+      "variant": "D. E. Shaw Research Random123 Philox2x64_R<10>",
+      "weyl_hex": "9e3779b97f4a7c15"
+    },
+    "descriptor_contract": {
+      "cell_type": "adaptive_glif5",
+      "intrinsic_model_config_sha256": "69fe726023e3289ac85857ea9125c55fee1618891e7b65403784c1b961bad149",
+      "intrinsic_model_id": 523000114,
+      "intrinsic_model_scope": "Every descriptor uses the same pinned Allen human GLIF5 intrinsic fit.",
+      "outgoing_connectivity_role": "One deterministic inhibitory label when the topology-independent Philox role word is below floor(2^64/5), otherwise excitatory.",
+      "role": "reservoir",
+      "specimen_id": 508378649,
+      "wiring_role_caveat": "Dale-like outgoing wiring metadata only; it does not claim distinct inhibitory dynamics or molecular E/I biology."
+    },
+    "execution_guard": {
+      "artifact_policy": "Refuse before subprocess launch if the destination exists, then use exclusive-create mode for the final write.",
+      "confirmation_rule": "The supplied confirmation must exactly equal SHA-256 of the raw protocol file bytes.",
+      "default_mode": "Print the plan and raw protocol SHA-256; do not start a worker or write an artifact.",
+      "guard_order": "Protocol confirmation and destination nonexistence are checked before git subprocesses, worker subprocesses, or artifact writes.",
+      "required_execution_flags": [
+        "--execute",
+        "--confirm-protocol-sha",
+        "<exact raw protocol SHA-256>"
+      ]
+    },
+    "fanout": 6,
+    "fixed_work_per_topology": {
+      "invalid_base_edge_queries": 4,
+      "invalid_cell_queries": 4,
+      "returned_or_examined_base_edges": 72,
+      "valid_base_edge_row_queries": 12,
+      "valid_cell_descriptor_queries": 12
+    },
+    "hypotheses": [
+      "All valid, invalid, fixed-fanout, range, no-self, and no-duplicate invariants pass for every topology and configured count.",
+      "For each topology, fixed-query median time and traced peak bytes each have max/min ratio at most 2.0 across 10^6, 10^9, and 10^11 configured IDs.",
+      "No result reports resident, updated, or spiking cells, cell-step work, delivered events, token throughput, GPU evidence, or capability evidence."
+    ],
+    "invalid_gids_by_cell_count": {
+      "1000000": [
+        -1,
+        1000000,
+        1000001,
+        18446744073709551616
+      ],
+      "1000000000": [
+        -1,
+        1000000000,
+        1000000001,
+        18446744073709551616
+      ],
+      "100000000000": [
+        -1,
+        100000000000,
+        100000000001,
+        18446744073709551616
+      ]
+    },
+    "measurement": {
+      "checksum": "SHA-256 of canonical JSON descriptor and target records.",
+      "hardware_scope": "CPU scalar only",
+      "memory": "tracemalloc peak Python allocation bytes during manifest construction and fixed queries; not RSS or resident cell state.",
+      "process_isolation": "One fresh subprocess per configured cell count; all topology families run inside that subprocess.",
+      "time": "perf_counter_ns for construction and each fixed descriptor-plus-edge-row query; report median and maximum query latency."
+    },
+    "name": "procedural-address-space-v1",
+    "notes": [
+      "This is an explicit protocol break from the legacy NumPy global-RNG materialized arrays. There is no compatibility version, fallback, or claim of exact legacy seeded rows.",
+      "The artifact is address/query-only engineering evidence. It is not a resident or updated simulation and must not report tokens per second.",
+      "The 4D hypercube is an abstract functional lattice, not an anatomical claim."
+    ],
+    "purpose": "Gate 1 and Gate 2 CPU scalar engineering evidence for deterministic uint64 cell and immutable base-edge address queries.",
+    "sampling_without_replacement": {
+      "candidate_attempts_per_slot": 128,
+      "fallback": "Map the row-level Philox counter [source_gid, (0 << 16) | (255 << 8) | 0] to one global start GID, then advance one wrapped cursor shared by all edge slots; the cursor is never reset or revisited.",
+      "fallback_work_bound": "Across the whole row, at most fanout + 1 fallback GIDs and at most 129*fanout + 1 total candidates are examined because the used set contains only the source plus earlier targets.",
+      "range_mapping": "floor(random_uint64 * candidate_count / 2^64)",
+      "rejections": [
+        "self target",
+        "duplicate target",
+        "out-of-grid local target",
+        "insufficient long-range distance"
+      ]
+    },
+    "seed": 71,
+    "topologies": [
+      "random",
+      "uniform_no_self",
+      "single_scale_groups",
+      "nested_groups",
+      "mixed_membership",
+      "ring_1d",
+      "sheet_2d",
+      "layered_sheet",
+      "volume_3d",
+      "hypercube_4d"
+    ],
+    "topology_protocol": "random123-philox2x64-10-v1",
+    "valid_gids_by_cell_count": {
+      "1000000": [
+        0,
+        1,
+        71,
+        142857,
+        250000,
+        333333,
+        499999,
+        500000,
+        524287,
+        750000,
+        999998,
+        999999
+      ],
+      "1000000000": [
+        0,
+        1,
+        71,
+        142857142,
+        250000000,
+        333333333,
+        499999999,
+        500000000,
+        536870911,
+        750000000,
+        999999998,
+        999999999
+      ],
+      "100000000000": [
+        0,
+        1,
+        71,
+        4294967295,
+        4294967296,
+        4294967297,
+        14285714285,
+        33333333333,
+        50000000000,
+        75000000000,
+        99999999998,
+        99999999999
+      ]
+    }
+  },
+  "protocol_sha256": "0b675f14d413c43040ce5521141b39aba31525befb0a89555a350c337d6a8110",
+  "scaling": {
+    "hypercube_4d": {
+      "fixed_query_time_log_log_slope": 0.004419089898577071,
+      "fixed_query_time_max_min_ratio": 1.3183505154639175,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": 0.003958250599283686,
+      "tracemalloc_peak_max_min_ratio": 1.048909379553313
+    },
+    "layered_sheet": {
+      "fixed_query_time_log_log_slope": -0.00780535040683992,
+      "fixed_query_time_max_min_ratio": 1.3003256364712847,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": 0.002234789224603774,
+      "tracemalloc_peak_max_min_ratio": 1.0260321046933107
+    },
+    "mixed_membership": {
+      "fixed_query_time_log_log_slope": 0.006471049401019635,
+      "fixed_query_time_max_min_ratio": 1.0799447295696802,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": 0.0017747665450885276,
+      "tracemalloc_peak_max_min_ratio": 1.0210641559010292
+    },
+    "nested_groups": {
+      "fixed_query_time_log_log_slope": -0.003282510605168165,
+      "fixed_query_time_max_min_ratio": 1.1003465918468394,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": 0.0020034373126719116,
+      "tracemalloc_peak_max_min_ratio": 1.0233133296963084
+    },
+    "random": {
+      "fixed_query_time_log_log_slope": -0.0036322434344742017,
+      "fixed_query_time_max_min_ratio": 1.0422371779995359,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": 0.0014051743862437912,
+      "tracemalloc_peak_max_min_ratio": 1.016976153731269
+    },
+    "ring_1d": {
+      "fixed_query_time_log_log_slope": 0.006937716239724751,
+      "fixed_query_time_max_min_ratio": 1.0823093426955335,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": 0.0020021471909160296,
+      "tracemalloc_peak_max_min_ratio": 1.0244927890491322
+    },
+    "sheet_2d": {
+      "fixed_query_time_log_log_slope": -0.014051997848380229,
+      "fixed_query_time_max_min_ratio": 1.316361405661204,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": -0.009667713818247398,
+      "tracemalloc_peak_max_min_ratio": 1.1162797708772987
+    },
+    "single_scale_groups": {
+      "fixed_query_time_log_log_slope": 0.0062703757443439995,
+      "fixed_query_time_max_min_ratio": 1.1004162330905307,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": 0.0011624106898969696,
+      "tracemalloc_peak_max_min_ratio": 1.0139065449362457
+    },
+    "uniform_no_self": {
+      "fixed_query_time_log_log_slope": -0.003316319322944288,
+      "fixed_query_time_max_min_ratio": 1.0545023696682465,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": true,
+      "tracemalloc_peak_log_log_slope": 0.0013991139306927026,
+      "tracemalloc_peak_max_min_ratio": 1.0167837043677475
+    },
+    "volume_3d": {
+      "fixed_query_time_log_log_slope": -0.05668704692653944,
+      "fixed_query_time_max_min_ratio": 2.1111517902906933,
+      "maximum_preregistered_ratio": 2.0,
+      "passes_no_material_scale_slope": false,
+      "tracemalloc_peak_log_log_slope": -0.013875658365593376,
+      "tracemalloc_peak_max_min_ratio": 1.1870552818828681
+    }
+  },
+  "workers": [
+    {
+      "cell_count": 1000000,
+      "results": [
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 15100,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 363200,
+          "query_median_ns": 224550.0,
+          "query_sha256": "c87cd9ccfd392ecd1883ba12c7f6a002f01e594181c393c7d0287b967e28a2ab",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.0036860000109300017
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20087,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20087
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "random",
+          "tracemalloc_peak_bytes": 20087,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 14100,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 238300,
+          "query_median_ns": 220250.0,
+          "query_sha256": "fec312ee116d2697e720c627bb36ddb4a1e1cd6f78223f6aa2fecea5c32f6658",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.00333949999185279
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20079,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20079
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "uniform_no_self",
+          "tracemalloc_peak_bytes": 20079,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 13400,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 366300,
+          "query_median_ns": 292700.0,
+          "query_sha256": "0c7075889d4d4ea21f4ed6edd9f98e41377cae40fa6dbd525515e5da5d0abbc4",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004378500016173348
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 25959,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 25959
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "single_scale_groups",
+          "tracemalloc_peak_bytes": 25959,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 11900,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 622600,
+          "query_median_ns": 333350.0,
+          "query_sha256": "25795c11d49bd10a2ea089c962f23f9e85f8677905c057dc9b0f7172f24833d8",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.005487399990670383
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 27495,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 27495
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "nested_groups",
+          "tracemalloc_peak_bytes": 27495,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 13600,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 292000,
+          "query_median_ns": 253300.0,
+          "query_sha256": "84bdfa7fed16b5692d26885202482896ddf7de8f708a572b53e2d132f7e8df5c",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.0039271000132430345
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 22835,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 22835
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "mixed_membership",
+          "tracemalloc_peak_bytes": 22835,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 11300,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 411000,
+          "query_median_ns": 256350.0,
+          "query_sha256": "17fb67d089243e8a6ab04917a366a4c2a24548f9fc0681eb25a40de084242936",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004214499989757314
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20455,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20455
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "ring_1d",
+          "tracemalloc_peak_bytes": 20455,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 16300,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 1975100,
+          "query_median_ns": 751050.0,
+          "query_sha256": "b6875819afacbb5ea2f9c5a4f934a5a34b00dbcc23657c6e2362db90e6b9a6e2",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.011590100009925663
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 37027,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 37027
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "sheet_2d",
+          "tracemalloc_peak_bytes": 37027,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 13000,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 2500900,
+          "query_median_ns": 878500.0,
+          "query_sha256": "a4329b296a5883960bf41f51f123204b66739513469b0f6a281aadc10eafcd59",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.01316539998515509
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 21243,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 21243
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "layered_sheet",
+          "tracemalloc_peak_bytes": 21243,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 12200,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 3565600,
+          "query_median_ns": 1393650.0,
+          "query_sha256": "c7d0a479b3c4d831060fdd5111fdeffc485113b9898a365cf2591b2de52de17f",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.019923999992897734
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 43375,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 43375
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "volume_3d",
+          "tracemalloc_peak_bytes": 43375,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000,
+          "construction_ns": 13700,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 5752200,
+          "query_median_ns": 1029950.0,
+          "query_sha256": "ec574c42e9c6a70e3ba5b1d1fbf86a4822ee7e2896583c6b964500c06ed3ae70",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000,
+              "configured": 1000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.02190430002519861
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 45983,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 45983
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "hypercube_4d",
+          "tracemalloc_peak_bytes": 45983,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        }
+      ]
+    },
+    {
+      "cell_count": 1000000000,
+      "results": [
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 15400,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 273600,
+          "query_median_ns": 218300.0,
+          "query_sha256": "095bdb5d0112a19286c5bce7c69be05bfc75b28f2e5d5660a1c22d42041a3968",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.0034334999800194055
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20190,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20190
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "random",
+          "tracemalloc_peak_bytes": 20190,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 13700,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 288300,
+          "query_median_ns": 222500.0,
+          "query_sha256": "037d452c287bfa07b766a59af76230f66e586354dd00fa904974180f041da277",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.00340620000497438
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20198,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20198
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "uniform_no_self",
+          "tracemalloc_peak_bytes": 20198,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 10500,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 428700,
+          "query_median_ns": 288300.0,
+          "query_sha256": "1416b5e8b8ece06b3e57e415dbbe57a0241318df0cad376cfdfe772d487415f1",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004440199991222471
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 26090,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 26090
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "single_scale_groups",
+          "tracemalloc_peak_bytes": 26090,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 12300,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 357600,
+          "query_median_ns": 302950.0,
+          "query_sha256": "43ac88e4ec2a241532dc75e012fd16e8c429d67422f6406d4f17b5e275f8663e",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004604899993864819
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 27882,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 27882
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "nested_groups",
+          "tracemalloc_peak_bytes": 27882,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 10800,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 282700,
+          "query_median_ns": 260450.0,
+          "query_sha256": "e40553337b168f204ea987db78af45a3a673f9bca02924346911400f853b90ac",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004012700024759397
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 23050,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 23050
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "mixed_membership",
+          "tracemalloc_peak_bytes": 23050,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 10200,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 398200,
+          "query_median_ns": 270400.0,
+          "query_sha256": "866b97b3b25f551335ed293738948428ad505d425da6cc2c23b4fae65c6c716b",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004236399981891736
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20574,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20574
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "ring_1d",
+          "tracemalloc_peak_bytes": 20574,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 11400,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 2005300,
+          "query_median_ns": 570550.0,
+          "query_sha256": "41a2265f93b1950d17176d4533240ae4a24be8a30ceeeb54bd20da76b25abbad",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.00944530000560917
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 33170,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 33170
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "sheet_2d",
+          "tracemalloc_peak_bytes": 33170,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 11900,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 2083900,
+          "query_median_ns": 675600.0,
+          "query_sha256": "c8df9d06115b502ec58f976afe33c5cfd6396198103764e4506edf28cee6af4b",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.01171649998286739
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 21578,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 21578
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "layered_sheet",
+          "tracemalloc_peak_bytes": 21578,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 10800,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 2777700,
+          "query_median_ns": 1441600.0,
+          "query_sha256": "0c3ce2df13e2d846750a1e3536e1970f5c3d000153c55186c90f8d61cb9f6ca3",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.018795099982526153
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 42782,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 42782
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "volume_3d",
+          "tracemalloc_peak_bytes": 42782,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 1000000000,
+          "construction_ns": 14000,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 5678300,
+          "query_median_ns": 848750.0,
+          "query_sha256": "82c58e9609ffcdd55afcf515192949cff6fc652bee11362136934f612d0e8355",
+          "sampled_at_or_above_2_32": false,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 1000000000,
+              "configured": 1000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 6000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.02213979998487048
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 46542,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 46542
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "hypercube_4d",
+          "tracemalloc_peak_bytes": 46542,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        }
+      ]
+    },
+    {
+      "cell_count": 100000000000,
+      "results": [
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 15300,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 244900,
+          "query_median_ns": 215450.0,
+          "query_sha256": "22f16a49f697ece508bfe4308a6f483d89f5c8f1d0d1d775f14f2aa73d8589ca",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.0033187000080943108
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20428,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20428
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "random",
+          "tracemalloc_peak_bytes": 20428,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 19000,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 359000,
+          "query_median_ns": 211000.0,
+          "query_sha256": "2501c45893d00fdafab41c1edd69515a9449b577f3c2200f0b80dec3a6e9a88b",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.003365699987625703
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20416,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20416
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "uniform_no_self",
+          "tracemalloc_peak_bytes": 20416,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 10600,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 349000,
+          "query_median_ns": 317250.0,
+          "query_sha256": "d000aa1061de7edc1e6ca32fdfe0ca123fdf60ce8f2bf6e4518e8b2d6a42761d",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004557799984468147
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 26320,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 26320
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "single_scale_groups",
+          "tracemalloc_peak_bytes": 26320,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 13000,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 664800,
+          "query_median_ns": 324350.0,
+          "query_sha256": "96579cbf885141bb1763349e1da425f3acaceb3cc982d48668027a05594b833c",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.005181800021091476
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 28136,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 28136
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "nested_groups",
+          "tracemalloc_peak_bytes": 28136,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 12600,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 313800,
+          "query_median_ns": 273550.0,
+          "query_sha256": "67e5be01d54d52dbb009724fadf03378fe177c4a0abf748fe457942aa2b4b64f",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004282000008970499
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 23316,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 23316
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "mixed_membership",
+          "tracemalloc_peak_bytes": 23316,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 10400,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 368200,
+          "query_median_ns": 277450.0,
+          "query_sha256": "e31d95e74e0666f818c7ed08554822cfdc55158e30b1b26aa4b0cd2e1cb9685a",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.004150699998717755
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 20956,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 20956
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "ring_1d",
+          "tracemalloc_peak_bytes": 20956,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 10600,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 2947800,
+          "query_median_ns": 655300.0,
+          "query_sha256": "734de404a60a991b7df4b9aba52a8251809480a646854f584eb6c023b664e0de",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.011633399990387261
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 33332,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 33332
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "sheet_2d",
+          "tracemalloc_peak_bytes": 33332,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 15300,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 2377200,
+          "query_median_ns": 827300.0,
+          "query_sha256": "2b1d335ce220871d2a98c158c44c7cb11c4c0bbfa5002533f8a1e14b3b5b2715",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.012539999996079132
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 21796,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 21796
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "layered_sheet",
+          "tracemalloc_peak_bytes": 21796,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 13800,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 2847800,
+          "query_median_ns": 682850.0,
+          "query_sha256": "568ba7820663d9d7f909a2dae628e59cdeb1bba2f4a09814d1973a4189106986",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.01346330001251772
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 36540,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 36540
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "volume_3d",
+          "tracemalloc_peak_bytes": 36540,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        },
+        {
+          "all_invariants_pass": true,
+          "cell_count": 100000000000,
+          "construction_ns": 12100,
+          "fanout": 6,
+          "invalid_cell_queries_rejected": 4,
+          "invalid_edge_queries_rejected": 4,
+          "memory_metric": "peak Python allocation bytes traced during manifest construction and the fixed scalar query workload; not process RSS or resident cell state",
+          "query_max_ns": 6393800,
+          "query_median_ns": 1118950.0,
+          "query_sha256": "5ce9c606d931ef3ed4d4789e1a9e0f5fa138190ab31f5e36d34aaca0a92cd3e3",
+          "sampled_at_or_above_2_32": true,
+          "sampled_below_2_32": true,
+          "scale_accounting": {
+            "cells": {
+              "addressable": 100000000000,
+              "configured": 100000000000,
+              "resident_distinct": 0,
+              "resident_peak": 0,
+              "spiking_distinct": 0,
+              "updated_distinct": 0
+            },
+            "claim": {
+              "label": "procedural address queries",
+              "text": "Configured identities were validated and immutable base edges were examined; this is address/query-only evidence with no resident or updated cell simulation."
+            },
+            "edges": {
+              "configured": 600000000000,
+              "generated": 72,
+              "mutable": 0,
+              "resident": 0
+            },
+            "events": {
+              "delivered": 0,
+              "queue_peak": 0,
+              "sent_bytes_by_shard_pair": []
+            },
+            "interval": {
+              "biological_step_seconds": null,
+              "name": "procedural topology address queries",
+              "start_step": 0,
+              "step_count": 0,
+              "wall_seconds": 0.024700500012841076
+            },
+            "memory": {
+              "bytes_by_shard": [
+                {
+                  "device_bytes": 0,
+                  "host_bytes": 48232,
+                  "shard": "process-0"
+                }
+              ],
+              "device_bytes": 0,
+              "host_bytes": 48232
+            },
+            "work": {
+              "analytic_catchups": 0,
+              "analytic_step_equivalents": 0,
+              "cell_step_evaluations": 0,
+              "spike_events": 0
+            }
+          },
+          "topology": "hypercube_4d",
+          "tracemalloc_peak_bytes": 48232,
+          "valid_cell_queries": 12,
+          "valid_edge_row_queries": 12
+        }
+      ]
+    }
+  ]
+}
