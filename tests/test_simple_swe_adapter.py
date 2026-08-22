@@ -15,7 +15,8 @@ from humanbrain.simple_swe import compiler as compiler_module
 from humanbrain.simple_swe.compiler import CompileRequest, RawPythonCompiler
 from humanbrain.simple_swe.freeze import create_freeze_manifest
 from humanbrain.simple_swe.protocol import load_protocol
-from humanbrain.simple_swe.tasks import PublicTask, canonical_sha256
+from humanbrain.simple_swe.tasks import canonical_sha256
+from humanbrain.typed_program import ProgramParameter, ProgramType, TypedSignature
 
 PROTOCOL_PATH = (
     Path(__file__).parents[1] / "benchmarks" / "simple_swe_protocol_v1.json"
@@ -63,34 +64,28 @@ def _checkpoint(root: Path) -> Path:
     return checkpoint
 
 
-def _task() -> PublicTask:
-    return PublicTask(
-        task_id="fixture/direct-synthesis",
-        partition="fixture",
-        tier=0,
-        family="fixture_direct",
-        ordinal=0,
+def _signature() -> TypedSignature:
+    return TypedSignature(
         entry_point="solve_opaque",
-        parameter_names=("value",),
-        prompt="Return one complete function ending in task-specific semantics.",
-        hidden_test_sha256="f" * 64,
-        task_sha256="e" * 64,
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
     )
 
 
 def _request() -> CompletionRequest:
-    task = _task()
     return CompletionRequest(
-        prompt=task.prompt,
-        entry_point=task.entry_point,
-        parameter_names=tuple(task.parameter_names),
+        prompt="Return one complete function ending in task-specific semantics.",
+        signature=_signature(),
     )
 
 
 def test_completion_request_exposes_only_prompt_and_signature() -> None:
     request = _request()
 
-    assert set(vars(request)) == {"prompt", "entry_point", "parameter_names"}
+    assert set(vars(request)) == {"prompt", "signature"}
+    assert request.signature == _signature()
+    assert request.signature.parameters[0].type == ProgramType.Int()
+    assert request.signature.result == ProgramType.Int()
     assert not hasattr(request, "family")
     assert not hasattr(request, "tier")
     assert not hasattr(request, "ordinal")
