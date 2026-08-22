@@ -10,7 +10,7 @@ from types import MappingProxyType
 from typing import Callable, Sequence, TypeAlias
 
 from humanbrain.simple_swe.protocol import ProtocolSpec
-from humanbrain.typed_program import ProgramParameter, ProgramType, TypedSignature
+from humanbrain.typed_program_types import ProgramParameter, ProgramType, TypedSignature
 
 
 JsonScalar: TypeAlias = None | bool | int | float | str

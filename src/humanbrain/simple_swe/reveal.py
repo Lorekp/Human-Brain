@@ -28,7 +28,7 @@ from humanbrain.simple_swe.tasks import (
     canonical_json_bytes,
     canonical_sha256,
 )
-from humanbrain.typed_program import TypedSignature
+from humanbrain.typed_program_types import TypedSignature
 
 BUNDLE_SCHEMA = "humanbrain.simple-swe-private-eval-bundle.v3"
 SEED_SCHEMA = "humanbrain.simple-swe-private-seed-reservation.v1"

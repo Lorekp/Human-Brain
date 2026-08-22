@@ -20,7 +20,7 @@ from humanbrain.simple_swe.freeze import (
 )
 from humanbrain.simple_swe.protocol import load_protocol
 from humanbrain.simple_swe.tasks import canonical_sha256
-from humanbrain.typed_program import TypedSignature
+from humanbrain.typed_program_types import TypedSignature
 
 
 @dataclass(frozen=True)
