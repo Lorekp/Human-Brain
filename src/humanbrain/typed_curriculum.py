@@ -14,7 +14,7 @@ import math
 import os
 import time
 import tracemalloc
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -46,6 +46,35 @@ _CHECKPOINT_RELATIVE_PATH = Path(
 _EVIDENCE_RELATIVE_DIRECTORY = Path(
     "artifacts/typed_program_public_train_v1/evidence"
 )
+_EXECUTION_GATES = (
+    "label_replay",
+    "syntax",
+    "compile",
+    "semantics",
+    "checkpoint_raw_immutability",
+    "checkpoint_cell_synapse_immutability",
+    "cell_race_audit",
+    "timing_memory_accounting",
+)
+_REPORTING_MEASUREMENTS = (
+    "wall_time_ns",
+    "process_time_ns",
+    "tracemalloc_current_bytes",
+    "tracemalloc_peak_bytes",
+    "checkpoint_bytes",
+    "evidence_bytes",
+    "training_sequences",
+    "training_tokens",
+    "completion_attempts",
+    "completion_tokens",
+    "cell_races",
+)
+_PRODUCTION_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+_PRODUCTION_PROTOCOL_PATH = (
+    _PRODUCTION_REPOSITORY_ROOT
+    / "benchmarks"
+    / "typed_program_public_train_protocol_v1.json"
+)
 
 
 class ExecutionRefusedError(RuntimeError):
@@ -58,6 +87,27 @@ class EvidenceExistsError(RuntimeError):
 
 class CurriculumGateError(RuntimeError):
     """One or more preregistered TRAIN gates failed."""
+
+
+@dataclass(frozen=True, slots=True)
+class _RunDependencies:
+    """Private production adapters; tests may replace this complete set."""
+
+    repository_root: Path
+    protocol_path: Path
+    grow: Callable[..., object]
+    complete: Callable[..., Completion]
+    restore_checkpoint: Callable[[bytes], object]
+
+
+def _production_dependencies() -> _RunDependencies:
+    return _RunDependencies(
+        repository_root=_PRODUCTION_REPOSITORY_ROOT,
+        protocol_path=_PRODUCTION_PROTOCOL_PATH,
+        grow=grow,
+        complete=complete,
+        restore_checkpoint=FrozenCheckpoint.from_bytes,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -428,7 +478,8 @@ def _validate_fixed_configuration(value: object) -> None:
 def load_public_curriculum(path: str | Path) -> PublicCurriculum:
     """Load and validate the preregistered public curriculum without running it."""
     protocol_path = Path(path)
-    raw = protocol_path.read_bytes()
+    with protocol_path.open("rb") as stream:
+        raw = stream.read(_MAX_PROTOCOL_BYTES + 1)
     if len(raw) > _MAX_PROTOCOL_BYTES:
         raise ValueError("public curriculum protocol exceeds its byte limit")
     raw_sha256 = sha256(raw).hexdigest()
@@ -553,6 +604,19 @@ def load_public_curriculum(path: str | Path) -> PublicCurriculum:
         "require --execute and the exact raw protocol SHA-256"
     ):
         raise ValueError("execution authorization commitment changed")
+    if tuple(_sequence(execution["gates"], "execution.gates")) != _EXECUTION_GATES:
+        raise ValueError("execution gate commitments changed")
+    if (
+        execution["attempts"],
+        execution["restore"],
+    ) != (
+        "exactly one completion for every TRAIN task; no retry or replacement",
+        (
+            "fresh FrozenCheckpoint.from_bytes of the one common checkpoint "
+            "before every completion"
+        ),
+    ):
+        raise ValueError("execution attempt or restore commitment changed")
     reporting = _record(
         root["reporting"],
         frozenset(
@@ -578,6 +642,10 @@ def load_public_curriculum(path: str | Path) -> PublicCurriculum:
         True,
     ):
         raise ValueError("evidence path or write-policy commitment changed")
+    if tuple(
+        _sequence(reporting["measurements"], "reporting.measurements")
+    ) != _REPORTING_MEASUREMENTS:
+        raise ValueError("reporting measurement commitments changed")
     prohibitions = tuple(
         _nonempty_text(item, "prohibitions")
         for item in _sequence(root["prohibitions"], "prohibitions")
@@ -619,10 +687,9 @@ def _plan(curriculum: PublicCurriculum) -> dict[str, object]:
 
 
 def _evidence_paths(
-    protocol_path: Path,
+    repository_root: Path,
     curriculum: PublicCurriculum,
 ) -> tuple[Path, Path]:
-    repository_root = protocol_path.resolve().parents[1]
     return (
         repository_root / curriculum.checkpoint_relative_path,
         repository_root / curriculum.evidence_relative_directory,
@@ -741,6 +808,46 @@ def _race_audit(completion: Completion) -> tuple[bool, list[dict[str, object]]]:
 
 def _gate(passed: bool, detail: str) -> dict[str, object]:
     return {"detail": detail, "passed": passed, "status": "passed" if passed else "failed"}
+
+
+def _timing_memory_accounting_gate(
+    measurements: Mapping[str, object],
+    *,
+    run_summary: bool,
+) -> dict[str, object]:
+    required = {
+        "process_time_ns",
+        "tracemalloc_current_bytes",
+        "tracemalloc_peak_bytes",
+        "wall_time_ns",
+    }
+    if run_summary:
+        required.update(
+            {
+                "cell_races",
+                "checkpoint_bytes",
+                "completion_attempts",
+                "completion_tokens",
+                "evidence_bytes",
+                "training_sequences",
+                "training_tokens",
+            }
+        )
+    values_are_counts = all(
+        type(measurements.get(name)) is int and int(measurements[name]) >= 0
+        for name in required
+    )
+    peak_covers_current = (
+        type(measurements.get("tracemalloc_peak_bytes")) is int
+        and type(measurements.get("tracemalloc_current_bytes")) is int
+        and int(measurements["tracemalloc_peak_bytes"])
+        >= int(measurements["tracemalloc_current_bytes"])
+    )
+    passed = values_are_counts and peak_covers_current
+    return _gate(
+        passed,
+        "all registered timing, memory, and accounting counters are present and valid",
+    )
 
 
 def _audit_completion(
@@ -905,7 +1012,10 @@ def _failed_completion_report(
     error: Exception,
     *,
     completion_returned: bool,
+    completion: Completion | None = None,
 ) -> dict[str, object]:
+    if completion_returned != (completion is not None):
+        raise ValueError("completion return status must match the supplied Completion")
     detail = "completion audit failed" if completion_returned else "completion did not return"
     gates = {
         name: {
@@ -926,7 +1036,7 @@ def _failed_completion_report(
             "typed_lowering",
         )
     }
-    return {
+    report: dict[str, object] = {
         "all_gates_passed": False,
         "attempt_error": f"{type(error).__name__}: {error}",
         "gates": gates,
@@ -935,6 +1045,36 @@ def _failed_completion_report(
         "semantic_cases": [],
         "tokens": [],
     }
+    if completion is not None:
+        report.update(
+            {
+                "checkpoint_cell_synapse_after": completion.checkpoint_cell_synapse_after,
+                "checkpoint_cell_synapse_before": (
+                    completion.checkpoint_cell_synapse_before
+                ),
+                "checkpoint_sha256": completion.checkpoint_sha256,
+                "model_input_sha256": completion.model_input_sha256,
+                "program_sha256": completion.program.sha256,
+                "prompt_sha256": completion.prompt_sha256,
+                "race_count": completion.race_count,
+                "races": [
+                    {
+                        "accepted_token": race.accepted_token,
+                        "allowed_cell_ids": list(race.allowed_cell_ids),
+                        "excluded_cell_ids": list(race.excluded_cell_ids),
+                        "index": index,
+                        "output_current_sha256": race.output_current_sha256,
+                        "prefix_sha256": race.prefix_sha256,
+                        "simulated_steps": race.simulated_steps,
+                        "spike_time_ms": race.spike_time_ms,
+                        "winner_cell_id": race.winner_cell_id,
+                    }
+                    for index, race in enumerate(completion.races)
+                ],
+                "tokens": list(completion.program.tokens),
+            }
+        )
+    return report
 
 
 def _evidence_byte_count(evidence_directory: Path) -> int:
@@ -948,12 +1088,15 @@ def _execute_curriculum(
     curriculum: PublicCurriculum,
     checkpoint_path: Path,
     evidence_directory: Path,
+    dependencies: _RunDependencies,
 ) -> dict[str, object]:
     """Execute only the fixed public TRAIN partition exactly once."""
     artifact_root = checkpoint_path.parent
     artifact_root.mkdir(parents=True, exist_ok=False)
     evidence_directory.mkdir()
-    tracemalloc.start()
+    tracemalloc_was_tracing = tracemalloc.is_tracing()
+    if not tracemalloc_was_tracing:
+        tracemalloc.start()
     run_wall_start = time.perf_counter_ns()
     run_process_start = time.process_time_ns()
     try:
@@ -977,7 +1120,7 @@ def _execute_curriculum(
         training_wall_start = time.perf_counter_ns()
         training_process_start = time.process_time_ns()
         try:
-            checkpoint = grow(
+            checkpoint = dependencies.grow(
                 Layer1Protocol(),
                 tuple(task.to_example() for task in curriculum.train_tasks),
             )
@@ -1037,10 +1180,10 @@ def _execute_curriculum(
         for task_index, task in enumerate(curriculum.train_tasks, start=1):
             task_wall_start = time.perf_counter_ns()
             task_process_start = time.process_time_ns()
-            restored_checkpoint = FrozenCheckpoint.from_bytes(checkpoint_bytes)
+            restored_checkpoint = dependencies.restore_checkpoint(checkpoint_bytes)
             try:
                 # This is the sole completion call for this registered TRAIN task.
-                completion = complete(
+                completion = dependencies.complete(
                     restored_checkpoint,
                     task.prompt,
                     task.signature,
@@ -1050,6 +1193,7 @@ def _execute_curriculum(
                 audit = _failed_completion_report(
                     error,
                     completion_returned=False,
+                    completion=None,
                 )
                 completion_returned = False
             else:
@@ -1065,10 +1209,26 @@ def _execute_curriculum(
                     audit = _failed_completion_report(
                         error,
                         completion_returned=True,
+                        completion=completion,
                     )
             task_wall_ns = time.perf_counter_ns() - task_wall_start
             task_process_ns = time.process_time_ns() - task_process_start
             current_bytes, peak_bytes = tracemalloc.get_traced_memory()
+            task_measurements = {
+                "process_time_ns": task_process_ns,
+                "tracemalloc_current_bytes": current_bytes,
+                "tracemalloc_peak_bytes": peak_bytes,
+                "wall_time_ns": task_wall_ns,
+            }
+            gates = audit["gates"]
+            assert isinstance(gates, dict)
+            gates["timing_memory_accounting"] = _timing_memory_accounting_gate(
+                task_measurements,
+                run_summary=False,
+            )
+            audit["all_gates_passed"] = all(
+                bool(gate["passed"]) for gate in gates.values()
+            )
             task_report = {
                 "attempt_count": 1,
                 "claim": "public TRAIN label replay; memorization only",
@@ -1076,12 +1236,7 @@ def _execute_curriculum(
                 "completion_returned": completion_returned,
                 "event": "train-task-complete",
                 "fresh_checkpoint_restore": True,
-                "measurements": {
-                    "process_time_ns": task_process_ns,
-                    "tracemalloc_current_bytes": current_bytes,
-                    "tracemalloc_peak_bytes": peak_bytes,
-                    "wall_time_ns": task_wall_ns,
-                },
+                "measurements": task_measurements,
                 "result": audit,
                 "task_id": task.task_id,
             }
@@ -1097,6 +1252,9 @@ def _execute_curriculum(
                     "attempt_count": 1,
                     "completion_token_count": len(audit["tokens"]),
                     "completion_returned": completion_returned,
+                    "checkpoint_sha256": audit.get("checkpoint_sha256"),
+                    "program_sha256": audit.get("program_sha256"),
+                    "prompt_sha256": audit.get("prompt_sha256"),
                     "race_count": audit["race_count"],
                     "task_id": task.task_id,
                 }
@@ -1108,9 +1266,7 @@ def _execute_curriculum(
         summary_ordinal = len(curriculum.train_tasks) + 2
         summary_path = evidence_directory / f"{summary_ordinal:03d}-summary.json"
         summary: dict[str, object] = {
-            "all_train_gates_passed": all(
-                bool(task["all_gates_passed"]) for task in task_summaries
-            ),
+            "all_train_gates_passed": False,
             "checkpoint": {
                 "bytes": len(checkpoint_bytes),
                 "cell_synapse_sha256": checkpoint.cell_synapse_sha256,
@@ -1122,6 +1278,7 @@ def _execute_curriculum(
             "development_completion_opened": False,
             "development_run_count": 0,
             "event": "run-summary",
+            "gates": {},
             "measurements": {
                 "cell_races": sum(int(task["race_count"]) for task in task_summaries),
                 "completion_tokens": sum(
@@ -1146,6 +1303,17 @@ def _execute_curriculum(
         measurements = summary["measurements"]
         assert isinstance(measurements, dict)
         while True:
+            summary_gates = summary["gates"]
+            assert isinstance(summary_gates, dict)
+            summary_gates["timing_memory_accounting"] = (
+                _timing_memory_accounting_gate(
+                    measurements,
+                    run_summary=True,
+                )
+            )
+            summary["all_train_gates_passed"] = all(
+                bool(task["all_gates_passed"]) for task in task_summaries
+            ) and bool(summary_gates["timing_memory_accounting"]["passed"])
             summary_bytes = _canonical_evidence(summary)
             total_bytes = evidence_bytes_before_summary + len(summary_bytes)
             if measurements["evidence_bytes"] == total_bytes:
@@ -1156,26 +1324,21 @@ def _execute_curriculum(
             raise RuntimeError("incremental evidence byte accounting mismatch")
         return summary
     finally:
-        tracemalloc.stop()
+        if not tracemalloc_was_tracing:
+            tracemalloc.stop()
 
 
 def run(argv: Sequence[str] | None = None) -> int:
     """Plan by default; execute only with an exact raw protocol hash."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--protocol",
-        type=Path,
-        default=Path(__file__).parents[2]
-        / "benchmarks"
-        / "typed_program_public_train_protocol_v1.json",
-    )
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--protocol-sha256")
     arguments = parser.parse_args(argv)
 
-    curriculum = load_public_curriculum(arguments.protocol)
+    dependencies = _production_dependencies()
+    curriculum = load_public_curriculum(dependencies.protocol_path)
     checkpoint_path, evidence_directory = _evidence_paths(
-        arguments.protocol,
+        dependencies.repository_root,
         curriculum,
     )
     if arguments.execute and arguments.protocol_sha256 != curriculum.raw_sha256:
@@ -1191,6 +1354,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         curriculum=curriculum,
         checkpoint_path=checkpoint_path,
         evidence_directory=evidence_directory,
+        dependencies=dependencies,
     )
     print(json.dumps(summary, sort_keys=True))
     if not summary["all_train_gates_passed"]:

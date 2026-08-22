@@ -58,6 +58,13 @@ Planning validates the frozen raw protocol and prints the TRAIN counts without
 writing an artifact. It also fails if the fixed artifact root, checkpoint, or
 incremental evidence directory already exists.
 
+The production module pins the repository root and protocol path from its own
+installed source location. The CLI has no protocol, repository-root,
+checkpoint, or evidence-path option, so copying the protocol cannot redirect
+evidence. Tests relocate the runner only by replacing one private dependency
+set that also supplies fake growth, restoration, and completion functions; that
+seam is not part of the production interface.
+
 A material run is intentionally not performed here. A later explicitly
 authorized invocation must supply both `--execute` and the exact lowercase raw
 protocol SHA through `--protocol-sha256`. No other seed, configuration,
@@ -72,16 +79,26 @@ On execution, the runner must:
    replacement even if another task fails;
 5. report label replay, typed lowering, Python syntax, Python compilation,
    public semantics, prompt/signature identity, checkpoint raw/state
-   immutability, and fitted-cell race integrity as separate gates; and
-6. record wall and process time, traced current/peak Python memory, checkpoint
+   immutability, and fitted-cell race integrity as separate gates;
+6. validate timing, traced memory, and accounting as an explicit gate on every
+   task and again on the run summary, with both levels included in the final
+   conjunction; and
+7. record wall and process time, traced current/peak Python memory, checkpoint
    bytes, incremental evidence bytes, training sequences/tokens, completion
-   attempts/tokens, and cell-race counts.
+   attempts/tokens, and cell-race counts. A returned completion retains its
+   program, prompt, checkpoint, token, and race identities even if a later
+   audit gate fails.
 
 The fixed evidence root is
 `artifacts/typed_program_public_train_v1`. Each JSON event is first flushed and
 then atomically linked into a new ordinal path; no existing file is replaced.
 A partial run is deliberately terminal evidence, not a resumable or retryable
 experiment.
+
+Protocol loading reads at most 131,073 bytes—the 128 KiB limit plus one
+sentinel byte—before hashing or JSON allocation. Execution preserves a caller's
+pre-existing `tracemalloc` session and stops tracing only when the runner
+started that session itself.
 
 ## Expected cost and exclusions
 
