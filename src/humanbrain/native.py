@@ -119,6 +119,9 @@ class _RecurrentConfig(ctypes.Structure):
         # R0 multi-trace bank: per-row step decays, length trace_count.
         ("trace_count", ctypes.c_size_t),
         ("eligibility_decays", _F64_POINTER),
+        # R0-b family A: u32 (cells,) per-token spike-count accumulator
+        # maintained by the kernel at the mask-write sites; may be NULL.
+        ("token_spike_counts", _U32_POINTER),
     ]
 
 
@@ -890,7 +893,7 @@ def _load_library() -> ctypes.CDLL:
 
         library.humanbrain_kernel_abi_version.argtypes = []
         library.humanbrain_kernel_abi_version.restype = ctypes.c_uint32
-        if library.humanbrain_kernel_abi_version() != 4:
+        if library.humanbrain_kernel_abi_version() != 5:
             raise NativeBuildError("native human-cell kernel ABI mismatch")
 
         pointer_args = [
@@ -1170,12 +1173,26 @@ class NativeRecurrentKernel:
         synaptic_current_pa: np.ndarray,
         eligibility: np.ndarray,
         host_mirror: str = "full",
+        token_spike_counts: np.ndarray | None = None,
+        mirror_token_spike_counts: bool = False,
+        mirror_boundary_voltage: bool = False,
     ) -> None:
         if host_mirror not in {"full", "eligibility"}:
             raise ValueError("host mirror must be 'full' or 'eligibility'")
         self._library = _load_library()
         self._population = population
         cells = population.cell_count
+        # R0-b family A: the u32 accumulator is host-live kernel state on CPU;
+        # it is cleared and folded inside every observe call. None (legacy
+        # callers) leaves the struct pointer null and skips accumulation.
+        if token_spike_counts is not None:
+            _require_native_array(
+                token_spike_counts,
+                dtype=np.dtype(np.uint32),
+                shape=(cells,),
+                name="token spike counts",
+            )
+        self._token_spike_counts = token_spike_counts
         decays = np.ascontiguousarray(eligibility_decays, dtype=np.float64)
         if decays.ndim != 1 or decays.size < 1:
             raise ValueError("eligibility decays must be a nonempty 1-D array")
@@ -1234,6 +1251,11 @@ class NativeRecurrentKernel:
             recurrent_decay,
             trace_count,
             _f64(decays),
+            (
+                _u32(token_spike_counts)
+                if token_spike_counts is not None
+                else ctypes.cast(None, _U32_POINTER)
+            ),
         )
         self._afferent_targets = afferent_targets
         self._recurrent_targets = recurrent_targets

@@ -46,6 +46,12 @@ pub struct RecurrentConfig {
     // eligibility_decays[k] every sub-step, in fixed index order.
     pub trace_count: usize,
     pub eligibility_decays: *const f64,
+    // R0-b family A (spike-count windows): u32 per-cell accumulator for the
+    // CURRENT token, cleared once at token start and folded at EXACTLY the
+    // existing mask-write sites (`counts[cell] += crossed`). No new pass over
+    // cells; no change to spike determination or any trace row. Null skips
+    // accumulation entirely (legacy callers stay bit-identical).
+    pub token_spike_counts: *mut u32,
 }
 
 #[inline]
@@ -63,6 +69,9 @@ unsafe fn glif_step_collect(
     refractory: &mut [i32],
     mut spike_indices: Option<&mut [i32]>,
     mut spike_mask: Option<&mut [u8]>,
+    // R0-b family A: absolute-indexed per-cell count accumulator for the
+    // current token (same length as `voltage`); folded at the mask-write site.
+    mut token_spike_counts: Option<&mut [u32]>,
 ) -> usize {
     let mut spike_count = 0usize;
     let channel_count = config.after_channel_count;
@@ -107,6 +116,11 @@ unsafe fn glif_step_collect(
         if let Some(mask) = spike_mask.as_deref_mut() {
             mask[cell] = u8::from(crossed);
         }
+        if crossed {
+            if let Some(counts) = token_spike_counts.as_deref_mut() {
+                counts[cell] += 1;
+            }
+        }
         if !crossed {
             continue;
         }
@@ -147,6 +161,9 @@ fn recurrent_cell_chunk_scalar(
     synaptic_current: &mut [f64],
     eligibility: &mut [f64],
     spike_mask: &mut [u8],
+    // R0-b family A: chunk-relative count accumulator (same length as
+    // `voltage`); folded at the existing mask-write site below.
+    mut token_spike_counts: Option<&mut [u32]>,
 ) {
     let channel_count = config.after_channel_count;
     debug_assert_eq!(after.len(), voltage.len() * channel_count);
@@ -188,6 +205,11 @@ fn recurrent_cell_chunk_scalar(
                 config.threshold_inf_relative_mv + next_voltage_threshold + next_spike_threshold;
             let crossed = next_voltage > total_threshold;
             spike_mask[local] = u8::from(crossed);
+            if crossed {
+                if let Some(counts) = token_spike_counts.as_deref_mut() {
+                    counts[local] += 1;
+                }
+            }
             if crossed {
                 voltage[local] =
                     config.voltage_reset_scale * next_voltage + config.voltage_reset_offset_mv;
@@ -234,6 +256,9 @@ unsafe fn recurrent_cell_chunk_avx2(
     synaptic_current: &mut [f64],
     eligibility: &mut [f64],
     spike_mask: &mut [u8],
+    // R0-b family A: chunk-relative count accumulator, folded per crossed
+    // lane inside the existing mask-write lane loop.
+    mut token_spike_counts: Option<&mut [u32]>,
 ) {
     use std::arch::x86_64::*;
 
@@ -275,6 +300,7 @@ unsafe fn recurrent_cell_chunk_avx2(
                 &mut synaptic_current[cell..cell + width],
                 eligibility,
                 &mut spike_mask[cell..cell + width],
+                token_spike_counts.as_deref_mut(),
             );
             cell += width;
             continue;
@@ -356,6 +382,9 @@ unsafe fn recurrent_cell_chunk_avx2(
             if crossed == 0 {
                 continue;
             }
+            if let Some(counts) = token_spike_counts.as_deref_mut() {
+                counts[cell + lane] += 1;
+            }
             let index = cell + lane;
             voltage[index] =
                 config.voltage_reset_scale * voltage[index] + config.voltage_reset_offset_mv;
@@ -388,6 +417,7 @@ unsafe fn recurrent_cell_chunk_avx2(
             &mut synaptic_current[cell..],
             eligibility,
             &mut spike_mask[cell..],
+            token_spike_counts.as_deref_mut(),
         );
     }
 }
@@ -411,6 +441,7 @@ fn recurrent_cell_chunk(
     synaptic_current: &mut [f64],
     eligibility: &mut [f64],
     spike_mask: &mut [u8],
+    token_spike_counts: Option<&mut [u32]>,
 ) {
     #[cfg(target_arch = "x86_64")]
     if config.after_channel_count == 2 && std::arch::is_x86_feature_detected!("avx2") {
@@ -432,6 +463,7 @@ fn recurrent_cell_chunk(
                 synaptic_current,
                 eligibility,
                 spike_mask,
+                token_spike_counts,
             );
         }
         return;
@@ -454,6 +486,7 @@ fn recurrent_cell_chunk(
         synaptic_current,
         eligibility,
         spike_mask,
+        token_spike_counts,
     );
 }
 
@@ -475,6 +508,7 @@ fn recurrent_step_serial(
     synaptic_current: &mut [f64],
     eligibility: &mut [f64],
     spike_mask: &mut [u8],
+    token_spike_counts: Option<&mut [u32]>,
 ) {
     recurrent_cell_chunk(
         config,
@@ -493,6 +527,7 @@ fn recurrent_step_serial(
         synaptic_current,
         eligibility,
         spike_mask,
+        token_spike_counts,
     );
 }
 
@@ -510,6 +545,20 @@ impl TraceBankAlias {
 
 unsafe impl Send for TraceBankAlias {}
 unsafe impl Sync for TraceBankAlias {}
+
+/// Raw alias of the family-A count accumulator handed to worker threads.
+/// Soundness: chunk ranges partition `[0, cells)`, so count writes are disjoint.
+#[derive(Clone, Copy)]
+struct CountBankAlias(*mut u32, usize);
+
+impl CountBankAlias {
+    fn parts(self) -> (*mut u32, usize) {
+        (self.0, self.1)
+    }
+}
+
+unsafe impl Send for CountBankAlias {}
+unsafe impl Sync for CountBankAlias {}
 
 #[inline]
 #[allow(clippy::too_many_arguments)]
@@ -529,11 +578,14 @@ fn recurrent_step_parallel(
     synaptic_current: &mut [f64],
     eligibility: &mut [f64],
     spike_mask: &mut [u8],
+    token_spike_counts: Option<&mut [u32]>,
 ) {
     let channels = config.after_channel_count;
     let target_chunks = rayon::current_num_threads() * 4;
     let chunk_cells = cells.div_ceil(target_chunks).max(MIN_PARALLEL_CHUNK_CELLS);
     let bank = TraceBankAlias(eligibility.as_mut_ptr(), decays.len() * cells);
+    let counts_bank =
+        token_spike_counts.map(|counts| CountBankAlias(counts.as_mut_ptr(), counts.len()));
 
     voltage
         .par_chunks_mut(chunk_cells)
@@ -560,6 +612,20 @@ fn recurrent_step_parallel(
                 // SAFETY: chunk ranges partition [0, cells) and rows partition
                 // the trace bank, so all (row, chunk) write ranges are disjoint.
                 let bank_slice = unsafe { slice::from_raw_parts_mut(bank_ptr, bank_len) };
+                let counts_slice = match counts_bank {
+                    Some(alias) => {
+                        let (ptr, len) = alias.parts();
+                        assert_eq!(len, cells);
+                        // SAFETY: chunk ranges partition the accumulator.
+                        Some(unsafe {
+                            slice::from_raw_parts_mut(
+                                ptr.add(start),
+                                chunk_cells.min(len.saturating_sub(start)),
+                            )
+                        })
+                    }
+                    None => None,
+                };
                 recurrent_cell_chunk(
                     config,
                     after_decay,
@@ -577,6 +643,7 @@ fn recurrent_step_parallel(
                     current,
                     bank_slice,
                     mask,
+                    counts_slice,
                 );
             },
         );
@@ -608,11 +675,18 @@ fn observe_token_frontier(
     eligibility: &mut [f64],
     input_scratch: &mut [f64],
     spike_mask: &mut [u8],
+    mut token_spike_counts: Option<&mut [u32]>,
     active_indices: &mut [i32],
     active_mask: &mut [u8],
 ) -> (usize, usize, u64, u64, u64) {
     let cells = glif.cell_count;
     let channels = glif.after_channel_count;
+    // R0-b family A: the accumulator is cleared at TOKEN start and folded at
+    // the existing mask-write sites; frontier/activity accounting never reads
+    // it (frozen protocol §3 requirement 5).
+    if let Some(counts) = token_spike_counts.as_deref_mut() {
+        counts.fill(0);
+    }
     let decays =
         unsafe { slice::from_raw_parts(recurrent.eligibility_decays, recurrent.trace_count) };
     debug_assert_eq!(eligibility.len(), decays.len() * cells);
@@ -674,6 +748,10 @@ fn observe_token_frontier(
         let step_active_count = active_count;
         for &cell in &active_indices[..step_active_count] {
             let cell = cell as usize;
+            let counts_slice = match token_spike_counts.as_deref_mut() {
+                Some(counts) => Some(&mut counts[cell..cell + 1]),
+                None => None,
+            };
             recurrent_cell_chunk_scalar(
                 glif,
                 after_decay,
@@ -691,6 +769,7 @@ fn observe_token_frontier(
                 &mut synaptic_current[cell..cell + 1],
                 eligibility,
                 &mut spike_mask[cell..cell + 1],
+                counts_slice,
             );
         }
 
@@ -779,6 +858,7 @@ pub unsafe extern "C" fn humanbrain_glif_step(
         slice::from_raw_parts_mut(refractory, cells),
         None,
         Some(slice::from_raw_parts_mut(spike_mask, cells)),
+        None,
     )
 }
 
@@ -835,6 +915,19 @@ pub unsafe extern "C" fn humanbrain_observe_token_reference_v1(
     let eligibility = slice::from_raw_parts_mut(eligibility, trace_count * cells);
     let step_current = slice::from_raw_parts_mut(step_current, cells);
     let spike_indices = slice::from_raw_parts_mut(spike_indices, cells);
+    // R0-b family A: same cleared-at-token-start accumulator contract as the
+    // optimized kernels; null pointer (legacy callers) skips accumulation.
+    let mut token_spike_counts = if recurrent.token_spike_counts.is_null() {
+        None
+    } else {
+        Some(slice::from_raw_parts_mut(
+            recurrent.token_spike_counts,
+            cells,
+        ))
+    };
+    if let Some(counts) = token_spike_counts.as_deref_mut() {
+        counts.fill(0);
+    }
 
     let mut total_spikes = 0usize;
     for step in 0..recurrent.token_steps {
@@ -858,6 +951,7 @@ pub unsafe extern "C" fn humanbrain_observe_token_reference_v1(
             refractory,
             Some(spike_indices),
             None,
+            token_spike_counts.as_deref_mut(),
         );
         total_spikes += spike_count;
 
@@ -1352,6 +1446,19 @@ unsafe fn observe_token_optimized(
     let spike_mask = slice::from_raw_parts_mut(spike_mask, cells);
     let active_indices = slice::from_raw_parts_mut(active_indices, cells);
     let active_mask = slice::from_raw_parts_mut(active_mask, cells);
+    // R0-b family A: cleared at TOKEN start, folded inside the chunk kernels
+    // at exactly the mask-write sites; null pointer (legacy callers) skips.
+    let mut token_spike_counts = if recurrent.token_spike_counts.is_null() {
+        None
+    } else {
+        Some(slice::from_raw_parts_mut(
+            recurrent.token_spike_counts,
+            cells,
+        ))
+    };
+    if let Some(counts) = token_spike_counts.as_deref_mut() {
+        counts.fill(0);
+    }
 
     if matches!(execution, Execution::Frontier) {
         let (total_spikes, active_count, scan_ns, build_ns, step_ns) = observe_token_frontier(
@@ -1372,6 +1479,7 @@ unsafe fn observe_token_optimized(
             eligibility,
             input_scratch,
             spike_mask,
+            token_spike_counts,
             active_indices,
             active_mask,
         );
@@ -1419,6 +1527,7 @@ unsafe fn observe_token_optimized(
                 synaptic_current,
                 eligibility,
                 spike_mask,
+                token_spike_counts.as_deref_mut(),
             );
         } else {
             recurrent_step_serial(
@@ -1437,6 +1546,7 @@ unsafe fn observe_token_optimized(
                 synaptic_current,
                 eligibility,
                 spike_mask,
+                token_spike_counts.as_deref_mut(),
             );
         }
 
@@ -1544,5 +1654,5 @@ optimized_observe_export!(humanbrain_observe_token_parallel, Execution::Parallel
 
 #[no_mangle]
 pub extern "C" fn humanbrain_kernel_abi_version() -> u32 {
-    4
+    5
 }

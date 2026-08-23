@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import math
+import re
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +27,81 @@ READOUT_LEARNING_RULES = frozenset({"ridge", "three_factor", "sparse_three_facto
 # geometric span 80 ms -> 4 s at token_interval_ms = 5 gives readout memory
 # windows of 16 -> 800 tokens. Trace 0 IS the incumbent single trace.
 ELIGIBILITY_TAUS_MS = tuple(np.geomspace(80.0, 4000.0, 8))
+
+# R0-b state-feature families (frozen protocol r0b-state-feature-protocol.md
+# §1.1/§1.2). The default family "traces" reproduces incumbent behavior
+# bit-for-bit; the successor families replace ONLY what feeds the readout.
+FEATURE_FAMILIES = (
+    "traces",
+    "spike_counts",
+    "voltage_quantiles",
+    "assembly_overlap",
+)
+# Canonical family order for every ordering decision: A < B < C (§2).
+_SINGLE_FAMILY_ORDER = ("spike_counts", "voltage_quantiles", "assembly_overlap")
+# Hard-edged sliding windows in TOKENS: same geomspace coverage as the tau
+# bank (16..800 tokens at token_interval_ms = 5), bitwise-frozen.
+WINDOW_TOKENS = tuple(int(round(w)) for w in np.geomspace(16.0, 800.0, 8))
+_MAX_WINDOW_TOKENS = 100_000
+_COMBO_FAMILY_PATTERN = re.compile(
+    r"^combo:(?P<first>spike_counts|voltage_quantiles|assembly_overlap)"
+    r"\+(?P<second>spike_counts|voltage_quantiles|assembly_overlap)$"
+)
+
+
+def parse_feature_family(family: str) -> tuple[str, ...]:
+    """Return the member families of ``family`` in canonical order.
+
+    Single names yield a one-element tuple; ``"combo:<f1>+<f2>"`` requires two
+    distinct single families in canonical order (§1.2 grammar). Anything else
+    raises ValueError.
+    """
+    if family in FEATURE_FAMILIES:
+        return ("traces",) if family == "traces" else (family,)
+    match = _COMBO_FAMILY_PATTERN.match(family)
+    if match is None:
+        raise ValueError(
+            f"unknown feature family {family!r}; expected one of "
+            f"{FEATURE_FAMILIES} or 'combo:<f1>+<f2>' over "
+            f"{_SINGLE_FAMILY_ORDER}"
+        )
+    members = (match.group("first"), match.group("second"))
+    if members[0] == members[1]:
+        raise ValueError(
+            f"combo feature family {family!r} must name two distinct families"
+        )
+    if _SINGLE_FAMILY_ORDER.index(members[0]) > _SINGLE_FAMILY_ORDER.index(
+        members[1]
+    ):
+        raise ValueError(
+            f"combo feature family {family!r} must list its members in "
+            f"canonical order {_SINGLE_FAMILY_ORDER}"
+        )
+    return members
+
+
+_FAMILY_MEMBER_ROWS = {
+    "spike_counts": lambda n_win: n_win,
+    "voltage_quantiles": lambda n_win: 3 * n_win,
+    "assembly_overlap": lambda n_win: n_win,
+}
+
+
+def resolved_feature_cells(config: RecurrentCircuitConfig) -> int:
+    """F for ``config``: feature sources feeding the readout, bias excluded."""
+    members = parse_feature_family(config.feature_family)
+    if members == ("traces",):
+        return len(config.eligibility_taus_ms) * config.reservoir_cells
+    n_win = len(config._resolved_window_tokens())
+    return (
+        sum(_FAMILY_MEMBER_ROWS[member](n_win) for member in members)
+        * config.reservoir_cells
+    )
+
+
+# R0-b incremental rollout: single families supported by the circuit so far.
+# Grows with each implementation commit; "traces" is always present.
+_IMPLEMENTED_FEATURE_FAMILIES = frozenset({"traces", "spike_counts"})
 
 _BASE_STATE_ARRAYS = (
     ("_afferent_targets", "afferent_targets", np.int32),
@@ -102,7 +178,12 @@ _RIDGE_STATISTIC_ARRAY_KEYS = frozenset({"normal_matrix", "target_moments"})
 # a dieted capture reduces metadata to the canonical circuit schema, whose
 # circuit_config already nests the tau bank at its canonical home.
 _ENVELOPE_ONLY_METADATA_KEYS = frozenset(
-    {"eligibility_taus_ms", "feature_cell_count"}
+    {
+        "eligibility_taus_ms",
+        "feature_cell_count",
+        "feature_family",
+        "feature_window_tokens",
+    }
 )
 
 
@@ -137,8 +218,46 @@ class RecurrentCircuitConfig:
     # Deprecated single-tau keyword (v3-era metadata and legacy callers).
     # When given, it constructs the one-element tau bank ``(value,)``.
     eligibility_tau_ms: float | None = None
+    # R0-b state-feature family feeding the readout (§1.2). Default
+    # "traces" reproduces incumbent behavior bit-for-bit.
+    feature_family: str = "traces"
+    # Optional override of the frozen window bank; None uses WINDOW_TOKENS.
+    feature_window_tokens: tuple[int, ...] | None = None
+
+    def _resolved_window_tokens(self) -> tuple[int, ...]:
+        """The effective hard-edged window bank in tokens."""
+        windows = self.feature_window_tokens
+        return tuple(int(w) for w in windows) if windows is not None else WINDOW_TOKENS
 
     def __post_init__(self) -> None:
+        if isinstance(self.feature_window_tokens, list):
+            object.__setattr__(
+                self, "feature_window_tokens", tuple(self.feature_window_tokens)
+            )
+        parse_feature_family(self.feature_family)
+        windows = self.feature_window_tokens
+        if windows is not None:
+            if (
+                not isinstance(windows, tuple)
+                or len(windows) < 1
+                or any(
+                    isinstance(w, bool) or not isinstance(w, int) for w in windows
+                )
+            ):
+                raise ValueError(
+                    "feature_window_tokens must be a nonempty tuple of integers"
+                )
+            if any(w < 1 for w in windows):
+                raise ValueError("feature window lengths must be positive")
+            if any(w > _MAX_WINDOW_TOKENS for w in windows):
+                raise ValueError(
+                    f"feature window lengths must not exceed {_MAX_WINDOW_TOKENS}"
+                )
+            if any(
+                windows[index + 1] <= windows[index]
+                for index in range(len(windows) - 1)
+            ):
+                raise ValueError("feature windows must be strictly increasing")
         if self.reservoir_cells < 8:
             raise ValueError("reservoir needs at least eight cells")
         active_cells = self.active_reservoir_cells or self.reservoir_cells
@@ -272,8 +391,55 @@ class RecurrentCellCircuit:
             (self.trace_count, self.config.reservoir_cells), dtype=np.float64
         )
         self._feature_traces = self._eligibility_traces.reshape(-1)
+        # R0-b state-feature family (frozen protocol §1.2): the trace bank
+        # REMAINS MAINTAINED in every arm; the active family only decides what
+        # feeds the readout feature space below.
+        self.feature_members = parse_feature_family(self.config.feature_family)
+        for member in self.feature_members:
+            if member not in _IMPLEMENTED_FEATURE_FAMILIES:
+                raise NotImplementedError(
+                    f"feature family {member!r} has no implementation yet "
+                    "(R0-b incremental rollout)"
+                )
+        self._feature_window_tokens = self.config._resolved_window_tokens()
+        self._feature_ring_capacity = max(self._feature_window_tokens)
+        windows = self._feature_window_tokens
+        cells_count = self.config.reservoir_cells
+        self._token_spike_counts = np.zeros(cells_count, dtype=np.uint32)
+        if self.feature_members == ("traces",):
+            feature_source_cells = self.trace_count * cells_count
+        else:
+            feature_source_cells = (
+                sum(
+                    _FAMILY_MEMBER_ROWS[member](len(windows))
+                    for member in self.feature_members
+                )
+                * cells_count
+            )
+            # One persistent f64 row store; each member's feature rows are a
+            # zero-copy view into it, so combos concatenate by addressing only
+            # (§2.D) and every accessor returns a stable buffer.
+            self._feature_rows = np.zeros(
+                (feature_source_cells // cells_count, cells_count),
+                dtype=np.float64,
+            )
+            row_cursor = 0
+            for member in self.feature_members:
+                span = _FAMILY_MEMBER_ROWS[member](len(windows))
+                block = self._feature_rows[row_cursor : row_cursor + span]
+                if member == "spike_counts":
+                    self._window_counts = block
+                elif member == "voltage_quantiles":
+                    self._quantile_rows = block
+                    self._quantile_stale = True
+                else:
+                    self._assembly_counts = block
+                row_cursor += span
+            if "spike_counts" in self.feature_members:
+                self._count_ring = np.zeros(
+                    (self._feature_ring_capacity, cells_count), dtype=np.uint32
+                )
         sparse_readout = self.config.readout_learning_rule == "sparse_three_factor"
-        feature_source_cells = self.trace_count * self.config.reservoir_cells
         self._readout_synapses_pa = (
             None
             if sparse_readout
@@ -329,12 +495,15 @@ class RecurrentCellCircuit:
         self._sparse_readout = (
             SparseCellReadout.create(
                 output_cells=self.token_cells,
-                # The sparse source space is the FULL multi-trace feature
-                # space: potential/contact sources address s in [0, K*R).
+                # The sparse source space is the FULL active-family feature
+                # space: potential/contact sources address s in [0, F).
                 reservoir_cells=feature_source_cells,
                 fan_in=self.config.readout_fan_in,
                 rng=rng,
-                reservoir_eligibility=self._feature_traces,
+                # The flat ACTIVE-family buffer is the live source space
+                # (frozen protocol §1.3); it stays a stable object whose
+                # contents advance in place.
+                reservoir_eligibility=self.feature_state_vector(),
                 output_heterogeneity_pa=self._output_heterogeneity_pa,
                 pacemaker_synapses_pa=self._pacemaker_synapses_pa,
             )
@@ -363,8 +532,83 @@ class RecurrentCellCircuit:
         self._bind_native_kernel()
 
     def source_trace_decays(self) -> np.ndarray:
-        """Per-contact apposition decay table over the K*R feature space."""
+        """Per-contact apposition decay table over the F feature sources."""
+        if self.feature_members != ("traces",):
+            # R0-b §1.3 generalization, dt-free: block b's contacts decay per
+            # token by exp(-1 / W_(block)); B repeats each window three times
+            # (one block per pinned quantile). Bitwise exp(-1/W) per source.
+            widths_per_block: list[int] = []
+            for member in self.feature_members:
+                if member == "voltage_quantiles":
+                    widths_per_block.extend(
+                        width for width in self._feature_window_tokens for _ in range(3)
+                    )
+                else:
+                    widths_per_block.extend(self._feature_window_tokens)
+            return np.repeat(
+                np.exp(
+                    -1.0 / np.asarray(widths_per_block, dtype=np.float64)
+                ),
+                self.config.reservoir_cells,
+            )
         return self._source_trace_decays
+
+    def feature_state_vector(self) -> np.ndarray:
+        """The flat f64 readout feature space of the ACTIVE family (§1.2).
+
+        Source id s decodes as (block, cell) = divmod(s, reservoir_cells);
+        for ``traces`` this IS the incumbent flat trace bank.
+        """
+        if self.feature_members == ("traces",):
+            return self._feature_traces
+        if "voltage_quantiles" in self.feature_members:
+            self._refresh_quantile_rows()
+        return self._feature_rows.reshape(-1)
+
+    # -- R0-b family boundary updates (run at the end of every observe) -----
+
+    def _advance_feature_boundary(self, token_id: int) -> None:
+        """Update the active family's transient state at the token boundary."""
+        if self.feature_members == ("traces",):
+            return
+        t = self._observed_tokens
+        if "spike_counts" in self.feature_members:
+            self._advance_spike_count_boundary(t)
+        if "voltage_quantiles" in self.feature_members:
+            self._capture_voltage_boundary(t)
+        if "assembly_overlap" in self.feature_members:
+            self._advance_assembly_boundary(token_id, t)
+
+    def _advance_spike_count_boundary(self, t: int) -> None:
+        """§2.A exact integer sliding sums over the per-token count vectors.
+
+        The kernel cleared and accumulated ``_token_spike_counts`` during this
+        token's sub-steps. Each row subtracts the exiting ring entry once
+        when t > W_k and adds d_t. Exits are read BEFORE the new vector is
+        pushed because for the largest window (W == ring capacity) the exit
+        slot aliases the incoming slot.
+        """
+        capacity = self._feature_ring_capacity
+        incoming = self._token_spike_counts
+        for k, width in enumerate(self._feature_window_tokens):
+            row = self._window_counts[k]
+            if t > width:
+                row -= self._count_ring[(t - width - 1) % capacity]
+            row += incoming
+        self._count_ring[(t - 1) % capacity] = incoming
+
+    def _capture_voltage_boundary(self, t: int) -> None:  # noqa: ARG002
+        raise NotImplementedError("voltage_quantiles lands with the R0-b family-B commit")
+
+    def _refresh_quantile_rows(self) -> None:
+        raise NotImplementedError(
+            "voltage_quantiles lands with the R0-b family-B commit"
+        )
+
+    def _advance_assembly_boundary(self, token_id: int, t: int) -> None:  # noqa: ARG002
+        raise NotImplementedError(
+            "assembly_overlap lands with the R0-b family-C commit"
+        )
 
     def _bind_native_kernel(self) -> None:
         """Bind native execution to the circuit's current checkpoint arrays."""
@@ -388,10 +632,15 @@ class RecurrentCellCircuit:
                 if self.config.readout_learning_rule == "sparse_three_factor"
                 else "full"
             ),
+            # R0-b family A: the u32 accumulator is live kernel state; CUDA
+            # arms mirror it per token only when the family consumes counts.
+            token_spike_counts=self._token_spike_counts,
+            mirror_token_spike_counts="spike_counts" in self.feature_members,
+            mirror_boundary_voltage=False,
         )
         self._native_local_learner = (
             NativeThreeFactorLearner(
-                eligibility=self._feature_traces,
+                eligibility=self.feature_state_vector(),
                 output_heterogeneity_pa=self._output_heterogeneity_pa,
                 readout_synapses_pa=self._readout_synapses_pa,
                 pacemaker_synapses_pa=self._pacemaker_synapses_pa,
@@ -460,8 +709,15 @@ class RecurrentCellCircuit:
             "developmental_state": developmental_state,
             # Explicit v5 guards alongside the asdict'd circuit config.
             "eligibility_taus_ms": list(self.config.eligibility_taus_ms),
-            "feature_cell_count": self.trace_count * self.config.reservoir_cells,
+            "feature_cell_count": self.feature_cell_count,
         }
+        if self.feature_members != ("traces",) or (
+            self.config.feature_window_tokens is not None
+        ):
+            # R0-b v6 guards: family and window bank ride beside the count for
+            # successor families (and any non-default window override).
+            metadata["feature_family"] = self.config.feature_family
+            metadata["feature_window_tokens"] = list(self._feature_window_tokens)
         if dieted:
             # Dieted payloads reduce to the canonical circuit metadata schema:
             # era guards belong to statistics-carrying envelopes only.
@@ -532,9 +788,14 @@ class RecurrentCellCircuit:
             cls._validate_cell_synapse_payload(metadata, arrays)
         )
         selected_metadata = {key: metadata[key] for key in _CELL_SYNAPSE_METADATA_KEYS}
-        # Era guards ride along when the payload carries them (v5); legacy
-        # v3 payloads simply lack both keys and stay single-trace.
-        for key in ("eligibility_taus_ms", "feature_cell_count"):
+        # Era guards ride along when the payload carries them (v5/v6); legacy
+        # v3 payloads simply lack the keys and stay single-trace.
+        for key in (
+            "eligibility_taus_ms",
+            "feature_cell_count",
+            "feature_family",
+            "feature_window_tokens",
+        ):
             if key in metadata:
                 selected_metadata[key] = metadata[key]
         if layout.sparse:
@@ -585,10 +846,10 @@ class RecurrentCellCircuit:
             assert isinstance(sparse_counters, dict)
             circuit._sparse_readout = SparseCellReadout.from_checkpoint(
                 output_cells=circuit.token_cells,
-                # Sparse source space spans the full feature space.
-                reservoir_cells=circuit.trace_count * circuit.config.reservoir_cells,
+                # Sparse source space spans the full active-family space.
+                reservoir_cells=circuit.feature_cell_count,
                 fan_in=circuit.config.readout_fan_in,
-                reservoir_eligibility=circuit._feature_traces,
+                reservoir_eligibility=circuit.feature_state_vector(),
                 output_heterogeneity_pa=circuit._output_heterogeneity_pa,
                 pacemaker_synapses_pa=circuit._pacemaker_synapses_pa,
                 arrays=state.arrays,
@@ -674,7 +935,7 @@ class RecurrentCellCircuit:
         # legacy v3-era payloads (neither key present) restore under the
         # K=1 interpretation exactly. Mixed-era metadata raises loudly.
         trace_count = len(config.eligibility_taus_ms)
-        feature_cell_count = trace_count * config.reservoir_cells
+        feature_cell_count = resolved_feature_cells(config)
         metadata_taus = metadata.get("eligibility_taus_ms")
         metadata_feature_cells = metadata.get("feature_cell_count")
         if metadata_taus is None and metadata_feature_cells is None:
@@ -696,6 +957,7 @@ class RecurrentCellCircuit:
                     "checkpoint metadata feature_cell_count disagrees with "
                     "the circuit configuration"
                 )
+        RecurrentCellCircuit._validate_feature_family_guards(metadata, config)
         layout = _READOUT_STATE_LAYOUTS[config.readout_learning_rule]
         developmental_state = bool(metadata["developmental_state"])
         array_names = tuple(
@@ -710,6 +972,39 @@ class RecurrentCellCircuit:
             raise ValueError("sparse checkpoint counters are missing")
         return config, layout, developmental_state, array_names
 
+    @staticmethod
+    def _validate_feature_family_guards(
+        metadata: Mapping[str, object],
+        config: RecurrentCircuitConfig,
+    ) -> None:
+        """R0-b §1.5 v6 strictness + v5 legacy load discipline."""
+        metadata_family = metadata.get("feature_family")
+        metadata_windows = metadata.get("feature_window_tokens")
+        if metadata_family is None and metadata_windows is None:
+            # v5-era payload (or v3): its layout is the traces family by
+            # construction; any other configured family must refuse loudly
+            # instead of silently reshaping or retraining in place.
+            if parse_feature_family(config.feature_family) != ("traces",):
+                raise ValueError(
+                    "checkpoint payload predates feature-family guards (v5 "
+                    "era) and can only satisfy the traces family; refusing "
+                    f"the requested feature family {config.feature_family!r}"
+                )
+            return
+        if metadata_family is None or metadata_windows is None:
+            raise ValueError("checkpoint feature-family metadata is incomplete")
+        if metadata_family != config.feature_family:
+            raise ValueError(
+                f"checkpoint metadata feature family {metadata_family!r} "
+                f"disagrees with the circuit configuration "
+                f"{config.feature_family!r}"
+            )
+        if list(metadata_windows) != list(config._resolved_window_tokens()):
+            raise ValueError(
+                "checkpoint metadata feature_window_tokens disagrees with "
+                "the circuit configuration"
+            )
+
     @property
     def learned_synapse_count(self) -> int:
         if self.config.readout_learning_rule == "sparse_three_factor":
@@ -721,6 +1016,13 @@ class RecurrentCellCircuit:
     @property
     def learning_frozen(self) -> bool:
         return self._learning_frozen
+
+    @property
+    def feature_cell_count(self) -> int:
+        """F: the active family's per-bias feature-source count (§1.2)."""
+        if self.feature_members == ("traces",):
+            return self.trace_count * self.config.reservoir_cells
+        return self._feature_rows.shape[0] * self.config.reservoir_cells
 
     @property
     def local_update_count(self) -> int:
@@ -783,6 +1085,17 @@ class RecurrentCellCircuit:
         self._reservoir.reset()
         self._synaptic_current_pa.fill(0.0)
         self._eligibility_traces.fill(0.0)
+        if self.feature_members != ("traces",):
+            # R0-b transient feature state is sequence-scoped (§1.2).
+            self._token_spike_counts.fill(0)
+            self._feature_rows.fill(0.0)
+            if "spike_counts" in self.feature_members:
+                self._count_ring.fill(0)
+            if "voltage_quantiles" in self.feature_members:
+                self._quantile_stale = True
+            if "assembly_overlap" in self.feature_members:
+                self._occurrences.fill(0)
+                self._token_ring.fill(0)
         self._native_kernel.synchronize_from_host()
         self._observed_tokens = 0
 
@@ -794,6 +1107,10 @@ class RecurrentCellCircuit:
         spike_total = self._native_kernel.observe(token)
 
         self._observed_tokens += 1
+        # R0-b §1.3: after the native token advance returns, the family's
+        # boundary update runs, then the flat feature buffer is current for
+        # strengthen/race/inspection.
+        self._advance_feature_boundary(token)
         return RecurrentStep(
             token_id=token,
             reservoir_spikes=spike_total,
@@ -873,7 +1190,8 @@ class RecurrentCellCircuit:
         assert self._feature_batch is not None
         assert self._target_moments is not None
         feature = self._feature_batch[self._pending_growth_examples]
-        feature[:-1] = self._feature_traces
+        # R0-b §1.3: the readout consumes the ACTIVE family's flat buffer.
+        feature[:-1] = self.feature_state_vector()
         feature[-1] = 1.0
         self._target_moments[target] += feature
         self._pending_growth_examples += 1
@@ -960,11 +1278,13 @@ class RecurrentCellCircuit:
             assert self._sparse_readout is not None
             return self._sparse_readout.current(self.config.output_base_current_pa)
         assert self._readout_synapses_pa is not None
+        # R0-b §1.3: inference consumes the ACTIVE family's flat buffer via
+        # the same matrix product the trace path uses.
         return (
             self.config.output_base_current_pa
             + self._pacemaker_synapses_pa
             + self._output_heterogeneity_pa
-            + self._readout_synapses_pa @ self._feature_traces
+            + self._readout_synapses_pa @ self.feature_state_vector()
         )
 
     def race(

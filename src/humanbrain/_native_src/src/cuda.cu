@@ -38,6 +38,10 @@ struct RecurrentConfig {
     // every sub-step, maintained in fixed index order 0..trace_count.
     unsigned long long trace_count;
     const double* eligibility_decays;
+    // R0-b family A (spike-count windows): u32 per-cell accumulator for the
+    // current token, cleared once at token start and folded at exactly the
+    // existing mask-write site. May be null (legacy callers).
+    unsigned int* token_spike_counts;
 };
 
 extern "C" __global__ void recurrent_token_kernel(
@@ -72,6 +76,12 @@ extern "C" __global__ void recurrent_token_kernel(
     }
     if (thread == 0) {
         *total_spikes = 0;
+    }
+    if (recurrent.token_spike_counts != nullptr) {
+        // Family A: cleared at TOKEN start, before any sub-step accumulates.
+        for (unsigned long long cell = thread; cell < cells; cell += stride) {
+            recurrent.token_spike_counts[cell] = 0u;
+        }
     }
     grid.sync();
     if (thread < recurrent.input_fanout) {
@@ -139,6 +149,10 @@ extern "C" __global__ void recurrent_token_kernel(
                 }
             }
             spike_mask[cell] = static_cast<unsigned char>(crossed);
+            if (recurrent.token_spike_counts != nullptr && crossed) {
+                // Family A: folded at exactly the existing mask-write site.
+                recurrent.token_spike_counts[cell] += 1u;
+            }
         }
         if (thread_spikes != 0) {
             atomicAdd(total_spikes, static_cast<unsigned long long>(thread_spikes));

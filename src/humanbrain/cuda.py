@@ -367,6 +367,9 @@ class CudaRecurrentKernel:
         synaptic_current_pa: np.ndarray,
         eligibility: np.ndarray,
         host_mirror: str = "full",
+        token_spike_counts: np.ndarray | None = None,
+        mirror_token_spike_counts: bool = False,
+        mirror_boundary_voltage: bool = False,
     ) -> None:
         if host_mirror not in {"full", "eligibility"}:
             raise ValueError("CUDA host mirror must be 'full' or 'eligibility'")
@@ -389,6 +392,19 @@ class CudaRecurrentKernel:
         self._synaptic_current_pa = synaptic_current_pa
         self._eligibility = eligibility
         self._host_mirror = host_mirror
+        # R0-b family A: device-side u32 accumulator; the kernel clears it at
+        # token start and folds it at the mask-write sites. The host anchor is
+        # refreshed per token only when this arm mirrors counts.
+        if token_spike_counts is not None:
+            _require_native_array(
+                token_spike_counts,
+                dtype=np.dtype(np.uint32),
+                shape=(cells,),
+                name="token spike counts",
+            )
+        self._token_spike_counts = token_spike_counts
+        self._mirror_token_spike_counts = bool(mirror_token_spike_counts)
+        self._mirror_boundary_voltage = bool(mirror_boundary_voltage)
         self._afferent_targets = afferent_targets
         self._recurrent_targets = recurrent_targets
         self._recurrent_weights_pa = recurrent_weights_pa
@@ -483,6 +499,18 @@ class CudaRecurrentKernel:
                 ctypes.c_void_p(self._arrays["eligibility_decays"][0]),
                 _F64_POINTER,
             )
+            if self._token_spike_counts is not None:
+                self._allocate_array(
+                    "token_spike_counts", self._token_spike_counts, upload=True
+                )
+                self._recurrent.token_spike_counts = ctypes.cast(
+                    ctypes.c_void_p(self._arrays["token_spike_counts"][0]),
+                    ctypes.POINTER(ctypes.c_uint32),
+                )
+            else:
+                self._recurrent.token_spike_counts = ctypes.cast(
+                    ctypes.c_void_p(0), ctypes.POINTER(ctypes.c_uint32)
+                )
             self._allocate_bytes("spike_mask", cells)
             self._allocate_bytes("input_mask", cells)
             self._allocate_bytes("total_spikes", ctypes.sizeof(ctypes.c_uint64))
@@ -596,20 +624,40 @@ class CudaRecurrentKernel:
             "eligibility": self._eligibility,
         }
 
+    def _synchronize_arrays(self) -> dict[str, np.ndarray]:
+        """Arrays moved by explicit host<->device synchronization calls.
+
+        Includes the family-A accumulator when allocated (``reset_sequence``
+        must zero it on device); per-token DtoH traffic is governed by
+        ``_host_mirror_arrays``, never by this dict.
+        """
+        arrays = self._mutable_arrays()
+        if self._token_spike_counts is not None:
+            arrays["token_spike_counts"] = self._token_spike_counts
+        return arrays
+
     def _host_mirror_arrays(self) -> dict[str, np.ndarray]:
-        if self._host_mirror == "eligibility":
-            return {"eligibility": self._eligibility}
-        return self._mutable_arrays()
+        if self._host_mirror == "full":
+            # Incumbent full-touch payload: exactly the seven legacy mutable
+            # arrays (byte contract pinned by tests/test_cuda.py).
+            return self._mutable_arrays()
+        arrays = {"eligibility": self._eligibility}
+        if self._mirror_token_spike_counts:
+            assert self._token_spike_counts is not None
+            arrays["token_spike_counts"] = self._token_spike_counts
+        if self._mirror_boundary_voltage:
+            arrays["voltage"] = self._population.state.voltage_relative_mv
+        return arrays
 
     def synchronize_from_host(self) -> None:
         self._driver.make_current()
-        for name, array in self._mutable_arrays().items():
+        for name, array in self._synchronize_arrays().items():
             self._copy_to_device(name, array)
 
     def synchronize_to_host(self) -> None:
-        """Download every mutable array for explicit state inspection."""
+        """Download every synchronized array for explicit state inspection."""
         self._driver.make_current()
-        for name, array in self._mutable_arrays().items():
+        for name, array in self._synchronize_arrays().items():
             self._copy_from_device(name, array)
 
     def synchronize_structure_from_host(self) -> None:
