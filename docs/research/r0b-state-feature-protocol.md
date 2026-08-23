@@ -462,7 +462,93 @@ all completed records, marks the cohort spent-with-partials in
 One shot means one shot: no alternate seeds, no arm additions, no post-hoc
 threshold edits, no rerunning "to check".
 
+## 5. Red tests (must FAIL before implementation, PASS after)
+
+New file `tests/test_state_features.py`, parametrized over the family
+registry; each names its failure condition mechanically. The R0 suite
+(`R0-T1..T10`) is mirrored 1:1 with family-specific instances; two
+combo-level tests extend it. "Per family" below means: instantiated for
+each of {spike_counts, voltage_quantiles, assembly_overlap} and for both
+legal combos.
+
+- **R0B-T1 window-bank determinism & config validation** (mirrors R0-T1):
+  default `WINDOW_TOKENS` bitwise-equals
+  `(16, 28, 49, 86, 150, 262, 457, 800)`, seed-independent;
+  `feature_family="traces"` reproduces incumbent behavior bit-for-bit
+  (same F, same strengthen output); unknown families, malformed
+  `"combo:"` grammar (dupes, wrong order, >2 members), and
+  non-monotone/non-positive window lists raise ValueError.
+- **R0B-T2 scripted-sequence reference equality** (mirrors R0-T2): a
+  scripted token sequence (repeats, refractory-suppressed cells, quiescent
+  tail ≥ 5·W_7) compared against a NumPy reference implementing EXACTLY
+  §2's update — bit-exact, not allclose:
+  A: rows equal sliding bincounts; a spike in window k appears in every
+  window whose span covers it; expiring tokens subtract exactly once.
+  B: quantile rows equal `np.quantile(..., method="linear")` over the ring
+  slice; warm-up truncation matches the pinned convention.
+  C: occurrence transitions fire only on 0→1 / 1→0; a token repeated
+  inside a window counts ONCE; expiry after repeats decrements once.
+- **R0B-T3 window-edge sanity** (mirrors R0-T3): after one distinct pulse
+  followed by W_7 identical-pair-free silence — A: each row drops to zero
+  at exactly t = pulse + W_k (integer expiry, no decay tail);
+  B: constant-signal windows quantile to that constant exactly;
+  C: coverage counts hit zero exactly at each window edge. Contrast case:
+  the trace bank under the same stimulus retains exp(−T/τ_k) tails —
+  asserted DIFFERENT from A's hard expiry (the falsification-attack made
+  explicit).
+- **R0B-T4 checkpoint round-trip v6** (mirrors R0-T4): grow → freeze →
+  save → load → `cell_synapse_state_sha256` identical; predictions on a
+  fixed context byte-identical pre/post; v6 metadata rejects family
+  mismatch, window-list mismatch, and wrong `feature_cell_count`; ridge
+  statistics restored at the family's F + 1.
+- **R0B-T5 v5 legacy load discipline** (mirrors R0-T5): a v5 fixture loads
+  ONLY under `"traces"` with bit-identical outputs and race winners;
+  loading it under any successor family raises loudly naming the conflict
+  (never silently reshapes or re-trains in place).
+- **R0B-T6 CUDA parity per family** (mirrors R0-T6, extends
+  tests/test_cuda.py pattern): 64-token loop — A: `assert_array_equal` on
+  the u32 accumulator Rust-vs-CUDA after every token, reset zeroes it on
+  device, mirror payload carries 8·K·R + 4·R bytes;
+  B: boundary-voltage samples `assert_array_equal`, hence host-side
+  quantile rows identical by construction, mirror payload
+  8·K·R + 8·R bytes (`"eligibility_plus_voltage"`); C: bookkeeping
+  invariant across a mid-sequence backend switch.
+- **R0B-T7 kernel equivalence across backends** (mirrors R0-T7, extends
+  tests/test_simulation_equivalence.py): Python-reference, Rust serial,
+  Rust AVX, CUDA produce identical family buffers after the 64-token
+  sequence at two activity densities; frontier membership and
+  `reservoir_activity_density` are bit-identical across ALL families
+  (§3 requirement 5).
+- **R0B-T8 feature-vector shape guards** (mirrors R0-T8): `_feature_batch`,
+  `_normal_matrix`, `_target_moments` shaped (128, F+1), (F+1, F+1),
+  (token_cells, F+1) with F = F_family (8192 / 24576 / 8192 / sums);
+  `feature[-1] == 1.0` and `feature[:-1]` bitwise-equals
+  `feature_state_vector()` at strengthen time; restore-time mismatch
+  raises naming the offending key.
+- **R0B-T9 sparse source-space validity** (mirrors R0-T9): potential/
+  contact sources sampled unique ascending over [0, F_family); canonical
+  candidate count `min(F_family, CANDIDATE_FACTOR · fan_in)`; per-contact
+  apposition decay equals `exp(−1 / W_(source // R))` (§1.3 generalization)
+  and equals today's row-0 value when W_0 substitutes; native sparse
+  current via the flat buffer matches a NumPy reference over the same
+  sources.
+- **R0B-T10 accounting invariance** (mirrors R0-T10): for fixed seed and
+  curriculum, token counts, presentation order, observed-token counters,
+  and curriculum digest are identical between `"traces"` and every family
+  arm; ONLY declared fields differ (ladder red-test accounting-block
+  pattern, a013-teaching-processes.md:177); `reservoir_activity_density`
+  remains a trace-row statistic under every family.
+- **R0B-T11 combo composition**: `"combo:X+Y"` feature vector equals the
+  concatenation of members' vectors in canonical order (bitwise, per
+  block); F_combo arithmetic; illegal grammars rejected; member boundary
+  updates independent of composition.
+- **R0B-T12 frozen selection rule determinism**: the §4.4 ranking function,
+  run on synthetic gate records (constructed ties, missing diagnostics,
+  control-arm entries), returns the documented choice deterministically
+  and ignores the control; unit-pinned so the live gate cannot improvise.
+
 <!-- R0B-CONTINUES -->
+
 
 
 
