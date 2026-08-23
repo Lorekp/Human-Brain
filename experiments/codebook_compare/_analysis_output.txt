@@ -1,0 +1,58 @@
+# completeness: 27/27 records; missing PRIMARY=[]; missing EXTENSION=[]; extra=[]
+# curriculum identity across arms within seed/N: OK (identical)
+# codebook provenance hash stability per (arm,N) across seeds: UNSTABLE: {('random', 1024): {'f82edf1a87bae133dec6d06b2a3d37bfdb9381b555a4b290e72b2b7bbe14c63f', '3c1135ac4ca56949fd5506f4d67d83a39ee7e4d18c2f2fe749283334626f2922', '96b008da183df9b8ae38d04652b548da11dcce7aa565e9c3ffc78593c126f8b6'}, ('random', 128): {'c97f272fab5fc4a09ef0ed218ca9b979676f0df732122576c6bc1ae51e7b990c', '10b3d637dc6ba7fca0c131086759369de451ba554ca3e37017510ebe885b977d', '85de60950feb6e97dc8f9097a33ca3e658882ce60eb56dc1f80c9f4abfef4f46'}, ('random', 512): {'028ce30e2c5edf79e2251e2f643879e58c4857934549b9226fada302906b56e7', '2d14a0b00cadb04a16f8a66d4e004a91d589dd6bd5da3bb82b5e20515972eaa6', '8fc620ae33d3a2c0d4457505c24907a9dcf7c11a82ad732fc230b004d89fc810'}}
+
+## capacity table (TRAIN)
+| codebook | N | train_cases frac (/126) | train_replay frac (/42) | margin_median_pa |
+| --- | --- | --- | --- | --- |
+| explicit | 128 | 0.1455 ± 0.0229 | 0.0635 ± 0.0364 | 3.1722 ± 15.0729 |
+| explicit | 512 | 0.5635 ± 0.2409 | 0.5238 ± 0.2474 | 100.7323 ± 4.9842 |
+| explicit | 1024 | 0.9815 ± 0.0165 | 0.9762 ± 0.0238 | 223.2207 ± 3.9987 |
+| random | 128 | 0.0979 ± 0.0183 | 0.0159 ± 0.0137 | -5.4053 ± 7.5744 |
+| random | 512 | 0.5873 ± 0.2205 | 0.5317 ± 0.2546 | 85.5865 ± 27.6870 |
+| random | 1024 | 0.9444 ± 0.0599 | 0.9444 ± 0.0599 | 215.2027 ± 3.8889 |
+| similarity | 128 | 0.1138 ± 0.0516 | 0.0317 ± 0.0364 | 7.3745 ± 4.6364 |
+| similarity | 512 | 0.7354 ± 0.0121 | 0.6905 ± 0.0238 | 101.1615 ± 5.8328 |
+| similarity | 1024 | 0.9656 ± 0.0465 | 0.9603 ± 0.0496 | 215.7147 ± 2.3964 |
+
+## transfer table (CALIBRATION)
+| codebook | N | calib_cases frac (/54) | per-seed passes (/54) |
+| --- | --- | --- | --- |
+| explicit | 128 | 0.1481 ± 0.0321 | 7/10/7 |
+| explicit | 512 | 0.1235 ± 0.0283 | 5/7/8 |
+| explicit | 1024 | 0.1543 ± 0.0283 | 8/10/7 |
+| random | 128 | 0.1667 ± 0.0321 | 10/7/10 |
+| random | 512 | 0.1728 ± 0.0214 | 10/8/10 |
+| random | 1024 | 0.1420 ± 0.0466 | 10/5/8 |
+| similarity | 128 | 0.1667 ± 0.0321 | 7/10/10 |
+| similarity | 512 | 0.1543 ± 0.0283 | 8/7/10 |
+| similarity | 1024 | 0.1420 ± 0.0466 | 5/8/10 |
+
+## delta CIs on calibration-cases fraction (Newcombe hybrid-score, confirmatory cells)
+| comparison | scope | delta | 95% CI | excludes zero |
+| --- | --- | --- | --- | --- |
+| similarity − random | N=128 | +0.0000 | [-0.0817, +0.0817] | no |
+| similarity − random | N=512 | -0.0185 | [-0.0996, +0.0626] | no |
+| similarity − random | pooled {128,512} | -0.0093 | [-0.0666, +0.0481] | no |
+| random − explicit | N=128 | +0.0185 | [-0.0615, +0.0984] | no |
+| random − explicit | N=512 | +0.0494 | [-0.0287, +0.1273] | no |
+| random − explicit | pooled {128,512} | +0.0340 | [-0.0217, +0.0895] | no |
+
+## extension cells (N=1024, exploratory)
+- similarity − random @ N=1024 pooled: +0.0000 [-0.0769, +0.0769] (includes zero)
+- random − explicit @ N=1024 pooled: -0.0123 [-0.0905, +0.0658] (includes zero)
+
+## per-seed paired deltas (robustness; seeds ordered 7,8,9)
+- similarity − random @ N=128: [-3, 3, 0] (signs -,+,0)
+- similarity − random @ N=512: [-2, -1, 0] (signs -,-,0)
+- similarity − random @ N=1024: [-5, 3, 2] (signs -,+,+)
+- random − explicit @ N=128: [3, -3, 3] (signs +,-,+)
+- random − explicit @ N=512: [5, 1, 2] (signs +,+,+)
+- random − explicit @ N=1024: [2, -5, 1] (signs +,-,+)
+
+## H-code verdict inputs (pooled confirmatory cells)
+- similarity−random: 52/324, delta -0.0093, CI [-0.0666, +0.0481] → ≈ 0
+- random−explicit: 55/324, delta +0.0340, CI [-0.0217, +0.0895] → ≈ 0
+
+# git_head(s) of records: ['081a4927b9c1d9544a6dfe26dba98b4a20d752e3']
+# total wall_s across 27 records (shared box, informational only): 472.3s
