@@ -547,9 +547,110 @@ legal combos.
   control-arm entries), returns the documented choice deterministically
   and ignores the control; unit-pinned so the live gate cannot improvise.
 
-<!-- R0B-CONTINUES -->
+## 6. Cost estimate (arithmetic on measured baselines; estimates flagged)
 
+Measured anchors: **22.7 tok/s grow / 22.1 read** at 1M-cell CUDA text
+training, VRAM 2.7/12 GB (roadmap :10-11) ⇒ ~44 ms/token budget; DtoH
+contract 8 B/cell/token eligibility-only mirror in that record's era;
+R0 arms carry the K=8 bank (64 B/cell/token DtoH) and stay warm per §1.2;
+ladder gate wall_s = 48.968 at N=1024 (R0 arm, scipy dsyrk); host ridge
+budget 20 GiB binding dense-ridge ceiling ≈ 50k features
+(ladder_experiments.py:134). Serialized-copy arithmetic assumes ~10–20 GB/s
+effective DtoH (same basis as R0 §5).
 
+Per-family deltas at steady state:
 
+| Quantity | A spike_counts | B voltage_quantiles | C assembly_overlap | worst combo (A+B) |
+| --- | --- | --- | --- | --- |
+| Kernel compute/step @1M | +1 u32 add on mask writes ≲ +2% | none | none | A's delta |
+| DtoH B/cell/token | +4 (u32 counts) | +8 (boundary f64) | +0 | +12 |
+| DtoH MB/token @1M (on top of bank's 64) | +4 | +8 | 0 | +12 |
+| Est. added copy time/token | +0.2–0.4 ms | +0.4–0.8 ms | 0 | +0.6–1.2 ms |
+| Host RAM transient | ring 800·R·4 B = 3.2 GB | ring 800·R·8 B = 6.4 GB | occ K·T ints + token ring (KB-scale) | sum of members |
+| Device memory @1M | +4 MB | +8 MB staging | 0 | +12 MB |
 
+Throughput bands at 1M (ESTIMATES, ×wall vs the R0-bank baseline, not vs
+22.7 single-trace): **A** ≈ ×1.01–1.05; **B** ≈ ×1.02–1.08 copy-side plus
+the quantile flag below; **C** ≈ ×1.00 (host O(k)/token bookkeeping,
+noise); **A+B** ≈ ×1.03–1.11. Cost is NOT part of any pass gate; a measured
+> 2× end-to-end slowdown at 1M triggers a scaling review as an engineering
+disposition, never a silent acceptance or gate edit.
 
+- **Family B open feasibility flag (declared honestly)**: exact quantile
+  refresh is `O(Σ W_k · R) ≈ 1848·R` comparisons per consume. At the gate's
+  N=1024 this is ~2M compares (~ms) — irrelevant. At R=1M it is ~1.9e9
+  compares per consume against a once-per-token strengthen cadence — NOT
+  viable as written. Pinned dispositions for a future v2 (none apply to
+  this gate): (i) accept the cost behind sparse-readout arms only,
+  (ii) subsampled refresh cadence (changes semantics → new protocol),
+  (iii) approximate running estimators (REJECTED ex ante in §2.B; would
+  need their own protocol). The gate runs at N=1024 where B is cheap.
+- **Dense-ridge ceilings** (20 GiB host budget): F+1 widths at R=1024 —
+  traces/A/C: 8193² · 8 B ≈ 0.54 GB; B: 24577² ≈ 4.8 GB; A+B / B+C:
+  32769² ≈ 8.6 GB — all inside budget; solve flops scale ~(F/8193)³
+  under OpenBLAS (~248 GFLOPS measured), so B/combo consolidation moves
+  from seconds toward tens of seconds per solve: ESTIMATE gate wall
+  minutes-to-tens-of-minutes, acceptable one-time, measured value recorded.
+  Sparse/CUDA path structurally unaffected (fixed fan_in; source space
+  grows, contacts do not).
+- **Python boundary updates**: O(N_WIN·R)/token (A), one memcpy (B),
+  O(k + transitions·k)/token (C) — negligible at ladder N, subsumed at
+  scale by batched BLAS on the consume side.
+
+## 7. Falsifier (program level)
+
+If ALL FIVE arms end ¬G1 after honest implementation (§5 red tests green,
+backend parity proven per family, curriculum anchor matched, single
+unmanipulated execution), then **the state-feature class — per-cell windowed
+summaries of spikes, voltage, and assembly coverage — is FALSIFIED as the
+readout basis at this operating point**, and the conclusion is stronger than
+R0's: three mechanistically distinct feature families, including hard-edged
+windows that cannot retain the shared framing prefix, still collapse tasks
+into one point. Under the preregistered interpretation this localizes the
+bottleneck OUTSIDE the feature state: features are NOT the bottleneck.
+
+**Pivot (frozen now, not negotiated later): the race/output layer.**
+Concretely, the winner-feedback broadcast loop — the first-spike winner
+re-entering the network as input, turning the existing argmax-current race
+(roadmap :18) into an iterative computation rather than a one-shot read —
+seeded by the HOT-2 hypothesis already queued at roadmap :119-120 ("margins
+exist but never re-enter computation"), mechanism pre-scoped at roadmap
+:62-65 as the R3 global-workspace half pulled forward. The pivot protocol
+owns its own gates; this document only fixes THAT the pivot happens and its
+first mechanism.
+
+Boundary distinctions fixed NOW so they cannot be renegotiated:
+
+- ∃ G1 passes but ALL ¬G2 ⇒ NOT a feature-class falsification — features
+  separate; answers degenerate downstream. Same destination (race/output
+  layer), different disposition label ("readout/race blocker").
+- Only capacity failures ⇒ features exonerated twice over; dispositions
+  banked; follow-ups require fresh v2 protocols per family.
+- The control arm C_rand passing alongside C_sim does not flip verdicts;
+  it downgrades the SEMANTIC claim only (§4.2 caveat).
+- Either way each arm's cohort is spent once and every outcome stands.
+
+## Honesty notes
+
+- Every §6 figure marked ESTIMATE is arithmetic on measured anchors, not a
+  measurement; the records will carry measured wall-clock, VRAM, and DtoH
+  bytes per arm.
+- The G1 null cited (6.7713e-05) was measured on the TRACE buffer; the
+  successor families' true nulls are unknown until run — that is why G1 is
+  a gate and not a prediction. The ≥1500× framing describes the threshold's
+  distance from the R0 measurement, nothing more.
+- Mechanistic bet, stated so it can be wrong in public: R0 failed because
+  exponentially-decaying features never forget the shared framing prefix;
+  hard-edged windows forget by construction. If families STILL fail G1, the
+  shared-prefix theory of the collapse dies with them, which is precisely
+  what licenses the §7 pivot.
+- Family C's assemblies are the installed afferent table, not emergent
+  recruited assemblies; "assembly" here means the codebook object of
+  a013-representation-choice.md. Claims about emergent assemblies are out
+  of scope.
+- The QA leg runs at fixture scale (96-cell circuit, 30-triple corpus) and
+  evidences answer de-degeneration, not reading skill; R2 owns the real
+  corpus question.
+- Traces remain maintained-but-unconsumed in non-trace arms (§1.2): a
+  deliberate waste bought for anchor comparability, recorded here so nobody
+  "optimizes" it mid-cohort.
