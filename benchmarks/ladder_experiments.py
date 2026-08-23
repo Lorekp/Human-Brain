@@ -663,11 +663,23 @@ def install_scipy_ridge(circuit: RecurrentCellCircuit) -> str:
         # regularization than the contextual reservoir synapses.
         regularized[-1, -1] -= circuit.config.readout_ridge * 0.99
         rhs = circuit._target_moments.T
+        # scipy>=1.17's batched linalg.solve copies the matrix internally even
+        # with overwrite_a=True, which OOMs a 32769^2 combo matrix. Factor in
+        # place instead: solve(assume_a='pos') IS potrf+potrs under the hood,
+        # so cho_factor(overwrite_a=True)/cho_solve perform the identical
+        # computation while keeping the peak at normal + one working copy.
         try:
-            coefficients = _scipy_solve(
-                regularized, rhs, assume_a="pos", overwrite_a=True
-            )
-        except np.linalg.LinAlgError:
+            from scipy.exceptions import LinAlgError as _scipy_linalg_error
+
+            lin_alg_errors = (np.linalg.LinAlgError, _scipy_linalg_error)
+        except ImportError:  # pragma: no cover - older scipy
+            lin_alg_errors = (np.linalg.LinAlgError,)
+        try:
+            from scipy.linalg import cho_factor, cho_solve
+
+            factor = cho_factor(regularized, lower=False, overwrite_a=True)
+            coefficients = cho_solve((factor[0], False), rhs)
+        except lin_alg_errors:
             coefficients = _scipy_solve(regularized, rhs, overwrite_a=True)
         # Same layout as the numpy path: (token_cells, features) rows.
         coefficients = coefficients.T
