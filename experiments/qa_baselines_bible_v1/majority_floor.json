@@ -1,0 +1,471 @@
+{
+  "arm": "majority_floor",
+  "completion_token_slack": 8,
+  "corpus_sha256": "361c83907d9b353c8128a55ea2b4ca49a01c2aa8c8d1f6224db4661c4c9e166c",
+  "corpus_source": "bible-kjv-pg10:v3-freeze-candidate",
+  "generated_utc": "2026-08-23T22:25:05+00:00",
+  "git_head": "915a58d",
+  "metrics": {
+    "answer_span": {
+      "accuracy": 0.0,
+      "correct": 0,
+      "note": "teacher-forced span accuracy not applicable to the mode floor",
+      "predictions": 0,
+      "tasks": 60
+    },
+    "degeneracy": {
+      "distinct_answers": 1,
+      "evaluated": 60,
+      "guard": {
+        "distinct_answers_min": 3,
+        "modal_share_max": 0.9
+      },
+      "guard_pass": false,
+      "modal_answer": "moses",
+      "modal_share": 1.0
+    },
+    "free_run": {
+      "exact_match_rate": 0.016666666666666666,
+      "exact_matches": 1,
+      "tasks": 60
+    }
+  },
+  "model": {
+    "kind": "majority_floor",
+    "modal_answer": "moses",
+    "timing_repeats_wall_s": [
+      0.111,
+      0.111,
+      0.106
+    ]
+  },
+  "protocol": "majority_floor word-level comparator over the 49-book Bible-QA TRAIN stream; VAL manifest items scored with qa-experiments-v1-shaped answer_span/free_run/degeneracy metrics",
+  "schema_version": "humanbrain/qa-baselines/v1",
+  "seed": 0,
+  "tasks": [
+    {
+      "completion": "moses",
+      "exact_match": true,
+      "expected": "Moses",
+      "family": "who_said",
+      "qa_id": "bq-V0-0000"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Peter",
+      "family": "who_said",
+      "qa_id": "bq-V0-0001"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "James",
+      "family": "who_said",
+      "qa_id": "bq-V0-0002"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus",
+      "family": "who_said",
+      "qa_id": "bq-V0-0003"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Others",
+      "family": "who_said",
+      "qa_id": "bq-V0-0004"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus",
+      "family": "who_said",
+      "qa_id": "bq-V0-0005"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Mary",
+      "family": "who_said",
+      "qa_id": "bq-V0-0006"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Mary",
+      "family": "who_said",
+      "qa_id": "bq-V0-0007"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "John",
+      "family": "who_said",
+      "qa_id": "bq-V0-0008"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus",
+      "family": "who_said",
+      "qa_id": "bq-V0-0009"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Peter",
+      "family": "who_said",
+      "qa_id": "bq-V0-0010"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus",
+      "family": "who_said",
+      "qa_id": "bq-V0-0011"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus",
+      "family": "who_said",
+      "qa_id": "bq-V0-0012"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus",
+      "family": "who_said",
+      "qa_id": "bq-V0-0013"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And",
+      "family": "who_said",
+      "qa_id": "bq-V0-0014"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus",
+      "family": "who_said",
+      "qa_id": "bq-V0-0015"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Pilate",
+      "family": "who_said",
+      "qa_id": "bq-V0-0016"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And",
+      "family": "who_said",
+      "qa_id": "bq-V0-0017"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Pilate",
+      "family": "who_said",
+      "qa_id": "bq-V0-0018"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Peter",
+      "family": "who_said",
+      "qa_id": "bq-V0-0019"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "So he went and took Gomer the daughter of Diblaim; which conceived, and bare him a son.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0000"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And it shall come to pass, if there remain ten men in one house, that they shall die.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0001"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And, behold, the angel that talked with me went forth, and another angel went out to meet him,",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0002"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Ye have heard that it hath been said, Thou shalt love thy neighbour, and hate thine enemy.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0003"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "But blessed are your eyes, for they see: and your ears, for they hear.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0004"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Even as the Son of man came not to be ministered unto, but to minister, and to give his life a ransom for many.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0005"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Then Judas, which betrayed him, answered and said, Master, is it I? He said unto him, Thou hast said.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0006"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And some fell among thorns, and the thorns grew up, and choked it, and it yielded no fruit.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0007"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And they twain shall be one flesh: so then they are no more twain, but one flesh.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0008"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And they that passed by railed on him, wagging their heads, and saying, Ah, thou that destroyest the temple, and buildest it in three days,",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0009"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And they were all amazed, and they glorified God, and were filled with fear, saying, We have seen strange things to day.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0010"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "But if I with the finger of God cast out devils, no doubt the kingdom of God is come upon you.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0011"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "For if they do these things in a green tree, what shall be done in the dry?",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0012"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus saith unto him, Go thy way; thy son liveth. And the man believed the word that Jesus had spoken unto him, and he went his way.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0013"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And they asked them, saying, Is this your son, who ye say was born blind? how then doth he now see?",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0014"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Abide in me, and I in you. As the branch cannot bear fruit of itself, except it abide in the vine; no more can ye, except ye abide in me.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0015"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And all that believed were together, and had all things common;",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0016"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "But Peter took him up, saying, Stand up; I myself also am a man.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0017"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And all the men were about twelve.",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0018"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Saying, Go unto this people, and say, Hearing ye shall hear, and shall not understand; and seeing ye shall see, and not perceive:",
+      "family": "address_lookup",
+      "qa_id": "bq-V1-0019"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "The beginning of the word of the LORD by Hosea. And the",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0000"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "You only have I known of all the families of the earth:",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0001"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And the LORD hath given a commandment concerning thee, that no more",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0002"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Yea, many people and strong nations shall come to seek the LORD",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0003"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "For if ye forgive men their trespasses, your heavenly Father will also",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0004"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Who, when he had found one pearl of great price, went and",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0005"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Again, he sent forth other servants, saying, Tell them which are bidden,",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0006"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "They gave him vinegar to drink mingled with gall: and when he",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0007"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And straightway he constrained his disciples to get into the ship, and",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0008"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "But in those days, after that tribulation, the sun shall be darkened,",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0009"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "As it is written in the book of the words of Esaias",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0010"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Then he took the five loaves and the two fishes, and looking",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0011"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And when he came to himself, he said, How many hired servants",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0012"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "That ye may eat and drink at my table in my kingdom,",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0013"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "Jesus saith unto her, I that speak unto thee am he.",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0014"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "We know that God spake unto Moses: as for this fellow, we",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0015"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "These things I have spoken unto you, that in me ye might",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0016"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "For to do whatsoever thy hand and thy counsel determined before to",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0017"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And because he saw it pleased the Jews, he proceeded further to",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0018"
+    },
+    {
+      "completion": "moses",
+      "exact_match": false,
+      "expected": "And there accompanied him into Asia Sopater of Berea; and of the",
+      "family": "verse_continuation",
+      "qa_id": "bq-V2-0019"
+    }
+  ],
+  "train_manifest_sha256": "d256c27dacec0cb2a169005611338c3408bbb252ba619dcde86fb01e3f8c9a7b",
+  "train_stream_sha256": "606eaf66a9ab227e7e90ff9094a76d229f90c473e7c463008d82e12654430105",
+  "val_manifest_sha256": "2771de48a90d9e694cc4260e9392d83c8e39f2aca7d57fe06dd51c7ce9a55bec",
+  "wall_s": 0.111
+}
