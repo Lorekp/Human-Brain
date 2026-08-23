@@ -108,16 +108,33 @@ grandmother-cell identities — assemblies only.
 
 ## Roadmap
 
-### Phase R0 — Multi-timescale features (the keystone, weeks)
+### Phase R0 — Multi-timescale features — EXECUTED, FALSIFIED (2026-08-23)
 
-Multi-timescale eligibility traces: N_TRACE traces at taus spanning
-~80 ms … ~4 s (16 → ~800 token windows), concatenated into the readout
-feature vector. Cost: recurrent.py + checkpoint-layout v5 + native mirror.
-Pre-registered gate BEFORE implementation: at N=1024, post-framing pairwise
-cosine across 18 calibration tasks must drop below 0.9 (from 0.9989) and
-held-out distinct-answer count must exceed 3 on QA fixtures. If features
-separate but answers stay degenerate, the readout/race layer is next
-(margins exist but never re-enter computation — HOT-2 seed).
+Outcome (preregistered gates, one-shot): eligibility traces at 8 taus
+(16→800-token windows) reached only 6.8e-05 separation vs required >0.10.
+The R0-b successor families (spike-count windows, voltage quantiles,
+assembly-overlap) also failed G1 (~1e-4; assembly+random passed at 0.102
+but was capacity-regressive). Full verdicts in
+experiments/r0_multitrace/gate_results.json + experiments/r0b_state_features/.
+Infrastructure built here survives: v6 checkpoints, K-bank native mirrors
+(Rust AVX/parallel/frontier + CUDA), scipy-class solver, per-family gate
+runner. FALSIFIER CLAUSE FIRED → next candidates evaluated by strategy
+report (in flight): race/output winner-feedback loop, associative-memory
+hybrid, learned output map over cell dynamics. The pivot is NOT a failure
+of the roadmap — R0 was designed to test the cheapest feature family first;
+it cost days, not months, and named its successors in advance.
+
+### Phase R0-b/race — Decision layer (current)
+
+Per the preregistered fork: if features cannot separate contexts by any
+spike-derived family, the degeneracy lives in how decisions form, not how
+state is encoded. Candidates ranked by the strategy report (dispatched):
+winner-feedback broadcast (HOT-2 seed), sparse associative memory over
+assemblies (hippocampal-style hybrid), learned output map over frozen cell
+dynamics (reservoir-computing orthodoxy), dendritic-state proxies. The
+constant-output signature ([variable-0] modal everywhere) is the target:
+any mechanism that makes the race see different evidence for different
+contexts destroys it.
 
 ### Phase R2 — Reading at scale (the demonstration, weeks)
 
