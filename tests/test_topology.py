@@ -40,6 +40,29 @@ def test_uniform_sampling_scales_without_population_sized_candidate_rows() -> No
     assert np.all(np.diff(np.sort(targets, axis=1), axis=1) != 0)
 
 
+def test_uniform_vectorized_builder_is_seed_deterministic_at_scale() -> None:
+    # 100_003 >= _UNIFORM_NO_SELF_VECTOR_MIN_CELLS, so both draws take the
+    # _uniform_no_self_vectorized path rather than the legacy per-row loop;
+    # equal seeds must reproduce the full target matrix bit-for-bit.
+    cells = 100_003
+    fanout = 6
+
+    first = build_recurrent_targets(
+        cells,
+        fanout,
+        np.random.default_rng(67),
+        "uniform_no_self",
+    )
+    second = build_recurrent_targets(
+        cells,
+        fanout,
+        np.random.default_rng(67),
+        "uniform_no_self",
+    )
+
+    assert np.array_equal(first, second)
+
+
 def test_uniform_sampling_preserves_legacy_seeded_targets() -> None:
     cells = 48
     fanout = 6
