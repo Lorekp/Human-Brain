@@ -350,7 +350,120 @@ Per family (all mandatory before that family's gate arm):
    (B); reset synchronization zeroes accumulators on device; C asserts
    backend-invariance of its host bookkeeping after switching mid-sequence.
 
+## 4. THE GATE (preregistered, mechanical, per-family verdicts + combination arm)
+
+Single gate execution; five confirmatory runs; nothing may be tuned,
+re-seeded, or added after the first token is observed. Diagnostics never
+gate (house rule). Thresholds are IDENTICAL to R0 §3 — only the feature
+state under test differs.
+
+### 4.1 Frozen run configuration (every arm)
+
+Byte-identical to the recorded R0 anchor arm
+(`experiments/r0_multitrace/ridge_N1024_s7.json`):
+
+- `n_cells=1024`, `seed=7`, `schedule=massed`, `data_scale=42`,
+  `supervision=all_transition`, `readout_rule=ridge`,
+  `--ridge-backend scipy`, `codebook=explicit` (except C arms below),
+  A2 lane framing, 3 corpus passes, input_fanout=16, recurrent_fanout=8,
+  `HUMANBRAIN_DEVICE=cpu` pinned, `--check-determinism` enforced
+  (byte-identical duplicate record modulo wall_s).
+- Freeze anchor: `curriculum_sha256 == 48219eda110f09f735525a7de00e56596f
+  fac729746654e809c3c5eb525ccae6` — checked ONCE before the first arm; a
+  mismatch ABORTS with the cohort NOT spent (r0_gate.py :42-58 pattern).
+- git_head recorded per arm record; all §5 red tests green on that exact
+  head (preflight).
+
+### 4.2 Arms, in pinned execution order
+
+| # | experiment_id | family | codebook | role |
+| --- | --- | --- | --- | --- |
+| 1 | `r0b_A_spikewin` | spike_counts | explicit | confirmatory |
+| 2 | `r0b_B_voltq` | voltage_quantiles | explicit | confirmatory |
+| 3 | `r0b_C_asmbl_sim` | assembly_overlap | similarity (`--assembly-k 16`) | confirmatory |
+| 4 | `r0b_C_asmbl_rand` | assembly_overlap | random (`--assembly-k 16`) | control (gated mechanically; see caveat) |
+| 5 | `r0b_combo_<X>_<Y>` | combo:X+Y | as members require | confirmatory (§4.4) |
+
+Outputs to `experiments/r0b_state_features/<arm>.json` +
+`<arm>.gate.json`; aggregate `gate_results.json`. Runner:
+`tools/r0b_gate.py` (structure of `tools/r0_gate.py`: anchor preflight →
+ladder invocation → G1 via `collect_state_separation` on
+`feature_state_vector()` → G2 via `qa_experiments.run(ExperimentConfig(
+seed=7, circuit=RecurrentCircuitConfig(reservoir_cells=96,
+feature_family=<family>)))` → G3 from the arm record). Combo members'
+codebooks: if both members are A/B → explicit; any member C → that C arm's
+codebook; the two C arms never co-member (§4.4 candidates exclude the
+control). QA guard unchanged: `GUARD_DISTINCT_MIN = 3`
+(qa_experiments.py:45), modal_share recorded diagnostically.
+
+Control-arm caveat (fixed now): if `r0b_C_asmbl_rand` passes where
+`r0b_C_asmbl_sim` also passes, semantic structure added nothing beyond
+distributed overlap — recorded as the H-code-analog caveat and carried into
+R2 sizing; it does NOT alter any mechanical verdict.
+
+### 4.3 Gates (per arm, identical thresholds to R0 §3.2)
+
+State vectors for G1: after growth + freeze, replay each of the 18
+CALIBRATION tasks' framing observations (`reset_sequence()` then `observe`
+over `typed_program._model_input(...)`), snapshot `feature_state_vector()`
+(bias excluded; identical exclusion to every prior separation measurement),
+pairwise cosine over task pairs with DIFFERENT first teacher token within
+the same stratum (Int / List[Int]) — exactly `collect_state_separation`
+(ladder_experiments.py:666-737) with the channel swapped.
+
+- **G1 (separation, primary)**: pooled MEDIAN cosine < 0.90 across those
+  pairs ⇔ median 1−cosine > 0.10. Null being beaten: 6.7713e-05 (R0 gate)
+  and 0.9989-cosine headline (roadmap :16); the boundary demands a ≥ ~1500×
+  move from the measured R0 null.
+- **G2 (answers, primary)**: distinct_answers ≥ 3 on the bundled QA fixture
+  corpus at committed defaults, seed 7, held-out CALIBRATION free-run.
+- **G3 (capacity non-regression, secondary)**: train_replay_tasks ≥ 39/42
+  (baseline 41/42 single-trace seed-7 ridge; floor 39). train_cases_passed
+  (/126) and calib_cases_passed (/54) recorded diagnostically.
+
+Per-arm verdict semantics (fixed now):
+
+- **PASS** ⇔ G1 ∧ G2 ∧ G3 for that arm.
+- **FAMILY-FALSIFIED** (¬G1 ∨ ¬G2) on an honestly implemented stack ⇒ THAT
+  family is falsified as the readout basis at this operating point.
+  Publishable; spends that arm permanently.
+- **CAPACITY-REGRESSIVE** (G1 ∧ G2 ∧ ¬G3): banked disposition; ANY follow-up
+  needs a new protocol v2 with a fresh cohort. No repair pass.
+
+### 4.4 Combination-arm selection rule (frozen BEFORE execution)
+
+After arms 1–4 complete within the SAME gate execution:
+
+1. Candidates: {A, B, C_sim}. The control C_rand is never a candidate.
+2. Rank by `median_1minuscos_pooled` DESCENDING on the G1 diagnostic;
+   tie-break (a) higher train_replay_tasks, (b) lower wall_s, (c) name
+   ascending. Take the top TWO as `<X>_<Y>` in canonical family order.
+3. Legality: this consumes diagnostics that do not gate the singles'
+   verdicts; the RULE is frozen here, before any token is observed, which
+   is what distinguishes it from post-hoc selection. The combo's own gates
+   (§4.3) are evaluated identically to every other arm.
+
+### 4.5 Program-level outcomes (fixed now)
+
+| Outcome across the five arms | Disposition |
+| --- | --- |
+| Any arm PASS | Feature de-collapse achieved. R2 sizing proceeds with the passing basis; if several pass, ship the one with lowest median_1minuscos_pooled (tie-break lower wall_s). |
+| ALL arms ¬G1 | **STATE-FEATURE CLASS FALSIFIED** at this operating point — features are NOT the bottleneck. Program PIVOTS to the race/output layer: winner-feedback broadcast loop + HOT-2 seed (roadmap :119-120; mechanism pre-scoped at :62-65). See §7. |
+| ∃ G1 passes, ALL ¬G2 | Downstream localization WITHOUT class falsification: features separate but answers stay degenerate ⇒ race/output layer, same destination, different label ("readout/race blocker", R0 §6 distinction preserved). |
+| Only capacity failures | Banked dispositions; new protocols required per family. |
+
+Exit-code semantics for `tools/r0b_gate.py`, fixed in advance: **0** = gate
+executed to completion with verdicts recorded (pass or fail — failure is a
+result); **2** = ABORTED before the cohort was spent (anchor mismatch or an
+arm crashed before producing its record). A crash mid-execution preserves
+all completed records, marks the cohort spent-with-partials in
+`gate_results.json`, and is NEVER retried silently.
+
+One shot means one shot: no alternate seeds, no arm additions, no post-hoc
+threshold edits, no rerunning "to check".
+
 <!-- R0B-CONTINUES -->
+
 
 
 
