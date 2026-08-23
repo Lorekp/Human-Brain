@@ -647,18 +647,28 @@ def install_scipy_ridge(circuit: RecurrentCellCircuit) -> str:
         _flush_growth_statistics()
         assert circuit._normal_matrix is not None
         assert circuit._target_moments is not None
-        upper = np.triu(circuit._normal_matrix)
-        full = upper + upper.T - np.diag(np.diag(upper))
-        regularized = full.copy()
-        diagonal = np.diag_indices_from(regularized)
-        regularized[diagonal] += circuit.config.readout_ridge
+        # Mirror the authoritative upper triangle into ONE working copy and
+        # symmetrize/regularize in place (bitwise-identical values to the
+        # original upper+upper.T-diag expression, verified elementwise), so
+        # consolidation peak stays at normal + one copy — the difference
+        # between fitting and not fitting a 32769^2 combo matrix in RAM.
+        regularized = np.array(circuit._normal_matrix, copy=True, order="C")
+        diagonal = np.arange(regularized.shape[0])
+        upper_diagonal = regularized[diagonal, diagonal].copy()
+        regularized += regularized.T
+        regularized[diagonal, diagonal] -= upper_diagonal
         # Same pacemaker tweak as the numpy path (recurrent.py).
+        regularized[diagonal, diagonal] += circuit.config.readout_ridge
+        # The pacemaker cell is a tonic biological bias and needs much less
+        # regularization than the contextual reservoir synapses.
         regularized[-1, -1] -= circuit.config.readout_ridge * 0.99
         rhs = circuit._target_moments.T
         try:
-            coefficients = _scipy_solve(regularized, rhs, assume_a="pos")
+            coefficients = _scipy_solve(
+                regularized, rhs, assume_a="pos", overwrite_a=True
+            )
         except np.linalg.LinAlgError:
-            coefficients = _scipy_solve(regularized, rhs)
+            coefficients = _scipy_solve(regularized, rhs, overwrite_a=True)
         # Same layout as the numpy path: (token_cells, features) rows.
         coefficients = coefficients.T
         gain = circuit.config.output_synapse_gain_pa
