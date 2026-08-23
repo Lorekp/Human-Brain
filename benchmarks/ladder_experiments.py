@@ -13,6 +13,11 @@ pluggable knobs:
                     (a013 representation arms; default ``explicit`` = status quo)
 ``--assembly-k``    assembly size k for the ``random``/``similarity`` arms
                     (default 16; must stay 16 for ``explicit``)
+``--local-lr-pa``   local-rule learning rate ℓ in pA injected into the
+                    readout rules (default 64.0 = shipped constant)
+``--local-margin-pa`` dense-rule competitive margin m in pA (default 64.0
+                    = shipped constant; dense-only knob, sparse skips via
+                    ``winner == target`` instead)
 
 Codebook arms (docs/research/a013-representation-choice.md): the codebook is
 the mapping from token ids to injected reservoir-cell populations. It is
@@ -50,6 +55,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import subprocess
 import sys
@@ -445,6 +451,8 @@ def _grow_circuit(
     schedule: str,
     supervision: str,
     codebook: Codebook | None = None,
+    local_learning_rate_pa: float = 64.0,
+    local_competitive_margin_pa: float = 64.0,
 ) -> RecurrentCellCircuit:
     """Drive the circuit's observe/strengthen cycle over the scheduled corpus."""
     input_fanout = _INPUT_FANOUT
@@ -456,6 +464,8 @@ def _grow_circuit(
         recurrent_fanout=_RECURRENT_FANOUT,
         random_seed=seed,
         readout_learning_rule=readout_rule,
+        local_learning_rate_pa=local_learning_rate_pa,
+        local_competitive_margin_pa=local_competitive_margin_pa,
     )
     circuit = RecurrentCellCircuit(token_cells=_TOKEN_CELLS, config=config)
     if codebook is not None and codebook.mode != "explicit":
@@ -620,9 +630,20 @@ def run_experiment(
     supervision: str,
     codebook: str = "explicit",
     assembly_k: int = _DEFAULT_ASSEMBLY_K,
+    local_learning_rate_pa: float = 64.0,
+    local_competitive_margin_pa: float = 64.0,
 ) -> dict[str, object]:
     """Execute one arm end-to-end and return its fixed-schema metrics record."""
     started = time.perf_counter()
+    for name, value in (
+        ("local_learning_rate_pa", local_learning_rate_pa),
+        ("local_competitive_margin_pa", local_competitive_margin_pa),
+    ):
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError(
+                f"{name} must be finite and > 0 (got {value!r}); "
+                "shipped default is 64.0 pA"
+            )
     curriculum = build_curriculum(seed, data_scale)
     codebook_arm = build_codebook(
         codebook,
@@ -639,6 +660,8 @@ def run_experiment(
         schedule=schedule,
         supervision=supervision,
         codebook=codebook_arm,
+        local_learning_rate_pa=local_learning_rate_pa,
+        local_competitive_margin_pa=local_competitive_margin_pa,
     )
     train = _evaluate_cohort(circuit, curriculum["train_tasks"], collect_margins=True)  # type: ignore[arg-type]
     calibration = _evaluate_cohort(  # type: ignore[arg-type]
@@ -676,6 +699,8 @@ def run_experiment(
                 recurrent_fanout=_RECURRENT_FANOUT,
                 random_seed=seed,
                 readout_learning_rule=readout_rule,
+                local_learning_rate_pa=local_learning_rate_pa,
+                local_competitive_margin_pa=local_competitive_margin_pa,
             )
         ),
         "frozen_protocol_sha256": curriculum["frozen_protocol_sha256"],
@@ -782,6 +807,26 @@ def main(argv: list[str] | None = None) -> int:
         help="assembly size for the random/similarity codebooks (default 16)",
     )
     parser.add_argument(
+        "--local-lr-pa",
+        dest="local_learning_rate_pa",
+        type=float,
+        default=64.0,
+        help=(
+            "local-rule learning rate in pA injected into the readout rules "
+            "(default 64.0 = shipped constant)"
+        ),
+    )
+    parser.add_argument(
+        "--local-margin-pa",
+        dest="local_competitive_margin_pa",
+        type=float,
+        default=64.0,
+        help=(
+            "dense-rule competitive margin in pA (default 64.0 = shipped "
+            "constant; dense-only knob)"
+        ),
+    )
+    parser.add_argument(
         "--check-determinism",
         action="store_true",
         help="run the whole arm twice in-process and assert byte-identical "
@@ -801,6 +846,8 @@ def main(argv: list[str] | None = None) -> int:
         supervision=arguments.supervision,
         codebook=arguments.codebook,
         assembly_k=arguments.assembly_k,
+        local_learning_rate_pa=arguments.local_learning_rate_pa,
+        local_competitive_margin_pa=arguments.local_competitive_margin_pa,
     )
     if arguments.check_determinism:
         repeat = run_experiment(
@@ -814,6 +861,8 @@ def main(argv: list[str] | None = None) -> int:
             supervision=arguments.supervision,
             codebook=arguments.codebook,
             assembly_k=arguments.assembly_k,
+            local_learning_rate_pa=arguments.local_learning_rate_pa,
+            local_competitive_margin_pa=arguments.local_competitive_margin_pa,
         )
         if _record_without_wall(record) != _record_without_wall(repeat):
             _fail("determinism check failed: identical-seed records differ beyond wall_s")
