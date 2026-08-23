@@ -32,9 +32,83 @@ cannot tell two verses apart cannot tell two function signatures apart.
 So the roadmap to coding runs THROUGH reading — exactly as the user
 intuited. The pivot is not a detour; it is the mainline.
 
+## The 11 properties as the organizing principle (user directive)
+
+The user's property table (recurrence, integration, global workspace,
+persistent state, metacognition, attention model, self-model,
+autobiographical memory, agency, embodiment/closed-loop, valence) is not a
+wish list appended to the roadmap — it IS the roadmap's spine. Reasoning
+recorded here so every phase decision references it:
+
+**1. Why the current architecture scores ABSENT on most of them — one
+mechanism.** The feature-starvation finding (cosine 0.9989) explains more
+than the transfer failure: a readout that sees ONE point in state space
+has nothing to loop back (no usable recurrence signal), nothing to
+integrate (states don't differ), no workspace content worth broadcasting
+(one candidate = no competition), and no internal state that persists
+meaningfully between inputs (it's identical between inputs). Fixing R1
+(features) is simultaneously the first step toward properties 1/2/4.
+The EI sweep proved state diversity is purchasable but currently mispriced
+(separation ×100 only where capacity collapses) — multi-timescale traces
+are the priced version of the same purchase.
+
+**2. Property → phase mapping (with honest dependency order):**
+- Strong recurrence (P1): partially exists (fanout carries prior-token
+  state); becomes USEFUL at R1 when traces differentiate contexts; fully
+  realized when recurrent loops re-enter computation (R3+).
+- Integrated representations (P2): requires P1's differentiated states to
+  bind across populations — R1/R2 deliver the substrate; concept-chunk
+  tokens (representation study's named fallback) are R2/R3's contribution.
+- Global workspace (P3): the first-spike race IS a bottleneck competition;
+  missing half is BROADCAST — winner re-enters the network as input. That
+  is a small, concrete mechanism (winner-feedback loop) scheduled as an
+  R3 experiment, gated on R1 (broadcasting a constant is pointless).
+- Persistent internal state (P4): eligibility traces already provide the
+  physics; R1 makes it informative; R3's episodic-store decision completes it.
+- Metacognition (P5): margins/confidence exist but never re-enter
+  computation (scored PARTIAL-as-seed). R3 attaches them to answers
+  (calibrated abstention); R4 uses them for self-checking before submission.
+- Attention model (P6): emerges from workspace + QA framing (which context
+  segment wins determines the answer); measurable via perturbation tests in R3.
+- Self-model (P7): honestly NOT EXERCISED by token prediction alone;
+  earliest credible seed is R4 (the system representing its own pass/fail
+  history on coding tasks — autobiographical by construction).
+- Long-term autobiographical memory (P8): R3 directly; the episodic-store
+  question is its central design decision.
+- Goal-directed agency (P9): enters at R4-R5 (mini-swe agent loop: act,
+  run tests, observe failure, revise). Before that, honestly absent.
+- Embodiment / closed loop (P10): R4's sandbox IS the closed loop — code
+  actions produce test results that alter future observations. First true
+  closure point of the whole program.
+- Homeostatic drives / valence (P11): seeded by turnover/activity-EMA
+  homeostat (exists dormant) + margin-valence mapping; scheduled R3+ as
+  stabilization, not motivation-theater.
+
+**3. The sequencing logic the properties impose.** The properties form a
+dependency DAG, and it matches the phase order: P4/P1 (state, recurrence)
+→ P2 (integration) → P3/P6 (workspace, attention) → P5 (metacognition)
+→ P8 (autobiography) → P9/P10 (agency, closure) with P11 as continuous
+stabilizer. Trying to install later properties without earlier ones is
+how you get "an enormous, rich, chaotic, high-dimensional system that
+isn't doing anything particularly useful" — the user's phrase. Each phase
+adds organization to complexity ALREADY distinguishable from the previous
+phase's vantage point.
+
+**4. Distributed representation (user's second directive) inside this
+spine.** Explicit token identities were falsified as insufficient for
+transfer (codebook experiment), but random-distribution was equally null:
+distribution must be STRUCTURED (similarity-projected or concept-mined).
+The representation study's ranked recommendation stands, now gated behind
+R1: distributed codes organize the input side, multi-timescale traces
+organize the temporal side, and the two together are what give the
+readout something to integrate (P2) and the workspace something to
+compete over (P3). Representation choice is therefore not one decision
+but a standing constraint on every phase: no component may reintroduce
+grandmother-cell identities — assemblies only.
+
 ## Roadmap
 
-### Phase R1 — Make features context-sensitive (the keystone, weeks)
+### Phase R0 — Multi-timescale features (the keystone, weeks)
 
 Multi-timescale eligibility traces: N_TRACE traces at taus spanning
 ~80 ms … ~4 s (16 → ~800 token windows), concatenated into the readout
@@ -89,7 +163,7 @@ is proven.
 ## Immediate queue (this week)
 
 1. GPU agent: 1M stability-pass fix + commit (in flight).
-2. Multi-timescale trace protocol doc + red tests (R1 keystone).
+2. Multi-timescale trace protocol doc + red tests (R0 keystone).
 3. Bible-QA first real run at 128k–1M (R2 start) once R1 lands.
 4. Procedural adapter L1/L2 spike (token injection + readout mirror).
 5. simple-SWE corpus audit for R4 readiness (unopened stack, verified
