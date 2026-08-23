@@ -1,0 +1,38 @@
+{
+  "benchmark": "scale-opt-cpu-throughput-v1",
+  "machine_note": "single process, public advance() seam only",
+  "results": [
+    {
+      "scenario": {
+        "resident_capacity": 1000,
+        "density_target": 0.05,
+        "window_steps": 20000,
+        "steps_per_call": 20,
+        "configured_cells": 1000000000,
+        "fanout": 8
+      },
+      "wall_seconds": 0.59387,
+      "steps": 400000,
+      "steps_per_second": 673548.31,
+      "v2_equivalent_tokens_per_second": 6735.4831,
+      "cell_steps": 8000960,
+      "cell_steps_per_second": 13472582.7,
+      "delivered_events": 50,
+      "generated_edges": 40,
+      "events_per_second": 151.5,
+      "spike_events": 5,
+      "peaks": {
+        "resident_peak": 50,
+        "queue_peak": 8,
+        "updated_distinct": 50,
+        "spiking_distinct": 1,
+        "resident_distinct": 50
+      },
+      "final_residents": 50,
+      "native_payload_bytes": 703416,
+      "payload_bytes_per_resident_cell": 14068.32,
+      "achieved_updated_fraction_of_capacity": 0.020002,
+      "state_digest_sha256": "70dab900b0e86a2699374ddfa493b537fe465e940c18fca38a11f510ed9fa2b2"
+    }
+  ]
+}
