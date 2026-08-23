@@ -1,0 +1,303 @@
+diff --git a/src/humanbrain/_native_src/src/procedural.rs b/src/humanbrain/_native_src/src/procedural.rs
+index 4145e49..e3dbad0 100644
+--- a/src/humanbrain/_native_src/src/procedural.rs
++++ b/src/humanbrain/_native_src/src/procedural.rs
+@@ -547,7 +547,10 @@ pub struct ProceduralRuntime {
+     after_amplitudes: [f64; 2],
+     current_step: u64,
+     residents: Vec<CellState>,
++    /// Pending future events. Slots `[0..pending_head)` are consumed; the
++    /// live queue is `[pending_head..)` in canonical ascending key order.
+     pending: Vec<ProceduralEventRecord>,
++    pending_head: usize,
+     last_spikes: Vec<ProceduralSpikeRecord>,
+     scratch: RuntimeScratch,
+     counters: ProceduralCounters,
+@@ -575,6 +578,7 @@ impl ProceduralRuntime {
+             current_step: 0,
+             residents,
+             pending,
++            pending_head: 0,
+             last_spikes,
+             scratch,
+             counters: ProceduralCounters::default(),
+@@ -600,6 +604,31 @@ impl ProceduralRuntime {
+         self.residents.binary_search_by_key(&gid, |state| state.gid)
+     }
+ 
++    /// Live (unconsumed) prefix of the pending-event queue, ascending by key.
++    #[inline]
++    fn pending_slice(&self) -> &[ProceduralEventRecord] {
++        &self.pending[self.pending_head..]
++    }
++
++    #[inline]
++    fn pending_logical_len(&self) -> usize {
++        self.pending.len() - self.pending_head
++    }
++
++    /// Release the consumed prefix once the whole queue is drained; larger
++    /// dead prefixes are compacted lazily so per-step delivery stays O(1)
++    /// amortized instead of shifting the live tail every step.
++    #[inline]
++    fn release_consumed_prefix(&mut self) {
++        if self.pending_head == self.pending.len() {
++            self.pending.clear();
++            self.pending_head = 0;
++        } else if self.pending_head >= 64 && self.pending_head * 2 >= self.pending.len() {
++            self.pending.drain(..self.pending_head);
++            self.pending_head = 0;
++        }
++    }
++
+     fn apply_event(&mut self, event: ProceduralEventRecord) -> Result<(), u32> {
+         let current = canonical_zero(event.current_pa);
+         match self.resident_index(event.target_gid) {
+@@ -664,11 +693,12 @@ impl ProceduralRuntime {
+         }
+         let mut pending_index = 0usize;
+         let mut submitted_index = 0usize;
+-        while pending_index < self.pending.len()
+-            && submitted_index < self.scratch.submitted_events.len()
++        let pending_head = self.pending_head;
++        let pending = &self.pending[pending_head..];
++        while pending_index < pending.len() && submitted_index < self.scratch.submitted_events.len()
+         {
+             match event_order(
+-                &self.pending[pending_index],
++                &pending[pending_index],
+                 &self.scratch.submitted_events[submitted_index],
+             ) {
+                 Ordering::Less => pending_index += 1,
+@@ -677,8 +707,7 @@ impl ProceduralRuntime {
+             }
+         }
+         let merged_len = self
+-            .pending
+-            .len()
++            .pending_logical_len()
+             .checked_add(self.scratch.submitted_events.len())
+             .ok_or(PROCEDURAL_EVENT_CAPACITY)?;
+         if merged_len > self.config.event_capacity {
+@@ -687,17 +716,16 @@ impl ProceduralRuntime {
+         self.scratch.event_work.clear();
+         pending_index = 0;
+         submitted_index = 0;
+-        while pending_index < self.pending.len()
+-            || submitted_index < self.scratch.submitted_events.len()
++        while pending_index < pending.len() || submitted_index < self.scratch.submitted_events.len()
+         {
+             let take_pending = submitted_index == self.scratch.submitted_events.len()
+-                || (pending_index < self.pending.len()
++                || (pending_index < pending.len()
+                     && event_order(
+-                        &self.pending[pending_index],
++                        &pending[pending_index],
+                         &self.scratch.submitted_events[submitted_index],
+                     ) == Ordering::Less);
+             let event = if take_pending {
+-                let event = self.pending[pending_index];
++                let event = pending[pending_index];
+                 pending_index += 1;
+                 event
+             } else {
+@@ -713,10 +741,89 @@ impl ProceduralRuntime {
+             )?;
+         }
+         std::mem::swap(&mut self.pending, &mut self.scratch.event_work);
++        self.pending_head = 0;
+         self.scratch.event_work.clear();
+         Ok(())
+     }
+ 
++    /// Order the live queue after a generation phase. Only the appended tail
++    /// is sorted; it is then linear-merged with the already-sorted live
++    /// prefix, yielding exactly the fully ascending canonical order a
++    /// whole-queue sort would produce. Duplicate canonical keys are detected
++    /// within the tail or across the seam; the merged queue is committed
++    /// before reporting the duplicate so a poisoned snapshot shows the same
++    /// byte content as the previous implementation.
++    fn finish_step_queue_order(&mut self, tail_start: usize) -> Result<(), u32> {
++        let head = self.pending_head;
++        if tail_start == self.pending.len() {
++            // Nothing was generated this step; the live queue is unchanged
++            // and duplicate-free by construction.
++            return Ok(());
++        }
++        {
++            let tail = &mut self.pending[tail_start..];
++            tail.sort_unstable_by(event_order);
++        }
++        let mut duplicate = self.pending[tail_start..]
++            .windows(2)
++            .any(|pair| same_event_key(&pair[0], &pair[1]));
++        if head == tail_start {
++            // No live prefix: the sorted tail is the entire live queue.
++            self.pending_head = tail_start;
++            if duplicate {
++                return Err(PROCEDURAL_DUPLICATE_EVENT);
++            }
++            return Ok(());
++        }
++        let capacity = self.config.event_capacity;
++        {
++            let queue = &self.pending;
++            let work = &mut self.scratch.event_work;
++            work.clear();
++            let mut prefix_index = head;
++            let mut tail_index = tail_start;
++            while prefix_index < tail_start || tail_index < queue.len() {
++                let take_prefix = if prefix_index == tail_start {
++                    false
++                } else if tail_index == queue.len() {
++                    true
++                } else {
++                    match event_order(&queue[prefix_index], &queue[tail_index]) {
++                        Ordering::Less => true,
++                        Ordering::Equal => {
++                            duplicate = true;
++                            true
++                        }
++                        Ordering::Greater => false,
++                    }
++                };
++                let source_index = if take_prefix {
++                    prefix_index
++                } else {
++                    tail_index
++                };
++                push_bounded(
++                    work,
++                    queue[source_index],
++                    capacity,
++                    PROCEDURAL_EVENT_CAPACITY,
++                )?;
++                if take_prefix {
++                    prefix_index += 1;
++                } else {
++                    tail_index += 1;
++                }
++            }
++        }
++        std::mem::swap(&mut self.pending, &mut self.scratch.event_work);
++        self.pending_head = 0;
++        self.scratch.event_work.clear();
++        if duplicate {
++            return Err(PROCEDURAL_DUPLICATE_EVENT);
++        }
++        Ok(())
++    }
++
+     fn advance(&mut self, step_count: u64, events: &[ProceduralEventRecord]) -> u32 {
+         if self.poisoned != PROCEDURAL_OK {
+             return PROCEDURAL_POISONED;
+@@ -744,23 +851,25 @@ impl ProceduralRuntime {
+             }
+         }
+         let mut resident_peak = self.residents.len();
+-        let mut queue_peak = self.pending.len();
++        let mut queue_peak = self.pending_logical_len();
+         let mut cell_steps = 0u64;
+         let mut generated_edges = 0u64;
+         let mut delivered_events = 0u64;
+ 
+         for _ in 0..step_count {
+             let due_count = self
+-                .pending
++                .pending_slice()
+                 .partition_point(|event| event.due_step <= self.current_step);
+-            if self.pending[..due_count]
++            if self.pending_slice()[..due_count]
+                 .iter()
+                 .any(|event| event.due_step != self.current_step)
+             {
+                 return self.poison(PROCEDURAL_INVALID);
+             }
+             self.scratch.event_work.clear();
+-            for event in &self.pending[..due_count] {
++            let consumption_base = self.pending_head;
++            let due = &self.pending[consumption_base..consumption_base + due_count];
++            for event in due {
+                 if let Err(code) = push_bounded(
+                     &mut self.scratch.event_work,
+                     *event,
+@@ -780,7 +889,8 @@ impl ProceduralRuntime {
+                     return self.poison(code);
+                 }
+             }
+-            drop(self.pending.drain(..due_count));
++            self.pending_head += due_count;
++            self.release_consumed_prefix();
+             resident_peak = resident_peak.max(self.residents.len());
+ 
+             self.scratch.step_spikes.clear();
+@@ -843,9 +953,18 @@ impl ProceduralRuntime {
+                 Some(value) => value,
+                 None => return self.poison(PROCEDURAL_EVENT_CAPACITY),
+             };
+-            if self.pending.len().saturating_add(generated_this_step) > self.config.event_capacity {
++            if self
++                .pending_logical_len()
++                .saturating_add(generated_this_step)
++                > self.config.event_capacity
++            {
+                 return self.poison(PROCEDURAL_EVENT_CAPACITY);
+             }
++            // Newly generated events all land after the live sorted prefix, so
++            // only the appended tail is sorted and then linearly merged back.
++            // The result is byte-identical to sorting the whole live queue:
++            // both produce the full queue in ascending canonical key order.
++            let tail_start = self.pending.len();
+             for spike_index in 0..self.scratch.step_spikes.len() {
+                 let source = self.scratch.step_spikes[spike_index];
+                 let due_step = match self
+@@ -896,15 +1015,10 @@ impl ProceduralRuntime {
+                     };
+                 }
+             }
+-            self.pending.sort_unstable_by(event_order);
+-            if self
+-                .pending
+-                .windows(2)
+-                .any(|pair| same_event_key(&pair[0], &pair[1]))
+-            {
+-                return self.poison(PROCEDURAL_DUPLICATE_EVENT);
++            if let Err(code) = self.finish_step_queue_order(tail_start) {
++                return self.poison(code);
+             }
+-            queue_peak = queue_peak.max(self.pending.len());
++            queue_peak = queue_peak.max(self.pending_logical_len());
+             self.residents.retain(|state| !state.is_canonical_rest());
+             self.current_step += 1;
+         }
+@@ -1309,7 +1423,7 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_counts(
+         return PROCEDURAL_INVALID;
+     }
+     *resident_count = (*runtime).residents.len();
+-    *pending_count = (*runtime).pending.len();
++    *pending_count = (*runtime).pending.len() - (*runtime).pending_head;
+     *spike_count = (*runtime).last_spikes.len();
+     PROCEDURAL_OK
+ }
+@@ -1332,7 +1446,7 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
+     if (residents.is_null() && resident_capacity != 0)
+         || (!residents.is_null() && resident_capacity < runtime.residents.len())
+         || (pending.is_null() && pending_capacity != 0)
+-        || (!pending.is_null() && pending_capacity < runtime.pending.len())
++        || (!pending.is_null() && pending_capacity < runtime.pending_logical_len())
+         || (spikes.is_null() && spike_capacity != 0)
+         || (!spikes.is_null() && spike_capacity < runtime.last_spikes.len())
+     {
+@@ -1344,7 +1458,11 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
+         }
+     }
+     if !pending.is_null() {
+-        ptr::copy_nonoverlapping(runtime.pending.as_ptr(), pending, runtime.pending.len());
++        ptr::copy_nonoverlapping(
++            runtime.pending.as_ptr().add(runtime.pending_head),
++            pending,
++            runtime.pending_logical_len(),
++        );
+     }
+     if !spikes.is_null() {
+         ptr::copy_nonoverlapping(
