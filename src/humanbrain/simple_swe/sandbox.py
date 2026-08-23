@@ -303,12 +303,55 @@ def _payload(
     ).encode("utf-8")
 
 
+_LAUNCHER_PROBE_SOURCE = (
+    "import sys;"
+    "print(sys.executable);"
+    "print(getattr(sys, '_base_executable', '') or '')"
+)
+
+
+def _redirect_launcher_executable(executable: Path) -> Path:
+    """Redirect a launcher executable to the real interpreter it spawns.
+
+    Windows venv ``python.exe`` files can be launchers (uv trampolines) that
+    run the actual interpreter as a child process. A Job Object with an
+    ``ActiveProcessLimit`` of one forbids that child, so the launcher itself
+    must never be selected for sandbox execution. Probing the executable with
+    isolated flags reveals which interpreter it really runs; anything
+    unprobeable resolves unchanged and later freeze-hash checks fail closed.
+    """
+    try:
+        result = subprocess.run(
+            [str(executable), "-I", "-S", "-c", _LAUNCHER_PROBE_SOURCE],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10.0,
+        )
+        lines = result.stdout.splitlines()
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return executable
+    for line in lines[:2]:
+        candidate_text = line.strip()
+        if not candidate_text:
+            continue
+        try:
+            candidate = Path(candidate_text).resolve()
+        except (OSError, ValueError):
+            continue
+        if candidate != executable and candidate.is_file():
+            return candidate
+    return executable
+
+
 def resolve_python_executable(value: str | Path | None = None) -> Path:
     """Resolve a direct interpreter, avoiding a venv launcher child process."""
     if value is not None:
-        return Path(value).resolve()
-    base_executable = getattr(sys, "_base_executable", None)
-    return Path(base_executable or sys.executable).resolve()
+        resolved = Path(value).resolve()
+    else:
+        base_executable = getattr(sys, "_base_executable", None)
+        resolved = Path(base_executable or sys.executable).resolve()
+    return _redirect_launcher_executable(resolved)
 
 
 def _sha256_file(path: Path) -> str:
