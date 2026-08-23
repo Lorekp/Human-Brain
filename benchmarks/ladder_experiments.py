@@ -9,6 +9,26 @@ pluggable knobs:
 ``--schedule``      ``massed`` | ``spaced`` | ``interleaved`` presentation order
 ``--data-scale``    ``21`` | ``42`` | ``84`` TRAIN tasks (nested prefixes)
 ``--supervision``   ``all_transition`` | ``program_only``
+``--codebook``      ``explicit`` | ``random`` | ``similarity`` afferent codebook
+                    (a013 representation arms; default ``explicit`` = status quo)
+``--assembly-k``    assembly size k for the ``random``/``similarity`` arms
+                    (default 16; must stay 16 for ``explicit``)
+
+Codebook arms (docs/research/a013-representation-choice.md): the codebook is
+the mapping from token ids to injected reservoir-cell populations. It is
+installed once before growth and consulted by BOTH phases — grow (observe/
+strengthen replay) and completion (framing replay + winner re-observation) —
+so one token always drives one fixed cell assembly.
+
+- ``explicit``: status quo. The circuit's built-in per-token random afferent
+  subsets are left untouched (identity token cells, private 16-of-N codes).
+- ``random``: distributed control arm. Every Layer-1 token gets a fresh
+  uniform k-of-N_E assembly drawn without replacement from a domain-separated
+  per-token RNG stream (seed, salt, token id); N_E is the reservoir size.
+- ``similarity``: deterministic frozen character-trigram feature-hashing
+  projection onto the top-k cells, so structurally similar tokens share
+  cells by construction; see :func:`_similarity_assembly_cells` for the
+  exact pinned function (stdlib ``hashlib.blake2b`` only, no external deps).
 
 One metrics JSON per run is written to ``<out>/<experiment_id>/<arm>.json``
 with the fixed schema documented in ``experiments/SCHEMA.md``.
@@ -34,8 +54,8 @@ import os
 import subprocess
 import sys
 import time
-from dataclasses import asdict
-from hashlib import sha256
+from dataclasses import asdict, dataclass
+from hashlib import blake2b, sha256
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +86,7 @@ READOUT_RULES = tuple(sorted(READOUT_LEARNING_RULES))
 SCHEDULES = ("massed", "spaced", "interleaved")
 DATA_SCALES = (21, 42, 84)
 SUPERVISIONS = ("all_transition", "program_only")
+CODEBOOKS = ("explicit", "random", "similarity")
 
 _CORPUS_PASSES = 3
 _TOKEN_CELLS = typed_program._TOKEN_CELL_COUNT
@@ -76,6 +97,10 @@ _CALIBRATION_LITERAL_COUNT = 4
 _MAX_N = 4096
 _RAM_BUDGET_BYTES = 1_500_000_000
 _A012_SPENT_LITERALS = (-9, -7, -5, -3, -1, 0, 2, 4, 6, 8)
+_DEFAULT_ASSEMBLY_K = _INPUT_FANOUT
+# Domain salt separating codebook RNG streams from the circuit's own RNG so
+# explicit vs random arms with one seed share identical recurrent topology.
+_CODEBOOK_RNG_SALT = 0xC0DEB005
 
 _ALL_TRANSITION = "all-next-token-targets"
 _PROGRAM_ONLY = "program-token-targets-only"
@@ -83,6 +108,170 @@ _SUPERVISION_SCOPE = {
     "all_transition": _ALL_TRANSITION,
     "program_only": _PROGRAM_ONLY,
 }
+
+
+# ---------------------------------------------------------------------------
+# Codebook knob (a013 representation arms)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Codebook:
+    """One arm's mapping from token ids to injected cell assemblies.
+
+    ``assemblies`` is ``(token_count, k)`` int32 with sorted distinct reservoir
+    cells per row, or ``None`` for the explicit arm (built-in wiring kept).
+    """
+
+    mode: str
+    n_e: int
+    k: int
+    seed: int | None
+    assemblies: np.ndarray | None
+    sha256: str
+
+
+def _codebook_token_name(token_id: int) -> str:
+    """Canonical Layer-1 name of a token id (byte characters + primitives)."""
+    token_id = int(token_id)
+    if 0 <= token_id < 256:
+        return chr(token_id)
+    spec = typed_program._ID_TO_SPEC.get(token_id)
+    if spec is None:
+        raise ValueError(f"token id {token_id} outside the Layer-1 vocabulary")
+    return spec.token
+
+
+def _similarity_assembly_cells(name: str, n_e: int, k: int) -> tuple[int, ...]:
+    """Frozen v1 similarity projection of one token name onto k cells.
+
+    Exact pinned definition (changing it requires re-pinning
+    ``tests/test_ladder_codebook.py``; stdlib only, no external dependencies):
+
+    1. ``text = name.lower()`` and pad it: ``padded = f"  {text}  "``.
+    2. Features are every contiguous character trigram of ``padded``.
+    3. A counting vector ``v`` in R^n_e starts at zero. Each feature string
+       ``g`` contributes one unit vote to the cell
+       ``h % n_e``, where ``h`` is the big-endian uint64 value of
+       ``blake2b(g.encode("utf-8"), digest_size=8)``: ``v[cell] += 1``.
+       Votes are deliberately UNSIGNED so that every shared-trigram cell is
+       positive evidence; with one vote per feature a signed scheme would
+       push half of them below all zero cells and destroy family structure.
+    4. Rank all cells ascending by key ``(-v[c], tiebreak)`` where
+       ``tiebreak = blake2b(f"{name}\\x00{c}".encode("utf-8"), digest_size=8)``
+       as a big-endian uint64. Evidence strength dominates, then a
+       deterministic per-(name, cell) pseudorandom priority spreads
+       zero-evidence filler cells like a random baseline instead of
+       collapsing them onto low indices.
+    5. The assembly is the sorted first ``k`` ranked cells.
+
+    The projection is run-seed independent by construction, and overlap
+    between two tokens' assemblies is monotone in shared character structure.
+    """
+    vector = np.zeros(n_e, dtype=np.int64)
+    padded = f"  {name.lower()}  "
+    for index in range(len(padded) - 2):
+        feature = padded[index : index + 3]
+        digest = int.from_bytes(
+            blake2b(feature.encode("utf-8"), digest_size=8).digest(), "big"
+        )
+        vector[digest % n_e] += 1
+    ranked = sorted(
+        range(n_e),
+        key=lambda cell: (
+            -int(vector[cell]),
+            int.from_bytes(
+                blake2b(
+                    f"{name}\x00{cell}".encode("utf-8"), digest_size=8
+                ).digest(),
+                "big",
+            ),
+        ),
+    )
+    return tuple(sorted(ranked[:k]))
+
+
+def build_codebook(
+    mode: str,
+    *,
+    token_count: int,
+    n_e: int,
+    k: int,
+    seed: int,
+) -> Codebook:
+    """Materialize one codebook arm over the full Layer-1 vocabulary."""
+    if mode not in CODEBOOKS:
+        raise ValueError(f"unknown codebook mode {mode!r}; expected one of {CODEBOOKS}")
+    if not 1 <= k <= n_e:
+        raise ValueError(f"assembly size k={k} must be within [1, n_e={n_e}]")
+    if token_count < 2:
+        raise ValueError("token_count must cover at least two tokens")
+
+    assemblies: np.ndarray | None = None
+    if mode == "random":
+        # Distributed control arm: per-token domain-separated streams make the
+        # mapping order-independent and reproducible under the seed alone.
+        rows = np.empty((token_count, k), dtype=np.int32)
+        for token_id in range(token_count):
+            rng = np.random.default_rng([seed, _CODEBOOK_RNG_SALT, token_id])
+            rows[token_id] = np.sort(rng.choice(n_e, size=k, replace=False))
+        assemblies = rows
+    elif mode == "similarity":
+        names = [_codebook_token_name(token_id) for token_id in range(token_count)]
+        flat = np.fromiter(
+            (
+                cell
+                for name in names
+                for cell in _similarity_assembly_cells(name, n_e, k)
+            ),
+            dtype=np.int32,
+            count=token_count * k,
+        )
+        assemblies = flat.reshape(token_count, k)
+
+    record = {
+        "mode": mode,
+        "n_e": int(n_e),
+        "k": int(k),
+        # Only the random arm consumes the seed; explicit and similarity are
+        # seed-independent, so their provenance digests must not vary by seed.
+        "seed": int(seed) if mode == "random" else None,
+        "assemblies": None if assemblies is None else assemblies.astype(int).tolist(),
+    }
+    return Codebook(
+        mode=mode,
+        n_e=n_e,
+        k=k,
+        seed=int(seed) if mode == "random" else None,
+        assemblies=assemblies,
+        sha256=sha256(_canonical_json(record)).hexdigest(),
+    )
+
+
+def install_codebook(circuit: RecurrentCellCircuit, codebook: Codebook) -> None:
+    """Overwrite the circuit's afferent table with the codebook assemblies.
+
+    Both grow and completion inject tokens through this single table, so one
+    install gives same-token-same-assembly across both phases.
+    """
+    if codebook.mode == "explicit":
+        raise ValueError("the explicit arm keeps the built-in afferent wiring")
+    if codebook.assemblies is None:
+        raise ValueError("non-explicit codebook is missing its assembly table")
+    if codebook.n_e > circuit.active_reservoir_cells:
+        raise ValueError("codebook E-population exceeds the active reservoir")
+    targets = circuit._afferent_targets
+    if codebook.assemblies.shape != targets.shape:
+        raise ValueError(
+            f"assembly table shape {codebook.assemblies.shape} does not match "
+            f"the circuit afferent table {targets.shape}"
+        )
+    if not np.all(np.diff(codebook.assemblies.astype(np.int64), axis=1) > 0):
+        raise ValueError("every assembly must be k distinct cells in sorted order")
+    if int(codebook.assemblies.max()) >= circuit.active_reservoir_cells:
+        raise ValueError("assembly cell outside the active reservoir population")
+    np.copyto(targets, codebook.assemblies)
+    circuit.synchronize_structure_from_host()
 
 
 def _canonical_json(value: object) -> bytes:
@@ -255,16 +444,22 @@ def _grow_circuit(
     readout_rule: str,
     schedule: str,
     supervision: str,
+    codebook: Codebook | None = None,
 ) -> RecurrentCellCircuit:
     """Drive the circuit's observe/strengthen cycle over the scheduled corpus."""
+    input_fanout = _INPUT_FANOUT
+    if codebook is not None and codebook.mode != "explicit":
+        input_fanout = codebook.k
     config = RecurrentCircuitConfig(
         reservoir_cells=n_cells,
-        input_fanout=_INPUT_FANOUT,
+        input_fanout=input_fanout,
         recurrent_fanout=_RECURRENT_FANOUT,
         random_seed=seed,
         readout_learning_rule=readout_rule,
     )
     circuit = RecurrentCellCircuit(token_cells=_TOKEN_CELLS, config=config)
+    if codebook is not None and codebook.mode != "explicit":
+        install_codebook(circuit, codebook)
     prepared = _prepare_sequences(curriculum["train_tasks"])  # type: ignore[arg-type]
     scope = _SUPERVISION_SCOPE[supervision]
     for task_index in _presentation_order(len(prepared), schedule, seed):
@@ -423,10 +618,19 @@ def run_experiment(
     schedule: str,
     data_scale: int,
     supervision: str,
+    codebook: str = "explicit",
+    assembly_k: int = _DEFAULT_ASSEMBLY_K,
 ) -> dict[str, object]:
     """Execute one arm end-to-end and return its fixed-schema metrics record."""
     started = time.perf_counter()
     curriculum = build_curriculum(seed, data_scale)
+    codebook_arm = build_codebook(
+        codebook,
+        token_count=_TOKEN_CELLS,
+        n_e=n_cells,
+        k=assembly_k,
+        seed=seed,
+    )
     circuit = _grow_circuit(
         curriculum,
         n_cells=n_cells,
@@ -434,17 +638,23 @@ def run_experiment(
         readout_rule=readout_rule,
         schedule=schedule,
         supervision=supervision,
+        codebook=codebook_arm,
     )
     train = _evaluate_cohort(circuit, curriculum["train_tasks"], collect_margins=True)  # type: ignore[arg-type]
     calibration = _evaluate_cohort(  # type: ignore[arg-type]
         circuit, curriculum["calibration_tasks"], collect_margins=False
     )
     margins = sorted(train["margins"])
+    effective_fanout = (
+        _INPUT_FANOUT
+        if codebook_arm.mode == "explicit"
+        else codebook_arm.k
+    )
     config_dump = {
         "corpus_passes": _CORPUS_PASSES,
         "data_scale": data_scale,
         "framing_order": typed_program.Layer1Protocol.for_lane("A2").framing_order,
-        "input_fanout": _INPUT_FANOUT,
+        "input_fanout": effective_fanout,
         "n_cells": n_cells,
         "pool_literal_count": _POOL_LITERAL_COUNT,
         "readout_rule": readout_rule,
@@ -454,6 +664,9 @@ def run_experiment(
         "supervision": supervision,
         "supervision_scope": _SUPERVISION_SCOPE[supervision],
         "token_cells": _TOKEN_CELLS,
+        "codebook": codebook_arm.mode,
+        "assembly_k": codebook_arm.k if codebook_arm.mode != "explicit" else None,
+        "codebook_sha256": codebook_arm.sha256,
         "train_task_count": len(curriculum["train_tasks"]),  # type: ignore[arg-type]
         "calibration_task_count": len(curriculum["calibration_tasks"]),  # type: ignore[arg-type]
         "circuit_config": asdict(
@@ -513,6 +726,22 @@ def _validate_arguments(arguments: argparse.Namespace) -> None:
         _fail(f"--data-scale must be one of {DATA_SCALES}")
     if arguments.supervision not in SUPERVISIONS:
         _fail(f"--supervision must be one of {SUPERVISIONS}")
+    if arguments.codebook not in CODEBOOKS:
+        _fail(f"--codebook must be one of {CODEBOOKS}")
+    if not 1 <= arguments.assembly_k <= min(arguments.N, _MAX_N):
+        _fail(
+            f"--assembly-k {arguments.assembly_k} must be within [1, N="
+            f"{arguments.N}] (assemblies are drawn without replacement over "
+            "the reservoir-sized E-population)"
+        )
+    if (
+        arguments.codebook == "explicit"
+        and arguments.assembly_k != _DEFAULT_ASSEMBLY_K
+    ):
+        _fail(
+            "--codebook explicit keeps the status-quo afferent wiring and "
+            f"requires --assembly-k {_DEFAULT_ASSEMBLY_K}"
+        )
     for name in ("experiment_id", "arm"):
         value = getattr(arguments, name)
         if (
@@ -544,6 +773,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--schedule", default="spaced", choices=SCHEDULES)
     parser.add_argument("--data-scale", type=int, default=21, choices=DATA_SCALES)
     parser.add_argument("--supervision", default="program_only", choices=SUPERVISIONS)
+    parser.add_argument("--codebook", default="explicit", choices=CODEBOOKS)
+    parser.add_argument(
+        "--assembly-k",
+        dest="assembly_k",
+        type=int,
+        default=_DEFAULT_ASSEMBLY_K,
+        help="assembly size for the random/similarity codebooks (default 16)",
+    )
     parser.add_argument(
         "--check-determinism",
         action="store_true",
@@ -562,6 +799,8 @@ def main(argv: list[str] | None = None) -> int:
         schedule=arguments.schedule,
         data_scale=arguments.data_scale,
         supervision=arguments.supervision,
+        codebook=arguments.codebook,
+        assembly_k=arguments.assembly_k,
     )
     if arguments.check_determinism:
         repeat = run_experiment(
@@ -573,6 +812,8 @@ def main(argv: list[str] | None = None) -> int:
             schedule=arguments.schedule,
             data_scale=arguments.data_scale,
             supervision=arguments.supervision,
+            codebook=arguments.codebook,
+            assembly_k=arguments.assembly_k,
         )
         if _record_without_wall(record) != _record_without_wall(repeat):
             _fail("determinism check failed: identical-seed records differ beyond wall_s")

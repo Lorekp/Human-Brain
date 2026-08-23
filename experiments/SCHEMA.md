@@ -16,11 +16,37 @@ python benchmarks/ladder_experiments.py \
     [--schedule {massed,spaced,interleaved}] \
     [--data-scale {21,42,84}] \
     [--supervision {all_transition,program_only}] \
+    [--codebook {explicit,random,similarity}] \
+    [--assembly-k K] \
     [--check-determinism]
 ```
 
 Defaults: `--readout-rule sparse_three_factor`, `--schedule spaced`,
-`--data-scale 21`, `--supervision program_only`, `--out experiments/`.
+`--data-scale 21`, `--supervision program_only`, `--codebook explicit`,
+`--assembly-k 16`, `--out experiments/`.
+
+## Codebook knob (a013 representation arms)
+
+The codebook is the mapping from token ids to injected reservoir-cell
+populations (docs/research/a013-representation-choice.md). It is installed
+once before growth and used by BOTH grow and completion, so one token always
+drives one fixed cell assembly. N_E equals the reservoir size (v1 single
+population):
+
+- `explicit` — status quo; the circuit's built-in per-token random 16-of-N
+  afferent subsets are left untouched. Requires the default `--assembly-k`.
+- `random` — distributed control arm: every Layer-1 token gets a uniform
+  k-of-N_E assembly drawn without replacement from a domain-separated
+  per-token stream (`default_rng([seed, salt, token_id])`, salt `0xC0DEB005`),
+  so explicit/random arms sharing a seed keep identical recurrent topology.
+- `similarity` — deterministic frozen character-trigram feature-hashing
+  projection onto the top-k cells (stdlib `blake2b`; exact pinned definition
+  documented in `_similarity_assembly_cells` of the harness), so structurally
+  similar tokens share cells by construction. Seed-independent.
+
+`config_dump` additionally records `codebook` (mode), `assembly_k` (`null`
+for explicit), and `codebook_sha256` (provenance digest over mode/n_e/k/seed/
+full assembly table; identical across seeds for explicit/similarity).
 
 ## What a run does
 
@@ -81,7 +107,7 @@ Defaults: `--readout-rule sparse_three_factor`, `--schedule spaced`,
 | `margin_median_pa` | float | Median collected margin in pA (0.0 if none). Floats rounded to 9 decimals. |
 | `wall_s` | float | Wall-clock seconds for the whole arm (rounded to 3 decimals). EXCLUDED from the determinism guarantee. |
 | `git_head` | string | `git rev-parse HEAD` of the repository at run time (`unknown` if unavailable). |
-| `config_dump` | object | Full effective configuration: knobs, corpus passes (3), framing order, fan-outs, token-cell count, cohort counts, the complete `RecurrentCircuitConfig` asdict, and the frozen protocol SHA-256 used as curriculum source. |
+| `config_dump` | object | Full effective configuration: knobs (including the codebook arm, assembly size, and codebook provenance digest), corpus passes (3), framing order, effective input fan-out, token-cell count, cohort counts, the complete `RecurrentCircuitConfig` asdict, and the frozen protocol SHA-256 used as curriculum source. |
 
 ## Determinism contract
 
