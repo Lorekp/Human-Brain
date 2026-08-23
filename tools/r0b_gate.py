@@ -11,6 +11,12 @@ per-family verdicts:
   Every arm: N=1024, seed=7, massed/42/all_transition, ridge readout,
   scipy ridge backend, CPU-pinned, --check-determinism enforced,
   curriculum anchor checked ONCE before the first arm.
+- RESUME / ONE-SHOT DISCIPLINE: completion is tracked per arm on disk -
+  ``experiments/r0b_state_features/<arm>.json`` written by the ladder
+  subprocess. A rerun of this runner REUSES every existing arm record and
+  never re-executes a completed arm (the ladder additionally refuses to
+  overwrite an existing metrics file), so an interrupted execution can be
+  continued without spending any arm twice.
 - G1 (separation, primary): collect_state_separation over the 18
   CALIBRATION framing replays on feature_state_vector(); pooled median
   1-cosine > 0.10.
