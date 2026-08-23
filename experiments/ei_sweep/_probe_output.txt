@@ -1,0 +1,12 @@
+f0.000_N1024_s7: inh=0 exc=1024 |w|_inh=None |w|_exc=650.0 sign_sha=5a648d801590 skew=0.6937 sep_elig_pooled=0.000558858 sep_curr_pooled=0.005970183
+f0.000_N1024_s8: inh=0 exc=1024 |w|_inh=None |w|_exc=650.0 sign_sha=5a648d801590 skew=0.6354 sep_elig_pooled=0.000572073 sep_curr_pooled=0.005948296
+f0.000_N1024_s9: inh=0 exc=1024 |w|_inh=None |w|_exc=650.0 sign_sha=5a648d801590 skew=0.7719 sep_elig_pooled=0.000574232 sep_curr_pooled=0.005733012
+f0.100_N1024_s7: inh=102 exc=922 |w|_inh=650.0 |w|_exc=650.0 sign_sha=390d1d375e48 skew=0.4422 sep_elig_pooled=0.000678734 sep_curr_pooled=0.010098153
+f0.100_N1024_s8: inh=102 exc=922 |w|_inh=650.0 |w|_exc=650.0 sign_sha=ede40be01013 skew=-0.3983 sep_elig_pooled=0.000680972 sep_curr_pooled=0.010308381
+f0.100_N1024_s9: inh=102 exc=922 |w|_inh=650.0 |w|_exc=650.0 sign_sha=700f0ad52fec skew=0.0165 sep_elig_pooled=0.000685815 sep_curr_pooled=0.010341226
+f0.200_N1024_s7: inh=205 exc=819 |w|_inh=650.0 |w|_exc=650.0 sign_sha=2d92f133e136 skew=0.1641 sep_elig_pooled=0.001038012 sep_curr_pooled=0.021211804
+f0.200_N1024_s8: inh=205 exc=819 |w|_inh=650.0 |w|_exc=650.0 sign_sha=ea795c3f7665 skew=3.0301 sep_elig_pooled=0.001036562 sep_curr_pooled=0.021980204
+f0.200_N1024_s9: inh=205 exc=819 |w|_inh=650.0 |w|_exc=650.0 sign_sha=b584a1f93a7a skew=0.4989 sep_elig_pooled=0.001175573 sep_curr_pooled=0.026126481
+f0.350_N1024_s7: inh=358 exc=666 |w|_inh=650.0 |w|_exc=650.0 sign_sha=5fd1e2662821 skew=0.3695 sep_elig_pooled=0.147708595 sep_curr_pooled=0.713151155
+f0.350_N1024_s8: inh=358 exc=666 |w|_inh=650.0 |w|_exc=650.0 sign_sha=92c1a241ea7e skew=1.2110 sep_elig_pooled=0.028506307 sep_curr_pooled=0.46350053
+f0.350_N1024_s9: inh=358 exc=666 |w|_inh=650.0 |w|_exc=650.0 sign_sha=160696a38b0e skew=0.4594 sep_elig_pooled=0.174866141 sep_curr_pooled=0.656237827

@@ -1,0 +1,42 @@
+{
+  "backend": "cuda",
+  "cells": 1000000,
+  "construction_seconds": 12.779,
+  "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+  "device_persistent_array_mib": 154.5,
+  "device_to_host_bytes_per_token": 8000008,
+  "freeze_seconds": 0.0,
+  "gpu_memory_used_mib_after": 2734.0,
+  "gpu_memory_used_mib_before": 2405.0,
+  "growth": {
+    "learned_synapses": 122,
+    "seconds": 180.516,
+    "sparse_readout_fan_in": 64,
+    "strengthen_calls": 4047,
+    "structural_deletions": 0,
+    "structural_recruitments": 178,
+    "synapse_ceiling": 25216,
+    "tokens": 4047,
+    "tokens_per_second": 22.42
+  },
+  "host_mirror_mode": "eligibility",
+  "learned_synapses": 122,
+  "read": {
+    "chance_rate": 0.0025,
+    "mean_kernel_ms_per_token": 43.7646,
+    "races": 1999,
+    "seconds": 91.187,
+    "tokens": 2000,
+    "tokens_per_second": 21.93,
+    "winner_match_rate": 0.01
+  },
+  "stability_inference_determinism": {
+    "replay_seconds": 90.952,
+    "replay_tokens": 1999,
+    "replay_tokens_per_second": 21.98,
+    "stable_bit_exact": true
+  },
+  "token_cells": 394,
+  "tokenizer_fit_seconds": 0.001,
+  "vocab_size": 394
+}
