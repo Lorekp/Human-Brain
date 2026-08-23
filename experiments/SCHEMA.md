@@ -18,12 +18,13 @@ python benchmarks/ladder_experiments.py \
     [--supervision {all_transition,program_only}] \
     [--codebook {explicit,random,similarity}] \
     [--assembly-k K] \
+    [--inhibitory-fraction F] \
     [--check-determinism]
 ```
 
 Defaults: `--readout-rule sparse_three_factor`, `--schedule spaced`,
 `--data-scale 21`, `--supervision program_only`, `--codebook explicit`,
-`--assembly-k 16`, `--out experiments/`.
+`--assembly-k 16`, `--inhibitory-fraction 0.2`, `--out experiments/`.
 
 ## Codebook knob (a013 representation arms)
 
@@ -47,6 +48,20 @@ population):
 `config_dump` additionally records `codebook` (mode), `assembly_k` (`null`
 for explicit), and `codebook_sha256` (provenance digest over mode/n_e/k/seed/
 full assembly table; identical across seeds for explicit/similarity).
+
+## Inhibitory-fraction knob (V3a EI-balance arms)
+
+`--inhibitory-fraction F` (default 0.2 = shipped constant,
+`RecurrentCircuitConfig.inhibitory_fraction`) sets the fraction of ACTIVE
+reservoir cells whose recurrent weight signs are negative: the circuit draws
+`round(F * N_active)` cells without replacement and flips their signs before
+multiplying by `recurrent_current_pa`. Valid range is `[0, 1)`, finite;
+enforced at CLI validation, in `run_experiment`, and in the config itself.
+Sign draws happen AFTER afferent/recurrent target draws in the circuit RNG,
+so arms sharing a seed keep identical wiring across fractions (only the sign
+pattern — and the downstream token-cell heterogeneity draw — changes).
+`config_dump` records `inhibitory_fraction` and the full effective
+`circuit_config`. Top-level schema fields are unchanged (v1).
 
 ## What a run does
 

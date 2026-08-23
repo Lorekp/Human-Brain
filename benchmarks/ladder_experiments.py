@@ -18,6 +18,11 @@ pluggable knobs:
 ``--local-margin-pa`` dense-rule competitive margin m in pA (default 64.0
                     = shipped constant; dense-only knob, sparse skips via
                     ``winner == target`` instead)
+``--inhibitory-fraction``
+                    fraction of ACTIVE reservoir cells carrying negative
+                    recurrent weight signs (default 0.2 = shipped constant;
+                    V3a EI-balance sweep knob — signs flip on
+                    ``round(fraction * active)`` cells, recurrent.py :261-268)
 
 Codebook arms (docs/research/a013-representation-choice.md): the codebook is
 the mapping from token ids to injected reservoir-cell populations. It is
@@ -93,6 +98,7 @@ SCHEDULES = ("massed", "spaced", "interleaved")
 DATA_SCALES = (21, 42, 84)
 SUPERVISIONS = ("all_transition", "program_only")
 CODEBOOKS = ("explicit", "random", "similarity")
+DEFAULT_INHIBITORY_FRACTION = 0.2
 
 _CORPUS_PASSES = 3
 _TOKEN_CELLS = typed_program._TOKEN_CELL_COUNT
@@ -280,6 +286,35 @@ def install_codebook(circuit: RecurrentCellCircuit, codebook: Codebook) -> None:
     circuit.synchronize_structure_from_host()
 
 
+def recurrent_sign_metrics(circuit: RecurrentCellCircuit) -> dict[str, object]:
+    """Canonical sign-structure metrics of the circuit's recurrent weights.
+
+    ``_recurrent_weights_pa`` is ``signs * recurrent_current_pa`` repeated
+    across the fan-out columns (recurrent.py signs :261-266, applied :268),
+    so column 0 carries the whole sign pattern. The hash pins ONLY the sign
+    vector (int8 -1/0/+1 canonical bytes), staying stable under
+    ``recurrent_current_pa`` retunes; group magnitudes are reported beside it
+    as the mechanism-engagement check (both equal recurrent_current_pa).
+    """
+    weights = circuit._recurrent_weights_pa[:, 0]
+    signs = np.sign(weights).astype(np.int8)
+    excitatory = signs > 0
+    inhibitory = signs < 0
+
+    def _mean_abs(mask: np.ndarray) -> float | None:
+        return float(np.mean(np.abs(weights[mask]))) if bool(mask.any()) else None
+
+    return {
+        "sign_sha256": sha256(signs.tobytes()).hexdigest(),
+        "active_cells": int(circuit.active_reservoir_cells),
+        "excitatory_cells": int(excitatory.sum()),
+        "inhibitory_cells": int(inhibitory.sum()),
+        "zero_sign_cells": int((signs == 0).sum()),
+        "mean_abs_weight_excitatory_pa": _mean_abs(excitatory),
+        "mean_abs_weight_inhibitory_pa": _mean_abs(inhibitory),
+    }
+
+
 def _canonical_json(value: object) -> bytes:
     return json.dumps(
         value,
@@ -453,6 +488,7 @@ def _grow_circuit(
     codebook: Codebook | None = None,
     local_learning_rate_pa: float = 64.0,
     local_competitive_margin_pa: float = 64.0,
+    inhibitory_fraction: float = DEFAULT_INHIBITORY_FRACTION,
 ) -> RecurrentCellCircuit:
     """Drive the circuit's observe/strengthen cycle over the scheduled corpus."""
     input_fanout = _INPUT_FANOUT
@@ -466,6 +502,7 @@ def _grow_circuit(
         readout_learning_rule=readout_rule,
         local_learning_rate_pa=local_learning_rate_pa,
         local_competitive_margin_pa=local_competitive_margin_pa,
+        inhibitory_fraction=inhibitory_fraction,
     )
     circuit = RecurrentCellCircuit(token_cells=_TOKEN_CELLS, config=config)
     if codebook is not None and codebook.mode != "explicit":
@@ -632,6 +669,7 @@ def run_experiment(
     assembly_k: int = _DEFAULT_ASSEMBLY_K,
     local_learning_rate_pa: float = 64.0,
     local_competitive_margin_pa: float = 64.0,
+    inhibitory_fraction: float = DEFAULT_INHIBITORY_FRACTION,
 ) -> dict[str, object]:
     """Execute one arm end-to-end and return its fixed-schema metrics record."""
     started = time.perf_counter()
@@ -644,6 +682,13 @@ def run_experiment(
                 f"{name} must be finite and > 0 (got {value!r}); "
                 "shipped default is 64.0 pA"
             )
+    if not math.isfinite(inhibitory_fraction) or not (
+        0.0 <= inhibitory_fraction < 1.0
+    ):
+        raise ValueError(
+            "inhibitory_fraction must be finite and in [0, 1) "
+            f"(got {inhibitory_fraction!r}); shipped default is 0.2"
+        )
     curriculum = build_curriculum(seed, data_scale)
     codebook_arm = build_codebook(
         codebook,
@@ -662,6 +707,7 @@ def run_experiment(
         codebook=codebook_arm,
         local_learning_rate_pa=local_learning_rate_pa,
         local_competitive_margin_pa=local_competitive_margin_pa,
+        inhibitory_fraction=inhibitory_fraction,
     )
     train = _evaluate_cohort(circuit, curriculum["train_tasks"], collect_margins=True)  # type: ignore[arg-type]
     calibration = _evaluate_cohort(  # type: ignore[arg-type]
@@ -690,6 +736,7 @@ def run_experiment(
         "codebook": codebook_arm.mode,
         "assembly_k": codebook_arm.k if codebook_arm.mode != "explicit" else None,
         "codebook_sha256": codebook_arm.sha256,
+        "inhibitory_fraction": inhibitory_fraction,
         "train_task_count": len(curriculum["train_tasks"]),  # type: ignore[arg-type]
         "calibration_task_count": len(curriculum["calibration_tasks"]),  # type: ignore[arg-type]
         "circuit_config": asdict(
@@ -701,6 +748,7 @@ def run_experiment(
                 readout_learning_rule=readout_rule,
                 local_learning_rate_pa=local_learning_rate_pa,
                 local_competitive_margin_pa=local_competitive_margin_pa,
+                inhibitory_fraction=inhibitory_fraction,
             )
         ),
         "frozen_protocol_sha256": curriculum["frozen_protocol_sha256"],
@@ -753,6 +801,14 @@ def _validate_arguments(arguments: argparse.Namespace) -> None:
         _fail(f"--supervision must be one of {SUPERVISIONS}")
     if arguments.codebook not in CODEBOOKS:
         _fail(f"--codebook must be one of {CODEBOOKS}")
+    if not math.isfinite(arguments.inhibitory_fraction) or not (
+        0.0 <= arguments.inhibitory_fraction < 1.0
+    ):
+        _fail(
+            f"--inhibitory-fraction {arguments.inhibitory_fraction!r} must be "
+            "finite and in [0, 1) (signs flip on round(fraction * active) "
+            "active reservoir cells; shipped default 0.2)"
+        )
     if not 1 <= arguments.assembly_k <= min(arguments.N, _MAX_N):
         _fail(
             f"--assembly-k {arguments.assembly_k} must be within [1, N="
@@ -827,6 +883,16 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--inhibitory-fraction",
+        dest="inhibitory_fraction",
+        type=float,
+        default=DEFAULT_INHIBITORY_FRACTION,
+        help=(
+            "fraction of active reservoir cells carrying negative recurrent "
+            "weight signs (default 0.2 = shipped constant; V3a EI-balance knob)"
+        ),
+    )
+    parser.add_argument(
         "--check-determinism",
         action="store_true",
         help="run the whole arm twice in-process and assert byte-identical "
@@ -848,6 +914,7 @@ def main(argv: list[str] | None = None) -> int:
         assembly_k=arguments.assembly_k,
         local_learning_rate_pa=arguments.local_learning_rate_pa,
         local_competitive_margin_pa=arguments.local_competitive_margin_pa,
+        inhibitory_fraction=arguments.inhibitory_fraction,
     )
     if arguments.check_determinism:
         repeat = run_experiment(
@@ -863,6 +930,7 @@ def main(argv: list[str] | None = None) -> int:
             assembly_k=arguments.assembly_k,
             local_learning_rate_pa=arguments.local_learning_rate_pa,
             local_competitive_margin_pa=arguments.local_competitive_margin_pa,
+            inhibitory_fraction=arguments.inhibitory_fraction,
         )
         if _record_without_wall(record) != _record_without_wall(repeat):
             _fail("determinism check failed: identical-seed records differ beyond wall_s")
