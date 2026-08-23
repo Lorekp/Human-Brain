@@ -188,5 +188,120 @@ state (ridge statistics, dense/sparse weights) changes width.
   disposition as R0 §1.5): switching family restarts readout learning blind;
   retraining from scratch is the sanctioned path. Declared, not hidden.
 
+## 2. Family definitions (exact feature formulas)
+
+Canonical family order for all ordering decisions: **A** spike_counts <
+**B** voltage_quantiles < **C** assembly_overlap. `t` = number of tokens
+observed since the last `reset_sequence()`; `R` = reservoir_cells;
+`T_tok = token_interval_ms`.
+
+### 2.A Spike-count windows (`spike_counts`)
+
+Per-token count vector, kernel-maintained:
+
+```
+s_t[c] = Σ over the token's token_steps sub-steps of spike_mask_step[c] ∈ {0,1}
+```
+
+i.e. the number of times cell c crossed threshold during token t's
+integration. Counts are small non-negative integers (the fitted GLIF5
+spike-cut refractory bounds firing rate; cells.py `AllenGlif5Parameters`)
+so f64 storage is exact.
+
+Feature rows — hard-edged sliding sums:
+
+```
+A_k[c](t) = Σ_{u = max(1, t−W_k+1)}^{t} s_u[c]        k = 0..7
+F_A       = N_WIN · R          (8192 at R=1024)
+source id s decodes as (k, cell) = divmod(s, R) — same decode as traces.
+```
+
+Update at each token boundary (exact integer arithmetic in f64):
+
+1. push `d_t := s_t` into `_count_ring`;
+2. for every k: if `t > W_k`, subtract the ring entry exiting window k
+   (`_count_ring[t − W_k]`), then add `d_t`.
+
+Cost: O(N_WIN·R) adds/token host-side + the kernel accumulation below.
+No exponential kernel exists anywhere in this family — that is the point.
+
+### 2.B Membrane-potential quantiles (`voltage_quantiles`)
+
+Boundary capture: after `observe()` completes its full sub-step integration
+and BEFORE strengthen/race, sample
+
+```
+b_t[c] = state.voltage_relative_mv[c]     (f64 relative mV, cells.py :290/:310)
+```
+
+into `_voltage_ring`. One sample per cell per token boundary ("boundary
+captures"); intra-token trajectory is deliberately NOT stored.
+
+Feature rows — exact empirical quantiles of the last W_k boundary samples:
+
+```
+B_{k,q}[c](t) = np.quantile({ b_u[c] : max(1, t−W_k+1) ≤ u ≤ t }, q,
+                             method="linear")     (numpy default interpolation)
+block index m = 3·k + j, j ∈ {0,1,2} for q ∈ (0.10, 0.50, 0.90); row order
+[q10 win0, q50 win0, q90 win0, q10 win1, ...]
+F_B       = 3 · N_WIN · R      (24576 at R=1024)
+source id s decodes as (m, cell) = divmod(s, R).
+```
+
+- Quantile method PINNED: numpy `method="linear"` on the raw sample set —
+  exact, deterministic, and platform-stable; running/approximate estimators
+  (P², histograms) are REJECTED ex ante because they change semantics under
+  reordering and cannot be parity-tested bit-exactly.
+- Rows are recomputed from the ring lazily at consume points (strengthen /
+  pre-race), not per sub-step; §6 accounts the cost honestly including the
+  1M-scale open flag.
+- On CPU the boundary read is free (host-live state); on CUDA it requires
+  the mirror extension of §3 — hence "needs boundary captures".
+
+### 2.C Assembly-overlap counts (`assembly_overlap`) — codebook random/similarity arms only
+
+Assemblies are the installed afferent table itself:
+`A(t) = circuit._afferent_targets[t]` (post-`install_codebook`,
+ladder_experiments.py:329-352) — the set of reservoir cells token t's pulse
+injects. Under `explicit`, this table IS the incumbent wiring and family C
+would re-derive input bookkeeping with no new structure (expected cross-token
+overlap 2/16, a013-representation-choice.md :10-14), so C is RESTRICTED to
+the random/similarity codebook arms where assemblies exist as first-class
+distributed objects with controlled overlap statistics.
+
+Feature rows — how many DISTINCT recently-active assemblies cover each cell:
+
+```
+Active(t, W_k) = 1 iff token t was observed within the last W_k tokens
+C_k[c](t)      = |{ t' distinct : Active(t', W_k) ∧ c ∈ A(t') }|
+F_C            = N_WIN · R          (8192 at R=1024)
+source id s decodes as (k, cell) = divmod(s, R).
+```
+
+Distinctness is handled by occurrence counters so repeated tokens count once:
+
+- `_occurrences[k, x]` += 1 when token x is observed; on a 0→1 transition,
+  `C_k[c] += 1` for every `c ∈ A(x)`.
+- When token y exits window k at the boundary, `_occurrences[k, y]` -= 1;
+  on a 1→0 transition, `C_k[c] -= 1` for every `c ∈ A(y)`.
+
+Mechanistic role: under the similarity projection, structurally related
+tokens share cells (blake2b trigram votes, ladder_experiments.py:223-269),
+so C_k reports WHICH SEMANTIC CONTENT recently surrounded each cell —
+context composition relative to wiring, something neither own-spikes (A)
+nor own-voltage (B) encode. The random arm serves as the distribution-only
+control (§4). Host-only bookkeeping: no kernel or mirror changes (§3).
+
+### 2.D Combination arm
+
+`feature_state_vector()` under `"combo:<f1>+<f2>"` returns the flat
+CONCATENATION of the two members' buffers in canonical family order,
+followed by nothing else; bias stays the separate final slot as everywhere.
+`F_combo = F_f1 + F_f2` (e.g. A+B → 32768 at R=1024). Members keep their own
+boundary updates; composition is an addressing change only. Which two run is
+frozen by the selection rule in §4.4 — chosen BEFORE any combo token is
+observed, from diagnostics the protocol pins now.
+
 <!-- R0B-CONTINUES -->
+
 
