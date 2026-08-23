@@ -102,7 +102,7 @@ def resolved_feature_cells(config: RecurrentCircuitConfig) -> int:
 # R0-b incremental rollout: single families supported by the circuit so far.
 # Grows with each implementation commit; "traces" is always present.
 _IMPLEMENTED_FEATURE_FAMILIES = frozenset(
-    {"traces", "spike_counts", "voltage_quantiles"}
+    {"traces", "spike_counts", "voltage_quantiles", "assembly_overlap"}
 )
 
 _BASE_STATE_ARRAYS = (
@@ -445,6 +445,13 @@ class RecurrentCellCircuit:
                 self._voltage_ring = np.zeros(
                     (self._feature_ring_capacity, cells_count), dtype=np.float64
                 )
+            if "assembly_overlap" in self.feature_members:
+                self._occurrences = np.zeros(
+                    (len(windows), self.token_cells), dtype=np.int32
+                )
+                self._token_ring = np.zeros(
+                    (self._feature_ring_capacity,), dtype=np.int32
+                )
         sparse_readout = self.config.readout_learning_rule == "sparse_three_factor"
         self._readout_synapses_pa = (
             None
@@ -639,10 +646,28 @@ class RecurrentCellCircuit:
             self._quantile_rows[3 * k : 3 * k + 3] = block
         self._quantile_stale = False
 
-    def _advance_assembly_boundary(self, token_id: int, t: int) -> None:  # noqa: ARG002
-        raise NotImplementedError(
-            "assembly_overlap lands with the R0-b family-C commit"
-        )
+    def _advance_assembly_boundary(self, token_id: int, t: int) -> None:
+        """§2.C distinct-assembly coverage via occurrence counters.
+
+        Host-only bookkeeping: no kernel or mirror changes (§3 requirement 4).
+        Occurrence transitions fire only on 0->1 (arrival) and 1->0 (expiry),
+        so a token repeated inside a window counts ONCE; the exit entry is
+        read before the ring write because the largest window aliases slots.
+        """
+        capacity = self._feature_ring_capacity
+        targets = self._afferent_targets[token_id]
+        for k, width in enumerate(self._feature_window_tokens):
+            occurrences = self._occurrences[k]
+            row = self._assembly_counts[k]
+            if t > width:
+                leaving = self._token_ring[(t - width - 1) % capacity]
+                occurrences[leaving] -= 1
+                if occurrences[leaving] == 0:
+                    np.add.at(row, self._afferent_targets[leaving], -1.0)
+            occurrences[token_id] += 1
+            if occurrences[token_id] == 1:
+                np.add.at(row, targets, 1.0)
+        self._token_ring[(t - 1) % capacity] = token_id
 
     def _bind_native_kernel(self) -> None:
         """Bind native execution to the circuit's current checkpoint arrays."""
