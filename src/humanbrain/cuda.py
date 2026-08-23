@@ -13,7 +13,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from humanbrain.native import NativeBuildError, _glif_config, _RecurrentConfig
+from humanbrain.native import (
+    NativeBuildError,
+    _F64_POINTER,
+    _RecurrentConfig,
+    _glif_config,
+    _require_native_array,
+)
 
 if TYPE_CHECKING:
     from humanbrain.cells import AdaptiveGlifPopulation
@@ -354,7 +360,7 @@ class CudaRecurrentKernel:
         recurrent_fanout: int,
         input_current_pa: float,
         recurrent_decay: float,
-        eligibility_decay: float,
+        eligibility_decays: np.ndarray,
         afferent_targets: np.ndarray,
         recurrent_targets: np.ndarray,
         recurrent_weights_pa: np.ndarray,
@@ -367,13 +373,30 @@ class CudaRecurrentKernel:
         self._driver = _driver()
         self._driver.make_current()
         self._population = population
+        cells = population.cell_count
+        decays = np.ascontiguousarray(eligibility_decays, dtype=np.float64)
+        if decays.ndim != 1 or decays.size < 1 or not np.all(np.isfinite(decays)):
+            raise ValueError("eligibility decays must be a nonempty finite 1-D array")
+        trace_count = int(decays.size)
+        # The eligibility buffer is the FULL trace bank: trace_count rows of
+        # cells, C-order (row k = trace k), mirrored contiguously.
+        _require_native_array(
+            eligibility,
+            dtype=np.dtype(np.float64),
+            shape=(trace_count * cells,),
+            name="eligibility",
+        )
         self._synaptic_current_pa = synaptic_current_pa
         self._eligibility = eligibility
         self._host_mirror = host_mirror
         self._afferent_targets = afferent_targets
         self._recurrent_targets = recurrent_targets
         self._recurrent_weights_pa = recurrent_weights_pa
+        # Host-side anchor for the decay values copied to the device buffer.
+        self._eligibility_decays_host = decays
         self._glif = _glif_config(population)
+        # The struct's decay pointer is patched to the device buffer below,
+        # after allocation; build the struct once with a null placeholder.
         self._recurrent = _RecurrentConfig(
             token_steps,
             pulse_steps,
@@ -381,7 +404,8 @@ class CudaRecurrentKernel:
             recurrent_fanout,
             input_current_pa,
             recurrent_decay,
-            eligibility_decay,
+            trace_count,
+            None,
         )
         self._token_cells = int(afferent_targets.shape[0])
         self._input_fanout = input_fanout
@@ -450,6 +474,15 @@ class CudaRecurrentKernel:
                 self._allocate_array(name, np.ascontiguousarray(array), upload=True)
             for name, array in mutables.items():
                 self._allocate_array(name, array, upload=True)
+            # Per-trace step decays live in a small device buffer; the
+            # RecurrentConfig struct member points at it for every launch.
+            self._allocate_array(
+                "eligibility_decays", self._eligibility_decays_host, upload=True
+            )
+            self._recurrent.eligibility_decays = ctypes.cast(
+                ctypes.c_void_p(self._arrays["eligibility_decays"][0]),
+                _F64_POINTER,
+            )
             self._allocate_bytes("spike_mask", cells)
             self._allocate_bytes("input_mask", cells)
             self._allocate_bytes("total_spikes", ctypes.sizeof(ctypes.c_uint64))

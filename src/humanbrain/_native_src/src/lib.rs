@@ -41,7 +41,11 @@ pub struct RecurrentConfig {
     pub recurrent_fanout: usize,
     pub input_current_pa: f64,
     pub recurrent_decay: f64,
-    pub eligibility_decay: f64,
+    // R0 multi-timescale trace bank: per-row step decays. Row k of the
+    // eligibility buffer (elements [k*cells, (k+1)*cells)) decays by
+    // eligibility_decays[k] every sub-step, in fixed index order.
+    pub trace_count: usize,
+    pub eligibility_decays: *const f64,
 }
 
 #[inline]
@@ -132,7 +136,9 @@ fn recurrent_cell_chunk_scalar(
     after_cut_decay: &[f64],
     after_amplitudes: &[f64],
     recurrent_decay: f64,
-    eligibility_decay: f64,
+    decays: &[f64],
+    cells: usize,
+    cell_offset: usize,
     voltage: &mut [f64],
     after: &mut [f64],
     threshold_spike: &mut [f64],
@@ -144,20 +150,22 @@ fn recurrent_cell_chunk_scalar(
 ) {
     let channel_count = config.after_channel_count;
     debug_assert_eq!(after.len(), voltage.len() * channel_count);
+    debug_assert_eq!(eligibility.len(), decays.len() * cells);
 
-    for cell in 0..voltage.len() {
-        let total_synaptic_current = synaptic_current[cell];
-        if refractory[cell] != 0 {
-            refractory[cell] -= 1;
-            spike_mask[cell] = 0;
+    for local in 0..voltage.len() {
+        let cell = cell_offset + local;
+        let total_synaptic_current = synaptic_current[local];
+        if refractory[local] != 0 {
+            refractory[local] -= 1;
+            spike_mask[local] = 0;
         } else {
-            let after_offset = cell * channel_count;
+            let after_offset = local * channel_count;
             let mut after_sum = 0.0f64;
             for channel in 0..channel_count {
                 after_sum += after[after_offset + channel];
             }
             let total_current = total_synaptic_current + after_sum;
-            let previous_voltage = voltage[cell];
+            let previous_voltage = voltage[local];
             let leak = config.leak_ns * previous_voltage;
             let voltage_delta = config.voltage_step_scale * (total_current - leak);
             let next_voltage = previous_voltage + voltage_delta;
@@ -165,13 +173,13 @@ fn recurrent_cell_chunk_scalar(
             let beta = total_current * config.threshold_beta_scale;
             let voltage_term = config.threshold_voltage_factor * previous_voltage;
             let beta_term = config.threshold_beta_factor * beta;
-            let decayed_voltage_threshold = config.threshold_exp_decay * threshold_voltage[cell];
+            let decayed_voltage_threshold = config.threshold_exp_decay * threshold_voltage[local];
             let next_voltage_threshold = decayed_voltage_threshold + voltage_term + beta_term;
-            let next_spike_threshold = threshold_spike[cell] * config.spike_threshold_decay;
+            let next_spike_threshold = threshold_spike[local] * config.spike_threshold_decay;
 
-            voltage[cell] = next_voltage;
-            threshold_voltage[cell] = next_voltage_threshold;
-            threshold_spike[cell] = next_spike_threshold;
+            voltage[local] = next_voltage;
+            threshold_voltage[local] = next_voltage_threshold;
+            threshold_spike[local] = next_spike_threshold;
             for channel in 0..channel_count {
                 after[after_offset + channel] *= after_decay[channel];
             }
@@ -179,26 +187,30 @@ fn recurrent_cell_chunk_scalar(
             let total_threshold =
                 config.threshold_inf_relative_mv + next_voltage_threshold + next_spike_threshold;
             let crossed = next_voltage > total_threshold;
-            spike_mask[cell] = u8::from(crossed);
+            spike_mask[local] = u8::from(crossed);
             if crossed {
-                voltage[cell] =
+                voltage[local] =
                     config.voltage_reset_scale * next_voltage + config.voltage_reset_offset_mv;
                 for channel in 0..channel_count {
                     let next_after = after[after_offset + channel];
                     after[after_offset + channel] =
                         after_amplitudes[channel] + next_after * after_cut_decay[channel];
                 }
-                threshold_spike[cell] = next_spike_threshold * config.spike_cut_threshold_decay
+                threshold_spike[local] = next_spike_threshold * config.spike_cut_threshold_decay
                     + config.threshold_spike_increment_mv;
-                refractory[cell] = config.spike_cut_steps;
+                refractory[local] = config.spike_cut_steps;
             }
         }
 
         // These independent decays originally formed a second full-array pass.
-        // Keeping their arithmetic unchanged while fusing the pass removes 24
+        // Keeping their arithmetic unchanged while fusing the pass removes
         // bytes of memory traffic per cell and biological integration step.
-        synaptic_current[cell] *= recurrent_decay;
-        eligibility[cell] *= eligibility_decay;
+        // Every trace row decays in fixed index order 0..trace_count; no row
+        // is ever derived from another (frozen protocol §2 requirement 2).
+        synaptic_current[local] *= recurrent_decay;
+        for (row, &decay) in decays.iter().enumerate() {
+            eligibility[row * cells + cell] *= decay;
+        }
     }
 }
 
@@ -211,7 +223,9 @@ unsafe fn recurrent_cell_chunk_avx2(
     after_cut_decay: &[f64],
     after_amplitudes: &[f64],
     recurrent_decay: f64,
-    eligibility_decay: f64,
+    decays: &[f64],
+    cells: usize,
+    cell_offset: usize,
     voltage: &mut [f64],
     after: &mut [f64],
     threshold_spike: &mut [f64],
@@ -224,6 +238,7 @@ unsafe fn recurrent_cell_chunk_avx2(
     use std::arch::x86_64::*;
 
     debug_assert_eq!(config.after_channel_count, 2);
+    debug_assert_eq!(eligibility.len(), decays.len() * cells);
     let width = 4usize;
     let mut cell = 0usize;
     let leak_ns = _mm256_set1_pd(config.leak_ns);
@@ -237,7 +252,6 @@ unsafe fn recurrent_cell_chunk_avx2(
     let after_decay_0 = _mm256_set1_pd(after_decay[0]);
     let after_decay_1 = _mm256_set1_pd(after_decay[1]);
     let recurrent_decay = _mm256_set1_pd(recurrent_decay);
-    let eligibility_decay = _mm256_set1_pd(eligibility_decay);
 
     while cell + width <= voltage.len() {
         if refractory[cell..cell + width]
@@ -250,14 +264,16 @@ unsafe fn recurrent_cell_chunk_avx2(
                 after_cut_decay,
                 after_amplitudes,
                 _mm256_cvtsd_f64(recurrent_decay),
-                _mm256_cvtsd_f64(eligibility_decay),
+                decays,
+                cells,
+                cell_offset + cell,
                 &mut voltage[cell..cell + width],
                 &mut after[cell * 2..(cell + width) * 2],
                 &mut threshold_spike[cell..cell + width],
                 &mut threshold_voltage[cell..cell + width],
                 &mut refractory[cell..cell + width],
                 &mut synaptic_current[cell..cell + width],
-                &mut eligibility[cell..cell + width],
+                eligibility,
                 &mut spike_mask[cell..cell + width],
             );
             cell += width;
@@ -322,9 +338,17 @@ unsafe fn recurrent_cell_chunk_avx2(
 
         let decayed_current = _mm256_mul_pd(current, recurrent_decay);
         _mm256_storeu_pd(synaptic_current.as_mut_ptr().add(cell), decayed_current);
-        let previous_eligibility = _mm256_loadu_pd(eligibility.as_ptr().add(cell));
-        let decayed_eligibility = _mm256_mul_pd(previous_eligibility, eligibility_decay);
-        _mm256_storeu_pd(eligibility.as_mut_ptr().add(cell), decayed_eligibility);
+        // Every trace row decays in fixed index order with its own broadcast
+        // constant; identical per-row op order to the scalar kernel.
+        for (row, &decay) in decays.iter().enumerate() {
+            let row_offset = cell_offset + row * cells + cell;
+            let previous_eligibility = _mm256_loadu_pd(eligibility.as_ptr().add(row_offset));
+            let decayed_eligibility = _mm256_mul_pd(previous_eligibility, _mm256_set1_pd(decay));
+            _mm256_storeu_pd(
+                eligibility.as_mut_ptr().add(row_offset),
+                decayed_eligibility,
+            );
+        }
 
         for lane in 0..width {
             let crossed = (crossed_bits >> lane) & 1;
@@ -353,14 +377,16 @@ unsafe fn recurrent_cell_chunk_avx2(
             after_cut_decay,
             after_amplitudes,
             _mm256_cvtsd_f64(recurrent_decay),
-            _mm256_cvtsd_f64(eligibility_decay),
+            decays,
+            cells,
+            cell_offset + cell,
             &mut voltage[cell..],
             &mut after[cell * 2..],
             &mut threshold_spike[cell..],
             &mut threshold_voltage[cell..],
             &mut refractory[cell..],
             &mut synaptic_current[cell..],
-            &mut eligibility[cell..],
+            eligibility,
             &mut spike_mask[cell..],
         );
     }
@@ -374,7 +400,9 @@ fn recurrent_cell_chunk(
     after_cut_decay: &[f64],
     after_amplitudes: &[f64],
     recurrent_decay: f64,
-    eligibility_decay: f64,
+    decays: &[f64],
+    cells: usize,
+    cell_offset: usize,
     voltage: &mut [f64],
     after: &mut [f64],
     threshold_spike: &mut [f64],
@@ -393,7 +421,9 @@ fn recurrent_cell_chunk(
                 after_cut_decay,
                 after_amplitudes,
                 recurrent_decay,
-                eligibility_decay,
+                decays,
+                cells,
+                cell_offset,
                 voltage,
                 after,
                 threshold_spike,
@@ -413,7 +443,9 @@ fn recurrent_cell_chunk(
         after_cut_decay,
         after_amplitudes,
         recurrent_decay,
-        eligibility_decay,
+        decays,
+        cells,
+        cell_offset,
         voltage,
         after,
         threshold_spike,
@@ -433,7 +465,8 @@ fn recurrent_step_serial(
     after_cut_decay: &[f64],
     after_amplitudes: &[f64],
     recurrent_decay: f64,
-    eligibility_decay: f64,
+    decays: &[f64],
+    cells: usize,
     voltage: &mut [f64],
     after: &mut [f64],
     threshold_spike: &mut [f64],
@@ -449,7 +482,9 @@ fn recurrent_step_serial(
         after_cut_decay,
         after_amplitudes,
         recurrent_decay,
-        eligibility_decay,
+        decays,
+        cells,
+        0,
         voltage,
         after,
         threshold_spike,
@@ -461,6 +496,21 @@ fn recurrent_step_serial(
     );
 }
 
+/// Raw alias of the trace bank handed to worker threads. Soundness: chunk
+/// ranges partition `[0, cells)` and rows partition `[0, trace_count * cells)`,
+/// so every `(row, chunk)` write range is disjoint across threads.
+#[derive(Clone, Copy)]
+struct TraceBankAlias(*mut f64, usize);
+
+impl TraceBankAlias {
+    fn parts(self) -> (*mut f64, usize) {
+        (self.0, self.1)
+    }
+}
+
+unsafe impl Send for TraceBankAlias {}
+unsafe impl Sync for TraceBankAlias {}
+
 #[inline]
 #[allow(clippy::too_many_arguments)]
 fn recurrent_step_parallel(
@@ -469,7 +519,8 @@ fn recurrent_step_parallel(
     after_cut_decay: &[f64],
     after_amplitudes: &[f64],
     recurrent_decay: f64,
-    eligibility_decay: f64,
+    decays: &[f64],
+    cells: usize,
     voltage: &mut [f64],
     after: &mut [f64],
     threshold_spike: &mut [f64],
@@ -479,10 +530,10 @@ fn recurrent_step_parallel(
     eligibility: &mut [f64],
     spike_mask: &mut [u8],
 ) {
-    let cells = voltage.len();
     let channels = config.after_channel_count;
     let target_chunks = rayon::current_num_threads() * 4;
     let chunk_cells = cells.div_ceil(target_chunks).max(MIN_PARALLEL_CHUNK_CELLS);
+    let bank = TraceBankAlias(eligibility.as_mut_ptr(), decays.len() * cells);
 
     voltage
         .par_chunks_mut(chunk_cells)
@@ -491,33 +542,40 @@ fn recurrent_step_parallel(
         .zip(threshold_voltage.par_chunks_mut(chunk_cells))
         .zip(refractory.par_chunks_mut(chunk_cells))
         .zip(synaptic_current.par_chunks_mut(chunk_cells))
-        .zip(eligibility.par_chunks_mut(chunk_cells))
         .zip(spike_mask.par_chunks_mut(chunk_cells))
+        .enumerate()
         .for_each(
-            |(
+            move |(
+                chunk_index,
                 (
                     (
                         ((((voltage, after), threshold_spike), threshold_voltage), refractory),
                         current,
                     ),
-                    eligibility,
+                    mask,
                 ),
-                mask,
             )| {
+                let start = chunk_index * chunk_cells;
+                let (bank_ptr, bank_len) = bank.parts();
+                // SAFETY: chunk ranges partition [0, cells) and rows partition
+                // the trace bank, so all (row, chunk) write ranges are disjoint.
+                let bank_slice = unsafe { slice::from_raw_parts_mut(bank_ptr, bank_len) };
                 recurrent_cell_chunk(
                     config,
                     after_decay,
                     after_cut_decay,
                     after_amplitudes,
                     recurrent_decay,
-                    eligibility_decay,
+                    decays,
+                    cells,
+                    start,
                     voltage,
                     after,
                     threshold_spike,
                     threshold_voltage,
                     refractory,
                     current,
-                    eligibility,
+                    bank_slice,
                     mask,
                 );
             },
@@ -555,6 +613,10 @@ fn observe_token_frontier(
 ) -> (usize, usize, u64, u64, u64) {
     let cells = glif.cell_count;
     let channels = glif.after_channel_count;
+    let decays =
+        unsafe { slice::from_raw_parts(recurrent.eligibility_decays, recurrent.trace_count) };
+    debug_assert_eq!(eligibility.len(), decays.len() * cells);
+    let trace_count = decays.len();
     let scan_started = Instant::now();
     active_mask.fill(0);
     let mut active_count = 0usize;
@@ -564,8 +626,15 @@ fn observe_token_frontier(
             || threshold_spike[cell] != 0.0
             || threshold_voltage[cell] != 0.0
             || refractory[cell] != 0
-            || synaptic_current[cell] != 0.0
-            || eligibility[cell] != 0.0;
+            || synaptic_current[cell] != 0.0;
+        if !active {
+            // A cell is frontier-active if ANY trace row is nonzero: a cell
+            // quiet in row 0 but not row k must not be dropped (frozen
+            // protocol §2 requirement 6).
+            for row in 0..trace_count {
+                active |= eligibility[row * cells + cell] != 0.0;
+            }
+        }
         if !active {
             for channel in 0..channels {
                 active |= after[after_offset + channel] != 0.0;
@@ -611,14 +680,16 @@ fn observe_token_frontier(
                 after_cut_decay,
                 after_amplitudes,
                 recurrent.recurrent_decay,
-                recurrent.eligibility_decay,
+                decays,
+                cells,
+                cell,
                 &mut voltage[cell..cell + 1],
                 &mut after[cell * channels..(cell + 1) * channels],
                 &mut threshold_spike[cell..cell + 1],
                 &mut threshold_voltage[cell..cell + 1],
                 &mut refractory[cell..cell + 1],
                 &mut synaptic_current[cell..cell + 1],
-                &mut eligibility[cell..cell + 1],
+                eligibility,
                 &mut spike_mask[cell..cell + 1],
             );
         }
@@ -641,7 +712,11 @@ fn observe_token_frontier(
                 continue;
             }
             total_spikes += 1;
-            eligibility[presynaptic] += 1.0;
+            // One spike event increments EVERY trace row once (never per
+            // fanout edge; same event set as the incumbent serial kernel).
+            for row in 0..trace_count {
+                eligibility[row * cells + presynaptic] += 1.0;
+            }
             let edge_offset = presynaptic * recurrent.recurrent_fanout;
             for edge in 0..recurrent.recurrent_fanout {
                 let target = targets[edge_offset + edge] as usize;
@@ -743,6 +818,8 @@ pub unsafe extern "C" fn humanbrain_observe_token_reference_v1(
     let recurrent = &*recurrent_config;
     let cells = glif.cell_count;
     let channels = glif.after_channel_count;
+    let decays = slice::from_raw_parts(recurrent.eligibility_decays, recurrent.trace_count);
+    let trace_count = decays.len();
     let after_decay = slice::from_raw_parts(after_decay, channels);
     let after_cut_decay = slice::from_raw_parts(after_cut_decay, channels);
     let after_amplitudes = slice::from_raw_parts(after_amplitudes, channels);
@@ -755,7 +832,7 @@ pub unsafe extern "C" fn humanbrain_observe_token_reference_v1(
     let threshold_voltage = slice::from_raw_parts_mut(threshold_voltage, cells);
     let refractory = slice::from_raw_parts_mut(refractory, cells);
     let synaptic_current = slice::from_raw_parts_mut(synaptic_current, cells);
-    let eligibility = slice::from_raw_parts_mut(eligibility, cells);
+    let eligibility = slice::from_raw_parts_mut(eligibility, trace_count * cells);
     let step_current = slice::from_raw_parts_mut(step_current, cells);
     let spike_indices = slice::from_raw_parts_mut(spike_indices, cells);
 
@@ -786,11 +863,15 @@ pub unsafe extern "C" fn humanbrain_observe_token_reference_v1(
 
         for cell in 0..cells {
             synaptic_current[cell] *= recurrent.recurrent_decay;
-            eligibility[cell] *= recurrent.eligibility_decay;
+            for (row, &decay) in decays.iter().enumerate() {
+                eligibility[row * cells + cell] *= decay;
+            }
         }
         for &presynaptic in &spike_indices[..spike_count] {
             let presynaptic = presynaptic as usize;
-            eligibility[presynaptic] += 1.0;
+            for row in 0..trace_count {
+                eligibility[row * cells + presynaptic] += 1.0;
+            }
             let edge_offset = presynaptic * recurrent.recurrent_fanout;
             for edge in 0..recurrent.recurrent_fanout {
                 let target = targets[edge_offset + edge] as usize;
@@ -937,7 +1018,7 @@ pub unsafe extern "C" fn humanbrain_sparse_three_factor_update(
     winner: usize,
     learning_rate_pa: f64,
     maximum_weight_pa: f64,
-    trace_decay: f64,
+    trace_decays: *const f64,
     target_post_gate: f64,
     winner_post_gate: f64,
     reservoir_eligibility: *const f64,
@@ -957,8 +1038,6 @@ pub unsafe extern "C" fn humanbrain_sparse_three_factor_update(
         || learning_rate_pa <= 0.0
         || !maximum_weight_pa.is_finite()
         || maximum_weight_pa <= 0.0
-        || !trace_decay.is_finite()
-        || !(0.0..=1.0).contains(&trace_decay)
         || !target_post_gate.is_finite()
         || !(0.0..=1.0).contains(&target_post_gate)
         || !winner_post_gate.is_finite()
@@ -969,6 +1048,7 @@ pub unsafe extern "C" fn humanbrain_sparse_three_factor_update(
         return output_count + 1;
     }
     let reservoir_trace = slice::from_raw_parts(reservoir_eligibility, cell_count);
+    let decays = slice::from_raw_parts(trace_decays, cell_count);
     let potential = slice::from_raw_parts(potential_sources, output_count * candidate_count);
     let apposition =
         slice::from_raw_parts_mut(apposition_eligibility, output_count * candidate_count);
@@ -989,8 +1069,14 @@ pub unsafe extern "C" fn humanbrain_sparse_three_factor_update(
         output_activity[winner] += (1.0 - activity_decay) * winner_post_gate;
     }
 
-    for trace in apposition.iter_mut() {
-        *trace *= trace_decay;
+    // Per-contact apposition decay: slot with source s decays by
+    // exp(-T / tau_(s // R)) supplied through `decays` (R0 §1.3).
+    for output in 0..output_count {
+        let offset = output * candidate_count;
+        for candidate in 0..candidate_count {
+            let source = potential[offset + candidate] as usize;
+            apposition[offset + candidate] *= decays[source];
+        }
     }
     let add_post_event = |output: usize, gate: f64, apposition: &mut [f64]| {
         let offset = output * candidate_count;
@@ -1246,6 +1332,9 @@ unsafe fn observe_token_optimized(
     let recurrent = &*recurrent_config;
     let cells = glif.cell_count;
     let channels = glif.after_channel_count;
+    let decays =
+        unsafe { slice::from_raw_parts(recurrent.eligibility_decays, recurrent.trace_count) };
+    let trace_count = decays.len();
     let after_decay = slice::from_raw_parts(after_decay, channels);
     let after_cut_decay = slice::from_raw_parts(after_cut_decay, channels);
     let after_amplitudes = slice::from_raw_parts(after_amplitudes, channels);
@@ -1258,7 +1347,7 @@ unsafe fn observe_token_optimized(
     let threshold_voltage = slice::from_raw_parts_mut(threshold_voltage, cells);
     let refractory = slice::from_raw_parts_mut(refractory, cells);
     let synaptic_current = slice::from_raw_parts_mut(synaptic_current, cells);
-    let eligibility = slice::from_raw_parts_mut(eligibility, cells);
+    let eligibility = slice::from_raw_parts_mut(eligibility, trace_count * cells);
     let input_scratch = slice::from_raw_parts_mut(input_scratch, recurrent.input_fanout);
     let spike_mask = slice::from_raw_parts_mut(spike_mask, cells);
     let active_indices = slice::from_raw_parts_mut(active_indices, cells);
@@ -1320,7 +1409,8 @@ unsafe fn observe_token_optimized(
                 after_cut_decay,
                 after_amplitudes,
                 recurrent.recurrent_decay,
-                recurrent.eligibility_decay,
+                decays,
+                cells,
                 voltage,
                 after,
                 threshold_spike,
@@ -1337,7 +1427,8 @@ unsafe fn observe_token_optimized(
                 after_cut_decay,
                 after_amplitudes,
                 recurrent.recurrent_decay,
-                recurrent.eligibility_decay,
+                decays,
+                cells,
                 voltage,
                 after,
                 threshold_spike,
@@ -1370,7 +1461,9 @@ unsafe fn observe_token_optimized(
                 continue;
             }
             total_spikes += 1;
-            eligibility[presynaptic] += 1.0;
+            for row in 0..trace_count {
+                eligibility[row * cells + presynaptic] += 1.0;
+            }
             let edge_offset = presynaptic * recurrent.recurrent_fanout;
             for edge in 0..recurrent.recurrent_fanout {
                 let target = targets[edge_offset + edge] as usize;
@@ -1451,5 +1544,5 @@ optimized_observe_export!(humanbrain_observe_token_parallel, Execution::Parallel
 
 #[no_mangle]
 pub extern "C" fn humanbrain_kernel_abi_version() -> u32 {
-    3
+    4
 }

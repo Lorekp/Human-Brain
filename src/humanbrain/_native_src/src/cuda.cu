@@ -33,7 +33,11 @@ struct RecurrentConfig {
     unsigned long long recurrent_fanout;
     double input_current_pa;
     double recurrent_decay;
-    double eligibility_decay;
+    // R0 multi-timescale trace bank: row k of the eligibility buffer
+    // (elements [k*cells, (k+1)*cells)) decays by eligibility_decays[k]
+    // every sub-step, maintained in fixed index order 0..trace_count.
+    unsigned long long trace_count;
+    const double* eligibility_decays;
 };
 
 extern "C" __global__ void recurrent_token_kernel(
@@ -154,8 +158,13 @@ extern "C" __global__ void recurrent_token_kernel(
                 }
             }
             synaptic_current[cell] = next_current;
-            eligibility[cell] = eligibility[cell] * recurrent.eligibility_decay
-                + static_cast<double>(spike_mask[cell]);
+            // Every trace row advances with identical per-row op order:
+            // multiply by its own decay constant, then add this step's spike.
+            for (unsigned long long k = 0; k < recurrent.trace_count; ++k) {
+                eligibility[k * cells + cell] =
+                    eligibility[k * cells + cell] * recurrent.eligibility_decays[k]
+                    + static_cast<double>(spike_mask[cell]);
+            }
         }
         grid.sync();
     }

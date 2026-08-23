@@ -199,11 +199,13 @@ def _python_reference_observe(circuit: RecurrentCellCircuit, token_id: int) -> i
             step_current_pa[afferents] += circuit.config.input_current_pa
         spikes = _vectorized_reference_step(circuit._reservoir, step_current_pa)
         circuit._synaptic_current_pa *= circuit._recurrent_decay
-        circuit._eligibility *= circuit._eligibility_decay
+        # Every trace row decays by its own per-row constant, then every
+        # spiking cell gains 1.0 in EVERY row once per spike event.
+        circuit._eligibility_traces *= circuit._eligibility_decays[:, None]
         if spikes.any():
             presynaptic = np.flatnonzero(spikes)
             spike_total += int(presynaptic.size)
-            circuit._eligibility[presynaptic] += 1.0
+            circuit._eligibility_traces += spikes.astype(np.float64)[None, :]
             targets = circuit._recurrent_targets[presynaptic].reshape(-1)
             weights = circuit._recurrent_weights_pa[presynaptic].reshape(-1)
             np.add.at(circuit._synaptic_current_pa, targets, weights)
@@ -215,7 +217,7 @@ def _circuit_state_arrays(circuit: RecurrentCellCircuit) -> tuple[np.ndarray, ..
     state = circuit._reservoir.state
     return (
         circuit._synaptic_current_pa,
-        circuit._eligibility,
+        circuit._eligibility_traces,
         state.voltage_relative_mv,
         state.after_spike_currents_pa,
         state.threshold_spike_mv,
@@ -247,7 +249,9 @@ def test_native_recurrent_token_loop_is_bit_exact_to_python_reference() -> None:
         expected_spikes = _python_reference_observe(expected, int(token))
         assert step.reservoir_spikes == expected_spikes
         np.testing.assert_array_equal(actual._synaptic_current_pa, expected._synaptic_current_pa)
-        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        np.testing.assert_array_equal(
+            actual._eligibility_traces, expected._eligibility_traces
+        )
         np.testing.assert_array_equal(
             actual._reservoir.state.voltage_relative_mv,
             expected._reservoir.state.voltage_relative_mv,
@@ -294,7 +298,9 @@ def test_fused_parallel_kernel_is_bit_exact_to_native_v1_for_64_tokens() -> None
 
     assert actual_spikes == expected_spikes
     np.testing.assert_array_equal(actual._synaptic_current_pa, expected._synaptic_current_pa)
-    np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+    np.testing.assert_array_equal(
+        actual._eligibility_traces, expected._eligibility_traces
+    )
     np.testing.assert_array_equal(
         actual._reservoir.state.voltage_relative_mv,
         expected._reservoir.state.voltage_relative_mv,
@@ -337,7 +343,9 @@ def test_quiescent_frontier_is_exact_across_activity_densities() -> None:
         indices = np.arange(seeded, dtype=np.intp) * config.reservoir_cells // seeded
         circuit.reset_sequence()
         circuit._synaptic_current_pa[indices] = 25.0
-        circuit._eligibility[indices] = 0.5
+        # Seed per-cell trace state through the flat feature view so the
+        # indexing stays cell-addressed regardless of the bank's (K, R) shape.
+        circuit._feature_traces[indices] = 0.5
         frontier_spikes = circuit._native_kernel.observe(13)
         frontier_state = tuple(array.copy() for array in _circuit_state_arrays(circuit))
         assert circuit._native_kernel.last_active_cells >= seeded
@@ -348,7 +356,7 @@ def test_quiescent_frontier_is_exact_across_activity_densities() -> None:
 
         circuit.reset_sequence()
         circuit._synaptic_current_pa[indices] = 25.0
-        circuit._eligibility[indices] = 0.5
+        circuit._feature_traces[indices] = 0.5
         dense_spikes = circuit._native_kernel._observe_parallel(13)
 
         assert frontier_spikes == dense_spikes
@@ -546,7 +554,10 @@ def test_batched_readout_statistics_match_sequential_outer_products() -> None:
             recurrent_topology="uniform_no_self",
         ),
     )
-    feature_count = circuit.config.reservoir_cells + 1
+    # R0: the readout feature space is K·R + 1 (all eight trace rows plus the
+    # pacemaker bias slot), so the sequential reference accumulates over the
+    # SAME flat feature vector strengthen() consumes.
+    feature_count = circuit._growth_feature_count
     expected_normal = np.zeros((feature_count, feature_count), dtype=np.float64)
     expected_targets = np.zeros((circuit.token_cells, feature_count), dtype=np.float64)
     tokens = np.random.default_rng(903).integers(0, circuit.token_cells, 301)
@@ -555,7 +566,7 @@ def test_batched_readout_statistics_match_sequential_outer_products() -> None:
     for token, target in pairwise(tokens):
         circuit.observe(int(token))
         feature = np.empty(feature_count, dtype=np.float64)
-        feature[:-1] = circuit.eligibility
+        feature[:-1] = circuit._feature_traces
         feature[-1] = 1.0
         expected_normal += np.outer(feature, feature)
         expected_targets[int(target)] += feature
@@ -579,21 +590,32 @@ def test_batched_readout_statistics_match_sequential_outer_products() -> None:
     diagonal = np.diag_indices_from(regularized)
     regularized[diagonal] += circuit.config.readout_ridge
     regularized[-1, -1] -= circuit.config.readout_ridge * 0.99
-    expected_coefficients = np.linalg.solve(regularized, expected_targets.T).T
     circuit._consolidate_readout()
     gain = circuit.config.output_synapse_gain_pa
-    np.testing.assert_allclose(
-        circuit._readout_synapses_pa,
-        expected_coefficients[:, :-1] * gain,
-        rtol=2e-10,
-        atol=2e-10,
+    # The statistics above agree bit-for-bit (targets) and to eps-level
+    # relative error (normal matrix). A FORWARD bound on the ridge solve is
+    # the wrong yardstick at F = K*R + 1 = 257: the eight trace rows are
+    # strongly collinear (kappa(regularized) ~ 6e7 measured), so kappa
+    # legitimately amplifies summation-order noise into O(1e-6) coefficient
+    # differences while both solves remain the same solution. The honest
+    # equivalence check is the normwise backward residual against the
+    # sequential oracle's system: each solve must reproduce that system to
+    # its own floating-point floor (measured ~3.6e-18 shipped vs ~3.0e-18
+    # for the reference solution itself).
+    shipped_full = np.concatenate(
+        [
+            circuit._readout_synapses_pa / gain,
+            circuit._pacemaker_synapses_pa[:, None] / gain,
+        ],
+        axis=1,
     )
-    np.testing.assert_allclose(
-        circuit._pacemaker_synapses_pa,
-        expected_coefficients[:, -1] * gain,
-        rtol=2e-10,
-        atol=2e-10,
+    residual = regularized @ shipped_full.T - expected_targets.T
+    residual_scale = (
+        np.linalg.norm(regularized, ord=np.inf)
+        * np.linalg.norm(shipped_full, ord=np.inf)
+        + np.linalg.norm(expected_targets, ord=np.inf)
     )
+    assert np.linalg.norm(residual, ord=np.inf) / residual_scale <= 1e-15
 
 
 def test_inference_only_circuit_does_not_allocate_quadratic_growth_state() -> None:

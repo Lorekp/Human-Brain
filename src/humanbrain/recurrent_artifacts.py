@@ -13,7 +13,11 @@ from humanbrain.recurrent import RecurrentCellCircuit
 from humanbrain.recurrent_language import RecurrentCellLanguageModel
 from humanbrain.tokenizer import BytePhraseTokenizer
 
-FORMAT = "recurrent-human-cell-checkpoint-v3"
+FORMAT = "recurrent-human-cell-checkpoint-v5"
+# Legacy single-trace era. Read-only: writers always emit v5; v3 payloads
+# restore exactly under the K=1 interpretation (frozen protocol §1.5).
+LEGACY_FORMATS = ("recurrent-human-cell-checkpoint-v3",)
+SUPPORTED_FORMATS = (FORMAT, *LEGACY_FORMATS)
 
 
 def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> str:
@@ -42,8 +46,13 @@ def save_recurrent_checkpoint(model: RecurrentCellLanguageModel, path: Path) -> 
 def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
     with np.load(path, allow_pickle=False) as state:
         metadata = json.loads(str(state["metadata"]))
-        if metadata.get("format") != FORMAT:
+        artifact_format = metadata.get("format")
+        if artifact_format not in SUPPORTED_FORMATS:
             raise ValueError("unsupported recurrent checkpoint format")
+        if artifact_format in LEGACY_FORMATS and "eligibility_taus_ms" in metadata:
+            raise ValueError(
+                "legacy v3 checkpoint must not carry multi-trace eligibility_taus_ms"
+            )
         tokenizer = BytePhraseTokenizer(
             _unpack_phrases(state["phrase_offsets"], state["phrase_values"])
         )

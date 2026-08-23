@@ -9,6 +9,12 @@ from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.readout import SparseCellReadout, SparseReadoutDimensions
 
 
+def _uniform_decays(circuit, value: float):
+    """Uniform per-source apposition decay over the circuit's feature space."""
+    size = circuit.trace_count * circuit.config.reservoir_cells
+    return np.full(size, float(value))
+
+
 def _scalar_sparse_current(circuit: RecurrentCellCircuit) -> np.ndarray:
     readout = circuit._sparse_readout
     assert readout is not None
@@ -20,7 +26,7 @@ def _scalar_sparse_current(circuit: RecurrentCellCircuit) -> np.ndarray:
         for slot in range(readout.dimensions.fan_in):
             source = int(readout.contact_sources[output, slot])
             current += float(readout.contact_weights_pa[output, slot]) * float(
-                circuit._eligibility[source]
+                circuit._feature_traces[source]
             )
         result[output] = current
     return result
@@ -212,13 +218,14 @@ def test_sparse_output_current_sums_only_explicit_contacts_in_source_order() -> 
         config=RecurrentCircuitConfig(
             reservoir_cells=8,
             input_fanout=2,
+            eligibility_tau_ms=80.0,
             recurrent_fanout=1,
             output_base_current_pa=400.0,
             readout_learning_rule="sparse_three_factor",
             readout_fan_in=2,
         ),
     )
-    circuit._eligibility[:] = (0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0)
+    circuit._feature_traces[:] = (0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0)
     circuit._output_heterogeneity_pa[:] = (0.125, -0.25, 0.5)
     circuit._pacemaker_synapses_pa[:] = (5.0, 7.0, 11.0)
     readout = circuit._sparse_readout
@@ -237,7 +244,7 @@ def test_sparse_output_current_sums_only_explicit_contacts_in_source_order() -> 
             source = readout.contact_sources[output, slot]
             current += (
                 readout.contact_weights_pa[output, slot]
-                * circuit._eligibility[source]
+                * circuit._feature_traces[source]
             )
         expected[output] = current
 
@@ -251,6 +258,7 @@ def test_sparse_learning_uses_pre_post_events_and_preserves_dale_signs() -> None
         config=RecurrentCircuitConfig(
             reservoir_cells=8,
             input_fanout=2,
+            eligibility_tau_ms=80.0,
             recurrent_fanout=1,
             output_base_current_pa=450.0,
             output_synapse_gain_pa=1_600.0,
@@ -259,7 +267,7 @@ def test_sparse_learning_uses_pre_post_events_and_preserves_dale_signs() -> None
             local_learning_rate_pa=learning_rate,
         ),
     )
-    circuit._eligibility[:] = (3.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+    circuit._feature_traces[:] = (3.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
     circuit._output_heterogeneity_pa.fill(0.0)
     readout = circuit._sparse_readout
     assert readout is not None
@@ -269,7 +277,7 @@ def test_sparse_learning_uses_pre_post_events_and_preserves_dale_signs() -> None
 
     circuit.strengthen(2)
 
-    expected_trace = circuit._eligibility.copy()
+    expected_trace = circuit._feature_traces.copy()
     np.testing.assert_array_equal(readout.apposition_eligibility[2], expected_trace)
     np.testing.assert_array_equal(readout.apposition_eligibility[0], expected_trace)
     assert not readout.apposition_eligibility[1].any()
@@ -298,6 +306,7 @@ def test_first_spike_arbitration_reports_discarded_simultaneous_candidates() -> 
             input_fanout=2,
             recurrent_fanout=1,
             output_base_current_pa=450.0,
+            eligibility_tau_ms=80.0,
             readout_learning_rule="sparse_three_factor",
             readout_fan_in=8,
         ),
@@ -334,8 +343,8 @@ def test_structural_turnover_is_slow_seeded_local_and_capacity_bounded() -> None
     potential = readout.potential_sources[target]
     initial_sources = readout.contact_sources[target].copy()
     candidate = next(source for source in potential if source not in set(initial_sources))
-    circuit._eligibility.fill(0.0)
-    circuit._eligibility[candidate] = 100.0
+    circuit._feature_traces.fill(0.0)
+    circuit._feature_traces[candidate] = 100.0
     circuit._output_heterogeneity_pa.fill(0.0)
     circuit._observed_tokens = 1
 
@@ -380,7 +389,7 @@ def test_sparse_ffi_rejects_nonfinite_or_out_of_range_plasticity_scalars() -> No
             winner=0,
             learning_rate_pa=10.0,
             maximum_weight_pa=1_600.0,
-            trace_decay=float("nan"),
+            trace_decays=np.full(readout.dimensions.reservoir_cells, float("nan")),
             target_post_gate=1.0,
             winner_post_gate=1.0,
             activity_decay=0.99,
@@ -583,6 +592,7 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
         config=RecurrentCircuitConfig(
             reservoir_cells=8,
             input_fanout=2,
+            eligibility_tau_ms=80.0,
             recurrent_fanout=1,
             readout_learning_rule="sparse_three_factor",
             readout_fan_in=8,
@@ -593,13 +603,13 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
     readout.contact_weights_pa[:] = 100.0
     weights_before = readout.contact_weights_pa.copy()
 
-    circuit._eligibility[:] = np.arange(1.0, 9.0)
+    circuit._feature_traces[:] = np.arange(1.0, 9.0)
     readout.teach(
         target=1,
         winner=0,
         learning_rate_pa=10.0,
         maximum_weight_pa=1_600.0,
-        trace_decay=1.0,
+        trace_decays=_uniform_decays(circuit, 1.0),
         target_post_gate=0.0,
         winner_post_gate=0.0,
         activity_decay=0.99,
@@ -607,13 +617,13 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
     assert not readout.apposition_eligibility.any()
     np.testing.assert_array_equal(readout.contact_weights_pa, weights_before)
 
-    circuit._eligibility.fill(0.0)
+    circuit._feature_traces.fill(0.0)
     readout.teach(
         target=1,
         winner=0,
         learning_rate_pa=10.0,
         maximum_weight_pa=1_600.0,
-        trace_decay=1.0,
+        trace_decays=_uniform_decays(circuit, 1.0),
         target_post_gate=1.0,
         winner_post_gate=1.0,
         activity_decay=0.99,
@@ -631,7 +641,7 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
         winner=0,
         learning_rate_pa=10.0,
         maximum_weight_pa=1_600.0,
-        trace_decay=0.0,
+        trace_decays=_uniform_decays(circuit, 0.0),
         target_post_gate=1.0,
         winner_post_gate=1.0,
         activity_decay=0.99,
@@ -640,13 +650,13 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
     np.testing.assert_array_equal(readout.contact_weights_pa, weights_before)
 
     readout.apposition_eligibility[2] = unrelated_trace
-    circuit._eligibility[:] = np.arange(1.0, 9.0)
+    circuit._feature_traces[:] = np.arange(1.0, 9.0)
     readout.teach(
         target=1,
         winner=0,
         learning_rate_pa=1.0,
         maximum_weight_pa=1_600.0,
-        trace_decay=1.0,
+        trace_decays=_uniform_decays(circuit, 1.0),
         target_post_gate=1.0,
         winner_post_gate=1.0,
         activity_decay=0.99,
@@ -664,6 +674,7 @@ def test_full_fan_in_matches_independent_scalar_current_and_update_oracle() -> N
         config=RecurrentCircuitConfig(
             reservoir_cells=8,
             input_fanout=2,
+            eligibility_tau_ms=80.0,
             recurrent_fanout=1,
             output_base_current_pa=450.0,
             readout_learning_rule="sparse_three_factor",
@@ -680,7 +691,7 @@ def test_full_fan_in_matches_independent_scalar_current_and_update_oracle() -> N
         np.testing.assert_array_equal(readout.potential_sources[output], exact_sources)
         np.testing.assert_array_equal(readout.contact_sources[output], exact_sources)
 
-    circuit._eligibility[:] = (1.0, 0.5, 2.0, 0.25, 0.0, 0.75, 1.5, 0.125)
+    circuit._feature_traces[:] = (1.0, 0.5, 2.0, 0.25, 0.0, 0.75, 1.5, 0.125)
     circuit._output_heterogeneity_pa.fill(0.0)
     circuit._pacemaker_synapses_pa[:] = (120.0, 20.0, 0.0)
     readout.contact_weights_pa[:] = np.asarray(
@@ -709,8 +720,8 @@ def test_full_fan_in_matches_independent_scalar_current_and_update_oracle() -> N
         for candidate in range(8):
             expected_traces[output, candidate] *= trace_decay
     for candidate in range(8):
-        expected_traces[target, candidate] += circuit._eligibility[candidate]
-        expected_traces[winner, candidate] += circuit._eligibility[candidate]
+        expected_traces[target, candidate] += circuit._feature_traces[candidate]
+        expected_traces[winner, candidate] += circuit._feature_traces[candidate]
     for output, modulation in ((target, 1.0), (winner, -1.0)):
         for slot in range(8):
             expected_weights[output, slot] = min(
@@ -753,13 +764,14 @@ def test_one_wrong_example_cannot_bypass_structural_recruitment_bound() -> None:
         config=RecurrentCircuitConfig(
             reservoir_cells=16,
             input_fanout=2,
+            eligibility_tau_ms=80.0,
             recurrent_fanout=1,
             readout_learning_rule="sparse_three_factor",
             readout_fan_in=4,
             readout_structural_interval=1,
         ),
     )
-    circuit._eligibility[:] = np.arange(1.0, 17.0)
+    circuit._feature_traces[:] = np.arange(1.0, 17.0)
     circuit._output_heterogeneity_pa.fill(0.0)
     circuit._observed_tokens = 1
     before = circuit.learned_synapse_count
@@ -785,13 +797,14 @@ def test_correct_presentation_runs_scheduled_structural_maintenance() -> None:
         config=RecurrentCircuitConfig(
             reservoir_cells=8,
             input_fanout=2,
+            eligibility_tau_ms=80.0,
             recurrent_fanout=1,
             readout_learning_rule="sparse_three_factor",
             readout_fan_in=2,
             readout_structural_interval=1,
         ),
     )
-    circuit._eligibility[:] = np.arange(1.0, 9.0)
+    circuit._feature_traces[:] = np.arange(1.0, 9.0)
     circuit._output_heterogeneity_pa.fill(0.0)
     circuit._observed_tokens = 1
 
@@ -809,13 +822,14 @@ def test_sparse_freeze_and_sequence_reset_preserve_only_long_term_synapse_state(
         config=RecurrentCircuitConfig(
             reservoir_cells=8,
             input_fanout=2,
+            eligibility_tau_ms=80.0,
             recurrent_fanout=1,
             readout_learning_rule="sparse_three_factor",
             readout_fan_in=2,
             readout_structural_interval=1,
         ),
     )
-    circuit._eligibility[:] = np.arange(1.0, 9.0)
+    circuit._feature_traces[:] = np.arange(1.0, 9.0)
     circuit._output_heterogeneity_pa.fill(0.0)
     circuit._observed_tokens = 1
     circuit.strengthen(2)

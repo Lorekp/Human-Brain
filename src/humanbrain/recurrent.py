@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+import math
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,11 @@ from humanbrain.recurrent_state import RecurrentCellSynapseState
 from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
 
 READOUT_LEARNING_RULES = frozenset({"ridge", "three_factor", "sparse_three_factor"})
+
+# R0 multi-timescale eligibility-trace bank (frozen protocol §1.1):
+# geometric span 80 ms -> 4 s at token_interval_ms = 5 gives readout memory
+# windows of 16 -> 800 tokens. Trace 0 IS the incumbent single trace.
+ELIGIBILITY_TAUS_MS = tuple(np.geomspace(80.0, 4000.0, 8))
 
 _BASE_STATE_ARRAYS = (
     ("_afferent_targets", "afferent_targets", np.int32),
@@ -85,6 +91,20 @@ _READOUT_STATE_LAYOUTS = {
     ),
 }
 
+# Ridge sufficient statistics are RUNTIME-ONLY under the v5 diet ("stats
+# never migrate", r0-multitrace-protocol.md §1.5 disposition): artifact
+# families that diet them away persist fitted weights + topology/config only,
+# and a resumed circuit refits statistics from scratch (retraining is the
+# sanctioned path). The recurrent-human-cell-checkpoint-v5 npz envelope still
+# carries them by default (capture default), so only dieted callers skip them.
+_RIDGE_STATISTIC_ARRAY_KEYS = frozenset({"normal_matrix", "target_moments"})
+# §1.5 era-guard keys ride along ONLY in payloads that carry ridge statistics;
+# a dieted capture reduces metadata to the canonical circuit schema, whose
+# circuit_config already nests the tau bank at its canonical home.
+_ENVELOPE_ONLY_METADATA_KEYS = frozenset(
+    {"eligibility_taus_ms", "feature_cell_count"}
+)
+
 
 @dataclass(frozen=True)
 class RecurrentCircuitConfig:
@@ -97,7 +117,7 @@ class RecurrentCircuitConfig:
     input_current_pa: float = 5_000.0
     recurrent_current_pa: float = 650.0
     recurrent_tau_ms: float = 8.0
-    eligibility_tau_ms: float = 80.0
+    eligibility_taus_ms: tuple[float, ...] = ELIGIBILITY_TAUS_MS
     output_base_current_pa: float = 450.0
     output_race_ms: float = 30.0
     readout_ridge: float = 1.0
@@ -114,6 +134,9 @@ class RecurrentCircuitConfig:
     inhibitory_fraction: float = 0.2
     random_seed: int = 17
     recurrent_topology: str = "random"
+    # Deprecated single-tau keyword (v3-era metadata and legacy callers).
+    # When given, it constructs the one-element tau bank ``(value,)``.
+    eligibility_tau_ms: float | None = None
 
     def __post_init__(self) -> None:
         if self.reservoir_cells < 8:
@@ -125,13 +148,33 @@ class RecurrentCircuitConfig:
             raise ValueError("input fanout must fit the active reservoir")
         if not 1 <= self.recurrent_fanout <= active_cells:
             raise ValueError("recurrent fanout must fit the active reservoir")
+        if isinstance(self.eligibility_taus_ms, list):
+            object.__setattr__(
+                self, "eligibility_taus_ms", tuple(self.eligibility_taus_ms)
+            )
+        if self.eligibility_tau_ms is not None:
+            # Deprecated shim: one tau in, one trace out.
+            object.__setattr__(
+                self, "eligibility_taus_ms", (float(self.eligibility_tau_ms),)
+            )
+        taus = self.eligibility_taus_ms
+        if not isinstance(taus, tuple) or len(taus) < 1:
+            raise ValueError("eligibility taus must contain at least one trace")
+        if not all(math.isfinite(float(tau)) for tau in taus):
+            raise ValueError("eligibility taus must be finite")
+        if any(float(tau) <= 0.0 for tau in taus):
+            raise ValueError("eligibility taus must be positive")
+        if any(
+            float(taus[index + 1]) <= float(taus[index])
+            for index in range(len(taus) - 1)
+        ):
+            raise ValueError("eligibility taus must be strictly increasing")
         positive = (
             self.token_interval_ms,
             self.input_pulse_ms,
             self.input_current_pa,
             self.recurrent_current_pa,
             self.recurrent_tau_ms,
-            self.eligibility_tau_ms,
             self.output_base_current_pa,
             self.output_race_ms,
             self.readout_ridge,
@@ -218,17 +261,28 @@ class RecurrentCellCircuit:
         self.cell_parameters = cell_parameters or AllenGlif5Parameters()
         self._reservoir = AdaptiveGlifPopulation(self.config.reservoir_cells, self.cell_parameters)
         self._synaptic_current_pa = np.zeros(self.config.reservoir_cells, dtype=np.float64)
-        self._eligibility = np.zeros(self.config.reservoir_cells, dtype=np.float64)
+        # R0 trace bank: one contiguous f64 buffer of N_TRACE * reservoir_cells
+        # elements, viewed C-order as (trace_count, reservoir_cells). Row k is
+        # the eligibility trace with tau = taus[k]. The flat view IS the
+        # readout feature space: source id s decodes as k, cell = divmod(s, R).
+        self.trace_count = len(self.config.eligibility_taus_ms)
+        # Frozen protocol §1.2: the bank IS a (K, reservoir_cells) C-order
+        # view; row k is trace k. The flat view is the readout feature space.
+        self._eligibility_traces = np.zeros(
+            (self.trace_count, self.config.reservoir_cells), dtype=np.float64
+        )
+        self._feature_traces = self._eligibility_traces.reshape(-1)
         sparse_readout = self.config.readout_learning_rule == "sparse_three_factor"
+        feature_source_cells = self.trace_count * self.config.reservoir_cells
         self._readout_synapses_pa = (
             None
             if sparse_readout
             else np.zeros(
-                (self.token_cells, self.config.reservoir_cells), dtype=np.float64
+                (self.token_cells, feature_source_cells), dtype=np.float64
             )
         )
         self._pacemaker_synapses_pa = np.zeros(self.token_cells, dtype=np.float64)
-        feature_count = self.config.reservoir_cells + 1
+        feature_count = feature_source_cells + 1
         self._normal_matrix: np.ndarray | None = None
         self._target_moments: np.ndarray | None = None
         self._feature_batch: np.ndarray | None = None
@@ -275,10 +329,12 @@ class RecurrentCellCircuit:
         self._sparse_readout = (
             SparseCellReadout.create(
                 output_cells=self.token_cells,
-                reservoir_cells=self.config.reservoir_cells,
+                # The sparse source space is the FULL multi-trace feature
+                # space: potential/contact sources address s in [0, K*R).
+                reservoir_cells=feature_source_cells,
                 fan_in=self.config.readout_fan_in,
                 rng=rng,
-                reservoir_eligibility=self._eligibility,
+                reservoir_eligibility=self._feature_traces,
                 output_heterogeneity_pa=self._output_heterogeneity_pa,
                 pacemaker_synapses_pa=self._pacemaker_synapses_pa,
             )
@@ -290,11 +346,25 @@ class RecurrentCellCircuit:
         )
         self._pulse_steps = max(1, round(self.config.input_pulse_ms / self.cell_parameters.dt_ms))
         self._recurrent_decay = np.exp(-self.cell_parameters.dt_ms / self.config.recurrent_tau_ms)
-        self._eligibility_decay = np.exp(
-            -self.cell_parameters.dt_ms / self.config.eligibility_tau_ms
+        taus = np.asarray(self.config.eligibility_taus_ms, dtype=np.float64)
+        self._eligibility_decays = np.ascontiguousarray(
+            np.exp(-(self.cell_parameters.dt_ms / taus)), dtype=np.float64
+        )
+        # Per-token decay of the sparse apposition traces, indexed by absolute
+        # feature source id s (k = s // R): exp(-T / tau_k).
+        self._source_trace_decays = np.ascontiguousarray(
+            np.repeat(
+                np.exp(-(self.config.token_interval_ms / taus)),
+                self.config.reservoir_cells,
+            ),
+            dtype=np.float64,
         )
         self._compile_output_race()
         self._bind_native_kernel()
+
+    def source_trace_decays(self) -> np.ndarray:
+        """Per-contact apposition decay table over the K*R feature space."""
+        return self._source_trace_decays
 
     def _bind_native_kernel(self) -> None:
         """Bind native execution to the circuit's current checkpoint arrays."""
@@ -306,12 +376,13 @@ class RecurrentCellCircuit:
             recurrent_fanout=self.config.recurrent_fanout,
             input_current_pa=self.config.input_current_pa,
             recurrent_decay=self._recurrent_decay,
-            eligibility_decay=self._eligibility_decay,
+            eligibility_decays=self._eligibility_decays,
             afferent_targets=self._afferent_targets,
             recurrent_targets=self._recurrent_targets,
             recurrent_weights_pa=self._recurrent_weights_pa,
             synaptic_current_pa=self._synaptic_current_pa,
-            eligibility=self._eligibility,
+            # Native kernels address the flat K·R bank (frozen protocol §1.3).
+            eligibility=self._feature_traces,
             host_mirror=(
                 "eligibility"
                 if self.config.readout_learning_rule == "sparse_three_factor"
@@ -320,7 +391,7 @@ class RecurrentCellCircuit:
         )
         self._native_local_learner = (
             NativeThreeFactorLearner(
-                eligibility=self._eligibility,
+                eligibility=self._feature_traces,
                 output_heterogeneity_pa=self._output_heterogeneity_pa,
                 readout_synapses_pa=self._readout_synapses_pa,
                 pacemaker_synapses_pa=self._pacemaker_synapses_pa,
@@ -345,17 +416,31 @@ class RecurrentCellCircuit:
         ):
             raise RuntimeError("compiled resting GLIF5 spike gain must be monotonic")
 
-    def capture_cell_synapse_state(self) -> RecurrentCellSynapseState:
-        """Capture persistent anatomy and learning state owned by this circuit."""
+    def capture_cell_synapse_state(
+        self,
+        *,
+        include_ridge_statistics: bool = True,
+    ) -> RecurrentCellSynapseState:
+        """Capture persistent anatomy and learning state owned by this circuit.
+
+        ``include_ridge_statistics=False`` is the v5 dieted capture for
+        artifact families that never migrate statistics: ridge sufficient
+        statistics are skipped (whether absent after a dieted restore or
+        present after growth) and metadata reduces to the canonical circuit
+        schema. The default keeps the statistics-carrying behavior of the
+        recurrent-checkpoint npz envelope.
+        """
         if not self.learning_frozen:
             raise RuntimeError("freeze recurrent readout learning before checkpointing")
         layout = _READOUT_STATE_LAYOUTS[self.config.readout_learning_rule]
-        if layout.ridge_statistics:
+        dieted = layout.ridge_statistics and not include_ridge_statistics
+        if layout.ridge_statistics and not dieted:
             self._flush_growth_statistics()
             if self._normal_matrix is None or self._target_moments is None:
                 raise RuntimeError("cannot checkpoint a recurrent circuit before growth")
-        elif self._normal_matrix is not None or self._target_moments is not None:
-            raise RuntimeError("local readout must not contain ridge statistics")
+        elif not layout.ridge_statistics:
+            if self._normal_matrix is not None or self._target_moments is not None:
+                raise RuntimeError("local readout must not contain ridge statistics")
 
         developmental_present = tuple(
             hasattr(self, attribute)
@@ -373,9 +458,22 @@ class RecurrentCellCircuit:
             "local_updates": self.local_update_count,
             "runtime_active_reservoir_cells": self.active_reservoir_cells,
             "developmental_state": developmental_state,
+            # Explicit v5 guards alongside the asdict'd circuit config.
+            "eligibility_taus_ms": list(self.config.eligibility_taus_ms),
+            "feature_cell_count": self.trace_count * self.config.reservoir_cells,
         }
+        if dieted:
+            # Dieted payloads reduce to the canonical circuit metadata schema:
+            # era guards belong to statistics-carrying envelopes only.
+            for key in _ENVELOPE_ONLY_METADATA_KEYS:
+                metadata.pop(key, None)
+        excluded_arrays = (
+            _RIDGE_STATISTIC_ARRAY_KEYS if dieted else frozenset()
+        )
         arrays: dict[str, np.ndarray] = {}
         for attribute, key, _ in _BASE_STATE_ARRAYS + layout.direct_arrays:
+            if key in excluded_arrays:
+                continue
             value = getattr(self, attribute)
             if value is None:
                 raise RuntimeError(f"checkpoint state {key} is missing")
@@ -434,6 +532,11 @@ class RecurrentCellCircuit:
             cls._validate_cell_synapse_payload(metadata, arrays)
         )
         selected_metadata = {key: metadata[key] for key in _CELL_SYNAPSE_METADATA_KEYS}
+        # Era guards ride along when the payload carries them (v5); legacy
+        # v3 payloads simply lack both keys and stay single-trace.
+        for key in ("eligibility_taus_ms", "feature_cell_count"):
+            if key in metadata:
+                selected_metadata[key] = metadata[key]
         if layout.sparse:
             selected_metadata["sparse_readout"] = metadata["sparse_readout"]
         return RecurrentCellSynapseState.copy_payload(
@@ -482,9 +585,10 @@ class RecurrentCellCircuit:
             assert isinstance(sparse_counters, dict)
             circuit._sparse_readout = SparseCellReadout.from_checkpoint(
                 output_cells=circuit.token_cells,
-                reservoir_cells=circuit.config.reservoir_cells,
+                # Sparse source space spans the full feature space.
+                reservoir_cells=circuit.trace_count * circuit.config.reservoir_cells,
                 fan_in=circuit.config.readout_fan_in,
-                reservoir_eligibility=circuit._eligibility,
+                reservoir_eligibility=circuit._feature_traces,
                 output_heterogeneity_pa=circuit._output_heterogeneity_pa,
                 pacemaker_synapses_pa=circuit._pacemaker_synapses_pa,
                 arrays=state.arrays,
@@ -565,6 +669,33 @@ class RecurrentCellCircuit:
         if not isinstance(config_value, dict) or not isinstance(cell_parameters, dict):
             raise ValueError("checkpoint circuit configuration is malformed")
         config = RecurrentCircuitConfig(**config_value)
+        # Checkpoint era guards (frozen protocol §1.5): v5 payloads carry
+        # explicit tau and feature-space guards and are loaded strictly;
+        # legacy v3-era payloads (neither key present) restore under the
+        # K=1 interpretation exactly. Mixed-era metadata raises loudly.
+        trace_count = len(config.eligibility_taus_ms)
+        feature_cell_count = trace_count * config.reservoir_cells
+        metadata_taus = metadata.get("eligibility_taus_ms")
+        metadata_feature_cells = metadata.get("feature_cell_count")
+        if metadata_taus is None and metadata_feature_cells is None:
+            if trace_count != 1:
+                raise ValueError(
+                    "legacy single-trace checkpoint payload cannot satisfy a "
+                    f"multi-trace configuration ({trace_count} taus requested)"
+                )
+        else:
+            if metadata_taus is None or metadata_feature_cells is None:
+                raise ValueError("checkpoint multi-trace metadata is incomplete")
+            if list(metadata_taus) != list(config.eligibility_taus_ms):
+                raise ValueError(
+                    "checkpoint metadata eligibility_taus_ms disagrees with "
+                    "the circuit configuration"
+                )
+            if int(metadata_feature_cells) != feature_cell_count:
+                raise ValueError(
+                    "checkpoint metadata feature_cell_count disagrees with "
+                    "the circuit configuration"
+                )
         layout = _READOUT_STATE_LAYOUTS[config.readout_learning_rule]
         developmental_state = bool(metadata["developmental_state"])
         array_names = tuple(
@@ -616,7 +747,12 @@ class RecurrentCellCircuit:
 
     @property
     def reservoir_activity_density(self) -> float:
-        return float(np.count_nonzero(self._eligibility)) / self.config.reservoir_cells
+        # Trace 0 IS the incumbent trace: the published activity-density
+        # accounting stays a trace-0 statistic (frozen protocol §1.2).
+        return (
+            float(np.count_nonzero(self._feature_traces[: self.config.reservoir_cells]))
+            / self.config.reservoir_cells
+        )
 
     @property
     def observed_tokens(self) -> int:
@@ -632,7 +768,8 @@ class RecurrentCellCircuit:
 
     @property
     def eligibility(self) -> np.ndarray:
-        return self._eligibility.copy()
+        # Back-compat view: trace 0, the incumbent single trace.
+        return self._feature_traces[: self.config.reservoir_cells].copy()
 
     def synchronize_structure_from_host(self) -> None:
         """Publish in-place afferent, recurrent-topology, and weight mutations."""
@@ -645,7 +782,7 @@ class RecurrentCellCircuit:
     def reset_sequence(self) -> None:
         self._reservoir.reset()
         self._synaptic_current_pa.fill(0.0)
-        self._eligibility.fill(0.0)
+        self._eligibility_traces.fill(0.0)
         self._native_kernel.synchronize_from_host()
         self._observed_tokens = 0
 
@@ -702,9 +839,9 @@ class RecurrentCellCircuit:
                 winner=race.winner,
                 learning_rate_pa=self.config.local_learning_rate_pa,
                 maximum_weight_pa=self.config.output_synapse_gain_pa,
-                trace_decay=np.exp(
-                    -self.config.token_interval_ms / self.config.eligibility_tau_ms
-                ),
+                # Per-contact apposition decay: exp(-T / tau_(source // R)),
+                # applied per slot inside the readout (frozen protocol §1.3).
+                trace_decays=self._source_trace_decays,
                 target_post_gate=1.0,
                 winner_post_gate=1.0,
                 activity_decay=self.config.readout_activity_decay,
@@ -736,7 +873,7 @@ class RecurrentCellCircuit:
         assert self._feature_batch is not None
         assert self._target_moments is not None
         feature = self._feature_batch[self._pending_growth_examples]
-        feature[:-1] = self._eligibility
+        feature[:-1] = self._feature_traces
         feature[-1] = 1.0
         self._target_moments[target] += feature
         self._pending_growth_examples += 1
@@ -827,7 +964,7 @@ class RecurrentCellCircuit:
             self.config.output_base_current_pa
             + self._pacemaker_synapses_pa
             + self._output_heterogeneity_pa
-            + self._readout_synapses_pa @ self._eligibility
+            + self._readout_synapses_pa @ self._feature_traces
         )
 
     def race(

@@ -18,8 +18,13 @@ import numpy as np
 
 from humanbrain.cells import AllenGlif5Parameters
 from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY
-from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig, RecurrentRace
-from humanbrain.recurrent_state import RecurrentCellSynapseState
+from humanbrain.recurrent import (
+    RecurrentCellCircuit,
+    RecurrentCircuitConfig,
+    RecurrentRace,
+    _BASE_STATE_ARRAYS as _CIRCUIT_BASE_STATE_ARRAYS,
+    _READOUT_STATE_LAYOUTS as _CIRCUIT_READOUT_STATE_LAYOUTS,
+)
 from humanbrain.typed_program_types import (
     ProgramParameter,
     ProgramType,
@@ -332,11 +337,21 @@ _CIRCUIT_CONFIG = RecurrentCircuitConfig(
 )
 _GROWTH_EPOCHS = 3
 _MAX_TRAINING_EXAMPLES = 256
-_MAX_CHECKPOINT_BYTES = 2_097_152
+# v5 checkpoint diet (documented cap change): the frozen Layer-1 artifact
+# serializes fitted readout WEIGHTS plus topology/config state only — never
+# the ridge sufficient statistics (`normal_matrix` is F^2 with
+# F = K*R + 1 = 1025 under the multi-trace feature space, i.e. ~8.4 MB of
+# raw f64 before base64, versus ~2.2 MB for the (277, 1024) weight matrix).
+# Statistics are runtime-transient per protocol ("stats never migrate",
+# docs/research/r0-multitrace-protocol.md §1.5 disposition); a restored
+# circuit that ever resumes training refits them from scratch — retraining
+# is the sanctioned path. 4 MiB covers the dieted payload (~3.1 MB canonical
+# JSON: weights dominate) with headroom; 2 MiB cannot, even dieted.
+_MAX_CHECKPOINT_BYTES = 4_194_304
 _MAX_PROGRAM_TOKENS = 128
 _MAX_AST_NODES = 64
 _MAX_AST_DEPTH = 16
-_PROTOCOL_VERSION = "humanbrain-layer1-typed-program-v4"
+_PROTOCOL_VERSION = "humanbrain-layer1-typed-program-v5"
 _A0_FRAMING_ORDER = "prompt/context-delimiter/canonical-signature/input-delimiter"
 _A1_FRAMING_ORDER = "canonical-signature/context-delimiter/prompt/input-delimiter"
 _ALL_TRANSITION_SUPERVISION = "all-next-token-targets"
@@ -401,20 +416,18 @@ _EXPECTED_FROZEN_ARRAY_LAYOUTS = {
     ),
     "readout_synapses_pa": _array_layout(
         np.float64,
-        (_TOKEN_CELL_COUNT, _CIRCUIT_CONFIG.reservoir_cells),
-    ),
-    "normal_matrix": _array_layout(
-        np.float64,
         (
-            _CIRCUIT_CONFIG.reservoir_cells + 1,
-            _CIRCUIT_CONFIG.reservoir_cells + 1,
+            _TOKEN_CELL_COUNT,
+            # v5 diet: the fitted weight matrix spans the full multi-trace
+            # feature space (K*R sources per token cell). The F^2 ridge
+            # statistics are deliberately ABSENT from this table: they are
+            # runtime-only state and never migrate through a checkpoint.
+            len(_CIRCUIT_CONFIG.eligibility_taus_ms)
+            * _CIRCUIT_CONFIG.reservoir_cells,
         ),
     ),
-    "target_moments": _array_layout(
-        np.float64,
-        (_TOKEN_CELL_COUNT, _CIRCUIT_CONFIG.reservoir_cells + 1),
-    ),
 }
+_FROZEN_RUNTIME_ONLY_ARRAYS = frozenset({"normal_matrix", "target_moments"})
 _EXPECTED_FROZEN_ARRAY_NAMES = tuple(sorted(_EXPECTED_FROZEN_ARRAY_LAYOUTS))
 
 
@@ -886,7 +899,11 @@ def _token_stream_bytes(token_ids: Sequence[int]) -> bytes:
 
 
 def _freeze_circuit(circuit: RecurrentCellCircuit) -> _FrozenCircuitState:
-    state = circuit.capture_cell_synapse_state()
+    # v5 dieted capture: ridge sufficient statistics are runtime-only and the
+    # metadata reduces to the canonical circuit schema, so the digest is taken
+    # over exactly the persisted domain (decode/complete recompute it with the
+    # same dieted capture).
+    state = circuit.capture_cell_synapse_state(include_ridge_statistics=False)
     arrays = tuple(
         _FrozenArray(
             name=name,
@@ -913,14 +930,60 @@ def _fixed_layout_circuit_sha256(frozen: _FrozenCircuitState) -> str:
     return digest.hexdigest()
 
 
+def _persisted_circuit_bindings(
+    readout_learning_rule: str,
+) -> tuple[tuple[str, str, object], ...]:
+    """Checkpoint array bindings that survive the v5 diet, in restore order.
+
+    Derived from the circuit's own state tables minus the runtime-only
+    statistics arrays, so the frozen artifact can never silently drift from
+    what ``capture_cell_synapse_state`` produces.
+    """
+    layout = _CIRCUIT_READOUT_STATE_LAYOUTS[readout_learning_rule]
+    return tuple(
+        (attribute, key, dtype)
+        for attribute, key, dtype in (
+            *_CIRCUIT_BASE_STATE_ARRAYS,
+            *layout.direct_arrays,
+        )
+        if key not in _FROZEN_RUNTIME_ONLY_ARRAYS
+    )
+
+
 def _restore_circuit(frozen: _FrozenCircuitState) -> RecurrentCellCircuit:
     metadata = json.loads(frozen.metadata_json.decode("utf-8"))
     arrays = {
         item.name: np.frombuffer(item.data, dtype=np.dtype(item.dtype)).reshape(item.shape)
         for item in frozen.arrays
     }
-    state = RecurrentCellSynapseState(metadata=metadata, arrays=arrays)
-    return RecurrentCellCircuit.restore_cell_synapse_state(state)
+    # Dieted restore (v5): metadata and every array header/digest were already
+    # strictly validated against the protocol during decode. Ridge statistics
+    # are intentionally absent — a restored circuit keeps them as None
+    # (runtime-transient); resumed training would refit them from scratch,
+    # the sanctioned "stats never migrate" disposition (§1.5).
+    config = RecurrentCircuitConfig(**metadata["circuit_config"])
+    circuit = RecurrentCellCircuit(
+        token_cells=int(metadata["token_cells"]),
+        config=config,
+        cell_parameters=AllenGlif5Parameters(**metadata["cell_parameters"]),
+    )
+    for attribute, key, dtype in _persisted_circuit_bindings(
+        config.readout_learning_rule
+    ):
+        existing = getattr(circuit, attribute)
+        value = np.array(arrays[key], dtype=dtype, copy=True, order="C")
+        if value.shape != existing.shape:
+            raise ValueError(
+                f"checkpoint array {key} has shape {value.shape}, "
+                f"expected {existing.shape}"
+            )
+        setattr(circuit, attribute, value)
+    circuit.active_reservoir_cells = int(metadata["runtime_active_reservoir_cells"])
+    circuit._bind_native_kernel()
+    circuit._growth_examples = int(metadata["growth_examples"])
+    circuit._local_updates = int(metadata["local_updates"])
+    circuit._learning_frozen = True
+    return circuit
 
 
 def _checkpoint_bytes(payload: _FrozenCheckpointPayload) -> bytes:
@@ -1261,7 +1324,9 @@ def complete(
         checkpoint_bytes,
     )
     circuit = _restore_circuit(payload.circuit)
-    before = circuit.cell_synapse_state_sha256
+    before = circuit.capture_cell_synapse_state(
+        include_ridge_statistics=False
+    ).sha256
     if before != checkpoint.cell_synapse_sha256:
         raise ValueError("restored checkpoint cell/synapse digest mismatch")
     protocol_record = json.loads(payload.protocol_json.decode("utf-8"))
@@ -1312,7 +1377,9 @@ def complete(
 
     emitted = tuple(tokens)
     _validate_program(emitted, typed_signature)
-    after = circuit.cell_synapse_state_sha256
+    after = circuit.capture_cell_synapse_state(
+        include_ridge_statistics=False
+    ).sha256
     if after != before:
         raise PersistentStateChangedError("completion changed frozen cell/synapse state")
     if (

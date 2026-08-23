@@ -100,10 +100,14 @@ import numpy as np  # noqa: E402
 
 from humanbrain import typed_composition, typed_program  # noqa: E402
 from humanbrain.recurrent import (  # noqa: E402
+    ELIGIBILITY_TAUS_MS,
     READOUT_LEARNING_RULES,
     RecurrentCellCircuit,
     RecurrentCircuitConfig,
 )
+
+# R0 multi-trace bank size K; the readout feature space is K * n_cells.
+_TRACE_COUNT = len(ELIGIBILITY_TAUS_MS)
 
 FROZEN_PROTOCOL_PATH = ROOT / "benchmarks" / "typed_composition_protocol_v1.json"
 
@@ -145,7 +149,7 @@ def _projected_cuda_host_bytes(n_cells: int, readout_rule: str) -> int:
     """Host-side persistent bytes the CUDA path still allocates in numpy."""
     if readout_rule != "ridge":
         return _projected_peak_bytes(n_cells, "three_factor")
-    features = n_cells + 1
+    features = _TRACE_COUNT * n_cells + 1
     normal = features * features * 8
     moments = typed_program._TOKEN_CELL_COUNT * features * 8
     batch = 128 * features * 8
@@ -691,7 +695,9 @@ def collect_state_separation(
         circuit.reset_sequence()
         for token_id in input_ids:
             circuit.observe(token_id)
-        channels["eligibility"].append(circuit._eligibility.copy())
+        # R0 G1 state vector: the FULL flat [e_0; ...; e_K-1] trace buffer
+        # the first decision race sees (bias excluded), not just row 0.
+        channels["eligibility"].append(circuit._feature_traces.copy())
         channels["synaptic_current"].append(circuit._synaptic_current_pa.copy())
         strata.append("List[Int]" if task.family_id.startswith("list_") else "Int")
         first_teacher.append(task.teacher_tokens[0])
@@ -841,10 +847,11 @@ def _evaluate_cohort(
 def _projected_peak_bytes(n_cells: int, readout_rule: str) -> int:
     reservoir = 16 * n_cells * 8
     if readout_rule == "ridge":
-        normal = (n_cells + 1) * (n_cells + 1) * 8
-        moments = _TOKEN_CELLS * (n_cells + 1) * 8
-        synapses = _TOKEN_CELLS * n_cells * 8
-        batch = 128 * (n_cells + 1) * 8
+        features = _TRACE_COUNT * n_cells + 1
+        normal = features * features * 8
+        moments = _TOKEN_CELLS * features * 8
+        synapses = _TOKEN_CELLS * features * 8
+        batch = 128 * features * 8
         return reservoir + normal + moments + synapses + batch
     if readout_rule == "three_factor":
         return reservoir + _TOKEN_CELLS * n_cells * 8
@@ -1037,6 +1044,23 @@ def _validate_device(arguments: argparse.Namespace) -> str:
 
 def _validate_arguments(arguments: argparse.Namespace) -> None:
     device = _validate_device(arguments)
+    # Knob-domain checks fire BEFORE resource projections so a caller with a
+    # malformed knob gets an honest knob error rather than budget noise.
+    assembly_ceiling = arguments.N if device == "cuda" else min(arguments.N, _MAX_N)
+    if not 1 <= arguments.assembly_k <= assembly_ceiling:
+        _fail(
+            f"--assembly-k {arguments.assembly_k} must be within [1, N="
+            f"{arguments.N}] (assemblies are drawn without replacement over "
+            "the reservoir-sized E-population)"
+        )
+    if (
+        arguments.codebook == "explicit"
+        and arguments.assembly_k != _DEFAULT_ASSEMBLY_K
+    ):
+        _fail(
+            "--codebook explicit keeps the status-quo afferent wiring and "
+            f"requires --assembly-k {_DEFAULT_ASSEMBLY_K}"
+        )
     if device == "cpu":
         if arguments.N > _MAX_N:
             _fail(
@@ -1097,21 +1121,6 @@ def _validate_arguments(arguments: argparse.Namespace) -> None:
             f"--inhibitory-fraction {arguments.inhibitory_fraction!r} must be "
             "finite and in [0, 1) (signs flip on round(fraction * active) "
             "active reservoir cells; shipped default 0.2)"
-        )
-    assembly_ceiling = arguments.N if device == "cuda" else min(arguments.N, _MAX_N)
-    if not 1 <= arguments.assembly_k <= assembly_ceiling:
-        _fail(
-            f"--assembly-k {arguments.assembly_k} must be within [1, N="
-            f"{arguments.N}] (assemblies are drawn without replacement over "
-            "the reservoir-sized E-population)"
-        )
-    if (
-        arguments.codebook == "explicit"
-        and arguments.assembly_k != _DEFAULT_ASSEMBLY_K
-    ):
-        _fail(
-            "--codebook explicit keeps the status-quo afferent wiring and "
-            f"requires --assembly-k {_DEFAULT_ASSEMBLY_K}"
         )
     for name in ("experiment_id", "arm"):
         value = getattr(arguments, name)

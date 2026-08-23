@@ -116,7 +116,9 @@ class _RecurrentConfig(ctypes.Structure):
         ("recurrent_fanout", ctypes.c_size_t),
         ("input_current_pa", ctypes.c_double),
         ("recurrent_decay", ctypes.c_double),
-        ("eligibility_decay", ctypes.c_double),
+        # R0 multi-trace bank: per-row step decays, length trace_count.
+        ("trace_count", ctypes.c_size_t),
+        ("eligibility_decays", _F64_POINTER),
     ]
 
 
@@ -888,7 +890,7 @@ def _load_library() -> ctypes.CDLL:
 
         library.humanbrain_kernel_abi_version.argtypes = []
         library.humanbrain_kernel_abi_version.restype = ctypes.c_uint32
-        if library.humanbrain_kernel_abi_version() != 3:
+        if library.humanbrain_kernel_abi_version() != 4:
             raise NativeBuildError("native human-cell kernel ABI mismatch")
 
         pointer_args = [
@@ -979,7 +981,7 @@ def _load_library() -> ctypes.CDLL:
             ctypes.c_size_t,
             ctypes.c_double,
             ctypes.c_double,
-            ctypes.c_double,
+            _F64_POINTER,  # per-source apposition decay table (length cell_count)
             ctypes.c_double,
             ctypes.c_double,
             _F64_POINTER,
@@ -1161,7 +1163,7 @@ class NativeRecurrentKernel:
         recurrent_fanout: int,
         input_current_pa: float,
         recurrent_decay: float,
-        eligibility_decay: float,
+        eligibility_decays: np.ndarray,
         afferent_targets: np.ndarray,
         recurrent_targets: np.ndarray,
         recurrent_weights_pa: np.ndarray,
@@ -1174,6 +1176,12 @@ class NativeRecurrentKernel:
         self._library = _load_library()
         self._population = population
         cells = population.cell_count
+        decays = np.ascontiguousarray(eligibility_decays, dtype=np.float64)
+        if decays.ndim != 1 or decays.size < 1:
+            raise ValueError("eligibility decays must be a nonempty 1-D array")
+        if not np.all(np.isfinite(decays)):
+            raise ValueError("eligibility decays must be finite")
+        trace_count = int(decays.size)
         expected_afferents = (afferent_targets.shape[0], input_fanout)
         _require_native_array(
             afferent_targets,
@@ -1195,7 +1203,6 @@ class NativeRecurrentKernel:
         )
         for array, name in (
             (synaptic_current_pa, "synaptic current"),
-            (eligibility, "eligibility"),
         ):
             _require_native_array(
                 array,
@@ -1203,11 +1210,21 @@ class NativeRecurrentKernel:
                 shape=(cells,),
                 name=name,
             )
+        # The eligibility buffer is the FULL trace bank: trace_count rows of
+        # cells, C-order (row k = trace k), delivered contiguously.
+        _require_native_array(
+            eligibility,
+            dtype=np.dtype(np.float64),
+            shape=(trace_count * cells,),
+            name="eligibility",
+        )
         if np.any(afferent_targets < 0) or np.any(afferent_targets >= cells):
             raise ValueError("afferent targets must index reservoir cells")
         if np.any(recurrent_targets < 0) or np.any(recurrent_targets >= cells):
             raise ValueError("recurrent targets must index reservoir cells")
         self._glif_config = _glif_config(population)
+        # Anchor the decay array's lifetime: the config stores its address.
+        self._eligibility_decays = decays
         self._recurrent_config = _RecurrentConfig(
             token_steps,
             pulse_steps,
@@ -1215,7 +1232,8 @@ class NativeRecurrentKernel:
             recurrent_fanout,
             input_current_pa,
             recurrent_decay,
-            eligibility_decay,
+            trace_count,
+            _f64(decays),
         )
         self._afferent_targets = afferent_targets
         self._recurrent_targets = recurrent_targets
@@ -1531,7 +1549,7 @@ class NativeSparseCellReadout:
         winner: int,
         learning_rate_pa: float,
         maximum_weight_pa: float,
-        trace_decay: float,
+        trace_decays: np.ndarray,
         target_post_gate: float,
         winner_post_gate: float,
         activity_decay: float,
@@ -1544,7 +1562,16 @@ class NativeSparseCellReadout:
             raise ValueError("winner outside output-cell population")
         learning_rate_pa = _positive_scalar("learning rate", learning_rate_pa)
         maximum_weight_pa = _positive_scalar("maximum weight", maximum_weight_pa)
-        trace_decay = _unit_interval("trace decay", trace_decay)
+        decays = np.ascontiguousarray(trace_decays, dtype=np.float64)
+        if decays.shape != (self._reservoir_cells,):
+            raise ValueError(
+                "trace decays must be a contiguous float64 array with shape "
+                f"({self._reservoir_cells},)"
+            )
+        if not np.all(np.isfinite(decays)) or np.any(decays < 0.0) or np.any(
+            decays > 1.0
+        ):
+            raise ValueError("trace decays must be finite and in [0, 1]")
         target_post_gate = _unit_interval("target post gate", target_post_gate)
         winner_post_gate = _unit_interval("winner post gate", winner_post_gate)
         activity_decay = _unit_interval("activity decay", activity_decay, open_interval=True)
@@ -1558,7 +1585,7 @@ class NativeSparseCellReadout:
                 winner,
                 learning_rate_pa,
                 maximum_weight_pa,
-                trace_decay,
+                _f64(decays),
                 target_post_gate,
                 winner_post_gate,
                 _f64(self._eligibility),

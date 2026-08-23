@@ -296,7 +296,7 @@ class SparseCellReadout:
         winner: int,
         learning_rate_pa: float,
         maximum_weight_pa: float,
-        trace_decay: float,
+        trace_decays: np.ndarray,
         target_post_gate: float,
         winner_post_gate: float,
         activity_decay: float,
@@ -306,7 +306,9 @@ class SparseCellReadout:
             winner=winner,
             learning_rate_pa=learning_rate_pa,
             maximum_weight_pa=maximum_weight_pa,
-            trace_decay=trace_decay,
+            # Per-slot apposition decay over the source space: slot with
+            # source s decays by trace_decays[s] (= exp(-T / tau_(s // R))).
+            trace_decays=trace_decays,
             target_post_gate=target_post_gate,
             winner_post_gate=winner_post_gate,
             activity_decay=activity_decay,
