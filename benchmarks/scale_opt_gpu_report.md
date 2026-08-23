@@ -40,16 +40,20 @@ Baseline = branch point `49eb043`; optimized = this branch.
 
 \* first size in each fresh process pays CUDA context init + NVRTC module load.
 † first size in its process pays context/module init (~0.6 s); pure
-construction is ≈ 0.24 s (median of repeats).
+construction is ≈ 0.22 s (median of repeats).
 
-Three-repeat medians (fresh circuits per repeat, identical harness):
+Three-repeat medians (fresh circuits per repeat, identical harness; raw
+per-repeat results committed as `scale_opt_gpu_medians-small.json` /
+`scale_opt_gpu_medians-large.json`):
 
 | cells | infer tps median | train tps median | kernel tps median | construction median (s) |
 |---:|---:|---:|---:|---:|
-| 100 000 | **496.9** | **472.5** | 598.1 | 0.17 |
-| 200 000 | **326.8** | **313.9** | 373.1 | 0.24 |
+| 100 000 | **479.0** | **466.0** | 571.8 | 0.16 |
+| 200 000 | **323.8** | **312.7** | 371.0 | 0.22 |
 
-Run-to-run spread at these sizes was ±4 % (infer) / ±3 % (train).
+Run-to-run spread across those repeats was ±8.5 % (infer) / ±7.1 % (train) at
+100 k — the first repeat pays context/module warm-up — and ±2.7 % / ±1.9 % at
+200 k.
 
 ## Techniques applied (3)
 
@@ -69,13 +73,21 @@ Run-to-run spread at these sizes was ±4 % (infer) / ±3 % (train).
    Result: topology build at 200 k went ~1.7 s → 0.03 s; at 1 M, 0.13 s.
    Whole-circuit construction at 1 M is now 0.85 s including uploads and the
    reverse-CSR build, removing construction as the million-cell blocker.
-2. **Bit-exact zero-spike edge-pass elision** (`cuda.cu`). After the per-step
-   `grid.sync()`, all threads read the atomic spike total; when no cell spiked
-   in that step they uniformly skip the reverse-CSR weight scan. At the
-   benchmark's realistic firing rates (1.5–3.1 spike events per token across
-   ≥100 k cells, i.e. >97 % spike-free steps out of 100 steps/token) this
-   removes almost all edge-scan memory traffic while touching every cell's
-   neuron update, synaptic decay, and eligibility trace exactly as before.
+2. **Bit-exact zero-spike edge-pass elision** (`cuda.cu`). After each
+   per-step `grid.sync()`, all threads read the atomic spike total and
+   uniformly skip the reverse-CSR weight scan while it is still zero. That
+   counter is zeroed only once per kernel launch — one launch integrates one
+   whole token, all 100 of its steps — so elision operates at whole-token
+   granularity: a single spike anywhere in a token ends its edge-scan
+   elision for every remaining step. On this workload 78 % of tokens are
+   entirely spike-free, so ≥78 % of all integration steps skip the scan
+   (steps before a spiking token's first spike also skip), and the kernel
+   gains (395→611 tps at 100 k, 198→378 tps at 200 k) are consistent with
+   removing roughly that share of edge-scan memory traffic while touching
+   every cell's neuron update, synaptic decay, and eligibility trace exactly
+   as before. The win is fragile with respect to the spike distribution:
+   denser firing, or spikes spread across more tokens, drives the
+   spike-free fraction — and with it the gain — toward zero.
 3. **Eligibility trace fused into the neuron pass** (`cuda.cu`). The trace
    update used only the thread's own `crossed` value, so it moved from the
    post-sync synapse pass into the neuron pass, dropping one full-array
@@ -108,15 +120,15 @@ they are not language or capability claims.
 
 ## Feasibility extrapolation on this card
 
-- **100 k cells**: gate comfortably passed — ~497/472 inf/train tps median
-  (>100 tps required), 144 responsive cells.
-- **200 k cells**: ~327/314 tps median — 2.1–2.4× the previously registered
-  engineering result lineage (158.18/150.00).
+- **100 k cells**: gate comfortably passed — ~479/466 inf/train tps median
+  (>100 tps required), 144–209 responsive cells across committed runs.
+- **200 k cells**: ~324/313 tps median — 2.05x/2.08x the previously
+  registered engineering result lineage (158.18/150.00).
 - **1 M cells**: demonstrated on-card end to end (construct 0.85 s, 35/34
   inf/train tps single-run, 131.6 MiB device arrays). >100 tps at 1 M is not
   reachable under current bit-exact float64 full-touch contracts on a 4070
   SUPER: it needs ≤10 ms/token vs the ~21 ms/token bandwidth roofline
-  (~470 tps absolute ceiling at 73 % efficiency ≈ 21 ms → measured 29 ms).
+  (~48 tps absolute ceiling at 73 % efficiency ≈ 21 ms → measured 29 ms).
 - **~80 M cells** is the VRAM ceiling for persistent-resident state
   (~138 B/cell device + context overhead under 12 GB), at which point
   throughput would be ~0.4 tps — memory stops binding long before time does.
@@ -131,6 +143,7 @@ they are not language or capability claims.
 - `src/humanbrain/_native_src/src/cuda.cu` — zero-spike edge elision + fused
   eligibility (NVRTC cache digests invalidate automatically).
 - `benchmarks/scale_opt_gpu_bench.py` + `scale_opt_gpu_*.json` — harness and
-  raw results (baseline-small/large, optimized intermediate, optimized-final).
+  raw results (baseline-small/large, optimized intermediate, optimized-final,
+  three-repeat medians backing the table above).
 - Tests: `pytest tests/test_cuda.py tests/test_sparse_cuda_engineering.py -q`
   green after each change (17 tests incl. `tests/test_topology.py`).
