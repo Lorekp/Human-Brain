@@ -1,8 +1,8 @@
-# Procedural adapter spike — L1/L2 (roadmap R5 prerequisite)
+# Procedural adapter spike — L1/L2/L3 (roadmap R5 prerequisite)
 
-**Date:** 2026-08-23
+**Date:** 2026-08-23/24
 **Branch:** `codex/scale-opt-cpu` (worktree `human-brain-scale-opt-cpu`)
-**Status:** executed spike. L1 verified live on this branch; L2 measured live at 2^20 configured cells; no native code changed. Scripts: `l1_token_injection.py`, `l2_eligibility_read_cost.py`; raw numbers: `l2_eligibility_read_cost.json`. All runs CPU-only, each script <60 s.
+**Status:** executed spike. L1 verified live on this branch; L2 measured live at 2^20 configured cells; **L3 implemented, tested, and benchmarked behind an additive `event_proportional` stepping mode** (`ProceduralRuntimeConfig(stepping_mode="event_proportional")`; default remains `full_touch`, bit-for-bit). Scripts: `l1_token_injection.py`, `l2_eligibility_read_cost.py`, `l3_event_proportional_throughput.py`; raw numbers: `l2_eligibility_read_cost.json`, `l3_event_proportional_throughput.json`. All runs CPU-only, each script <60 s.
 **Context:** `logs/text_scale_cpu_findings.md` §2 defines the three-layer adapter. This spike answers its two gating questions: does token injection work today, and is the existing snapshot FFI an eligible-read seam at scale.
 
 ---
@@ -98,7 +98,43 @@ Expected effect: per-token read cost drops from O(R)·1.6 µs to O(K log R)·~50
 
 **`sparse_three_factor` is the only supported readout rule on the procedural path at ≥1e6 configured.** `ridge` cannot come along: its sufficient statistic is the `(N+1)²` normal matrix (`recurrent.py:746-772`) — the exact O(N²)-memory object the procedural runtime exists to avoid (at 1e6 that is ~8 TB). Plain `three_factor`'s global competitive margin also has no event-mappable form at scale. Pin `SparseCellReadout` gates to shipped values (`post_gate=1.0`, `trace_decay=exp(-5/80)`, activity decay, structural turnover cadence) as `recurrent.py:700-723` does.
 
-## 3. Layer 3 scope statement — emission-captured pre-eligibility (design sketch only)
+## 3. Layer 3 spike — event-proportional stepping (IMPLEMENTED, tested, benchmarked)
+
+**Verdict: PROVEN. Event-proportional stepping is expressible inside the fail-stop/determinism contracts with a minimal additive change, and delivers 200–530 tok/s at 1e6 configured cells where the full-touch path extrapolates to ~1.4 tok/s (committed production anchor at 1M residents: 0.092 tok/s).**
+
+### 3.0 Operation classification of the advance loop
+
+The 100-steps-per-token loop contains **no cross-cell reduction** — the only per-step global work is the fused update pass itself. Per resident, `sparse_cell_step` does: GLIF integration (voltage/thresholds/after-currents/spike check), synaptic decay, eligibility decay, canonical-rest eviction test. A resident with `refractory==0` and exact-zero-bit `voltage/after/threshold_spike/threshold_voltage/synaptic_current` ("fast-rest") is an exact fixed point of everything except `eligibility *= d`: it cannot cross (requires `threshold_inf_relative_mv >= 0`, now validated at creation in the new mode), generates no events, and influences no other cell. Its full-touch cost is exactly one eligibility multiply per step. Classification: **everything is skippable-when-quiescent; nothing must touch all cells.** The shipped dense frontier uses the same exact-rest predicate (`docs/native-scaling-v2.md`), so this adds no new approximation class.
+
+### 3.1 Mechanism (additive mode in `src/humanbrain/_native_src/src/procedural.rs`)
+
+- `ProceduralConfig.stepping_mode: u32` trailing field (0 = shipped semantics untouched; 1 = event-proportional), threaded through `_NativeProceduralConfig` / `ProceduralRuntimeConfig.stepping_mode`.
+- The fused pass retires any stepped cell that ends fast-rest with a nonzero eligibility tail into a GID-keyed dormant store (`BTreeMap<u64, DormantEntry{eligibility, elig_step}>`). Dormant cells are dynamics-inert and leave the stepped set entirely.
+- On event delivery to a dormant cell, its stored eligibility is **replayed by iterated per-step multiplies** (`catch_up_eligibility`: gap = current_step − elig_step − 1) before reactivation through staging — bit-for-bit the multiplies the full-touch path would have executed; `pow()`/analytic shortcuts are never used, so lazy replay reproduces default bits exactly.
+- Dormant slots keep occupying `resident_capacity` (`total_residents()` includes them), preserving capacity fail-stop timing across modes.
+- New C-ABI export `humanbrain_procedural_runtime_dormant_snapshot` (raw `(gid, eligibility_raw, elig_step)` dump; null-buffer size query). ABI version stays 3.
+
+### 3.2 Contract surface — what is bit-exact vs documented divergence
+
+Bit-exact in both modes on identical schedules: spike traces, delivered/generated events, queue contents, capacity fail-stop timing/status, and the full state of every cell either path steps. Documented divergences (event-proportional only): `updated_distinct` excludes never-re-stepped dormants, `cell_step_evaluations` counts only stepped cells (this is the optimization), `resident_distinct` covers actively-stepped residency (dormant residency is reported via the dormant store), payload-byte estimate adds a B-tree node constant, and `snapshot()` reports active residents + staged only. Proofs: Rust unit tests (`procedural.rs`) assert all-active bit-parity including counters, lazy-replay bit-exactness against full-touch stored values, mixed-traffic dynamics parity with strictly smaller work, and mode-validation fail-stop; Python seam tests (`tests/test_procedural_runtime_ep.py`) pin the public contract with production GLIF constants.
+
+### 3.3 Measured throughput (`l3_event_proportional_throughput.json`, stress GLIF configuration)
+
+| Stream (N_cfg = 2^20) | Residents | tok/s | cell-steps/token |
+| --- | --- | ---: | ---: |
+| EP head-to-head @22k residents (512 fresh + 128 reactivations) | 21.6k dormant + 512 active | **528.3** (FT: 68.2 → **7.7×**) | 100.7k vs FT 1.99M |
+| EP reactivation mix @320k dormant (512+256) | 320.8k dormant | **222.8** | 118.5k |
+| EP text-locality pool (512 re-hits + 128 fresh) | 320.8k dormant | 141.3 | 134.4k |
+| EP worst-case uniform-random targets | 320.8k dormant | 19–49 | 212k–423k |
+| Full-touch same fixture, linearly extrapolated to 1M residents | — | 1.44 (anchor: 0.092 production) | — |
+
+The 160+ tok/s gate clears in two independent configurations (head-to-head and reactivation mix), with kernel work ∝ touched cells and **independent of dormant/resident background**.
+
+### 3.4 Honest cost model and rejected variant
+
+Touch-time replay cost equals the cell's idle gap in multiplies — information-theoretically forced for bit-exactness (any shorter scheme deviates from full-touch bits). Lazy replay therefore *never* exceeds eager total work but relocates it to touch time: uniform-random traffic over a large dormant pool accumulates long gaps and pays them per hit (the 19–49 tok/s worst-case rows); locality-bounded traffic pays little. A budgeted background catch-up sweep was implemented and then **rejected on measurement**: bounding gaps costs ≈ R_dormant/2 multiplies per step — i.e., it degenerates into eager decay. Production fitted-cell constants flush post-spike sub-normal tails over ~10^6 steps (measured decay factors recorded in the JSON), so near-term training runs keep recently-touched cells actively integrating regardless of mode; the dormant-store economics bind as tails underflow or as L3 plasticity changes what "rest" means. The benchmark drives a documented stress GLIF configuration (unit leak ⇒ voltage mirrors synaptic current ⇒ fast-state rest reachable in tens of steps; realistic 80 ms eligibility tau) to expose steady-state economics inside a CPU-only budget; parity tests cover both modes under production constants.
+
+## 4. Layer 3 scope statement — emission-captured pre-eligibility (design sketch only)
 
 L3 adds mutable resident-edge weights (+8 B/resident generated edge) with local plasticity applied at delivery. The prerequisite semantics gap: with `recurrent_delay_steps ≥ 1`, a strengthening decision at delivery needs the source's eligibility **at emission time**, not at delivery time. Sketch:
 
@@ -109,7 +145,7 @@ L3 adds mutable resident-edge weights (+8 B/resident generated edge) with local 
 
 Also required for parity eventually, not in this spike: host-side output race over compiled unit-response curves (pure function of assembled current), ascending-GID tie-break, and a persistence story (fail-stop poisoning is not a checkpoint codec).
 
-## 4. Recommended minimal viable experiment: text-grow over the procedural runtime at 1e6 configured
+## 5. Recommended minimal viable experiment: text-grow over the procedural runtime at 1e6 configured
 
 Goal: make the procedural runtime *measurable* on a real text gate at N_cfg = 1,048,576 (accuracy parity is explicitly not the gate; that is the post-L3 acceptance in findings §4). Three phases, each independently shippable:
 
@@ -119,11 +155,12 @@ Goal: make the procedural runtime *measurable* on a real text gate at N_cfg = 1,
 
 Sequencing rationale: Phase A de-risks the only unmeasured throughput unknown (injection rate ceiling) without any native change; B proves learning parity where the oracle still exists; C inherits both. The `read_cells` FFI (§2.2) is the single native prerequisite of B/C.
 
-## 5. Source index
+## 6. Source index
 
 - `src/humanbrain/procedural_runtime.py:164-188,440-475,554-656,658-730` — events, pre-FFI validation, advance, `_read_snapshot`/`snapshot`
 - `src/humanbrain/_native_src/src/procedural.rs:652-664,725-727,586-590,1654-1787` — `ProceduralRuntime` (sorted `residents`+`staged`), `total_residents`, eligibility update (+1.0 own-spike, ×decay per step), C-ABI exports incl. unfiltered snapshot
+- `src/humanbrain/_native_src/src/procedural.rs` — L3 spike: `stepping_mode`, dormant store + lazy catch-up, budgeted-transition fused pass, `humanbrain_procedural_runtime_dormant_snapshot` export, parity unit tests
 - `src/humanbrain/readout.py:21-110,292-346` — `SparseCellReadout.create/teach/turnover`, dense `reservoir_eligibility` binding
 - `src/humanbrain/recurrent.py:652-744` — `observe`/`strengthen` reference semantics (sparse_three_factor path)
 - `logs/text_scale_cpu_findings.md` §2-3 — layer definitions, throughput anchors/budgets quoted here
-- This directory — `l1_token_injection.py`, `l2_eligibility_read_cost.py`, `l2_eligibility_read_cost.json`
+- This directory — `l1_token_injection.py`, `l2_eligibility_read_cost.py`, `l2_eligibility_read_cost.json`, `l3_event_proportional_throughput.py`, `l3_event_proportional_throughput.json`

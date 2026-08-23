@@ -9,7 +9,7 @@ use super::GlifConfig;
 use std::{
     alloc::{alloc, Layout},
     cmp::Ordering,
-    collections::HashSet,
+    collections::{BTreeMap, HashSet},
     mem::size_of,
     ptr, slice,
 };
@@ -52,6 +52,13 @@ const SEEN_RESIDENT: u8 = 1;
 const SEEN_UPDATED: u8 = 2;
 const SEEN_SPIKING: u8 = 4;
 
+/// Stepping semantics selected at creation. `FULL_TOUCH` is the shipped
+/// default: every resident integrates every step until it reaches canonical
+/// rest. `EVENT_PROPORTIONAL` is the additive spike mode described in
+/// [`ProceduralConfig::stepping_mode`] below.
+pub const PROCEDURAL_STEPPING_FULL_TOUCH: u32 = 0;
+pub const PROCEDURAL_STEPPING_EVENT_PROPORTIONAL: u32 = 1;
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct ProceduralConfig {
@@ -66,6 +73,17 @@ pub struct ProceduralConfig {
     pub recurrent_delay_steps: u64,
     pub recurrent_decay: f64,
     pub eligibility_decay: f64,
+    /// Trailing additive field. 0 selects the shipped full-touch semantics
+    /// bit-for-bit; 1 selects event-proportional stepping, where a resident
+    /// whose only nonzero field is the eligibility tail ("dormant") leaves
+    /// the stepped set and its eligibility decays lazily, by replaying the
+    /// identical per-step multiplies, on the next event that touches it.
+    /// Spike records, delivered/generated events, queue contents, and the
+    /// dynamics of every touched cell are bit-identical across modes; the
+    /// documented divergences are internal accounting (`updated_distinct`,
+    /// `cell_step_evaluations`, payload bytes) and the split of residency
+    /// between the stepped array and the dormant store.
+    pub stepping_mode: u32,
 }
 
 #[repr(C)]
@@ -153,6 +171,23 @@ impl CellState {
             && self.refractory == 0
             && self.synaptic_current.to_bits() == 0
             && self.eligibility.to_bits() == 0
+    }
+
+    /// True when every dynamics-bearing field is exact zero and no refractory
+    /// time remains; only the eligibility tail may be nonzero. Under continued
+    /// unforced stepping such a cell changes nothing but its own eligibility:
+    /// zero inputs reproduce zero voltage/thresholds/after-currents exactly,
+    /// and with `threshold_inf_relative_mv >= 0` (validated in the
+    /// event-proportional mode) it can never cross. Its full-touch cost is
+    /// therefore exactly one eligibility multiply per step.
+    fn is_fast_rest(&self) -> bool {
+        self.voltage.to_bits() == 0
+            && self.after[0].to_bits() == 0
+            && self.after[1].to_bits() == 0
+            && self.threshold_spike.to_bits() == 0
+            && self.threshold_voltage.to_bits() == 0
+            && self.refractory == 0
+            && self.synaptic_current.to_bits() == 0
     }
 
     fn record(&self) -> ProceduralResidentRecord {
@@ -465,6 +500,11 @@ struct RuntimeScratch {
     interval_ledger: IntervalLedger,
     ledger_scratch: IntervalLedger,
     gid_run: Vec<u64>,
+    /// Per-step retirement runs (ascending GIDs by construction): cells whose
+    /// fused pass just left them fast-rest with an eligibility tail. Cleared
+    /// every step; committed into `ProceduralRuntime::dormant` after the pass.
+    dormant_gids: Vec<u64>,
+    dormant_values: Vec<f64>,
 }
 
 impl RuntimeScratch {
@@ -484,6 +524,8 @@ impl RuntimeScratch {
             interval_ledger: IntervalLedger::try_new(config.interval_distinct_capacity)?,
             ledger_scratch: IntervalLedger::try_new(config.interval_distinct_capacity)?,
             gid_run: reserved_vec(config.resident_capacity)?,
+            dormant_gids: reserved_vec(config.resident_capacity)?,
+            dormant_values: reserved_vec(config.resident_capacity)?,
         })
     }
 
@@ -498,7 +540,21 @@ impl RuntimeScratch {
             + self.ledger_scratch.gids.capacity() * size_of::<u64>()
             + self.ledger_scratch.flags.capacity() * size_of::<u8>()
             + self.gid_run.capacity() * size_of::<u64>()
+            + self.dormant_gids.capacity() * size_of::<u64>()
+            + self.dormant_values.capacity() * size_of::<f64>()
     }
+}
+
+/// One dormant-store entry: a fast-rest cell kept out of the stepped set
+/// purely as a lazily-decayed eligibility tail.
+#[derive(Clone, Copy, Debug)]
+struct DormantEntry {
+    /// Stored eligibility exactly as of the last eager per-step decay.
+    eligibility: f64,
+    /// Step whose fused pass performed that last decay. The passes after it
+    /// are replayed, one multiply each in identical order, when the cell is
+    /// next touched -- reproducing full-touch bits exactly.
+    elig_step: u64,
 }
 
 struct DenseScratch {
@@ -667,6 +723,12 @@ pub struct ProceduralRuntime {
     pending: Vec<ProceduralEventRecord>,
     pending_head: usize,
     last_spikes: Vec<ProceduralSpikeRecord>,
+    /// Event-proportional mode only: fast-rest cells with a nonzero
+    /// eligibility tail, keyed by GID. Dynamics-inert (they cannot spike or
+    /// affect any other cell), so they leave the per-step fused pass entirely;
+    /// their eligibility decays lazily on next touch. Always empty in
+    /// full-touch mode.
+    dormant: BTreeMap<u64, DormantEntry>,
     scratch: RuntimeScratch,
     counters: ProceduralCounters,
     poisoned: u32,
@@ -680,6 +742,15 @@ impl ProceduralRuntime {
         after_cut_decay: [f64; 2],
         after_amplitudes: [f64; 2],
     ) -> Result<Self, u32> {
+        if !matches!(
+            config.stepping_mode,
+            PROCEDURAL_STEPPING_FULL_TOUCH | PROCEDURAL_STEPPING_EVENT_PROPORTIONAL
+        ) {
+            // Fail-stop at construction: the C-ABI seam validates through
+            // `valid_common`, but the runtime constructor must reject an
+            // undefined stepping mode on every path.
+            return Err(PROCEDURAL_INVALID);
+        }
         let residents = reserved_vec(config.resident_capacity)?;
         let staged_capacity = config.resident_capacity.min(config.event_capacity);
         let staged = reserved_vec(staged_capacity)?;
@@ -698,10 +769,32 @@ impl ProceduralRuntime {
             pending,
             pending_head: 0,
             last_spikes,
+            dormant: BTreeMap::new(),
             scratch,
             counters: ProceduralCounters::default(),
             poisoned: PROCEDURAL_OK,
         })
+    }
+
+    #[inline]
+    fn event_proportional(&self) -> bool {
+        self.config.stepping_mode == PROCEDURAL_STEPPING_EVENT_PROPORTIONAL
+    }
+
+    /// Bit-exact lazy eligibility decay. Replays the identical per-step
+    /// multiplies the full-touch path would have executed between the last
+    /// eager decay and the current delivery step. Delivery happens before a
+    /// step's fused pass, so the pass of `elig_step` itself already ran and
+    /// the passes `elig_step+1 ..= current_step-1` are outstanding.
+    fn catch_up_eligibility(&self, value: f64, elig_step: u64) -> f64 {
+        let mut value = value;
+        let gap = self
+            .current_step
+            .saturating_sub(elig_step.saturating_add(1));
+        for _ in 0..gap {
+            value = canonical_zero(value * self.config.eligibility_decay);
+        }
+        value
     }
 
     fn payload_bytes(&self) -> usize {
@@ -710,6 +803,15 @@ impl ProceduralRuntime {
             + self.staged.capacity() * size_of::<CellState>()
             + self.pending.capacity() * size_of::<ProceduralEventRecord>()
             + self.last_spikes.capacity() * size_of::<ProceduralSpikeRecord>()
+            // Conservative B-tree node estimate (key + value plus order and
+            // parent linkage). Always zero in full-touch mode, so the
+            // reported payload is bit-identical to the shipped path there.
+            + self
+                .dormant
+                .len()
+                * (size_of::<u64>()
+                    + size_of::<DormantEntry>()
+                    + 4 * size_of::<usize>())
             + self.scratch.payload_bytes()
     }
 
@@ -720,10 +822,13 @@ impl ProceduralRuntime {
     }
 
     /// Materialized cells at this instant, including the current step's
-    /// staged insertions.
+    /// staged insertions. Dormant cells occupy resident-capacity slots exactly
+    /// as they did while eagerly stepped, so capacity pressure and the
+    /// fail-stop abort timing match the full-touch path; in full-touch mode
+    /// the dormant store is always empty and this reduces to the original sum.
     #[inline]
     fn total_residents(&self) -> usize {
-        self.residents.len() + self.staged.len()
+        self.residents.len() + self.staged.len() + self.dormant.len()
     }
 
     /// Fold the staged insertions back into the sorted resident array,
@@ -806,6 +911,42 @@ impl ProceduralRuntime {
                 self.residents[index].synaptic_current = canonical_zero(value);
             }
             Err(_) => {
+                if self.event_proportional() {
+                    if let Some(entry) = self.dormant.remove(&event.target_gid) {
+                        // Reactivation from the dormant store. The full-touch
+                        // path would have decayed this cell's eligibility on
+                        // every intervening step; replay those exact multiplies
+                        // now so the restored state is bit-identical to what
+                        // the resident array would have held at delivery time.
+                        let restored =
+                            self.catch_up_eligibility(entry.eligibility, entry.elig_step);
+                        debug_assert!(restored.to_bits() != 0 || entry.eligibility.to_bits() == 0);
+                        if current.to_bits() == 0 {
+                            // A zero-current delivery touches nothing in the
+                            // full-touch path either (canonical zero add);
+                            // leave the cell dormant. Its raw value stays as
+                            // of `entry.elig_step`, which only defers -- never
+                            // changes -- the replayed multiply sequence.
+                            self.dormant.insert(
+                                event.target_gid,
+                                DormantEntry {
+                                    eligibility: entry.eligibility,
+                                    elig_step: entry.elig_step,
+                                },
+                            );
+                            return Ok(());
+                        }
+                        let mut state = CellState::canonical_rest(event.target_gid);
+                        state.eligibility = restored;
+                        state.synaptic_current = current;
+                        // Net-neutral on total_residents(): one dormant slot
+                        // becomes one staged slot, so no capacity check is due
+                        // -- mirroring the full-touch path, where an event to
+                        // an existing resident performs none either.
+                        self.staged.push(state);
+                        return Ok(());
+                    }
+                }
                 if let Some(slot) = self
                     .staged
                     .iter()
@@ -1050,7 +1191,7 @@ impl ProceduralRuntime {
                 }
             }
         }
-        let mut resident_peak = self.residents.len();
+        let mut resident_peak = self.total_residents();
         let mut queue_peak = self.pending_logical_len();
         let mut cell_steps = 0u64;
         let mut generated_edges = 0u64;
@@ -1094,7 +1235,12 @@ impl ProceduralRuntime {
             resident_peak = resident_peak.max(self.total_residents());
 
             self.scratch.step_spikes.clear();
-            let population = self.total_residents();
+            self.scratch.dormant_gids.clear();
+            self.scratch.dormant_values.clear();
+            // The fused pass below integrates exactly these cells; dormant
+            // cells are retired from the stepped set in event-proportional
+            // mode, so this work count is where their cost disappears.
+            let population = self.residents.len() + self.staged.len();
             cell_steps = match cell_steps.checked_add(population as u64) {
                 Some(value) => value,
                 None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
@@ -1168,8 +1314,20 @@ impl ProceduralRuntime {
                             }
                         }
                         if !state.is_canonical_rest() {
-                            self.residents[write] = state;
-                            write += 1;
+                            if self.event_proportional() && state.is_fast_rest() {
+                                // Only the eligibility tail remains. The cell
+                                // cannot spike, change any other field, or
+                                // affect another cell; retire it from the
+                                // stepped set. Its eligibility was decayed by
+                                // this very pass, so it is recorded as of the
+                                // current step and lazily replayed from there.
+                                debug_assert!(state.eligibility.to_bits() != 0);
+                                self.scratch.dormant_gids.push(state.gid);
+                                self.scratch.dormant_values.push(state.eligibility);
+                            } else {
+                                self.residents[write] = state;
+                                write += 1;
+                            }
                         }
                     }
                     debug_assert!(write <= self.residents.len());
@@ -1198,52 +1356,106 @@ impl ProceduralRuntime {
                     if let Err(code) = self.absorb_staged() {
                         return self.poison(code);
                     }
-                    for state in &mut self.residents {
-                        if let Err(code) = self.scratch.interval_ledger.mark_single(
-                            state.gid,
-                            SEEN_UPDATED,
-                            distinct_capacity,
-                        ) {
-                            return self.poison(code);
-                        }
-                        if sparse_cell_step(
-                            &self.glif,
-                            &self.after_decay,
-                            &self.after_cut_decay,
-                            &self.after_amplitudes,
-                            self.config.recurrent_decay,
-                            self.config.eligibility_decay,
-                            state,
-                        ) {
+                    for index in 0..self.residents.len() {
+                        let mut retired: Option<(u64, f64)> = None;
+                        let event_proportional = self.event_proportional();
+                        {
+                            let state = &mut self.residents[index];
                             if let Err(code) = self.scratch.interval_ledger.mark_single(
                                 state.gid,
-                                SEEN_SPIKING,
+                                SEEN_UPDATED,
                                 distinct_capacity,
                             ) {
                                 return self.poison(code);
                             }
-                            if let Err(code) = push_bounded(
-                                &mut self.scratch.step_spikes,
-                                state.gid,
-                                self.config.resident_capacity,
-                                PROCEDURAL_RESIDENT_CAPACITY,
+                            if sparse_cell_step(
+                                &self.glif,
+                                &self.after_decay,
+                                &self.after_cut_decay,
+                                &self.after_amplitudes,
+                                self.config.recurrent_decay,
+                                self.config.eligibility_decay,
+                                state,
                             ) {
-                                return self.poison(code);
+                                if let Err(code) = self.scratch.interval_ledger.mark_single(
+                                    state.gid,
+                                    SEEN_SPIKING,
+                                    distinct_capacity,
+                                ) {
+                                    return self.poison(code);
+                                }
+                                if let Err(code) = push_bounded(
+                                    &mut self.scratch.step_spikes,
+                                    state.gid,
+                                    self.config.resident_capacity,
+                                    PROCEDURAL_RESIDENT_CAPACITY,
+                                ) {
+                                    return self.poison(code);
+                                }
+                                if let Err(code) = push_bounded(
+                                    &mut self.last_spikes,
+                                    ProceduralSpikeRecord {
+                                        step: self.current_step,
+                                        gid: state.gid,
+                                    },
+                                    self.config.spike_capacity,
+                                    PROCEDURAL_SPIKE_CAPACITY,
+                                ) {
+                                    return self.poison(code);
+                                }
                             }
-                            if let Err(code) = push_bounded(
-                                &mut self.last_spikes,
-                                ProceduralSpikeRecord {
-                                    step: self.current_step,
-                                    gid: state.gid,
-                                },
-                                self.config.spike_capacity,
-                                PROCEDURAL_SPIKE_CAPACITY,
-                            ) {
-                                return self.poison(code);
+                            if !state.is_canonical_rest()
+                                && event_proportional
+                                && state.is_fast_rest()
+                            {
+                                debug_assert!(state.eligibility.to_bits() != 0);
+                                retired = Some((state.gid, state.eligibility));
                             }
                         }
+                        if let Some((gid, eligibility)) = retired {
+                            self.scratch.dormant_gids.push(gid);
+                            self.scratch.dormant_values.push(eligibility);
+                        }
                     }
-                    self.residents.retain(|state| !state.is_canonical_rest());
+                    if !self.scratch.dormant_gids.is_empty() {
+                        // Partition out cells retired to the dormant store;
+                        // both arrays ascend by GID, so one merge sweep evicts
+                        // exactly the recorded runs (canonical-rest cells are
+                        // dropped here too, matching the retain below).
+                        let mut write = 0usize;
+                        let mut dormant_index = 0usize;
+                        for read in 0..self.residents.len() {
+                            let state = self.residents[read];
+                            if dormant_index < self.scratch.dormant_gids.len()
+                                && self.scratch.dormant_gids[dormant_index] == state.gid
+                            {
+                                dormant_index += 1;
+                                continue;
+                            }
+                            if state.is_canonical_rest() {
+                                continue;
+                            }
+                            self.residents[write] = state;
+                            write += 1;
+                        }
+                        debug_assert_eq!(dormant_index, self.scratch.dormant_gids.len());
+                        self.residents.truncate(write);
+                    } else {
+                        self.residents.retain(|state| !state.is_canonical_rest());
+                    }
+                }
+            }
+
+            if !self.scratch.dormant_gids.is_empty() {
+                debug_assert!(self.event_proportional());
+                for index in 0..self.scratch.dormant_gids.len() {
+                    self.dormant.insert(
+                        self.scratch.dormant_gids[index],
+                        DormantEntry {
+                            eligibility: self.scratch.dormant_values[index],
+                            elig_step: self.current_step,
+                        },
+                    );
                 }
             }
 
@@ -1617,6 +1829,14 @@ fn valid_common(glif: &GlifConfig, config: &ProceduralConfig) -> bool {
         && config.eligibility_decay.is_finite()
         && config.eligibility_decay > 0.0
         && config.eligibility_decay < 1.0
+        && matches!(
+            config.stepping_mode,
+            PROCEDURAL_STEPPING_FULL_TOUCH | PROCEDURAL_STEPPING_EVENT_PROPORTIONAL
+        )
+        // The dormant fixed-point argument requires that an all-zero cell can
+        // never cross: the quiescent threshold floor must be nonnegative.
+        && (config.stepping_mode == PROCEDURAL_STEPPING_FULL_TOUCH
+            || glif.threshold_inf_relative_mv >= 0.0)
 }
 
 unsafe fn read_common(
@@ -1783,6 +2003,50 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
     snapshot.retained_nonzero_cells = runtime.total_residents();
     snapshot.overflow_code = runtime.poisoned;
     *counters = snapshot;
+    PROCEDURAL_OK
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct ProceduralDormantRecord {
+    pub gid: u64,
+    /// Stored (pre-catch-up) eligibility as of `elig_step`.
+    pub eligibility_raw: f64,
+    /// Step whose fused pass last decayed the stored value.
+    pub elig_step: u64,
+}
+
+/// Event-proportional mode introspection: dump the dormant store in ascending
+/// GID order. Values are raw lazily-stored numbers, NOT caught-up ones; a
+/// reader replays `current_step - elig_step - 1` eligibility-decay multiplies
+/// to obtain the equivalent full-touch value bit-exactly. Empty in full-touch
+/// mode. Additive export; the ABI version is unchanged for this spike.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_procedural_runtime_dormant_snapshot(
+    runtime: *const ProceduralRuntime,
+    out: *mut ProceduralDormantRecord,
+    out_capacity: usize,
+    out_len: *mut usize,
+) -> u32 {
+    if runtime.is_null() || out_len.is_null() || (out.is_null() && out_capacity != 0) {
+        return PROCEDURAL_INVALID;
+    }
+    let runtime = &*runtime;
+    *out_len = runtime.dormant.len();
+    if out.is_null() {
+        // Pure size query: report the length without demanding capacity.
+        return PROCEDURAL_OK;
+    }
+    if out_capacity < runtime.dormant.len() {
+        return PROCEDURAL_SNAPSHOT_CAPACITY;
+    }
+    for (index, (gid, entry)) in runtime.dormant.iter().enumerate() {
+        *out.add(index) = ProceduralDormantRecord {
+            gid: *gid,
+            eligibility_raw: entry.eligibility,
+            elig_step: entry.elig_step,
+        };
+    }
     PROCEDURAL_OK
 }
 
@@ -1956,8 +2220,9 @@ pub unsafe extern "C" fn humanbrain_dense_reference_snapshot(
 #[cfg(test)]
 mod tests {
     use super::{
-        fallback_candidate, fill_targets_with, humanbrain_procedural_runtime_create, GlifConfig,
-        ProceduralConfig,
+        canonical_zero, fallback_candidate, fill_targets_with,
+        humanbrain_procedural_runtime_create, GlifConfig, ProceduralConfig, ProceduralEventRecord,
+        ProceduralRuntime, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL, PROCEDURAL_STEPPING_FULL_TOUCH,
     };
     use std::collections::HashSet;
 
@@ -1980,6 +2245,7 @@ mod tests {
             recurrent_delay_steps: 1,
             recurrent_decay: 0.5,
             eligibility_decay: 0.5,
+            stepping_mode: PROCEDURAL_STEPPING_FULL_TOUCH,
         };
         let mut targets = Vec::new();
         targets.try_reserve_exact(64).unwrap();
@@ -2034,6 +2300,7 @@ mod tests {
             recurrent_delay_steps: 1,
             recurrent_decay: 0.5,
             eligibility_decay: 0.5,
+            stepping_mode: PROCEDURAL_STEPPING_FULL_TOUCH,
         };
         let decay = [0.5, 0.5];
         let amplitudes = [0.0, 0.0];
@@ -2049,5 +2316,356 @@ mod tests {
         };
 
         assert!(runtime.is_null());
+    }
+
+    // ---------------------------------------------------------------------
+    // Event-proportional stepping parity fixtures.
+    //
+    // The GLIF constants below make post-spike cells go exactly quiet: the
+    // voltage reset is zero, after-spike amplitudes are zero, and thresholds
+    // decay geometrically to exact zeros. A spiked cell therefore decays to
+    // fast-rest with a pure eligibility tail -- the dormant case -- while
+    // epsilon keep-alive currents hold cells actively integrating when the
+    // fixture wants the two modes to touch every cell every step.
+    // ---------------------------------------------------------------------
+
+    fn ep_glif() -> GlifConfig {
+        GlifConfig {
+            cell_count: 1,
+            after_channel_count: 2,
+            spike_cut_steps: 3,
+            // Unit leak makes v' = I exactly: voltage mirrors the synaptic
+            // current and reaches canonical zero in the same step it does,
+            // so a quieted cell's fast-rest is reachable inside short test
+            // horizons (a mild leak leaves sub-normal voltage tails alive
+            // for ~1000 steps and dormancy never engages).
+            leak_ns: 1.0,
+            voltage_step_scale: 1.0,
+            threshold_beta_scale: 0.0,
+            threshold_exp_decay: 0.9,
+            threshold_voltage_factor: 0.0,
+            threshold_beta_factor: 0.0,
+            spike_threshold_decay: 0.9,
+            threshold_inf_relative_mv: 1.0,
+            voltage_reset_scale: 0.0,
+            voltage_reset_offset_mv: 0.0,
+            spike_cut_threshold_decay: 0.5,
+            // Zero increment keeps the spike-threshold term exactly zero even
+            // after spikes, so a quieted cell's only surviving state is the
+            // eligibility tail -- the dormant case under test.
+            threshold_spike_increment_mv: 0.0,
+        }
+    }
+
+    fn ep_config(configured_cells: u64, mode: u32) -> ProceduralConfig {
+        ProceduralConfig {
+            configured_cells,
+            fanout: 4,
+            seed: 71,
+            resident_capacity: 256,
+            event_capacity: 8192,
+            spike_capacity: 8192,
+            interval_distinct_capacity: 1024,
+            // Subthreshold edge weight: one delivered event cannot cross the
+            // 1.0 threshold floor, so a spike wave dies after one generation
+            // instead of cascading forever (which would keep every cell
+            // active and make dormancy unreachable).
+            recurrent_weight_pa: 0.25,
+            recurrent_delay_steps: 1,
+            // Aggressive synaptic decay flushes delivered currents to exact
+            // zero within ~40 steps, so spiked cells actually reach fast-rest
+            // inside the test horizon (a mild decay like 0.9 would keep
+            // sub-normal synaptic tails alive for thousands of steps and no
+            // cell would ever dormanize).
+            recurrent_decay: 1e-8,
+            eligibility_decay: 0.5,
+            stepping_mode: mode,
+        }
+    }
+
+    fn ep_runtime(configured_cells: u64, mode: u32) -> ProceduralRuntime {
+        let decay = [0.5, 0.5];
+        ProceduralRuntime::new(
+            ep_glif(),
+            ep_config(configured_cells, mode),
+            decay,
+            decay,
+            [0.0; 2],
+        )
+        .unwrap()
+    }
+
+    fn drive(target: u64, due_step: u64, current_pa: f64) -> ProceduralEventRecord {
+        ProceduralEventRecord {
+            due_step,
+            target_gid: target,
+            source_gid: target,
+            edge_slot: 0,
+            current_pa: current_pa,
+        }
+    }
+
+    /// Advance one step at a time so every batch is unambiguous, collecting
+    /// the spikes each call produced.
+    fn run_steps(
+        runtime: &mut ProceduralRuntime,
+        batches: &[Vec<ProceduralEventRecord>],
+    ) -> Vec<(u64, u64)> {
+        let mut trace = Vec::new();
+        for batch in batches {
+            let status = runtime.advance(1, batch);
+            assert_eq!(status, super::PROCEDURAL_OK);
+            for spike in &runtime.last_spikes {
+                trace.push((spike.step, spike.gid));
+            }
+        }
+        trace
+    }
+
+    fn resident_bits(runtime: &ProceduralRuntime) -> Vec<(u64, [u64; 7])> {
+        let mut records: Vec<_> = runtime
+            .residents
+            .iter()
+            .map(|state| {
+                let record = state.record();
+                (
+                    record.gid,
+                    [
+                        record.voltage_relative_mv.to_bits(),
+                        record.after_spike_current_0_pa.to_bits(),
+                        record.after_spike_current_1_pa.to_bits(),
+                        record.threshold_spike_mv.to_bits(),
+                        record.threshold_voltage_mv.to_bits(),
+                        record.synaptic_current_pa.to_bits(),
+                        record.eligibility.to_bits(),
+                    ],
+                )
+            })
+            .collect();
+        records.sort_unstable_by_key(|entry| entry.0);
+        records
+    }
+
+    /// Replay lazy eligibility decay exactly as the kernel's catch-up does:
+    /// one canonical multiply per outstanding fused pass.
+    fn replay_eligibility(raw: f64, elig_step: u64, current_step: u64) -> f64 {
+        let mut value = raw;
+        let gap = current_step.saturating_sub(elig_step.saturating_add(1));
+        for _ in 0..gap {
+            value = canonical_zero(value * 0.5);
+        }
+        value
+    }
+
+    /// All-active fixture: epsilon keep-alive currents plus periodic strong
+    /// pulses keep every touched cell integrating every step, so the
+    /// event-proportional mode must never dormanize anything and both modes
+    /// must agree bit for bit on spikes, counters, and resident state.
+    #[test]
+    fn event_proportional_matches_full_touch_bit_exactly_while_all_cells_stay_active() {
+        let cells = 48u64;
+        let steps = 400usize;
+        let build_batches = || {
+            let mut batches = Vec::with_capacity(steps);
+            for step in 0..steps {
+                let mut batch: Vec<ProceduralEventRecord> = Vec::new();
+                for gid in 0..cells {
+                    batch.push(drive(gid, step as u64, 1e-30));
+                }
+                if step % 37 == 11 {
+                    for gid in 0..cells {
+                        if (gid * 7 + step as u64) % 13 == 0 {
+                            batch.push(ProceduralEventRecord {
+                                due_step: step as u64,
+                                target_gid: gid,
+                                source_gid: (gid + 1) % cells,
+                                edge_slot: 1,
+                                current_pa: 10.0,
+                            });
+                        }
+                    }
+                }
+                batches.push(batch);
+            }
+            batches
+        };
+
+        let mut full_touch = ep_runtime(cells, PROCEDURAL_STEPPING_FULL_TOUCH);
+        let full_touch_trace = run_steps(&mut full_touch, &build_batches());
+
+        let mut event_proportional = ep_runtime(cells, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+        let event_trace = run_steps(&mut event_proportional, &build_batches());
+
+        assert!(
+            !full_touch_trace.is_empty(),
+            "fixture must actually spike cells"
+        );
+        assert_eq!(full_touch_trace, event_trace, "spike traces must match");
+        assert!(
+            event_proportional.dormant.is_empty(),
+            "all-active fixture must never dormanize"
+        );
+
+        let ft_counters = full_touch.counters;
+        let ep_counters = event_proportional.counters;
+        assert_eq!(
+            ft_counters.cell_step_evaluations,
+            ep_counters.cell_step_evaluations
+        );
+        assert_eq!(ft_counters.delivered_events, ep_counters.delivered_events);
+        assert_eq!(ft_counters.generated_edges, ep_counters.generated_edges);
+        assert_eq!(ft_counters.spike_events, ep_counters.spike_events);
+        assert_eq!(ft_counters.resident_peak, ep_counters.resident_peak);
+        assert_eq!(ft_counters.resident_distinct, ep_counters.resident_distinct);
+        assert_eq!(ft_counters.updated_distinct, ep_counters.updated_distinct);
+        assert_eq!(
+            ft_counters.retained_nonzero_cells,
+            ep_counters.retained_nonzero_cells
+        );
+
+        assert_eq!(
+            resident_bits(&full_touch),
+            resident_bits(&event_proportional)
+        );
+    }
+
+    /// Dormant cells store their eligibility raw and replay the identical
+    /// multiply sequence on catch-up: the replayed value must equal the
+    /// full-touch path's stored eligibility bit for bit.
+    #[test]
+    fn event_proportional_lazy_decay_replays_full_touch_multiplies_exactly() {
+        let cells = 16u64;
+        let steps = 300usize;
+        let mut batches = vec![Vec::<ProceduralEventRecord>::new(); steps];
+        for gid in [3u64, 7, 11] {
+            batches[0].push(drive(gid, 0, 10.0));
+        }
+
+        let mut full_touch = ep_runtime(cells, PROCEDURAL_STEPPING_FULL_TOUCH);
+        let ft_trace = run_steps(&mut full_touch, &batches);
+
+        let mut event_proportional = ep_runtime(cells, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+        let ep_trace = run_steps(&mut event_proportional, &batches);
+
+        assert_eq!(ft_trace, ep_trace, "spike traces must match");
+        assert!(
+            !event_proportional.dormant.is_empty(),
+            "spiked cells must dormanize"
+        );
+
+        let current_step = full_touch.current_step;
+        assert_eq!(current_step, event_proportional.current_step);
+        for (gid, entry) in &event_proportional.dormant {
+            let expected = replay_eligibility(entry.eligibility, entry.elig_step, current_step);
+            let actual = full_touch
+                .residents
+                .iter()
+                .find(|state| state.gid == *gid)
+                .map(|state| state.eligibility)
+                .unwrap_or_else(|| {
+                    // The full-touch path evicted this cell only if its
+                    // eligibility underflowed to exact zero.
+                    0.0
+                });
+            assert_eq!(expected.to_bits(), actual.to_bits(), "gid {gid}");
+        }
+        // Every spiking cell must be accounted for between the two stores.
+        for (_, gid) in &ft_trace {
+            let still_active_ft = full_touch.residents.iter().any(|state| state.gid == *gid);
+            let dormant_ep = event_proportional.dormant.contains_key(gid);
+            let active_ep = event_proportional
+                .residents
+                .iter()
+                .any(|state| state.gid == *gid);
+            assert!(still_active_ft == (dormant_ep || active_ep), "gid {gid}");
+        }
+    }
+
+    /// Mixed traffic: dormancy, reactivation from the dormant store, fresh
+    /// first-spikes, and long quiet stretches. Dynamics must stay bit-identical;
+    /// only the documented work/residency accounting may diverge.
+    #[test]
+    fn event_proportional_mixed_traffic_matches_full_touch_dynamics_and_state() {
+        let cells = 32u64;
+        let steps = 600usize;
+        let mut batches = vec![Vec::<ProceduralEventRecord>::new(); steps];
+        for gid in 0..9u64 {
+            batches[0].push(drive(gid, 0, 10.0));
+        }
+        for gid in [2u64, 5] {
+            batches[150].push(drive(gid, 150, 10.0));
+        }
+        for gid in 20..25u64 {
+            batches[150].push(drive(gid, 150, 10.0));
+        }
+        for gid in [0u64, 3, 20] {
+            batches[400].push(drive(gid, 400, 10.0));
+        }
+
+        let mut full_touch = ep_runtime(cells, PROCEDURAL_STEPPING_FULL_TOUCH);
+        let ft_trace = run_steps(&mut full_touch, &batches);
+        let mut event_proportional = ep_runtime(cells, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+        let ep_trace = run_steps(&mut event_proportional, &batches);
+
+        assert!(!ft_trace.is_empty());
+        assert_eq!(
+            ft_trace, ep_trace,
+            "spike traces must match on mixed traffic"
+        );
+
+        let ft = full_touch.counters;
+        let ep = event_proportional.counters;
+        assert_eq!(ft.delivered_events, ep.delivered_events);
+        assert_eq!(ft.generated_edges, ep.generated_edges);
+        assert_eq!(ft.spike_events, ep.spike_events);
+        assert_eq!(ft.spiking_distinct, ep.spiking_distinct);
+        assert_eq!(ft.retained_nonzero_cells, ep.retained_nonzero_cells);
+        assert_eq!(ft.resident_peak, ep.resident_peak);
+        assert_eq!(ft.current_step, ep.current_step);
+        // Documented divergence: EP does not "update" dormant cells.
+        assert!(ep.updated_distinct <= ft.updated_distinct);
+        assert!(ep.cell_step_evaluations < ft.cell_step_evaluations);
+
+        let current_step = full_touch.current_step;
+        for (gid, bits) in resident_bits(&event_proportional) {
+            let ft_state = full_touch
+                .residents
+                .iter()
+                .find(|state| state.gid == gid)
+                .expect("actively-stepping EP cell must be active in full-touch too");
+            let record = ft_state.record();
+            let ft_bits = [
+                record.voltage_relative_mv.to_bits(),
+                record.after_spike_current_0_pa.to_bits(),
+                record.after_spike_current_1_pa.to_bits(),
+                record.threshold_spike_mv.to_bits(),
+                record.threshold_voltage_mv.to_bits(),
+                record.synaptic_current_pa.to_bits(),
+                record.eligibility.to_bits(),
+            ];
+            assert_eq!(bits, ft_bits, "active-state mismatch at gid {gid}");
+        }
+        for (gid, entry) in &event_proportional.dormant {
+            let replayed = replay_eligibility(entry.eligibility, entry.elig_step, current_step);
+            match full_touch.residents.iter().find(|state| state.gid == *gid) {
+                Some(state) => {
+                    assert_eq!(replayed.to_bits(), state.eligibility.to_bits(), "gid {gid}");
+                    assert!(state.is_fast_rest(), "divergent cell must be an elig tail");
+                }
+                None => assert_eq!(
+                    replayed.to_bits(),
+                    0.0f64.to_bits(),
+                    "evicted cell must have underflowed to exact zero"
+                ),
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_stepping_mode_is_rejected_at_creation() {
+        let decay = [0.5, 0.5];
+        assert!(
+            ProceduralRuntime::new(ep_glif(), ep_config(16, 7), decay, decay, [0.0; 2]).is_err()
+        );
     }
 }
