@@ -101,7 +101,9 @@ def resolved_feature_cells(config: RecurrentCircuitConfig) -> int:
 
 # R0-b incremental rollout: single families supported by the circuit so far.
 # Grows with each implementation commit; "traces" is always present.
-_IMPLEMENTED_FEATURE_FAMILIES = frozenset({"traces", "spike_counts"})
+_IMPLEMENTED_FEATURE_FAMILIES = frozenset(
+    {"traces", "spike_counts", "voltage_quantiles"}
+)
 
 _BASE_STATE_ARRAYS = (
     ("_afferent_targets", "afferent_targets", np.int32),
@@ -439,6 +441,10 @@ class RecurrentCellCircuit:
                 self._count_ring = np.zeros(
                     (self._feature_ring_capacity, cells_count), dtype=np.uint32
                 )
+            if "voltage_quantiles" in self.feature_members:
+                self._voltage_ring = np.zeros(
+                    (self._feature_ring_capacity, cells_count), dtype=np.float64
+                )
         sparse_readout = self.config.readout_learning_rule == "sparse_three_factor"
         self._readout_synapses_pa = (
             None
@@ -597,13 +603,41 @@ class RecurrentCellCircuit:
             row += incoming
         self._count_ring[(t - 1) % capacity] = incoming
 
-    def _capture_voltage_boundary(self, t: int) -> None:  # noqa: ARG002
-        raise NotImplementedError("voltage_quantiles lands with the R0-b family-B commit")
+    def _capture_voltage_boundary(self, t: int) -> None:
+        """§2.B boundary capture: one post-observe voltage sample per cell.
+
+        Runs after observe() completes its full sub-step integration and
+        before any strengthen/race consumption; the intra-token trajectory is
+        deliberately not stored. On CUDA the sample set is identical because
+        ``voltage`` is mirrored per token in family-B arms (§3 requirement 3).
+        """
+        capacity = self._feature_ring_capacity
+        self._voltage_ring[(t - 1) % capacity] = (
+            self._reservoir.state.voltage_relative_mv
+        )
+        self._quantile_stale = True
 
     def _refresh_quantile_rows(self) -> None:
-        raise NotImplementedError(
-            "voltage_quantiles lands with the R0-b family-B commit"
-        )
+        """Recompute §2.B rows: pinned np.quantile(method='linear') over each
+        window's ring slice (warm-up truncated). Exact and platform-stable;
+        running/approximate estimators are rejected ex ante."""
+        if not self._quantile_stale:
+            return
+        capacity = self._feature_ring_capacity
+        fill = min(self._observed_tokens, capacity)
+        windows = self._feature_window_tokens
+        if fill == 0:
+            self._quantile_rows[...] = 0.0
+            self._quantile_stale = False
+            return
+        samples = self._voltage_ring[:fill]
+        for k, width in enumerate(windows):
+            lo = max(0, fill - width)
+            block = np.quantile(
+                samples[lo:], (0.10, 0.50, 0.90), axis=0, method="linear"
+            )
+            self._quantile_rows[3 * k : 3 * k + 3] = block
+        self._quantile_stale = False
 
     def _advance_assembly_boundary(self, token_id: int, t: int) -> None:  # noqa: ARG002
         raise NotImplementedError(
@@ -636,7 +670,7 @@ class RecurrentCellCircuit:
             # arms mirror it per token only when the family consumes counts.
             token_spike_counts=self._token_spike_counts,
             mirror_token_spike_counts="spike_counts" in self.feature_members,
-            mirror_boundary_voltage=False,
+            mirror_boundary_voltage="voltage_quantiles" in self.feature_members,
         )
         self._native_local_learner = (
             NativeThreeFactorLearner(
@@ -1081,6 +1115,10 @@ class RecurrentCellCircuit:
         """Make every mutable fitted-cell array available for host inspection."""
         self._native_kernel.synchronize_to_host()
 
+    def synchronize_state_from_host(self) -> None:
+        """Alias of :meth:`synchronize_state_from_device` (R0-b red-test seam)."""
+        self.synchronize_state_from_device()
+
     def reset_sequence(self) -> None:
         self._reservoir.reset()
         self._synaptic_current_pa.fill(0.0)
@@ -1092,6 +1130,7 @@ class RecurrentCellCircuit:
             if "spike_counts" in self.feature_members:
                 self._count_ring.fill(0)
             if "voltage_quantiles" in self.feature_members:
+                self._voltage_ring.fill(0.0)
                 self._quantile_stale = True
             if "assembly_overlap" in self.feature_members:
                 self._occurrences.fill(0)
