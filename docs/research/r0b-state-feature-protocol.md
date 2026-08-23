@@ -302,6 +302,55 @@ boundary updates; composition is an addressing change only. Which two run is
 frozen by the selection rule in §4.4 — chosen BEFORE any combo token is
 observed, from diagnostics the protocol pins now.
 
+## 3. Native mirror requirements
+
+How state is mirrored TODAY (the contract any change must preserve):
+CPU/Rust host numpy arrays ARE the live kernel state; the serial/AVX kernels
+write `spike_mask` per sub-step at fixed sites (lib.rs :107-109 scalar step,
+:158-191 fused pass) and decay/increment every trace row with fixed op order
+(spike-determine → decay → increment; multi-row debug contract lib.rs
+:153). CUDA owns state device-side; mirror mode is chosen at binding
+(recurrent.py :386-390), `"eligibility"` downloads only the K·R bank,
+`"full"` everything mutable (cuda.py :587-602); DtoH bytes/token are
+computed from the mirrored set (:505-508).
+
+Per family (all mandatory before that family's gate arm):
+
+1. **A (`spike_counts`) — kernel accumulation, all three backends.** Each
+   kernel gains a u32 `(cells,)` accumulator `token_spike_counts`, cleared
+   at token start and folded at EXACTLY the existing mask-write sites
+   (`counts[cell] += crossed`). No new pass over cells; no change to spike
+   determination or to any trace row. Rust serial + AVX and CUDA implement
+   identical accumulation order. The buffer is host-live on CPU (like all
+   state) and added to the CUDA eligibility-mode mirror payload.
+2. **A — CUDA mirror byte contract.** New mirror payload for family-A arms:
+   traces bank (8·K·R B, kept warm per §1.2) + counts (4·R B).
+   `device_to_host_bytes_per_token` (:505-508) and simulation-speed.md
+   updated to state both terms explicitly rather than silently growing
+   traffic.
+3. **B (`voltage_quantiles`) — boundary capture only; NO kernel changes.**
+   CPU: `_voltage_ring` append reads `state.voltage_relative_mv` directly
+   post-observe (host-live). CUDA: new mirror mode
+   `"eligibility_plus_voltage"` = traces bank + voltage f64 (8·R B/token);
+   quantile math happens HOST-side from downloaded boundaries so CPU/CUDA
+   consume identical sample sets (parity testable bit-exactly, R0B-T6).
+   Forcing the existing `"full"` mirror was REJECTED: it would drag 60+
+   B/cell/token of unrelated arrays into a sparse-readout arm's budget.
+4. **C (`assembly_overlap`) — zero kernel/mirror delta.** Token ids are
+   known host-side; assemblies are the host-owned afferent table. Nothing
+   native moves. This family is the control for "native cost" claims in §6.
+5. **Quiescent/frontier safety.** Activity/frontier checks
+   (`eligibility[cell] != 0.0`-style, lib.rs :568 region; active-count
+   accounting native.py :1277-1278) consider ONLY trace rows and cell
+   dynamics — never the new accumulators/rings. A zero-trace cell with
+   nonzero counts stays quiescent exactly as today; frontier membership is
+   bit-identical across families by construction (R0B-T7 asserts it).
+6. **Parity tests extend per family** (§5): 64-token CPU-vs-CUDA equality
+   asserted on the counts accumulator (A) and on boundary-voltage samples
+   (B); reset synchronization zeroes accumulators on device; C asserts
+   backend-invariance of its host bookkeeping after switching mid-sequence.
+
 <!-- R0B-CONTINUES -->
+
 
 
