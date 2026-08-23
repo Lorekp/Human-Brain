@@ -130,17 +130,30 @@ def test_cpu_device_keeps_the_python_circuit_n_cap() -> None:
         harness._validate_arguments(_arguments(N=16384, device="cpu"))
     # R0 multi-trace arithmetic (protocol §5): the ridge feature space is
     # F = K*N + 1 with K = 8 traces, so the 1.5 GiB single-process peak-array
-    # budget now binds at N = 1669. The pre-R0 N=4096 boundary would need
-    # ~8.77 GB of peak arrays and is refused by the same honest projection.
+    # budget would bind at N = 1669. Superseded by R0-b protocol §6: dense-
+    # ridge statistics on the cpu path are gated by the preregistered
+    # 20 GiB host budget (family-aware geometry), which is what lets the
+    # frozen voltage_quantiles / combo arms run at N=1024.
     limit = max(
         n
         for n in range(1, harness._MAX_N + 1)
         if harness._projected_peak_bytes(n, "ridge") <= harness._RAM_BUDGET_BYTES
     )
-    assert limit == 1669  # pin the moved multi-trace boundary explicitly
+    assert limit == 1669  # the legacy 1.5 GiB projection arithmetic is intact
+    ridge_limit = max(
+        n
+        for n in range(1, harness._MAX_N + 1)
+        if harness._projected_peak_bytes(n, "ridge")
+        <= harness._HOST_RIDGE_BUDGET_BYTES
+    )
+    # Within the python-circuit N cap the 20 GiB §6 budget never binds
+    # (_MAX_CUDA_HOST_RIDGE_CELLS=4406 exceeds _MAX_N=4096).
+    assert ridge_limit == harness._MAX_N
+    assert harness._MAX_CUDA_HOST_RIDGE_CELLS > harness._MAX_N
     harness._validate_arguments(_arguments(N=limit, device="cpu"))
-    with pytest.raises(SystemExit, match="single-process budget"):
-        harness._validate_arguments(_arguments(N=limit + 1, device="cpu"))
+    harness._validate_arguments(_arguments(N=ridge_limit, device="cpu"))
+    with pytest.raises(SystemExit, match="python circuit limit"):
+        harness._validate_arguments(_arguments(N=harness._MAX_N + 1, device="cpu"))
 
 
 def test_cuda_device_refuses_stale_16k_mission_and_pins_the_new_boundary() -> None:

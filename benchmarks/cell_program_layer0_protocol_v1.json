@@ -62,6 +62,8 @@
         2287.441471871285,
         4000.0
       ],
+      "feature_family": "traces",
+      "feature_window_tokens": null,
       "output_base_current_pa": 450.0,
       "output_race_ms": 30.0,
       "readout_ridge": 1.0,
@@ -85,81 +87,279 @@
       {
         "id": "identity",
         "prompt": "Return the input integer unchanged.",
-        "tokens": ["ARG0", "END"],
+        "tokens": [
+          "ARG0",
+          "END"
+        ],
         "entry_point": "identity",
-        "cases": [[-7, -7], [0, 0], [12, 12]]
+        "cases": [
+          [
+            -7,
+            -7
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            12,
+            12
+          ]
+        ]
       },
       {
         "id": "absolute",
         "prompt": "Return the absolute value of the input integer.",
-        "tokens": ["ABS", "ARG0", "END"],
+        "tokens": [
+          "ABS",
+          "ARG0",
+          "END"
+        ],
         "entry_point": "absolute",
-        "cases": [[-7, 7], [0, 0], [12, 12]]
+        "cases": [
+          [
+            -7,
+            7
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            12,
+            12
+          ]
+        ]
       },
       {
         "id": "increment",
         "prompt": "Return the input integer plus one.",
-        "tokens": ["ADD", "ARG0", "ONE", "END"],
+        "tokens": [
+          "ADD",
+          "ARG0",
+          "ONE",
+          "END"
+        ],
         "entry_point": "increment",
-        "cases": [[-7, -6], [0, 1], [12, 13]]
+        "cases": [
+          [
+            -7,
+            -6
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            12,
+            13
+          ]
+        ]
       },
       {
         "id": "decrement",
         "prompt": "Return the input integer minus one.",
-        "tokens": ["SUB", "ARG0", "ONE", "END"],
+        "tokens": [
+          "SUB",
+          "ARG0",
+          "ONE",
+          "END"
+        ],
         "entry_point": "decrement",
-        "cases": [[-7, -8], [0, -1], [12, 11]]
+        "cases": [
+          [
+            -7,
+            -8
+          ],
+          [
+            0,
+            -1
+          ],
+          [
+            12,
+            11
+          ]
+        ]
       },
       {
         "id": "double",
         "prompt": "Return two times the input integer.",
-        "tokens": ["MUL", "TWO", "ARG0", "END"],
+        "tokens": [
+          "MUL",
+          "TWO",
+          "ARG0",
+          "END"
+        ],
         "entry_point": "double_value",
-        "cases": [[-7, -14], [0, 0], [12, 24]]
+        "cases": [
+          [
+            -7,
+            -14
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            12,
+            24
+          ]
+        ]
       },
       {
         "id": "floor_zero",
         "prompt": "Return the greater of zero and the input integer.",
-        "tokens": ["MAX", "ZERO", "ARG0", "END"],
+        "tokens": [
+          "MAX",
+          "ZERO",
+          "ARG0",
+          "END"
+        ],
         "entry_point": "floor_zero",
-        "cases": [[-7, 0], [0, 0], [12, 12]]
+        "cases": [
+          [
+            -7,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            12,
+            12
+          ]
+        ]
       },
       {
         "id": "cap_two",
         "prompt": "Return the lesser of two and the input integer.",
-        "tokens": ["MIN", "TWO", "ARG0", "END"],
+        "tokens": [
+          "MIN",
+          "TWO",
+          "ARG0",
+          "END"
+        ],
         "entry_point": "cap_two",
-        "cases": [[-7, -7], [0, 0], [12, 2]]
+        "cases": [
+          [
+            -7,
+            -7
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            12,
+            2
+          ]
+        ]
       },
       {
         "id": "constant_minus_one",
         "prompt": "Return negative one for every input integer.",
-        "tokens": ["NEG_ONE", "END"],
+        "tokens": [
+          "NEG_ONE",
+          "END"
+        ],
         "entry_point": "constant_minus_one",
-        "cases": [[-7, -1], [0, -1], [12, -1]]
+        "cases": [
+          [
+            -7,
+            -1
+          ],
+          [
+            0,
+            -1
+          ],
+          [
+            12,
+            -1
+          ]
+        ]
       }
     ],
     "public_dev_probe": [
       {
         "id": "absolute_after_increment",
         "prompt": "Add one to the input integer, then return its absolute value.",
-        "tokens": ["ABS", "ADD", "ARG0", "ONE", "END"],
+        "tokens": [
+          "ABS",
+          "ADD",
+          "ARG0",
+          "ONE",
+          "END"
+        ],
         "entry_point": "absolute_after_increment",
-        "cases": [[-7, 6], [-1, 0], [4, 5]]
+        "cases": [
+          [
+            -7,
+            6
+          ],
+          [
+            -1,
+            0
+          ],
+          [
+            4,
+            5
+          ]
+        ]
       },
       {
         "id": "clamp_zero_two",
         "prompt": "Keep the input integer between zero and two.",
-        "tokens": ["MIN", "TWO", "MAX", "ZERO", "ARG0", "END"],
+        "tokens": [
+          "MIN",
+          "TWO",
+          "MAX",
+          "ZERO",
+          "ARG0",
+          "END"
+        ],
         "entry_point": "clamp_zero_two",
-        "cases": [[-7, 0], [1, 1], [12, 2]]
+        "cases": [
+          [
+            -7,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            12,
+            2
+          ]
+        ]
       },
       {
         "id": "cap_doubled_value",
         "prompt": "Double the input integer and return no more than two.",
-        "tokens": ["MIN", "TWO", "MUL", "TWO", "ARG0", "END"],
+        "tokens": [
+          "MIN",
+          "TWO",
+          "MUL",
+          "TWO",
+          "ARG0",
+          "END"
+        ],
         "entry_point": "cap_doubled_value",
-        "cases": [[-3, -6], [1, 2], [4, 2]]
+        "cases": [
+          [
+            -3,
+            -6
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            4,
+            2
+          ]
+        ]
       }
     ]
   },

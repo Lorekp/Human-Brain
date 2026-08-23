@@ -66,7 +66,10 @@ def _sparse_circuit(**overrides: object) -> RecurrentCellCircuit:
         active_reservoir_cells=None,
         input_fanout=4,
         recurrent_fanout=2,
-        token_interval_ms=2.0,
+        # 5.0 ms is the incumbent timing: the W_0-substitution identity
+        # exp(-1/W_0) == exp(-T_tok / tau_0) asserted in R0B-T9 holds only
+        # when tau_0/T = 80/5 = 16 = W_0 (frozen protocol §1.3).
+        token_interval_ms=5.0,
         input_pulse_ms=1.0,
         input_current_pa=8_000.0,
         recurrent_current_pa=325.0,
@@ -920,10 +923,16 @@ def test_r0b_t11_combo_composition(combo: str, members: tuple[str, str]) -> None
     np.testing.assert_array_equal(combo_circuit.feature_state_vector(), concatenated)
     sizes = [block.size for block in blocks]
     assert combo_circuit.feature_cell_count == sum(sizes)
+    # F_combo arithmetic at THIS circuit's reservoir size (FAMILY_FEATURE_CELLS
+    # states the per-cell rows at R=1024).
+    per_cell = {
+        name: value // 1024
+        for name, value in FAMILY_FEATURE_CELLS.items()
+    }
     assert combo_circuit.feature_cell_count == (
-        FAMILY_FEATURE_CELLS.get(members[0], 8192)
-        + FAMILY_FEATURE_CELLS.get(members[1], 8192)
-    ) // 8 * 8
+        (per_cell[members[0]] + per_cell[members[1]])
+        * combo_circuit.config.reservoir_cells
+    )
     # Canonical order: A < B < C by construction of the grammar tests.
 
 

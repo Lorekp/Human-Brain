@@ -403,7 +403,9 @@ def test_r0_t4_checkpoint_roundtrip_v5(tmp_path) -> None:
 
 
 def test_r0_t4b_v5_format_string_is_written() -> None:
-    assert ARTIFACT_FORMAT_V5 == "recurrent-human-cell-checkpoint-v5"
+    # Superseded by R0-b protocol §1.5: writers always emit v6; v5/v3 remain
+    # readable legacy formats.
+    assert ARTIFACT_FORMAT_V5 == "recurrent-human-cell-checkpoint-v6"
 
 
 # --------------------------------------------------------------------------
@@ -452,7 +454,8 @@ def test_r0_t5_v3_legacy_single_tau_loads_bit_identically(tmp_path) -> None:
     with np.load(v5_path, allow_pickle=False) as payload:
         arrays = {name: payload[name] for name in payload.files}
     metadata = json.loads(str(arrays["metadata"]))
-    assert metadata["format"] == "recurrent-human-cell-checkpoint-v5"
+    # Writers emit v6 since R0-b §1.5.
+    assert metadata["format"] == "recurrent-human-cell-checkpoint-v6"
     cell_metadata = dict(metadata)
     cell_metadata["format"] = "recurrent-human-cell-checkpoint-v3"
     cell_metadata.pop("eligibility_taus_ms", None)

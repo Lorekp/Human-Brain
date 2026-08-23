@@ -638,9 +638,14 @@ class CudaRecurrentKernel:
 
     def _host_mirror_arrays(self) -> dict[str, np.ndarray]:
         if self._host_mirror == "full":
-            # Incumbent full-touch payload: exactly the seven legacy mutable
-            # arrays (byte contract pinned by tests/test_cuda.py).
-            return self._mutable_arrays()
+            # Incumbent full-touch payload plus exactly the R0-b terms this
+            # arm's family consumes (byte contract for traces arms stays
+            # pinned to the seven legacy mutable arrays - tests/test_cuda.py).
+            arrays = self._mutable_arrays()
+            if self._mirror_token_spike_counts:
+                assert self._token_spike_counts is not None
+                arrays["token_spike_counts"] = self._token_spike_counts
+            return arrays
         arrays = {"eligibility": self._eligibility}
         if self._mirror_token_spike_counts:
             assert self._token_spike_counts is not None

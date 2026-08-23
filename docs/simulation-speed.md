@@ -41,6 +41,16 @@ mirror downloads the trace bank alone: 8·K bytes per cell per token. Reporting
 this boundary separately prevents kernel-only throughput from being mistaken
 for end-to-end throughput.
 
+R0-b state-feature arms extend the sparse-readout mirror payload explicitly
+(frozen r0b protocol §3): family A (spike_counts) downloads the trace bank
+plus the u32 per-token spike-count accumulator — 8·K + 4 bytes per cell per
+token; family B (voltage_quantiles) mode ``eligibility_plus_voltage``
+downloads the trace bank plus the boundary voltage samples — 8·K + 8 bytes
+per cell per token; combos carrying both members download bank + counts +
+voltage (8·K + 12). The traces-family payload is unchanged, and the
+full-touch contract above is unchanged; only these declared per-arm terms
+grow, never silently.
+
 This follows NVIDIA's documented
 [cooperative-grid synchronization](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/cooperative-groups.html)
 pattern and its [best-practices guidance](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/)

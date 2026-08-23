@@ -283,6 +283,10 @@ unsafe fn recurrent_cell_chunk_avx2(
             .iter()
             .any(|&remaining| remaining != 0)
         {
+            let counts_slice = match token_spike_counts.as_deref_mut() {
+                Some(counts) => Some(&mut counts[cell..cell + width]),
+                None => None,
+            };
             recurrent_cell_chunk_scalar(
                 config,
                 after_decay,
@@ -300,7 +304,7 @@ unsafe fn recurrent_cell_chunk_avx2(
                 &mut synaptic_current[cell..cell + width],
                 eligibility,
                 &mut spike_mask[cell..cell + width],
-                token_spike_counts.as_deref_mut(),
+                counts_slice,
             );
             cell += width;
             continue;
@@ -400,6 +404,10 @@ unsafe fn recurrent_cell_chunk_avx2(
     }
 
     if cell < voltage.len() {
+        let counts_slice = match token_spike_counts.as_deref_mut() {
+            Some(counts) => Some(&mut counts[cell..]),
+            None => None,
+        };
         recurrent_cell_chunk_scalar(
             config,
             after_decay,
@@ -417,7 +425,7 @@ unsafe fn recurrent_cell_chunk_avx2(
             &mut synaptic_current[cell..],
             eligibility,
             &mut spike_mask[cell..],
-            token_spike_counts.as_deref_mut(),
+            counts_slice,
         );
     }
 }

@@ -104,6 +104,7 @@ from humanbrain.recurrent import (  # noqa: E402
     READOUT_LEARNING_RULES,
     RecurrentCellCircuit,
     RecurrentCircuitConfig,
+    parse_feature_family,
 )
 
 # R0 multi-trace bank size K; the readout feature space is K * n_cells.
@@ -556,6 +557,7 @@ def _grow_circuit(
     local_competitive_margin_pa: float = 64.0,
     inhibitory_fraction: float = DEFAULT_INHIBITORY_FRACTION,
     ridge_backend: str = "numpy",
+    feature_family: str = "traces",
 ) -> RecurrentCellCircuit:
     """Drive the circuit's observe/strengthen cycle over the scheduled corpus."""
     input_fanout = _INPUT_FANOUT
@@ -570,6 +572,7 @@ def _grow_circuit(
         local_learning_rate_pa=local_learning_rate_pa,
         local_competitive_margin_pa=local_competitive_margin_pa,
         inhibitory_fraction=inhibitory_fraction,
+        feature_family=feature_family,
     )
     circuit = RecurrentCellCircuit(token_cells=_TOKEN_CELLS, config=config)
     # Bind BEFORE any strengthen: the accelerated flush must capture every
@@ -695,9 +698,12 @@ def collect_state_separation(
         circuit.reset_sequence()
         for token_id in input_ids:
             circuit.observe(token_id)
-        # R0 G1 state vector: the FULL flat [e_0; ...; e_K-1] trace buffer
-        # the first decision race sees (bias excluded), not just row 0.
-        channels["eligibility"].append(circuit._feature_traces.copy())
+        # R0-b G1 state vector: the flat ACTIVE-family buffer the first
+        # decision race sees (bias excluded) - traces under 'traces', the
+        # window/quantile/overlap bank under successor families (frozen R0-b
+        # protocol §1.2 channel swap; pairing, strata, exclusion, medians
+        # untouched).
+        channels["eligibility"].append(circuit.feature_state_vector().copy())
         channels["synaptic_current"].append(circuit._synaptic_current_pa.copy())
         strata.append("List[Int]" if task.family_id.startswith("list_") else "Int")
         first_teacher.append(task.teacher_tokens[0])
@@ -844,10 +850,22 @@ def _evaluate_cohort(
     }
 
 
-def _projected_peak_bytes(n_cells: int, readout_rule: str) -> int:
+def _feature_cells_for(family: str, n_cells: int) -> int:
+    """F for one family at a reservoir size (mirrors recurrent.py geometry)."""
+    members = parse_feature_family(family)
+    if members == ("traces",):
+        return _TRACE_COUNT * n_cells
+    n_win = 8  # WINDOW_TOKENS length; ladder arms use the frozen bank
+    rows = {"spike_counts": n_win, "voltage_quantiles": 3 * n_win, "assembly_overlap": n_win}
+    return sum(rows[member] for member in members) * n_cells
+
+
+def _projected_peak_bytes(
+    n_cells: int, readout_rule: str, feature_family: str = "traces"
+) -> int:
     reservoir = 16 * n_cells * 8
     if readout_rule == "ridge":
-        features = _TRACE_COUNT * n_cells + 1
+        features = _feature_cells_for(feature_family, n_cells) + 1
         normal = features * features * 8
         moments = _TOKEN_CELLS * features * 8
         synapses = _TOKEN_CELLS * features * 8
@@ -855,7 +873,7 @@ def _projected_peak_bytes(n_cells: int, readout_rule: str) -> int:
         return reservoir + normal + moments + synapses + batch
     if readout_rule == "three_factor":
         return reservoir + _TOKEN_CELLS * n_cells * 8
-    candidate_count = min(n_cells, 4 * 64)
+    candidate_count = min(_feature_cells_for(feature_family, n_cells), 4 * 64)
     return reservoir + _TOKEN_CELLS * (candidate_count * 16 + 64 * 16 + 16)
 
 
@@ -889,6 +907,7 @@ def run_experiment(
     inhibitory_fraction: float = DEFAULT_INHIBITORY_FRACTION,
     ridge_backend: str = "numpy",
     with_state_separation: bool = False,
+    feature_family: str = "traces",
 ) -> dict[str, object]:
     """Execute one arm end-to-end and return its fixed-schema metrics record."""
     started = time.perf_counter()
@@ -928,6 +947,7 @@ def run_experiment(
         local_competitive_margin_pa=local_competitive_margin_pa,
         inhibitory_fraction=inhibitory_fraction,
         ridge_backend=ridge_backend,
+        feature_family=feature_family,
     )
     ridge_backend_used = str(
         getattr(circuit, "_ridge_backend_label", "numpy")
@@ -981,6 +1001,7 @@ def run_experiment(
                 local_learning_rate_pa=local_learning_rate_pa,
                 local_competitive_margin_pa=local_competitive_margin_pa,
                 inhibitory_fraction=inhibitory_fraction,
+                feature_family=feature_family,
             )
         ),
         "frozen_protocol_sha256": curriculum["frozen_protocol_sha256"],
@@ -998,6 +1019,7 @@ def run_experiment(
         "schedule": schedule,
         "data_scale": data_scale,
         "supervision": supervision,
+        "feature_family": feature_family,
         "curriculum_sha256": curriculum["sha256"],
         "train_replay_tasks": train["replayed"],
         "train_cases_total": train["cases_total"],
@@ -1106,6 +1128,11 @@ def _validate_arguments(arguments: argparse.Namespace) -> None:
         )
     if arguments.readout_rule not in READOUT_RULES:
         _fail(f"--readout-rule must be one of {READOUT_RULES}")
+    feature_family_value = getattr(arguments, "feature_family", "traces")
+    try:
+        parse_feature_family(feature_family_value)
+    except ValueError as error:
+        _fail(f"--feature-family: {error}")
     if arguments.schedule not in SCHEDULES:
         _fail(f"--schedule must be one of {SCHEDULES}")
     if arguments.data_scale not in DATA_SCALES:
@@ -1131,11 +1158,22 @@ def _validate_arguments(arguments: argparse.Namespace) -> None:
         ):
             _fail(f"--{name.replace('_', '-')} must be a safe single path segment")
     if device == "cpu":
-        projected = _projected_peak_bytes(arguments.N, arguments.readout_rule)
-        if projected > _RAM_BUDGET_BYTES:
+        feature_family = getattr(arguments, "feature_family", "traces")
+        projected = _projected_peak_bytes(
+            arguments.N, arguments.readout_rule, feature_family
+        )
+        # Dense-ridge statistics are the binding allocation on this path and
+        # scale with the FAMILY geometry (R0-b §6 preregisters the 20 GiB
+        # host budget for them; the 1.5 GiB figure predates bank geometries).
+        budget = (
+            _HOST_RIDGE_BUDGET_BYTES
+            if arguments.readout_rule == "ridge"
+            else _RAM_BUDGET_BYTES
+        )
+        if projected > budget:
             _fail(
                 f"projected peak arrays {projected} bytes exceed the "
-                f"{_RAM_BUDGET_BYTES}-byte single-process budget"
+                f"{budget}-byte single-process budget"
             )
 
 
@@ -1190,6 +1228,16 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "fraction of active reservoir cells carrying negative recurrent "
             "weight signs (default 0.2 = shipped constant; V3a EI-balance knob)"
+        ),
+    )
+    parser.add_argument(
+        "--feature-family",
+        dest="feature_family",
+        default="traces",
+        help=(
+            "R0-b readout state-feature family: 'traces' (incumbent), "
+            "'spike_counts', 'voltage_quantiles', 'assembly_overlap', or a "
+            "canonical-order 'combo:<f1>+<f2>'"
         ),
     )
     parser.add_argument(
@@ -1257,6 +1305,7 @@ def main(argv: list[str] | None = None) -> int:
         inhibitory_fraction=arguments.inhibitory_fraction,
         ridge_backend=ridge_backend,
         with_state_separation=arguments.with_state_separation,
+        feature_family=arguments.feature_family,
     )
     if arguments.check_determinism:
         repeat = run_experiment(
@@ -1275,6 +1324,7 @@ def main(argv: list[str] | None = None) -> int:
             inhibitory_fraction=arguments.inhibitory_fraction,
             ridge_backend=ridge_backend,
             with_state_separation=arguments.with_state_separation,
+            feature_family=arguments.feature_family,
         )
         if _record_without_wall(record) != _record_without_wall(repeat):
             _fail("determinism check failed: identical-seed records differ beyond wall_s")

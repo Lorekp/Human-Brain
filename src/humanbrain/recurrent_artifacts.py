@@ -13,10 +13,14 @@ from humanbrain.recurrent import RecurrentCellCircuit
 from humanbrain.recurrent_language import RecurrentCellLanguageModel
 from humanbrain.tokenizer import BytePhraseTokenizer
 
-FORMAT = "recurrent-human-cell-checkpoint-v5"
-# Legacy single-trace era. Read-only: writers always emit v5; v3 payloads
-# restore exactly under the K=1 interpretation (frozen protocol §1.5).
-LEGACY_FORMATS = ("recurrent-human-cell-checkpoint-v3",)
+FORMAT = "recurrent-human-cell-checkpoint-v6"
+# Legacy eras. Read-only: writers always emit v6 (R0-b §1.5). v5 payloads
+# restore exactly under the traces family; v3 payloads under the K=1
+# interpretation (frozen protocol §1.5).
+LEGACY_FORMATS = (
+    "recurrent-human-cell-checkpoint-v3",
+    "recurrent-human-cell-checkpoint-v5",
+)
 SUPPORTED_FORMATS = (FORMAT, *LEGACY_FORMATS)
 
 
@@ -49,7 +53,12 @@ def load_recurrent_checkpoint(path: Path) -> RecurrentCellLanguageModel:
         artifact_format = metadata.get("format")
         if artifact_format not in SUPPORTED_FORMATS:
             raise ValueError("unsupported recurrent checkpoint format")
-        if artifact_format in LEGACY_FORMATS and "eligibility_taus_ms" in metadata:
+        # The K=1 era check applies to v3 only; v5 legitimately carries
+        # multi-trace guards.
+        if (
+            artifact_format == "recurrent-human-cell-checkpoint-v3"
+            and "eligibility_taus_ms" in metadata
+        ):
             raise ValueError(
                 "legacy v3 checkpoint must not carry multi-trace eligibility_taus_ms"
             )
