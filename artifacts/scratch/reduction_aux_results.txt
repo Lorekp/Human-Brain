@@ -1,0 +1,5 @@
+sum-order check: 2000 trials, mismatches=0, worst ulp=0
+N=65536 full GLIF5   : 0.318 ms/step  (205.79 Mcell-steps/s)
+N=65536 reduced G3 : 0.292 ms/step  (224.14 Mcell-steps/s)
+dispatch overhead ratio: 0.9181 (identical streams expected => ~1)
+reduced constants: phi=-0.0 vfactor=np.float64(0.0) bfactor=np.float64(0.0)
