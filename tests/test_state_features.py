@@ -169,12 +169,13 @@ def test_r0b_t1_window_bank_determinism(seed: int) -> None:
 
 
 def _reference_count_windows(counts: list[np.ndarray], windows) -> np.ndarray:
-    """Exact §2.A semantics: sliding sums over stored per-token vectors."""
+    """Exact §2.A semantics: the sliding sum over the LAST ``width`` stored
+    per-token count vectors (hard-edged, warm-up truncated)."""
     rows = np.zeros((len(windows), counts[0].size), dtype=np.float64)
+    held = len(counts)
     for k, width in enumerate(windows):
-        for t in range(len(counts)):
-            lo = max(0, t - width + 1)
-            rows[k] += np.sum(counts[lo : t + 1], axis=0)
+        lo = max(0, held - width)
+        rows[k] = np.sum(counts[lo:], axis=0)
     return rows
 
 
@@ -183,7 +184,7 @@ def test_r0b_t2_spike_count_reference_equality() -> None:
     the kernel-maintained per-token spike-count vectors (repeats,
     refractory-suppressed cells, quiescent tail >= 5*W_7)."""
     circuit = _ridge_circuit(feature_family="spike_counts")
-    sequence = [2, 2, 5, 2, 9, 5] + [7] * (5 * WINDOW_TOKENS[-1])
+    sequence = [2, 2, 5, 2, 8, 5] + [7] * (5 * WINDOW_TOKENS[-1])
     captured: list[np.ndarray] = []
     for step, token in enumerate(sequence, start=1):
         circuit.observe(token)
@@ -196,9 +197,17 @@ def test_r0b_t2_spike_count_reference_equality() -> None:
     # subtracts exactly once (final state equals the reference).
     expected = _reference_count_windows(captured, WINDOW_TOKENS)
     np.testing.assert_array_equal(_window_rows(circuit), expected)
-    # Quiescent tail drove every row to zero: only the last W_k tokens are
-    # identical constant inputs, so all rows must agree bitwise.
-    np.testing.assert_array_equal(_window_rows(circuit)[0], _window_rows(circuit)[-1])
+    # Hard-edged forgetting: row k must equal the exact sliding bincount of
+    # ONLY the last W_k captured vectors - no residue of anything older (the
+    # property the falsified exponential trace bank can never satisfy).
+    for k, width in enumerate(WINDOW_TOKENS):
+        np.testing.assert_array_equal(
+            _window_rows(circuit)[k],
+            _reference_count_windows(captured, [width])[0],
+        )
+    # Contrast: under the SAME stimulus the maintained trace bank retains
+    # nonzero state everywhere (the tail keeps the reservoir active).
+    assert np.any(circuit._eligibility_traces != 0.0)
 
 
 def test_r0b_t2_voltage_quantile_reference_equality() -> None:
@@ -207,7 +216,7 @@ def test_r0b_t2_voltage_quantile_reference_equality() -> None:
     warm-up truncation."""
     circuit = _ridge_circuit(feature_family="voltage_quantiles")
     ring_rows: list[np.ndarray] = []
-    sequence = [2, 2, 5, 2, 9, 5]
+    sequence = [2, 2, 5, 2, 8, 5]
     for token in sequence + [7] * 40:
         circuit.observe(token)
         ring_rows.append(circuit._reservoir.state.voltage_relative_mv.copy())
@@ -232,7 +241,7 @@ def test_r0b_t2_assembly_overlap_reference_equality() -> None:
     circuit = _ridge_circuit(feature_family="assembly_overlap")
     _install_toy_assemblies(circuit)
     history: list[int] = []
-    sequence = [2, 2, 5, 2, 9, 5] + [3] * (WINDOW_TOKENS[1] + 6)
+    sequence = [2, 2, 5, 2, 8, 5] + [3] * (WINDOW_TOKENS[1] + 6)
 
     def reference() -> np.ndarray:
         rows = np.zeros((len(WINDOW_TOKENS), 64), dtype=np.float64)
@@ -259,11 +268,12 @@ def test_r0b_t2_assembly_overlap_reference_equality() -> None:
 
 
 def test_r0b_t3_window_edge_hard_expiry() -> None:
-    """Failure: after one distinct pulse plus W_7 pair-free silence, family-A
-    rows do not hit zero at EXACTLY t = pulse + W_k (no decay tail); C does
-    not clear at each edge; B does not quantile a constant signal exactly;
-    or the trace bank under the same stimulus does NOT retain its
-    exp(-T/tau) tails (the contrast case must differ from A's hard expiry)."""
+    """Failure: family-A/C rows do not drop the pulse's contribution at
+    EXACTLY t = pulse + W_k - one integer subtraction, no decay tail, no
+    residue of anything older than the window; B does not quantile a constant
+    signal exactly; or the trace bank under the same stimulus does NOT retain
+    its exp(-T/tau) tails (the contrast case must differ from hard expiry).
+    """
     pulse_token = 4
     silence = max(WINDOW_TOKENS) + 2
     sequence = [pulse_token] + [8] * silence
@@ -272,25 +282,76 @@ def test_r0b_t3_window_edge_hard_expiry() -> None:
     c_circuit = _ridge_circuit(feature_family="assembly_overlap")
     _install_toy_assemblies(c_circuit)
     tr_circuit = _ridge_circuit(feature_family="traces")
+    a_counts: list[np.ndarray] = []
+    c_history: list[int] = []
+    previous_a: np.ndarray | None = None
+    previous_c: np.ndarray | None = None
+
+    def reference_coverage(history: list[int]) -> np.ndarray:
+        table = c_circuit._afferent_targets
+        rows = np.zeros((len(WINDOW_TOKENS), 64), dtype=np.float64)
+        for k, width in enumerate(WINDOW_TOKENS):
+            active = history[-width:]
+            for cell in range(64):
+                rows[k, cell] = len(
+                    {t for t in active if cell in set(table[t])}
+                )
+        return rows
+
     for step, token in enumerate(sequence, start=1):
+        if step > 1:
+            previous_a = _window_rows(a_circuit).copy()
+            previous_c = c_circuit.feature_state_vector().copy()
         a_circuit.observe(token)
         c_circuit.observe(token)
         tr_circuit.observe(token)
-        for k, width in enumerate(WINDOW_TOKENS):
-            age = step - 1  # tokens since the pulse
-            if age >= width:
-                assert not _window_rows(a_circuit)[k].any(), (
-                    f"family A row {k} must be identically zero once the "
-                    f"pulse left the window (t={step}, W={width})"
-                )
-                assert not c_circuit.feature_state_vector()[
-                    k * 64 : (k + 1) * 64
-                ].any()
+        a_counts.append(a_circuit._token_spike_counts.copy())
+        c_history.append(token)
 
-    np.testing.assert_array_equal(_window_rows(a_circuit), 0.0)
-    np.testing.assert_array_equal(c_circuit.feature_state_vector(), 0.0)
+        # Exact per-step equality with the §2 semantics over the ACTUAL
+        # history (the repeated tail keeps firing, so rows are live sums).
+        np.testing.assert_array_equal(
+            _window_rows(a_circuit),
+            _reference_count_windows(a_counts, WINDOW_TOKENS),
+        )
+        coverage = c_circuit.feature_state_vector().reshape(
+            len(WINDOW_TOKENS), 64
+        )
+        np.testing.assert_array_equal(coverage, reference_coverage(c_history))
+
+        # Edge identity: when the pulse exits window k (step == W_k + 1) it
+        # is subtracted EXACTLY once, in ONE step, with no fractional tail.
+        if step > 1:
+            assert previous_a is not None and previous_c is not None
+            for k, width in enumerate(WINDOW_TOKENS):
+                if step != width + 1:
+                    continue
+                delta_a = _window_rows(a_circuit)[k] - previous_a[k]
+                np.testing.assert_array_equal(
+                    delta_a, a_counts[-1] - a_counts[0]
+                )
+                delta_c = (
+                    c_circuit.feature_state_vector()[
+                        k * 64 : (k + 1) * 64
+                    ]
+                    - previous_c[k * 64 : (k + 1) * 64]
+                )
+                # Arrival (token already active) transitions nothing; only
+                # the single pulse presentation leaves the window.
+                expected_delta = np.zeros(64, dtype=np.float64)
+                for cell in set(c_circuit._afferent_targets[pulse_token].tolist()):
+                    expected_delta[cell] -= 1.0
+                np.testing.assert_array_equal(delta_c, expected_delta)
+
+    np.testing.assert_array_equal(
+        _window_rows(a_circuit),
+        _reference_count_windows(a_counts, WINDOW_TOKENS),
+    )
+    np.testing.assert_array_equal(
+        c_circuit.feature_state_vector(), reference_coverage(c_history).reshape(-1)
+    )
     # Contrast: the trace bank retains exponential tails under the SAME
-    # stimulus — hard-edged windows forget, traces never do.
+    # stimulus - hard-edged windows forget, traces never do.
     assert np.any(tr_circuit._feature_traces != 0.0)
 
 
@@ -318,7 +379,8 @@ def test_r0b_t3_voltage_constant_signal_exact_quantiles() -> None:
         "spike_counts",
         "voltage_quantiles",
         "assembly_overlap",
-        "combo:voltage_quantiles+spike_counts",
+        # Canonical-order combo (the reversed grammar is rejected in T1).
+        "combo:voltage_quantiles+assembly_overlap",
     ],
 )
 def test_r0b_t4_checkpoint_v6_roundtrip(tmp_path, family: str) -> None:
@@ -719,9 +781,9 @@ def test_r0b_t8_restore_shape_mismatch_names_key(tmp_path) -> None:
 @pytest.mark.parametrize(
     "family,windows_of_source",
     [
-        ("spike_counts", lambda s: WINDOW_TOKENS[s // 64]),
-        ("voltage_quantiles", lambda s: WINDOW_TOKENS[(s // 64) // 3]),
-        ("assembly_overlap", lambda s: WINDOW_TOKENS[s // 64]),
+        ("spike_counts", lambda s: WINDOW_TOKENS[s // 16]),
+        ("voltage_quantiles", lambda s: WINDOW_TOKENS[(s // 16) // 3]),
+        ("assembly_overlap", lambda s: WINDOW_TOKENS[s // 16]),
         ("combo:spike_counts+voltage_quantiles", None),  # concatenation check
     ],
 )
