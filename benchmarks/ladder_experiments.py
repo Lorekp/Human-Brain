@@ -45,9 +45,18 @@ with the fixed schema documented in ``experiments/SCHEMA.md``.
 
 Hard constraints enforced here:
 
-- ``HUMANBRAIN_DEVICE`` is pinned to ``cpu`` (refuses any other value);
-- single-process RAM stays under 2 GiB (projected-array refusal plus the
-  hard ``N > 4096`` python-circuit limit);
+- ``HUMANBRAIN_DEVICE`` defaults to ``cpu``; ``--device cuda`` (or an
+  explicit ``HUMANBRAIN_DEVICE=cuda`` environment) selects the CUDA
+  full-touch kernel path used by ``benchmarks/scale_opt_gpu_bench.py``
+  (vectorized construction + whole-token spike elision) for N beyond the
+  python-circuit limit;
+- ``--device cpu`` keeps the historical guards unchanged: single-process
+  RAM under 2 GiB (projected-array refusal plus the hard ``N > 4096``
+  python-circuit limit);
+- ``--device cuda`` swaps the python-RAM projection for the budgets that
+  actually bind on that path: host-side dense ridge statistics ((N+1)^2
+  float64 normal matrix, held twice during consolidation) against a fixed
+  host budget, and a device-array projection against an 8 GiB VRAM cap;
 - runs are deterministic per seed: two runs with identical arguments produce
   byte-identical JSON except ``wall_s`` (``--check-determinism`` asserts it
   in-process);
@@ -75,12 +84,17 @@ if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
 _DEVICE = os.environ.get("HUMANBRAIN_DEVICE")
-if _DEVICE is not None and _DEVICE.strip().lower() not in {"", "cpu"}:
+if _DEVICE is not None and _DEVICE.strip().lower() not in {"", "cpu", "cuda"}:
     raise SystemExit(
-        "ladder_experiments requires HUMANBRAIN_DEVICE=cpu only; "
+        "ladder_experiments requires HUMANBRAIN_DEVICE in {unset, cpu, cuda}; "
         f"refusing HUMANBRAIN_DEVICE={_DEVICE!r}"
     )
-os.environ["HUMANBRAIN_DEVICE"] = "cpu"
+# Default stays the historical pinned-CPU python circuit; --device cuda
+# overrides this below (before any circuit kernel is constructed), mirroring
+# how benchmarks/scale_opt_gpu_bench.py drives HUMANBRAIN_DEVICE=cuda.
+os.environ["HUMANBRAIN_DEVICE"] = (
+    "cuda" if _DEVICE is not None and _DEVICE.strip().lower() == "cuda" else "cpu"
+)
 
 import numpy as np  # noqa: E402
 
@@ -108,6 +122,54 @@ _POOL_LITERAL_COUNT = 21
 _CALIBRATION_LITERAL_COUNT = 4
 _MAX_N = 4096
 _RAM_BUDGET_BYTES = 1_500_000_000
+# --- CUDA full-touch path budgets (the python-circuit guards do not apply) ---
+# The dense ridge readout keeps its (N+1)^2 float64 normal matrix on the HOST
+# and consolidation copies it once, so host RAM — not VRAM — binds first.
+# 20 GiB of the box's 32 GiB physical memory, leaving headroom for OS,
+# desktop compositor, and BLAS workspace.
+_HOST_RIDGE_BUDGET_BYTES = 20_000_000_000
+# Device-array projection guard (CudaRecurrentKernel allocations: per-cell
+# recurrent fan-out edges + weights + six mutable state arrays + spike/input
+# masks). Never binding below the host cap, kept for honest accounting.
+_CUDA_VRAM_BUDGET_BYTES = 8 * 1024**3
+
+
+def _projected_cuda_device_bytes(n_cells: int, input_fanout: int) -> int:
+    """Mirror CudaRecurrentKernel's allocation sizes for one circuit."""
+    per_cell = _RECURRENT_FANOUT * (4 + 8) + 6 * 8 + 4 + 2
+    token_arrays = typed_program._TOKEN_CELL_COUNT * input_fanout * 4
+    return n_cells * per_cell + token_arrays + 8
+
+
+def _projected_cuda_host_bytes(n_cells: int, readout_rule: str) -> int:
+    """Host-side persistent bytes the CUDA path still allocates in numpy."""
+    if readout_rule != "ridge":
+        return _projected_peak_bytes(n_cells, "three_factor")
+    features = n_cells + 1
+    normal = features * features * 8
+    moments = typed_program._TOKEN_CELL_COUNT * features * 8
+    batch = 128 * features * 8
+    # Consolidation copies the normal matrix before the regularized solve.
+    return 2 * normal + moments + batch
+
+
+def _largest_n_within_host_budget(budget_bytes: int) -> int:
+    """Largest N with ridge statistics inside ``budget_bytes``.
+
+    Scanned down from a generous closed-form upper bound so this cap can
+    never drift from :func:`_projected_cuda_host_bytes` (the exact quadratic
+    changes whenever that projection gains another term).
+    """
+    candidate = int((budget_bytes // 16) ** 0.5) + 1
+    while _projected_cuda_host_bytes(candidate, "ridge") > budget_bytes:
+        candidate -= 1
+    return candidate
+
+
+# Largest N whose CUDA-path host footprint fits _HOST_RIDGE_BUDGET_BYTES.
+_MAX_CUDA_HOST_RIDGE_CELLS = _largest_n_within_host_budget(
+    _HOST_RIDGE_BUDGET_BYTES
+)
 _A012_SPENT_LITERALS = (-9, -7, -5, -3, -1, 0, 2, 4, 6, 8)
 _DEFAULT_ASSEMBLY_K = _INPUT_FANOUT
 # Domain salt separating codebook RNG streams from the circuit's own RNG so
@@ -489,6 +551,7 @@ def _grow_circuit(
     local_learning_rate_pa: float = 64.0,
     local_competitive_margin_pa: float = 64.0,
     inhibitory_fraction: float = DEFAULT_INHIBITORY_FRACTION,
+    ridge_backend: str = "numpy",
 ) -> RecurrentCellCircuit:
     """Drive the circuit's observe/strengthen cycle over the scheduled corpus."""
     input_fanout = _INPUT_FANOUT
@@ -505,6 +568,10 @@ def _grow_circuit(
         inhibitory_fraction=inhibitory_fraction,
     )
     circuit = RecurrentCellCircuit(token_cells=_TOKEN_CELLS, config=config)
+    # Bind BEFORE any strengthen: the accelerated flush must capture every
+    # rank-k update from the first statistics batch onward.
+    if ridge_backend == "scipy":
+        circuit._ridge_backend_label = install_scipy_ridge(circuit)  # type: ignore[attr-defined]
     if codebook is not None and codebook.mode != "explicit":
         install_codebook(circuit, codebook)
     prepared = _prepare_sequences(curriculum["train_tasks"])  # type: ignore[arg-type]
@@ -519,6 +586,149 @@ def _grow_circuit(
                 circuit.strengthen(training_ids[index + 1])
     circuit.freeze_learning()
     return circuit
+
+
+# ---------------------------------------------------------------------------
+# CUDA-scale ridge consolidation + sealed-diagnostic state separation
+# ---------------------------------------------------------------------------
+
+
+def install_scipy_ridge(circuit: RecurrentCellCircuit) -> str:
+    """Route ridge statistics/consolidation through scipy's OpenBLAS.
+
+    numpy 2.2.6 on this interpreter resolves to a generic (unoptimized)
+    BLAS (<0.3 GFLOPS measured), which makes the dense rank-k statistics
+    flushes and the O(N^3) consolidation solve impossible at N >= 4096
+    (a 44-minute wall without completing). scipy 1.17 bundles OpenBLAS
+    (~248 GFLOPS measured). Math is identical up to floating-point order:
+
+    - flush: ``normal += features.T @ features`` becomes one BLAS ``dsyrk``
+      accumulating into the UPPER triangle only; the lower triangle stays
+      zero until consolidation mirrors it (the authoritative values are the
+      accumulated upper-triangle ones);
+    - consolidate: mirror upper->full, apply the same ridge regularizer,
+      solve with Cholesky (SPD) falling back to LU.
+
+    Instance-level binding only — no engine source changes. Returns the
+    backend label recorded in ``config_dump``.
+    """
+    from scipy.linalg import solve as _scipy_solve
+    from scipy.linalg.blas import dsyrk
+
+    def _flush_growth_statistics() -> None:
+        pending = circuit._pending_growth_examples
+        if pending < 1:
+            return
+        assert circuit._feature_batch is not None
+        assert circuit._normal_matrix is not None
+        features = circuit._feature_batch[:pending]
+        circuit._normal_matrix = dsyrk(
+            alpha=1.0,
+            a=features,
+            trans=1,
+            beta=1.0,
+            c=circuit._normal_matrix,
+            overwrite_c=1,
+        )
+        circuit._pending_growth_examples = 0
+
+    def _consolidate_readout() -> None:
+        if circuit.config.readout_learning_rule != "ridge":
+            return
+        if circuit._growth_examples < 1:
+            raise RuntimeError("cannot consolidate without growth examples")
+        _flush_growth_statistics()
+        assert circuit._normal_matrix is not None
+        assert circuit._target_moments is not None
+        upper = np.triu(circuit._normal_matrix)
+        full = upper + upper.T - np.diag(np.diag(upper))
+        regularized = full.copy()
+        diagonal = np.diag_indices_from(regularized)
+        regularized[diagonal] += circuit.config.readout_ridge
+        # Same pacemaker tweak as the numpy path (recurrent.py).
+        regularized[-1, -1] -= circuit.config.readout_ridge * 0.99
+        rhs = circuit._target_moments.T
+        try:
+            coefficients = _scipy_solve(regularized, rhs, assume_a="pos")
+        except np.linalg.LinAlgError:
+            coefficients = _scipy_solve(regularized, rhs)
+        # Same layout as the numpy path: (token_cells, features) rows.
+        coefficients = coefficients.T
+        gain = circuit.config.output_synapse_gain_pa
+        circuit._readout_synapses_pa[:] = coefficients[:, :-1] * gain
+        circuit._pacemaker_synapses_pa[:] = coefficients[:, -1] * gain
+
+    circuit._flush_growth_statistics = _flush_growth_statistics  # type: ignore[method-assign]
+    circuit._consolidate_readout = _consolidate_readout  # type: ignore[method-assign]
+    return "scipy-openblas-dsyrk"
+
+
+def collect_state_separation(
+    circuit: RecurrentCellCircuit, tasks: tuple
+) -> dict[str, object]:
+    """Sealed-diagnostic analog of ``ei_sweep``'s state separation.
+
+    Definition matches ``experiments/ei_sweep/_mechanism_probe.py`` exactly:
+    replay each TRAIN task's framing observations, snapshot the eligibility
+    trace and synaptic-current vector (the state the first decision race
+    sees), then pairwise 1-cosine over task pairs with DIFFERENT first
+    teacher token within the same stratum (Int / List[Int]); medians per
+    stratum and pooled. Sealed null ~0.001. Diagnostics never gate outcomes.
+    """
+    protocol = typed_program.Layer1Protocol.for_lane("A2")
+    channels: dict[str, list[np.ndarray]] = {
+        "eligibility": [],
+        "synaptic_current": [],
+    }
+    strata: list[str] = []
+    first_teacher: list[str] = []
+    for task in tasks:
+        input_ids = typed_program._model_input(
+            task.prompt,
+            task.signature,
+            framing_order=protocol.framing_order,
+        )
+        circuit.reset_sequence()
+        for token_id in input_ids:
+            circuit.observe(token_id)
+        channels["eligibility"].append(circuit._eligibility.copy())
+        channels["synaptic_current"].append(circuit._synaptic_current_pa.copy())
+        strata.append("List[Int]" if task.family_id.startswith("list_") else "Int")
+        first_teacher.append(task.teacher_tokens[0])
+
+    def _cosine_distance(left: np.ndarray, right: np.ndarray) -> float:
+        left_norm = float(np.linalg.norm(left))
+        right_norm = float(np.linalg.norm(right))
+        if left_norm == 0.0 and right_norm == 0.0:
+            return 0.0
+        if left_norm == 0.0 or right_norm == 0.0:
+            return 1.0
+        return 1.0 - float(np.dot(left, right)) / (left_norm * right_norm)
+
+    result: dict[str, object] = {}
+    for channel, vectors in channels.items():
+        by_stratum: dict[str, list[float]] = {"Int": [], "List[Int]": []}
+        for index in range(len(vectors)):
+            for other in range(index + 1, len(vectors)):
+                if first_teacher[index] == first_teacher[other]:
+                    continue
+                if strata[index] != strata[other]:
+                    continue
+                distance = _cosine_distance(vectors[index], vectors[other])
+                by_stratum[strata[index]].append(distance)
+        pooled = by_stratum["Int"] + by_stratum["List[Int]"]
+
+        def _median(values: list[float]) -> float | None:
+            return round(float(np.median(values)), 9) if values else None
+
+        result[channel] = {
+            "pairs_Int": len(by_stratum["Int"]),
+            "pairs_List_Int": len(by_stratum["List[Int]"]),
+            "median_1minuscos_Int": _median(by_stratum["Int"]),
+            "median_1minuscos_List_Int": _median(by_stratum["List[Int]"]),
+            "median_1minuscos_pooled": _median(pooled),
+        }
+    return result
 
 
 def _complete_program(
@@ -670,6 +880,8 @@ def run_experiment(
     local_learning_rate_pa: float = 64.0,
     local_competitive_margin_pa: float = 64.0,
     inhibitory_fraction: float = DEFAULT_INHIBITORY_FRACTION,
+    ridge_backend: str = "numpy",
+    with_state_separation: bool = False,
 ) -> dict[str, object]:
     """Execute one arm end-to-end and return its fixed-schema metrics record."""
     started = time.perf_counter()
@@ -708,7 +920,20 @@ def run_experiment(
         local_learning_rate_pa=local_learning_rate_pa,
         local_competitive_margin_pa=local_competitive_margin_pa,
         inhibitory_fraction=inhibitory_fraction,
+        ridge_backend=ridge_backend,
     )
+    ridge_backend_used = str(
+        getattr(circuit, "_ridge_backend_label", "numpy")
+    )
+    diagnostics: dict[str, object] | None = None
+    if with_state_separation:
+        # Post-growth, pre-evaluation state; the diagnostic replays framing
+        # observations itself and leaves the circuit sequence-reset.
+        diagnostics = {
+            "state_separation": collect_state_separation(
+                circuit, curriculum["train_tasks"]  # type: ignore[arg-type]
+            )
+        }
     train = _evaluate_cohort(circuit, curriculum["train_tasks"], collect_margins=True)  # type: ignore[arg-type]
     calibration = _evaluate_cohort(  # type: ignore[arg-type]
         circuit, curriculum["calibration_tasks"], collect_margins=False
@@ -752,8 +977,12 @@ def run_experiment(
             )
         ),
         "frozen_protocol_sha256": curriculum["frozen_protocol_sha256"],
+        # Evidence that the run really executed on the requested backend
+        # ("cuda" = CudaRecurrentKernel full-touch path, "cpu" otherwise).
+        "simulation_backend": circuit.simulation_backend,
+        "ridge_backend": ridge_backend_used,
     }
-    return {
+    record = {
         "experiment_id": experiment_id,
         "arm": arm,
         "N": n_cells,
@@ -776,15 +1005,75 @@ def run_experiment(
         "git_head": _git_head(),
         "config_dump": config_dump,
     }
+    if diagnostics is not None:
+        # Beyond-schema diagnostics (ei_sweep analog): never gate outcomes.
+        record["diagnostics"] = diagnostics
+    return record
+
+
+def _resolve_device(arguments: argparse.Namespace) -> str:
+    """Effective device: explicit ``--device`` wins, else HUMANBRAIN_DEVICE."""
+    requested = getattr(arguments, "device", "auto")
+    if requested == "auto":
+        environment = os.environ.get("HUMANBRAIN_DEVICE", "cpu").strip().lower()
+        return environment if environment in {"cpu", "cuda"} else "cpu"
+    return requested
+
+
+def _validate_device(arguments: argparse.Namespace) -> str:
+    device = _resolve_device(arguments)
+    if device not in {"cpu", "cuda"}:
+        _fail(f"--device must be one of ('cuda', 'cpu'), got {device!r}")
+    if (
+        getattr(arguments, "device", "auto") == "auto"
+        and os.environ.get("HUMANBRAIN_DEVICE", "").strip().lower() not in
+        {"", "cpu", "cuda"}
+    ):
+        # Unreachable today (import gate refuses earlier); kept so validation
+        # never depends on import order.
+        _fail("HUMANBRAIN_DEVICE must be auto, cpu, or cuda")
+    return device
 
 
 def _validate_arguments(arguments: argparse.Namespace) -> None:
-    if arguments.N > _MAX_N:
-        _fail(
-            f"--N {arguments.N} exceeds the python circuit limit of {_MAX_N} "
-            "reservoir cells (peak-array projection would breach the 2 GiB "
-            "single-process budget)"
+    device = _validate_device(arguments)
+    if device == "cpu":
+        if arguments.N > _MAX_N:
+            _fail(
+                f"--N {arguments.N} exceeds the python circuit limit of {_MAX_N} "
+                "reservoir cells (peak-array projection would breach the 2 GiB "
+                "single-process budget; pass --device cuda for the CUDA "
+                "full-touch path)"
+            )
+    else:
+        # CUDA path: the python-circuit RAM projection does not apply. The
+        # binding host cost is the dense ridge statistics (see
+        # _projected_cuda_host_bytes); VRAM is bounded by its own projection.
+        projected_host = _projected_cuda_host_bytes(
+            arguments.N, arguments.readout_rule
         )
+        if projected_host > _HOST_RIDGE_BUDGET_BYTES:
+            _fail(
+                f"--N {arguments.N} needs ~{projected_host} bytes of HOST ridge "
+                f"statistics (dense (N+1)^2 float64 normal matrix held twice "
+                f"during consolidation), beyond the {_HOST_RIDGE_BUDGET_BYTES}-"
+                f"byte budget; largest supported N on this box is "
+                f"{_MAX_CUDA_HOST_RIDGE_CELLS}"
+            )
+        effective_fanout = (
+            _INPUT_FANOUT
+            if arguments.codebook == "explicit"
+            else arguments.assembly_k
+        )
+        projected_vram = _projected_cuda_device_bytes(
+            arguments.N, effective_fanout
+        )
+        if projected_vram > _CUDA_VRAM_BUDGET_BYTES:
+            _fail(
+                f"--N {arguments.N} projects {projected_vram} bytes of CUDA "
+                f"device arrays, beyond the {_CUDA_VRAM_BUDGET_BYTES}-byte "
+                "single-process VRAM cap"
+            )
     if arguments.N < max(_INPUT_FANOUT, _RECURRENT_FANOUT):
         _fail(
             f"--N {arguments.N} is below the minimum of {_INPUT_FANOUT} "
@@ -809,7 +1098,8 @@ def _validate_arguments(arguments: argparse.Namespace) -> None:
             "finite and in [0, 1) (signs flip on round(fraction * active) "
             "active reservoir cells; shipped default 0.2)"
         )
-    if not 1 <= arguments.assembly_k <= min(arguments.N, _MAX_N):
+    assembly_ceiling = arguments.N if device == "cuda" else min(arguments.N, _MAX_N)
+    if not 1 <= arguments.assembly_k <= assembly_ceiling:
         _fail(
             f"--assembly-k {arguments.assembly_k} must be within [1, N="
             f"{arguments.N}] (assemblies are drawn without replacement over "
@@ -831,12 +1121,13 @@ def _validate_arguments(arguments: argparse.Namespace) -> None:
             or any(character in value for character in "/\\")
         ):
             _fail(f"--{name.replace('_', '-')} must be a safe single path segment")
-    projected = _projected_peak_bytes(arguments.N, arguments.readout_rule)
-    if projected > _RAM_BUDGET_BYTES:
-        _fail(
-            f"projected peak arrays {projected} bytes exceed the "
-            f"{_RAM_BUDGET_BYTES}-byte single-process budget"
-        )
+    if device == "cpu":
+        projected = _projected_peak_bytes(arguments.N, arguments.readout_rule)
+        if projected > _RAM_BUDGET_BYTES:
+            _fail(
+                f"projected peak arrays {projected} bytes exceed the "
+                f"{_RAM_BUDGET_BYTES}-byte single-process budget"
+            )
 
 
 def _record_without_wall(record: dict[str, object]) -> bytes:
@@ -893,6 +1184,35 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--device",
+        choices=("auto", "cpu", "cuda"),
+        default="auto",
+        help=(
+            "execution backend: auto honors HUMANBRAIN_DEVICE (default cpu); "
+            "cuda selects the CUDA full-touch kernel path and swaps the "
+            "python-circuit N cap for the host ridge-statistics budget"
+        ),
+    )
+    parser.add_argument(
+        "--ridge-backend",
+        choices=("auto", "numpy", "scipy"),
+        default="auto",
+        help=(
+            "dense-ridge statistics/consolidation backend: auto uses scipy "
+            "OpenBLAS when importable (numpy's generic BLAS cannot finish "
+            "N >= 4096 flushes/solves); numpy keeps the historical path"
+        ),
+    )
+    parser.add_argument(
+        "--with-state-separation",
+        dest="with_state_separation",
+        action="store_true",
+        help=(
+            "append the sealed-diagnostic state_separation block (ei_sweep "
+            "analog) to the record; diagnostics never gate outcomes"
+        ),
+    )
+    parser.add_argument(
         "--check-determinism",
         action="store_true",
         help="run the whole arm twice in-process and assert byte-identical "
@@ -900,6 +1220,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     arguments = parser.parse_args(argv)
     _validate_arguments(arguments)
+    # Bind the effective device before any circuit kernel is constructed
+    # (recurrent_kernel reads HUMANBRAIN_DEVICE at construction time).
+    os.environ["HUMANBRAIN_DEVICE"] = _resolve_device(arguments)
+    ridge_backend = arguments.ridge_backend
+    if ridge_backend == "auto":
+        try:
+            import scipy.linalg.blas  # noqa: F401
+
+            ridge_backend = "scipy"
+        except ImportError:
+            ridge_backend = "numpy"
 
     record = run_experiment(
         experiment_id=arguments.experiment_id,
@@ -915,6 +1246,8 @@ def main(argv: list[str] | None = None) -> int:
         local_learning_rate_pa=arguments.local_learning_rate_pa,
         local_competitive_margin_pa=arguments.local_competitive_margin_pa,
         inhibitory_fraction=arguments.inhibitory_fraction,
+        ridge_backend=ridge_backend,
+        with_state_separation=arguments.with_state_separation,
     )
     if arguments.check_determinism:
         repeat = run_experiment(
@@ -931,6 +1264,8 @@ def main(argv: list[str] | None = None) -> int:
             local_learning_rate_pa=arguments.local_learning_rate_pa,
             local_competitive_margin_pa=arguments.local_competitive_margin_pa,
             inhibitory_fraction=arguments.inhibitory_fraction,
+            ridge_backend=ridge_backend,
+            with_state_separation=arguments.with_state_separation,
         )
         if _record_without_wall(record) != _record_without_wall(repeat):
             _fail("determinism check failed: identical-seed records differ beyond wall_s")
