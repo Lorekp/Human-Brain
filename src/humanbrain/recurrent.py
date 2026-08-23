@@ -471,6 +471,9 @@ class RecurrentCellCircuit:
         self._local_updates = 0
         self._observed_tokens = 0
         self._learning_frozen = False
+        # R0-c Thread-1 logging seam: optional per-token observer callback.
+        # None by default; when None, observe() is untouched bit-for-bit.
+        self._observation_sink = None
 
         rng = np.random.default_rng(self.config.random_seed)
         self._afferent_targets = np.empty(
@@ -1120,6 +1123,26 @@ class RecurrentCellCircuit:
         return self._observed_tokens
 
     @property
+    def observation_sink(self):
+        """Optional per-token observer callback (R0-c Thread-1 logging seam).
+
+        When set to a callable, it is invoked as ``sink(circuit, token_id)``
+        at the end of every :meth:`observe`, after the feature-family
+        boundary update. The callback receives the circuit so it can read
+        ``feature_state_vector()``, the raw banks, and reservoir state.
+        Observers must not drive the circuit (no observe/race/reset inside).
+        Instance-level only: it is not part of ``RecurrentCircuitConfig``
+        and does not alter any checkpoint schema or digest.
+        """
+        return self._observation_sink
+
+    @observation_sink.setter
+    def observation_sink(self, sink) -> None:
+        if sink is not None and not callable(sink):
+            raise ValueError("observation_sink must be callable or None")
+        self._observation_sink = sink
+
+    @property
     def simulation_backend(self) -> str:
         return self._native_kernel.backend
 
@@ -1175,6 +1198,12 @@ class RecurrentCellCircuit:
         # boundary update runs, then the flat feature buffer is current for
         # strengthen/race/inspection.
         self._advance_feature_boundary(token)
+        if self._observation_sink is not None:
+            # R0-c Thread-1: fire AFTER the family boundary update so the
+            # observer reads the same post-observe state any strengthen/race
+            # consumer would see. The sink must not drive the circuit (no
+            # observe/race/reset calls inside the callback).
+            self._observation_sink(self, token)
         return RecurrentStep(
             token_id=token,
             reservoir_spikes=spike_total,
