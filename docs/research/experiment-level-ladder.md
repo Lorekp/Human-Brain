@@ -60,7 +60,11 @@ missing experiment per level.
 
 | | |
 |---|---|
-| Exists | Sealed a012 @N=128 ridge (`hb-a012-once-20260822`, `typed-composition-a012-v1-results.md`): TRAIN replay 40/42, cases 120/126; calibration replay **0/18**, cases 7/54; margins min +56 pA / median 726 pA; state separation ≈1e-3. Pilot `experiments/readout_compare/FINDINGS.md` (@`410c720`; 27 runs + determinism recheck): ridge capacity monotone in N (train 0.146→0.563→0.981), both local rules **N-flat and collapsed** to the degenerate constant program `variable-0`; genuine transfer ≤4/54 for every rule at every N; feature-collision thesis confirmed. `experiments/schedule_compare/FINDINGS.md` (@`0cb7359`; 18 runs): presentation order **structurally inert** under ridge — teaching-matrix T3 marked dead for closed-form readouts; REPORT-GAP records that frozen `perm_appendix.json` orders have no loading path. `experiments/a013-ladder-sanity-v1/` (3 arms). In flight on this box right now: `experiments/codebook_compare/` (explicit/random/similarity × N∈{128,512} × seeds 7-9) + `codebook_probe`. Earlier generation: typed-program public TRAIN v1 (memorization 3/3, 9/9) and DEV v1 0/2 (retired); Layer-0 plumbing smoke (`docs/cell-program-layer0.md`). |
+| Exists | Sealed a012 @N=128 ridge (`hb-a012-once-20260822`, `typed-composition-a012-v1-results.md`): TRAIN replay 40/42, cases 120/126; calibration replay **0/18**, cases 7/54; margins min +56 pA / median 726 pA; state separation ≈1e-3. Pilot `experiments/readout_compare/FINDINGS.md` (@`410c720`; 27 runs + determinism recheck): ridge capacity monotone in N (train 0.146→0.563→0.981), both local rules **N-flat and collapsed** to the degenerate constant program `variable-0`; genuine transfer ≤4/54 for every rule at every N; feature-collision thesis confirmed. `experiments/schedule_compare/FINDINGS.md` (@`0cb7359`; 18 runs): presentation order **structurally inert** under ridge — teaching-matrix T3 marked dead for closed-form readouts; REPORT-GAP records that frozen `perm_appendix.json` orders have no loading path. `experiments/a013-ladder-sanity-v1/` (3 arms). Landing while this doc was
+written: `experiments/codebook_compare/` (explicit/random/similarity ×
+N∈{128,512} × seeds 7-9) — explicit arms complete and analyzed, random/
+similarity arms still filling at write time; verdict pending. Earlier
+generation: typed-program public TRAIN v1 (memorization 3/3, 9/9) and DEV v1 0/2 (retired); Layer-0 plumbing smoke (`docs/cell-program-layer0.md`). |
 | Missing | Local-rule revival (blocked: shipped constants collapse — see dependency D2). Unexecuted teaching-matrix rows: T6 replay consolidation, T5a error-gating, T5b errorless, T4 supervision mixing, T1 dose-response knee, T2 diversity×representation interaction. V3a `inhibitory_fraction` sweep (knob exists, default 0.2, never swept). V2 parameter jitter. Two-region E/P pilot (design-only, `a013-regioned-architecture.md` §6). |
 | Decisive missing experiment | **Constant-collapse repair, then revive sparse three-factor as an instrument** (rerun the schedule axis under the online local rule with byte-frozen permutation orders). Every order-sensitive and interaction experiment (T2, T3-local, T5b, the regioned decisive experiment, cell-LM v1) pins the local rule; until its degenerate-constant failure is fixed, L1 has no functioning biological learner, only ridge. |
 
@@ -121,6 +125,14 @@ D2 constant derivation (collapse fix)
                            ─▶ T2 interaction (sparse column)
                            ─▶ regioned decisive exp (pins sparse rule)
                            ─▶ cell-LM v1 (ridge retired at scale ⇒ local-only)
+
+   STATUS UPDATE while this doc was written: the derivation half of D2 has
+   LANDED (commits 5be40ad + 0e51cdd) — `local-rule-constant-derivation.md`
+   derives lr* = 0.1 pA (~620× below shipped 64 pA) and margin ∈ {363, 726}
+   pA from circuit arithmetic, adds harness knobs --local-lr-pa/--local-
+   margin-pa, and preregisters `local_rule_constant_screen_v1` (6 arms).
+   D2 is now blocked only on EXECUTING that screen and committing its
+   verdict — a Wave-1 action, not a design task.
 
 D3 perm_appendix loader (REPORT-GAP) ─▶ any order-sensitive rerun
                                           with byte-equal frozen orders
@@ -191,18 +203,19 @@ Gemma 12B Q4_0 GGUF ≈ 8 GB VRAM; CUDA measured layouts < 1 GB VRAM.
 
 | Thread | Work | Depends on | Resource budget | Contention note |
 |---|---|---|---|---|
-| A1 | Constant-collapse repair ("constant derivation"): red tests + fix so local-rule completions derive the correct constant/identity program | nothing | S code change (readout/completion path); validation batch ≤5 CPU-min, ≤2 GiB, 0 VRAM | Touches `recurrent.py`/lib.rs — see src-freeze rule; lands BEFORE A7 starts editing natives |
+| A1 | Execute the preregistered `local_rule_constant_screen_v1` (6 arms; derivation + `--local-lr-pa/--local-margin-pa` knobs already landed in `5be40ad`/`0e51cdd`) and commit its verdict — this is D2's remaining half | screen spec (landed) | ~6 arms ≈ 2–5 CPU-min, ≤2 GiB, 0 VRAM | Lock queue with A2/A3/A4; if the screen rejects derived constants, revival re-opens as a design task and Waves 2–3 local-rule items slip one wave |
 | A2 | T6 replay consolidation dev-gate (error-prioritized pre-freeze pass) | nothing (harness seam exists) | ~5–10 CPU-min for the arm set; ≤2 GiB; 0 VRAM | Serial under cpu-bench.lock with A3/A4; deterministic outputs immune to box noise, wall_s is not |
 | A3 | T4 supervision-mixing scheduler + T1 dose-response (21⊂42⊂84⊂168 cohorts) | nothing | ≈10-line scheduler + ~15–20 arms ≈ 5–10 CPU-min; ≤2 GiB | Same lock queue as A2; fresh cohorts are cheap, generate inside the locked window |
 | A4 | V3a `inhibitory_fraction` preregistered sweep (existing knob) | nothing | Sweep spec authoring + ≤10 CPU-min runs; ≤2 GiB | First actual E/I-structure data; keep arms ≤4096 (python circuit limit) |
 | A5 | Hetero placement doc (D4 blocker): per-cell assignment manifest design for V2 jitter / V5 class-to-region maps, seed+hash discipline | nothing (reads A6 output for V1 feasibility line) | 0 compute; docs only | Fully parallel with everything; no locks |
 | A6 | GLIF3-in-GLIF5 expressibility proof (zeroed threshold-adaptation coefficients, ASC channel compatibility) | nothing | Minutes of numeric checks | Non-timing; no lock |
-| A7 | Resident-tile + due-event registry slice (ordered path step 4) | nothing code-wise; **waits for A1's native edits to land** | Dev + unit tests; non-timing | Real merge-conflict hazard with A1 in `_native_src/src/` — sequence, don't interleave |
+| A7 | Resident-tile + due-event registry slice (ordered path step 4) | nothing code-wise | Dev + unit tests; non-timing | Will edit `_native_src/src/` — coordinate with B3 (two-region pilot) so the two native editors never overlap; no bench lock needed for dev/tests |
 | A8 | cell-LM v1 freeze prep *except* the arm choice: corpus mirror fetch + SHA-256, train-only tokenizer/BPE vocab sweep, pure-numpy B0/B1 baseline harness | D11 (fetch success) | One network fetch + ~30–60 CPU-min sweeps; no GPU (torch would need an extra — stay numpy per pyproject) | Tokenizer sweep is not timing-sensitive: lock-free, but drop process priority while any bench lock is held |
 
-Wave-1 conflicts: A1↔A7 (same native files — serialize); A2/A3/A4 (same
-harness + `experiments/<id>/` namespaces — serialize under cpu-bench.lock);
-everything else overlaps freely.
+Wave-1 conflicts: A2/A3/A4 share the harness + `experiments/<id>/`
+namespaces — serialize under cpu-bench.lock; A7 must not start editing
+`_native_src/` while B3-class native work is in flight (sequence, don't
+interleave); everything else overlaps freely.
 
 ### Wave 2 — after the codebook verdict (D1) and A1 land
 
