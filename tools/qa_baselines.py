@@ -4,7 +4,7 @@
 Preregistered comparators for R2 Bible-QA evaluation (docs/research/
 cell-lm-corpus-bible.md §6 "Evaluation additions", red test 20). Emits metric
 records FIELD-COMPARABLE to benchmarks/qa_experiments.py
-(humanbrain/qa-experiments/v1):
+(humanbrain/qa-experiments/v2; metric fields unchanged since v1):
 
 - ``metrics.answer_span`` — teacher-forced prediction across the answer-word
   span of every VAL QA item, conditioned on the serialized prompt;

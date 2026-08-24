@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
 from time import perf_counter
+from typing import Any
 
 from humanbrain.language import LanguageEvaluation, Prediction
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig, RecurrentRace
@@ -19,6 +20,13 @@ class RecurrentModelConfig:
     min_phrase_frequency: int = 3
     growth_epochs: int = 1
     circuit: RecurrentCircuitConfig = field(default_factory=RecurrentCircuitConfig)
+    # Optional pre-fitted tokenizer overriding grow()'s internal
+    # BytePhraseTokenizer fit (e.g. humanbrain.concept_tokens.ConceptTokenizer
+    # or humanbrain.bpe_tokenizer.BpeTokenizer). Duck-typed: must expose the
+    # BytePhraseTokenizer encode/decode/decode_bytes/vocab_size interface.
+    # The vocabulary/output-cell alignment invariant is still enforced in
+    # __init__ against whatever tokenizer lands here.
+    tokenizer: Any | None = None
 
 
 class RecurrentCellLanguageModel:
@@ -46,13 +54,16 @@ class RecurrentCellLanguageModel:
         corpus = tuple(str(text) for text in texts)
         if not corpus or not any(corpus):
             raise ValueError("at least one non-empty growth text is required")
-        tokenizer = BytePhraseTokenizer.fit(
-            corpus,
-            TokenizerConfig(
-                max_phrases=cfg.max_phrases,
-                min_frequency=cfg.min_phrase_frequency,
-            ),
-        )
+        if cfg.tokenizer is not None:
+            tokenizer = cfg.tokenizer
+        else:
+            tokenizer = BytePhraseTokenizer.fit(
+                corpus,
+                TokenizerConfig(
+                    max_phrases=cfg.max_phrases,
+                    min_frequency=cfg.min_phrase_frequency,
+                ),
+            )
         circuit = RecurrentCellCircuit(
             token_cells=tokenizer.vocab_size,
             config=cfg.circuit,

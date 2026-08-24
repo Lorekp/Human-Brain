@@ -21,6 +21,20 @@ cannot exist, so ``--readout-rule auto`` upgrades to ``sparse_three_factor``
 once its projection breaches a 2 GiB host budget — the same rule/active-cell
 contract lm_million_smoke.py drives at N=1e6.
 
+Growth-tokenizer seam (``--tokenizer {byte,bpe4096,concept}``): ``byte``
+keeps the historical in-grow BytePhraseTokenizer fit; ``bpe4096`` constructs
+the plain BPE baseline (humanbrain.bpe_tokenizer); ``concept`` mines
+recurring multi-token concepts from the TRAIN growth texts per
+``humanbrain.concept_tokens`` and wraps them above the same base fit in a
+reserved band ([1024, 1024+512)) — concepts spanning the ``answer:`` +
+``' '`` prompt/answer junction are dropped so the answer-span prefix/suffix
+seam below stays intact. Every arm flows through one language interface whose
+vocabulary/output-cell alignment invariant is re-checked defensively here
+(see ``humanbrain.language`` and ``humanbrain.recurrent_language``
+constructors). Concept-arm mining gates default to the a013 compression-
+study protocol (freq >= 50, MI >= 5 bits); lower them for fixture-scale
+corpora via ``--concept-min-frequency`` / ``--concept-min-mi-bits``.
+
 Records are byte-deterministic apart from ``wall_s``: ``--check-determinism``
 runs twice and compares canonical JSON with wall-clock keys stripped.
 """
@@ -36,6 +50,13 @@ import os
 from dataclasses import replace
 from time import perf_counter
 
+from humanbrain.bpe_tokenizer import BpeTokenizer
+from humanbrain.concept_tokens import (
+    CONCEPT_ID_BASE,
+    ConceptConfig,
+    ConceptTokenizer,
+    mine_concepts_detailed,
+)
 from humanbrain.qa_corpus import (
     CORPUS_SOURCE,
     QATask,
@@ -49,8 +70,9 @@ from humanbrain.recurrent_language import (
     RecurrentCellLanguageModel,
     RecurrentModelConfig,
 )
+from humanbrain.tokenizer import BytePhraseTokenizer, TokenizerConfig
 
-SCHEMA_VERSION = "humanbrain/qa-experiments/v1"
+SCHEMA_VERSION = "humanbrain/qa-experiments/v2"
 GUARD_MODAL_SHARE_MAX = 0.9
 GUARD_DISTINCT_MIN = 3
 
@@ -60,6 +82,13 @@ GUARD_DISTINCT_MIN = 3
 _MAX_RIDGE_HOST_BYTES = 2 * 1024**3
 _DEVICES = ("cpu", "cuda")
 _READOUT_RULES = ("ridge", "three_factor", "sparse_three_factor")
+# Growth-tokenizer arms (see _build_growth_tokenizer): "byte" keeps the
+# historical in-grow BytePhraseTokenizer fit, "bpe4096" constructs the plain
+# BPE baseline promoted to humanbrain.bpe_tokenizer, and "concept" mines
+# reserved-band concepts from the TRAIN growth texts above a base fit that
+# mirrors grow()'s own configuration.
+_TOKENIZERS = ("byte", "bpe4096", "concept")
+_BPE4096_VOCAB_SIZE = 4096
 
 
 @dataclass(frozen=True)
@@ -81,6 +110,13 @@ class ExperimentConfig:
     # "auto" keeps the historical dense-ridge rule while its statistics fit a
     # single-process host budget and upgrades to sparse_three_factor beyond.
     readout_rule: str = "auto"
+    # Growth-tokenizer arm; see _TOKENIZERS/_build_growth_tokenizer. The
+    # concept-arm mining gates default to the a013 compression-study protocol
+    # (freq >= 50, MI >= 5 bits) — sized for full-book corpora, so fixture-
+    # scale runs lower them via CLI to let concepts actually flow.
+    tokenizer: str = "byte"
+    concept_min_frequency: int = 50
+    concept_min_mutual_information_bits: float = 5.0
 
 
 def _resolve_device(requested: str) -> str:
@@ -91,6 +127,80 @@ def _resolve_device(requested: str) -> str:
         raise ValueError(f"device must be one of ('auto', 'cpu', 'cuda'), got {requested!r}")
     environment = os.environ.get("HUMANBRAIN_DEVICE", "cpu").strip().lower()
     return environment if environment in _DEVICES else "cpu"
+
+
+def _resolve_tokenizer(requested: str) -> str:
+    """Effective growth-tokenizer arm."""
+    if requested not in _TOKENIZERS:
+        raise ValueError(f"tokenizer must be one of {_TOKENIZERS}, got {requested!r}")
+    return requested
+
+
+def _build_growth_tokenizer(
+    kind: str,
+    texts: list[str],
+    *,
+    max_phrases: int,
+    min_phrase_frequency: int,
+    concept_min_frequency: int,
+    concept_min_mutual_information_bits: float,
+) -> tuple[object | None, dict[str, object]]:
+    """Pre-fitted growth tokenizer for the requested arm plus its provenance.
+
+    Returns ``(None, {"kind": "byte"})`` for the byte arm so ``grow()`` keeps
+    its internal fit untouched. The concept arm fits the base BytePhrase
+    tokenizer with EXACTLY grow()'s configuration (max_phrases /
+    min_phrase_frequency), mines recurring multi-token concepts from the same
+    TRAIN texts, then wraps both in one ConceptTokenizer whose encode/decode
+    interface matches the base. Concepts containing ``b": "`` are dropped:
+    qa_corpus pins every prompt to end ``answer:``, so a concept spanning that
+    colon-space junction could fuse prompt tail into the answer span and
+    break the prefix/suffix seam enforced by _span_evaluation.
+
+    The vocabulary/output-cell alignment invariant (recurrent_language.py
+    constructor) holds for every arm because the circuit is sized from the
+    returned tokenizer's own vocab_size.
+    """
+    meta: dict[str, object] = {"kind": kind}
+    if kind == "byte":
+        return None, meta
+    if kind == "concept":
+        base = BytePhraseTokenizer.fit(
+            texts,
+            TokenizerConfig(max_phrases=max_phrases, min_frequency=min_phrase_frequency),
+        )
+        candidates = [
+            candidate
+            for candidate in mine_concepts_detailed(
+                texts,
+                base,
+                ConceptConfig(
+                    min_frequency=concept_min_frequency,
+                    min_mutual_information_bits=concept_min_mutual_information_bits,
+                ),
+            )
+            if b": " not in candidate.payload
+        ]
+        meta.update(
+            {
+                "base_vocab_size": base.vocab_size,
+                "concept_count": len(candidates),
+                "concept_id_base": CONCEPT_ID_BASE,
+                "min_frequency": concept_min_frequency,
+                "min_mutual_information_bits": concept_min_mutual_information_bits,
+            }
+        )
+        return ConceptTokenizer(base, tuple(c.payload for c in candidates)), meta
+    if kind == "bpe4096":
+        tokenizer = BpeTokenizer.fit(texts, vocab_size=_BPE4096_VOCAB_SIZE)
+        meta.update(
+            {
+                "target_vocab_size": _BPE4096_VOCAB_SIZE,
+                "vocab_size": tokenizer.vocab_size,
+            }
+        )
+        return tokenizer, meta
+    raise ValueError(f"tokenizer must be one of {_TOKENIZERS}, got {kind!r}")
 
 
 def _resolve_readout_rule(reservoir_cells: int, requested: str) -> str:
@@ -204,6 +314,7 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
     cfg = config or ExperimentConfig()
     device = _resolve_device(cfg.device)
     readout_rule = _resolve_readout_rule(cfg.circuit.reservoir_cells, cfg.readout_rule)
+    tokenizer_kind = _resolve_tokenizer(cfg.tokenizer)
     # Bind the effective device BEFORE any circuit exists (recurrent_kernel
     # reads HUMANBRAIN_DEVICE at construction), mirroring ladder_experiments.
     os.environ["HUMANBRAIN_DEVICE"] = device
@@ -217,6 +328,14 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
         eval_tasks = eval_tasks[: cfg.eval_limit]
 
     growth_texts = [growth_text(task) for task in train_tasks]
+    tokenizer_override, tokenizer_meta = _build_growth_tokenizer(
+        tokenizer_kind,
+        growth_texts,
+        max_phrases=cfg.max_phrases,
+        min_phrase_frequency=cfg.min_phrase_frequency,
+        concept_min_frequency=cfg.concept_min_frequency,
+        concept_min_mutual_information_bits=cfg.concept_min_mutual_information_bits,
+    )
     started = perf_counter()
     model = RecurrentCellLanguageModel.grow(
         growth_texts,
@@ -225,6 +344,7 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
             max_phrases=cfg.max_phrases,
             min_phrase_frequency=cfg.min_phrase_frequency,
             circuit=effective_circuit,
+            tokenizer=tokenizer_override,
         ),
     )
     grow_wall_s = perf_counter() - started
@@ -284,6 +404,7 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
         "schema_version": SCHEMA_VERSION,
         "protocol": (
             "grow RecurrentCellLanguageModel on TRAIN qa_prompt+' '+answer texts; "
+            "--tokenizer selects the growth tokenizer arm (byte/bpe4096/concept); "
             "held-out CALIBRATION teacher-forced answer-span accuracy, free-run "
             "complete() exact match, and first-class degeneracy metrics"
         ),
@@ -303,6 +424,7 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
             "active_reservoir_cells": model.active_reservoir_cells,
         },
         "model": {
+            "tokenizer": tokenizer_meta,
             "vocabulary_size": model.vocabulary_size,
             "token_cells": model._circuit.token_cells,  # noqa: SLF001
             "vocabulary_alignment_pass": vocabulary_alignment_pass,
@@ -393,6 +515,33 @@ def main() -> None:
         ),
     )
     parser.add_argument("--eval-limit", type=int, default=None)
+    parser.add_argument(
+        "--tokenizer",
+        choices=_TOKENIZERS,
+        default="byte",
+        help=(
+            "growth tokenizer: byte = BytePhraseTokenizer fit on TRAIN "
+            "(historical default); bpe4096 = plain BPE baseline; concept = "
+            "BytePhrase + reserved-band [1024,1536) concepts mined from the "
+            "TRAIN texts"
+        ),
+    )
+    parser.add_argument(
+        "--concept-min-frequency",
+        type=int,
+        default=ExperimentConfig.concept_min_frequency,
+        help=(
+            "concept arm mining gate: n-gram occurrence floor in the TRAIN "
+            "texts (study protocol 50; lower it for fixture-scale corpora)"
+        ),
+    )
+    parser.add_argument(
+        "--concept-min-mi-bits",
+        dest="concept_min_mutual_information_bits",
+        type=float,
+        default=ExperimentConfig.concept_min_mutual_information_bits,
+        help="concept arm mining gate: minimum mutual information in bits",
+    )
     parser.add_argument("--check-determinism", action="store_true")
     parser.add_argument(
         "--require-pass",
@@ -414,6 +563,9 @@ def main() -> None:
         eval_limit=args.eval_limit,
         device=args.device,
         readout_rule=args.readout_rule,
+        tokenizer=args.tokenizer,
+        concept_min_frequency=args.concept_min_frequency,
+        concept_min_mutual_information_bits=args.concept_min_mutual_information_bits,
     )
     if args.check_determinism:
         result: dict[str, object] = check_determinism(config)

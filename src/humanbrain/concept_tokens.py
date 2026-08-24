@@ -236,7 +236,17 @@ class ConceptTokenizer:
 
     @property
     def vocab_size(self) -> int:
-        return self._base.vocab_size + len(self._concepts)
+        # Size of the full id space this tokenizer can emit or receive.
+        # Concept ids live at [CONCEPT_ID_BASE, CONCEPT_ID_BASE + len), so
+        # consumers that size dense resources from vocab_size (e.g. a
+        # circuit's output-cell population) need the BAND END, not
+        # ``base.vocab_size + len``: the two diverge as soon as concepts
+        # exist, because ids jump across the [768, 1024) headroom. With an
+        # empty concept inventory nothing above the base bands can be
+        # emitted, so the tight base size is exact there.
+        if not self._concepts:
+            return self._base.vocab_size
+        return CONCEPT_ID_BASE + len(self._concepts)
 
     def encode(self, text: str) -> list[int]:
         base_ids = self._base.encode(text)
