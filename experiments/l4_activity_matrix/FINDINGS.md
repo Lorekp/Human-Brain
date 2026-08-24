@@ -138,6 +138,49 @@ Same ordering and regime shape; absolute levels carry the desktop-load factor. N
 EP/FT at 20% flips positive (1.5x) even pre-Seam-B on single tokens — FT's full-touch
 stepping floor stops helping once residency is small relative to traffic.
 
+## 4b. Post-Seam-B rerun — MEASURED VERDICT (same day as merge)
+
+Run: `--tokens 12`, main worktree @`264ff55` (Seam B `90f4e92` + gates `535e1bf` landed),
+seam probe: `indexed` (scan-arm 40 ms vs floor), provenance digest pinned in artifact
+`l4_activity_matrix_post-seam-b.json`.
+
+| Activity | Fixture | EP ms/tok | EP tok/s | FT ms/tok | FT tok/s | EP/FT | EP cell-steps/tok | FT cell-steps/tok |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1% (10k ev/tok) | 262,144 | 64.8 | 15.43 | 1157.0 | 0.864 | **17.9x** | 1,880,233 | 27,321,140 |
+| 2% (20k ev/tok) | 262,144 | 245.6 | 4.07 | 766.7 | 1.304 | **3.12x** | 3,655,861 | 28,373,753 |
+| 5% (50k ev/tok) | 262,144 | 635.1 | 1.57 | 944.5 | 1.059 | **1.49x** | 8,425,480 | 31,234,661 |
+| 20% (200k ev/tok) | 131,072 | 1945.4 | 0.514 | 2704.6 | 0.370 | **1.39x** | 23,484,863 | 48,195,267 |
+
+Improvements vs baseline (§4): EP 15.3x / 12.4x / 41.1x / ≥192x (the 20% multiples are
+lower bounds — baseline arms were breaker-truncated single tokens). FT flattened from
+collapse (5%: 15.6 s → 0.94 s; 20%: 538 s → 2.7 s). Mirror reads 18–23 µs/token =
+≤0.036 % of any token.
+
+Expectation checks (§5):
+- **E1 PASS** — both modes accelerated; EP 5% 0.635 s/tok vs B-G2 gate 3.0 s/tok (4.7x
+  inside); FT 5% 0.944 s/tok vs 1.7 s gate.
+- **E2 PASS** — FT flattened onto its stepping floor (~0.9–2.7 s/tok across 1–20%,
+  was 1.6 s→538 s on baseline).
+- **E3 CONCLUSION PASS, SHAPE CLAUSE REFUTED** — EP beats FT at every level ≥1%
+  (predicted), but the margin is largest at LOW activity (17.9x at 1%) and converges
+  toward ~1.4x at 20%, not monotonically increasing: once the injection wall is gone,
+  FT's fixed full-touch stepping floor dominates the ratio at low activity, while at
+  high activity EP's replay/reactivation bookkeeping closes the gap.
+- **E4 PASS (negative result confirmed)** — best EP throughput anywhere ≥1% uniform is
+  **15.4 tok/s at 1%**, an order of magnitude under the 160 tok/s band. Falsification
+  condition (EP < 6.25 ms/token) not approached. The band remains sparse-regime-only;
+  operator decision rule §3.3(d) survives Seam B unchanged in form.
+- **E5 PASS** — mirror reads 18–23 µs/token at every level (≤0.036 % overhead).
+- **E6 PASS** — both 20% cells completed all 12 tokens without the breaker.
+
+**Verdict:** Seam B removes the injection wall for both modes and makes event-
+proportional the strict default at every measured uniform activity ≥1% (EP/FT 17.9x /
+3.1x / 1.5x / 1.4x). The CPU-EP upper band at ≥1% *uniform* activity remains bounded by
+host-side per-event costs, not kernel work — the 160+ tok/s gate continues to apply only
+to sparse text-like traffic (FINDINGS §3.3(a): 363 tok/s @640 events/token).
+
+
+
 ## 5. Pre-registered expectations for the post-Seam-B rerun
 
 Written BEFORE the Seam-B merge, from the spec §B.4 cost model, the §B.8(B-G2)
