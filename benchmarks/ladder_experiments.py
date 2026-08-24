@@ -134,13 +134,14 @@ _RAM_BUDGET_BYTES = 1_500_000_000
 _HOST_RIDGE_BUDGET_BYTES = 20_000_000_000
 # Device-array projection guard (CudaRecurrentKernel allocations: per-cell
 # recurrent fan-out edges + weights + six mutable state arrays + spike/input
-# masks). Never binding below the host cap, kept for honest accounting.
+# masks + the 1-bit-per-cell decayed-state activity bitmap). Never binding
+# below the host cap, kept for honest accounting.
 _CUDA_VRAM_BUDGET_BYTES = 8 * 1024**3
 
 
 def _projected_cuda_device_bytes(n_cells: int, input_fanout: int) -> int:
     """Mirror CudaRecurrentKernel's allocation sizes for one circuit."""
-    per_cell = _RECURRENT_FANOUT * (4 + 8) + 6 * 8 + 4 + 2
+    per_cell = _RECURRENT_FANOUT * (4 + 8) + 6 * 8 + 4 + 2 + 1
     token_arrays = typed_program._TOKEN_CELL_COUNT * input_fanout * 4
     return n_cells * per_cell + token_arrays + 8
 

@@ -6,6 +6,61 @@ device allocation observed ≈ 132 MiB arrays + driver context; system GPU pool
 stayed ≈ 2.5 GiB including the Windows desktop).
 Date: 2026-08-22.
 
+## Wave 2 (2026-08-24): decayed-state activity bitmap in the neuron pass
+
+**Profile first.** A throwaway instrumented build of `cuda.cu` (identical
+arithmetic, `clock64()` stamps taken by block 0 immediately after each
+cooperative `grid.sync()` return, exported through the front of the
+`input_mask` buffer) attributed one token at N=1,000,000 (100 steps/token,
+2 after-current channels): neuron pass ≈ 30 ms, reverse-CSR synaptic pass
+≈ 1.8 ms, mask zeroing + afferent scatter ≈ 0, residual ≈ 0 — i.e. the
+per-step full-touch neuron update is ~94% of the ~29 ms kernel and the kernel
+is ~96% of end-to-end token time (race/strengthen/D2H ≈ 1 ms combined).
+Effective streaming rate was already ≈ 373 GB/s (~74% of peak), so the only
+meaningful lever was moving fewer bytes.
+
+**One targeted change:** a per-cell *decayed-state activity* bitmap
+(`decay_active`, 1 bit/cell, uint64 words). A cell whose two after-spike
+current channels and its eligibility trace are all exactly ±0.0 stays exactly
+at those bits under decay (`0.0 · d == +0.0` for the positive decay factors,
+`(+0.0) + (+0.0) == +0.0`, `-0.0` guarded as *active* via signbit on the host
+side), so the neuron pass may skip their loads, decays, and stores with no
+numerical effect. Cells enter the active set on their first spike
+(`atomicOr`, gated to the crossing thread) and stay active until the host
+re-derives the bitmap from uploaded state (`__init__`,
+`synchronize_from_host`). With ~2.5 spikes/token the active set stays at a
+few hundred cells out of 1M: ~48 B/cell/step of traffic removed from the
+dominant segment (~44% of its bytes).
+
+**Bit-exactness evidence**
+- `tests/test_cuda.py` (CPU/CUDA state parity per token, reset/replay,
+  checkpoint continuation), `tests/test_sparse_cuda_engineering.py`,
+  `tests/test_topology.py`: green unmodified.
+- New oracle `benchmarks/scale_opt_gpu_parity.py`: SHA-256 over every mutable
+  device state array byte-for-byte + per-token spike counts + structural
+  counters after bootstrap/inference/training schedules at 128 and 1M cells.
+  Baseline (detached worktree at base commit) vs optimized: **all six phase
+  digests identical** (`scale_opt_gpu_parity_base.json` /
+  `scale_opt_gpu_parity_opt.json`).
+
+**Measured delta** (`scale_opt_gpu_bench.py --cells 131072,1000000`, same
+list → same seed offsets → identical circuits; single runs, base =
+pre-change worktree at this branch's base commit):
+
+| cells | metric | base → wave 2 | Δ |
+|---:|---|---|---|
+| 131,072 | inference tok/s | 408.9 → 510.5 | +24.9% |
+| 131,072 | training ("grow") tok/s | 370.8 → 472.0 | +27.3% |
+| 131,072 | kernel tok/s | 494.3 → 620.1 | +25.4% |
+| 1,000,000 | inference tok/s | 32.6 → 101.6 | ×3.12 |
+| 1,000,000 | training ("grow") tok/s | 31.4 → 96.1 | **×3.06** |
+| 1,000,000 | kernel tok/s (ms/token) | 33.8 → 112.9 (29.6 → 8.9 ms) | ×3.34 |
+
+Device array overhead: +cells/64 words (125 KiB at 1M); VRAM budget guard in
+`benchmarks/ladder_experiments.py` updated to include the 1 B/cell.
+
+## Wave 1 (2026-08-22): construction vectorization, zero-spike elision
+
 ## Scope and constraints kept
 
 - Exactness contracts unchanged: `tests/test_cuda.py` bit-exact CPU/CUDA state
