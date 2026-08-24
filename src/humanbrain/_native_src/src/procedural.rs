@@ -878,6 +878,38 @@ impl ProceduralRuntime {
         self.residents.binary_search_by_key(&gid, |state| state.gid)
     }
 
+    /// Targeted active-residency lookup backing
+    /// `humanbrain_procedural_runtime_read_cells`: binary-search the ascending
+    /// resident array first, then `staged`.
+    /// Precedence is unreachable under the disjointness invariant D1
+    /// (`residents`/`staged`/`dormant` are pairwise disjoint; residents gain
+    /// members only via `absorb_staged`, dormant reactivation removes the
+    /// key from `dormant` before pushing to `staged`, and fresh staging only
+    /// happens after misses in all three structures); it exists so the read
+    /// contract stays total without relying on an invariant an FFI caller
+    /// cannot observe.
+    fn read_cell(&self, gid: u64) -> Option<&CellState> {
+        if let Ok(index) = self.resident_index(gid) {
+            return Some(&self.residents[index]);
+        }
+        match self.staged.binary_search_by_key(&gid, |state| state.gid) {
+            Ok(index) => {
+                // `read_cells` runs only between top-level calls, where every
+                // non-poisoned exit of `advance` has left `staged` empty and
+                // every delivery-phase push order can only be observed after
+                // a poisoned abort (which read_cells refuses). The sortedness
+                // guard turns any future lifecycle mistake into a loud test
+                // failure instead of a silently misordered binary search.
+                debug_assert!(self
+                    .staged
+                    .windows(2)
+                    .all(|window| window[0].gid <= window[1].gid));
+                Some(&self.staged[index])
+            }
+            Err(_) => None,
+        }
+    }
+
     /// Live (unconsumed) prefix of the pending-event queue, ascending by key.
     #[inline]
     fn pending_slice(&self) -> &[ProceduralEventRecord] {
@@ -2006,6 +2038,79 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
     PROCEDURAL_OK
 }
 
+/// Targeted resident-state read (active residency only).
+///
+/// For each `gids[i]`: binary-search `residents` (ascending-GID array) via
+/// `resident_index`, then linear-binary-search `staged`; staged wins if
+/// present (unreachable under the disjointness invariant D1, kept defensive).
+/// Writes exactly `gid_count` [`ProceduralResidentRecord`] values to `out` in
+/// input request order and one presence flag per request to `found`. Absent
+/// cells get the canonical-rest record for the requested gid. O(K log R).
+/// Allocates nothing. Mutates nothing. Touches no counters.
+///
+/// Pinned semantics (cpu-seams-spec.md Seam A):
+/// - Output order is request order; duplicate gids each get their own search.
+/// - Absent cells (`found[i] == 0`) carry canonical positive zeros built by
+///   `canonical_rest(gid).record()`, preserving signed-zero canon at the seam.
+/// - Dormant cells (event-proportional fast-rest retirement) are NOT active
+///   residents and report `found = 0` + canonical zeros, matching what
+///   `snapshot()` reports in that mode; hosts needing dormant eligibility must
+///   use `humanbrain_procedural_runtime_dormant_snapshot` and replay the
+///   catch-up multiplies themselves. This divergence from "any configured gid"
+///   is deliberate: both read seams must agree on what "is resident" means or
+///   host mirrors will silently disagree with checkpoints.
+/// - Unlike `snapshot()` (which serves diagnostics of a poisoned runtime via
+///   `counters.overflow_code`), this seam FAILS CLOSED on poison: it returns
+///   `PROCEDURAL_POISONED` without touching `out`/`found`. It feeds learning
+///   (eligibility mirrors driving weight updates); serving pre-poison state
+///   would corrupt training with no signal. The asymmetry with snapshot() is
+///   intentional; checkpoint/diagnostic reads keep using `snapshot()`.
+/// - No GID range validation: a requested gid >= configured_cells is simply
+///   absent (`found = 0`, canonical zeros, status OK). Range rejection stays a
+///   caller-side courtesy.
+///
+/// Safety: callers must pass a valid `runtime` handle and, when
+/// `gid_count > 0`, readable `gids` plus writable `out`/`found` buffers of at
+/// least `gid_count` elements; `out`/`found` must not alias runtime-owned
+/// memory (unreachable from Python, where both are freshly allocated ctypes
+/// arrays). Additive export; `humanbrain_kernel_abi_version` is unchanged,
+/// same rationale as the `dormant_snapshot` precedent.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_procedural_runtime_read_cells(
+    runtime: *const ProceduralRuntime,
+    gids: *const u64,
+    gid_count: usize,
+    out: *mut ProceduralResidentRecord,
+    found: *mut u8,
+) -> u32 {
+    if runtime.is_null() || (gid_count > 0 && (gids.is_null() || out.is_null() || found.is_null()))
+    {
+        return PROCEDURAL_INVALID;
+    }
+    let runtime = &*runtime;
+    if runtime.poisoned != PROCEDURAL_OK {
+        return PROCEDURAL_POISONED;
+    }
+    if gid_count == 0 {
+        return PROCEDURAL_OK;
+    }
+    for index in 0..gid_count {
+        let gid = *gids.add(index);
+        let slot = out.add(index);
+        match runtime.read_cell(gid) {
+            Some(state) => {
+                *slot = state.record();
+                *found.add(index) = 1;
+            }
+            None => {
+                *slot = CellState::canonical_rest(gid).record();
+                *found.add(index) = 0;
+            }
+        }
+    }
+    PROCEDURAL_OK
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct ProceduralDormantRecord {
@@ -2221,10 +2326,12 @@ pub unsafe extern "C" fn humanbrain_dense_reference_snapshot(
 mod tests {
     use super::{
         canonical_zero, fallback_candidate, fill_targets_with,
-        humanbrain_procedural_runtime_create, GlifConfig, ProceduralConfig, ProceduralEventRecord,
-        ProceduralRuntime, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL, PROCEDURAL_STEPPING_FULL_TOUCH,
+        humanbrain_procedural_runtime_create, humanbrain_procedural_runtime_read_cells,
+        humanbrain_procedural_runtime_snapshot, CellState, GlifConfig, ProceduralConfig,
+        ProceduralCounters, ProceduralEventRecord, ProceduralResidentRecord, ProceduralRuntime,
+        PROCEDURAL_STEPPING_EVENT_PROPORTIONAL, PROCEDURAL_STEPPING_FULL_TOUCH,
     };
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
 
     #[test]
     fn fallback_candidate_matches_widened_counter64_oracle_across_u64_wrap() {
@@ -2667,5 +2774,298 @@ mod tests {
         assert!(
             ProceduralRuntime::new(ep_glif(), ep_config(16, 7), decay, decay, [0.0; 2]).is_err()
         );
+    }
+
+    // ---------------------------------------------------------------------
+    // read_cells targeted FFI (cpu-seams-spec.md Seam A).
+    //
+    // The C-ABI helper is exercised exactly as an FFI caller sees it: raw
+    // buffers, presence flags, and status codes. Staged cells are produced
+    // deterministically by direct `apply_event` deliveries between advances
+    // (staged is only observable between top-level calls when a fused pass
+    // has not yet absorbed it), which is precisely the defensive branch the
+    // export must keep correct.
+    // ---------------------------------------------------------------------
+
+    /// Dynamics-field bit words of one record. Comparisons use `to_bits`,
+    /// never `==`, so `-0.0` can never masquerade as canonical `+0.0`.
+    fn record_bits(record: &ProceduralResidentRecord) -> [u64; 8] {
+        [
+            record.voltage_relative_mv.to_bits(),
+            record.after_spike_current_0_pa.to_bits(),
+            record.after_spike_current_1_pa.to_bits(),
+            record.threshold_spike_mv.to_bits(),
+            record.threshold_voltage_mv.to_bits(),
+            record.synaptic_current_pa.to_bits(),
+            record.eligibility.to_bits(),
+            record.refractory_steps as i64 as u64,
+        ]
+    }
+
+    /// gid -> record map pulled through the real snapshot export, so present
+    /// records must byte-match what any existing consumer already reads.
+    fn snapshot_records(runtime: &ProceduralRuntime) -> HashMap<u64, ProceduralResidentRecord> {
+        let count = runtime.total_residents();
+        let template = CellState::canonical_rest(u64::MAX).record();
+        let mut buffer = vec![template; count.max(1)];
+        let mut counters = ProceduralCounters::default();
+        let status = unsafe {
+            humanbrain_procedural_runtime_snapshot(
+                runtime as *const ProceduralRuntime,
+                buffer.as_mut_ptr(),
+                buffer.len(),
+                std::ptr::null_mut(),
+                0,
+                std::ptr::null_mut(),
+                0,
+                &mut counters,
+            )
+        };
+        assert_eq!(status, super::PROCEDURAL_OK);
+        buffer.truncate(count);
+        buffer
+            .into_iter()
+            .map(|record| (record.gid, record))
+            .collect()
+    }
+
+    fn read_through_ffi(
+        runtime: &ProceduralRuntime,
+        gids: &[u64],
+    ) -> (u32, Vec<ProceduralResidentRecord>, Vec<u8>) {
+        let mut out = vec![CellState::canonical_rest(u64::MAX).record(); gids.len().max(1)];
+        let mut found = vec![0xFFu8; gids.len().max(1)];
+        let status = unsafe {
+            humanbrain_procedural_runtime_read_cells(
+                runtime as *const ProceduralRuntime,
+                gids.as_ptr(),
+                gids.len(),
+                out.as_mut_ptr(),
+                found.as_mut_ptr(),
+            )
+        };
+        out.truncate(gids.len());
+        found.truncate(gids.len());
+        (status, out, found)
+    }
+
+    fn assert_canonical_positive_zeros(record: &ProceduralResidentRecord, gid: u64) {
+        assert_eq!(record.gid, gid);
+        for field in record_bits(record).iter().take(7) {
+            assert_eq!(*field, 0u64, "absent record must carry canonical +0.0");
+        }
+        assert_eq!(record.refractory_steps, 0);
+    }
+
+    #[test]
+    fn read_cells_matches_snapshot_records_for_present_absent_and_staged() {
+        let mut runtime = ep_runtime(48, PROCEDURAL_STEPPING_FULL_TOUCH);
+        // Gids 0..8 become absorbed residents: delivered, then folded into
+        // the sorted array by the step's fused pass.
+        let batch: Vec<_> = (0..8).map(|gid| drive(gid, 0, 10.0)).collect();
+        assert_eq!(runtime.advance(1, &batch), super::PROCEDURAL_OK);
+        assert_eq!(runtime.staged.len(), 0);
+        // Stage gids 20..24 without running a fused pass, leaving them in the
+        // staged Vec where the export's defensive staged branch must find
+        // them. Ascending pushes keep `staged` sorted as the binary search
+        // requires.
+        for gid in 20..24u64 {
+            runtime
+                .apply_event(drive(gid, runtime.current_step, 10.0))
+                .unwrap();
+        }
+        assert_eq!(runtime.staged.len(), 4);
+
+        // Request order mixes residents, staged, absent, out-of-range, and a
+        // duplicate; results must come back positionally.
+        let gids = [20u64, 40, 3, 22, 1000, 3, 7];
+        let (status, out, found) = read_through_ffi(&runtime, &gids);
+        assert_eq!(status, super::PROCEDURAL_OK);
+        let expected = snapshot_records(&runtime);
+
+        for (index, requested) in gids.iter().enumerate() {
+            assert_eq!(out[index].gid, *requested, "gid must echo request order");
+            match expected.get(requested) {
+                Some(snapshot_record) => {
+                    assert_eq!(found[index], 1, "gid {requested} must be found");
+                    assert_eq!(record_bits(&out[index]), record_bits(snapshot_record));
+                }
+                None => {
+                    assert_eq!(found[index], 0, "gid {requested} must be absent");
+                    assert_canonical_positive_zeros(&out[index], *requested);
+                }
+            }
+        }
+
+        // Duplicate requests get independent but identical answers.
+        assert_eq!(found[2], found[5]);
+        assert_eq!(record_bits(&out[2]), record_bits(&out[5]));
+        // Out-of-range gids (1000 >= configured 48) are simply absent, not errors.
+        assert_canonical_positive_zeros(&out[4], 1000);
+    }
+
+    #[test]
+    fn read_cells_reports_poisoned_without_touching_outputs() {
+        let mut config = ep_config(16, PROCEDURAL_STEPPING_FULL_TOUCH);
+        config.resident_capacity = 4;
+        let decay = [0.5, 0.5];
+        let mut runtime =
+            ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
+        // Force a resident-capacity fail-stop mid-delivery: six distinct
+        // targets into four slots poisons the runtime.
+        let batch: Vec<_> = (0..6).map(|gid| drive(gid, 0, 10.0)).collect();
+        assert_eq!(
+            runtime.advance(1, &batch),
+            super::PROCEDURAL_RESIDENT_CAPACITY
+        );
+        assert_ne!(runtime.poisoned, super::PROCEDURAL_OK);
+
+        let sentinel_voltage = f64::from_bits(0xDEAD_BEEF_CAFE_F00D);
+        let sentinels = vec![
+            ProceduralResidentRecord {
+                gid: u64::MAX,
+                voltage_relative_mv: sentinel_voltage,
+                after_spike_current_0_pa: sentinel_voltage,
+                after_spike_current_1_pa: sentinel_voltage,
+                threshold_spike_mv: sentinel_voltage,
+                threshold_voltage_mv: sentinel_voltage,
+                refractory_steps: -1,
+                synaptic_current_pa: sentinel_voltage,
+                eligibility: sentinel_voltage,
+            };
+            2
+        ];
+        let mut out = sentinels.clone();
+        let mut found = vec![0xAAu8; 2];
+
+        // Poison check precedes both the short-circuit and every write, and
+        // unlike snapshot() this seam refuses to serve pre-poison state.
+        let status = unsafe {
+            humanbrain_procedural_runtime_read_cells(
+                &runtime as *const ProceduralRuntime,
+                [0u64, 1].as_ptr(),
+                2,
+                out.as_mut_ptr(),
+                found.as_mut_ptr(),
+            )
+        };
+        assert_eq!(status, super::PROCEDURAL_POISONED);
+        for (index, sentinel) in sentinels.iter().enumerate() {
+            assert_eq!(
+                out[index].gid, sentinel.gid,
+                "outputs must be untouched on poison"
+            );
+            assert_eq!(
+                record_bits(&out[index]),
+                record_bits(sentinel),
+                "outputs must be untouched on poison"
+            );
+        }
+        assert_eq!(found, vec![0xAAu8; 2], "flags must be untouched on poison");
+    }
+
+    #[test]
+    fn read_cells_handles_empty_null_and_duplicate_requests() {
+        let mut runtime = ep_runtime(32, PROCEDURAL_STEPPING_FULL_TOUCH);
+        let batch = vec![drive(2, 0, 10.0), drive(9, 0, 10.0)];
+        assert_eq!(runtime.advance(1, &batch), super::PROCEDURAL_OK);
+
+        // gid_count == 0 short-circuits OK even with null buffers.
+        let empty_status = unsafe {
+            humanbrain_procedural_runtime_read_cells(
+                &runtime as *const ProceduralRuntime,
+                std::ptr::null(),
+                0,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        };
+        assert_eq!(empty_status, super::PROCEDURAL_OK);
+
+        // Nonzero counts demand non-null buffers, mirroring counts().
+        let gids = [2u64];
+        let mut out = vec![CellState::canonical_rest(0).record(); 1];
+        let mut found = [0u8; 1];
+        for (gids_override, out_override, found_override) in [
+            (std::ptr::null(), out.as_mut_ptr(), found.as_mut_ptr()),
+            (gids.as_ptr(), std::ptr::null_mut(), found.as_mut_ptr()),
+            (gids.as_ptr(), out.as_mut_ptr(), std::ptr::null_mut()),
+        ] {
+            let status = unsafe {
+                humanbrain_procedural_runtime_read_cells(
+                    &runtime as *const ProceduralRuntime,
+                    gids_override,
+                    1,
+                    out_override,
+                    found_override,
+                )
+            };
+            assert_eq!(status, super::PROCEDURAL_INVALID);
+        }
+        let null_runtime_status = unsafe {
+            humanbrain_procedural_runtime_read_cells(
+                std::ptr::null(),
+                gids.as_ptr(),
+                1,
+                out.as_mut_ptr(),
+                found.as_mut_ptr(),
+            )
+        };
+        assert_eq!(null_runtime_status, super::PROCEDURAL_INVALID);
+
+        // Duplicates stay consistent; untouched-but-valid gid 31 and
+        // out-of-range gid 500 both report absent without error.
+        let repeated = [2u64, 2, 31, 500];
+        let (status, out, found) = read_through_ffi(&runtime, &repeated);
+        assert_eq!(status, super::PROCEDURAL_OK);
+        assert_eq!(found, [1, 1, 0, 0]);
+        assert_eq!(record_bits(&out[0]), record_bits(&out[1]));
+        let expected = snapshot_records(&runtime);
+        assert_eq!(record_bits(&out[0]), record_bits(&expected[&2]));
+        assert_canonical_positive_zeros(&out[2], 31);
+        assert_canonical_positive_zeros(&out[3], 500);
+    }
+
+    #[test]
+    fn read_cells_is_bit_identical_across_identically_seeded_runtimes() {
+        let build_batches = || {
+            let mut batches = Vec::new();
+            for step in 0..12usize {
+                let batch: Vec<_> = if step % 3 == 0 {
+                    (0..6u64)
+                        .filter(|gid| (gid + step as u64) % 2 == 0)
+                        .map(|gid| drive(gid, step as u64, 10.0))
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                batches.push(batch);
+            }
+            batches
+        };
+
+        let mut first = ep_runtime(48, PROCEDURAL_STEPPING_FULL_TOUCH);
+        run_steps(&mut first, &build_batches());
+        let mut second = ep_runtime(48, PROCEDURAL_STEPPING_FULL_TOUCH);
+        run_steps(&mut second, &build_batches());
+
+        let gids = [5u64, 999, 2, 2, 40, 0];
+        let (first_status, first_out, first_found) = read_through_ffi(&first, &gids);
+        let (second_status, second_out, second_found) = read_through_ffi(&second, &gids);
+        assert_eq!(first_status, super::PROCEDURAL_OK);
+        assert_eq!(first_status, second_status);
+        // Raw out-buffer bytes compared as whole u64 words (9 per 72-byte
+        // record), plus the flag bytes.
+        let first_words = unsafe {
+            std::slice::from_raw_parts(first_out.as_ptr() as *const u64, first_out.len() * 9)
+        };
+        let second_words = unsafe {
+            std::slice::from_raw_parts(second_out.as_ptr() as *const u64, second_out.len() * 9)
+        };
+        assert_eq!(first_words, second_words);
+        assert_eq!(first_found, second_found);
+        // Sanity: the fixture must actually mix hits and absences.
+        assert!(first_found.contains(&1));
+        assert!(first_found.contains(&0));
     }
 }
