@@ -718,6 +718,20 @@ pub struct ProceduralRuntime {
     /// an insertion costs O(1) instead of shifting the sorted array; they are
     /// merged back during the step's fused update pass.
     staged: Vec<CellState>,
+    /// Delivery-phase membership index for `staged`: gid -> slot offset into
+    /// the `staged` Vec (`cpu-seams-spec.md` Seam B). Valid ONLY while
+    /// `staged` accumulates between fused passes -- after the fused pass of
+    /// step t-1 cleared it, until `absorb_staged` of step t runs (invariant
+    /// D2). The fused pass sorts `staged`, invalidating slots; no
+    /// `apply_event` can run between that sort and the clearing absorb (same
+    /// step, same `&mut self` call chain), and a poison abort in that window
+    /// is terminal (`advance` fails closed), so stale contents are never
+    /// read: do NOT add a reader outside the delivery phase, and do not
+    /// re-key after the sort -- scoping is the fix. Emptied only by
+    /// `absorb_staged`, the single removal path (nothing ever removes one
+    /// staged entry). Never iterated for semantics; pure lookup structure
+    /// replacing the O(S) `.position()` scan in `apply_event` with O(log S).
+    staged_index: BTreeMap<u64, u32>,
     /// Pending future events. Slots `[0..pending_head)` are consumed; the
     /// live queue is `[pending_head..)` in canonical ascending key order.
     pending: Vec<ProceduralEventRecord>,
@@ -753,6 +767,10 @@ impl ProceduralRuntime {
         }
         let residents = reserved_vec(config.resident_capacity)?;
         let staged_capacity = config.resident_capacity.min(config.event_capacity);
+        // Slot offsets into `staged` are stored as u32 in the delivery-phase
+        // membership index; fail loudly at construction if a capacity could
+        // ever overflow that width.
+        debug_assert!(staged_capacity <= u32::MAX as usize);
         let staged = reserved_vec(staged_capacity)?;
         let pending = reserved_vec(config.event_capacity)?;
         let last_spikes = reserved_vec(config.spike_capacity)?;
@@ -766,6 +784,7 @@ impl ProceduralRuntime {
             current_step: 0,
             residents,
             staged,
+            staged_index: BTreeMap::new(),
             pending,
             pending_head: 0,
             last_spikes,
@@ -812,6 +831,17 @@ impl ProceduralRuntime {
                 * (size_of::<u64>()
                     + size_of::<DormantEntry>()
                     + 4 * size_of::<usize>())
+            // Conservative B-tree node estimate for the delivery-phase
+            // staged membership index (key + value plus order and parent
+            // linkage), styled after the dormant-store term above. The term
+            // is len-deterministic: zero outside a delivery phase and
+            // exactly one entry per staged cell during one.
+            + self
+                .staged_index
+                .len()
+                * (size_of::<u64>()
+                    + size_of::<u32>()
+                    + 4 * size_of::<usize>())
             + self.scratch.payload_bytes()
     }
 
@@ -841,6 +871,7 @@ impl ProceduralRuntime {
     /// not-yet-read resident is ever clobbered.
     fn absorb_staged(&mut self) -> Result<(), u32> {
         if self.staged.is_empty() {
+            debug_assert!(self.staged_index.is_empty());
             return Ok(());
         }
         self.staged.sort_unstable_by_key(|state| state.gid);
@@ -871,6 +902,12 @@ impl ProceduralRuntime {
         }
         debug_assert_eq!(read, write);
         self.staged.clear();
+        // Invariant D2 (`cpu-seams-spec.md` Seam B.3): the membership index
+        // is only valid while `staged` accumulates. Clearing it here beside
+        // the Vec is the single removal path -- there are no individual
+        // tombstones because nothing ever removes one staged entry, so no
+        // stale slot can outlive the sort that invalidates it.
+        self.staged_index.clear();
         Ok(())
     }
 
@@ -976,16 +1013,14 @@ impl ProceduralRuntime {
                         // -- mirroring the full-touch path, where an event to
                         // an existing resident performs none either.
                         self.staged.push(state);
+                        self.staged_index
+                            .insert(state.gid, self.staged.len() as u32 - 1);
                         return Ok(());
                     }
                 }
-                if let Some(slot) = self
-                    .staged
-                    .iter()
-                    .position(|state| state.gid == event.target_gid)
-                {
-                    let value = self.staged[slot].synaptic_current + current;
-                    self.staged[slot].synaptic_current = canonical_zero(value);
+                if let Some(&slot) = self.staged_index.get(&event.target_gid) {
+                    let value = self.staged[slot as usize].synaptic_current + current;
+                    self.staged[slot as usize].synaptic_current = canonical_zero(value);
                     return Ok(());
                 }
                 if current.to_bits() == 0 {
@@ -1005,6 +1040,8 @@ impl ProceduralRuntime {
                 let mut state = CellState::canonical_rest(event.target_gid);
                 state.synaptic_current = current;
                 self.staged.push(state);
+                self.staged_index
+                    .insert(state.gid, self.staged.len() as u32 - 1);
             }
         }
         Ok(())
@@ -1995,6 +2032,20 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
         // Residents are reported in ascending GID order; staged cells join
         // the stream via merge so a mid-step snapshot matches the sorted
         // layout the previous single-array implementation produced.
+        //
+        // Hardening (Seam B.6.5): the merge assumes `staged` is ascending.
+        // Non-empty staged is reachable here only mid-delivery or on a
+        // poisoned mid-abort; the assert documents that assumption so a
+        // future lifecycle mistake fails loudly instead of silently
+        // misordering output.
+        debug_assert!(
+            runtime.staged.is_empty()
+                || runtime
+                    .staged
+                    .windows(2)
+                    .all(|window| window[0].gid <= window[1].gid),
+            "snapshot merge requires ascending staged"
+        );
         let mut main_index = 0usize;
         let mut staged_index = 0usize;
         let mut out_index = 0usize;
@@ -2327,11 +2378,11 @@ mod tests {
     use super::{
         canonical_zero, fallback_candidate, fill_targets_with,
         humanbrain_procedural_runtime_create, humanbrain_procedural_runtime_read_cells,
-        humanbrain_procedural_runtime_snapshot, CellState, GlifConfig, ProceduralConfig,
-        ProceduralCounters, ProceduralEventRecord, ProceduralResidentRecord, ProceduralRuntime,
-        PROCEDURAL_STEPPING_EVENT_PROPORTIONAL, PROCEDURAL_STEPPING_FULL_TOUCH,
+        humanbrain_procedural_runtime_snapshot, CellState, DormantEntry, GlifConfig,
+        ProceduralConfig, ProceduralCounters, ProceduralEventRecord, ProceduralResidentRecord,
+        ProceduralRuntime, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL, PROCEDURAL_STEPPING_FULL_TOUCH,
     };
-    use std::collections::{HashMap, HashSet};
+    use std::collections::{BTreeMap, HashMap, HashSet};
 
     #[test]
     fn fallback_candidate_matches_widened_counter64_oracle_across_u64_wrap() {
@@ -3067,5 +3118,559 @@ mod tests {
         // Sanity: the fixture must actually mix hits and absences.
         assert!(first_found.contains(&1));
         assert!(first_found.contains(&0));
+    }
+
+    // ---------------------------------------------------------------------
+    // Indexed staged membership (cpu-seams-spec.md Seam B).
+    //
+    // `staged_index: BTreeMap<u64, u32>` is a delivery-phase lookup structure
+    // replacing the O(S) `.position()` scan in `apply_event` with O(log S).
+    // Lifecycle contract (spec B.3): valid only while `staged` accumulates
+    // between fused passes; cleared by `absorb_staged` as the single removal
+    // path; never read outside that window. The tests below pin the mapping,
+    // bit-parity against the pre-change linear-scan hot loop, lifecycle
+    // scoping, and accumulation order.
+    // ---------------------------------------------------------------------
+
+    /// D2 forward direction: after every delivery-phase mutation the index
+    /// must map exactly `{staged[i].gid -> i}` -- nothing more, nothing less.
+    fn assert_index_maps_exactly_the_staged_vec(runtime: &ProceduralRuntime) {
+        let expected: BTreeMap<u64, u32> = runtime
+            .staged
+            .iter()
+            .enumerate()
+            .map(|(slot, state)| (state.gid, slot as u32))
+            .collect();
+        assert_eq!(
+            runtime.staged_index, expected,
+            "staged_index must equal {{staged[i].gid -> i}} during delivery"
+        );
+        // Every index hit must resolve to a same-gid slot (guards u32 slot
+        // truncation and stale slots mechanically).
+        for (gid, slot) in &runtime.staged_index {
+            assert_eq!(
+                runtime.staged[*slot as usize].gid, *gid,
+                "index entry ({gid} -> {slot}) points at a different cell"
+            );
+        }
+    }
+
+    /// Exact pre-Seam-B `apply_event` (the hot loop the spec replaces):
+    /// staged membership resolved by a linear `.position()` scan, no index
+    /// maintenance. Bit-parity oracle for the indexed path; deliberately does
+    /// NOT touch `staged_index`, so `native_payload_bytes` is the one
+    /// legitimately divergent counter (spec B.4 accounting note).
+    fn linear_scan_apply_event(
+        runtime: &mut ProceduralRuntime,
+        event: ProceduralEventRecord,
+    ) -> Result<(), u32> {
+        let current = canonical_zero(event.current_pa);
+        match runtime.resident_index(event.target_gid) {
+            Ok(index) => {
+                let value = runtime.residents[index].synaptic_current + current;
+                runtime.residents[index].synaptic_current = canonical_zero(value);
+            }
+            Err(_) => {
+                if runtime.event_proportional() {
+                    if let Some(entry) = runtime.dormant.remove(&event.target_gid) {
+                        let restored =
+                            runtime.catch_up_eligibility(entry.eligibility, entry.elig_step);
+                        debug_assert!(restored.to_bits() != 0 || entry.eligibility.to_bits() == 0);
+                        if current.to_bits() == 0 {
+                            runtime.dormant.insert(
+                                event.target_gid,
+                                DormantEntry {
+                                    eligibility: entry.eligibility,
+                                    elig_step: entry.elig_step,
+                                },
+                            );
+                            return Ok(());
+                        }
+                        let mut state = CellState::canonical_rest(event.target_gid);
+                        state.eligibility = restored;
+                        state.synaptic_current = current;
+                        runtime.staged.push(state);
+                        return Ok(());
+                    }
+                }
+                if let Some(slot) = runtime
+                    .staged
+                    .iter()
+                    .position(|state| state.gid == event.target_gid)
+                {
+                    let value = runtime.staged[slot].synaptic_current + current;
+                    runtime.staged[slot].synaptic_current = canonical_zero(value);
+                    return Ok(());
+                }
+                if current.to_bits() == 0 {
+                    return Ok(());
+                }
+                if runtime.total_residents() == runtime.config.resident_capacity {
+                    return Err(super::PROCEDURAL_RESIDENT_CAPACITY);
+                }
+                if runtime.total_residents()
+                    == runtime.residents.capacity() + runtime.staged.capacity()
+                {
+                    return Err(super::PROCEDURAL_ALLOCATION);
+                }
+                runtime.scratch.interval_ledger.mark_single(
+                    event.target_gid,
+                    super::SEEN_RESIDENT,
+                    runtime.config.interval_distinct_capacity,
+                )?;
+                let mut state = CellState::canonical_rest(event.target_gid);
+                state.synaptic_current = current;
+                runtime.staged.push(state);
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn staged_index_maps_exactly_the_staged_vec_during_delivery() {
+        // Full-touch keeps the fixture free of dormancy; a second EP phase
+        // below covers the dormant-reactivation push site.
+        let mut runtime = ep_runtime(64, PROCEDURAL_STEPPING_FULL_TOUCH);
+        // Absorbed residents first: an advance must leave both stores empty.
+        let batch: Vec<_> = (0..8).map(|gid| drive(gid, 0, 10.0)).collect();
+        assert_eq!(runtime.advance(1, &batch), super::PROCEDURAL_OK);
+        assert!(runtime.staged.is_empty());
+        assert!(runtime.staged_index.is_empty());
+
+        // Delivery phase observable between top-level calls: fresh staging in
+        // non-ascending order (slots are push-order, not gid order).
+        for gid in [20u64, 22, 21] {
+            runtime
+                .apply_event(drive(gid, runtime.current_step, 1.5))
+                .unwrap();
+        }
+        assert_index_maps_exactly_the_staged_vec(&runtime);
+        assert_eq!(runtime.staged_index.get(&21), Some(&2));
+
+        // Hits accumulate into the mapped slot without changing membership.
+        runtime
+            .apply_event(drive(22, runtime.current_step, 0.5))
+            .unwrap();
+        runtime
+            .apply_event(drive(22, runtime.current_step, 0.25))
+            .unwrap();
+        assert_index_maps_exactly_the_staged_vec(&runtime);
+        assert_eq!(runtime.staged.len(), 3);
+
+        // Zero-current deliveries stage nothing and hit nothing new.
+        runtime
+            .apply_event(drive(30, runtime.current_step, 0.0))
+            .unwrap();
+        runtime
+            .apply_event(drive(20, runtime.current_step, 0.0))
+            .unwrap();
+        assert_index_maps_exactly_the_staged_vec(&runtime);
+        assert_eq!(runtime.staged.len(), 3);
+
+        // The next advance's fused pass sorts `staged` (invalidating slots)
+        // and absorb clears Vec+index together: post-advance emptiness.
+        assert_eq!(runtime.advance(1, &[]), super::PROCEDURAL_OK);
+        assert!(runtime.staged.is_empty());
+        assert!(runtime.staged_index.is_empty());
+
+        // EP reactivation push site: spike gid 3, wait out recurrent noise
+        // until it fast-rests into the dormant store, then deliver directly
+        // so the dormant branch stages the cell.
+        let mut ep = ep_runtime(16, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+        assert_eq!(ep.advance(1, &[drive(3, 0, 10.0)]), super::PROCEDURAL_OK);
+        for _ in 0..2000 {
+            ep.advance(1, &[]);
+            if ep.dormant.contains_key(&3) {
+                break;
+            }
+        }
+        assert!(ep.dormant.contains_key(&3), "fixture must dormanize gid 3");
+        ep.apply_event(drive(3, ep.current_step, 5.0)).unwrap();
+        assert_eq!(ep.staged.len(), 1);
+        assert_index_maps_exactly_the_staged_vec(&ep);
+        assert_eq!(ep.staged_index.get(&3), Some(&0));
+        // Reactivated cell absorbs cleanly on the next advance.
+        assert_eq!(ep.advance(1, &[]), super::PROCEDURAL_OK);
+        assert!(ep.staged_index.is_empty());
+    }
+
+    #[test]
+    fn indexed_apply_event_is_bit_identical_to_linear_scan_reference() {
+        // Identical schedules over identically constructed runtimes; the only
+        // difference is the staged-membership lookup mechanism. Covers both
+        // stepping modes, resident hits, within-batch staged hits, duplicate
+        // accumulations, zero-current events, and dormant reactivations.
+        for mode in [
+            PROCEDURAL_STEPPING_FULL_TOUCH,
+            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
+        ] {
+            let build_batches = || {
+                // Same-target repeats use DISTINCT source gids: event keys are
+                // (due_step, target, source, edge_slot), so repeats stay legal
+                // while canonical order keeps their delivery sequence fixed.
+                let keyed =
+                    |due: u64, target: u64, source: u64, value: f64| ProceduralEventRecord {
+                        due_step: due,
+                        target_gid: target,
+                        source_gid: source,
+                        edge_slot: 0,
+                        current_pa: value,
+                    };
+                let mut batches = Vec::new();
+                // Step 0: residents 0..8 born, plus repeats onto absent
+                // targets (fresh staging + immediate staged hits).
+                let mut batch: Vec<_> = (0..8).map(|gid| drive(gid, 0, 10.0)).collect();
+                batch.push(keyed(0, 20, 9, 3.0));
+                batch.push(keyed(0, 20, 10, 1.5));
+                batch.push(keyed(0, 21, 11, -2.5));
+                batch.push(keyed(0, 20, 12, 0.25)); // third accumulation
+                batch.push(keyed(0, 30, 13, 0.0)); // zero-current miss
+                batch.push(keyed(0, 31, 14, 4.0));
+                batches.push(batch);
+                // Step 1: re-hit yesterday's residents, stage fresh targets,
+                // duplicate across sources with order-sensitive magnitudes.
+                let mut batch: Vec<_> = (0..8).map(|gid| drive(gid, 1, 1e-30)).collect();
+                batch.push(keyed(1, 40, 20, 1e16));
+                batch.push(keyed(1, 40, 21, 1.0));
+                batch.push(keyed(1, 40, 22, -1e16));
+                batch.push(keyed(1, 41, 23, 0.125));
+                batch.push(keyed(1, 41, 24, 0.125));
+                batches.push(batch);
+                // Step 2: quiet step lets fast-rest cells retire (EP).
+                batches.push(Vec::new());
+                // Step 3: re-drive previously retired gids (reactivation).
+                batches.push(vec![drive(0, 3, 10.0), drive(1, 3, 6.0)]);
+                batches
+            };
+
+            let mut indexed = ep_runtime(48, mode);
+            let mut oracle = ep_runtime(48, mode);
+            let mut indexed_trace = Vec::new();
+            let mut oracle_trace = Vec::new();
+
+            for batch in &build_batches() {
+                assert_eq!(indexed.advance(1, batch), super::PROCEDURAL_OK);
+                assert_eq!(oracle.advance(1, batch), super::PROCEDURAL_OK);
+                indexed_trace.extend(
+                    indexed
+                        .last_spikes
+                        .iter()
+                        .map(|spike| (spike.step, spike.gid)),
+                );
+                oracle_trace.extend(
+                    oracle
+                        .last_spikes
+                        .iter()
+                        .map(|spike| (spike.step, spike.gid)),
+                );
+                // Mid-schedule state parity: residents, dormant store, and --
+                // where a poisoned abort ever left staged visible -- staged.
+                assert_eq!(resident_bits(&indexed), resident_bits(&oracle));
+                let indexed_dormant: BTreeMap<u64, (u64, u64)> = indexed
+                    .dormant
+                    .iter()
+                    .map(|(gid, entry)| (*gid, (entry.eligibility.to_bits(), entry.elig_step)))
+                    .collect();
+                let oracle_dormant: BTreeMap<u64, (u64, u64)> = oracle
+                    .dormant
+                    .iter()
+                    .map(|(gid, entry)| (*gid, (entry.eligibility.to_bits(), entry.elig_step)))
+                    .collect();
+                assert_eq!(
+                    indexed_dormant, oracle_dormant,
+                    "dormant store must stay bit-identical"
+                );
+                assert_eq!(indexed.staged.len(), oracle.staged.len());
+                for (a, b) in indexed.staged.iter().zip(oracle.staged.iter()) {
+                    assert_eq!(a.gid, b.gid);
+                    assert_eq!(a.synaptic_current.to_bits(), b.synaptic_current.to_bits());
+                    assert_eq!(a.eligibility.to_bits(), b.eligibility.to_bits());
+                }
+            }
+
+            // Direct delivery phase between advances: indexed path vs the
+            // verbatim linear-scan oracle, interleaved hits/misses/zeros.
+            // Push order stays ascending so the snapshot merge's documented
+            // sorted-staged assumption (B.6.5 hardening) holds for these
+            // deliberately non-poisoned fixtures.
+            let direct: Vec<ProceduralEventRecord> = vec![
+                drive(24, 4, 2.0),
+                drive(25, 4, -1.0),
+                drive(24, 4, 8.0),
+                drive(26, 4, 0.0),
+                drive(25, 4, 0.5),
+                drive(3, 4, 1.0), // already a resident (0..8 absorbed)
+                drive(27, 4, 1e-16),
+                drive(27, 4, 1e16),
+            ];
+            for event in &direct {
+                indexed.apply_event(*event).unwrap();
+                linear_scan_apply_event(&mut oracle, *event).unwrap();
+                assert_index_maps_exactly_the_staged_vec(&indexed);
+            }
+            assert!(!indexed.staged.is_empty());
+            assert_eq!(indexed.staged.len(), oracle.staged.len());
+            for (a, b) in indexed.staged.iter().zip(oracle.staged.iter()) {
+                assert_eq!(a.gid, b.gid);
+                assert_eq!(a.synaptic_current.to_bits(), b.synaptic_current.to_bits());
+            }
+
+            // Full-state parity through the real snapshot export: every f64
+            // field compared via to_bits, never ==.
+            let indexed_records = snapshot_records(&indexed);
+            let oracle_records = snapshot_records(&oracle);
+            assert_eq!(indexed_records.len(), oracle_records.len());
+            for (gid, record) in &indexed_records {
+                let other = oracle_records
+                    .get(gid)
+                    .unwrap_or_else(|| panic!("oracle missing gid {gid}"));
+                assert_eq!(record_bits(record), record_bits(other), "gid {gid}");
+            }
+
+            // Counters: everything except native_payload_bytes, which shifts
+            // by the documented index term (spec B.4) because the oracle path
+            // maintains no index.
+            let a = indexed.counters;
+            let b = oracle.counters;
+            assert_eq!(a.current_step, b.current_step);
+            assert_eq!(a.resident_peak, b.resident_peak);
+            assert_eq!(a.resident_distinct, b.resident_distinct);
+            assert_eq!(a.updated_distinct, b.updated_distinct);
+            assert_eq!(a.spiking_distinct, b.spiking_distinct);
+            assert_eq!(a.cell_step_evaluations, b.cell_step_evaluations);
+            assert_eq!(a.spike_events, b.spike_events);
+            assert_eq!(a.generated_edges, b.generated_edges);
+            assert_eq!(a.delivered_events, b.delivered_events);
+            assert_eq!(a.queue_peak, b.queue_peak);
+            assert_eq!(a.retained_nonzero_cells, b.retained_nonzero_cells);
+            assert_eq!(a.overflow_code, b.overflow_code);
+            assert_eq!(indexed_trace, oracle_trace, "spike traces must match");
+            assert!(
+                !indexed_trace.is_empty(),
+                "fixture must actually spike cells"
+            );
+        }
+    }
+
+    #[test]
+    fn staged_index_cleared_by_absorb_and_unused_after_sort() {
+        // Normal advance: the fused pass sorts `staged` (which invalidates
+        // every slot) and then absorb clears Vec+index together. Post-advance
+        // emptiness proves no stale slot survives the sort boundary.
+        let mut runtime = ep_runtime(32, PROCEDURAL_STEPPING_FULL_TOUCH);
+        let batch: Vec<_> = (0..4).map(|gid| drive(gid, 0, 10.0)).collect();
+        assert_eq!(runtime.advance(1, &batch), super::PROCEDURAL_OK);
+        assert!(runtime.staged.is_empty());
+        assert!(runtime.staged_index.is_empty());
+
+        // Poison mid-delivery: capacity fail-stop aborts the delivery phase
+        // with `staged` non-empty and the index populated-but-doomed (rule
+        // B.3.4). Poisoning is terminal -- the very next advance must refuse
+        // with PROCEDURAL_POISONED rather than consult the stale structure.
+        let mut config = ep_config(16, PROCEDURAL_STEPPING_FULL_TOUCH);
+        config.resident_capacity = 4;
+        let decay = [0.5, 0.5];
+        let mut doomed = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
+        let overflow: Vec<_> = (0..6).map(|gid| drive(gid, 0, 10.0)).collect();
+        assert_eq!(
+            doomed.advance(1, &overflow),
+            super::PROCEDURAL_RESIDENT_CAPACITY
+        );
+        assert_ne!(doomed.poisoned, super::PROCEDURAL_OK);
+        assert!(!doomed.staged.is_empty() || !doomed.staged_index.is_empty());
+        assert_eq!(doomed.advance(1, &[]), super::PROCEDURAL_POISONED);
+        assert_eq!(doomed.advance(1, &[]), super::PROCEDURAL_POISONED);
+
+        // Mid-fused-pass poison variant (rule B.3.3/B.3.4): spike-capacity
+        // overflow fires after the fused-pass sort has invalidated slots but
+        // before absorb clears them; subsequent advances still fail closed.
+        let mut tight = ep_config(64, PROCEDURAL_STEPPING_FULL_TOUCH);
+        tight.spike_capacity = 2;
+        let mut cut = ProceduralRuntime::new(ep_glif(), tight, decay, decay, [0.0; 2]).unwrap();
+        let spikes: Vec<_> = (0..6).map(|gid| drive(gid, 0, 10.0)).collect();
+        assert_eq!(cut.advance(1, &spikes), super::PROCEDURAL_SPIKE_CAPACITY);
+        assert_ne!(cut.poisoned, super::PROCEDURAL_OK);
+        assert_eq!(cut.advance(1, &[]), super::PROCEDURAL_POISONED);
+        // And a clean runtime driven through the identical schedule shows the
+        // poison came from the capacity bound, not the schedule shape.
+        let mut fits = ep_runtime(64, PROCEDURAL_STEPPING_FULL_TOUCH);
+        assert_eq!(fits.advance(1, &spikes), super::PROCEDURAL_OK);
+        assert!(fits.staged_index.is_empty());
+    }
+
+    #[test]
+    fn duplicate_delivery_accumulation_order_preserved() {
+        // Order-sensitive magnitudes: ((0+1e16)+1)-1e16 != 0 under float
+        // addition, so any reorder of the canonical delivery sequence would
+        // move bits. Guards the B.5 determinism argument mechanically at the
+        // exact branch this seam replaced.
+        let currents = [0.0f64, 1e16, 1.0, -1e16, 1.0, 2.0, -1.0, 1e-16, 3.0];
+        let target = 50u64;
+
+        // Direct deliveries: pure accumulation through the indexed hit path,
+        // no fused-pass decay contaminating the observed value.
+        let mut runtime = ep_runtime(64, PROCEDURAL_STEPPING_FULL_TOUCH);
+        for (source, value) in currents.iter().enumerate() {
+            runtime
+                .apply_event(ProceduralEventRecord {
+                    due_step: 0,
+                    target_gid: target,
+                    source_gid: source as u64,
+                    edge_slot: 0,
+                    current_pa: *value,
+                })
+                .unwrap();
+        }
+        assert_eq!(runtime.staged.len(), 1);
+        // Oracle: fold left over the canonical pending order (events sorted
+        // by (due_step, target, source, edge_slot); ascending source here),
+        // starting from the canonical-rest zero, canonical_zero after each
+        // addition exactly as apply_event does.
+        let mut expected = 0.0f64;
+        for value in &currents {
+            expected = canonical_zero(expected + *value);
+        }
+        assert_ne!(expected, 0.0, "magnitudes must be order-sensitive");
+        assert_eq!(
+            runtime.staged[0].synaptic_current.to_bits(),
+            expected.to_bits(),
+            "accumulated synaptic_current must bit-equal the sequential-sum oracle"
+        );
+
+        // Same sequence through the linear-scan oracle runtime: identical
+        // bits, proving the index changed the lookup and nothing else.
+        let mut oracle = ep_runtime(64, PROCEDURAL_STEPPING_FULL_TOUCH);
+        for (source, value) in currents.iter().enumerate() {
+            linear_scan_apply_event(
+                &mut oracle,
+                ProceduralEventRecord {
+                    due_step: 0,
+                    target_gid: target,
+                    source_gid: source as u64,
+                    edge_slot: 0,
+                    current_pa: *value,
+                },
+            )
+            .unwrap();
+        }
+        assert_eq!(
+            oracle.staged[0].synaptic_current.to_bits(),
+            runtime.staged[0].synaptic_current.to_bits()
+        );
+
+        // Through a real advance: many duplicates inside one delivery batch
+        // land on one staged slot; the absorbed resident carries the same
+        // folded value scaled by exactly one fused-pass recurrent decay.
+        let mut advanced = ep_runtime(64, PROCEDURAL_STEPPING_FULL_TOUCH);
+        let batch: Vec<ProceduralEventRecord> = currents
+            .iter()
+            .enumerate()
+            .map(|(source, value)| ProceduralEventRecord {
+                due_step: 0,
+                target_gid: target,
+                source_gid: source as u64,
+                edge_slot: 0,
+                current_pa: *value,
+            })
+            .collect();
+        assert_eq!(advanced.advance(1, &batch), super::PROCEDURAL_OK);
+        let state = advanced
+            .residents
+            .iter()
+            .find(|state| state.gid == target)
+            .expect("duplicate target must survive as a resident");
+        let decayed = canonical_zero(expected * advanced.config.recurrent_decay);
+        assert_eq!(state.synaptic_current.to_bits(), decayed.to_bits());
+    }
+
+    /// Acceptance gate B-G1 (cpu-seams-spec.md Seam B.8(a)): with S = 10,000
+    /// entries staged, 10,000 mixed operations (50% staged hits + 50% fresh
+    /// staging misses) plus one wholesale clear must amortize below 1 µs/op.
+    /// Threshold is generous enough for debug builds; measure in --release
+    /// for the recorded number. Each repetition uses a fresh runtime so gid
+    /// ranges never collide with previously absorbed residents.
+    #[test]
+    fn staged_index_amortized_op_gate_b_g1() {
+        const STAGED_BURST: usize = 10_000;
+        const MIXED_OPS: usize = 10_000;
+        const WARMUP_REPS: usize = 2;
+        const TIMED_REPS: usize = 11;
+
+        let make_runtime = || {
+            ProceduralRuntime::new(
+                ep_glif(),
+                ProceduralConfig {
+                    configured_cells: 1_000_000,
+                    fanout: 4,
+                    seed: 71,
+                    resident_capacity: 65_536,
+                    event_capacity: 65_536,
+                    spike_capacity: 1024,
+                    interval_distinct_capacity: 32_768,
+                    recurrent_weight_pa: 0.25,
+                    recurrent_delay_steps: 1,
+                    recurrent_decay: 0.5,
+                    eligibility_decay: 0.5,
+                    stepping_mode: PROCEDURAL_STEPPING_FULL_TOUCH,
+                },
+                [0.5, 0.5],
+                [0.5, 0.5],
+                [0.0; 2],
+            )
+            .unwrap()
+        };
+
+        let mut timed_nanos: u128 = 0;
+        for rep in 0..WARMUP_REPS + TIMED_REPS {
+            let mut runtime = make_runtime();
+            // Untimed burst: S distinct fresh targets stage in one delivery
+            // rush, none yet absorbed (S = |staged| for every timed op).
+            for gid in 0..STAGED_BURST as u64 {
+                runtime.apply_event(drive(gid, 0, 1.0)).unwrap();
+            }
+            assert_eq!(runtime.staged.len(), STAGED_BURST);
+
+            let start = std::time::Instant::now();
+            for index in 0..MIXED_OPS {
+                let event = if index % 2 == 0 {
+                    // Hit: accumulate into an existing staged target.
+                    drive((index / 2) as u64, 0, 1.0)
+                } else {
+                    // Miss: fresh staging insertion beyond the burst.
+                    drive(STAGED_BURST as u64 + (index / 2) as u64, 0, 1.0)
+                };
+                runtime.apply_event(event).unwrap();
+            }
+            // One wholesale clear per repetition: the single removal path.
+            runtime.absorb_staged().unwrap();
+            let elapsed = start.elapsed();
+
+            // Ledger grew by the 15k distinct marks of this rep only; a fresh
+            // runtime follows, so no cross-repetition capacity debt exists.
+            assert_eq!(runtime.staged_index.len(), 0);
+            if rep >= WARMUP_REPS {
+                timed_nanos += elapsed.as_nanos();
+            }
+        }
+
+        let amortized_us_per_op =
+            timed_nanos as f64 / (TIMED_REPS as f64 * MIXED_OPS as f64) / 1_000.0;
+        eprintln!(
+            "B-G1 staged-index amortized_us_per_op={:.4} (gate < 1.0, S={}, ops/rep={}, reps={})",
+            amortized_us_per_op, STAGED_BURST, MIXED_OPS, TIMED_REPS
+        );
+        println!(
+            "B-G1 staged-index amortized_us_per_op={:.4}",
+            amortized_us_per_op
+        );
+        // Hard gate runs in --release (the recorded number). Debug builds get
+        // a generous bound that still discriminates O(log S) indexing from
+        // the replaced O(S) linear scan (~tens of us/op at S=10k in debug).
+        let threshold_us_per_op = if cfg!(debug_assertions) { 25.0 } else { 1.0 };
+        assert!(
+            amortized_us_per_op < threshold_us_per_op,
+            "B-G1 FAILED: {amortized_us_per_op:.4} us/op amortized at S={STAGED_BURST} \
+             (gate < {threshold_us_per_op} us/op)"
+        );
     }
 }
