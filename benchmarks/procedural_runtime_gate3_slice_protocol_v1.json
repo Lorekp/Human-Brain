@@ -183,8 +183,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/procedural.rs",
-        "size": 122675,
-        "sha256": "fdc61c0c3e5e15a56fd7a25e25d6468f7f47f7f67d6192a530369641fd9b5d08"
+        "size": 152232,
+        "sha256": "ac13eddc3ad24e672dc42d0eb62716898843902d98b33ec1f6233559c252bc53"
       },
       {
         "path": "src/humanbrain/cells.py",
@@ -1517,11 +1517,11 @@
         "sha256": "7155d4a3ae920eb37d40cc58d538052302cfb45517dbafec685b414305e2c98f"
       }
     ],
-    "bundle_sha256": "eb1b37c4844265219c9d0b49ccf05a63c83789c56f535960ba12f1cb75cbd898",
+    "bundle_sha256": "9920a3c4bfd770745353ebe295a3814c82176b281e975792743a915a18e71c0a",
     "limits": {
       "maximum_file_bytes": 1048576,
       "maximum_aggregate_bytes": 8388608,
-      "actual_aggregate_bytes": 2195450
+      "actual_aggregate_bytes": 2225007
     }
   },
   "timing": {
