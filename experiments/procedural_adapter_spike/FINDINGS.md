@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-23/24
 **Branch:** `codex/scale-opt-cpu` (worktree `human-brain-scale-opt-cpu`)
-**Status:** executed spike. L1 verified live on this branch; L2 measured live at 2^20 configured cells; **L3 implemented, tested, and benchmarked behind an additive `event_proportional` stepping mode** (`ProceduralRuntimeConfig(stepping_mode="event_proportional")`; default remains `full_touch`, bit-for-bit). Scripts: `l1_token_injection.py`, `l2_eligibility_read_cost.py`, `l3_event_proportional_throughput.py`; raw numbers: `l2_eligibility_read_cost.json`, `l3_event_proportional_throughput.json`. All runs CPU-only, each script <60 s.
+**Status:** executed spike. L1 verified live on this branch; L2 measured live at 2^20 configured cells; **L3 implemented, tested, and benchmarked across traffic regimes behind an additive `event_proportional` stepping mode** (`ProceduralRuntimeConfig(stepping_mode="event_proportional")`; default remains `full_touch`, bit-for-bit). Scripts: `l1_token_injection.py`, `l2_eligibility_read_cost.py`, `l3_event_proportional_throughput.py`; raw numbers: `l2_eligibility_read_cost.json`, `l3_event_proportional_throughput.json`. All runs CPU-only, each script <60 s.
 **Context:** `logs/text_scale_cpu_findings.md` §2 defines the three-layer adapter. This spike answers its two gating questions: does token injection work today, and is the existing snapshot FFI an eligible-read seam at scale.
 
 ---
@@ -100,7 +100,7 @@ Expected effect: per-token read cost drops from O(R)·1.6 µs to O(K log R)·~50
 
 ## 3. Layer 3 spike — event-proportional stepping (IMPLEMENTED, tested, benchmarked)
 
-**Verdict: PROVEN. Event-proportional stepping is expressible inside the fail-stop/determinism contracts with a minimal additive change, and delivers 200–530 tok/s at 1e6 configured cells where the full-touch path extrapolates to ~1.4 tok/s (committed production anchor at 1M residents: 0.092 tok/s).**
+**Verdict: PROVEN AND REGIME-MAPPED. Event-proportional stepping is expressible inside the fail-stop/determinism contracts with a minimal additive change. Measured head-to-head on sparse locality-bounded tokens over a 97.7%-dormant resident pool it delivers 363.0 tok/s vs full-touch 68.9 tok/s (5.3×) at 16.6× less kernel work. The measured activity matrix at 1e6 configured cells then confirms the regime boundary: at uniform high-volume traffic (10k–50k events/token) the advantage erases and inverts (0.5–1.1×), with both modes bound by the shared injection path. Every number in §3.3 is measured on this branch; no extrapolations. (Committed production anchor for dense 1M-resident stepping remains 0.092 tok/s.)**
 
 ### 3.0 Operation classification of the advance loop
 
@@ -120,19 +120,42 @@ Bit-exact in both modes on identical schedules: spike traces, delivered/generate
 
 ### 3.3 Measured throughput (`l3_event_proportional_throughput.json`, stress GLIF configuration)
 
-| Stream (N_cfg = 2^20) | Residents | tok/s | cell-steps/token |
-| --- | --- | ---: | ---: |
-| EP head-to-head @22k residents (512 fresh + 128 reactivations) | 21.6k dormant + 512 active | **528.3** (FT: 68.2 → **7.7×**) | 100.7k vs FT 1.99M |
-| EP reactivation mix @320k dormant (512+256) | 320.8k dormant | **222.8** | 118.5k |
-| EP text-locality pool (512 re-hits + 128 fresh) | 320.8k dormant | 141.3 | 134.4k |
-| EP worst-case uniform-random targets | 320.8k dormant | 19–49 | 212k–423k |
-| Full-touch same fixture, linearly extrapolated to 1M residents | — | 1.44 (anchor: 0.092 production) | — |
+All rows below are **measured on this branch** (CPU-only, stress GLIF config; identical schedules across modes within each comparison). No extrapolations.
 
-The 160+ tok/s gate clears in two independent configurations (head-to-head and reactivation mix), with kernel work ∝ touched cells and **independent of dormant/resident background**.
+**(a) The priced feature — sparse locality-bounded tokens (the text-workload shape).** Head-to-head at N_cfg = 1e6, 16,384-resident fixture, 640 events/token (512 fresh + 128 dormant reactivations), 100-step windows, 15 tokens:
+
+| Stream | Residents | tok/s | cell-steps/token |
+| --- | --- | ---: | ---: |
+| EP head-to-head @23.4k residents (512 fresh + 128 reactivations) | 23.4k dormant + 640 active (97.7% dormant) | **363.0** (FT: 68.9 → **5.3×**) | 125.8k vs FT 2.09M (**16.6× less**) |
+
+Kernel work ∝ touched cells and independent of the dormant/resident background — the L3 mechanism doing exactly what it was built for.
+
+**(b) CONFIRMED REGIME BOUNDARY — activity matrix at N_cfg = 1e6, both modes on identical schedules** (2^18 residency ratcheted first: EP retires it to dormancy, FT keeps it actively stepping; pool-locality targets = alternating halves of a 2×activity vocabulary; 12 tokens/cell):
+
+| Activity (events/token) | EP tok/s | FT tok/s | EP/FT | EP cell-steps/tok | FT cell-steps/tok |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1% (10k) | 2.3 | 2.0 | **1.1×** | 1.88M | 27.3M |
+| 2% (20k) | 0.6 | 0.8 | **0.7×** | 3.83M | 28.5M |
+| 5% (50k) | 0.1 | 0.2 | **0.5×** | 8.76M | 31.4M |
+
+EP holds a 3.6–14.5× kernel-work advantage at every activity level, but wall-clock parity at 1% inverts to ~1.4–1.5× slower at 2–5%. Two compounding causes, now separated:
+
+**(c) Injection-path diagnostic (5% activity, shipped fanout=4 vs minimal fanout=1):**
+
+| Config | EP s/token | FT s/token | EP/FT |
+| --- | ---: | ---: | ---: |
+| fanout=4 (shipped) | 9.01 | 4.99 | 0.55× |
+| fanout=1 | 0.73 | 0.54 | 0.74× |
+
+Cutting generated-edge volume 4× speeds **both** modes ~9–12× (superlinearly): the dominant cost at these volumes is the shared injection path, not stepping — `apply_event`'s staged-membership test is a linear `.position()` scan of the staged Vec per event whose target is not resident (`src/humanbrain/_native_src/src/procedural.rs`, ~line 950), i.e. O(staged²) per token when ~fanout×activity fresh recipients stage per token. This wall is mode-independent and masks stepping differences at ≥1% activity. Named seam prerequisite (alongside §2.2 `read_cells`): indexed staged membership (sorted-staged binary search or hash scratch). Even with the injection wall shrunk (fanout=1 row), EP remains ≤ FT at 50k events/token — so the regime boundary is real economics, not only the wall:
+
+**(d) Operator decision rule (crossover heuristic).** Event-proportional is the default for text-like workloads — sparse, locality-bounded traffic where per-token touches are ≲ a few % of residents and cells are mostly quiescent/dormant (measured: 5.3× at 640 events over 23.4k residents ≈ 2.7%). Full-touch remains correct for dense/uniform traffic: once events-per-token approaches or exceeds ~10% of current residents — or targets are uniform-random over a pool much larger than the resident set, which maximizes replay gaps — switch to `full_touch` (measured: EP/FT degrades 1.1× → 0.7× → 0.5× across 1% → 5% uniform activity; crossover sits between ~3% and ~14% of residents in this fixture). Mode choice is performance-only: both modes are bit-exact-identical on all stepped state and fail-stop identically (§3.2).
+
+The 160+ tok/s gate clears in the sparse reference configuration (363 tok/s); at ≥1% uniform high-volume activity neither mode reaches it before the §(c) injection seam lands.
 
 ### 3.4 Honest cost model and rejected variant
 
-Touch-time replay cost equals the cell's idle gap in multiplies — information-theoretically forced for bit-exactness (any shorter scheme deviates from full-touch bits). Lazy replay therefore *never* exceeds eager total work but relocates it to touch time: uniform-random traffic over a large dormant pool accumulates long gaps and pays them per hit (the 19–49 tok/s worst-case rows); locality-bounded traffic pays little. A budgeted background catch-up sweep was implemented and then **rejected on measurement**: bounding gaps costs ≈ R_dormant/2 multiplies per step — i.e., it degenerates into eager decay. Production fitted-cell constants flush post-spike sub-normal tails over ~10^6 steps (measured decay factors recorded in the JSON), so near-term training runs keep recently-touched cells actively integrating regardless of mode; the dormant-store economics bind as tails underflow or as L3 plasticity changes what "rest" means. The benchmark drives a documented stress GLIF configuration (unit leak ⇒ voltage mirrors synaptic current ⇒ fast-state rest reachable in tens of steps; realistic 80 ms eligibility tau) to expose steady-state economics inside a CPU-only budget; parity tests cover both modes under production constants.
+Touch-time replay cost equals the cell's idle gap in multiplies — information-theoretically forced for bit-exactness (any shorter scheme deviates from full-touch bits). Lazy replay therefore *never* exceeds eager total work but relocates it to touch time: uniform-random traffic over a large dormant pool accumulates long gaps and pays them per hit, and high-volume traffic pays per hit even with short gaps (both confirmed quantitatively by the §3.3(b) matrix: at ≥10k events/token the touch-time replay plus reactivation bookkeeping erases then inverts the stepping advantage); locality-bounded sparse traffic pays little (§3.3(a)). A budgeted background catch-up sweep was implemented and then **rejected on measurement**: bounding gaps costs ≈ R_dormant/2 multiplies per step — i.e., it degenerates into eager decay. Production fitted-cell constants flush post-spike sub-normal tails over ~10^6 steps (measured decay factors recorded in the JSON), so near-term training runs keep recently-touched cells actively integrating regardless of mode; the dormant-store economics bind as tails underflow or as L3 plasticity changes what "rest" means. The benchmark drives a documented stress GLIF configuration (unit leak ⇒ voltage mirrors synaptic current ⇒ fast-state rest reachable in tens of steps; realistic 80 ms eligibility tau) to expose steady-state economics inside a CPU-only budget; parity tests cover both modes under production constants.
 
 ## 4. Layer 3 scope statement — emission-captured pre-eligibility (design sketch only)
 
