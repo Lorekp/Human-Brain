@@ -10,13 +10,13 @@ Wiring is copied from a real ``RecurrentCellCircuit`` instance so the RNG
 consumption order (afferents, recurrent targets, inhibitory signs,
 heterogeneity) is bit-faithful to the r0-c stack at the same seed.
 
-Per-token substep order (mirrors the native serial kernel):
-  1. step_current = synaptic_current; first pulse_steps substeps add
-     input_current_pa at the token's afferent targets;
+Per-substep order (mirrors the native serial kernel):
+  1. step_current = synaptic_current; pulse substeps add input_current_pa at
+     the active token's afferent targets; optional experiment noise is added;
   2. population.step(step_current)  (soma + apical + gate);
   3. synaptic_current *= recurrent_decay; eligibility *= decays (ALL cells);
-  4. per spiking presynaptic cell (ascending): eligibility += 1.0, then
-     synaptic_current[targets] += weights.
+  4. per spiking presynaptic cell (ascending flat order): eligibility += 1.0,
+     then synaptic_current[targets] += weights.
 Steps 3-4 touch disjoint arrays from step 2's outputs, so the batched arm axis
 is bitwise-equal to independent single-arm runs (tested).
 """
@@ -109,21 +109,49 @@ class ApicalTokenRunner:
         self.token_spike_counts.fill(0)
         self.last_total_spikes[:] = 0
 
-    def observe(self, token_id: int, apical_u: np.ndarray | None = None) -> None:
+    # ------------------------------------------------------------- primitive
+
+    def _advance(
+        self,
+        n_steps: int,
+        *,
+        pulse_token: int | None,
+        schedule: dict[int, int] | None = None,
+        noise_rng=None,
+        noise_sigma: float = 0.0,
+        spike_accumulator: dict[int, np.ndarray] | None = None,
+    ) -> None:
+        """Run ``n_steps`` fitted 0.05 ms substeps of the shared inner loop.
+
+        ``pulse_token`` reproduces observe()'s leading-pulse schedule;
+        ``schedule`` maps absolute substep index -> token id for one-pulse
+        deliveries (conjunction bursts). Exactly one of them may be given.
+        """
         pop = self.population
-        if apical_u is not None:
-            pop.set_apical_drive(apical_u)
-        arms = pop.arm_count
-        self.token_spike_counts[:] = 0
-        total = np.zeros(arms, dtype=np.int64)
-        aff = self.afferent_targets[int(token_id)]
+        arms, cells = pop.arm_count, pop.cell_count
         recurrent_targets = self.recurrent_targets
         recurrent_weights = self.recurrent_weights_pa
         fanout = recurrent_targets.shape[1]
-        for substep in range(self.token_steps):
+        total = np.zeros(arms, dtype=np.int64)
+        pulse_afferents = (
+            self.afferent_targets[int(pulse_token)] if pulse_token is not None else None
+        )
+        for local_step in range(n_steps):
             np.copyto(self.step_current, self.synaptic_current_pa)
-            if substep < self.pulse_steps:
-                self.step_current[:, aff] += self.input_current_pa
+            delivered = False
+            if pulse_afferents is not None and local_step < self.pulse_steps:
+                self.step_current[:, pulse_afferents] += self.input_current_pa
+                delivered = True
+            if schedule is not None and not delivered:
+                token = schedule.get(local_step)
+                if token is not None:
+                    self.step_current[:, self.afferent_targets[token]] += (
+                        self.input_current_pa
+                    )
+            if noise_rng is not None and noise_sigma > 0.0:
+                self.step_current += noise_rng.standard_normal(
+                    size=(arms, cells)
+                ) * noise_sigma
             fired = pop.step(self.step_current)
             # decay passes over ALL cells (native serial ordering)
             self.synaptic_current_pa *= self.recurrent_decay
@@ -139,8 +167,42 @@ class ApicalTokenRunner:
                     weights.reshape(-1),
                 )
                 total += np.bincount(spiking_rows, minlength=arms)[:arms]
+            if spike_accumulator is not None:
+                counts = spike_accumulator.get("counts")
+                if counts is not None and spiking_rows.size:
+                    counts += fired.astype(np.int64)
             self.token_spike_counts += fired
         self.last_total_spikes = total
+
+    # ------------------------------------------------------------------ API
+
+    def observe(self, token_id: int, apical_u: np.ndarray | None = None) -> None:
+        """One teacher-forced token under the native observe() semantics."""
+        pop = self.population
+        if apical_u is not None:
+            pop.set_apical_drive(apical_u)
+        self.token_spike_counts[:] = 0
+        self._advance(self.token_steps, pulse_token=int(token_id))
+
+    def run_free_window(
+        self,
+        n_steps: int,
+        *,
+        schedule: dict[int, int] | None = None,
+        noise_rng=None,
+        noise_sigma: float = 0.0,
+    ) -> np.ndarray:
+        """Free-running substeps (no per-token count reset); returns spike mask sum."""
+        accumulator = {"counts": np.zeros_like(self.token_spike_counts, dtype=np.int64)}
+        self._advance(
+            n_steps,
+            pulse_token=None,
+            schedule=schedule,
+            noise_rng=noise_rng,
+            noise_sigma=noise_sigma,
+            spike_accumulator=accumulator,
+        )
+        return accumulator["counts"]
 
 
 class ContextSummarizer:
@@ -180,23 +242,3 @@ class ContextSummarizer:
     def freeze(self) -> np.ndarray:
         self._frozen = self.drive_vector()
         return self._frozen
-
-
-def context_drive_for_tokens(token_ids, cell_count: int, freeze_at: int | None = None):
-    """Drive matrix (tokens, cells) for a byte-token sequence.
-
-    Row t is the summary AFTER observing token t-? -- precisely: the histogram
-    includes tokens [0, t] inclusive when row t is consumed DURING token t's
-    substeps (the summary leads the soma by design: the context phase of token
-    t carries everything observed up to and including token t). If freeze_at is
-    given, rows at or beyond freeze_at repeat the frozen decision-point drive.
-    """
-    summarizer = ContextSummarizer(cell_count)
-    rows = np.empty((len(token_ids), cell_count), dtype=np.float64)
-    for index, token in enumerate(token_ids):
-        summarizer.update_byte(int(token))
-        rows[index] = summarizer.drive_vector()
-    if freeze_at is not None:
-        frozen = summarizer.freeze() if freeze_at > 0 else np.zeros(cell_count)
-        rows[freeze_at:] = frozen[None, :]
-    return rows
