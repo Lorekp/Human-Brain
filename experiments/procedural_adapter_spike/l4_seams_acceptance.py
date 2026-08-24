@@ -415,14 +415,24 @@ def _isolation_worktree_kernel_state(repo_root: Path) -> tuple[Path, str]:
         check=False,
     ).stdout.strip()
     marker = target / ".seam-b-scan-variant"
-    if (target / ".git").exists() and marker.exists():
-        if marker.read_text(encoding="utf-8").strip() == committed:
-            return target, "reused"
+    if not marker.exists() or marker.read_text(
+        encoding="utf-8"
+    ).strip() != committed:
+        # Missing or stale variant: rebuild from scratch.
         subprocess.run(
             ["git", "worktree", "remove", "--force", str(target)],
+            capture_output=True,
+            text=True,
             cwd=repo_root,
             check=False,
         )
+        if target.exists():
+            raise RuntimeError(
+                f"{target} exists but is not a removable git worktree; "
+                "delete it and rerun"
+            )
+    else:
+        return target, "reused"
     completed = subprocess.run(
         ["git", "worktree", "add", "--detach", str(target), "HEAD"],
         capture_output=True,

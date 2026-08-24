@@ -73,5 +73,267 @@
     "A-G5": {
       "pass": true
     }
+  },
+  "seam_b": {
+    "spec": "docs/research/cpu-seams-spec.md Seam B (B.8)",
+    "baseline_note": "The spec's '@51762c4' anchors denote the pre-Seam-B L3-finalize content; on codex/scale-opt-cpu that content is 056e01a (identical commit message), carried to fa9070e by Seam A's additive read-only read_cells FFI. 51762c4 itself lives on the mirrored codex/gpu-speed-optimization lineage whose runtime predates the staged Vec and event-proportional mode entirely, so bit-parity is proven against fa9070e: the exact bits that measured EP 9.01 / FT 4.99 s/token in FINDINGS 3.3(c).",
+    "b_g1": {
+      "amortized_us_per_op": 0.2528,
+      "threshold_us_per_op": 1.0,
+      "staged_entries": 10000,
+      "mixed_ops_per_rep": 10000,
+      "timed_reps": 11,
+      "profile": "release --locked --offline"
+    },
+    "parity_baseline": {
+      "commit": "fa9070eeb4b1f01b3caddd982e8e7b806d4ccc25",
+      "worktree": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-seam-b-parity-base",
+      "driver_reported_commit": "fa9070eeb4b1f01b3caddd982e8e7b806d4ccc25"
+    },
+    "driver_outputs": {
+      "post": {
+        "path": "C:\\Users\\laure\\AppData\\Local\\Temp\\seam-b-acceptance\\seam_b_post.json",
+        "reused_existing": true,
+        "source_commit": "f4b1b5fa92b05240e90e1e53a143b82b38552a2d"
+      },
+      "baseline": {
+        "path": "C:\\Users\\laure\\AppData\\Local\\Temp\\seam-b-acceptance\\seam_b_baseline.json",
+        "reused_existing": true,
+        "source_commit": "fa9070eeb4b1f01b3caddd982e8e7b806d4ccc25"
+      }
+    },
+    "b_g2": {
+      "fixture": {
+        "configured_cells": 1000000,
+        "residency_built": 262144,
+        "build_window": 2048,
+        "window_steps": 100,
+        "settle_steps": 400,
+        "tokens": 15,
+        "events_per_token": 50000,
+        "vocabulary_pool": 100000,
+        "drive_current_pa": 150000.0,
+        "fanout": 4,
+        "weight_pa": 0.25
+      },
+      "event_proportional_median_ms": 1027.951,
+      "full_touch_median_ms": 750.724,
+      "ep_threshold_ms": 3000.0,
+      "ft_threshold_ms": 1700.0,
+      "recorded_pre_seam_b_s_per_token": {
+        "ep": 9.01,
+        "ft": 4.99
+      }
+    },
+    "b_g3": {
+      "baseline_commit": "fa9070eeb4b1f01b3caddd982e8e7b806d4ccc25",
+      "post_commit": "f4b1b5fa92b05240e90e1e53a143b82b38552a2d",
+      "bit_identical": true,
+      "detail": {
+        "event_proportional": {
+          "match": true,
+          "spike_count_baseline": 750035,
+          "spike_count_post": 750035,
+          "delivered_events": 250012,
+          "generated_edges": 200012,
+          "cell_step_evaluations_post": 9185197,
+          "median_token_ms_post": 1027.951
+        },
+        "full_touch": {
+          "match": true,
+          "spike_count_baseline": 750035,
+          "spike_count_post": 750035,
+          "delivered_events": 250012,
+          "generated_edges": 200012,
+          "cell_step_evaluations_post": 31689635,
+          "median_token_ms_post": 750.724
+        }
+      },
+      "storage_note": "spike traces pinned by sha256 over compact JSON ('{\"spikes\": [...]}'); full traces in sidecar file",
+      "sidecar_baseline_outputs": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-scale-opt-cpu\\experiments\\procedural_adapter_spike\\l4_seam_b_baseline_outputs.json",
+      "baseline_outputs": {
+        "fa9070eeb4b1f01b3caddd982e8e7b806d4ccc25": {
+          "event_proportional": {
+            "spikes_sha256": "ca20b126f9de9acb89cb97287ed0032979981852f849173f18aa0f70b4e857af",
+            "spike_count": 750035,
+            "delivered_events": 250012,
+            "generated_edges": 200012
+          },
+          "full_touch": {
+            "spikes_sha256": "ca20b126f9de9acb89cb97287ed0032979981852f849173f18aa0f70b4e857af",
+            "spike_count": 750035,
+            "delivered_events": 250012,
+            "generated_edges": 200012
+          }
+        }
+      }
+    },
+    "b_g4": {
+      "reference_tok_s": 363.0,
+      "rep_ep_tok_s": [
+        356.6,
+        372.9,
+        291.8,
+        384.0,
+        355.8
+      ],
+      "median_ep_tok_s": 356.6,
+      "relative_drift": 0.0176,
+      "tolerance": 0.05,
+      "box_quiet_at_start": true,
+      "sibling_processes_seen": [],
+      "absolute_leg_pass": true,
+      "paired_isolation": {
+        "worktree": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-seamb-isolation",
+        "variant_state": "created",
+        "pairs": [
+          {
+            "pair": 1,
+            "scan_ep_tok_s": 217.1,
+            "indexed_ep_tok_s": 305.7,
+            "indexed_gain": 0.4081
+          },
+          {
+            "pair": 2,
+            "scan_ep_tok_s": 190.9,
+            "indexed_ep_tok_s": 294.5,
+            "indexed_gain": 0.5427
+          },
+          {
+            "pair": 3,
+            "scan_ep_tok_s": 208.6,
+            "indexed_ep_tok_s": 319.1,
+            "indexed_gain": 0.5297
+          }
+        ],
+        "scan_mean_tok_s": 205.5,
+        "indexed_mean_tok_s": 306.4,
+        "indexed_won_all_pairs": true,
+        "mean_gain": 0.491
+      },
+      "paired_leg_pass": true,
+      "pass_mode": "absolute-within-tolerance",
+      "detail_last_rep": {
+        "full_touch": {
+          "events_per_token": 640,
+          "median_token_ms": 30.276,
+          "tokens_per_second_end_to_end": 33.0,
+          "cell_steps_per_token_median_call": 2094354,
+          "build_wall_s": 0.154,
+          "final_state": {
+            "active_residents": 24031,
+            "dormant": 0,
+            "pending": 2560
+          }
+        },
+        "event_proportional": {
+          "events_per_token": 640,
+          "median_token_ms": 2.81,
+          "tokens_per_second_end_to_end": 355.8,
+          "cell_steps_per_token_median_call": 125836,
+          "build_wall_s": 0.075,
+          "final_state": {
+            "active_residents": 640,
+            "dormant": 23391,
+            "pending": 2560
+          }
+        },
+        "speedup_event_proportional_vs_full_touch": 10.8
+      }
+    },
+    "b_g5": {
+      "suites_green": true,
+      "payload_stability_included": true,
+      "tail": [
+        ".............................................................            [100%]"
+      ]
+    },
+    "gates": {
+      "B-G1": {
+        "pass": true,
+        "threshold_us": 1.0,
+        "amortized_us_per_op": 0.2528,
+        "threshold_us_per_op": 1.0,
+        "staged_entries": 10000,
+        "mixed_ops_per_rep": 10000,
+        "timed_reps": 11,
+        "profile": "release --locked --offline"
+      },
+      "B-G2": {
+        "pass": true,
+        "fixture": {
+          "configured_cells": 1000000,
+          "residency_built": 262144,
+          "build_window": 2048,
+          "window_steps": 100,
+          "settle_steps": 400,
+          "tokens": 15,
+          "events_per_token": 50000,
+          "vocabulary_pool": 100000,
+          "drive_current_pa": 150000.0,
+          "fanout": 4,
+          "weight_pa": 0.25
+        },
+        "event_proportional_median_ms": 1027.951,
+        "full_touch_median_ms": 750.724,
+        "ep_threshold_ms": 3000.0,
+        "ft_threshold_ms": 1700.0,
+        "recorded_pre_seam_b_s_per_token": {
+          "ep": 9.01,
+          "ft": 4.99
+        }
+      },
+      "B-G3": {
+        "pass": true,
+        "bit_identical": true
+      },
+      "B-G4": {
+        "pass": true,
+        "pass_mode": "absolute-within-tolerance",
+        "median_ep_tok_s": 356.6,
+        "rep_ep_tok_s": [
+          356.6,
+          372.9,
+          291.8,
+          384.0,
+          355.8
+        ],
+        "reference_tok_s": 363.0,
+        "relative_drift": 0.0176,
+        "tolerance": 0.05,
+        "paired_isolation": {
+          "worktree": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-seamb-isolation",
+          "variant_state": "created",
+          "pairs": [
+            {
+              "pair": 1,
+              "scan_ep_tok_s": 217.1,
+              "indexed_ep_tok_s": 305.7,
+              "indexed_gain": 0.4081
+            },
+            {
+              "pair": 2,
+              "scan_ep_tok_s": 190.9,
+              "indexed_ep_tok_s": 294.5,
+              "indexed_gain": 0.5427
+            },
+            {
+              "pair": 3,
+              "scan_ep_tok_s": 208.6,
+              "indexed_ep_tok_s": 319.1,
+              "indexed_gain": 0.5297
+            }
+          ],
+          "scan_mean_tok_s": 205.5,
+          "indexed_mean_tok_s": 306.4,
+          "indexed_won_all_pairs": true,
+          "mean_gain": 0.491
+        }
+      },
+      "B-G5": {
+        "pass": true
+      }
+    },
+    "commit": "e554284277375009fcbf44ec9f0d043bd63782f7"
   }
 }
