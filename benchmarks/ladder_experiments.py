@@ -99,6 +99,10 @@ os.environ["HUMANBRAIN_DEVICE"] = (
 import numpy as np  # noqa: E402
 
 from humanbrain import typed_composition, typed_program  # noqa: E402
+from humanbrain.observatory import (  # noqa: E402
+    ActivityRecorder,
+    activity_stream_path,
+)
 from humanbrain.recurrent import (  # noqa: E402
     READOUT_LEARNING_RULES,
     RecurrentCellCircuit,
@@ -552,6 +556,7 @@ def _grow_circuit(
     local_competitive_margin_pa: float = 64.0,
     inhibitory_fraction: float = DEFAULT_INHIBITORY_FRACTION,
     ridge_backend: str = "numpy",
+    activity_recorder: ActivityRecorder | None = None,
 ) -> RecurrentCellCircuit:
     """Drive the circuit's observe/strengthen cycle over the scheduled corpus."""
     input_fanout = _INPUT_FANOUT
@@ -567,7 +572,13 @@ def _grow_circuit(
         local_competitive_margin_pa=local_competitive_margin_pa,
         inhibitory_fraction=inhibitory_fraction,
     )
-    circuit = RecurrentCellCircuit(token_cells=_TOKEN_CELLS, config=config)
+    circuit = RecurrentCellCircuit(
+        token_cells=_TOKEN_CELLS,
+        config=config,
+        observation_sink=(
+            activity_recorder.record if activity_recorder is not None else None
+        ),
+    )
     # Bind BEFORE any strengthen: the accelerated flush must capture every
     # rank-k update from the first statistics batch onward.
     if ridge_backend == "scipy":
@@ -576,6 +587,8 @@ def _grow_circuit(
         install_codebook(circuit, codebook)
     prepared = _prepare_sequences(curriculum["train_tasks"])  # type: ignore[arg-type]
     scope = _SUPERVISION_SCOPE[supervision]
+    if activity_recorder is not None:
+        activity_recorder.set_phase("training")
     for task_index in _presentation_order(len(prepared), schedule, seed):
         input_ids, teacher_ids = prepared[task_index]
         training_ids = (*input_ids, *teacher_ids)
@@ -882,6 +895,7 @@ def run_experiment(
     inhibitory_fraction: float = DEFAULT_INHIBITORY_FRACTION,
     ridge_backend: str = "numpy",
     with_state_separation: bool = False,
+    activity_recorder: ActivityRecorder | None = None,
 ) -> dict[str, object]:
     """Execute one arm end-to-end and return its fixed-schema metrics record."""
     started = time.perf_counter()
@@ -921,6 +935,7 @@ def run_experiment(
         local_competitive_margin_pa=local_competitive_margin_pa,
         inhibitory_fraction=inhibitory_fraction,
         ridge_backend=ridge_backend,
+        activity_recorder=activity_recorder,
     )
     ridge_backend_used = str(
         getattr(circuit, "_ridge_backend_label", "numpy")
@@ -929,12 +944,18 @@ def run_experiment(
     if with_state_separation:
         # Post-growth, pre-evaluation state; the diagnostic replays framing
         # observations itself and leaves the circuit sequence-reset.
+        if activity_recorder is not None:
+            activity_recorder.set_phase("state_diagnostic")
         diagnostics = {
             "state_separation": collect_state_separation(
                 circuit, curriculum["train_tasks"]  # type: ignore[arg-type]
             )
         }
+    if activity_recorder is not None:
+        activity_recorder.set_phase("train_evaluation")
     train = _evaluate_cohort(circuit, curriculum["train_tasks"], collect_margins=True)  # type: ignore[arg-type]
+    if activity_recorder is not None:
+        activity_recorder.set_phase("calibration")
     calibration = _evaluate_cohort(  # type: ignore[arg-type]
         circuit, curriculum["calibration_tasks"], collect_margins=False
     )
@@ -1128,6 +1149,10 @@ def _validate_arguments(arguments: argparse.Namespace) -> None:
                 f"projected peak arrays {projected} bytes exceed the "
                 f"{_RAM_BUDGET_BYTES}-byte single-process budget"
             )
+    if not 1 <= arguments.observatory_samples <= 4_096:
+        _fail("--observatory-samples must be within [1, 4096]")
+    if not 1 <= arguments.observatory_state_stride <= 10_000:
+        _fail("--observatory-state-stride must be within [1, 10000]")
 
 
 def _record_without_wall(record: dict[str, object]) -> bytes:
@@ -1213,6 +1238,29 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--record-observatory",
+        action="store_true",
+        help=(
+            "stream token-boundary spike totals and bounded live cell-state "
+            "samples to <experiment>/.observatory/<arm>.jsonl"
+        ),
+    )
+    parser.add_argument(
+        "--observatory-samples",
+        type=int,
+        default=128,
+        help="evenly distributed live-state sample size (default 128; max 4096)",
+    )
+    parser.add_argument(
+        "--observatory-state-stride",
+        type=int,
+        default=20,
+        help=(
+            "record sampled voltage/current/eligibility every N token frames "
+            "while spike totals remain per-token (default 20)"
+        ),
+    )
+    parser.add_argument(
         "--check-determinism",
         action="store_true",
         help="run the whole arm twice in-process and assert byte-identical "
@@ -1232,23 +1280,53 @@ def main(argv: list[str] | None = None) -> int:
         except ImportError:
             ridge_backend = "numpy"
 
-    record = run_experiment(
-        experiment_id=arguments.experiment_id,
-        arm=arguments.arm,
-        n_cells=arguments.N,
-        seed=arguments.seed,
-        readout_rule=arguments.readout_rule,
-        schedule=arguments.schedule,
-        data_scale=arguments.data_scale,
-        supervision=arguments.supervision,
-        codebook=arguments.codebook,
-        assembly_k=arguments.assembly_k,
-        local_learning_rate_pa=arguments.local_learning_rate_pa,
-        local_competitive_margin_pa=arguments.local_competitive_margin_pa,
-        inhibitory_fraction=arguments.inhibitory_fraction,
-        ridge_backend=ridge_backend,
-        with_state_separation=arguments.with_state_separation,
+    output_root = (
+        Path(arguments.out) if arguments.out else ROOT / "experiments"
     )
+    output_path = output_root / arguments.experiment_id / f"{arguments.arm}.json"
+    if output_path.exists():
+        _fail(f"refusing to overwrite existing metrics file {output_path}")
+    recorder: ActivityRecorder | None = None
+    if arguments.record_observatory:
+        stream_path = activity_stream_path(
+            output_root,
+            arguments.experiment_id,
+            arguments.arm,
+        )
+        if stream_path.exists():
+            _fail(f"refusing to overwrite existing activity stream {stream_path}")
+        recorder = ActivityRecorder(
+            stream_path,
+            run_id=f"{arguments.experiment_id}/{arguments.arm}",
+            sample_count=arguments.observatory_samples,
+            state_stride=arguments.observatory_state_stride,
+        )
+    try:
+        record = run_experiment(
+            experiment_id=arguments.experiment_id,
+            arm=arguments.arm,
+            n_cells=arguments.N,
+            seed=arguments.seed,
+            readout_rule=arguments.readout_rule,
+            schedule=arguments.schedule,
+            data_scale=arguments.data_scale,
+            supervision=arguments.supervision,
+            codebook=arguments.codebook,
+            assembly_k=arguments.assembly_k,
+            local_learning_rate_pa=arguments.local_learning_rate_pa,
+            local_competitive_margin_pa=arguments.local_competitive_margin_pa,
+            inhibitory_fraction=arguments.inhibitory_fraction,
+            ridge_backend=ridge_backend,
+            with_state_separation=arguments.with_state_separation,
+            activity_recorder=recorder,
+        )
+    except BaseException:
+        if recorder is not None:
+            recorder.close(complete=False)
+        raise
+    else:
+        if recorder is not None:
+            recorder.close()
     if arguments.check_determinism:
         repeat = run_experiment(
             experiment_id=arguments.experiment_id,
@@ -1270,12 +1348,6 @@ def main(argv: list[str] | None = None) -> int:
         if _record_without_wall(record) != _record_without_wall(repeat):
             _fail("determinism check failed: identical-seed records differ beyond wall_s")
 
-    output_root = (
-        Path(arguments.out) if arguments.out else ROOT / "experiments"
-    )
-    output_path = output_root / arguments.experiment_id / f"{arguments.arm}.json"
-    if output_path.exists():
-        _fail(f"refusing to overwrite existing metrics file {output_path}")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(record, sort_keys=True, indent=2, allow_nan=False) + "\n"
     output_path.write_text(payload, encoding="utf-8")

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -175,6 +175,16 @@ class RecurrentStep:
 
 
 @dataclass(frozen=True)
+class RecurrentDynamicsSample:
+    """A bounded, read-only sample of live reservoir state."""
+
+    gids: tuple[int, ...]
+    voltage_relative_mv: tuple[float, ...]
+    synaptic_current_pa: tuple[float, ...]
+    eligibility: tuple[float, ...]
+
+
+@dataclass(frozen=True)
 class RecurrentRace:
     winner: int
     spike_time_ms: float
@@ -207,11 +217,15 @@ class RecurrentCellCircuit:
         token_cells: int,
         config: RecurrentCircuitConfig | None = None,
         cell_parameters: AllenGlif5Parameters | None = None,
+        observation_sink: (
+            Callable[["RecurrentCellCircuit", RecurrentStep], None] | None
+        ) = None,
     ) -> None:
         if token_cells < 2:
             raise ValueError("a circuit needs at least two token cells")
         self.token_cells = int(token_cells)
         self.config = config or RecurrentCircuitConfig()
+        self._observation_sink = observation_sink
         self.active_reservoir_cells = (
             self.config.active_reservoir_cells or self.config.reservoir_cells
         )
@@ -657,11 +671,35 @@ class RecurrentCellCircuit:
         spike_total = self._native_kernel.observe(token)
 
         self._observed_tokens += 1
-        return RecurrentStep(
+        step = RecurrentStep(
             token_id=token,
             reservoir_spikes=spike_total,
             simulated_steps=self._token_steps,
             biological_time_ms=self._token_steps * self.cell_parameters.dt_ms,
+        )
+        if self._observation_sink is not None:
+            self._observation_sink(self, step)
+        return step
+
+    def capture_dynamics(self, gids: Sequence[int]) -> RecurrentDynamicsSample:
+        """Copy selected live state without exposing full population arrays."""
+        selected = tuple(gids)
+        if any(
+            type(gid) is not int or not 0 <= gid < self.active_reservoir_cells
+            for gid in selected
+        ):
+            raise ValueError("sample gids must be exact integers in the active reservoir")
+        indices = np.asarray(selected, dtype=np.intp)
+        state = self._reservoir.state
+        return RecurrentDynamicsSample(
+            gids=selected,
+            voltage_relative_mv=tuple(
+                float(value) for value in state.voltage_relative_mv[indices]
+            ),
+            synaptic_current_pa=tuple(
+                float(value) for value in self._synaptic_current_pa[indices]
+            ),
+            eligibility=tuple(float(value) for value in self._eligibility[indices]),
         )
 
     def strengthen(self, target_token_id: int) -> None:
