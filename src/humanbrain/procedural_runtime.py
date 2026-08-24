@@ -788,6 +788,7 @@ class NativeProceduralRuntime:
                 return ()
             cell_bound = self.config.manifest.cell_count
             values = []
+            append_value = values.append
             for gid in gids:
                 value = _exact_uint64("gids entry", gid)
                 if value >= cell_bound:
@@ -795,24 +796,22 @@ class NativeProceduralRuntime:
                         f"gids entry {value} is outside the configured "
                         "address space"
                     )
-                values.append(value)
+                append_value(value)
             native_gids = (ctypes.c_uint64 * count)(*values)
             records = (_NativeResident * count)()
             found = (ctypes.c_uint8 * count)()
-            status = int(
-                self._library.humanbrain_procedural_runtime_read_cells(
-                    self._handle,
-                    native_gids,
-                    count,
-                    records,
-                    found,
-                )
+            status = self._library.humanbrain_procedural_runtime_read_cells(
+                self._handle,
+                native_gids,
+                count,
+                records,
+                found,
             )
             if status != 0:
                 raise ProceduralRuntimeError(status)
             return tuple(
-                _resident(record) if flag else None
-                for record, flag in zip(records, found)
+                _resident(records[index]) if found[index] else None
+                for index in range(count)
             )
 
     def dormant_cells(self) -> tuple[tuple[int, float, int], ...]:
