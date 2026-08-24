@@ -1,0 +1,60 @@
+{
+ "analytic": {
+  "fresh_union_support_L200_bits": 1960.2100005624313,
+  "pairwise_sdr_overlap_bits_w2_over_n": 0.5
+ },
+ "corpus": {
+  "items": 200,
+  "prompt_tokens_max": 393,
+  "prompt_tokens_mean": 147.645,
+  "prompt_tokens_median": 158.5,
+  "prompt_tokens_min": 30,
+  "source": "bible-kjv-pg10:v3-freeze-candidate TRAIN manifest only"
+ },
+ "lambdas": {
+  "0.90": {
+   "effective_support_bits_mean_1e-2_floor": 609.125,
+   "frac_pairs_cosine_above_090": 0.20045226130653265,
+   "max_cross_item_cosine": 0.9999106408477216,
+   "pooled_median_cosine": 0.8195841096133069,
+   "pooled_median_one_minus_cosine": 0.18041589038669315,
+   "recency_window_tokens_approx": 10.0,
+   "support_bits_mean_any_touch": 786.52,
+   "universal_bits_count": 389,
+   "universal_l2_mass_share": 0.8201137726921257
+  },
+  "0.97": {
+   "effective_support_bits_mean_1e-2_floor": 752.74,
+   "frac_pairs_cosine_above_090": 0.10592964824120603,
+   "max_cross_item_cosine": 0.9932868856522437,
+   "pooled_median_cosine": 0.8101617454633385,
+   "pooled_median_one_minus_cosine": 0.18983825453666142,
+   "recency_window_tokens_approx": 33.33,
+   "support_bits_mean_any_touch": 786.52,
+   "universal_bits_count": 389,
+   "universal_l2_mass_share": 0.6840894975655409
+  },
+  "0.99": {
+   "effective_support_bits_mean_1e-2_floor": 786.52,
+   "frac_pairs_cosine_above_090": 0.14467336683417084,
+   "max_cross_item_cosine": 0.9816014133780478,
+   "pooled_median_cosine": 0.8266996641808699,
+   "pooled_median_one_minus_cosine": 0.17330033581913007,
+   "recency_window_tokens_approx": 100.0,
+   "support_bits_mean_any_touch": 786.52,
+   "universal_bits_count": 389,
+   "universal_l2_mass_share": 0.6043453140932328
+  }
+ },
+ "measured_pairwise_sdr_overlap_bits": {
+  "mean": 0.4885912698412698,
+  "median": 0.0
+ },
+ "projection": {
+  "n_bits": 2048,
+  "rng": "numpy default_rng((seed, n, w, token_id)).choice(n, w, replace=False)",
+  "seed": 7,
+  "w_ones": 32
+ },
+ "schema_version": "humanbrain/ustate-capacity-precondition/v1"
+}
