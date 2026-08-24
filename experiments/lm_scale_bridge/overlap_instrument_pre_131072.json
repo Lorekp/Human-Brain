@@ -1,0 +1,26 @@
+{
+  "mode": "instrument",
+  "cells": 131072,
+  "seed": 17,
+  "tokens": 400,
+  "vocab": 394,
+  "epoch_seconds": 1.8313,
+  "reset_seconds": 0.0009,
+  "encode_prep_seconds": 0.0,
+  "ms_per_token": {
+    "wall": 4.578,
+    "kernel_mean": 3.887,
+    "kernel_p50": 3.803,
+    "kernel_max": 6.275,
+    "d2h_mean": 0.193,
+    "d2h_max": 0.583,
+    "strengthen_mean": 0.376,
+    "strengthen_max": 0.976,
+    "host_python_mean": 0.496
+  },
+  "tokens_per_second": 218.4,
+  "gpu_idle_fraction_of_wall": 0.1509,
+  "gpu_idle_excluding_dma_busy": 0.1087,
+  "d2h_mb_per_token": 1.049,
+  "decision_threshold": "overlap profitable only if idle >= 5% of wall"
+}
