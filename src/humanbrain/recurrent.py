@@ -474,6 +474,10 @@ class RecurrentCellCircuit:
         # R0-c Thread-1 logging seam: optional per-token observer callback.
         # None by default; when None, observe() is untouched bit-for-bit.
         self._observation_sink = None
+        # Race-pivot T-P8 reentrancy guard: True while an observation_sink
+        # callback is executing; observe/race/reset raise a deliberate
+        # RuntimeError instead of letting a driving sink recurse.
+        self._sink_active = False
 
         rng = np.random.default_rng(self.config.random_seed)
         self._afferent_targets = np.empty(
@@ -1168,6 +1172,7 @@ class RecurrentCellCircuit:
         self.synchronize_state_from_device()
 
     def reset_sequence(self) -> None:
+        self._guard_sink_reentrancy("reset")
         self._reservoir.reset()
         self._synaptic_current_pa.fill(0.0)
         self._eligibility_traces.fill(0.0)
@@ -1186,8 +1191,23 @@ class RecurrentCellCircuit:
         self._native_kernel.synchronize_from_host()
         self._observed_tokens = 0
 
+    def _guard_sink_reentrancy(self, operation: str) -> None:
+        """T-P8 contract: a driving observation_sink must raise deliberately.
+
+        Observers are read-only (observation_sink docstring); a callback that
+        calls observe/race/reset would otherwise recurse unchecked (historically
+        to RecursionError). Raise immediately, BEFORE any state mutation.
+        """
+        if self._sink_active:
+            raise RuntimeError(
+                "observation_sink reentrancy guard: the sink callback drove "
+                f"the circuit via {operation}(); observers must not call "
+                "observe/race/reset (recurrent.py observation_sink contract)"
+            )
+
     def observe(self, token_id: int) -> RecurrentStep:
         """Apply one token as afferent current and advance the cell circuit."""
+        self._guard_sink_reentrancy("observe")
         token = int(token_id)
         if not 0 <= token < self.token_cells:
             raise ValueError("token id outside output-cell population")
@@ -1202,8 +1222,13 @@ class RecurrentCellCircuit:
             # R0-c Thread-1: fire AFTER the family boundary update so the
             # observer reads the same post-observe state any strengthen/race
             # consumer would see. The sink must not drive the circuit (no
-            # observe/race/reset calls inside the callback).
-            self._observation_sink(self, token)
+            # observe/race/reset calls inside the callback); T-P8 makes that
+            # contract enforced rather than documented.
+            self._sink_active = True
+            try:
+                self._observation_sink(self, token)
+            finally:
+                self._sink_active = False
         return RecurrentStep(
             token_id=token,
             reservoir_spikes=spike_total,
@@ -1384,6 +1409,7 @@ class RecurrentCellCircuit:
         self, allowed_token_ids: Sequence[int] | None = None
     ) -> RecurrentRace:
         """Race output cells under synaptic current; the first spike is the token."""
+        self._guard_sink_reentrancy("race")
         if self._observed_tokens < 1:
             raise RuntimeError("observe context before racing output cells")
         return self._race_output_candidates(
@@ -1428,6 +1454,47 @@ class RecurrentCellCircuit:
         ):
             raise ValueError("allowed token outside output-cell population")
         return np.unique(np.asarray(allowed_ids, dtype=np.intp))
+
+    def complete_broadcast(
+        self,
+        prompt_ids,
+        max_new_tokens: int,
+        *,
+        broadcast_b: int = 1,
+        variant: str = "P-S",
+        chase_to_settle: bool | None = None,
+        max_settle_rounds: int | None = None,
+        record_settle_profile: bool = False,
+    ):
+        """Circuit-level winner-feedback broadcast free-run (race-pivot §3.1).
+
+        Thin delegate to :func:`humanbrain.race_pivot.broadcast_free_run` — the
+        host-side loop over the public ``race()``/``observe()`` primitives; no
+        race semantics or cell dynamics are touched. Consumes and resets the
+        sequence here (prompt ingestion follows this module's logging contract:
+        one sink-visible event per output DECISION — see the race_pivot module
+        docstring). Returns a ``race_pivot.BroadcastRunResult``.
+        """
+        from humanbrain.race_pivot import (
+            MAX_SETTLE_ROUNDS_DEFAULT,
+            broadcast_free_run,
+        )
+
+        return broadcast_free_run(
+            self,
+            prompt_ids,
+            max_new_tokens,
+            broadcast_b=broadcast_b,
+            variant=variant,
+            chase_to_settle=chase_to_settle,
+            max_settle_rounds=(
+                MAX_SETTLE_ROUNDS_DEFAULT
+                if max_settle_rounds is None
+                else max_settle_rounds
+            ),
+            consume_prompt=True,
+            record_settle_profile=record_settle_profile,
+        )
 
     def _race_output_candidates(
         self,

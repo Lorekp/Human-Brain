@@ -364,10 +364,6 @@ def _require_abstention_scorer():
 # ===========================================================================
 # T-P1 — broadcast determinism (protocol §7)
 # ===========================================================================
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P1: complete_broadcast/settle-record API unimplemented (§3.1) — RED until pivot lands",
-)
 def test_tp1_b2_two_runs_bit_identical_streams_settle_hashes_features() -> None:
     """Identical seed/prompt/config with B=2 → identical token streams, settle-profile
     hashes, bit-identical final feature vectors across two independent runs."""
@@ -397,10 +393,6 @@ def test_tp1_b2_two_runs_bit_identical_streams_settle_hashes_features() -> None:
 # ===========================================================================
 # T-P2 — stability convergence bounds (protocol §7, §3.1 control flow)
 # ===========================================================================
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P2: complete_broadcast settle counters unimplemented (§3.1) — RED until pivot lands",
-)
 def test_tp2_fixed_point_case_stable_within_max_settle_rounds() -> None:
     """Constructed fixed-point case (corpus 'aaaa…'): every position terminates STABLE
     within MAX_SETTLE_ROUNDS with correct settle counters; emitted == initial."""
@@ -419,10 +411,6 @@ def test_tp2_fixed_point_case_stable_within_max_settle_rounds() -> None:
         assert _record_field(record, ("initial_winner", "initial", "w0")) == 4
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P2: complete_broadcast UNCONVERGED bookkeeping unimplemented (§3.1) — RED until pivot lands",
-)
 def test_tp2_oscillating_case_unconverged_exactly_at_max_settle_rounds_and_returns() -> None:
     """Constructed oscillating case (corpus 'abab…', 2-cycle 3<->5 under chase): the
     position flags UNCONVERGED at exactly MAX_SETTLE_ROUNDS and the call RETURNS
@@ -449,10 +437,6 @@ def test_tp2_oscillating_case_unconverged_exactly_at_max_settle_rounds_and_retur
         assert rounds == MAX_SETTLE_ROUNDS
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P2: P-R flip bookkeeping unimplemented (§3.1) — RED until pivot lands",
-)
 def test_tp2_pr_flip_bookkeeping_emitted_eq_settled_initial_recorded_separately() -> None:
     """P-R: emitted token is the SETTLED winner; the INITIAL race winner is recorded
     separately; flips are counted consistently (settled != initial ⇔ flipped)."""
@@ -577,10 +561,6 @@ def test_tp3_reference_ps_b1_zero_extra_observe_events() -> None:
     instrumented._circuit.observation_sink = None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P3: production complete_broadcast(P-S, B=1) unimplemented (§3.1) — RED until pivot lands",
-)
 def test_tp3_production_ps_b1_parity_with_complete() -> None:
     """Production P-S/B=1 must be BIT-IDENTICAL to current ``complete()``: token
     stream, per-step ``output_current_pa()`` sha256s, final feature vectors, and
@@ -717,10 +697,6 @@ def test_tp5_singleton_candidate_set_yields_explicit_zero_margin() -> None:
     assert _reference_margin(np.arange(4, dtype=float), 2, allowed=[2]) == 0.0
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P5: production margin logging alongside decisions unimplemented (§3.2) — RED until pivot lands",
-)
 def test_tp5_logged_margins_equal_independent_recompute_zero_tolerance() -> None:
     """Logged margins must equal independently recomputed values from the public
     ``output_current_pa()`` to 0.0 tolerance, carry the target−best-competitor sign
@@ -767,10 +743,6 @@ def test_tp6_margin_pooling_reproducible_across_identical_grows() -> None:
     assert len(first) == 3
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P6: tau freeze/hash-seal machinery unimplemented (§3.2) — RED until pivot lands",
-)
 def test_tp6_tau_freeze_twice_machine_precision_and_hash_sealed() -> None:
     """τ computed twice from the frozen TRAIN pool agrees to machine precision, and the
     τ block is hash-sealed into the gate JSON's pre-registration block."""
@@ -789,10 +761,6 @@ def test_tp6_tau_freeze_twice_machine_precision_and_hash_sealed() -> None:
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P6: post-freeze preflight rejection unimplemented (§3.2) — RED until pivot lands",
-)
 def test_tp6_preflight_rejects_post_freeze_calibration_mutation() -> None:
     """Any post-freeze mutation of the calibration inputs must FAIL the anchor check
     (hash mismatch ⇒ ABORT, cohort not spent — simulated in-test)."""
@@ -809,10 +777,6 @@ def test_tp6_preflight_rejects_post_freeze_calibration_mutation() -> None:
 # ===========================================================================
 # T-P7 — abstention correctness (protocol §7, §3.2 P-M1)
 # ===========================================================================
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P7: P-M1 abstention labeling unimplemented (§3.2) — RED until pivot lands",
-)
 def test_tp7_abstention_labels_straddle_tau_low() -> None:
     """Crafted margin vectors straddling τ_low produce exactly the specified
     abstain/answer labels; high-confidence flags fire strictly above τ_high."""
@@ -835,10 +799,6 @@ def test_tp7_abstention_labels_straddle_tau_low() -> None:
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P7: selective-accuracy scoring with abstention unimplemented (§3.2) — RED until pivot lands",
-)
 def test_tp7_coverage_denominator_and_abstained_never_correct() -> None:
     """Coverage denominators verified on synthetic records; a position engineered to be
     CORRECT but abstained never counts toward selective accuracy (denominator and
@@ -881,12 +841,6 @@ def test_tp8_sink_disabled_zero_calls_and_results_identical() -> None:
     assert before == bare_out  # logging fully off changes nothing
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P8: reentrancy guard (sink driving observe/race/reset must RAISE cleanly) "
-    "unimplemented — today a driving sink recurses until RecursionError, which is NOT "
-    "the contract; the test rejects RecursionError so it stays RED until a real guard lands",
-)
 def test_tp8_sink_that_drives_circuit_raises() -> None:
     """A callback that calls observe/race/reset must RAISE with a deliberate guard
     error immediately. Currently only docstring discipline exists: a driving sink runs
@@ -906,10 +860,6 @@ def test_tp8_sink_that_drives_circuit_raises() -> None:
     circuit.observation_sink = None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="T-P8: settle-profile/margin logging through the sink unimplemented (§3.1/§3.2) — RED until pivot lands",
-)
 def test_tp8_settle_profiles_and_margins_flow_through_observation_sink() -> None:
     """Settle profiles and margins reach logs THROUGH the observation_sink contract:
     post-boundary reads only, and the sink-visible state equals the caller-visible
