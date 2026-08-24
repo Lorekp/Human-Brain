@@ -1,0 +1,146 @@
+{
+  "N": 96,
+  "abstention": {
+    "coverage": 1.0,
+    "frozen_coverage_min": 0.3,
+    "frozen_selective_min": 0.061851478566709396,
+    "n_abstained": 0,
+    "n_answered": 99,
+    "n_correct_answered": 8,
+    "n_total": 99,
+    "selective_accuracy": 0.08080808080808081,
+    "tau_high": 1093.4090596622568,
+    "tau_low": -442.0095367935478
+  },
+  "anchors": {
+    "git_head": "63c213b6a8341281a620ffecf4a941529a122fd3",
+    "qa_corpus_sha256": "8857eb77f3581aae55db44d34f7bb62b592e2a4ff10161fe5127b16243106bd5",
+    "qa_curriculum_sha256": "edad2c59d5b721a9a4dc3dde0f6bc11452f3db138426c7a6bad45f8b8718c7cc",
+    "typed_curriculum_sha256": "48219eda110f09f735525a7de00e56596ffac729746654e809c3c5eb525ccae6"
+  },
+  "arm": "P-M1",
+  "arm_config": {
+    "abstention": true,
+    "broadcast_b": 1,
+    "chase_to_settle": false,
+    "variant": "P-S"
+  },
+  "distinct_answers": 6,
+  "eval_task_count": 6,
+  "execution": {
+    "completion_token_slack": 8,
+    "device": "cpu",
+    "growth_epochs": 2,
+    "readout_rule": "ridge",
+    "ridge_backend": "scipy",
+    "simulation_backend": "cpu"
+  },
+  "experiment_id": "race_pivot_gate",
+  "free_run_exact_matches": 0,
+  "free_run_rows": [
+    {
+      "completion": "           t s",
+      "exact_match": false,
+      "expected": "light",
+      "normalized_completion": "t s",
+      "qa_id": "q_bxcsdxmsd"
+    },
+    {
+      "completion": "nn::ns:r uur   r the",
+      "exact_match": false,
+      "expected": "the heaven and the earth",
+      "normalized_completion": "nn::ns:r uur r the",
+      "qa_id": "q_mxwdrtjjd"
+    },
+    {
+      "completion": "              Question lQuestionQuestionl l\n answer\n:: answer",
+      "exact_match": false,
+      "expected": "the way, the truth, and the life",
+      "normalized_completion": "question lquestionquestionl l answer :: answer",
+      "qa_id": "q_tnhbjgbvk"
+    },
+    {
+      "completion": "eee e e e  e ",
+      "exact_match": false,
+      "expected": "The LORD",
+      "normalized_completion": "eee e e e e",
+      "qa_id": "q_ycgydhrsg"
+    },
+    {
+      "completion": "eee e e  e e e",
+      "exact_match": false,
+      "expected": "steal",
+      "normalized_completion": "eee e e e e e",
+      "qa_id": "q_qknsngrph"
+    },
+    {
+      "completion": ":::::::::o",
+      "exact_match": false,
+      "expected": "kind",
+      "normalized_completion": ":::::::::o",
+      "qa_id": "q_dhgbcffpp"
+    }
+  ],
+  "gate_verdicts": {
+    "g_p1_distinct_pass": true,
+    "g_p2_exact_pass": false,
+    "g_p3_replay_pass": true,
+    "overall_pass": false,
+    "pm1_success_gate_pass": null
+  },
+  "leg": "fixture_n96",
+  "margin_count": 99,
+  "margin_max_pa": 1602.2930048695034,
+  "margin_median_pa": 224.59722246212004,
+  "margin_min_pa": -51.192485908875824,
+  "modal_answer": "t s",
+  "modal_share": 0.16666666666666666,
+  "preregistration": {
+    "gates": {
+      "g_p1_distinct_min": 3,
+      "g_p2_exact_min": 1,
+      "g_p3_replay_min_of": [
+        39,
+        42
+      ],
+      "max_settle_rounds": 4,
+      "pm1_coverage_min": 0.3,
+      "pm1_selective_min": 0.061851478566709396
+    },
+    "tau_block": {
+      "block_sha256": "d11d395ebb13800602312dd17cf4f1f450ed61a0f6f2512d4e1a24cc57d9ca9f",
+      "method": "numpy.percentile linear interpolation over TRAIN decision margins",
+      "pool_n": 161,
+      "pool_sha256": "76bec058c4a4cdc740e087e3668c4f0724f96637f87bd16c6899fce2b5c85e3b",
+      "tau_high": 1093.4090596622568,
+      "tau_high_percentile": 95.0,
+      "tau_low": -442.0095367935478,
+      "tau_low_percentile": 5.0
+    },
+    "tau_freeze_timing": "TRAIN margin pool frozen BEFORE any CALIBRATION free-run (\u00a73.2); pool_n below is the raw decision count",
+    "tau_pool_n": 161
+  },
+  "protocol": "docs/research/race-pivot-protocol.md @ d52c9d2",
+  "role": "confirmatory",
+  "seed": 7,
+  "settle": {
+    "flip_rate_mean": 0.0,
+    "injection_counts_per_task": [
+      14,
+      18,
+      30,
+      13,
+      14,
+      10
+    ],
+    "rounds_histogram": {
+      "rounds_1_STABLE": 45,
+      "rounds_1_UNSTABLE_AT_POSITION": 54
+    },
+    "stable_fraction_mean": 0.46174196174196175
+  },
+  "train_cases_passed": 126,
+  "train_cases_total": 126,
+  "train_replay_tasks": 42,
+  "wall_s": 49.23235659999773
+}
