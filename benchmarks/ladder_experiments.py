@@ -912,6 +912,372 @@ def _git_head() -> str:
         return "unknown"
 
 
+# ---------------------------------------------------------------------------
+# Race/output-pivot gate (--experiment race_pivot_gate; protocol
+# docs/research/race-pivot-protocol.md §5-§6, structure of tools/r0b_gate.py)
+# ---------------------------------------------------------------------------
+RACE_PIVOT_EXPERIMENT_ID = "race_pivot_gate"
+# Frozen anchors (verified before implementation landed; see commit history):
+# typed-program replay curriculum at seed 7 / data_scale 42 reproduces the
+# pinned r0b anchor; the QA fixture curriculum/corpus digests are the seed-7
+# materialization of humanbrain.qa_corpus at committed defaults.
+RACE_PIVOT_TYPED_CURRICULUM_ANCHOR = (
+    "48219eda110f09f735525a7de00e56596ffac729746654e809c3c5eb525ccae6"
+)
+RACE_PIVOT_QA_CURRICULUM_ANCHOR = (
+    "edad2c59d5b721a9a4dc3dde0f6bc11452f3db138426c7a6bad45f8b8718c7cc"
+)
+RACE_PIVOT_QA_CORPUS_SHA256 = (
+    "8857eb77f3581aae55db44d34f7bb62b592e2a4ff10161fe5127b16243106bd5"
+)
+RACE_PIVOT_SEED = 7  # protocol §5: seed 7 throughout, as R0/R0-b/R0-c
+RACE_PIVOT_G1_DISTINCT_MIN = 3  # G-P1 (GUARD_DISTINCT_MIN, benchmarks/qa_experiments.py)
+RACE_PIVOT_G2_EXACT_MIN = 1  # G-P2 (deliberate tightening vs R0-b)
+RACE_PIVOT_G3_REPLAY_MIN = 39  # G-P3 floor of 42 (baseline 41/42 seed-7 ridge)
+# P-M1 frozen success gate (N=1024 leg only; fixture leg reports diagnostics):
+# selective span-accuracy >= two-sigma unigram threshold AND coverage >= 0.30.
+RACE_PIVOT_PM1_SELECTIVE_MIN = 0.061851478566709396
+RACE_PIVOT_PM1_COVERAGE_MIN = 0.30
+RACE_PIVOT_TAU_LOW_PERCENTILE = 5.0  # protocol §3.2, frozen
+RACE_PIVOT_TAU_HIGH_PERCENTILE = 95.0  # protocol §3.2, frozen
+RACE_PIVOT_MAX_SETTLE_ROUNDS = 4  # protocol §3.1, frozen
+# Replay leg scale: the ONLY scale with a recorded baseline
+# (readout_compare/ridge_N1024_s7.json = 41/42; r0b records 42/42 there).
+RACE_PIVOT_REPLAY_N_CELLS = 1024
+
+# Preregistered arms (§5). Arm config is data, never tuned post hoc.
+RACE_PIVOT_ARMS: dict[str, dict[str, object]] = {
+    "P-S1": {"broadcast_b": 1, "variant": "P-S", "chase_to_settle": False},
+    "P-S2": {"broadcast_b": 2, "variant": "P-S", "chase_to_settle": False},
+    "P-S4": {"broadcast_b": 4, "variant": "P-S", "chase_to_settle": False},
+    "P-R4": {"broadcast_b": 4, "variant": "P-R", "chase_to_settle": True},
+    # P-M1 consumes margins through calibrated abstention on top of the
+    # parity-anchor generator (P-S/B=1); the choice is pinned HERE, pre-run.
+    "P-M1": {
+        "broadcast_b": 1,
+        "variant": "P-S",
+        "chase_to_settle": False,
+        "abstention": True,
+    },
+}
+
+
+def _race_pivot_qa_train_margin_pool(model, train_tasks) -> list[float]:
+    """Pool TRAIN answer-position decision margins (protocol §3.2 freeze).
+
+    Teacher-forces ``prompt + ' ' + answer`` and, at every answer-span decision
+    point, records m = currents[target] − max(currents[competitors]) over ALL
+    token cells (the unrestricted allowed set), host-side from the public
+    ``output_current_pa()`` — the ladder collector's formula at ladder line 797
+    generalized to the full cell population. Runs BEFORE any held-out scoring.
+    """
+    from humanbrain import race_pivot, qa_corpus
+
+    tokenizer = model._tokenizer  # noqa: SLF001 - same-repo benchmark seam
+    circuit = model._circuit  # noqa: SLF001
+    pool: list[float] = []
+    for task in train_tasks:
+        prompt_text = qa_corpus.prompt_for_task(task)
+        full_ids = list(tokenizer.encode(prompt_text + " " + task.answer))
+        answer_ids = list(tokenizer.encode(" " + task.answer))
+        span_start = len(full_ids) - len(answer_ids)
+        circuit.reset_sequence()
+        circuit.observe(full_ids[0])
+        for target_index in range(1, len(full_ids)):
+            currents = np.ascontiguousarray(circuit.output_current_pa())
+            if target_index >= span_start:
+                pool.append(race_pivot.reference_margin(currents, full_ids[target_index]))
+            circuit.observe(full_ids[target_index])
+    return pool
+
+
+def run_race_pivot_gate_experiment(
+    *,
+    experiment_id: str,
+    arm: str,
+    n_cells: int,
+    seed: int,
+    ridge_backend: str = "numpy",
+    growth_epochs: int = 2,
+    completion_token_slack: int = 8,
+) -> dict[str, object]:
+    """One preregistered race-pivot gate arm end-to-end (protocol §5-§6).
+
+    Battery per arm: (a) fixture-QA broadcast leg — grow the cell LM on the
+    TRAIN QA texts, freeze τ_low/τ_high from the TRAIN decision-margin pool
+    INTO the record (hash-sealed) BEFORE any CALIBRATION free-run, then free-run
+    CALIBRATION through ``complete_broadcast`` and score distinct answers
+    (G-P1) and exact matches (G-P2); (b) capacity replay leg — the typed-
+    program curriculum (42 tasks, massed/all_transition, ridge) replayed by the
+    incumbent ``_evaluate_cohort`` machinery (G-P3). Gates are recomputed from
+    raw metrics at the terminal summary; stored booleans are never trusted.
+    """
+    from humanbrain import qa_corpus, race_pivot
+
+    started = time.perf_counter()
+    if arm not in RACE_PIVOT_ARMS:
+        raise ValueError(f"unknown race-pivot arm {arm!r}; known: {sorted(RACE_PIVOT_ARMS)}")
+    if n_cells not in (96, 1024):
+        raise ValueError("race_pivot_gate runs the preregistered legs N=96 and N=1024 only")
+    if seed != RACE_PIVOT_SEED:
+        raise ValueError(f"protocol §5 pins seed {RACE_PIVOT_SEED} for every leg/arm")
+
+    # ---- anchor preflight (BEFORE any cohort consumption) ------------------
+    qa_curriculum = qa_corpus.build_curriculum(seed)
+    if str(qa_curriculum["sha256"]) != RACE_PIVOT_QA_CURRICULUM_ANCHOR:
+        raise RuntimeError(
+            "anchor check FAILED: QA curriculum sha256 "
+            f"{qa_curriculum['sha256']} != pinned {RACE_PIVOT_QA_CURRICULUM_ANCHOR}"
+        )
+    if str(qa_corpus.corpus_digest()) != RACE_PIVOT_QA_CORPUS_SHA256:
+        raise RuntimeError(
+            "anchor check FAILED: QA corpus digest drifted from the pinned value"
+        )
+    typed_curriculum = build_curriculum(seed, 42)
+    if str(typed_curriculum["sha256"]) != RACE_PIVOT_TYPED_CURRICULUM_ANCHOR:
+        raise RuntimeError(
+            "anchor check FAILED: typed curriculum sha256 "
+            f"{typed_curriculum['sha256']} != pinned "
+            f"{RACE_PIVOT_TYPED_CURRICULUM_ANCHOR}"
+        )
+
+    arm_config = RACE_PIVOT_ARMS[arm]
+    with_abstention = bool(arm_config.get("abstention"))
+    broadcast_kwargs = {
+        key: arm_config[key] for key in ("broadcast_b", "variant", "chase_to_settle")
+    }
+
+    # ---- fixture-QA broadcast leg ------------------------------------------
+    import qa_experiments as qae  # benchmarks sibling module
+    from humanbrain.recurrent_language import (
+        RecurrentCellLanguageModel,
+        RecurrentModelConfig,
+    )
+
+    readout_rule = qae._resolve_readout_rule(n_cells, "auto")
+    effective_circuit = RecurrentCircuitConfig(
+        reservoir_cells=n_cells,
+        readout_learning_rule=readout_rule,
+    )
+    train_tasks = qa_curriculum["train_tasks"]
+    eval_tasks = qa_curriculum["calibration_tasks"]
+    growth_texts = [qa_corpus.growth_text(task) for task in train_tasks]
+    model = RecurrentCellLanguageModel.grow(
+        growth_texts,
+        RecurrentModelConfig(
+            growth_epochs=growth_epochs,
+            max_phrases=512,
+            min_phrase_frequency=2,
+            circuit=effective_circuit,
+        ),
+    )
+    tokenizer = model._tokenizer  # noqa: SLF001 - same-repo benchmark seam
+
+    # τ freeze FIRST — before any CALIBRATION free-run is scored (§3.2).
+    tau_pool = _race_pivot_qa_train_margin_pool(model, train_tasks)
+    tau_block = race_pivot.freeze_tau(
+        tau_pool,
+        tau_low_percentile=RACE_PIVOT_TAU_LOW_PERCENTILE,
+        tau_high_percentile=RACE_PIVOT_TAU_HIGH_PERCENTILE,
+    )
+
+    free_rows: list[dict[str, object]] = []
+    decision_rows: list[dict[str, object]] = []
+    stability_fractions: list[float] = []
+    flip_rates: list[float] = []
+    rounds_histogram: dict[str, int] = {}
+    injection_counts: list[int] = []
+    global_position = 0
+    for task in eval_tasks:
+        prompt_ids = list(tokenizer.encode(qa_corpus.prompt_for_task(task)))
+        budget = len(tokenizer.encode(" " + task.answer)) + completion_token_slack
+        result = model.complete_broadcast(
+            prompt_ids,
+            budget,
+            max_settle_rounds=RACE_PIVOT_MAX_SETTLE_ROUNDS,
+            **broadcast_kwargs,
+        )
+        completion = tokenizer.decode(list(result.tokens))
+        normalized = qae._normalize(completion)
+        answer_ids = list(tokenizer.encode(" " + task.answer))
+        for offset, record in enumerate(result.position_records):
+            within_span = offset < len(answer_ids)
+            decision_rows.append(
+                {
+                    "position": global_position + offset,
+                    "task": task.qa_id,
+                    "margin_pa": float(record.margin_pa),
+                    "would_be_correct": bool(
+                        within_span and record.emitted_token == answer_ids[offset]
+                    ),
+                }
+            )
+        stability_fractions.append(float(result.stable_fraction))
+        flip_rates.append(float(result.sequence_flip_rate))
+        injection_counts.append(int(result.injection_count))
+        for record in result.position_records:
+            key = f"rounds_{record.settle_rounds}_{record.outcome}"
+            rounds_histogram[key] = rounds_histogram.get(key, 0) + 1
+        global_position += len(result.position_records)
+        free_rows.append(
+            {
+                "qa_id": task.qa_id,
+                "completion": completion,
+                "normalized_completion": normalized,
+                "expected": task.answer,
+                "exact_match": normalized == qae._normalize(task.answer),
+            }
+        )
+
+    degeneracy = qae._degeneracy_metrics(
+        [str(row["normalized_completion"]) for row in free_rows]
+    )
+    distinct_answers = int(degeneracy["distinct_answers"])
+    exact_matches = sum(1 for row in free_rows if row["exact_match"])
+    margin_values = sorted(row["margin_pa"] for row in decision_rows)
+
+    abstention_block: dict[str, object] | None = None
+    if with_abstention:
+        labeled = race_pivot.apply_abstention(
+            decision_rows,
+            tau_low=float(tau_block["tau_low"]),
+            tau_high=float(tau_block["tau_high"]),
+        )
+        abstention_block = {
+            **labeled.as_dict(),
+            # Diagnostics-only at the fixture leg; the frozen success gate is
+            # evaluated at the N=1024 leg (protocol §3.2).
+            "frozen_selective_min": RACE_PIVOT_PM1_SELECTIVE_MIN,
+            "frozen_coverage_min": RACE_PIVOT_PM1_COVERAGE_MIN,
+        }
+
+    # ---- capacity replay leg (G-P3, incumbent machinery) -------------------
+    # Pinned BYTE-IDENTICAL to the recorded single-trace baseline anchor
+    # (experiments/readout_compare/ridge_N1024_s7.json = 41/42; R0 protocol
+    # §3.1): N=1024 / traces / ridge / massed / data_scale=42 /
+    # all_transition / explicit codebook. G-P3 is capacity NON-REGRESSION
+    # against that fixed baseline, so the replay leg runs at the baseline
+    # scale in BOTH legs of this protocol -- no N=96 baseline exists (small
+    # reservoirs cannot replay; measured 0/42), and inventing one post hoc
+    # would be tuning.
+    replay_n_cells = RACE_PIVOT_REPLAY_N_CELLS
+    codebook_arm = build_codebook(
+        "explicit",
+        token_count=_TOKEN_CELLS,
+        n_e=replay_n_cells,
+        k=_DEFAULT_ASSEMBLY_K,
+        seed=seed,
+    )
+    typed_circuit = _grow_circuit(
+        typed_curriculum,
+        n_cells=replay_n_cells,
+        seed=seed,
+        readout_rule="ridge",
+        schedule="massed",
+        supervision="all_transition",
+        codebook=codebook_arm,
+        ridge_backend=ridge_backend,
+        feature_family="traces",
+    )
+    train_eval = _evaluate_cohort(
+        typed_circuit, typed_curriculum["train_tasks"], collect_margins=True
+    )
+
+    # ---- mechanical gates, recomputed from raw metrics ----------------------
+    g1_pass = distinct_answers >= RACE_PIVOT_G1_DISTINCT_MIN
+    g2_pass = exact_matches >= RACE_PIVOT_G2_EXACT_MIN
+    train_replay_tasks = int(train_eval["replayed"])
+    g3_pass = train_replay_tasks >= RACE_PIVOT_G3_REPLAY_MIN
+    pm1_pass: bool | None = None
+    if with_abstention and abstention_block is not None and n_cells == 1024:
+        pm1_pass = bool(
+            float(abstention_block["selective_accuracy"]) >= RACE_PIVOT_PM1_SELECTIVE_MIN
+            and float(abstention_block["coverage"]) >= RACE_PIVOT_PM1_COVERAGE_MIN
+        )
+
+    wall_s = time.perf_counter() - started
+    record: dict[str, object] = {
+        "experiment_id": experiment_id,
+        "arm": arm,
+        "N": n_cells,
+        "seed": seed,
+        "role": "confirmatory",
+        "protocol": "docs/research/race-pivot-protocol.md @ d52c9d2",
+        "leg": "fixture_n96" if n_cells == 96 else "n1024",
+        "arm_config": {**broadcast_kwargs, "abstention": with_abstention},
+        "anchors": {
+            "typed_curriculum_sha256": RACE_PIVOT_TYPED_CURRICULUM_ANCHOR,
+            "qa_curriculum_sha256": RACE_PIVOT_QA_CURRICULUM_ANCHOR,
+            "qa_corpus_sha256": RACE_PIVOT_QA_CORPUS_SHA256,
+            "git_head": _git_head(),
+        },
+        "preregistration": {
+            "tau_block": tau_block,
+            "tau_freeze_timing": (
+                "TRAIN margin pool frozen BEFORE any CALIBRATION free-run "
+                "(§3.2); pool_n below is the raw decision count"
+            ),
+            "tau_pool_n": len(tau_pool),
+            "gates": {
+                "g_p1_distinct_min": RACE_PIVOT_G1_DISTINCT_MIN,
+                "g_p2_exact_min": RACE_PIVOT_G2_EXACT_MIN,
+                "g_p3_replay_min_of": [RACE_PIVOT_G3_REPLAY_MIN, 42],
+                "pm1_selective_min": RACE_PIVOT_PM1_SELECTIVE_MIN,
+                "pm1_coverage_min": RACE_PIVOT_PM1_COVERAGE_MIN,
+                "max_settle_rounds": RACE_PIVOT_MAX_SETTLE_ROUNDS,
+            },
+        },
+        # Raw metrics (gates recompute from these)
+        "distinct_answers": distinct_answers,
+        "modal_share": degeneracy["modal_share"],
+        "modal_answer": degeneracy["modal_answer"],
+        "free_run_exact_matches": exact_matches,
+        "train_replay_tasks": train_replay_tasks,
+        "train_cases_total": train_eval["cases_total"],
+        "train_cases_passed": train_eval["cases_passed"],
+        "eval_task_count": len(eval_tasks),
+        "margin_count": len(margin_values),
+        "margin_min_pa": margin_values[0] if margin_values else None,
+        "margin_median_pa": (
+            float(np.median(margin_values)) if margin_values else None
+        ),
+        "margin_max_pa": margin_values[-1] if margin_values else None,
+        # Broadcast diagnostics (never gate)
+        "settle": {
+            "stable_fraction_mean": (
+                sum(stability_fractions) / len(stability_fractions)
+                if stability_fractions
+                else None
+            ),
+            "flip_rate_mean": (
+                sum(flip_rates) / len(flip_rates) if flip_rates else None
+            ),
+            "rounds_histogram": rounds_histogram,
+            "injection_counts_per_task": injection_counts,
+        },
+        "abstention": abstention_block,
+        "free_run_rows": free_rows,
+        # Mechanical verdicts (recomputed here from raw metrics above)
+        "gate_verdicts": {
+            "g_p1_distinct_pass": g1_pass,
+            "g_p2_exact_pass": g2_pass,
+            "g_p3_replay_pass": g3_pass,
+            "pm1_success_gate_pass": pm1_pass,
+            "overall_pass": bool(g1_pass and g2_pass and g3_pass),
+        },
+        "execution": {
+            "device": os.environ.get("HUMANBRAIN_DEVICE", "cpu"),
+            "simulation_backend": model._circuit.simulation_backend,  # noqa: SLF001
+            "readout_rule": readout_rule,
+            "ridge_backend": ridge_backend,
+            "growth_epochs": growth_epochs,
+            "completion_token_slack": completion_token_slack,
+        },
+        "wall_s": wall_s,
+    }
+    return record
+
+
 def run_experiment(
     *,
     experiment_id: str,
@@ -1311,26 +1677,24 @@ def main(argv: list[str] | None = None) -> int:
         except ImportError:
             ridge_backend = "numpy"
 
-    record = run_experiment(
-        experiment_id=arguments.experiment_id,
-        arm=arguments.arm,
-        n_cells=arguments.N,
-        seed=arguments.seed,
-        readout_rule=arguments.readout_rule,
-        schedule=arguments.schedule,
-        data_scale=arguments.data_scale,
-        supervision=arguments.supervision,
-        codebook=arguments.codebook,
-        assembly_k=arguments.assembly_k,
-        local_learning_rate_pa=arguments.local_learning_rate_pa,
-        local_competitive_margin_pa=arguments.local_competitive_margin_pa,
-        inhibitory_fraction=arguments.inhibitory_fraction,
-        ridge_backend=ridge_backend,
-        with_state_separation=arguments.with_state_separation,
-        feature_family=arguments.feature_family,
-    )
-    if arguments.check_determinism:
-        repeat = run_experiment(
+    if arguments.experiment_id == RACE_PIVOT_EXPERIMENT_ID:
+
+        def _gate_run():
+            return run_race_pivot_gate_experiment(
+                experiment_id=arguments.experiment_id,
+                arm=arguments.arm,
+                n_cells=arguments.N,
+                seed=arguments.seed,
+                ridge_backend=ridge_backend,
+            )
+
+        record = _gate_run()
+        if arguments.check_determinism:
+            repeat = _gate_run()
+            if _record_without_wall(record) != _record_without_wall(repeat):
+                _fail("determinism check failed: identical-seed records differ beyond wall_s")
+    else:
+        record = run_experiment(
             experiment_id=arguments.experiment_id,
             arm=arguments.arm,
             n_cells=arguments.N,
@@ -1348,8 +1712,27 @@ def main(argv: list[str] | None = None) -> int:
             with_state_separation=arguments.with_state_separation,
             feature_family=arguments.feature_family,
         )
-        if _record_without_wall(record) != _record_without_wall(repeat):
-            _fail("determinism check failed: identical-seed records differ beyond wall_s")
+        if arguments.check_determinism:
+            repeat = run_experiment(
+                experiment_id=arguments.experiment_id,
+                arm=arguments.arm,
+                n_cells=arguments.N,
+                seed=arguments.seed,
+                readout_rule=arguments.readout_rule,
+                schedule=arguments.schedule,
+                data_scale=arguments.data_scale,
+                supervision=arguments.supervision,
+                codebook=arguments.codebook,
+                assembly_k=arguments.assembly_k,
+                local_learning_rate_pa=arguments.local_learning_rate_pa,
+                local_competitive_margin_pa=arguments.local_competitive_margin_pa,
+                inhibitory_fraction=arguments.inhibitory_fraction,
+                ridge_backend=ridge_backend,
+                with_state_separation=arguments.with_state_separation,
+                feature_family=arguments.feature_family,
+            )
+            if _record_without_wall(record) != _record_without_wall(repeat):
+                _fail("determinism check failed: identical-seed records differ beyond wall_s")
 
     output_root = (
         Path(arguments.out) if arguments.out else ROOT / "experiments"
@@ -1372,6 +1755,7 @@ def main(argv: list[str] | None = None) -> int:
             "margin_min_pa",
             "wall_s",
         )
+        if key in record  # experiment-specific records carry their own summary
     }}, sort_keys=True))
     return 0
 
