@@ -53,6 +53,16 @@ in the frozen §2 table; no probe result influenced this amendment.
    the r0c anchor `c2cc7357...`; concept arms necessarily differ (different
    tokenization) and record their own digest.
 
+## Erratum (implementation-time, pre-spend)
+
+§5's assertion is refined to PREFIX-consistency: 18 mined concepts contain the
+literal `\nA:` marker, so EVERY item's boundary token straddles the marker.
+The cut therefore stops BEFORE the straddling token and the final 4-8 cue
+bytes are uniformly unobserved in concept arms (`boundary_missed_prompt_bytes`
+recorded per item; distribution reported in FINDINGS). The alternative —
+observing a token that extends past `\nA:` — would leak answer-region bytes
+into the decision state and was rejected. Gate semantics unchanged.
+
 ## What does NOT change
 
 Gates, thresholds, comparators, controls, seeds, projector, union rule,
