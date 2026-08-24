@@ -34,7 +34,7 @@ def make_views(artifact_dir: Path) -> list[Path]:
     made = []
     for arm_meta in manifest["arms"]:
         arm = arm_meta["arm"]
-        prefix = f"{arm}_n"
+        prefix = f"arm_{arm}_n"
         keys = [k for k in z.files if k.startswith(prefix)]
         assert keys, f"no arrays for {arm}"
         arrays = {k: z[k] for k in sorted(keys)}
