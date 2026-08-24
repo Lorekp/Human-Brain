@@ -1,0 +1,2049 @@
+{
+ "analytic": {
+  "n2048_w32": {
+   "fresh_union_support_L200_bits": 1960.2100005624313,
+   "pairwise_sdr_overlap_bits_w2_over_n": 0.5,
+   "recency_window_tokens_by_lambda": {
+    "0.90": 43.70869065356567,
+    "0.97": 151.19139880116785,
+    "0.99": 458.2105765533884
+   }
+  },
+  "n4096_w64": {
+   "fresh_union_support_L200_bits": 3920.4200011248627,
+   "pairwise_sdr_overlap_bits_w2_over_n": 1.0,
+   "recency_window_tokens_by_lambda": {
+    "0.90": 43.70869065356567,
+    "0.97": 151.19139880116785,
+    "0.99": 458.2105765533884
+   }
+  }
+ },
+ "configs": {
+  "n2048_w32_lam0.90": {
+   "lambda": 0.9,
+   "n_bits": 2048,
+   "sparsity_w_over_n": 0.015625,
+   "verse_boundary_full_lengths": {
+    "active_bits": {
+     "active_bits_any_touch_mean": 684.15,
+     "active_bits_any_touch_median": 678.0,
+     "active_bits_effective_mean": 517.695,
+     "active_bits_effective_median": 512.5,
+     "untouched_fraction_effective_mean": 0.7472192382812499
+    },
+    "cosine": {
+     "frac_pairs_cosine_above_090": 0.003969849246231155,
+     "max_cross_item_cosine": 0.9991719745713988,
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_cosine": 0.6027829739636931,
+     "pooled_median_one_minus_cosine": 0.39721702603630693
+    }
+   },
+   "verse_prefix_curves": {
+    "128": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 685.4090909090909,
+      "active_bits_any_touch_median": 671.0,
+      "active_bits_effective_mean": 499.8863636363636,
+      "active_bits_effective_median": 503.0,
+      "untouched_fraction_effective_mean": 0.7559148615056819
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0023510971786833857,
+      "max_cross_item_cosine": 0.9524929807268532,
+      "n_items": 88,
+      "n_pairs": 3828,
+      "pooled_median_cosine": 0.610502572496127,
+      "pooled_median_one_minus_cosine": 0.389497427503873
+     }
+    },
+    "16": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 328.46,
+      "active_bits_any_touch_median": 329.0,
+      "active_bits_effective_mean": 328.46,
+      "active_bits_effective_median": 329.0,
+      "untouched_fraction_effective_mean": 0.839619140625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0018592964824120603,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5783782912952917,
+      "pooled_median_one_minus_cosine": 0.42162170870470833
+     }
+    },
+    "192": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 738.8709677419355,
+      "active_bits_any_touch_median": 731.0,
+      "active_bits_effective_mean": 492.48387096774195,
+      "active_bits_effective_median": 488.0,
+      "untouched_fraction_effective_mean": 0.7595293598790323
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.8567389546240216,
+      "n_items": 31,
+      "n_pairs": 465,
+      "pooled_median_cosine": 0.6033835951535002,
+      "pooled_median_one_minus_cosine": 0.39661640484649985
+     }
+    },
+    "24": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 405.485,
+      "active_bits_any_touch_median": 407.0,
+      "active_bits_effective_mean": 405.485,
+      "active_bits_effective_median": 407.0,
+      "untouched_fraction_effective_mean": 0.8020092773437499
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0019095477386934674,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6031996061079892,
+      "pooled_median_one_minus_cosine": 0.3968003938920109
+     }
+    },
+    "256": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 826.2,
+      "active_bits_any_touch_median": 834.0,
+      "active_bits_effective_mean": 525.4,
+      "active_bits_effective_median": 513.0,
+      "untouched_fraction_effective_mean": 0.74345703125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.8188288808206298,
+      "n_items": 5,
+      "n_pairs": 10,
+      "pooled_median_cosine": 0.6766737270981615,
+      "pooled_median_one_minus_cosine": 0.3233262729018385
+     }
+    },
+    "32": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 460.8542713567839,
+      "active_bits_any_touch_median": 460.0,
+      "active_bits_effective_mean": 460.8542713567839,
+      "active_bits_effective_median": 460.0,
+      "untouched_fraction_effective_mean": 0.7749735003140703
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.002030353789147759,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 199,
+      "n_pairs": 19701,
+      "pooled_median_cosine": 0.6115623411381922,
+      "pooled_median_one_minus_cosine": 0.3884376588618078
+     }
+    },
+    "320": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 877.0,
+      "active_bits_any_touch_median": 877.0,
+      "active_bits_effective_mean": 424.0,
+      "active_bits_effective_median": 424.0,
+      "untouched_fraction_effective_mean": 0.79296875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.6102965127646969,
+      "n_items": 2,
+      "n_pairs": 1,
+      "pooled_median_cosine": 0.6102965127646969,
+      "pooled_median_one_minus_cosine": 0.3897034872353031
+     }
+    },
+    "48": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 531.8717948717949,
+      "active_bits_any_touch_median": 533.0,
+      "active_bits_effective_mean": 501.8,
+      "active_bits_effective_median": 508.0,
+      "untouched_fraction_effective_mean": 0.75498046875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0019561194818926778,
+      "max_cross_item_cosine": 0.9913209483345639,
+      "n_items": 195,
+      "n_pairs": 18915,
+      "pooled_median_cosine": 0.6190386924306185,
+      "pooled_median_one_minus_cosine": 0.3809613075693815
+     }
+    },
+    "64": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 581.3497267759562,
+      "active_bits_any_touch_median": 582.0,
+      "active_bits_effective_mean": 503.53005464480873,
+      "active_bits_effective_median": 504.0,
+      "untouched_fraction_effective_mean": 0.7541357155054644
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0021617726535759323,
+      "max_cross_item_cosine": 0.9756674467346966,
+      "n_items": 183,
+      "n_pairs": 16653,
+      "pooled_median_cosine": 0.6213450865567551,
+      "pooled_median_one_minus_cosine": 0.37865491344324487
+     }
+    },
+    "8": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 217.615,
+      "active_bits_any_touch_median": 216.0,
+      "active_bits_effective_mean": 217.615,
+      "active_bits_effective_median": 216.0,
+      "untouched_fraction_effective_mean": 0.89374267578125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.007085427135678392,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.4620029176645517,
+      "pooled_median_one_minus_cosine": 0.5379970823354483
+     }
+    },
+    "96": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 642.5153846153846,
+      "active_bits_any_touch_median": 633.0,
+      "active_bits_effective_mean": 496.5769230769231,
+      "active_bits_effective_median": 490.5,
+      "untouched_fraction_effective_mean": 0.7575307992788461
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0028622540250447226,
+      "max_cross_item_cosine": 0.9655820109263367,
+      "n_items": 130,
+      "n_pairs": 8385,
+      "pooled_median_cosine": 0.6368733960146464,
+      "pooled_median_one_minus_cosine": 0.36312660398535357
+     }
+    }
+   },
+   "w_ones": 32,
+   "window800_curve": {
+    "100": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 737.285,
+      "active_bits_any_touch_median": 743.5,
+      "active_bits_effective_mean": 555.37,
+      "active_bits_effective_median": 556.0,
+      "untouched_fraction_effective_mean": 0.7288232421875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0006532663316582914,
+      "max_cross_item_cosine": 0.957288538356961,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5699203441602143,
+      "pooled_median_one_minus_cosine": 0.4300796558397857
+     }
+    },
+    "200": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 858.045,
+      "active_bits_any_touch_median": 857.5,
+      "active_bits_effective_mean": 552.15,
+      "active_bits_effective_median": 549.5,
+      "untouched_fraction_effective_mean": 0.7303955078125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0021105527638190956,
+      "max_cross_item_cosine": 0.9793913444820287,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5898198669924246,
+      "pooled_median_one_minus_cosine": 0.4101801330075754
+     }
+    },
+    "400": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 955.9,
+      "active_bits_any_touch_median": 955.5,
+      "active_bits_effective_mean": 554.12,
+      "active_bits_effective_median": 557.5,
+      "untouched_fraction_effective_mean": 0.72943359375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0011055276381909548,
+      "max_cross_item_cosine": 0.9500308820149338,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5818964675998635,
+      "pooled_median_one_minus_cosine": 0.4181035324001365
+     }
+    },
+    "50": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 582.17,
+      "active_bits_any_touch_median": 576.5,
+      "active_bits_effective_mean": 552.625,
+      "active_bits_effective_median": 549.0,
+      "untouched_fraction_effective_mean": 0.73016357421875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0009045226130653266,
+      "max_cross_item_cosine": 0.9854393104722214,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5748439213398214,
+      "pooled_median_one_minus_cosine": 0.42515607866017857
+     }
+    },
+    "600": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1016.96,
+      "active_bits_any_touch_median": 1014.0,
+      "active_bits_effective_mean": 554.955,
+      "active_bits_effective_median": 557.0,
+      "untouched_fraction_effective_mean": 0.72902587890625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0005527638190954774,
+      "max_cross_item_cosine": 0.9705656938631686,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5636446552145362,
+      "pooled_median_one_minus_cosine": 0.43635534478546373
+     }
+    },
+    "800": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1064.825,
+      "active_bits_any_touch_median": 1071.0,
+      "active_bits_effective_mean": 549.53,
+      "active_bits_effective_median": 550.0,
+      "untouched_fraction_effective_mean": 0.7316748046875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0007035175879396985,
+      "max_cross_item_cosine": 0.9542662725907989,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5824910483754486,
+      "pooled_median_one_minus_cosine": 0.4175089516245514
+     }
+    }
+   }
+  },
+  "n2048_w32_lam0.97": {
+   "lambda": 0.97,
+   "n_bits": 2048,
+   "sparsity_w_over_n": 0.015625,
+   "verse_boundary_full_lengths": {
+    "active_bits": {
+     "active_bits_any_touch_mean": 684.15,
+     "active_bits_any_touch_median": 678.0,
+     "active_bits_effective_mean": 668.59,
+     "active_bits_effective_median": 669.5,
+     "untouched_fraction_effective_mean": 0.6735400390624999
+    },
+    "cosine": {
+     "frac_pairs_cosine_above_090": 0.024321608040201004,
+     "max_cross_item_cosine": 0.9813512374984393,
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_cosine": 0.7859292788024328,
+     "pooled_median_one_minus_cosine": 0.21407072119756726
+    }
+   },
+   "verse_prefix_curves": {
+    "128": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 685.4090909090909,
+      "active_bits_any_touch_median": 671.0,
+      "active_bits_effective_mean": 685.4090909090909,
+      "active_bits_effective_median": 671.0,
+      "untouched_fraction_effective_mean": 0.6653275923295454
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.017763845350052248,
+      "max_cross_item_cosine": 0.970682037987411,
+      "n_items": 88,
+      "n_pairs": 3828,
+      "pooled_median_cosine": 0.8020894122785587,
+      "pooled_median_one_minus_cosine": 0.19791058772144138
+     }
+    },
+    "16": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 328.46,
+      "active_bits_any_touch_median": 329.0,
+      "active_bits_effective_mean": 328.46,
+      "active_bits_effective_median": 329.0,
+      "untouched_fraction_effective_mean": 0.839619140625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.001708542713567839,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6118854841231769,
+      "pooled_median_one_minus_cosine": 0.38811451587682316
+     }
+    },
+    "192": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 738.8709677419355,
+      "active_bits_any_touch_median": 731.0,
+      "active_bits_effective_mean": 683.6129032258065,
+      "active_bits_effective_median": 674.0,
+      "untouched_fraction_effective_mean": 0.6662046370967742
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.01935483870967742,
+      "max_cross_item_cosine": 0.9274093526500443,
+      "n_items": 31,
+      "n_pairs": 465,
+      "pooled_median_cosine": 0.8083248252072829,
+      "pooled_median_one_minus_cosine": 0.19167517479271712
+     }
+    },
+    "24": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 405.485,
+      "active_bits_any_touch_median": 407.0,
+      "active_bits_effective_mean": 405.485,
+      "active_bits_effective_median": 407.0,
+      "untouched_fraction_effective_mean": 0.8020092773437499
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.002462311557788945,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6827339611422479,
+      "pooled_median_one_minus_cosine": 0.31726603885775206
+     }
+    },
+    "256": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 826.2,
+      "active_bits_any_touch_median": 834.0,
+      "active_bits_effective_mean": 699.6,
+      "active_bits_effective_median": 704.0,
+      "untouched_fraction_effective_mean": 0.6583984375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.8833096425551844,
+      "n_items": 5,
+      "n_pairs": 10,
+      "pooled_median_cosine": 0.8257923138970646,
+      "pooled_median_one_minus_cosine": 0.1742076861029354
+     }
+    },
+    "32": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 460.8542713567839,
+      "active_bits_any_touch_median": 460.0,
+      "active_bits_effective_mean": 460.8542713567839,
+      "active_bits_effective_median": 460.0,
+      "untouched_fraction_effective_mean": 0.7749735003140703
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0029440129942642505,
+      "max_cross_item_cosine": 0.999999999999999,
+      "n_items": 199,
+      "n_pairs": 19701,
+      "pooled_median_cosine": 0.7289592246026306,
+      "pooled_median_one_minus_cosine": 0.27104077539736937
+     }
+    },
+    "320": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 877.0,
+      "active_bits_any_touch_median": 877.0,
+      "active_bits_effective_mean": 680.5,
+      "active_bits_effective_median": 680.5,
+      "untouched_fraction_effective_mean": 0.667724609375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.7662193118011562,
+      "n_items": 2,
+      "n_pairs": 1,
+      "pooled_median_cosine": 0.7662193118011562,
+      "pooled_median_one_minus_cosine": 0.2337806881988438
+     }
+    },
+    "48": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 531.8717948717949,
+      "active_bits_any_touch_median": 533.0,
+      "active_bits_effective_mean": 531.8717948717949,
+      "active_bits_effective_median": 533.0,
+      "untouched_fraction_effective_mean": 0.7402969751602564
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.006238435104414486,
+      "max_cross_item_cosine": 0.9502223330730662,
+      "n_items": 195,
+      "n_pairs": 18915,
+      "pooled_median_cosine": 0.770205949434286,
+      "pooled_median_one_minus_cosine": 0.229794050565714
+     }
+    },
+    "64": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 581.3497267759562,
+      "active_bits_any_touch_median": 582.0,
+      "active_bits_effective_mean": 581.3497267759562,
+      "active_bits_effective_median": 582.0,
+      "untouched_fraction_effective_mean": 0.7161378287226776
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.010628715546748334,
+      "max_cross_item_cosine": 0.9635231039224947,
+      "n_items": 183,
+      "n_pairs": 16653,
+      "pooled_median_cosine": 0.7900986567747305,
+      "pooled_median_one_minus_cosine": 0.20990134322526954
+     }
+    },
+    "8": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 217.615,
+      "active_bits_any_touch_median": 216.0,
+      "active_bits_effective_mean": 217.615,
+      "active_bits_effective_median": 216.0,
+      "untouched_fraction_effective_mean": 0.89374267578125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.012613065326633166,
+      "max_cross_item_cosine": 0.9999999999999997,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.476121632492549,
+      "pooled_median_one_minus_cosine": 0.523878367507451
+     }
+    },
+    "96": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 642.5153846153846,
+      "active_bits_any_touch_median": 633.0,
+      "active_bits_effective_mean": 642.5153846153846,
+      "active_bits_effective_median": 633.0,
+      "untouched_fraction_effective_mean": 0.6862717848557692
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.025163983303518187,
+      "max_cross_item_cosine": 0.9506626752285082,
+      "n_items": 130,
+      "n_pairs": 8385,
+      "pooled_median_cosine": 0.8127223098105046,
+      "pooled_median_one_minus_cosine": 0.18727769018949536
+     }
+    }
+   },
+   "w_ones": 32,
+   "window800_curve": {
+    "100": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 737.285,
+      "active_bits_any_touch_median": 743.5,
+      "active_bits_effective_mean": 737.285,
+      "active_bits_effective_median": 743.5,
+      "untouched_fraction_effective_mean": 0.6399975585937501
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.00407035175879397,
+      "max_cross_item_cosine": 0.9492484142267136,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7697078547952855,
+      "pooled_median_one_minus_cosine": 0.23029214520471453
+     }
+    },
+    "200": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 858.045,
+      "active_bits_any_touch_median": 857.5,
+      "active_bits_effective_mean": 811.035,
+      "active_bits_effective_median": 806.0,
+      "untouched_fraction_effective_mean": 0.6039868164062501
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.006884422110552763,
+      "max_cross_item_cosine": 0.9473378767427161,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7816387743425421,
+      "pooled_median_one_minus_cosine": 0.21836122565745786
+     }
+    },
+    "400": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 955.9,
+      "active_bits_any_touch_median": 955.5,
+      "active_bits_effective_mean": 811.905,
+      "active_bits_effective_median": 813.0,
+      "untouched_fraction_effective_mean": 0.60356201171875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0067839195979899495,
+      "max_cross_item_cosine": 0.9632776985772,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7802769090173054,
+      "pooled_median_one_minus_cosine": 0.21972309098269466
+     }
+    },
+    "50": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 582.17,
+      "active_bits_any_touch_median": 576.5,
+      "active_bits_effective_mean": 582.17,
+      "active_bits_effective_median": 576.5,
+      "untouched_fraction_effective_mean": 0.7157373046875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0018592964824120603,
+      "max_cross_item_cosine": 0.9507191000656722,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7404181193648272,
+      "pooled_median_one_minus_cosine": 0.2595818806351728
+     }
+    },
+    "600": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1016.96,
+      "active_bits_any_touch_median": 1014.0,
+      "active_bits_effective_mean": 810.43,
+      "active_bits_effective_median": 808.5,
+      "untouched_fraction_effective_mean": 0.6042822265625001
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.004422110552763819,
+      "max_cross_item_cosine": 0.9437226264548564,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.772720449284438,
+      "pooled_median_one_minus_cosine": 0.2272795507155621
+     }
+    },
+    "800": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1064.825,
+      "active_bits_any_touch_median": 1071.0,
+      "active_bits_effective_mean": 814.61,
+      "active_bits_effective_median": 818.5,
+      "untouched_fraction_effective_mean": 0.6022412109374999
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0051256281407035175,
+      "max_cross_item_cosine": 0.9692544553138089,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7799862747550879,
+      "pooled_median_one_minus_cosine": 0.22001372524491208
+     }
+    }
+   }
+  },
+  "n2048_w32_lam0.99": {
+   "lambda": 0.99,
+   "n_bits": 2048,
+   "sparsity_w_over_n": 0.015625,
+   "verse_boundary_full_lengths": {
+    "active_bits": {
+     "active_bits_any_touch_mean": 684.15,
+     "active_bits_any_touch_median": 678.0,
+     "active_bits_effective_mean": 684.15,
+     "active_bits_effective_median": 678.0,
+     "untouched_fraction_effective_mean": 0.6659423828125
+    },
+    "cosine": {
+     "frac_pairs_cosine_above_090": 0.13276381909547738,
+     "max_cross_item_cosine": 0.979010205533245,
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_cosine": 0.8498747283217546,
+     "pooled_median_one_minus_cosine": 0.1501252716782454
+    }
+   },
+   "verse_prefix_curves": {
+    "128": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 685.4090909090909,
+      "active_bits_any_touch_median": 671.0,
+      "active_bits_effective_mean": 685.4090909090909,
+      "active_bits_effective_median": 671.0,
+      "untouched_fraction_effective_mean": 0.6653275923295454
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.18834900731452456,
+      "max_cross_item_cosine": 0.9710012682678097,
+      "n_items": 88,
+      "n_pairs": 3828,
+      "pooled_median_cosine": 0.8672199774146988,
+      "pooled_median_one_minus_cosine": 0.1327800225853012
+     }
+    },
+    "16": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 328.46,
+      "active_bits_any_touch_median": 329.0,
+      "active_bits_effective_mean": 328.46,
+      "active_bits_effective_median": 329.0,
+      "untouched_fraction_effective_mean": 0.839619140625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0018592964824120603,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6028514126858303,
+      "pooled_median_one_minus_cosine": 0.3971485873141697
+     }
+    },
+    "192": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 738.8709677419355,
+      "active_bits_any_touch_median": 731.0,
+      "active_bits_effective_mean": 738.8709677419355,
+      "active_bits_effective_median": 731.0,
+      "untouched_fraction_effective_mean": 0.639223160282258
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.3849462365591398,
+      "max_cross_item_cosine": 0.9569823252135955,
+      "n_items": 31,
+      "n_pairs": 465,
+      "pooled_median_cosine": 0.8891528423377949,
+      "pooled_median_one_minus_cosine": 0.1108471576622051
+     }
+    },
+    "24": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 405.485,
+      "active_bits_any_touch_median": 407.0,
+      "active_bits_effective_mean": 405.485,
+      "active_bits_effective_median": 407.0,
+      "untouched_fraction_effective_mean": 0.8020092773437499
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0023618090452261304,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6765353748895122,
+      "pooled_median_one_minus_cosine": 0.32346462511048785
+     }
+    },
+    "256": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 826.2,
+      "active_bits_any_touch_median": 834.0,
+      "active_bits_effective_mean": 826.2,
+      "active_bits_effective_median": 834.0,
+      "untouched_fraction_effective_mean": 0.59658203125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.5,
+      "max_cross_item_cosine": 0.9077080585667415,
+      "n_items": 5,
+      "n_pairs": 10,
+      "pooled_median_cosine": 0.8963718064187981,
+      "pooled_median_one_minus_cosine": 0.1036281935812019
+     }
+    },
+    "32": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 460.8542713567839,
+      "active_bits_any_touch_median": 460.0,
+      "active_bits_effective_mean": 460.8542713567839,
+      "active_bits_effective_median": 460.0,
+      "untouched_fraction_effective_mean": 0.7749735003140703
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0034516014415511905,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 199,
+      "n_pairs": 19701,
+      "pooled_median_cosine": 0.7270591061134796,
+      "pooled_median_one_minus_cosine": 0.27294089388652043
+     }
+    },
+    "320": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 877.0,
+      "active_bits_any_touch_median": 877.0,
+      "active_bits_effective_mean": 877.0,
+      "active_bits_effective_median": 877.0,
+      "untouched_fraction_effective_mean": 0.57177734375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.8721548078888206,
+      "n_items": 2,
+      "n_pairs": 1,
+      "pooled_median_cosine": 0.8721548078888206,
+      "pooled_median_one_minus_cosine": 0.1278451921111794
+     }
+    },
+    "48": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 531.8717948717949,
+      "active_bits_any_touch_median": 533.0,
+      "active_bits_effective_mean": 531.8717948717949,
+      "active_bits_effective_median": 533.0,
+      "untouched_fraction_effective_mean": 0.7402969751602564
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.009040444091990485,
+      "max_cross_item_cosine": 0.9641189634341344,
+      "n_items": 195,
+      "n_pairs": 18915,
+      "pooled_median_cosine": 0.7795283726026946,
+      "pooled_median_one_minus_cosine": 0.22047162739730541
+     }
+    },
+    "64": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 581.3497267759562,
+      "active_bits_any_touch_median": 582.0,
+      "active_bits_effective_mean": 581.3497267759562,
+      "active_bits_effective_median": 582.0,
+      "untouched_fraction_effective_mean": 0.7161378287226776
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.023599351468203928,
+      "max_cross_item_cosine": 0.9631289084989808,
+      "n_items": 183,
+      "n_pairs": 16653,
+      "pooled_median_cosine": 0.8133233782552524,
+      "pooled_median_one_minus_cosine": 0.18667662174474764
+     }
+    },
+    "8": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 217.615,
+      "active_bits_any_touch_median": 216.0,
+      "active_bits_effective_mean": 217.615,
+      "active_bits_effective_median": 216.0,
+      "untouched_fraction_effective_mean": 0.89374267578125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.012613065326633166,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.4698555191717267,
+      "pooled_median_one_minus_cosine": 0.5301444808282734
+     }
+    },
+    "96": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 642.5153846153846,
+      "active_bits_any_touch_median": 633.0,
+      "active_bits_effective_mean": 642.5153846153846,
+      "active_bits_effective_median": 633.0,
+      "untouched_fraction_effective_mean": 0.6862717848557692
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.10483005366726297,
+      "max_cross_item_cosine": 0.9804478490417011,
+      "n_items": 130,
+      "n_pairs": 8385,
+      "pooled_median_cosine": 0.8534949464014503,
+      "pooled_median_one_minus_cosine": 0.1465050535985497
+     }
+    }
+   },
+   "w_ones": 32,
+   "window800_curve": {
+    "100": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 737.285,
+      "active_bits_any_touch_median": 743.5,
+      "active_bits_effective_mean": 737.285,
+      "active_bits_effective_median": 743.5,
+      "untouched_fraction_effective_mean": 0.6399975585937501
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.03477386934673367,
+      "max_cross_item_cosine": 0.9634298044422049,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.830745103024138,
+      "pooled_median_one_minus_cosine": 0.169254896975862
+     }
+    },
+    "200": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 858.045,
+      "active_bits_any_touch_median": 857.5,
+      "active_bits_effective_mean": 858.045,
+      "active_bits_effective_median": 857.5,
+      "untouched_fraction_effective_mean": 0.58103271484375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.14261306532663318,
+      "max_cross_item_cosine": 0.9712130811660505,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.8667061130441726,
+      "pooled_median_one_minus_cosine": 0.13329388695582745
+     }
+    },
+    "400": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 955.9,
+      "active_bits_any_touch_median": 955.5,
+      "active_bits_effective_mean": 955.9,
+      "active_bits_effective_median": 955.5,
+      "untouched_fraction_effective_mean": 0.533251953125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.19512562814070353,
+      "max_cross_item_cosine": 0.963097532189209,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.8737826812923742,
+      "pooled_median_one_minus_cosine": 0.12621731870762576
+     }
+    },
+    "50": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 582.17,
+      "active_bits_any_touch_median": 576.5,
+      "active_bits_effective_mean": 582.17,
+      "active_bits_effective_median": 576.5,
+      "untouched_fraction_effective_mean": 0.7157373046875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.004723618090452261,
+      "max_cross_item_cosine": 0.9663053797376494,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7578352054204536,
+      "pooled_median_one_minus_cosine": 0.24216479457954643
+     }
+    },
+    "600": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1016.96,
+      "active_bits_any_touch_median": 1014.0,
+      "active_bits_effective_mean": 974.01,
+      "active_bits_effective_median": 980.0,
+      "untouched_fraction_effective_mean": 0.5244091796875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.16728643216080402,
+      "max_cross_item_cosine": 0.9725507751829998,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.8712875112549956,
+      "pooled_median_one_minus_cosine": 0.1287124887450044
+     }
+    },
+    "800": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1064.825,
+      "active_bits_any_touch_median": 1071.0,
+      "active_bits_effective_mean": 977.265,
+      "active_bits_effective_median": 980.0,
+      "untouched_fraction_effective_mean": 0.5228198242187501
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.16592964824120604,
+      "max_cross_item_cosine": 0.9695058705329848,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.8714753046357269,
+      "pooled_median_one_minus_cosine": 0.1285246953642732
+     }
+    }
+   }
+  },
+  "n4096_w64_lam0.90": {
+   "lambda": 0.9,
+   "n_bits": 4096,
+   "sparsity_w_over_n": 0.015625,
+   "verse_boundary_full_lengths": {
+    "active_bits": {
+     "active_bits_any_touch_mean": 1363.52,
+     "active_bits_any_touch_median": 1347.0,
+     "active_bits_effective_mean": 1031.695,
+     "active_bits_effective_median": 1025.0,
+     "untouched_fraction_effective_mean": 0.7481213378906251
+    },
+    "cosine": {
+     "frac_pairs_cosine_above_090": 0.004020100502512563,
+     "max_cross_item_cosine": 0.9992062278312609,
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_cosine": 0.6005169808440874,
+     "pooled_median_one_minus_cosine": 0.39948301915591256
+    }
+   },
+   "verse_prefix_curves": {
+    "128": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1363.8977272727273,
+      "active_bits_any_touch_median": 1341.0,
+      "active_bits_effective_mean": 996.125,
+      "active_bits_effective_median": 1013.5,
+      "untouched_fraction_effective_mean": 0.756805419921875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0020898641588296763,
+      "max_cross_item_cosine": 0.9485099133811505,
+      "n_items": 88,
+      "n_pairs": 3828,
+      "pooled_median_cosine": 0.6103511266414391,
+      "pooled_median_one_minus_cosine": 0.3896488733585609
+     }
+    },
+    "16": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 654.255,
+      "active_bits_any_touch_median": 655.5,
+      "active_bits_effective_mean": 654.255,
+      "active_bits_effective_median": 655.5,
+      "untouched_fraction_effective_mean": 0.840269775390625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0017587939698492463,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5815227821257776,
+      "pooled_median_one_minus_cosine": 0.4184772178742224
+     }
+    },
+    "192": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1470.0,
+      "active_bits_any_touch_median": 1462.0,
+      "active_bits_effective_mean": 985.1290322580645,
+      "active_bits_effective_median": 977.0,
+      "untouched_fraction_effective_mean": 0.759489982358871
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.8604813296965035,
+      "n_items": 31,
+      "n_pairs": 465,
+      "pooled_median_cosine": 0.6025091320259014,
+      "pooled_median_one_minus_cosine": 0.3974908679740986
+     }
+    },
+    "24": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 807.665,
+      "active_bits_any_touch_median": 812.5,
+      "active_bits_effective_mean": 807.665,
+      "active_bits_effective_median": 812.5,
+      "untouched_fraction_effective_mean": 0.802816162109375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0018592964824120603,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6036723189214849,
+      "pooled_median_one_minus_cosine": 0.3963276810785151
+     }
+    },
+    "256": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1634.2,
+      "active_bits_any_touch_median": 1641.0,
+      "active_bits_effective_mean": 1040.2,
+      "active_bits_effective_median": 1031.0,
+      "untouched_fraction_effective_mean": 0.746044921875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.8157498786151044,
+      "n_items": 5,
+      "n_pairs": 10,
+      "pooled_median_cosine": 0.6805991762058672,
+      "pooled_median_one_minus_cosine": 0.31940082379413287
+     }
+    },
+    "32": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 918.1809045226131,
+      "active_bits_any_touch_median": 919.0,
+      "active_bits_effective_mean": 918.1809045226131,
+      "active_bits_effective_median": 919.0,
+      "untouched_fraction_effective_mean": 0.7758347401067839
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.001979594944419065,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 199,
+      "n_pairs": 19701,
+      "pooled_median_cosine": 0.6121020773557666,
+      "pooled_median_one_minus_cosine": 0.3878979226442334
+     }
+    },
+    "320": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1738.5,
+      "active_bits_any_touch_median": 1738.5,
+      "active_bits_effective_mean": 838.0,
+      "active_bits_effective_median": 838.0,
+      "untouched_fraction_effective_mean": 0.79541015625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.6320833260891373,
+      "n_items": 2,
+      "n_pairs": 1,
+      "pooled_median_cosine": 0.6320833260891373,
+      "pooled_median_one_minus_cosine": 0.3679166739108627
+     }
+    },
+    "48": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1058.9333333333334,
+      "active_bits_any_touch_median": 1063.0,
+      "active_bits_effective_mean": 998.2615384615384,
+      "active_bits_effective_median": 1012.0,
+      "untouched_fraction_effective_mean": 0.7562838040865385
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.002061855670103093,
+      "max_cross_item_cosine": 0.9918292714919801,
+      "n_items": 195,
+      "n_pairs": 18915,
+      "pooled_median_cosine": 0.620024339490535,
+      "pooled_median_one_minus_cosine": 0.37997566050946496
+     }
+    },
+    "64": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1156.6338797814208,
+      "active_bits_any_touch_median": 1156.0,
+      "active_bits_effective_mean": 1003.1147540983607,
+      "active_bits_effective_median": 1006.0,
+      "untouched_fraction_effective_mean": 0.7550989369877049
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.002101723413198823,
+      "max_cross_item_cosine": 0.9736373549115827,
+      "n_items": 183,
+      "n_pairs": 16653,
+      "pooled_median_cosine": 0.6219032140843592,
+      "pooled_median_one_minus_cosine": 0.3780967859156408
+     }
+    },
+    "8": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 434.505,
+      "active_bits_any_touch_median": 431.0,
+      "active_bits_effective_mean": 434.505,
+      "active_bits_effective_median": 431.0,
+      "untouched_fraction_effective_mean": 0.893919677734375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.006984924623115578,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.46647120649030754,
+      "pooled_median_one_minus_cosine": 0.5335287935096924
+     }
+    },
+    "96": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1276.753846153846,
+      "active_bits_any_touch_median": 1258.0,
+      "active_bits_effective_mean": 987.8923076923077,
+      "active_bits_effective_median": 975.5,
+      "untouched_fraction_effective_mean": 0.7588153545673078
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0027429934406678594,
+      "max_cross_item_cosine": 0.9663378417823874,
+      "n_items": 130,
+      "n_pairs": 8385,
+      "pooled_median_cosine": 0.638801338370622,
+      "pooled_median_one_minus_cosine": 0.36119866162937797
+     }
+    }
+   },
+   "w_ones": 64,
+   "window800_curve": {
+    "100": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1493.25,
+      "active_bits_any_touch_median": 1507.0,
+      "active_bits_effective_mean": 1122.775,
+      "active_bits_effective_median": 1125.0,
+      "untouched_fraction_effective_mean": 0.725885009765625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0007537688442211055,
+      "max_cross_item_cosine": 0.9584308068033742,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5666933043412345,
+      "pooled_median_one_minus_cosine": 0.4333066956587654
+     }
+    },
+    "200": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1736.655,
+      "active_bits_any_touch_median": 1740.0,
+      "active_bits_effective_mean": 1114.425,
+      "active_bits_effective_median": 1111.5,
+      "untouched_fraction_effective_mean": 0.727923583984375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0020100502512562816,
+      "max_cross_item_cosine": 0.9779286917528247,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5868247280647816,
+      "pooled_median_one_minus_cosine": 0.41317527193521836
+     }
+    },
+    "400": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1933.5,
+      "active_bits_any_touch_median": 1935.0,
+      "active_bits_effective_mean": 1118.88,
+      "active_bits_effective_median": 1119.5,
+      "untouched_fraction_effective_mean": 0.7268359375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0011055276381909548,
+      "max_cross_item_cosine": 0.9500509972759598,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5796872082054338,
+      "pooled_median_one_minus_cosine": 0.42031279179456615
+     }
+    },
+    "50": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1177.265,
+      "active_bits_any_touch_median": 1170.5,
+      "active_bits_effective_mean": 1115.955,
+      "active_bits_effective_median": 1112.0,
+      "untouched_fraction_effective_mean": 0.727550048828125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0009045226130653266,
+      "max_cross_item_cosine": 0.9856684755348506,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.574463664617638,
+      "pooled_median_one_minus_cosine": 0.425536335382362
+     }
+    },
+    "600": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 2055.505,
+      "active_bits_any_touch_median": 2051.5,
+      "active_bits_effective_mean": 1121.18,
+      "active_bits_effective_median": 1124.0,
+      "untouched_fraction_effective_mean": 0.7262744140624999
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0005527638190954774,
+      "max_cross_item_cosine": 0.9711353929756812,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.5618369571024926,
+      "pooled_median_one_minus_cosine": 0.43816304289750735
+     }
+    },
+    "800": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 2149.51,
+      "active_bits_any_touch_median": 2160.5,
+      "active_bits_effective_mean": 1109.25,
+      "active_bits_effective_median": 1113.0,
+      "untouched_fraction_effective_mean": 0.72918701171875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0007035175879396985,
+      "max_cross_item_cosine": 0.9508675155459752,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.579569092834629,
+      "pooled_median_one_minus_cosine": 0.420430907165371
+     }
+    }
+   }
+  },
+  "n4096_w64_lam0.97": {
+   "lambda": 0.97,
+   "n_bits": 4096,
+   "sparsity_w_over_n": 0.015625,
+   "verse_boundary_full_lengths": {
+    "active_bits": {
+     "active_bits_any_touch_mean": 1363.52,
+     "active_bits_any_touch_median": 1347.0,
+     "active_bits_effective_mean": 1333.17,
+     "active_bits_effective_median": 1334.5,
+     "untouched_fraction_effective_mean": 0.67451904296875
+    },
+    "cosine": {
+     "frac_pairs_cosine_above_090": 0.024472361809045225,
+     "max_cross_item_cosine": 0.9825893087597798,
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_cosine": 0.7845251088880429,
+     "pooled_median_one_minus_cosine": 0.21547489111195706
+    }
+   },
+   "verse_prefix_curves": {
+    "128": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1363.8977272727273,
+      "active_bits_any_touch_median": 1341.0,
+      "active_bits_effective_mean": 1363.8977272727273,
+      "active_bits_effective_median": 1341.0,
+      "untouched_fraction_effective_mean": 0.6670171564275569
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.019070010449320794,
+      "max_cross_item_cosine": 0.9728049408160128,
+      "n_items": 88,
+      "n_pairs": 3828,
+      "pooled_median_cosine": 0.802287693368692,
+      "pooled_median_one_minus_cosine": 0.197712306631308
+     }
+    },
+    "16": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 654.255,
+      "active_bits_any_touch_median": 655.5,
+      "active_bits_effective_mean": 654.255,
+      "active_bits_effective_median": 655.5,
+      "untouched_fraction_effective_mean": 0.840269775390625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0018090452261306533,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6144804996390443,
+      "pooled_median_one_minus_cosine": 0.3855195003609558
+     }
+    },
+    "192": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1470.0,
+      "active_bits_any_touch_median": 1462.0,
+      "active_bits_effective_mean": 1363.741935483871,
+      "active_bits_effective_median": 1349.0,
+      "untouched_fraction_effective_mean": 0.667055191532258
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.01935483870967742,
+      "max_cross_item_cosine": 0.9261742036528022,
+      "n_items": 31,
+      "n_pairs": 465,
+      "pooled_median_cosine": 0.8091058104424879,
+      "pooled_median_one_minus_cosine": 0.19089418955751214
+     }
+    },
+    "24": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 807.665,
+      "active_bits_any_touch_median": 812.5,
+      "active_bits_effective_mean": 807.665,
+      "active_bits_effective_median": 812.5,
+      "untouched_fraction_effective_mean": 0.802816162109375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0026130653266331657,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6831676655168496,
+      "pooled_median_one_minus_cosine": 0.3168323344831504
+     }
+    },
+    "256": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1634.2,
+      "active_bits_any_touch_median": 1641.0,
+      "active_bits_effective_mean": 1391.0,
+      "active_bits_effective_median": 1389.0,
+      "untouched_fraction_effective_mean": 0.660400390625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.8898451971102178,
+      "n_items": 5,
+      "n_pairs": 10,
+      "pooled_median_cosine": 0.829575569655904,
+      "pooled_median_one_minus_cosine": 0.17042443034409605
+     }
+    },
+    "32": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 918.1809045226131,
+      "active_bits_any_touch_median": 919.0,
+      "active_bits_effective_mean": 918.1809045226131,
+      "active_bits_effective_median": 919.0,
+      "untouched_fraction_effective_mean": 0.7758347401067839
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0031978072179077205,
+      "max_cross_item_cosine": 0.9999999999999998,
+      "n_items": 199,
+      "n_pairs": 19701,
+      "pooled_median_cosine": 0.7284699296937748,
+      "pooled_median_one_minus_cosine": 0.2715300703062252
+     }
+    },
+    "320": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1738.5,
+      "active_bits_any_touch_median": 1738.5,
+      "active_bits_effective_mean": 1344.5,
+      "active_bits_effective_median": 1344.5,
+      "untouched_fraction_effective_mean": 0.6717529296875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.7780886163491243,
+      "n_items": 2,
+      "n_pairs": 1,
+      "pooled_median_cosine": 0.7780886163491243,
+      "pooled_median_one_minus_cosine": 0.2219113836508757
+     }
+    },
+    "48": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1058.9333333333334,
+      "active_bits_any_touch_median": 1063.0,
+      "active_bits_effective_mean": 1058.9333333333334,
+      "active_bits_effective_median": 1063.0,
+      "untouched_fraction_effective_mean": 0.7414713541666667
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.006238435104414486,
+      "max_cross_item_cosine": 0.9505609623272,
+      "n_items": 195,
+      "n_pairs": 18915,
+      "pooled_median_cosine": 0.7722304510854345,
+      "pooled_median_one_minus_cosine": 0.22776954891456547
+     }
+    },
+    "64": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1156.6338797814208,
+      "active_bits_any_touch_median": 1156.0,
+      "active_bits_effective_mean": 1156.6338797814208,
+      "active_bits_effective_median": 1156.0,
+      "untouched_fraction_effective_mean": 0.7176186816939891
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.011409355671650754,
+      "max_cross_item_cosine": 0.9632290664709453,
+      "n_items": 183,
+      "n_pairs": 16653,
+      "pooled_median_cosine": 0.7912502591886917,
+      "pooled_median_one_minus_cosine": 0.20874974081130826
+     }
+    },
+    "8": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 434.505,
+      "active_bits_any_touch_median": 431.0,
+      "active_bits_effective_mean": 434.505,
+      "active_bits_effective_median": 431.0,
+      "untouched_fraction_effective_mean": 0.893919677734375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.012663316582914573,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.48074066166353474,
+      "pooled_median_one_minus_cosine": 0.5192593383364652
+     }
+    },
+    "96": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1276.753846153846,
+      "active_bits_any_touch_median": 1258.0,
+      "active_bits_effective_mean": 1276.753846153846,
+      "active_bits_effective_median": 1258.0,
+      "untouched_fraction_effective_mean": 0.6882925180288462
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.026475849731663684,
+      "max_cross_item_cosine": 0.9512195424841102,
+      "n_items": 130,
+      "n_pairs": 8385,
+      "pooled_median_cosine": 0.813356627038799,
+      "pooled_median_one_minus_cosine": 0.18664337296120104
+     }
+    }
+   },
+   "w_ones": 64,
+   "window800_curve": {
+    "100": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1493.25,
+      "active_bits_any_touch_median": 1507.0,
+      "active_bits_effective_mean": 1493.25,
+      "active_bits_effective_median": 1507.0,
+      "untouched_fraction_effective_mean": 0.63543701171875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.004120603015075377,
+      "max_cross_item_cosine": 0.9501757251637188,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7686183128950528,
+      "pooled_median_one_minus_cosine": 0.23138168710494728
+     }
+    },
+    "200": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1736.655,
+      "active_bits_any_touch_median": 1740.0,
+      "active_bits_effective_mean": 1642.675,
+      "active_bits_effective_median": 1641.0,
+      "untouched_fraction_effective_mean": 0.598956298828125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.006934673366834171,
+      "max_cross_item_cosine": 0.9510062490830682,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7803118922859151,
+      "pooled_median_one_minus_cosine": 0.21968810771408487
+     }
+    },
+    "400": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1933.5,
+      "active_bits_any_touch_median": 1935.0,
+      "active_bits_effective_mean": 1644.58,
+      "active_bits_effective_median": 1646.5,
+      "untouched_fraction_effective_mean": 0.5984912109375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.006532663316582915,
+      "max_cross_item_cosine": 0.9590961045156046,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7788447585996663,
+      "pooled_median_one_minus_cosine": 0.2211552414003337
+     }
+    },
+    "50": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1177.265,
+      "active_bits_any_touch_median": 1170.5,
+      "active_bits_effective_mean": 1177.265,
+      "active_bits_effective_median": 1170.5,
+      "untouched_fraction_effective_mean": 0.7125817871093749
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0018592964824120603,
+      "max_cross_item_cosine": 0.9498220826249737,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7395740738241986,
+      "pooled_median_one_minus_cosine": 0.2604259261758014
+     }
+    },
+    "600": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 2055.505,
+      "active_bits_any_touch_median": 2051.5,
+      "active_bits_effective_mean": 1643.745,
+      "active_bits_effective_median": 1640.5,
+      "untouched_fraction_effective_mean": 0.598695068359375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.004371859296482412,
+      "max_cross_item_cosine": 0.9439755534563503,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7707324308294132,
+      "pooled_median_one_minus_cosine": 0.22926756917058683
+     }
+    },
+    "800": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 2149.51,
+      "active_bits_any_touch_median": 2160.5,
+      "active_bits_effective_mean": 1649.44,
+      "active_bits_effective_median": 1661.0,
+      "untouched_fraction_effective_mean": 0.5973046875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.005075376884422111,
+      "max_cross_item_cosine": 0.9679988120927103,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7782722403029335,
+      "pooled_median_one_minus_cosine": 0.22172775969706648
+     }
+    }
+   }
+  },
+  "n4096_w64_lam0.99": {
+   "lambda": 0.99,
+   "n_bits": 4096,
+   "sparsity_w_over_n": 0.015625,
+   "verse_boundary_full_lengths": {
+    "active_bits": {
+     "active_bits_any_touch_mean": 1363.52,
+     "active_bits_any_touch_median": 1347.0,
+     "active_bits_effective_mean": 1363.52,
+     "active_bits_effective_median": 1347.0,
+     "untouched_fraction_effective_mean": 0.667109375
+    },
+    "cosine": {
+     "frac_pairs_cosine_above_090": 0.1293467336683417,
+     "max_cross_item_cosine": 0.9791919052845882,
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_cosine": 0.848485482958137,
+     "pooled_median_one_minus_cosine": 0.15151451704186297
+    }
+   },
+   "verse_prefix_curves": {
+    "128": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1363.8977272727273,
+      "active_bits_any_touch_median": 1341.0,
+      "active_bits_effective_mean": 1363.8977272727273,
+      "active_bits_effective_median": 1341.0,
+      "untouched_fraction_effective_mean": 0.6670171564275569
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.18756530825496343,
+      "max_cross_item_cosine": 0.9701129376909959,
+      "n_items": 88,
+      "n_pairs": 3828,
+      "pooled_median_cosine": 0.8682275969995328,
+      "pooled_median_one_minus_cosine": 0.13177240300046728
+     }
+    },
+    "16": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 654.255,
+      "active_bits_any_touch_median": 655.5,
+      "active_bits_effective_mean": 654.255,
+      "active_bits_effective_median": 655.5,
+      "untouched_fraction_effective_mean": 0.840269775390625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0018592964824120603,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.6055516646561043,
+      "pooled_median_one_minus_cosine": 0.39444833534389573
+     }
+    },
+    "192": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1470.0,
+      "active_bits_any_touch_median": 1462.0,
+      "active_bits_effective_mean": 1470.0,
+      "active_bits_effective_median": 1462.0,
+      "untouched_fraction_effective_mean": 0.64111328125
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.3419354838709677,
+      "max_cross_item_cosine": 0.9564045538405019,
+      "n_items": 31,
+      "n_pairs": 465,
+      "pooled_median_cosine": 0.8883103482391712,
+      "pooled_median_one_minus_cosine": 0.11168965176082879
+     }
+    },
+    "24": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 807.665,
+      "active_bits_any_touch_median": 812.5,
+      "active_bits_effective_mean": 807.665,
+      "active_bits_effective_median": 812.5,
+      "untouched_fraction_effective_mean": 0.802816162109375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0026633165829145727,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.677739356383031,
+      "pooled_median_one_minus_cosine": 0.32226064361696904
+     }
+    },
+    "256": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1634.2,
+      "active_bits_any_touch_median": 1641.0,
+      "active_bits_effective_mean": 1634.2,
+      "active_bits_effective_median": 1641.0,
+      "untouched_fraction_effective_mean": 0.601025390625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.5,
+      "max_cross_item_cosine": 0.9173105987830851,
+      "n_items": 5,
+      "n_pairs": 10,
+      "pooled_median_cosine": 0.8997627539997539,
+      "pooled_median_one_minus_cosine": 0.10023724600024614
+     }
+    },
+    "32": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 918.1809045226131,
+      "active_bits_any_touch_median": 919.0,
+      "active_bits_effective_mean": 918.1809045226131,
+      "active_bits_effective_median": 919.0,
+      "untouched_fraction_effective_mean": 0.7758347401067839
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0035023602862798843,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 199,
+      "n_pairs": 19701,
+      "pooled_median_cosine": 0.7274080275705888,
+      "pooled_median_one_minus_cosine": 0.27259197242941124
+     }
+    },
+    "320": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1738.5,
+      "active_bits_any_touch_median": 1738.5,
+      "active_bits_effective_mean": 1738.5,
+      "active_bits_effective_median": 1738.5,
+      "untouched_fraction_effective_mean": 0.5755615234375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.0,
+      "max_cross_item_cosine": 0.8732310394481725,
+      "n_items": 2,
+      "n_pairs": 1,
+      "pooled_median_cosine": 0.8732310394481725,
+      "pooled_median_one_minus_cosine": 0.12676896055182751
+     }
+    },
+    "48": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1058.9333333333334,
+      "active_bits_any_touch_median": 1063.0,
+      "active_bits_effective_mean": 1058.9333333333334,
+      "active_bits_effective_median": 1063.0,
+      "untouched_fraction_effective_mean": 0.7414713541666667
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.010203542162305049,
+      "max_cross_item_cosine": 0.9639601565502937,
+      "n_items": 195,
+      "n_pairs": 18915,
+      "pooled_median_cosine": 0.7821487780387806,
+      "pooled_median_one_minus_cosine": 0.21785122196121942
+     }
+    },
+    "64": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1156.6338797814208,
+      "active_bits_any_touch_median": 1156.0,
+      "active_bits_effective_mean": 1156.6338797814208,
+      "active_bits_effective_median": 1156.0,
+      "untouched_fraction_effective_mean": 0.7176186816939891
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.025280730198762986,
+      "max_cross_item_cosine": 0.9618133773227959,
+      "n_items": 183,
+      "n_pairs": 16653,
+      "pooled_median_cosine": 0.8148770063993706,
+      "pooled_median_one_minus_cosine": 0.18512299360062945
+     }
+    },
+    "8": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 434.505,
+      "active_bits_any_touch_median": 431.0,
+      "active_bits_effective_mean": 434.505,
+      "active_bits_effective_median": 431.0,
+      "untouched_fraction_effective_mean": 0.893919677734375
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.012613065326633166,
+      "max_cross_item_cosine": 1.0,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.4749950801951874,
+      "pooled_median_one_minus_cosine": 0.5250049198048126
+     }
+    },
+    "96": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1276.753846153846,
+      "active_bits_any_touch_median": 1258.0,
+      "active_bits_effective_mean": 1276.753846153846,
+      "active_bits_effective_median": 1258.0,
+      "untouched_fraction_effective_mean": 0.6882925180288462
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.10912343470483005,
+      "max_cross_item_cosine": 0.9810447576122406,
+      "n_items": 130,
+      "n_pairs": 8385,
+      "pooled_median_cosine": 0.8548751243008601,
+      "pooled_median_one_minus_cosine": 0.1451248756991399
+     }
+    }
+   },
+   "w_ones": 64,
+   "window800_curve": {
+    "100": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1493.25,
+      "active_bits_any_touch_median": 1507.0,
+      "active_bits_effective_mean": 1493.25,
+      "active_bits_effective_median": 1507.0,
+      "untouched_fraction_effective_mean": 0.63543701171875
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.03241206030150754,
+      "max_cross_item_cosine": 0.9672886136385243,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.8305054219695405,
+      "pooled_median_one_minus_cosine": 0.1694945780304596
+     }
+    },
+    "200": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1736.655,
+      "active_bits_any_touch_median": 1740.0,
+      "active_bits_effective_mean": 1736.655,
+      "active_bits_effective_median": 1740.0,
+      "untouched_fraction_effective_mean": 0.5760119628906251
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.13879396984924622,
+      "max_cross_item_cosine": 0.969749946347979,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.866534434948738,
+      "pooled_median_one_minus_cosine": 0.133465565051262
+     }
+    },
+    "400": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1933.5,
+      "active_bits_any_touch_median": 1935.0,
+      "active_bits_effective_mean": 1933.5,
+      "active_bits_effective_median": 1935.0,
+      "untouched_fraction_effective_mean": 0.5279541015625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.18758793969849247,
+      "max_cross_item_cosine": 0.9618661906968358,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.8732547159701158,
+      "pooled_median_one_minus_cosine": 0.12674528402988422
+     }
+    },
+    "50": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 1177.265,
+      "active_bits_any_touch_median": 1170.5,
+      "active_bits_effective_mean": 1177.265,
+      "active_bits_effective_median": 1170.5,
+      "untouched_fraction_effective_mean": 0.7125817871093749
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.004422110552763819,
+      "max_cross_item_cosine": 0.9672789042450464,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.7572121482577514,
+      "pooled_median_one_minus_cosine": 0.24278785174224865
+     }
+    },
+    "600": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 2055.505,
+      "active_bits_any_touch_median": 2051.5,
+      "active_bits_effective_mean": 1971.64,
+      "active_bits_effective_median": 1984.0,
+      "untouched_fraction_effective_mean": 0.5186425781249999
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.1599497487437186,
+      "max_cross_item_cosine": 0.970633239924465,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.8704342378734714,
+      "pooled_median_one_minus_cosine": 0.1295657621265286
+     }
+    },
+    "800": {
+     "active_bits": {
+      "active_bits_any_touch_mean": 2149.51,
+      "active_bits_any_touch_median": 2160.5,
+      "active_bits_effective_mean": 1975.975,
+      "active_bits_effective_median": 1987.0,
+      "untouched_fraction_effective_mean": 0.517584228515625
+     },
+     "cosine": {
+      "frac_pairs_cosine_above_090": 0.16291457286432162,
+      "max_cross_item_cosine": 0.9687947132474388,
+      "n_items": 200,
+      "n_pairs": 19900,
+      "pooled_median_cosine": 0.8714685146867029,
+      "pooled_median_one_minus_cosine": 0.1285314853132971
+     }
+    }
+   }
+  }
+ },
+ "corpus": {
+  "book_span_derivation": "TOC region = bytes until SECOND occurrence of the Old Testament header; titles = non-empty TOC lines minus the two section headers; book i heading = FIRST occurrence of its exact title line after book i-1's heading; span = [heading_i, heading_{i+1}), last ends at EOF",
+  "freeze_json_sha256": "361c83907d9b353c8128a55ea2b4ca49a01c2aa8c8d1f6224db4661c4c9e166c",
+  "sample_rule": "default_rng(7).choice without replacement, sorted",
+  "source": "bible-kjv-pg10:v3-freeze-candidate, TRAIN-role books only",
+  "tokenization": "byte ids 0..255 (utf-8); preregistration section 1 tokenizer with max_phrases=0",
+  "train_verses_available": 25266,
+  "verse_refs_first10": [
+   "Genesis 4:14",
+   "Genesis 5:27",
+   "Genesis 8:8",
+   "Genesis 11:30",
+   "Genesis 14:23",
+   "Genesis 24:45",
+   "Genesis 27:39",
+   "Genesis 31:23",
+   "Genesis 32:32",
+   "Genesis 36:19"
+  ],
+  "verse_token_lengths_max": 441,
+  "verse_token_lengths_mean": 129.615,
+  "verse_token_lengths_median": 119.0,
+  "verse_token_lengths_min": 29,
+  "verses_sampled": 200
+ },
+ "environment": {
+  "device": "cpu",
+  "numpy": "2.2.6",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.14.0"
+ },
+ "imported_module_sha256": "1de7f6edd914584c4c72d7e42426254590049cfb69cbbfa730afa3179afa63f9",
+ "projection_rule": "humanbrain.sdr_union.SDRProjector: default_rng((seed, n, w, token_id)).choice(n, w, replace=False), sorted",
+ "purpose": "empirical validation of the w^2/n union-capacity claim across lambda x n x w before the U-STATE D3 probe suite spends compute",
+ "recommendation": {
+  "best_config": "n4096_w64_lam0.90",
+  "rule": "among configs retaining >=1% sparsity (untouched-bit fraction under a 1e-2 floor) at 800-token windows, minimize pooled median window-end cosine; tie-break on share of pairs above 0.90",
+  "sparsity_eligible_configs": [
+   "n2048_w32_lam0.90",
+   "n2048_w32_lam0.97",
+   "n2048_w32_lam0.99",
+   "n4096_w64_lam0.90",
+   "n4096_w64_lam0.97",
+   "n4096_w64_lam0.99"
+  ],
+  "verse_boundary_gu1_pass_median_cosine_le_090": true,
+  "verse_boundary_median_cosine": 0.6005169808440874,
+  "window800_active_bits_effective_mean": 1109.25,
+  "window800_frac_pairs_above_090": 0.0007035175879396985,
+  "window800_median_cosine": 0.579569092834629,
+  "window800_median_one_minus_cosine": 0.420430907165371,
+  "window800_retained_sparsity_fraction": 0.72918701171875
+ },
+ "schema_version": "humanbrain/ustate-capacity-study/v1",
+ "seed": 7,
+ "summary": {
+  "n2048_w32_lam0.90": {
+   "verse_boundary_gu1_pass_median_cosine_le_090": true,
+   "verse_boundary_median_cosine": 0.6027829739636931,
+   "window800_active_bits_effective_mean": 549.53,
+   "window800_frac_pairs_above_090": 0.0007035175879396985,
+   "window800_median_cosine": 0.5824910483754486,
+   "window800_median_one_minus_cosine": 0.4175089516245514,
+   "window800_retained_sparsity_fraction": 0.7316748046875
+  },
+  "n2048_w32_lam0.97": {
+   "verse_boundary_gu1_pass_median_cosine_le_090": true,
+   "verse_boundary_median_cosine": 0.7859292788024328,
+   "window800_active_bits_effective_mean": 814.61,
+   "window800_frac_pairs_above_090": 0.0051256281407035175,
+   "window800_median_cosine": 0.7799862747550879,
+   "window800_median_one_minus_cosine": 0.22001372524491208,
+   "window800_retained_sparsity_fraction": 0.6022412109374999
+  },
+  "n2048_w32_lam0.99": {
+   "verse_boundary_gu1_pass_median_cosine_le_090": true,
+   "verse_boundary_median_cosine": 0.8498747283217546,
+   "window800_active_bits_effective_mean": 977.265,
+   "window800_frac_pairs_above_090": 0.16592964824120604,
+   "window800_median_cosine": 0.8714753046357269,
+   "window800_median_one_minus_cosine": 0.1285246953642732,
+   "window800_retained_sparsity_fraction": 0.5228198242187501
+  },
+  "n4096_w64_lam0.90": {
+   "verse_boundary_gu1_pass_median_cosine_le_090": true,
+   "verse_boundary_median_cosine": 0.6005169808440874,
+   "window800_active_bits_effective_mean": 1109.25,
+   "window800_frac_pairs_above_090": 0.0007035175879396985,
+   "window800_median_cosine": 0.579569092834629,
+   "window800_median_one_minus_cosine": 0.420430907165371,
+   "window800_retained_sparsity_fraction": 0.72918701171875
+  },
+  "n4096_w64_lam0.97": {
+   "verse_boundary_gu1_pass_median_cosine_le_090": true,
+   "verse_boundary_median_cosine": 0.7845251088880429,
+   "window800_active_bits_effective_mean": 1649.44,
+   "window800_frac_pairs_above_090": 0.005075376884422111,
+   "window800_median_cosine": 0.7782722403029335,
+   "window800_median_one_minus_cosine": 0.22172775969706648,
+   "window800_retained_sparsity_fraction": 0.5973046875
+  },
+  "n4096_w64_lam0.99": {
+   "verse_boundary_gu1_pass_median_cosine_le_090": true,
+   "verse_boundary_median_cosine": 0.848485482958137,
+   "window800_active_bits_effective_mean": 1975.975,
+   "window800_frac_pairs_above_090": 0.16291457286432162,
+   "window800_median_cosine": 0.8714685146867029,
+   "window800_median_one_minus_cosine": 0.1285314853132971,
+   "window800_retained_sparsity_fraction": 0.517584228515625
+  }
+ },
+ "token_sdr_overlap": {
+  "n2048_w32": {
+   "analytic_w2_over_n": 0.5,
+   "max_bits": 5.0,
+   "mean_bits": 0.49932598039215687,
+   "median_bits": 0.0,
+   "n_pairs": 32640,
+   "p95_bits": 2.0
+  },
+  "n4096_w64": {
+   "analytic_w2_over_n": 1.0,
+   "max_bits": 7.0,
+   "mean_bits": 0.9925245098039216,
+   "median_bits": 1.0,
+   "n_pairs": 32640,
+   "p95_bits": 3.0
+  }
+ }
+}
