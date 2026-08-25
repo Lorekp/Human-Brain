@@ -1,0 +1,353 @@
+{
+  "schema_version": "humanbrain/t-route-e4/v1",
+  "generated_utc": "2026-08-25T13:20:15Z",
+  "git_head": "9a93ab9",
+  "change_note": "experiments/t_route/e4_repetition/CHANGE_NOTE_5.md",
+  "config_echo": {
+    "n_bits": 2048,
+    "w_ones": 32,
+    "projector_seed": 7,
+    "fan_in": 32,
+    "w_seed": 7,
+    "k_winners": 128,
+    "h_win": 12,
+    "o_max": 8,
+    "adj": 2,
+    "randomized_w_seed": 13,
+    "shuffled_question_seed": 11,
+    "betas": [
+      0.05,
+      0.25,
+      0.5
+    ],
+    "cap_exp": {
+      "0.05": 11790,
+      "0.25": 2577,
+      "0.5": 1418
+    },
+    "arms": [
+      "mult_b0.05",
+      "mult_b0.25",
+      "mult_b0.5",
+      "add_gated",
+      "add_free"
+    ],
+    "encoding": "1656 sequential rounds, file order; k-cap top-128 winners per round; potentiation gated to winner post bits on fixed fan-in-32 support; multiplicative (1+b)^m via integer fire counts, additive arms as noted"
+  },
+  "integrity_echo": {
+    "episodes_raw_sha256": "fb759b86d7c796967e4bdb74558f835ffc92af3762add434ba68d4f264b6b293",
+    "episodes_lf_canonical_sha256": "a94a8c22cedace1b533351b3a811829b68f62a374daaceff683b052b1b359e5a",
+    "episode_count": 1656,
+    "pair_census": {
+      "unique_pairs": 1611,
+      "pairs_ge10": 1,
+      "episodes_ge10": 27,
+      "pairs_eq1": 1593,
+      "episodes_eq1": 1593,
+      "pairs_mid": 17,
+      "episodes_mid": 36
+    }
+  },
+  "max_synapses_at_cap_by_arm": {
+    "mult_b0.05": 398,
+    "mult_b0.25": 913,
+    "mult_b0.5": 1138
+  },
+  "gates": {
+    "rule": "per arm x stratum on eligible items (matched): base_med>0 AND base_med>=2*shuf_med AND base_med>=1.5*rand_med; stratum gate-eligible iff eligible_n>=20",
+    "table": {
+      "mult_b0.05": {
+        "REPEATED": {
+          "eligible_n": 27,
+          "base_med": 39.0,
+          "shuf_med": 39.0,
+          "rand_med": 12.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 3.25,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 272.0
+        },
+        "SINGLE": {
+          "eligible_n": 1566,
+          "base_med": 34.0,
+          "shuf_med": 34.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 3.090909090909091,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 242.0
+        },
+        "MID": {
+          "eligible_n": 36,
+          "base_med": 34.0,
+          "shuf_med": 34.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 3.090909090909091,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 245.0
+        }
+      },
+      "mult_b0.25": {
+        "REPEATED": {
+          "eligible_n": 27,
+          "base_med": 34.0,
+          "shuf_med": 34.0,
+          "rand_med": 12.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.8333333333333335,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 272.0
+        },
+        "SINGLE": {
+          "eligible_n": 1566,
+          "base_med": 31.0,
+          "shuf_med": 31.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.8181818181818183,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 242.0
+        },
+        "MID": {
+          "eligible_n": 36,
+          "base_med": 30.0,
+          "shuf_med": 30.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.727272727272727,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 245.0
+        }
+      },
+      "mult_b0.5": {
+        "REPEATED": {
+          "eligible_n": 27,
+          "base_med": 34.0,
+          "shuf_med": 34.0,
+          "rand_med": 12.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.8333333333333335,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 272.0
+        },
+        "SINGLE": {
+          "eligible_n": 1566,
+          "base_med": 30.0,
+          "shuf_med": 30.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.727272727272727,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 242.0
+        },
+        "MID": {
+          "eligible_n": 36,
+          "base_med": 30.0,
+          "shuf_med": 30.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.727272727272727,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 245.0
+        }
+      },
+      "add_gated": {
+        "REPEATED": {
+          "eligible_n": 27,
+          "base_med": 34.0,
+          "shuf_med": 34.0,
+          "rand_med": 12.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.8333333333333335,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 272.0
+        },
+        "SINGLE": {
+          "eligible_n": 1566,
+          "base_med": 30.0,
+          "shuf_med": 30.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.727272727272727,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 242.0
+        },
+        "MID": {
+          "eligible_n": 36,
+          "base_med": 30.0,
+          "shuf_med": 30.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 2.727272727272727,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 245.0
+        }
+      },
+      "add_free": {
+        "REPEATED": {
+          "eligible_n": 27,
+          "base_med": 88.0,
+          "shuf_med": 91.0,
+          "rand_med": 12.0,
+          "enrich_vs_shuf": 0.967032967032967,
+          "enrich_vs_rand": 7.333333333333333,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 272.0
+        },
+        "SINGLE": {
+          "eligible_n": 1566,
+          "base_med": 80.0,
+          "shuf_med": 80.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 1.0,
+          "enrich_vs_rand": 7.2727272727272725,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 242.0
+        },
+        "MID": {
+          "eligible_n": 36,
+          "base_med": 82.5,
+          "shuf_med": 83.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": 0.9939759036144579,
+          "enrich_vs_rand": 7.5,
+          "gate_conjuncts": {
+            "base_med>0": true,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": true
+          },
+          "gate_eligible": true,
+          "PASS": false,
+          "median_gold_bits": 245.0
+        }
+      }
+    },
+    "per_arm_pass_REPEATED": {
+      "mult_b0.05": false,
+      "mult_b0.25": false,
+      "mult_b0.5": false,
+      "add_gated": false,
+      "add_free": false
+    },
+    "per_arm_pass_SINGLE": {
+      "mult_b0.05": false,
+      "mult_b0.25": false,
+      "mult_b0.5": false,
+      "add_gated": false,
+      "add_free": false
+    }
+  },
+  "cross_question_jaccard_descriptive": {
+    "mult_b0.05": {
+      "REPEATED": 1.0,
+      "SINGLE": 1.0
+    },
+    "mult_b0.25": {
+      "REPEATED": 1.0,
+      "SINGLE": 1.0
+    },
+    "mult_b0.5": {
+      "REPEATED": 1.0,
+      "SINGLE": 1.0
+    },
+    "add_gated": {
+      "REPEATED": 1.0,
+      "SINGLE": 1.0
+    },
+    "add_free": {
+      "REPEATED": 1.0,
+      "SINGLE": 0.8757962487020686
+    }
+  },
+  "verdict": "MULT_KCAP_ADDS_NOTHING_OVER_E2__ASSEMBLY_PIVOT_CLOSES",
+  "verdict_matrix": {
+    "any_REPEATED_pass": false,
+    "any_SINGLE_pass": false
+  },
+  "verdict_note": "Rows of CN5 \u00a77; branch mapping: repeated-fail=>pivot closes; repeated-pass+single-fail=>regime confirmed; single-pass=>E3 undermined."
+}
