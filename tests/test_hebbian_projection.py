@@ -113,6 +113,29 @@ def test_one_shot_no_epoch_amplification():
     assert np.array_equal(once.to_dense(), snapshot)
 
 
+def test_apply_dense_delta_matches_eventwise():
+    """Aggregated token-pair counts land identical mass as event-wise updates."""
+    projector = SDRProjector(n_bits=TOY.n_bits, w_ones=TOY.w_ones, seed=TOY.w_seed)
+    events = _toy_events(projector)
+    ev_bits = [
+        (projector.indices(p).tolist(), projector.indices(q).tolist())
+        for p, q in events
+    ]
+    eventwise = SparseProjection(TOY)
+    eventwise.accumulate_events(ev_bits)
+
+    counts: dict[tuple[int, int], float] = {}
+    for p, q in events:
+        counts[(p, q)] = counts.get((p, q), 0.0) + 1.0
+    dense = np.zeros((TOY.n_bits, TOY.n_bits), dtype=np.float64)
+    for (p, q), m in counts.items():
+        dense[np.ix_(projector.indices(q), projector.indices(p))] += m
+
+    fast = SparseProjection(TOY)
+    fast.apply_dense_delta(dense)
+    assert np.allclose(fast.to_dense(), eventwise.to_dense(), rtol=0, atol=1e-12)
+
+
 # ------------------------------------------------------- scaling normalization
 
 

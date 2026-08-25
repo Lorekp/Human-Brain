@@ -150,14 +150,30 @@ class SparseProjection:
                     if col is not None:
                         delta_row[col] += 1.0
 
-    def apply_homeostasis(
-        self, df: np.ndarray, n_passages: int
-    ) -> "HomeostaticProjection":
-        """Freeze §3 arm A: IDF-like row scaling + row L2 normalization.
+    def apply_dense_delta(self, dense_delta: np.ndarray) -> None:
+        """Project an (n x n) dense delta onto the support and accumulate it.
 
-        Returns a NEW read-only view; the trained accumulator is untouched.
-        Rows whose scale is zero (df >= n_passages... impossible here since
-        ln(1)=0 only when df == n_passages) or whose norm collapses stay zero.
+        Algebraically identical to event-wise accumulate_events: aggregation of
+        dW = pre x post x M events into token-pair counts is linear, so the
+        masked dense sum lands the same mass on the same synapses. Used by the
+        E1 harness where event counts reach ~10^6.
+        """
+        dense = np.asarray(dense_delta, dtype=np.float64)
+        if dense.shape != (self.n_bits, self.n_bits):
+            raise ValueError(
+                f"dense_delta shape {dense.shape} != {(self.n_bits, self.n_bits)}"
+            )
+        rows = np.repeat(np.arange(self.n_bits, dtype=np.int64), self.config.fan_in)
+        cols = self._support.ravel()
+        self._delta += dense[rows, cols].reshape(self._delta.shape)
+
+    def apply_homeostasis(self, df: np.ndarray, n_passages: int) -> "HomeostaticProjection":
+        """Freeze §3 arm A as amended by Change Note 1.
+
+        Per row b with ||W[b,:]||_2 > 0:
+            W'[b, :] = idf(b) * W[b, :] / ||W[b, :]||_2,
+        idf(b) = ln((N_pass + 1) / (df[b] + 1)); structurally zero rows stay
+        zero. Returns a NEW read-only view; the accumulator is untouched.
         """
         df = np.asarray(df, dtype=np.int64)
         if df.shape != (self.n_bits,):
