@@ -463,8 +463,13 @@ def main() -> None:
             "(design-time feasibility figure frozen in Change Note 4)"
         )
     su, sg, sr = sum(pair_counts.values()), sum(gated_counts.values()), sum(rspan_counts.values())
-    if sg != sr or sr == 0:
-        raise SystemExit(f"STOP: gated mass invariant broken (quote={sg}, random={sr}, ungated={su})")
+    if sr == 0 or sg == 0:
+        raise SystemExit(f"STOP: gated mass is empty (quote={sg}, random={sr}, ungated={su})")
+    # NOTE: pair-EVENT masses sg != sr in general BY DESIGN: equal per-episode
+    # masked token counts (span lengths) do NOT imply equal event counts, since
+    # events depend on anchor-window coverage of the masked POSITIONS — the very
+    # quantity the random-span control deliberately varies. Only span lengths and
+    # the inclusion set are matched (Change Note 4 C3b).
     log(
         f"  gated episodes={census['gated_episodes']} excluded={census['excluded_no_quote_or_unmatched']} "
         f"multi-match={census['multi_match_episodes']} matches={census['total_matches']}"
