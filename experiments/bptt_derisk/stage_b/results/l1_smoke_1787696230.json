@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-08-26T00:17:10",
+  "mode": "full",
+  "config": {
+    "n_layer": 6,
+    "n_embd": 320,
+    "ctx_len": 512,
+    "batch_size": 8,
+    "lr_init": 0.0006,
+    "lr_final": 1e-05,
+    "vocab": 241
+  },
+  "params_M": 8.164,
+  "wkv_mode": "compiled wkv kernel",
+  "steps_timed": 45,
+  "median_step_s": 0.0306,
+  "p90_step_s": 0.0404,
+  "slow_steps_gt3x_median": 2,
+  "tok_per_s_median": 133731.9,
+  "loss_first10_avg": 5.2484,
+  "loss_last10_avg": 3.2553,
+  "vram_peak_allocated_mib": 1198.7,
+  "vram_peak_reserved_mib": 1344.0,
+  "vram_nvidiasmi_whole_gpu_peak_mib": 11941,
+  "wall_s": 18.2
+}

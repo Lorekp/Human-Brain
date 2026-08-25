@@ -1,0 +1,447 @@
+{
+  "generated_utc": "2026-08-25T22:12:07+00:00",
+  "tokenizer": {
+    "vocab_size": 6144,
+    "len": 6144,
+    "bos": "<|im_start|>",
+    "eos": "<|im_end|>"
+  },
+  "config_verbatim": {
+    "model_type": "neuronspark",
+    "architectures": [
+      "NeuronSparkForCausalLM"
+    ],
+    "auto_map": {
+      "AutoConfig": "configuration_neuronspark.NeuronSparkConfig",
+      "AutoModelForCausalLM": "modeling_neuronspark.NeuronSparkForCausalLM"
+    },
+    "vocab_size": 6144,
+    "D": 896,
+    "N": 8,
+    "K": 16,
+    "num_layers": 20,
+    "D_ff": 2688,
+    "v_th_min": 0.1,
+    "torch_dtype": "float32",
+    "transformers_version": "4.52.0",
+    "_training_step": 85000,
+    "_tokens_seen": 203910528
+  },
+  "compat_fix": "monkeypatched NeuronSparkForCausalLM.all_tied_weights_keys={} for transformers 5.9.0 (remote code written for 4.52.0)",
+  "model": {
+    "device": "cuda",
+    "params": 874142120,
+    "dtypes": [
+      "torch.float32"
+    ]
+  },
+  "chinese_sanity": {
+    "prompt": "<|im_start|>\u4eba\u5de5\u667a\u80fd\u7684\u53d1\u5c55",
+    "greedy_continuation": ",\u4e3a\u4eba\u7c7b\u7684\u672a\u6765\u53d1\u5c55\u521b\u9020\u4e86\u6761\u4ef6\u3002\n\u5728\u672a\u6765,\u4eba\u5de5\u667a\u80fd\u5c06\u6210\u4e3a\u4eba\u7c7b\u793e\u4f1a\u53d1\u5c55\u7684\u91cd\u8981\u65b9\u5411\u3002\u4eba\u5de5\u667a\u80fd\u662f\u4eba\u7c7b\u793e\u4f1a\u53d1\u5c55\u7684\u91cd\u8981\u7ec4\u6210\u90e8\u5206,\u662f\u4eba\u7c7b\u793e\u4f1a\u53d1\u5c55\u548c\u8fdb\u6b65\u7684\u5fc5\u7531\u4e4b\u8def\u3002\u4eba\u5de5\u667a\u80fd\u662f\u4eba\u7c7b\u793e\u4f1a\u53d1\u5c55",
+    "wall_s": 12.5
+  },
+  "coverage": {
+    "total_tokens_25_items": 5172,
+    "unk_tokens": 0,
+    "unk_rate": 0.0,
+    "mean_answer_tokens_per_word": 7.7526363636363635
+  },
+  "answer_span": {
+    "tasks": 25,
+    "predictions": 693,
+    "correct": 127,
+    "accuracy": 0.18326118326118326,
+    "alignment_failures": 0,
+    "note": "token-level teacher-forced span accuracy (BPE analogue of the baselines' word-level answer_span metric)"
+  },
+  "free_run": {
+    "tasks": 25,
+    "exact_matches": 0,
+    "exact_match_rate": 0.0
+  },
+  "degeneracy": {
+    "evaluated": 25,
+    "distinct_answers": 20,
+    "modal_share": 0.08,
+    "guard_pass": true
+  },
+  "tasks_span": [
+    {
+      "qa_id": "q_gydhnkpsj",
+      "family": "function_summary",
+      "answer_tokens": 51,
+      "correct_tokens": 10,
+      "pred_decoded": "macyo  ma   = o u fi  irr yhe td  hg  ff herner got t",
+      "target_decoded": "Canonical JSON encoding shared by the analyzer's outputs/tests."
+    },
+    {
+      "qa_id": "q_bccdbjwrv",
+      "family": "function_summary",
+      "answer_tokens": 58,
+      "correct_tokens": 11,
+      "pred_decoded": "tapare mtr  aam u. rile dn mdirree  u.irr i gottrg -ootigh",
+      "target_decoded": "Compile subthreshold voltage and threshold under constant current."
+    },
+    {
+      "qa_id": "q_swtqfrhhv",
+      "family": "function_summary",
+      "answer_tokens": 60,
+      "correct_tokens": 17,
+      "pred_decoded": "trotu tdtoe tr tegr   N    ec i hdt to rir  matmhe mi marog ",
+      "target_decoded": "Produce the full FINDINGS-ready analysis dict for the R2 pilot."
+    },
+    {
+      "qa_id": "q_rxnwdlbwx",
+      "family": "function_summary",
+      "answer_tokens": 61,
+      "correct_tokens": 15,
+      "pred_decoded": "yroe hsocertrice  yotrmt riiit yye rhe riot  t tye r,,gi.  n,",
+      "target_decoded": "Prompt-last framing: context verses, then the question, then ``answer:``."
+    },
+    {
+      "qa_id": "q_rfpxvtrdl",
+      "family": "function_summary",
+      "answer_tokens": 55,
+      "correct_tokens": 6,
+      "pred_decoded": "hiyea sicoom.e:mmrgiym  ritiyiii  htithaw iey,ohtic ,t,",
+      "target_decoded": "Machine-checkable degeneracy-guard verdict with explicit reasons."
+    },
+    {
+      "qa_id": "q_yfbndpscg",
+      "family": "function_summary",
+      "answer_tokens": 62,
+      "correct_tokens": 14,
+      "pred_decoded": "tantyino   t foa i thee  /tthe th  dirdi   oi,miiigtriNI mo,ee",
+      "target_decoded": "Run a current clamp through the pinned adaptive human GLIF5 cell."
+    },
+    {
+      "qa_id": "q_ffscxqyjx",
+      "family": "function_summary",
+      "answer_tokens": 50,
+      "correct_tokens": 13,
+      "pred_decoded": "yahryyyhe mii  t  rrri ri fom s,f  i ,f firi,ir i ",
+      "target_decoded": "Return the validated fixture corpus entries in fixed order."
+    },
+    {
+      "qa_id": "q_xdwkybftj",
+      "family": "function_summary",
+      "answer_tokens": 52,
+      "correct_tokens": 6,
+      "pred_decoded": "yile gttom m   iim tdni e mmaitert o toti gi  nareg  ",
+      "target_decoded": "Wilson score interval on a binomial proportion (matches run_pilot)."
+    },
+    {
+      "qa_id": "q_gslpkrqzq",
+      "family": "module_containment",
+      "answer_tokens": 18,
+      "correct_tokens": 0,
+      "pred_decoded": "miiigaicecuicdi.tr",
+      "target_decoded": "humanbrain.qa_analysis"
+    },
+    {
+      "qa_id": "q_vsggmfsxy",
+      "family": "module_containment",
+      "answer_tokens": 17,
+      "correct_tokens": 1,
+      "pred_decoded": "hiiig.ic cp.lyit ",
+      "target_decoded": "humanbrain.swe_model"
+    },
+    {
+      "qa_id": "q_dvlfbdmdq",
+      "family": "module_containment",
+      "answer_tokens": 18,
+      "correct_tokens": 0,
+      "pred_decoded": "miiigoiiecuiydiutr",
+      "target_decoded": "humanbrain.qa_analysis"
+    },
+    {
+      "qa_id": "q_kvgccsvyn",
+      "family": "module_containment",
+      "answer_tokens": 14,
+      "correct_tokens": 2,
+      "pred_decoded": "hiiig.icecom,ee",
+      "target_decoded": "humanbrain.cells"
+    },
+    {
+      "qa_id": "q_rkykswvmk",
+      "family": "module_containment",
+      "answer_tokens": 14,
+      "correct_tokens": 2,
+      "pred_decoded": "haiig.im com,ee",
+      "target_decoded": "humanbrain.cells"
+    },
+    {
+      "qa_id": "q_jprptmhyk",
+      "family": "module_containment",
+      "answer_tokens": 17,
+      "correct_tokens": 0,
+      "pred_decoded": "yiiigaiiecuiyom .",
+      "target_decoded": "humanbrain.qa_corpus"
+    },
+    {
+      "qa_id": "q_vfsdymntw",
+      "family": "module_containment",
+      "answer_tokens": 22,
+      "correct_tokens": 4,
+      "pred_decoded": "hiiigaiyectom\ncd ,unt.",
+      "target_decoded": "humanbrain.scale_accounting"
+    },
+    {
+      "qa_id": "q_njgqkrsgq",
+      "family": "module_containment",
+      "answer_tokens": 14,
+      "correct_tokens": 1,
+      "pred_decoded": "miiigaimecn,ee",
+      "target_decoded": "humanbrain.cells"
+    },
+    {
+      "qa_id": "q_pwqtwxkzf",
+      "family": "signature_recall",
+      "answer_tokens": 17,
+      "correct_tokens": 4,
+      "pred_decoded": "mtimohm corttt ya",
+      "target_decoded": "injected_current_pa"
+    },
+    {
+      "qa_id": "q_bbyxvngxs",
+      "family": "signature_recall",
+      "answer_tokens": 11,
+      "correct_tokens": 3,
+      "pred_decoded": "haitmeethir",
+      "target_decoded": "baselines_dir"
+    },
+    {
+      "qa_id": "q_plwlxxwtp",
+      "family": "signature_recall",
+      "answer_tokens": 25,
+      "correct_tokens": 7,
+      "pred_decoded": "ttm i tom .iton,caitocosnt",
+      "target_decoded": "seed, calibration_task_count"
+    },
+    {
+      "qa_id": "q_jgdzqkjts",
+      "family": "signature_recall",
+      "answer_tokens": 21,
+      "correct_tokens": 8,
+      "pred_decoded": "htrmenosnter torttt ma",
+      "target_decoded": "step_count, current_pa"
+    },
+    {
+      "qa_id": "q_gjzgdbypt",
+      "family": "signature_recall",
+      "answer_tokens": 6,
+      "correct_tokens": 1,
+      "pred_decoded": "mit ce",
+      "target_decoded": "messages"
+    },
+    {
+      "qa_id": "q_mdfpblbrr",
+      "family": "signature_recall",
+      "answer_tokens": 7,
+      "correct_tokens": 0,
+      "pred_decoded": "m *ow  ",
+      "target_decoded": "**kwargs"
+    },
+    {
+      "qa_id": "q_qvsfgqpxv",
+      "family": "signature_recall",
+      "answer_tokens": 8,
+      "correct_tokens": 1,
+      "pred_decoded": "hoa  trt",
+      "target_decoded": "cls, path"
+    },
+    {
+      "qa_id": "q_qwnzlfcwp",
+      "family": "signature_recall",
+      "answer_tokens": 6,
+      "correct_tokens": 0,
+      "pred_decoded": "mdt tr",
+      "target_decoded": "analysis"
+    },
+    {
+      "qa_id": "q_pszpmpbcf",
+      "family": "signature_recall",
+      "answer_tokens": 9,
+      "correct_tokens": 1,
+      "pred_decoded": "hit   tat",
+      "target_decoded": "model, path"
+    }
+  ],
+  "tasks_free_run": [
+    {
+      "qa_id": "q_gydhnkpsj",
+      "family": "function_summary",
+      "expected": "Canonical JSON encoding shared by the analyzer's outputs/tests.",
+      "completion": " tai the the the the the t",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_bccdbjwrv",
+      "family": "function_summary",
+      "expected": "Compile subthreshold voltage and threshold under constant current.",
+      "completion": " tai to to t t t t t t t",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_swtqfrhhv",
+      "family": "function_summary",
+      "expected": "Produce the full FINDINGS-ready analysis dict for the R2 pilot.",
+      "completion": " timi the the the the the the",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_rxnwdlbwx",
+      "family": "function_summary",
+      "expected": "Prompt-last framing: context verses, then the question, then ``answer:``.",
+      "completion": " yuanguang.cn the the the the",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_rfpxvtrdl",
+      "family": "function_summary",
+      "expected": "Machine-checkable degeneracy-guard verdict with explicit reasons.",
+      "completion": " tai the the the the the",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_yfbndpscg",
+      "family": "function_summary",
+      "expected": "Run a current clamp through the pinned adaptive human GLIF5 cell.",
+      "completion": " the greme the gre gre gre gr",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_ffscxqyjx",
+      "family": "function_summary",
+      "expected": "Return the validated fixture corpus entries in fixed order.",
+      "completion": " yuanguang.com the gre gre gr",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_xdwkybftj",
+      "family": "function_summary",
+      "expected": "Wilson score interval on a binomial proportion (matches run_pilot).",
+      "completion": " yuanguang.com\nmailemamamamam",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_gslpkrqzq",
+      "family": "module_containment",
+      "expected": "humanbrain.qa_analysis",
+      "completion": " yai yai ya ya ",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_vsggmfsxy",
+      "family": "module_containment",
+      "expected": "humanbrain.swe_model",
+      "completion": " mile mai mai m",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_dvlfbdmdq",
+      "family": "module_containment",
+      "expected": "humanbrain.qa_analysis",
+      "completion": " yai yi yi yi y",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_kvgccsvyn",
+      "family": "module_containment",
+      "expected": "humanbrain.cells",
+      "completion": " mile mail mail",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_rkykswvmk",
+      "family": "module_containment",
+      "expected": "humanbrain.cells",
+      "completion": " hile re re re ",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_jprptmhyk",
+      "family": "module_containment",
+      "expected": "humanbrain.qa_corpus",
+      "completion": " yuanguang.com\nmil",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_vfsdymntw",
+      "family": "module_containment",
+      "expected": "humanbrain.scale_accounting",
+      "completion": " mile mai mai m",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_njgqkrsgq",
+      "family": "module_containment",
+      "expected": "humanbrain.cells",
+      "completion": " mile mail mail",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_pwqtwxkzf",
+      "family": "signature_recall",
+      "expected": "injected_current_pa",
+      "completion": " yai yai ya ya",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_bbyxvngxs",
+      "family": "signature_recall",
+      "expected": "baselines_dir",
+      "completion": " tima the mai ",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_plwlxxwtp",
+      "family": "signature_recall",
+      "expected": "seed, calibration_task_count",
+      "completion": " yai yang the gr",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_jgdzqkjts",
+      "family": "signature_recall",
+      "expected": "step_count, current_pa",
+      "completion": " hailemamamamam",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_gjzgdbypt",
+      "family": "signature_recall",
+      "expected": "messages",
+      "completion": " mile mai mai ",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_mdfpblbrr",
+      "family": "signature_recall",
+      "expected": "**kwargs",
+      "completion": " mile mai mai ",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_qvsfgqpxv",
+      "family": "signature_recall",
+      "expected": "cls, path",
+      "completion": " haile the gre ",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_qwnzlfcwp",
+      "family": "signature_recall",
+      "expected": "analysis",
+      "completion": " tima the mai ",
+      "exact_match": false
+    },
+    {
+      "qa_id": "q_pszpmpbcf",
+      "family": "signature_recall",
+      "expected": "model, path",
+      "completion": " yai yang tythe ",
+      "exact_match": false
+    }
+  ]
+}

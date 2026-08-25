@@ -1,0 +1,6 @@
+# Third-party clone + data (re-created by commands in READINESS.md)
+external/
+# Logs and checkpoints
+*.log
+results/ckpts/
+__pycache__/

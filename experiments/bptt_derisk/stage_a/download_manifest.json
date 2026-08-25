@@ -1,0 +1,243 @@
+{
+  "generated_utc": "2026-08-25T21:32:47+00:00",
+  "repos": {
+    "ridger/SpikeGPT-OpenWebText-216M": {
+      "local_dir": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-path3-probe\\.models\\stage_a\\SpikeGPT-OpenWebText-216M",
+      "hf_commit_sha": "4039295cca3da1df0e5871f4bc7727b227496132",
+      "files": [
+        {
+          "file": ".gitattributes",
+          "expected_size": 1477,
+          "actual_size": 1477,
+          "size_match": true
+        },
+        {
+          "file": "README.md",
+          "expected_size": 272,
+          "actual_size": 272,
+          "size_match": true
+        },
+        {
+          "file": "SpikeGPT-216M.pth",
+          "expected_size": 861716013,
+          "actual_size": 861716013,
+          "size_match": true,
+          "sha256": "024d2dab5f71b6bd8d4f3ef38bf9bd61c54b2ea8f9efe4b57517bf9b6b0328de"
+        }
+      ],
+      "extras_not_in_api_listing": [
+        ".cache/huggingface/.gitignore",
+        ".cache/huggingface/CACHEDIR.TAG",
+        ".cache/huggingface/download/.gitattributes.metadata",
+        ".cache/huggingface/download/README.md.metadata",
+        ".cache/huggingface/download/SpikeGPT-216M.pth.metadata"
+      ],
+      "total_downloaded_bytes": 861717762,
+      "integrity_mismatches": [],
+      "download_wall_s": 12.1
+    },
+    "ridger/SpikeGPT-BookCorpus": {
+      "local_dir": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-path3-probe\\.models\\stage_a\\SpikeGPT-BookCorpus",
+      "hf_commit_sha": "28d52794a2f7efcd1ac89dde430acb97507e437e",
+      "files": [
+        {
+          "file": ".gitattributes",
+          "expected_size": 1477,
+          "actual_size": 1477,
+          "size_match": true
+        },
+        {
+          "file": "BookCorpus-SpikeGPT.pth",
+          "expected_size": 737553365,
+          "actual_size": 737553365,
+          "size_match": true,
+          "sha256": "01496fea44d1ddcee1f166a8a187c8f225ad1f3a5c8a0e9c81f2a42e67be8069"
+        },
+        {
+          "file": "README.md",
+          "expected_size": 341,
+          "actual_size": 341,
+          "size_match": true
+        }
+      ],
+      "extras_not_in_api_listing": [
+        ".cache/huggingface/.gitignore",
+        ".cache/huggingface/CACHEDIR.TAG",
+        ".cache/huggingface/download/.gitattributes.metadata",
+        ".cache/huggingface/download/BookCorpus-SpikeGPT.pth.metadata",
+        ".cache/huggingface/download/README.md.metadata"
+      ],
+      "total_downloaded_bytes": 737555183,
+      "integrity_mismatches": [],
+      "download_wall_s": 14.3
+    },
+    "Brain2nd/NeuronSpark-0.9B": {
+      "local_dir": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-path3-probe\\.models\\stage_a\\NeuronSpark-0.9B",
+      "hf_commit_sha": "c91be7a801749def4dcb56acd2c62be32ae32e7c",
+      "files": [
+        {
+          "file": ".gitattributes",
+          "expected_size": 1519,
+          "actual_size": 1519,
+          "size_match": true
+        },
+        {
+          "file": "LICENSE",
+          "expected_size": 10766,
+          "actual_size": 10766,
+          "size_match": true
+        },
+        {
+          "file": "README.md",
+          "expected_size": 4521,
+          "actual_size": 4521,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/__init__.py",
+          "expected_size": 402,
+          "actual_size": 402,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/fp16_codec.py",
+          "expected_size": 3919,
+          "actual_size": 3919,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/lateral_inhibition.py",
+          "expected_size": 6693,
+          "actual_size": 6693,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/parallel_scan.py",
+          "expected_size": 29944,
+          "actual_size": 29944,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/plif_node.py",
+          "expected_size": 2720,
+          "actual_size": 2720,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/rms_norm.py",
+          "expected_size": 996,
+          "actual_size": 996,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/selective_plif.py",
+          "expected_size": 3052,
+          "actual_size": 3052,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/snn_block.py",
+          "expected_size": 9915,
+          "actual_size": 9915,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/snn_decoder_layer.py",
+          "expected_size": 14323,
+          "actual_size": 14323,
+          "size_match": true
+        },
+        {
+          "file": "atomic_ops/snn_ffn.py",
+          "expected_size": 7418,
+          "actual_size": 7418,
+          "size_match": true
+        },
+        {
+          "file": "config.json",
+          "expected_size": 478,
+          "actual_size": 478,
+          "size_match": true
+        },
+        {
+          "file": "configuration.json",
+          "expected_size": 41,
+          "actual_size": 41,
+          "size_match": true
+        },
+        {
+          "file": "configuration_neuronspark.py",
+          "expected_size": 931,
+          "actual_size": 931,
+          "size_match": true
+        },
+        {
+          "file": "model.py",
+          "expected_size": 18772,
+          "actual_size": 18772,
+          "size_match": true
+        },
+        {
+          "file": "model.safetensors",
+          "expected_size": 3496634368,
+          "actual_size": 3496634368,
+          "size_match": true,
+          "sha256": "85a3b5312303134fced86a9d352175b91682176b6dea6af176f64bdaf6fc4b57"
+        },
+        {
+          "file": "modeling_neuronspark.py",
+          "expected_size": 3392,
+          "actual_size": 3392,
+          "size_match": true
+        },
+        {
+          "file": "special_tokens_map.json",
+          "expected_size": 195,
+          "actual_size": 195,
+          "size_match": true
+        },
+        {
+          "file": "tokenizer.json",
+          "expected_size": 448002,
+          "actual_size": 448002,
+          "size_match": true
+        },
+        {
+          "file": "tokenizer_config.json",
+          "expected_size": 791,
+          "actual_size": 791,
+          "size_match": true
+        }
+      ],
+      "extras_not_in_api_listing": [
+        ".cache/huggingface/.gitignore",
+        ".cache/huggingface/CACHEDIR.TAG",
+        ".cache/huggingface/download/.gitattributes.metadata",
+        ".cache/huggingface/download/LICENSE.metadata",
+        ".cache/huggingface/download/README.md.metadata",
+        ".cache/huggingface/download/atomic_ops/__init__.py.metadata",
+        ".cache/huggingface/download/atomic_ops/fp16_codec.py.metadata",
+        ".cache/huggingface/download/atomic_ops/lateral_inhibition.py.metadata",
+        ".cache/huggingface/download/atomic_ops/parallel_scan.py.metadata",
+        ".cache/huggingface/download/atomic_ops/plif_node.py.metadata",
+        ".cache/huggingface/download/atomic_ops/rms_norm.py.metadata",
+        ".cache/huggingface/download/atomic_ops/selective_plif.py.metadata",
+        ".cache/huggingface/download/atomic_ops/snn_block.py.metadata",
+        ".cache/huggingface/download/atomic_ops/snn_decoder_layer.py.metadata",
+        ".cache/huggingface/download/atomic_ops/snn_ffn.py.metadata",
+        ".cache/huggingface/download/config.json.metadata",
+        ".cache/huggingface/download/configuration.json.metadata",
+        ".cache/huggingface/download/configuration_neuronspark.py.metadata",
+        ".cache/huggingface/download/model.py.metadata",
+        ".cache/huggingface/download/model.safetensors.metadata",
+        ".cache/huggingface/download/modeling_neuronspark.py.metadata",
+        ".cache/huggingface/download/special_tokens_map.json.metadata",
+        ".cache/huggingface/download/tokenizer.json.metadata",
+        ".cache/huggingface/download/tokenizer_config.json.metadata"
+      ],
+      "total_downloaded_bytes": 3497203158,
+      "integrity_mismatches": [],
+      "download_wall_s": 38.8
+    }
+  }
+}
