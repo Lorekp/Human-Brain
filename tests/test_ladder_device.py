@@ -85,6 +85,8 @@ def _arguments(**overrides) -> argparse.Namespace:
         # Keep in step with every knob the harness validates (added by
         # sibling knob authors; update here when a new validated knob lands).
         inhibitory_fraction=0.2,
+        observatory_samples=128,
+        observatory_state_stride=20,
     )
     values.update(overrides)
     return argparse.Namespace(**values)

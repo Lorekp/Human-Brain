@@ -45,8 +45,10 @@ def test_sink_fires_per_token_in_order_after_boundary() -> None:
     seen: list[tuple[int, tuple]] = []
     post_boundary: list[np.ndarray] = []
 
-    def sink(circ: RecurrentCellCircuit, token_id: int) -> None:
-        seen.append((token_id, tuple(np.asarray(circ.feature_state_vector()).shape)))
+    def sink(circ: RecurrentCellCircuit, step) -> None:
+        seen.append(
+            (step.token_id, tuple(np.asarray(circ.feature_state_vector()).shape))
+        )
         post_boundary.append(np.asarray(circ.feature_state_vector()).copy())
 
     circuit.observation_sink = sink
@@ -66,7 +68,7 @@ def test_sink_is_readonly_observer_bit_identity() -> None:
     traces: list[np.ndarray] = []
     voltages: list[np.ndarray] = []
 
-    def sink(circ: RecurrentCellCircuit, token_id: int) -> None:
+    def sink(circ: RecurrentCellCircuit, step) -> None:
         traces.append(np.asarray(circ._feature_traces).copy())
         voltages.append(np.asarray(circ._reservoir.state.voltage_relative_mv).copy())
 
@@ -88,7 +90,7 @@ def test_sink_is_readonly_observer_bit_identity() -> None:
 def test_sink_on_traces_family_unchanged_path() -> None:
     circuit = _circuit(feature_family="traces")
     calls: list[int] = []
-    circuit.observation_sink = lambda circ, token_id: calls.append(token_id)
+    circuit.observation_sink = lambda circ, step: calls.append(step.token_id)
     for token_id in _ids():
         circuit.observe(token_id)
     assert len(calls) == 24

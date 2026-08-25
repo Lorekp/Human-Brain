@@ -166,11 +166,11 @@ class ReplayLogger:
         )
         self.boundary_global_index.append(self.token_offset - 1)
 
-    def _sink(self, circuit: RecurrentCellCircuit, token_id: int) -> None:
+    def _sink(self, circuit: RecurrentCellCircuit, step) -> None:
         if circuit is not self.circuit:
             raise RuntimeError("observation_sink fired on a foreign circuit")
         t = self.token_offset
-        self.all_token_ids.append(int(token_id))
+        self.all_token_ids.append(int(step.token_id))
         at_boundary = t == self.current_boundary
         vec = np.asarray(circuit.feature_state_vector())
         name = circuit.config.feature_family

@@ -7,6 +7,7 @@ import hashlib
 import os
 import tempfile
 import threading
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -23,6 +24,12 @@ from humanbrain.native import (
 
 if TYPE_CHECKING:
     from humanbrain.cells import AdaptiveGlifPopulation
+
+
+def async_pipeline_enabled() -> bool:
+    """Read the double-buffered H2D/D2H overlap switch (default: on)."""
+    value = os.environ.get("HUMANBRAIN_CUDA_ASYNC", "1").strip().lower()
+    return value not in {"0", "false", "off"}
 
 _SOURCE = Path(__file__).with_name("_native_src") / "src" / "cuda.cu"
 _CUDA_MINIMUM_CELLS = 100_000
@@ -150,6 +157,38 @@ class _CudaDriver:
         library.cuEventDestroy_v2.restype = ctypes.c_int
         library.cuGetErrorString.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_char_p)]
         library.cuGetErrorString.restype = ctypes.c_int
+        library.cuStreamCreate.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_uint]
+        library.cuStreamCreate.restype = ctypes.c_int
+        library.cuStreamDestroy.argtypes = [ctypes.c_void_p]
+        library.cuStreamDestroy.restype = ctypes.c_int
+        library.cuStreamWaitEvent.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_uint,
+        ]
+        library.cuStreamWaitEvent.restype = ctypes.c_int
+        library.cuMemHostAlloc.argtypes = [
+            ctypes.POINTER(ctypes.c_void_p),
+            ctypes.c_size_t,
+            ctypes.c_uint,
+        ]
+        library.cuMemHostAlloc.restype = ctypes.c_int
+        library.cuMemFreeHost.argtypes = [ctypes.c_void_p]
+        library.cuMemFreeHost.restype = ctypes.c_int
+        library.cuMemcpyDtoHAsync_v2.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_uint64,
+            ctypes.c_size_t,
+            ctypes.c_void_p,
+        ]
+        library.cuMemcpyDtoHAsync_v2.restype = ctypes.c_int
+        library.cuMemcpyDtoDAsync_v2.argtypes = [
+            ctypes.c_uint64,
+            ctypes.c_uint64,
+            ctypes.c_size_t,
+            ctypes.c_void_p,
+        ]
+        library.cuMemcpyDtoDAsync_v2.restype = ctypes.c_int
 
         self.check(library.cuInit(0), "initialize CUDA")
         device = ctypes.c_int()
@@ -514,9 +553,306 @@ class CudaRecurrentKernel:
             self._allocate_bytes("spike_mask", cells)
             self._allocate_bytes("input_mask", cells)
             self._allocate_bytes("total_spikes", ctypes.sizeof(ctypes.c_uint64))
+            self._allocate_array("decay_active", self._decayed_activity_words(), upload=True)
+            self._allocate_array(
+                "threshold_spike_active", self._threshold_spike_active_words(), upload=True
+            )
+            self._allocate_array(
+                "refractory_active", self._refractory_active_words(), upload=True
+            )
+            self._build_launch_arguments()
+            if async_pipeline_enabled():
+                self._build_pipeline()
         except Exception:
             self.close()
             raise
+
+    def _build_launch_arguments(self) -> None:
+        """Pre-marshal the cooperative-launch argument block once.
+
+        Only two entries change per token (the afferent row pointer and the
+        spike-count destination); cuLaunchCooperativeKernel copies parameter
+        values at launch time, so patching these ctypes cells between launches
+        removes per-token argument marshaling from the critical path.
+        """
+        values: list[object] = [
+            self._glif,
+            self._recurrent,
+            ctypes.c_uint64(self._arrays["after_decay"][0]),
+            ctypes.c_uint64(self._arrays["after_cut_decay"][0]),
+            ctypes.c_uint64(self._arrays["after_amplitudes"][0]),
+            ctypes.c_uint64(0),
+            ctypes.c_uint64(self._arrays["incoming_offsets"][0]),
+            ctypes.c_uint64(self._arrays["incoming_edges"][0]),
+            ctypes.c_uint64(self._arrays["recurrent_weights"][0]),
+            ctypes.c_uint64(self._arrays["voltage"][0]),
+            ctypes.c_uint64(self._arrays["after"][0]),
+            ctypes.c_uint64(self._arrays["threshold_spike"][0]),
+            ctypes.c_uint64(self._arrays["threshold_voltage"][0]),
+            ctypes.c_uint64(self._arrays["refractory"][0]),
+            ctypes.c_uint64(self._arrays["synaptic_current"][0]),
+            ctypes.c_uint64(self._arrays["eligibility"][0]),
+            ctypes.c_uint64(self._arrays["spike_mask"][0]),
+            ctypes.c_uint64(self._arrays["input_mask"][0]),
+            ctypes.c_uint64(self._arrays["total_spikes"][0]),
+            ctypes.c_uint64(self._arrays["decay_active"][0]),
+            ctypes.c_uint64(self._arrays["threshold_spike_active"][0]),
+            ctypes.c_uint64(self._arrays["refractory_active"][0]),
+        ]
+        self._launch_values = values
+        self._arg_afferent_pointer = values[5]
+        self._arg_spikes_pointer = values[18]
+        self._launch_arguments = (ctypes.c_void_p * len(values))(
+            *(ctypes.cast(ctypes.byref(value), ctypes.c_void_p) for value in values)
+        )
+        self._afferent_base_pointer, _ = self._arrays["afferents"]
+        self._afferent_row_bytes = (
+            self._input_fanout * np.dtype(np.int32).itemsize
+        )
+
+    # ------------------------------------------------------------------
+    # Double-buffered host-device overlap pipeline.
+    #
+    # The cooperative kernel reads and writes one primary eligibility
+    # buffer in place, so a naive D2H snapshot would race with the next
+    # launch. Each pipeline slot therefore owns a device-side eligibility
+    # snapshot: the compute stream runs [kernel -> D2D primary->snapshot]
+    # back to back, so the snapshot stays stable while any later kernel
+    # overwrites the primary buffer. A non-blocking copy stream then drains
+    # snapshots (and per-slot spike counters) into a pinned host staging
+    # ring, overlapping the next token's kernel execution. collect() waits
+    # the slot's copy event and publishes the bit-exact snapshot into the
+    # host eligibility mirror, so learning sees exactly the bytes that the
+    # synchronous path would have downloaded.
+    # ------------------------------------------------------------------
+
+    _PIPELINE_DEPTH = 4
+    _CU_STREAM_NON_BLOCKING = 0x1
+    _CU_MEMHOSTALLOC_PORTABLE = 0x1
+
+    def _build_pipeline(self) -> None:
+        library = self._driver.library
+        self._compute_stream = ctypes.c_void_p()
+        self._copy_stream = ctypes.c_void_p()
+        self._driver.check(
+            library.cuStreamCreate(
+                ctypes.byref(self._compute_stream), self._CU_STREAM_NON_BLOCKING
+            ),
+            "create CUDA compute stream",
+        )
+        self._driver.check(
+            library.cuStreamCreate(
+                ctypes.byref(self._copy_stream), self._CU_STREAM_NON_BLOCKING
+            ),
+            "create CUDA copy stream",
+        )
+        _, eligibility_bytes = self._arrays["eligibility"]
+        spike_bytes = ctypes.sizeof(ctypes.c_uint64)
+        slot_stride = eligibility_bytes + spike_bytes
+        self._slot_eligibility_bytes = eligibility_bytes
+        self._device_slot_snapshots: list[int] = []
+        self._device_slot_spikes: list[int] = []
+        self._pinned_keepalive: list[object] = []
+        self._pinned_addresses: list[int] = []
+        self._slot_events: list[dict[str, ctypes.c_void_p]] = []
+        try:
+            host_block = ctypes.c_void_p()
+            self._driver.check(
+                library.cuMemHostAlloc(
+                    ctypes.byref(host_block),
+                    self._PIPELINE_DEPTH * slot_stride,
+                    self._CU_MEMHOSTALLOC_PORTABLE,
+                ),
+                "allocate CUDA pinned staging ring",
+            )
+            base_address = int(host_block.value)
+            self._pinned_keepalive.append(host_block)
+            for slot in range(self._PIPELINE_DEPTH):
+                snapshot = ctypes.c_uint64()
+                self._driver.check(
+                    library.cuMemAlloc_v2(
+                        ctypes.byref(snapshot), eligibility_bytes
+                    ),
+                    f"allocate CUDA eligibility snapshot {slot}",
+                )
+                self._allocations.append(int(snapshot.value))
+                self._device_slot_snapshots.append(int(snapshot.value))
+                spikes = ctypes.c_uint64()
+                self._driver.check(
+                    library.cuMemAlloc_v2(ctypes.byref(spikes), spike_bytes),
+                    f"allocate CUDA slot spike counter {slot}",
+                )
+                self._allocations.append(int(spikes.value))
+                self._device_slot_spikes.append(int(spikes.value))
+                address = base_address + slot * slot_stride
+                self._pinned_addresses.append(address)
+                self._pinned_keepalive.append(
+                    (ctypes.c_char * slot_stride).from_address(address)
+                )
+                events = {
+                    "start": ctypes.c_void_p(),
+                    "stop": ctypes.c_void_p(),
+                    "kernel_done": ctypes.c_void_p(),
+                    "copy_done": ctypes.c_void_p(),
+                }
+                for name, event in events.items():
+                    self._driver.check(
+                        library.cuEventCreate(ctypes.byref(event), 0),
+                        f"create CUDA {name} event {slot}",
+                    )
+                self._slot_events.append(events)
+        except Exception:
+            self.close()
+            raise
+        self._submit_sequence = 0
+        self._pending_sequences: deque[int] = deque()
+
+    @property
+    def async_pipeline_active(self) -> bool:
+        return hasattr(self, "_pending_sequences")
+
+    @property
+    def pending_tokens(self) -> int:
+        return len(self._pending_sequences) if self.async_pipeline_active else 0
+
+    def _launch_kernel(self, stream: ctypes.c_void_p | None) -> None:
+        self._driver.check(
+            self._driver.library.cuLaunchCooperativeKernel(
+                self._function,
+                self._block_count,
+                1,
+                1,
+                self._BLOCK_SIZE,
+                1,
+                1,
+                0,
+                stream,
+                self._launch_arguments,
+            ),
+            "launch CUDA token kernel",
+        )
+
+    def observe_async(self, token_id: int) -> int:
+        """Enqueue one token interval without blocking the host.
+
+        Returns a handle for :meth:`collect`. Handles must be collected in
+        submission order; the eligibility host mirror is refreshed only by
+        ``collect`` or the synchronous entry points, which drain first.
+        """
+        if not self.async_pipeline_active:
+            raise RuntimeError("CUDA async pipeline is disabled")
+        if not 0 <= token_id < self._token_cells:
+            raise ValueError("token id outside CUDA afferent population")
+        if len(self._pending_sequences) >= self._PIPELINE_DEPTH:
+            raise RuntimeError("CUDA async pipeline stall: collect pending tokens first")
+        self._driver.make_current()
+        slot = self._submit_sequence % self._PIPELINE_DEPTH
+        handle = self._submit_sequence
+        self._submit_sequence += 1
+        self._pending_sequences.append(handle)
+
+        self._arg_afferent_pointer.value = (
+            self._afferent_base_pointer + token_id * self._afferent_row_bytes
+        )
+        self._arg_spikes_pointer.value = self._device_slot_spikes[slot]
+
+        library = self._driver.library
+        events = self._slot_events[slot]
+        check = self._driver.check
+        check(library.cuEventRecord(events["start"], self._compute_stream),
+              "record CUDA async start")
+        self._launch_kernel(self._compute_stream)
+        check(library.cuEventRecord(events["stop"], self._compute_stream),
+              "record CUDA async stop")
+        # Stable per-slot snapshot of the just-updated eligibility state.
+        eligibility_pointer, eligibility_bytes = self._arrays["eligibility"]
+        check(
+            library.cuMemcpyDtoDAsync_v2(
+                self._device_slot_snapshots[slot],
+                eligibility_pointer,
+                eligibility_bytes,
+                self._compute_stream,
+            ),
+            "snapshot CUDA eligibility",
+        )
+        check(
+            library.cuEventRecord(events["kernel_done"], self._compute_stream),
+            "record CUDA kernel-done",
+        )
+        # Copy stream stages the snapshot into pinned memory while the next
+        # kernel executes on the compute stream.
+        check(
+            library.cuStreamWaitEvent(self._copy_stream, events["kernel_done"], 0),
+            "gate CUDA copy stream",
+        )
+        check(
+            library.cuMemcpyDtoHAsync_v2(
+                ctypes.c_void_p(self._pinned_addresses[slot]),
+                self._device_slot_snapshots[slot],
+                eligibility_bytes,
+                self._copy_stream,
+            ),
+            "stage CUDA eligibility",
+        )
+        check(
+            library.cuMemcpyDtoHAsync_v2(
+                ctypes.c_void_p(
+                    self._pinned_addresses[slot] + eligibility_bytes
+                ),
+                self._device_slot_spikes[slot],
+                ctypes.sizeof(ctypes.c_uint64),
+                self._copy_stream,
+            ),
+            "stage CUDA spike count",
+        )
+        check(
+            library.cuEventRecord(events["copy_done"], self._copy_stream),
+            "record CUDA copy-done",
+        )
+        return handle
+
+    def collect(self, handle: int) -> int:
+        """Wait one async token's staged results and refresh the mirror."""
+        if not self.async_pipeline_active:
+            raise RuntimeError("CUDA async pipeline is disabled")
+        if not self._pending_sequences or handle != self._pending_sequences[0]:
+            raise RuntimeError("async tokens must be collected in submission order")
+        slot = handle % self._PIPELINE_DEPTH
+        events = self._slot_events[slot]
+        library = self._driver.library
+        self._driver.check(
+            library.cuEventSynchronize(events["copy_done"]),
+            "wait for staged CUDA token",
+        )
+        elapsed = ctypes.c_float()
+        self._driver.check(
+            library.cuEventElapsedTime(
+                ctypes.byref(elapsed), events["start"], events["stop"]
+            ),
+            "measure staged CUDA token kernel",
+        )
+        self.last_kernel_milliseconds = float(elapsed.value)
+        eligibility_bytes = self._slot_eligibility_bytes
+        pinned_view = np.frombuffer(
+            (ctypes.c_char * eligibility_bytes).from_address(
+                self._pinned_addresses[slot]
+            ),
+            dtype=np.float64,
+        )
+        np.copyto(self._eligibility, pinned_view)
+        spike_view = np.frombuffer(
+            (ctypes.c_char * ctypes.sizeof(ctypes.c_uint64)).from_address(
+                self._pinned_addresses[slot] + eligibility_bytes
+            ),
+            dtype=np.uint64,
+        )
+        self._pending_sequences.popleft()
+        return int(spike_view[0])
+
+    def drain(self) -> None:
+        """Collect every outstanding async token (no-op when idle)."""
+        while self._pending_sequences:
+            self.collect(self._pending_sequences[0])
 
     @property
     def device_name(self) -> str:
@@ -656,18 +992,76 @@ class CudaRecurrentKernel:
 
     def synchronize_from_host(self) -> None:
         self._driver.make_current()
+        if self.async_pipeline_active:
+            self.drain()
         for name, array in self._synchronize_arrays().items():
             self._copy_to_device(name, array)
+        self._copy_to_device("decay_active", self._decayed_activity_words())
+        self._copy_to_device(
+            "threshold_spike_active", self._threshold_spike_active_words()
+        )
+        self._copy_to_device("refractory_active", self._refractory_active_words())
+
+    def _pack_activity_bits(self, active: np.ndarray) -> np.ndarray:
+        """Pack one bool per cell into uint64 words (8-byte padded)."""
+        packed = np.packbits(active.astype(np.uint8), bitorder="little")
+        remainder = packed.size % 8
+        if remainder:
+            packed = np.concatenate(
+                [packed, np.zeros(8 - remainder, dtype=packed.dtype)]
+            )
+        return packed.view(np.uint64)
+
+    def _decayed_activity_words(self) -> np.ndarray:
+        """Pack the per-cell decayed-state activity bitmap (uint64 words).
+
+        A cell is active when any after-spike current channel or ANY entry of
+        its multi-trace eligibility bank is not exactly +0.0. Negative zero
+        is deliberately treated as active (signbit check): skipping a
+        ``-0.0`` value would be a bit-level no-op for the after-current decay
+        but not for the eligibility expression, and treating it as active
+        keeps every path bit-identical to unconditional evaluation.
+        """
+        state = self._population.state
+        after = state.after_spike_currents_pa
+        eligibility = self._eligibility
+        active = np.any((after != 0.0) | np.signbit(after), axis=1)
+        # The eligibility buffer is the full trace bank flattened in C order
+        # (row k = trace k): unflatten to (trace_count, cells) and reduce over
+        # traces per cell, matching the kernel's fused loop that decays every
+        # row of one cell under a single decay_active bit.
+        bank = eligibility.reshape(-1, self._population.cell_count)
+        active |= np.any((bank != 0.0) | np.signbit(bank), axis=0)
+        return self._pack_activity_bits(active)
+
+    def _threshold_spike_active_words(self) -> np.ndarray:
+        """Pack the spike-threshold nonzero bitmap (uint64 words).
+
+        A cell whose ``threshold_spike`` value is exactly +0.0 stays at those
+        exact bits under decay (positive decay factor), so the kernel may skip
+        its load, decay, and store. Negative zero is deliberately treated as
+        active (signbit check) so every path keeps bit-identical state.
+        """
+        threshold = self._population.state.threshold_spike_mv
+        return self._pack_activity_bits((threshold != 0.0) | np.signbit(threshold))
+
+    def _refractory_active_words(self) -> np.ndarray:
+        """Pack the refractory-countdown nonzero bitmap (uint64 words)."""
+        return self._pack_activity_bits(self._population.state.refractory_steps != 0)
 
     def synchronize_to_host(self) -> None:
         """Download every synchronized array for explicit state inspection."""
         self._driver.make_current()
+        if self.async_pipeline_active:
+            self.drain()
         for name, array in self._synchronize_arrays().items():
             self._copy_from_device(name, array)
 
     def synchronize_structure_from_host(self) -> None:
         """Rebuild reverse CSR and upload all in-place structural mutations."""
         self._driver.make_current()
+        if self.async_pipeline_active:
+            self.drain()
         for name, array in self._structure_arrays_from_host().items():
             self._copy_to_device(name, array)
 
@@ -675,55 +1069,25 @@ class CudaRecurrentKernel:
         if not 0 <= token_id < self._token_cells:
             raise ValueError("token id outside CUDA afferent population")
         self._driver.make_current()
-        afferent_base, _ = self._arrays["afferents"]
-        afferent_pointer = (
-            afferent_base + token_id * self._input_fanout * np.dtype(np.int32).itemsize
+        if self.async_pipeline_active:
+            # Serialize behind any outstanding async tokens before touching
+            # the shared primary buffers or the host mirror.
+            self.drain()
+        self._arg_afferent_pointer.value = (
+            self._afferent_base_pointer + token_id * self._afferent_row_bytes
         )
-        values: list[object] = [
-            self._glif,
-            self._recurrent,
-            ctypes.c_uint64(self._arrays["after_decay"][0]),
-            ctypes.c_uint64(self._arrays["after_cut_decay"][0]),
-            ctypes.c_uint64(self._arrays["after_amplitudes"][0]),
-            ctypes.c_uint64(afferent_pointer),
-            ctypes.c_uint64(self._arrays["incoming_offsets"][0]),
-            ctypes.c_uint64(self._arrays["incoming_edges"][0]),
-            ctypes.c_uint64(self._arrays["recurrent_weights"][0]),
-            ctypes.c_uint64(self._arrays["voltage"][0]),
-            ctypes.c_uint64(self._arrays["after"][0]),
-            ctypes.c_uint64(self._arrays["threshold_spike"][0]),
-            ctypes.c_uint64(self._arrays["threshold_voltage"][0]),
-            ctypes.c_uint64(self._arrays["refractory"][0]),
-            ctypes.c_uint64(self._arrays["synaptic_current"][0]),
-            ctypes.c_uint64(self._arrays["eligibility"][0]),
-            ctypes.c_uint64(self._arrays["spike_mask"][0]),
-            ctypes.c_uint64(self._arrays["input_mask"][0]),
-            ctypes.c_uint64(self._arrays["total_spikes"][0]),
-        ]
-        arguments = (ctypes.c_void_p * len(values))(
-            *(ctypes.cast(ctypes.byref(value), ctypes.c_void_p) for value in values)
-        )
+        self._arg_spikes_pointer.value = self._arrays["total_spikes"][0]
         library = self._driver.library
-        self._driver.check(library.cuEventRecord(self._start_event, None), "record CUDA start")
-        self._driver.check(
-            library.cuLaunchCooperativeKernel(
-                self._function,
-                self._block_count,
-                1,
-                1,
-                self._BLOCK_SIZE,
-                1,
-                1,
-                0,
-                None,
-                arguments,
-            ),
-            "launch CUDA token kernel",
+        stream = (
+            self._compute_stream if self.async_pipeline_active else None
         )
-        self._driver.check(library.cuEventRecord(self._stop_event, None), "record CUDA stop")
-        self._driver.check(library.cuEventSynchronize(self._stop_event), "wait for CUDA token")
+        check = self._driver.check
+        check(library.cuEventRecord(self._start_event, stream), "record CUDA start")
+        self._launch_kernel(stream)
+        check(library.cuEventRecord(self._stop_event, stream), "record CUDA stop")
+        check(library.cuEventSynchronize(self._stop_event), "wait for CUDA token")
         elapsed = ctypes.c_float()
-        self._driver.check(
+        check(
             library.cuEventElapsedTime(ctypes.byref(elapsed), self._start_event, self._stop_event),
             "measure CUDA token kernel",
         )
@@ -740,14 +1104,39 @@ class CudaRecurrentKernel:
             return
         try:
             driver.make_current()
+            if getattr(self, "async_pipeline_active", False):
+                try:
+                    self.drain()
+                except Exception:
+                    pass
             for pointer in reversed(getattr(self, "_allocations", [])):
                 driver.library.cuMemFree_v2(pointer)
             self._allocations.clear()
-            for event_name in ("_start_event", "_stop_event"):
-                event = getattr(self, event_name, None)
-                if event is not None and event.value:
-                    driver.library.cuEventDestroy_v2(event)
-                    event.value = None
+            for event_name in (self._start_event, self._stop_event):
+                if event_name is not None and event_name.value:
+                    driver.library.cuEventDestroy_v2(event_name)
+                    event_name.value = None
+            for events in getattr(self, "_slot_events", []):
+                for event in events.values():
+                    if event is not None and event.value:
+                        driver.library.cuEventDestroy_v2(event)
+                        event.value = None
+            self._slot_events = []
+            library = driver.library
+            for stream_name in ("_compute_stream", "_copy_stream"):
+                stream = getattr(self, stream_name, None)
+                if stream is not None and stream.value:
+                    library.cuStreamDestroy(stream)
+                    stream.value = None
+            pinned_addresses = getattr(self, "_pinned_addresses", None)
+            keepalive = getattr(self, "_pinned_keepalive", None)
+            if pinned_addresses and keepalive is not None and keepalive:
+                host_block = keepalive[0]
+                if getattr(host_block, "value", None):
+                    library.cuMemFreeHost(ctypes.c_void_p(host_block.value))
+                    host_block.value = None
+            self._pinned_keepalive = []
+            self._pending_sequences = deque()
             module = getattr(self, "_module", None)
             if module is not None and module.value:
                 driver.library.cuModuleUnload(module)

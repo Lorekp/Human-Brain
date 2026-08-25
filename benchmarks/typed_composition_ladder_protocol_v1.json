@@ -1,0 +1,316 @@
+{
+  "protocol_id": "humanbrain-typed-composition-a013-ladder-v1",
+  "base_commit": "49eb043bd3efdaeb3b76508b9a7fc82954734017",
+  "status": {
+    "state": "draft-preregistration-unfinalized",
+    "arm_sizes_finalized": false,
+    "raw_protocol_sha256_at_freeze": null,
+    "note": "All {PARAM}/null arm sizes are resolved exactly once from the measured resident-cost curve before freeze; post-freeze mutation invalidates the pinned hash and refuses execution."
+  },
+  "corpus_passes": 3,
+  "identifier": {
+    "algorithm": "sha256-domain-nul-u16be-mod-alphabet",
+    "domain": "humanbrain/typed-composition/a013/v1/entry-point",
+    "alphabet": "bcdfghjklmnpqrstvwxyz",
+    "prefix": "q_",
+    "body_length": 9
+  },
+  "task_order_domain": "humanbrain/typed-composition/a013/v1/task-order",
+  "literals": [
+    -9,
+    -7,
+    -5,
+    -3,
+    -1,
+    0,
+    2,
+    4,
+    6,
+    8
+  ],
+  "calibration_literals": [
+    -7,
+    -1,
+    2,
+    8
+  ],
+  "templates": {
+    "scalar_add": {
+      "even": "For an integer, add {k}.",
+      "odd": "Increase an integer by {k}."
+    },
+    "scalar_input_minus_literal": {
+      "even": "For an integer, subtract {k}.",
+      "odd": "Decrease an integer by {k}."
+    },
+    "scalar_literal_minus_input": {
+      "even": "Subtract an integer from {k}.",
+      "odd": "Compute {k} minus an integer."
+    },
+    "list_add": {
+      "even": "Add {k} to each integer in the list.",
+      "odd": "Increase every integer in the list by {k}."
+    }
+  },
+  "identity_prompts": {
+    "train_scalar": "Preserve the supplied integer unchanged.",
+    "train_list": "Pass through the supplied integer list unchanged.",
+    "calibration_scalar": "Keep the given integer exactly as it is.",
+    "calibration_list": "Keep every integer in the given list as it is."
+  },
+  "cohort_disjointness": {
+    "prior_cohort": "humanbrain-typed-composition-a012-v1 (sealed, spent)",
+    "prior_identifier_domain": "humanbrain/typed-composition/v1/entry-point",
+    "requirement": "regenerate all tasks under the a013 domains; no a013 task prompt+signature byte pair may equal any a012 task byte pair; identifier sets must be disjoint"
+  },
+  "readout": {
+    "rule": "sparse_three_factor",
+    "ridge_allowed": false,
+    "fan_in_capacity_k": 64,
+    "candidates_per_output_c": 256,
+    "output_cell_count_v": 257,
+    "resident_bytes_formula": "64*V*K + V*C + small per-output terms; independent of N",
+    "measured_reference": {
+      "source": "docs/sparse-cell-readout.md; artifacts/sparse_cuda_engineering_v1_*.json",
+      "sparse_readout_bytes_at_200k": 1052672,
+      "dense_readout_bytes_at_200k": 409600000,
+      "inference_tokens_per_second_before": 127.265,
+      "inference_tokens_per_second_after": 158.177
+    }
+  },
+  "lanes": [
+    {
+      "lane": "A2",
+      "diagnostic_only": false,
+      "eligible": true,
+      "framing_order": "canonical-signature/context-delimiter/prompt/input-delimiter",
+      "supervision_scope": "program-token-targets-only"
+    },
+    {
+      "lane": "A1",
+      "diagnostic_only": true,
+      "eligible": false,
+      "framing_order": "canonical-signature/context-delimiter/prompt/input-delimiter",
+      "supervision_scope": "all-next-token-targets"
+    },
+    {
+      "lane": "A0",
+      "diagnostic_only": true,
+      "eligible": false,
+      "retired": true,
+      "note": "not rerun anywhere in this ladder; framing axis is carried by A1@L6 vs A2@L3"
+    }
+  ],
+  "arms": [
+    {
+      "arm": "L1",
+      "lane": "A2",
+      "role": "bridge",
+      "cells_configured": 128,
+      "cells_param": null,
+      "assumed_activity_density": null,
+      "purpose": "re-measure the sealed a012 operating point under the local sparse three-factor readout; isolates the readout-rule change at known scale"
+    },
+    {
+      "arm": "L2",
+      "lane": "A2",
+      "role": "scale",
+      "cells_configured": null,
+      "cells_param": "N_ARM_L2=10^6",
+      "assumed_activity_density": null,
+      "purpose": "first scaled dose"
+    },
+    {
+      "arm": "L3",
+      "lane": "A2",
+      "role": "scale",
+      "cells_configured": null,
+      "cells_param": "N_ARM_L3=10^7",
+      "assumed_activity_density": null,
+      "purpose": "second scaled dose"
+    },
+    {
+      "arm": "L4",
+      "lane": "A2",
+      "role": "scale",
+      "cells_configured": null,
+      "cells_param": "N_ARM_L4=10^8",
+      "assumed_activity_density": null,
+      "purpose": "third scaled dose"
+    },
+    {
+      "arm": "L5",
+      "lane": "A2",
+      "role": "scale-max",
+      "cells_configured": null,
+      "cells_param": "N_ARM_L5=N_MAX (largest feasible cohort; target >= 10^9 configured)",
+      "assumed_activity_density": null,
+      "purpose": "maximum feasible dose; shortfall vs target recorded at freeze if measurements require it"
+    },
+    {
+      "arm": "L6",
+      "lane": "A1",
+      "role": "framing-control",
+      "diagnostic_only": true,
+      "cells_configured": null,
+      "cells_param": "N_ARM_L6 = N_ARM_L3 (matched pair)",
+      "assumed_activity_density": null,
+      "purpose": "keeps the framing/supervision axis at matched scale versus L3"
+    }
+  ],
+  "expected_accounting_token_level": {
+    "invariance": "identical for every arm; N changes reservoir size only, never token counts",
+    "train_task_count": 42,
+    "calibration_task_count": 18,
+    "train_case_count": 126,
+    "calibration_case_count": 54,
+    "teacher_targets_per_pass": 272,
+    "framing_tokens_per_pass": 8484,
+    "framing_decomposition": "7156 canonical signature bytes + 1244 UTF-8 prompt bytes + 84 delimiter tokens",
+    "observations_per_pass": 8714,
+    "corpus_passes": 3,
+    "completions_per_arm": 60,
+    "a2_strengthen_calls": 816,
+    "a1_strengthen_calls": 26142,
+    "observation_calls_per_lane": 26142
+  },
+  "per_arm_expected_accounting": {
+    "definition": "each arm carries this block with scale fields evaluated at its frozen N; loader requires exact equality per arm",
+    "token_fields_source": "expected_accounting_token_level",
+    "scale_fields": [
+      {
+        "field": "state_vector_floats",
+        "formula": "N"
+      },
+      {
+        "field": "eligibility_digest_input_bytes",
+        "formula": "8*N"
+      },
+      {
+        "field": "eligibility_excerpt_bytes_sealed",
+        "formula": "2048 (first and last 1024)"
+      },
+      {
+        "field": "resident_state_bytes_estimate",
+        "formula": "181*N (measured B/cell incl. sparse readout; estimate, never a gate)"
+      },
+      {
+        "field": "resident_state_bytes_floor",
+        "formula": "60*N (GLIF5 state floor; planning only)"
+      },
+      {
+        "field": "local_readout_updates_a2_upper_bound",
+        "formula": "a2_strengthen_calls * K = 816*64 = 52224"
+      },
+      {
+        "field": "local_readout_updates_a1_upper_bound",
+        "formula": "a1_strengthen_calls * K = 26142*64 = 1673088"
+      },
+      {
+        "field": "projected_wall_seconds",
+        "formula": "evaluated at finalization from measured tok/s(N, activity density); estimate, never a gate"
+      }
+    ]
+  },
+  "cost_model_anchors": {
+    "glif5_state_floor_bytes_per_cell": 60,
+    "measured_total_bytes_per_cell_incl_sparse_readout": 181,
+    "frontier_tokens_per_second_98k_cells_at_2p5_activity": 843,
+    "frontier_tokens_per_second_98k_cells_at_100_activity": 11.7,
+    "density_curve_source": "artifacts/native_activity_density_v1.json",
+    "density_curve_rows": [
+      {"configured_cells": 131072, "frontier_seconds_per_token_by_density": {"0.01": 0.0018, "0.05": 0.0057, "0.2": 0.0194, "1.0": 0.0854}},
+      {"configured_cells": 1048576, "frontier_seconds_per_token_by_density": {"0.01": 0.0188, "0.05": 0.1898, "0.2": 0.3338, "1.0": 0.7114}}
+    ],
+    "residency_statement": "60 B/cell floor implies >= 6 TB live state at 100B configured and ~10 TB at 170B: full-touch simulation is out of reach on one workstation; sparse event-driven residency where token cost tracks resident cells is the only path.",
+    "activity_density_policy": "every arm declares an assumed activity density used only for planning estimates and telemetry; it never enters any eligibility gate"
+  },
+  "diagnostics": {
+    "state_sample": "the exact N-float64 eligibility vector immediately before each emitted-token race",
+    "state_bytes": "little-endian IEEE-754 float64 C-order bytes; exactly 8*N bytes per sample",
+    "collision_key": "SHA-256 over the complete eligibility byte vector, grouped with allowed_cell_ids; O(1) stored per decision plus first/last 1024-byte sealed excerpts",
+    "decision_collision": "reject if exact full-vector digest repeats for the same allowed-cell set at decisions with different expected targets",
+    "state_separation_formula": "1-cosine(e_i,e_j); both-zero=0 and exactly-one-zero=1; streaming accumulation over full vectors",
+    "state_separation_aggregation": "report count, minimum, p10, median, and mean separately for Int and List[Int] pairs; persisted summaries only",
+    "state_separation_question": "exploratory, non-veto: does separation improve with N?",
+    "fading_formula": "direct eligibility retention exp(-(token_distance*5ms)/80ms); A1/A2 distance 1 token = 5 ms; non-veto regression monitor for the a012-confirmed framing fix (0.9394)",
+    "target_margin_pair_set": "every competitive TRAIN teacher position in a sealed A2 exact-replay completion",
+    "target_margin_formula": "current(expected target)-max current(other allowed target), in pA",
+    "target_margin_aggregation": "report count, minimum, p10, median, and mean; minimum must be finite and strictly positive"
+  },
+  "eligibility_gates": {
+    "completion_phase": "seal all of an arm's completions before any label, case, family, or template scoring",
+    "capacity_family": {
+      "a2_train_replay": "42/42 tasks",
+      "a2_train_cases": "126/126 cases",
+      "meaning": "fits the curriculum at this N"
+    },
+    "generalization_family": {
+      "a2_calibration_replay": "18/18 tasks",
+      "a2_calibration_cases": "54/54 cases",
+      "meaning": "transfers to opposite-template/literal calibration at this N"
+    },
+    "all_or_nothing": "an arm is eligible only if BOTH families pass together with every mandatory common gate; partial passes never count",
+    "readout_capacity_family": {
+      "fan_in_budget": "at most 64 learned synapses per output cell at every sealed decision",
+      "weight_magnitude_bound": "all weights finite and within the frozen bound {PARAM: w_bound}",
+      "structural_clocks_positive": true,
+      "resident_byte_accounting": "persisted readout bytes match 64*V*K + V*C + small per-output terms within tolerance",
+      "dense_layout_refusal": "no (N,N) or (V,N) float allocation permitted in the ladder path"
+    },
+    "feasibility_precheck": "before creating an arm claim marker, projected resident bytes and wall time from the measured curve at the declared activity density must fit the frozen envelope; refusal records cause and removes the arm without execution",
+    "mandatory_common": [
+      "protocol-integrity",
+      "source-bundle-integrity",
+      "cell-race-integrity",
+      "checkpoint-v5-immutability",
+      "checkpoint-raw-byte-immutability",
+      "completion-attempt-accounting",
+      "observation-and-strengthen-accounting",
+      "exclusive-per-arm-attempt",
+      "terminal-evidence-envelope-integrity"
+    ]
+  },
+  "ladder_interpretation": {
+    "preregistered_reading": [
+      "capacity fails below some N and passes above, generalization passes above: pure capacity defect resolving with scale; continue per ladder, no architecture change",
+      "capacity passes but generalization fails at every N including L5: fits-but-does-not-generalize; stop scaling, new hypothesis and fresh cohort",
+      "neither family passes anywhere with healthy margins: learner/state defect; inspect readout dynamics and state separation; do not resize again",
+      "integrity or accounting failure: implementation defect; new protocol version; affected cohorts spent"
+    ],
+    "rollup_authority": "the ladder roll-up record lists per-arm eligibility and is the sole ladder-level eligibility statement"
+  },
+  "execution_order": ["L1", "L2", "L3", "L6", "L4", "L5"],
+  "execution": {
+    "default_mode": "plan",
+    "execute_requires": "--execute --confirm-protocol-sha256 EXACT_RAW_SHA256 --confirm-source-bundle-sha256 EXACT_REVIEWED_SOURCE_BUNDLE_SHA256 --run-id METADATA_ID",
+    "arm_claims": "one exclusive spent marker set per arm: artifacts/.typed_composition_a013_ladder_v1_<arm>.claimed (+ .claiming staging, .invalid poison, .complete authority; POSIX fsync / Windows MoveFileExW WRITE_THROUGH no-replace semantics as a012)",
+    "failure_isolation": "an arm failing any gate is terminal for that arm only; remaining arms still run; no retry, resume, resize, or reorder exists for a claimed arm",
+    "cross_arm_immutability": "no arm outcome may alter any later arm's parameters; mid-ladder protocol byte change aborts the current arm with .invalid",
+    "runtime_backend": "native CPU sparse/event-driven path for all arms; HUMANBRAIN_DEVICE=cuda is rejected for ladder execution",
+    "production_checkout": "derive the repository root from every imported local runtime module and require this exact checkout/protocol before evidence, model construction, or native execution",
+    "source_bundle_paths": {
+      "inherits": "benchmarks/typed_composition_protocol_v1.json#source_bundle_paths (full enumerated closure re-listed at freeze)",
+      "adds": [
+        "benchmarks/typed_composition_ladder_protocol_v1.json",
+        "benchmarks/typed_composition_ladder.py",
+        "src/humanbrain/typed_composition_ladder_runner.py",
+        "docs/typed-composition-a013-ladder-v1.md"
+      ],
+      "freeze_rule": "the plan must mechanically require every imported local runtime module plus native build closure in the bundle before --execute is accepted"
+    },
+    "checkpoint_schema": "v5 with explicit cell_count and sparse readout state; v4 and v3 unsupported, no compatibility loader",
+    "resume_policy": "no resume and no second attempt of any claimed protocol/arm/cohort under any run identifier after success or failure",
+    "development_policy": "DEV-v1 remains retired; a012 artifacts remain sealed spent evidence and are never rerun or used for tuning",
+    "selection_policy": "A1 (and the retired A0) are diagnostic only; every A2 arm is a capability candidate on its own cohort; no winner selection across arms; public sealing/scoring returns diagnostics only; verified per-arm 999-terminal-summary envelopes are the sole per-arm authorities",
+    "run_hold": "No material TRAIN, calibration, or future-cohort execution is authorized by this draft or its freeze; separate authorization naming the exact frozen protocol and source-bundle hashes is required."
+  },
+  "future_regioned_variant": {
+    "generated": false,
+    "status": "placeholder-not-part-of-this-protocol",
+    "candidate_name": "typed-composition-regioned-v1",
+    "sketch": "separate encoder-region (prompt/signature ingestion) + processor-region (program-token competition and readout) circuit with region-local state, explicit inter-region projection budgets, and its own preregistered accounting",
+    "commitments": [],
+    "runner_path": null
+  }
+}

@@ -109,7 +109,7 @@ _GOLDEN_WINNERS_SHA256 = (
 #      therefore machine-portable only in its winner/feature projections, which
 #      are pinned separately and still match.
 _GOLDEN_CURRENTS_SHA256 = (
-    "dc7743b0d7ecdd2369cb684e1350dd68030b8a553fbd34ee842bbe26694a5aa9"
+    "53f7f5a6f81afb04ea501e21845eca652b6d2fd9f52c80685175f42b5b19989a"
 )
 _GOLDEN_FEATURES_SHA256 = (
     "6a802cde95066a6805a464ef00bde71958fea3083d98cb64446ffc0c1b9d2b6e"
@@ -161,9 +161,9 @@ class _CountingSink:
     def __init__(self) -> None:
         self.log: list[tuple[int, str]] = []
 
-    def __call__(self, circuit: RecurrentCellCircuit, token_id: int) -> None:
+    def __call__(self, circuit: RecurrentCellCircuit, step) -> None:
         currents = np.ascontiguousarray(circuit.output_current_pa()).tobytes()
-        self.log.append((int(token_id), sha256(currents).hexdigest()))
+        self.log.append((int(step.token_id), sha256(currents).hexdigest()))
 
     @property
     def calls(self) -> int:
@@ -848,8 +848,8 @@ def test_tp8_sink_that_drives_circuit_raises() -> None:
     circuit = _trained_circuit([3, 5] * 10)
     circuit.reset_sequence()
 
-    def driving_sink(observed_circuit: RecurrentCellCircuit, token_id: int) -> None:
-        observed_circuit.observe((token_id + 1) % observed_circuit.token_cells)
+    def driving_sink(observed_circuit: RecurrentCellCircuit, step) -> None:
+        observed_circuit.observe((step.token_id + 1) % observed_circuit.token_cells)
 
     circuit.observation_sink = driving_sink
     with pytest.raises((RuntimeError, ValueError)) as excinfo:
@@ -867,10 +867,10 @@ def test_tp8_settle_profiles_and_margins_flow_through_observation_sink() -> None
     circuit = _trained_circuit([3, 5] * 10)
     captured: list[dict] = []
 
-    def logging_sink(observed_circuit: RecurrentCellCircuit, token_id: int) -> None:
+    def logging_sink(observed_circuit: RecurrentCellCircuit, step) -> None:
         captured.append(
             {
-                "token": token_id,
+                "token": step.token_id,
                 "features": np.ascontiguousarray(
                     observed_circuit.feature_state_vector()
                 ).tobytes(),

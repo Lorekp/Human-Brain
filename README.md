@@ -34,10 +34,18 @@ The repositories do not import or modify one another.
 | SWE-bench integration | Instance-specific SQLFluff 1625 checkpoint resolved 1/1 | Proves the interface only; the checkpoint was grown from that instance's public solution trajectory |
 | Typed program decoding | TRAIN replay 3/3 labels; frozen teacher-free DEV 0/2 | Memorization, not prompt-conditioned composition |
 | Public Simple-SWE baseline | 0/90 train and 0/27 dev | Prompt-only cell baseline failed, largely through invalid syntax |
+| Million-scale CUDA text training | Post speed-waves the 1M-cell CUDA pipeline reaches 96.1 grow / 101.6 inference tok/s (from 31.4 / 32.6; ×3.06 / ×3.12), putting a full-KJV epoch near 5 h at 1M cells (≈15 h before optimization) | Measured engineering throughput ([report](benchmarks/scale_opt_gpu_report.md), [corpus plan](docs/research/cell-lm-corpus-bible.md)); the ≈5 h epoch is projected from tok/s, not a completed run |
+| CPU event-proportional runtime | L3 stepping + Seams A/B + L5 bulk marshal: event-proportional beats full-touch at every measured uniform activity ≥1% (17.9× / 3.1× / 1.5× / 1.4× at 1/2/5/20%) and sparse text-like tokens sustain 363 tok/s | Throughput only ([findings](experiments/procedural_adapter_spike/FINDINGS.md), [post-Seam-B rerun](experiments/l4_activity_matrix/FINDINGS.md)); the ≥100 tok/s gate remains sparse-regime-only (best ≥1% uniform: 15.4 tok/s) |
+| Concept tokenizer | Recurring-concept stack mined above BytePhraseTokenizer beats matched-vocab BPE-1280 in-domain: +19.3% compression (Bible), +18.4% (code); poor cross-domain transfer as predicted | Tokenizer-level compression ([findings](experiments/concept_tokens/FINDINGS.md)); not a capability result |
+| SDR union memory | G-U1 separation passes hugely (concept arms 0.40–0.61 mean cosine vs byte arms 0.16–0.19) while G-U2 decode fails in every arm — NEGATIVE_WITH_LOCALIZATION_V2, Direction B elevated | Honest negative ([protocol](docs/research/ustate-preregistration.md), [findings](experiments/ustate_probes/FINDINGS.md)); union state separates but does not decode |
+| T-ROUTE trained mapping | E1/E2/E3 falsified with mechanism localization: winners collapse to a query-independent ~170-bit static pool, and a random-span control reproduces the gated arm exactly (placement carries zero signal) | Program-grade termination of Bible-QA for fixed local connectivity ([conclusion](docs/research/t-route-program-conclusion.md)); three remaining paths need user direction |
 
 Exact protocols, hashes, hardware, and limitations live in
 [benchmark status](docs/benchmark-status.md). Results are kept even when they
 fail; a benchmark is not silently reclassified after its split is opened.
+Research-lane documents — protocols, preregistrations, verdicts, design
+inputs — are catalogued with per-document status in
+[the research index](docs/research/INDEX.md).
 
 ## Architecture
 
@@ -81,11 +89,33 @@ the release DLL by source hash. Set `HUMANBRAIN_DEVICE` to `auto`, `cpu`, or
 `cuda`, and use `HUMANBRAIN_NATIVE_CACHE` to choose an explicit native-cache
 location.
 
-The full suite currently reports four frozen-protocol freshness failures in
-`tests/test_large_scale_capability.py`: the registered large-scale protocol
-pins the prior `src/humanbrain/cells.py` source digest. That gate must be
-reviewed and deliberately re-frozen; it should not be bypassed by weakening
-the digest check.
+### Native experiment visualizer
+
+[Neural Observatory](docs/neural-observatory.md) is a GPU-rendered desktop
+workbench for the canonical `experiments/<experiment>/<arm>.json` results. It
+compares cohorts, shows uncertainty-aware outcome statistics, reports
+neuroscience-relevant structural and representation diagnostics, queries exact
+local topology from materialized or procedural networks, tails live activity,
+and replays complete experiment traces from disk. Billion-neuron configurations
+remain inspectable without creating one UI object per neuron, while long traces
+remain seekable without retaining every decoded frame in memory.
+
+```powershell
+uv --cache-dir .uv-cache pip install --python .venv\Scripts\python.exe -e ".[visualizer]"
+& ".venv\Scripts\python.exe" -m humanbrain.visualizer.cli experiments --experiment visualizer_demo
+```
+
+The frozen-protocol gates are re-frozen deliberately after source-changing
+merges, never bypassed by weakening digest checks. The Gate-3 procedural
+binding was regenerated against the post-merge sources (protocol pin
+`f5d83856…`). The large-scale-capability protocol
+(`benchmarks/large_scale_capability_protocol_v1.json`) still pins the
+pre-campaign `cells.py` and related sources, so
+`tests/test_large_scale_capability.py` reports freshness failures until that
+preregistered protocol is reviewed and deliberately re-frozen. Separately,
+the Simple-SWE freeze/reveal gates pin their sandbox to exactly
+python-3.11 and fail by design on hosts whose interpreter is a different
+minor version.
 
 ## Research lanes
 
@@ -134,10 +164,45 @@ interfaces work but held-out composition does not.
 - [Layer-0 scalar plumbing](docs/cell-program-layer0.md) is implemented but
   has not been executed or scored against its public composition definitions.
 - [Typed composition A012](docs/typed-composition-a012-v1.md) specifies the
-  unexecuted incompatible v4 A0/A1/A2 increment; the obsolete Layer-1 v3
-  TRAIN/DEV loaders and CLIs are retired, with their exact protocols,
-  artifacts, evidence, and reports kept as historical records anchored to
-  their original commits.
+  v4 A0/A1/A2 increment; the obsolete Layer-1 v3 TRAIN/DEV loaders and CLIs
+  are retired, with their exact protocols, artifacts, evidence, and reports
+  kept as historical records anchored to their original commits.
+- [Typed composition A012 sealed result](docs/typed-composition-a012-v1-results.md)
+  records the one-shot execution: all 16 production integrity gates passed;
+  prompt-last framing raised prompt-trace retention ~13,000x (0.00007 to
+  0.939), but A2 was ineligible at 128 cells (TRAIN replay 40/42,
+  calibration replay 0/18). The cohort is permanently spent.
+- [A013 scale ladder](docs/typed-composition-a013-ladder-v1.md) (draft)
+  preregisters a dose-response ladder — N=128 bridge arm with local
+  three-factor readout, arms spanning 1e6 to max-feasible configured cells,
+  an A1 framing control, capacity gates reported separately from
+  generalization gates, and a run hold until sizes are frozen from measured
+  cost curves. Ridge readout is retired for large arms: it is O(N^2)
+  memory / O(N^3) solve and was already excluded at 6,144 cells.
+
+## Research directions
+
+- [Biology-of-learning fusion survey](docs/research/a013-biology-learning-fusion.md)
+  maps real plasticity mechanisms onto the implemented equations and finds the
+  sparse three-factor rule already in the codebase (dormant during the sealed
+  run). Ranked proposals: error-gated (RPE-style) three-factor plasticity,
+  rest-phase replay consolidation, homeostatic margin normalization with
+  critical-period scheduling — each with a decisive preregistrable experiment.
+- Regioned architecture, representation choice, teaching-process matrix, and
+  the cognitive-property roadmap are design inputs on master
+  (`docs/research/a013-*.md`; catalogued in
+  [the research index](docs/research/INDEX.md)). The first executed waves off
+  this line are recorded honestly: U-STATE and APICAL-AND week-1 verdicts are
+  negative with localization, and the T-ROUTE trained-mapping family is
+  falsified in all three tested third-factor forms
+  ([program conclusion](docs/research/t-route-program-conclusion.md)).
+- [Indicator assessment instrument](docs/indicator-assessment/RUBRIC.md)
+  tracks architectural similarity to consciousness-science indicator sets
+  (RPT/GWT/HOT/AST/PP/AE families) across model versions using strictly
+  categorical levels — ABSENT / PARTIAL / PRESENT / UNCERTAIN — as an
+  early-warning review tool. It produces no numeric scores and makes no
+  claims about subjective experience; indicator presence is evidence about
+  architecture, not about consciousness.
 
 ## Data and provenance
 
@@ -152,6 +217,9 @@ They are point-cell prototypes, not multicompartment reconstructions.
   shortcuts.
 - [Benchmark status](docs/benchmark-status.md) — authoritative result index and
   claim boundaries.
+- [Research index](docs/research/INDEX.md) — every research document with a
+  one-line description and status (current / superseded / falsified-negative /
+  historical).
 - [`src/humanbrain`](src/humanbrain) — Python orchestration and cell/program
   interfaces.
 - [`src/humanbrain/_native_src`](src/humanbrain/_native_src) — deterministic

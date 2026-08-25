@@ -1,0 +1,25 @@
+{
+  "label": "wave3_post",
+  "results": [
+    {
+      "bootstrap_digest": "43dd64530739a3d53d81d16b2f9caf5987e4c5a9928ec58946a4e43300b386e1",
+      "cells": 128,
+      "inference_digest": "a7893de3874430a398600c13d13a70f12e977bc81e44fc00af0ad1f550c7967e",
+      "local_updates": 24,
+      "structural_deletions": 0,
+      "structural_recruitments": 72,
+      "total_spike_events": 3160,
+      "training_digest": "53bef3cbe382b379e8d14d063687d0b181c409ca1c4f7ea89f9027c7b39fcdf7"
+    },
+    {
+      "bootstrap_digest": "9ee69c0fc64c3d30507884c152dfc332376f743fce6d95abe41c1bbbc770f0b6",
+      "cells": 1000000,
+      "inference_digest": "85125c04c43003a225babf81bea89bf8549d7442de5c5e4f3a9ced1f8a88831f",
+      "local_updates": 24,
+      "structural_deletions": 0,
+      "structural_recruitments": 72,
+      "total_spike_events": 320,
+      "training_digest": "abb7ec16b42f2c8fbbd0ccb7303d585f8b526d6fe093dfc3a56d009ce11825bc"
+    }
+  ]
+}

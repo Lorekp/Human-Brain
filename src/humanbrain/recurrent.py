@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections import deque
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import math
@@ -22,6 +23,19 @@ from humanbrain.recurrent_state import RecurrentCellSynapseState
 from humanbrain.topology import RECURRENT_TOPOLOGIES, build_recurrent_targets
 
 READOUT_LEARNING_RULES = frozenset({"ridge", "three_factor", "sparse_three_factor"})
+
+
+def _normalized_token_ids(token_ids: Sequence[int]) -> list[int]:
+    """Convert a token sequence to exact python ints without per-item churn."""
+    if isinstance(token_ids, np.ndarray):
+        if token_ids.ndim == 1 and token_ids.dtype.kind in "iu":
+            return token_ids.tolist()
+        return [int(token_id) for token_id in token_ids]
+    if isinstance(token_ids, list) and all(
+        type(token_id) is int for token_id in token_ids
+    ):
+        return token_ids
+    return [int(token_id) for token_id in token_ids]
 
 # R0 multi-timescale eligibility-trace bank (frozen protocol §1.1):
 # geometric span 80 ms -> 4 s at token_interval_ms = 5 gives readout memory
@@ -339,6 +353,16 @@ class RecurrentStep:
 
 
 @dataclass(frozen=True)
+class RecurrentDynamicsSample:
+    """A bounded, read-only sample of live reservoir state."""
+
+    gids: tuple[int, ...]
+    voltage_relative_mv: tuple[float, ...]
+    synaptic_current_pa: tuple[float, ...]
+    eligibility: tuple[float, ...]
+
+
+@dataclass(frozen=True)
 class RecurrentRace:
     winner: int
     spike_time_ms: float
@@ -371,11 +395,15 @@ class RecurrentCellCircuit:
         token_cells: int,
         config: RecurrentCircuitConfig | None = None,
         cell_parameters: AllenGlif5Parameters | None = None,
+        observation_sink: (
+            Callable[["RecurrentCellCircuit", RecurrentStep], None] | None
+        ) = None,
     ) -> None:
         if token_cells < 2:
             raise ValueError("a circuit needs at least two token cells")
         self.token_cells = int(token_cells)
         self.config = config or RecurrentCircuitConfig()
+        self._observation_sink = observation_sink
         self.active_reservoir_cells = (
             self.config.active_reservoir_cells or self.config.reservoir_cells
         )
@@ -1218,22 +1246,44 @@ class RecurrentCellCircuit:
         # boundary update runs, then the flat feature buffer is current for
         # strengthen/race/inspection.
         self._advance_feature_boundary(token)
+        step = RecurrentStep(
+            token_id=token,
+            reservoir_spikes=spike_total,
+            simulated_steps=self._token_steps,
+            biological_time_ms=self._token_steps * self.cell_parameters.dt_ms,
+        )
         if self._observation_sink is not None:
-            # R0-c Thread-1: fire AFTER the family boundary update so the
+            # R0-c Thread-1: fired AFTER the family boundary update so the
             # observer reads the same post-observe state any strengthen/race
             # consumer would see. The sink must not drive the circuit (no
             # observe/race/reset calls inside the callback); T-P8 makes that
             # contract enforced rather than documented.
             self._sink_active = True
             try:
-                self._observation_sink(self, token)
+                self._observation_sink(self, step)
             finally:
                 self._sink_active = False
-        return RecurrentStep(
-            token_id=token,
-            reservoir_spikes=spike_total,
-            simulated_steps=self._token_steps,
-            biological_time_ms=self._token_steps * self.cell_parameters.dt_ms,
+        return step
+
+    def capture_dynamics(self, gids: Sequence[int]) -> RecurrentDynamicsSample:
+        """Copy selected live state without exposing full population arrays."""
+        selected = tuple(gids)
+        if any(
+            type(gid) is not int or not 0 <= gid < self.active_reservoir_cells
+            for gid in selected
+        ):
+            raise ValueError("sample gids must be exact integers in the active reservoir")
+        indices = np.asarray(selected, dtype=np.intp)
+        state = self._reservoir.state
+        return RecurrentDynamicsSample(
+            gids=selected,
+            voltage_relative_mv=tuple(
+                float(value) for value in state.voltage_relative_mv[indices]
+            ),
+            synaptic_current_pa=tuple(
+                float(value) for value in self._synaptic_current_pa[indices]
+            ),
+            eligibility=tuple(float(value) for value in self._eligibility[indices]),
         )
 
     def strengthen(self, target_token_id: int) -> None:
@@ -1374,21 +1424,90 @@ class RecurrentCellCircuit:
         self._learning_frozen = True
 
     def grow_sequence(self, token_ids: Sequence[int], epochs: int = 1) -> None:
-        """Replay a sequence and grow synapses from cell eligibility traces."""
+        """Replay a sequence and grow synapses from cell eligibility traces.
+
+        On the CUDA backend the loop is double-buffered: the next token's
+        kernel is enqueued before the current token's readout learning runs,
+        so host-side strengthen work and the D2H eligibility staging overlap
+        kernel execution. The consumed eligibility bytes are bit-identical
+        to the synchronous path, so the training trajectory is unchanged.
+        Token ids are validated up front (the synchronous path rejects an
+        out-of-range id mid-sequence instead; valid inputs are unaffected).
+        """
         if self._learning_frozen:
             raise RuntimeError("readout learning is frozen")
-        ids = [int(token_id) for token_id in token_ids]
+        ids = _normalized_token_ids(token_ids)
         if len(ids) < 2:
             raise ValueError("growth sequence needs at least two tokens")
         if epochs < 1:
             raise ValueError("epochs must be positive")
+        self._validate_token_range(ids)
+        pipeline_available = callable(
+            getattr(self._native_kernel, "observe_async", None)
+        ) and bool(getattr(self._native_kernel, "async_pipeline_active", False))
         for _ in range(epochs):
             self.reset_sequence()
-            for index in range(len(ids) - 1):
-                self.observe(ids[index])
-                self.strengthen(ids[index + 1])
+            if pipeline_available:
+                self._grow_sequence_pipelined(ids)
+            else:
+                for index in range(len(ids) - 1):
+                    self.observe(ids[index])
+                    self.strengthen(ids[index + 1])
         if self.config.readout_learning_rule == "ridge":
             self._consolidate_readout()
+
+    def _grow_sequence_pipelined(self, ids: list[int]) -> None:
+        """Grow one epoch keeping the GPU saturated ahead of host learning.
+
+        Submissions run up to ``_PIPELINE_DEPTH - 1`` tokens ahead of the
+        host, so the device never drains between cooperative launches: the
+        next kernels are already queued while the current one executes and
+        while readout learning works on the host. Collected eligibility
+        bytes are identical to the synchronous order, so learning sees the
+        same trajectory.
+        """
+        total = len(ids)
+        lookahead = self._native_kernel._PIPELINE_DEPTH - 1
+        submit = self._observe_submit
+        inflight: deque[tuple[int, int]] = deque([(ids[0], submit(ids[0]))])
+        for index in range(total - 1):
+            while (
+                len(inflight) < lookahead
+                and index + len(inflight) < total - 1
+            ):
+                token_id = ids[index + len(inflight)]
+                inflight.append((token_id, submit(token_id)))
+            token_id, handle = inflight.popleft()
+            self._observe_collect(token_id, handle)
+            self.strengthen(ids[index + 1])
+        while inflight:
+            self._observe_collect(*inflight.popleft())
+
+    def _observe_submit(self, token_id: int) -> int:
+        token = int(token_id)
+        if not 0 <= token < self.token_cells:
+            raise ValueError("token id outside output-cell population")
+        return self._native_kernel.observe_async(token)
+
+    def _observe_collect(self, token_id: int, handle: int) -> RecurrentStep:
+        spike_total = self._native_kernel.collect(handle)
+        self._observed_tokens += 1
+        step = RecurrentStep(
+            token_id=int(token_id),
+            reservoir_spikes=spike_total,
+            simulated_steps=self._token_steps,
+            biological_time_ms=self._token_steps * self.cell_parameters.dt_ms,
+        )
+        if self._observation_sink is not None:
+            self._observation_sink(self, step)
+        return step
+
+    def _validate_token_range(self, ids: list[int]) -> None:
+        if not ids:
+            return
+        array = np.fromiter(ids, dtype=np.int64, count=len(ids))
+        if array.min() < 0 or array.max() >= self.token_cells:
+            raise ValueError("token id outside output-cell population")
 
     def output_current_pa(self) -> np.ndarray:
         """Read the current delivered by all learned output synapses."""

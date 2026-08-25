@@ -1,0 +1,113 @@
+{
+  "label": "wave3-bitmapfix",
+  "protocol_mirror": {
+    "eligibility_tau_ms": 40.0,
+    "input_current_pa": 4000.0,
+    "input_fanout": 32,
+    "input_pulse_ms": 1.5,
+    "readout_activity_decay": 0.99,
+    "readout_fan_in": 64,
+    "readout_homeostatic_rate": 0.05,
+    "readout_learning_rule": "sparse_three_factor",
+    "readout_structural_grace": 32,
+    "readout_structural_interval": 1,
+    "readout_turnover_probability": 1.0,
+    "recurrent_current_pa": 325.0,
+    "recurrent_fanout": 6,
+    "recurrent_topology": "uniform_no_self",
+    "seed": 2317,
+    "token_cells": 256,
+    "token_interval_ms": 5.0
+  },
+  "results": [
+    {
+      "active_cells": 131072,
+      "backend": "cuda",
+      "bootstrap_seconds": 0.1436447,
+      "bootstrap_spike_events": 141,
+      "cells": 131072,
+      "construction_seconds": 0.831454,
+      "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+      "device_persistent_array_mib": 17.328182220458984,
+      "device_to_host_bytes_per_token": 1048584,
+      "gpu_memory_used_mib_after": 2747.0,
+      "gpu_memory_used_mib_before": 2557.0,
+      "host_persistent_array_mib": 11.04888916015625,
+      "host_to_device_bytes_per_token": 0,
+      "inference": {
+        "end_to_end_tokens_per_second": 520.597352925147,
+        "kernel_seconds": 0.09917635226249695,
+        "kernel_tokens_per_second": 645.3151234137625,
+        "mean_spikes_per_token": 2.71875,
+        "observe_seconds": 0.1137659,
+        "race_seconds": 0.0090931,
+        "reservoir_spike_events": 174,
+        "tokens": 64,
+        "wall_seconds": 0.1229357
+      },
+      "integration_steps_per_token": 100,
+      "responsive_eligibility_cells": 169,
+      "training": {
+        "applied_teaching_updates": 64,
+        "end_to_end_tokens_per_second": 479.6048056401525,
+        "kernel_seconds": 0.10263539147377014,
+        "kernel_tokens_per_second": 623.5665795297917,
+        "mean_spikes_per_token": 2.65625,
+        "observe_seconds": 0.1167922,
+        "reservoir_spike_events": 170,
+        "strengthen_seconds": 0.016558,
+        "structural_deletions": 0,
+        "structural_recruitments": 64,
+        "tokens": 64,
+        "wall_seconds": 0.1334432
+      }
+    },
+    {
+      "active_cells": 1000000,
+      "backend": "cuda",
+      "bootstrap_seconds": 0.6310015,
+      "bootstrap_spike_events": 225,
+      "cells": 1000000,
+      "construction_seconds": 1.5468324,
+      "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+      "device_persistent_array_mib": 131.99599075317383,
+      "device_to_host_bytes_per_token": 8000008,
+      "gpu_memory_used_mib_after": 2891.0,
+      "gpu_memory_used_mib_before": 2721.0,
+      "host_persistent_array_mib": 83.97222900390625,
+      "host_to_device_bytes_per_token": 0,
+      "inference": {
+        "end_to_end_tokens_per_second": 107.17257480603857,
+        "kernel_seconds": 0.5272478070259095,
+        "kernel_tokens_per_second": 121.38504731012563,
+        "mean_spikes_per_token": 2.515625,
+        "observe_seconds": 0.5817687,
+        "race_seconds": 0.015223,
+        "reservoir_spike_events": 161,
+        "tokens": 64,
+        "wall_seconds": 0.5971677
+      },
+      "integration_steps_per_token": 100,
+      "responsive_eligibility_cells": 194,
+      "training": {
+        "applied_teaching_updates": 64,
+        "end_to_end_tokens_per_second": 102.05767406733638,
+        "kernel_seconds": 0.5462946543693542,
+        "kernel_tokens_per_second": 117.15289448307338,
+        "mean_spikes_per_token": 3.03125,
+        "observe_seconds": 0.6006988,
+        "reservoir_spike_events": 194,
+        "strengthen_seconds": 0.026207,
+        "structural_deletions": 0,
+        "structural_recruitments": 64,
+        "tokens": 64,
+        "wall_seconds": 0.6270964
+      }
+    }
+  ],
+  "timing": {
+    "bootstrap_events": 64,
+    "timed_tokens": 64,
+    "warmup_tokens": 4
+  }
+}

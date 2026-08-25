@@ -1,0 +1,182 @@
+{
+  "benchmark": "scale-opt-cpu-golden-v1",
+  "note": "Bit-exactness oracle: canonical snapshot digests captured on the baseline implementation. Optimizations must reproduce every digest exactly (struct-packed resident/event/spike bits + counters).",
+  "scenarios": [
+    {
+      "resident_capacity": 1000,
+      "density_target": 0.01,
+      "window_steps": 20000,
+      "state_digest_sha256": "136727c37500ab7932cf5e71560a710f8548d6bab0baf9a4969227cca848612c",
+      "final_residents": 10,
+      "cell_steps": 192,
+      "delivered_events": 10,
+      "generated_edges": 8,
+      "spike_events": 1
+    },
+    {
+      "resident_capacity": 1000,
+      "density_target": 0.05,
+      "window_steps": 20000,
+      "state_digest_sha256": "f2cc9917187761a1197c19905fb5478b3fd6092bb1d669dafa820879ffdb5964",
+      "final_residents": 50,
+      "cell_steps": 8000960,
+      "delivered_events": 50,
+      "generated_edges": 40,
+      "spike_events": 5
+    },
+    {
+      "resident_capacity": 1000,
+      "density_target": 0.2,
+      "window_steps": 20000,
+      "state_digest_sha256": "504e154b379cd3b5c0cc72026eb41ed1fe051c1be13a74efd852f2efcdafbc18",
+      "final_residents": 200,
+      "cell_steps": 38003840,
+      "delivered_events": 200,
+      "generated_edges": 160,
+      "spike_events": 20
+    },
+    {
+      "resident_capacity": 1000,
+      "density_target": 1.0,
+      "window_steps": 20000,
+      "state_digest_sha256": "a5fa5432fdee82fc63ad6a4695e8b8f035ac27f6a6963fb021aa50caf99e414b",
+      "final_residents": 1000,
+      "cell_steps": 198019200,
+      "delivered_events": 1000,
+      "generated_edges": 800,
+      "spike_events": 100
+    },
+    {
+      "resident_capacity": 10000,
+      "density_target": 0.01,
+      "window_steps": 10000,
+      "state_digest_sha256": "0867b14a043070e913ace07b6cdbf1b9158b4ced10334545684464ea7bc230c2",
+      "final_residents": 100,
+      "cell_steps": 9001920,
+      "delivered_events": 100,
+      "generated_edges": 80,
+      "spike_events": 10
+    },
+    {
+      "resident_capacity": 10000,
+      "density_target": 0.05,
+      "window_steps": 10000,
+      "state_digest_sha256": "b49ec4652eb88146179a9366d404646078abe6abea1262d5f5132cfba6c2ad85",
+      "final_residents": 500,
+      "cell_steps": 49009600,
+      "delivered_events": 500,
+      "generated_edges": 400,
+      "spike_events": 50
+    },
+    {
+      "resident_capacity": 10000,
+      "density_target": 0.2,
+      "window_steps": 10000,
+      "state_digest_sha256": "b21c692100b5213961eaeabc2272c46f725728504ab8b928c934a92174b5d54a",
+      "final_residents": 2000,
+      "cell_steps": 199038400,
+      "delivered_events": 2000,
+      "generated_edges": 1600,
+      "spike_events": 200
+    },
+    {
+      "resident_capacity": 10000,
+      "density_target": 1.0,
+      "window_steps": 10000,
+      "state_digest_sha256": "ccaaccba190b6b8382900445ed0b5f2ec0d8feea2d3b0f9bd6e0a7403c36f2fd",
+      "final_residents": 10000,
+      "cell_steps": 999192000,
+      "delivered_events": 10000,
+      "generated_edges": 8000,
+      "spike_events": 1000
+    },
+    {
+      "resident_capacity": 100000,
+      "density_target": 0.01,
+      "window_steps": 4000,
+      "state_digest_sha256": "0c1c93762a57dea4c162806a8053540c8ad4dc288f40e0b648e5b4aa9b7a2a0e",
+      "final_residents": 1000,
+      "cell_steps": 39619200,
+      "delivered_events": 1000,
+      "generated_edges": 800,
+      "spike_events": 100
+    },
+    {
+      "resident_capacity": 100000,
+      "density_target": 0.05,
+      "window_steps": 4000,
+      "state_digest_sha256": "ef4d6c93b7d4b334227976931e5bf3a12977821eab31b8ca82a8ef595a215ddc",
+      "final_residents": 5000,
+      "cell_steps": 199696000,
+      "delivered_events": 5000,
+      "generated_edges": 4000,
+      "spike_events": 500
+    },
+    {
+      "resident_capacity": 100000,
+      "density_target": 0.2,
+      "window_steps": 4000,
+      "state_digest_sha256": "d4e337d0bb0c8f07fbb72bd6cc58d7b3a0bd09966dd7635f35ffd8bf4ed3c267",
+      "final_residents": 20000,
+      "cell_steps": 799984000,
+      "delivered_events": 20000,
+      "generated_edges": 16000,
+      "spike_events": 2000
+    },
+    {
+      "resident_capacity": 100000,
+      "density_target": 1.0,
+      "window_steps": 4000,
+      "state_digest_sha256": "4a931b1e00c36b27f087e69748b076b7279c3bea82e2edc059fc4f537e758e3a",
+      "final_residents": 99994,
+      "cell_steps": 4000562005,
+      "delivered_events": 100000,
+      "generated_edges": 80000,
+      "spike_events": 10000
+    },
+    {
+      "resident_capacity": 1000000,
+      "density_target": 0.01,
+      "window_steps": 2000,
+      "state_digest_sha256": "c739f5c3e818c3b7db062a72d60b4bc990bc41e0780fb9d99d01051c4aaff117",
+      "final_residents": 10000,
+      "cell_steps": 199992000,
+      "delivered_events": 10000,
+      "generated_edges": 8000,
+      "spike_events": 1000
+    },
+    {
+      "resident_capacity": 1000000,
+      "density_target": 0.05,
+      "window_steps": 2000,
+      "state_digest_sha256": "cce2bda8bc35bb56cfd9d1bb5ce4b0bca316af196d1e5b71c553ec829ba64788",
+      "final_residents": 50000,
+      "cell_steps": 1000360000,
+      "delivered_events": 50000,
+      "generated_edges": 40000,
+      "spike_events": 5000
+    },
+    {
+      "resident_capacity": 1000000,
+      "density_target": 0.2,
+      "window_steps": 2000,
+      "state_digest_sha256": "f8bc562f87fdff0b21f43bfac1ca172ba9062b97c3187c0d073708e10cb5d958",
+      "final_residents": 199963,
+      "cell_steps": 4001322472,
+      "delivered_events": 200000,
+      "generated_edges": 160000,
+      "spike_events": 20000
+    },
+    {
+      "resident_capacity": 1000000,
+      "density_target": 1.0,
+      "window_steps": 2000,
+      "state_digest_sha256": "f5046952f477ff7065dc4303502f07c9c3b1899a9964788c9c6cb15b2d2806c6",
+      "final_residents": 999423,
+      "cell_steps": 20001754913,
+      "delivered_events": 1000000,
+      "generated_edges": 800000,
+      "spike_events": 100000
+    }
+  ]
+}
