@@ -848,8 +848,8 @@ def test_tp8_sink_that_drives_circuit_raises() -> None:
     circuit = _trained_circuit([3, 5] * 10)
     circuit.reset_sequence()
 
-    def driving_sink(observed_circuit: RecurrentCellCircuit, token_id: int) -> None:
-        observed_circuit.observe((token_id + 1) % observed_circuit.token_cells)
+    def driving_sink(observed_circuit: RecurrentCellCircuit, step) -> None:
+        observed_circuit.observe((step.token_id + 1) % observed_circuit.token_cells)
 
     circuit.observation_sink = driving_sink
     with pytest.raises((RuntimeError, ValueError)) as excinfo:
@@ -867,10 +867,10 @@ def test_tp8_settle_profiles_and_margins_flow_through_observation_sink() -> None
     circuit = _trained_circuit([3, 5] * 10)
     captured: list[dict] = []
 
-    def logging_sink(observed_circuit: RecurrentCellCircuit, token_id: int) -> None:
+    def logging_sink(observed_circuit: RecurrentCellCircuit, step) -> None:
         captured.append(
             {
-                "token": token_id,
+                "token": step.token_id,
                 "features": np.ascontiguousarray(
                     observed_circuit.feature_state_vector()
                 ).tobytes(),
