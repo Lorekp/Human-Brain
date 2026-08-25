@@ -112,7 +112,10 @@ binding was regenerated against the post-merge sources (protocol pin
 (`benchmarks/large_scale_capability_protocol_v1.json`) still pins the
 pre-campaign `cells.py` and related sources, so
 `tests/test_large_scale_capability.py` reports freshness failures until that
-preregistered protocol is reviewed and deliberately re-frozen.
+preregistered protocol is reviewed and deliberately re-frozen. Separately,
+the Simple-SWE freeze/reveal gates pin their sandbox to exactly
+python-3.11 and fail by design on hosts whose interpreter is a different
+minor version.
 
 ## Research lanes
 
