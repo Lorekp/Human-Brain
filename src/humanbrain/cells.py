@@ -591,6 +591,9 @@ class TwoCompartmentGLIF5(AdaptiveGlifPopulation):
         # Per-arm constants precomputed once so every consumer sees the same bits.
         self._apical_scale = np.ascontiguousarray((dt / tau_vector)[:, None])
         self._gate_drop = np.ascontiguousarray(1.0 - gate_vector)
+        self._gate_drop_per_cell = np.ascontiguousarray(
+            np.repeat(self._gate_drop, cell_count)
+        )
         self.apical_voltage_mv = np.zeros((self.arm_count, cell_count), dtype=np.float64)
         self.gate_remaining = np.zeros((self.arm_count, cell_count), dtype=np.int32)
         self._apical_drive = np.zeros((self.arm_count, cell_count), dtype=np.float64)
@@ -672,11 +675,19 @@ class TwoCompartmentGLIF5(AdaptiveGlifPopulation):
         return current
 
     def step(self, injected_current_pa) -> np.ndarray:
-        """Advance every arm by one fitted 0.05 ms step; returns spike mask."""
+        """Advance every arm by one fitted 0.05 ms step; returns spike mask.
+
+        All somatic arithmetic runs on flat contiguous views with the exact
+        operation structure of ``glif_step_collect``; refractory cells compute
+        discarded candidate values and commit nothing. The per-element
+        threshold multiplier is exactly 1.0 wherever the gate is closed, so
+        the crossing test is bit-identical to the native kernel flag-off.
+        """
         current = self._prepare_current(injected_current_pa)
         state = self.state
         constants = self.constants
         parameters = self.parameters
+        n = self.arm_count * self.cell_count
 
         # (a) apical Euler integration (frozen literal update order)
         delta = self._apical_drive - self.apical_voltage_mv
@@ -689,76 +700,80 @@ class TwoCompartmentGLIF5(AdaptiveGlifPopulation):
         )
         self.gate_remaining[opening] = self.gate_steps
 
-        # (c) soma: bit-exact replication of glif_step_collect for the
-        # non-refractory cells; refractory cells only decrement.
-        refractory = state.refractory_steps
-        resting = refractory == 0
+        # (c) soma over flat views; only resting cells commit.
+        voltage = state.voltage_relative_mv.reshape(-1)
+        threshold_voltage_flat = state.threshold_voltage_mv.reshape(-1)
+        threshold_spike_flat = state.threshold_spike_mv.reshape(-1)
+        after_flat = state.after_spike_currents_pa.reshape(n, -1)
+        current_flat = current.reshape(-1)
+        refractory_flat = state.refractory_steps.reshape(-1)
+
+        resting = refractory_flat == 0
         blocked = ~resting
         if blocked.any():
-            refractory[blocked] -= 1
-        indices = np.nonzero(resting)
-        if indices[0].size:
-            rows, cols = indices
-            previous_voltage = state.voltage_relative_mv[indices]
-            after = state.after_spike_currents_pa[indices]
-            after_sum = after[:, 0] + after[:, 1]
-            total_current = current[indices] + after_sum
-            leak = parameters.leak_ns * previous_voltage
-            voltage_delta = constants.voltage_step_scale * (total_current - leak)
-            next_voltage = previous_voltage + voltage_delta
+            refractory_flat[blocked] -= 1
 
-            beta = total_current * constants.threshold_beta_scale
-            voltage_term = constants.threshold_voltage_factor * previous_voltage
-            beta_term = constants.threshold_beta_factor * beta
-            decayed_threshold = constants.threshold_exp_decay * (
-                state.threshold_voltage_mv[indices]
-            )
-            next_voltage_threshold = decayed_threshold + voltage_term + beta_term
-            next_spike_threshold = (
-                state.threshold_spike_mv[indices] * constants.spike_threshold_decay
-            )
+        after_sum = after_flat[:, 0] + after_flat[:, 1]
+        total_current = current_flat + after_sum
+        leak = parameters.leak_ns * voltage
+        voltage_delta = constants.voltage_step_scale * (total_current - leak)
+        next_voltage = voltage + voltage_delta
 
-            total_threshold = (
-                parameters.threshold_inf_relative_mv
-                + next_voltage_threshold
-                + next_spike_threshold
-            )
-            multiplier = np.ones(total_threshold.shape, dtype=np.float64)
-            open_here = self.gate_remaining[indices] > 0
-            if open_here.any():
-                multiplier[open_here] = self._gate_drop[rows[open_here]]
-            crossed = next_voltage > total_threshold * multiplier
+        beta = total_current * constants.threshold_beta_scale
+        voltage_term = constants.threshold_voltage_factor * voltage
+        beta_term = constants.threshold_beta_factor * beta
+        decayed_threshold = constants.threshold_exp_decay * threshold_voltage_flat
+        next_voltage_threshold = decayed_threshold + voltage_term + beta_term
+        next_spike_threshold = threshold_spike_flat * constants.spike_threshold_decay
 
-            state.voltage_relative_mv[indices] = next_voltage
-            state.threshold_voltage_mv[indices] = next_voltage_threshold
-            state.threshold_spike_mv[indices] = next_spike_threshold
-            state.after_spike_currents_pa[indices] = (
-                after * constants.after_spike_decay[None, :]
+        total_threshold = (
+            parameters.threshold_inf_relative_mv
+            + next_voltage_threshold
+            + next_spike_threshold
+        )
+        multiplier = np.where(
+            self.gate_remaining.reshape(-1) > 0, self._gate_drop_per_cell, 1.0
+        )
+        crossed = (next_voltage > total_threshold * multiplier) & resting
+
+        # commit candidates for resting cells only
+        voltage[...] = np.where(resting, next_voltage, voltage)
+        threshold_voltage_flat[...] = np.where(
+            resting, next_voltage_threshold, threshold_voltage_flat
+        )
+        threshold_spike_flat[...] = np.where(
+            resting, next_spike_threshold, threshold_spike_flat
+        )
+        decayed_after_0 = after_flat[:, 0] * constants.after_spike_decay[0]
+        decayed_after_1 = after_flat[:, 1] * constants.after_spike_decay[1]
+        after_flat[:, 0][...] = np.where(resting, decayed_after_0, after_flat[:, 0])
+        after_flat[:, 1][...] = np.where(resting, decayed_after_1, after_flat[:, 1])
+
+        spike_indices = np.flatnonzero(crossed)
+        if spike_indices.size:
+            reset_voltage = (
+                parameters.voltage_reset_scale * next_voltage[spike_indices]
+                + parameters.voltage_reset_offset_mv
             )
-            mask = self._spike_mask
-            mask.fill(False)
-            mask[indices] = crossed
-            crossed_indices = (rows[crossed], cols[crossed])
-            if crossed_indices[0].size:
-                state.voltage_relative_mv[crossed_indices] = (
-                    parameters.voltage_reset_scale * next_voltage[crossed]
-                    + parameters.voltage_reset_offset_mv
-                )
-                # Native order: the decay above is committed first, and the
-                # spike reset reads the ALREADY-DECAYED after-current.
-                after_crossed = state.after_spike_currents_pa[crossed_indices]
-                state.after_spike_currents_pa[crossed_indices] = (
-                    constants.after_spike_amplitudes_pa[None, :]
-                    + after_crossed * constants.after_spike_cut_decay[None, :]
-                )
-                state.threshold_spike_mv[crossed_indices] = (
-                    next_spike_threshold[crossed]
-                    * constants.spike_cut_threshold_decay
-                    + parameters.threshold_spike_increment_mv
-                )
-                refractory[crossed_indices] = parameters.spike_cut_steps
-        else:
-            self._spike_mask.fill(False)
+            voltage[spike_indices] = reset_voltage
+            # Native order: the decay above is committed first, and the spike
+            # reset reads the ALREADY-DECAYED after-current.
+            crossed_after = after_flat[spike_indices]
+            after_flat[spike_indices, 0] = (
+                constants.after_spike_amplitudes_pa[0]
+                + crossed_after[:, 0] * constants.after_spike_cut_decay[0]
+            )
+            after_flat[spike_indices, 1] = (
+                constants.after_spike_amplitudes_pa[1]
+                + crossed_after[:, 1] * constants.after_spike_cut_decay[1]
+            )
+            threshold_spike_flat[spike_indices] = (
+                next_spike_threshold[spike_indices]
+                * constants.spike_cut_threshold_decay
+                + parameters.threshold_spike_increment_mv
+            )
+            refractory_flat[spike_indices] = parameters.spike_cut_steps
+        self._spike_mask[...] = crossed.reshape(self.arm_count, self.cell_count)
 
         # (d) gate clock decrement
         self.gate_remaining -= self.gate_remaining > 0

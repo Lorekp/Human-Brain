@@ -1,0 +1,7 @@
+{
+  "n_cells": 1024,
+  "tokens_checked": 192,
+  "bit_exact": true,
+  "divergence": [],
+  "native_spikes_seen": 105053
+}
