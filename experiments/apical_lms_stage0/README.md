@@ -65,12 +65,15 @@ membrane cannot host the recursion → B′ dies at Stage 0 (stop-on-failure).
       0.85 gate and DendriCL's abstract-compartment 0.873 @ d=10. Whether it
       clears the gate with cohort-scale training rows is precisely what the
       licensed corpus leg decides.
-- [ ] **Corpus cohort leg: BLOCKED** until the sibling retro-probe (P-A step −1)
-      commits its verdict. Then:
-      `python experiments/apical_lms_stage0/run_stage0.py --cohort \
-       --license-token retro-probe:<VERDICT> --train-episodes T --test-episodes E`
-      Cohort sizing to be set at licensing time; stop-on-failure applies
-      (below-gate exit code 1 already exercised by the fixture legs).
+- [x] **Corpus cohort leg FIRED (2026-08-25) — VERDICT: FAIL (terminal).**
+      Fired under `--license-token retro-probe:PASS` (commit d999ed3) at
+      640 train / 160 test episodes with the AMENDED dual-layer gate
+      (14cc57b): layer (a) probe R² = 0.837981 < 0.85 → FAIL (stop-on-failure,
+      exit code 1); layer (b) hosting relationship HELD at all four swept
+      points (decoded ≥ abstract-ref task R²). No width cliff at cohort
+      scale. Full readout: `corpus_leg/FINDINGS.md`,
+      `corpus_leg/corpus_leg_verdict.json`. **B′ dies at Stage 0** per the
+      frozen preregistration semantics; cohort is spent — no reruns.
 
 The corpus guard is mechanical: `--cohort` without a license token exits
 immediately (`enforce_cohort_guard`).
