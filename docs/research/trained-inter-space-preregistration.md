@@ -207,3 +207,26 @@ Incremental commits on `codex/a013-cognition-design`, pull before push, only
 own files touched: D1 this document; D2 red tests; D2-3 module green +
 tests; D4 logging harness + npz/manifest + e1_results.json (binary npz stays
 local; array-level sha256s committed in the manifest); D5 FINDINGS.md.
+
+## 9. Change Note 2 (2026-08-25, PRE-SPEND amendment — no episode had been
+## encoded when written; toy-config tests only)
+
+**What:** `shuffled_values_copy`'s `SparseProjection` branch subtracted the
+source accumulator's `_delta` from the permuted values after shuffling
+(`out._values = shuf_vals - proj._delta`). For any TRAINED accumulator
+(delta != 0) this breaks the §5 shuffled-W contract — "W with its nonzero
+VALUES permuted among the existing support" — because `values()` of the copy
+then differs from a pure permutation of W's value multiset (values shift by
+-delta, can go negative). The existing unit test missed it because it only
+exercised an untrained projection (delta == 0, where subtraction is identity).
+
+**Fix:** `out._values = shuf_vals` directly (the permuted values ARE the
+copy's init+delta state); `_delta` zeroed as before. Regression test added:
+`test_shuffle_values_preserves_multiset_on_trained_accumulator` (red first,
+then green).
+
+**Scope:** G-T3b control machinery only. NO change to arms, gates, thresholds,
+seeds, the pairing rule, the routing readout, or the comparators. The
+shuffled-W control remains: values of the trained accumulator W (init+delta,
+pre-homeostat) permuted via `default_rng(11)` over the fixed support.
+

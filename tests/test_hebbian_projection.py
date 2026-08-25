@@ -33,6 +33,7 @@ from humanbrain.hebbian_projection import (
     HebbianConfig,
     SparseProjection,
     kwinner_indices,
+    shuffled_values_copy,
 )
 from humanbrain.sdr_union import SDRProjector
 
@@ -225,6 +226,29 @@ def test_shuffle_values_preserves_support_and_multiset():
     assert np.array_equal(shuf.support(), sup_before)
     assert np.array_equal(np.sort(shuf.values(), axis=None), vals_before)
     # And it is actually permuted (astronomically unlikely to be identity).
+    assert not np.array_equal(shuf.values(), proj.values()) or TOY.fan_in * TOY.n_bits < 64
+
+
+def test_shuffle_values_preserves_multiset_on_trained_accumulator():
+    """Change Note 2 regression: the G-T3b control permutes W's values on a
+    TRAINED accumulator (delta != 0); the value multiset must survive exactly."""
+    projector = SDRProjector(n_bits=TOY.n_bits, w_ones=TOY.w_ones, seed=TOY.w_seed)
+    events = [
+        (projector.indices(p).tolist(), projector.indices(q).tolist())
+        for p, q in _toy_events(projector)
+    ]
+    proj = SparseProjection(TOY)
+    proj.accumulate_events(events)  # trained: nonzero delta
+    assert proj._delta.any()
+    sup_before = proj.support().copy()
+    vals_before = np.sort(proj.values(), axis=None)
+
+    shuf = shuffled_values_copy(proj, 11)
+    assert isinstance(shuf, SparseProjection)
+    assert np.array_equal(shuf.support(), sup_before)
+    assert np.array_equal(np.sort(shuf.values(), axis=None), vals_before)
+    assert not shuf._delta.any()  # copy carries zero delta
+    # And it is actually permuted.
     assert not np.array_equal(shuf.values(), proj.values()) or TOY.fan_in * TOY.n_bits < 64
 
 

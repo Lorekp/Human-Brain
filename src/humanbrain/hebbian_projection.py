@@ -248,7 +248,10 @@ def shuffled_values_copy(proj: SparseProjection | HomeostaticProjection, seed: i
         out = object.__new__(SparseProjection)
         out.config = proj.config
         out._support = proj._support.copy()
-        out._values = shuf_vals - proj._delta  # keep delta zeroed in the copy
+        # Change Note 2 (prereg, PRE-SPEND): the permuted values ARE the
+        # init+delta state of the copy — subtracting proj._delta here broke the
+        # value-multiset contract for any TRAINED accumulator (delta != 0).
+        out._values = shuf_vals
         out._delta = np.zeros_like(out._values)
         out._position = proj._position
         return out
