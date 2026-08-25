@@ -1,0 +1,71 @@
+{
+  "label": "wave3-bitmapfix-rep2",
+  "protocol_mirror": {
+    "eligibility_tau_ms": 40.0,
+    "input_current_pa": 4000.0,
+    "input_fanout": 32,
+    "input_pulse_ms": 1.5,
+    "readout_activity_decay": 0.99,
+    "readout_fan_in": 64,
+    "readout_homeostatic_rate": 0.05,
+    "readout_learning_rule": "sparse_three_factor",
+    "readout_structural_grace": 32,
+    "readout_structural_interval": 1,
+    "readout_turnover_probability": 1.0,
+    "recurrent_current_pa": 325.0,
+    "recurrent_fanout": 6,
+    "recurrent_topology": "uniform_no_self",
+    "seed": 2317,
+    "token_cells": 256,
+    "token_interval_ms": 5.0
+  },
+  "results": [
+    {
+      "active_cells": 1000000,
+      "backend": "cuda",
+      "bootstrap_seconds": 0.6535944,
+      "bootstrap_spike_events": 133,
+      "cells": 1000000,
+      "construction_seconds": 2.0681739,
+      "device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)",
+      "device_persistent_array_mib": 131.99599075317383,
+      "device_to_host_bytes_per_token": 8000008,
+      "gpu_memory_used_mib_after": 2689.0,
+      "gpu_memory_used_mib_before": 2355.0,
+      "host_persistent_array_mib": 83.97222900390625,
+      "host_to_device_bytes_per_token": 0,
+      "inference": {
+        "end_to_end_tokens_per_second": 105.21560321091717,
+        "kernel_seconds": 0.5439291534423828,
+        "kernel_tokens_per_second": 117.66238230652105,
+        "mean_spikes_per_token": 2.53125,
+        "observe_seconds": 0.5954935,
+        "race_seconds": 0.0126625,
+        "reservoir_spike_events": 162,
+        "tokens": 64,
+        "wall_seconds": 0.6082748
+      },
+      "integration_steps_per_token": 100,
+      "responsive_eligibility_cells": 160,
+      "training": {
+        "applied_teaching_updates": 64,
+        "end_to_end_tokens_per_second": 107.20919881728152,
+        "kernel_seconds": 0.5238596811294556,
+        "kernel_tokens_per_second": 122.17011979622917,
+        "mean_spikes_per_token": 2.5,
+        "observe_seconds": 0.5750151,
+        "reservoir_spike_events": 160,
+        "strengthen_seconds": 0.021764,
+        "structural_deletions": 0,
+        "structural_recruitments": 64,
+        "tokens": 64,
+        "wall_seconds": 0.5969637
+      }
+    }
+  ],
+  "timing": {
+    "bootstrap_events": 64,
+    "timed_tokens": 64,
+    "warmup_tokens": 4
+  }
+}
