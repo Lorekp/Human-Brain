@@ -1,0 +1,53 @@
+== pairing invariants ==
+  one curriculum_sha256 per cell across arms: OK (9 cells)
+
+== per-arm table (train eval always full-42/126; calib /54) ==
+   all42 N=512  s=7  k=42  train 106/126 (0.8413)  label-replay 34/42  calib  5/54 (0.0926)  margin_med +95.7 pA
+errtop21 N=512  s=7  k=21  train  69/126 (0.5476)  label-replay 21/42  calib  7/54 (0.1296)  margin_med +151.9 pA
+  rand21 N=512  s=7  k=21  train  71/126 (0.5635)  label-replay 21/42  calib 10/54 (0.1852)  margin_med +183.4 pA
+   all42 N=512  s=8  k=42  train  55/126 (0.4365)  label-replay 16/42  calib  7/54 (0.1296)  margin_med +105.7 pA
+errtop21 N=512  s=8  k=21  train  69/126 (0.5476)  label-replay 20/42  calib 10/54 (0.1852)  margin_med +194.5 pA
+  rand21 N=512  s=8  k=21  train  71/126 (0.5635)  label-replay 21/42  calib 10/54 (0.1852)  margin_med +191.4 pA
+   all42 N=512  s=9  k=42  train  52/126 (0.4127)  label-replay 16/42  calib  8/54 (0.1481)  margin_med +100.7 pA
+errtop21 N=512  s=9  k=21  train  65/126 (0.5159)  label-replay 19/42  calib 10/54 (0.1852)  margin_med +184.0 pA
+  rand21 N=512  s=9  k=21  train  68/126 (0.5397)  label-replay 21/42  calib 10/54 (0.1852)  margin_med +164.2 pA
+   all42 N=1024 s=7  k=42  train 123/126 (0.9762)  label-replay 41/42  calib  8/54 (0.1481)  margin_med +225.2 pA
+errtop21 N=1024 s=7  k=21  train  69/126 (0.5476)  label-replay 21/42  calib  8/54 (0.1481)  margin_med +380.7 pA
+  rand21 N=1024 s=7  k=21  train  70/126 (0.5556)  label-replay 21/42  calib 11/54 (0.2037)  margin_med +383.1 pA
+   all42 N=1024 s=8  k=42  train 126/126 (1.0000)  label-replay 42/42  calib 10/54 (0.1852)  margin_med +225.8 pA
+errtop21 N=1024 s=8  k=21  train  69/126 (0.5476)  label-replay 21/42  calib  5/54 (0.0926)  margin_med +395.9 pA
+  rand21 N=1024 s=8  k=21  train  72/126 (0.5714)  label-replay 21/42  calib  6/54 (0.1111)  margin_med +435.7 pA
+   all42 N=1024 s=9  k=42  train 122/126 (0.9683)  label-replay 40/42  calib  7/54 (0.1296)  margin_med +218.6 pA
+errtop21 N=1024 s=9  k=21  train  66/126 (0.5238)  label-replay 21/42  calib  7/54 (0.1296)  margin_med +366.8 pA
+  rand21 N=1024 s=9  k=21  train  68/126 (0.5397)  label-replay 21/42  calib 10/54 (0.1852)  margin_med +403.8 pA
+
+== PRIMARY GATE: errtop21 vs rand21 on CALIB cases (pooled) ==
+  N=512: errtop21 27/162 (0.1667) vs rand21 30/162 (0.1852)  delta=-0.0185  Newcombe95%=[-0.1017, +0.0649]  CI>0: False
+  N=1024: errtop21 20/162 (0.1235) vs rand21 27/162 (0.1667)  delta=-0.0432  Newcombe95%=[-0.1206, +0.0342]  CI>0: False
+  pooled: errtop21 47/324 (0.1451) vs rand21 57/324 (0.1759)  delta=-0.0309  Newcombe95%=[-0.0875, +0.0259]  CI>0: False
+  per-cell paired deltas (9): ['-0.0556', '+0.0000', '+0.0000', '-0.0556', '-0.0185', '-0.0556']  positive: 0/9
+  PRIMARY VERDICT (pooled Newcombe CI excludes zero): FAIL
+
+== SECONDARY GATE: forgetting guard (< 5 pp full-train drop vs all42) ==
+  errtop21 [gated] N=512: control 213/378 (0.5635) vs 203/378 (0.5370)  drop=+2.65 pp  worst-cell=+29.37 pp
+  errtop21 [gated] N=1024: control 371/378 (0.9815) vs 204/378 (0.5397)  drop=+44.18 pp  worst-cell=+45.24 pp
+  errtop21 [gated] pooled: control 584/756 (0.7725) vs 407/756 (0.5384)  drop=+23.41 pp  worst-cell=+45.24 pp
+    rand21 [diagnostic] N=512: control 213/378 (0.5635) vs 210/378 (0.5556)  drop=+0.79 pp  worst-cell=+27.78 pp
+    rand21 [diagnostic] N=1024: control 371/378 (0.9815) vs 210/378 (0.5556)  drop=+42.59 pp  worst-cell=+42.86 pp
+    rand21 [diagnostic] pooled: control 584/756 (0.7725) vs 420/756 (0.5556)  drop=+21.69 pp  worst-cell=+42.86 pp
+  SECONDARY VERDICT (errtop21 drop < 5pp everywhere): FAIL
+
+== EXPLORATORY (non-gating): selection composition & overlap ==
+  N=512  s=7: error hist {3: 4, 2: 4, 1: 0, 0: 34}; top21 min-error 0 (zero-error tasks pulled in by tie-break: 13); |top∩rand|=8
+  N=512  s=8: error hist {3: 19, 2: 7, 1: 0, 0: 16}; top21 min-error 2 (zero-error tasks pulled in by tie-break: 0); |top∩rand|=12
+  N=512  s=9: error hist {3: 22, 2: 4, 1: 0, 0: 16}; top21 min-error 3 (zero-error tasks pulled in by tie-break: 0); |top∩rand|=12
+  N=1024 s=7: error hist {3: 1, 2: 0, 1: 0, 0: 41}; top21 min-error 0 (zero-error tasks pulled in by tie-break: 20); |top∩rand|=8
+  N=1024 s=8: error hist {3: 0, 2: 0, 1: 0, 0: 42}; top21 min-error 0 (zero-error tasks pulled in by tie-break: 21); |top∩rand|=12
+  N=1024 s=9: error hist {3: 0, 2: 2, 1: 0, 0: 40}; top21 min-error 0 (zero-error tasks pulled in by tie-break: 19); |top∩rand|=12
+
+== replication cross-check: all42_N512_s* vs schedule_compare/massed_N512_s* ==
+  s=7: REPLICATES
+  s=8: REPLICATES
+  s=9: REPLICATES
+
+FINAL: primary=FAIL  secondary=FAIL

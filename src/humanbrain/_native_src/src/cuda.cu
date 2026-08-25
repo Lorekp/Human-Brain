@@ -55,7 +55,8 @@ extern "C" __global__ void recurrent_token_kernel(
     double* eligibility,
     unsigned char* spike_mask,
     unsigned char* input_mask,
-    unsigned long long* total_spikes
+    unsigned long long* total_spikes,
+    unsigned long long* decay_active
 ) {
     cg::grid_group grid = cg::this_grid();
     const unsigned long long thread = blockIdx.x * blockDim.x + threadIdx.x;
@@ -78,14 +79,27 @@ extern "C" __global__ void recurrent_token_kernel(
     for (unsigned long long step = 0; step < recurrent.token_steps; ++step) {
         unsigned int thread_spikes = 0;
         for (unsigned long long cell = thread; cell < cells; cell += stride) {
+            // Decayed-state activity bitmap: a cell whose after-spike currents
+            // and eligibility trace are all exactly zero stays exactly zero
+            // under decay (0.0 * d == +0.0 for the positive decay factors and
+            // (+0.0) + (+0.0) == +0.0), so skipping their loads, decays, and
+            // stores is a bit-exact no-op. Cells enter the active set on their
+            // first spike (atomicOr below) and never leave it until the host
+            // re-derives the bitmap from uploaded state.
+            const unsigned long long activity_word = cell >> 6;
+            const unsigned long long activity_bit = 1ULL << (cell & 63);
+            const bool decay_active_cell =
+                (decay_active[activity_word] & activity_bit) != 0ULL;
             bool crossed = false;
             if (refractory[cell] != 0) {
                 refractory[cell] -= 1;
             } else {
                 const unsigned long long after_offset = cell * channels;
                 double after_sum = 0.0;
-                for (unsigned long long channel = 0; channel < channels; ++channel) {
-                    after_sum += after[after_offset + channel];
+                if (decay_active_cell) {
+                    for (unsigned long long channel = 0; channel < channels; ++channel) {
+                        after_sum += after[after_offset + channel];
+                    }
                 }
                 double current = synaptic_current[cell];
                 if (step < recurrent.pulse_steps && input_mask[cell] != 0) {
@@ -112,8 +126,10 @@ extern "C" __global__ void recurrent_token_kernel(
                 voltage[cell] = next_voltage;
                 threshold_voltage[cell] = next_voltage_threshold;
                 threshold_spike[cell] = next_spike_threshold;
-                for (unsigned long long channel = 0; channel < channels; ++channel) {
-                    after[after_offset + channel] *= after_decay[channel];
+                if (decay_active_cell) {
+                    for (unsigned long long channel = 0; channel < channels; ++channel) {
+                        after[after_offset + channel] *= after_decay[channel];
+                    }
                 }
 
                 const double total_threshold = glif.threshold_inf_relative_mv
@@ -135,27 +151,49 @@ extern "C" __global__ void recurrent_token_kernel(
                 }
             }
             spike_mask[cell] = static_cast<unsigned char>(crossed);
+            // Fused eligibility trace: identical expression and inputs as the
+            // previous post-sync pass (spike_mask[cell] was just written from
+            // this thread's own `crossed`), executed without re-reading the
+            // mask or a second full-array traversal. Inactive zero-trace cells
+            // keep their exact +0.0 bits by skipping the update.
+            if (decay_active_cell || crossed) {
+                eligibility[cell] = eligibility[cell] * recurrent.eligibility_decay
+                    + static_cast<double>(crossed);
+                if (crossed && !decay_active_cell) {
+                    atomicOr(decay_active + activity_word, activity_bit);
+                }
+            }
         }
         if (thread_spikes != 0) {
             atomicAdd(total_spikes, static_cast<unsigned long long>(thread_spikes));
         }
         grid.sync();
 
+        // Bit-exact work elision: when no cell spiked in this integration
+        // step, every edge contribution below would test spike_mask[source]
+        // == 0 and be skipped, leaving next_current == synaptic_current *
+        // recurrent_decay exactly. Reading the post-sync spike total lets all
+        // threads uniformly skip the reverse-CSR scan for spike-free steps
+        // without changing any floating-point result. Neuron updates, spike
+        // masks, synaptic decay, and eligibility traces remain full-touch.
+        const unsigned long long step_spikes = *total_spikes;
         for (unsigned long long cell = thread; cell < cells; cell += stride) {
             double next_current = synaptic_current[cell] * recurrent.recurrent_decay;
-            const int begin = incoming_offsets[cell];
-            const int end = incoming_offsets[cell + 1];
-            for (int position = begin; position < end; ++position) {
-                const int edge = incoming_edges[position];
-                const unsigned long long source =
-                    static_cast<unsigned long long>(edge) / recurrent.recurrent_fanout;
-                if (spike_mask[source] != 0) {
-                    next_current += recurrent_weights[edge];
+            if (step_spikes != 0ULL) {
+                const int begin = incoming_offsets[cell];
+                const int end = incoming_offsets[cell + 1];
+                for (int position = begin; position < end; ++position) {
+                    const int edge = incoming_edges[position];
+                    const unsigned long long source =
+                        static_cast<unsigned long long>(edge) / recurrent.recurrent_fanout;
+                    if (spike_mask[source] != 0) {
+                        next_current += recurrent_weights[edge];
+                    }
                 }
             }
             synaptic_current[cell] = next_current;
-            eligibility[cell] = eligibility[cell] * recurrent.eligibility_decay
-                + static_cast<double>(spike_mask[cell]);
+            // Eligibility traces are updated in the neuron pass above; this
+            // pass only decays and drives synaptic current.
         }
         grid.sync();
     }

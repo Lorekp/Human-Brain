@@ -1,0 +1,1 @@
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -64.011504036, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 10.156, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare_detcheck\\sparse_three_factor_N512_s8.json"}

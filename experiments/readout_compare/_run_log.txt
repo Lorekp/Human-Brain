@@ -1,0 +1,82 @@
+=== readout_compare matrix start 2026-08-23T01:33:58+02:00 ===
+SKIP existing ridge_N128_s7
+--- RUN ridge_N128_s8 2026-08-23T01:33:58+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 100, "margin_min_pa": -82.621616971, "train_cases_passed": 20, "train_cases_total": 126, "train_replay_tasks": 3, "wall_s": 3.22, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\ridge_N128_s8.json"}
+--- DONE ridge_N128_s8 rc=0 wall=3s
+--- RUN ridge_N128_s9 2026-08-23T01:34:01+02:00
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 179, "margin_min_pa": -125.031304632, "train_cases_passed": 20, "train_cases_total": 126, "train_replay_tasks": 4, "wall_s": 3.156, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\ridge_N128_s9.json"}
+--- DONE ridge_N128_s9 rc=0 wall=3s
+--- RUN three_factor_N128_s7 2026-08-23T01:34:04+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -4709.37671863, "train_cases_passed": 15, "train_cases_total": 126, "train_replay_tasks": 1, "wall_s": 3.878, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N128_s7.json"}
+--- DONE three_factor_N128_s7 rc=0 wall=5s
+--- RUN three_factor_N128_s8 2026-08-23T01:34:09+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -6605.57589998, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 3.639, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N128_s8.json"}
+--- DONE three_factor_N128_s8 rc=0 wall=3s
+--- RUN three_factor_N128_s9 2026-08-23T01:34:13+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -10630.011361612, "train_cases_passed": 8, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 3.549, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N128_s9.json"}
+--- DONE three_factor_N128_s9 rc=0 wall=4s
+--- RUN sparse_three_factor_N128_s7 2026-08-23T01:34:16+02:00
+{"calib_cases_passed": 0, "calib_cases_total": 54, "margin_count": 148, "margin_min_pa": -0.017199743, "train_cases_passed": 0, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 6.726, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N128_s7.json"}
+--- DONE sparse_three_factor_N128_s7 rc=0 wall=7s
+--- RUN sparse_three_factor_N128_s8 2026-08-23T01:34:23+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -64.014766409, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 5.326, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N128_s8.json"}
+--- DONE sparse_three_factor_N128_s8 rc=0 wall=6s
+--- RUN sparse_three_factor_N128_s9 2026-08-23T01:34:29+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -64.011219506, "train_cases_passed": 8, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 5.125, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N128_s9.json"}
+--- DONE sparse_three_factor_N128_s9 rc=0 wall=5s
+--- RUN ridge_N512_s7 2026-08-23T01:34:34+02:00
+{"calib_cases_passed": 5, "calib_cases_total": 54, "margin_count": 281, "margin_min_pa": -30.627828736, "train_cases_passed": 106, "train_cases_total": 126, "train_replay_tasks": 34, "wall_s": 8.483, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\ridge_N512_s7.json"}
+--- DONE ridge_N512_s7 rc=0 wall=9s
+--- RUN ridge_N512_s8 2026-08-23T01:34:43+02:00
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 269, "margin_min_pa": -157.152136141, "train_cases_passed": 55, "train_cases_total": 126, "train_replay_tasks": 16, "wall_s": 9.121, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\ridge_N512_s8.json"}
+--- DONE ridge_N512_s8 rc=0 wall=9s
+--- RUN ridge_N512_s9 2026-08-23T01:34:52+02:00
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 255, "margin_min_pa": -76.618283471, "train_cases_passed": 52, "train_cases_total": 126, "train_replay_tasks": 16, "wall_s": 8.514, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\ridge_N512_s9.json"}
+--- DONE ridge_N512_s9 rc=0 wall=9s
+--- RUN three_factor_N512_s7 2026-08-23T01:35:01+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -9098.318306666, "train_cases_passed": 15, "train_cases_total": 126, "train_replay_tasks": 1, "wall_s": 10.709, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N512_s7.json"}
+--- DONE three_factor_N512_s7 rc=0 wall=11s
+--- RUN three_factor_N512_s8 2026-08-23T01:35:12+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -19980.294291274, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 10.324, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N512_s8.json"}
+--- DONE three_factor_N512_s8 rc=0 wall=11s
+--- RUN three_factor_N512_s9 2026-08-23T01:35:23+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -9751.460695108, "train_cases_passed": 8, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 10.329, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N512_s9.json"}
+--- DONE three_factor_N512_s9 rc=0 wall=10s
+--- RUN sparse_three_factor_N512_s7 2026-08-23T01:35:33+02:00
+{"calib_cases_passed": 0, "calib_cases_total": 54, "margin_count": 148, "margin_min_pa": -0.034066567, "train_cases_passed": 0, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 13.31, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N512_s7.json"}
+--- DONE sparse_three_factor_N512_s7 rc=0 wall=14s
+--- RUN sparse_three_factor_N512_s8 2026-08-23T01:35:47+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -64.011504036, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 10.697, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N512_s8.json"}
+--- DONE sparse_three_factor_N512_s8 rc=0 wall=11s
+--- RUN sparse_three_factor_N512_s9 2026-08-23T01:35:58+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -64.022508214, "train_cases_passed": 8, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 10.26, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N512_s9.json"}
+--- DONE sparse_three_factor_N512_s9 rc=0 wall=10s
+--- RUN ridge_N1024_s7 2026-08-23T01:36:08+02:00
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 311, "margin_min_pa": -58.721236151, "train_cases_passed": 123, "train_cases_total": 126, "train_replay_tasks": 41, "wall_s": 16.992, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\ridge_N1024_s7.json"}
+--- DONE ridge_N1024_s7 rc=0 wall=17s
+--- RUN ridge_N1024_s8 2026-08-23T01:36:25+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 19.728415931, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 16.944, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\ridge_N1024_s8.json"}
+--- DONE ridge_N1024_s8 rc=0 wall=18s
+--- RUN ridge_N1024_s9 2026-08-23T01:36:43+02:00
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 298, "margin_min_pa": -76.418153857, "train_cases_passed": 122, "train_cases_total": 126, "train_replay_tasks": 40, "wall_s": 15.741, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\ridge_N1024_s9.json"}
+--- DONE ridge_N1024_s9 rc=0 wall=16s
+--- RUN three_factor_N1024_s7 2026-08-23T01:36:59+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -10860.97492767, "train_cases_passed": 15, "train_cases_total": 126, "train_replay_tasks": 1, "wall_s": 19.624, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N1024_s7.json"}
+--- DONE three_factor_N1024_s7 rc=0 wall=19s
+--- RUN three_factor_N1024_s8 2026-08-23T01:37:18+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -25640.271643299, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 19.615, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N1024_s8.json"}
+--- DONE three_factor_N1024_s8 rc=0 wall=20s
+--- RUN three_factor_N1024_s9 2026-08-23T01:37:38+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -11523.962814223, "train_cases_passed": 8, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 19.584, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\three_factor_N1024_s9.json"}
+--- DONE three_factor_N1024_s9 rc=0 wall=20s
+--- RUN sparse_three_factor_N1024_s7 2026-08-23T01:37:58+02:00
+{"calib_cases_passed": 0, "calib_cases_total": 54, "margin_count": 148, "margin_min_pa": -0.012734693, "train_cases_passed": 0, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 21.114, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N1024_s7.json"}
+--- DONE sparse_three_factor_N1024_s7 rc=0 wall=22s
+--- RUN sparse_three_factor_N1024_s8 2026-08-23T01:38:20+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -64.026506192, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 17.374, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N1024_s8.json"}
+--- DONE sparse_three_factor_N1024_s8 rc=0 wall=17s
+--- RUN sparse_three_factor_N1024_s9 2026-08-23T01:38:37+02:00
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 42, "margin_min_pa": -64.01186518, "train_cases_passed": 8, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 17.465, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\readout_compare\\sparse_three_factor_N1024_s9.json"}
+--- DONE sparse_three_factor_N1024_s9 rc=0 wall=18s
+=== detcheck rc=0 2026-08-23T01:39:15+02:00 ===
+=== MATRIX COMPLETE 2026-08-23T01:39:15+02:00 ===

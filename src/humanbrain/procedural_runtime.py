@@ -67,6 +67,11 @@ _STATUS_NAMES: Final = {
     10: "interval distinct-cell capacity exhausted",
 }
 
+_STEPPING_MODE_IDS = {
+    "full_touch": 0,
+    "event_proportional": 1,
+}
+
 
 def _exact_uint64(owner: str, value: object) -> int:
     if type(value) is not int:
@@ -107,6 +112,7 @@ class ProceduralRuntimeConfig:
     recurrent_delay_steps: int
     recurrent_tau_ms: float = 8.0
     eligibility_tau_ms: float = 80.0
+    stepping_mode: str = "full_touch"
 
     def __post_init__(self) -> None:
         if not isinstance(self.manifest, TopologyManifest):
@@ -144,6 +150,10 @@ class ProceduralRuntimeConfig:
                 "interval_distinct_capacity cannot be below resident_capacity"
             )
         _positive_finite("recurrent_weight_pa", self.recurrent_weight_pa)
+        if self.stepping_mode not in _STEPPING_MODE_IDS:
+            raise ValueError(
+                "stepping_mode must be 'full_touch' or 'event_proportional'"
+            )
         delay = _exact_uint64("recurrent_delay_steps", self.recurrent_delay_steps)
         if delay == 0:
             raise ValueError("recurrent_delay_steps must be at least one")
@@ -249,6 +259,7 @@ class _NativeProceduralConfig(ctypes.Structure):
         ("recurrent_delay_steps", ctypes.c_uint64),
         ("recurrent_decay", ctypes.c_double),
         ("eligibility_decay", ctypes.c_double),
+        ("stepping_mode", ctypes.c_uint32),
     ]
 
 
@@ -278,6 +289,14 @@ class _NativeResident(ctypes.Structure):
 
 class _NativeSpike(ctypes.Structure):
     _fields_ = [("step", ctypes.c_uint64), ("gid", ctypes.c_uint64)]
+
+
+class _NativeDormant(ctypes.Structure):
+    _fields_ = [
+        ("gid", ctypes.c_uint64),
+        ("eligibility_raw", ctypes.c_double),
+        ("elig_step", ctypes.c_uint64),
+    ]
 
 
 class _NativeCounters(ctypes.Structure):
@@ -348,6 +367,13 @@ def _procedural_library() -> ctypes.CDLL:
         ctypes.POINTER(_NativeCounters),
     ]
     library.humanbrain_procedural_runtime_snapshot.restype = ctypes.c_uint32
+    library.humanbrain_procedural_runtime_dormant_snapshot.argtypes = [
+        void_pointer,
+        ctypes.POINTER(_NativeDormant),
+        ctypes.c_size_t,
+        size_pointer,
+    ]
+    library.humanbrain_procedural_runtime_dormant_snapshot.restype = ctypes.c_uint32
 
     library.humanbrain_dense_reference_create.argtypes = [
         ctypes.POINTER(_GlifConfig),
@@ -434,6 +460,7 @@ def _native_runtime_config(config: ProceduralRuntimeConfig) -> _NativeProcedural
         config.recurrent_delay_steps,
         np.exp(-parameters.dt_ms / config.recurrent_tau_ms),
         np.exp(-parameters.dt_ms / config.eligibility_tau_ms),
+        _STEPPING_MODE_IDS[config.stepping_mode],
     )
 
 
@@ -728,6 +755,67 @@ class NativeProceduralRuntime:
             self._require_open()
             snapshot, _ = self._read_snapshot(include_state=True)
             return snapshot
+
+    def dormant_cells(self) -> tuple[tuple[int, float, int], ...]:
+        """Raw dormant-store contents as ``(gid, eligibility_raw, elig_step)``.
+
+        Event-proportional mode only; ``full_touch`` runtimes always report an
+        empty tuple. Values are the lazily stored pre-catch-up numbers: to
+        obtain the equivalent full-touch eligibility at the current step,
+        replay ``current_step - elig_step - 1`` eligibility-decay multiplies
+        (one canonical multiply each). Ascending GID order.
+        """
+        with self._operation_lock:
+            self._require_open()
+            count = ctypes.c_size_t()
+            status = int(
+                self._library.humanbrain_procedural_runtime_dormant_snapshot(
+                    self._handle,
+                    None,
+                    0,
+                    ctypes.byref(count),
+                )
+            )
+            if status != 0:
+                raise ProceduralRuntimeError(status)
+            if not count.value:
+                return ()
+            records = (_NativeDormant * count.value)()
+            status = int(
+                self._library.humanbrain_procedural_runtime_dormant_snapshot(
+                    self._handle,
+                    records,
+                    len(records),
+                    ctypes.byref(count),
+                )
+            )
+            if status != 0:
+                raise ProceduralRuntimeError(status)
+            return tuple(
+                (int(record.gid), float(record.eligibility_raw), int(record.elig_step))
+                for record in records
+            )
+
+    @property
+    def dormant_count(self) -> int:
+        with self._operation_lock:
+            self._require_open()
+            count = ctypes.c_size_t()
+            status = int(
+                self._library.humanbrain_procedural_runtime_dormant_snapshot(
+                    self._handle,
+                    None,
+                    0,
+                    ctypes.byref(count),
+                )
+            )
+            if status != 0:
+                raise ProceduralRuntimeError(status)
+            return int(count.value)
+
+    @property
+    def current_step(self) -> int:
+        return self._current_step
 
 
 class NativeDenseProceduralReference:

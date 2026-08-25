@@ -1,0 +1,53 @@
+{
+  "rows": [
+    {
+      "configured_cells": 1048576,
+      "requested_read_cells": 16,
+      "residents": 1576,
+      "hot_cells_spiked": 64,
+      "counts_us": 0.9,
+      "ffi_only_us": 5.1,
+      "snapshot_full_us": 2005.6,
+      "ns_per_resident": 1272.6,
+      "k_extract_us": 0.5
+    },
+    {
+      "configured_cells": 1048576,
+      "requested_read_cells": 16,
+      "residents": 10568,
+      "hot_cells_spiked": 64,
+      "counts_us": 0.8,
+      "ffi_only_us": 23.95,
+      "snapshot_full_us": 14521.6,
+      "ns_per_resident": 1374.1,
+      "k_extract_us": 0.4
+    },
+    {
+      "configured_cells": 1048576,
+      "requested_read_cells": 16,
+      "residents": 50539,
+      "hot_cells_spiked": 64,
+      "counts_us": 1.6,
+      "ffi_only_us": 906.4,
+      "snapshot_full_us": 80256.0,
+      "ns_per_resident": 1588.0,
+      "k_extract_us": 0.5
+    },
+    {
+      "configured_cells": 1048576,
+      "requested_read_cells": 16,
+      "residents": 100528,
+      "hot_cells_spiked": 64,
+      "counts_us": 0.9,
+      "ffi_only_us": 1277.6,
+      "snapshot_full_us": 161347.7,
+      "ns_per_resident": 1605.0,
+      "k_extract_us": 0.5
+    }
+  ],
+  "mirror_fresh_zeros_1e6_us": 14.2,
+  "mirror_scatter_reset_R100k_us": 146.8,
+  "event_marshal_2600_us": 2504.1,
+  "advance_with_2600_events_us": 4447.1,
+  "linear_projection_snapshot_s_at_1e6_residents": 1.6
+}

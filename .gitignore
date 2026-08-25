@@ -11,3 +11,4 @@ target/
 *.pyc
 .pytest_cache/
 .pytest-tmp/
+experiments/*/.observatory/*.jsonl

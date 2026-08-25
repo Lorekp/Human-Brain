@@ -183,8 +183,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/procedural.rs",
-        "size": 56843,
-        "sha256": "416e7f19c42664f03eb4a8aab13f5744305774f95762a98a92cb98f3f672db37"
+        "size": 104970,
+        "sha256": "aa917346206942059519ca056c1c7814ac5f3302db24c4c669697bb006e9ee27"
       },
       {
         "path": "src/humanbrain/cells.py",
@@ -203,8 +203,8 @@
       },
       {
         "path": "src/humanbrain/procedural_runtime.py",
-        "size": 34630,
-        "sha256": "6e61b316ff4586a26c75e5b29d51b3dc316bce3da998c7d55546164b36ca4139"
+        "size": 37698,
+        "sha256": "9820016ce6d885124d036a1b614ff40c8459f4586a87a6e09667584c0e85cb71"
       },
       {
         "path": "src/humanbrain/procedural_topology.py",
@@ -223,8 +223,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/cuda.cu",
-        "size": 6911,
-        "sha256": "b73256637b414e42229258e2ae3b4e520783af409e27e70f9108ff8fda9ae50f"
+        "size": 8035,
+        "sha256": "2bb36aaad47fabdf8b0abd58c1d4bb83e9a63594ebfeac24f49e7ff4a1daaee4"
       },
       {
         "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/.cargo-checksum.json",
@@ -1517,11 +1517,11 @@
         "sha256": "7155d4a3ae920eb37d40cc58d538052302cfb45517dbafec685b414305e2c98f"
       }
     ],
-    "bundle_sha256": "8777b30fbcec0191eb72a2203f756a0073936baac763d93265cb70ac94ac2e52",
+    "bundle_sha256": "e9a3af72b9b61734f39b5e59a5626e9bfc4fd7e7e155ebc6b9a27d3ad8a59809",
     "limits": {
       "maximum_file_bytes": 1048576,
       "maximum_aggregate_bytes": 8388608,
-      "actual_aggregate_bytes": 2124200
+      "actual_aggregate_bytes": 2176519
     }
   },
   "timing": {

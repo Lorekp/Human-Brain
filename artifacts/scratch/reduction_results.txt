@@ -1,0 +1,37 @@
+leak_per_s=51.48073062244647 phi=-0.0 vfactor=np.float64(0.0) bfactor=np.float64(0.0)
+== A-const600
+   spikes glif3=14 reduced=14 identical=True
+   inert thresholds: threshold_voltage bits={0} threshold_spike bits={0}
+   refractory mismatches: none
+   voltage: first mismatch step=463 mismatches=751/4000 worst=2 ulp, max|dv|=3.553e-15 mV
+   asc(post-decay view): worst<=6 ulp, max|da|=1.137e-13 pA
+== B-noisy
+   spikes glif3=13 reduced=13 identical=True
+   inert thresholds: threshold_voltage bits={0} threshold_spike bits={0}
+   refractory mismatches: none
+   voltage: first mismatch step=672 mismatches=1380/6000 worst=4 ulp, max|dv|=7.105e-15 mV
+   asc(post-decay view): worst<=2 ulp, max|da|=1.137e-13 pA
+== C-piecewise
+   spikes glif3=10 reduced=10 identical=True
+   inert thresholds: threshold_voltage bits={0} threshold_spike bits={0}
+   refractory mismatches: none
+   voltage: first mismatch step=2641 mismatches=183/4000 worst=2 ulp, max|dv|=3.553e-15 mV
+   asc(post-decay view): worst<=2 ulp, max|da|=1.137e-13 pA
+== D-zeroasc-noisy
+   spikes glif3=17 reduced=17 identical=True
+   inert thresholds: threshold_voltage bits={0} threshold_spike bits={0}
+   refractory mismatches: none
+   voltage: first mismatch step=None mismatches=0/6000 worst=0 ulp, max|dv|=0.000e+00 mV
+   asc(post-decay view): worst<=0 ulp, max|da|=0.000e+00 pA
+== E-subthreshold-noisy
+   spikes glif3=0 reduced=0 identical=True
+   inert thresholds: threshold_voltage bits={0} threshold_spike bits={0}
+   refractory mismatches: none
+   voltage: first mismatch step=None mismatches=0/3000 worst=0 ulp, max|dv|=0.000e+00 mV
+   asc(post-decay view): worst<=0 ulp, max|da|=0.000e+00 pA
+== F-red-unshifted-naive
+   spikes glif3=14 reduced=14 identical=False
+   inert thresholds: threshold_voltage bits={0} threshold_spike bits={0}
+   refractory mismatches: from step 373
+   voltage: first mismatch step=253 mismatches=2612/4000 worst=65 ulp, max|dv|=5.598e+00 mV
+   asc(post-decay view): worst<=65 ulp, max|da|=1.946e+02 pA

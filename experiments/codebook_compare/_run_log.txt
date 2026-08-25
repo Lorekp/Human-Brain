@@ -1,0 +1,83 @@
+codebook_compare run log — start 2026-08-23T12:05:12+02:00
+=== explicit_N128_s7 ===
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 64, "margin_min_pa": -94.148550712, "train_cases_passed": 15, "train_cases_total": 126, "train_replay_tasks": 1, "wall_s": 8.443, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N128_s7.json"}
+explicit_N128_s7 exit=0
+=== explicit_N128_s8 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 100, "margin_min_pa": -82.621616971, "train_cases_passed": 20, "train_cases_total": 126, "train_replay_tasks": 3, "wall_s": 3.601, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N128_s8.json"}
+explicit_N128_s8 exit=0
+=== explicit_N128_s9 ===
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 179, "margin_min_pa": -125.031304632, "train_cases_passed": 20, "train_cases_total": 126, "train_replay_tasks": 4, "wall_s": 3.542, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N128_s9.json"}
+explicit_N128_s9 exit=0
+=== explicit_N512_s7 ===
+{"calib_cases_passed": 5, "calib_cases_total": 54, "margin_count": 281, "margin_min_pa": -30.627828737, "train_cases_passed": 106, "train_cases_total": 126, "train_replay_tasks": 34, "wall_s": 13.382, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N512_s7.json"}
+explicit_N512_s7 exit=0
+=== explicit_N512_s8 ===
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 269, "margin_min_pa": -157.152136142, "train_cases_passed": 55, "train_cases_total": 126, "train_replay_tasks": 16, "wall_s": 13.312, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N512_s8.json"}
+explicit_N512_s8 exit=0
+=== explicit_N512_s9 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 255, "margin_min_pa": -76.618283472, "train_cases_passed": 52, "train_cases_total": 126, "train_replay_tasks": 16, "wall_s": 13.825, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N512_s9.json"}
+explicit_N512_s9 exit=0
+=== explicit_N1024_s7 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 311, "margin_min_pa": -58.721236154, "train_cases_passed": 123, "train_cases_total": 126, "train_replay_tasks": 41, "wall_s": 36.154, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N1024_s7.json"}
+explicit_N1024_s7 exit=0
+=== explicit_N1024_s8 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 19.72841593, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 34.26, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N1024_s8.json"}
+explicit_N1024_s8 exit=0
+=== explicit_N1024_s9 ===
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 298, "margin_min_pa": -76.418153858, "train_cases_passed": 122, "train_cases_total": 126, "train_replay_tasks": 40, "wall_s": 33.292, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\explicit_N1024_s9.json"}
+explicit_N1024_s9 exit=0
+=== random_N128_s7 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 70, "margin_min_pa": -79.962177236, "train_cases_passed": 15, "train_cases_total": 126, "train_replay_tasks": 1, "wall_s": 3.669, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N128_s7.json"}
+random_N128_s7 exit=0
+=== random_N128_s8 ===
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 102, "margin_min_pa": -79.82676777, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 3.734, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N128_s8.json"}
+random_N128_s8 exit=0
+=== random_N128_s9 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 97, "margin_min_pa": -76.755670158, "train_cases_passed": 11, "train_cases_total": 126, "train_replay_tasks": 1, "wall_s": 3.611, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N128_s9.json"}
+random_N128_s9 exit=0
+=== random_N512_s7 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 97, "margin_min_pa": -142.115577518, "train_cases_passed": 42, "train_cases_total": 126, "train_replay_tasks": 10, "wall_s": 13.176, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N512_s7.json"}
+random_N512_s7 exit=0
+=== random_N512_s8 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 276, "margin_min_pa": -195.274464259, "train_cases_passed": 92, "train_cases_total": 126, "train_replay_tasks": 29, "wall_s": 13.234, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N512_s8.json"}
+random_N512_s8 exit=0
+=== random_N512_s9 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 259, "margin_min_pa": -100.936199679, "train_cases_passed": 88, "train_cases_total": 126, "train_replay_tasks": 28, "wall_s": 12.718, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N512_s9.json"}
+random_N512_s9 exit=0
+=== random_N1024_s7 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 305, "margin_min_pa": -100.618414731, "train_cases_passed": 120, "train_cases_total": 126, "train_replay_tasks": 40, "wall_s": 34.057, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N1024_s7.json"}
+random_N1024_s7 exit=0
+=== random_N1024_s8 ===
+{"calib_cases_passed": 5, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 26.044772096, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 34.61, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N1024_s8.json"}
+random_N1024_s8 exit=0
+=== random_N1024_s9 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 302, "margin_min_pa": -125.842892668, "train_cases_passed": 111, "train_cases_total": 126, "train_replay_tasks": 37, "wall_s": 33.618, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\random_N1024_s9.json"}
+random_N1024_s9 exit=0
+=== similarity_N128_s7 ===
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 107, "margin_min_pa": -180.081248282, "train_cases_passed": 21, "train_cases_total": 126, "train_replay_tasks": 3, "wall_s": 3.953, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N128_s7.json"}
+similarity_N128_s7 exit=0
+=== similarity_N128_s8 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 151, "margin_min_pa": -110.092882943, "train_cases_passed": 14, "train_cases_total": 126, "train_replay_tasks": 1, "wall_s": 3.916, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N128_s8.json"}
+similarity_N128_s8 exit=0
+=== similarity_N128_s9 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 114, "margin_min_pa": -119.258278991, "train_cases_passed": 8, "train_cases_total": 126, "train_replay_tasks": 0, "wall_s": 4.231, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N128_s9.json"}
+similarity_N128_s9 exit=0
+=== similarity_N512_s7 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 270, "margin_min_pa": -62.987428137, "train_cases_passed": 93, "train_cases_total": 126, "train_replay_tasks": 30, "wall_s": 14.012, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N512_s7.json"}
+similarity_N512_s7 exit=0
+=== similarity_N512_s8 ===
+{"calib_cases_passed": 7, "calib_cases_total": 54, "margin_count": 274, "margin_min_pa": -112.418658618, "train_cases_passed": 91, "train_cases_total": 126, "train_replay_tasks": 28, "wall_s": 15.06, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N512_s8.json"}
+similarity_N512_s8 exit=0
+=== similarity_N512_s9 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 263, "margin_min_pa": -61.547458003, "train_cases_passed": 94, "train_cases_total": 126, "train_replay_tasks": 29, "wall_s": 13.54, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N512_s9.json"}
+similarity_N512_s9 exit=0
+=== similarity_N1024_s7 ===
+{"calib_cases_passed": 5, "calib_cases_total": 54, "margin_count": 307, "margin_min_pa": -83.271347193, "train_cases_passed": 115, "train_cases_total": 126, "train_replay_tasks": 38, "wall_s": 34.953, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N1024_s7.json"}
+similarity_N1024_s7 exit=0
+=== similarity_N1024_s8 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 307, "margin_min_pa": -14.352168775, "train_cases_passed": 124, "train_cases_total": 126, "train_replay_tasks": 41, "wall_s": 34.935, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N1024_s8.json"}
+similarity_N1024_s8 exit=0
+=== similarity_N1024_s9 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 310, "margin_min_pa": 5.441378768, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 35.42, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-codebook-compare-run\\experiments\\codebook_compare\\similarity_N1024_s9.json"}
+similarity_N1024_s9 exit=0
+matrix complete 2026-08-23T12:21:08+02:00, FAIL=0

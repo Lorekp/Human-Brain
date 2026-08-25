@@ -1,0 +1,15 @@
+{
+  "mode": "gate",
+  "label": "post-sync",
+  "cells": 131072,
+  "seed": 17,
+  "grow_tokens": 600,
+  "epochs": 1,
+  "async_env": "0",
+  "checkpoint_sha256": "d3a08356634ae00722ddd70d2c172a12755abf5cfcc7a8eb53fbbf3335135974",
+  "winner_replay_sha256": "f25b6886f2afbbad61752f073ab4aab1b70580c058f6ed1c8edd205b9aff2de7",
+  "learned_synapses": 7,
+  "local_updates": 597,
+  "structural_recruitments": 13,
+  "grow_tokens_per_second": 251.6
+}

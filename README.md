@@ -81,11 +81,27 @@ the release DLL by source hash. Set `HUMANBRAIN_DEVICE` to `auto`, `cpu`, or
 `cuda`, and use `HUMANBRAIN_NATIVE_CACHE` to choose an explicit native-cache
 location.
 
-The full suite currently reports four frozen-protocol freshness failures in
-`tests/test_large_scale_capability.py`: the registered large-scale protocol
-pins the prior `src/humanbrain/cells.py` source digest. That gate must be
-reviewed and deliberately re-frozen; it should not be bypassed by weakening
-the digest check.
+### Native experiment visualizer
+
+[Neural Observatory](docs/neural-observatory.md) is a GPU-rendered desktop
+workbench for the canonical `experiments/<experiment>/<arm>.json` results. It
+compares cohorts, shows uncertainty-aware outcome statistics, reports
+neuroscience-relevant structural and representation diagnostics, queries exact
+local topology from materialized or procedural networks, tails live activity,
+and replays complete experiment traces from disk. Billion-neuron configurations
+remain inspectable without creating one UI object per neuron, while long traces
+remain seekable without retaining every decoded frame in memory.
+
+```powershell
+uv --cache-dir .uv-cache pip install --python .venv\Scripts\python.exe -e ".[visualizer]"
+& ".venv\Scripts\python.exe" -m humanbrain.visualizer.cli experiments --experiment visualizer_demo
+```
+
+The full suite currently reports frozen-protocol freshness failures in
+`tests/test_large_scale_capability.py` and `tests/test_procedural_runtime.py`:
+registered protocols pin prior source or protocol digests. Those gates must be
+reviewed and deliberately re-frozen; they should not be bypassed by weakening
+the digest checks.
 
 ## Research lanes
 
