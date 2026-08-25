@@ -1,0 +1,154 @@
+{
+  "corpus_sha256": "8857eb77f3581aae55db44d34f7bb62b592e2a4ff10161fe5127b16243106bd5",
+  "corpus_source": "fixture:v1-kjv-verse-contexts",
+  "curriculum_sha256": "ef24b1d3fea84cf1eb5401a54e7240b19892f4c34ad74a9f1e5161ad611c948d",
+  "eval_task_count": 6,
+  "execution": {
+    "active_reservoir_cells": 96,
+    "device": "cpu",
+    "kernel_backend": "cpu",
+    "readout_learning_rule": "ridge",
+    "requested_device": "auto",
+    "reservoir_cells": 96,
+    "simulation_device": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD"
+  },
+  "metrics": {
+    "answer_span": {
+      "accuracy": 0.3,
+      "correct": 12,
+      "predictions": 40,
+      "tasks": 6
+    },
+    "degeneracy": {
+      "distinct_answers": 3,
+      "evaluated": 6,
+      "guard": {
+        "distinct_answers_min": 3,
+        "modal_share_max": 0.9
+      },
+      "guard_pass": true,
+      "modal_answer": "",
+      "modal_share": 0.6666666666666666
+    },
+    "free_run": {
+      "exact_match_rate": 0.0,
+      "exact_matches": 0,
+      "tasks": 6
+    }
+  },
+  "model": {
+    "active_reservoir_cells": 96,
+    "learned_synapses": 143616,
+    "reservoir_cells": 96,
+    "token_cells": 394,
+    "tokenizer": {
+      "kind": "byte"
+    },
+    "vocabulary_alignment_pass": true,
+    "vocabulary_size": 394
+  },
+  "protocol": "grow RecurrentCellLanguageModel on TRAIN qa_prompt+' '+answer texts; --tokenizer selects the growth tokenizer arm (byte/bpe4096/concept); held-out CALIBRATION teacher-forced answer-span accuracy, free-run complete() exact match, and first-class degeneracy metrics",
+  "schema_version": "humanbrain/qa-experiments/v2",
+  "seed": 17,
+  "tasks": [
+    {
+      "cohort": "CALIBRATION",
+      "completion": "                 ",
+      "exact_match": false,
+      "expected": "that I am God",
+      "ordinal": 24,
+      "qa_id": "q_hnvlhkqsk",
+      "question": "What does the psalm say to know?",
+      "references": [
+        "Psalm 46:10"
+      ],
+      "span_correct": 4,
+      "span_predictions": 9
+    },
+    {
+      "cohort": "CALIBRATION",
+      "completion": "\n\n\n\n\n\n,,,,,\nandl",
+      "exact_match": false,
+      "expected": "death",
+      "ordinal": 25,
+      "qa_id": "q_pmznycgkd",
+      "question": "What are the wages of sin?",
+      "references": [
+        "Romans 6:23"
+      ],
+      "span_correct": 0,
+      "span_predictions": 6
+    },
+    {
+      "cohort": "CALIBRATION",
+      "completion": "            ",
+      "exact_match": false,
+      "expected": "the LORD",
+      "ordinal": 26,
+      "qa_id": "q_fwxsnpqjq",
+      "question": "Who speaks thoughts of peace toward you here?",
+      "references": [
+        "Jeremiah 29:11"
+      ],
+      "span_correct": 2,
+      "span_predictions": 4
+    },
+    {
+      "cohort": "CALIBRATION",
+      "completion": "              ",
+      "exact_match": false,
+      "expected": "steal",
+      "ordinal": 27,
+      "qa_id": "q_dggpdbxfn",
+      "question": "According to Exodus 20:15, what shalt thou not do?",
+      "references": [
+        "Exodus 20:13",
+        "Exodus 20:14",
+        "Exodus 20:15"
+      ],
+      "span_correct": 1,
+      "span_predictions": 6
+    },
+    {
+      "cohort": "CALIBRATION",
+      "completion": "               ",
+      "exact_match": false,
+      "expected": "Charity",
+      "ordinal": 28,
+      "qa_id": "q_qwnbdplgm",
+      "question": "What suffereth long and is kind?",
+      "references": [
+        "1 Corinthians 13:4"
+      ],
+      "span_correct": 1,
+      "span_predictions": 7
+    },
+    {
+      "cohort": "CALIBRATION",
+      "completion": "            ? and?",
+      "exact_match": false,
+      "expected": "the LORD thy God",
+      "ordinal": 29,
+      "qa_id": "q_vbqbwcqhn",
+      "question": "Who is with thee whithersoever thou goest?",
+      "references": [
+        "Joshua 1:9"
+      ],
+      "span_correct": 4,
+      "span_predictions": 8
+    }
+  ],
+  "throughput": {
+    "eval": {
+      "token_steps": 1580,
+      "wall_s": 0.404883400000017
+    },
+    "growth": {
+      "token_steps": 4694,
+      "wall_s": 6.7991734000002
+    }
+  },
+  "train_task_count": 24,
+  "training_digest": "ed5ef849325c6e9f148657919e5ac837f3625e524901274a3c1292bab2f9d720",
+  "wall_s": 7.2040578000001005
+}

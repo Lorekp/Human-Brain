@@ -1,0 +1,2063 @@
+{
+ "corpus_sha256": "789e3ac592fd8aa1d4f68af8704a4a9b19d64db7277efea59ebc50ff8dd446ec",
+ "corpus_source": "repo-src:humanbrain",
+ "counts": {
+  "TRAIN": {
+   "function_summary": 25,
+   "module_containment": 25,
+   "signature_recall": 25,
+   "total": 75
+  },
+  "VAL": {
+   "function_summary": 8,
+   "module_containment": 8,
+   "signature_recall": 9,
+   "total": 25
+  }
+ },
+ "entries": {
+  "TRAIN": [
+   {
+    "answer": "Replay a context through cell state and race output token cells.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent (recurrent.py)",
+     "class RecurrentCellCircuit:",
+     "def predict_next(context):",
+     "\"\"\"Replay a context through cell state and race output token cells.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.recurrent",
+    "ordinal": 0,
+    "qa_id": "q_yclglbrsg",
+    "question": "In the module humanbrain.recurrent, what does the method RecurrentCellCircuit.predict_next do?",
+    "references": [
+     "recurrent.py::RecurrentCellCircuit.predict_next::function_summary"
+    ],
+    "source_file": "recurrent.py",
+    "target": "RecurrentCellCircuit.predict_next"
+   },
+   {
+    "answer": "CPU arrays are already the canonical mutable state.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.native (native.py)",
+     "class NativeRecurrentKernel:",
+     "def synchronize_to_host():",
+     "\"\"\"CPU arrays are already the canonical mutable state.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.native",
+    "ordinal": 1,
+    "qa_id": "q_btykzztjh",
+    "question": "In the module humanbrain.native, what does the method NativeRecurrentKernel.synchronize_to_host do?",
+    "references": [
+     "native.py::NativeRecurrentKernel.synchronize_to_host::function_summary"
+    ],
+    "source_file": "native.py",
+    "target": "NativeRecurrentKernel.synchronize_to_host"
+   },
+   {
+    "answer": "Canonical JSON encoding (sort_keys, tight separators, UTF-8).",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.python_qa_corpus (python_qa_corpus.py)",
+     "def canonical_json(value):",
+     "\"\"\"Canonical JSON encoding (sort_keys, tight separators, UTF-8).\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.python_qa_corpus",
+    "ordinal": 2,
+    "qa_id": "q_splfzpbtd",
+    "question": "In the module humanbrain.python_qa_corpus, what does the function canonical_json do?",
+    "references": [
+     "python_qa_corpus.py::canonical_json::function_summary"
+    ],
+    "source_file": "python_qa_corpus.py",
+    "target": "canonical_json"
+   },
+   {
+    "answer": "Persist this opaque state under caller-owned metadata.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent_state (recurrent_state.py)",
+     "class RecurrentCellSynapseState:",
+     "def save_enveloped_checkpoint(path, envelope):",
+     "\"\"\"Persist this opaque state under caller-owned metadata.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.recurrent_state",
+    "ordinal": 3,
+    "qa_id": "q_tvhfzbhwz",
+    "question": "In the module humanbrain.recurrent_state, what does the method RecurrentCellSynapseState.save_enveloped_checkpoint do?",
+    "references": [
+     "recurrent_state.py::RecurrentCellSynapseState.save_enveloped_checkpoint::function_summary"
+    ],
+    "source_file": "recurrent_state.py",
+    "target": "RecurrentCellSynapseState.save_enveloped_checkpoint"
+   },
+   {
+    "answer": "Update local cell-rate and pre/post structural coactivity traces.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.development (development.py)",
+     "class DevelopmentalGrowthController:",
+     "def record_plasticity():",
+     "\"\"\"Update local cell-rate and pre/post structural coactivity traces.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.development",
+    "ordinal": 4,
+    "qa_id": "q_pmyrdbmbl",
+    "question": "In the module humanbrain.development, what does the method DevelopmentalGrowthController.record_plasticity do?",
+    "references": [
+     "development.py::DevelopmentalGrowthController.record_plasticity::function_summary"
+    ],
+    "source_file": "development.py",
+    "target": "DevelopmentalGrowthController.record_plasticity"
+   },
+   {
+    "answer": "Fit the base tokenizer (if none supplied) and mine concepts.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.concept_tokens (concept_tokens.py)",
+     "class ConceptTokenizer:",
+     "def fit(cls, texts, base, config, base_config):",
+     "\"\"\"Fit the base tokenizer (if none supplied) and mine concepts.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.concept_tokens",
+    "ordinal": 5,
+    "qa_id": "q_lcfktknms",
+    "question": "In the module humanbrain.concept_tokens, what does the method ConceptTokenizer.fit do?",
+    "references": [
+     "concept_tokens.py::ConceptTokenizer.fit::function_summary"
+    ],
+    "source_file": "concept_tokens.py",
+    "target": "ConceptTokenizer.fit"
+   },
+   {
+    "answer": "Compile the CUDA cell kernel with NVRTC into a device-specific cache.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.cuda (cuda.py)",
+     "def build_cuda(cache_root, force):",
+     "\"\"\"Compile the CUDA cell kernel with NVRTC into a device-specific cache.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.cuda",
+    "ordinal": 6,
+    "qa_id": "q_txhnbbvmn",
+    "question": "In the module humanbrain.cuda, what does the function build_cuda do?",
+    "references": [
+     "cuda.py::build_cuda::function_summary"
+    ],
+    "source_file": "cuda.py",
+    "target": "build_cuda"
+   },
+   {
+    "answer": "Download every synchronized array for explicit state inspection.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.cuda (cuda.py)",
+     "class CudaRecurrentKernel:",
+     "def synchronize_to_host():",
+     "\"\"\"Download every synchronized array for explicit state inspection.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.cuda",
+    "ordinal": 7,
+    "qa_id": "q_gqtzhkgtd",
+    "question": "In the module humanbrain.cuda, what does the method CudaRecurrentKernel.synchronize_to_host do?",
+    "references": [
+     "cuda.py::CudaRecurrentKernel.synchronize_to_host::function_summary"
+    ],
+    "source_file": "cuda.py",
+    "target": "CudaRecurrentKernel.synchronize_to_host"
+   },
+   {
+    "answer": "Rebuild reverse CSR and upload all in-place structural mutations.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.cuda (cuda.py)",
+     "class CudaRecurrentKernel:",
+     "def synchronize_structure_from_host():",
+     "\"\"\"Rebuild reverse CSR and upload all in-place structural mutations.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.cuda",
+    "ordinal": 8,
+    "qa_id": "q_pfxxfcwbt",
+    "question": "In the module humanbrain.cuda, what does the method CudaRecurrentKernel.synchronize_structure_from_host do?",
+    "references": [
+     "cuda.py::CudaRecurrentKernel.synchronize_structure_from_host::function_summary"
+    ],
+    "source_file": "cuda.py",
+    "target": "CudaRecurrentKernel.synchronize_structure_from_host"
+   },
+   {
+    "answer": "Apply the configured readout plasticity rule after one observation.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent (recurrent.py)",
+     "class RecurrentCellCircuit:",
+     "def strengthen(target_token_id):",
+     "\"\"\"Apply the configured readout plasticity rule after one observation.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.recurrent",
+    "ordinal": 9,
+    "qa_id": "q_rftndtlzv",
+    "question": "In the module humanbrain.recurrent, what does the method RecurrentCellCircuit.strengthen do?",
+    "references": [
+     "recurrent.py::RecurrentCellCircuit.strengthen::function_summary"
+    ],
+    "source_file": "recurrent.py",
+    "target": "RecurrentCellCircuit.strengthen"
+   },
+   {
+    "answer": "Scale incoming recurrent synapses from a postsynaptic rate signal.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.development (development.py)",
+     "class DevelopmentalGrowthController:",
+     "def apply_activity_homeostasis():",
+     "\"\"\"Scale incoming recurrent synapses from a postsynaptic rate signal.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.development",
+    "ordinal": 10,
+    "qa_id": "q_dzqpnkygq",
+    "question": "In the module humanbrain.development, what does the method DevelopmentalGrowthController.apply_activity_homeostasis do?",
+    "references": [
+     "development.py::DevelopmentalGrowthController.apply_activity_homeostasis::function_summary"
+    ],
+    "source_file": "development.py",
+    "target": "DevelopmentalGrowthController.apply_activity_homeostasis"
+   },
+   {
+    "answer": "Teacher-force held-out text while preserving recurrent cell state.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent_language (recurrent_language.py)",
+     "class RecurrentCellLanguageModel:",
+     "def evaluate(text, max_predictions):",
+     "\"\"\"Teacher-force held-out text while preserving recurrent cell state.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.recurrent_language",
+    "ordinal": 11,
+    "qa_id": "q_wnymrykbb",
+    "question": "In the module humanbrain.recurrent_language, what does the method RecurrentCellLanguageModel.evaluate do?",
+    "references": [
+     "recurrent_language.py::RecurrentCellLanguageModel.evaluate::function_summary"
+    ],
+    "source_file": "recurrent_language.py",
+    "target": "RecurrentCellLanguageModel.evaluate"
+   },
+   {
+    "answer": "Freeze recurrent cells and synapses and return the artifact SHA-256.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent_language (recurrent_language.py)",
+     "class RecurrentCellLanguageModel:",
+     "def save(path):",
+     "\"\"\"Freeze recurrent cells and synapses and return the artifact SHA-256.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.recurrent_language",
+    "ordinal": 12,
+    "qa_id": "q_kfkzrfxwz",
+    "question": "In the module humanbrain.recurrent_language, what does the method RecurrentCellLanguageModel.save do?",
+    "references": [
+     "recurrent_language.py::RecurrentCellLanguageModel.save::function_summary"
+    ],
+    "source_file": "recurrent_language.py",
+    "target": "RecurrentCellLanguageModel.save"
+   },
+   {
+    "answer": "Return diagnostics only after the caller has sealed all lanes.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_composition_runner (typed_composition_runner.py)",
+     "def score_sealed_completions(protocol, sealed, checkpoint_sha256s, checkpoint_cell_synapse_sha256s):",
+     "\"\"\"Return diagnostics only after the caller has sealed all lanes.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.typed_composition_runner",
+    "ordinal": 13,
+    "qa_id": "q_vbsmsdsng",
+    "question": "In the module humanbrain.typed_composition_runner, what does the function score_sealed_completions do?",
+    "references": [
+     "typed_composition_runner.py::score_sealed_completions::function_summary"
+    ],
+    "source_file": "typed_composition_runner.py",
+    "target": "score_sealed_completions"
+   },
+   {
+    "answer": "Canonical base-token id sequence of each concept.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.concept_tokens (concept_tokens.py)",
+     "class ConceptTokenizer:",
+     "def concept_token_sequences():",
+     "\"\"\"Canonical base-token id sequence of each concept.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.concept_tokens",
+    "ordinal": 14,
+    "qa_id": "q_ybkcyjtcl",
+    "question": "In the module humanbrain.concept_tokens, what does the method ConceptTokenizer.concept_token_sequences do?",
+    "references": [
+     "concept_tokens.py::ConceptTokenizer.concept_token_sequences::function_summary"
+    ],
+    "source_file": "concept_tokens.py",
+    "target": "ConceptTokenizer.concept_token_sequences"
+   },
+   {
+    "answer": "Mine recurring multi-token concepts from ``texts`` above ``base``.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.concept_tokens (concept_tokens.py)",
+     "def mine_concepts_detailed(texts, base, config):",
+     "\"\"\"Mine recurring multi-token concepts from ``texts`` above ``base``.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.concept_tokens",
+    "ordinal": 15,
+    "qa_id": "q_pbsfxkndy",
+    "question": "In the module humanbrain.concept_tokens, what does the function mine_concepts_detailed do?",
+    "references": [
+     "concept_tokens.py::mine_concepts_detailed::function_summary"
+    ],
+    "source_file": "concept_tokens.py",
+    "target": "mine_concepts_detailed"
+   },
+   {
+    "answer": "Execute the official counter KAT and the frozen v2 topology reference.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.procedural_topology (procedural_topology.py)",
+     "def verify_topology_implementation():",
+     "\"\"\"Execute the official counter KAT and the frozen v2 topology reference.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.procedural_topology",
+    "ordinal": 16,
+    "qa_id": "q_qtxzkdpwp",
+    "question": "In the module humanbrain.procedural_topology, what does the function verify_topology_implementation do?",
+    "references": [
+     "procedural_topology.py::verify_topology_implementation::function_summary"
+    ],
+    "source_file": "procedural_topology.py",
+    "target": "verify_topology_implementation"
+   },
+   {
+    "answer": "Mine recurring multi-token concepts; see :func:`mine_concepts_detailed`.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.concept_tokens (concept_tokens.py)",
+     "def mine_concepts(texts, base, config):",
+     "\"\"\"Mine recurring multi-token concepts; see :func:`mine_concepts_detailed`.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.concept_tokens",
+    "ordinal": 17,
+    "qa_id": "q_jrjdhxjtz",
+    "question": "In the module humanbrain.concept_tokens, what does the function mine_concepts do?",
+    "references": [
+     "concept_tokens.py::mine_concepts::function_summary"
+    ],
+    "source_file": "concept_tokens.py",
+    "target": "mine_concepts"
+   },
+   {
+    "answer": "CPU topology and weight arrays are already live native state.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.native (native.py)",
+     "class NativeRecurrentKernel:",
+     "def synchronize_structure_from_host():",
+     "\"\"\"CPU topology and weight arrays are already live native state.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.native",
+    "ordinal": 18,
+    "qa_id": "q_dzfzdpryr",
+    "question": "In the module humanbrain.native, what does the method NativeRecurrentKernel.synchronize_structure_from_host do?",
+    "references": [
+     "native.py::NativeRecurrentKernel.synchronize_structure_from_host::function_summary"
+    ],
+    "source_file": "native.py",
+    "target": "NativeRecurrentKernel.synchronize_structure_from_host"
+   },
+   {
+    "answer": "Read the current delivered by all learned output synapses.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent (recurrent.py)",
+     "class RecurrentCellCircuit:",
+     "def output_current_pa():",
+     "\"\"\"Read the current delivered by all learned output synapses.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.recurrent",
+    "ordinal": 19,
+    "qa_id": "q_xsnbjgmxl",
+    "question": "In the module humanbrain.recurrent, what does the method RecurrentCellCircuit.output_current_pa do?",
+    "references": [
+     "recurrent.py::RecurrentCellCircuit.output_current_pa::function_summary"
+    ],
+    "source_file": "recurrent.py",
+    "target": "RecurrentCellCircuit.output_current_pa"
+   },
+   {
+    "answer": "Publish in-place afferent, recurrent-topology, and weight mutations.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent (recurrent.py)",
+     "class RecurrentCellCircuit:",
+     "def synchronize_structure_from_host():",
+     "\"\"\"Publish in-place afferent, recurrent-topology, and weight mutations.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.recurrent",
+    "ordinal": 20,
+    "qa_id": "q_nvnbtychh",
+    "question": "In the module humanbrain.recurrent, what does the method RecurrentCellCircuit.synchronize_structure_from_host do?",
+    "references": [
+     "recurrent.py::RecurrentCellCircuit.synchronize_structure_from_host::function_summary"
+    ],
+    "source_file": "recurrent.py",
+    "target": "RecurrentCellCircuit.synchronize_structure_from_host"
+   },
+   {
+    "answer": "Pinned module list: top-level ``humanbrain/*.py``, no ``__init__.py``.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.python_qa_corpus (python_qa_corpus.py)",
+     "def discover_source_files(src_dir):",
+     "\"\"\"Pinned module list: top-level ``humanbrain/*.py``, no ``__init__.py``.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.python_qa_corpus",
+    "ordinal": 21,
+    "qa_id": "q_ycrnqdvcw",
+    "question": "In the module humanbrain.python_qa_corpus, what does the function discover_source_files do?",
+    "references": [
+     "python_qa_corpus.py::discover_source_files::function_summary"
+    ],
+    "source_file": "python_qa_corpus.py",
+    "target": "discover_source_files"
+   },
+   {
+    "answer": "Teacher-forced held-out next-token accuracy through cell races.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.language (language.py)",
+     "class CellLanguageModel:",
+     "def evaluate(text, max_predictions):",
+     "\"\"\"Teacher-forced held-out next-token accuracy through cell races.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.language",
+    "ordinal": 22,
+    "qa_id": "q_cndpdbbmx",
+    "question": "In the module humanbrain.language, what does the method CellLanguageModel.evaluate do?",
+    "references": [
+     "language.py::CellLanguageModel.evaluate::function_summary"
+    ],
+    "source_file": "language.py",
+    "target": "CellLanguageModel.evaluate"
+   },
+   {
+    "answer": "Optional per-token observer callback (R0-c Thread-1 logging seam).",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent (recurrent.py)",
+     "class RecurrentCellCircuit:",
+     "def observation_sink():",
+     "\"\"\"Optional per-token observer callback (R0-c Thread-1 logging seam).\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.recurrent",
+    "ordinal": 23,
+    "qa_id": "q_kbndzcysk",
+    "question": "In the module humanbrain.recurrent, what does the method RecurrentCellCircuit.observation_sink do?",
+    "references": [
+     "recurrent.py::RecurrentCellCircuit.observation_sink::function_summary"
+    ],
+    "source_file": "recurrent.py",
+    "target": "RecurrentCellCircuit.observation_sink"
+   },
+   {
+    "answer": "Growth text pairs the prompt with its answer: ``<prompt> <answer>``.",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.python_qa_corpus (python_qa_corpus.py)",
+     "def growth_text_for_entry(record):",
+     "\"\"\"Growth text pairs the prompt with its answer: ``<prompt> <answer>``.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.python_qa_corpus",
+    "ordinal": 24,
+    "qa_id": "q_wbfmwwrjr",
+    "question": "In the module humanbrain.python_qa_corpus, what does the function growth_text_for_entry do?",
+    "references": [
+     "python_qa_corpus.py::growth_text_for_entry::function_summary"
+    ],
+    "source_file": "python_qa_corpus.py",
+    "target": "growth_text_for_entry"
+   },
+   {
+    "answer": "humanbrain.development",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.development (development.py)",
+     "def grow_developmentally():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.development",
+    "ordinal": 25,
+    "qa_id": "q_xzpntnypn",
+    "question": "Which humanbrain module defines the function grow_developmentally?",
+    "references": [
+     "development.py::grow_developmentally::module_containment"
+    ],
+    "source_file": "development.py",
+    "target": "grow_developmentally"
+   },
+   {
+    "answer": "humanbrain.python_qa_corpus",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.python_qa_corpus (python_qa_corpus.py)",
+     "def prompt_for_entry():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.python_qa_corpus",
+    "ordinal": 26,
+    "qa_id": "q_qzjcvbqcs",
+    "question": "Which humanbrain module defines the function prompt_for_entry?",
+    "references": [
+     "python_qa_corpus.py::prompt_for_entry::module_containment"
+    ],
+    "source_file": "python_qa_corpus.py",
+    "target": "prompt_for_entry"
+   },
+   {
+    "answer": "humanbrain.swe_growth",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.swe_growth (swe_growth.py)",
+     "def growth_examples_from_trajectory():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.swe_growth",
+    "ordinal": 27,
+    "qa_id": "q_lftyrgpsl",
+    "question": "Which humanbrain module defines the function growth_examples_from_trajectory?",
+    "references": [
+     "swe_growth.py::growth_examples_from_trajectory::module_containment"
+    ],
+    "source_file": "swe_growth.py",
+    "target": "growth_examples_from_trajectory"
+   },
+   {
+    "answer": "humanbrain.development",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.development (development.py)",
+     "class DevelopmentalGrowthController:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.development",
+    "ordinal": 28,
+    "qa_id": "q_jdpfnhjvr",
+    "question": "Which humanbrain module defines the class DevelopmentalGrowthController?",
+    "references": [
+     "development.py::DevelopmentalGrowthController::module_containment"
+    ],
+    "source_file": "development.py",
+    "target": "DevelopmentalGrowthController"
+   },
+   {
+    "answer": "humanbrain.recurrent",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent (recurrent.py)",
+     "class RecurrentCellCircuit:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.recurrent",
+    "ordinal": 29,
+    "qa_id": "q_tgctndmdl",
+    "question": "Which humanbrain module defines the class RecurrentCellCircuit?",
+    "references": [
+     "recurrent.py::RecurrentCellCircuit::module_containment"
+    ],
+    "source_file": "recurrent.py",
+    "target": "RecurrentCellCircuit"
+   },
+   {
+    "answer": "humanbrain.typed_composition_runner",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_composition_runner (typed_composition_runner.py)",
+     "def validate_execution_confirmation():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.typed_composition_runner",
+    "ordinal": 30,
+    "qa_id": "q_pzgrvmkzp",
+    "question": "Which humanbrain module defines the function validate_execution_confirmation?",
+    "references": [
+     "typed_composition_runner.py::validate_execution_confirmation::module_containment"
+    ],
+    "source_file": "typed_composition_runner.py",
+    "target": "validate_execution_confirmation"
+   },
+   {
+    "answer": "humanbrain.python_qa_corpus",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.python_qa_corpus (python_qa_corpus.py)",
+     "def build_corpus():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.python_qa_corpus",
+    "ordinal": 31,
+    "qa_id": "q_dcywjyscd",
+    "question": "Which humanbrain module defines the function build_corpus?",
+    "references": [
+     "python_qa_corpus.py::build_corpus::module_containment"
+    ],
+    "source_file": "python_qa_corpus.py",
+    "target": "build_corpus"
+   },
+   {
+    "answer": "humanbrain.cortex",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.cortex (cortex.py)",
+     "class DendriticCortex:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.cortex",
+    "ordinal": 32,
+    "qa_id": "q_qmqmdhrmz",
+    "question": "Which humanbrain module defines the class DendriticCortex?",
+    "references": [
+     "cortex.py::DendriticCortex::module_containment"
+    ],
+    "source_file": "cortex.py",
+    "target": "DendriticCortex"
+   },
+   {
+    "answer": "humanbrain.recurrent",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent (recurrent.py)",
+     "def parse_feature_family():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.recurrent",
+    "ordinal": 33,
+    "qa_id": "q_dqfszrdcv",
+    "question": "Which humanbrain module defines the function parse_feature_family?",
+    "references": [
+     "recurrent.py::parse_feature_family::module_containment"
+    ],
+    "source_file": "recurrent.py",
+    "target": "parse_feature_family"
+   },
+   {
+    "answer": "humanbrain.recurrent_language",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent_language (recurrent_language.py)",
+     "class RecurrentCellLanguageModel:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.recurrent_language",
+    "ordinal": 34,
+    "qa_id": "q_bwndfbgvh",
+    "question": "Which humanbrain module defines the class RecurrentCellLanguageModel?",
+    "references": [
+     "recurrent_language.py::RecurrentCellLanguageModel::module_containment"
+    ],
+    "source_file": "recurrent_language.py",
+    "target": "RecurrentCellLanguageModel"
+   },
+   {
+    "answer": "humanbrain.eval_bridge",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.eval_bridge (eval_bridge.py)",
+     "def process_one_request():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.eval_bridge",
+    "ordinal": 35,
+    "qa_id": "q_xrqtlrldy",
+    "question": "Which humanbrain module defines the function process_one_request?",
+    "references": [
+     "eval_bridge.py::process_one_request::module_containment"
+    ],
+    "source_file": "eval_bridge.py",
+    "target": "process_one_request"
+   },
+   {
+    "answer": "humanbrain.typed_program_types",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_program_types (typed_program_types.py)",
+     "class ProgramParameter:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.typed_program_types",
+    "ordinal": 36,
+    "qa_id": "q_mfkzfssqn",
+    "question": "Which humanbrain module defines the class ProgramParameter?",
+    "references": [
+     "typed_program_types.py::ProgramParameter::module_containment"
+    ],
+    "source_file": "typed_program_types.py",
+    "target": "ProgramParameter"
+   },
+   {
+    "answer": "humanbrain.typed_composition",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_composition (typed_composition.py)",
+     "class CompositionTask:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.typed_composition",
+    "ordinal": 37,
+    "qa_id": "q_vrgfmbgxc",
+    "question": "Which humanbrain module defines the class CompositionTask?",
+    "references": [
+     "typed_composition.py::CompositionTask::module_containment"
+    ],
+    "source_file": "typed_composition.py",
+    "target": "CompositionTask"
+   },
+   {
+    "answer": "humanbrain.procedural_runtime",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.procedural_runtime (procedural_runtime.py)",
+     "class ProceduralRuntimeError:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.procedural_runtime",
+    "ordinal": 38,
+    "qa_id": "q_tznflfjpb",
+    "question": "Which humanbrain module defines the class ProceduralRuntimeError?",
+    "references": [
+     "procedural_runtime.py::ProceduralRuntimeError::module_containment"
+    ],
+    "source_file": "procedural_runtime.py",
+    "target": "ProceduralRuntimeError"
+   },
+   {
+    "answer": "humanbrain.program",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.program (program.py)",
+     "class Layer0ProgramGrammar:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.program",
+    "ordinal": 39,
+    "qa_id": "q_jlxzgdgch",
+    "question": "Which humanbrain module defines the class Layer0ProgramGrammar?",
+    "references": [
+     "program.py::Layer0ProgramGrammar::module_containment"
+    ],
+    "source_file": "program.py",
+    "target": "Layer0ProgramGrammar"
+   },
+   {
+    "answer": "humanbrain.eval_bridge",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.eval_bridge (eval_bridge.py)",
+     "def make_proxy_handler():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.eval_bridge",
+    "ordinal": 40,
+    "qa_id": "q_nrsvvbfxn",
+    "question": "Which humanbrain module defines the function make_proxy_handler?",
+    "references": [
+     "eval_bridge.py::make_proxy_handler::module_containment"
+    ],
+    "source_file": "eval_bridge.py",
+    "target": "make_proxy_handler"
+   },
+   {
+    "answer": "humanbrain.procedural_runtime",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.procedural_runtime (procedural_runtime.py)",
+     "class NativeDenseProceduralReference:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.procedural_runtime",
+    "ordinal": 41,
+    "qa_id": "q_gtkgdxhfn",
+    "question": "Which humanbrain module defines the class NativeDenseProceduralReference?",
+    "references": [
+     "procedural_runtime.py::NativeDenseProceduralReference::module_containment"
+    ],
+    "source_file": "procedural_runtime.py",
+    "target": "NativeDenseProceduralReference"
+   },
+   {
+    "answer": "humanbrain.cortex",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.cortex (cortex.py)",
+     "class CellRace:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.cortex",
+    "ordinal": 42,
+    "qa_id": "q_dwrcnhltg",
+    "question": "Which humanbrain module defines the class CellRace?",
+    "references": [
+     "cortex.py::CellRace::module_containment"
+    ],
+    "source_file": "cortex.py",
+    "target": "CellRace"
+   },
+   {
+    "answer": "humanbrain.typed_composition_runner",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_composition_runner (typed_composition_runner.py)",
+     "class SealedCompletion:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.typed_composition_runner",
+    "ordinal": 43,
+    "qa_id": "q_ftxgvxcqz",
+    "question": "Which humanbrain module defines the class SealedCompletion?",
+    "references": [
+     "typed_composition_runner.py::SealedCompletion::module_containment"
+    ],
+    "source_file": "typed_composition_runner.py",
+    "target": "SealedCompletion"
+   },
+   {
+    "answer": "humanbrain.readout",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.readout (readout.py)",
+     "class SparseCellReadout:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.readout",
+    "ordinal": 44,
+    "qa_id": "q_fzcgktcgt",
+    "question": "Which humanbrain module defines the class SparseCellReadout?",
+    "references": [
+     "readout.py::SparseCellReadout::module_containment"
+    ],
+    "source_file": "readout.py",
+    "target": "SparseCellReadout"
+   },
+   {
+    "answer": "humanbrain.typed_composition_runner",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_composition_runner (typed_composition_runner.py)",
+     "class EvidenceExistsError:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.typed_composition_runner",
+    "ordinal": 45,
+    "qa_id": "q_vhdbthsph",
+    "question": "Which humanbrain module defines the class EvidenceExistsError?",
+    "references": [
+     "typed_composition_runner.py::EvidenceExistsError::module_containment"
+    ],
+    "source_file": "typed_composition_runner.py",
+    "target": "EvidenceExistsError"
+   },
+   {
+    "answer": "humanbrain.procedural_topology",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.procedural_topology (procedural_topology.py)",
+     "def topology_implementation_contract():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.procedural_topology",
+    "ordinal": 46,
+    "qa_id": "q_fqltwmsqd",
+    "question": "Which humanbrain module defines the function topology_implementation_contract?",
+    "references": [
+     "procedural_topology.py::topology_implementation_contract::module_containment"
+    ],
+    "source_file": "procedural_topology.py",
+    "target": "topology_implementation_contract"
+   },
+   {
+    "answer": "humanbrain.bpe_tokenizer",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.bpe_tokenizer (bpe_tokenizer.py)",
+     "class BpeTokenizer:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.bpe_tokenizer",
+    "ordinal": 47,
+    "qa_id": "q_yjqsktqqv",
+    "question": "Which humanbrain module defines the class BpeTokenizer?",
+    "references": [
+     "bpe_tokenizer.py::BpeTokenizer::module_containment"
+    ],
+    "source_file": "bpe_tokenizer.py",
+    "target": "BpeTokenizer"
+   },
+   {
+    "answer": "humanbrain.native",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.native (native.py)",
+     "def loaded_library_identity():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.native",
+    "ordinal": 48,
+    "qa_id": "q_yvhzrsfsk",
+    "question": "Which humanbrain module defines the function loaded_library_identity?",
+    "references": [
+     "native.py::loaded_library_identity::module_containment"
+    ],
+    "source_file": "native.py",
+    "target": "loaded_library_identity"
+   },
+   {
+    "answer": "humanbrain.procedural_runtime",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.procedural_runtime (procedural_runtime.py)",
+     "class ProceduralSnapshot:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.procedural_runtime",
+    "ordinal": 49,
+    "qa_id": "q_lstdcksdr",
+    "question": "Which humanbrain module defines the class ProceduralSnapshot?",
+    "references": [
+     "procedural_runtime.py::ProceduralSnapshot::module_containment"
+    ],
+    "source_file": "procedural_runtime.py",
+    "target": "ProceduralSnapshot"
+   },
+   {
+    "answer": "prompt, max_new_tokens, stop_text",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.language (language.py)",
+     "class CellLanguageModel:",
+     "def complete(prompt, max_new_tokens, stop_text):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.language",
+    "ordinal": 50,
+    "qa_id": "q_mhchhgxfk",
+    "question": "In the module humanbrain.language, what parameters does the method CellLanguageModel.complete take?",
+    "references": [
+     "language.py::CellLanguageModel.complete::signature_recall"
+    ],
+    "source_file": "language.py",
+    "target": "CellLanguageModel.complete"
+   },
+   {
+    "answer": "target",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.readout (readout.py)",
+     "class SparseCellReadout:",
+     "def advance_target(target):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.readout",
+    "ordinal": 51,
+    "qa_id": "q_fbstvnjtl",
+    "question": "In the module humanbrain.readout, what parameters does the method SparseCellReadout.advance_target take?",
+    "references": [
+     "readout.py::SparseCellReadout.advance_target::signature_recall"
+    ],
+    "source_file": "readout.py",
+    "target": "SparseCellReadout.advance_target"
+   },
+   {
+    "answer": "cls, path",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.language (language.py)",
+     "class CellLanguageModel:",
+     "def load(cls, path):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.language",
+    "ordinal": 52,
+    "qa_id": "q_ycvqnkjll",
+    "question": "In the module humanbrain.language, what parameters does the method CellLanguageModel.load take?",
+    "references": [
+     "language.py::CellLanguageModel.load::signature_recall"
+    ],
+    "source_file": "language.py",
+    "target": "CellLanguageModel.load"
+   },
+   {
+    "answer": "repository_root",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.native (native.py)",
+     "def procedural_runtime_source_manifest(repository_root):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.native",
+    "ordinal": 53,
+    "qa_id": "q_cfdfcqjhg",
+    "question": "In the module humanbrain.native, what parameters does the function procedural_runtime_source_manifest take?",
+    "references": [
+     "native.py::procedural_runtime_source_manifest::signature_recall"
+    ],
+    "source_file": "native.py",
+    "target": "procedural_runtime_source_manifest"
+   },
+   {
+    "answer": "target, winner, learning_rate_pa, maximum_weight_pa, trace_decays, target_post_gate, winner_post_gate, activity_decay",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.readout (readout.py)",
+     "class SparseCellReadout:",
+     "def teach(target, winner, learning_rate_pa, maximum_weight_pa, trace_decays, target_post_gate, winner_post_gate, activity_decay):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.readout",
+    "ordinal": 54,
+    "qa_id": "q_bvybpqzjt",
+    "question": "In the module humanbrain.readout, what parameters does the method SparseCellReadout.teach take?",
+    "references": [
+     "readout.py::SparseCellReadout.teach::signature_recall"
+    ],
+    "source_file": "readout.py",
+    "target": "SparseCellReadout.teach"
+   },
+   {
+    "answer": "stage, recruited_cells",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.development (development.py)",
+     "class DevelopmentalGrowthController:",
+     "def close_stage(stage, recruited_cells):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.development",
+    "ordinal": 55,
+    "qa_id": "q_rfznvprnz",
+    "question": "In the module humanbrain.development, what parameters does the method DevelopmentalGrowthController.close_stage take?",
+    "references": [
+     "development.py::DevelopmentalGrowthController.close_stage::signature_recall"
+    ],
+    "source_file": "development.py",
+    "target": "DevelopmentalGrowthController.close_stage"
+   },
+   {
+    "answer": "spec",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_program (typed_program.py)",
+     "class _TypedHoleState:",
+     "def consume(spec):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.typed_program",
+    "ordinal": 56,
+    "qa_id": "q_kymnnnbyp",
+    "question": "In the module humanbrain.typed_program, what parameters does the method _TypedHoleState.consume take?",
+    "references": [
+     "typed_program.py::_TypedHoleState.consume::signature_recall"
+    ],
+    "source_file": "typed_program.py",
+    "target": "_TypedHoleState.consume"
+   },
+   {
+    "answer": "protocol, confirmation",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_composition_runner (typed_composition_runner.py)",
+     "def validate_execution_confirmation(protocol, confirmation):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.typed_composition_runner",
+    "ordinal": 57,
+    "qa_id": "q_sfpmhpndc",
+    "question": "In the module humanbrain.typed_composition_runner, what parameters does the function validate_execution_confirmation take?",
+    "references": [
+     "typed_composition_runner.py::validate_execution_confirmation::signature_recall"
+    ],
+    "source_file": "typed_composition_runner.py",
+    "target": "validate_execution_confirmation"
+   },
+   {
+    "answer": "cache_root, force",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.native (native.py)",
+     "def build_native(cache_root, force):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.native",
+    "ordinal": 58,
+    "qa_id": "q_xwncckmcc",
+    "question": "In the module humanbrain.native, what parameters does the function build_native take?",
+    "references": [
+     "native.py::build_native::signature_recall"
+    ],
+    "source_file": "native.py",
+    "target": "build_native"
+   },
+   {
+    "answer": "prompt",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent_language (recurrent_language.py)",
+     "class RecurrentCellLanguageModel:",
+     "def predict_next(prompt):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.recurrent_language",
+    "ordinal": 59,
+    "qa_id": "q_rrpdrcrrn",
+    "question": "In the module humanbrain.recurrent_language, what parameters does the method RecurrentCellLanguageModel.predict_next take?",
+    "references": [
+     "recurrent_language.py::RecurrentCellLanguageModel.predict_next::signature_recall"
+    ],
+    "source_file": "recurrent_language.py",
+    "target": "RecurrentCellLanguageModel.predict_next"
+   },
+   {
+    "answer": "cls, path",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.recurrent_state (recurrent_state.py)",
+     "class RecurrentCellSynapseState:",
+     "def load_enveloped_checkpoint(cls, path):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.recurrent_state",
+    "ordinal": 60,
+    "qa_id": "q_bfjhvkhhj",
+    "question": "In the module humanbrain.recurrent_state, what parameters does the method RecurrentCellSynapseState.load_enveloped_checkpoint take?",
+    "references": [
+     "recurrent_state.py::RecurrentCellSynapseState.load_enveloped_checkpoint::signature_recall"
+    ],
+    "source_file": "recurrent_state.py",
+    "target": "RecurrentCellSynapseState.load_enveloped_checkpoint"
+   },
+   {
+    "answer": "output, structural_event, random_seed, minimum_age, turnover_probability, learning_rate_pa, maximum_weight_pa, homeostatic_rate",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.readout (readout.py)",
+     "class SparseCellReadout:",
+     "def turnover(output, structural_event, random_seed, minimum_age, turnover_probability, learning_rate_pa, maximum_weight_pa, homeostatic_rate):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.readout",
+    "ordinal": 61,
+    "qa_id": "q_gtqwmsjgj",
+    "question": "In the module humanbrain.readout, what parameters does the method SparseCellReadout.turnover take?",
+    "references": [
+     "readout.py::SparseCellReadout.turnover::signature_recall"
+    ],
+    "source_file": "readout.py",
+    "target": "SparseCellReadout.turnover"
+   },
+   {
+    "answer": "root, protocol_path",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_composition_runner (typed_composition_runner.py)",
+     "def build_execution_plan(root, protocol_path):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.typed_composition_runner",
+    "ordinal": 62,
+    "qa_id": "q_kppprvngg",
+    "question": "In the module humanbrain.typed_composition_runner, what parameters does the function build_execution_plan take?",
+    "references": [
+     "typed_composition_runner.py::build_execution_plan::signature_recall"
+    ],
+    "source_file": "typed_composition_runner.py",
+    "target": "build_execution_plan"
+   },
+   {
+    "answer": "queue, timeout_seconds",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.eval_bridge (eval_bridge.py)",
+     "def make_proxy_handler(queue, timeout_seconds):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.eval_bridge",
+    "ordinal": 63,
+    "qa_id": "q_vdvjkmdwd",
+    "question": "In the module humanbrain.eval_bridge, what parameters does the function make_proxy_handler take?",
+    "references": [
+     "eval_bridge.py::make_proxy_handler::signature_recall"
+    ],
+    "source_file": "eval_bridge.py",
+    "target": "make_proxy_handler"
+   },
+   {
+    "answer": "base_current_pa",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.native (native.py)",
+     "class NativeSparseCellReadout:",
+     "def current(base_current_pa):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.native",
+    "ordinal": 64,
+    "qa_id": "q_zkldtpcjj",
+    "question": "In the module humanbrain.native, what parameters does the method NativeSparseCellReadout.current take?",
+    "references": [
+     "native.py::NativeSparseCellReadout.current::signature_recall"
+    ],
+    "source_file": "native.py",
+    "target": "NativeSparseCellReadout.current"
+   },
+   {
+    "answer": "text",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.bpe_tokenizer (bpe_tokenizer.py)",
+     "class BpeTokenizer:",
+     "def encode(text):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.bpe_tokenizer",
+    "ordinal": 65,
+    "qa_id": "q_mpyxpjcvn",
+    "question": "In the module humanbrain.bpe_tokenizer, what parameters does the method BpeTokenizer.encode take?",
+    "references": [
+     "bpe_tokenizer.py::BpeTokenizer.encode::signature_recall"
+    ],
+    "source_file": "bpe_tokenizer.py",
+    "target": "BpeTokenizer.encode"
+   },
+   {
+    "answer": "cls, element",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_program_types (typed_program_types.py)",
+     "class ProgramType:",
+     "def List(cls, element):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.typed_program_types",
+    "ordinal": 66,
+    "qa_id": "q_jfqgmkkzh",
+    "question": "In the module humanbrain.typed_program_types, what parameters does the method ProgramType.List take?",
+    "references": [
+     "typed_program_types.py::ProgramType.List::signature_recall"
+    ],
+    "source_file": "typed_program_types.py",
+    "target": "ProgramType.List"
+   },
+   {
+    "answer": "relpaths",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.python_qa_corpus (python_qa_corpus.py)",
+     "def split_file_roles(relpaths):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.python_qa_corpus",
+    "ordinal": 67,
+    "qa_id": "q_gqyrthtvd",
+    "question": "In the module humanbrain.python_qa_corpus, what parameters does the function split_file_roles take?",
+    "references": [
+     "python_qa_corpus.py::split_file_roles::signature_recall"
+    ],
+    "source_file": "python_qa_corpus.py",
+    "target": "split_file_roles"
+   },
+   {
+    "answer": "ids",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.tokenizer (tokenizer.py)",
+     "class BytePhraseTokenizer:",
+     "def decode_bytes(ids):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.tokenizer",
+    "ordinal": 68,
+    "qa_id": "q_jbtvljcbl",
+    "question": "In the module humanbrain.tokenizer, what parameters does the method BytePhraseTokenizer.decode_bytes take?",
+    "references": [
+     "tokenizer.py::BytePhraseTokenizer.decode_bytes::signature_recall"
+    ],
+    "source_file": "tokenizer.py",
+    "target": "BytePhraseTokenizer.decode_bytes"
+   },
+   {
+    "answer": "gid",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.procedural_topology (procedural_topology.py)",
+     "class ProceduralTopology:",
+     "def describe_cell(gid):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.procedural_topology",
+    "ordinal": 69,
+    "qa_id": "q_wwqpmnptd",
+    "question": "In the module humanbrain.procedural_topology, what parameters does the method ProceduralTopology.describe_cell take?",
+    "references": [
+     "procedural_topology.py::ProceduralTopology.describe_cell::signature_recall"
+    ],
+    "source_file": "procedural_topology.py",
+    "target": "ProceduralTopology.describe_cell"
+   },
+   {
+    "answer": "value",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.python_qa_corpus (python_qa_corpus.py)",
+     "def canonical_json(value):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.python_qa_corpus",
+    "ordinal": 70,
+    "qa_id": "q_wtnvzhbkk",
+    "question": "In the module humanbrain.python_qa_corpus, what parameters does the function canonical_json take?",
+    "references": [
+     "python_qa_corpus.py::canonical_json::signature_recall"
+    ],
+    "source_file": "python_qa_corpus.py",
+    "target": "canonical_json"
+   },
+   {
+    "answer": "protocol, examples",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.typed_program (typed_program.py)",
+     "def grow(protocol, examples):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.typed_program",
+    "ordinal": 71,
+    "qa_id": "q_jrtfjtrkb",
+    "question": "In the module humanbrain.typed_program, what parameters does the function grow take?",
+    "references": [
+     "typed_program.py::grow::signature_recall"
+    ],
+    "source_file": "typed_program.py",
+    "target": "grow"
+   },
+   {
+    "answer": "token_id",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.tokenizer (tokenizer.py)",
+     "class BytePhraseTokenizer:",
+     "def token_bytes(token_id):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.tokenizer",
+    "ordinal": 72,
+    "qa_id": "q_hpmysmlvf",
+    "question": "In the module humanbrain.tokenizer, what parameters does the method BytePhraseTokenizer.token_bytes take?",
+    "references": [
+     "tokenizer.py::BytePhraseTokenizer.token_bytes::signature_recall"
+    ],
+    "source_file": "tokenizer.py",
+    "target": "BytePhraseTokenizer.token_bytes"
+   },
+   {
+    "answer": "cls, output_cells, reservoir_cells, fan_in, reservoir_eligibility, output_heterogeneity_pa, pacemaker_synapses_pa, arrays, counters",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.readout (readout.py)",
+     "class SparseCellReadout:",
+     "def from_checkpoint(cls, output_cells, reservoir_cells, fan_in, reservoir_eligibility, output_heterogeneity_pa, pacemaker_synapses_pa, arrays, counters):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.readout",
+    "ordinal": 73,
+    "qa_id": "q_swbrygptq",
+    "question": "In the module humanbrain.readout, what parameters does the method SparseCellReadout.from_checkpoint take?",
+    "references": [
+     "readout.py::SparseCellReadout.from_checkpoint::signature_recall"
+    ],
+    "source_file": "readout.py",
+    "target": "SparseCellReadout.from_checkpoint"
+   },
+   {
+    "answer": "output, structural_event, random_seed, minimum_age, turnover_probability, learning_rate_pa, maximum_weight_pa, homeostatic_rate",
+    "cohort": "TRAIN",
+    "context": [
+     "# module humanbrain.native (native.py)",
+     "class NativeSparseCellReadout:",
+     "def turnover(output, structural_event, random_seed, minimum_age, turnover_probability, learning_rate_pa, maximum_weight_pa, homeostatic_rate):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.native",
+    "ordinal": 74,
+    "qa_id": "q_xvvnbdxmq",
+    "question": "In the module humanbrain.native, what parameters does the method NativeSparseCellReadout.turnover take?",
+    "references": [
+     "native.py::NativeSparseCellReadout.turnover::signature_recall"
+    ],
+    "source_file": "native.py",
+    "target": "NativeSparseCellReadout.turnover"
+   }
+  ],
+  "VAL": [
+   {
+    "answer": "Canonical JSON encoding shared by the analyzer's outputs/tests.",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_analysis (qa_analysis.py)",
+     "def canonical_json_bytes(value):",
+     "\"\"\"Canonical JSON encoding shared by the analyzer's outputs/tests.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.qa_analysis",
+    "ordinal": 75,
+    "qa_id": "q_gydhnkpsj",
+    "question": "In the module humanbrain.qa_analysis, what does the function canonical_json_bytes do?",
+    "references": [
+     "qa_analysis.py::canonical_json_bytes::function_summary"
+    ],
+    "source_file": "qa_analysis.py",
+    "target": "canonical_json_bytes"
+   },
+   {
+    "answer": "Compile subthreshold voltage and threshold under constant current.",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.cells (cells.py)",
+     "class AdaptiveGlifPopulation:",
+     "def compile_resting_response(step_count, current_pa):",
+     "\"\"\"Compile subthreshold voltage and threshold under constant current.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.cells",
+    "ordinal": 76,
+    "qa_id": "q_bccdbjwrv",
+    "question": "In the module humanbrain.cells, what does the method AdaptiveGlifPopulation.compile_resting_response do?",
+    "references": [
+     "cells.py::AdaptiveGlifPopulation.compile_resting_response::function_summary"
+    ],
+    "source_file": "cells.py",
+    "target": "AdaptiveGlifPopulation.compile_resting_response"
+   },
+   {
+    "answer": "Produce the full FINDINGS-ready analysis dict for the R2 pilot.",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_analysis (qa_analysis.py)",
+     "def analyze_pilot_record(record, baselines):",
+     "\"\"\"Produce the full FINDINGS-ready analysis dict for the R2 pilot.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.qa_analysis",
+    "ordinal": 77,
+    "qa_id": "q_swtqfrhhv",
+    "question": "In the module humanbrain.qa_analysis, what does the function analyze_pilot_record do?",
+    "references": [
+     "qa_analysis.py::analyze_pilot_record::function_summary"
+    ],
+    "source_file": "qa_analysis.py",
+    "target": "analyze_pilot_record"
+   },
+   {
+    "answer": "Prompt-last framing: context verses, then the question, then ``answer:``.",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_corpus (qa_corpus.py)",
+     "def qa_prompt(context, question):",
+     "\"\"\"Prompt-last framing: context verses, then the question, then ``answer:``.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.qa_corpus",
+    "ordinal": 78,
+    "qa_id": "q_rxnwdlbwx",
+    "question": "In the module humanbrain.qa_corpus, what does the function qa_prompt do?",
+    "references": [
+     "qa_corpus.py::qa_prompt::function_summary"
+    ],
+    "source_file": "qa_corpus.py",
+    "target": "qa_prompt"
+   },
+   {
+    "answer": "Machine-checkable degeneracy-guard verdict with explicit reasons.",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_analysis (qa_analysis.py)",
+     "def guard_verdict(degeneracy, label):",
+     "\"\"\"Machine-checkable degeneracy-guard verdict with explicit reasons.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.qa_analysis",
+    "ordinal": 79,
+    "qa_id": "q_rfpxvtrdl",
+    "question": "In the module humanbrain.qa_analysis, what does the function guard_verdict do?",
+    "references": [
+     "qa_analysis.py::guard_verdict::function_summary"
+    ],
+    "source_file": "qa_analysis.py",
+    "target": "guard_verdict"
+   },
+   {
+    "answer": "Run a current clamp through the pinned adaptive human GLIF5 cell.",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.cells (cells.py)",
+     "def simulate_glif5_current(parameters, current_pa, duration_ms):",
+     "\"\"\"Run a current clamp through the pinned adaptive human GLIF5 cell.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.cells",
+    "ordinal": 80,
+    "qa_id": "q_yfbndpscg",
+    "question": "In the module humanbrain.cells, what does the function simulate_glif5_current do?",
+    "references": [
+     "cells.py::simulate_glif5_current::function_summary"
+    ],
+    "source_file": "cells.py",
+    "target": "simulate_glif5_current"
+   },
+   {
+    "answer": "Return the validated fixture corpus entries in fixed order.",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_corpus (qa_corpus.py)",
+     "def load_corpus():",
+     "\"\"\"Return the validated fixture corpus entries in fixed order.\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.qa_corpus",
+    "ordinal": 81,
+    "qa_id": "q_ffscxqyjx",
+    "question": "In the module humanbrain.qa_corpus, what does the function load_corpus do?",
+    "references": [
+     "qa_corpus.py::load_corpus::function_summary"
+    ],
+    "source_file": "qa_corpus.py",
+    "target": "load_corpus"
+   },
+   {
+    "answer": "Wilson score interval on a binomial proportion (matches run_pilot).",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_analysis (qa_analysis.py)",
+     "def wilson(correct, n, z):",
+     "\"\"\"Wilson score interval on a binomial proportion (matches run_pilot).\"\"\""
+    ],
+    "family": "function_summary",
+    "module": "humanbrain.qa_analysis",
+    "ordinal": 82,
+    "qa_id": "q_xdwkybftj",
+    "question": "In the module humanbrain.qa_analysis, what does the function wilson do?",
+    "references": [
+     "qa_analysis.py::wilson::function_summary"
+    ],
+    "source_file": "qa_analysis.py",
+    "target": "wilson"
+   },
+   {
+    "answer": "humanbrain.qa_analysis",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_analysis (qa_analysis.py)",
+     "def canonical_json_bytes():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.qa_analysis",
+    "ordinal": 83,
+    "qa_id": "q_gslpkrqzq",
+    "question": "Which humanbrain module defines the function canonical_json_bytes?",
+    "references": [
+     "qa_analysis.py::canonical_json_bytes::module_containment"
+    ],
+    "source_file": "qa_analysis.py",
+    "target": "canonical_json_bytes"
+   },
+   {
+    "answer": "humanbrain.swe_model",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.swe_model (swe_model.py)",
+     "class HumanCellModel:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.swe_model",
+    "ordinal": 84,
+    "qa_id": "q_vsggmfsxy",
+    "question": "Which humanbrain module defines the class HumanCellModel?",
+    "references": [
+     "swe_model.py::HumanCellModel::module_containment"
+    ],
+    "source_file": "swe_model.py",
+    "target": "HumanCellModel"
+   },
+   {
+    "answer": "humanbrain.qa_analysis",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_analysis (qa_analysis.py)",
+     "def per_family_analysis():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.qa_analysis",
+    "ordinal": 85,
+    "qa_id": "q_dvlfbdmdq",
+    "question": "Which humanbrain module defines the function per_family_analysis?",
+    "references": [
+     "qa_analysis.py::per_family_analysis::module_containment"
+    ],
+    "source_file": "qa_analysis.py",
+    "target": "per_family_analysis"
+   },
+   {
+    "answer": "humanbrain.cells",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.cells (cells.py)",
+     "class AdaptiveGlifState:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.cells",
+    "ordinal": 86,
+    "qa_id": "q_kvgccsvyn",
+    "question": "Which humanbrain module defines the class AdaptiveGlifState?",
+    "references": [
+     "cells.py::AdaptiveGlifState::module_containment"
+    ],
+    "source_file": "cells.py",
+    "target": "AdaptiveGlifState"
+   },
+   {
+    "answer": "humanbrain.cells",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.cells (cells.py)",
+     "class GlifTrace:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.cells",
+    "ordinal": 87,
+    "qa_id": "q_rkykswvmk",
+    "question": "Which humanbrain module defines the class GlifTrace?",
+    "references": [
+     "cells.py::GlifTrace::module_containment"
+    ],
+    "source_file": "cells.py",
+    "target": "GlifTrace"
+   },
+   {
+    "answer": "humanbrain.qa_corpus",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_corpus (qa_corpus.py)",
+     "def prompt_for_task():"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.qa_corpus",
+    "ordinal": 88,
+    "qa_id": "q_jprptmhyk",
+    "question": "Which humanbrain module defines the function prompt_for_task?",
+    "references": [
+     "qa_corpus.py::prompt_for_task::module_containment"
+    ],
+    "source_file": "qa_corpus.py",
+    "target": "prompt_for_task"
+   },
+   {
+    "answer": "humanbrain.scale_accounting",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.scale_accounting (scale_accounting.py)",
+     "class ShardMemory:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.scale_accounting",
+    "ordinal": 89,
+    "qa_id": "q_vfsdymntw",
+    "question": "Which humanbrain module defines the class ShardMemory?",
+    "references": [
+     "scale_accounting.py::ShardMemory::module_containment"
+    ],
+    "source_file": "scale_accounting.py",
+    "target": "ShardMemory"
+   },
+   {
+    "answer": "humanbrain.cells",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.cells (cells.py)",
+     "class FittedGlif5Constants:"
+    ],
+    "family": "module_containment",
+    "module": "humanbrain.cells",
+    "ordinal": 90,
+    "qa_id": "q_njgqkrsgq",
+    "question": "Which humanbrain module defines the class FittedGlif5Constants?",
+    "references": [
+     "cells.py::FittedGlif5Constants::module_containment"
+    ],
+    "source_file": "cells.py",
+    "target": "FittedGlif5Constants"
+   },
+   {
+    "answer": "injected_current_pa",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.cells (cells.py)",
+     "class AdaptiveGlifPopulation:",
+     "def step(injected_current_pa):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.cells",
+    "ordinal": 91,
+    "qa_id": "q_pwqtwxkzf",
+    "question": "In the module humanbrain.cells, what parameters does the method AdaptiveGlifPopulation.step take?",
+    "references": [
+     "cells.py::AdaptiveGlifPopulation.step::signature_recall"
+    ],
+    "source_file": "cells.py",
+    "target": "AdaptiveGlifPopulation.step"
+   },
+   {
+    "answer": "baselines_dir",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_analysis (qa_analysis.py)",
+     "def load_baseline_records(baselines_dir):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.qa_analysis",
+    "ordinal": 92,
+    "qa_id": "q_bbyxvngxs",
+    "question": "In the module humanbrain.qa_analysis, what parameters does the function load_baseline_records take?",
+    "references": [
+     "qa_analysis.py::load_baseline_records::signature_recall"
+    ],
+    "source_file": "qa_analysis.py",
+    "target": "load_baseline_records"
+   },
+   {
+    "answer": "seed, calibration_task_count",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_corpus (qa_corpus.py)",
+     "def build_curriculum(seed, calibration_task_count):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.qa_corpus",
+    "ordinal": 93,
+    "qa_id": "q_plwlxxwtp",
+    "question": "In the module humanbrain.qa_corpus, what parameters does the function build_curriculum take?",
+    "references": [
+     "qa_corpus.py::build_curriculum::signature_recall"
+    ],
+    "source_file": "qa_corpus.py",
+    "target": "build_curriculum"
+   },
+   {
+    "answer": "step_count, current_pa",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.cells (cells.py)",
+     "class AdaptiveGlifPopulation:",
+     "def compile_resting_response(step_count, current_pa):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.cells",
+    "ordinal": 94,
+    "qa_id": "q_jgdzqkjts",
+    "question": "In the module humanbrain.cells, what parameters does the method AdaptiveGlifPopulation.compile_resting_response take?",
+    "references": [
+     "cells.py::AdaptiveGlifPopulation.compile_resting_response::signature_recall"
+    ],
+    "source_file": "cells.py",
+    "target": "AdaptiveGlifPopulation.compile_resting_response"
+   },
+   {
+    "answer": "messages",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.swe_model (swe_model.py)",
+     "def serialize_messages(messages):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.swe_model",
+    "ordinal": 95,
+    "qa_id": "q_gjzgdbypt",
+    "question": "In the module humanbrain.swe_model, what parameters does the function serialize_messages take?",
+    "references": [
+     "swe_model.py::serialize_messages::signature_recall"
+    ],
+    "source_file": "swe_model.py",
+    "target": "serialize_messages"
+   },
+   {
+    "answer": "**kwargs",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.swe_model (swe_model.py)",
+     "class HumanCellModel:",
+     "def format_message(**kwargs):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.swe_model",
+    "ordinal": 96,
+    "qa_id": "q_mdfpblbrr",
+    "question": "In the module humanbrain.swe_model, what parameters does the method HumanCellModel.format_message take?",
+    "references": [
+     "swe_model.py::HumanCellModel.format_message::signature_recall"
+    ],
+    "source_file": "swe_model.py",
+    "target": "HumanCellModel.format_message"
+   },
+   {
+    "answer": "cls, path",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.cells (cells.py)",
+     "class AllenGlif3Parameters:",
+     "def from_allen_config(cls, path):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.cells",
+    "ordinal": 97,
+    "qa_id": "q_qvsfgqpxv",
+    "question": "In the module humanbrain.cells, what parameters does the method AllenGlif3Parameters.from_allen_config take?",
+    "references": [
+     "cells.py::AllenGlif3Parameters.from_allen_config::signature_recall"
+    ],
+    "source_file": "cells.py",
+    "target": "AllenGlif3Parameters.from_allen_config"
+   },
+   {
+    "answer": "analysis",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.qa_analysis (qa_analysis.py)",
+     "def render_findings_markdown(analysis):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.qa_analysis",
+    "ordinal": 98,
+    "qa_id": "q_qwnzlfcwp",
+    "question": "In the module humanbrain.qa_analysis, what parameters does the function render_findings_markdown take?",
+    "references": [
+     "qa_analysis.py::render_findings_markdown::signature_recall"
+    ],
+    "source_file": "qa_analysis.py",
+    "target": "render_findings_markdown"
+   },
+   {
+    "answer": "model, path",
+    "cohort": "VAL",
+    "context": [
+     "# module humanbrain.artifacts (artifacts.py)",
+     "def save_checkpoint(model, path):"
+    ],
+    "family": "signature_recall",
+    "module": "humanbrain.artifacts",
+    "ordinal": 99,
+    "qa_id": "q_pszpmpbcf",
+    "question": "In the module humanbrain.artifacts, what parameters does the function save_checkpoint take?",
+    "references": [
+     "artifacts.py::save_checkpoint::signature_recall"
+    ],
+    "source_file": "artifacts.py",
+    "target": "save_checkpoint"
+   }
+  ]
+ },
+ "files": [
+  {
+   "path": "artifacts.py",
+   "sha256": "514ee4dc979bbf7e609783eaa5aae833f5991e26a3bd49a12da4942bad9802aa"
+  },
+  {
+   "path": "bpe_tokenizer.py",
+   "sha256": "70eb179249004e1c57613a1b2cf541948c61031c5a061777295fcaee65fe5243"
+  },
+  {
+   "path": "cells.py",
+   "sha256": "20f3e4301fed026daf0752bedcc800503efd9d75770240d837659a63b7911fc5"
+  },
+  {
+   "path": "cli.py",
+   "sha256": "2674ca6f7d58f7b803e2d0fccdb357e3b0f738fd4e668e451c519dc955246f3a"
+  },
+  {
+   "path": "concept_tokens.py",
+   "sha256": "9070deaf7d9a8a54add24e3a213d8b6aa7bbb24b3d35ad66a7b68b3d1148f43e"
+  },
+  {
+   "path": "cortex.py",
+   "sha256": "bf13da29cde29592627de65053c6ea66c26f2738ea4877f463c6d340aef982cc"
+  },
+  {
+   "path": "cuda.py",
+   "sha256": "76170f3a6fce686286c0cde8fbe9169e71b4af1d35669a23f73df6bf3b7a4fda"
+  },
+  {
+   "path": "development.py",
+   "sha256": "5025fc171f38c181b49cbf9f6b0f351653a0c43f98e4a5df04f32f343c251ece"
+  },
+  {
+   "path": "eval_bridge.py",
+   "sha256": "55800a0077981712ca59d52d1c34d27cd0b75240c7f6c728fc1456286182cbd7"
+  },
+  {
+   "path": "human_cell_identity.py",
+   "sha256": "0050670ce4976c6163bc652eb33846d7118d6e2ca047eeeda1cf334efb8cc6f9"
+  },
+  {
+   "path": "language.py",
+   "sha256": "790ab0603ddba28718e171ffa195560aef383b79b0156d14d552d674b5f1c29c"
+  },
+  {
+   "path": "native.py",
+   "sha256": "d8989cd6657c8934dad2bc4b443a46b351c053c5fd58b77e682aacfbebfac282"
+  },
+  {
+   "path": "procedural_runtime.py",
+   "sha256": "6e61b316ff4586a26c75e5b29d51b3dc316bce3da998c7d55546164b36ca4139"
+  },
+  {
+   "path": "procedural_topology.py",
+   "sha256": "30f704f5721e7c8c92902006f28ccb7b0a73b79a7dd9b62e5e91b7c2ab4c69bb"
+  },
+  {
+   "path": "program.py",
+   "sha256": "ca5c46aa04688954099d029cc94829f4b8ca1e0fddc651d4aff2bdbe5fb05ddd"
+  },
+  {
+   "path": "python_qa_corpus.py",
+   "sha256": "33e336ba9b36f9da689f80b0eec5fc443f60b25af61f9f0164017c8d5c12b50b"
+  },
+  {
+   "path": "qa_analysis.py",
+   "sha256": "f9c5d92eac5583cfbde89689211a8ed0458a1f456650805fa1d06798481829e1"
+  },
+  {
+   "path": "qa_corpus.py",
+   "sha256": "38644d590dcf9607127b6ce775801c1ec19eff217c153e46b0eb45d93ed36c66"
+  },
+  {
+   "path": "readout.py",
+   "sha256": "95b325e434124f5dd44a4d5ac5fce6f98fbe9d1126756b6720ca7b93c50bc690"
+  },
+  {
+   "path": "recurrent.py",
+   "sha256": "200cf2c2faf40e136622e7d6f41aa64bb82f3b50650801fd98baec07dd680734"
+  },
+  {
+   "path": "recurrent_artifacts.py",
+   "sha256": "415976d6b89bfcaf012edbe68503c602770a3bd49e10487588bdcfeb8a617775"
+  },
+  {
+   "path": "recurrent_language.py",
+   "sha256": "8d6990d0e30eed96bb2da5c40fa86328d85f22ed48967649669960d2ad7dcc65"
+  },
+  {
+   "path": "recurrent_state.py",
+   "sha256": "eca7a0db39eba1baa07fbeed0d65c80b5ac6af1293092971e14b17d18efe8bb6"
+  },
+  {
+   "path": "scale_accounting.py",
+   "sha256": "a0a9e70769e24f918889395d0f5a729e12d3aef08a9bcbd70692a2bf8589e57d"
+  },
+  {
+   "path": "swe_growth.py",
+   "sha256": "813b9786787c471fb997757258049cf55bd3e4418fa53343f9d169f9432c02e3"
+  },
+  {
+   "path": "swe_model.py",
+   "sha256": "7ed79302a67a291482489c49500717dfdfd96baf0ef2c31b5614d944d731b555"
+  },
+  {
+   "path": "tokenizer.py",
+   "sha256": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce"
+  },
+  {
+   "path": "topology.py",
+   "sha256": "d12b7199523ce769c202557fe2a4135cc87fc1082e830579e4ce20f731e147a0"
+  },
+  {
+   "path": "typed_composition.py",
+   "sha256": "678f8b71149005c63d7572c7207a2b9d71dd559e3b4d3d25b04e37c4ca4d81e0"
+  },
+  {
+   "path": "typed_composition_runner.py",
+   "sha256": "607ac6109aee879eb349cee27558f9974dfa6fadaf27a827299f68bc121dc3c4"
+  },
+  {
+   "path": "typed_program.py",
+   "sha256": "82ceb082a42570a1bdb5e56a8b55d815b4a6c93db0899123808c71ac68d9425b"
+  },
+  {
+   "path": "typed_program_types.py",
+   "sha256": "5f06a43bc771a8d61881d7ebf7c7decefcadbe245d77ce10640dbfff5174d099"
+  }
+ ],
+ "git_head": "1c9cdb6",
+ "roles": {
+  "artifacts.py": "VAL",
+  "bpe_tokenizer.py": "TRAIN",
+  "cells.py": "VAL",
+  "cli.py": "VAL",
+  "concept_tokens.py": "TRAIN",
+  "cortex.py": "TRAIN",
+  "cuda.py": "TRAIN",
+  "development.py": "TRAIN",
+  "eval_bridge.py": "TRAIN",
+  "human_cell_identity.py": "TRAIN",
+  "language.py": "TRAIN",
+  "native.py": "TRAIN",
+  "procedural_runtime.py": "TRAIN",
+  "procedural_topology.py": "TRAIN",
+  "program.py": "TRAIN",
+  "python_qa_corpus.py": "TRAIN",
+  "qa_analysis.py": "VAL",
+  "qa_corpus.py": "VAL",
+  "readout.py": "TRAIN",
+  "recurrent.py": "TRAIN",
+  "recurrent_artifacts.py": "VAL",
+  "recurrent_language.py": "TRAIN",
+  "recurrent_state.py": "TRAIN",
+  "scale_accounting.py": "VAL",
+  "swe_growth.py": "TRAIN",
+  "swe_model.py": "VAL",
+  "tokenizer.py": "TRAIN",
+  "topology.py": "TRAIN",
+  "typed_composition.py": "TRAIN",
+  "typed_composition_runner.py": "TRAIN",
+  "typed_program.py": "TRAIN",
+  "typed_program_types.py": "TRAIN"
+ },
+ "schema_version": "humanbrain/python-qa-corpus/v1",
+ "split_rule": "BY FILE: sha256(file-split-domain, relpath)-ranked modules; lowest 25%-ish share (floor 3) are VAL; every triple's source_file lies wholly in one cohort"
+}

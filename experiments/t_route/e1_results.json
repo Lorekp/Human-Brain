@@ -1,0 +1,156 @@
+{
+  "schema_version": "humanbrain/t-route-e1/v1",
+  "generated_utc": "2026-08-25T09:15:41Z",
+  "git_head": "7e013df",
+  "integrity_echo": {
+    "freeze_candidate_raw_sha256": "361c83907d9b353c8128a55ea2b4ca49a01c2aa8c8d1f6224db4661c4c9e166c",
+    "train_raw_sha256": "d82fe615dced145d4a6d10d19e90583d1eca4bb6be79e638a96bebc511b0a0e8",
+    "train_canonical_sha256": "d256c27dacec0cb2a169005611338c3408bbb252ba619dcde86fb01e3f8c9a7b",
+    "val_raw_sha256": "4f9be9b725c630cbc0e94f8cea4a96413bc026895a3d1b5312882e1980e37dec",
+    "val_canonical_sha256": "2771de48a90d9e694cc4260e9392d83c8e39f2aca7d57fe06dd51c7ce9a55bec",
+    "counts": {
+      "train": 200,
+      "val": 60
+    },
+    "pairing_events_total": 278754,
+    "unique_token_pairs": 2794
+  },
+  "config_echo": {
+    "n_bits": 2048,
+    "w_ones": 32,
+    "projector_seed": 7,
+    "fan_in": 32,
+    "w_seed": 7,
+    "k_winners": 128,
+    "randomized_w_seed": 13,
+    "shuffle_w_seed": 11,
+    "shuffled_question_seed": 11,
+    "h_win": 12,
+    "o_max": 8,
+    "adj": 2,
+    "lam_P": 0.9,
+    "n_passages_train": 200
+  },
+  "gold_unmatched_census": {
+    "train": {
+      "count": 140,
+      "total": 200,
+      "by_family": {
+        "address_lookup": 70,
+        "verse_continuation": 70,
+        "who_said": 0
+      }
+    },
+    "val": {
+      "count": 40,
+      "total": 60,
+      "by_family": {
+        "address_lookup": 20,
+        "verse_continuation": 20,
+        "who_said": 0
+      }
+    }
+  },
+  "gt3": {
+    "gating_stratum": "who_said",
+    "pooled_splits": true,
+    "a_wrong_passage": {
+      "median_overlap": null,
+      "median_expected_chance": null,
+      "n_eligible": 0,
+      "rule": "median wrong-passage overlap <= median per-item analytic chance K*|gold_sigma(i)|/n",
+      "pass": false
+    },
+    "b_shuffled_w": {
+      "rand_med": 11.0,
+      "shufw_med": 12.0,
+      "band_lo": 7.333333333333333,
+      "band_hi": 16.5,
+      "rule": "rand_med/1.5 <= shufw_med <= rand_med*1.5 (who_said, pooled splits)",
+      "pass": true
+    },
+    "per_item_wrong_passage": [],
+    "pass": false
+  },
+  "gt1": {
+    "gating_stratum": "who_said",
+    "table": {
+      "who_said": {
+        "train": {
+          "eligible_n": 60,
+          "base_med": 0.0,
+          "shuf_med": 0.0,
+          "rand_med": 11.0,
+          "enrich_vs_shuf": null,
+          "enrich_vs_rand": 0.0,
+          "gate_conjuncts": {
+            "base_med>0": false,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": false
+          }
+        },
+        "val": {
+          "eligible_n": 20,
+          "base_med": 0.0,
+          "shuf_med": 0.0,
+          "rand_med": 10.5,
+          "enrich_vs_shuf": null,
+          "enrich_vs_rand": 0.0,
+          "gate_conjuncts": {
+            "base_med>0": false,
+            "base>=2x_shuf": false,
+            "base>=1.5x_rand": false
+          }
+        }
+      },
+      "address_lookup": {
+        "train": {
+          "eligible_n": 0,
+          "base_med": null,
+          "shuf_med": null,
+          "rand_med": null,
+          "enrich_vs_shuf": null,
+          "enrich_vs_rand": null
+        },
+        "val": {
+          "eligible_n": 0,
+          "base_med": null,
+          "shuf_med": null,
+          "rand_med": null,
+          "enrich_vs_shuf": null,
+          "enrich_vs_rand": null
+        }
+      },
+      "verse_continuation": {
+        "train": {
+          "eligible_n": 0,
+          "base_med": null,
+          "shuf_med": null,
+          "rand_med": null,
+          "enrich_vs_shuf": null,
+          "enrich_vs_rand": null
+        },
+        "val": {
+          "eligible_n": 0,
+          "base_med": null,
+          "shuf_med": null,
+          "rand_med": null,
+          "enrich_vs_shuf": null,
+          "enrich_vs_rand": null
+        }
+      }
+    },
+    "rule": "on BOTH splits: base_med>0 AND base_med>=2*shuf_med AND base_med>=1.5*rand_med (who_said)",
+    "pass": false
+  },
+  "gt2": null,
+  "pipeline_spent": false,
+  "comparators_unchanged": {
+    "unigram_span_acc": 0.04538341158059468,
+    "majority_prior_span_acc": 0.0406885758998435,
+    "random_ranking_seed11": 0.001564945226917058,
+    "source": "experiments/qa_baselines_bible_v1/*.json anchors (29/639, 26/639, 1/639)"
+  },
+  "stop_rule_applied": "\u00a76.2: G-T1 FAIL => NEGATIVE_CORE_WOUND; pipeline leg NOT spent.",
+  "verdict": "NEGATIVE_CORE_WOUND"
+}

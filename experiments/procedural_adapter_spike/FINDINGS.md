@@ -191,3 +191,42 @@ Sequencing rationale: Phase A de-risks the only unmeasured throughput unknown (i
 - `src/humanbrain/recurrent.py:652-744` — `observe`/`strengthen` reference semantics (sparse_three_factor path)
 - `logs/text_scale_cpu_findings.md` §2-3 — layer definitions, throughput anchors/budgets quoted here
 - This directory — `l1_token_injection.py`, `l2_eligibility_read_cost.py`, `l2_eligibility_read_cost.json`, `l3_event_proportional_throughput.py`, `l3_event_proportional_throughput.json`
+
+## 7. Layer 5 — bulk event-array marshaling: the ~0.96 µs/event host cap is gone (IMPLEMENTED, gated)
+
+**Question (L1 caveat §1 follow-up; the E4 bottleneck behind the EP sparse band):** Python-side per-event work — one frozen dataclass with `__post_init__` validation plus a `_NativeEvent` construction and ctypes array assembly each — was measured at ~0.96 µs/event and caps host throughput before the kernel does. Can a caller feed events to the same C-ABI as one bulk buffer, zero-copy, without changing one simulated bit?
+
+**Implementation (host-only, no native change).** `procedural_runtime.py` now exports `PROCEDURAL_EVENT_DTYPE` (structured dtype `[u64×4, f64]`, itemsize 40) and `procedural_input_events(...)`. The dtype layout is pinned against `_NativeEvent` (size + every field offset) at import. `advance()` accepts either today's record sequence or a contiguous 1-D array of this dtype; the array path validates vectorized (capacity, stale due-steps, address space, fanout bound, finite currents, duplicate canonical keys via one lexsort) and hands the FFI a pointer into the caller's buffer — no per-event Python object exists on that path.
+
+**Measurement** (`l5_marshal_batching.py`, cfg=1e6 / EP / pool-locality schedule / 12 tokens / fixture 2^18 / stress GLIF, interleaved twin runtimes, commit `0d137fc`; artifact `experiments/l5_marshal_batching/l5_marshal_batching_post-batching.json`). Per-event phase split of the production marshal path:
+
+| phase | legacy (records) | bulk (ndarray) |
+|---|---|---|
+| object construction | 1.33–1.36 µs/ev | — |
+| ctypes marshaling | 0.82–1.18 µs/ev | — |
+| numpy build | — | 0.007–0.011 µs/ev |
+| FFI advance call | 2.59–3.48 µs/ev | identical within noise |
+| result unpacking | ~0.006–0.009 µs/ev | identical |
+
+The L1-era 0.96 µs/event figure corresponds to marshaling alone; the full production path (construction + marshal) is **~2.17–2.57 µs/event**, and the bulk build replaces it at **204–358× less host time** (~0.01 µs/ev, flat in batch size). Even the leanest possible per-event loop (raw per-field writes into a reused ctypes buffer, what earlier harnesses did untimed) costs 0.22–0.24 µs/event — ~25× the vectorized path.
+
+**End-to-end effect at the L4 protocol point** (token wall = construction + marshal + FFI + unpack):
+
+| activity | legacy tok/s | bulk tok/s | speedup |
+|---|---|---|---|
+| 1% (10k ev/tok) | 16.9 | 34.5 | 2.04× |
+| 2% (20k ev/tok) | 9.4 | 18.3 | 1.95× |
+| 5% (50k ev/tok) | 3.7 | 7.7 | 2.07× |
+
+Through the *public* `advance()` seam (includes snapshot/accounting assembly per call; shrunken 2^14 fixture): 1.44× @1%, 1.52× @2%, 1.22× @5%.
+
+**Gates — all pass on every run (G0–G4):**
+- G0 dtype ≡ C struct byte-for-byte (import-time assert);
+- G1 every token's full counter struct byte-identical across arms;
+- G2 every token's delivered spike-record bytes identical;
+- G3 end-of-stream resident/pending/dormant dumps hash-identical;
+- G4 public-seam records-vs-array streams produce identical accounting counters, spikes, and snapshots.
+Additionally `tests/test_procedural_bulk_events.py` (18 cases) pins layout, builder exactness semantics (`-0.0` canonicalization, >int64 ints, non-finite currents, float-in-int-column rejection), rule-for-rule error parity with the record path, capacity messages, dense-reference parity, and full state parity over spike-producing schedules. The throughput golden oracle still matches (`scale_opt_cpu_throughput.py --check-golden`).
+
+**Caveats.** Bulk arrays bypass `ProceduralInputEvent.__post_init__` by design; semantic rules are enforced vectorized at `advance()` with identical outcomes (tested), but exactness of integer columns is trusted from the dtype rather than proven per element for pre-built arrays — use `procedural_input_events()` when converting raw Python sequences. `-0.0` current canonicalization and misaligned/non-contiguous inputs take a contiguous copy (the only paths off zero-copy). The FFI remains the same single-event-pointer signature: nothing native changed, so Seam-C is closed as unnecessary — the cap was purely host-side.
+

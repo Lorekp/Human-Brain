@@ -13,9 +13,11 @@ Covers:
 - ``--N`` above the python-circuit limit stays rejected on ``--device cpu``
   (the RAM projection guard is about the python circuit, not dogma);
 - ``--device cuda`` legitimately lifts the python-circuit N cap but is
-  bounded by the HOST-side ridge-statistics budget (dense (N+1)^2 float64
-  normal matrix, doubled during consolidation) — N=16384 must validate,
-  N=65536 must be refused with an honest reason;
+  bounded by the HOST-side ridge-statistics budget (dense F^2 float64
+  normal matrix, doubled during consolidation, F = K*N + 1 under the R0
+  multi-trace feature space) — the budget binds at N = 4406; larger N
+  (e.g. the pre-R0 mission point 16384) must be refused with an honest
+  reason, and the CPU single-process budget likewise moved (4096 -> 1669);
 - every assembly must still fit the reservoir, and ``--codebook explicit``
   still requires ``--assembly-k 16`` on either device.
 """
@@ -128,19 +130,51 @@ def test_cpu_device_keeps_the_python_circuit_n_cap() -> None:
     harness = _harness()
     with pytest.raises(SystemExit, match="python circuit limit"):
         harness._validate_arguments(_arguments(N=16384, device="cpu"))
-    # The historical boundary stays exactly where it was.
-    harness._validate_arguments(_arguments(N=4096, device="cpu"))
+    # R0 multi-trace arithmetic (protocol §5): the ridge feature space is
+    # F = K*N + 1 with K = 8 traces, so the 1.5 GiB single-process peak-array
+    # budget would bind at N = 1669. Superseded by R0-b protocol §6: dense-
+    # ridge statistics on the cpu path are gated by the preregistered
+    # 20 GiB host budget (family-aware geometry), which is what lets the
+    # frozen voltage_quantiles / combo arms run at N=1024.
+    limit = max(
+        n
+        for n in range(1, harness._MAX_N + 1)
+        if harness._projected_peak_bytes(n, "ridge") <= harness._RAM_BUDGET_BYTES
+    )
+    assert limit == 1669  # the legacy 1.5 GiB projection arithmetic is intact
+    ridge_limit = max(
+        n
+        for n in range(1, harness._MAX_N + 1)
+        if harness._projected_peak_bytes(n, "ridge")
+        <= harness._HOST_RIDGE_BUDGET_BYTES
+    )
+    # Within the python-circuit N cap the 20 GiB §6 budget never binds
+    # (_MAX_CUDA_HOST_RIDGE_CELLS=4406 exceeds _MAX_N=4096).
+    assert ridge_limit == harness._MAX_N
+    assert harness._MAX_CUDA_HOST_RIDGE_CELLS > harness._MAX_N
+    harness._validate_arguments(_arguments(N=limit, device="cpu"))
+    harness._validate_arguments(_arguments(N=ridge_limit, device="cpu"))
+    with pytest.raises(SystemExit, match="python circuit limit"):
+        harness._validate_arguments(_arguments(N=harness._MAX_N + 1, device="cpu"))
 
 
-def test_cuda_device_validates_16k_and_refuses_64k_on_host_budget() -> None:
+def test_cuda_device_refuses_stale_16k_mission_and_pins_the_new_boundary() -> None:
     harness = _harness()
-    # Primary mission point must pass validation on cuda.
-    harness._validate_arguments(_arguments(N=16384, device="cuda"))
-    # 64k needs a dense (65537^2) float64 ridge normal matrix (~34.4 GiB,
-    # doubled during consolidation) — larger than this box's physical RAM.
-    # The refusal must say so honestly instead of silently attempting it.
-    with pytest.raises(SystemExit, match="ridge"):
-        harness._validate_arguments(_arguments(N=65536, device="cuda"))
+    # Pre-R0, N=16384 was the codebook scale-up mission point. Multi-trace
+    # §1.2 grows the ridge feature space to F = K*N + 1 (K = 8), so its host
+    # statistics at N=16384 would need ~275 GB — validation must refuse that
+    # honestly and pin the new largest-supported N (4406 within the 20 GB
+    # host budget; §5 cost arithmetic).
+    assert harness._MAX_CUDA_HOST_RIDGE_CELLS == 4406
+    with pytest.raises(
+        SystemExit,
+        match=r"HOST ridge statistics.*largest supported N on this box is 4406",
+    ):
+        harness._validate_arguments(_arguments(N=16384, device="cuda"))
+    # The moved boundary itself must validate cleanly on cuda.
+    harness._validate_arguments(
+        _arguments(N=harness._MAX_CUDA_HOST_RIDGE_CELLS, device="cuda")
+    )
 
 
 def test_cuda_device_budget_boundary_is_consistent() -> None:
@@ -153,11 +187,20 @@ def test_cuda_device_budget_boundary_is_consistent() -> None:
 
 def test_assembly_k_must_fit_the_reservoir_on_both_devices() -> None:
     harness = _harness()
+    # Knob-domain errors fire BEFORE resource projections: an assembly that
+    # cannot fit the reservoir is reported as an assembly-k error even when
+    # the same N would also breach a device budget.
     with pytest.raises(SystemExit, match="assembly-k"):
         harness._validate_arguments(
             _arguments(N=16384, assembly_k=99999, device="cuda")
         )
-    harness._validate_arguments(_arguments(N=16384, assembly_k=32, device="cuda"))
+    # Feasible multi-trace mission point: k=32 fits the N=4406 reservoir and
+    # the whole argument set validates on cuda.
+    harness._validate_arguments(
+        _arguments(
+            N=harness._MAX_CUDA_HOST_RIDGE_CELLS, assembly_k=32, device="cuda"
+        )
+    )
 
 
 def test_explicit_arm_still_requires_default_k_on_cuda() -> None:

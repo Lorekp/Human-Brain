@@ -13,6 +13,7 @@ from humanbrain.simple_swe.compiler import (
     RawPythonCompiler,
 )
 from humanbrain.simple_swe.freeze import (
+    RECURRENT_CHECKPOINT_FORMATS,
     FreezeIntegrityError,
     FreezeManifest,
     checkpoint_hashes,
@@ -71,7 +72,7 @@ def _load_cell_model(
 ) -> CellLanguageModel | RecurrentCellLanguageModel:
     if checkpoint_format == "human-cell-brain-checkpoint-v1":
         return CellLanguageModel.load(checkpoint_path)
-    if checkpoint_format == "recurrent-human-cell-checkpoint-v3":
+    if checkpoint_format in RECURRENT_CHECKPOINT_FORMATS:
         model = RecurrentCellLanguageModel.load(checkpoint_path)
         if not model._circuit.learning_frozen:
             raise FreezeIntegrityError("recurrent checkpoint learning is not frozen")

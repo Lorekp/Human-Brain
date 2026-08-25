@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import sys
 from dataclasses import replace
 from hashlib import sha256
 from pathlib import Path
@@ -421,3 +422,120 @@ def test_runtime_identity_rejects_a_different_python_minor(
         sandbox.SandboxConfigurationError, match=r"python-3.11.*3.12"
     ):
         sandbox.python_runtime_identity(executable, "python-3.11")
+
+
+def _venv_trampoline_candidate() -> Path | None:
+    """Find this box's launcher interpreter: the running venv python or the
+    checkout's .venv trampoline."""
+    executable = Path(sys.executable).resolve()
+    base = getattr(sys, "_base_executable", None)
+    if base is not None:
+        try:
+            inside_venv = Path(base).resolve() != executable
+        except OSError:
+            inside_venv = False
+        if inside_venv and executable.is_file():
+            return executable
+    repository_venv = Path(__file__).parents[1] / ".venv" / "Scripts" / "python.exe"
+    if repository_venv.is_file() and (repository_venv.parents[1] / "pyvenv.cfg").is_file():
+        return repository_venv
+    return None
+
+
+VENV_TRAMPOLINE = _venv_trampoline_candidate()
+_TRAMPOLINE_REASON = "this checkout exposes no venv launcher interpreter"
+
+
+def test_launcher_reporting_a_different_interpreter_is_redirected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    launcher = tmp_path / "python.exe"
+    launcher.write_bytes(b"trampoline-launcher")
+    real_interpreter = PYTHON_EXECUTABLE
+    assert real_interpreter != launcher.resolve()
+    calls: list[list[str]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(list(command))
+        return SimpleNamespace(
+            returncode=0, stdout=f"{real_interpreter}\n\n", stderr=""
+        )
+
+    monkeypatch.setattr(sandbox.subprocess, "run", fake_run)
+
+    resolved = sandbox.resolve_python_executable(launcher)
+
+    assert calls[0][0] == str(launcher.resolve())
+    assert calls[0][1:3] == ["-I", "-S"]
+    assert calls[0][3] == "-c"
+    assert resolved == real_interpreter
+
+
+def test_direct_interpreter_resolution_probes_and_stays_put(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    direct = PYTHON_EXECUTABLE
+    calls: list[list[str]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(list(command))
+        return SimpleNamespace(
+            returncode=0, stdout=f"{direct}\n{direct}\n", stderr=""
+        )
+
+    monkeypatch.setattr(sandbox.subprocess, "run", fake_run)
+
+    resolved = sandbox.resolve_python_executable(direct)
+
+    assert calls[0][1:4] == ["-I", "-S", "-c"]
+    assert resolved == direct
+
+
+def test_unprobeable_executable_resolves_to_itself(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mystery = tmp_path / "python.exe"
+    mystery.write_bytes(b"not-a-python")
+
+    def failing_run(command, **_kwargs):
+        raise FileNotFoundError(command[0])
+
+    monkeypatch.setattr(sandbox.subprocess, "run", failing_run)
+
+    assert sandbox.resolve_python_executable(mystery) == mystery.resolve()
+
+
+@pytest.mark.skipif(VENV_TRAMPOLINE is None, reason=_TRAMPOLINE_REASON)
+def test_venv_trampoline_resolves_to_the_base_interpreter() -> None:
+    trampoline = VENV_TRAMPOLINE
+    assert trampoline is not None
+
+    resolved = sandbox.resolve_python_executable(trampoline)
+
+    assert resolved != trampoline.resolve()
+    assert resolved.is_file()
+
+
+@pytest.mark.skipif(VENV_TRAMPOLINE is None, reason=_TRAMPOLINE_REASON)
+def test_completion_through_a_venv_trampoline_runs_one_process(
+    increment_task: tuple[PublicTask, PrivateTask],
+) -> None:
+    public, private = increment_task
+    trampoline = VENV_TRAMPOLINE
+    assert trampoline is not None
+    redirected = sandbox.resolve_python_executable(trampoline)
+    frozen_sha256 = sha256(redirected.read_bytes()).hexdigest()
+
+    result = execute_completion(
+        "def solve_increment(value):\n    return value + 1\n",
+        public,
+        private,
+        PROTOCOL.execution,
+        python_executable=trampoline,
+        python_executable_sha256=frozen_sha256,
+        worker_source=WORKER_SOURCE,
+        worker_sha256=WORKER_SHA256,
+    )
+
+    assert result.outcome == "passed"
+    assert result.sandboxed is True

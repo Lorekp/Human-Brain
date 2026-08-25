@@ -53,16 +53,21 @@ def test_sparse_checkpoint_owns_no_dense_classifier_and_continues_exactly(
         np.testing.assert_array_equal(after.checkpoint_arrays()[key], value)
     assert loaded.predict_next("ab") == model.predict_next("ab")
 
+    # Seed every row of the (K, R) trace bank identically in both circuits:
+    # the sparse source space spans all K·R feature sources, so the exact-
+    # continuation check below must cover the whole multi-trace state.
     eligibility = np.arange(1.0, 17.0)
-    model._circuit._eligibility[:] = eligibility
-    loaded._circuit._eligibility[:] = eligibility
+    model._circuit._eligibility_traces[:] = eligibility
+    loaded._circuit._eligibility_traces[:] = eligibility
     for readout in (before, after):
         readout.teach(
             target=99,
             winner=98,
             learning_rate_pa=8.0,
             maximum_weight_pa=1_600.0,
-            trace_decay=0.9,
+            # Production per-source decay table over the full K*R feature
+            # space (exp(-T / tau_k), k = s // R); identical for both circuits.
+            trace_decays=model._circuit.source_trace_decays(),
             target_post_gate=1.0,
             winner_post_gate=1.0,
             activity_decay=0.99,

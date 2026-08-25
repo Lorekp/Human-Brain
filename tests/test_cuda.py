@@ -33,7 +33,7 @@ def _state_arrays(circuit: RecurrentCellCircuit) -> tuple[np.ndarray, ...]:
     state = circuit._reservoir.state
     return (
         circuit._synaptic_current_pa,
-        circuit._eligibility,
+        circuit._eligibility_traces,
         state.voltage_relative_mv,
         state.after_spike_currents_pa,
         state.threshold_spike_mv,
@@ -44,7 +44,9 @@ def _state_arrays(circuit: RecurrentCellCircuit) -> tuple[np.ndarray, ...]:
 
 def _assert_same_state(actual: RecurrentCellCircuit, expected: RecurrentCellCircuit) -> None:
     np.testing.assert_array_equal(actual._synaptic_current_pa, expected._synaptic_current_pa)
-    np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+    np.testing.assert_array_equal(
+        actual._eligibility_traces, expected._eligibility_traces
+    )
     actual_state = actual._reservoir.state
     expected_state = expected._reservoir.state
     np.testing.assert_array_equal(
@@ -219,13 +221,13 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
         assert actual.simulation_backend == "cuda"
         assert "NVIDIA" in actual.simulation_device
         assert actual._native_kernel.device_to_host_bytes_per_token == (
-            actual._eligibility.nbytes + np.dtype(np.uint64).itemsize
+            actual._eligibility_traces.nbytes + np.dtype(np.uint64).itemsize
         )
 
         actual_step = actual.observe(97)
         expected_step = expected.observe(97)
         assert actual_step == expected_step
-        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        np.testing.assert_array_equal(actual._eligibility_traces, expected._eligibility_traces)
         np.testing.assert_array_equal(
             actual.output_current_pa(), expected.output_current_pa()
         )
@@ -245,7 +247,7 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
         actual_step = actual.observe(98)
         expected_step = expected.observe(98)
         assert actual_step == expected_step
-        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        np.testing.assert_array_equal(actual._eligibility_traces, expected._eligibility_traces)
         np.testing.assert_array_equal(
             actual.output_current_pa(), expected.output_current_pa()
         )
@@ -259,7 +261,7 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
         actual_step = actual.observe(99)
         expected_step = expected.observe(99)
         assert actual_step == expected_step
-        np.testing.assert_array_equal(actual._eligibility, expected._eligibility)
+        np.testing.assert_array_equal(actual._eligibility_traces, expected._eligibility_traces)
         actual.synchronize_state_from_device()
         _assert_same_state(actual, expected)
 
@@ -284,14 +286,14 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
         assert loaded_expected._circuit.simulation_backend == "cpu"
         assert loaded_actual._circuit.simulation_backend == "cuda"
         assert loaded_actual._circuit._native_kernel.device_to_host_bytes_per_token == (
-            loaded_actual._circuit._eligibility.nbytes
+            loaded_actual._circuit._eligibility_traces.nbytes
             + np.dtype(np.uint64).itemsize
         )
 
         assert loaded_actual.predict_next("ab") == loaded_expected.predict_next("ab")
         np.testing.assert_array_equal(
-            loaded_actual._circuit._eligibility,
-            loaded_expected._circuit._eligibility,
+            loaded_actual._circuit._eligibility_traces,
+            loaded_expected._circuit._eligibility_traces,
         )
         loaded_actual._circuit.synchronize_state_from_device()
         _assert_same_state(loaded_actual._circuit, loaded_expected._circuit)
@@ -306,7 +308,7 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
             winner=11,
             learning_rate_pa=64.0,
             maximum_weight_pa=1_600.0,
-            trace_decay=np.exp(-2.0 / 40.0),
+            trace_decays=np.full(16 * 1, np.exp(-2.0 / 40.0)),
             target_post_gate=1.0,
             winner_post_gate=1.0,
             activity_decay=0.99,
@@ -316,7 +318,7 @@ def test_cuda_sparse_readout_lifecycle_and_checkpoint_continuation_are_exact(
             winner=11,
             learning_rate_pa=64.0,
             maximum_weight_pa=1_600.0,
-            trace_decay=np.exp(-2.0 / 40.0),
+            trace_decays=np.full(16 * 1, np.exp(-2.0 / 40.0)),
             target_post_gate=1.0,
             winner_post_gate=1.0,
             activity_decay=0.99,

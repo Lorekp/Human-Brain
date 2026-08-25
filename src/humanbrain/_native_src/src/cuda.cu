@@ -33,7 +33,15 @@ struct RecurrentConfig {
     unsigned long long recurrent_fanout;
     double input_current_pa;
     double recurrent_decay;
-    double eligibility_decay;
+    // R0 multi-timescale trace bank: row k of the eligibility buffer
+    // (elements [k*cells, (k+1)*cells)) decays by eligibility_decays[k]
+    // every sub-step, maintained in fixed index order 0..trace_count.
+    unsigned long long trace_count;
+    const double* eligibility_decays;
+    // R0-b family A (spike-count windows): u32 per-cell accumulator for the
+    // current token, cleared once at token start and folded at exactly the
+    // existing mask-write site. May be null (legacy callers).
+    unsigned int* token_spike_counts;
 };
 
 extern "C" __global__ void recurrent_token_kernel(
@@ -56,7 +64,9 @@ extern "C" __global__ void recurrent_token_kernel(
     unsigned char* spike_mask,
     unsigned char* input_mask,
     unsigned long long* total_spikes,
-    unsigned long long* decay_active
+    unsigned long long* decay_active,
+    unsigned long long* threshold_spike_active,
+    unsigned long long* refractory_active
 ) {
     cg::grid_group grid = cg::this_grid();
     const unsigned long long thread = blockIdx.x * blockDim.x + threadIdx.x;
@@ -69,6 +79,12 @@ extern "C" __global__ void recurrent_token_kernel(
     }
     if (thread == 0) {
         *total_spikes = 0;
+    }
+    if (recurrent.token_spike_counts != nullptr) {
+        // Family A: cleared at TOKEN start, before any sub-step accumulates.
+        for (unsigned long long cell = thread; cell < cells; cell += stride) {
+            recurrent.token_spike_counts[cell] = 0u;
+        }
     }
     grid.sync();
     if (thread < recurrent.input_fanout) {
@@ -91,8 +107,15 @@ extern "C" __global__ void recurrent_token_kernel(
             const bool decay_active_cell =
                 (decay_active[activity_word] & activity_bit) != 0ULL;
             bool crossed = false;
-            if (refractory[cell] != 0) {
+            if ((refractory_active[activity_word] & activity_bit) != 0ULL
+                && refractory[cell] != 0) {
                 refractory[cell] -= 1;
+                // Owner-thread maintenance: only this thread writes its own
+                // cell, so clearing the "possibly nonzero" bit exactly when
+                // the countdown reaches zero cannot race.
+                if (refractory[cell] == 0) {
+                    atomicAnd(refractory_active + activity_word, ~activity_bit);
+                }
             } else {
                 const unsigned long long after_offset = cell * channels;
                 double after_sum = 0.0;
@@ -120,12 +143,22 @@ extern "C" __global__ void recurrent_token_kernel(
                     glif.threshold_exp_decay * threshold_voltage[cell];
                 const double next_voltage_threshold =
                     decayed_voltage_threshold + voltage_term + beta_term;
-                const double next_spike_threshold =
-                    threshold_spike[cell] * glif.spike_threshold_decay;
+                // Zero-fixpoint elision: for a cell whose spike threshold is
+                // exactly ±0.0 the decay below is a bit-level no-op
+                // (+0.0 * positive d == +0.0, -0.0 guarded as active via the
+                // signbit-aware host bitmap), so its load and store may be
+                // skipped. Cells enter the active set on their first spike.
+                double next_spike_threshold;
+                if ((threshold_spike_active[activity_word] & activity_bit) != 0ULL) {
+                    next_spike_threshold =
+                        threshold_spike[cell] * glif.spike_threshold_decay;
+                    threshold_spike[cell] = next_spike_threshold;
+                } else {
+                    next_spike_threshold = 0.0;
+                }
 
                 voltage[cell] = next_voltage;
                 threshold_voltage[cell] = next_voltage_threshold;
-                threshold_spike[cell] = next_spike_threshold;
                 if (decay_active_cell) {
                     for (unsigned long long channel = 0; channel < channels; ++channel) {
                         after[after_offset + channel] *= after_decay[channel];
@@ -147,21 +180,36 @@ extern "C" __global__ void recurrent_token_kernel(
                         * glif.spike_cut_threshold_decay
                         + glif.threshold_spike_increment_mv;
                     refractory[cell] = glif.spike_cut_steps;
+                    // The cell just spiked: its spike threshold and refractory
+                    // countdown are now (possibly) nonzero, so both must take
+                    // the full update path until the host re-derives the
+                    // bitmaps from uploaded state.
+                    atomicOr(threshold_spike_active + activity_word, activity_bit);
+                    atomicOr(refractory_active + activity_word, activity_bit);
                     thread_spikes += 1;
                 }
             }
             spike_mask[cell] = static_cast<unsigned char>(crossed);
-            // Fused eligibility trace: identical expression and inputs as the
-            // previous post-sync pass (spike_mask[cell] was just written from
-            // this thread's own `crossed`), executed without re-reading the
-            // mask or a second full-array traversal. Inactive zero-trace cells
-            // keep their exact +0.0 bits by skipping the update.
+            // Fused multi-trace eligibility: identical expression and inputs
+            // as the previous post-sync pass (spike_mask[cell] was just
+            // written from this thread's own `crossed`), executed without
+            // re-reading the mask or a second full-array traversal. Row k of
+            // the bank decays by eligibility_decays[k] and adds this step's
+            // spike, in fixed index order. Inactive zero-trace cells keep
+            // their exact +0.0 bits by skipping the update.
             if (decay_active_cell || crossed) {
-                eligibility[cell] = eligibility[cell] * recurrent.eligibility_decay
-                    + static_cast<double>(crossed);
+                for (unsigned long long k = 0; k < recurrent.trace_count; ++k) {
+                    eligibility[k * cells + cell] =
+                        eligibility[k * cells + cell] * recurrent.eligibility_decays[k]
+                        + static_cast<double>(crossed);
+                }
                 if (crossed && !decay_active_cell) {
                     atomicOr(decay_active + activity_word, activity_bit);
                 }
+            }
+            if (recurrent.token_spike_counts != nullptr && crossed) {
+                // Family A: folded at exactly the existing mask-write site.
+                recurrent.token_spike_counts[cell] += 1u;
             }
         }
         if (thread_spikes != 0) {
@@ -192,8 +240,9 @@ extern "C" __global__ void recurrent_token_kernel(
                 }
             }
             synaptic_current[cell] = next_current;
-            // Eligibility traces are updated in the neuron pass above; this
-            // pass only decays and drives synaptic current.
+            // Eligibility traces (full multi-trace bank) are updated in the
+            // neuron pass above; this pass only decays and drives synaptic
+            // current.
         }
         grid.sync();
     }

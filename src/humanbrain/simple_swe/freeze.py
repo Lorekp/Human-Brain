@@ -50,9 +50,17 @@ _EXECUTION_COMMITMENT_FIELDS = (
     "simulation_artifact_sha256",
     "simulation_architecture",
 )
+# Recurrent checkpoint eras accepted by SWE evaluation, mirroring
+# recurrent_artifacts.SUPPORTED_FORMATS: writers emit -v6 (R0-b §1.5);
+# -v3/-v5 are read-only legacy eras. Unknown future formats stay rejected.
+RECURRENT_CHECKPOINT_FORMATS = {
+    "recurrent-human-cell-checkpoint-v3",
+    "recurrent-human-cell-checkpoint-v5",
+    "recurrent-human-cell-checkpoint-v6",
+}
 ALLOWED_CHECKPOINT_FORMATS = {
     "human-cell-brain-checkpoint-v1",
-    "recurrent-human-cell-checkpoint-v3",
+    *RECURRENT_CHECKPOINT_FORMATS,
 }
 _EXECUTION_MODULES = (
     "humanbrain",
@@ -342,7 +350,7 @@ def _simulation_backend_identity(
             artifact_sha256=None,
             architecture=None,
         )
-    if checkpoint_format != "recurrent-human-cell-checkpoint-v3":
+    if checkpoint_format not in RECURRENT_CHECKPOINT_FORMATS:
         raise FreezeIntegrityError("unsupported cell checkpoint format")
     from humanbrain.recurrent_language import RecurrentCellLanguageModel
 

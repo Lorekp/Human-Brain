@@ -6,6 +6,70 @@ device allocation observed ≈ 132 MiB arrays + driver context; system GPU pool
 stayed ≈ 2.5 GiB including the Windows desktop).
 Date: 2026-08-22.
 
+## Wave 3 (2026-08-25): spike-threshold + refractory zero-fixpoint bitmaps
+
+**Profile first** — the wave-2 bitmap changed the balance, so the same throwaway
+`clock64()` instrumentation was rebuilt (block-0 stamps after every cooperative
+`grid.sync()`, exported through a padded `input_mask` tail; identical
+arithmetic) and run over 64 timed tokens at N=1,000,000 on the post-bitmap
+kernel (~7.1–8.5 ms/token): **neuron pass ≈ 89% of the kernel** (6.37 of
+7.14 ms median), reverse-CSR synaptic pass ≈ 11%, prologue/afferent scatter ≈ 0,
+host race/strengthen/copies unchanged from the wave-2 accounting. Only 9.4% of
+integration steps execute the CSR scan (median token: zero scan steps); one
+scanning step costs ~19x a quiet one (0.148 vs 0.0076 ms). The activity bitmap
+already removed after-current/eligibility traffic; what remains in the dominant
+pass is the full-touch GLIF update itself, ~61 B/cell/step for the 99.98% of
+cells that never spiked.
+
+**One targeted change:** two more 1-bit-per-cell zero-fixpoint bitmaps extending
+the wave-2 mechanism in `cuda.cu`:
+- `threshold_spike_active`: a cell whose spike threshold is exactly +0.0 stays
+  at exactly those bits under decay (`+0.0 · positive d == +0.0`), so its load,
+  decay, and store are skipped; −0.0 is conservatively active via signbit on
+  the host side.
+- `refractory_active`: cells outside the spike path hold an identically-zero
+  refractory countdown, so the load/test is skipped; the owner thread clears
+  the bit when its own countdown reaches zero (per-cell single-writer, no race).
+Cells enter both sets at their first spike (`atomicOr` on the crossing thread)
+and the host re-derives them from uploaded state exactly like `decay_active`
+(`__init__`, `synchronize_from_host`). Steady state at 1M cells measured on
+this workload: 162/1,000,000 nonzero spike thresholds, 0 refractory — 20 of
+~61 B/cell/step leave the dominant pass (+2 bits/cell device overhead).
+
+**Bit-exactness evidence**
+- `tests/test_cuda.py`, `tests/test_sparse_cuda_engineering.py`,
+  `tests/test_topology.py`: green unmodified (18 tests).
+- `benchmarks/scale_opt_gpu_parity.py` pre/post
+  (`scale_opt_gpu_parity_wave3_pre.json` / `_post.json`): all six phase digests
+  (128 & 1M cells × bootstrap/inference/training schedules) byte-identical,
+  plus identical per-token spike counts and structural counters.
+
+**Measured delta** (`scale_opt_gpu_bench.py --cells 131072,1000000`, single
+runs; base = pre-change worktree commit 5a3c4e7):
+
+| cells | metric | base → wave 3 | Δ |
+|---:|---|---|---|
+| 131,072 | inference tok/s | 508.7 → 520.6 | +2.3% |
+| 131,072 | training ("grow") tok/s | 465.1 → 479.6 | +3.1% |
+| 131,072 | kernel ms/token (256-token median) | 1.369 → 1.356 | **−1.0%** |
+| 1,000,000 | inference tok/s (two runs) | 105.8 → 107.2 / 105.2 | within noise |
+| 1,000,000 | training ("grow") tok/s (two runs) | 101.4 → 102.1 / 107.2 | within noise |
+| 1,000,000 | kernel ms/token (256-token median) | 7.275 → 7.170 | **−1.5%** |
+
+**Honest negative — diminishing returns documented.** The traffic model
+predicted ~−25% kernel time from removing ~26% of neuron-pass bytes; the
+measured kernel effect is only ~−1..1.5%, and end-to-end tok/s moves within
+run-to-run noise. Post-bitmap, the full-touch neuron pass is not
+DRAM-bytes-bound on this card: effective streaming rate is already ~950 GB/s
+(above the 504 GB/s DRAM spec, i.e. largely L2-resident), so shaving L2-hit
+bytes barely shortens the critical path. Two cheaper probes on the same
+segment — a `__launch_bounds__(256, 6)` register squeeze (50 regs → 42,
+neutral-to-slightly-worse) and `__restrict__` + `#pragma unroll 2` ILP pairing
+(no change) — were measured with the instrumented build and discarded.
+Remaining bit-exact levers would have to restructure the two-pass
+barrier structure or touch precision/layout contracts; both are out of scope
+for this exactness-preserving workstream.
+
 ## Wave 2 (2026-08-24): decayed-state activity bitmap in the neuron pass
 
 **Profile first.** A throwaway instrumented build of `cuda.cu` (identical

@@ -1,0 +1,234 @@
+{
+  "arm": "trigram_smoothed",
+  "completion_token_slack": 8,
+  "corpus_artifact_sha256": "dd4ba1c96c398da161d52703c4ca44a06f0dbdc71496f486183245b8e0b34212",
+  "corpus_sha256": "789e3ac592fd8aa1d4f68af8704a4a9b19d64db7277efea59ebc50ff8dd446ec",
+  "corpus_source": "repo-src:humanbrain:python-qa-corpus-v1",
+  "generated_utc": "2026-08-24T09:57:00+00:00",
+  "git_head": "f086684",
+  "metrics": {
+    "answer_span": {
+      "accuracy": 0.057692307692307696,
+      "correct": 6,
+      "predictions": 104,
+      "tasks": 25
+    },
+    "degeneracy": {
+      "distinct_answers": 7,
+      "evaluated": 25,
+      "guard": {
+        "distinct_answers_min": 3,
+        "modal_share_max": 0.9
+      },
+      "guard_pass": true,
+      "modal_answer": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "modal_share": 0.32
+    },
+    "free_run": {
+      "exact_match_rate": 0.0,
+      "exact_matches": 0,
+      "tasks": 25
+    }
+  },
+  "model": {
+    "argmax_candidate_set": "trigram+bigram context continuations union top-500 unigram words (conservative restriction of full-vocab argmax)",
+    "bigram_types": 28208,
+    "jm_lambdas": [
+      0.6,
+      0.3,
+      0.1
+    ],
+    "kind": "trigram_smoothed",
+    "timing_repeats_wall_s": [
+      1.291,
+      1.33,
+      1.399
+    ],
+    "trigram_types": 40370,
+    "vocab_size": 4645
+  },
+  "protocol": "trigram_smoothed word-level comparator over the 24-file Python-QA TRAIN stream (humanbrain/python-qa-corpus/v1, BY-FILE split); VAL cohort scored with qa-experiments-v1-shaped answer_span/free_run/degeneracy metrics",
+  "schema_version": "humanbrain/qa-baselines/v1",
+  "seed": 0,
+  "tasks": [
+    {
+      "completion": "first_line if signature emit candidate family function_summary source_file relpath module module target qualname anchor f relpath qualname",
+      "exact_match": false,
+      "expected": "Canonical JSON encoding shared by the analyzer's outputs/tests.",
+      "family": "function_summary",
+      "qa_id": "q_gydhnkpsj"
+    },
+    {
+      "completion": "first_line if signature emit candidate family function_summary source_file relpath module module target qualname anchor f relpath",
+      "exact_match": false,
+      "expected": "Compile subthreshold voltage and threshold under constant current.",
+      "family": "function_summary",
+      "qa_id": "q_bccdbjwrv"
+    },
+    {
+      "completion": "first_line if signature emit candidate family function_summary source_file relpath module module target qualname anchor f relpath qualname function_summary context",
+      "exact_match": false,
+      "expected": "Produce the full FINDINGS-ready analysis dict for the R2 pilot.",
+      "family": "function_summary",
+      "qa_id": "q_swtqfrhhv"
+    },
+    {
+      "completion": "first_line if signature emit candidate family function_summary source_file relpath module module target qualname anchor f relpath qualname function_summary",
+      "exact_match": false,
+      "expected": "Prompt-last framing: context verses, then the question, then ``answer:``.",
+      "family": "function_summary",
+      "qa_id": "q_rxnwdlbwx"
+    },
+    {
+      "completion": "first_line if signature emit candidate family function_summary source_file relpath module module target qualname anchor f relpath",
+      "exact_match": false,
+      "expected": "Machine-checkable degeneracy-guard verdict with explicit reasons.",
+      "family": "function_summary",
+      "qa_id": "q_rfpxvtrdl"
+    },
+    {
+      "completion": "first_line if signature emit candidate family function_summary source_file relpath module module target qualname anchor f relpath qualname function_summary context",
+      "exact_match": false,
+      "expected": "Run a current clamp through the pinned adaptive human GLIF5 cell.",
+      "family": "function_summary",
+      "qa_id": "q_yfbndpscg"
+    },
+    {
+      "completion": "first_line if signature emit candidate family function_summary source_file relpath module module target qualname anchor f relpath qualname",
+      "exact_match": false,
+      "expected": "Return the validated fixture corpus entries in fixed order.",
+      "family": "function_summary",
+      "qa_id": "q_ffscxqyjx"
+    },
+    {
+      "completion": "first_line if signature emit candidate family function_summary source_file relpath module module target qualname anchor f relpath qualname",
+      "exact_match": false,
+      "expected": "Wilson score interval on a binomial proportion (matches run_pilot).",
+      "family": "function_summary",
+      "qa_id": "q_xdwkybftj"
+    },
+    {
+      "completion": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "exact_match": false,
+      "expected": "humanbrain.qa_analysis",
+      "family": "module_containment",
+      "qa_id": "q_gslpkrqzq"
+    },
+    {
+      "completion": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "exact_match": false,
+      "expected": "humanbrain.swe_model",
+      "family": "module_containment",
+      "qa_id": "q_vsggmfsxy"
+    },
+    {
+      "completion": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "exact_match": false,
+      "expected": "humanbrain.qa_analysis",
+      "family": "module_containment",
+      "qa_id": "q_dvlfbdmdq"
+    },
+    {
+      "completion": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "exact_match": false,
+      "expected": "humanbrain.cells",
+      "family": "module_containment",
+      "qa_id": "q_kvgccsvyn"
+    },
+    {
+      "completion": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "exact_match": false,
+      "expected": "humanbrain.cells",
+      "family": "module_containment",
+      "qa_id": "q_rkykswvmk"
+    },
+    {
+      "completion": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "exact_match": false,
+      "expected": "humanbrain.qa_corpus",
+      "family": "module_containment",
+      "qa_id": "q_jprptmhyk"
+    },
+    {
+      "completion": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "exact_match": false,
+      "expected": "humanbrain.scale_accounting",
+      "family": "module_containment",
+      "qa_id": "q_vfsdymntw"
+    },
+    {
+      "completion": "return tasks train_tasks _materialize train_specs cohort train literals calibration_literals identifier_domain",
+      "exact_match": false,
+      "expected": "humanbrain.cells",
+      "family": "module_containment",
+      "qa_id": "q_njgqkrsgq"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if",
+      "exact_match": false,
+      "expected": "injected_current_pa",
+      "family": "signature_recall",
+      "qa_id": "q_pwqtwxkzf"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if",
+      "exact_match": false,
+      "expected": "baselines_dir",
+      "family": "signature_recall",
+      "qa_id": "q_bbyxvngxs"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if not",
+      "exact_match": false,
+      "expected": "seed, calibration_task_count",
+      "family": "signature_recall",
+      "qa_id": "q_plwlxxwtp"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if not",
+      "exact_match": false,
+      "expected": "step_count, current_pa",
+      "family": "signature_recall",
+      "qa_id": "q_jgdzqkjts"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if",
+      "exact_match": false,
+      "expected": "messages",
+      "family": "signature_recall",
+      "qa_id": "q_gjzgdbypt"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if",
+      "exact_match": false,
+      "expected": "**kwargs",
+      "family": "signature_recall",
+      "qa_id": "q_mdfpblbrr"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if not",
+      "exact_match": false,
+      "expected": "cls, path",
+      "family": "signature_recall",
+      "qa_id": "q_qvsfgqpxv"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if",
+      "exact_match": false,
+      "expected": "analysis",
+      "family": "signature_recall",
+      "qa_id": "q_qwnzlfcwp"
+    },
+    {
+      "completion": "signature elif isinstance node ast functiondef ast asyncfunctiondef if not",
+      "exact_match": false,
+      "expected": "model, path",
+      "family": "signature_recall",
+      "qa_id": "q_pszpmpbcf"
+    }
+  ],
+  "train_manifest_sha256": "3fb6c5c115244a2bf2342beb7a6c386604ccc669aea49b679cb040a522bc7329",
+  "train_stream_sha256": "06fe41f1a3aa3aed55d590598ddd21baffe4a55e2d2955eabae0c6d7364f47a0",
+  "val_manifest_sha256": "af635b146027e5bbcb7b95d1b9d7c7bb507d385d889231e39deb82e3ba15a0cb",
+  "wall_s": 1.33
+}

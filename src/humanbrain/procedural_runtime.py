@@ -2,7 +2,11 @@
 
 The runtime's configured address space is metadata. Rust owns every biological
 step, resident-state transition, event delivery, and procedural edge expansion;
-Python validates and marshals one batch per :meth:`advance` call.
+Python validates and marshals one batch per :meth:`advance` call. Event batches
+may be built as :class:`ProceduralInputEvent` records or as bulk NumPy arrays
+with dtype :data:`PROCEDURAL_EVENT_DTYPE` (see :func:`procedural_input_events`)
+-- the array form is validated vectorized and handed to the FFI zero-copy, so
+host marshaling cost is independent of the event count at first order.
 
 The eight mutable per-cell fields are the pinned GLIF5 voltage, two after-spike
 currents, spike and voltage threshold components, refractory counter, recurrent
@@ -299,6 +303,45 @@ class _NativeDormant(ctypes.Structure):
     ]
 
 
+#: NumPy structured dtype laid out byte-for-byte like :class:`_NativeEvent`
+#: (four little-endian ``uint64`` keys followed by one ``float64`` current;
+#: packed, no padding, itemsize 40). A contiguous 1-D array of this dtype can
+#: be handed to :meth:`NativeProceduralRuntime.advance` directly -- the FFI
+#: receives a zero-copy pointer into the array's own buffer, bypassing
+#: per-event Python objects entirely.
+PROCEDURAL_EVENT_DTYPE: Final = np.dtype(
+    [
+        ("due_step", "<u8"),
+        ("target_gid", "<u8"),
+        ("source_gid", "<u8"),
+        ("edge_slot", "<u8"),
+        ("current_pa", "<f8"),
+    ]
+)
+
+
+def _assert_event_layout() -> None:
+    """Fail at import if the NumPy view and the C struct ever drift apart."""
+    if PROCEDURAL_EVENT_DTYPE.itemsize != ctypes.sizeof(_NativeEvent):
+        raise RuntimeError(
+            "PROCEDURAL_EVENT_DTYPE itemsize "
+            f"{PROCEDURAL_EVENT_DTYPE.itemsize} differs from _NativeEvent "
+            f"size {ctypes.sizeof(_NativeEvent)}"
+        )
+    for name, _field in _NativeEvent._fields_:
+        c_offset = getattr(_NativeEvent, name).offset
+        np_offset = PROCEDURAL_EVENT_DTYPE.fields[name][1]
+        if c_offset != np_offset:
+            raise RuntimeError(
+                f"event field {name!r} offset mismatch: "
+                f"_NativeEvent={c_offset} dtype={np_offset}"
+            )
+
+
+_assert_event_layout()
+
+
+
 class _NativeCounters(ctypes.Structure):
     _fields_ = [
         ("current_step", ctypes.c_uint64),
@@ -517,6 +560,152 @@ def _event_batch(
     return (_NativeEvent * len(native))(*native)
 
 
+def procedural_input_events(
+    due_steps: object,
+    target_gids: object,
+    source_gids: object,
+    edge_slots: object,
+    current_pa: object,
+) -> np.ndarray:
+    """Build a bulk :data:`PROCEDURAL_EVENT_DTYPE` batch without per-event
+    Python objects.
+
+    Each argument is either an integer/float scalar (broadcast across the
+    batch) or a sequence/array of exact integers (``uint64`` columns) /
+    finite floats (``current_pa``). Record-level semantics match
+    :class:`ProceduralInputEvent.__post_init__`: integer columns are rejected
+    when any entry is negative or exceeds ``uint64``, and ``-0.0`` currents
+    canonicalize to ``+0.0``. Batch-level rules (due-step freshness, address
+    space, fanout bound, duplicate canonical keys, capacity) are enforced by
+    :meth:`NativeProceduralRuntime.advance` exactly as for record lists.
+
+    Returns a 1-D C-contiguous structured array whose buffer can be passed
+    straight into the C-ABI advance call.
+    """
+    columns = []
+    for name, value in (
+        ("due_step", due_steps),
+        ("target_gid", target_gids),
+        ("source_gid", source_gids),
+        ("edge_slot", edge_slots),
+    ):
+        if isinstance(value, np.ndarray):
+            values = value
+            if values.dtype.kind not in ("i", "u"):
+                raise TypeError(f"events.{name} must be integer-typed")
+        else:
+            if isinstance(value, (list, tuple)):
+                values = np.asarray(value)
+                if values.dtype.kind == "O":
+                    # Ints beyond int64 range arrive as object arrays; keep
+                    # the exact-integer contract before converting.
+                    if not all(type(entry) is int for entry in values):
+                        raise TypeError(
+                            f"events.{name} entries must be exact integers"
+                        )
+                elif values.dtype.kind not in ("i", "u"):
+                    raise TypeError(
+                        f"events.{name} entries must be exact integers"
+                    )
+            else:
+                if isinstance(value, np.generic):
+                    if value.dtype.kind not in ("i", "u"):
+                        raise TypeError(f"events.{name} must be an exact integer")
+                elif type(value) is not int:
+                    raise TypeError(f"events.{name} must be an exact integer")
+                values = np.asarray([value])
+        if values.size:
+            if values.dtype.kind == "O":
+                if min(values) < 0 or max(values) > _UINT64_MAX:
+                    raise ValueError(f"event.{name} must fit uint64")
+            elif int(values.min()) < 0 or int(values.max()) > _UINT64_MAX:
+                raise ValueError(f"event.{name} must fit uint64")
+        columns.append(values.astype(np.uint64, copy=False))
+    currents = np.asarray(current_pa, dtype=np.float64)
+    if currents.size and not bool(np.all(np.isfinite(currents))):
+        raise ValueError("event.current_pa must be a finite number")
+    currents = currents.astype(np.float64, copy=True)
+    currents[currents == 0.0] = 0.0  # canonicalize -0.0 like the record path
+    shape = np.broadcast_shapes(*(c.shape for c in columns), currents.shape)
+    events = np.empty(int(np.prod(shape)) if shape else 1, dtype=PROCEDURAL_EVENT_DTYPE)
+    flat_columns = [np.ravel(np.broadcast_to(c, shape)) for c in columns]
+    flat_currents = np.ravel(np.broadcast_to(currents, shape))
+    events["due_step"] = flat_columns[0]
+    events["target_gid"] = flat_columns[1]
+    events["source_gid"] = flat_columns[2]
+    events["edge_slot"] = flat_columns[3]
+    events["current_pa"] = flat_currents
+    return events
+
+
+def _event_batch_array(
+    config: ProceduralRuntimeConfig,
+    current_step: int,
+    events: np.ndarray,
+) -> tuple[np.ndarray, ctypes.POINTER[_NativeEvent] | None, int]:
+    """Validate one bulk :data:`PROCEDURAL_EVENT_DTYPE` batch vectorized.
+
+    Applies exactly the rules of :func:`_event_batch` -- capacity, stale
+    due steps, configured address space, fanout bound, finite currents,
+    duplicate canonical keys -- using array reductions instead of a Python
+    loop. Returns ``(buffer_owner, pointer, count)``: the caller must keep
+    ``buffer_owner`` referenced until the FFI call has returned. The pointer
+    aliases the caller's buffer (zero-copy) unless normalization
+    (non-contiguity, misalignment, ``-0.0`` canonicalization) forces a copy.
+    """
+    if not isinstance(events, np.ndarray) or events.dtype != PROCEDURAL_EVENT_DTYPE:
+        raise TypeError(
+            "bulk events must be a NumPy array with dtype "
+            "PROCEDURAL_EVENT_DTYPE"
+        )
+    flat = np.ascontiguousarray(events.reshape(-1))
+    count = int(flat.shape[0])
+    if count > config.event_capacity:
+        raise ValueError("event batch exceeds event_capacity before native dispatch")
+    if count == 0:
+        return flat, None, 0
+    due_steps = flat["due_step"]
+    targets = flat["target_gid"]
+    sources = flat["source_gid"]
+    slots = flat["edge_slot"]
+    if int(due_steps.min()) < current_step:
+        raise ValueError("event due_step cannot precede the runtime step")
+    cell_bound = config.manifest.cell_count
+    if int(targets.max()) >= cell_bound:
+        raise ValueError("event target_gid is outside the configured address space")
+    if int(sources.max()) >= cell_bound:
+        raise ValueError("event source_gid is outside the configured address space")
+    fanout = config.manifest.fanout
+    if int(slots.max()) >= fanout:
+        raise ValueError("event edge_slot is outside the configured source row")
+    currents = flat["current_pa"]
+    if not bool(np.all(np.isfinite(currents))):
+        raise ValueError("event.current_pa must be a finite number")
+    zero_mask = currents == 0.0
+    if bool(np.any(zero_mask)):
+        # Canonicalize -0.0 to +0.0 exactly like ProceduralInputEvent does;
+        # this is the one case that gives up the zero-copy alias.
+        normalized = np.array(flat, copy=True)
+        normalized["current_pa"][zero_mask] = 0.0
+        flat = normalized
+    order = np.lexsort((slots, sources, targets, due_steps))
+    if count > 1:
+        adjacent_equal = np.ones(count - 1, dtype=bool)
+        for column in (due_steps, targets, sources, slots):
+            ordered = column[order]
+            adjacent_equal &= ordered[1:] == ordered[:-1]
+        if bool(np.any(adjacent_equal)):
+            raise ValueError("events contain a duplicate canonical ordering key")
+    address = flat.ctypes.data
+    alignment = ctypes.alignment(ctypes.c_double)
+    if address % alignment:
+        flat = np.array(flat, copy=True)
+        address = flat.ctypes.data
+    if address % alignment:  # pragma: no cover - NumPy allocations are aligned
+        raise RuntimeError("normalized event buffer is not pointer-aligned")
+    return flat, ctypes.cast(address, ctypes.POINTER(_NativeEvent)), count
+
+
 def _resident(record: _NativeResident) -> ProceduralResidentState:
     return ProceduralResidentState(
         gid=int(record.gid),
@@ -603,15 +792,24 @@ class NativeProceduralRuntime:
     def advance(
         self,
         step_count: int,
-        events: Sequence[ProceduralInputEvent] = (),
+        events: Sequence[ProceduralInputEvent] | np.ndarray = (),
     ) -> ProceduralAdvance:
+        """Advance the runtime, delivering caller-supplied external events.
+
+        ``events`` is either a sequence of :class:`ProceduralInputEvent`
+        records or a contiguous 1-D NumPy array with dtype
+        :data:`PROCEDURAL_EVENT_DTYPE`. The array form marshals in bulk --
+        vectorized validation and one zero-copy buffer pointer -- and applies
+        the identical rule set (capacity, freshness, address space, fanout
+        bound, finite currents, duplicate canonical keys) as the record form.
+        """
         with self._operation_lock:
             return self._advance_locked(step_count, events)
 
     def _advance_locked(
         self,
         step_count: int,
-        events: Sequence[ProceduralInputEvent],
+        events: Sequence[ProceduralInputEvent] | np.ndarray,
     ) -> ProceduralAdvance:
         self._require_open()
         steps = _exact_uint64("step_count", step_count)
@@ -619,13 +817,20 @@ class NativeProceduralRuntime:
             raise ValueError("step_count must be at least one")
         if self._current_step + steps > _UINT64_MAX:
             raise ValueError("advance would overflow the uint64 biological-step counter")
-        native_events = _event_batch(self.config, self._current_step, events)
+        if isinstance(events, np.ndarray):
+            bulk_buffer, native_events, event_count = _event_batch_array(
+                self.config, self._current_step, events
+            )
+        else:
+            bulk_buffer = None
+            native_events = _event_batch(self.config, self._current_step, events)
+            event_count = 0 if native_events is None else len(native_events)
         status = int(
             self._library.humanbrain_procedural_runtime_advance(
                 self._handle,
                 steps,
                 native_events,
-                0 if native_events is None else len(native_events),
+                event_count,
             )
         )
         if status != 0:
@@ -990,7 +1195,7 @@ class NativeDenseProceduralReference:
     def advance(
         self,
         step_count: int,
-        events: Sequence[ProceduralInputEvent] = (),
+        events: Sequence[ProceduralInputEvent] | np.ndarray = (),
     ) -> tuple[ProceduralSpike, ...]:
         with self._operation_lock:
             return self._advance_locked(step_count, events)
@@ -998,7 +1203,7 @@ class NativeDenseProceduralReference:
     def _advance_locked(
         self,
         step_count: int,
-        events: Sequence[ProceduralInputEvent],
+        events: Sequence[ProceduralInputEvent] | np.ndarray,
     ) -> tuple[ProceduralSpike, ...]:
         self._require_open()
         steps = _exact_uint64("step_count", step_count)
@@ -1006,13 +1211,20 @@ class NativeDenseProceduralReference:
             raise ValueError("step_count must be at least one")
         if self._current_step + steps > _UINT64_MAX:
             raise ValueError("advance would overflow the uint64 biological-step counter")
-        native_events = _event_batch(self.config, self._current_step, events)
+        if isinstance(events, np.ndarray):
+            bulk_buffer, native_events, event_count = _event_batch_array(
+                self.config, self._current_step, events
+            )
+        else:
+            bulk_buffer = None
+            native_events = _event_batch(self.config, self._current_step, events)
+            event_count = 0 if native_events is None else len(native_events)
         status = int(
             self._library.humanbrain_dense_reference_advance(
                 self._handle,
                 steps,
                 native_events,
-                0 if native_events is None else len(native_events),
+                event_count,
             )
         )
         if status != 0:
@@ -1081,6 +1293,7 @@ class NativeDenseProceduralReference:
 __all__ = [
     "NativeDenseProceduralReference",
     "NativeProceduralRuntime",
+    "PROCEDURAL_EVENT_DTYPE",
     "ProceduralAdvance",
     "ProceduralInputEvent",
     "ProceduralResidentState",
@@ -1088,4 +1301,5 @@ __all__ = [
     "ProceduralRuntimeError",
     "ProceduralSnapshot",
     "ProceduralSpike",
+    "procedural_input_events",
 ]

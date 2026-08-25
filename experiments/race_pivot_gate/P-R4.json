@@ -1,0 +1,138 @@
+{
+  "N": 96,
+  "abstention": null,
+  "anchors": {
+    "git_head": "63c213b6a8341281a620ffecf4a941529a122fd3",
+    "qa_corpus_sha256": "8857eb77f3581aae55db44d34f7bb62b592e2a4ff10161fe5127b16243106bd5",
+    "qa_curriculum_sha256": "edad2c59d5b721a9a4dc3dde0f6bc11452f3db138426c7a6bad45f8b8718c7cc",
+    "typed_curriculum_sha256": "48219eda110f09f735525a7de00e56596ffac729746654e809c3c5eb525ccae6"
+  },
+  "arm": "P-R4",
+  "arm_config": {
+    "abstention": false,
+    "broadcast_b": 4,
+    "chase_to_settle": true,
+    "variant": "P-R"
+  },
+  "distinct_answers": 6,
+  "eval_task_count": 6,
+  "execution": {
+    "completion_token_slack": 8,
+    "device": "cpu",
+    "growth_epochs": 2,
+    "readout_rule": "ridge",
+    "ridge_backend": "scipy",
+    "simulation_backend": "cpu"
+  },
+  "experiment_id": "race_pivot_gate",
+  "free_run_exact_matches": 0,
+  "free_run_rows": [
+    {
+      "completion": "     a       ?",
+      "exact_match": false,
+      "expected": "light",
+      "normalized_completion": "a ?",
+      "qa_id": "q_bxcsdxmsd"
+    },
+    {
+      "completion": "      ww heartheartheartheartheart  heartheart",
+      "exact_match": false,
+      "expected": "the heaven and the earth",
+      "normalized_completion": "ww heartheartheartheartheart heartheart",
+      "qa_id": "q_mxwdrtjjd"
+    },
+    {
+      "completion": "    e      ?    ?     ??      ",
+      "exact_match": false,
+      "expected": "the way, the truth, and the life",
+      "normalized_completion": "e ? ? ??",
+      "qa_id": "q_tnhbjgbvk"
+    },
+    {
+      "completion": " ?d ? heartheartheartheartheartheart ",
+      "exact_match": false,
+      "expected": "The LORD",
+      "normalized_completion": "?d ? heartheartheartheartheartheart",
+      "qa_id": "q_ycgydhrsg"
+    },
+    {
+      "completion": "e  edhhh?   heartheart",
+      "exact_match": false,
+      "expected": "steal",
+      "normalized_completion": "e edhhh? heartheart",
+      "qa_id": "q_qknsngrph"
+    },
+    {
+      "completion": ":: t o?heartheart ",
+      "exact_match": false,
+      "expected": "kind",
+      "normalized_completion": ":: t o?heartheart",
+      "qa_id": "q_dhgbcffpp"
+    }
+  ],
+  "gate_verdicts": {
+    "g_p1_distinct_pass": true,
+    "g_p2_exact_pass": false,
+    "g_p3_replay_pass": true,
+    "overall_pass": false,
+    "pm1_success_gate_pass": null
+  },
+  "leg": "fixture_n96",
+  "margin_count": 99,
+  "margin_max_pa": 1586.6306945979286,
+  "margin_median_pa": 205.06386994786817,
+  "margin_min_pa": -10.149214182342575,
+  "modal_answer": "a ?",
+  "modal_share": 0.16666666666666666,
+  "preregistration": {
+    "gates": {
+      "g_p1_distinct_min": 3,
+      "g_p2_exact_min": 1,
+      "g_p3_replay_min_of": [
+        39,
+        42
+      ],
+      "max_settle_rounds": 4,
+      "pm1_coverage_min": 0.3,
+      "pm1_selective_min": 0.061851478566709396
+    },
+    "tau_block": {
+      "block_sha256": "d11d395ebb13800602312dd17cf4f1f450ed61a0f6f2512d4e1a24cc57d9ca9f",
+      "method": "numpy.percentile linear interpolation over TRAIN decision margins",
+      "pool_n": 161,
+      "pool_sha256": "76bec058c4a4cdc740e087e3668c4f0724f96637f87bd16c6899fce2b5c85e3b",
+      "tau_high": 1093.4090596622568,
+      "tau_high_percentile": 95.0,
+      "tau_low": -442.0095367935478,
+      "tau_low_percentile": 5.0
+    },
+    "tau_freeze_timing": "TRAIN margin pool frozen BEFORE any CALIBRATION free-run (\u00a73.2); pool_n below is the raw decision count",
+    "tau_pool_n": 161
+  },
+  "protocol": "docs/research/race-pivot-protocol.md @ d52c9d2",
+  "role": "confirmatory",
+  "seed": 7,
+  "settle": {
+    "flip_rate_mean": 0.5079772079772079,
+    "injection_counts_per_task": [
+      131,
+      151,
+      212,
+      121,
+      118,
+      97
+    ],
+    "rounds_histogram": {
+      "rounds_1_STABLE": 44,
+      "rounds_2_STABLE": 24,
+      "rounds_3_STABLE": 12,
+      "rounds_4_STABLE": 5,
+      "rounds_4_UNCONVERGED": 14
+    },
+    "stable_fraction_mean": 0.860989010989011
+  },
+  "train_cases_passed": 126,
+  "train_cases_total": 126,
+  "train_replay_tasks": 42,
+  "wall_s": 48.782340300000214
+}

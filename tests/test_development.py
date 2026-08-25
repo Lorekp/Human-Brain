@@ -70,7 +70,7 @@ def test_recruitment_keeps_unborn_cells_dormant_then_grows_their_synapses() -> N
         circuit.strengthen((token + 1) % circuit.token_cells)
         controller.record_plasticity()
 
-    assert not np.any(circuit._eligibility[unborn])
+    assert not np.any(circuit.eligibility[unborn])
     assert not np.any(circuit._reservoir.state.voltage_relative_mv[unborn])
     assert not np.any(circuit._recurrent_weights_pa[unborn])
     assert not np.any(circuit._readout_synapses_pa[:, unborn])

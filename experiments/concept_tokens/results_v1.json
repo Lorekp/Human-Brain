@@ -1,0 +1,819 @@
+{
+ "study": "concept-tokens-v1",
+ "git_head": "33ce3df6623516b37d6139e813a9f7437e9549fe",
+ "python": "3.14.0",
+ "protocol": {
+  "concept_config": {
+   "min_frequency": 50,
+   "min_mutual_information_bits": 5.0,
+   "max_concepts": 512,
+   "min_tokens": 2,
+   "max_tokens": 12
+  },
+  "base_tokenizer": "BytePhraseTokenizer defaults (max_phrases=512); ids [0,768)",
+  "concept_band": "[1024,1536)"
+ },
+ "provenance": {
+  "bible": {
+   "candidate_id": "cell-lm-v1-freeze-candidate-bible-kjv-pg10-v3",
+   "trimmed_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
+   "train_books": 49
+  },
+  "code": {
+   "root": "src/humanbrain",
+   "files_used": 13,
+   "files_available": 41,
+   "total_bytes": 215682,
+   "paths": [
+    "src\\humanbrain\\__init__.py",
+    "src\\humanbrain\\artifacts.py",
+    "src\\humanbrain\\cells.py",
+    "src\\humanbrain\\cli.py",
+    "src\\humanbrain\\concept_tokens.py",
+    "src\\humanbrain\\cortex.py",
+    "src\\humanbrain\\cuda.py",
+    "src\\humanbrain\\development.py",
+    "src\\humanbrain\\eval_bridge.py",
+    "src\\humanbrain\\human_cell_identity.py",
+    "src\\humanbrain\\language.py",
+    "src\\humanbrain\\native.py",
+    "src\\humanbrain\\procedural_runtime.py"
+   ]
+  }
+ },
+ "corpora_bytes": {
+  "bible_train": 3656825,
+  "code_sample": 215694
+ },
+ "compression_grid": [
+  {
+   "tokenizer": "bible/BPE-4096",
+   "tokens": 1590511,
+   "bytes": 3656825,
+   "bytes_per_token": 2.299,
+   "encode_seconds": 0.7,
+   "fit_domain": "bible",
+   "eval_domain": "bible_train"
+  },
+  {
+   "tokenizer": "bible/BPE-1280",
+   "tokens": 1769667,
+   "bytes": 3656825,
+   "bytes_per_token": 2.066,
+   "encode_seconds": 0.67,
+   "fit_domain": "bible",
+   "eval_domain": "bible_train"
+  },
+  {
+   "tokenizer": "bible/BytePhrase-base",
+   "tokens": 2030527,
+   "bytes": 3656825,
+   "bytes_per_token": 1.801,
+   "encode_seconds": 0.54,
+   "fit_domain": "bible",
+   "eval_domain": "bible_train"
+  },
+  {
+   "tokenizer": "bible/ConceptStack",
+   "tokens": 1483292,
+   "bytes": 3656825,
+   "bytes_per_token": 2.465,
+   "encode_seconds": 0.87,
+   "fit_domain": "bible",
+   "eval_domain": "bible_train"
+  },
+  {
+   "tokenizer": "bible/BPE-4096",
+   "tokens": 141413,
+   "bytes": 215694,
+   "bytes_per_token": 1.525,
+   "encode_seconds": 0.04,
+   "fit_domain": "bible",
+   "eval_domain": "code_sample"
+  },
+  {
+   "tokenizer": "bible/BPE-1280",
+   "tokens": 154425,
+   "bytes": 215694,
+   "bytes_per_token": 1.397,
+   "encode_seconds": 0.05,
+   "fit_domain": "bible",
+   "eval_domain": "code_sample"
+  },
+  {
+   "tokenizer": "bible/BytePhrase-base",
+   "tokens": 193465,
+   "bytes": 215694,
+   "bytes_per_token": 1.115,
+   "encode_seconds": 0.04,
+   "fit_domain": "bible",
+   "eval_domain": "code_sample"
+  },
+  {
+   "tokenizer": "bible/ConceptStack",
+   "tokens": 180351,
+   "bytes": 215694,
+   "bytes_per_token": 1.196,
+   "encode_seconds": 0.07,
+   "fit_domain": "bible",
+   "eval_domain": "code_sample"
+  },
+  {
+   "tokenizer": "code/BPE-4096",
+   "tokens": 2226400,
+   "bytes": 3656825,
+   "bytes_per_token": 1.642,
+   "encode_seconds": 0.66,
+   "fit_domain": "code",
+   "eval_domain": "bible_train"
+  },
+  {
+   "tokenizer": "code/BPE-1280",
+   "tokens": 2412431,
+   "bytes": 3656825,
+   "bytes_per_token": 1.516,
+   "encode_seconds": 0.7,
+   "fit_domain": "code",
+   "eval_domain": "bible_train"
+  },
+  {
+   "tokenizer": "code/BytePhrase-base",
+   "tokens": 3038501,
+   "bytes": 3656825,
+   "bytes_per_token": 1.203,
+   "encode_seconds": 0.75,
+   "fit_domain": "code",
+   "eval_domain": "bible_train"
+  },
+  {
+   "tokenizer": "code/ConceptStack",
+   "tokens": 2749176,
+   "bytes": 3656825,
+   "bytes_per_token": 1.33,
+   "encode_seconds": 1.24,
+   "fit_domain": "code",
+   "eval_domain": "bible_train"
+  },
+  {
+   "tokenizer": "code/BPE-4096",
+   "tokens": 62479,
+   "bytes": 215694,
+   "bytes_per_token": 3.452,
+   "encode_seconds": 0.05,
+   "fit_domain": "code",
+   "eval_domain": "code_sample"
+  },
+  {
+   "tokenizer": "code/BPE-1280",
+   "tokens": 78099,
+   "bytes": 215694,
+   "bytes_per_token": 2.762,
+   "encode_seconds": 0.04,
+   "fit_domain": "code",
+   "eval_domain": "code_sample"
+  },
+  {
+   "tokenizer": "code/BytePhrase-base",
+   "tokens": 90624,
+   "bytes": 215694,
+   "bytes_per_token": 2.38,
+   "encode_seconds": 0.03,
+   "fit_domain": "code",
+   "eval_domain": "code_sample"
+  },
+  {
+   "tokenizer": "code/ConceptStack",
+   "tokens": 65969,
+   "bytes": 215694,
+   "bytes_per_token": 3.27,
+   "encode_seconds": 0.04,
+   "fit_domain": "code",
+   "eval_domain": "code_sample"
+  }
+ ],
+ "concept_counts": {
+  "bible": 512,
+  "code": 299
+ },
+ "top50_concepts_bible": [
+  {
+   "text": ".\r\n\r\n",
+   "count": 19705,
+   "mi_bits": 9.15,
+   "bytes": 5
+  },
+  {
+   "text": ", and",
+   "count": 19701,
+   "mi_bits": 6.15,
+   "bytes": 5
+  },
+  {
+   "text": ", and ",
+   "count": 18038,
+   "mi_bits": 7.74,
+   "bytes": 6
+  },
+  {
+   "text": "of the",
+   "count": 9593,
+   "mi_bits": 5.29,
+   "bytes": 6
+  },
+  {
+   "text": " of the",
+   "count": 9243,
+   "mi_bits": 6.96,
+   "bytes": 7
+  },
+  {
+   "text": "of the ",
+   "count": 8597,
+   "mi_bits": 6.86,
+   "bytes": 7
+  },
+  {
+   "text": " of the ",
+   "count": 8248,
+   "mi_bits": 8.52,
+   "bytes": 8
+  },
+  {
+   "text": "the LORD",
+   "count": 5147,
+   "mi_bits": 6.7,
+   "bytes": 8
+  },
+  {
+   "text": " the LORD",
+   "count": 4936,
+   "mi_bits": 8.36,
+   "bytes": 9
+  },
+  {
+   "text": "th ",
+   "count": 3997,
+   "mi_bits": 5.0,
+   "bytes": 3
+  },
+  {
+   "text": " in the",
+   "count": 3800,
+   "mi_bits": 6.14,
+   "bytes": 7
+  },
+  {
+   "text": "in the ",
+   "count": 3600,
+   "mi_bits": 6.06,
+   "bytes": 7
+  },
+  {
+   "text": " in the ",
+   "count": 3404,
+   "mi_bits": 7.7,
+   "bytes": 8
+  },
+  {
+   "text": " and the",
+   "count": 3108,
+   "mi_bits": 5.29,
+   "bytes": 8
+  },
+  {
+   "text": "s of ",
+   "count": 3010,
+   "mi_bits": 5.66,
+   "bytes": 5
+  },
+  {
+   "text": "eth",
+   "count": 2974,
+   "mi_bits": 7.57,
+   "bytes": 3
+  },
+  {
+   "text": "and the ",
+   "count": 2928,
+   "mi_bits": 5.2,
+   "bytes": 8
+  },
+  {
+   "text": "the LORD ",
+   "count": 2902,
+   "mi_bits": 7.6,
+   "bytes": 9
+  },
+  {
+   "text": " the LORD ",
+   "count": 2773,
+   "mi_bits": 9.25,
+   "bytes": 10
+  },
+  {
+   "text": "ing ",
+   "count": 2754,
+   "mi_bits": 5.99,
+   "bytes": 4
+  },
+  {
+   "text": " and the ",
+   "count": 2742,
+   "mi_bits": 6.83,
+   "bytes": 9
+  },
+  {
+   "text": "ess",
+   "count": 2547,
+   "mi_bits": 6.16,
+   "bytes": 3
+  },
+  {
+   "text": "; and",
+   "count": 2477,
+   "mi_bits": 5.89,
+   "bytes": 5
+  },
+  {
+   "text": "eth ",
+   "count": 2311,
+   "mi_bits": 8.92,
+   "bytes": 4
+  },
+  {
+   "text": "; and ",
+   "count": 2283,
+   "mi_bits": 7.49,
+   "bytes": 6
+  },
+  {
+   "text": "s, and",
+   "count": 2226,
+   "mi_bits": 8.55,
+   "bytes": 6
+  },
+  {
+   "text": ": and ",
+   "count": 2158,
+   "mi_bits": 5.35,
+   "bytes": 6
+  },
+  {
+   "text": ", that ",
+   "count": 2083,
+   "mi_bits": 6.31,
+   "bytes": 7
+  },
+  {
+   "text": "s, and ",
+   "count": 2035,
+   "mi_bits": 10.14,
+   "bytes": 7
+  },
+  {
+   "text": "shall be",
+   "count": 1977,
+   "mi_bits": 7.54,
+   "bytes": 8
+  },
+  {
+   "text": "ter",
+   "count": 1965,
+   "mi_bits": 6.35,
+   "bytes": 3
+  },
+  {
+   "text": " And the",
+   "count": 1916,
+   "mi_bits": 6.27,
+   "bytes": 8
+  },
+  {
+   "text": "And the ",
+   "count": 1904,
+   "mi_bits": 6.26,
+   "bytes": 8
+  },
+  {
+   "text": ", and the",
+   "count": 1886,
+   "mi_bits": 9.72,
+   "bytes": 9
+  },
+  {
+   "text": " And the ",
+   "count": 1873,
+   "mi_bits": 7.96,
+   "bytes": 9
+  },
+  {
+   "text": " shall be",
+   "count": 1823,
+   "mi_bits": 9.15,
+   "bytes": 9
+  },
+  {
+   "text": "all the",
+   "count": 1803,
+   "mi_bits": 5.36,
+   "bytes": 7
+  },
+  {
+   "text": "shall be ",
+   "count": 1703,
+   "mi_bits": 9.05,
+   "bytes": 9
+  },
+  {
+   "text": " all the",
+   "count": 1699,
+   "mi_bits": 6.99,
+   "bytes": 8
+  },
+  {
+   "text": " to the",
+   "count": 1676,
+   "mi_bits": 5.8,
+   "bytes": 7
+  },
+  {
+   "text": ", and the ",
+   "count": 1665,
+   "mi_bits": 11.26,
+   "bytes": 10
+  },
+  {
+   "text": "s.\r\n",
+   "count": 1643,
+   "mi_bits": 6.48,
+   "bytes": 4
+  },
+  {
+   "text": "est",
+   "count": 1640,
+   "mi_bits": 5.97,
+   "bytes": 3
+  },
+  {
+   "text": "s.\r\n\r\n",
+   "count": 1633,
+   "mi_bits": 11.1,
+   "bytes": 6
+  },
+  {
+   "text": "all the ",
+   "count": 1622,
+   "mi_bits": 6.93,
+   "bytes": 8
+  },
+  {
+   "text": "to the ",
+   "count": 1606,
+   "mi_bits": 5.74,
+   "bytes": 7
+  },
+  {
+   "text": " unto the",
+   "count": 1579,
+   "mi_bits": 6.54,
+   "bytes": 9
+  },
+  {
+   "text": ", and\r\n",
+   "count": 1566,
+   "mi_bits": 7.13,
+   "bytes": 7
+  },
+  {
+   "text": "\u2019s",
+   "count": 1557,
+   "mi_bits": 5.38,
+   "bytes": 4
+  },
+  {
+   "text": " shall be ",
+   "count": 1555,
+   "mi_bits": 10.64,
+   "bytes": 10
+  }
+ ],
+ "top50_concepts_code": [
+  {
+   "text": " = ",
+   "count": 1104,
+   "mi_bits": 5.33,
+   "bytes": 3
+  },
+  {
+   "text": ")\n        ",
+   "count": 510,
+   "mi_bits": 7.4,
+   "bytes": 10
+  },
+  {
+   "text": ",\n            ",
+   "count": 504,
+   "mi_bits": 8.05,
+   "bytes": 14
+  },
+  {
+   "text": ",\n        ",
+   "count": 462,
+   "mi_bits": 7.31,
+   "bytes": 10
+  },
+  {
+   "text": "),\n",
+   "count": 450,
+   "mi_bits": 6.78,
+   "bytes": 3
+  },
+  {
+   "text": "self._",
+   "count": 276,
+   "mi_bits": 7.78,
+   "bytes": 6
+  },
+  {
+   "text": ":\n        ",
+   "count": 268,
+   "mi_bits": 7.27,
+   "bytes": 10
+  },
+  {
+   "text": " self.",
+   "count": 258,
+   "mi_bits": 5.95,
+   "bytes": 6
+  },
+  {
+   "text": ")\n    ",
+   "count": 254,
+   "mi_bits": 6.9,
+   "bytes": 6
+  },
+  {
+   "text": ") -",
+   "count": 235,
+   "mi_bits": 6.84,
+   "bytes": 3
+  },
+  {
+   "text": ":\n            ",
+   "count": 228,
+   "mi_bits": 7.66,
+   "bytes": 14
+  },
+  {
+   "text": "\n        self",
+   "count": 225,
+   "mi_bits": 7.68,
+   "bytes": 13
+  },
+  {
+   "text": "->",
+   "count": 225,
+   "mi_bits": 6.87,
+   "bytes": 2
+  },
+  {
+   "text": " -> ",
+   "count": 224,
+   "mi_bits": 12.97,
+   "bytes": 4
+  },
+  {
+   "text": "-> ",
+   "count": 224,
+   "mi_bits": 9.92,
+   "bytes": 3
+  },
+  {
+   "text": " ->",
+   "count": 224,
+   "mi_bits": 9.92,
+   "bytes": 3
+  },
+  {
+   "text": ") -> ",
+   "count": 222,
+   "mi_bits": 18.14,
+   "bytes": 5
+  },
+  {
+   "text": ") ->",
+   "count": 222,
+   "mi_bits": 15.09,
+   "bytes": 4
+  },
+  {
+   "text": ",\n                ",
+   "count": 215,
+   "mi_bits": 8.06,
+   "bytes": 18
+  },
+  {
+   "text": " np.",
+   "count": 208,
+   "mi_bits": 6.89,
+   "bytes": 4
+  },
+  {
+   "text": "\")\n",
+   "count": 206,
+   "mi_bits": 5.67,
+   "bytes": 3
+  },
+  {
+   "text": "\n        self.",
+   "count": 205,
+   "mi_bits": 12.26,
+   "bytes": 14
+  },
+  {
+   "text": "        self.",
+   "count": 205,
+   "mi_bits": 8.24,
+   "bytes": 13
+  },
+  {
+   "text": " ctypes.",
+   "count": 190,
+   "mi_bits": 6.62,
+   "bytes": 8
+  },
+  {
+   "text": ",\n    ",
+   "count": 188,
+   "mi_bits": 6.52,
+   "bytes": 6
+  },
+  {
+   "text": "ion",
+   "count": 183,
+   "mi_bits": 9.53,
+   "bytes": 3
+  },
+  {
+   "text": "ati",
+   "count": 183,
+   "mi_bits": 5.11,
+   "bytes": 3
+  },
+  {
+   "text": "),\n            ",
+   "count": 177,
+   "mi_bits": 11.72,
+   "bytes": 15
+  },
+  {
+   "text": "\n\n    ",
+   "count": 174,
+   "mi_bits": 5.2,
+   "bytes": 6
+  },
+  {
+   "text": "()\n",
+   "count": 170,
+   "mi_bits": 5.33,
+   "bytes": 3
+  },
+  {
+   "text": "ent",
+   "count": 164,
+   "mi_bits": 7.84,
+   "bytes": 3
+  },
+  {
+   "text": "\",\n",
+   "count": 163,
+   "mi_bits": 5.38,
+   "bytes": 3
+  },
+  {
+   "text": "\"\"\"",
+   "count": 156,
+   "mi_bits": 6.55,
+   "bytes": 3
+  },
+  {
+   "text": "\n        if ",
+   "count": 155,
+   "mi_bits": 11.43,
+   "bytes": 12
+  },
+  {
+   "text": "\n        if",
+   "count": 155,
+   "mi_bits": 8.38,
+   "bytes": 11
+  },
+  {
+   "text": "        if ",
+   "count": 155,
+   "mi_bits": 7.41,
+   "bytes": 11
+  },
+  {
+   "text": "ing",
+   "count": 150,
+   "mi_bits": 5.35,
+   "bytes": 3
+  },
+  {
+   "text": "ive",
+   "count": 146,
+   "mi_bits": 9.37,
+   "bytes": 3
+  },
+  {
+   "text": "(\n            ",
+   "count": 139,
+   "mi_bits": 6.15,
+   "bytes": 14
+  },
+  {
+   "text": "\n        )",
+   "count": 139,
+   "mi_bits": 5.52,
+   "bytes": 10
+  },
+  {
+   "text": ":\n    ",
+   "count": 138,
+   "mi_bits": 6.82,
+   "bytes": 6
+  },
+  {
+   "text": "\n    def ",
+   "count": 137,
+   "mi_bits": 12.53,
+   "bytes": 9
+  },
+  {
+   "text": "\n    def",
+   "count": 137,
+   "mi_bits": 9.48,
+   "bytes": 8
+  },
+  {
+   "text": "    def ",
+   "count": 137,
+   "mi_bits": 8.51,
+   "bytes": 8
+  },
+  {
+   "text": "    def",
+   "count": 137,
+   "mi_bits": 5.46,
+   "bytes": 7
+  },
+  {
+   "text": "),\n        ",
+   "count": 136,
+   "mi_bits": 10.73,
+   "bytes": 11
+  },
+  {
+   "text": "(self.",
+   "count": 136,
+   "mi_bits": 7.16,
+   "bytes": 6
+  },
+  {
+   "text": ")\n            ",
+   "count": 133,
+   "mi_bits": 6.08,
+   "bytes": 14
+  },
+  {
+   "text": " not ",
+   "count": 127,
+   "mi_bits": 6.01,
+   "bytes": 5
+  },
+  {
+   "text": "\n            raise",
+   "count": 123,
+   "mi_bits": 9.62,
+   "bytes": 18
+  }
+ ],
+ "sensitivity": {
+  "code_min_frequency_20": {
+   "num_concepts": 512,
+   "top10": [
+    " = ",
+    ")\n        ",
+    ",\n            ",
+    ",\n        ",
+    "),\n",
+    "self._",
+    ":\n        ",
+    " self.",
+    ")\n    ",
+    ") -"
+   ]
+  }
+ }
+}

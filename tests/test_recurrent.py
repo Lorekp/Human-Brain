@@ -74,14 +74,21 @@ def test_three_factor_update_uses_trace_competition_and_target_modulation() -> N
             local_learning_rate_pa=learning_rate,
         ),
     )
-    circuit._eligibility[:] = (3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    # R0: seed the (K, R) trace bank with the incumbent [3, 4] pattern split
+    # across traces (row 0 cell 0 and row 3 cell 5) so the flat source slots
+    # 0 and 3·R+5 carry exactly the same squared norm as the single-trace
+    # original (1 + 3² + 4² = 26) while proving multi-row slot addressing.
+    circuit._eligibility_traces[:] = 0.0
+    circuit._eligibility_traces[0, 0] = 3.0
+    circuit._eligibility_traces[3, 5] = 4.0
     circuit._output_heterogeneity_pa.fill(0.0)
     circuit._observed_tokens = 1
 
     circuit.strengthen(2)
 
-    step = learning_rate / np.sqrt(26.0)
-    expected = step * circuit._eligibility
+    flat_features = circuit._feature_traces.copy()
+    step = learning_rate / np.sqrt(1.0 + float(flat_features @ flat_features))
+    expected = step * flat_features
     np.testing.assert_allclose(circuit._readout_synapses_pa[2], expected)
     np.testing.assert_allclose(circuit._readout_synapses_pa[0], -expected)
     assert not circuit._readout_synapses_pa[1].any()

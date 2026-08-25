@@ -263,4 +263,4 @@ def test_curriculum_digest_flows_into_run_record() -> None:
     record = QA.run(config)
     assert record["curriculum_sha256"] == qa_corpus.build_curriculum(11)["sha256"]
     assert record["corpus_sha256"] == qa_corpus.corpus_digest()
-    assert record["schema_version"] == "humanbrain/qa-experiments/v1"
+    assert record["schema_version"] == "humanbrain/qa-experiments/v2"

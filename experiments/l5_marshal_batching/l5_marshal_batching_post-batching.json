@@ -1,0 +1,436 @@
+{
+  "spec": "L5 host-marshal phase breakdown + bulk numpy A/B gates (L4 protocol point: cfg=1e6, EP, pool-locality schedule)",
+  "label": "post-batching",
+  "commit": "0d137fc0d2c49d10ea3638990778c0c5291bc6bf",
+  "python": "3.14.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.2.6",
+  "layout_gate_g0": {
+    "itemsize": 40,
+    "offsets": {
+      "due_step": 0,
+      "target_gid": 8,
+      "source_gid": 16,
+      "edge_slot": 24,
+      "current_pa": 32
+    }
+  },
+  "protocol": {
+    "configured_cells": 1000000,
+    "activities_pct": [
+      1,
+      2,
+      5
+    ],
+    "events_per_token": {
+      "1": 10000,
+      "2": 20000,
+      "5": 50000
+    },
+    "tokens": 12,
+    "token_window_steps": 100,
+    "strategies": [
+      "dataclass+_event_batch",
+      "buffer_fill(host-only)",
+      "numpy_bulk(zero-copy)"
+    ],
+    "gates": [
+      "G0 layout",
+      "G1 counters",
+      "G2 spikes",
+      "G3 state dumps"
+    ]
+  },
+  "rows": [
+    {
+      "activity_pct_of_configured": 1,
+      "events_per_token": 10000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 39210,
+        "staged_peak_model": 53132,
+        "resident_capacity": 1000000,
+        "event_capacity": 80000,
+        "spike_capacity": 40000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build_wall_s": {
+        "dataclass_arm": 1.636,
+        "numpy_arm": 1.517
+      },
+      "buffer_fill_host_only": {
+        "median_ms": 2.243,
+        "per_event_us": 0.2243,
+        "note": "host-only; never touches simulation state"
+      },
+      "final_state": {
+        "dataclass_arm": {
+          "resident_count": 262144,
+          "pending_count": 40000,
+          "dormant_count": 252144,
+          "residents_sha256": "5bb9ddccb294bb5a597b8ca18c13fe48cac4034ca4f8a3cf8b653baddee457da",
+          "pending_sha256": "6cbfdf180800ad00a353bfe34af072e0bf96d877eab36e467cb9519c589b35ba",
+          "dormant_sha256": "f4a0d3317ea98080fc25ee539e7b5fb5a25fdccd57c2022e15ef2344c8eddde7"
+        },
+        "numpy_arm": {
+          "resident_count": 262144,
+          "pending_count": 40000,
+          "dormant_count": 252144,
+          "residents_sha256": "5bb9ddccb294bb5a597b8ca18c13fe48cac4034ca4f8a3cf8b653baddee457da",
+          "pending_sha256": "6cbfdf180800ad00a353bfe34af072e0bf96d877eab36e467cb9519c589b35ba",
+          "dormant_sha256": "f4a0d3317ea98080fc25ee539e7b5fb5a25fdccd57c2022e15ef2344c8eddde7"
+        }
+      },
+      "gate_counters_G1": true,
+      "gate_spikes_G2": true,
+      "gate_state_G3": true,
+      "stream": {
+        "legacy_dataclass_incl_host": {
+          "median_token_ms": 59.09,
+          "tok_per_s_incl_host": 16.923,
+          "phases_ms": {
+            "object_construction": 13.2579,
+            "ctypes_marshal": 8.1529,
+            "ffi_call": 34.7916,
+            "result_unpack": 0.094
+          },
+          "phases_us_per_event": {
+            "object_construction": 1.3258,
+            "ctypes_marshal": 0.8153,
+            "ffi_call": 3.4792,
+            "result_unpack": 0.0094
+          }
+        },
+        "batched_numpy_bulk_incl_host": {
+          "median_token_ms": 29.0,
+          "tok_per_s_incl_host": 34.483,
+          "phases_ms": {
+            "numpy_build": 0.1068,
+            "ffi_call": 28.8513,
+            "result_unpack": 0.0522
+          },
+          "phases_us_per_event": {
+            "numpy_build": 0.0107,
+            "ffi_call": 2.8851,
+            "result_unpack": 0.0052
+          }
+        }
+      },
+      "marshal_path": {
+        "legacy_object_plus_ctypes_us_per_event": 2.1737,
+        "bulk_numpy_build_us_per_event": 0.0107,
+        "speedup_x": 203.5
+      },
+      "end_to_end_speedup_x": 2.038,
+      "walls_ms": {
+        "legacy_total_ms": [
+          153.484,
+          235.607,
+          117.394,
+          61.323,
+          55.058,
+          54.411,
+          65.456,
+          56.857,
+          56.832,
+          65.747,
+          55.924,
+          55.002
+        ],
+        "bulk_total_ms": [
+          124.024,
+          209.357,
+          92.151,
+          29.236,
+          28.764,
+          31.37,
+          28.289,
+          28.095,
+          28.377,
+          27.645,
+          29.553,
+          27.91
+        ]
+      }
+    },
+    {
+      "activity_pct_of_configured": 2,
+      "events_per_token": 20000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 76883,
+        "staged_peak_model": 104573,
+        "resident_capacity": 1000000,
+        "event_capacity": 160000,
+        "spike_capacity": 80000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build_wall_s": {
+        "dataclass_arm": 1.47,
+        "numpy_arm": 1.541
+      },
+      "buffer_fill_host_only": {
+        "median_ms": 4.558,
+        "per_event_us": 0.2279,
+        "note": "host-only; never touches simulation state"
+      },
+      "final_state": {
+        "dataclass_arm": {
+          "resident_count": 262144,
+          "pending_count": 80000,
+          "dormant_count": 242144,
+          "residents_sha256": "e43f5c6b62a4798d0372bb1641a9e0c6f357fa458512c3dc3e3f8709262610ab",
+          "pending_sha256": "7e1792e92ec698184cf2cb0d6fab9d2d7163938f814314643686b293e0458cd4",
+          "dormant_sha256": "80454b925f10ccf142c568712607bc7b8130345ed026ffb247f709b6ee45d443"
+        },
+        "numpy_arm": {
+          "resident_count": 262144,
+          "pending_count": 80000,
+          "dormant_count": 242144,
+          "residents_sha256": "e43f5c6b62a4798d0372bb1641a9e0c6f357fa458512c3dc3e3f8709262610ab",
+          "pending_sha256": "7e1792e92ec698184cf2cb0d6fab9d2d7163938f814314643686b293e0458cd4",
+          "dormant_sha256": "80454b925f10ccf142c568712607bc7b8130345ed026ffb247f709b6ee45d443"
+        }
+      },
+      "gate_counters_G1": true,
+      "gate_spikes_G2": true,
+      "gate_state_G3": true,
+      "stream": {
+        "legacy_dataclass_incl_host": {
+          "median_token_ms": 106.574,
+          "tok_per_s_incl_host": 9.383,
+          "phases_ms": {
+            "object_construction": 27.2116,
+            "ctypes_marshal": 19.929,
+            "ffi_call": 54.1649,
+            "result_unpack": 0.1177
+          },
+          "phases_us_per_event": {
+            "object_construction": 1.3606,
+            "ctypes_marshal": 0.9965,
+            "ffi_call": 2.7082,
+            "result_unpack": 0.0059
+          }
+        },
+        "batched_numpy_bulk_incl_host": {
+          "median_token_ms": 54.741,
+          "tok_per_s_incl_host": 18.268,
+          "phases_ms": {
+            "numpy_build": 0.1356,
+            "ffi_call": 54.4755,
+            "result_unpack": 0.0766
+          },
+          "phases_us_per_event": {
+            "numpy_build": 0.0068,
+            "ffi_call": 2.7238,
+            "result_unpack": 0.0038
+          }
+        }
+      },
+      "marshal_path": {
+        "legacy_object_plus_ctypes_us_per_event": 2.4258,
+        "bulk_numpy_build_us_per_event": 0.0068,
+        "speedup_x": 357.8
+      },
+      "end_to_end_speedup_x": 1.947,
+      "walls_ms": {
+        "legacy_total_ms": [
+          305.646,
+          440.344,
+          208.229,
+          107.31,
+          98.367,
+          105.838,
+          96.317,
+          110.987,
+          97.532,
+          105.49,
+          100.174,
+          107.76
+        ],
+        "bulk_total_ms": [
+          246.093,
+          386.29,
+          156.721,
+          53.375,
+          53.902,
+          54.867,
+          55.436,
+          53.032,
+          54.615,
+          54.996,
+          54.015,
+          53.398
+        ]
+      }
+    },
+    {
+      "activity_pct_of_configured": 5,
+      "events_per_token": 50000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 181269,
+        "staged_peak_model": 249397,
+        "resident_capacity": 1000000,
+        "event_capacity": 400000,
+        "spike_capacity": 200000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build_wall_s": {
+        "dataclass_arm": 1.49,
+        "numpy_arm": 1.509
+      },
+      "buffer_fill_host_only": {
+        "median_ms": 11.778,
+        "per_event_us": 0.2356,
+        "note": "host-only; never touches simulation state"
+      },
+      "final_state": {
+        "dataclass_arm": {
+          "resident_count": 262148,
+          "pending_count": 200000,
+          "dormant_count": 212148,
+          "residents_sha256": "a27c7863eb1e0bc810c0bc853649af5255ff398831d06bacb7e2709d3e8b5ea9",
+          "pending_sha256": "a23d249415e87d1304ce2a6ac4a2e2af1a226b98d7b0cddad8d282c9f92deff6",
+          "dormant_sha256": "dc19c05b233dd4276b7d5ba8d6b39ebdacd28ea67bef1ef0a11793d00c2c830a"
+        },
+        "numpy_arm": {
+          "resident_count": 262148,
+          "pending_count": 200000,
+          "dormant_count": 212148,
+          "residents_sha256": "a27c7863eb1e0bc810c0bc853649af5255ff398831d06bacb7e2709d3e8b5ea9",
+          "pending_sha256": "a23d249415e87d1304ce2a6ac4a2e2af1a226b98d7b0cddad8d282c9f92deff6",
+          "dormant_sha256": "dc19c05b233dd4276b7d5ba8d6b39ebdacd28ea67bef1ef0a11793d00c2c830a"
+        }
+      },
+      "gate_counters_G1": true,
+      "gate_spikes_G2": true,
+      "gate_state_G3": true,
+      "stream": {
+        "legacy_dataclass_incl_host": {
+          "median_token_ms": 268.369,
+          "tok_per_s_incl_host": 3.726,
+          "phases_ms": {
+            "object_construction": 67.3701,
+            "ctypes_marshal": 59.0641,
+            "ffi_call": 135.9128,
+            "result_unpack": 0.3073
+          },
+          "phases_us_per_event": {
+            "object_construction": 1.3474,
+            "ctypes_marshal": 1.1813,
+            "ffi_call": 2.7183,
+            "result_unpack": 0.0061
+          }
+        },
+        "batched_numpy_bulk_incl_host": {
+          "median_token_ms": 129.937,
+          "tok_per_s_incl_host": 7.696,
+          "phases_ms": {
+            "numpy_build": 0.4363,
+            "ffi_call": 129.2745,
+            "result_unpack": 0.2305
+          },
+          "phases_us_per_event": {
+            "numpy_build": 0.0087,
+            "ffi_call": 2.5855,
+            "result_unpack": 0.0046
+          }
+        }
+      },
+      "marshal_path": {
+        "legacy_object_plus_ctypes_us_per_event": 2.5732,
+        "bulk_numpy_build_us_per_event": 0.0087,
+        "speedup_x": 294.9
+      },
+      "end_to_end_speedup_x": 2.065,
+      "walls_ms": {
+        "legacy_total_ms": [
+          702.721,
+          899.083,
+          375.991,
+          264.217,
+          255.276,
+          259.887,
+          261.289,
+          267.055,
+          256.284,
+          284.595,
+          322.327,
+          269.683
+        ],
+        "bulk_total_ms": [
+          594.49,
+          760.993,
+          253.618,
+          128.731,
+          128.947,
+          129.767,
+          127.825,
+          129.846,
+          128.574,
+          131.247,
+          131.111,
+          130.028
+        ]
+      }
+    }
+  ],
+  "production_seam_g4": [
+    {
+      "activity_pct_of_configured": null,
+      "events_per_token": 10000,
+      "tokens": 6,
+      "fixture_residents": 16384,
+      "gate_production_G4": true,
+      "legacy_records": {
+        "median_advance_ms": 100.139,
+        "tok_per_s": 9.986,
+        "record_construction_us_per_event": 1.3328
+      },
+      "bulk_ndarray": {
+        "median_advance_ms": 69.626,
+        "tok_per_s": 14.363
+      },
+      "end_to_end_speedup_x": 1.438
+    },
+    {
+      "activity_pct_of_configured": null,
+      "events_per_token": 20000,
+      "tokens": 6,
+      "fixture_residents": 16384,
+      "gate_production_G4": true,
+      "legacy_records": {
+        "median_advance_ms": 198.264,
+        "tok_per_s": 5.044,
+        "record_construction_us_per_event": 1.3252
+      },
+      "bulk_ndarray": {
+        "median_advance_ms": 130.281,
+        "tok_per_s": 7.676
+      },
+      "end_to_end_speedup_x": 1.522
+    },
+    {
+      "activity_pct_of_configured": null,
+      "events_per_token": 50000,
+      "tokens": 6,
+      "fixture_residents": 16384,
+      "gate_production_G4": true,
+      "legacy_records": {
+        "median_advance_ms": 543.452,
+        "tok_per_s": 1.84,
+        "record_construction_us_per_event": 1.5208
+      },
+      "bulk_ndarray": {
+        "median_advance_ms": 445.171,
+        "tok_per_s": 2.246
+      },
+      "end_to_end_speedup_x": 1.221
+    }
+  ],
+  "all_gates_pass": true
+}

@@ -196,10 +196,10 @@ def _python_observe(circuit: RecurrentCellCircuit, token_id: int) -> None:
             step_current_pa[afferents] += circuit.config.input_current_pa
         spikes = _python_step(circuit, step_current_pa)
         circuit._synaptic_current_pa *= circuit._recurrent_decay
-        circuit._eligibility *= circuit._eligibility_decay
+        circuit._eligibility_traces *= circuit._eligibility_decays[:, None]
         if spikes.any():
             presynaptic = np.flatnonzero(spikes)
-            circuit._eligibility[presynaptic] += 1.0
+            circuit._eligibility_traces += spikes.astype(np.float64)[None, :]
             targets = circuit._recurrent_targets[presynaptic].reshape(-1)
             weights = circuit._recurrent_weights_pa[presynaptic].reshape(-1)
             np.add.at(circuit._synaptic_current_pa, targets, weights)
