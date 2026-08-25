@@ -124,17 +124,41 @@ hybrid, learned output map over cell dynamics. The pivot is NOT a failure
 of the roadmap — R0 was designed to test the cheapest feature family first;
 it cost days, not months, and named its successors in advance.
 
-### Phase R0-b/race — Decision layer (current)
+### Phase R0-b/race — Decision layer — EXECUTED (2026-08-24)
 
-Per the preregistered fork: if features cannot separate contexts by any
-spike-derived family, the degeneracy lives in how decisions form, not how
-state is encoded. Candidates ranked by the strategy report (dispatched):
-winner-feedback broadcast (HOT-2 seed), sparse associative memory over
-assemblies (hippocampal-style hybrid), learned output map over frozen cell
-dynamics (reservoir-computing orthodoxy), dendritic-state proxies. The
-constant-output signature ([variable-0] modal everywhere) is the target:
-any mechanism that makes the race see different evidence for different
-contexts destroys it.
+Race-pivot implemented per protocol (broadcast engine P-S/P-R, margin
+consumers; 21/21 tests green). N=96 fixture gates: TERMINAL INELIGIBLE —
+every arm exact=0 (G-P2 fail) though broadcast de-collapsed answers
+(6 distinct, modal 0.167, replay 42/42). N=1024 not spent per
+stop-on-failure. Verdict: docs/research/race-pivot-gate-verdict.md.
+
+### Phase R0-d — Custom architecture pivot — CURRENT
+
+Reservoir-computing family falsified for QA reading after the full chain:
+features (R0/R0-b), associative store on reservoir keys (R0-c), scale alone
+(R2 pilot 1.19% at 131k), decision layer (race-pivot). Custom-architecture
+research (custom-architecture-directions.md) ranked five directions; two
+executed week-1:
+
+- **U-STATE (SDR union memory): NEGATIVE_WITH_LOCALIZATION_V2**
+  (40a2934). Separation PASSED (concept unions 0.402–0.607 vs bytes
+  0.166–0.190; collapse tail 290× better) but decode failed everywhere
+  (best 2.19% < unigram 4.54% < bar 6.19%), flat across the λ sweep.
+  P3: concept self-store recovers speakers at 38.3% in TRAIN books but
+  0% on VAL — capacity intact, generalization zero.
+- **APICAL-AND (two-compartment coincidence encoder)**: G-A1 conjunction
+  index failed in all 18 arms (<1.5×); decode analysis pending.
+
+**The cross-cutting finding (design constraint for everything downstream):
+nine preregistered executions show separation and storage capacity SUCCEED
+while generalization of stored context to unseen question–context pairings
+FAILS.** The deficit is not representational, not capacity, not readout —
+it is the absence of any mechanism binding paraphrased-question space to
+passage-content space. Architectures that only reorganize HOW context is
+encoded cannot fix this; what is missing is a trained mapping between two
+different content spaces (question-space and passage-space), which in
+brains is exactly what learned long-range connectivity provides and what
+every fixed-connectivity variant tested here lacks by construction.
 
 ### Phase R2 — Reading at scale (the demonstration, weeks)
 
