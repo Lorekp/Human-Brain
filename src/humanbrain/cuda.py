@@ -493,6 +493,12 @@ class CudaRecurrentKernel:
             self._allocate_bytes("input_mask", cells)
             self._allocate_bytes("total_spikes", ctypes.sizeof(ctypes.c_uint64))
             self._allocate_array("decay_active", self._decayed_activity_words(), upload=True)
+            self._allocate_array(
+                "threshold_spike_active", self._threshold_spike_active_words(), upload=True
+            )
+            self._allocate_array(
+                "refractory_active", self._refractory_active_words(), upload=True
+            )
             self._build_launch_arguments()
             if async_pipeline_enabled():
                 self._build_pipeline()
@@ -529,6 +535,8 @@ class CudaRecurrentKernel:
             ctypes.c_uint64(self._arrays["input_mask"][0]),
             ctypes.c_uint64(self._arrays["total_spikes"][0]),
             ctypes.c_uint64(self._arrays["decay_active"][0]),
+            ctypes.c_uint64(self._arrays["threshold_spike_active"][0]),
+            ctypes.c_uint64(self._arrays["refractory_active"][0]),
         ]
         self._launch_values = values
         self._arg_afferent_pointer = values[5]
@@ -903,6 +911,20 @@ class CudaRecurrentKernel:
         for name, array in self._mutable_arrays().items():
             self._copy_to_device(name, array)
         self._copy_to_device("decay_active", self._decayed_activity_words())
+        self._copy_to_device(
+            "threshold_spike_active", self._threshold_spike_active_words()
+        )
+        self._copy_to_device("refractory_active", self._refractory_active_words())
+
+    def _pack_activity_bits(self, active: np.ndarray) -> np.ndarray:
+        """Pack one bool per cell into uint64 words (8-byte padded)."""
+        packed = np.packbits(active.astype(np.uint8), bitorder="little")
+        remainder = packed.size % 8
+        if remainder:
+            packed = np.concatenate(
+                [packed, np.zeros(8 - remainder, dtype=packed.dtype)]
+            )
+        return packed.view(np.uint64)
 
     def _decayed_activity_words(self) -> np.ndarray:
         """Pack the per-cell decayed-state activity bitmap (uint64 words).
@@ -919,13 +941,22 @@ class CudaRecurrentKernel:
         eligibility = self._eligibility
         active = np.any((after != 0.0) | np.signbit(after), axis=1)
         active |= (eligibility != 0.0) | np.signbit(eligibility)
-        packed = np.packbits(active.astype(np.uint8), bitorder="little")
-        remainder = packed.size % 8
-        if remainder:
-            packed = np.concatenate(
-                [packed, np.zeros(8 - remainder, dtype=packed.dtype)]
-            )
-        return packed.view(np.uint64)
+        return self._pack_activity_bits(active)
+
+    def _threshold_spike_active_words(self) -> np.ndarray:
+        """Pack the spike-threshold nonzero bitmap (uint64 words).
+
+        A cell whose ``threshold_spike`` value is exactly +0.0 stays at those
+        exact bits under decay (positive decay factor), so the kernel may skip
+        its load, decay, and store. Negative zero is deliberately treated as
+        active (signbit check) so every path keeps bit-identical state.
+        """
+        threshold = self._population.state.threshold_spike_mv
+        return self._pack_activity_bits((threshold != 0.0) | np.signbit(threshold))
+
+    def _refractory_active_words(self) -> np.ndarray:
+        """Pack the refractory-countdown nonzero bitmap (uint64 words)."""
+        return self._pack_activity_bits(self._population.state.refractory_steps != 0)
 
     def synchronize_to_host(self) -> None:
         """Download every mutable array for explicit state inspection."""

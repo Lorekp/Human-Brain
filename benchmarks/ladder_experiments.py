@@ -134,8 +134,8 @@ _RAM_BUDGET_BYTES = 1_500_000_000
 _HOST_RIDGE_BUDGET_BYTES = 20_000_000_000
 # Device-array projection guard (CudaRecurrentKernel allocations: per-cell
 # recurrent fan-out edges + weights + six mutable state arrays + spike/input
-# masks + the 1-bit-per-cell decayed-state activity bitmap). Never binding
-# below the host cap, kept for honest accounting.
+# masks + the three 1-bit-per-cell activity/zero-fixpoint bitmaps). Never
+# binding below the host cap, kept for honest accounting.
 _CUDA_VRAM_BUDGET_BYTES = 8 * 1024**3
 
 
