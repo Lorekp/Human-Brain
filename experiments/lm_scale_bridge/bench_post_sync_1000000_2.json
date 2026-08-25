@@ -1,0 +1,11 @@
+{
+  "mode": "bench",
+  "pipeline": "sync",
+  "cells": 1000000,
+  "seed": 17,
+  "tokens": 300,
+  "epochs": 1,
+  "grow_seconds": 8.807,
+  "grow_tokens_per_second": 34.1,
+  "ms_per_token": 29.358
+}
