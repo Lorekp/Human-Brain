@@ -315,6 +315,11 @@ class _NativeCounters(ctypes.Structure):
         ("native_payload_bytes", ctypes.c_size_t),
         ("retained_nonzero_cells", ctypes.c_size_t),
         ("overflow_code", ctypes.c_uint32),
+        # Explicit tail padding mirroring the Rust `padding_zero` field: the
+        # native snapshot copies the whole struct byte-for-byte, so declaring
+        # it here documents that the full FFI image is defined (and keeps raw
+        # cross-run comparisons of these bytes deterministic).
+        ("padding_zero", ctypes.c_uint32),
     ]
 
 

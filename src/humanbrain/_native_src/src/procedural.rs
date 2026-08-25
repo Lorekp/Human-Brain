@@ -134,6 +134,17 @@ pub struct ProceduralCounters {
     pub native_payload_bytes: usize,
     pub retained_nonzero_cells: usize,
     pub overflow_code: u32,
+    /// Explicit tail padding (offsets 108..112 of the 112-byte C layout).
+    /// The FFI snapshot hands this struct to callers byte-for-byte and tests
+    /// compare/hash those raw bytes between runs, so the padding must be a
+    /// declared always-zero field instead of unspecified implicit padding
+    /// carrying stack garbage from whichever construction path built the
+    /// value -- that garbage made raw-bytes comparisons depend on allocator
+    /// history (i.e. on which code/tests ran earlier in the process), which
+    /// surfaced as an order-dependent failure of the generated-recurrent-key
+    /// collision fail-stop test. Keep this zero; `size_of` stays 112 either
+    /// way.
+    pub padding_zero: u32,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1555,6 +1566,7 @@ impl ProceduralRuntime {
             native_payload_bytes: self.payload_bytes(),
             retained_nonzero_cells: self.total_residents(),
             overflow_code: PROCEDURAL_OK,
+            padding_zero: 0,
         };
         PROCEDURAL_OK
     }
@@ -2221,14 +2233,56 @@ pub unsafe extern "C" fn humanbrain_dense_reference_snapshot(
 mod tests {
     use super::{
         canonical_zero, fallback_candidate, fill_targets_with,
-        humanbrain_procedural_runtime_create, GlifConfig, ProceduralConfig, ProceduralEventRecord,
-        ProceduralRuntime, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL, PROCEDURAL_STEPPING_FULL_TOUCH,
+        humanbrain_procedural_runtime_create, GlifConfig, ProceduralConfig, ProceduralCounters,
+        ProceduralEventRecord, ProceduralRuntime, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
+        PROCEDURAL_STEPPING_FULL_TOUCH,
     };
     use std::collections::HashSet;
 
     #[test]
     fn fallback_candidate_matches_widened_counter64_oracle_across_u64_wrap() {
         assert_eq!(fallback_candidate(u64::MAX - 1, 3, u64::MAX), 2);
+    }
+
+    /// Raw little-endian bytes of the FFI counters image, exactly what the
+    /// snapshot seam copies out to callers.
+    fn counters_raw_bytes(counters: &ProceduralCounters) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                counters as *const ProceduralCounters as *const u8,
+                std::mem::size_of::<ProceduralCounters>(),
+            )
+        }
+    }
+
+    /// Regression guard: the Python side compares and hashes the RAW bytes of
+    /// ``ProceduralCounters`` across independent runs, so all 112 bytes must
+    /// be defined. The 4-byte tail used to be implicit (unspecified) padding
+    /// carrying stack garbage from the construction site, which made those
+    /// comparisons depend on allocator history -- surfacing as an
+    /// order-dependent failure of the generated-recurrent-key collision
+    /// fail-stop test. The padding is now the declared always-zero
+    /// ``padding_zero`` field; pin the layout and the zero-padding invariant
+    /// on both construction paths so neither can regress silently.
+    #[test]
+    fn ffi_counter_bytes_are_fully_defined_and_padding_stays_zero() {
+        assert_eq!(std::mem::size_of::<ProceduralCounters>(), 112);
+        assert_eq!(std::mem::offset_of!(ProceduralCounters, overflow_code), 104);
+        assert_eq!(std::mem::offset_of!(ProceduralCounters, padding_zero), 108);
+
+        // Construction site 1: ::default() at runtime creation (the path a
+        // poisoned-first-advance runtime reports through the snapshot seam).
+        let default_counters = ProceduralCounters::default();
+        let raw_default = counters_raw_bytes(&default_counters);
+        assert!(raw_default.iter().all(|&byte| byte == 0));
+
+        // Construction site 2: the per-interval literal inside advance().
+        let mut runtime = ep_runtime(16, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+        let status = runtime.advance(1, &[drive(0, 0, 1e-30)]);
+        assert_eq!(status, super::PROCEDURAL_OK);
+        let raw_advanced = counters_raw_bytes(&runtime.counters);
+        // Declared fields may be nonzero; the declared padding field must not.
+        assert_eq!(&raw_advanced[108..112], &[0u8, 0, 0, 0]);
     }
 
     #[test]
