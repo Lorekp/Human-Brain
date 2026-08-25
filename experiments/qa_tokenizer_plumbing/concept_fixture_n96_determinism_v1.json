@@ -1,0 +1,7 @@
+{
+  "determinism_pass": true,
+  "record_sha256_a": "d54804bb771e3b9e8ed780089411e34386034c54a54f9d4e2323622d89a3353c",
+  "record_sha256_b": "d54804bb771e3b9e8ed780089411e34386034c54a54f9d4e2323622d89a3353c",
+  "schema_version": "humanbrain/qa-experiments/v2",
+  "seed": 17
+}

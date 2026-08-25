@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -499,3 +500,299 @@ def simulate_glif5_current(
         threshold_mv=threshold,
         spike_times_ms=tuple(spikes),
     )
+
+
+class TwoCompartmentGLIF5(AdaptiveGlifPopulation):
+    """APICAL-AND two-compartment GLIF5 (preregistered; CPU path only).
+
+    Frozen by ``docs/research/apical-and-preregistration.md`` @ 05fb3ef
+    (committed before this class existed). The soma is a bit-exact NumPy
+    replication of the native ``glif_step_collect`` equations over the fitted
+    Allen constants; the new apical compartment is:
+
+      (a) leaky integrator   ``v_a += (dt/tau_a) * (u_a - v_a)`` per step;
+      (b) plateau: ``v_a > theta_p`` with ``gate_remaining == 0`` opens a
+          somatic-threshold gate for ``round(gate_duration_ms/dt)`` steps
+          (re-opening on the same test while the depolarization persists);
+      (c) gated crossing test: ``next_v > total_threshold * (1 - g_gate)``
+          wherever ``gate_remaining > 0`` — multiplicative lowering only;
+      (d) ``gate_remaining[gate_remaining > 0] -= 1``.
+
+    With zero apical drive every somatic array update is BIT-IDENTICAL to
+    :class:`AdaptiveGlifPopulation` (flag-off parity tests). An optional
+    leading arm axis lets one instance simulate the whole preregistered
+    18-arm grid at once; per-arm results equal independent single-arm
+    instances bitwise (tested).
+    """
+
+    def __init__(
+        self,
+        cell_count: int,
+        parameters: AllenGlif5Parameters | None = None,
+        *,
+        tau_a_ms: float | Sequence[float] = 100.0,
+        theta_p: float | Sequence[float] = 0.5,
+        g_gate: float | Sequence[float] = 0.6,
+        gate_duration_ms: float = 100.0,
+        arm_count: int | None = None,
+    ) -> None:
+        grids = (tau_a_ms, theta_p, g_gate)
+        lengths = {len(value) for value in grids if isinstance(value, (list, tuple))}
+        if arm_count is None:
+            if len(lengths) > 1:
+                raise ValueError("compartment grids must have equal length")
+            arm_count = lengths.pop() if lengths else 1
+        if not isinstance(arm_count, int) or arm_count < 1:
+            raise ValueError("arm_count must be a positive integer")
+
+        def _vector(name: str, value: float | Sequence[float]) -> np.ndarray:
+            array = np.asarray(value, dtype=np.float64)
+            if array.ndim == 0:
+                array = np.full(arm_count, float(array), dtype=np.float64)
+            if array.shape != (arm_count,):
+                raise ValueError(f"{name} must be scalar or length-{arm_count}")
+            return np.ascontiguousarray(array)
+
+        tau_vector = _vector("tau_a_ms", tau_a_ms)
+        theta_vector = _vector("theta_p", theta_p)
+        gate_vector = _vector("g_gate", g_gate)
+        if not np.all(np.isfinite(tau_vector)) or np.any(tau_vector <= 0.0):
+            raise ValueError("tau_a_ms must be finite and positive")
+        if not np.all(np.isfinite(theta_vector)) or np.any(theta_vector <= 0.0):
+            raise ValueError("theta_p must be finite and positive")
+        if not np.all(np.isfinite(gate_vector)) or np.any(gate_vector < 0.0):
+            raise ValueError("g_gate must be finite and nonnegative")
+        if np.any(gate_vector >= 1.0):
+            raise ValueError("g_gate must be below 1.0")
+        if not (math.isfinite(gate_duration_ms) and gate_duration_ms > 0.0):
+            raise ValueError("gate_duration_ms must be finite and positive")
+        super().__init__(cell_count, parameters)
+        dt = self.parameters.dt_ms
+        self.arm_count = int(arm_count)
+        # Re-allocate the inherited state with the leading arm axis. The
+        # native kernel never binds these arrays (this subclass is CPU-path
+        # only and driven through step()), so the shape change is safe.
+        channels = len(self.parameters.after_spike_taus_ms)
+        shape = (self.arm_count, cell_count)
+        self.state = AdaptiveGlifState(
+            voltage_relative_mv=np.zeros(shape, dtype=np.float64),
+            after_spike_currents_pa=np.zeros(
+                (self.arm_count, cell_count, channels), dtype=np.float64
+            ),
+            threshold_spike_mv=np.zeros(shape, dtype=np.float64),
+            threshold_voltage_mv=np.zeros(shape, dtype=np.float64),
+            refractory_steps=np.zeros(shape, dtype=np.int32),
+        )
+        self.tau_a_ms = tau_vector
+        self.theta_p = theta_vector
+        self.g_gate = gate_vector
+        self.gate_duration_ms = float(gate_duration_ms)
+        self.gate_steps = max(1, round(gate_duration_ms / dt))
+        # Per-arm constants precomputed once so every consumer sees the same bits.
+        self._apical_scale = np.ascontiguousarray((dt / tau_vector)[:, None])
+        self._gate_drop = np.ascontiguousarray(1.0 - gate_vector)
+        self._gate_drop_per_cell = np.ascontiguousarray(
+            np.repeat(self._gate_drop, cell_count)
+        )
+        self.apical_voltage_mv = np.zeros((self.arm_count, cell_count), dtype=np.float64)
+        self.gate_remaining = np.zeros((self.arm_count, cell_count), dtype=np.int32)
+        self._apical_drive = np.zeros((self.arm_count, cell_count), dtype=np.float64)
+        self._spike_mask = np.zeros((self.arm_count, cell_count), dtype=np.bool_)
+
+    @classmethod
+    def from_grid(
+        cls,
+        cell_count: int,
+        *,
+        tau_a_ms: Sequence[float],
+        theta_p: Sequence[float],
+        g_gate: Sequence[float],
+        gate_duration_ms: float = 100.0,
+        parameters: AllenGlif5Parameters | None = None,
+    ) -> "TwoCompartmentGLIF5":
+        """One batched population over the CARTESIAN-PRODUCT arm grid.
+
+        Arm a of the output corresponds to
+        ``itertools.product(tau_a_ms, theta_p, g_gate)`` position a.
+        """
+        import itertools
+
+        combos = list(itertools.product(tau_a_ms, theta_p, g_gate))
+        if not combos:
+            raise ValueError("arm grid needs at least one combination")
+        return cls(
+            cell_count,
+            parameters,
+            tau_a_ms=[c[0] for c in combos],
+            theta_p=[c[1] for c in combos],
+            g_gate=[c[2] for c in combos],
+            gate_duration_ms=gate_duration_ms,
+            arm_count=len(combos),
+        )
+
+    def set_apical_drive(self, drive: np.ndarray | None) -> None:
+        """Publish the per-token apical drive ``u_a`` (copied, shape (A,c))."""
+        if drive is None:
+            self._apical_drive.fill(0.0)
+            return
+        vector = np.asarray(drive, dtype=np.float64)
+        if vector.ndim == 1 and self.arm_count == 1:
+            vector = vector[None, :]
+        if vector.shape != (self.arm_count, self.cell_count):
+            raise ValueError("apical drive must have shape (arm_count, cell_count)")
+        np.copyto(self._apical_drive, np.ascontiguousarray(vector))
+
+    @property
+    def cell_count(self) -> int:
+        # Base property derives from voltage.size, which now includes the arm axis.
+        return int(self._cell_count)
+
+    def gate_multiplier(self) -> np.ndarray:
+        """The multiplicative soma-threshold factor per cell right now."""
+        out = np.ones((self.arm_count, self.cell_count), dtype=np.float64)
+        open_rows = np.nonzero(self.gate_remaining > 0)
+        out[open_rows] = self._gate_drop[open_rows[0]]
+        return out
+
+    def reset(self) -> None:
+        super().reset()
+        self.apical_voltage_mv.fill(0.0)
+        self.gate_remaining.fill(0.0)
+        self._apical_drive.fill(0.0)
+
+    def _prepare_current(self, injected_current_pa) -> np.ndarray:
+        current = np.asarray(injected_current_pa, dtype=np.float64)
+        if current.ndim == 0:
+            current = np.full(
+                (self.arm_count, self.cell_count), float(current), dtype=np.float64
+            )
+        elif current.ndim == 1 and self.arm_count == 1:
+            current = current[None, :]
+        if current.shape != (self.arm_count, self.cell_count):
+            raise ValueError(
+                "injected current must be scalar or (arm_count, cell_count)"
+            )
+        return current
+
+    def step(self, injected_current_pa) -> np.ndarray:
+        """Advance every arm by one fitted 0.05 ms step; returns spike mask.
+
+        All somatic arithmetic runs on flat contiguous views with the exact
+        operation structure of ``glif_step_collect``; refractory cells compute
+        discarded candidate values and commit nothing. The per-element
+        threshold multiplier is exactly 1.0 wherever the gate is closed, so
+        the crossing test is bit-identical to the native kernel flag-off.
+        """
+        current = self._prepare_current(injected_current_pa)
+        state = self.state
+        constants = self.constants
+        parameters = self.parameters
+        n = self.arm_count * self.cell_count
+
+        # (a) apical Euler integration (frozen literal update order)
+        delta = self._apical_drive - self.apical_voltage_mv
+        delta *= self._apical_scale
+        self.apical_voltage_mv += delta
+
+        # (b) plateau opening on the frozen test
+        opening = (self.apical_voltage_mv > self.theta_p[:, None]) & (
+            self.gate_remaining == 0
+        )
+        self.gate_remaining[opening] = self.gate_steps
+
+        # (c) soma over flat views; only resting cells commit.
+        voltage = state.voltage_relative_mv.reshape(-1)
+        threshold_voltage_flat = state.threshold_voltage_mv.reshape(-1)
+        threshold_spike_flat = state.threshold_spike_mv.reshape(-1)
+        after_flat = state.after_spike_currents_pa.reshape(n, -1)
+        current_flat = current.reshape(-1)
+        refractory_flat = state.refractory_steps.reshape(-1)
+
+        resting = refractory_flat == 0
+        blocked = ~resting
+        if blocked.any():
+            refractory_flat[blocked] -= 1
+
+        after_sum = after_flat[:, 0] + after_flat[:, 1]
+        total_current = current_flat + after_sum
+        leak = parameters.leak_ns * voltage
+        voltage_delta = constants.voltage_step_scale * (total_current - leak)
+        next_voltage = voltage + voltage_delta
+
+        beta = total_current * constants.threshold_beta_scale
+        voltage_term = constants.threshold_voltage_factor * voltage
+        beta_term = constants.threshold_beta_factor * beta
+        decayed_threshold = constants.threshold_exp_decay * threshold_voltage_flat
+        next_voltage_threshold = decayed_threshold + voltage_term + beta_term
+        next_spike_threshold = threshold_spike_flat * constants.spike_threshold_decay
+
+        total_threshold = (
+            parameters.threshold_inf_relative_mv
+            + next_voltage_threshold
+            + next_spike_threshold
+        )
+        multiplier = np.where(
+            self.gate_remaining.reshape(-1) > 0, self._gate_drop_per_cell, 1.0
+        )
+        crossed = (next_voltage > total_threshold * multiplier) & resting
+
+        # commit candidates for resting cells only
+        voltage[...] = np.where(resting, next_voltage, voltage)
+        threshold_voltage_flat[...] = np.where(
+            resting, next_voltage_threshold, threshold_voltage_flat
+        )
+        threshold_spike_flat[...] = np.where(
+            resting, next_spike_threshold, threshold_spike_flat
+        )
+        decayed_after_0 = after_flat[:, 0] * constants.after_spike_decay[0]
+        decayed_after_1 = after_flat[:, 1] * constants.after_spike_decay[1]
+        after_flat[:, 0][...] = np.where(resting, decayed_after_0, after_flat[:, 0])
+        after_flat[:, 1][...] = np.where(resting, decayed_after_1, after_flat[:, 1])
+
+        spike_indices = np.flatnonzero(crossed)
+        if spike_indices.size:
+            reset_voltage = (
+                parameters.voltage_reset_scale * next_voltage[spike_indices]
+                + parameters.voltage_reset_offset_mv
+            )
+            voltage[spike_indices] = reset_voltage
+            # Native order: the decay above is committed first, and the spike
+            # reset reads the ALREADY-DECAYED after-current.
+            crossed_after = after_flat[spike_indices]
+            after_flat[spike_indices, 0] = (
+                constants.after_spike_amplitudes_pa[0]
+                + crossed_after[:, 0] * constants.after_spike_cut_decay[0]
+            )
+            after_flat[spike_indices, 1] = (
+                constants.after_spike_amplitudes_pa[1]
+                + crossed_after[:, 1] * constants.after_spike_cut_decay[1]
+            )
+            threshold_spike_flat[spike_indices] = (
+                next_spike_threshold[spike_indices]
+                * constants.spike_cut_threshold_decay
+                + parameters.threshold_spike_increment_mv
+            )
+            refractory_flat[spike_indices] = parameters.spike_cut_steps
+        self._spike_mask[...] = crossed.reshape(self.arm_count, self.cell_count)
+
+        # (d) gate clock decrement
+        self.gate_remaining -= self.gate_remaining > 0
+        return self._spike_mask
+
+
+def build_arm_grid() -> dict[str, dict[str, tuple]]:
+    """The frozen 18-arm grid from the preregistration (§2)."""
+    taus = (50.0, 100.0, 200.0)
+    thetas = (0.25, 0.50, 0.75)
+    gates = (0.30, 0.60)
+    arms = {}
+    for tau in taus:
+        for theta in thetas:
+            for gate in gates:
+                name = f"A{tau:g}_{theta:g}_{gate:g}"
+                arms[name] = {
+                    "tau_a_ms": tau,
+                    "theta_p": theta,
+                    "g_gate": gate,
+                }
+    return arms

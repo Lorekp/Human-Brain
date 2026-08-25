@@ -197,3 +197,166 @@ Traceback (most recent call last):
 MemoryError: Memory error in scipy.linalg.solve.
 random_N32768_s8 exit=1
 === random_N32768_s9 ===
+Traceback (most recent call last):
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 1299, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 1235, in main
+    record = run_experiment(
+        experiment_id=arguments.experiment_id,
+    ...<13 lines>...
+        with_state_separation=arguments.with_state_separation,
+    )
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 912, in run_experiment
+    circuit = _grow_circuit(
+        curriculum,
+    ...<9 lines>...
+        ridge_backend=ridge_backend,
+    )
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 587, in _grow_circuit
+    circuit.freeze_learning()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\src\humanbrain\recurrent.py", line 800, in freeze_learning
+    self._consolidate_readout()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 652, in _consolidate_readout
+    coefficients = _scipy_solve(regularized, rhs, assume_a="pos")
+  File "C:\Users\laure\AppData\Roaming\Python\Python314\site-packages\scipy\linalg\_basic.py", line 295, in solve
+    x, err_lst = _batched_linalg._solve(
+                 ~~~~~~~~~~~~~~~~~~~~~~^
+        a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+MemoryError: Memory error in scipy.linalg.solve.
+random_N32768_s9 exit=1
+=== similarity_N32768_s7 ===
+Traceback (most recent call last):
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 1299, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 1235, in main
+    record = run_experiment(
+        experiment_id=arguments.experiment_id,
+    ...<13 lines>...
+        with_state_separation=arguments.with_state_separation,
+    )
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 912, in run_experiment
+    circuit = _grow_circuit(
+        curriculum,
+    ...<9 lines>...
+        ridge_backend=ridge_backend,
+    )
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 587, in _grow_circuit
+    circuit.freeze_learning()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\src\humanbrain\recurrent.py", line 800, in freeze_learning
+    self._consolidate_readout()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 652, in _consolidate_readout
+    coefficients = _scipy_solve(regularized, rhs, assume_a="pos")
+  File "C:\Users\laure\AppData\Roaming\Python\Python314\site-packages\scipy\linalg\_basic.py", line 295, in solve
+    x, err_lst = _batched_linalg._solve(
+                 ~~~~~~~~~~~~~~~~~~~~~~^
+        a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+MemoryError: Memory error in scipy.linalg.solve.
+similarity_N32768_s7 exit=1
+=== similarity_N32768_s8 ===
+Traceback (most recent call last):
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 1299, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 1235, in main
+    record = run_experiment(
+        experiment_id=arguments.experiment_id,
+    ...<13 lines>...
+        with_state_separation=arguments.with_state_separation,
+    )
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 912, in run_experiment
+    circuit = _grow_circuit(
+        curriculum,
+    ...<9 lines>...
+        ridge_backend=ridge_backend,
+    )
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 587, in _grow_circuit
+    circuit.freeze_learning()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\src\humanbrain\recurrent.py", line 800, in freeze_learning
+    self._consolidate_readout()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 652, in _consolidate_readout
+    coefficients = _scipy_solve(regularized, rhs, assume_a="pos")
+  File "C:\Users\laure\AppData\Roaming\Python\Python314\site-packages\scipy\linalg\_basic.py", line 295, in solve
+    x, err_lst = _batched_linalg._solve(
+                 ~~~~~~~~~~~~~~~~~~~~~~^
+        a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+MemoryError: Memory error in scipy.linalg.solve.
+similarity_N32768_s8 exit=1
+=== similarity_N32768_s9 ===
+Traceback (most recent call last):
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 1299, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 1235, in main
+    record = run_experiment(
+        experiment_id=arguments.experiment_id,
+    ...<13 lines>...
+        with_state_separation=arguments.with_state_separation,
+    )
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 912, in run_experiment
+    circuit = _grow_circuit(
+        curriculum,
+    ...<9 lines>...
+        ridge_backend=ridge_backend,
+    )
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 587, in _grow_circuit
+    circuit.freeze_learning()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\src\humanbrain\recurrent.py", line 800, in freeze_learning
+    self._consolidate_readout()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\laure\Desktop\DeepSim\.worktrees\human-brain-a013-cognition-design\benchmarks\ladder_experiments.py", line 652, in _consolidate_readout
+    coefficients = _scipy_solve(regularized, rhs, assume_a="pos")
+  File "C:\Users\laure\AppData\Roaming\Python\Python314\site-packages\scipy\linalg\_basic.py", line 295, in solve
+    x, err_lst = _batched_linalg._solve(
+                 ~~~~~~~~~~~~~~~~~~~~~~^
+        a1, b1, structure, lower, transposed, overwrite_a, overwrite_b
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+MemoryError: Memory error in scipy.linalg.solve.
+similarity_N32768_s9 exit=1
+=== explicit_N4096_s7 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 649.63625066, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 79.323, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\explicit_N4096_s7.json"}
+explicit_N4096_s7 exit=0
+=== explicit_N4096_s8 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 603.408899669, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 74.26, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\explicit_N4096_s8.json"}
+explicit_N4096_s8 exit=0
+=== explicit_N4096_s9 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 310, "margin_min_pa": 607.850218093, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 71.529, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\explicit_N4096_s9.json"}
+explicit_N4096_s9 exit=0
+=== random_N4096_s7 ===
+{"calib_cases_passed": 9, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 608.753594264, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 77.365, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\random_N4096_s7.json"}
+random_N4096_s7 exit=0
+=== random_N4096_s8 ===
+{"calib_cases_passed": 6, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 598.447123997, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 73.657, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\random_N4096_s8.json"}
+random_N4096_s8 exit=0
+=== random_N4096_s9 ===
+{"calib_cases_passed": 8, "calib_cases_total": 54, "margin_count": 310, "margin_min_pa": 657.701240723, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 71.506, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\random_N4096_s9.json"}
+random_N4096_s9 exit=0
+=== similarity_N4096_s7 ===
+{"calib_cases_passed": 10, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 645.776753917, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 78.765, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\similarity_N4096_s7.json"}
+similarity_N4096_s7 exit=0
+=== similarity_N4096_s8 ===
+{"calib_cases_passed": 5, "calib_cases_total": 54, "margin_count": 312, "margin_min_pa": 630.780725453, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 75.174, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\similarity_N4096_s8.json"}
+similarity_N4096_s8 exit=0
+=== similarity_N4096_s9 ===
+{"calib_cases_passed": 5, "calib_cases_total": 54, "margin_count": 310, "margin_min_pa": 746.614794899, "train_cases_passed": 126, "train_cases_total": 126, "train_replay_tasks": 42, "wall_s": 72.637, "written": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\human-brain-a013-cognition-design\\experiments\\codebook_compare\\similarity_N4096_s9.json"}
+similarity_N4096_s9 exit=0
+scale matrix complete 2026-08-23T15:13:47+02:00, FAIL=1

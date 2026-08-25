@@ -178,8 +178,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/lib.rs",
-        "size": 54216,
-        "sha256": "d5d1da772e47e71e24f788bb2aa018dee8cd440270878d0ccd4b83e8eed5e9d8"
+        "size": 62759,
+        "sha256": "403cc28e466c0f6ee07546f6f182e5914f5ada4c9fbfe549d971c824221c3a61"
       },
       {
         "path": "src/humanbrain/_native_src/src/procedural.rs",
@@ -188,8 +188,8 @@
       },
       {
         "path": "src/humanbrain/cells.py",
-        "size": 21020,
-        "sha256": "20f3e4301fed026daf0752bedcc800503efd9d75770240d837659a63b7911fc5"
+        "size": 34389,
+        "sha256": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6"
       },
       {
         "path": "src/humanbrain/human_cell_identity.py",
@@ -198,8 +198,8 @@
       },
       {
         "path": "src/humanbrain/native.py",
-        "size": 60658,
-        "sha256": "0431f67e5fd7b175dd6668b82be8cf5aaab34c67bd4a877fd962d0b416b2ee16"
+        "size": 63067,
+        "sha256": "d8989cd6657c8934dad2bc4b443a46b351c053c5fd58b77e682aacfbebfac282"
       },
       {
         "path": "src/humanbrain/procedural_runtime.py",
@@ -223,8 +223,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/cuda.cu",
-        "size": 10922,
-        "sha256": "09d56071059598d8a4a725f240dc184e935b104f400b87584d7da25d4bf642fd"
+        "size": 12288,
+        "sha256": "897ecdc1416b8fda273253e71a3442509c122521cc02b3327f6aa7bfecc4d01c"
       },
       {
         "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/.cargo-checksum.json",
@@ -1517,11 +1517,11 @@
         "sha256": "7155d4a3ae920eb37d40cc58d538052302cfb45517dbafec685b414305e2c98f"
       }
     ],
-    "bundle_sha256": "057ebc648a3652f4c54da884e527199810a552c25fdd4fca2a9bb28c07ae6a69",
+    "bundle_sha256": "3e3b768a50bd00d2f735ec2bf78437cf19c9eccd876e737e00efe4cc6a86d320",
     "limits": {
       "maximum_file_bytes": 1048576,
       "maximum_aggregate_bytes": 8388608,
-      "actual_aggregate_bytes": 2179406
+      "actual_aggregate_bytes": 2205093
     }
   },
   "timing": {

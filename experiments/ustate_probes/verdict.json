@@ -1,0 +1,131 @@
+{
+ "arms": {
+  "lam090_concept_n2048": {
+   "encoding": "concept",
+   "gu1_pass": true,
+   "gu2_best": {
+    "decoder": "mlp",
+    "span_acc": 0.014084507042253521
+   },
+   "gu2_pass": false,
+   "gu3_detail": {
+    "cap_majority_prior_plus_2sigma": 0.07362470987207292,
+    "cap_two_sigma_threshold": 0.061851478566709396,
+    "majority_prior_reference": 0.0406885758998435,
+    "mlp_shuffled_label_control": 0.00782472613458529,
+    "p2_shuffled_key_control": 0.01564945226917058
+   },
+   "gu3_pass": true,
+   "qualifies": false
+  },
+  "lam090_n2048": {
+   "encoding": "byte",
+   "gu1_pass": true,
+   "gu2_best": {
+    "decoder": "logistic",
+    "span_acc": 0.01564945226917058
+   },
+   "gu2_pass": false,
+   "gu3_detail": {
+    "cap_majority_prior_plus_2sigma": 0.07362470987207292,
+    "cap_two_sigma_threshold": 0.061851478566709396,
+    "majority_prior_reference": 0.0406885758998435,
+    "mlp_shuffled_label_control": 0.009389671361502348,
+    "p2_shuffled_key_control": 0.03286384976525822
+   },
+   "gu3_pass": true,
+   "qualifies": false
+  },
+  "lam097_concept_n2048": {
+   "encoding": "concept",
+   "gu1_pass": true,
+   "gu2_best": {
+    "decoder": "logistic",
+    "span_acc": 0.018779342723004695
+   },
+   "gu2_pass": false,
+   "gu3_detail": {
+    "cap_majority_prior_plus_2sigma": 0.07362470987207292,
+    "cap_two_sigma_threshold": 0.061851478566709396,
+    "majority_prior_reference": 0.0406885758998435,
+    "mlp_shuffled_label_control": 0.017214397496087636,
+    "p2_shuffled_key_control": 0.01564945226917058
+   },
+   "gu3_pass": true,
+   "qualifies": false
+  },
+  "lam097_n2048": {
+   "encoding": "byte",
+   "gu1_pass": true,
+   "gu2_best": {
+    "decoder": "logistic",
+    "span_acc": 0.01564945226917058
+   },
+   "gu2_pass": false,
+   "gu3_detail": {
+    "cap_majority_prior_plus_2sigma": 0.07362470987207292,
+    "cap_two_sigma_threshold": 0.061851478566709396,
+    "majority_prior_reference": 0.0406885758998435,
+    "mlp_shuffled_label_control": 0.012519561815336464,
+    "p2_shuffled_key_control": 0.03286384976525822
+   },
+   "gu3_pass": true,
+   "qualifies": false
+  },
+  "lam099_concept_n2048": {
+   "encoding": "concept",
+   "gu1_pass": true,
+   "gu2_best": {
+    "decoder": "logistic",
+    "span_acc": 0.02190923317683881
+   },
+   "gu2_pass": false,
+   "gu3_detail": {
+    "cap_majority_prior_plus_2sigma": 0.07362470987207292,
+    "cap_two_sigma_threshold": 0.061851478566709396,
+    "majority_prior_reference": 0.0406885758998435,
+    "mlp_shuffled_label_control": 0.01564945226917058,
+    "p2_shuffled_key_control": 0.01564945226917058
+   },
+   "gu3_pass": true,
+   "qualifies": false
+  },
+  "lam099_n2048": {
+   "encoding": "byte",
+   "gu1_pass": true,
+   "gu2_best": {
+    "decoder": "mlp",
+    "span_acc": 0.02190923317683881
+   },
+   "gu2_pass": false,
+   "gu3_detail": {
+    "cap_majority_prior_plus_2sigma": 0.07362470987207292,
+    "cap_two_sigma_threshold": 0.061851478566709396,
+    "majority_prior_reference": 0.0406885758998435,
+    "mlp_shuffled_label_control": 0.02190923317683881,
+    "p2_shuffled_key_control": 0.03286384976525822
+   },
+   "gu3_pass": true,
+   "qualifies": false
+  }
+ },
+ "artifact_sources": {
+  "lam090_concept_n2048": "experiments\\ustate_probes_concept\\view_lam090_concept",
+  "lam090_n2048": "experiments\\ustate_probes\\view_lam090",
+  "lam097_concept_n2048": "experiments\\ustate_probes_concept\\view_lam097_concept",
+  "lam097_n2048": "experiments\\ustate_probes\\view_lam097",
+  "lam099_concept_n2048": "experiments\\ustate_probes_concept\\view_lam099_concept",
+  "lam099_n2048": "experiments\\ustate_probes\\view_lam099"
+ },
+ "best_raw_union_mlp_span_acc": 0.02190923317683881,
+ "controls_majority_prior_consistent": true,
+ "gates": {
+  "g_u2_threshold": 0.061851478566709396,
+  "g_u3_mlp_label_cap": 0.07362470987207292,
+  "trigram": 0.162754303599374,
+  "unigram": 0.04538341158059468
+ },
+ "qualifying_arms": [],
+ "schema_version": "humanbrain/ustate-d3-verdict/v2",
+ "verdict": "NEGATIVE_WITH_LOCALIZATION_V2"
+}

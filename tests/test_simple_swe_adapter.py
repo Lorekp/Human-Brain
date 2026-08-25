@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import inspect
+import json
 import subprocess
 from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
+import pytest
 from humanbrain.language import CellLanguageModel
 from humanbrain.recurrent import RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel, RecurrentModelConfig
@@ -220,6 +222,10 @@ def test_recurrent_adapter_allows_transient_traces_but_preserves_learned_state(
     assert model._circuit.learning_frozen is True
     checkpoint = tmp_path / "generic-recurrent-cell-checkpoint.npz"
     model.save(checkpoint)
+    with np.load(checkpoint, allow_pickle=False) as state:
+        assert json.loads(str(state["metadata"]))["format"] == (
+            "recurrent-human-cell-checkpoint-v6"
+        )
     checkpoint_bytes_before = checkpoint.read_bytes()
     freeze_path = tmp_path / "freeze.json"
     create_freeze_manifest(
@@ -244,6 +250,43 @@ def test_recurrent_adapter_allows_transient_traces_but_preserves_learned_state(
     )
     restored = RecurrentCellLanguageModel.load(checkpoint)
     assert restored._circuit.learning_frozen is True
+
+
+def test_adapter_validation_accepts_v6_and_rejects_unknown_future_formats(
+    tmp_path: Path,
+) -> None:
+    assert freeze.ALLOWED_CHECKPOINT_FORMATS == {
+        "human-cell-brain-checkpoint-v1",
+        "recurrent-human-cell-checkpoint-v3",
+        "recurrent-human-cell-checkpoint-v5",
+        "recurrent-human-cell-checkpoint-v6",
+    }
+    model = RecurrentCellLanguageModel.grow(
+        ["def solve(value):\n    return value + 1\n"],
+        RecurrentModelConfig(
+            circuit=RecurrentCircuitConfig(
+                reservoir_cells=8,
+                input_fanout=4,
+                recurrent_fanout=2,
+                token_interval_ms=1.0,
+                input_pulse_ms=0.5,
+            )
+        ),
+    )
+    checkpoint = tmp_path / "qa-recurrent-cell-checkpoint.npz"
+    model.save(checkpoint)
+    hashes = freeze.checkpoint_hashes(checkpoint)
+    assert hashes.checkpoint_format == "recurrent-human-cell-checkpoint-v6"
+
+    future = tmp_path / "future-recurrent-cell-checkpoint.npz"
+    np.savez(
+        future,
+        metadata=np.asarray(
+            json.dumps({"format": "recurrent-human-cell-checkpoint-v7"})
+        ),
+    )
+    with pytest.raises(freeze.FreezeIntegrityError):
+        freeze.checkpoint_hashes(future)
 
 
 def test_sparse_three_factor_adapter_preserves_checkpointed_synapse_structure(

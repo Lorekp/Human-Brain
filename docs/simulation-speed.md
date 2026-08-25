@@ -32,11 +32,24 @@ persistence.
 
 Device state persists between tokens. The current exact public-state contract
 downloads voltage, both after-spike channels, both thresholds, refractory
-state, synaptic current, eligibility, and the spike total after every token.
-That is 60 bytes per cell plus eight bytes device-to-host per token; steady
-observation performs no host-to-device transfer. Reporting this boundary
-separately prevents kernel-only throughput from being mistaken for end-to-end
-throughput.
+state, synaptic current, the full multi-timescale eligibility-trace bank
+(R0: K = 8 traces per cell), and the spike total after every token. That is
+(52 + 8·K) bytes per cell plus eight bytes device-to-host per token — 60 B
+per cell/token at K = 1, 116 B per cell/token at K = 8; steady observation
+performs no host-to-device transfer. The sparse-readout eligibility-only
+mirror downloads the trace bank alone: 8·K bytes per cell per token. Reporting
+this boundary separately prevents kernel-only throughput from being mistaken
+for end-to-end throughput.
+
+R0-b state-feature arms extend the sparse-readout mirror payload explicitly
+(frozen r0b protocol §3): family A (spike_counts) downloads the trace bank
+plus the u32 per-token spike-count accumulator — 8·K + 4 bytes per cell per
+token; family B (voltage_quantiles) mode ``eligibility_plus_voltage``
+downloads the trace bank plus the boundary voltage samples — 8·K + 8 bytes
+per cell per token; combos carrying both members download bank + counts +
+voltage (8·K + 12). The traces-family payload is unchanged, and the
+full-touch contract above is unchanged; only these declared per-arm terms
+grow, never silently.
 
 This follows NVIDIA's documented
 [cooperative-grid synchronization](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/cooperative-groups.html)

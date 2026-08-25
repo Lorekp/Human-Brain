@@ -332,7 +332,11 @@ def test_layer0_public_protocol_freezes_only_the_plumbing_probe() -> None:
     assert Layer0ProgramGrammar().max_nodes == protocol["grammar"]["max_nodes"]
     assert Layer0ProgramModelConfig().grammar.max_nodes == protocol["grammar"]["max_nodes"]
     default_circuit = RecurrentCircuitConfig()
-    expected_circuit = asdict(default_circuit)
+    # R0 multi-trace schema (protocol §1.2): the deprecated scalar
+    # eligibility_tau_ms freezes as null and the canonical tau bank
+    # eligibility_taus_ms (geomspace 80 ms -> 4 s, K = 8) rides in its own
+    # field; the JSON dump carries the bank as a plain float list.
+    expected_circuit = json.loads(json.dumps(asdict(default_circuit)))
     expected_circuit["active_reservoir_cells"] = (
         default_circuit.active_reservoir_cells or default_circuit.reservoir_cells
     )

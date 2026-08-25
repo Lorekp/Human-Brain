@@ -1,0 +1,329 @@
+{
+  "schema_version": "humanbrain/t-route-e2/v1",
+  "generated_utc": "2026-08-25T09:41:36Z",
+  "git_head": "5595bee",
+  "amendment": "experiments/t_route/e2/CHANGE_NOTE_3.md",
+  "reproduction_check": true,
+  "config_echo": {
+    "n_bits": 2048,
+    "w_ones": 32,
+    "projector_seed": 7,
+    "fan_in": 32,
+    "w_seed": 7,
+    "k_winners": 128,
+    "randomized_w_seed": 13,
+    "shuffle_w_seed": 11,
+    "shuffled_question_seed": 11,
+    "h_win": 12,
+    "o_max": 8,
+    "lam_P": 0.9,
+    "k_sweep": [
+      8,
+      16,
+      32
+    ],
+    "transform": "per-row top-k by value, ties ascending column index; NO homeostat, NO normalization"
+  },
+  "integrity_echo": {
+    "freeze_candidate_raw_sha256": "361c83907d9b353c8128a55ea2b4ca49a01c2aa8c8d1f6224db4661c4c9e166c",
+    "train_raw_sha256": "d82fe615dced145d4a6d10d19e90583d1eca4bb6be79e638a96bebc511b0a0e8",
+    "val_raw_sha256": "4f9be9b725c630cbc0e94f8cea4a96413bc026895a3d1b5312882e1980e37dec",
+    "counts": {
+      "train": 200,
+      "val": 60
+    },
+    "pairing_events_total": 278754,
+    "unique_token_pairs": 2794
+  },
+  "gt1": {
+    "gating_stratum": "who_said",
+    "rule": "per config on BOTH splits: base_med>0 AND base_med>=2*shuf_med AND base_med>=1.5*rand_med (who_said)",
+    "table": {
+      "arm_k8": {
+        "who_said": {
+          "train": {
+            "eligible_n": 60,
+            "base_med": 80.0,
+            "shuf_med": 80.0,
+            "rand_med": 11.0,
+            "armB_med": 79.5,
+            "enrich_vs_shuf": 1.0,
+            "enrich_vs_rand": 7.2727272727272725,
+            "gate_conjuncts": {
+              "base_med>0": true,
+              "base>=2x_shuf": false,
+              "base>=1.5x_rand": true
+            }
+          },
+          "val": {
+            "eligible_n": 20,
+            "base_med": 74.0,
+            "shuf_med": 71.0,
+            "rand_med": 10.5,
+            "armB_med": 80.0,
+            "enrich_vs_shuf": 1.0422535211267605,
+            "enrich_vs_rand": 7.0476190476190474,
+            "gate_conjuncts": {
+              "base_med>0": true,
+              "base>=2x_shuf": false,
+              "base>=1.5x_rand": true
+            }
+          }
+        },
+        "address_lookup": {
+          "train": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          },
+          "val": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          }
+        },
+        "verse_continuation": {
+          "train": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          },
+          "val": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          }
+        }
+      },
+      "arm_k16": {
+        "who_said": {
+          "train": {
+            "eligible_n": 60,
+            "base_med": 81.0,
+            "shuf_med": 81.0,
+            "rand_med": 11.0,
+            "armB_med": 79.5,
+            "enrich_vs_shuf": 1.0,
+            "enrich_vs_rand": 7.363636363636363,
+            "gate_conjuncts": {
+              "base_med>0": true,
+              "base>=2x_shuf": false,
+              "base>=1.5x_rand": true
+            }
+          },
+          "val": {
+            "eligible_n": 20,
+            "base_med": 74.5,
+            "shuf_med": 70.5,
+            "rand_med": 10.5,
+            "armB_med": 80.0,
+            "enrich_vs_shuf": 1.0567375886524824,
+            "enrich_vs_rand": 7.095238095238095,
+            "gate_conjuncts": {
+              "base_med>0": true,
+              "base>=2x_shuf": false,
+              "base>=1.5x_rand": true
+            }
+          }
+        },
+        "address_lookup": {
+          "train": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          },
+          "val": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          }
+        },
+        "verse_continuation": {
+          "train": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          },
+          "val": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          }
+        }
+      },
+      "arm_k32": {
+        "who_said": {
+          "train": {
+            "eligible_n": 60,
+            "base_med": 80.0,
+            "shuf_med": 80.0,
+            "rand_med": 11.0,
+            "armB_med": 79.5,
+            "enrich_vs_shuf": 1.0,
+            "enrich_vs_rand": 7.2727272727272725,
+            "gate_conjuncts": {
+              "base_med>0": true,
+              "base>=2x_shuf": false,
+              "base>=1.5x_rand": true
+            }
+          },
+          "val": {
+            "eligible_n": 20,
+            "base_med": 74.0,
+            "shuf_med": 70.5,
+            "rand_med": 10.5,
+            "armB_med": 80.0,
+            "enrich_vs_shuf": 1.049645390070922,
+            "enrich_vs_rand": 7.0476190476190474,
+            "gate_conjuncts": {
+              "base_med>0": true,
+              "base>=2x_shuf": false,
+              "base>=1.5x_rand": true
+            }
+          }
+        },
+        "address_lookup": {
+          "train": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          },
+          "val": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          }
+        },
+        "verse_continuation": {
+          "train": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          },
+          "val": {
+            "eligible_n": 0,
+            "base_med": null,
+            "shuf_med": null,
+            "rand_med": null,
+            "armB_med": null,
+            "enrich_vs_shuf": null,
+            "enrich_vs_rand": null
+          }
+        }
+      }
+    },
+    "per_config_pass": {
+      "arm_k8": false,
+      "arm_k16": false,
+      "arm_k32": false
+    },
+    "pass_any_config": false
+  },
+  "armB_contrast": {
+    "note": "descriptive, not gated; armB medians recomputed from the hash-verified E1 log",
+    "beats_armB_by_split": {
+      "arm_k8": {
+        "train": true,
+        "val": false
+      },
+      "arm_k16": {
+        "train": true,
+        "val": false
+      },
+      "arm_k32": {
+        "train": true,
+        "val": false
+      }
+    }
+  },
+  "headroom": {
+    "who_said": {
+      "train": {
+        "n": 60,
+        "median_gold_bits": 238.0,
+        "p25_gold_bits": 185.0,
+        "p75_gold_bits": 265.5
+      },
+      "val": {
+        "n": 20,
+        "median_gold_bits": 212.0,
+        "p25_gold_bits": 184.0,
+        "p75_gold_bits": 215.0
+      }
+    },
+    "address_lookup": {
+      "train": {
+        "n": 0,
+        "median_gold_bits": null,
+        "p25_gold_bits": null,
+        "p75_gold_bits": null
+      },
+      "val": {
+        "n": 0,
+        "median_gold_bits": null,
+        "p25_gold_bits": null,
+        "p75_gold_bits": null
+      }
+    },
+    "verse_continuation": {
+      "train": {
+        "n": 0,
+        "median_gold_bits": null,
+        "p25_gold_bits": null,
+        "p75_gold_bits": null
+      },
+      "val": {
+        "n": 0,
+        "median_gold_bits": null,
+        "p25_gold_bits": null,
+        "p75_gold_bits": null
+      }
+    }
+  },
+  "verdict": "RECOVERY_FAILS_SPARSITY_INSUFFICIENT",
+  "stop_rule_applied": "C5: ANY config passing G-T1 on both splits => ROUTING_RECOVERED_WITHOUT_HOMEOSTAT; no config => RECOVERY_FAILS_SPARSITY_INSUFFICIENT."
+}

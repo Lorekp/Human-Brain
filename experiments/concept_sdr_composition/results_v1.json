@@ -1,0 +1,613 @@
+{
+ "study": "concept-sdr-composition-v1",
+ "git_head": "f57dc20b217af75c9e9d371be131ed1535b9e879",
+ "provenance": {
+  "candidate_id": "cell-lm-v1-freeze-candidate-bible-kjv-pg10-v3",
+  "trimmed_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
+  "sha256_match": true,
+  "train_books": 49
+ },
+ "protocol": {
+  "projector": "SDRProjector defaults n=2048 w=32 seed=7 (ustate-preregistration.md section 1)",
+  "union_rule": "U_t = max(lam*U_{t-1}, s_t)",
+  "lambda_sweep": [
+   0.9,
+   0.97,
+   0.99
+  ],
+  "base_tokenizer": "BytePhraseTokenizer.fit(train, max_phrases=0, min_frequency=3)",
+  "concept_config": {
+   "min_frequency": 50,
+   "min_mutual_information_bits": 5.0,
+   "max_concepts": 512,
+   "min_tokens": 2,
+   "max_tokens": 12
+  },
+  "sample": "first 4 verses of each of 49 train books (+1 top-up for books 1-4)",
+  "n_verses": 200,
+  "arms": [
+   "byte_full",
+   "concept",
+   "byte_matched"
+  ]
+ },
+ "sample_stats": {
+  "total_verses_train": 19920,
+  "min_verses_per_book": 11,
+  "max_verses_per_book": 2461,
+  "n_classes": 49
+ },
+ "token_stats": {
+  "verse_bytes_total": 46722,
+  "byte_full_total_steps": 46722,
+  "concept_total_steps": 28410,
+  "steps_ratio_concept_over_byte": 0.6081,
+  "concept_token_share_of_concept_stream": 0.1861,
+  "distinct_ids_used": {
+   "byte_full": 74,
+   "concept": 439,
+   "concept_band_ids_used": 367
+  }
+ },
+ "top20_concepts": [
+  {
+   "text": " th",
+   "count": 95950,
+   "mi_bits": 5.15
+  },
+  {
+   "text": "\r\n",
+   "count": 81794,
+   "mi_bits": 5.48
+  },
+  {
+   "text": "the",
+   "count": 80882,
+   "mi_bits": 5.78
+  },
+  {
+   "text": " the",
+   "count": 71196,
+   "mi_bits": 8.17
+  },
+  {
+   "text": "the ",
+   "count": 48897,
+   "mi_bits": 7.63
+  },
+  {
+   "text": " the ",
+   "count": 46275,
+   "mi_bits": 10.12
+  },
+  {
+   "text": "nd ",
+   "count": 43888,
+   "mi_bits": 5.41
+  },
+  {
+   "text": "and",
+   "count": 38030,
+   "mi_bits": 6.74
+  },
+  {
+   "text": "and ",
+   "count": 32267,
+   "mi_bits": 9.08
+  },
+  {
+   "text": " of",
+   "count": 30657,
+   "mi_bits": 5.64
+  },
+  {
+   "text": " and",
+   "count": 30597,
+   "mi_bits": 9.0
+  },
+  {
+   "text": "of ",
+   "count": 28240,
+   "mi_bits": 5.52
+  },
+  {
+   "text": " and ",
+   "count": 28016,
+   "mi_bits": 11.44
+  },
+  {
+   "text": " of ",
+   "count": 26771,
+   "mi_bits": 8.01
+  },
+  {
+   "text": ", a",
+   "count": 21706,
+   "mi_bits": 5.28
+  },
+  {
+   "text": "\r\n\r\n",
+   "count": 20269,
+   "mi_bits": 14.43
+  },
+  {
+   "text": "\n\r\n",
+   "count": 20269,
+   "mi_bits": 8.95
+  },
+  {
+   "text": "\r\n\r",
+   "count": 20269,
+   "mi_bits": 8.95
+  },
+  {
+   "text": ", an",
+   "count": 19817,
+   "mi_bits": 9.46
+  },
+  {
+   "text": ".\r\n",
+   "count": 19815,
+   "mi_bits": 10.86
+  }
+ ],
+ "arms": {
+  "lam090": {
+   "byte_full": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.3059995180997721,
+     "pooled_median_cosine": 0.6940004819002279,
+     "max_cross_item_cosine": 0.9999936827936233,
+     "frac_pairs_cosine_above_090": 0.015577889447236181
+    },
+    "support": {
+     "mean_support_gt0": 836.86,
+     "mean_support_ge_floor": 545.35,
+     "universal_bits": 462,
+     "universal_bit_l2_mass_share": 0.876678
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.1,
+      0.2,
+      0.08,
+      0.08
+     ],
+     "mean_accuracy": 0.115,
+     "chance": 0.0204
+    }
+   },
+   "concept": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.38642430921428034,
+     "pooled_median_cosine": 0.6135756907857197,
+     "max_cross_item_cosine": 0.9993231640433685,
+     "frac_pairs_cosine_above_090": 0.010603015075376884
+    },
+    "support": {
+     "mean_support_gt0": 1079.28,
+     "mean_support_ge_floor": 694.33,
+     "universal_bits": 350,
+     "universal_bit_l2_mass_share": 0.704548
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.2,
+      0.1,
+      0.06,
+      0.12
+     ],
+     "mean_accuracy": 0.12,
+     "chance": 0.0204
+    }
+   },
+   "byte_matched": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.41244308664519574,
+     "pooled_median_cosine": 0.5875569133548042,
+     "max_cross_item_cosine": 0.9581908613963751,
+     "frac_pairs_cosine_above_090": 0.0007537688442211055
+    },
+    "support": {
+     "mean_support_gt0": 746.12,
+     "mean_support_ge_floor": 532.65,
+     "universal_bits": 361,
+     "universal_bit_l2_mass_share": 0.740028
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.04,
+      0.08,
+      0.04,
+      0.02
+     ],
+     "mean_accuracy": 0.045,
+     "chance": 0.0204
+    }
+   }
+  },
+  "lam097": {
+   "byte_full": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.17489126440115882,
+     "pooled_median_cosine": 0.8251087355988411,
+     "max_cross_item_cosine": 0.998599095517847,
+     "frac_pairs_cosine_above_090": 0.04849246231155779
+    },
+    "support": {
+     "mean_support_gt0": 836.86,
+     "mean_support_ge_floor": 762.89,
+     "universal_bits": 462,
+     "universal_bit_l2_mass_share": 0.792853
+    },
+    "trajectory": {
+     "bin_centers_norm": [
+      0.025,
+      0.075,
+      0.125,
+      0.175,
+      0.225,
+      0.275,
+      0.325,
+      0.375,
+      0.425,
+      0.475,
+      0.525,
+      0.575,
+      0.625,
+      0.675,
+      0.725,
+      0.775,
+      0.825,
+      0.875,
+      0.925,
+      0.975
+     ],
+     "mean_active_bits_gt0": [
+      214.51,
+      429.14,
+      532.9,
+      606.04,
+      651.57,
+      688.63,
+      720.56,
+      743.03,
+      761.46,
+      781.6,
+      793.78,
+      808.94,
+      823.51,
+      835.8,
+      845.38,
+      855.74,
+      862.88,
+      868.67,
+      876.03,
+      887.18
+     ],
+     "mean_active_bits_ge_floor": [
+      214.51,
+      429.14,
+      531.93,
+      601.21,
+      643.22,
+      674.29,
+      698.85,
+      712.91,
+      728.01,
+      740.24,
+      742.81,
+      747.77,
+      757.87,
+      760.47,
+      760.34,
+      763.78,
+      762.08,
+      756.72,
+      752.94,
+      754.34
+     ],
+     "mean_verse_steps": 233.61
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.1,
+      0.12,
+      0.1,
+      0.16
+     ],
+     "mean_accuracy": 0.12,
+     "chance": 0.0204
+    }
+   },
+   "concept": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.2877406359336932,
+     "pooled_median_cosine": 0.7122593640663069,
+     "max_cross_item_cosine": 0.9879882828298466,
+     "frac_pairs_cosine_above_090": 0.0031658291457286433
+    },
+    "support": {
+     "mean_support_gt0": 1079.28,
+     "mean_support_ge_floor": 1018.83,
+     "universal_bits": 350,
+     "universal_bit_l2_mass_share": 0.561604
+    },
+    "trajectory": {
+     "bin_centers_norm": [
+      0.025,
+      0.075,
+      0.125,
+      0.175,
+      0.225,
+      0.275,
+      0.325,
+      0.375,
+      0.425,
+      0.475,
+      0.525,
+      0.575,
+      0.625,
+      0.675,
+      0.725,
+      0.775,
+      0.825,
+      0.875,
+      0.925,
+      0.975
+     ],
+     "mean_active_bits_gt0": [
+      169.74,
+      383.33,
+      518.22,
+      622.48,
+      701.12,
+      771.6,
+      830.4,
+      877.92,
+      923.26,
+      970.63,
+      995.55,
+      1037.82,
+      1059.8,
+      1094.87,
+      1121.07,
+      1146.88,
+      1164.99,
+      1195.93,
+      1211.59,
+      1244.34
+     ],
+     "mean_active_bits_ge_floor": [
+      169.74,
+      383.33,
+      518.22,
+      622.48,
+      699.62,
+      766.98,
+      821.45,
+      861.96,
+      899.37,
+      938.01,
+      956.7,
+      986.53,
+      993.8,
+      1014.43,
+      1031.72,
+      1050.32,
+      1059.01,
+      1077.51,
+      1078.54,
+      1092.27
+     ],
+     "mean_verse_steps": 142.05
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.2,
+      0.12,
+      0.14,
+      0.2
+     ],
+     "mean_accuracy": 0.165,
+     "chance": 0.0204
+    },
+    "probe_shuffled_label_control": {
+     "fold_accuracies": [
+      0.0,
+      0.04,
+      0.02,
+      0.0
+     ],
+     "mean_accuracy": 0.015,
+     "chance": 0.0204
+    }
+   },
+   "byte_matched": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.21878990871268156,
+     "pooled_median_cosine": 0.7812100912873184,
+     "max_cross_item_cosine": 0.9594525359226979,
+     "frac_pairs_cosine_above_090": 0.009246231155778894
+    },
+    "support": {
+     "mean_support_gt0": 746.12,
+     "mean_support_ge_floor": 719.03,
+     "universal_bits": 361,
+     "universal_bit_l2_mass_share": 0.668931
+    },
+    "trajectory": {
+     "bin_centers_norm": [
+      0.025,
+      0.075,
+      0.125,
+      0.175,
+      0.225,
+      0.275,
+      0.325,
+      0.375,
+      0.425,
+      0.475,
+      0.525,
+      0.575,
+      0.625,
+      0.675,
+      0.725,
+      0.775,
+      0.825,
+      0.875,
+      0.925,
+      0.975
+     ],
+     "mean_active_bits_gt0": [
+      154.89,
+      337.28,
+      435.23,
+      501.92,
+      554.66,
+      596.67,
+      630.18,
+      654.87,
+      677.28,
+      700.83,
+      713.11,
+      733.57,
+      743.93,
+      758.61,
+      769.87,
+      778.85,
+      786.07,
+      799.63,
+      805.12,
+      819.19
+     ],
+     "mean_active_bits_ge_floor": [
+      154.89,
+      337.28,
+      435.23,
+      501.92,
+      552.7,
+      592.62,
+      624.77,
+      646.32,
+      665.38,
+      684.85,
+      694.23,
+      708.06,
+      711.82,
+      722.91,
+      732.75,
+      736.6,
+      739.07,
+      745.75,
+      745.86,
+      753.46
+     ],
+     "mean_verse_steps": 142.05
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.08,
+      0.1,
+      0.1,
+      0.04
+     ],
+     "mean_accuracy": 0.08,
+     "chance": 0.0204
+    }
+   }
+  },
+  "lam099": {
+   "byte_full": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.11526045536606877,
+     "pooled_median_cosine": 0.8847395446339312,
+     "max_cross_item_cosine": 0.9966851422206675,
+     "frac_pairs_cosine_above_090": 0.34919597989949747
+    },
+    "support": {
+     "mean_support_gt0": 836.86,
+     "mean_support_ge_floor": 829.68,
+     "universal_bits": 462,
+     "universal_bit_l2_mass_share": 0.699504
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.2,
+      0.14,
+      0.14,
+      0.08
+     ],
+     "mean_accuracy": 0.14,
+     "chance": 0.0204
+    }
+   },
+   "concept": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.2524534127213577,
+     "pooled_median_cosine": 0.7475465872786423,
+     "max_cross_item_cosine": 0.9535123190522347,
+     "frac_pairs_cosine_above_090": 0.0011557788944723617
+    },
+    "support": {
+     "mean_support_gt0": 1079.28,
+     "mean_support_ge_floor": 1077.53,
+     "universal_bits": 350,
+     "universal_bit_l2_mass_share": 0.447395
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.22,
+      0.22,
+      0.22,
+      0.2
+     ],
+     "mean_accuracy": 0.215,
+     "chance": 0.0204
+    }
+   },
+   "byte_matched": {
+    "separation": {
+     "n_items": 200,
+     "n_pairs": 19900,
+     "pooled_median_one_minus_cosine": 0.15607639085762415,
+     "pooled_median_cosine": 0.8439236091423759,
+     "max_cross_item_cosine": 0.9759544396191802,
+     "frac_pairs_cosine_above_090": 0.12251256281407036
+    },
+    "support": {
+     "mean_support_gt0": 746.12,
+     "mean_support_ge_floor": 745.05,
+     "universal_bits": 361,
+     "universal_bit_l2_mass_share": 0.586655
+    },
+    "probe_book_id": {
+     "fold_accuracies": [
+      0.06,
+      0.08,
+      0.12,
+      0.08
+     ],
+     "mean_accuracy": 0.085,
+     "chance": 0.0204
+    }
+   }
+  }
+ }
+}

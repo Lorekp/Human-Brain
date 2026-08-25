@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
 from time import perf_counter
+from typing import Any
 
 from humanbrain.language import LanguageEvaluation, Prediction
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig, RecurrentRace
@@ -19,6 +20,13 @@ class RecurrentModelConfig:
     min_phrase_frequency: int = 3
     growth_epochs: int = 1
     circuit: RecurrentCircuitConfig = field(default_factory=RecurrentCircuitConfig)
+    # Optional pre-fitted tokenizer overriding grow()'s internal
+    # BytePhraseTokenizer fit (e.g. humanbrain.concept_tokens.ConceptTokenizer
+    # or humanbrain.bpe_tokenizer.BpeTokenizer). Duck-typed: must expose the
+    # BytePhraseTokenizer encode/decode/decode_bytes/vocab_size interface.
+    # The vocabulary/output-cell alignment invariant is still enforced in
+    # __init__ against whatever tokenizer lands here.
+    tokenizer: Any | None = None
 
 
 class RecurrentCellLanguageModel:
@@ -46,13 +54,16 @@ class RecurrentCellLanguageModel:
         corpus = tuple(str(text) for text in texts)
         if not corpus or not any(corpus):
             raise ValueError("at least one non-empty growth text is required")
-        tokenizer = BytePhraseTokenizer.fit(
-            corpus,
-            TokenizerConfig(
-                max_phrases=cfg.max_phrases,
-                min_frequency=cfg.min_phrase_frequency,
-            ),
-        )
+        if cfg.tokenizer is not None:
+            tokenizer = cfg.tokenizer
+        else:
+            tokenizer = BytePhraseTokenizer.fit(
+                corpus,
+                TokenizerConfig(
+                    max_phrases=cfg.max_phrases,
+                    min_frequency=cfg.min_phrase_frequency,
+                ),
+            )
         circuit = RecurrentCellCircuit(
             token_cells=tokenizer.vocab_size,
             config=cfg.circuit,
@@ -129,6 +140,64 @@ class RecurrentCellLanguageModel:
             generated.append(race.winner)
             self._circuit.observe(race.winner)
         return self._tokenizer.decode(generated)
+
+    def complete_broadcast(
+        self,
+        prompt_ids_or_text,
+        max_new_tokens: int = 32,
+        *,
+        broadcast_b: int = 1,
+        variant: str = "P-S",
+        chase_to_settle: bool | None = None,
+        max_settle_rounds: int | None = None,
+        record_settle_profile: bool = False,
+    ):
+        """Winner-feedback broadcast completion (race-pivot protocol §3.1).
+
+        Bit-for-bit parity with :meth:`complete` at B=1/P-S INCLUDING logging:
+        the prompt is consumed through plain visible observes (exactly
+        ``complete()``'s afferent events), then each output position is driven
+        by ``humanbrain.race_pivot.broadcast_free_run`` on top of the public
+        ``race()``/``observe()`` primitives — no dynamics or native changes.
+
+        Accepts either a prompt string (encoded via the model tokenizer, like
+        :meth:`complete`) or a pre-encoded token-id sequence. Returns a
+        ``race_pivot.BroadcastRunResult`` (``.tokens`` is the emitted stream;
+        ``result.text``-style decoding stays the caller's job).
+        """
+        from humanbrain.race_pivot import (
+            MAX_SETTLE_ROUNDS_DEFAULT,
+            broadcast_free_run,
+        )
+
+        if max_new_tokens < 0:
+            raise ValueError("max_new_tokens must be non-negative")
+        if isinstance(prompt_ids_or_text, str):
+            ids = self._tokenizer.encode(prompt_ids_or_text)
+            if not ids:
+                raise ValueError("completion prompt cannot be empty")
+        else:
+            ids = [int(token) for token in prompt_ids_or_text]
+            if not ids:
+                raise ValueError("completion prompt cannot be empty")
+        self._circuit.reset_sequence()
+        for token_id in ids:
+            self._circuit.observe(token_id)
+        return broadcast_free_run(
+            self._circuit,
+            [],
+            max_new_tokens,
+            broadcast_b=broadcast_b,
+            variant=variant,
+            chase_to_settle=chase_to_settle,
+            max_settle_rounds=(
+                MAX_SETTLE_ROUNDS_DEFAULT
+                if max_settle_rounds is None
+                else max_settle_rounds
+            ),
+            consume_prompt=False,
+            record_settle_profile=record_settle_profile,
+        )
 
     def evaluate(self, text: str, max_predictions: int | None = None) -> LanguageEvaluation:
         """Teacher-force held-out text while preserving recurrent cell state."""

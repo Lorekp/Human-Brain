@@ -14,7 +14,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from humanbrain.native import NativeBuildError, _glif_config, _RecurrentConfig
+from humanbrain.native import (
+    NativeBuildError,
+    _F64_POINTER,
+    _RecurrentConfig,
+    _glif_config,
+    _require_native_array,
+)
 
 if TYPE_CHECKING:
     from humanbrain.cells import AdaptiveGlifPopulation
@@ -393,26 +399,59 @@ class CudaRecurrentKernel:
         recurrent_fanout: int,
         input_current_pa: float,
         recurrent_decay: float,
-        eligibility_decay: float,
+        eligibility_decays: np.ndarray,
         afferent_targets: np.ndarray,
         recurrent_targets: np.ndarray,
         recurrent_weights_pa: np.ndarray,
         synaptic_current_pa: np.ndarray,
         eligibility: np.ndarray,
         host_mirror: str = "full",
+        token_spike_counts: np.ndarray | None = None,
+        mirror_token_spike_counts: bool = False,
+        mirror_boundary_voltage: bool = False,
     ) -> None:
         if host_mirror not in {"full", "eligibility"}:
             raise ValueError("CUDA host mirror must be 'full' or 'eligibility'")
         self._driver = _driver()
         self._driver.make_current()
         self._population = population
+        cells = population.cell_count
+        decays = np.ascontiguousarray(eligibility_decays, dtype=np.float64)
+        if decays.ndim != 1 or decays.size < 1 or not np.all(np.isfinite(decays)):
+            raise ValueError("eligibility decays must be a nonempty finite 1-D array")
+        trace_count = int(decays.size)
+        # The eligibility buffer is the FULL trace bank: trace_count rows of
+        # cells, C-order (row k = trace k), mirrored contiguously.
+        _require_native_array(
+            eligibility,
+            dtype=np.dtype(np.float64),
+            shape=(trace_count * cells,),
+            name="eligibility",
+        )
         self._synaptic_current_pa = synaptic_current_pa
         self._eligibility = eligibility
         self._host_mirror = host_mirror
+        # R0-b family A: device-side u32 accumulator; the kernel clears it at
+        # token start and folds it at the mask-write sites. The host anchor is
+        # refreshed per token only when this arm mirrors counts.
+        if token_spike_counts is not None:
+            _require_native_array(
+                token_spike_counts,
+                dtype=np.dtype(np.uint32),
+                shape=(cells,),
+                name="token spike counts",
+            )
+        self._token_spike_counts = token_spike_counts
+        self._mirror_token_spike_counts = bool(mirror_token_spike_counts)
+        self._mirror_boundary_voltage = bool(mirror_boundary_voltage)
         self._afferent_targets = afferent_targets
         self._recurrent_targets = recurrent_targets
         self._recurrent_weights_pa = recurrent_weights_pa
+        # Host-side anchor for the decay values copied to the device buffer.
+        self._eligibility_decays_host = decays
         self._glif = _glif_config(population)
+        # The struct's decay pointer is patched to the device buffer below,
+        # after allocation; build the struct once with a null placeholder.
         self._recurrent = _RecurrentConfig(
             token_steps,
             pulse_steps,
@@ -420,7 +459,8 @@ class CudaRecurrentKernel:
             recurrent_fanout,
             input_current_pa,
             recurrent_decay,
-            eligibility_decay,
+            trace_count,
+            None,
         )
         self._token_cells = int(afferent_targets.shape[0])
         self._input_fanout = input_fanout
@@ -489,6 +529,27 @@ class CudaRecurrentKernel:
                 self._allocate_array(name, np.ascontiguousarray(array), upload=True)
             for name, array in mutables.items():
                 self._allocate_array(name, array, upload=True)
+            # Per-trace step decays live in a small device buffer; the
+            # RecurrentConfig struct member points at it for every launch.
+            self._allocate_array(
+                "eligibility_decays", self._eligibility_decays_host, upload=True
+            )
+            self._recurrent.eligibility_decays = ctypes.cast(
+                ctypes.c_void_p(self._arrays["eligibility_decays"][0]),
+                _F64_POINTER,
+            )
+            if self._token_spike_counts is not None:
+                self._allocate_array(
+                    "token_spike_counts", self._token_spike_counts, upload=True
+                )
+                self._recurrent.token_spike_counts = ctypes.cast(
+                    ctypes.c_void_p(self._arrays["token_spike_counts"][0]),
+                    ctypes.POINTER(ctypes.c_uint32),
+                )
+            else:
+                self._recurrent.token_spike_counts = ctypes.cast(
+                    ctypes.c_void_p(0), ctypes.POINTER(ctypes.c_uint32)
+                )
             self._allocate_bytes("spike_mask", cells)
             self._allocate_bytes("input_mask", cells)
             self._allocate_bytes("total_spikes", ctypes.sizeof(ctypes.c_uint64))
@@ -899,16 +960,41 @@ class CudaRecurrentKernel:
             "eligibility": self._eligibility,
         }
 
+    def _synchronize_arrays(self) -> dict[str, np.ndarray]:
+        """Arrays moved by explicit host<->device synchronization calls.
+
+        Includes the family-A accumulator when allocated (``reset_sequence``
+        must zero it on device); per-token DtoH traffic is governed by
+        ``_host_mirror_arrays``, never by this dict.
+        """
+        arrays = self._mutable_arrays()
+        if self._token_spike_counts is not None:
+            arrays["token_spike_counts"] = self._token_spike_counts
+        return arrays
+
     def _host_mirror_arrays(self) -> dict[str, np.ndarray]:
-        if self._host_mirror == "eligibility":
-            return {"eligibility": self._eligibility}
-        return self._mutable_arrays()
+        if self._host_mirror == "full":
+            # Incumbent full-touch payload plus exactly the R0-b terms this
+            # arm's family consumes (byte contract for traces arms stays
+            # pinned to the seven legacy mutable arrays - tests/test_cuda.py).
+            arrays = self._mutable_arrays()
+            if self._mirror_token_spike_counts:
+                assert self._token_spike_counts is not None
+                arrays["token_spike_counts"] = self._token_spike_counts
+            return arrays
+        arrays = {"eligibility": self._eligibility}
+        if self._mirror_token_spike_counts:
+            assert self._token_spike_counts is not None
+            arrays["token_spike_counts"] = self._token_spike_counts
+        if self._mirror_boundary_voltage:
+            arrays["voltage"] = self._population.state.voltage_relative_mv
+        return arrays
 
     def synchronize_from_host(self) -> None:
         self._driver.make_current()
         if self.async_pipeline_active:
             self.drain()
-        for name, array in self._mutable_arrays().items():
+        for name, array in self._synchronize_arrays().items():
             self._copy_to_device(name, array)
         self._copy_to_device("decay_active", self._decayed_activity_words())
         self._copy_to_device(
@@ -959,11 +1045,11 @@ class CudaRecurrentKernel:
         return self._pack_activity_bits(self._population.state.refractory_steps != 0)
 
     def synchronize_to_host(self) -> None:
-        """Download every mutable array for explicit state inspection."""
+        """Download every synchronized array for explicit state inspection."""
         self._driver.make_current()
         if self.async_pipeline_active:
             self.drain()
-        for name, array in self._mutable_arrays().items():
+        for name, array in self._synchronize_arrays().items():
             self._copy_from_device(name, array)
 
     def synchronize_structure_from_host(self) -> None:

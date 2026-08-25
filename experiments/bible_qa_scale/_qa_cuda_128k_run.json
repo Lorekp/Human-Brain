@@ -1,0 +1,123 @@
+{
+  "corpus_sha256": "8857eb77f3581aae55db44d34f7bb62b592e2a4ff10161fe5127b16243106bd5",
+  "corpus_source": "fixture:v1-kjv-verse-contexts",
+  "curriculum_sha256": "ef24b1d3fea84cf1eb5401a54e7240b19892f4c34ad74a9f1e5161ad611c948d",
+  "eval_task_count": 4,
+  "execution": {
+    "active_reservoir_cells": 131072,
+    "device": "cuda",
+    "kernel_backend": "cuda",
+    "readout_learning_rule": "sparse_three_factor",
+    "requested_device": "cuda",
+    "reservoir_cells": 131072,
+    "simulation_device": "NVIDIA GeForce RTX 4070 SUPER (compute 89)"
+  },
+  "metrics": {
+    "answer_span": {
+      "accuracy": 0.0,
+      "correct": 0,
+      "predictions": 25,
+      "tasks": 4
+    },
+    "degeneracy": {
+      "distinct_answers": 3,
+      "evaluated": 4,
+      "guard": {
+        "distinct_answers_min": 3,
+        "modal_share_max": 0.9
+      },
+      "guard_pass": true,
+      "modal_answer": "lifelifelifelifelifelifelifelifelifelifelifelifelifelife",
+      "modal_share": 0.5
+    },
+    "free_run": {
+      "exact_match_rate": 0.0,
+      "exact_matches": 0,
+      "tasks": 4
+    }
+  },
+  "model": {
+    "active_reservoir_cells": 131072,
+    "learned_synapses": 3,
+    "reservoir_cells": 131072,
+    "token_cells": 299,
+    "vocabulary_alignment_pass": true,
+    "vocabulary_size": 299
+  },
+  "protocol": "grow RecurrentCellLanguageModel on TRAIN qa_prompt+' '+answer texts; held-out CALIBRATION teacher-forced answer-span accuracy, free-run complete() exact match, and first-class degeneracy metrics",
+  "schema_version": "humanbrain/qa-experiments/v1",
+  "seed": 17,
+  "tasks": [
+    {
+      "cohort": "CALIBRATION",
+      "completion": "lifelifelifelifelifelifelifelifelifelifelifelifelifelifelifelifelife",
+      "exact_match": false,
+      "expected": "that I am God",
+      "ordinal": 24,
+      "qa_id": "q_hnvlhkqsk",
+      "question": "What does the psalm say to know?",
+      "references": [
+        "Psalm 46:10"
+      ],
+      "span_correct": 0,
+      "span_predictions": 9
+    },
+    {
+      "cohort": "CALIBRATION",
+      "completion": "lifelifelifelifelifelifelifelifelifelifelifelifelifelife",
+      "exact_match": false,
+      "expected": "death",
+      "ordinal": 25,
+      "qa_id": "q_pmznycgkd",
+      "question": "What are the wages of sin?",
+      "references": [
+        "Romans 6:23"
+      ],
+      "span_correct": 0,
+      "span_predictions": 6
+    },
+    {
+      "cohort": "CALIBRATION",
+      "completion": "lifelifelifelifelifelifelifelifelifelifelifelife",
+      "exact_match": false,
+      "expected": "the LORD",
+      "ordinal": 26,
+      "qa_id": "q_fwxsnpqjq",
+      "question": "Who speaks thoughts of peace toward you here?",
+      "references": [
+        "Jeremiah 29:11"
+      ],
+      "span_correct": 0,
+      "span_predictions": 4
+    },
+    {
+      "cohort": "CALIBRATION",
+      "completion": "lifelifelifelifelifelifelifelifelifelifelifelifelifelife",
+      "exact_match": false,
+      "expected": "steal",
+      "ordinal": 27,
+      "qa_id": "q_dggpdbxfn",
+      "question": "According to Exodus 20:15, what shalt thou not do?",
+      "references": [
+        "Exodus 20:13",
+        "Exodus 20:14",
+        "Exodus 20:15"
+      ],
+      "span_correct": 0,
+      "span_predictions": 6
+    }
+  ],
+  "throughput": {
+    "eval": {
+      "token_steps": 1214,
+      "wall_s": 4.381206199992448
+    },
+    "growth": {
+      "token_steps": 554,
+      "wall_s": 3.513011600007303
+    }
+  },
+  "train_task_count": 5,
+  "training_digest": "6874ad3b704185944ae93418d27d58c5f6c630df1a18c4291f30fdb8219f333b",
+  "wall_s": 7.894218200002797
+}

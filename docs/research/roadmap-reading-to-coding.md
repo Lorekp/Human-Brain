@@ -108,16 +108,57 @@ grandmother-cell identities — assemblies only.
 
 ## Roadmap
 
-### Phase R0 — Multi-timescale features (the keystone, weeks)
+### Phase R0 — Multi-timescale features — EXECUTED, FALSIFIED (2026-08-23)
 
-Multi-timescale eligibility traces: N_TRACE traces at taus spanning
-~80 ms … ~4 s (16 → ~800 token windows), concatenated into the readout
-feature vector. Cost: recurrent.py + checkpoint-layout v5 + native mirror.
-Pre-registered gate BEFORE implementation: at N=1024, post-framing pairwise
-cosine across 18 calibration tasks must drop below 0.9 (from 0.9989) and
-held-out distinct-answer count must exceed 3 on QA fixtures. If features
-separate but answers stay degenerate, the readout/race layer is next
-(margins exist but never re-enter computation — HOT-2 seed).
+Outcome (preregistered gates, one-shot): eligibility traces at 8 taus
+(16→800-token windows) reached only 6.8e-05 separation vs required >0.10.
+The R0-b successor families (spike-count windows, voltage quantiles,
+assembly-overlap) also failed G1 (~1e-4; assembly+random passed at 0.102
+but was capacity-regressive). Full verdicts in
+experiments/r0_multitrace/gate_results.json + experiments/r0b_state_features/.
+Infrastructure built here survives: v6 checkpoints, K-bank native mirrors
+(Rust AVX/parallel/frontier + CUDA), scipy-class solver, per-family gate
+runner. FALSIFIER CLAUSE FIRED → next candidates evaluated by strategy
+report (in flight): race/output winner-feedback loop, associative-memory
+hybrid, learned output map over cell dynamics. The pivot is NOT a failure
+of the roadmap — R0 was designed to test the cheapest feature family first;
+it cost days, not months, and named its successors in advance.
+
+### Phase R0-b/race — Decision layer — EXECUTED (2026-08-24)
+
+Race-pivot implemented per protocol (broadcast engine P-S/P-R, margin
+consumers; 21/21 tests green). N=96 fixture gates: TERMINAL INELIGIBLE —
+every arm exact=0 (G-P2 fail) though broadcast de-collapsed answers
+(6 distinct, modal 0.167, replay 42/42). N=1024 not spent per
+stop-on-failure. Verdict: docs/research/race-pivot-gate-verdict.md.
+
+### Phase R0-d — Custom architecture pivot — CURRENT
+
+Reservoir-computing family falsified for QA reading after the full chain:
+features (R0/R0-b), associative store on reservoir keys (R0-c), scale alone
+(R2 pilot 1.19% at 131k), decision layer (race-pivot). Custom-architecture
+research (custom-architecture-directions.md) ranked five directions; two
+executed week-1:
+
+- **U-STATE (SDR union memory): NEGATIVE_WITH_LOCALIZATION_V2**
+  (40a2934). Separation PASSED (concept unions 0.402–0.607 vs bytes
+  0.166–0.190; collapse tail 290× better) but decode failed everywhere
+  (best 2.19% < unigram 4.54% < bar 6.19%), flat across the λ sweep.
+  P3: concept self-store recovers speakers at 38.3% in TRAIN books but
+  0% on VAL — capacity intact, generalization zero.
+- **APICAL-AND (two-compartment coincidence encoder)**: G-A1 conjunction
+  index failed in all 18 arms (<1.5×); decode analysis pending.
+
+**The cross-cutting finding (design constraint for everything downstream):
+nine preregistered executions show separation and storage capacity SUCCEED
+while generalization of stored context to unseen question–context pairings
+FAILS.** The deficit is not representational, not capacity, not readout —
+it is the absence of any mechanism binding paraphrased-question space to
+passage-content space. Architectures that only reorganize HOW context is
+encoded cannot fix this; what is missing is a trained mapping between two
+different content spaces (question-space and passage-space), which in
+brains is exactly what learned long-range connectivity provides and what
+every fixed-connectivity variant tested here lacks by construction.
 
 ### Phase R2 — Reading at scale (the demonstration, weeks)
 

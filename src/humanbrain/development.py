@@ -314,7 +314,11 @@ class DevelopmentalGrowthController:
 
     def record_plasticity(self) -> None:
         """Update local cell-rate and pre/post structural coactivity traces."""
-        eligibility = self.circuit._eligibility
+        # Trace 0 IS the incumbent trace: developmental structural scoring
+        # keeps its exact published meaning (frozen protocol §1.2/§1.4).
+        eligibility = self.circuit._feature_traces[
+            : self.circuit.config.reservoir_cells
+        ]
         active_edges = self.circuit._recurrent_weights_pa != 0.0
         target_activity = eligibility[self.circuit._recurrent_targets]
         contribution = eligibility[:, None] * target_activity

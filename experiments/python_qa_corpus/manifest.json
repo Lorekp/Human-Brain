@@ -1,0 +1,30 @@
+{
+ "artifact": "python_qa_corpus_v1.json",
+ "artifact_sha256": "dd4ba1c96c398da161d52703c4ca44a06f0dbdc71496f486183245b8e0b34212",
+ "builder": "tools/build_python_qa_corpus.py",
+ "corpus_sha256": "789e3ac592fd8aa1d4f68af8704a4a9b19d64db7277efea59ebc50ff8dd446ec",
+ "counts": {
+  "TRAIN": {
+   "function_summary": 25,
+   "module_containment": 25,
+   "signature_recall": 25,
+   "total": 75
+  },
+  "VAL": {
+   "function_summary": 8,
+   "module_containment": 8,
+   "signature_recall": 9,
+   "total": 25
+  }
+ },
+ "determinism_check_in_process": true,
+ "families": [
+  "function_summary",
+  "module_containment",
+  "signature_recall"
+ ],
+ "git_head": "1c9cdb6",
+ "library_schema_version": "humanbrain/python-qa-corpus/v1",
+ "schema_version": "humanbrain/python-qa-corpus-manifest/v1",
+ "source_files": 32
+}

@@ -1,0 +1,50 @@
+{
+  "arm": "r0b_C_asmbl_sim",
+  "codebook": "similarity",
+  "curriculum_anchor_match": true,
+  "curriculum_sha256": "48219eda110f09f735525a7de00e56596ffac729746654e809c3c5eb525ccae6",
+  "diagnostics_never_gate": {
+    "margin_median_pa": 389.883167522,
+    "margin_min_pa": -601.498464522,
+    "ridge_backend": "scipy-openblas-dsyrk",
+    "simulation_backend": "cpu"
+  },
+  "experiment_id": "r0b_state_features",
+  "family": "assembly_overlap",
+  "gates": {
+    "G1": {
+      "definition": "pooled median post-framing cosine < 0.90 across 18 CALIBRATION tasks on feature_state_vector()",
+      "median_1minuscos_Int": 0.1021854,
+      "median_1minuscos_List_Int": 0.085286104,
+      "median_1minuscos_pooled": 0.097769516,
+      "pairs_Int": 44,
+      "pairs_List_Int": 4,
+      "pass": false
+    },
+    "G2": {
+      "answer_span_accuracy": 0.0392156862745098,
+      "definition": "QA fixture distinct_answers >= 3 (held-out CALIBRATION free-run, seed 7, 96-cell circuit)",
+      "distinct_answers": 6,
+      "evaluated": 6,
+      "free_run_exact_matches": 0,
+      "modal_share": 0.16666666666666666,
+      "pass": true
+    },
+    "G3": {
+      "calib_cases_passed": 5,
+      "calib_cases_total": 54,
+      "definition": "train_replay_tasks >= 39 of 42",
+      "pass": false,
+      "train_cases_passed": 15,
+      "train_cases_total": 126,
+      "train_replay_tasks": 1,
+      "train_task_total": 42
+    }
+  },
+  "git_head": "271ebf8584348a8829746a352f3c443f5e38ae71",
+  "median_1minuscos_pooled": 0.097769516,
+  "role": "confirmatory",
+  "train_replay_tasks": 1,
+  "verdict": "FAMILY-FALSIFIED",
+  "wall_s": 56.693
+}

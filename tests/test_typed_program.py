@@ -180,8 +180,8 @@ def test_checkpoint_byte_limit_is_enforced_before_json_validation() -> None:
     protocol = Layer1Protocol()
     oversized_json_string = b'"' + (b"x" * protocol.max_checkpoint_bytes) + b'"'
 
-    assert protocol.max_checkpoint_bytes == 2_097_152
-    with pytest.raises(ValueError, match="exceeds the 2097152-byte protocol limit"):
+    assert protocol.max_checkpoint_bytes == 4_194_304
+    with pytest.raises(ValueError, match="exceeds the 4194304-byte protocol limit"):
         FrozenCheckpoint.from_bytes(oversized_json_string)
 
 
@@ -203,7 +203,7 @@ def test_checkpoint_records_sequences_separately_from_cell_presentations() -> No
     )
     record = json.loads(checkpoint.to_bytes().decode("utf-8"))
 
-    assert record["format"] == "humanbrain-layer1-typed-program-v4"
+    assert record["format"] == "humanbrain-layer1-typed-program-v5"
     assert record["training_sequence_token_counts"] == [170]
     assert record["training_teacher_token_counts"] == [1]
     assert checkpoint.training_sequence_token_counts == (170,)
@@ -292,7 +292,7 @@ def test_a1_and_a2_observe_identical_states_but_a2_strengthens_only_program_targ
     assert a2_strengthened == list(typed_program._program_token_ids(example.teacher_tokens)) * 3
 
 
-def test_checkpoint_v4_requires_exact_sequence_and_teacher_count_fields() -> None:
+def test_checkpoint_v5_requires_exact_sequence_and_teacher_count_fields() -> None:
     signature = TypedSignature(
         entry_point="identity",
         parameters=(ProgramParameter("value", ProgramType.Int()),),
@@ -352,6 +352,42 @@ def test_checkpoint_rejects_hash_consistent_growth_count_forgery() -> None:
         FrozenCheckpoint.from_bytes(_canonical_checkpoint_bytes(forged))
 
 
+def test_v5_checkpoint_persists_weights_but_never_ridge_statistics() -> None:
+    """v5 diet (protocol: stats never migrate): weights + config persist only."""
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    checkpoint = grow(
+        Layer1Protocol(),
+        (
+            Example(
+                prompt="Return the integer.",
+                signature=signature,
+                teacher_tokens=("variable-0",),
+            ),
+        ),
+    )
+    record = json.loads(checkpoint.to_bytes().decode("utf-8"))
+    array_names = {item["name"] for item in record["circuit"]["arrays"]}
+    assert "readout_synapses_pa" in array_names
+    assert "normal_matrix" not in array_names
+    assert "target_moments" not in array_names
+    # Metadata stays on the canonical frozen schema; era-guard siblings belong
+    # to statistics-carrying envelopes only, and the tau bank lives nested in
+    # circuit_config.
+    assert set(record["circuit"]["metadata"]) == set(
+        typed_program._FROZEN_CIRCUIT_METADATA_KEYS
+    )
+    assert "eligibility_taus_ms" not in record["circuit"]["metadata"]
+
+    payload = typed_program._decode_checkpoint_bytes(checkpoint.to_bytes())
+    circuit = typed_program._restore_circuit(payload.circuit)
+    assert circuit._normal_matrix is None
+    assert circuit._target_moments is None
+
+
 def test_protocol_commits_growth_and_complete_pinned_human_cell_identity() -> None:
     protocol = Layer1Protocol()
     signature = TypedSignature(
@@ -389,7 +425,7 @@ def test_protocol_commits_growth_and_complete_pinned_human_cell_identity() -> No
         "voltage_reset_scale": 1.669558016548051,
     }
 
-    assert protocol.protocol_version == "humanbrain-layer1-typed-program-v4"
+    assert protocol.protocol_version == "humanbrain-layer1-typed-program-v5"
     assert protocol.growth_epochs == 3
     assert protocol.allen_glif5_config_sha256 == HUMAN_GLIF5_IDENTITY.config_sha256
     assert protocol.allen_glif5_parameters == AllenGlif5Parameters()
@@ -398,7 +434,7 @@ def test_protocol_commits_growth_and_complete_pinned_human_cell_identity() -> No
     assert record["protocol"]["allen_glif5_config_sha256"] == (protocol.allen_glif5_config_sha256)
     assert record["protocol"]["allen_glif5_parameters"] == expected_parameters
     assert record["protocol"]["max_training_examples"] == 256
-    assert record["protocol"]["max_checkpoint_bytes"] == 2_097_152
+    assert record["protocol"]["max_checkpoint_bytes"] == 4_194_304
 
 
 def test_completion_restores_exactly_one_recurrent_circuit(
@@ -419,22 +455,22 @@ def test_completion_restores_exactly_one_recurrent_circuit(
             ),
         ),
     )
-    restore = typed_program.RecurrentCellCircuit.restore_cell_synapse_state.__func__
+    # v5 routes Layer-1 completion through the dieted weights-only restore
+    # (`_restore_circuit`); the generic `restore_cell_synapse_state` remains
+    # the strict entry point for statistics-carrying recurrent artifacts. The
+    # invariant under test is unchanged: exactly ONE circuit restored per
+    # completion.
+    restore = typed_program._restore_circuit
     construction_count = 0
 
     def counted_restore(
-        cls: type[typed_program.RecurrentCellCircuit],
-        state: object,
+        frozen: object,
     ) -> typed_program.RecurrentCellCircuit:
         nonlocal construction_count
         construction_count += 1
-        return restore(cls, state)
+        return restore(frozen)
 
-    monkeypatch.setattr(
-        typed_program.RecurrentCellCircuit,
-        "restore_cell_synapse_state",
-        classmethod(counted_restore),
-    )
+    monkeypatch.setattr(typed_program, "_restore_circuit", counted_restore)
 
     completion = complete(checkpoint, "Return the integer.", signature)
 

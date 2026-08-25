@@ -33,7 +33,15 @@ struct RecurrentConfig {
     unsigned long long recurrent_fanout;
     double input_current_pa;
     double recurrent_decay;
-    double eligibility_decay;
+    // R0 multi-timescale trace bank: row k of the eligibility buffer
+    // (elements [k*cells, (k+1)*cells)) decays by eligibility_decays[k]
+    // every sub-step, maintained in fixed index order 0..trace_count.
+    unsigned long long trace_count;
+    const double* eligibility_decays;
+    // R0-b family A (spike-count windows): u32 per-cell accumulator for the
+    // current token, cleared once at token start and folded at exactly the
+    // existing mask-write site. May be null (legacy callers).
+    unsigned int* token_spike_counts;
 };
 
 extern "C" __global__ void recurrent_token_kernel(
@@ -71,6 +79,12 @@ extern "C" __global__ void recurrent_token_kernel(
     }
     if (thread == 0) {
         *total_spikes = 0;
+    }
+    if (recurrent.token_spike_counts != nullptr) {
+        // Family A: cleared at TOKEN start, before any sub-step accumulates.
+        for (unsigned long long cell = thread; cell < cells; cell += stride) {
+            recurrent.token_spike_counts[cell] = 0u;
+        }
     }
     grid.sync();
     if (thread < recurrent.input_fanout) {
@@ -176,17 +190,26 @@ extern "C" __global__ void recurrent_token_kernel(
                 }
             }
             spike_mask[cell] = static_cast<unsigned char>(crossed);
-            // Fused eligibility trace: identical expression and inputs as the
-            // previous post-sync pass (spike_mask[cell] was just written from
-            // this thread's own `crossed`), executed without re-reading the
-            // mask or a second full-array traversal. Inactive zero-trace cells
-            // keep their exact +0.0 bits by skipping the update.
+            // Fused multi-trace eligibility: identical expression and inputs
+            // as the previous post-sync pass (spike_mask[cell] was just
+            // written from this thread's own `crossed`), executed without
+            // re-reading the mask or a second full-array traversal. Row k of
+            // the bank decays by eligibility_decays[k] and adds this step's
+            // spike, in fixed index order. Inactive zero-trace cells keep
+            // their exact +0.0 bits by skipping the update.
             if (decay_active_cell || crossed) {
-                eligibility[cell] = eligibility[cell] * recurrent.eligibility_decay
-                    + static_cast<double>(crossed);
+                for (unsigned long long k = 0; k < recurrent.trace_count; ++k) {
+                    eligibility[k * cells + cell] =
+                        eligibility[k * cells + cell] * recurrent.eligibility_decays[k]
+                        + static_cast<double>(crossed);
+                }
                 if (crossed && !decay_active_cell) {
                     atomicOr(decay_active + activity_word, activity_bit);
                 }
+            }
+            if (recurrent.token_spike_counts != nullptr && crossed) {
+                // Family A: folded at exactly the existing mask-write site.
+                recurrent.token_spike_counts[cell] += 1u;
             }
         }
         if (thread_spikes != 0) {
@@ -217,8 +240,9 @@ extern "C" __global__ void recurrent_token_kernel(
                 }
             }
             synaptic_current[cell] = next_current;
-            // Eligibility traces are updated in the neuron pass above; this
-            // pass only decays and drives synaptic current.
+            // Eligibility traces (full multi-trace bank) are updated in the
+            // neuron pass above; this pass only decays and drives synaptic
+            // current.
         }
         grid.sync();
     }
