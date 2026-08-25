@@ -109,7 +109,7 @@ _GOLDEN_WINNERS_SHA256 = (
 #      therefore machine-portable only in its winner/feature projections, which
 #      are pinned separately and still match.
 _GOLDEN_CURRENTS_SHA256 = (
-    "dc7743b0d7ecdd2369cb684e1350dd68030b8a553fbd34ee842bbe26694a5aa9"
+    "53f7f5a6f81afb04ea501e21845eca652b6d2fd9f52c80685175f42b5b19989a"
 )
 _GOLDEN_FEATURES_SHA256 = (
     "6a802cde95066a6805a464ef00bde71958fea3083d98cb64446ffc0c1b9d2b6e"
