@@ -23,6 +23,7 @@ harness scripts, per the repo's committed-evidence convention.
 | [r0c-strategy-decision.md](r0c-strategy-decision.md) | Adopted post-R0/R0-b mainline: associative-memory-through-race; P1/P2/P3 probes gating D5 | superseded — mainline advanced through U-STATE/APICAL-AND/T-ROUTE chain ([t-route-program-conclusion.md](t-route-program-conclusion.md)) |
 | [t-route-strategy.md](t-route-strategy.md) | Adopted mainline cycle 2: trained question-space↔passage-space mapping (T-ROUTE) with G-T1..G-T3 gates | superseded — trained-mapping family falsified ([t-route-program-conclusion.md](t-route-program-conclusion.md)) |
 | [gemma4-comparison-design.md](gemma4-comparison-design.md) | Fixes the Gemma-4-12B comparison target, Wilson-CI decision rules, and M4-M6 ladder before any tuning | current |
+| [similar-projects-landscape.md](similar-projects-landscape.md) | Primary-source landscape of cell-based language/program-learning projects (SNN LMs, HTM/HTM-dendritic, Assembly Calculus/NEMO, Spaun, HuMAM/DTB/NEST); Human Brain's combination is unusual, not unique | current |
 | [hermes-ox-alpha-workforce.md](hermes-ox-alpha-workforce.md) | First-party audit + smoke tests for using Hermes Agent / Ox Alpha as parallel research workforce on public work only | current |
 
 ## Falsified-negative verdicts
