@@ -1,0 +1,142 @@
+{
+  "schema_version": "humanbrain/t-route-e4-winner-sets/v1",
+  "generated_utc": "2026-08-25T13:19:39Z",
+  "git_head": "9a93ab9",
+  "amendment": "experiments/t_route/e4_repetition/CHANGE_NOTE_5.md (committed pre-spend)",
+  "npz_file": "e4_logged_winner_sets.npz",
+  "npz_sha256": "feb29fd05a8e3bb46ea6e0de214b41852dc8fd292427a856ce9bf581541fb1df",
+  "array_sha256": {
+    "answers": {
+      "sha256": "85036309eb714e813c10f6ea8c9b2144f91e0e2256cf23d62e66e80f0b8593c1",
+      "shape": [
+        1656
+      ],
+      "dtype": "<U24"
+    },
+    "episode_ids": {
+      "sha256": "60156859350449e04a8d1d5822c063bf56d96bafa51d89d39a6407f51c65effb",
+      "shape": [
+        1656
+      ],
+      "dtype": "<U24"
+    },
+    "gold_mask": {
+      "sha256": "05be08c7450702d79087d566634c5053613b9351f7d5566b6dbd83f98143aefc",
+      "shape": [
+        1656,
+        2048
+      ],
+      "dtype": "bool"
+    },
+    "gold_sizes": {
+      "sha256": "a443dc3a0a57a1e94b9bd598b20b3751f09b84d25b9dc4af25b036d1545b9247",
+      "shape": [
+        1656
+      ],
+      "dtype": "int64"
+    },
+    "item_index": {
+      "sha256": "d19a92080b9814e3d197ce2575c8fdc984d9d21a4d400afa0e7778997e56f80f",
+      "shape": [
+        18216
+      ],
+      "dtype": "int64"
+    },
+    "matched": {
+      "sha256": "3f2f02e89a95d1d98605842bd926efc2c217a4134eba19b1ea142bd876396951",
+      "shape": [
+        1656
+      ],
+      "dtype": "bool"
+    },
+    "pair_count": {
+      "sha256": "9031213e2d31204a58008a87e78321a726a7285daf6021830d484fec0633348d",
+      "shape": [
+        1656
+      ],
+      "dtype": "int64"
+    },
+    "routing_set": {
+      "sha256": "db3fc5a06f8ed1d01f4d8ed4b7f5daa1ffe3691685487592d5b43134351d6aef",
+      "shape": [
+        18216
+      ],
+      "dtype": "<U20"
+    },
+    "shuffle_perm": {
+      "sha256": "baf48e3f2752e1948484724c1c3ca9e9540d2f694639461d9fa9ca0353a6ef6d",
+      "shape": [
+        1656
+      ],
+      "dtype": "int64"
+    },
+    "stratum": {
+      "sha256": "38f277812bd17817a77df70878f1e74047751e470cc262c7fbaf267672368bbc",
+      "shape": [
+        1656
+      ],
+      "dtype": "<U8"
+    },
+    "winner_sets": {
+      "sha256": "14eaa152ab991c4d3736b404609671670a8a0fc9c7473caaa183af3dce5423bb",
+      "shape": [
+        18216,
+        128
+      ],
+      "dtype": "int16"
+    }
+  },
+  "integrity": {
+    "episodes_raw_sha256": "fb759b86d7c796967e4bdb74558f835ffc92af3762add434ba68d4f264b6b293",
+    "episodes_lf_canonical_sha256": "a94a8c22cedace1b533351b3a811829b68f62a374daaceff683b052b1b359e5a",
+    "episode_count": 1656,
+    "pair_census": {
+      "unique_pairs": 1611,
+      "pairs_ge10": 1,
+      "episodes_ge10": 27,
+      "pairs_eq1": 1593,
+      "episodes_eq1": 1593,
+      "pairs_mid": 17,
+      "episodes_mid": 36
+    }
+  },
+  "config": {
+    "n_bits": 2048,
+    "w_ones": 32,
+    "projector_seed": 7,
+    "fan_in": 32,
+    "w_seed": 7,
+    "k_winners": 128,
+    "h_win": 12,
+    "o_max": 8,
+    "adj": 2,
+    "randomized_w_seed": 13,
+    "shuffled_question_seed": 11,
+    "betas": [
+      0.05,
+      0.25,
+      0.5
+    ],
+    "cap_exp": {
+      "0.05": 11790,
+      "0.25": 2577,
+      "0.5": 1418
+    },
+    "arms": [
+      "mult_b0.05",
+      "mult_b0.25",
+      "mult_b0.5",
+      "add_gated",
+      "add_free"
+    ],
+    "encoding": "1656 sequential rounds, file order; k-cap top-128 winners per round; potentiation gated to winner post bits on fixed fan-in-32 support; multiplicative (1+b)^m via integer fire counts, additive arms as noted"
+  },
+  "within_episode_token_pair_events_total": 4239716,
+  "max_synapses_at_cap_by_arm": {
+    "mult_b0.05": 398,
+    "mult_b0.25": 913,
+    "mult_b0.5": 1138
+  },
+  "elapsed_seconds": 189.9,
+  "note": "Binary npz stays local; array-level sha256 committed here."
+}
