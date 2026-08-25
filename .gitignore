@@ -11,4 +11,8 @@ target/
 *.pyc
 .pytest_cache/
 .pytest-tmp/
+<<<<<<< HEAD
 experiments/*/.observatory/*.jsonl
+=======
+experiments/procedural_adapter_spike/l4_seam_b_baseline_outputs.json
+>>>>>>> origin/codex/scale-opt-cpu

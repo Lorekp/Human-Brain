@@ -373,7 +373,17 @@ def _procedural_library() -> ctypes.CDLL:
         ctypes.c_size_t,
         size_pointer,
     ]
-    library.humanbrain_procedural_runtime_dormant_snapshot.restype = ctypes.c_uint32
+    library.humanbrain_procedural_runtime_dormant_snapshot.restype = (
+        ctypes.c_uint32
+    )
+    library.humanbrain_procedural_runtime_read_cells.argtypes = [
+        void_pointer,
+        ctypes.POINTER(ctypes.c_uint64),
+        ctypes.c_size_t,
+        resident_pointer,
+        ctypes.POINTER(ctypes.c_uint8),
+    ]
+    library.humanbrain_procedural_runtime_read_cells.restype = ctypes.c_uint32
 
     library.humanbrain_dense_reference_create.argtypes = [
         ctypes.POINTER(_GlifConfig),
@@ -755,6 +765,54 @@ class NativeProceduralRuntime:
             self._require_open()
             snapshot, _ = self._read_snapshot(include_state=True)
             return snapshot
+
+    def read_cells(
+        self, gids: Sequence[int]
+    ) -> tuple[ProceduralResidentState | None, ...]:
+        """Targeted read of active resident state, in request order.
+
+        ``None`` marks a requested cell that is not actively resident (not
+        in ``residents``/``staged`` at this instant). Dormant cells
+        (event-proportional mode) read as absent; use ``dormant_cells()``
+        for those. Duplicate gids get independent repeated entries and
+        results align positionally with the request. Out-of-range gids are
+        rejected here before any FFI call as a courtesy; natively they are
+        simply absent. Caller obligation: re-read after every
+        :meth:`advance` -- eligibility mirrors cached across steps silently
+        stale the learning inputs they feed.
+        """
+        with self._operation_lock:
+            self._require_open()
+            count = len(gids)
+            if count == 0:
+                return ()
+            cell_bound = self.config.manifest.cell_count
+            values = []
+            append_value = values.append
+            for gid in gids:
+                value = _exact_uint64("gids entry", gid)
+                if value >= cell_bound:
+                    raise ValueError(
+                        f"gids entry {value} is outside the configured "
+                        "address space"
+                    )
+                append_value(value)
+            native_gids = (ctypes.c_uint64 * count)(*values)
+            records = (_NativeResident * count)()
+            found = (ctypes.c_uint8 * count)()
+            status = self._library.humanbrain_procedural_runtime_read_cells(
+                self._handle,
+                native_gids,
+                count,
+                records,
+                found,
+            )
+            if status != 0:
+                raise ProceduralRuntimeError(status)
+            return tuple(
+                _resident(records[index]) if found[index] else None
+                for index in range(count)
+            )
 
     def dormant_cells(self) -> tuple[tuple[int, float, int], ...]:
         """Raw dormant-store contents as ``(gid, eligibility_raw, elig_step)``.
