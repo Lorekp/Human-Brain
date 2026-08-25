@@ -223,8 +223,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/cuda.cu",
-        "size": 8035,
-        "sha256": "2bb36aaad47fabdf8b0abd58c1d4bb83e9a63594ebfeac24f49e7ff4a1daaee4"
+        "size": 10922,
+        "sha256": "09d56071059598d8a4a725f240dc184e935b104f400b87584d7da25d4bf642fd"
       },
       {
         "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/.cargo-checksum.json",
@@ -1517,11 +1517,11 @@
         "sha256": "7155d4a3ae920eb37d40cc58d538052302cfb45517dbafec685b414305e2c98f"
       }
     ],
-    "bundle_sha256": "e9a3af72b9b61734f39b5e59a5626e9bfc4fd7e7e155ebc6b9a27d3ad8a59809",
+    "bundle_sha256": "057ebc648a3652f4c54da884e527199810a552c25fdd4fca2a9bb28c07ae6a69",
     "limits": {
       "maximum_file_bytes": 1048576,
       "maximum_aggregate_bytes": 8388608,
-      "actual_aggregate_bytes": 2176519
+      "actual_aggregate_bytes": 2179406
     }
   },
   "timing": {
