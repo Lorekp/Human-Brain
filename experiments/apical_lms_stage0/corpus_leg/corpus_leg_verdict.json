@@ -1,0 +1,168 @@
+{
+  "verdict": "FAIL",
+  "semantics": "fitted GLIF5 apical membrane cannot host the recursion; B' dies at Stage 0",
+  "gate": {
+    "amendment": "dual-layer (14cc57b): probe-R^2 alone cannot certify hosting",
+    "layer_a_probe": {
+      "metric": "mean held-out probe R^2 (v_A -> reference online-LMS trajectory)",
+      "value": 0.8379811235126576,
+      "threshold": 0.85,
+      "pass": false,
+      "artifact": "cohort_primary_licensed_invocation.json",
+      "stage0_cli_exit_code": 1,
+      "median_r2": 0.8406684782823008
+    },
+    "layer_b_hosting": {
+      "relationship": "decoded-through-membrane task R^2 >= abstract-recursion task R^2 at every matched operating point (DendriCL published-band relationship)",
+      "points": [
+        {
+          "point": "d_task=10, d_apical=10",
+          "decoded_task_r2": 0.4851224039848787,
+          "abstract_ref_task_r2": 0.39227149153565744,
+          "margin_decoded_minus_ref": 0.09285091244922128,
+          "hold": true
+        },
+        {
+          "point": "d_task=10, d_apical=32",
+          "decoded_task_r2": 0.23144978888509415,
+          "abstract_ref_task_r2": 0.17238986859363858,
+          "margin_decoded_minus_ref": 0.05905992029145557,
+          "hold": true
+        },
+        {
+          "point": "d_task=10, d_apical=128",
+          "decoded_task_r2": 0.06863621036856149,
+          "abstract_ref_task_r2": 0.04947699611744483,
+          "margin_decoded_minus_ref": 0.019159214251116663,
+          "hold": true
+        },
+        {
+          "point": "d_task=10, d_apical=384",
+          "decoded_task_r2": 0.02364822108297493,
+          "abstract_ref_task_r2": 0.016868786584182338,
+          "margin_decoded_minus_ref": 0.006779434498792591,
+          "hold": true
+        }
+      ],
+      "pass": true
+    },
+    "conclusion": false
+  },
+  "determinism_crosscheck": {
+    "abs_delta_probe_r2_stage0cli_vs_threelayer": 0.0,
+    "match": true,
+    "exact_lift_max_abs_err": 2.7755575615628914e-16
+  },
+  "diagnostics_non_gating": {
+    "question": "does the no-width-cliff finding hold at cohort scale under frozen constants?",
+    "sweep": [
+      {
+        "leg": "corpus_width10_d10_frozenjoint",
+        "d_apical": 10,
+        "cell_count": 10,
+        "gamma": 0.016666666666666666,
+        "stability_bound_at_d_apical": 0.16666666666666666,
+        "mean_spikes_per_token": 7.571428571428571,
+        "probe_mean_r2": 0.8253424110512816,
+        "ref_task_r2": 0.39227149153565744,
+        "decoded_task_r2": 0.4851224039848787,
+        "decoded_ge_ref": true,
+        "source": "corpus_width10_d10_frozenjoint.json"
+      },
+      {
+        "leg": "corpus_width32_d10_frozenjoint",
+        "d_apical": 32,
+        "cell_count": 32,
+        "gamma": 0.0058823529411764705,
+        "stability_bound_at_d_apical": 0.058823529411764705,
+        "mean_spikes_per_token": 24.669598214285717,
+        "probe_mean_r2": 0.8340806721929213,
+        "ref_task_r2": 0.17238986859363858,
+        "decoded_task_r2": 0.23144978888509415,
+        "decoded_ge_ref": true,
+        "source": "corpus_width32_d10_frozenjoint.json"
+      },
+      {
+        "leg": "corpus_width128_d10_frozenjoint",
+        "d_apical": 128,
+        "cell_count": 128,
+        "gamma": 0.0015384615384615387,
+        "stability_bound_at_d_apical": 0.015384615384615385,
+        "mean_spikes_per_token": 93.29098214285713,
+        "probe_mean_r2": 0.8372631985878064,
+        "ref_task_r2": 0.04947699611744483,
+        "decoded_task_r2": 0.06863621036856149,
+        "decoded_ge_ref": true,
+        "source": "corpus_width128_d10_frozenjoint.json"
+      },
+      {
+        "leg": "corpus_primary_d10_frozen",
+        "d_apical": 384,
+        "cell_count": 384,
+        "gamma": 0.0005181347150259068,
+        "stability_bound_at_d_apical": 0.0051813471502590676,
+        "mean_spikes_per_token": 266.62125,
+        "probe_mean_r2": 0.8379811235126576,
+        "ref_task_r2": 0.016868786584182338,
+        "decoded_task_r2": 0.02364822108297493,
+        "decoded_ge_ref": true,
+        "source": "corpus_primary_dual_layer.json"
+      }
+    ],
+    "probe_r2_range_across_widths": [
+      0.8253424110512816,
+      0.8379811235126576
+    ],
+    "probe_r2_flat_within": 0.012638712461376045,
+    "gamma_tracks_shrinkage": [
+      {
+        "d_apical": 10,
+        "gamma": 0.016666666666666666,
+        "ref_task_r2": 0.39227149153565744,
+        "decoded_task_r2": 0.4851224039848787
+      },
+      {
+        "d_apical": 32,
+        "gamma": 0.0058823529411764705,
+        "ref_task_r2": 0.17238986859363858,
+        "decoded_task_r2": 0.23144978888509415
+      },
+      {
+        "d_apical": 128,
+        "gamma": 0.0015384615384615387,
+        "ref_task_r2": 0.04947699611744483,
+        "decoded_task_r2": 0.06863621036856149
+      },
+      {
+        "d_apical": 384,
+        "gamma": 0.0005181347150259068,
+        "ref_task_r2": 0.016868786584182338,
+        "decoded_task_r2": 0.02364822108297493
+      }
+    ],
+    "note": "diagnostics never gate (skill discipline: only frozen gates decide)"
+  },
+  "provenance": {
+    "branch": "codex/path2-pilot",
+    "head": "d999ed3",
+    "harness_commit": "23bb93b",
+    "license_commit": "d999ed3",
+    "amendment_commit": "14cc57b",
+    "license_token": "retro-probe:PASS",
+    "n_train_episodes": 640,
+    "n_test_episodes": 160,
+    "seed": 20260825,
+    "base_config": {
+      "alpha": 0.99,
+      "d_apical": 384,
+      "cell_count": 384,
+      "gamma_frozen_at_d_apical": 0.0005181347150259068,
+      "gamma_fraction": 0.2,
+      "gamma_star_task_dim": 0.08333333333333333,
+      "stability_bound_d_apical": 0.0051813471502590676,
+      "stability_bound_task_dim": 0.16666666666666666,
+      "r2_gate": 0.85
+    }
+  },
+  "wall_s_total": 889.2
+}
