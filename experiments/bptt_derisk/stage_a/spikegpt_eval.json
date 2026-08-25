@@ -1,0 +1,515 @@
+{
+  "generated_utc": "2026-08-25T22:23:55+00:00",
+  "openwebtext_216m": {
+    "answer_span": {
+      "tasks": 25,
+      "predictions": 188,
+      "correct": 34,
+      "accuracy": 0.18085106382978725,
+      "alignment_failures": 0
+    },
+    "mean_prompt_answer_nll_per_token": 7.523360698881503,
+    "tasks_span": [
+      {
+        "qa_id": "q_gydhnkpsj",
+        "family": "function_summary",
+        "answer_tokens": 13,
+        "correct_tokens": 2
+      },
+      {
+        "qa_id": "q_bccdbjwrv",
+        "family": "function_summary",
+        "answer_tokens": 10,
+        "correct_tokens": 1
+      },
+      {
+        "qa_id": "q_swtqfrhhv",
+        "family": "function_summary",
+        "answer_tokens": 18,
+        "correct_tokens": 5
+      },
+      {
+        "qa_id": "q_rxnwdlbwx",
+        "family": "function_summary",
+        "answer_tokens": 19,
+        "correct_tokens": 4
+      },
+      {
+        "qa_id": "q_rfpxvtrdl",
+        "family": "function_summary",
+        "answer_tokens": 12,
+        "correct_tokens": 1
+      },
+      {
+        "qa_id": "q_yfbndpscg",
+        "family": "function_summary",
+        "answer_tokens": 14,
+        "correct_tokens": 4
+      },
+      {
+        "qa_id": "q_ffscxqyjx",
+        "family": "function_summary",
+        "answer_tokens": 10,
+        "correct_tokens": 2
+      },
+      {
+        "qa_id": "q_xdwkybftj",
+        "family": "function_summary",
+        "answer_tokens": 14,
+        "correct_tokens": 4
+      },
+      {
+        "qa_id": "q_gslpkrqzq",
+        "family": "module_containment",
+        "answer_tokens": 6,
+        "correct_tokens": 1
+      },
+      {
+        "qa_id": "q_vsggmfsxy",
+        "family": "module_containment",
+        "answer_tokens": 6,
+        "correct_tokens": 2
+      },
+      {
+        "qa_id": "q_dvlfbdmdq",
+        "family": "module_containment",
+        "answer_tokens": 6,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_kvgccsvyn",
+        "family": "module_containment",
+        "answer_tokens": 4,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_rkykswvmk",
+        "family": "module_containment",
+        "answer_tokens": 4,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_jprptmhyk",
+        "family": "module_containment",
+        "answer_tokens": 7,
+        "correct_tokens": 2
+      },
+      {
+        "qa_id": "q_vfsdymntw",
+        "family": "module_containment",
+        "answer_tokens": 7,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_njgqkrsgq",
+        "family": "module_containment",
+        "answer_tokens": 4,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_pwqtwxkzf",
+        "family": "signature_recall",
+        "answer_tokens": 6,
+        "correct_tokens": 1
+      },
+      {
+        "qa_id": "q_bbyxvngxs",
+        "family": "signature_recall",
+        "answer_tokens": 4,
+        "correct_tokens": 1
+      },
+      {
+        "qa_id": "q_plwlxxwtp",
+        "family": "signature_recall",
+        "answer_tokens": 7,
+        "correct_tokens": 2
+      },
+      {
+        "qa_id": "q_jgdzqkjts",
+        "family": "signature_recall",
+        "answer_tokens": 7,
+        "correct_tokens": 2
+      },
+      {
+        "qa_id": "q_gjzgdbypt",
+        "family": "signature_recall",
+        "answer_tokens": 1,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_mdfpblbrr",
+        "family": "signature_recall",
+        "answer_tokens": 2,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_qvsfgqpxv",
+        "family": "signature_recall",
+        "answer_tokens": 3,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_qwnzlfcwp",
+        "family": "signature_recall",
+        "answer_tokens": 1,
+        "correct_tokens": 0
+      },
+      {
+        "qa_id": "q_pszpmpbcf",
+        "family": "signature_recall",
+        "answer_tokens": 3,
+        "correct_tokens": 0
+      }
+    ],
+    "free_run": {
+      "tasks": 25,
+      "exact_matches": 0
+    },
+    "degeneracy": {
+      "evaluated": 25,
+      "distinct_answers": 24,
+      "modal_share": 0.08,
+      "guard_pass": true
+    },
+    "tasks_free_run": [
+      {
+        "qa_id": "q_gydhnkpsj",
+        "family": "function_summary",
+        "expected": "Canonical JSON encoding shared by the analyzer's outputs/tests.",
+        "completion": " If the query is not valid, then the query will be returned.\n\n# If the query is not valid, then the",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_bccdbjwrv",
+        "family": "function_summary",
+        "expected": "Compile subthreshold voltage and threshold under constant current.",
+        "completion": "\n\nOutput:\n\nError:\n\nError:\n\nError:\n\nError:\n\nError:",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_swtqfrhhv",
+        "family": "function_summary",
+        "expected": "Produce the full FINDINGS-ready analysis dict for the R2 pilot.",
+        "completion": " If the user is using the R2_pilot_pilot_pilot_pilot_pilot_pilot_pilot",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_rxnwdlbwx",
+        "family": "function_summary",
+        "expected": "Prompt-last framing: context verses, then the question, then ``answer:``.",
+        "completion": "\n\nAnswer:\n\nAnswer:\n\nAnswer:\n\nAnswer:\n\nQuestion:\n\nQuestion:\n\nAnswer",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_rfpxvtrdl",
+        "family": "function_summary",
+        "expected": "Machine-checkable degeneracy-guard verdict with explicit reasons.",
+        "completion": " This is a function of the function parameter.\n\ndefence: This is a function of the function function.\n",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_yfbndpscg",
+        "family": "function_summary",
+        "expected": "Run a current clamp through the pinned adaptive human GLIF5 cell.",
+        "completion": " If the function is not specified then the function will return the value of the function.\n\n#include <stdio.py>\n\n#",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_ffscxqyjx",
+        "family": "function_summary",
+        "expected": "Return the validated fixture corpus entries in fixed order.",
+        "completion": "\n\nError:\n\nError:\n\nError:\n\nError:\n\nError:\n\nError:\n\n",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_xdwkybftj",
+        "family": "function_summary",
+        "expected": "Wilson score interval on a binomial proportion (matches run_pilot).",
+        "completion": "\n\n\"\n\n\"\n\n\"\n\n\"\n\n\"\n\n\"\n\n\"\n\n\"\n\n",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_gslpkrqzq",
+        "family": "module_containment",
+        "expected": "humanbrain.qa_analysis",
+        "completion": " No.\n\n#\n\n#\n\n#\n\n#\n",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_vsggmfsxy",
+        "family": "module_containment",
+        "expected": "humanbrain.swe_model",
+        "completion": "\n\nObjectObjectClassClassClass:\n\nClassClassClassClassClass",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_dvlfbdmdq",
+        "family": "module_containment",
+        "expected": "humanbrain.qa_analysis",
+        "completion": " No.\n\n# #\n\n# #\n\n# #\n",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_kvgccsvyn",
+        "family": "module_containment",
+        "expected": "humanbrain.cells",
+        "completion": " No.\n\n#include <module>\n\n#include <class",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_rkykswvmk",
+        "family": "module_containment",
+        "expected": "humanbrain.cells",
+        "completion": " No.\n\nAnswer: No.\n\nAnswer: No.\n",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_jprptmhyk",
+        "family": "module_containment",
+        "expected": "humanbrain.qa_corpus",
+        "completion": " If the function is not specified, then the function will be called to the",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_vfsdymntw",
+        "family": "module_containment",
+        "expected": "humanbrain.scale_accounting",
+        "completion": "\n\nObjectObject:\n\nObjectClass:\n\nObjectObject:",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_njgqkrsgq",
+        "family": "module_containment",
+        "expected": "humanbrain.cells",
+        "completion": "\n\nType:\n\nType:\n\nType:\n\nType",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_pwqtwxkzf",
+        "family": "signature_recall",
+        "expected": "injected_current_pa",
+        "completion": "\n\ndefinitely.in_in_in_in_in",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_bbyxvngxs",
+        "family": "signature_recall",
+        "expected": "baselines_dir",
+        "completion": " The query parameter is not specified in the query.\n\n# #",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_plwlxxwtp",
+        "family": "signature_recall",
+        "expected": "seed, calibration_task_count",
+        "completion": "\n\n#\n\n#\n\n#\n\n#\n\n#",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_jgdzqkjts",
+        "family": "signature_recall",
+        "expected": "step_count, current_pa",
+        "completion": "\n\n#\n\n#\n\n#\n\n#\n\n#",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_gjzgdbypt",
+        "family": "signature_recall",
+        "expected": "messages",
+        "completion": " This is a function of the function that we call the function function.",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_mdfpblbrr",
+        "family": "signature_recall",
+        "expected": "**kwargs",
+        "completion": "\n\nError:\n\nError:\n\nError:\n\n",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_qvsfgqpxv",
+        "family": "signature_recall",
+        "expected": "cls, path",
+        "completion": "\n\nGlo_en_class_en_name:\n\n",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_qwnzlfcwp",
+        "family": "signature_recall",
+        "expected": "analysis",
+        "completion": " If the function returns the result then the result will be returned to the",
+        "exact_match": false
+      },
+      {
+        "qa_id": "q_pszpmpbcf",
+        "family": "signature_recall",
+        "expected": "model, path",
+        "completion": " This is a function of the function.py function.\n\n# #",
+        "exact_match": false
+      }
+    ]
+  },
+  "bookcorpus": {
+    "card_claim": "L18-D768 ctx1024 (README.md); artifact is actually emb (77,768), 24 blocks, 184,349,184 params",
+    "charset_recovery": {
+      "candidates_nll_per_char": {
+        "A": 6.943545191715925,
+        "B": 6.947726874124436,
+        "C": 6.943545191715925
+      },
+      "best": "A"
+    },
+    "tasks_free_run": [
+      {
+        "qa_id": "q_gydhnkpsj",
+        "family": "function_summary",
+        "expected": "Canonical JSON encoding shared by the analyzer's outputs/tests.",
+        "completion": "A;;;;9;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+      },
+      {
+        "qa_id": "q_bccdbjwrv",
+        "family": "function_summary",
+        "expected": "Compile subthreshold voltage and threshold under constant current.",
+        "completion": ",ocZ,noVm,ja,ocZ,noVm,ntnoZh,Xjktmdbco,A;?C,Wt,e9e9,l9e,9\ne9,nhtft,nhtnocotnZ,nhVncrjmYn,ZYdodji,Xjktmdbco,A;?C,e9e,9\nnh"
+      },
+      {
+        "qa_id": "q_swtqfrhhv",
+        "family": "function_summary",
+        "expected": "Produce the full FINDINGS-ready analysis dict for the R2 pilot.",
+        "completion": "nhbncVr9Xjh:,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ"
+      },
+      {
+        "qa_id": "q_rxnwdlbwx",
+        "family": "function_summary",
+        "expected": "Prompt-last framing: context verses, then the question, then ``answer:``.",
+        "completion": "nZmdZn9Xjh:,ocZ,nZmdZn,ja,nZmdZn,ja,nZmdZn,ja,nZmdZn,nZmdZn,I,ocZ,nZmdZn,ja,nZmdZn,ja,nZmdZnn,7,ocZ,nZmdZn,ja,nZlpZiXZn,"
+      },
+      {
+        "qa_id": "q_rfpxvtrdl",
+        "family": "function_summary",
+        "expected": "Machine-checkable degeneracy-guard verdict with explicit reasons.",
+        "completion": "aWd,M,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,"
+      },
+      {
+        "qa_id": "q_yfbndpscg",
+        "family": "function_summary",
+        "expected": "Run a current clamp through the pinned adaptive human GLIF5 cell.",
+        "completion": "nhVncrjmYn9Xjh:,nhVncrjmYn,ZYdodji,Xjktmdbco,A;??,eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      {
+        "qa_id": "q_ffscxqyjx",
+        "family": "function_summary",
+        "expected": "Return the validated fixture corpus entries in fixed order.",
+        "completion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "qa_id": "q_xdwkybftj",
+        "family": "function_summary",
+        "expected": "Wilson score interval on a binomial proportion (matches run_pilot).",
+        "completion": "A;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+      },
+      {
+        "qa_id": "q_gslpkrqzq",
+        "family": "module_containment",
+        "expected": "humanbrain.qa_analysis",
+        "completion": "aWe,M,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,"
+      },
+      {
+        "qa_id": "q_vsggmfsxy",
+        "family": "module_containment",
+        "expected": "humanbrain.swe_model",
+        "completion": "nkZXdVg,VbZio,nkZXdVg,VbZio,nkZXdVg,VbZio,nkZXdVg,VbZio,nkZXdVg,VbZio,nkZXdVg,VbZio,nkZXdVg,VbZio,nkZXdVg,VbZio,nkZXdVg,"
+      },
+      {
+        "qa_id": "q_dvlfbdmdq",
+        "family": "module_containment",
+        "expected": "humanbrain.qa_analysis",
+        "completion": "amZZ,rdgg,Xjktmdbco,A;??,Wt,e9e9,nhVncrjmYn,ZYdodji,nhVncrjmYn,ZYdodji,7,gdXZinZ,ijoZn,I,ocdn,ZWjjf,dn,gdXZinZY,ajm,tjpm"
+      },
+      {
+        "qa_id": "q_kvgccsvyn",
+        "family": "module_containment",
+        "expected": "humanbrain.cells",
+        "completion": "A;;;9Xjh:,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,no"
+      },
+      {
+        "qa_id": "q_rkykswvmk",
+        "family": "module_containment",
+        "expected": "humanbrain.cells",
+        "completion": "A;;;9Xjh:,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,no"
+      },
+      {
+        "qa_id": "q_jprptmhyk",
+        "family": "module_containment",
+        "expected": "humanbrain.qa_corpus",
+        "completion": "A;;;;9Xjh:,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,nojmt,ja,ocZ,n"
+      },
+      {
+        "qa_id": "q_vfsdymntw",
+        "family": "module_containment",
+        "expected": "humanbrain.scale_accounting",
+        "completion": "nhdocnXc9Xjh:nhdocnji9Xjh:,nhdocnji9Xjh:,nhdocnji:nhdocnji9Xjh:,nhdocnji:nhdocnji:nhdocnjin,nhdocnjib,nhVncrjmYn,ZYdodji"
+      },
+      {
+        "qa_id": "q_njgqkrsgq",
+        "family": "module_containment",
+        "expected": "humanbrain.cells",
+        "completion": "aWd,9\nnhVncrjmYn,I,cook,I,::rrr9aVXZWjjf9Xjh:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      {
+        "qa_id": "q_pwqtwxkzf",
+        "family": "signature_recall",
+        "expected": "injected_current_pa",
+        "completion": "?;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;,9\nocZ,nojmt,ja,ocZ,nojmt,dn,ocVo,ocZ,nojmt,ja,ocZ,nojmt,dn,ocV"
+      },
+      {
+        "qa_id": "q_bbyxvngxs",
+        "family": "signature_recall",
+        "expected": "baselines_dir",
+        "completion": "A;;;;;;;;9Xjh:nhVncrjmYn,Xjktmdbco,A;?C,Wt,nhVncrjmYn,ZYdodji,7,gdXZinZ,ijoZn,I,ocdn,ZWjjf,dn,gdXZinZY,ajm,tjpm,kZmnjiVg"
+      },
+      {
+        "qa_id": "q_plwlxxwtp",
+        "family": "signature_recall",
+        "expected": "seed, calibration_task_count",
+        "completion": "aWd,ViY,ocZ,nZXjiY,nZo,ja,ocZ,nZXjiY,nZo,ja,nZon,di,ocZ,nZXjiY,nZo,9\nocZ,nZXjiY,ncjo,rVn,V,nZo,ja,nZon,7,ViY,ocZ,nZXjiY,"
+      },
+      {
+        "qa_id": "q_jgdzqkjts",
+        "family": "signature_recall",
+        "expected": "step_count, current_pa",
+        "completion": "agdbco:nkZXdVg,VbZio,nhtfZn,nhtfZn,nhtfZn,nhtfZn,nhtfZn,nhtfZn,V,nZXjiY,ncjo,7,ocZi,VijocZm,7,ocZi,VijocZm,9\nocZ,nhtfZn,"
+      },
+      {
+        "qa_id": "q_gjzgdbypt",
+        "family": "signature_recall",
+        "expected": "messages",
+        "completion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "qa_id": "q_mdfpblbrr",
+        "family": "signature_recall",
+        "expected": "**kwargs",
+        "completion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "qa_id": "q_qvsfgqpxv",
+        "family": "signature_recall",
+        "expected": "cls, path",
+        "completion": "A;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+      },
+      {
+        "qa_id": "q_qwnzlfcwp",
+        "family": "signature_recall",
+        "expected": "analysis",
+        "completion": "nZiY,ocZ,XjhhZio,oj,ocZ,nZinZ,ja,ocZ,pidqZmnZ,ViY,ocZ,kZmnji,rcj,rdgg,WZ,ocZ,nZinZ,ja,ocZ,pidqZmnZ,9\nocZ,nZinZ,ja,ocZ,pi"
+      },
+      {
+        "qa_id": "q_pszpmpbcf",
+        "family": "signature_recall",
+        "expected": "model, path",
+        "completion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  }
+}

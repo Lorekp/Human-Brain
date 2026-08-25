@@ -1,0 +1,15 @@
+{
+  "checkpoint": "SpikeGPT-216M.pth",
+  "nll_per_token": 4.0961582834644314,
+  "ppl": 60.10892202177314,
+  "generations": [
+    {
+      "prompt": "The city of Paris is famous for its",
+      "continuation": " vibrant urban neighborhoods. The city is home to more than 100,000 people, including many of its residents. The city is home to more than 100,000 people. The city is also home to"
+    },
+    {
+      "prompt": "def add_numbers(a, b):\n    return",
+      "continuation": "(a, b);\n\n}\n\nconst b = b);\n\nconst b = b;\n\nconst b = b;\n\nconst b = b;\n\nconst b"
+    }
+  ]
+}

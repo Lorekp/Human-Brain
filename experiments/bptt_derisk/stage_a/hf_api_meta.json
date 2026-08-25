@@ -1,0 +1,167 @@
+{
+  "fetched_utc": "2026-08-25T21:32:36+00:00",
+  "repos": {
+    "ridger/SpikeGPT-OpenWebText-216M": {
+      "repo": "ridger/SpikeGPT-OpenWebText-216M",
+      "api_sha": "4039295cca3da1df0e5871f4bc7727b227496132",
+      "lastModified": "2023-05-26T04:47:12.000Z",
+      "tags": [
+        "en",
+        "dataset:the_pile_openwebtext2",
+        "license:apache-2.0",
+        "region:us"
+      ],
+      "files": {
+        ".gitattributes": {
+          "size": 1477,
+          "blob_id": "c7d9f3332a950355d5a77d85000f05e6f45435ea"
+        },
+        "README.md": {
+          "size": 272,
+          "blob_id": "f5d9fcd7961759c165d3cc5492724f977a4f778a"
+        },
+        "SpikeGPT-216M.pth": {
+          "size": 861716013,
+          "blob_id": "80da1514271097d7089ea91b2a03ab7efc185642"
+        }
+      }
+    },
+    "ridger/SpikeGPT-BookCorpus": {
+      "repo": "ridger/SpikeGPT-BookCorpus",
+      "api_sha": "28d52794a2f7efcd1ac89dde430acb97507e437e",
+      "lastModified": "2023-03-08T03:37:54.000Z",
+      "tags": [
+        "rwkv",
+        "spiking neural netwroks",
+        "text-generation",
+        "en",
+        "dataset:bookcorpus",
+        "license:bsd-2-clause",
+        "region:us"
+      ],
+      "files": {
+        ".gitattributes": {
+          "size": 1477,
+          "blob_id": "c7d9f3332a950355d5a77d85000f05e6f45435ea"
+        },
+        "BookCorpus-SpikeGPT.pth": {
+          "size": 737553365,
+          "blob_id": "6be4a913cc421e796cdd160d5feadd5f9b4106f5"
+        },
+        "README.md": {
+          "size": 341,
+          "blob_id": "941c25d6cc32b455caae386d8e93dfdf187c4480"
+        }
+      }
+    },
+    "Brain2nd/NeuronSpark-0.9B": {
+      "repo": "Brain2nd/NeuronSpark-0.9B",
+      "api_sha": "c91be7a801749def4dcb56acd2c62be32ae32e7c",
+      "lastModified": "2026-03-16T18:11:24.000Z",
+      "tags": [
+        "transformers",
+        "safetensors",
+        "neuronspark",
+        "text-generation",
+        "snn",
+        "spiking-neural-network",
+        "neuromorphic",
+        "conversational",
+        "custom_code",
+        "zh",
+        "license:apache-2.0",
+        "region:us"
+      ],
+      "files": {
+        ".gitattributes": {
+          "size": 1519,
+          "blob_id": "a6344aac8c09253b3b630fb776ae94478aa0275b"
+        },
+        "LICENSE": {
+          "size": 10766,
+          "blob_id": "31a34969fa65243b3ad8978aec990c43c84852f0"
+        },
+        "README.md": {
+          "size": 4521,
+          "blob_id": "5c634386afabb5571ba8c5797294e47124edfe0a"
+        },
+        "atomic_ops/__init__.py": {
+          "size": 402,
+          "blob_id": "692cce0aa225e2f0d17928a3a9da64bcc9a4683a"
+        },
+        "atomic_ops/fp16_codec.py": {
+          "size": 3919,
+          "blob_id": "20a29f72b9988c2bfba2bde424d6d1d96c0fb957"
+        },
+        "atomic_ops/lateral_inhibition.py": {
+          "size": 6693,
+          "blob_id": "fc8ee7fc8601cdcaac6cb40026542cb122300ce7"
+        },
+        "atomic_ops/parallel_scan.py": {
+          "size": 29944,
+          "blob_id": "990ba2d3d3577e04c42e8ab934027e565f293c4d"
+        },
+        "atomic_ops/plif_node.py": {
+          "size": 2720,
+          "blob_id": "f8cf509c0a96e0599a38078b0d4ef1c64d11cace"
+        },
+        "atomic_ops/rms_norm.py": {
+          "size": 996,
+          "blob_id": "2b285cb124bfbc06d8f196ad3598accd683bc7a6"
+        },
+        "atomic_ops/selective_plif.py": {
+          "size": 3052,
+          "blob_id": "347dfa1a49780ae5ce2138be489f36bf1e189aa0"
+        },
+        "atomic_ops/snn_block.py": {
+          "size": 9915,
+          "blob_id": "27b55a6fc88f34e40e6db67a7e71e4f4d708a035"
+        },
+        "atomic_ops/snn_decoder_layer.py": {
+          "size": 14323,
+          "blob_id": "774d787703f5e198b5ce3424989ad1e4ba50d076"
+        },
+        "atomic_ops/snn_ffn.py": {
+          "size": 7418,
+          "blob_id": "230bd8f3d220b1a3d0bbab54b93848061bc9c89d"
+        },
+        "config.json": {
+          "size": 478,
+          "blob_id": "bed00dc61389a689c62f9bd19a2d17d5e9f90ae3"
+        },
+        "configuration.json": {
+          "size": 41,
+          "blob_id": "2d68ec396fff9f92f36288c120a00b33f3788867"
+        },
+        "configuration_neuronspark.py": {
+          "size": 931,
+          "blob_id": "54fe555e2b462383bd9a66b13d0132dc387be8b9"
+        },
+        "model.py": {
+          "size": 18772,
+          "blob_id": "d0fc26dd6a86e0b8d1fb60140291fec9f4b2c0cf"
+        },
+        "model.safetensors": {
+          "size": 3496634368,
+          "blob_id": "cd3f6f649e97d6314685f388ef2f3682ad22cf30"
+        },
+        "modeling_neuronspark.py": {
+          "size": 3392,
+          "blob_id": "b9de173483bc123c16f0d6a6f0ba46dd45ed9637"
+        },
+        "special_tokens_map.json": {
+          "size": 195,
+          "blob_id": "9f0f31582956b84e7049ba52d0f57c33c36d374e"
+        },
+        "tokenizer.json": {
+          "size": 448002,
+          "blob_id": "b53f496a1342510170d2cd704d907a85685221b5"
+        },
+        "tokenizer_config.json": {
+          "size": 791,
+          "blob_id": "9ab366a2b5eb3d4b7e1b34b5401367944a547aa0"
+        }
+      }
+    }
+  }
+}
