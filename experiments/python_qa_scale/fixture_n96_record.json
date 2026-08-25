@@ -1,0 +1,419 @@
+{
+  "corpus_arm": "python_qa",
+  "corpus_sha256": "789e3ac592fd8aa1d4f68af8704a4a9b19d64db7277efea59ebc50ff8dd446ec",
+  "corpus_source": "repo-src:humanbrain:python-qa-corpus-v1",
+  "curriculum_sha256": "0df523965905ce8394319e38b92b5e6bec905975f68d780f139ceba03b3997c8",
+  "eval_task_count": 25,
+  "execution": {
+    "active_reservoir_cells": 96,
+    "device": "cpu",
+    "kernel_backend": "cpu",
+    "readout_learning_rule": "ridge",
+    "requested_device": "cpu",
+    "reservoir_cells": 96,
+    "simulation_device": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD"
+  },
+  "metrics": {
+    "answer_span": {
+      "accuracy": 0.12807881773399016,
+      "correct": 78,
+      "predictions": 609,
+      "tasks": 25
+    },
+    "degeneracy": {
+      "distinct_answers": 15,
+      "evaluated": 25,
+      "guard": {
+        "distinct_answers_min": 3,
+        "modal_share_max": 0.9
+      },
+      "guard_pass": true,
+      "modal_answer": "",
+      "modal_share": 0.44
+    },
+    "free_run": {
+      "exact_match_rate": 0.0,
+      "exact_matches": 0,
+      "tasks": 25
+    }
+  },
+  "model": {
+    "active_reservoir_cells": 96,
+    "learned_synapses": 260192,
+    "reservoir_cells": 96,
+    "token_cells": 567,
+    "tokenizer": {
+      "kind": "byte"
+    },
+    "vocabulary_alignment_pass": true,
+    "vocabulary_size": 567
+  },
+  "protocol": "grow RecurrentCellLanguageModel on TRAIN qa_prompt+' '+answer texts; --corpus selects the corpus arm (bible fixture / frozen python_qa coding corpus); --tokenizer selects the growth tokenizer arm (byte/bpe4096/concept); held-out teacher-forced answer-span accuracy, free-run complete() exact match, and first-class degeneracy metrics",
+  "schema_version": "humanbrain/qa-experiments/v2",
+  "seed": 17,
+  "tasks": [
+    {
+      "cohort": "VAL",
+      "completion": "                                            ",
+      "exact_match": false,
+      "expected": "Canonical JSON encoding shared by the analyzer's outputs/tests.",
+      "ordinal": 75,
+      "qa_id": "q_gydhnkpsj",
+      "question": "In the module humanbrain.qa_analysis, what does the function canonical_json_bytes do?",
+      "references": [
+        "qa_analysis.py::canonical_json_bytes::function_summary"
+      ],
+      "span_correct": 8,
+      "span_predictions": 36
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                  . ..........\n....\n..\n\n...\n........ ....",
+      "exact_match": false,
+      "expected": "Compile subthreshold voltage and threshold under constant current.",
+      "ordinal": 76,
+      "qa_id": "q_bccdbjwrv",
+      "question": "In the module humanbrain.cells, what does the method AdaptiveGlifPopulation.compile_resting_response do?",
+      "references": [
+        "cells.py::AdaptiveGlifPopulation.compile_resting_response::function_summary"
+      ],
+      "span_correct": 8,
+      "span_predictions": 49
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                                     .  ....................   .  ",
+      "exact_match": false,
+      "expected": "Produce the full FINDINGS-ready analysis dict for the R2 pilot.",
+      "ordinal": 77,
+      "qa_id": "q_swtqfrhhv",
+      "question": "In the module humanbrain.qa_analysis, what does the function analyze_pilot_record do?",
+      "references": [
+        "qa_analysis.py::analyze_pilot_record::function_summary"
+      ],
+      "span_correct": 10,
+      "span_predictions": 58
+    },
+    {
+      "cohort": "VAL",
+      "completion": "         \n\n\n\n \n\n\n\n \n\n\n \n\n\n\n\n\n\n\n\n`\n\n`\n``\n\n``\n\n````\n\n``\n...\n......",
+      "exact_match": false,
+      "expected": "Prompt-last framing: context verses, then the question, then ``answer:``.",
+      "ordinal": 78,
+      "qa_id": "q_rxnwdlbwx",
+      "question": "In the module humanbrain.qa_corpus, what does the function qa_prompt do?",
+      "references": [
+        "qa_corpus.py::qa_prompt::function_summary"
+      ],
+      "span_correct": 3,
+      "span_predictions": 56
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                  \n\n\n \n\n)\n\n\n\n))))\n)``\n\n```))`..................",
+      "exact_match": false,
+      "expected": "Machine-checkable degeneracy-guard verdict with explicit reasons.",
+      "ordinal": 79,
+      "qa_id": "q_rfpxvtrdl",
+      "question": "In the module humanbrain.qa_analysis, what does the function guard_verdict do?",
+      "references": [
+        "qa_analysis.py::guard_verdict::function_summary"
+      ],
+      "span_correct": 7,
+      "span_predictions": 55
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                                .....`...`..`...``..``..",
+      "exact_match": false,
+      "expected": "Run a current clamp through the pinned adaptive human GLIF5 cell.",
+      "ordinal": 80,
+      "qa_id": "q_yfbndpscg",
+      "question": "In the module humanbrain.cells, what does the function simulate_glif5_current do?",
+      "references": [
+        "cells.py::simulate_glif5_current::function_summary"
+      ],
+      "span_correct": 11,
+      "span_predictions": 48
+    },
+    {
+      "cohort": "VAL",
+      "completion": "\n\n\n\n\n\n\n  \n\n\n\n \n\n \n \n `\n\n\n \n.\n`.\n`\n..\n`\n.\n.`.\n.\n....\n.\n\n...\n",
+      "exact_match": false,
+      "expected": "Return the validated fixture corpus entries in fixed order.",
+      "ordinal": 81,
+      "qa_id": "q_ffscxqyjx",
+      "question": "In the module humanbrain.qa_corpus, what does the function load_corpus do?",
+      "references": [
+        "qa_corpus.py::load_corpus::function_summary"
+      ],
+      "span_correct": 1,
+      "span_predictions": 51
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                                              ........................ . .",
+      "exact_match": false,
+      "expected": "Wilson score interval on a binomial proportion (matches run_pilot).",
+      "ordinal": 82,
+      "qa_id": "q_xdwkybftj",
+      "question": "In the module humanbrain.qa_analysis, what does the function wilson do?",
+      "references": [
+        "qa_analysis.py::wilson::function_summary"
+      ],
+      "span_correct": 9,
+      "span_predictions": 66
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                      ",
+      "exact_match": false,
+      "expected": "humanbrain.qa_analysis",
+      "ordinal": 83,
+      "qa_id": "q_gslpkrqzq",
+      "question": "Which humanbrain module defines the function canonical_json_bytes?",
+      "references": [
+        "qa_analysis.py::canonical_json_bytes::module_containment"
+      ],
+      "span_correct": 1,
+      "span_predictions": 14
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                . ..",
+      "exact_match": false,
+      "expected": "humanbrain.swe_model",
+      "ordinal": 84,
+      "qa_id": "q_vsggmfsxy",
+      "question": "Which humanbrain module defines the class HumanCellModel?",
+      "references": [
+        "swe_model.py::HumanCellModel::module_containment"
+      ],
+      "span_correct": 1,
+      "span_predictions": 12
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                      ",
+      "exact_match": false,
+      "expected": "humanbrain.qa_analysis",
+      "ordinal": 85,
+      "qa_id": "q_dvlfbdmdq",
+      "question": "Which humanbrain module defines the function per_family_analysis?",
+      "references": [
+        "qa_analysis.py::per_family_analysis::module_containment"
+      ],
+      "span_correct": 1,
+      "span_predictions": 14
+    },
+    {
+      "cohort": "VAL",
+      "completion": "            ",
+      "exact_match": false,
+      "expected": "humanbrain.cells",
+      "ordinal": 86,
+      "qa_id": "q_kvgccsvyn",
+      "question": "Which humanbrain module defines the class AdaptiveGlifState?",
+      "references": [
+        "cells.py::AdaptiveGlifState::module_containment"
+      ],
+      "span_correct": 1,
+      "span_predictions": 4
+    },
+    {
+      "cohort": "VAL",
+      "completion": "\nhumanbrain...humanbrain..  ..",
+      "exact_match": false,
+      "expected": "humanbrain.cells",
+      "ordinal": 87,
+      "qa_id": "q_rkykswvmk",
+      "question": "Which humanbrain module defines the class GlifTrace?",
+      "references": [
+        "cells.py::GlifTrace::module_containment"
+      ],
+      "span_correct": 2,
+      "span_predictions": 4
+    },
+    {
+      "cohort": "VAL",
+      "completion": "      \n    \n\n\n  \n\n \n",
+      "exact_match": false,
+      "expected": "humanbrain.qa_corpus",
+      "ordinal": 88,
+      "qa_id": "q_jprptmhyk",
+      "question": "Which humanbrain module defines the function prompt_for_task?",
+      "references": [
+        "qa_corpus.py::prompt_for_task::module_containment"
+      ],
+      "span_correct": 1,
+      "span_predictions": 12
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                 \n \n\n\n\n\n\npy",
+      "exact_match": false,
+      "expected": "humanbrain.scale_accounting",
+      "ordinal": 89,
+      "qa_id": "q_vfsdymntw",
+      "question": "Which humanbrain module defines the class ShardMemory?",
+      "references": [
+        "scale_accounting.py::ShardMemory::module_containment"
+      ],
+      "span_correct": 1,
+      "span_predictions": 18
+    },
+    {
+      "cohort": "VAL",
+      "completion": " the thethe   the   ",
+      "exact_match": false,
+      "expected": "humanbrain.cells",
+      "ordinal": 90,
+      "qa_id": "q_njgqkrsgq",
+      "question": "Which humanbrain module defines the class FittedGlif5Constants?",
+      "references": [
+        "cells.py::FittedGlif5Constants::module_containment"
+      ],
+      "span_correct": 1,
+      "span_predictions": 4
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                     ",
+      "exact_match": false,
+      "expected": "injected_current_pa",
+      "ordinal": 91,
+      "qa_id": "q_pwqtwxkzf",
+      "question": "In the module humanbrain.cells, what parameters does the method AdaptiveGlifPopulation.step take?",
+      "references": [
+        "cells.py::AdaptiveGlifPopulation.step::signature_recall"
+      ],
+      "span_correct": 1,
+      "span_predictions": 13
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                  ",
+      "exact_match": false,
+      "expected": "baselines_dir",
+      "ordinal": 92,
+      "qa_id": "q_bbyxvngxs",
+      "question": "In the module humanbrain.qa_analysis, what parameters does the function load_baseline_records take?",
+      "references": [
+        "qa_analysis.py::load_baseline_records::signature_recall"
+      ],
+      "span_correct": 1,
+      "span_predictions": 10
+    },
+    {
+      "cohort": "VAL",
+      "completion": " \n \n\n  \n\n\n\n\n\n\n\n  \n\n`\n \n```\n```\n`\n``",
+      "exact_match": false,
+      "expected": "seed, calibration_task_count",
+      "ordinal": 93,
+      "qa_id": "q_plwlxxwtp",
+      "question": "In the module humanbrain.qa_corpus, what parameters does the function build_curriculum take?",
+      "references": [
+        "qa_corpus.py::build_curriculum::signature_recall"
+      ],
+      "span_correct": 1,
+      "span_predictions": 27
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                         ",
+      "exact_match": false,
+      "expected": "step_count, current_pa",
+      "ordinal": 94,
+      "qa_id": "q_jgdzqkjts",
+      "question": "In the module humanbrain.cells, what parameters does the method AdaptiveGlifPopulation.compile_resting_response take?",
+      "references": [
+        "cells.py::AdaptiveGlifPopulation.compile_resting_response::signature_recall"
+      ],
+      "span_correct": 2,
+      "span_predictions": 17
+    },
+    {
+      "cohort": "VAL",
+      "completion": " \n  \n  \n\n  \n\n \" \n",
+      "exact_match": false,
+      "expected": "messages",
+      "ordinal": 95,
+      "qa_id": "q_gjzgdbypt",
+      "question": "In the module humanbrain.swe_model, what parameters does the function serialize_messages take?",
+      "references": [
+        "swe_model.py::serialize_messages::signature_recall"
+      ],
+      "span_correct": 1,
+      "span_predictions": 9
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                 ",
+      "exact_match": false,
+      "expected": "**kwargs",
+      "ordinal": 96,
+      "qa_id": "q_mdfpblbrr",
+      "question": "In the module humanbrain.swe_model, what parameters does the method HumanCellModel.format_message take?",
+      "references": [
+        "swe_model.py::HumanCellModel.format_message::signature_recall"
+      ],
+      "span_correct": 1,
+      "span_predictions": 9
+    },
+    {
+      "cohort": "VAL",
+      "completion": "             ",
+      "exact_match": false,
+      "expected": "cls, path",
+      "ordinal": 97,
+      "qa_id": "q_qvsfgqpxv",
+      "question": "In the module humanbrain.cells, what parameters does the method AllenGlif3Parameters.from_allen_config take?",
+      "references": [
+        "cells.py::AllenGlif3Parameters.from_allen_config::signature_recall"
+      ],
+      "span_correct": 2,
+      "span_predictions": 5
+    },
+    {
+      "cohort": "VAL",
+      "completion": "                 ",
+      "exact_match": false,
+      "expected": "analysis",
+      "ordinal": 98,
+      "qa_id": "q_qwnzlfcwp",
+      "question": "In the module humanbrain.qa_analysis, what parameters does the function render_findings_markdown take?",
+      "references": [
+        "qa_analysis.py::render_findings_markdown::signature_recall"
+      ],
+      "span_correct": 1,
+      "span_predictions": 9
+    },
+    {
+      "cohort": "VAL",
+      "completion": " py \n \n .py\npy humanbrain the  ",
+      "exact_match": false,
+      "expected": "model, path",
+      "ordinal": 99,
+      "qa_id": "q_pszpmpbcf",
+      "question": "In the module humanbrain.artifacts, what parameters does the function save_checkpoint take?",
+      "references": [
+        "artifacts.py::save_checkpoint::signature_recall"
+      ],
+      "span_correct": 2,
+      "span_predictions": 9
+    }
+  ],
+  "throughput": {
+    "eval": {
+      "token_steps": 7479,
+      "wall_s": 1.014684199995827
+    },
+    "growth": {
+      "token_steps": 11118,
+      "wall_s": 37.26753369999642
+    }
+  },
+  "train_task_count": 75,
+  "training_digest": "c738963857de46d0474a24192c65c8acb193efc65e5164962bd946e215cf3b66",
+  "wall_s": 38.282218399996054
+}

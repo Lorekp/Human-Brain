@@ -21,6 +21,15 @@ cannot exist, so ``--readout-rule auto`` upgrades to ``sparse_three_factor``
 once its projection breaches a 2 GiB host budget — the same rule/active-cell
 contract lm_million_smoke.py drives at N=1e6.
 
+Corpus seam (``--corpus {bible,python_qa}``): ``bible`` keeps the historical
+KJV verse-context fixture served by ``humanbrain.qa_corpus``; ``python_qa``
+serves the raw-Python-text coding corpus through
+``humanbrain.python_qa_adapter``, which loads the sha256-verified FROZEN
+artifact (``experiments/python_qa_corpus/python_qa_corpus_v1.json``) — grow
+on all 75 TRAIN items, evaluate all 25 VAL items, cohort labels preserved,
+so records stay field-comparable with the locked n-gram baselines in
+``experiments/python_qa_baselines_v1/`` (M0/M1 comparators).
+
 Growth-tokenizer seam (``--tokenizer {byte,bpe4096,concept}``): ``byte``
 keeps the historical in-grow BytePhraseTokenizer fit; ``bpe4096`` constructs
 the plain BPE baseline (humanbrain.bpe_tokenizer); ``concept`` mines
@@ -49,6 +58,7 @@ import json
 import os
 from dataclasses import replace
 from time import perf_counter
+from types import ModuleType
 
 from humanbrain.bpe_tokenizer import BpeTokenizer
 from humanbrain.concept_tokens import (
@@ -57,14 +67,9 @@ from humanbrain.concept_tokens import (
     ConceptTokenizer,
     mine_concepts_detailed,
 )
-from humanbrain.qa_corpus import (
-    CORPUS_SOURCE,
-    QATask,
-    build_curriculum,
-    corpus_digest,
-    growth_text,
-    prompt_for_task,
-)
+import humanbrain.python_qa_adapter as python_qa_adapter
+from humanbrain.qa_corpus import QATask
+from humanbrain import qa_corpus as bible_qa_corpus
 from humanbrain.recurrent import RecurrentCircuitConfig
 from humanbrain.recurrent_language import (
     RecurrentCellLanguageModel,
@@ -89,6 +94,9 @@ _READOUT_RULES = ("ridge", "three_factor", "sparse_three_factor")
 # mirrors grow()'s own configuration.
 _TOKENIZERS = ("byte", "bpe4096", "concept")
 _BPE4096_VOCAB_SIZE = 4096
+# Corpus arms (see --corpus): "bible" = historical KJV verse-context fixture;
+# "python_qa" = frozen raw-Python-text coding corpus via python_qa_adapter.
+_CORPUS_ARMS = ("bible", "python_qa")
 
 
 @dataclass(frozen=True)
@@ -103,6 +111,10 @@ class ExperimentConfig:
     )
     eval_limit: int | None = None
     completion_token_slack: int = 8
+    # Corpus arm (see _CORPUS_ARMS / _resolve_corpus): "bible" keeps the
+    # historical humanbrain.qa_corpus fixture; "python_qa" serves the frozen
+    # coding corpus through python_qa_adapter (full TRAIN grow, full VAL eval).
+    corpus: str = "bible"
     # Execution backend seam (fd84598 lineage, mirrors ladder_experiments):
     # "auto" honors HUMANBRAIN_DEVICE; explicit cpu/cuda wins over it. The
     # environment is bound inside run() BEFORE any circuit is constructed.
@@ -134,6 +146,15 @@ def _resolve_tokenizer(requested: str) -> str:
     if requested not in _TOKENIZERS:
         raise ValueError(f"tokenizer must be one of {_TOKENIZERS}, got {requested!r}")
     return requested
+
+
+def _resolve_corpus(requested: str) -> ModuleType:
+    """Corpus handle exposing CORPUS_SOURCE/corpus_digest/build_curriculum/…."""
+    if requested == "bible":
+        return bible_qa_corpus
+    if requested == "python_qa":
+        return python_qa_adapter
+    raise ValueError(f"corpus must be one of {_CORPUS_ARMS}, got {requested!r}")
 
 
 def _build_growth_tokenizer(
@@ -273,10 +294,16 @@ def _normalize(text: str) -> str:
     return " ".join(text.split()).casefold()
 
 
-def _free_run(model: RecurrentCellLanguageModel, task: QATask, *, slack: int) -> dict[str, object]:
+def _free_run(
+    model: RecurrentCellLanguageModel,
+    task: QATask,
+    *,
+    slack: int,
+    prompt: str,
+) -> dict[str, object]:
     tokenizer = model._tokenizer  # noqa: SLF001
     budget = len(tokenizer.encode(" " + task.answer)) + slack
-    completion = model.complete(prompt_for_task(task), max_new_tokens=budget)
+    completion = model.complete(prompt, max_new_tokens=budget)
     return {
         "completion": completion,
         "normalized_completion": _normalize(completion),
@@ -315,11 +342,12 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
     device = _resolve_device(cfg.device)
     readout_rule = _resolve_readout_rule(cfg.circuit.reservoir_cells, cfg.readout_rule)
     tokenizer_kind = _resolve_tokenizer(cfg.tokenizer)
+    corpus_arm = _resolve_corpus(cfg.corpus)
     # Bind the effective device BEFORE any circuit exists (recurrent_kernel
     # reads HUMANBRAIN_DEVICE at construction), mirroring ladder_experiments.
     os.environ["HUMANBRAIN_DEVICE"] = device
     effective_circuit = replace(cfg.circuit, readout_learning_rule=readout_rule)
-    curriculum = build_curriculum(cfg.seed)
+    curriculum = corpus_arm.build_curriculum(cfg.seed)  # type: ignore[attr-defined]
     train_tasks: tuple[QATask, ...] = curriculum["train_tasks"]
     eval_tasks: tuple[QATask, ...] = curriculum["calibration_tasks"]
     if cfg.max_train_tasks is not None:
@@ -327,7 +355,7 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
     if cfg.eval_limit is not None:
         eval_tasks = eval_tasks[: cfg.eval_limit]
 
-    growth_texts = [growth_text(task) for task in train_tasks]
+    growth_texts = [corpus_arm.growth_text(task) for task in train_tasks]  # type: ignore[attr-defined]
     tokenizer_override, tokenizer_meta = _build_growth_tokenizer(
         tokenizer_kind,
         growth_texts,
@@ -360,10 +388,18 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
         )
 
     span_rows = [
-        _span_evaluation(model, prompt_for_task(task), task.answer)
+        _span_evaluation(model, corpus_arm.prompt_for_task(task), task.answer)  # type: ignore[attr-defined]
         for task in eval_tasks
     ]
-    free_rows = [_free_run(model, task, slack=cfg.completion_token_slack) for task in eval_tasks]
+    free_rows = [
+        _free_run(
+            model,
+            task,
+            slack=cfg.completion_token_slack,
+            prompt=corpus_arm.prompt_for_task(task),  # type: ignore[attr-defined]
+        )
+        for task in eval_tasks
+    ]
     eval_wall_s = perf_counter() - started - grow_wall_s
     wall_s = perf_counter() - started
 
@@ -373,7 +409,7 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
     # Circuit operations: each span task teacher-forces len(full_ids)-1 races;
     # each free-run task observes len(prompt) then races answer+slack steps.
     eval_token_steps = sum(int(row["races"]) for row in span_rows) + sum(
-        len(model._tokenizer.encode(prompt_for_task(task)))  # noqa: SLF001
+        len(model._tokenizer.encode(corpus_arm.prompt_for_task(task)))  # type: ignore[attr-defined] # noqa: SLF001
         + len(model._tokenizer.encode(" " + task.answer))  # noqa: SLF001
         + cfg.completion_token_slack
         for task in eval_tasks
@@ -404,12 +440,15 @@ def run(config: ExperimentConfig | None = None) -> dict[str, object]:
         "schema_version": SCHEMA_VERSION,
         "protocol": (
             "grow RecurrentCellLanguageModel on TRAIN qa_prompt+' '+answer texts; "
-            "--tokenizer selects the growth tokenizer arm (byte/bpe4096/concept); "
-            "held-out CALIBRATION teacher-forced answer-span accuracy, free-run "
-            "complete() exact match, and first-class degeneracy metrics"
+            "--corpus selects the corpus arm (bible fixture / frozen python_qa "
+            "coding corpus); --tokenizer selects the growth tokenizer arm "
+            "(byte/bpe4096/concept); held-out teacher-forced answer-span "
+            "accuracy, free-run complete() exact match, and first-class "
+            "degeneracy metrics"
         ),
-        "corpus_source": CORPUS_SOURCE,
-        "corpus_sha256": corpus_digest(),
+        "corpus_arm": cfg.corpus,
+        "corpus_source": corpus_arm.CORPUS_SOURCE,  # type: ignore[attr-defined]
+        "corpus_sha256": corpus_arm.corpus_digest(),  # type: ignore[attr-defined]
         "curriculum_sha256": curriculum["sha256"],
         "seed": cfg.seed,
         "train_task_count": len(train_tasks),
@@ -475,6 +514,18 @@ def check_determinism(config: ExperimentConfig | None = None) -> dict[str, objec
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=ExperimentConfig.seed)
+    parser.add_argument(
+        "--corpus",
+        choices=_CORPUS_ARMS,
+        default="bible",
+        help=(
+            "corpus arm: bible = KJV verse-context fixture (humanbrain.qa_corpus, "
+            "historical default); python_qa = frozen raw-Python-text coding "
+            "corpus via humanbrain.python_qa_adapter — grows on all 75 TRAIN "
+            "items and evaluates all 25 VAL items of the pinned artifact, so "
+            "records are field-comparable with experiments/python_qa_baselines_v1"
+        ),
+    )
     parser.add_argument("--max-train-tasks", type=int, default=None)
     parser.add_argument("--growth-epochs", type=int, default=ExperimentConfig.growth_epochs)
     parser.add_argument("--max-phrases", type=int, default=ExperimentConfig.max_phrases)
@@ -551,6 +602,7 @@ def main() -> None:
     args = parser.parse_args()
     config = ExperimentConfig(
         seed=args.seed,
+        corpus=args.corpus,
         max_train_tasks=args.max_train_tasks,
         growth_epochs=args.growth_epochs,
         max_phrases=args.max_phrases,
