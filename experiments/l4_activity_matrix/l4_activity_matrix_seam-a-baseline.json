@@ -1,0 +1,511 @@
+{
+  "spec": "L3 activity matrix rerun (FINDINGS.md 3.3(b)) extended to 20%; post-seam validation per docs/research/cpu-seams-spec.md",
+  "label": "seam-a-baseline",
+  "commit": "fa9070eeb4b1f01b3caddd982e8e7b806d4ccc25",
+  "python": "3.14.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "seam_detection": {
+    "read_cells": {
+      "ffi_export_present": true,
+      "python_binding_present": true,
+      "available": true,
+      "method": "hasattr on loaded CDLL + runtime class"
+    },
+    "indexed_staged": {
+      "method": "behavioral single-scale probe: M=24576 staged entries x R=16 repeat deliveries vs identical volume on the resident fast path",
+      "configured_cells": 262144,
+      "events_per_call": 393216,
+      "scan_heavy_median_ms": 7335.931,
+      "resident_reference_median_ms": 3813.849,
+      "scan_heavy_walls_ms": [
+        4946.762,
+        7335.931,
+        8170.706
+      ],
+      "reference_walls_ms": [
+        3813.849,
+        3747.821,
+        6355.279
+      ],
+      "linear_floor_ms": 400.0,
+      "scan_over_reference": 1.923,
+      "verdict": "linear_scan",
+      "indexed_staged_available": false,
+      "source_corroboration": {
+        "file": "C:\\Users\\laure\\Desktop\\DeepSim\\.worktrees\\baseline-fa9070e-tmp\\src\\humanbrain\\_native_src\\src\\procedural.rs",
+        "symbol_present": false
+      },
+      "caveat": "behavioral verdict reflects the LOADED library; the source-tree grep may disagree if the build is stale"
+    },
+    "seam_level": "seam_a",
+    "provenance": {
+      "head_commit": "fa9070eeb4b1f01b3caddd982e8e7b806d4ccc25",
+      "procedural_rs_dirty": false,
+      "source_digest": "ce5ee8fdb3a71e8103219e1c3bde227a8c6a8c4e34923dc7a9a8d1c78e4abcb6",
+      "library_path": null
+    }
+  },
+  "protocol": {
+    "configured_cells": 1000000,
+    "activity_levels_pct": [
+      1,
+      2,
+      5,
+      20
+    ],
+    "events_per_token": {
+      "1": 10000,
+      "2": 20000,
+      "5": 50000,
+      "20": 200000
+    },
+    "modes": [
+      "full_touch",
+      "event_proportional"
+    ],
+    "tokens_per_cell": 4,
+    "token_window_steps": 100,
+    "build_recipe": "fresh runtime per cell; 262,144-resident default fixture in 2048-wide windows (chunked per spec; capacity-shrunk for high-activity rows); settle 400; timing starts post-build",
+    "pool_rule": "2x events_per_token, alternating halves (L3 locality rule)",
+    "fixture_sizing_rule": "fixture = largest 2^k <= min(2^18, cfg - staged_peak); staged_peak = ceil(1.10 * cfg*(1-exp(-f*A/cfg))) + A (only injected cells spike; downstream is subthreshold)",
+    "max_token_seconds_breaker": 300.0,
+    "quick_mode": false,
+    "stress_glif": "unit-leak stress configuration (L3-identical)"
+  },
+  "rows": [
+    {
+      "mode": "full_touch",
+      "activity_pct_of_configured": 1,
+      "events_per_token": 10000,
+      "vocabulary_pool": 20000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 39210,
+        "staged_peak_model": 53132,
+        "resident_capacity": 1000000,
+        "event_capacity": 80000,
+        "spike_capacity": 40000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build": {
+        "fixture_residents_built": 262144,
+        "per_window": 2048,
+        "settle_steps": 400,
+        "build_wall_s": 62.868,
+        "state_after_settle": {
+          "active_residents": 262144,
+          "dormant": 0,
+          "pending": 0
+        }
+      },
+      "stream": {
+        "tokens_measured": 4,
+        "truncated_by_breaker": false,
+        "median_token_ms": 1588.051,
+        "p90_token_ms": 2294.666,
+        "tokens_per_second_end_to_end": 0.63,
+        "cell_steps_per_token_median_call": 27120508,
+        "walls_ms": [
+          814.9,
+          2294.7,
+          1880.2,
+          1295.9
+        ]
+      },
+      "final_state": {
+        "active_residents": 262144,
+        "dormant": 0,
+        "pending": 40000
+      },
+      "mirror_read": {
+        "ran": true,
+        "path": "read_cells_optimized",
+        "probe_k": 16,
+        "probe_tokens": 4,
+        "median_read_us": 29.7,
+        "median_advance_ms_context": 972.034,
+        "overhead_pct_of_token": 0.0031
+      }
+    },
+    {
+      "mode": "full_touch",
+      "activity_pct_of_configured": 2,
+      "events_per_token": 20000,
+      "vocabulary_pool": 40000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 76883,
+        "staged_peak_model": 104573,
+        "resident_capacity": 1000000,
+        "event_capacity": 160000,
+        "spike_capacity": 80000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build": {
+        "fixture_residents_built": 262144,
+        "per_window": 2048,
+        "settle_steps": 400,
+        "build_wall_s": 70.059,
+        "state_after_settle": {
+          "active_residents": 262144,
+          "dormant": 0,
+          "pending": 0
+        }
+      },
+      "stream": {
+        "tokens_measured": 4,
+        "truncated_by_breaker": false,
+        "median_token_ms": 3584.158,
+        "p90_token_ms": 4778.312,
+        "tokens_per_second_end_to_end": 0.279,
+        "cell_steps_per_token_median_call": 27980444,
+        "walls_ms": [
+          1303.7,
+          4778.3,
+          3438.5,
+          3729.8
+        ]
+      },
+      "final_state": {
+        "active_residents": 262144,
+        "dormant": 0,
+        "pending": 80000
+      },
+      "mirror_read": {
+        "ran": true,
+        "path": "read_cells_optimized",
+        "probe_k": 16,
+        "probe_tokens": 4,
+        "median_read_us": 28.8,
+        "median_advance_ms_context": 5160.822,
+        "overhead_pct_of_token": 0.0006
+      }
+    },
+    {
+      "mode": "full_touch",
+      "activity_pct_of_configured": 5,
+      "events_per_token": 50000,
+      "vocabulary_pool": 100000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 181269,
+        "staged_peak_model": 249397,
+        "resident_capacity": 1000000,
+        "event_capacity": 400000,
+        "spike_capacity": 200000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build": {
+        "fixture_residents_built": 262144,
+        "per_window": 2048,
+        "settle_steps": 400,
+        "build_wall_s": 63.465,
+        "state_after_settle": {
+          "active_residents": 262144,
+          "dormant": 0,
+          "pending": 0
+        }
+      },
+      "stream": {
+        "tokens_measured": 4,
+        "truncated_by_breaker": false,
+        "median_token_ms": 15649.467,
+        "p90_token_ms": 16995.797,
+        "tokens_per_second_end_to_end": 0.064,
+        "cell_steps_per_token_median_call": 30322089,
+        "walls_ms": [
+          532.1,
+          14561.1,
+          16737.9,
+          16995.8
+        ]
+      },
+      "final_state": {
+        "active_residents": 262148,
+        "dormant": 0,
+        "pending": 200000
+      },
+      "mirror_read": {
+        "ran": true,
+        "path": "read_cells_optimized",
+        "probe_k": 16,
+        "probe_tokens": 4,
+        "median_read_us": 27.7,
+        "median_advance_ms_context": 14490.915,
+        "overhead_pct_of_token": 0.0002
+      }
+    },
+    {
+      "mode": "full_touch",
+      "activity_pct_of_configured": 20,
+      "events_per_token": 200000,
+      "vocabulary_pool": 400000,
+      "capacity_plan": {
+        "fixture_residents": 131072,
+        "expected_fresh_staging_per_token": 550671,
+        "staged_peak_model": 805739,
+        "resident_capacity": 1000000,
+        "event_capacity": 1600000,
+        "spike_capacity": 800000,
+        "interval_distinct_capacity": 1600000,
+        "fanout": 4
+      },
+      "build": {
+        "fixture_residents_built": 131072,
+        "per_window": 2048,
+        "settle_steps": 400,
+        "build_wall_s": 12.317,
+        "state_after_settle": {
+          "active_residents": 131072,
+          "dormant": 0,
+          "pending": 0
+        }
+      },
+      "stream": {
+        "tokens_measured": 2,
+        "truncated_by_breaker": true,
+        "median_token_ms": 538099.001,
+        "p90_token_ms": 1070961.14,
+        "tokens_per_second_end_to_end": 0.002,
+        "cell_steps_per_token_median_call": 25195644,
+        "walls_ms": [
+          5236.9,
+          1070961.1
+        ]
+      },
+      "final_state": {
+        "active_residents": 400250,
+        "dormant": 0,
+        "pending": 800000
+      },
+      "mirror_read": {
+        "ran": false,
+        "path": "skipped_slow_stream",
+        "reason": "stream truncated=True or max token 1071.0s > 60.0s; per-token read overhead is meaningless at this token cost"
+      }
+    },
+    {
+      "mode": "event_proportional",
+      "activity_pct_of_configured": 1,
+      "events_per_token": 10000,
+      "vocabulary_pool": 20000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 39210,
+        "staged_peak_model": 53132,
+        "resident_capacity": 1000000,
+        "event_capacity": 80000,
+        "spike_capacity": 40000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build": {
+        "fixture_residents_built": 262144,
+        "per_window": 2048,
+        "settle_steps": 400,
+        "build_wall_s": 9.2,
+        "state_after_settle": {
+          "active_residents": 0,
+          "dormant": 262144,
+          "pending": 0
+        }
+      },
+      "stream": {
+        "tokens_measured": 4,
+        "truncated_by_breaker": false,
+        "median_token_ms": 991.904,
+        "p90_token_ms": 1641.71,
+        "tokens_per_second_end_to_end": 1.008,
+        "cell_steps_per_token_median_call": 1540340,
+        "walls_ms": [
+          241.0,
+          1641.7,
+          1308.0,
+          675.8
+        ]
+      },
+      "final_state": {
+        "active_residents": 10000,
+        "dormant": 252144,
+        "pending": 40000
+      },
+      "mirror_read": {
+        "ran": true,
+        "path": "read_cells_optimized",
+        "probe_k": 16,
+        "probe_tokens": 4,
+        "median_read_us": 18.3,
+        "median_advance_ms_context": 1170.197,
+        "overhead_pct_of_token": 0.0016
+      }
+    },
+    {
+      "mode": "event_proportional",
+      "activity_pct_of_configured": 2,
+      "events_per_token": 20000,
+      "vocabulary_pool": 40000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 76883,
+        "staged_peak_model": 104573,
+        "resident_capacity": 1000000,
+        "event_capacity": 160000,
+        "spike_capacity": 80000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build": {
+        "fixture_residents_built": 262144,
+        "per_window": 2048,
+        "settle_steps": 400,
+        "build_wall_s": 9.694,
+        "state_after_settle": {
+          "active_residents": 0,
+          "dormant": 262144,
+          "pending": 0
+        }
+      },
+      "stream": {
+        "tokens_measured": 4,
+        "truncated_by_breaker": false,
+        "median_token_ms": 3054.353,
+        "p90_token_ms": 4271.989,
+        "tokens_per_second_end_to_end": 0.327,
+        "cell_steps_per_token_median_call": 2994809,
+        "walls_ms": [
+          609.6,
+          2966.9,
+          3141.8,
+          4272.0
+        ]
+      },
+      "final_state": {
+        "active_residents": 20000,
+        "dormant": 242144,
+        "pending": 80000
+      },
+      "mirror_read": {
+        "ran": true,
+        "path": "read_cells_optimized",
+        "probe_k": 16,
+        "probe_tokens": 4,
+        "median_read_us": 18.85,
+        "median_advance_ms_context": 4292.68,
+        "overhead_pct_of_token": 0.0004
+      }
+    },
+    {
+      "mode": "event_proportional",
+      "activity_pct_of_configured": 5,
+      "events_per_token": 50000,
+      "vocabulary_pool": 100000,
+      "capacity_plan": {
+        "fixture_residents": 262144,
+        "expected_fresh_staging_per_token": 181269,
+        "staged_peak_model": 249397,
+        "resident_capacity": 1000000,
+        "event_capacity": 400000,
+        "spike_capacity": 200000,
+        "interval_distinct_capacity": 1000000,
+        "fanout": 4
+      },
+      "build": {
+        "fixture_residents_built": 262144,
+        "per_window": 2048,
+        "settle_steps": 400,
+        "build_wall_s": 6.332,
+        "state_after_settle": {
+          "active_residents": 0,
+          "dormant": 262144,
+          "pending": 0
+        }
+      },
+      "stream": {
+        "tokens_measured": 4,
+        "truncated_by_breaker": false,
+        "median_token_ms": 26122.17,
+        "p90_token_ms": 29945.739,
+        "tokens_per_second_end_to_end": 0.038,
+        "cell_steps_per_token_median_call": 6902947,
+        "walls_ms": [
+          1301.8,
+          24234.8,
+          29945.7,
+          28009.5
+        ]
+      },
+      "final_state": {
+        "active_residents": 50000,
+        "dormant": 212148,
+        "pending": 200000
+      },
+      "mirror_read": {
+        "ran": true,
+        "path": "read_cells_optimized",
+        "probe_k": 16,
+        "probe_tokens": 4,
+        "median_read_us": 20.55,
+        "median_advance_ms_context": 22545.975,
+        "overhead_pct_of_token": 0.0001
+      }
+    },
+    {
+      "mode": "event_proportional",
+      "activity_pct_of_configured": 20,
+      "events_per_token": 200000,
+      "vocabulary_pool": 400000,
+      "capacity_plan": {
+        "fixture_residents": 131072,
+        "expected_fresh_staging_per_token": 550671,
+        "staged_peak_model": 805739,
+        "resident_capacity": 1000000,
+        "event_capacity": 1600000,
+        "spike_capacity": 800000,
+        "interval_distinct_capacity": 1600000,
+        "fanout": 4
+      },
+      "build": {
+        "fixture_residents_built": 131072,
+        "per_window": 2048,
+        "settle_steps": 400,
+        "build_wall_s": 4.441,
+        "state_after_settle": {
+          "active_residents": 0,
+          "dormant": 131072,
+          "pending": 0
+        }
+      },
+      "stream": {
+        "tokens_measured": 2,
+        "truncated_by_breaker": true,
+        "median_token_ms": 373551.271,
+        "p90_token_ms": 728600.43,
+        "tokens_per_second_end_to_end": 0.003,
+        "cell_steps_per_token_median_call": 12897602,
+        "walls_ms": [
+          18502.1,
+          728600.4
+        ]
+      },
+      "final_state": {
+        "active_residents": 200000,
+        "dormant": 200250,
+        "pending": 800000
+      },
+      "mirror_read": {
+        "ran": false,
+        "path": "skipped_slow_stream",
+        "reason": "stream truncated=True or max token 728.6s > 60.0s; per-token read overhead is meaningless at this token cost"
+      }
+    }
+  ],
+  "ep_over_ft_ratio_by_activity": {
+    "1pct": 1.6,
+    "2pct": 1.172,
+    "5pct": 0.594,
+    "20pct": 1.5
+  }
+}

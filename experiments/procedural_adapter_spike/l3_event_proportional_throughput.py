@@ -5,6 +5,14 @@ a large dormant population while only a sparse set of cells integrates per
 token -- the steady-state training regime that motivates event-proportional
 work semantics.
 
+Measurement matrix (replaces the earlier extrapolated estimates): both
+stepping modes drive IDENTICAL schedules at 1,000,000 configured cells with
+per-token activity of 1%, 2%, and 5% of configured cells (10k / 20k / 50k
+events per token). Each mode first ratchets the same residency fixture
+(2^18 cells built in 2,048-event windows, then settled), then re-drives a
+bounded vocabulary pool (2x the per-token event count, alternating halves,
+so replay gaps stay at one token window -- text-like short-gap locality).
+
 Everything is driven through the raw C-ABI with a documented stress GLIF
 configuration: unit leak makes voltage mirror synaptic current exactly, so a
 spiked cell's fast state reaches canonical zero in tens of steps and its
@@ -13,6 +21,32 @@ budget. The mechanism, fail-stop contracts, and bit-parity obligations are
 identical under production constants; only the tail-flush horizon differs
 (see FINDINGS.md for the measured production flush horizon and why it
 dominates near-term training runs).
+
+Capacity planning against the fail-stop contracts: overflow poisons the
+runtime mid-measurement (nonzero advance status), so every capacity is sized
+for the LARGEST single advance() call, not steady state:
+
+- ``event_capacity`` = QUEUE_HEADROOM x max batch. The injected batch sits in
+  the queue until its due step, then each spike generates ``fanout`` edges
+  that coexist in the queue: peak <= batch + fanout*batch = 5x batch.
+- ``spike_capacity`` = SPIKE_HEADROOM x max batch. Spikes per call are
+  bounded by the injected batch size (subthreshold edge weights cannot
+  cascade); headroom covers transient multi-spike behaviour (status-9 guard).
+- ``interval_distinct_capacity`` >= resident_capacity (native contract
+  minimum) and above the worst-case union of entry residents + staged
+  insertions + spiked gids marked in one call (status-10 guard).
+- The residency build advances in small fixed windows (``build_per_window``)
+  so no single call ever exceeds the per-call sizing above.
+
+Two auxiliary sections price components the matrix conflates:
+
+- ``injection_path_diagnostic_5pct`` re-runs the 5% activity cell at shipped
+  fanout=4 vs minimal fanout=1. Generated-edge volume drops 4x; wall-time
+  movement between rows prices the shared injection path independently of
+  stepping mode.
+- ``low_activity_reference`` repeats the original spike head-to-head fixture
+  (16,384 residents, 640 events/token) where injection volume is small
+  enough that the mode difference IS the stepping cost being priced.
 
 Output: l3_event_proportional_throughput.json next to this script.
 """
@@ -36,6 +70,11 @@ from humanbrain.cells import AllenGlif5Parameters  # noqa: E402
 from humanbrain.native import _F64_POINTER, _GlifConfig, _load_library  # noqa: E402
 
 MASK64 = 0xFFFFFFFFFFFFFFFF
+
+# --- capacity-planning headroom constants (documented, not tuned) ----------
+SPIKE_HEADROOM = 4    # status-9 guard: max spikes/call <= injected batch
+QUEUE_HEADROOM = 8    # status-3 guard: queue peak <= batch + fanout*batch = 5x
+BUILD_PER_WINDOW = 2048  # build phase chunk; keeps every call within sizing
 
 
 class NativeEvent(ctypes.Structure):
@@ -155,9 +194,12 @@ def production_flush_horizon() -> dict:
     )
     eligibility_factor = math.exp(-parameters.dt_ms / 80.0)
 
-    def horizon(factor: float) -> int:
-        if not (0.0 < factor < 1.0):
-            return -1  # sentinel: never reaches canonical rest
+    def horizon(factor: float) -> float:
+        # Log-domain guard: a decay factor that computes to 0.0 (or rounds
+        # to >= 1.0) never reaches canonical rest. Return an infinite
+        # sentinel instead of feeding it to math.log (ValueError).
+        if factor <= 0.0 or factor >= 1.0:
+            return math.inf
         return int(math.log(1e-300 / 30.0) / math.log(factor))
 
     return {
@@ -175,7 +217,12 @@ def production_flush_horizon() -> dict:
 
 
 class Runtime:
-    """Raw C-ABI runtime with internal step bookkeeping."""
+    """Raw C-ABI runtime with internal step bookkeeping.
+
+    Capacities scale off ``max_batch`` -- the largest single advance() call
+    this runtime will ever see -- with documented headroom, because the
+    fail-stop contract poisons the runtime on overflow instead of degrading.
+    """
 
     def __init__(
         self,
@@ -183,19 +230,25 @@ class Runtime:
         stepping_mode: str,
         configured_cells: int,
         resident_capacity: int,
-        event_capacity: int,
+        max_batch: int,
         weight_pa: float,
+        fanout: int = 4,
     ) -> None:
         mode_id = {"full_touch": 0, "event_proportional": 1}[stepping_mode]
         self.stepping_mode = stepping_mode
+        self.max_batch = max_batch
+        self.fanout = fanout
+        event_capacity = QUEUE_HEADROOM * max_batch
+        spike_capacity = SPIKE_HEADROOM * max_batch
+        interval_distinct_capacity = max(resident_capacity, event_capacity)
         config = NativeConfig(
             configured_cells,
-            4,
+            fanout,
             71,
             resident_capacity,
             event_capacity,
-            event_capacity,
-            max(resident_capacity, event_capacity),
+            spike_capacity,
+            interval_distinct_capacity,
             weight_pa,
             1,
             # Aggressive synaptic decay: the 150 k pA drive must flush below
@@ -217,9 +270,19 @@ class Runtime:
         )
         if not self.handle:
             raise RuntimeError(f"native create failed ({stepping_mode})")
+        # Buffer holds one injected batch; event_capacity/4 slots = 2x batch.
         self.buffer = (NativeEvent * (event_capacity // 4))()
         self.counters = NativeCounters()
         self.step = 0
+        self.capacity_plan = {
+            "resident_capacity": resident_capacity,
+            "event_capacity": event_capacity,
+            "spike_capacity": spike_capacity,
+            "interval_distinct_capacity": interval_distinct_capacity,
+            "max_batch": max_batch,
+            "spike_headroom_multiplier": SPIKE_HEADROOM,
+            "queue_headroom_multiplier": QUEUE_HEADROOM,
+        }
 
     def close(self) -> None:
         if self.handle:
@@ -228,8 +291,7 @@ class Runtime:
 
     def advance(self, steps: int, targets) -> float:
         count = len(targets)
-        capacity = len(self.buffer)
-        if count > capacity:
+        if count > len(self.buffer):
             raise RuntimeError("event batch exceeds buffer")
         buffer = self.buffer
         due = self.step + steps - 1  # deliver on the window's final step
@@ -287,10 +349,62 @@ class Runtime:
         return self.counters.cell_step_evaluations
 
 
+def build_residency(runtime: Runtime, total: int, per_window: int) -> float:
+    """Ratchet residency by driving fresh gids in small windows.
+
+    Windows stay at ``per_window`` events so every advance() call fits the
+    per-call capacity sizing regardless of total residency built.
+    """
+    wall = 0.0
+    built = 0
+    while built < total:
+        chunk = min(per_window, total - built)
+        wall += runtime.advance(100, range(built, built + chunk))
+        built += chunk
+    return wall
+
+
+def activity_stream(runtime: Runtime, *, tokens: int, events_per_token: int,
+                    pool: int) -> dict:
+    """Steady-state activity at a fixed fraction of configured cells.
+
+    Each token drives ``events_per_token`` distinct cells drawn from a
+    bounded vocabulary pool of ``pool`` gids, alternating halves so a cell is
+    re-hit every second token (replay gap <= two token windows -- text-like
+    short-gap locality). Contiguous mod-pool slices keep targets
+    distinct inside a batch; across tokens the later due step keeps
+    canonical event keys unique.
+    """
+    walls = []
+    work_sum = 0
+    for token in range(tokens):
+        offset = ((token % 2) * events_per_token) % pool
+        targets = [(offset + i) % pool for i in range(events_per_token)]
+        walls.append(runtime.advance(100, targets) * 1000.0)
+        # cell_step_evaluations is per advance() call -- accumulate.
+        work_sum += runtime.total_work()
+    median = statistics.median(walls)
+    return {
+        "activity_fraction_of_configured": round(events_per_token / 1_000_000, 4),
+        "events_per_token": events_per_token,
+        "vocabulary_pool": pool,
+        "tokens_measured": tokens,
+        "median_token_ms": round(median, 3),
+        "p90_token_ms": round(sorted(walls)[int(0.9 * len(walls))], 3),
+        "tokens_per_second_end_to_end": round(1000.0 / median, 1),
+        "cell_steps_per_token_median_call": int(work_sum / tokens),
+        "implied_cell_steps_per_second": int((work_sum / tokens) / (median / 1000.0)),
+    }
+
+
+ACTIVITY_CELLS = ((1, 10_000), (2, 20_000), (5, 50_000))
+MAX_EVENTS_PER_TOKEN = max(count for _, count in ACTIVITY_CELLS)
+TOKENS_PER_CELL = 12
+
+
 def fresh_targets(count: int, token_index: int, low: int, high: int) -> list[int]:
     """Deterministic xorshift pseudo-random distinct targets inside
-    ``[low, high)`` -- callers keep this range disjoint from any fixed
-    reactivation targets so canonical event keys stay unique."""
+    ``[low, high)`` (used by the low-activity reference fixture)."""
     span = high - low
     state = (0x9E3779B97F4A7C15 * (token_index + 1)) & MASK64
     out: list[int] = []
@@ -310,144 +424,143 @@ def fresh_targets(count: int, token_index: int, low: int, high: int) -> list[int
     return out
 
 
-def build_residency(runtime: Runtime, total: int, per_window: int) -> float:
-    wall = 0.0
-    built = 0
-    while built < total:
-        chunk = min(per_window, total - built)
-        wall += runtime.advance(100, range(built, built + chunk))
-        built += chunk
-    return wall
-
-
-def token_stream(runtime: Runtime, *, tokens: int, fresh: int, reactivations: int,
-                 fresh_low: int, fresh_high: int) -> dict:
-    """`fresh_low:fresh_high` supplies never-built targets; `reactivations`
-    re-drives gids [0, reactivations) which are dormant by construction time.
-    Keep the ranges disjoint so canonical event keys stay unique."""
-    walls = []
-    work_sum = 0
-    for token in range(tokens):
-        targets = fresh_targets(fresh, token, fresh_low, fresh_high)
-        if reactivations:
-            # Re-drive the oldest built gids: they are dormant by now and the
-            # ranges are disjoint, so canonical keys stay unique.
-            targets = targets[: max(fresh - reactivations, 0)] + list(
-                range(reactivations)
-            )
-        walls.append(runtime.advance(100, targets) * 1000.0)
-        # cell_step_evaluations is per advance() call -- accumulate.
-        work_sum += runtime.total_work()
-    median = statistics.median(walls)
-    return {
-        "fresh_events_per_token": fresh,
-        "reactivations_per_token": reactivations,
-        "median_token_ms": round(median, 3),
-        "p90_token_ms": round(sorted(walls)[int(0.9 * len(walls))], 3),
-        "tokens_per_second_end_to_end": round(1000.0 / median, 1),
-        "cell_steps_per_token_median_call": int(work_sum / tokens),
-        "implied_cell_steps_per_second": int((work_sum / tokens) / (median / 1000.0)),
-    }
-
-
-def locality_stream(runtime: Runtime, *, tokens: int, pool: int,
-                    fresh_per_token: int) -> dict:
-    """Text-like traffic: a bounded active-vocabulary pool that keeps being
-    re-hit (short replay gaps) plus a trickle of brand-new cells."""
-    walls = []
-    work_sum = 0
-    for token in range(tokens):
-        # Rotating window over the built dormant region: recently used words
-        # keep getting re-hit, so replay gaps stay short.
-        start = (token * 7) % 4096
-        targets = [(start + i) % 4096 for i in range(pool)]
-        targets.extend(fresh_targets(fresh_per_token, token, 1 << 18, 1 << 20))
-        walls.append(runtime.advance(100, targets) * 1000.0)
-        work_sum += runtime.total_work()
-    median = statistics.median(walls)
-    return {
-        "pool_rehits_per_token": pool,
-        "fresh_events_per_token": fresh_per_token,
-        "median_token_ms": round(median, 3),
-        "tokens_per_second_end_to_end": round(1000.0 / median, 1),
-        "cell_steps_per_token_median_call": int(work_sum / tokens),
-    }
-
-
-def main() -> None:
-    results: dict = {"production_flush": production_flush_horizon()}
-    configured_cells = 1 << 20
-
-    # Scenario A: ~256k dormant residents at 1M configured, sparse tokens.
-    ep = Runtime(
-        stepping_mode="event_proportional",
+def run_mode(stepping_mode: str, configured_cells: int, *, fanout: int = 4,
+             activities: tuple = ACTIVITY_CELLS,
+             tokens_per_cell: int = TOKENS_PER_CELL) -> dict:
+    max_batch = max(count for _, count in activities)
+    rt = Runtime(
+        stepping_mode=stepping_mode,
         configured_cells=configured_cells,
         resident_capacity=configured_cells,
-        event_capacity=1 << 16,
+        max_batch=max_batch,
         weight_pa=0.25,
+        fanout=fanout,
     )
     try:
-        build_wall = build_residency(ep, total=1 << 18, per_window=2048)
-        ep.settle(400)
-        results["scenario_a"] = {
-            "configured_cells": configured_cells,
-            "dormant_residency": 1 << 18,
+        result: dict = {"capacity_plan": rt.capacity_plan}
+        result["fixture"] = {"fanout": fanout}
+        build_wall = build_residency(rt, total=1 << 18, per_window=BUILD_PER_WINDOW)
+        rt.settle(400)
+        result["build"] = {
+            "total_residents_built": 1 << 18,
+            "per_window": BUILD_PER_WINDOW,
+            "settle_steps": 400,
             "build_wall_s": round(build_wall, 3),
-            "state_after_settle": ep.live_state(),
+            "state_after_settle": rt.live_state(),
         }
-        scenario_a = []
-        for fresh in (256, 512, 1024, 2048):
-            entry = token_stream(ep, tokens=30, fresh=fresh, reactivations=0,
-                                 fresh_low=1 << 18, fresh_high=1 << 20)
-            scenario_a.append(entry)
-        # Reactivation traffic over the dormant pool.
-        scenario_a.append(token_stream(ep, tokens=30, fresh=512, reactivations=256,
-                                       fresh_low=1 << 18, fresh_high=1 << 20))
-        # Text-like locality: a rotating active-vocabulary pool plus a
-        # trickle of new cells.
-        scenario_a.append(locality_stream(ep, tokens=60, pool=512,
-                                          fresh_per_token=128))
-        results["scenario_a"]["tokens"] = scenario_a
-        results["scenario_a"]["final_state"] = ep.live_state()
+        streams = {}
+        for pct, count in activities:
+            streams[f"{pct}pct"] = activity_stream(
+                rt,
+                tokens=tokens_per_cell,
+                events_per_token=count,
+                pool=2 * count,
+            )
+        streams["final_state"] = rt.live_state()
+        result["activity_streams"] = streams
+        return result
     finally:
-        ep.close()
+        rt.close()
 
-    # Scenario B: head-to-head full-touch vs event-proportional at a
-    # residency the full-touch path can still build (~16k), identical
-    # schedules, then the extrapolation to 1e6 residents against the
-    # committed 9.18 M cell-steps/s anchor.
+
+def low_activity_reference(configured_cells: int) -> dict:
+    """Head-to-head at the original spike fixture (build 16,384 residents;
+    512 fresh + 128 reactivation events per token): event volume stays small
+    enough that the shared injection path is subdominant, so the difference
+    IS the stepping-mode cost being priced."""
     head = {}
     for mode in ("full_touch", "event_proportional"):
         rt = Runtime(
             stepping_mode=mode,
             configured_cells=configured_cells,
             resident_capacity=65_536,
-            event_capacity=1 << 16,
+            # Largest single call = the 2,048-wide residency-build window,
+            # not the 640-event token batch.
+            max_batch=max(640, BUILD_PER_WINDOW),
             weight_pa=0.25,
         )
         try:
-            build_wall = build_residency(rt, total=16_384, per_window=2048)
+            build_wall = build_residency(rt, total=16_384, per_window=BUILD_PER_WINDOW)
             rt.settle(400)
-            stream = token_stream(rt, tokens=15, fresh=512, reactivations=128,
-                                  fresh_low=16_384, fresh_high=configured_cells)
-            stream["build_wall_s"] = round(build_wall, 3)
-            stream["final_state"] = rt.live_state()
-            head[mode] = stream
+            walls = []
+            work_sum = 0
+            for token in range(15):
+                targets = fresh_targets(512, token, 16_384, configured_cells)
+                targets += list(range(128))  # re-drive dormant built gids
+                walls.append(rt.advance(100, targets) * 1000.0)
+                work_sum += rt.total_work()
+            median = statistics.median(walls)
+            head[mode] = {
+                "events_per_token": 640,
+                "median_token_ms": round(median, 3),
+                "tokens_per_second_end_to_end": round(1000.0 / median, 1),
+                "cell_steps_per_token_median_call": int(work_sum / 15),
+                "build_wall_s": round(build_wall, 3),
+                "final_state": rt.live_state(),
+            }
         finally:
             rt.close()
     ft_rate = head["full_touch"]["tokens_per_second_end_to_end"]
     ep_rate = head["event_proportional"]["tokens_per_second_end_to_end"]
-    head["speedup_ratio"] = round(ep_rate / ft_rate, 1) if ft_rate else None
-    # Full-touch cost scales linearly with integrating residents; extrapolate
-    # from this run's own final resident count to one million.
-    head["full_touch_extrapolated_at_1m_residents_tok_s"] = round(
-        ft_rate
-        * head["full_touch"]["final_state"]["active_residents"]
-        / configured_cells,
-        3,
+    head["speedup_event_proportional_vs_full_touch"] = (
+        round(ep_rate / ft_rate, 1) if ft_rate else None
     )
-    head["committed_anchor_1m_full_touch_tok_s"] = 0.092
-    results["scenario_b_head_to_head"] = head
+    return head
+
+
+def main() -> None:
+    results: dict = {
+        "production_flush": production_flush_horizon(),
+        "fixture": {
+            "configured_cells": 1_000_000,
+            "residency_built": 1 << 18,
+            "build_per_window": BUILD_PER_WINDOW,
+            "settle_steps": 400,
+            "tokens_per_cell": TOKENS_PER_CELL,
+            "token_window_steps": 100,
+            "pool_rule": (
+                "2x events_per_token, alternating halves; each cell re-hit "
+                "every second token (replay gap <= two token windows)"
+            ),
+        },
+    }
+    configured_cells = results["fixture"]["configured_cells"]
+
+    ep = run_mode("event_proportional", configured_cells)
+    ft = run_mode("full_touch", configured_cells)
+
+    speedups = {}
+    for pct, _ in ACTIVITY_CELLS:
+        key = f"{pct}pct"
+        ft_rate = ft["activity_streams"][key]["tokens_per_second_end_to_end"]
+        ep_rate = ep["activity_streams"][key]["tokens_per_second_end_to_end"]
+        speedups[key] = round(ep_rate / ft_rate, 1) if ft_rate else None
+    results["matrix"] = {
+        "event_proportional": ep,
+        "full_touch": ft,
+        "speedup_event_proportional_vs_full_touch": speedups,
+    }
+
+    # Diagnostic ablation at 5% activity: shipped fanout=4 vs minimal
+    # fanout=1. Generated-edge volume drops 4x, shrinking the staged batch
+    # that dominates the shared injection path -- wall-time movement between
+    # the two rows prices that path independently of stepping mode.
+    diag = {}
+    for fanout in (4, 1):
+        key = f"fanout{fanout}"
+        diag[key] = {
+            "event_proportional": run_mode(
+                "event_proportional", configured_cells, fanout=fanout,
+                activities=((5, 50_000),), tokens_per_cell=4,
+            )["activity_streams"]["5pct"],
+            "full_touch": run_mode(
+                "full_touch", configured_cells, fanout=fanout,
+                activities=((5, 50_000),), tokens_per_cell=4,
+            )["activity_streams"]["5pct"],
+        }
+    results["injection_path_diagnostic_5pct"] = diag
+
+    results["low_activity_reference"] = low_activity_reference(configured_cells)
 
     out_path = Path(__file__).with_name("l3_event_proportional_throughput.json")
     out_path.write_text(json.dumps(results, indent=2))
@@ -456,3 +569,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

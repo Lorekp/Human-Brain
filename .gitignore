@@ -12,3 +12,4 @@ target/
 .pytest_cache/
 .pytest-tmp/
 experiments/*/.observatory/*.jsonl
+experiments/procedural_adapter_spike/l4_seam_b_baseline_outputs.json
