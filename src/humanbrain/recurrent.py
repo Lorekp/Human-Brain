@@ -501,7 +501,10 @@ class RecurrentCellCircuit:
         self._learning_frozen = False
         # R0-c Thread-1 logging seam: optional per-token observer callback.
         # None by default; when None, observe() is untouched bit-for-bit.
-        self._observation_sink = None
+        # The constructor argument was already bound at the top of __init__;
+        # a stale unconditional ``self._observation_sink = None`` used to sit
+        # here and silently discard every constructor-bound observer (all
+        # replay-log recorders), so observe() never fired them.
         # Race-pivot T-P8 reentrancy guard: True while an observation_sink
         # callback is executing; observe/race/reset raise a deliberate
         # RuntimeError instead of letting a driving sink recurse.
@@ -1175,6 +1178,28 @@ class RecurrentCellCircuit:
         self._observation_sink = sink
 
     @property
+    def token_spike_counts(self) -> np.ndarray:
+        """Live u32 per-cell spike accumulator for the most recent token.
+
+        Cleared at token start and folded at every spike site by the native
+        kernel (R0-b family A). On the CPU backend this is live host state at
+        observation-sink time; read-only view for sink consumers such as
+        :class:`humanbrain.burst_metrics.BurstFractionTracker`.
+        """
+        return self._token_spike_counts
+
+    @property
+    def context_current_pa(self) -> np.ndarray:
+        """Live recurrent context synaptic-current vector (f64, pA).
+
+        Post-observe this holds only decayed context drive: the token's
+        afferent pulse is scratch-restored inside the kernel, so any strictly
+        positive entry is recurrent depolarization from recent activity — the
+        DD-HTM predictive-state signal. Read-only view.
+        """
+        return self._synaptic_current_pa
+
+    @property
     def simulation_backend(self) -> str:
         return self._native_kernel.backend
 
@@ -1283,7 +1308,7 @@ class RecurrentCellCircuit:
             synaptic_current_pa=tuple(
                 float(value) for value in self._synaptic_current_pa[indices]
             ),
-            eligibility=tuple(float(value) for value in self._eligibility[indices]),
+            eligibility=tuple(float(value) for value in self._feature_traces[indices]),
         )
 
     def strengthen(self, target_token_id: int) -> None:

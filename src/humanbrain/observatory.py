@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import TextIO
 
+from humanbrain.burst_metrics import BurstFractionTracker
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentStep
 
 
@@ -51,6 +52,7 @@ class ActivityRecorder:
         run_id: str,
         sample_count: int = 128,
         state_stride: int = 20,
+        burst_tracker: BurstFractionTracker | None = None,
     ) -> None:
         if not run_id:
             raise ValueError("run_id must be non-empty")
@@ -62,6 +64,9 @@ class ActivityRecorder:
         self.run_id = run_id
         self.sample_count = sample_count
         self.state_stride = state_stride
+        # Burst-fraction instrumentation (DD-HTM TM surprise metric). None by
+        # default: the stream schema stays byte-for-byte legacy when unset.
+        self._burst_tracker = burst_tracker
         self.phase = "initializing"
         self._sample_gids: tuple[int, ...] | None = None
         self._frame_count = 0
@@ -78,6 +83,10 @@ class ActivityRecorder:
     def record(self, circuit: RecurrentCellCircuit, step: RecurrentStep) -> None:
         if self._closed:
             raise RuntimeError("activity recorder is closed")
+        if self._burst_tracker is not None:
+            # Instrumentation first, so a footer snapshot always reflects
+            # every event this recorder consumed. The tracker only reads.
+            self._burst_tracker.record(circuit, step)
         if self._sample_gids is None:
             self._sample_gids = evenly_spaced_gids(
                 circuit.active_reservoir_cells,
@@ -136,14 +145,15 @@ class ActivityRecorder:
     def close(self, *, complete: bool = True) -> None:
         if self._closed:
             return
-        self._write(
-            {
-                "type": "footer",
-                "complete": bool(complete),
-                "frame_count": self._frame_count,
-                "biological_time_ms": self._biological_time_ms,
-            }
-        )
+        footer: dict[str, object] = {
+            "type": "footer",
+            "complete": bool(complete),
+            "frame_count": self._frame_count,
+            "biological_time_ms": self._biological_time_ms,
+        }
+        if self._burst_tracker is not None:
+            footer["burst_metrics"] = self._burst_tracker.snapshot()
+        self._write(footer)
         self._stream.close()
         self._closed = True
 

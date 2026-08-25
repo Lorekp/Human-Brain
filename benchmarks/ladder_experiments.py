@@ -99,6 +99,7 @@ os.environ["HUMANBRAIN_DEVICE"] = (
 import numpy as np  # noqa: E402
 
 from humanbrain import typed_composition, typed_program  # noqa: E402
+from humanbrain.burst_metrics import BurstFractionTracker  # noqa: E402
 from humanbrain.observatory import (  # noqa: E402
     ActivityRecorder,
     activity_stream_path,
@@ -1712,6 +1713,16 @@ def main(argv: list[str] | None = None) -> int:
         help="run the whole arm twice in-process and assert byte-identical "
         "records minus wall_s before writing",
     )
+    parser.add_argument(
+        "--no-burst-metrics",
+        dest="no_burst_metrics",
+        action="store_true",
+        help=(
+            "opt out of DD-HTM burst-fraction tracking in observatory "
+            "replay logs (on by default; adds a footer burst_metrics "
+            "block only - frames and dynamics stay untouched)"
+        ),
+    )
     arguments = parser.parse_args(argv)
     _validate_arguments(arguments)
     # Bind the effective device before any circuit kernel is constructed
@@ -1725,6 +1736,36 @@ def main(argv: list[str] | None = None) -> int:
             ridge_backend = "scipy"
         except ImportError:
             ridge_backend = "numpy"
+
+    output_root = (
+        Path(arguments.out) if arguments.out else ROOT / "experiments"
+    )
+    output_path = output_root / arguments.experiment_id / f"{arguments.arm}.json"
+    if output_path.exists():
+        _fail(f"refusing to overwrite existing metrics file {output_path}")
+    recorder: ActivityRecorder | None = None
+    if arguments.record_observatory and arguments.experiment_id != (
+        RACE_PIVOT_EXPERIMENT_ID
+    ):
+        stream_path = activity_stream_path(
+            output_root,
+            arguments.experiment_id,
+            arguments.arm,
+        )
+        if stream_path.exists():
+            _fail(f"refusing to overwrite existing activity stream {stream_path}")
+        # Burst-fraction tracking rides the replay log by default (HTM
+        # deep-dive adopt row): footer-only instrumentation, zero effect on
+        # frames or dynamics; --no-burst-metrics restores the legacy stream.
+        recorder = ActivityRecorder(
+            stream_path,
+            run_id=f"{arguments.experiment_id}/{arguments.arm}",
+            sample_count=arguments.observatory_samples,
+            state_stride=arguments.observatory_state_stride,
+            burst_tracker=(
+                None if arguments.no_burst_metrics else BurstFractionTracker()
+            ),
+        )
 
     try:
         if arguments.experiment_id == RACE_PIVOT_EXPERIMENT_ID:
