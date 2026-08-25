@@ -1,0 +1,232 @@
+{
+  "builder_tool": "tools/build_bible_qa_corpus.py (imported verbatim)",
+  "checks": {
+    "all/count_ge_target": true,
+    "all/frozen_address_disjoint": true,
+    "all/frozen_pins_verified": true,
+    "all/max_two_episodes_per_anchor_verse": true,
+    "all/quotes_verbatim_by_construction": true,
+    "all/scope_respected": true,
+    "train/frozen_address_disjoint": true,
+    "train/frozen_pins_verified": true,
+    "train/max_two_episodes_per_anchor_verse": true,
+    "train/quotes_verbatim_by_construction": true,
+    "train/scope_respected": true
+  },
+  "counts": {
+    "candidates": 2571,
+    "emitted": 2006,
+    "emitted_all_scope": 2006,
+    "emitted_train_scope": 1656,
+    "frozen_address_overlap_removed": 161,
+    "frozen_train_items": 200,
+    "frozen_val_items": 60,
+    "per_verse_cap_enforced_removed": 1,
+    "same_address_duplicate_removed": 403,
+    "target": 2000
+  },
+  "episodes_file": "episodes.jsonl",
+  "episodes_sha256": "723cfc0666cc217babca482195655f418819aca3c22e1129589bf1bff726f428",
+  "extraction": {
+    "guards": [
+      "nested-speech guard scoped to the current sentence segment: prior speech verb / question mark => event skipped",
+      "at most 2 guarded events per verse",
+      "pronoun/conjunction-speaker purge + builder speaker-shape gate",
+      "quote 2..20 words, no nested quotes, no parenthetical leads"
+    ],
+    "max_episodes_per_anchor_verse": 2,
+    "sub_patterns": [
+      "miner_exact: builder SPEAKER_VERB_RE verbatim",
+      "short_infix: '<Name> answered and said,' / '<Name> said unto|to <X>[, saying],' / '<Name> [lowercase clause][, and] said,' / '<Name> answered <obj>,'",
+      "thus_saith: 'Thus saith the LORD[,;]' / post-posed 'saith the LORD[,;]' / backward ', ..., saith the LORD.' / 'the word of the LORD came unto X, saying,'",
+      "verse-final anchors: attribution formula at verse end takes its quote from the opening span of the following verse"
+    ],
+    "tier_candidates_all_scope": {
+      "miner_exact": 121,
+      "short_infix": 1866,
+      "thus_saith": 584
+    },
+    "tiers": [
+      "miner_exact",
+      "short_infix",
+      "thus_saith"
+    ],
+    "verbatim_rule": "quote is a contiguous substring of its source verse text; edge trims and 'unto X,'/'saying,' filler strips only; long speeches cut at [.?!;], then ':', then hard-truncated to 20 words"
+  },
+  "frozen_corpus": {
+    "counts": {
+      "train": 200,
+      "val": 60
+    },
+    "dedupe": "anchor+source verse-address exclusion vs TRAIN and VAL items; same-address pair collapse; cross-address repeats kept (separate speech acts)",
+    "digest_pins": {
+      "train_canonical": "d256c27dacec0cb2a169005611338c3408bbb252ba619dcde86fb01e3f8c9a7b",
+      "train_raw_sha256": "d82fe615dced145d4a6d10d19e90583d1eca4bb6be79e638a96bebc511b0a0e8",
+      "val_canonical": "2771de48a90d9e694cc4260e9392d83c8e39f2aca7d57fe06dd51c7ce9a55bec",
+      "val_raw_sha256": "4f9be9b725c630cbc0e94f8cea4a96413bc026895a3d1b5312882e1980e37dec"
+    }
+  },
+  "generated_utc": "2026-08-25T11:03:05+00:00",
+  "hygiene_warning": "episodes.jsonl includes validation-book verses; if E3's preregistered gates include VAL-cohort scoring, train from episodes_train.jsonl instead",
+  "parse_stats": {
+    "anomalies": {
+      "text_before_first_verse": 66
+    },
+    "canonical_kjv_verses": 31102,
+    "delta_vs_canonical": 0,
+    "train_books_scanned": 49,
+    "train_verses_scanned": 25266,
+    "val_book_indices_excluded": [
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43
+    ],
+    "verse_total_parsed": 31102
+  },
+  "purpose": "T-ROUTE reserve plan: mechanically scale who_said training episodes past the N=200 sample limit; ready if E3 passes",
+  "schema_version": "humanbrain/synthetic-episodes/v1",
+  "scopes": {
+    "all": {
+      "emitted": 2006,
+      "file": "episodes.jsonl",
+      "note": "all 66 books minus frozen-item addresses; CONTAMINATES any evaluation that gates on held-out validation books",
+      "sha256": "723cfc0666cc217babca482195655f418819aca3c22e1129589bf1bff726f428"
+    },
+    "train": {
+      "emitted": 1656,
+      "file": "episodes_train.jsonl",
+      "note": "TRAIN-side books only (builder split rule); use this subset when E3-style gates score the validation cohort",
+      "sha256": "a94a8c22cedace1b533351b3a811829b68f62a374daaceff683b052b1b359e5a"
+    }
+  },
+  "seed": 7,
+  "sha256_content": "97137f402c44b34620c53809c5d6ea1226f9edf9a2d5625341b25810510247a3",
+  "source": {
+    "fetch_mode": "existing-stable-pair-reused",
+    "gutenberg_id": 10,
+    "sha256_raw": "0204adaed1f25700aa854218cae63c7172228c41088f335e99167a071eed83c0",
+    "size_trimmed_bytes": 4436168
+  },
+  "stats": {
+    "mean_quote_words": 13.173,
+    "quote_words_histogram": {
+      "10": 103,
+      "11": 76,
+      "12": 93,
+      "13": 87,
+      "14": 110,
+      "15": 106,
+      "16": 111,
+      "17": 76,
+      "18": 84,
+      "19": 78,
+      "2": 23,
+      "20": 471,
+      "3": 47,
+      "4": 97,
+      "5": 73,
+      "6": 96,
+      "7": 101,
+      "8": 88,
+      "9": 86
+    },
+    "speakers_top20": [
+      [
+        "the lord",
+        427
+      ],
+      [
+        "lord",
+        354
+      ],
+      [
+        "jesus",
+        119
+      ],
+      [
+        "the lord god",
+        101
+      ],
+      [
+        "david",
+        88
+      ],
+      [
+        "moses",
+        67
+      ],
+      [
+        "god",
+        59
+      ],
+      [
+        "israel",
+        43
+      ],
+      [
+        "saul",
+        35
+      ],
+      [
+        "samuel",
+        26
+      ],
+      [
+        "joseph",
+        24
+      ],
+      [
+        "peter",
+        23
+      ],
+      [
+        "jacob",
+        18
+      ],
+      [
+        "joshua",
+        17
+      ],
+      [
+        "the",
+        17
+      ],
+      [
+        "pharaoh",
+        16
+      ],
+      [
+        "job",
+        15
+      ],
+      [
+        "elijah",
+        15
+      ],
+      [
+        "joab",
+        13
+      ],
+      [
+        "jehoshaphat",
+        12
+      ]
+    ],
+    "unique_speakers": 218
+  },
+  "synthesizer": "src/humanbrain/episode_synthesizer.py"
+}
