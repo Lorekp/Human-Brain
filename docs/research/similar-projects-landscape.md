@@ -243,3 +243,25 @@ claim should remain **"unusual combination"**, not **"first"** or **"unique"**:
 the search cannot prove a negative, several 2026 systems are unreviewed and
 changing quickly, and CTP-Hybrid already shows that even first-spike token
 decoding is no longer exclusive.
+
+## Addendum (2026-08-25, deep-dive follow-up)
+
+Full-text reads of both primary sources (`deep-dive-dendricl-ctp.md`) correct
+two claims above:
+
+1. **CTP-Hybrid:** code IS now archived — `neurovein_v2_code.zip` (9.5 MB) on
+   Zenodo record 20120983 (v2.0, May 2026; concept DOI 20077294 resolves there).
+   More importantly, v2.0 contains **no output-side first-spike competitive
+   decoding**: first-spike timing is input-encoding only (IST); output decoding
+   is SpikeReadoutV3 → vocabulary logits. The "closest in output-decoding
+   language" framing and the feature-table row "Earliest-spike vocabulary
+   decoding: a very recent claim exists" are retracted — no public precedent for
+   our membrane-latency race was found.
+2. **DendriCL:** paper states code is released as the `snn-icl-bench`
+   repository (~1,800 lines + raw result JSONs; live URL not independently
+   verified). Its Active-Dendrites baseline (context-gate style — mechanistically
+   closest to our falsified APICAL-AND) collapses to chance at d=20 while its
+   apical-estimator design succeeds: independent corroboration of the G-A1
+   negative result's direction.
+
+See `deep-dive-dendricl-ctp.md` for the full adopt/adapt/avoid analysis.

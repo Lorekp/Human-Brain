@@ -50,3 +50,15 @@ was always roadmap-scheduled and does NOT violate neuron-derived constraints
 — connectivity trained during development by passage statistics is what
 brains do. Path 1 relaxes "local learning rules only" but keeps everything
 else. Path 3 abandons verbatim-quote QA for tasks identity-SDRs can express.
+
+**Update 2026-08-25:** the strategy cycle completed six primary-source deep
+dives (Assembly Calculus/NEMO, DendriCL + CTP-Hybrid, HTM Temporal Memory,
+NEST e-prop + HuMAM/DTB, SpikeGPT + NeuronSpark, spiking-reservoir-lm).
+Their consolidated effect on this fork — re-priced prospects per path, a
+master adopt/adapt/avoid ledger grouped by path, two new cheap probes
+(B′ = APICAL-LMS Stage-0 via TwoCompartmentGLIF5; HTM predictive-state
+depolarizing bias into the first-spike race), and a recommended execution
+order under the single-GPU + $70 vast.ai envelope — is in
+[path-decision-synthesis.md](path-decision-synthesis.md). No finding reopens
+the termination recorded above; the three independent external corroboration
+angles are summarized there.

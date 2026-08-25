@@ -26,6 +26,20 @@ harness scripts, per the repo's committed-evidence convention.
 | [similar-projects-landscape.md](similar-projects-landscape.md) | Primary-source landscape of cell-based language/program-learning projects (SNN LMs, HTM/HTM-dendritic, Assembly Calculus/NEMO, Spaun, HuMAM/DTB/NEST); Human Brain's combination is unusual, not unique | current |
 | [hermes-ox-alpha-workforce.md](hermes-ox-alpha-workforce.md) | First-party audit + smoke tests for using Hermes Agent / Ox Alpha as parallel research workforce on public work only | current |
 
+## External project deep dives and path decision (2026-08-25 wave)
+
+Primary-source full-text reads of the six closest external systems, consolidated into one fork-decision document. All six corroborate or re-price the post-T-ROUTE fork; none reopens it.
+
+| Document | One-line description | Status |
+| --- | --- | --- |
+| [path-decision-synthesis.md](path-decision-synthesis.md) | Consolidated fork decision after the six deep dives: master adopt/adapt/avoid grouped by path, sharpened path-1/2/3 prospects + first experiments + costs + falsifiers, two new cheap probes (B′ APICAL-LMS Stage-0; HTM predictive-state race bias), recommended order under single-GPU + $70 vast.ai | current (active decision input) |
+| [deep-dive-assembly-calculus.md](deep-dive-assembly-calculus.md) | NEMO/Assembly Calculus: repetition-rich regime avoids (not escapes) the E3 trap; position-as-place, k-cap, mutual inhibition; preregistered repetition-regime probe for path 3 | current |
+| [deep-dive-dendricl-ctp.md](deep-dive-dendricl-ctp.md) | DendriCL + CTP-Hybrid: estimator-not-gate resurrects Direction B as B′ = APICAL-LMS; CTP v2.0 has no output first-spike race (landscape corrections) | current |
+| [deep-dive-htm-tm.md](deep-dive-htm-tm.md) | HTM Temporal Memory: why TM sequences work where U-STATE decode failed; growth constants, context-conditioned re-representation, predictive-state race-bias probe; path 2 strengthened | current |
+| [deep-dive-nest-eprop-scale.md](deep-dive-nest-eprop-scale.md) | NEST e-prop (validated three-factor rule to 2M plastic neurons) + HuMAM/DTB scale platforms that learn nothing; credit-assignment template and scale anchors for path 2 | current |
+| [deep-dive-spikegpt-neuronspark.md](deep-dive-spikegpt-neuronspark.md) | SpikeGPT + NeuronSpark: ceiling of gradient-trained spiking (~7% best-case tax); full path-1 recipe template; M4–M6 undemonstrated cluster-wide | current |
+| [deep-dive-spiking-reservoir-lm.md](deep-dive-spiking-reservoir-lm.md) | spiking-reservoir-lm: independent capacity-law corroboration of our termination chain; cheap methodology transfers (seed selection, pre-flights, tripwires, windowed probes) | current |
+
 ## Falsified-negative verdicts
 
 | Document | One-line description | Status |
