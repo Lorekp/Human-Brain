@@ -147,18 +147,42 @@ executed week-1:
   P3: concept self-store recovers speakers at 38.3% in TRAIN books but
   0% on VAL — capacity intact, generalization zero.
 - **APICAL-AND (two-compartment coincidence encoder)**: G-A1 conjunction
-  index failed in all 18 arms (<1.5×); decode analysis pending.
+  index failed in all 18 arms (best median CI 1.0290 vs required ≥1.5);
+  decode below majority-prior. Mechanistic localization: burst response
+  recruitment-limited — the gate adds only 2–3%, not the required 50%
+  (apical-and-verdict.md, c323575).
+
+**T-ROUTE (trained question→passage projection): NEGATIVE — escalation
+ladder exhausted** (E1/E2/E3 chain, t-route-program-conclusion.md).
+E1: episode-scoped three-factor Hebbian routing fails (homeostat floors
+common bytes; winners collapse to a rare-byte pool). E2: removing the
+normalization recovers absolute overlap but winners are query-independent
+(static prior; shuffled enrichment 1.00–1.06). E3: quote-span gating
+reproduced exactly by random-span control — position is never addressable
+in a token-identity substrate. External corroboration: NEMO places
+position in which-area-fires-when (not token bits); spiking-reservoir-lm's
+capacity law bounds frozen substrates at ~2 bits/trained-param; HTM's ABCD/
+XBCY argument shows cumulative unions cannot write conjunctions. The
+windowed-decoder retro-probe (48 configs, capacity-unlimited ridge over
+windows k∈{1,4,16,64}) confirmed U-STATE is state-empty: zero configs beat
+even majority-prior (5981159). E4 closed path-3's assembly pivot: only
+1/1611 who-said pairs reaches NEMO's repetition regime; multiplicative+k-cap
+builds a frequency aristocracy with winner Jaccard exactly 1.000 (4b886b9).
 
 **The cross-cutting finding (design constraint for everything downstream):
-nine preregistered executions show separation and storage capacity SUCCEED
+sixteen preregistered executions show separation and storage capacity SUCCEED
 while generalization of stored context to unseen question–context pairings
 FAILS.** The deficit is not representational, not capacity, not readout —
-it is the absence of any mechanism binding paraphrased-question space to
-passage-content space. Architectures that only reorganize HOW context is
-encoded cannot fix this; what is missing is a trained mapping between two
-different content spaces (question-space and passage-space), which in
-brains is exactly what learned long-range connectivity provides and what
-every fixed-connectivity variant tested here lacks by construction.
+it is the absence of any trained mapping between question-space and
+passage-content space, and no local-learning variant tested can supply it.
+The fork decision lives in path-decision-synthesis.md: path 2
+(trained-by-construction connectivity, R3 episodic-store) strengthened by
+HTM existence proof + e-prop credit template; path 1 re-priced (~7% spiking
+tax, $60–90/shot); path 3 narrowed to repetition-regime tasks. Two cheap
+probes defined: P-A (B′ = APICAL-LMS estimator via existing
+TwoCompartmentGLIF5 — DendriCL role reversal) and P-B (predictive-state
+depolarizing bias into the first-spike race — TM-native, distinct from the
+falsified plateau gate).
 
 ### Phase R2 — Reading at scale (the demonstration, weeks)
 
