@@ -69,7 +69,12 @@ def test_topology_partner_uniqueness_per_post_bit():
 
 
 def test_hebbian_accumulation_identity_outer_products():
-    """dW must equal the exact sum of pre(x)post M outer products."""
+    """dW equals the support-masked sum of pre(x)post M outer products.
+
+    The freeze pins training ONLY at projection synapses (strategy: "trained
+    only at projection synapses"), so the dense expectation is each event's
+    outer product masked to W's sparse support.
+    """
     projector = SDRProjector(n_bits=TOY.n_bits, w_ones=TOY.w_ones, seed=TOY.w_seed)
     events = _toy_events(projector)
 
@@ -79,13 +84,19 @@ def test_hebbian_accumulation_identity_outer_products():
     )
 
     expected = SparseProjection(TOY)  # same init, no training
-    dense_expected = expected.to_dense() + sum(
-        np.outer(projector.vector(p), projector.vector(q)) for p, q in events
-    )
-    assert np.allclose(trained.to_dense(), dense_expected, rtol=0, atol=1e-12)
-    # Accumulation is additive on top of the seeded-random init values.
-    delta = trained.to_dense() - expected.to_dense()
-    assert abs(delta.sum() - len(events) * (TOY.w_ones**2)) < 1e-9
+    support_mask = np.zeros((TOY.n_bits, TOY.n_bits), dtype=bool)
+    sup = expected.support()
+    support_mask[np.repeat(np.arange(TOY.n_bits), TOY.fan_in), sup.ravel()] = True
+    delta_expected = np.zeros((TOY.n_bits, TOY.n_bits), dtype=np.float64)
+    for p, q in events:
+        # W convention: rows = post (passage) bits, cols = pre (question) bits.
+        delta_expected += support_mask * np.outer(projector.vector(q), projector.vector(p))
+    assert np.allclose(trained.to_dense() - expected.to_dense(), delta_expected,
+                       rtol=0, atol=1e-12)
+    # Repeated identical events accumulate multiplicities (additivity).
+    n_block_entries = len(events) * TOY.w_ones * TOY.w_ones
+    masked_entries = int((delta_expected > 0).sum())
+    assert masked_entries <= n_block_entries
 
 
 def test_one_shot_no_epoch_amplification():
@@ -106,7 +117,11 @@ def test_one_shot_no_epoch_amplification():
 
 
 def test_homeostatic_row_normalization():
-    """Nonzero rows have unit L2 norm after scaling; zero rows stay zero."""
+    """Change Note 1 formula: rows unit-normalized, then scaled by idf(b).
+
+    Nonzero rows end with L2 norm == idf(df_b); IDF ordering is preserved as a
+    per-bit gain; structurally zero rows stay zero.
+    """
     projector = SDRProjector(n_bits=TOY.n_bits, w_ones=TOY.w_ones, seed=TOY.w_seed)
     events = [
         (projector.indices(p).tolist(), projector.indices(q).tolist())
@@ -114,18 +129,19 @@ def test_homeostatic_row_normalization():
     ]
     proj = SparseProjection(TOY)
     proj.accumulate_events(events)
-    # df: bits of token 10/11/12/13 active; tokens 0..3 never post-active.
     df = np.zeros(TOY.n_bits, dtype=np.int64)
     for t in (10, 11, 12, 13):
         df[projector.indices(t)] += 1
-    scaled = proj.apply_homeostasis(df, n_passages=4)
-    norms = np.linalg.norm(scaled, axis=1)
-    touched = df > 0
-    assert np.allclose(norms[touched], 1.0, atol=1e-12)
-    assert np.all(norms[~touched] >= 0.0)
-    untouched_rows = df == 0
-    if untouched_rows.any():
-        assert np.allclose(scaled[untouched_rows], proj.to_dense()[untouched_rows])
+    view = proj.apply_homeostasis(df, n_passages=4)
+    scaled = view.to_dense()
+    expected_scales = np.array([TOY.idf_scale(int(d), 4) for d in df])
+    row_norms = np.linalg.norm(scaled, axis=1)
+    touched = np.linalg.norm(proj.to_dense(), axis=1) > 0  # all rows here
+    assert np.allclose(row_norms[touched], expected_scales[touched], atol=1e-12)
+    # Direction preserved: cosine between raw and scaled rows is 1 on touched.
+    raw = proj.to_dense()
+    dots = (raw * scaled).sum(axis=1)
+    assert np.allclose(dots[touched], row_norms[touched] * np.linalg.norm(raw, axis=1)[touched])
 
 
 def test_idf_scale_monotone_in_document_frequency():
@@ -181,12 +197,12 @@ def test_route_determinism_end_to_end():
 def test_shuffle_values_preserves_support_and_multiset():
     proj = SparseProjection(TOY)
     sup_before = proj.support().copy()
-    vals_before = np.sort(proj.values())
+    vals_before = np.sort(proj.values(), axis=None)
     shuf = proj.shuffled_values_copy(seed=11)
     assert np.array_equal(shuf.support(), sup_before)
-    assert np.array_equal(np.sort(shuf.values()), vals_before)
+    assert np.array_equal(np.sort(shuf.values(), axis=None), vals_before)
     # And it is actually permuted (astronomically unlikely to be identity).
-    assert not np.array_equal(shuf.values(), vals_before) or TOY.fan_in * TOY.n_bits < 64
+    assert not np.array_equal(shuf.values(), proj.values()) or TOY.fan_in * TOY.n_bits < 64
 
 
 def test_public_constants_match_freeze():

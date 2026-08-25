@@ -85,11 +85,21 @@ target; M is a binary third factor = question-onset eligibility):
 
 - **Arm A** `sparse_trained_homeostat`: sparse trained W of §1/§2 plus
   homeostatic IDF-like row scaling applied ONCE after accumulation:
-  `df[b]` = number of TRAIN passage streams whose token-union contains bit b;
-  `scale[b] = ln((N_pass + 1) / (df[b] + 1))`; row `b` of W multiplied by
-  `scale[b]`, then rows with nonzero norm L2-normalized
-  (`W[b,:] /= ||W[b,:]||_2` iff norm > 0; zero rows stay zero). This is the
-  install candidate.
+  `df[b]` = number of TRAIN passage streams whose token-union contains bit b.
+  **Change Note 1 (2026-08-25, PRE-SPEND amendment — no episode had been
+  encoded when written; toy-config tests only):** the originally drafted order
+  ("rows multiplied by scale, then L2-normalized") is mathematically vacuous —
+  a uniform per-row scale followed by per-row L2 normalization cancels
+  exactly. Amended operative formula, per row b:
+  `W'[b, :] = idf(b) * W[b, :] / ||W[b, :]||_2` for `||W[b, :]||_2 > 0`
+  (structurally zero rows stay zero), where
+  `idf(b) = ln((N_pass + 1) / (df[b] + 1))`.
+  Rationale unchanged from the strategy: each postsynaptic bit normalizes its
+  incoming weight mass (homeostatic target norm), and the IDF factor survives
+  normalization as a per-bit gain term so commonly-active passage bits are
+  down-weighted in routed drive. This change was applied before any corpus
+  encoding or gate computation; nothing about arms, gates, controls, seeds,
+  or thresholds changed.
 - **Arm B** `dense_unnormalized_correlation`: `C += outer(Q_pop_e, P_pop_e)`
   accumulated over TRAIN episodes in canonical manifest order (undecayed
   unions both sides), stored dense float64, NO normalization of any kind —
