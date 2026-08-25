@@ -213,10 +213,19 @@ class UnionEncoder:
         self.projector = SDRProjector(
             n_bits=self.n_bits, w_ones=self.w_ones, seed=self.seed
         )
+        self._state: UnionState | None = None
+
+    @property
+    def state(self) -> UnionState:
+        """Persistent incremental engine for replay-style consumers."""
+        if self._state is None:
+            self._state = UnionState(self.projector, lam=self.lam)
+        return self._state
 
     def encode(self, token_ids: Sequence[int]) -> EncodedSequence:
         """Reset-and-replay: bit-identical for identical streams, always."""
-        state = UnionState(self.projector, lam=self.lam)
+        state = self.state
+        state.reset()
         for token in token_ids:
             state.step(int(token))
         return EncodedSequence(

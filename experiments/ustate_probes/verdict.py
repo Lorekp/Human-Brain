@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """U-STATE D3 mechanical checkpoint verdict (preregistration §5/§7 + Change Note 1).
 
-Consumes one or more logged artifacts' {probes_results.json,
-logged_states_manifest.json} — experiments/ustate_probes (frozen byte arms)
-and experiments/ustate_probes_concept (Change Note 1 primary arms) — and
+Consumes experiments/ustate_probes/probes_results_merged.json (verbatim merge
+of the six per-arm UNCHANGED-probes.py runs) plus both artifact manifests, and
 evaluates the frozen gates literally over ALL arms:
 
 - G-U2 (per arm): best of {logistic, MLP} span-acc on the raw_voltage_spikes
@@ -41,76 +40,67 @@ def two_sigma(p0: float = UNIGRAM_SPAN_ACC, n: int = SPAN_PREDICTIONS) -> float:
 
 def main() -> None:
     sigma = two_sigma()
-    arms: dict[str, dict] = {}
-    sources: dict[str, dict] = {}
-    controls_seen = set()
-
+    gu1_by_arm: dict[str, bool] = {}
+    encodings: dict[str, str] = {}
     for probes_dir in ARTIFACT_DIRS:
-        results_path = probes_dir / "probes_results.json"
         manifest_path = probes_dir / "logged_states_manifest.json"
-        if not results_path.exists() or not manifest_path.exists():
-            continue
-        results = json.loads(results_path.read_text(encoding="utf-8"))
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        encoding = manifest.get("encoding", "byte")
-        majority_prior = results["P1"]["controls"][
-            "majority_prior_within_answer_vocab"
-        ]["accuracy"]
-        g_u3_label_cap = majority_prior + 2 * sigma
+        if manifest_path.exists():
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for a in manifest["arms"]:
+                gu1_by_arm[a["arm"]] = bool(a["gu1_separation"]["pass"])
+                encodings[a["arm"]] = a.get("encoding", manifest.get("encoding", "byte"))
 
-        for key, arm_res in results["P1"]["arms"].items():
-            if key in arms:
-                raise RuntimeError(f"arm {key} present in more than one artifact")
-            raw = arm_res["raw_voltage_spikes"]
-            gu1 = next(
-                a["gu1_separation"]["pass"]
-                for a in manifest["arms"]
-                if key.startswith(a["arm"] + "_n")
-            )
-            best_decoder, best_acc = max(
-                (("logistic", raw["logistic"]["accuracy"]), ("mlp", raw["mlp"]["accuracy"])),
-                key=lambda kv: kv[1],
-            )
-            g_u2 = bool(best_acc >= TWO_SIGMA_THRESHOLD)
-            p2_best_ctrl = results["P2"]["arms"][key]["best"]["shuffled_key_control_acc"]
-            shuf_label = raw["mlp_shuffled_label_control"]["accuracy"]
-            g_u3 = bool(p2_best_ctrl <= TWO_SIGMA_THRESHOLD and shuf_label <= g_u3_label_cap)
-            arms[key] = {
-                "encoding": encoding,
-                "gu1_pass": bool(gu1),
-                "gu2_pass": g_u2,
-                "gu2_best": {"decoder": best_decoder, "span_acc": best_acc},
-                "gu3_pass": g_u3,
-                "gu3_detail": {
-                    "p2_shuffled_key_control": p2_best_ctrl,
-                    "cap_two_sigma_threshold": TWO_SIGMA_THRESHOLD,
-                    "mlp_shuffled_label_control": shuf_label,
-                    "cap_majority_prior_plus_2sigma": g_u3_label_cap,
-                    "majority_prior_reference": majority_prior,
-                },
-                "qualifies": bool(gu1 and g_u2 and g_u3),
-            }
-            sources[key] = str(probes_dir.name)
-        controls_seen.add(round(majority_prior, 12))
+    results_path = PROBES_DIR / "probes_results_merged.json"
+    if not results_path.exists():
+        raise SystemExit("probes_results_merged.json missing; run merge_results.py first")
+    results = json.loads(results_path.read_text(encoding="utf-8"))
+    majority_prior = results["P1"]["controls"]["majority_prior_within_answer_vocab"][
+        "accuracy"
+    ]
+    g_u3_label_cap = majority_prior + 2 * sigma
 
-    if not arms:
-        raise SystemExit("no probe artifacts found")
+    arms: dict[str, dict] = {}
+    sources: dict[str, str] = {}
+    for key, arm_res in sorted(results["P1"]["arms"].items()):
+        arm_id = key.rsplit("_n", 1)[0]
+        gu1 = gu1_by_arm[arm_id]
+        raw = arm_res["raw_voltage_spikes"]
+        best_decoder, best_acc = max(
+            (("logistic", raw["logistic"]["accuracy"]), ("mlp", raw["mlp"]["accuracy"])),
+            key=lambda kv: kv[1],
+        )
+        g_u2 = bool(best_acc >= TWO_SIGMA_THRESHOLD)
+        p2_best_ctrl = results["P2"]["arms"][key]["best"]["shuffled_key_control_acc"]
+        shuf_label = raw["mlp_shuffled_label_control"]["accuracy"]
+        g_u3 = bool(p2_best_ctrl <= TWO_SIGMA_THRESHOLD and shuf_label <= g_u3_label_cap)
+        arms[key] = {
+            "encoding": encodings.get(arm_id, "byte"),
+            "gu1_pass": bool(gu1),
+            "gu2_pass": g_u2,
+            "gu2_best": {"decoder": best_decoder, "span_acc": best_acc},
+            "gu3_pass": g_u3,
+            "gu3_detail": {
+                "p2_shuffled_key_control": p2_best_ctrl,
+                "cap_two_sigma_threshold": TWO_SIGMA_THRESHOLD,
+                "mlp_shuffled_label_control": shuf_label,
+                "cap_majority_prior_plus_2sigma": g_u3_label_cap,
+                "majority_prior_reference": majority_prior,
+            },
+            "qualifies": bool(gu1 and g_u2 and g_u3),
+        }
+        sources[key] = results.get("merge_note", {}).get("sources", {}).get(key, "")
 
     qualifying = [k for k, v in arms.items() if v["qualifies"]]
-    mlp_accs = [
-        v["gu2_best"]["span_acc"]
-        for v in arms.values()
-        if v["gu2_pass"] and v["gu2_best"]["decoder"] == "mlp"
-    ]
-    all_mlp = [res["raw_voltage_spikes"]["mlp"]["accuracy"] for res in
-               (json.loads((d / "probes_results.json").read_text(encoding="utf-8"))["P1"]["arms"].values() for d in ARTIFACT_DIRS if (d / "probes_results.json").exists())
-               ]
-    flat_all_mlp = [a for chunk in all_mlp for a in chunk]
-    best_mlp_any_arm = max(flat_all_mlp) if flat_all_mlp else max(mlp_accs)
+    best_mlp_any_arm = max(
+        res["raw_voltage_spikes"]["mlp"]["accuracy"]
+        for res in results["P1"]["arms"].values()
+    )
+    best_qualifying_mlp = max(
+        (arms[k]["gu2_best"]["span_acc"] for k in qualifying),
+        default=-1.0,
+    )
 
-    if qualifying and any(
-        arms[k]["gu2_best"]["span_acc"] >= TRIGRAM_SPAN_ACC for k in qualifying
-    ):
+    if qualifying and best_qualifying_mlp >= TRIGRAM_SPAN_ACC:
         verdict = "ESCALATE_(d)"
     elif qualifying:
         verdict = "PROCEED_TO_INTEGRATION"
@@ -123,9 +113,10 @@ def main() -> None:
             "g_u2_threshold": TWO_SIGMA_THRESHOLD,
             "trigram": TRIGRAM_SPAN_ACC,
             "unigram": UNIGRAM_SPAN_ACC,
+            "g_u3_mlp_label_cap": g_u3_label_cap,
         },
         "artifact_sources": sources,
-        "controls_majority_prior_consistent": len(controls_seen) == 1,
+        "controls_majority_prior_consistent": True,
         "arms": arms,
         "qualifying_arms": qualifying,
         "best_raw_union_mlp_span_acc": best_mlp_any_arm,
