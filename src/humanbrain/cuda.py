@@ -1015,18 +1015,23 @@ class CudaRecurrentKernel:
     def _decayed_activity_words(self) -> np.ndarray:
         """Pack the per-cell decayed-state activity bitmap (uint64 words).
 
-        A cell is active when any after-spike current channel or its
-        eligibility trace is not exactly +0.0. Negative zero is deliberately
-        treated as active (signbit check): skipping a ``-0.0`` value would be
-        a bit-level no-op for the after-current decay but not for the
-        eligibility expression, and treating it as active keeps every path
-        bit-identical to unconditional evaluation.
+        A cell is active when any after-spike current channel or ANY entry of
+        its multi-trace eligibility bank is not exactly +0.0. Negative zero
+        is deliberately treated as active (signbit check): skipping a
+        ``-0.0`` value would be a bit-level no-op for the after-current decay
+        but not for the eligibility expression, and treating it as active
+        keeps every path bit-identical to unconditional evaluation.
         """
         state = self._population.state
         after = state.after_spike_currents_pa
         eligibility = self._eligibility
         active = np.any((after != 0.0) | np.signbit(after), axis=1)
-        active |= (eligibility != 0.0) | np.signbit(eligibility)
+        # The eligibility buffer is the full trace bank flattened in C order
+        # (row k = trace k): unflatten to (trace_count, cells) and reduce over
+        # traces per cell, matching the kernel's fused loop that decays every
+        # row of one cell under a single decay_active bit.
+        bank = eligibility.reshape(-1, self._population.cell_count)
+        active |= np.any((bank != 0.0) | np.signbit(bank), axis=0)
         return self._pack_activity_bits(active)
 
     def _threshold_spike_active_words(self) -> np.ndarray:

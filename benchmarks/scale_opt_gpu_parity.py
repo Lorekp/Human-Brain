@@ -37,7 +37,10 @@ def state_arrays(circuit: RecurrentCellCircuit) -> dict[str, np.ndarray]:
     state = circuit._reservoir.state
     return {
         "synaptic_current": circuit._synaptic_current_pa,
-        "eligibility": circuit._eligibility,
+        # R0 multi-timescale consolidation replaced the single per-cell
+        # eligibility trace with the full flat trace bank (row k = trace k);
+        # this is the exact array mirrored into the CUDA eligibility buffer.
+        "eligibility_traces": circuit._eligibility_traces,
         "voltage": state.voltage_relative_mv,
         "after": state.after_spike_currents_pa,
         "threshold_spike": state.threshold_spike_mv,
