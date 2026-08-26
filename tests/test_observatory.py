@@ -194,6 +194,10 @@ def test_activity_stream_is_flush_visible_and_records_real_state(
     assert tuple(reader.header.sample_gids) == (0, 5, 10, 15)
     assert reader.frames[-1].spike_count == first.reservoir_spikes
     assert len(reader.frames[-1].voltage_relative_mv) == 4
+    sample = circuit.capture_dynamics(reader.header.sample_gids)
+    assert sample.eligibility == tuple(
+        float(value) for value in circuit.eligibility[list(sample.gids)]
+    )
 
     recorder.set_phase("calibration")
     circuit.observe(3)

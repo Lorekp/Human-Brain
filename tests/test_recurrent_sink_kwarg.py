@@ -15,6 +15,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import humanbrain.recurrent as recurrent_module
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 
 
@@ -47,6 +48,34 @@ def test_observation_sink_default_stays_none() -> None:
     circuit = _circuit()
     assert circuit._observation_sink is None
     assert circuit.observation_sink is None
+
+
+def test_observation_sink_requests_native_spike_count_mirroring(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mirror_flags: list[bool] = []
+    original = recurrent_module.recurrent_kernel
+
+    def recording_kernel(*args, **kwargs):
+        mirror_flags.append(kwargs["mirror_token_spike_counts"])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(recurrent_module, "recurrent_kernel", recording_kernel)
+    _circuit(observation_sink=_sink)
+    assert mirror_flags == [True]
+
+
+def test_restore_accepts_sink_before_native_rebind() -> None:
+    circuit = _circuit()
+    circuit.observe(0)
+    circuit.strengthen(1)
+    circuit.freeze_learning()
+    state = circuit.capture_cell_synapse_state()
+    restored = RecurrentCellCircuit.restore_cell_synapse_state(
+        state,
+        observation_sink=_sink,
+    )
+    assert restored.observation_sink is _sink
 
 
 if __name__ == "__main__":

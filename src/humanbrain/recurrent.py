@@ -725,10 +725,13 @@ class RecurrentCellCircuit:
                 if self.config.readout_learning_rule == "sparse_three_factor"
                 else "full"
             ),
-            # R0-b family A: the u32 accumulator is live kernel state; CUDA
-            # arms mirror it per token only when the family consumes counts.
+            # The u32 accumulator is live kernel state. CUDA mirrors it when
+            # either the feature family or an observation sink consumes it.
             token_spike_counts=self._token_spike_counts,
-            mirror_token_spike_counts="spike_counts" in self.feature_members,
+            mirror_token_spike_counts=(
+                "spike_counts" in self.feature_members
+                or self._observation_sink is not None
+            ),
             mirror_boundary_voltage="voltage_quantiles" in self.feature_members,
         )
         self._native_local_learner = (
@@ -903,6 +906,10 @@ class RecurrentCellCircuit:
     def restore_cell_synapse_state(
         cls,
         state: RecurrentCellSynapseState,
+        *,
+        observation_sink: (
+            Callable[["RecurrentCellCircuit", RecurrentStep], None] | None
+        ) = None,
     ) -> RecurrentCellCircuit:
         """Restore one validated persistent state into a newly bound circuit."""
         metadata = state.metadata
@@ -914,6 +921,7 @@ class RecurrentCellCircuit:
             token_cells=int(metadata["token_cells"]),
             config=config,
             cell_parameters=AllenGlif5Parameters(**metadata["cell_parameters"]),
+            observation_sink=observation_sink,
         )
         direct_arrays = _BASE_STATE_ARRAYS + layout.direct_arrays
         for attribute, key, dtype in direct_arrays:
@@ -1282,7 +1290,9 @@ class RecurrentCellCircuit:
             synaptic_current_pa=tuple(
                 float(value) for value in self._synaptic_current_pa[indices]
             ),
-            eligibility=tuple(float(value) for value in self._eligibility[indices]),
+            eligibility=tuple(
+                float(value) for value in self._eligibility_traces[0, indices]
+            ),
         )
 
     def strengthen(self, target_token_id: int) -> None:
