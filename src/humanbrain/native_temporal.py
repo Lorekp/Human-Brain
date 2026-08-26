@@ -16,11 +16,10 @@ _STATUS_NAMES: Final = {
     0: "ok",
     1: "invalid native input or state",
     2: "segment capacity exhausted",
-    3: "posting-block capacity exhausted",
-    4: "owner segment capacity exhausted",
-    5: "temporal store is poisoned after an earlier failure",
-    6: "native bounded allocation failed",
-    7: "diagnostic destination capacity is insufficient",
+    3: "owner segment capacity exhausted",
+    4: "temporal store is poisoned after an earlier failure",
+    5: "native bounded allocation failed",
+    6: "diagnostic destination capacity is insufficient",
 }
 
 
@@ -208,7 +207,7 @@ class NativeTemporalStore:
             ctypes.byref(self._native_config)
         )
         if not self._handle:
-            raise NativeTemporalStoreError(6)
+            raise NativeTemporalStoreError(5)
         result_capacity = min(config.owner_count, config.segment_capacity)
         self._owner_results = (_NativeOwnerDiagnostic * result_capacity)()
 

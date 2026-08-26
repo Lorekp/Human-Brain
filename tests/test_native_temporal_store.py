@@ -23,6 +23,22 @@ from humanbrain.sparse_temporal_cortex import (
 )
 
 
+@pytest.mark.parametrize(
+    ("status", "message"),
+    (
+        (3, "owner segment capacity exhausted"),
+        (4, "temporal store is poisoned after an earlier failure"),
+        (5, "native bounded allocation failed"),
+        (6, "diagnostic destination capacity is insufficient"),
+    ),
+)
+def test_native_status_map_has_no_obsolete_posting_capacity_code(
+    status: int,
+    message: str,
+) -> None:
+    assert str(NativeTemporalStoreError(status)) == message
+
+
 def _dense_reference(
     segments: list[tuple[int, tuple[int, ...], tuple[int, ...]]],
     context: tuple[int, ...],
@@ -348,7 +364,8 @@ def test_prepare_is_exact_and_bounded_by_matching_source_postings() -> None:
         assert exhausted.value.status == 2
         with pytest.raises(NativeTemporalStoreError) as poisoned:
             store.prepare(tuple(range(10)))
-        assert poisoned.value.status == 5
+        assert poisoned.value.status == 4
+        assert str(poisoned.value) == "temporal store is poisoned after an earlier failure"
 
     # Link the adapter result to the current physical Python fixture rather
     # than treating the hand-written case above as its own oracle.

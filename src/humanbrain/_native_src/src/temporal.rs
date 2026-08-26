@@ -8,17 +8,15 @@ use std::{mem::size_of, ptr, slice};
 
 const PAIRS_PER_SEGMENT: usize = 10;
 const PHYSICAL_CONTACTS_PER_PAIR: u8 = 2;
-const POSTINGS_PER_BLOCK: usize = 64;
 const NONE: u32 = u32::MAX;
 
 const TEMPORAL_OK: u32 = 0;
 const TEMPORAL_INVALID: u32 = 1;
 const TEMPORAL_SEGMENT_CAPACITY: u32 = 2;
-const TEMPORAL_POSTING_CAPACITY: u32 = 3;
-const TEMPORAL_OWNER_CAPACITY: u32 = 4;
-const TEMPORAL_POISONED: u32 = 5;
-const TEMPORAL_ALLOCATION_FAILED: u32 = 6;
-const TEMPORAL_OUTPUT_CAPACITY: u32 = 7;
+const TEMPORAL_OWNER_CAPACITY: u32 = 3;
+const TEMPORAL_POISONED: u32 = 4;
+const TEMPORAL_ALLOCATION_FAILED: u32 = 5;
+const TEMPORAL_OUTPUT_CAPACITY: u32 = 6;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -58,7 +56,7 @@ pub struct TemporalPrepareSummary {
     pub padding_zero: [u8; 6],
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct SourceMeta {
     head: u32,
     tail: u32,
@@ -73,25 +71,7 @@ impl SourceMeta {
     };
 }
 
-#[derive(Clone, Copy)]
-struct PostingBlock {
-    postings: [u32; POSTINGS_PER_BLOCK],
-    next: u32,
-    len: u16,
-    _padding_zero: u16,
-}
-
-impl PostingBlock {
-    const EMPTY: Self = Self {
-        postings: [0; POSTINGS_PER_BLOCK],
-        next: NONE,
-        len: 0,
-        _padding_zero: 0,
-    };
-}
-
 const _: [(); 12] = [(); size_of::<SourceMeta>()];
-const _: [(); 264] = [(); size_of::<PostingBlock>()];
 
 fn reserved_vec<T>(capacity: usize) -> Result<Vec<T>, u32> {
     let mut values = Vec::new();
@@ -107,20 +87,15 @@ fn filled_vec<T: Copy>(length: usize, value: T) -> Result<Vec<T>, u32> {
     Ok(values)
 }
 
-fn maximum_posting_blocks(source_count: usize, posting_capacity: usize) -> Option<usize> {
-    let nonempty_sources = source_count.min(posting_capacity);
-    nonempty_sources.checked_add((posting_capacity - nonempty_sources) / POSTINGS_PER_BLOCK)
-}
-
 pub struct TemporalStore {
     config: TemporalStoreConfig,
-    posting_block_capacity: usize,
     owners: Vec<u32>,
     sources: Vec<u32>,
     permanences: Vec<u16>,
     owner_segment_counts: Vec<u8>,
     source_meta: Vec<SourceMeta>,
-    posting_blocks: Vec<PostingBlock>,
+    next_pair: Vec<u32>,
+    prev_pair: Vec<u32>,
     source_stamps: Vec<u32>,
     segment_stamps: Vec<u32>,
     potential_contacts: Vec<u8>,
@@ -155,21 +130,16 @@ impl TemporalStore {
             .segment_capacity
             .checked_mul(PAIRS_PER_SEGMENT)
             .ok_or(TEMPORAL_INVALID)?;
-        let posting_block_capacity = maximum_posting_blocks(config.source_count, posting_capacity)
-            .ok_or(TEMPORAL_INVALID)?;
-        if posting_block_capacity > u32::MAX as usize {
-            return Err(TEMPORAL_INVALID);
-        }
         let owner_result_capacity = config.owner_count.min(config.segment_capacity);
         Ok(Self {
             config,
-            posting_block_capacity,
             owners: reserved_vec(config.segment_capacity)?,
             sources: reserved_vec(posting_capacity)?,
             permanences: reserved_vec(posting_capacity)?,
             owner_segment_counts: filled_vec(config.owner_count, 0)?,
             source_meta: filled_vec(config.source_count, SourceMeta::EMPTY)?,
-            posting_blocks: reserved_vec(posting_block_capacity)?,
+            next_pair: reserved_vec(posting_capacity)?,
+            prev_pair: reserved_vec(posting_capacity)?,
             source_stamps: filled_vec(config.source_count, 0)?,
             segment_stamps: filled_vec(config.segment_capacity, 0)?,
             potential_contacts: filled_vec(config.segment_capacity, 0)?,
@@ -194,40 +164,99 @@ impl TemporalStore {
         ((normalized as usize) < self.config.source_count).then_some(normalized)
     }
 
-    fn required_new_blocks(&self, sources: &[u32]) -> usize {
-        sources
-            .iter()
-            .filter(|source| {
-                let meta = self.source_meta[**source as usize];
-                meta.tail == NONE
-                    || self.posting_blocks[meta.tail as usize].len as usize == POSTINGS_PER_BLOCK
-            })
-            .count()
-    }
-
-    fn append_posting(&mut self, source: u32, posting: u32) {
+    fn append_posting(&mut self, source: u32, pair_slot: u32) {
         let source_index = source as usize;
         let tail = self.source_meta[source_index].tail;
-        let block_index = if tail == NONE
-            || self.posting_blocks[tail as usize].len as usize == POSTINGS_PER_BLOCK
-        {
-            let block_index = self.posting_blocks.len() as u32;
-            self.posting_blocks.push(PostingBlock::EMPTY);
-            if tail == NONE {
-                self.source_meta[source_index].head = block_index;
-            } else {
-                self.posting_blocks[tail as usize].next = block_index;
-            }
-            self.source_meta[source_index].tail = block_index;
-            block_index
+        self.prev_pair[pair_slot as usize] = tail;
+        self.next_pair[pair_slot as usize] = NONE;
+        if tail == NONE {
+            self.source_meta[source_index].head = pair_slot;
         } else {
-            tail
-        };
-        let block = &mut self.posting_blocks[block_index as usize];
-        let slot = block.len as usize;
-        block.postings[slot] = posting;
-        block.len += 1;
+            self.next_pair[tail as usize] = pair_slot;
+        }
+        self.source_meta[source_index].tail = pair_slot;
         self.source_meta[source_index].live_count += 1;
+    }
+
+    fn unlink_posting(&mut self, pair_slot: u32) {
+        let pair_index = pair_slot as usize;
+        let source_index = self.sources[pair_index] as usize;
+        let previous = self.prev_pair[pair_index];
+        let next = self.next_pair[pair_index];
+        if previous == NONE {
+            self.source_meta[source_index].head = next;
+        } else {
+            self.next_pair[previous as usize] = next;
+        }
+        if next == NONE {
+            self.source_meta[source_index].tail = previous;
+        } else {
+            self.prev_pair[next as usize] = previous;
+        }
+        self.source_meta[source_index].live_count -= 1;
+        self.next_pair[pair_index] = NONE;
+        self.prev_pair[pair_index] = NONE;
+    }
+
+    /// Commit one prevalidated canonical pair set without allocating or failing.
+    ///
+    /// Transactional callers must finish every validation and capacity check
+    /// before entering this unlink/rewrite/relink primitive.
+    fn rewrite_segment_pairs_canonical(
+        &mut self,
+        segment_id: u32,
+        normalized_sources: &[u32],
+        permanence_ticks: &[u16],
+    ) {
+        let first_pair = segment_id as usize * PAIRS_PER_SEGMENT;
+        for pair_index in first_pair..first_pair + PAIRS_PER_SEGMENT {
+            if self.sources[pair_index] != NONE {
+                self.unlink_posting(pair_index as u32);
+            }
+        }
+        for slot in 0..PAIRS_PER_SEGMENT {
+            let pair_index = first_pair + slot;
+            if slot < normalized_sources.len() {
+                self.sources[pair_index] = normalized_sources[slot];
+                self.permanences[pair_index] = permanence_ticks[slot];
+            } else {
+                self.sources[pair_index] = NONE;
+                self.permanences[pair_index] = 0;
+            }
+        }
+        for (slot, source) in normalized_sources.iter().enumerate() {
+            self.append_posting(*source, (first_pair + slot) as u32);
+        }
+    }
+
+    #[cfg(test)]
+    fn rewrite_segment_pairs(
+        &mut self,
+        segment_id: u32,
+        normalized_sources: &[u32],
+        permanence_ticks: &[u16],
+    ) -> Result<(), u32> {
+        if self.poisoned != TEMPORAL_OK {
+            return Err(TEMPORAL_POISONED);
+        }
+        if segment_id as usize >= self.owners.len()
+            || normalized_sources.len() > PAIRS_PER_SEGMENT
+            || normalized_sources.len() != permanence_ticks.len()
+            || normalized_sources
+                .iter()
+                .enumerate()
+                .any(|(index, source)| {
+                    *source as usize >= self.config.source_count
+                        || (index != 0 && normalized_sources[index - 1] >= *source)
+                })
+            || permanence_ticks
+                .iter()
+                .any(|ticks| !(1..=500).contains(ticks))
+        {
+            return Err(TEMPORAL_INVALID);
+        }
+        self.rewrite_segment_pairs_canonical(segment_id, normalized_sources, permanence_ticks);
+        Ok(())
     }
 
     fn allocate_segment(
@@ -264,20 +293,14 @@ impl TemporalStore {
         if self.owner_segment_counts[owner as usize] == u8::MAX {
             return Err(self.poison(TEMPORAL_OWNER_CAPACITY));
         }
-        let required_blocks = self.required_new_blocks(&normalized_sources);
-        if self.posting_blocks.len().saturating_add(required_blocks) > self.posting_block_capacity {
-            return Err(self.poison(TEMPORAL_POSTING_CAPACITY));
-        }
-
         let segment_id = self.owners.len() as u32;
         self.owners.push(owner);
         self.owner_segment_counts[owner as usize] += 1;
-        for (slot, source) in normalized_sources.iter().enumerate() {
-            self.sources.push(*source);
-            self.permanences.push(permanence_ticks[slot]);
-            let posting = segment_id * PAIRS_PER_SEGMENT as u32 + slot as u32;
-            self.append_posting(*source, posting);
-        }
+        self.sources.extend([NONE; PAIRS_PER_SEGMENT]);
+        self.permanences.extend([0; PAIRS_PER_SEGMENT]);
+        self.next_pair.extend([NONE; PAIRS_PER_SEGMENT]);
+        self.prev_pair.extend([NONE; PAIRS_PER_SEGMENT]);
+        self.rewrite_segment_pairs_canonical(segment_id, &normalized_sources, permanence_ticks);
         Ok(segment_id)
     }
 
@@ -356,27 +379,22 @@ impl TemporalStore {
         let mut postings_visited = 0u64;
         for source in context_sources {
             let source_index = self.normalize_source(*source).unwrap() as usize;
-            let mut block_index = self.source_meta[source_index].head;
-            while block_index != NONE {
-                let block = &self.posting_blocks[block_index as usize];
-                for index in 0..block.len as usize {
-                    let posting = block.postings[index];
-                    let segment_id = posting / PAIRS_PER_SEGMENT as u32;
-                    let segment_index = segment_id as usize;
-                    if self.segment_stamps[segment_index] != generation {
-                        self.segment_stamps[segment_index] = generation;
-                        self.potential_contacts[segment_index] = 0;
-                        self.connected_contacts[segment_index] = 0;
-                        self.touched_segments.push(segment_id);
-                    }
-                    self.potential_contacts[segment_index] += PHYSICAL_CONTACTS_PER_PAIR;
-                    if self.permanences[posting as usize] >= self.config.connected_permanence_ticks
-                    {
-                        self.connected_contacts[segment_index] += PHYSICAL_CONTACTS_PER_PAIR;
-                    }
-                    postings_visited += 1;
+            let mut pair_slot = self.source_meta[source_index].head;
+            while pair_slot != NONE {
+                let segment_id = pair_slot / PAIRS_PER_SEGMENT as u32;
+                let segment_index = segment_id as usize;
+                if self.segment_stamps[segment_index] != generation {
+                    self.segment_stamps[segment_index] = generation;
+                    self.potential_contacts[segment_index] = 0;
+                    self.connected_contacts[segment_index] = 0;
+                    self.touched_segments.push(segment_id);
                 }
-                block_index = block.next;
+                self.potential_contacts[segment_index] += PHYSICAL_CONTACTS_PER_PAIR;
+                if self.permanences[pair_slot as usize] >= self.config.connected_permanence_ticks {
+                    self.connected_contacts[segment_index] += PHYSICAL_CONTACTS_PER_PAIR;
+                }
+                postings_visited += 1;
+                pair_slot = self.next_pair[pair_slot as usize];
             }
         }
         self.touched_segments.sort_unstable();
@@ -586,15 +604,203 @@ mod tests {
         }
     }
 
-    fn posting_lengths(store: &TemporalStore, normalized_source: usize) -> Vec<usize> {
-        let mut lengths = Vec::new();
-        let mut block_index = store.source_meta[normalized_source].head;
-        while block_index != NONE {
-            let block = &store.posting_blocks[block_index as usize];
-            lengths.push(block.len as usize);
-            block_index = block.next;
+    fn posting_slots(store: &TemporalStore, normalized_source: usize) -> Vec<u32> {
+        let meta = store.source_meta[normalized_source];
+        let mut slots = Vec::new();
+        let mut previous = NONE;
+        let mut pair_slot = meta.head;
+        while pair_slot != NONE {
+            assert_eq!(store.prev_pair[pair_slot as usize], previous);
+            assert_eq!(store.sources[pair_slot as usize], normalized_source as u32);
+            slots.push(pair_slot);
+            previous = pair_slot;
+            pair_slot = store.next_pair[pair_slot as usize];
+            assert!(slots.len() <= meta.live_count as usize, "posting cycle");
         }
-        lengths
+        assert_eq!(previous, meta.tail);
+        assert_eq!(slots.len(), meta.live_count as usize);
+
+        let mut reverse = Vec::new();
+        let mut next = NONE;
+        pair_slot = meta.tail;
+        while pair_slot != NONE {
+            assert_eq!(store.next_pair[pair_slot as usize], next);
+            reverse.push(pair_slot);
+            next = pair_slot;
+            pair_slot = store.prev_pair[pair_slot as usize];
+            assert!(reverse.len() <= meta.live_count as usize, "posting cycle");
+        }
+        reverse.reverse();
+        assert_eq!(reverse, slots);
+        slots
+    }
+
+    fn assert_intrusive_index_integrity(store: &TemporalStore) {
+        let mut visits = vec![0u8; store.sources.len()];
+        for source in 0..store.config.source_count {
+            for pair_slot in posting_slots(store, source) {
+                visits[pair_slot as usize] += 1;
+            }
+        }
+        for (pair_slot, source) in store.sources.iter().enumerate() {
+            if *source == NONE {
+                assert_eq!(store.permanences[pair_slot], 0);
+                assert_eq!(store.next_pair[pair_slot], NONE);
+                assert_eq!(store.prev_pair[pair_slot], NONE);
+                assert_eq!(visits[pair_slot], 0);
+            } else {
+                assert!((*source as usize) < store.config.source_count);
+                assert!((1..=500).contains(&store.permanences[pair_slot]));
+                assert_eq!(visits[pair_slot], 1);
+            }
+        }
+        for segment_sources in store.sources.chunks_exact(PAIRS_PER_SEGMENT) {
+            let live_count = segment_sources
+                .iter()
+                .position(|source| *source == NONE)
+                .unwrap_or(PAIRS_PER_SEGMENT);
+            assert!(segment_sources[..live_count]
+                .windows(2)
+                .all(|pair| pair[0] < pair[1]));
+            assert!(segment_sources[live_count..]
+                .iter()
+                .all(|source| *source == NONE));
+        }
+    }
+
+    fn test_word(state: &mut u64) -> u64 {
+        *state = state
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
+        *state
+    }
+
+    fn test_sample(state: &mut u64, population: usize, count: usize) -> Vec<u32> {
+        let mut values = (0..population as u32).collect::<Vec<_>>();
+        for draw in 0..count {
+            let remaining = population - draw;
+            let selected = draw + test_word(state) as usize % remaining;
+            values.swap(draw, selected);
+        }
+        values[..count].sort_unstable();
+        values.truncate(count);
+        values
+    }
+
+    type DiagnosticTuple = (u32, u32, u32, u8, u8, u8, u8);
+
+    fn diagnostic_tuple(value: &TemporalOwnerDiagnostic) -> DiagnosticTuple {
+        (
+            value.owner,
+            value.best_matching_segment,
+            value.best_active_segment,
+            value.matching_potential_contacts,
+            value.matching_connected_contacts,
+            value.active_potential_contacts,
+            value.active_connected_contacts,
+        )
+    }
+
+    fn dense_prepare_reference(
+        store: &TemporalStore,
+        segments: &[(u32, Vec<u32>, Vec<u16>)],
+        context: &[u32],
+    ) -> ((usize, usize, usize, u64, u8, u8), Vec<DiagnosticTuple>) {
+        let mut potential = vec![0u8; segments.len()];
+        let mut connected = vec![0u8; segments.len()];
+        let mut postings_visited = 0u64;
+        for (segment_id, (_owner, sources, ticks)) in segments.iter().enumerate() {
+            for (source, permanence) in sources.iter().zip(ticks) {
+                if context.contains(source) {
+                    potential[segment_id] += PHYSICAL_CONTACTS_PER_PAIR;
+                    if *permanence >= store.config.connected_permanence_ticks {
+                        connected[segment_id] += PHYSICAL_CONTACTS_PER_PAIR;
+                    }
+                    postings_visited += 1;
+                }
+            }
+        }
+        let candidate_segments = potential.iter().filter(|count| **count != 0).count();
+        let matching_segments = potential
+            .iter()
+            .filter(|count| **count >= store.config.theta_match)
+            .count();
+        let active_segments = connected
+            .iter()
+            .filter(|count| **count >= store.config.theta_active)
+            .count();
+        let mut diagnostics = Vec::new();
+        for owner in 0..store.config.owner_count as u32 {
+            let mut best_matching = NONE;
+            let mut best_active = NONE;
+            for (segment_id, (segment_owner, _sources, _ticks)) in segments.iter().enumerate() {
+                if *segment_owner != owner {
+                    continue;
+                }
+                let segment_id = segment_id as u32;
+                if potential[segment_id as usize] >= store.config.theta_match
+                    && (best_matching == NONE
+                        || potential[segment_id as usize] > potential[best_matching as usize]
+                        || (potential[segment_id as usize] == potential[best_matching as usize]
+                            && (connected[segment_id as usize]
+                                > connected[best_matching as usize]
+                                || (connected[segment_id as usize]
+                                    == connected[best_matching as usize]
+                                    && segment_id < best_matching))))
+                {
+                    best_matching = segment_id;
+                }
+                if connected[segment_id as usize] >= store.config.theta_active
+                    && (best_active == NONE
+                        || connected[segment_id as usize] > connected[best_active as usize]
+                        || (connected[segment_id as usize] == connected[best_active as usize]
+                            && (potential[segment_id as usize] > potential[best_active as usize]
+                                || (potential[segment_id as usize]
+                                    == potential[best_active as usize]
+                                    && segment_id < best_active))))
+                {
+                    best_active = segment_id;
+                }
+            }
+            if best_matching != NONE || best_active != NONE {
+                diagnostics.push((
+                    owner,
+                    best_matching,
+                    best_active,
+                    if best_matching == NONE {
+                        0
+                    } else {
+                        potential[best_matching as usize]
+                    },
+                    if best_matching == NONE {
+                        0
+                    } else {
+                        connected[best_matching as usize]
+                    },
+                    if best_active == NONE {
+                        0
+                    } else {
+                        potential[best_active as usize]
+                    },
+                    if best_active == NONE {
+                        0
+                    } else {
+                        connected[best_active as usize]
+                    },
+                ));
+            }
+        }
+        (
+            (
+                candidate_segments,
+                matching_segments,
+                active_segments,
+                postings_visited,
+                potential.iter().copied().max().unwrap_or(0),
+                connected.iter().copied().max().unwrap_or(0),
+            ),
+            diagnostics,
+        )
     }
 
     #[test]
@@ -620,9 +826,47 @@ mod tests {
             assert_eq!(size_of::<TemporalStoreConfig>(), 40);
             assert_eq!(size_of::<TemporalOwnerDiagnostic>(), 16);
             assert_eq!(size_of::<TemporalPrepareSummary>(), 48);
+            assert_eq!(size_of::<TemporalStore>(), 432);
         }
         assert_eq!(size_of::<SourceMeta>(), 12);
-        assert_eq!(size_of::<PostingBlock>(), 264);
+    }
+
+    #[test]
+    fn c1_intrusive_store_logical_payload_layout_is_exact() {
+        // Element payloads requested from Vec; allocator metadata and the
+        // separately pinned TemporalStore header are intentionally excluded.
+        const SOURCES: usize = 131_072;
+        const OWNERS: usize = 131_072;
+        const SEGMENTS: usize = 23_286_406;
+        const PAIRS: usize = SEGMENTS * PAIRS_PER_SEGMENT;
+        const LEARNED_SOA: usize = SEGMENTS * size_of::<u32>()
+            + PAIRS * size_of::<u32>()
+            + PAIRS * size_of::<u16>()
+            + OWNERS * size_of::<u8>();
+        const INTRUSIVE_INDEX: usize =
+            SOURCES * size_of::<SourceMeta>() + PAIRS * size_of::<u32>() + PAIRS * size_of::<u32>();
+        const SOURCE_SCRATCH: usize = SOURCES * size_of::<u32>();
+        const SEGMENT_SCRATCH: usize = SEGMENTS * size_of::<u32>()
+            + SEGMENTS * size_of::<u8>()
+            + SEGMENTS * size_of::<u8>()
+            + SEGMENTS * size_of::<u32>();
+        const OWNER_SCRATCH: usize = OWNERS * size_of::<u32>() * 4;
+        const NATIVE_RESERVED_PAYLOAD: usize =
+            LEARNED_SOA + INTRUSIVE_INDEX + SOURCE_SCRATCH + SEGMENT_SCRATCH + OWNER_SCRATCH;
+        const PYTHON_DIAGNOSTIC_OUTPUT: usize = OWNERS * size_of::<TemporalOwnerDiagnostic>();
+
+        assert_eq!(PAIRS, 232_864_060);
+        assert_eq!(LEARNED_SOA, 1_490_461_056);
+        assert_eq!(INTRUSIVE_INDEX, 1_864_485_344);
+        assert_eq!(SOURCE_SCRATCH, 524_288);
+        assert_eq!(SEGMENT_SCRATCH, 232_864_060);
+        assert_eq!(OWNER_SCRATCH, 2_097_152);
+        assert_eq!(NATIVE_RESERVED_PAYLOAD, 3_590_431_900);
+        assert_eq!(PYTHON_DIAGNOSTIC_OUTPUT, 2_097_152);
+        assert_eq!(
+            NATIVE_RESERVED_PAYLOAD + PYTHON_DIAGNOSTIC_OUTPUT,
+            3_592_529_052
+        );
     }
 
     #[test]
@@ -747,7 +991,8 @@ mod tests {
             Err(TEMPORAL_INVALID)
         );
         assert!(store.owners.is_empty());
-        assert!(store.posting_blocks.is_empty());
+        assert!(store.next_pair.is_empty());
+        assert!(store.prev_pair.is_empty());
 
         assert_eq!(store.allocate_segment(0, &sources(), &ticks), Ok(0));
         assert_eq!(store.sources, (0..10).collect::<Vec<_>>());
@@ -768,7 +1013,7 @@ mod tests {
     }
 
     #[test]
-    fn posting_chain_crosses_63_64_65_boundaries_exactly() {
+    fn intrusive_posting_chain_crosses_63_64_65_fanout_exactly() {
         let mut store = TemporalStore::new(config(10, 65, 65)).unwrap();
         let ticks = [250; PAIRS_PER_SEGMENT];
         let mut output = vec![empty_diagnostic(); 65];
@@ -788,14 +1033,187 @@ mod tests {
                 assert_eq!(summary.postings_visited, count as u64);
                 assert_eq!(store.source_meta[0].live_count, count as u32);
                 assert_eq!(
-                    posting_lengths(&store, 0),
-                    if count <= 64 {
-                        vec![count]
-                    } else {
-                        vec![64, count - 64]
-                    }
+                    posting_slots(&store, 0),
+                    (0..count)
+                        .map(|segment| (segment * PAIRS_PER_SEGMENT) as u32)
+                        .collect::<Vec<_>>()
                 );
             }
+        }
+    }
+
+    #[test]
+    fn canonical_rewrite_unlinks_drops_and_regrows_without_stale_postings() {
+        let mut store = TemporalStore::new(config(24, 2, 2)).unwrap();
+        let ticks = [250; PAIRS_PER_SEGMENT];
+        assert_eq!(store.allocate_segment(0, &sources(), &ticks), Ok(0));
+        let second = [100, 110, 111, 112, 113, 114, 115, 116, 117, 118];
+        assert_eq!(store.allocate_segment(1, &second, &ticks), Ok(1));
+        assert_intrusive_index_integrity(&store);
+
+        let rewritten = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20];
+        let rewritten_ticks = [101, 102, 103, 104, 105, 255, 256, 257, 258, 259];
+        assert_eq!(
+            store.rewrite_segment_pairs(0, &rewritten, &rewritten_ticks),
+            Ok(())
+        );
+        assert_eq!(&store.sources[..PAIRS_PER_SEGMENT], &rewritten);
+        assert_eq!(&store.permanences[..PAIRS_PER_SEGMENT], &rewritten_ticks);
+        assert_eq!(posting_slots(&store, 0), vec![10]);
+        assert_eq!(posting_slots(&store, 2), vec![0]);
+        assert_intrusive_index_integrity(&store);
+
+        assert_eq!(store.rewrite_segment_pairs(0, &[], &[]), Ok(()));
+        assert_eq!(
+            &store.sources[..PAIRS_PER_SEGMENT],
+            &[NONE; PAIRS_PER_SEGMENT]
+        );
+        assert_eq!(
+            &store.permanences[..PAIRS_PER_SEGMENT],
+            &[0; PAIRS_PER_SEGMENT]
+        );
+        assert_eq!(posting_slots(&store, 2), Vec::<u32>::new());
+        assert_eq!(posting_slots(&store, 0), vec![10]);
+        assert_intrusive_index_integrity(&store);
+        let mut output = [empty_diagnostic(); 2];
+        let dropped = store
+            .prepare(&[102], output.as_mut_ptr(), output.len())
+            .unwrap();
+        assert_eq!(dropped.candidate_segments, 0);
+        assert_eq!(dropped.postings_visited, 0);
+
+        let regrown = [1, 3, 5];
+        let regrown_ticks = [251, 252, 253];
+        assert_eq!(
+            store.rewrite_segment_pairs(0, &regrown, &regrown_ticks),
+            Ok(())
+        );
+        assert_eq!(&store.sources[..3], &regrown);
+        assert_eq!(&store.sources[3..PAIRS_PER_SEGMENT], &[NONE; 7]);
+        assert_eq!(&store.permanences[..3], &regrown_ticks);
+        assert_eq!(&store.permanences[3..PAIRS_PER_SEGMENT], &[0; 7]);
+        assert_intrusive_index_integrity(&store);
+        let recognized = store
+            .prepare(&[101, 103, 105], output.as_mut_ptr(), output.len())
+            .unwrap();
+        assert_eq!(recognized.candidate_segments, 1);
+        assert_eq!(recognized.postings_visited, 3);
+        assert_eq!(recognized.owner_result_count, 1);
+        assert_eq!(output[0].owner, 0);
+        assert_eq!(output[0].best_active_segment, 0);
+
+        assert_eq!(
+            store.rewrite_segment_pairs(0, &regrown, &regrown_ticks),
+            Ok(())
+        );
+        assert_intrusive_index_integrity(&store);
+
+        let before = (
+            store.sources.clone(),
+            store.permanences.clone(),
+            store.next_pair.clone(),
+            store.prev_pair.clone(),
+            store.source_meta.clone(),
+        );
+        assert_eq!(
+            store.rewrite_segment_pairs(0, &[3, 3], &[250, 250]),
+            Err(TEMPORAL_INVALID)
+        );
+        assert_eq!(
+            store.rewrite_segment_pairs(2, &[2], &[250]),
+            Err(TEMPORAL_INVALID)
+        );
+        assert_eq!(
+            store.rewrite_segment_pairs(0, &[2], &[0]),
+            Err(TEMPORAL_INVALID)
+        );
+        assert_eq!(
+            (
+                store.sources.clone(),
+                store.permanences.clone(),
+                store.next_pair.clone(),
+                store.prev_pair.clone(),
+                store.source_meta.clone(),
+            ),
+            before,
+        );
+        assert_intrusive_index_integrity(&store);
+    }
+
+    #[test]
+    fn randomized_rewrites_match_independent_dense_recognition() {
+        let mut frozen_config = config(128, 24, 64);
+        frozen_config.theta_match = 8;
+        frozen_config.theta_active = 12;
+        let mut store = TemporalStore::new(frozen_config).unwrap();
+        let mut state = 0xA13C_1A57_D15C_A11Du64;
+        let mut segments = Vec::new();
+        for segment_id in 0..64u32 {
+            let owner = test_word(&mut state) as u32 % 24;
+            let sources = test_sample(&mut state, 128, PAIRS_PER_SEGMENT);
+            let ticks = (0..PAIRS_PER_SEGMENT)
+                .map(|_| (test_word(&mut state) % 500 + 1) as u16)
+                .collect::<Vec<_>>();
+            let physical = sources
+                .iter()
+                .map(|source| source + frozen_config.source_gid_base)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                store.allocate_segment(owner, &physical, &ticks),
+                Ok(segment_id)
+            );
+            segments.push((owner, sources, ticks));
+        }
+
+        let mut output = vec![empty_diagnostic(); frozen_config.owner_count];
+        for round in 0..256 {
+            let segment_id = test_word(&mut state) as usize % segments.len();
+            let live_count = test_word(&mut state) as usize % (PAIRS_PER_SEGMENT + 1);
+            let sources = test_sample(&mut state, frozen_config.source_count, live_count);
+            let ticks = (0..live_count)
+                .map(|_| (test_word(&mut state) % 500 + 1) as u16)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                store.rewrite_segment_pairs(segment_id as u32, &sources, &ticks),
+                Ok(())
+            );
+            segments[segment_id].1 = sources;
+            segments[segment_id].2 = ticks;
+            assert_intrusive_index_integrity(&store);
+
+            let context_count = test_word(&mut state) as usize % 33;
+            let logical_context =
+                test_sample(&mut state, frozen_config.source_count, context_count);
+            let mut physical_context = logical_context
+                .iter()
+                .map(|source| source + frozen_config.source_gid_base)
+                .collect::<Vec<_>>();
+            if round % 2 != 0 {
+                physical_context.reverse();
+            }
+            let summary = store
+                .prepare(&physical_context, output.as_mut_ptr(), output.len())
+                .unwrap();
+            let (expected_summary, expected_diagnostics) =
+                dense_prepare_reference(&store, &segments, &logical_context);
+            assert_eq!(
+                (
+                    summary.candidate_segments,
+                    summary.matching_segments,
+                    summary.active_segments,
+                    summary.postings_visited,
+                    summary.max_potential_contacts,
+                    summary.max_connected_contacts,
+                ),
+                expected_summary,
+            );
+            assert_eq!(
+                output[..summary.owner_result_count]
+                    .iter()
+                    .map(diagnostic_tuple)
+                    .collect::<Vec<_>>(),
+                expected_diagnostics,
+            );
         }
     }
 
