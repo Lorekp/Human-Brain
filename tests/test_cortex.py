@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from humanbrain.cells import AllenGlif3Parameters, simulate_glif3_current
 from humanbrain.cortex import DendriticCortex, HumanCellParameters
@@ -99,3 +100,107 @@ def test_compiled_membrane_response_matches_stepwise_euler_race() -> None:
     race = cortex.race([5, 2])
     assert expected is not None
     assert (race.winner, race.spike_time_ms) == expected
+
+
+def test_context_race_retains_its_frozen_public_outcome() -> None:
+    cortex = DendriticCortex(cell_count=16, max_order=4)
+    cortex.grow_sequence([5, 2, 8])
+    cortex.grow_sequence([6, 2, 9])
+    race = cortex.race([5, 2])
+    assert race.winner == 8
+    assert race.simulated_steps == 107
+    assert race.spike_time_ms == pytest.approx(5.35)
+    assert race.active_cells == 2
+
+
+def test_plateau_primed_cell_wins_glif3_first_spike_race() -> None:
+    cortex = DendriticCortex(cell_count=64)
+    cell_ids = np.arange(32, dtype=np.int32)
+    basal_current = np.arange(570.0, 602.0, dtype=np.float64)
+    plateau_current = basal_current.copy()
+    predicted_cell = 7
+    plateau_current[predicted_cell] = 665.0
+
+    race = cortex.race_currents(cell_ids, plateau_current)
+
+    cell = cortex.parameters.cell
+    threshold = cell.threshold_relative_mv + cortex._threshold_offset[cell_ids]
+    voltage = np.zeros(cell_ids.size, dtype=np.float64)
+    decaying_current = plateau_current.copy()
+    expected = None
+    for step in range(cortex._race_steps):
+        voltage += cortex._voltage_step_scale * (
+            decaying_current - cell.leak_ns * voltage
+        )
+        spiking = np.flatnonzero(voltage >= threshold)
+        if spiking.size:
+            local = int(
+                spiking[np.argmax(voltage[spiking] - threshold[spiking])]
+            )
+            expected = (int(cell_ids[local]), step + 1)
+            break
+        decaying_current *= cortex._nmda_decay
+
+    assert expected is not None
+    assert race.winner == predicted_cell == expected[0]
+    assert race.simulated_steps == expected[1]
+    assert race.spike_time_ms == expected[1] * cell.dt_ms
+    assert race.spike_time_ms < cortex.race_currents(
+        cell_ids, basal_current
+    ).spike_time_ms
+
+
+@pytest.mark.parametrize(
+    ("cell_ids", "current_pa", "fallback_current_pa"),
+    [
+        ([], [], None),
+        ([[0, 1]], [570.0, 571.0], None),
+        ([0.0, 1.0], [570.0, 571.0], None),
+        ([0, 0], [570.0, 571.0], None),
+        ([-1, 0], [570.0, 571.0], None),
+        ([0, 16], [570.0, 571.0], None),
+        ([0, 1], [570.0], None),
+        ([0, 1], [[570.0], [571.0]], None),
+        ([0, 1], [570.0, np.nan], None),
+        ([0, 1], [570.0, -1.0], None),
+        ([0, 1], [570.0, 571.0], [665.0]),
+        ([0, 1], [570.0, 571.0], [665.0, np.inf]),
+        ([0, 1], [570.0, 571.0], [665.0, -1.0]),
+    ],
+)
+def test_supplied_current_race_rejects_invalid_inputs(
+    cell_ids,
+    current_pa,
+    fallback_current_pa,
+) -> None:
+    cortex = DendriticCortex(cell_count=16)
+    with pytest.raises(ValueError):
+        cortex.race_currents(
+            cell_ids,
+            current_pa,
+            fallback_current_pa=fallback_current_pa,
+        )
+
+
+def test_supplied_current_race_raises_when_no_cell_spikes() -> None:
+    cortex = DendriticCortex(cell_count=16)
+    with pytest.raises(RuntimeError, match="did not spike"):
+        cortex.race_currents([0, 1], [0.0, 0.0])
+    with pytest.raises(RuntimeError, match="did not spike"):
+        cortex.race_currents(
+            [0, 1],
+            [0.0, 0.0],
+            fallback_current_pa=[0.0, 0.0],
+        )
+
+
+def test_fallback_current_preserves_elapsed_race_steps() -> None:
+    cortex = DendriticCortex(cell_count=16)
+    race = cortex.race_currents(
+        [3],
+        [0.0],
+        fallback_current_pa=[665.0],
+    )
+    assert race.winner == 3
+    assert race.simulated_steps > cortex._race_steps
+    assert race.spike_time_ms == race.simulated_steps * cortex.parameters.cell.dt_ms

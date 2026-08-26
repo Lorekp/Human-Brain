@@ -185,27 +185,83 @@ class DendriticCortex:
                 self, active, association_drive, context, bias
             )
         p = self.parameters
-        cell = p.cell
-        size = len(active)
-        threshold = cell.threshold_relative_mv + self._threshold_offset[active]
-        peak = cell.rest_mv
-        phases = (
-            association_drive,
+        return self.race_currents(
+            active,
+            association_drive * p.branch_current_pa,
             # A weak learned branch can remain subthreshold. A diffuse
             # neuromodulatory/arousal drive starts a second biological race;
             # it does not choose a token or inspect a non-cell score.
-            association_drive + 6.0,
+            fallback_current_pa=(association_drive + 6.0) * p.branch_current_pa,
         )
-        for phase_index, phase_drive in enumerate(phases):
-            # Allen represents voltage relative to its fitted leak reversal.
-            i_nmda = phase_drive * p.branch_current_pa
+
+    def race_currents(
+        self,
+        cell_ids: Sequence[int] | np.ndarray,
+        current_pa: Sequence[float] | np.ndarray,
+        *,
+        fallback_current_pa: Sequence[float] | np.ndarray | None = None,
+    ) -> CellRace:
+        """Race physical GLIF3 cells under supplied decaying synaptic currents.
+
+        ``current_pa`` supplies each cell's initial NMDA-like current. When the
+        primary phase is subthreshold, an optional fallback phase starts a new
+        race from rest while elapsed simulation time and the reported peak are
+        retained. The first threshold crossing wins; within one integration
+        bin, the cell with the greatest voltage-threshold margin wins.
+        """
+        raw_ids = np.asarray(cell_ids)
+        if raw_ids.ndim != 1:
+            raise ValueError("cell_ids must be one-dimensional")
+        if raw_ids.size == 0:
+            raise ValueError("cell_ids must not be empty")
+        if raw_ids.dtype.kind not in {"i", "u"}:
+            raise ValueError("cell_ids must contain integers")
+        if np.any(raw_ids < 0) or np.any(raw_ids >= self.cell_count):
+            raise ValueError("cell id outside cortical sheet")
+        active = raw_ids.astype(np.intp, copy=False)
+        if np.unique(active).size != active.size:
+            raise ValueError("cell_ids must be unique")
+
+        def validated_currents(
+            values: Sequence[float] | np.ndarray,
+            name: str,
+        ) -> np.ndarray:
+            currents = np.asarray(values, dtype=np.float64)
+            if currents.shape != active.shape:
+                raise ValueError(f"{name} must have shape {active.shape}")
+            if not np.all(np.isfinite(currents)):
+                raise ValueError(f"{name} must contain only finite values")
+            if np.any(currents < 0.0):
+                raise ValueError(f"{name} must be nonnegative")
+            return currents
+
+        primary = validated_currents(current_pa, "current_pa")
+        phases = [primary]
+        if fallback_current_pa is not None:
+            phases.append(
+                validated_currents(fallback_current_pa, "fallback_current_pa")
+            )
+
+        cell = self.parameters.cell
+        threshold = cell.threshold_relative_mv + self._threshold_offset[active]
+        peak = cell.rest_mv
+        rising_response = self._unit_nmda_response[
+            : self._unit_nmda_peak_step + 1
+        ]
+        for phase_index, i_nmda in enumerate(phases):
             # The fitted membrane is linear before its first spike. Search the
             # compiled response's monotonic rising limb for each cell's first
             # crossing without materializing a steps-by-cells matrix.
-            rising_response = self._unit_nmda_response[: self._unit_nmda_peak_step + 1]
+            response_needed = np.full(active.size, np.inf, dtype=np.float64)
+            np.divide(
+                threshold,
+                i_nmda,
+                out=response_needed,
+                where=i_nmda > 0.0,
+            )
             first_steps = np.searchsorted(
                 rising_response,
-                threshold / i_nmda,
+                response_needed,
                 side="left",
             )
             valid = first_steps < rising_response.size
@@ -234,7 +290,7 @@ class DendriticCortex:
                 winner=int(active[local]),
                 spike_time_ms=elapsed_steps * cell.dt_ms,
                 peak_voltage_mv=peak,
-                active_cells=size,
+                active_cells=active.size,
                 simulated_steps=elapsed_steps,
             )
         raise RuntimeError("active human cells did not spike under arousal")
