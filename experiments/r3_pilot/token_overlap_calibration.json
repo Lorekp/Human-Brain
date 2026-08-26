@@ -1,0 +1,1336 @@
+{
+  "artifact_id": "r3-token-overlap-calibration-v1",
+  "comparison_at_20_contacts": {
+    "byte": {
+      "contacts": 20,
+      "expected_active_overlap": {
+        "decimal": 5.405405405405405,
+        "exact_fraction": "200/37"
+      },
+      "p_ge_theta_a_13": {
+        "decimal": 2.5094640046403468e-05,
+        "exact_fraction": "17307363779/689683683328244"
+      },
+      "p_ge_theta_m_10": {
+        "decimal": 0.009270773064467826,
+        "exact_fraction": "1541612473433/166287370288628"
+      }
+    },
+    "byte_over_concept_probability_ratio": {
+      "theta_a_13": {
+        "decimal": 14049122363.377201,
+        "exact_fraction": "1007851978745162198401410250961716335/71737718035142052004134364"
+      },
+      "theta_m_10": {
+        "decimal": 22274821.894049596,
+        "exact_fraction": "4415017872882880681873783614126064035/198206652061370269974747949828"
+      }
+    },
+    "concept": {
+      "contacts": 20,
+      "expected_active_overlap": {
+        "decimal": 0.9111617312072893,
+        "exact_fraction": "400/439"
+      },
+      "p_ge_theta_a_13": {
+        "decimal": 1.786206952814317e-15,
+        "exact_fraction": "484661482946615927/271335570709201184995138819074705"
+      },
+      "p_ge_theta_m_10": {
+        "decimal": 4.161996494770799e-10,
+        "exact_fraction": "338789308259498892347837/814006712127603554985416457224115"
+      }
+    },
+    "interpretation": "The concept stack sharply lowers accidental independent-context threshold crossings. This is an expected-engagement reference, not a gate and not a prediction for exact context recurrence."
+  },
+  "concept_backbone": {
+    "count_semantics": "Counts identify and describe the frequent backbone. They are overlapping mined n-gram occurrences, not emitted-token probabilities, so they do not weight the hypergeometric law.",
+    "effective_ids_within_top20_counts": {
+      "decimal": 15.051906827100476,
+      "exact_fraction": "648999416025/43117421831"
+    },
+    "items": [
+      {
+        "concept_token_id": 1024,
+        "mi_bits": 5.15,
+        "mined_ngram_count": 95950,
+        "rank": 1,
+        "share_within_top20_counts": {
+          "decimal": 0.11910303436547688,
+          "exact_fraction": "19190/161121"
+        },
+        "text": " th"
+      },
+      {
+        "concept_token_id": 1025,
+        "mi_bits": 5.48,
+        "mined_ngram_count": 81794,
+        "rank": 2,
+        "share_within_top20_counts": {
+          "decimal": 0.10153114739853898,
+          "exact_fraction": "81794/805605"
+        },
+        "text": "\r\n"
+      },
+      {
+        "concept_token_id": 1026,
+        "mi_bits": 5.78,
+        "mined_ngram_count": 80882,
+        "rank": 3,
+        "share_within_top20_counts": {
+          "decimal": 0.10039907895308495,
+          "exact_fraction": "80882/805605"
+        },
+        "text": "the"
+      },
+      {
+        "concept_token_id": 1027,
+        "mi_bits": 8.17,
+        "mined_ngram_count": 71196,
+        "rank": 4,
+        "share_within_top20_counts": {
+          "decimal": 0.08837581693261586,
+          "exact_fraction": "23732/268535"
+        },
+        "text": " the"
+      },
+      {
+        "concept_token_id": 1028,
+        "mi_bits": 7.63,
+        "mined_ngram_count": 48897,
+        "rank": 5,
+        "share_within_top20_counts": {
+          "decimal": 0.06069599865939263,
+          "exact_fraction": "16299/268535"
+        },
+        "text": "the "
+      },
+      {
+        "concept_token_id": 1029,
+        "mi_bits": 10.12,
+        "mined_ngram_count": 46275,
+        "rank": 6,
+        "share_within_top20_counts": {
+          "decimal": 0.05744130187871227,
+          "exact_fraction": "3085/53707"
+        },
+        "text": " the "
+      },
+      {
+        "concept_token_id": 1030,
+        "mi_bits": 5.41,
+        "mined_ngram_count": 43888,
+        "rank": 7,
+        "share_within_top20_counts": {
+          "decimal": 0.054478311331235534,
+          "exact_fraction": "43888/805605"
+        },
+        "text": "nd "
+      },
+      {
+        "concept_token_id": 1031,
+        "mi_bits": 6.74,
+        "mined_ngram_count": 38030,
+        "rank": 8,
+        "share_within_top20_counts": {
+          "decimal": 0.04720675765418536,
+          "exact_fraction": "7606/161121"
+        },
+        "text": "and"
+      },
+      {
+        "concept_token_id": 1032,
+        "mi_bits": 9.08,
+        "mined_ngram_count": 32267,
+        "rank": 9,
+        "share_within_top20_counts": {
+          "decimal": 0.04005312777353666,
+          "exact_fraction": "32267/805605"
+        },
+        "text": "and "
+      },
+      {
+        "concept_token_id": 1033,
+        "mi_bits": 5.64,
+        "mined_ngram_count": 30657,
+        "rank": 10,
+        "share_within_top20_counts": {
+          "decimal": 0.038054629750311875,
+          "exact_fraction": "10219/268535"
+        },
+        "text": " of"
+      },
+      {
+        "concept_token_id": 1034,
+        "mi_bits": 9.0,
+        "mined_ngram_count": 30597,
+        "rank": 11,
+        "share_within_top20_counts": {
+          "decimal": 0.03798015156311095,
+          "exact_fraction": "10199/268535"
+        },
+        "text": " and"
+      },
+      {
+        "concept_token_id": 1035,
+        "mi_bits": 5.52,
+        "mined_ngram_count": 28240,
+        "rank": 12,
+        "share_within_top20_counts": {
+          "decimal": 0.035054400109234676,
+          "exact_fraction": "5648/161121"
+        },
+        "text": "of "
+      },
+      {
+        "concept_token_id": 1036,
+        "mi_bits": 11.44,
+        "mined_ngram_count": 28016,
+        "rank": 13,
+        "share_within_top20_counts": {
+          "decimal": 0.03477634821035123,
+          "exact_fraction": "28016/805605"
+        },
+        "text": " and "
+      },
+      {
+        "concept_token_id": 1037,
+        "mi_bits": 8.01,
+        "mined_ngram_count": 26771,
+        "rank": 14,
+        "share_within_top20_counts": {
+          "decimal": 0.03323092582593206,
+          "exact_fraction": "26771/805605"
+        },
+        "text": " of "
+      },
+      {
+        "concept_token_id": 1038,
+        "mi_bits": 5.28,
+        "mined_ngram_count": 21706,
+        "rank": 15,
+        "share_within_top20_counts": {
+          "decimal": 0.0269437255230541,
+          "exact_fraction": "21706/805605"
+        },
+        "text": ", a"
+      },
+      {
+        "concept_token_id": 1039,
+        "mi_bits": 14.43,
+        "mined_ngram_count": 20269,
+        "rank": 16,
+        "share_within_top20_counts": {
+          "decimal": 0.025159972939591983,
+          "exact_fraction": "20269/805605"
+        },
+        "text": "\r\n\r\n"
+      },
+      {
+        "concept_token_id": 1040,
+        "mi_bits": 8.95,
+        "mined_ngram_count": 20269,
+        "rank": 17,
+        "share_within_top20_counts": {
+          "decimal": 0.025159972939591983,
+          "exact_fraction": "20269/805605"
+        },
+        "text": "\n\r\n"
+      },
+      {
+        "concept_token_id": 1041,
+        "mi_bits": 8.95,
+        "mined_ngram_count": 20269,
+        "rank": 18,
+        "share_within_top20_counts": {
+          "decimal": 0.025159972939591983,
+          "exact_fraction": "20269/805605"
+        },
+        "text": "\r\n\r"
+      },
+      {
+        "concept_token_id": 1042,
+        "mi_bits": 9.46,
+        "mined_ngram_count": 19817,
+        "rank": 19,
+        "share_within_top20_counts": {
+          "decimal": 0.024598903929345026,
+          "exact_fraction": "19817/805605"
+        },
+        "text": ", an"
+      },
+      {
+        "concept_token_id": 1043,
+        "mi_bits": 10.86,
+        "mined_ngram_count": 19815,
+        "rank": 20,
+        "share_within_top20_counts": {
+          "decimal": 0.024596421323104994,
+          "exact_fraction": "1321/53707"
+        },
+        "text": ".\r\n"
+      }
+    ],
+    "mined_ngram_count_sum": 805605,
+    "size": 20,
+    "source_field": "results_v1.top20_concepts",
+    "top1_share_within_top20_counts": {
+      "decimal": 0.11910303436547688,
+      "exact_fraction": "19190/161121"
+    },
+    "top5_share_within_top20_counts": {
+      "decimal": 0.4701050763091093,
+      "exact_fraction": "378719/805605"
+    }
+  },
+  "generated_by": "experiments/r3_pilot/calibrate_token_overlap.py",
+  "inputs_limited_to_frozen_pre_pilot_sources": true,
+  "model": {
+    "active_context_ids_K": 20,
+    "contact_counts_n": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "contact_sampling": "uniform without replacement, as frozen in section 3",
+    "law": "X ~ Hypergeometric(N=distinct ids, K=20 active ids, n=contacts)",
+    "method": "exact hypergeometric enumeration; no RNG or Monte Carlo error",
+    "pmf": "C(K,x)*C(N-K,n-x)/C(N,n)",
+    "recurrence_scope": "Independent-context overlap reference only. Exact recurrence of the segment's own context is intentionally not averaged in.",
+    "theta_a_connected_active": 13,
+    "theta_a_scope": "P(active overlap >= 13) is an upper bound on depolarization: the hypergeometric law does not assume contacts are connected.",
+    "theta_m_potential_active": 10,
+    "unit_scope": "Token-id overlap abstraction required by the tokenizer freeze; not a cell-level model of the native lane's full winner set."
+  },
+  "pilot_outcome_data_used": false,
+  "regimes": [
+    {
+      "active_context_ids": 20,
+      "at_20_contacts": {
+        "contacts": 20,
+        "expected_active_overlap": {
+          "decimal": 5.405405405405405,
+          "exact_fraction": "200/37"
+        },
+        "p_ge_theta_a_13": {
+          "decimal": 2.5094640046403468e-05,
+          "exact_fraction": "17307363779/689683683328244"
+        },
+        "p_ge_theta_m_10": {
+          "decimal": 0.009270773064467826,
+          "exact_fraction": "1541612473433/166287370288628"
+        }
+      },
+      "basis": "results_v1 token_stats.distinct_ids_used.byte_full",
+      "contact_curve_0_to_20": [
+        {
+          "contacts": 0,
+          "expected_active_overlap": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 1,
+          "expected_active_overlap": {
+            "decimal": 0.2702702702702703,
+            "exact_fraction": "10/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 2,
+          "expected_active_overlap": {
+            "decimal": 0.5405405405405406,
+            "exact_fraction": "20/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 3,
+          "expected_active_overlap": {
+            "decimal": 0.8108108108108109,
+            "exact_fraction": "30/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 4,
+          "expected_active_overlap": {
+            "decimal": 1.0810810810810811,
+            "exact_fraction": "40/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 5,
+          "expected_active_overlap": {
+            "decimal": 1.3513513513513513,
+            "exact_fraction": "50/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 6,
+          "expected_active_overlap": {
+            "decimal": 1.6216216216216217,
+            "exact_fraction": "60/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 7,
+          "expected_active_overlap": {
+            "decimal": 1.8918918918918919,
+            "exact_fraction": "70/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 8,
+          "expected_active_overlap": {
+            "decimal": 2.1621621621621623,
+            "exact_fraction": "80/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 9,
+          "expected_active_overlap": {
+            "decimal": 2.4324324324324325,
+            "exact_fraction": "90/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 10,
+          "expected_active_overlap": {
+            "decimal": 2.7027027027027026,
+            "exact_fraction": "100/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 2.571745689909036e-07,
+            "exact_fraction": "76/295519111"
+          }
+        },
+        {
+          "contacts": 11,
+          "expected_active_overlap": {
+            "decimal": 2.972972972972973,
+            "exact_fraction": "110/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 2.4270849948516527e-06,
+            "exact_fraction": "2869/1182076444"
+          }
+        },
+        {
+          "contacts": 12,
+          "expected_active_overlap": {
+            "decimal": 3.2432432432432434,
+            "exact_fraction": "120/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 1.2467226092286707e-05,
+            "exact_fraction": "206321/16549070216"
+          }
+        },
+        {
+          "contacts": 13,
+          "expected_active_overlap": {
+            "decimal": 3.5135135135135136,
+            "exact_fraction": "130/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 7.407101641443076e-10,
+            "exact_fraction": "95/128255294174"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 4.6150280096584954e-05,
+            "exact_fraction": "23676071/513021176696"
+          }
+        },
+        {
+          "contacts": 14,
+          "expected_active_overlap": {
+            "decimal": 3.7837837837837838,
+            "exact_fraction": "140/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 9.264948446591913e-09,
+            "exact_fraction": "10355/1117653277802"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0001376743161820347,
+            "exact_fraction": "615488603/4470613111208"
+          }
+        },
+        {
+          "contacts": 15,
+          "expected_active_overlap": {
+            "decimal": 4.054054054054054,
+            "exact_fraction": "150/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 6.197315515972627e-08,
+            "exact_fraction": "6023/97187241548"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.00035123040038141743,
+            "exact_fraction": "1570215233/4470613111208"
+          }
+        },
+        {
+          "contacts": 16,
+          "expected_active_overlap": {
+            "decimal": 4.324324324324325,
+            "exact_fraction": "160/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 2.942466084718438e-07,
+            "exact_fraction": "38806151/131883086780636"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0007946307446936951,
+            "exact_fraction": "104798355461/131883086780636"
+          }
+        },
+        {
+          "contacts": 17,
+          "expected_active_overlap": {
+            "decimal": 4.594594594594595,
+            "exact_fraction": "170/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 1.111208409776533e-06,
+            "exact_fraction": "69671119/62698516666204"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.001633378194033176,
+            "exact_fraction": "6247033785169/3824609516638444"
+          }
+        },
+        {
+          "contacts": 18,
+          "expected_active_overlap": {
+            "decimal": 4.864864864864865,
+            "exact_fraction": "180/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 3.547761150509817e-06,
+            "exact_fraction": "13568801059/3824609516638444"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0031030255888188016,
+            "exact_fraction": "515993965103/166287370288628"
+          }
+        },
+        {
+          "contacts": 19,
+          "expected_active_overlap": {
+            "decimal": 5.135135135135135,
+            "exact_fraction": "190/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 9.943712094934686e-06,
+            "exact_fraction": "38030815909/3824609516638444"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.005517446308823758,
+            "exact_fraction": "917481637403/166287370288628"
+          }
+        },
+        {
+          "contacts": 20,
+          "expected_active_overlap": {
+            "decimal": 5.405405405405405,
+            "exact_fraction": "200/37"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 2.5094640046403468e-05,
+            "exact_fraction": "17307363779/689683683328244"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.009270773064467826,
+            "exact_fraction": "1541612473433/166287370288628"
+          }
+        }
+      ],
+      "distinct_id_universe": 74,
+      "name": "byte_74_ids",
+      "overlap_pmf_at_20_contacts": [
+        {
+          "active_overlap": 0,
+          "probability": {
+            "decimal": 0.0005456585675421597,
+            "exact_fraction": "53951211405/98873571522968"
+          }
+        },
+        {
+          "active_overlap": 1,
+          "probability": {
+            "decimal": 0.006236097914767541,
+            "exact_fraction": "77073159150/12359196440371"
+          }
+        },
+        {
+          "active_overlap": 2,
+          "probability": {
+            "decimal": 0.03126710204487614,
+            "exact_fraction": "1545745025175/49436785761484"
+          }
+        },
+        {
+          "active_overlap": 3,
+          "probability": {
+            "decimal": 0.09126613569855738,
+            "exact_fraction": "41735115679725/457290268293727"
+          }
+        },
+        {
+          "active_overlap": 4,
+          "probability": {
+            "decimal": 0.17352574484791503,
+            "exact_fraction": "634813075338975/3658322146349816"
+          }
+        },
+        {
+          "active_overlap": 5,
+          "probability": {
+            "decimal": 0.22780815733880125,
+            "exact_fraction": "104174453388960/457290268293727"
+          }
+        },
+        {
+          "active_overlap": 6,
+          "probability": {
+            "decimal": 0.21357014750512618,
+            "exact_fraction": "97663550052150/457290268293727"
+          }
+        },
+        {
+          "active_overlap": 7,
+          "probability": {
+            "decimal": 0.14585278366203738,
+            "exact_fraction": "66697058572200/457290268293727"
+          }
+        },
+        {
+          "active_overlap": 8,
+          "probability": {
+            "decimal": 0.07336047749667952,
+            "exact_fraction": "67094064873225/914580536587454"
+          }
+        },
+        {
+          "active_overlap": 9,
+          "probability": {
+            "decimal": 0.02729692185922959,
+            "exact_fraction": "12482616720600/457290268293727"
+          }
+        },
+        {
+          "active_overlap": 10,
+          "probability": {
+            "decimal": 0.007506653511288137,
+            "exact_fraction": "312065418015/41571842572157"
+          }
+        },
+        {
+          "active_overlap": 11,
+          "probability": {
+            "decimal": 0.0015164956588460882,
+            "exact_fraction": "693478706700/457290268293727"
+          }
+        },
+        {
+          "active_overlap": 12,
+          "probability": {
+            "decimal": 0.00022252925428719773,
+            "exact_fraction": "4680981270225/21035352341511442"
+          }
+        },
+        {
+          "active_overlap": 13,
+          "probability": {
+            "decimal": 2.330911992533659e-05,
+            "exact_fraction": "245157775200/10517676170755721"
+          }
+        },
+        {
+          "active_overlap": 14,
+          "probability": {
+            "decimal": 1.6996233278891263e-06,
+            "exact_fraction": "17876087775/10517676170755721"
+          }
+        },
+        {
+          "active_overlap": 15,
+          "probability": {
+            "decimal": 8.32468568762021e-08,
+            "exact_fraction": "6128944380/73623733195290047"
+          }
+        },
+        {
+          "active_overlap": 16,
+          "probability": {
+            "decimal": 2.6014642773813156e-09,
+            "exact_fraction": "1532236095/588989865562320376"
+          }
+        },
+        {
+          "active_overlap": 17,
+          "probability": {
+            "decimal": 4.800856797935531e-11,
+            "exact_fraction": "3534570/73623733195290047"
+          }
+        },
+        {
+          "active_overlap": 18,
+          "probability": {
+            "decimal": 4.616208459553394e-13,
+            "exact_fraction": "135945/294494932781160188"
+          }
+        },
+        {
+          "active_overlap": 19,
+          "probability": {
+            "decimal": 1.8336478488792035e-15,
+            "exact_fraction": "135/73623733195290047"
+          }
+        },
+        {
+          "active_overlap": 20,
+          "probability": {
+            "decimal": 1.6978220822955587e-18,
+            "exact_fraction": "1/588989865562320376"
+          }
+        }
+      ]
+    },
+    {
+      "active_context_ids": 20,
+      "at_20_contacts": {
+        "contacts": 20,
+        "expected_active_overlap": {
+          "decimal": 0.9111617312072893,
+          "exact_fraction": "400/439"
+        },
+        "p_ge_theta_a_13": {
+          "decimal": 1.786206952814317e-15,
+          "exact_fraction": "484661482946615927/271335570709201184995138819074705"
+        },
+        "p_ge_theta_m_10": {
+          "decimal": 4.161996494770799e-10,
+          "exact_fraction": "338789308259498892347837/814006712127603554985416457224115"
+        }
+      },
+      "basis": "results_v1 token_stats.distinct_ids_used.concept; active 20-id backbone identified by top20_concepts",
+      "contact_curve_0_to_20": [
+        {
+          "contacts": 0,
+          "expected_active_overlap": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 1,
+          "expected_active_overlap": {
+            "decimal": 0.04555808656036447,
+            "exact_fraction": "20/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 2,
+          "expected_active_overlap": {
+            "decimal": 0.09111617312072894,
+            "exact_fraction": "40/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 3,
+          "expected_active_overlap": {
+            "decimal": 0.1366742596810934,
+            "exact_fraction": "60/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 4,
+          "expected_active_overlap": {
+            "decimal": 0.18223234624145787,
+            "exact_fraction": "80/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 5,
+          "expected_active_overlap": {
+            "decimal": 0.22779043280182232,
+            "exact_fraction": "100/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 6,
+          "expected_active_overlap": {
+            "decimal": 0.2733485193621868,
+            "exact_fraction": "120/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 7,
+          "expected_active_overlap": {
+            "decimal": 0.31890660592255127,
+            "exact_fraction": "140/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 8,
+          "expected_active_overlap": {
+            "decimal": 0.36446469248291574,
+            "exact_fraction": "160/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 9,
+          "expected_active_overlap": {
+            "decimal": 0.41002277904328016,
+            "exact_fraction": "180/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          }
+        },
+        {
+          "contacts": 10,
+          "expected_active_overlap": {
+            "decimal": 0.45558086560364464,
+            "exact_fraction": "200/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 2.7961384504260105e-15,
+            "exact_fraction": "4862/1738826630440721457"
+          }
+        },
+        {
+          "contacts": 11,
+          "expected_active_overlap": {
+            "decimal": 0.5011389521640092,
+            "exact_fraction": "220/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 3.010574243011129e-14,
+            "exact_fraction": "5066/168273544881360141"
+          }
+        },
+        {
+          "contacts": 12,
+          "expected_active_overlap": {
+            "decimal": 0.5466970387243736,
+            "exact_fraction": "240/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 0.0,
+            "exact_fraction": "0/1"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 1.767991525920189e-13,
+            "exact_fraction": "764983/4326847661794353393"
+          }
+        },
+        {
+          "contacts": 13,
+          "expected_active_overlap": {
+            "decimal": 0.592255125284738,
+            "exact_fraction": "260/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 2.5678061332808548e-20,
+            "exact_fraction": "680/26481749972735374216291"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 7.498310217959109e-13,
+            "exact_fraction": "863340767/1151380433597190183317"
+          }
+        },
+        {
+          "contacts": 14,
+          "expected_active_overlap": {
+            "decimal": 0.6378132118451025,
+            "exact_fraction": "280/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 3.5400763898494037e-19,
+            "exact_fraction": "285260/805801820598947815438569"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 2.5684673766401876e-12,
+            "exact_fraction": "6209027064737/2417405461796843446315707"
+          }
+        },
+        {
+          "contacts": 15,
+          "expected_active_overlap": {
+            "decimal": 0.683371298405467,
+            "exact_fraction": "300/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 2.614460213597029e-18,
+            "exact_fraction": "3511228/1343003034331579692397615"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 7.540833128002657e-12,
+            "exact_fraction": "1320960231169/175174308825858220747515"
+          }
+        },
+        {
+          "contacts": 16,
+          "expected_active_overlap": {
+            "decimal": 0.7289293849658315,
+            "exact_fraction": "320/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 1.3730129124130532e-17,
+            "exact_fraction": "977299069/71179160819573723697073595"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 1.9678565563521893e-11,
+            "exact_fraction": "182700493427537/9284238367770485699618295"
+          }
+        },
+        {
+          "contacts": 17,
+          "expected_active_overlap": {
+            "decimal": 0.7744874715261959,
+            "exact_fraction": "340/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 5.745701580764766e-17,
+            "exact_fraction": "1729960937227/30108785026679685123862130685"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 4.676608192080359e-11,
+            "exact_fraction": "61220430743198557/1309077609855638483646179595"
+          }
+        },
+        {
+          "contacts": 18,
+          "expected_active_overlap": {
+            "decimal": 0.8200455580865603,
+            "exact_fraction": "360/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 2.0366231701722747e-16,
+            "exact_fraction": "398969244019/1958974295599572482619460245"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 1.0296305009805509e-10,
+            "exact_fraction": "9479992521315184829/92071791893179906683114631515"
+          }
+        },
+        {
+          "contacts": 19,
+          "expected_active_overlap": {
+            "decimal": 0.8656036446469249,
+            "exact_fraction": "380/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 6.349853196355128e-16,
+            "exact_fraction": "24613443442180913/38762224387028740713591259867815"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 2.1268729675292617e-10,
+            "exact_fraction": "8244232721007493368049/38762224387028740713591259867815"
+          }
+        },
+        {
+          "contacts": 20,
+          "expected_active_overlap": {
+            "decimal": 0.9111617312072893,
+            "exact_fraction": "400/439"
+          },
+          "p_ge_theta_a_13": {
+            "decimal": 1.786206952814317e-15,
+            "exact_fraction": "484661482946615927/271335570709201184995138819074705"
+          },
+          "p_ge_theta_m_10": {
+            "decimal": 4.161996494770799e-10,
+            "exact_fraction": "338789308259498892347837/814006712127603554985416457224115"
+          }
+        }
+      ],
+      "distinct_id_universe": 439,
+      "name": "concept_stack_439_ids",
+      "overlap_pmf_at_20_contacts": [
+        {
+          "active_overlap": 0,
+          "probability": {
+            "decimal": 0.38524445901210147,
+            "exact_fraction": "7751614768157657879034234968/20121288150478397107537176053"
+          }
+        },
+        {
+          "active_overlap": 1,
+          "probability": {
+            "decimal": 0.38524445901210147,
+            "exact_fraction": "7751614768157657879034234968/20121288150478397107537176053"
+          }
+        },
+        {
+          "active_overlap": 2,
+          "probability": {
+            "decimal": 0.17340804202415042,
+            "exact_fraction": "3489193181178197623854562124/20121288150478397107537176053"
+          }
+        },
+        {
+          "active_overlap": 3,
+          "probability": {
+            "decimal": 0.04658723517066728,
+            "exact_fraction": "937395183003097869095255496/20121288150478397107537176053"
+          }
+        },
+        {
+          "active_overlap": 4,
+          "probability": {
+            "decimal": 0.008352178017570001,
+            "exact_fraction": "5209753997844140080164016122/623759932664830310333652457643"
+          }
+        },
+        {
+          "active_overlap": 5,
+          "probability": {
+            "decimal": 0.0010584938477712477,
+            "exact_fraction": "3301230256059653120103931008/3118799663324151551668262288215"
+          }
+        },
+        {
+          "active_overlap": 6,
+          "probability": {
+            "decimal": 9.800868960844886e-05,
+            "exact_fraction": "183401680892202951116885056/1871279797994490931000957372929"
+          }
+        },
+        {
+          "active_overlap": 7,
+          "probability": {
+            "decimal": 6.759219972996474e-06,
+            "exact_fraction": "366803361784405902233770112/54267114141840236999027763814941"
+          }
+        },
+        {
+          "active_overlap": 8,
+          "probability": {
+            "decimal": 3.508317492126548e-07,
+            "exact_fraction": "19038626579104606104885488/54267114141840236999027763814941"
+          }
+        },
+        {
+          "active_overlap": 9,
+          "probability": {
+            "decimal": 1.3758107812260972e-08,
+            "exact_fraction": "2239838421071130129986528/162801342425520710997083291444823"
+          }
+        },
+        {
+          "active_overlap": 10,
+          "probability": {
+            "decimal": 4.0702470544830747e-10,
+            "exact_fraction": "331320842236683063237616/814006712127603554985416457224115"
+          }
+        },
+        {
+          "active_overlap": 11,
+          "probability": {
+            "decimal": 9.024938036547839e-12,
+            "exact_fraction": "1469272027657131100832/162801342425520710997083291444823"
+          }
+        },
+        {
+          "active_overlap": 12,
+          "probability": {
+            "decimal": 1.4821978527177107e-13,
+            "exact_fraction": "2681153335140750184/18089038047280078999675921271647"
+          }
+        },
+        {
+          "active_overlap": 13,
+          "probability": {
+            "decimal": 1.7711102048904683e-15,
+            "exact_fraction": "32037679882189696/18089038047280078999675921271647"
+          }
+        },
+        {
+          "active_overlap": 14,
+          "probability": {
+            "decimal": 1.5009408516020917e-17,
+            "exact_fraction": "271505761713472/18089038047280078999675921271647"
+          }
+        },
+        {
+          "active_overlap": 15,
+          "probability": {
+            "decimal": 8.701106386099083e-20,
+            "exact_fraction": "543011523426944/6240718126311627254888192838718215"
+          }
+        },
+        {
+          "active_overlap": 16,
+          "probability": {
+            "decimal": 3.276018970669835e-22,
+            "exact_fraction": "408894219448/1248143625262325450977638567743643"
+          }
+        },
+        {
+          "active_overlap": 17,
+          "probability": {
+            "decimal": 7.411807625949853e-25,
+            "exact_fraction": "925100044/1248143625262325450977638567743643"
+          }
+        },
+        {
+          "active_overlap": 18,
+          "probability": {
+            "decimal": 8.887059503536994e-28,
+            "exact_fraction": "3327698/3744430875786976352932915703230929"
+          }
+        },
+        {
+          "active_overlap": 19,
+          "probability": {
+            "decimal": 4.4759806111996955e-31,
+            "exact_fraction": "1676/3744430875786976352932915703230929"
+          }
+        },
+        {
+          "active_overlap": 20,
+          "probability": {
+            "decimal": 5.341265645823025e-35,
+            "exact_fraction": "1/18722154378934881764664578516154645"
+          }
+        }
+      ]
+    }
+  ],
+  "self_validation": {
+    "byte_74_ids": {
+      "all_exact_means_equal_n_times_k_over_N": true,
+      "all_exact_pmf_sums_equal_one": true,
+      "max_float_pmf_sum_error": 1.1102230246251565e-16,
+      "tails_monotone_in_contact_count": true,
+      "tails_zero_below_their_thresholds": true,
+      "theta_a_tail_never_exceeds_theta_m_tail": true
+    },
+    "concept_stack_439_ids": {
+      "all_exact_means_equal_n_times_k_over_N": true,
+      "all_exact_pmf_sums_equal_one": true,
+      "max_float_pmf_sum_error": 0.0,
+      "tails_monotone_in_contact_count": true,
+      "tails_zero_below_their_thresholds": true,
+      "theta_a_tail_never_exceeds_theta_m_tail": true
+    }
+  },
+  "sources": {
+    "composition_study": {
+      "corpus_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
+      "corpus_sha256_match": true,
+      "path": "experiments/concept_sdr_composition/results_v1.json",
+      "sha256": "97cb7dc5db72fa7aec4e3435accf20a312f2cf001d0b1a27da5788c0e1398e3e",
+      "study": "concept-sdr-composition-v1"
+    },
+    "segment_growth_preregistration": {
+      "path": "docs/research/r3-segment-growth-preregistration.md",
+      "sha256": "ab21456dc8aff82d6883dccad5905d25b398f9a215d73c7e82d35904d2a53412"
+    },
+    "tokenizer_freeze": {
+      "path": "docs/research/r3-tokenizer-freeze.md",
+      "sha256": "36fe1f5106b85def3d4331e9eaa449513aa0c8b7e2f7ccbe8fdc6003c3b9358c"
+    }
+  },
+  "status": "pre-replay diagnostic; non-gating"
+}
