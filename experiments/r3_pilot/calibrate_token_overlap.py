@@ -175,7 +175,6 @@ def _validate_regime(
     population = int(regime["distinct_id_universe"])
     previous_match = Fraction(0, 1)
     previous_active = Fraction(0, 1)
-    max_float_sum_error = 0.0
     for row in regime["contact_curve_0_to_20"]:
         contacts = int(row["contacts"])
         probabilities = [
@@ -207,17 +206,12 @@ def _validate_regime(
             _require(p_active == 0, "theta_a tail must be zero below threshold")
         previous_match = p_match
         previous_active = p_active
-        max_float_sum_error = max(
-            max_float_sum_error,
-            abs(sum(float(probability) for probability in probabilities) - 1.0),
-        )
     return {
         "all_exact_pmf_sums_equal_one": True,
         "all_exact_means_equal_n_times_k_over_N": True,
         "tails_monotone_in_contact_count": True,
         "theta_a_tail_never_exceeds_theta_m_tail": True,
         "tails_zero_below_their_thresholds": True,
-        "max_float_pmf_sum_error": max_float_sum_error,
     }
 
 

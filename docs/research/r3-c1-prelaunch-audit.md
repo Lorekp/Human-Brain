@@ -29,6 +29,10 @@ No C1 outcome data have been opened. The cohort slot is unspent.
 - The C1 corpus hash, 66-book roster, 49/17 TRAIN/HELD-OUT split, tokenizer
   reconstruction, pool-feasibility arithmetic, and construction seed are
   reproducible.
+- The tokenizer-freeze §5 constants-only overlap diagnostic is committed as
+  `experiments/r3_pilot/token_overlap_calibration.json` and rebuilds
+  byte-identically. At 20 contacts, the concept-stack independent-context
+  tails are P(X≥10)=4.162e-10 and P(X≥13)=1.786e-15.
 - Generic segment-growth mechanics have deterministic unit evidence for novel
   winner allocation, punishment, and rerun parity.
 - CN-1 measured a real scale-dependent recruitment transition and recorded
@@ -56,7 +60,7 @@ of the experiment and the validity of its held-out score.
 | A3 control | **Unfrozen deviation.** The runner samples from a cumulative active-cell union, which saturates and is not the prior-step control in the prereg. | Freeze a mass-matched, current-step shuffled control that destroys binding without changing activity density. |
 | Permanence update | **Unfrozen deviation.** The implementation reinforces all active contacts because reinforcing only already-connected contacts cannot raise 0.21 contacts through the 0.50 threshold. | State the intended HTM-style potential-contact rule explicitly in the Change Note and pin it with a fixture. |
 | Boundaries | **Unspecified.** Transient cell state and `W_prev` cross books, passes, and the TRAIN/HELD-OUT boundary. | Persist learned synapses but reset transient membrane/context state at every book and pass boundary; pin this policy before replay. |
-| Required diagnostic | **Missing.** Tokenizer freeze §5 requires a pre-outcome hypergeometric concept-vocabulary calibration artifact. | Commit the constants-only artifact before any repaired C1 replay. |
+| Required diagnostic | **Closed after audit.** Tokenizer freeze §5 artifact `token_overlap_calibration.json` is source-only, deterministic, non-gating, and tested. | Keep `calibrate_token_overlap.py --check` green when its frozen inputs change. |
 | Contract tripwires | **Missing.** “No forbidden trainable component” and weight clone/hash checks are prose claims only. | Add executable state inventories and frozen-state hashes at every checkpoint/evaluation boundary. |
 | Resume validity | **Unproven.** The dry run compares tracker flatten/restore only; it does not resume and compare the full lane, pool dynamics, counters, and next-step output. | Prove uninterrupted versus checkpoint-resumed equality for every persistent array and emitted step result. |
 | Wall-clock accounting | **Fail.** Cumulative elapsed time is not persisted and the live projection reads the wrong summary level. | Persist cohort elapsed time, check within books, test projections, and treat the cap as cumulative across resumes. |
@@ -154,7 +158,8 @@ Before scaling:
 - prove TRAIN/HELD-OUT ordering cannot alter the held-out score;
 - prove fresh and resumed runs emit identical spikes, races, counters, and
   checkpoint hashes;
-- execute the missing tokenizer hypergeometric diagnostic.
+- keep the tokenizer hypergeometric diagnostic source-current and include its
+  false-positive interpretation in CN-2.
 
 ### C1-COST-DENSE-4096 — pre-outcome cap gate
 

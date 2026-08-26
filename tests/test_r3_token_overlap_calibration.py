@@ -26,6 +26,10 @@ def test_committed_artifact_is_a_fresh_deterministic_rebuild() -> None:
     assert committed["pilot_outcome_data_used"] is False
     assert committed["inputs_limited_to_frozen_pre_pilot_sources"] is True
     assert committed["status"] == "pre-replay diagnostic; non-gating"
+    assert all(
+        "max_float_pmf_sum_error" not in validation
+        for validation in committed["self_validation"].values()
+    )
 
 
 def test_exact_hypergeometric_reference_values() -> None:

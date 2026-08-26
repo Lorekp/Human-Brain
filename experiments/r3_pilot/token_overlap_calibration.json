@@ -1301,7 +1301,6 @@
     "byte_74_ids": {
       "all_exact_means_equal_n_times_k_over_N": true,
       "all_exact_pmf_sums_equal_one": true,
-      "max_float_pmf_sum_error": 1.1102230246251565e-16,
       "tails_monotone_in_contact_count": true,
       "tails_zero_below_their_thresholds": true,
       "theta_a_tail_never_exceeds_theta_m_tail": true
@@ -1309,7 +1308,6 @@
     "concept_stack_439_ids": {
       "all_exact_means_equal_n_times_k_over_N": true,
       "all_exact_pmf_sums_equal_one": true,
-      "max_float_pmf_sum_error": 0.0,
       "tails_monotone_in_contact_count": true,
       "tails_zero_below_their_thresholds": true,
       "theta_a_tail_never_exceeds_theta_m_tail": true

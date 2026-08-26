@@ -24,10 +24,9 @@ Authoritative analysis and repair gates:
    reinforces, and punishes while HELD-OUT is being scored.
 6. **Four scientific choices were changed without a formal amendment:** winner
    source, A3 sampling, the permanence update, and cross-book/pass state.
-7. **A required tokenizer calibration artifact is missing.**
-8. **Full checkpoint/resume equality and contract tripwires are not proven.**
-9. **The 15-hour arithmetic and live projection are wrong.**
-10. **CN-1's dense activity is not a viable coincidence code.** At its measured
+7. **Full checkpoint/resume equality and contract tripwires are not proven.**
+8. **The 15-hour arithmetic and live projection are wrong.**
+9. **CN-1's dense activity is not a viable coincidence code.** At its measured
     ~56.9% occupancy, random 20-contact segments cross θm with probability
     ~0.80 and θa with probability ~0.31.
 
@@ -35,6 +34,9 @@ Authoritative analysis and repair gates:
 
 - Corpus hash and 66/49/17 book split.
 - Frozen tokenizer reconstruction and pool-feasibility arithmetic.
+- Tokenizer §5 overlap calibration: deterministic artifact and 17 related
+  tests pass; concept-stack 20-contact accidental tails are
+  P(X≥10)=4.162e-10 and P(X≥13)=1.786e-15.
 - P-B verdict versus its frozen shuffled/unigram/majority controls.
 - Generic segment-growth unit mechanics and deterministic reruns.
 - CN-1 rheobase/recruitment measurements (not its dense C1 drive choice).
@@ -72,8 +74,9 @@ measured current end-to-end mode fits the 15-hour cap.
 - [ ] **R3-F1 scientific controls:** disposable epoch-0 shadows, exposure-local
       preflight, frozen read-only evaluation, frozen boundary reset policy,
       mass-matched A3, and uninterrupted/resumed deep-state equality.
-- [ ] **Tokenizer §5 artifact:** constants-only hypergeometric concept-vs-byte
-      calibration committed before repaired replay.
+- [x] **Tokenizer §5 artifact:** constants-only hypergeometric concept-vs-byte
+      calibration committed and source-current
+      (`token_overlap_calibration.json`).
 - [ ] **C1-COST-DENSE-4096:** actual production activity masks, dense segment
       matching, physical plateau/race cost, checkpoint/I/O cost, and conservative
       projection below 13.5 h.
