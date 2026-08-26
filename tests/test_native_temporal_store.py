@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import copy
 import random
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -146,6 +148,78 @@ def test_close_is_idempotent_and_serializes_the_handle_lifetime() -> None:
 
     store.close()
     store.close()
+    with pytest.raises(RuntimeError, match="closed"):
+        store.prepare(())
+
+
+def test_close_waits_for_inflight_prepare_before_destroying_handle() -> None:
+    store = NativeTemporalStore(
+        NativeTemporalStoreConfig(
+            source_count=10,
+            owner_count=1,
+            segment_capacity=1,
+            theta_match=18,
+            theta_active=20,
+        )
+    )
+    store.allocate_segment(0, tuple(range(10)), (250,) * 10)
+
+    prepare_entered_native = threading.Event()
+    release_prepare = threading.Event()
+    close_reached_lock = threading.Event()
+    destroy_called = threading.Event()
+    close_thread_id: list[int] = []
+
+    original_library = store._library
+    original_lock = store._operation_lock
+
+    class BlockingLibrary:
+        def __getattr__(self, name: str) -> object:
+            return getattr(original_library, name)
+
+        def humanbrain_temporal_store_prepare(self, *args: object) -> int:
+            prepare_entered_native.set()
+            if not release_prepare.wait(timeout=5.0):
+                raise AssertionError("test did not release the blocked native prepare")
+            return int(original_library.humanbrain_temporal_store_prepare(*args))
+
+        def humanbrain_temporal_store_destroy(self, handle: int) -> None:
+            destroy_called.set()
+            original_library.humanbrain_temporal_store_destroy(handle)
+
+    class ObservedOperationLock:
+        def __enter__(self) -> ObservedOperationLock:
+            if close_thread_id and threading.get_ident() == close_thread_id[0]:
+                close_reached_lock.set()
+            original_lock.acquire()
+            return self
+
+        def __exit__(self, *_: object) -> None:
+            original_lock.release()
+
+    store._library = BlockingLibrary()
+    store._operation_lock = ObservedOperationLock()
+
+    def close_store() -> None:
+        close_thread_id.append(threading.get_ident())
+        store.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        prepare_future = executor.submit(store.prepare, tuple(range(10)))
+        assert prepare_entered_native.wait(timeout=5.0)
+        close_future = executor.submit(close_store)
+        try:
+            assert close_reached_lock.wait(timeout=5.0)
+            assert not destroy_called.is_set()
+            assert not close_future.done()
+        finally:
+            release_prepare.set()
+
+        diagnostics = prepare_future.result(timeout=5.0)
+        close_future.result(timeout=5.0)
+
+    assert diagnostics.active_segments == 1
+    assert destroy_called.is_set()
     with pytest.raises(RuntimeError, match="closed"):
         store.prepare(())
 
