@@ -122,6 +122,84 @@ def test_max_segments_per_cell_matches_native_owner_load_domain() -> None:
 
 
 @pytest.mark.parametrize(
+    ("updates", "field"),
+    [
+        (
+            {
+                "column_count": 256,
+                "active_columns": 256,
+                "max_pyramidal_cells": 4 * 256,
+                "prediction_quorum": 1,
+            },
+            "active_columns",
+        ),
+        (
+            {
+                "base_cells_per_column": 256,
+                "max_pyramidal_cells": 11 * 256,
+                "novel_race_cap": 256,
+                "novel_current_pa": 20_000.0,
+                "matching_current_pa": 20_100.0,
+                "active_current_pa": 20_200.0,
+            },
+            "base_cells_per_column",
+        ),
+        (
+            {
+                "novel_race_cap": 256,
+                "novel_current_pa": 20_000.0,
+                "matching_current_pa": 20_100.0,
+                "active_current_pa": 20_200.0,
+            },
+            "novel_race_cap",
+        ),
+        ({"theta_match": 256, "theta_active": 256}, "theta_match"),
+        ({"theta_active": 256}, "theta_active"),
+        (
+            {
+                "column_count": 255,
+                "active_columns": 255,
+                "max_pyramidal_cells": 4 * 255,
+                "prediction_quorum": 256,
+            },
+            "prediction_quorum",
+        ),
+    ],
+)
+def test_rust_uint8_config_fields_reject_out_of_domain_values(
+    updates: dict[str, int | float],
+    field: str,
+) -> None:
+    with pytest.raises(ValueError, match=rf"{field}.*\[1, 255\]"):
+        replace(_config(1), **updates)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "active_columns",
+        "base_cells_per_column",
+        "theta_match",
+        "theta_active",
+        "novel_race_cap",
+        "prediction_quorum",
+    ],
+)
+@pytest.mark.parametrize("value", [True, 1.0])
+def test_rust_uint8_config_fields_reject_bool_and_float(
+    field: str,
+    value: object,
+) -> None:
+    with pytest.raises(ValueError, match=rf"{field}.*\[1, 255\]"):
+        replace(_config(1), **{field: value})
+
+
+def test_novel_race_cap_rejects_values_above_the_native_structural_cap() -> None:
+    with pytest.raises(ValueError, match=r"novel_race_cap.*\[1, 8\]"):
+        replace(_config(1), novel_race_cap=9)
+
+
+@pytest.mark.parametrize(
     ("field", "updates"),
     [
         (
@@ -144,6 +222,25 @@ def test_native_uint32_config_fields_reject_out_of_domain_values(
         replace(_config(1), **updates)
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("column_count", True),
+        ("column_count", 11.0),
+        ("max_pyramidal_cells", True),
+        ("max_pyramidal_cells", 44.0),
+        ("construction_seed", True),
+        ("construction_seed", 17.0),
+    ],
+)
+def test_native_uint32_config_fields_reject_bool_and_float(
+    field: str,
+    value: object,
+) -> None:
+    with pytest.raises(ValueError, match=rf"{field}.*uint32"):
+        replace(_config(1), **{field: value})
+
+
 def test_config_rejects_a_derived_physical_cell_id_overflow() -> None:
     with pytest.raises(ValueError, match=r"physical cell.*uint32"):
         replace(
@@ -157,10 +254,15 @@ def test_config_rejects_a_derived_physical_cell_id_overflow() -> None:
     ("codebook", "match"),
     [
         ({0.0: tuple(range(K))}, "token ID.*uint32"),
+        ({(1 << 32) - 1: tuple(range(K))}, "token ID.*live uint32"),
         ({1 << 32: tuple(range(K))}, "token ID.*uint32"),
         (
             {0: (0.0, *range(1, K))},
             "column ID.*uint32",
+        ),
+        (
+            {0: ((1 << 32) - 1, *range(1, K))},
+            "column ID.*live uint32",
         ),
     ],
 )
@@ -173,7 +275,7 @@ def test_codebook_ids_must_be_exact_native_uint32_values(
 
 
 @pytest.mark.parametrize("method", ["learn", "recognize"])
-@pytest.mark.parametrize("token_id", [0.0, True, -1, 1 << 32])
+@pytest.mark.parametrize("token_id", [0.0, True, -1, (1 << 32) - 1, 1 << 32])
 def test_arriving_token_ids_must_be_exact_native_uint32_values(
     method: str,
     token_id: object,
@@ -512,7 +614,7 @@ def test_grouped_contact_counts_cross_each_threshold_at_the_boundary() -> None:
     assert at_active.active_segments >= 1
 
 
-@pytest.mark.parametrize("cell_id", [0.0, True, -1, 1 << 32])
+@pytest.mark.parametrize("cell_id", [0.0, True, -1, (1 << 32) - 1, 1 << 32])
 def test_context_diagnostics_requires_exact_native_uint32_cell_ids(
     cell_id: object,
 ) -> None:
@@ -648,6 +750,22 @@ def test_checkpoint_resume_matches_uninterrupted_next_spikes_and_state() -> None
     assert restored.snapshot() == uninterrupted.snapshot()
 
 
+def test_generic_checkpoint_resume_accepts_its_exact_reachable_context() -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2, growth_policy=GrowthPolicy.GENERIC_AFFERENTS)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    _learn_pair(circuit, 0, 1)
+    snapshot = circuit.snapshot()
+
+    restored = SparseTemporalCortex.from_snapshot(
+        codebook,
+        config=config,
+        snapshot=snapshot,
+    )
+
+    assert restored.snapshot() == snapshot
+
+
 def test_checkpoint_round_trips_segments_after_punishment_drops_all_pairs() -> None:
     codebook = _disjoint_codebook(3)
     config = replace(
@@ -676,6 +794,118 @@ def test_checkpoint_round_trips_segments_after_punishment_drops_all_pairs() -> N
 
     assert restored.segment_count == circuit.segment_count
     assert restored.snapshot() == snapshot
+
+
+@pytest.mark.parametrize("empty_field", ["previous_context", "previous_winner_context"])
+def test_checkpoint_rejects_only_one_empty_transient_context(empty_field: str) -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    circuit.recognize(0)
+    snapshot = circuit.snapshot()
+    corrupted = replace(snapshot, **{empty_field: ()})
+
+    with pytest.raises(ValueError, match="both be empty or nonempty"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+def test_bound_checkpoint_rejects_different_valid_paired_contexts() -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2)
+    left = SparseTemporalCortex(codebook, config=config)
+    right = SparseTemporalCortex(codebook, config=config)
+    left.recognize(0)
+    right.recognize(1)
+    snapshot = left.snapshot()
+    corrupted = replace(
+        snapshot,
+        previous_winner_context=right.snapshot().previous_winner_context,
+    )
+
+    with pytest.raises(ValueError, match="bound-winner contexts must be identical"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+@pytest.mark.parametrize(
+    ("growth_policy", "corrupt_field", "match"),
+    [
+        (
+            GrowthPolicy.BOUND_WINNERS,
+            "both",
+            "bound-winner context must contain committed pyramidal winners",
+        ),
+        (
+            GrowthPolicy.GENERIC_AFFERENTS,
+            "previous_context",
+            "generic-afferent context must use canonical proximal cells",
+        ),
+    ],
+)
+def test_checkpoint_rejects_the_other_policy_context_layout(
+    growth_policy: GrowthPolicy,
+    corrupt_field: str,
+    match: str,
+) -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2, growth_policy=growth_policy)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    circuit.recognize(0)
+    snapshot = circuit.snapshot()
+    if growth_policy is GrowthPolicy.BOUND_WINNERS:
+        wrong = tuple(
+            2 * config.max_pyramidal_cells + config.column_count + column
+            for column in codebook[0]
+        )
+        wrong += tuple(
+            2 * config.max_pyramidal_cells + 2 * config.column_count + column
+            for column in codebook[0]
+        )
+        corrupted = replace(
+            snapshot,
+            previous_context=wrong,
+            previous_winner_context=wrong,
+        )
+    else:
+        corrupted = replace(
+            snapshot,
+            previous_context=snapshot.previous_winner_context,
+        )
+
+    with pytest.raises(ValueError, match=match):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+def test_generic_checkpoint_contexts_must_describe_the_same_token_code() -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2, growth_policy=GrowthPolicy.GENERIC_AFFERENTS)
+    left = SparseTemporalCortex(codebook, config=config)
+    right = SparseTemporalCortex(codebook, config=config)
+    left.recognize(0)
+    right.recognize(1)
+    snapshot = left.snapshot()
+    corrupted = replace(
+        snapshot,
+        previous_context=right.snapshot().previous_context,
+    )
+
+    with pytest.raises(ValueError, match="same canonical token code"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
 
 
 def test_checkpoint_rejects_allocated_segment_count_above_owner_cap() -> None:
@@ -780,14 +1010,78 @@ def test_checkpoint_ids_must_be_exact_native_uint32_values(
 
 
 @pytest.mark.parametrize(
+    ("location", "label"),
+    [
+        ("column_cell", "snapshot column cell ID"),
+        ("segment_owner", "snapshot segment owner"),
+        ("segment_source", "snapshot segment source"),
+        ("previous_context", "snapshot previous_context cell ID"),
+        (
+            "previous_winner_context",
+            "snapshot previous_winner_context cell ID",
+        ),
+    ],
+)
+def test_checkpoint_rejects_uint32_max_as_a_live_identity(
+    location: str,
+    label: str,
+) -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    _learn_pair(circuit, 0, 1)
+    snapshot = circuit.snapshot()
+    sentinel = (1 << 32) - 1
+
+    if location == "column_cell":
+        column_cells = [list(cells) for cells in snapshot.learned.column_cells]
+        column_cells[0][0] = sentinel
+        corrupted = replace(
+            snapshot,
+            learned=replace(
+                snapshot.learned,
+                column_cells=tuple(tuple(cells) for cells in column_cells),
+            ),
+        )
+    elif location in {"segment_owner", "segment_source"}:
+        owner, sources, ticks = snapshot.learned.segments[0]
+        if location == "segment_owner":
+            row = (sentinel, sources, ticks)
+        else:
+            row = (owner, (sentinel, *sources[1:]), ticks)
+        corrupted = replace(
+            snapshot,
+            learned=replace(
+                snapshot.learned,
+                segments=(row, *snapshot.learned.segments[1:]),
+            ),
+        )
+    else:
+        context = getattr(snapshot, location)
+        corrupted = replace(
+            snapshot,
+            **{location: (sentinel, *context[1:])},
+        )
+
+    with pytest.raises(ValueError, match=rf"{label}.*live uint32"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+@pytest.mark.parametrize(
     ("counter", "value"),
     [
         ("learning_step", -1),
         ("learning_step", 1 << 64),
         ("learning_step", True),
+        ("learning_step", 1.0),
         ("event_step", -1),
         ("event_step", 1 << 64),
         ("event_step", True),
+        ("event_step", 1.0),
     ],
 )
 def test_checkpoint_rejects_counters_outside_the_native_uint64_domain(
@@ -814,10 +1108,36 @@ def test_checkpoint_rejects_counters_outside_the_native_uint64_domain(
         )
 
 
+@pytest.mark.parametrize(
+    "growth_policy",
+    [GrowthPolicy.BOUND_WINNERS, GrowthPolicy.GENERIC_AFFERENTS],
+)
+@pytest.mark.parametrize("contexts_present", [False, True])
+def test_checkpoint_event_step_must_match_transient_context_presence(
+    growth_policy: GrowthPolicy,
+    contexts_present: bool,
+) -> None:
+    codebook = _disjoint_codebook(1)
+    config = _config(1, growth_policy=growth_policy)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    if contexts_present:
+        circuit.recognize(0)
+    snapshot = circuit.snapshot()
+    corrupted = replace(snapshot, event_step=0 if contexts_present else 1)
+
+    with pytest.raises(ValueError, match="event_step must be zero exactly"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
 def test_checkpoint_accepts_the_inclusive_uint64_counter_boundary() -> None:
     codebook = _disjoint_codebook(1)
     config = _config(1)
     circuit = SparseTemporalCortex(codebook, config=config)
+    circuit.recognize(0)
     snapshot = circuit.snapshot()
     boundary = replace(
         snapshot,
@@ -845,6 +1165,7 @@ def test_uint64_counter_overflow_stops_before_state_changes(
     codebook = _disjoint_codebook(1)
     config = _config(1)
     circuit = SparseTemporalCortex(codebook, config=config)
+    circuit.recognize(0)
     snapshot = circuit.snapshot()
     if counter == "learning_step":
         boundary = replace(
@@ -877,6 +1198,7 @@ def test_unknown_token_preflight_precedes_uint64_counter_stop(
     codebook = _disjoint_codebook(1)
     config = _config(1)
     circuit = SparseTemporalCortex(codebook, config=config)
+    circuit.recognize(0)
     snapshot = circuit.snapshot()
     if counter == "learning_step":
         boundary = replace(
@@ -894,6 +1216,45 @@ def test_unknown_token_preflight_precedes_uint64_counter_stop(
 
     with pytest.raises(ValueError, match="unknown token 1"):
         getattr(circuit, method)(1)
+
+    assert circuit.snapshot() == before
+
+
+@pytest.mark.parametrize(
+    ("counter", "method"),
+    [("learning_step", "learn"), ("event_step", "recognize")],
+)
+def test_physics_stop_precedes_counter_overflow_without_state_changes(
+    counter: str,
+    method: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    codebook = _disjoint_codebook(1)
+    config = _config(1)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    circuit.recognize(0)
+    snapshot = circuit.snapshot()
+    if counter == "learning_step":
+        boundary = replace(
+            snapshot,
+            learned=replace(snapshot.learned, learning_step=(1 << 64) - 1),
+        )
+    else:
+        boundary = replace(snapshot, event_step=(1 << 64) - 1)
+    circuit = SparseTemporalCortex.from_snapshot(
+        codebook,
+        config=config,
+        snapshot=boundary,
+    )
+    before = circuit.snapshot()
+
+    def fail_physics(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("STOP: active human cells did not spike")
+
+    monkeypatch.setattr(circuit._physics, "race_currents", fail_physics)
+
+    with pytest.raises(RuntimeError, match="active human cells did not spike"):
+        getattr(circuit, method)(0)
 
     assert circuit.snapshot() == before
 
@@ -957,6 +1318,78 @@ def test_checkpoint_rejects_a_segment_with_a_non_source_contact() -> None:
     )
 
     with pytest.raises(ValueError, match="non-normalized source"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+@pytest.mark.parametrize(
+    "growth_policy",
+    [GrowthPolicy.BOUND_WINNERS, GrowthPolicy.GENERIC_AFFERENTS],
+)
+def test_checkpoint_rejects_segment_sources_from_the_other_policy_domain(
+    growth_policy: GrowthPolicy,
+) -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2, growth_policy=growth_policy)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    source_step, _target_step = _learn_pair(circuit, 0, 1)
+    snapshot = circuit.snapshot()
+    owner, sources, permanence_ticks = snapshot.learned.segments[0]
+    if growth_policy is GrowthPolicy.BOUND_WINNERS:
+        wrong_sources = tuple(
+            2 * config.max_pyramidal_cells + config.column_count + column
+            for column in codebook[0][: len(sources)]
+        )
+    else:
+        wrong_sources = tuple(sorted(source_step.winner_cells[: len(sources)]))
+    corrupted = replace(
+        snapshot,
+        learned=replace(
+            snapshot.learned,
+            segments=(
+                (owner, wrong_sources, permanence_ticks),
+                *snapshot.learned.segments[1:],
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="configured source policy"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+def test_bound_checkpoint_rejects_an_uncommitted_pyramidal_segment_source() -> None:
+    codebook = _disjoint_codebook(2)
+    base_config = _config(2)
+    config = replace(
+        base_config,
+        max_pyramidal_cells=(
+            base_config.max_pyramidal_cells + base_config.novel_race_cap
+        ),
+    )
+    circuit = SparseTemporalCortex(codebook, config=config)
+    _learn_pair(circuit, 0, 1)
+    snapshot = circuit.snapshot()
+    owner, sources, permanence_ticks = snapshot.learned.segments[0]
+    uncommitted_source = snapshot.learned.next_reserve_cell
+    corrupted = replace(
+        snapshot,
+        learned=replace(
+            snapshot.learned,
+            segments=(
+                (owner, (*sources[:-1], uncommitted_source), permanence_ticks),
+                *snapshot.learned.segments[1:],
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="segment source is not a committed"):
         SparseTemporalCortex.from_snapshot(
             codebook,
             config=config,
@@ -1113,6 +1546,73 @@ def test_checkpoint_rejects_malformed_reserve_cohorts(corruption: str) -> None:
     )
 
     with pytest.raises(ValueError, match="reserve cohort"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+def test_checkpoint_rejects_complete_reserve_cohorts_in_reverse_gid_order() -> None:
+    codebook = _disjoint_codebook(1)
+    base_cells = K * 2
+    config = SparseTemporalConfig(
+        column_count=K,
+        active_columns=K,
+        base_cells_per_column=2,
+        max_pyramidal_cells=base_cells + 16,
+        contacts_per_segment=20,
+        theta_match=18,
+        theta_active=20,
+    )
+    circuit = SparseTemporalCortex(codebook, config=config)
+    snapshot = circuit.snapshot()
+    column_cells = [list(cells) for cells in snapshot.learned.column_cells]
+    column_cells[0].extend(range(base_cells + 8, base_cells + 16))
+    column_cells[0].extend(range(base_cells, base_cells + 8))
+    corrupted = replace(
+        snapshot,
+        learned=replace(
+            snapshot.learned,
+            column_cells=tuple(tuple(cells) for cells in column_cells),
+            next_reserve_cell=base_cells + 16,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="column cells must be strictly increasing"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+def test_checkpoint_rejects_a_committed_reserve_cohort_without_an_owned_segment() -> None:
+    codebook = _disjoint_codebook(1)
+    base_cells = K * 2
+    config = SparseTemporalConfig(
+        column_count=K,
+        active_columns=K,
+        base_cells_per_column=2,
+        max_pyramidal_cells=base_cells + 8,
+        contacts_per_segment=20,
+        theta_match=18,
+        theta_active=20,
+    )
+    circuit = SparseTemporalCortex(codebook, config=config)
+    snapshot = circuit.snapshot()
+    column_cells = [list(cells) for cells in snapshot.learned.column_cells]
+    column_cells[0].extend(range(base_cells, base_cells + 8))
+    corrupted = replace(
+        snapshot,
+        learned=replace(
+            snapshot.learned,
+            column_cells=tuple(tuple(cells) for cells in column_cells),
+            next_reserve_cell=base_cells + 8,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="reserve cohort has no owned segment"):
         SparseTemporalCortex.from_snapshot(
             codebook,
             config=config,
