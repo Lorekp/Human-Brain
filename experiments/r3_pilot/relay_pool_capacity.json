@@ -1,19 +1,29 @@
 {
   "architecture": {
     "basket_cells": 4096,
+    "basket_offset": 262144,
     "cells_per_column": 32,
     "columns": 4096,
+    "contact_source_pairs": {
+      "A1": "winner_pyramidal + injective_winner_relay",
+      "A3": "generic_proximal + injective_generic_relay"
+    },
     "contacts_per_segment": 20,
+    "generic_proximal_cells": 4096,
+    "generic_proximal_offset": 266240,
+    "generic_relay_cells": 4096,
+    "generic_relay_offset": 270336,
     "initial_permanence": "0.51",
     "max_segments_per_cell": 255,
-    "presynaptic_source_cells_with_relays": 262144,
+    "physical_gid_bits": 19,
     "pyramidal_cell_cap": 131072,
-    "relay_cells": 131072,
     "sdr_seed": 17,
     "token_sdr": "token_sdr_indices(seed=17,n_bits=4096,w_ones=K)",
-    "total_physical_glif3_cells": 266240
+    "total_physical_glif3_cells": 274432,
+    "winner_relay_cells": 131072,
+    "winner_relay_offset": 131072
   },
-  "artifact_id": "r3-relay-pool-capacity-v4-grouped-relays",
+  "artifact_id": "r3-relay-pool-capacity-v5-paired-sources",
   "claim_boundary": {
     "capability_evidence": false,
     "ideal_structural_sizing_only": true,
@@ -105,23 +115,77 @@
       "max_column_depth": 1125,
       "max_segments_per_cell": 255,
       "memory_estimate": {
-        "assumptions": {
-          "cell_segment_index": "CSR u32 offsets",
-          "column_cell_index": "CSR u32 offsets plus packed 17-bit physical gids",
-          "contact_cell_gid_bits": 18,
-          "permanence_bits": 8,
-          "recognition_inverted_index": "excluded; separately costed",
-          "relay_mapping": "injective arithmetic offset; zero resident projection bits",
-          "token_sdr_storage": "procedural seed; zero resident bytes"
+        "developmental_column_membership": {
+          "base_memberships_arithmetic": 16384,
+          "compact_recruited_column_bits": 996168,
+          "compact_recruited_column_bytes": 124521,
+          "compact_recruited_column_dtype_bits": 12,
+          "hot_cell_gid_bytes": 397592,
+          "hot_column_offset_bytes": 16388,
+          "native_hot_soa_bytes": 413980,
+          "recruited_memberships": 83014,
+          "restore_rule": "base memberships are arithmetic; recruited physical ids are contiguous and store one packed column id each; rebuild hot CSR on restore"
         },
-        "cell_gid_bits": 1689766,
-        "cell_segment_offset_bits": 3180768,
-        "column_offset_bits": 131104,
-        "contact_bits": 12108931120,
-        "ideal_bitpacked_bytes": 1514241595,
-        "ideal_bitpacked_mib": "1444.093318",
-        "recognition_inverted_index_included": false,
-        "relay_projection_bits": 0
+        "recognition_inverted_index": {
+          "excluded_mutable_64_entry_block_ceiling_estimate_bytes": 996199200,
+          "included_in_store_totals": false,
+          "required_static_csr_floor_bytes": 931980532,
+          "static_offset_bytes": 524292,
+          "static_posting_bytes": 931456240
+        },
+        "segment_store": {
+          "compact_bitpacked": {
+            "A1": {
+              "mib": "768.939789",
+              "pair_permanence_bits": 2095776540,
+              "pair_record_bits": 6054465560,
+              "pair_record_bytes": 756808195,
+              "pair_source_bits": 3958689020,
+              "segment_owner_bits": 395868902,
+              "segment_owner_bytes": 49483613,
+              "source_bits_per_pair": 17,
+              "total_bits": 6450334462,
+              "total_bytes": 806291808
+            },
+            "A3": {
+              "mib": "630.141994",
+              "pair_permanence_bits": 2095776540,
+              "pair_record_bits": 4890145260,
+              "pair_record_bytes": 611268158,
+              "pair_source_bits": 2794368720,
+              "segment_owner_bits": 395868902,
+              "segment_owner_bytes": 49483613,
+              "source_bits_per_pair": 12,
+              "total_bits": 5286014162,
+              "total_bytes": 660751771
+            }
+          },
+          "native_hot_soa": {
+            "mib": "1421.414429",
+            "owner_segment_count_bytes": 131072,
+            "owner_segment_count_dtype": "uint8",
+            "pair_permanence_bytes": 465728120,
+            "pair_permanence_dtype": "uint16",
+            "pair_source_bytes": 931456240,
+            "pair_source_dtype": "uint32",
+            "segment_owner_bytes": 93145624,
+            "segment_owner_dtype": "uint32",
+            "total_bytes": 1490461056
+          },
+          "pair_slot_count": 232864060,
+          "pair_slots_per_segment": 10,
+          "permanence_bits": 9,
+          "physical_contacts_per_pair": 2,
+          "relay_projection_bits": 0,
+          "segment_contact_offset_bytes": 0,
+          "segment_count": 23286406,
+          "slot_rule": "fixed source/relay pairs; relay identity is arithmetic and both contacts share one permanence tick; tick zero marks an empty slot"
+        },
+        "total_excluding_recognition_index": {
+          "A1_compact_bitpacked_bytes": 806416329,
+          "A3_compact_bitpacked_bytes": 660876292,
+          "native_hot_soa_bytes": 1490875036
+        }
       },
       "physical_relay_multiplier": 2,
       "physical_winner_width": 22,
@@ -150,23 +214,77 @@
       "max_column_depth": 1125,
       "max_segments_per_cell": 255,
       "memory_estimate": {
-        "assumptions": {
-          "cell_segment_index": "CSR u32 offsets",
-          "column_cell_index": "CSR u32 offsets plus packed 17-bit physical gids",
-          "contact_cell_gid_bits": 18,
-          "permanence_bits": 8,
-          "recognition_inverted_index": "excluded; separately costed",
-          "relay_mapping": "injective arithmetic offset; zero resident projection bits",
-          "token_sdr_storage": "procedural seed; zero resident bytes"
+        "developmental_column_membership": {
+          "base_memberships_arithmetic": 32768,
+          "compact_recruited_column_bits": 917376,
+          "compact_recruited_column_bytes": 114672,
+          "compact_recruited_column_dtype_bits": 12,
+          "hot_cell_gid_bytes": 436864,
+          "hot_column_offset_bytes": 16388,
+          "native_hot_soa_bytes": 453252,
+          "recruited_memberships": 76448,
+          "restore_rule": "base memberships are arithmetic; recruited physical ids are contiguous and store one packed column id each; rebuild hot CSR on restore"
         },
-        "cell_gid_bits": 1856672,
-        "cell_segment_offset_bits": 3494944,
-        "column_offset_bits": 131104,
-        "contact_bits": 12108931120,
-        "ideal_bitpacked_bytes": 1514301730,
-        "ideal_bitpacked_mib": "1444.150667",
-        "recognition_inverted_index_included": false,
-        "relay_projection_bits": 0
+        "recognition_inverted_index": {
+          "excluded_mutable_64_entry_block_ceiling_estimate_bytes": 996199200,
+          "included_in_store_totals": false,
+          "required_static_csr_floor_bytes": 931980532,
+          "static_offset_bytes": 524292,
+          "static_posting_bytes": 931456240
+        },
+        "segment_store": {
+          "compact_bitpacked": {
+            "A1": {
+              "mib": "768.939789",
+              "pair_permanence_bits": 2095776540,
+              "pair_record_bits": 6054465560,
+              "pair_record_bytes": 756808195,
+              "pair_source_bits": 3958689020,
+              "segment_owner_bits": 395868902,
+              "segment_owner_bytes": 49483613,
+              "source_bits_per_pair": 17,
+              "total_bits": 6450334462,
+              "total_bytes": 806291808
+            },
+            "A3": {
+              "mib": "630.141994",
+              "pair_permanence_bits": 2095776540,
+              "pair_record_bits": 4890145260,
+              "pair_record_bytes": 611268158,
+              "pair_source_bits": 2794368720,
+              "segment_owner_bits": 395868902,
+              "segment_owner_bytes": 49483613,
+              "source_bits_per_pair": 12,
+              "total_bits": 5286014162,
+              "total_bytes": 660751771
+            }
+          },
+          "native_hot_soa": {
+            "mib": "1421.414429",
+            "owner_segment_count_bytes": 131072,
+            "owner_segment_count_dtype": "uint8",
+            "pair_permanence_bytes": 465728120,
+            "pair_permanence_dtype": "uint16",
+            "pair_source_bytes": 931456240,
+            "pair_source_dtype": "uint32",
+            "segment_owner_bytes": 93145624,
+            "segment_owner_dtype": "uint32",
+            "total_bytes": 1490461056
+          },
+          "pair_slot_count": 232864060,
+          "pair_slots_per_segment": 10,
+          "permanence_bits": 9,
+          "physical_contacts_per_pair": 2,
+          "relay_projection_bits": 0,
+          "segment_contact_offset_bytes": 0,
+          "segment_count": 23286406,
+          "slot_rule": "fixed source/relay pairs; relay identity is arithmetic and both contacts share one permanence tick; tick zero marks an empty slot"
+        },
+        "total_excluding_recognition_index": {
+          "A1_compact_bitpacked_bytes": 806406480,
+          "A3_compact_bitpacked_bytes": 660866443,
+          "native_hot_soa_bytes": 1490914308
+        }
       },
       "physical_relay_multiplier": 2,
       "physical_winner_width": 22,
@@ -182,6 +300,20 @@
       "three_pass_segments_created": 23286406,
       "winner_cells_per_context": 11
     }
+  },
+  "permanence_encoding": {
+    "connected_ticks": 250,
+    "initial_ticks": 255,
+    "minimum_bits": 9,
+    "native_hot_dtype": "uint16",
+    "negative_decrement_ticks": 2,
+    "permanence_increment_ticks": 50,
+    "reachable_tick_count": 501,
+    "reachable_tick_range": [
+      0,
+      500
+    ],
+    "ticks_per_unit": 500
   },
   "schedule": {
     "book_boundary_resets": 147,
@@ -218,7 +350,7 @@
     ],
     "transition_events_per_pass": 2117363
   },
-  "schema_version": 4,
+  "schema_version": 5,
   "scope": {
     "book_token_lengths_sha256": "f6afe1b50deb0c94d48d2c56688fcd52eacc1c573438134d585fe00ddd7ec5f1",
     "corpus_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
@@ -249,18 +381,77 @@
       "fits_segment_capacity": false,
       "max_segments_per_cell": 8966,
       "memory_estimate": {
-        "assumptions": {
-          "cell_segment_index": "CSR u32 offsets",
-          "contact_cell_gid_bits": 18,
-          "permanence_bits": 8,
-          "recognition_inverted_index": "excluded; separately costed",
-          "token_sdr_storage": "procedural seed; zero resident bytes"
+        "developmental_column_membership": {
+          "base_memberships_arithmetic": 0,
+          "compact_recruited_column_bits": 0,
+          "compact_recruited_column_bytes": 0,
+          "compact_recruited_column_dtype_bits": 12,
+          "hot_cell_gid_bytes": 0,
+          "hot_column_offset_bytes": 0,
+          "native_hot_soa_bytes": 0,
+          "recruited_memberships": 0,
+          "restore_rule": "base memberships are arithmetic; recruited physical ids are contiguous and store one packed column id each; rebuild hot CSR on restore"
         },
-        "cell_offset_bits": 4194336,
-        "contact_bits": 12108931120,
-        "ideal_bitpacked_bytes": 1514140682,
-        "ideal_bitpacked_mib": "1443.997080",
-        "recognition_inverted_index_included": false
+        "recognition_inverted_index": {
+          "excluded_mutable_64_entry_block_ceiling_estimate_bytes": 996199200,
+          "included_in_store_totals": false,
+          "required_static_csr_floor_bytes": 931980532,
+          "static_offset_bytes": 524292,
+          "static_posting_bytes": 931456240
+        },
+        "segment_store": {
+          "compact_bitpacked": {
+            "A1": {
+              "mib": "768.939789",
+              "pair_permanence_bits": 2095776540,
+              "pair_record_bits": 6054465560,
+              "pair_record_bytes": 756808195,
+              "pair_source_bits": 3958689020,
+              "segment_owner_bits": 395868902,
+              "segment_owner_bytes": 49483613,
+              "source_bits_per_pair": 17,
+              "total_bits": 6450334462,
+              "total_bytes": 806291808
+            },
+            "A3": {
+              "mib": "630.141994",
+              "pair_permanence_bits": 2095776540,
+              "pair_record_bits": 4890145260,
+              "pair_record_bytes": 611268158,
+              "pair_source_bits": 2794368720,
+              "segment_owner_bits": 395868902,
+              "segment_owner_bytes": 49483613,
+              "source_bits_per_pair": 12,
+              "total_bits": 5286014162,
+              "total_bytes": 660751771
+            }
+          },
+          "native_hot_soa": {
+            "mib": "1421.414429",
+            "owner_segment_count_bytes": 131072,
+            "owner_segment_count_dtype": "uint8",
+            "pair_permanence_bytes": 465728120,
+            "pair_permanence_dtype": "uint16",
+            "pair_source_bytes": 931456240,
+            "pair_source_dtype": "uint32",
+            "segment_owner_bytes": 93145624,
+            "segment_owner_dtype": "uint32",
+            "total_bytes": 1490461056
+          },
+          "pair_slot_count": 232864060,
+          "pair_slots_per_segment": 10,
+          "permanence_bits": 9,
+          "physical_contacts_per_pair": 2,
+          "relay_projection_bits": 0,
+          "segment_contact_offset_bytes": 0,
+          "segment_count": 23286406,
+          "slot_rule": "fixed source/relay pairs; relay identity is arithmetic and both contacts share one permanence tick; tick zero marks an empty slot"
+        },
+        "total_excluding_recognition_index": {
+          "A1_compact_bitpacked_bytes": 806291808,
+          "A3_compact_bitpacked_bytes": 660751771,
+          "native_hot_soa_bytes": 1490461056
+        }
       },
       "physical_relay_multiplier": 2,
       "physical_winner_width": 22,
@@ -291,14 +482,14 @@
         "assumptions": {
           "cell_segment_index": "CSR u32 offsets",
           "contact_cell_gid_bits": 17,
-          "permanence_bits": 8,
+          "permanence_bits": 9,
           "recognition_inverted_index": "excluded; separately costed",
           "token_sdr_storage": "procedural seed; zero resident bytes"
         },
         "cell_offset_bits": 4194336,
-        "contact_bits": 21169460000,
-        "ideal_bitpacked_bytes": 2646706792,
-        "ideal_bitpacked_mib": "2524.096291",
+        "contact_bits": 22016238400,
+        "ideal_bitpacked_bytes": 2752554092,
+        "ideal_bitpacked_mib": "2625.040142",
         "recognition_inverted_index_included": false
       },
       "physical_relay_multiplier": 1,
@@ -330,14 +521,14 @@
         "assumptions": {
           "cell_segment_index": "CSR u32 offsets",
           "contact_cell_gid_bits": 17,
-          "permanence_bits": 8,
+          "permanence_bits": 9,
           "recognition_inverted_index": "excluded; separately costed",
           "token_sdr_storage": "procedural seed; zero resident bytes"
         },
         "cell_offset_bits": 4194336,
-        "contact_bits": 42338920000,
-        "ideal_bitpacked_bytes": 5292889292,
-        "ideal_bitpacked_mib": "5047.692577",
+        "contact_bits": 44032476800,
+        "ideal_bitpacked_bytes": 5504583892,
+        "ideal_bitpacked_mib": "5249.580280",
         "recognition_inverted_index_included": false
       },
       "physical_relay_multiplier": 1,

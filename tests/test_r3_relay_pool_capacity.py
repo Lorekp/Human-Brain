@@ -27,24 +27,47 @@ def test_committed_relay_pool_capacity_passes_fast_check() -> None:
 def test_artifact_freezes_the_shared_column_contract() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
 
+    assert artifact["artifact_id"] == "r3-relay-pool-capacity-v5-paired-sources"
+    assert artifact["schema_version"] == 5
     assert artifact["architecture"] == {
         "basket_cells": 4096,
+        "basket_offset": 262144,
         "cells_per_column": 32,
         "columns": 4096,
+        "contact_source_pairs": {
+            "A1": "winner_pyramidal + injective_winner_relay",
+            "A3": "generic_proximal + injective_generic_relay",
+        },
         "contacts_per_segment": 20,
+        "generic_proximal_cells": 4096,
+        "generic_proximal_offset": 266240,
+        "generic_relay_cells": 4096,
+        "generic_relay_offset": 270336,
         "initial_permanence": "0.51",
         "max_segments_per_cell": 255,
-        "presynaptic_source_cells_with_relays": 262144,
+        "physical_gid_bits": 19,
         "pyramidal_cell_cap": 131072,
-        "relay_cells": 131072,
         "sdr_seed": 17,
         "token_sdr": "token_sdr_indices(seed=17,n_bits=4096,w_ones=K)",
-        "total_physical_glif3_cells": 266240,
+        "total_physical_glif3_cells": 274432,
+        "winner_relay_cells": 131072,
+        "winner_relay_offset": 131072,
     }
     assert artifact["shared_column_arms"]["K20"]["winner_cells_per_context"] == 20
     assert artifact["shared_column_arms"]["K20"]["physical_relay_multiplier"] == 1
     assert artifact["shared_column_arms"]["K11"]["physical_relay_multiplier"] == 2
     assert artifact["shared_column_arms"]["K40"]["winner_cells_per_context"] == 40
+    assert artifact["permanence_encoding"] == {
+        "connected_ticks": 250,
+        "initial_ticks": 255,
+        "minimum_bits": 9,
+        "native_hot_dtype": "uint16",
+        "negative_decrement_ticks": 2,
+        "permanence_increment_ticks": 50,
+        "reachable_tick_count": 501,
+        "reachable_tick_range": [0, 500],
+        "ticks_per_unit": 500,
+    }
     assert artifact["claim_boundary"] == {
         "capability_evidence": False,
         "ideal_structural_sizing_only": True,
@@ -96,13 +119,75 @@ def test_artifact_freezes_train_capacity_stops_and_developmental_fit() -> None:
     assert developmental["base8_K11"]["relay_population_cells"] == 131072
     assert developmental["base8_K11"]["relay_population_cells_sized"] is True
     memory = developmental["base8_K11"]["memory_estimate"]
-    assert memory["assumptions"]["contact_cell_gid_bits"] == 18
-    assert memory["assumptions"]["relay_mapping"] == (
-        "injective arithmetic offset; zero resident projection bits"
-    )
-    assert memory["assumptions"]["cell_segment_index"] == "CSR u32 offsets"
-    assert memory["recognition_inverted_index_included"] is False
-    assert memory["relay_projection_bits"] == 0
+    assert memory["segment_store"]["segment_count"] == 23286406
+    assert memory["segment_store"]["pair_slot_count"] == 232864060
+    assert memory["segment_store"]["pair_slots_per_segment"] == 10
+    assert memory["segment_store"]["physical_contacts_per_pair"] == 2
+    assert memory["segment_store"]["permanence_bits"] == 9
+    assert memory["segment_store"]["relay_projection_bits"] == 0
+    assert memory["segment_store"]["segment_contact_offset_bytes"] == 0
+    assert memory["segment_store"]["compact_bitpacked"]["A1"] == {
+        "mib": "768.939789",
+        "pair_permanence_bits": 2095776540,
+        "pair_record_bits": 6054465560,
+        "pair_record_bytes": 756808195,
+        "pair_source_bits": 3958689020,
+        "segment_owner_bits": 395868902,
+        "segment_owner_bytes": 49483613,
+        "source_bits_per_pair": 17,
+        "total_bits": 6450334462,
+        "total_bytes": 806291808,
+    }
+    assert memory["segment_store"]["compact_bitpacked"]["A3"] == {
+        "mib": "630.141994",
+        "pair_permanence_bits": 2095776540,
+        "pair_record_bits": 4890145260,
+        "pair_record_bytes": 611268158,
+        "pair_source_bits": 2794368720,
+        "segment_owner_bits": 395868902,
+        "segment_owner_bytes": 49483613,
+        "source_bits_per_pair": 12,
+        "total_bits": 5286014162,
+        "total_bytes": 660751771,
+    }
+    assert memory["segment_store"]["native_hot_soa"] == {
+        "mib": "1421.414429",
+        "owner_segment_count_bytes": 131072,
+        "owner_segment_count_dtype": "uint8",
+        "pair_permanence_bytes": 465728120,
+        "pair_permanence_dtype": "uint16",
+        "pair_source_bytes": 931456240,
+        "pair_source_dtype": "uint32",
+        "segment_owner_bytes": 93145624,
+        "segment_owner_dtype": "uint32",
+        "total_bytes": 1490461056,
+    }
+    assert memory["developmental_column_membership"] == {
+        "base_memberships_arithmetic": 32768,
+        "compact_recruited_column_bits": 917376,
+        "compact_recruited_column_bytes": 114672,
+        "compact_recruited_column_dtype_bits": 12,
+        "hot_cell_gid_bytes": 436864,
+        "hot_column_offset_bytes": 16388,
+        "native_hot_soa_bytes": 453252,
+        "recruited_memberships": 76448,
+        "restore_rule": (
+            "base memberships are arithmetic; recruited physical ids are contiguous "
+            "and store one packed column id each; rebuild hot CSR on restore"
+        ),
+    }
+    assert memory["total_excluding_recognition_index"] == {
+        "A1_compact_bitpacked_bytes": 806406480,
+        "A3_compact_bitpacked_bytes": 660866443,
+        "native_hot_soa_bytes": 1490914308,
+    }
+    assert memory["recognition_inverted_index"] == {
+        "excluded_mutable_64_entry_block_ceiling_estimate_bytes": 996199200,
+        "included_in_store_totals": False,
+        "required_static_csr_floor_bytes": 931980532,
+        "static_offset_bytes": 524292,
+        "static_posting_bytes": 931456240,
+    }
     assert artifact["token_pool_comparisons"]["q4"]["capacity_stop"] is True
 
     w22_theta_m = artifact["collision_tails"]["W22"]["theta_m_10"]

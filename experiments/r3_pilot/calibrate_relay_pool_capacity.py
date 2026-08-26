@@ -2,7 +2,8 @@
 
 The primary model is 4,096 columns backed by a 131,072-address fitted-GLIF3
 pyramidal sheet, one injective fitted-GLIF3 relay twin per pyramidal address,
-and one fitted-GLIF3 basket cell per column.  A seeded token SDR activates K
+one fitted-GLIF3 basket cell per column, and one generic proximal/relay pair
+per column for the A3 mass-matched control.  A seeded token SDR activates K
 columns and a context-conditioned winner is selected in every active column.
 ``--check`` validates the committed artifact without importing NumPy or
 decoding corpus bytes.  ``--replay-check`` rebuilds the canonical TRAIN stream
@@ -32,8 +33,8 @@ from typing import Any, Sequence
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_PATH = Path(__file__).with_name("relay_pool_capacity.json")
 
-ARTIFACT_ID = "r3-relay-pool-capacity-v4-grouped-relays"
-SCHEMA_VERSION = 4
+ARTIFACT_ID = "r3-relay-pool-capacity-v5-paired-sources"
+SCHEMA_VERSION = 5
 CORPUS_SHA256 = "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa"
 TOKENIZER_SHA256 = "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2"
 PREFIX_200_SHA256 = "de5d527b12968762d6bd614c3a77c705e053e272361a72d20f3c0a21b272ef3c"
@@ -49,16 +50,30 @@ SDR_SEED = 17
 COLUMNS = 4_096
 CELLS_PER_COLUMN = 32
 TOTAL_CELLS = COLUMNS * CELLS_PER_COLUMN
-RELAY_CELLS = TOTAL_CELLS
+WINNER_RELAY_CELLS = TOTAL_CELLS
 BASKET_CELLS = COLUMNS
-PRESYNAPTIC_SOURCE_CELLS_WITH_RELAYS = TOTAL_CELLS + RELAY_CELLS
-TOTAL_PHYSICAL_GLIF3_CELLS = (
-    TOTAL_CELLS + RELAY_CELLS + BASKET_CELLS
-)
+GENERIC_PROXIMAL_CELLS = COLUMNS
+GENERIC_RELAY_CELLS = COLUMNS
+WINNER_RELAY_OFFSET = TOTAL_CELLS
+BASKET_OFFSET = WINNER_RELAY_OFFSET + WINNER_RELAY_CELLS
+GENERIC_PROXIMAL_OFFSET = BASKET_OFFSET + BASKET_CELLS
+GENERIC_RELAY_OFFSET = GENERIC_PROXIMAL_OFFSET + GENERIC_PROXIMAL_CELLS
+TOTAL_PHYSICAL_GLIF3_CELLS = GENERIC_RELAY_OFFSET + GENERIC_RELAY_CELLS
+PHYSICAL_GID_BITS = 19
 K_VALUES = (11, 20, 40)
 CONTACTS_PER_SEGMENT = 20
+PHYSICAL_CONTACTS_PER_PAIR = 2
+PAIR_SLOTS_PER_SEGMENT = CONTACTS_PER_SEGMENT // PHYSICAL_CONTACTS_PER_PAIR
+PYRAMIDAL_GID_BITS = 17
+COLUMN_GID_BITS = 12
 MAX_SEGMENTS_PER_CELL = 255
 INITIAL_PERMANENCE = "0.51"
+CONNECTED_PERMANENCE = "0.50"
+PERMANENCE_INCREMENT = "0.10"
+NEGATIVE_DECREMENT = "0.004"
+PERMANENCE_TICKS_PER_UNIT = 500
+PERMANENCE_BITS = PERMANENCE_TICKS_PER_UNIT.bit_length()
+MUTABLE_RECOGNITION_INDEX_CAP_BYTES = 996_199_200
 THETA_M = 10
 THETA_A = 13
 BOUNDARY_CONTEXT = -1
@@ -94,17 +109,49 @@ def _ceil_div(numerator: int, denominator: int) -> int:
 def _architecture() -> dict[str, Any]:
     return {
         "basket_cells": BASKET_CELLS,
+        "basket_offset": BASKET_OFFSET,
         "cells_per_column": CELLS_PER_COLUMN,
         "columns": COLUMNS,
+        "contact_source_pairs": {
+            "A1": "winner_pyramidal + injective_winner_relay",
+            "A3": "generic_proximal + injective_generic_relay",
+        },
         "contacts_per_segment": CONTACTS_PER_SEGMENT,
+        "generic_proximal_cells": GENERIC_PROXIMAL_CELLS,
+        "generic_proximal_offset": GENERIC_PROXIMAL_OFFSET,
+        "generic_relay_cells": GENERIC_RELAY_CELLS,
+        "generic_relay_offset": GENERIC_RELAY_OFFSET,
         "initial_permanence": INITIAL_PERMANENCE,
         "max_segments_per_cell": MAX_SEGMENTS_PER_CELL,
-        "presynaptic_source_cells_with_relays": PRESYNAPTIC_SOURCE_CELLS_WITH_RELAYS,
+        "physical_gid_bits": PHYSICAL_GID_BITS,
         "pyramidal_cell_cap": TOTAL_CELLS,
-        "relay_cells": RELAY_CELLS,
         "sdr_seed": SDR_SEED,
         "token_sdr": "token_sdr_indices(seed=17,n_bits=4096,w_ones=K)",
         "total_physical_glif3_cells": TOTAL_PHYSICAL_GLIF3_CELLS,
+        "winner_relay_cells": WINNER_RELAY_CELLS,
+        "winner_relay_offset": WINNER_RELAY_OFFSET,
+    }
+
+
+def _permanence_encoding() -> dict[str, Any]:
+    def ticks(value: str) -> int:
+        scaled = Decimal(value) * PERMANENCE_TICKS_PER_UNIT
+        _require(
+            scaled == scaled.to_integral_value(),
+            f"permanence {value} is not exact at scale {PERMANENCE_TICKS_PER_UNIT}",
+        )
+        return int(scaled)
+
+    return {
+        "connected_ticks": ticks(CONNECTED_PERMANENCE),
+        "initial_ticks": ticks(INITIAL_PERMANENCE),
+        "minimum_bits": PERMANENCE_TICKS_PER_UNIT.bit_length(),
+        "native_hot_dtype": "uint16",
+        "negative_decrement_ticks": ticks(NEGATIVE_DECREMENT),
+        "permanence_increment_ticks": ticks(PERMANENCE_INCREMENT),
+        "reachable_tick_count": PERMANENCE_TICKS_PER_UNIT + 1,
+        "reachable_tick_range": [0, PERMANENCE_TICKS_PER_UNIT],
+        "ticks_per_unit": PERMANENCE_TICKS_PER_UNIT,
     }
 
 
@@ -180,6 +227,10 @@ def validate_artifact(artifact: dict[str, Any]) -> None:
     _require(artifact.get("schema_version") == SCHEMA_VERSION, "schema mismatch")
     _require(artifact.get("claim_boundary") == _claim_boundary(), "claim drift")
     _require(artifact.get("architecture") == _architecture(), "architecture drift")
+    _require(
+        artifact.get("permanence_encoding") == _permanence_encoding(),
+        "permanence encoding drift",
+    )
 
     scope = artifact.get("scope")
     _require(isinstance(scope, dict), "scope is missing")
@@ -224,6 +275,18 @@ def validate_artifact(artifact: dict[str, Any]) -> None:
         _require(arm.get("segments") == arm.get("distinct_contexts") * k, "segment drift")
         _require(arm.get("contacts") == arm.get("segments") * 20, "contact drift")
         _require(arm.get("max_segments_per_cell") >= 0, "negative cell load")
+        expected_memory = (
+            _paired_memory(arm["segments"])
+            if k == 11
+            else _shared_memory(
+                arm["segments"],
+                contact_cell_gid_bits=PYRAMIDAL_GID_BITS,
+            )
+        )
+        _require(
+            arm.get("memory_estimate") == expected_memory,
+            f"K{k} memory estimate drift",
+        )
     _require(arms["K11"].get("physical_relay_multiplier") == 2, "K11 relay drift")
     _require(arms["K20"].get("physical_relay_multiplier") == 1, "K20 relay drift")
     _require(arms["K40"].get("physical_relay_multiplier") == 1, "K40 relay drift")
@@ -243,6 +306,15 @@ def validate_artifact(artifact: dict[str, Any]) -> None:
         _require(
             arm.get("all_train_unique_states_fit") is not None,
             f"{label} fit verdict is missing",
+        )
+        _require(
+            arm.get("memory_estimate")
+            == _variable_memory(
+                arm["segments"],
+                arm["pyramidal_cells_required"],
+                base_cells_per_column=base_depth,
+            ),
+            f"{label} memory estimate drift",
         )
 
     comparisons = artifact.get("token_pool_comparisons")
@@ -522,14 +594,14 @@ def _shared_memory(
     contact_cell_gid_bits: int,
 ) -> dict[str, Any]:
     contacts = segments * CONTACTS_PER_SEGMENT
-    contact_bits = contacts * (contact_cell_gid_bits + 8)
+    contact_bits = contacts * (contact_cell_gid_bits + PERMANENCE_BITS)
     cell_offset_bits = (TOTAL_CELLS + 1) * 32
     total_bytes = _ceil_div(contact_bits + cell_offset_bits, 8)
     return {
         "assumptions": {
             "cell_segment_index": "CSR u32 offsets",
             "contact_cell_gid_bits": contact_cell_gid_bits,
-            "permanence_bits": 8,
+            "permanence_bits": PERMANENCE_BITS,
             "recognition_inverted_index": "excluded; separately costed",
             "token_sdr_storage": "procedural seed; zero resident bytes",
         },
@@ -538,6 +610,155 @@ def _shared_memory(
         "ideal_bitpacked_bytes": total_bytes,
         "ideal_bitpacked_mib": _mib_string(total_bytes),
         "recognition_inverted_index_included": False,
+    }
+
+
+def _compact_paired_arm(pair_slots: int, *, source_bits: int) -> dict[str, Any]:
+    segment_count = pair_slots // PAIR_SLOTS_PER_SEGMENT
+    segment_owner_bits = segment_count * PYRAMIDAL_GID_BITS
+    segment_owner_bytes = _ceil_div(segment_owner_bits, 8)
+    pair_source_bits = pair_slots * source_bits
+    pair_permanence_bits = pair_slots * PERMANENCE_BITS
+    pair_record_bits = pair_source_bits + pair_permanence_bits
+    pair_record_bytes = _ceil_div(pair_record_bits, 8)
+    total_bits = segment_owner_bits + pair_record_bits
+    total_bytes = segment_owner_bytes + pair_record_bytes
+    return {
+        "mib": _mib_string(total_bytes),
+        "pair_permanence_bits": pair_permanence_bits,
+        "pair_record_bits": pair_record_bits,
+        "pair_record_bytes": pair_record_bytes,
+        "pair_source_bits": pair_source_bits,
+        "segment_owner_bits": segment_owner_bits,
+        "segment_owner_bytes": segment_owner_bytes,
+        "source_bits_per_pair": source_bits,
+        "total_bits": total_bits,
+        "total_bytes": total_bytes,
+    }
+
+
+def _paired_segment_store(segments: int) -> dict[str, Any]:
+    pair_slots = segments * PAIR_SLOTS_PER_SEGMENT
+    segment_owner_bytes = segments * 4
+    pair_source_bytes = pair_slots * 4
+    pair_permanence_bytes = pair_slots * 2
+    owner_segment_count_bytes = TOTAL_CELLS
+    native_hot_bytes = (
+        segment_owner_bytes
+        + pair_source_bytes
+        + pair_permanence_bytes
+        + owner_segment_count_bytes
+    )
+    static_offset_bytes = (TOTAL_CELLS + 1) * 4
+    static_posting_bytes = pair_slots * 4
+    return {
+        "compact_bitpacked": {
+            "A1": _compact_paired_arm(pair_slots, source_bits=PYRAMIDAL_GID_BITS),
+            "A3": _compact_paired_arm(pair_slots, source_bits=COLUMN_GID_BITS),
+        },
+        "native_hot_soa": {
+            "mib": _mib_string(native_hot_bytes),
+            "owner_segment_count_bytes": owner_segment_count_bytes,
+            "owner_segment_count_dtype": "uint8",
+            "pair_permanence_bytes": pair_permanence_bytes,
+            "pair_permanence_dtype": "uint16",
+            "pair_source_bytes": pair_source_bytes,
+            "pair_source_dtype": "uint32",
+            "segment_owner_bytes": segment_owner_bytes,
+            "segment_owner_dtype": "uint32",
+            "total_bytes": native_hot_bytes,
+        },
+        "pair_slot_count": pair_slots,
+        "pair_slots_per_segment": PAIR_SLOTS_PER_SEGMENT,
+        "permanence_bits": PERMANENCE_BITS,
+        "physical_contacts_per_pair": PHYSICAL_CONTACTS_PER_PAIR,
+        "relay_projection_bits": 0,
+        "segment_contact_offset_bytes": 0,
+        "segment_count": segments,
+        "slot_rule": (
+            "fixed source/relay pairs; relay identity is arithmetic and both contacts "
+            "share one permanence tick; tick zero marks an empty slot"
+        ),
+        "recognition_index_cost": {
+            "excluded_mutable_64_entry_block_ceiling_estimate_bytes": (
+                MUTABLE_RECOGNITION_INDEX_CAP_BYTES
+            ),
+            "included_in_store_totals": False,
+            "required_static_csr_floor_bytes": (
+                static_offset_bytes + static_posting_bytes
+            ),
+            "static_offset_bytes": static_offset_bytes,
+            "static_posting_bytes": static_posting_bytes,
+        },
+    }
+
+
+def _paired_memory(
+    segments: int,
+    *,
+    allocated_cells: int | None = None,
+    base_cells_per_column: int | None = None,
+) -> dict[str, Any]:
+    store = _paired_segment_store(segments)
+    membership = {
+        "base_memberships_arithmetic": 0,
+        "compact_recruited_column_bits": 0,
+        "compact_recruited_column_bytes": 0,
+        "compact_recruited_column_dtype_bits": COLUMN_GID_BITS,
+        "hot_cell_gid_bytes": 0,
+        "hot_column_offset_bytes": 0,
+        "native_hot_soa_bytes": 0,
+        "recruited_memberships": 0,
+        "restore_rule": (
+            "base memberships are arithmetic; recruited physical ids are contiguous "
+            "and store one packed column id each; rebuild hot CSR on restore"
+        ),
+    }
+    if allocated_cells is not None:
+        _require(base_cells_per_column is not None, "base depth missing")
+        base_memberships = COLUMNS * base_cells_per_column
+        recruited_memberships = allocated_cells - base_memberships
+        _require(recruited_memberships >= 0, "negative recruited membership count")
+        compact_recruited_column_bits = recruited_memberships * COLUMN_GID_BITS
+        hot_column_offset_bytes = (COLUMNS + 1) * 4
+        hot_cell_gid_bytes = allocated_cells * 4
+        membership = {
+            "base_memberships_arithmetic": base_memberships,
+            "compact_recruited_column_bits": compact_recruited_column_bits,
+            "compact_recruited_column_bytes": _ceil_div(
+                compact_recruited_column_bits,
+                8,
+            ),
+            "compact_recruited_column_dtype_bits": COLUMN_GID_BITS,
+            "hot_cell_gid_bytes": hot_cell_gid_bytes,
+            "hot_column_offset_bytes": hot_column_offset_bytes,
+            "native_hot_soa_bytes": hot_column_offset_bytes + hot_cell_gid_bytes,
+            "recruited_memberships": recruited_memberships,
+            "restore_rule": (
+                "base memberships are arithmetic; recruited physical ids are contiguous "
+                "and store one packed column id each; rebuild hot CSR on restore"
+            ),
+        }
+    compact = store["compact_bitpacked"]
+    hot = store["native_hot_soa"]
+    recognition = store.pop("recognition_index_cost")
+    return {
+        "developmental_column_membership": membership,
+        "recognition_inverted_index": recognition,
+        "segment_store": store,
+        "total_excluding_recognition_index": {
+            "A1_compact_bitpacked_bytes": (
+                compact["A1"]["total_bytes"]
+                + membership["compact_recruited_column_bytes"]
+            ),
+            "A3_compact_bitpacked_bytes": (
+                compact["A3"]["total_bytes"]
+                + membership["compact_recruited_column_bytes"]
+            ),
+            "native_hot_soa_bytes": (
+                hot["total_bytes"] + membership["native_hot_soa_bytes"]
+            ),
+        },
     }
 
 
@@ -601,12 +822,16 @@ def _shared_arm(
         "first_pass_segments": segments,
         "fits_segment_capacity": first_stop is None,
         "max_segments_per_cell": max_load,
-        "memory_estimate": _shared_memory(
-            segments,
-            contact_cell_gid_bits=(18 if relay_multiplier == 2 else 17),
+        "memory_estimate": (
+            _paired_memory(segments)
+            if relay_multiplier == 2
+            else _shared_memory(
+                segments,
+                contact_cell_gid_bits=PYRAMIDAL_GID_BITS,
+            )
         ),
         "physical_relay_multiplier": relay_multiplier,
-        "relay_population_cells": RELAY_CELLS if relay_multiplier == 2 else 0,
+        "relay_population_cells": WINNER_RELAY_CELLS if relay_multiplier == 2 else 0,
         "relay_population_cells_sized": True,
         "physical_winner_width": physical_width,
         "cell_load_sha256": _sha256(loads.astype("<u4", copy=False).tobytes()),
@@ -617,42 +842,17 @@ def _shared_arm(
     }
 
 
-def _variable_memory(segments: int, allocated_cells: int) -> dict[str, Any]:
-    contacts = segments * CONTACTS_PER_SEGMENT
-    contact_bits = contacts * (18 + 8)
-    column_offset_bits = (COLUMNS + 1) * 32
-    cell_gid_bits = allocated_cells * 17
-    cell_segment_offset_bits = (allocated_cells + 1) * 32
-    relay_projection_bits = 0
-    total_bytes = _ceil_div(
-        contact_bits
-        + column_offset_bits
-        + cell_gid_bits
-        + cell_segment_offset_bits
-        + relay_projection_bits,
-        8,
+def _variable_memory(
+    segments: int,
+    allocated_cells: int,
+    *,
+    base_cells_per_column: int,
+) -> dict[str, Any]:
+    return _paired_memory(
+        segments,
+        allocated_cells=allocated_cells,
+        base_cells_per_column=base_cells_per_column,
     )
-    return {
-        "assumptions": {
-            "cell_segment_index": "CSR u32 offsets",
-            "column_cell_index": "CSR u32 offsets plus packed 17-bit physical gids",
-            "contact_cell_gid_bits": 18,
-            "permanence_bits": 8,
-            "recognition_inverted_index": "excluded; separately costed",
-            "relay_mapping": (
-                "injective arithmetic offset; zero resident projection bits"
-            ),
-            "token_sdr_storage": "procedural seed; zero resident bytes",
-        },
-        "cell_gid_bits": cell_gid_bits,
-        "cell_segment_offset_bits": cell_segment_offset_bits,
-        "column_offset_bits": column_offset_bits,
-        "contact_bits": contact_bits,
-        "ideal_bitpacked_bytes": total_bytes,
-        "ideal_bitpacked_mib": _mib_string(total_bytes),
-        "recognition_inverted_index_included": False,
-        "relay_projection_bits": relay_projection_bits,
-    }
 
 
 def _variable_depth_arm(
@@ -715,7 +915,7 @@ def _variable_depth_arm(
         "max_column_depth": max_depth,
         "max_segments_per_cell": max_load,
         "physical_relay_multiplier": 2,
-        "relay_population_cells": RELAY_CELLS,
+        "relay_population_cells": WINNER_RELAY_CELLS,
         "relay_population_cells_sized": True,
         "relay_population_rule": (
             "one fitted-GLIF3 twin per pyramidal address; "
@@ -732,7 +932,11 @@ def _variable_depth_arm(
         "segments": segments_allocated,
         "three_pass_segments_created": segments_allocated,
         "winner_cells_per_context": 11,
-        "memory_estimate": _variable_memory(segments_allocated, allocated_cells),
+        "memory_estimate": _variable_memory(
+            segments_allocated,
+            allocated_cells,
+            base_cells_per_column=base_depth,
+        ),
     }
 
 
@@ -869,6 +1073,7 @@ def run_replay() -> dict[str, Any]:
             "max_context_token_ids": max_context_tokens,
         },
         "developmental_variable_depth": developmental,
+        "permanence_encoding": _permanence_encoding(),
         "schedule": {
             "book_boundary_resets": TRAIN_BOOKS * EXPOSURE_PASSES,
             "boundary_rule": (
