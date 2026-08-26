@@ -1,4 +1,10 @@
-"""C1 cohort runner - r3 segment-growth pilot, full frozen leg (prereg §4-§8).
+"""C1 diagnostic scaffold - r3 segment-growth pilot (prereg §4-§8).
+
+HARD NO-GO (2026-08-26): the long cohort entry point is mechanically blocked
+until the neuron-only substrate and scientific-control failures in
+`docs/research/r3-c1-prelaunch-audit.md` are repaired. `--dry-run` remains
+available for reproducing and localizing the documented wiring defects; its
+success is not launch-readiness evidence.
 
 Runs the complete C1 leg of ``docs/research/r3-segment-growth-preregistration.md``
 on branch ``codex/path2-pilot``: corpus assert-or-STOP, arms A1/A2/A3 at
@@ -144,6 +150,12 @@ EXIT_OK = 0
 EXIT_STOP = 2                     # protocol STOP (corpus drift, gate failure w/ verdict, ...)
 EXIT_WALLCLOCK_ABORT = 3          # cap exceeded; partial logs reported
 EXIT_RESUME_INVALID = 4
+
+C1_LAUNCH_BLOCK_REASON = (
+    "C1 launch blocked by docs/research/r3-c1-prelaunch-audit.md: the current "
+    "GLIF5+Python-tracker scaffold is not the frozen GLIF3 plateau/race "
+    "experiment and learns during held-out scoring"
+)
 
 TOKENIZER_TAG = (
     "BytePhraseTokenizer(max_phrases=0,min_frequency=3)"
@@ -1642,7 +1654,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             REPO_ROOT / "experiments" / "r3_pilot" / ("c1_dry_run" if args.dry_run else "c1_run")
         )
 
-    code, _manifest = run_dry_run(args) if args.dry_run else orchestrate(args)
+    if not args.dry_run:
+        print(f"HARD NO-GO: {C1_LAUNCH_BLOCK_REASON}", file=sys.stderr)
+        return EXIT_STOP
+
+    code, _manifest = run_dry_run(args)
     return code
 
 

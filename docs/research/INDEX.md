@@ -40,6 +40,17 @@ Primary-source full-text reads of the six closest external systems, consolidated
 | [deep-dive-spikegpt-neuronspark.md](deep-dive-spikegpt-neuronspark.md) | SpikeGPT + NeuronSpark: ceiling of gradient-trained spiking (~7% best-case tax); full path-1 recipe template; M4–M6 undemonstrated cluster-wide | current |
 | [deep-dive-spiking-reservoir-lm.md](deep-dive-spiking-reservoir-lm.md) | spiking-reservoir-lm: independent capacity-law corroboration of our termination chain; cheap methodology transfers (seed selection, pre-flights, tripwires, windowed probes) | current |
 
+## Path-2 R3 campaign
+
+| Document | One-line description | Status |
+| --- | --- | --- |
+| [r3-c1-prelaunch-audit.md](r3-c1-prelaunch-audit.md) | Independent C1 verification: current GLIF5+Python-tracker runner is a hard NO-GO because it violates the GLIF3 plateau/race contract, leaks held-out learning, and cannot meet the cap as claimed; freezes the repair gates | current — governing C1 readiness decision |
+| [r3-segment-growth-preregistration.md](r3-segment-growth-preregistration.md) | Frozen Path-2 C1/C2 winner-cell and distal-segment protocol with G-S0..G-S3 and stop-on-failure rules | current protocol, blocked pending CN-2 repair |
+| [r3-tokenizer-freeze.md](r3-tokenizer-freeze.md) | Freezes the concept tokenizer, pool mapping, corpus-derived vocabulary, and required pre-outcome engagement diagnostic | current |
+| [r3-drive-calibration.md](r3-drive-calibration.md) | CN-1 freezes 250,000 pA drive and records the CUDA observation-sink mirror defect at C1 scale | current prelaunch evidence; not a launch license |
+| [r3-learning-rule-spec.md](r3-learning-rule-spec.md) | Path-2 local learning-rule design following the segment-growth pilot | current design input; gated by valid C1 |
+| [P-B race-bias findings](../../experiments/race_bias_probes/FINDINGS.md) | Predictive-state proportional bias passed the frozen shuffled/unigram/majority controls; smaller gain over the incumbent off arm remains a stated caveat | current mechanism evidence |
+
 ## Falsified-negative verdicts
 
 | Document | One-line description | Status |

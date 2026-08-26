@@ -39,6 +39,8 @@ The repositories do not import or modify one another.
 | Concept tokenizer | Recurring-concept stack mined above BytePhraseTokenizer beats matched-vocab BPE-1280 in-domain: +19.3% compression (Bible), +18.4% (code); poor cross-domain transfer as predicted | Tokenizer-level compression ([findings](experiments/concept_tokens/FINDINGS.md)); not a capability result |
 | SDR union memory | G-U1 separation passes hugely (concept arms 0.40–0.61 mean cosine vs byte arms 0.16–0.19) while G-U2 decode fails in every arm — NEGATIVE_WITH_LOCALIZATION_V2, Direction B elevated | Honest negative ([protocol](docs/research/ustate-preregistration.md), [findings](experiments/ustate_probes/FINDINGS.md)); union state separates but does not decode |
 | T-ROUTE trained mapping | E1/E2/E3 falsified with mechanism localization: winners collapse to a query-independent ~170-bit static pool, and a random-span control reproduces the gated arm exactly (placement carries zero signal) | Program-grade termination of Bible-QA for fixed local connectivity ([conclusion](docs/research/t-route-program-conclusion.md)); three remaining paths need user direction |
+| Predictive race bias (P-B) | Proportional bias reached 14.55% held-out span accuracy versus 3.60% shuffled (McNemar p≈8.7×10⁻¹⁵), 3.21× unigram, and 3.58× majority prior | Frozen mechanism gate passed; the smaller 14.55% versus 13.15% incumbent-off margin and TRAIN-self/VAL ratio 0.375 keep this promising rather than a generalization proof |
+| Path-2 R3 C1 readiness | Independent prelaunch audit found the merged GLIF5+Python-tracker runner is not the preregistered GLIF3 plateau/race experiment, learns during held-out scoring, and understates the schedule | **Hard NO-GO; cohort unspent.** Repair is fixture-first under the [governing audit](docs/research/r3-c1-prelaunch-audit.md) |
 
 Exact protocols, hashes, hardware, and limitations live in
 [benchmark status](docs/benchmark-status.md). Results are kept even when they
@@ -196,6 +198,10 @@ interfaces work but held-out composition does not.
   negative with localization, and the T-ROUTE trained-mapping family is
   falsified in all three tested third-factor forms
   ([program conclusion](docs/research/t-route-program-conclusion.md)).
+- Path 2 is the current mainline, but its first C1 implementation is held
+  before launch: segment recognition and winner election must be moved into
+  physically simulated fitted-cell plateau/race dynamics before any score is
+  valid ([prelaunch audit](docs/research/r3-c1-prelaunch-audit.md)).
 - [Indicator assessment instrument](docs/indicator-assessment/RUBRIC.md)
   tracks architectural similarity to consciousness-science indicator sets
   (RPT/GWT/HOT/AST/PP/AE families) across model versions using strictly
