@@ -1,0 +1,81 @@
+{
+  "probe": "P-B",
+  "title": "HTM predictive-state depolarizing bias into the basket-cell first-spike race",
+  "source": "docs/research/path-decision-synthesis.md @ e16d22c, section Probe P-B + section 2.3 constants",
+  "frozen_before": "implementation (this file committed before src/humanbrain/race_bias.py exists)",
+  "date_frozen": "2026-08-25",
+  "lane": {
+    "substrate": "humanbrain.cortex.DendriticCortex (Allen GLIF3 fitted parameters, compiled unit-response first-spike race under basket inhibition)",
+    "mechanism_verbatim": "small sustained somatic bias (or threshold offset), proportional to matched-segment count, on cells whose distal branch matched the recent winner history, consumed by the existing basket-cell first-spike race",
+    "segment_mapping": {
+      "note": "lane-native instantiation of HTM constants; principles/constants adopted, algorithmic simulator NOT ported (synthesis 2.3 avoid row)",
+      "segment": "one grown dendritic branch (phase-ordered presynaptic winner-history key -> postsynaptic token cell)",
+      "recent_winner_history": "the actual recent race-winner token sequence (teacher-forced context at eval; ground-truth replay stream during growth)",
+      "grown_contacts": "contact budget cap = 20 per segment (synthesis 2.3)",
+      "connected_contacts": "min(contact_cap, floor(branch_strength)); each co-occurrence potentiates one contact (growth increment 1.0)",
+      "match_predicate": "connected_contacts >= theta_connected with theta_connected = 13 (task brief: theta ~= 13 connected of ~20 grown to start)"
+    },
+    "bias_form": "somatic CURRENT addition chosen (not threshold offset); voltage response is linear in current pre-first-spike so the two are interchangeable up to scaling; addition consumes the existing race unchanged"
+  },
+  "constants": {
+    "theta_connected": 13,
+    "contact_cap": 20,
+    "growth_increment": 1.0,
+    "bias_gain_pa_per_matched_segment": 30.0,
+    "predicted_segment_decrement_fraction": 0.04,
+    "max_order": 8,
+    "probe_seed": 7,
+    "control_seed": 11,
+    "fixture_cells": 96,
+    "cohort_cells": 1024
+  },
+  "n_semantics": {
+    "definition": "N = pyramidal token-cell budget of the cortical sheet: word-type cells (TRAIN-stream frequency rank, ties lexicographic) plus one reserved UNK cell",
+    "rationale": "the recurrent-circuit legs (N=96/N=1024 reservoir cells, race-pivot gate + APICAL-AND) map onto this lane as the raced pyramidal population; the sheet must also encode every prompt word, hence the UNK cell",
+    "deviation_note": "recorded openly: prior legs sized a latent reservoir; this lane sizes the token-cell sheet itself. Restriction can only LOWER our ceiling (unreachable VAL targets auto-miss), so passing gates under restriction is conservative."
+  },
+  "arms": [
+    {"id": "off", "role": "parity anchor; bit-identical to the incumbent race required"},
+    {"id": "proportional", "role": "PRIMARY; bias_current(cell) = 30 pA x matched_segment_count(cell)"},
+    {"id": "shuffled", "role": "CONTROL; identical per-race bias-magnitude multiset assigned to uniformly sampled active cells, Generator(PCG64(control_seed)) advanced exactly once per race call"},
+    {"id": "decrement_plus", "role": "proportional bias + predictedSegmentDecrement analog: during TRAIN replay only, every theta-connected matching segment whose target lost the race loses 0.04 x increment strength per converged-but-lost event (floor 0)"},
+    {"id": "decrement_minus", "role": "DIAGNOSTIC only (the '-' side of the +/- spec): losers gain 0.04 x increment instead; never used for the pass/fail verdict"}
+  ],
+  "scoring": {
+    "readout": "race-resolved only: the race winner IS the prediction; NO offline heads (logistic/MLP/probe) anywhere",
+    "protocol": "teacher-forced span eval mirroring tools/qa_baselines.answer_span_eval verbatim: prompt = words(serialized_prompt_answer.split('\\nA:')[0]) with words = regex [a-z0-9']+ over casefolded text; per answer-word target: predict from context via ONE race, score pred == target, append TARGET to context",
+    "val_denominator_check": "VAL predictions must equal 639 exactly; abort otherwise",
+    "splits": "TRAIN-self (train-manifest items, model grown on their books) vs VAL held-out books reported at EVERY stage (38.3%-to-0% early-warning)",
+    "comparators_frozen": {
+      "unigram_span_acc": 0.04538341158059468,
+      "majority_prior_span_acc": 0.0406885758998435,
+      "trigram_informational": 0.162754303599374
+    },
+    "instrumentation_free": "per-race winning spike time and biased-winner fraction logged per arm (burst/anomaly telemetry per synthesis 2.1)"
+  },
+  "gates": {
+    "fixture_N96_stop_on_failure": [
+      "flag-off bit-parity: race records AND grown branch state hash byte-identical between the incumbent race path and the flag-off probe path",
+      "double-run determinism: identical config/seed reproduces byte-identical result records (modulo wall clock)",
+      "every registered arm executes and emits finite telemetry",
+      "UNK/target coverage reported"
+    ],
+    "cohort_N1024_pass": [
+      "held-out-book (VAL) span accuracy of the best registered primary arm STRICTLY ABOVE the shuffled-bias control (paired McNemar discordant test reported)",
+      "AND strictly above frozen unigram 4.538% and majority-prior 4.069%",
+      "TRAIN-self vs VAL split shows transfer, not self-store memorization"
+    ],
+    "falsifier": "depolarized arm <= shuffled-control arm, or movement confined to TRAIN books (the 38.3%-to-0% signature) => predictive-state-as-race-head-start joins the dead list",
+    "stop_rules": "fixture failure aborts the cohort permanently; no re-seeding, re-tuning, or re-execution after the first token of any leg; the cohort is spent exactly once"
+  },
+  "coordination": {
+    "worktree": "C:/Users/laure/Desktop/DeepSim/.worktrees/human-brain-path2-pilot",
+    "branch": "codex/path2-pilot",
+    "owned_files": [
+      "src/humanbrain/race_bias.py",
+      "tests/test_race_bias.py",
+      "experiments/race_bias_probes/",
+      "minimal opt-in hook inside src/humanbrain/cortex.py (default-off, shared with sibling P-A agent only via clean diffs)"
+    ]
+  }
+}

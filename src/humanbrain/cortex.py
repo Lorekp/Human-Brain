@@ -9,6 +9,7 @@ from math import log1p
 import numpy as np
 
 from humanbrain.cells import AllenGlif3Parameters
+from humanbrain.race_bias import PredictiveBiasConfig, apply_predictive_bias
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,7 @@ class DendriticCortex:
         max_order: int = 8,
         parameters: HumanCellParameters | None = None,
         seed: int = 7,
+        predictive_bias: PredictiveBiasConfig | None = None,
     ) -> None:
         if cell_count < 2:
             raise ValueError("a cortex needs at least two token cells")
@@ -73,6 +75,10 @@ class DendriticCortex:
         self.cell_count = int(cell_count)
         self.max_order = int(max_order)
         self.parameters = parameters or HumanCellParameters()
+        # Probe P-B (predictive-state race bias): None / mode "off" leaves every
+        # code path below untouched — flag-off is byte-identical to the
+        # incumbent race (tests/test_race_bias.py gate 1).
+        self.predictive_bias = predictive_bias
         self._branches: dict[tuple[int, ...], dict[int, float]] = {}
         self._unigram = np.zeros(self.cell_count, dtype=np.float64)
         rng = np.random.default_rng(seed)
@@ -171,6 +177,13 @@ class DendriticCortex:
     def race(self, context: Sequence[int]) -> CellRace:
         """Simulate active pyramidal cells and return the first spike."""
         active, association_drive = self._dendritic_drive(context)
+        bias = self.predictive_bias
+        if bias is not None and bias.mode != "off":
+            # Probe P-B: sustained somatic bias on theta-matched cells,
+            # consumed downstream by this same first-spike race unchanged.
+            association_drive = apply_predictive_bias(
+                self, active, association_drive, context, bias
+            )
         p = self.parameters
         cell = p.cell
         size = len(active)
@@ -225,6 +238,46 @@ class DendriticCortex:
                 simulated_steps=elapsed_steps,
             )
         raise RuntimeError("active human cells did not spike under arousal")
+
+    def matching_segments(self, context: Sequence[int]) -> list[tuple[int, int, float]]:
+        """Raw segments matching the recent winner history, deterministically.
+
+        Returns ``(order, target_cell, strength)`` for every grown branch whose
+        presynaptic key equals the equally long tail of ``context``, ascending
+        by order then target. Theta gating (connected-contact count) is a
+        caller concern; see ``humanbrain.race_bias``.
+        """
+        ctx = tuple(int(token) for token in context)
+        available = min(self.max_order, len(ctx))
+        segments: list[tuple[int, int, float]] = []
+        for order in range(1, available + 1):
+            branch = self._branches.get(ctx[len(ctx) - order :])
+            if not branch:
+                continue
+            for target in sorted(branch):
+                segments.append((order, int(target), float(branch[target])))
+        return segments
+
+    def adjust_branch_strength(self, context, target: int, delta: float) -> bool:
+        """Adjust one segment's strength, flooring at zero (segment removed).
+
+        Used by the predictedSegmentDecrement analog in
+        ``humanbrain.race_bias.grow_with_segment_decrement``. Returns whether
+        the segment existed.
+        """
+        key = tuple(int(token) for token in context)
+        targets = self._branches.get(key)
+        if targets is None:
+            return False
+        tid = int(target)
+        if tid not in targets:
+            return False
+        value = float(targets[tid]) + float(delta)
+        if value <= 0.0:
+            del targets[tid]
+        else:
+            targets[tid] = value
+        return True
 
     def iter_branches(self) -> Iterable[tuple[tuple[int, ...], int, float]]:
         """Yield learned biological state for artifact serialization."""

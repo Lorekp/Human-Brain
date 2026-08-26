@@ -1,0 +1,174 @@
+{
+  "arms": {
+    "A1": {
+      "allocated_segments": 86,
+      "arm": "A1",
+      "burst_fraction_by_pass": [
+        0.995,
+        0.915
+      ],
+      "diagnostics": {
+        "construction_seed": 17,
+        "distinct_ids": 70,
+        "first_step_burst": true,
+        "lane_cells": 96,
+        "max_token_id": 1535,
+        "mean_winner_set_size": 53.8075,
+        "spike_rate_health": {
+          "floor_fraction": 0.001,
+          "mean_activity_density": 0.005604947916666667,
+          "passed": true
+        },
+        "token_cells": 1536,
+        "tracker_growth_on": true
+      },
+      "elections": 382,
+      "f_pred": 0.045,
+      "passes": [
+        {
+          "burst_fraction": 0.995,
+          "burst_steps": 199,
+          "pass_index": 0,
+          "predicted_fraction": 0.005,
+          "predicted_steps": 1,
+          "steps": 200
+        },
+        {
+          "burst_fraction": 0.915,
+          "burst_steps": 183,
+          "pass_index": 1,
+          "predicted_fraction": 0.085,
+          "predicted_steps": 17,
+          "steps": 200
+        }
+      ],
+      "permanences_sha256": "9946af845f661931ecbdfb9695386782655c9f7bca6b245a4c95671d161afefb",
+      "punished_events": 281,
+      "removed_contacts": 0,
+      "steps": 400,
+      "telemetry_sha256": "b452a80fdcc285e8c543634e4275b4e13c708fe35256dc822f9d201d3e4578de",
+      "total_contacts": 1700,
+      "total_segments": 86
+    },
+    "A1_rerun": {
+      "allocated_segments": 86,
+      "arm": "A1",
+      "burst_fraction_by_pass": [
+        0.995,
+        0.915
+      ],
+      "elections": 382,
+      "f_pred": 0.045,
+      "passes": [
+        {
+          "burst_fraction": 0.995,
+          "burst_steps": 199,
+          "pass_index": 0,
+          "predicted_fraction": 0.005,
+          "predicted_steps": 1,
+          "steps": 200
+        },
+        {
+          "burst_fraction": 0.915,
+          "burst_steps": 183,
+          "pass_index": 1,
+          "predicted_fraction": 0.085,
+          "predicted_steps": 17,
+          "steps": 200
+        }
+      ],
+      "permanences_sha256": "9946af845f661931ecbdfb9695386782655c9f7bca6b245a4c95671d161afefb",
+      "punished_events": 281,
+      "removed_contacts": 0,
+      "steps": 400,
+      "telemetry_sha256": "b452a80fdcc285e8c543634e4275b4e13c708fe35256dc822f9d201d3e4578de",
+      "total_contacts": 1700,
+      "total_segments": 86
+    },
+    "A2": {
+      "allocated_segments": 0,
+      "arm": "A2",
+      "burst_fraction_by_pass": [
+        1.0,
+        1.0
+      ],
+      "diagnostics": {
+        "construction_seed": 17,
+        "distinct_ids": 70,
+        "first_step_burst": true,
+        "lane_cells": 96,
+        "max_token_id": 1535,
+        "mean_winner_set_size": 53.8075,
+        "spike_rate_health": {
+          "floor_fraction": 0.001,
+          "mean_activity_density": 0.005604947916666667,
+          "passed": true
+        },
+        "token_cells": 1536,
+        "tracker_growth_on": false
+      },
+      "elections": 400,
+      "f_pred": 0.0,
+      "passes": [
+        {
+          "burst_fraction": 1.0,
+          "burst_steps": 200,
+          "pass_index": 0,
+          "predicted_fraction": 0.0,
+          "predicted_steps": 0,
+          "steps": 200
+        },
+        {
+          "burst_fraction": 1.0,
+          "burst_steps": 200,
+          "pass_index": 1,
+          "predicted_fraction": 0.0,
+          "predicted_steps": 0,
+          "steps": 200
+        }
+      ],
+      "permanences_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "punished_events": 0,
+      "removed_contacts": 0,
+      "steps": 400,
+      "telemetry_sha256": "d884648660032c5ab240e65cef7b13e2cddf715f4051bde63aedb165d210edbe",
+      "total_contacts": 0,
+      "total_segments": 0
+    }
+  },
+  "construction_seed": 17,
+  "dispatch": "G-S0 fixture wiring re-dispatch; tokenizer freeze 966d6e6; P-B fd2c1c8",
+  "experiment": "r3-gs0-fixture-wiring-health",
+  "freeze": "docs/research/r3-tokenizer-freeze.md \u00a74",
+  "health_checks": {
+    "a2_structural_zero": true,
+    "all_passed": true,
+    "bit_identical_reruns": true,
+    "burst_telemetry_present": true,
+    "clean_run": true,
+    "f_pred_A1": 0.045,
+    "f_pred_A2": 0.0,
+    "predicted_path_fraction_computable": true,
+    "spike_rate_preflight": true
+  },
+  "lane_cells": 96,
+  "passes": 2,
+  "prereg": "docs/research/r3-segment-growth-preregistration.md \u00a76 G-S0",
+  "slice": {
+    "books_touched": "Genesis",
+    "candidate_id": "cell-lm-v1-freeze-candidate-bible-kjv-pg10-v3",
+    "concept_band_ids": 37,
+    "distinct_ids": 70,
+    "max_token_id": 1535,
+    "mining_seconds": 9.5,
+    "n_tokens": 200,
+    "n_verses_used": 5,
+    "sha256_match": true,
+    "slice_sha256": "de5d527b12968762d6bd614c3a77c705e053e272361a72d20f3c0a21b272ef3c",
+    "tokenizer": "BytePhraseTokenizer(max_phrases=0,min_frequency=3) + ConceptTokenizer(freq>=50,MI>=5,cap512)",
+    "train_books": 49,
+    "trimmed_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa"
+  },
+  "wall_clock_seconds": 1.5,
+  "winner_set_source": "observation-sink spike stream (circuit._token_spike_counts > 0)"
+}
