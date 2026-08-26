@@ -33,29 +33,33 @@ sources and generic afferent sources.
 ## Provenance and claim boundary
 
 This design was originally completed at `292ac10`, first audited after the
-deep read-only runtime landed at `bd6a036`, and re-audited against committed
-repository HEAD `e5a775ef30000d4b408ecac28cfdb0df702e846a`
-(`refactor(native): make temporal read-only allocation-free`). The governing
-committed implementation inputs are:
+deep read-only runtime landed at `bd6a036`, and re-audited through committed
+repository HEAD `9f55a8769ac2eeb323d5df874b7cafc6b3cceb4d`
+(`fix(r3): validate checkpoint reachability history`). The governing committed
+implementation inputs are:
 
 | Input | Governing commit or state |
 | --- | --- |
-| Canonical pair/reserve/Philox Python oracle | `fc2c4e3` and later committed source at HEAD |
-| Intrusive mutable native temporal store | `3dd2c4f` and later committed source at HEAD |
+| Canonical pair/reserve/Philox Python oracle | `fb973df` plus reachability completion `9f55a87` |
+| Intrusive mutable native temporal store | `3dd2c4f` plus mutation facade `22aca6a` |
 | Fitted native GLIF3 temporal physics | `612b2f5` and later committed source at HEAD |
 | Deep read-only physical runtime | `bd6a036` and prerequisite fixes through HEAD `e5a775e` |
 | A3 recognition decision and final-density arithmetic | `292ac10` |
 
-The audit through `e5a775e` establishes committed facts that were provisional
+The audit through `e5a775e` established committed facts that were provisional
 in the first version of this note: `segment_capacity` is independent of preload
 length, `TemporalStore::runtime_owner_load` is the sole learned-load authority,
 runtime construction accepts canonical rows with zero through ten live pairs,
-and `GenericAfferents` rejects `base_cells_per_column < 2`. It also establishes
+and `GenericAfferents` rejects `base_cells_per_column < 2`. It also established
 the production Random123 sampler, fixed-size context storage, construction-time
 race scratch, typed categorized-cap/tick-overflow STOPs, and the stable compact
-`TemporalPoisonCode` ABI. The numbered audit near the end records every
-remaining gap and supersedes both the old working-tree hash inventory and the
-intermediate `bd6a036` status assessment.
+`TemporalPoisonCode` ABI. Commit `fb973df` then tightened the Python oracle's
+checkpoint grammar and aligned its late counter-overflow priority with the
+native runtime. Commit `22aca6a` added the native store's prevalidated mutation
+facade, and `9f55a87` completed Python-oracle cohort-history and growth-off
+counter validation. The numbered audit near the end reflects those commits and
+supersedes the old working-tree hash inventory and intermediate `bd6a036`
+assessment.
 
 No outcome or held-out data were used. This is an implementation design under
 the existing protocol, not a Change Note.
@@ -506,15 +510,15 @@ zero-based, inclusive byte ranges:
 | 192..195 | segment count | `u32` | `S <= segment_capacity` |
 | 196..199 | cohort count | `u32` | complete cohorts only |
 | 200..203 | next reserve cell | `u32` | must equal the value derived from cohorts |
-| 204..211 | event count | `u64` | logical transient counter |
-| 212..219 | learning step | `u64` | persistent RNG address counter |
+| 204..211 | event count | `u64` | zero exactly when both contexts are empty |
+| 212..219 | learning step | `u64` | persistent RNG address counter; zero for growth-off |
 | 220 | prior-context length | `u8` | only 0 or 22 |
 | 221 | winner-context length | `u8` | only 0 or 22 |
 | 222..223 | poison code | `u16` | stable mapping below; zero means unpoisoned |
-| 224..255 | reserved tail | `[u8; 32]` | exactly zero |
+| 224..255 | logical-state digest | `[u8; 32]` | exact domain-separated digest below |
 
 The size audit is
-`8 + 2 + 2 + 4 + 8 + 8 + 5*32 + 4 + 4 + 4 + 8 + 8 + 1 + 1 + 2 + 32 = 256`.
+`8 + 2 + 2 + 4 + 8 + 8 + 6*32 + 4 + 4 + 4 + 8 + 8 + 1 + 1 + 2 = 256`.
 No field moved and the body still begins at byte 256.
 
 All integers are unsigned little-endian. Hash fields are their 32 digest bytes
@@ -602,6 +606,100 @@ body_bytes =
 There is no live-count array. The canonical sentinel suffix makes live count
 derivable and independently validates row integrity.
 
+### Logical-state digest
+
+The body digest alone cannot protect logical scalars stored in the header. The
+logical-state digest binds the exact stored body digest to the canonical scalar
+block without changing the 256-byte header or the body layout:
+
+```text
+logical_state_preimage =
+    b"humanbrain-r3-checkpoint-logical-state-v1\0"
+  || header[128:160]  # exact stored 32-byte body digest
+  || header[192:224]  # exact canonical little-endian scalar block
+
+logical_state_digest = SHA256(logical_state_preimage).digest()
+```
+
+The domain component is exactly the 41 ASCII characters shown followed by one
+zero byte; it has no length prefix or alternate framing.
+
+The scalar slice is exactly, in order, `segment_count`, `cohort_count`,
+`next_reserve_cell`, `event_count`, `learning_step`, both context lengths, and
+`poison_code`. It is 32 bytes. No identity, semantic-index field, length, or
+reserved field is implicit in this preimage; those fields have their own exact
+validation rules.
+
+This literal state-digest vector fixes byte order independently of a checkpoint
+implementation:
+
+```python
+from hashlib import sha256
+from struct import pack
+
+body_digest = bytes(range(32))
+scalar_block = pack(
+    "<IIIQQBBH",
+    0x01020304,
+    0x05060708,
+    0x090A0B0C,
+    0x0102030405060708,
+    0x1112131415161718,
+    22,
+    22,
+    15,
+)
+preimage = (
+    b"humanbrain-r3-checkpoint-logical-state-v1\0"
+    + body_digest
+    + scalar_block
+)
+print(len(preimage), preimage.hex(), sha256(preimage).hexdigest())
+```
+
+The preimage is 106 bytes:
+
+```text
+68756d616e627261696e2d72332d636865636b706f696e742d6c6f676963616c
+2d73746174652d763100000102030405060708090a0b0c0d0e0f101112131415
+161718191a1b1c1d1e1f04030201080706050c0b0a0908070605040302011817
+16151413121116160f00
+```
+
+Its expected SHA-256 is
+`83acb5b8fdd0256ea4a69d07d7a8d3f96c1c26c9fc3a6b19d6711567157988d1`.
+On 2026-08-27 a standalone CPython 3.11 encoder and an independent
+PowerShell/.NET `BitConverter`/`SHA256.HashData` encoder emitted the same
+preimage length, bytes, and digest.
+
+### Runtime-reachable learned-state invariants
+
+Checkpoint structure is necessary but not sufficient for runtime reachability.
+Import and every production constructor that accepts preloaded membership plus
+rows must enforce these invariants before publishing state:
+
+1. Under `BoundWinners`, every live normalized segment source is a committed
+   pyramidal cell. Allocation and regrowth sample only committed prior winners,
+   punishment only removes pairs, and commitment is monotonic. Under
+   `GenericAfferents`, the exact normalized proximal-source domain remains the
+   complete source requirement.
+2. Replay `cohort_columns` in global order, assigning cohort `k` the GID range
+   `base_total + k * novel_race_cap .. base_total + (k + 1) * novel_race_cap`.
+   For each cohort assigned to column `c`, every base or earlier-cohort member
+   already committed to `c` must have final owner load exactly
+   `max_segments_per_cell`, and at least one cell in the new cohort must have
+   final owner load at least one. Empty segment rows still count toward owner
+   load, so punishment cannot erase this witness.
+
+A production constructor that receives per-column membership instead of an
+explicit cohort log reconstructs the same global order by sorting complete
+reserve cohorts by first GID. The sorted cohorts must cover the deterministic
+contiguous reserve prefix before the same replay checks run.
+
+Impossible preload fixtures belong behind a private test-only seam. A
+production constructor must not create a state that canonical checkpoint import
+would reject.
+
 ### Identity hashes
 
 All three header identities are raw 32-byte SHA-256 outputs, not 64-byte hex
@@ -624,10 +722,19 @@ json.dumps(
 
 There is no BOM, indentation, trailing newline, or alternate JSON
 canonicalizer. The identity is `SHA256(preimage).digest()`, exactly the raw
-bytes represented by `protocol_sha256()`. A production run or checkpoint
-export must first validate the same object with
-`validate_protocol(value, require_runnable=True)`. The current preregistration
-has `source_binding.runnable = false`; defining this identity does not make it
+bytes represented by `protocol_sha256()`.
+
+Before a production run or checkpoint export may compute or use that identity,
+it must complete this exact validation sequence:
+
+1. `validate_protocol(value, require_runnable=True)`;
+2. `validate_committed_source_blobs(REPO_ROOT, value["source_binding"])`;
+3. `validate_source_bytes(REPO_ROOT, value["source_binding"])`.
+
+Invoking the exact `calibration_v3_protocol.py --check-runnable` path is
+equivalent because it performs all three checks. Object validation alone is not
+source validation. The current preregistration has
+`source_binding.runnable = false`; defining this identity does not make it
 runnable, amend it, or authorize an artifact. Any later refreeze changes the
 protocol identity and intentionally makes the old checkpoint incompatible.
 
@@ -771,8 +878,10 @@ circuit_identity = SHA256(circuit_preimage).digest()
 ```
 
 The circuit preimage contains immutable behavior only. Recruited cohorts,
-segments, contexts, counters, and the poison latch remain checkpoint body/header
-state, not circuit identity.
+segments, contexts, counters, the poison latch, and the logical-state digest
+remain checkpoint body/header state, not circuit identity. Adding the
+logical-state digest therefore does not change the 35-field circuit preimage or
+its literal vector below.
 
 #### Literal circuit-identity vector
 
@@ -927,24 +1036,35 @@ Import is a build-and-publish transaction:
 2. Compare protocol, source-bundle, and circuit identities before allocating a
    multi-gigabyte store.
 3. Verify the body SHA-256 by streaming.
-4. Validate segment/cohort counts, cursor bounds, context lengths, counters, and
-   poison code.
-5. Validate every cohort column, reconstruct deterministic base cells plus each
+4. Recompute and compare the logical-state digest from the verified stored body
+   digest and the exact raw header bytes 192..223. Do this before accepting any
+   decoded logical-state scalar.
+5. Validate segment/cohort counts, cursor bounds, context lengths, counters, and
+   poison code. Require
+   `(event_count == 0) == (prior_context_length == 0 &&
+   winner_context_length == 0)`; nonzero event count therefore requires both
+   lengths to be 22. A growth-off circuit requires `learning_step == 0`.
+6. Validate every cohort column, reconstruct deterministic base cells plus each
    complete `novel_race_cap` cohort, and require
    `next_reserve_cell = base_total + cohort_count * novel_race_cap <=
    max_pyramidal_cells`.
-6. Validate every segment owner is committed, count owners with checked
+7. Validate every segment owner is committed, count owners with checked
    arithmetic, and reject any owner above configured cap or 255.
-7. Validate every row's sentinel suffix, strictly increasing normalized live
-   sources, source domain, and ticks in `1..=500`.
-8. Validate contexts against the exact runtime-reachable grammar below. Both
+8. Validate every row's sentinel suffix, strictly increasing normalized live
+   sources, source domain, and ticks in `1..=500`. For `BoundWinners`, also
+   require every live source to be in the reconstructed committed-cell set.
+9. Replay the cohort log in global order against the final owner loads. Before
+   each cohort, require every existing member of its target column to have load
+   exactly `max_segments_per_cell`; require at least one member of the new
+   cohort to own one or more allocated rows.
+10. Validate contexts against the exact runtime-reachable grammar below. Both
    are empty, or both are exactly 22; set equality or a permutation is never
    sufficient.
-9. Construct a brand-new runtime and preallocated store off to the side. Rebuild
-   column CSR, owner counts, and postings in segment-ID/slot order.
-10. Compute and compare the semantic index digest, then canonically re-hash or
+11. Construct a brand-new runtime and preallocated store off to the side.
+    Rebuild column CSR, owner counts, and postings in segment-ID/slot order.
+12. Compute and compare the semantic index digest, then canonically re-hash or
     re-export logical state.
-11. Return or publish the new handle only after every check succeeds.
+13. Return or publish the new handle only after every check succeeds.
 
 There is no in-place restore. Invalid input publishes nothing and cannot change
 an existing runtime.
@@ -983,21 +1103,25 @@ sources in token-code order, then their eleven relays in the same order.
 
 Checkpoint export holds the runtime lock and streams canonical rows directly to
 an exclusive new temporary file or caller-provided seekable sink while hashing.
-It must not clone the learned store into another 1.5 GB buffer. After body and
-header hashes are complete, flush and fsync the file and its directory, then
-atomically rename without overwriting an existing destination. Destination
-collision or I/O failure is retryable and does not poison or roll back neuronal
-state.
+Reserve the first 256 bytes, stream the body once, then seek back only after all
+header values exist. It must not clone the learned store into another 1.5 GB
+buffer. After body and semantic hashes are complete, encode the canonical
+scalar block, compute the logical-state digest over the stored body digest plus
+that block, and write the complete header. Then flush and fsync the file and its
+directory and atomically rename without overwriting an existing destination.
+Destination collision or I/O failure is retryable and does not poison or roll
+back neuronal state.
 
 A poisoned runtime may be exported; the stable latch code must be preserved so
 restore cannot clear a terminal STOP. Rich one-shot diagnostic payloads need
 not be persistent because subsequent calls expose only `POISONED`.
 
-## Current layout audit against `e5a775e`
+## Current layout audit through `9f55a87`
 
 This is the current re-audit of all fifteen original
-incompatibilities. `RESOLVED` means the committed read-only runtime now has the
-required property; it does not claim mutation/checkpoint implementation.
+incompatibilities. `RESOLVED` means the committed runtime or store now has the
+named prerequisite; it does not claim an integrated mutation/checkpoint
+implementation.
 
 1. **RESOLVED — independent segment capacity.**
    `TemporalCircuitConfig.segment_capacity` is independent of preload length,
@@ -1020,14 +1144,15 @@ required property; it does not claim mutation/checkpoint implementation.
    `allocate_runtime_segment` accepts equal lengths in `0..=10`; focused tests
    cover empty and partial rows. The public diagnostic FFI still intentionally
    requires exactly ten and is not the checkpoint seam.
-6. **OPEN — normalized checkpoint import façade.**
-   `allocate_runtime_segment` accepts physical GIDs and normalizes them;
-   checkpoint rows are already normalized. Add distinct purpose-named
-   construction and normalized-import façades so restore cannot normalize
-   twice.
-7. **OPEN — all-active mutation view.** Best-owner diagnostics still cannot
-   express the ascending all-active punishment pass. Preserve an internal
-   all-active view or move that pass into the store.
+6. **PARTIALLY RESOLVED — normalized checkpoint import façade.** Commit
+   `22aca6a` added exact canonical normalized-row validation and prevalidated
+   append/rewrite primitives. `allocate_runtime_segment` still accepts physical
+   GIDs and normalizes them, while a purpose-named checkpoint construction seam
+   does not exist. Restore must use the normalized path and never normalize a
+   canonical checkpoint row twice.
+7. **RESOLVED — all-active mutation view.** Commit `22aca6a` added a two-pass,
+   allocation-free ascending all-active materializer. It counts capacity before
+   the first write, so insufficient output leaves the caller buffer untouched.
 8. **RESOLVED — production Random123 sampler.** `lemire_candidate`, bounded
    Philox selection, and allocation-free `sample_without_replacement` are
    production crate functions with exact known-answer and Python-oracle tests.
@@ -1042,9 +1167,10 @@ required property; it does not claim mutation/checkpoint implementation.
     retains exact zero-drive candidates for parity; sparse zero-drive elision
     remains a separately proved performance optimization before the integrated
     cost gate, not a mutation correctness prerequisite.
-11. **OPEN — no-fail store commit façade.** Existing `allocate_segment` can
-    poison and returns `Result`; it cannot be used after commit begins. Add a
-    prevalidated infallible append/rewrite façade over already-reserved vectors.
+11. **RESOLVED — no-fail store commit façade.** Commit `22aca6a` added separate
+    canonical row/backing preflights and infallible prevalidated append/rewrite
+    commits over already-reserved vectors. The facade preserves empty allocated
+    rows, owner loads, and backing pointers/capacities.
 12. **PARTIALLY RESOLVED — recognition output capacity.** The runtime owns an
     owner-sized diagnostic buffer, so `TemporalStore::prepare` output-capacity
     failure is unreachable through `recognize`. `prepare` still advances
@@ -1068,6 +1194,21 @@ One additional construction guard requested by the original audit is now
 **RESOLVED**: `GenericAfferents` rejects `base_cells_per_column < 2` at
 `e5a775e`, and committed fixtures exercise the exact base-width-two source and
 context layout.
+
+The Python-oracle checkpoint grammar is **RESOLVED through `9f55a87`**: live IDs
+use exact domains, bound-winner sources must be committed, every recruited
+cohort owns a row, chronological replay requires all of its column predecessors
+at the exact cap, contexts use the canonical token grammar, `event_step == 0`
+exactly when both contexts are empty, and growth-off requires
+`learning_step == 0`. This resolves the oracle surface only; the native importer
+and every production native preload constructor must still implement the same
+checks.
+
+The earlier cross-language counter-priority discrepancy is **RESOLVED** by
+`fb973df`. The Python oracle now follows the documented native order:
+recognition and physical races precede event overflow, and the plastic learning
+plan/capacity checks precede learning-counter overflow. Committed simultaneous
+failure tests freeze that priority without changing this design's token order.
 
 ## Memory and cost implications
 
@@ -1111,24 +1252,31 @@ than cloning an existing runtime.
 1. **DONE through `e5a775e`:** land and independently verify the read-only
    `TemporalCircuitRuntime`, production Random123 sampler, fixed contexts,
    allocation-free race path, typed STOP staging, and stable poison ABI.
-2. **DONE in this revision:** re-audit every incompatibility above against the
-   exact committed source hash.
-3. Add red interface-level differential tests for LEARN semantics and atomic
+2. **DONE at `fb973df`:** tighten Python-oracle ID/snapshot grammar and freeze
+   the documented native late-counter failure priority with simultaneous-failure
+   tests.
+3. **DONE at `22aca6a`:** land and independently verify canonical row views,
+   all-active materialization, mutation preflight, and no-fail store commits.
+4. **DONE at `9f55a87`:** complete Python-oracle chronological cohort replay
+   and growth-off learning-counter validation.
+5. **DONE in this revision:** correct the checkpoint logical-state integrity,
+   learned-state reachability, and production protocol-validation contracts.
+6. Add red interface-level differential tests for LEARN semantics and atomic
    STOP behavior.
-4. Build on the committed sampler/context/race prerequisites; preallocate the
-   remaining mutation, checkpoint, block-output, and commit scratch. Treat
+7. Build on the committed sampler/context/race/store prerequisites; preallocate
+   the remaining mutation, checkpoint, block-output, and commit scratch. Treat
    zero-drive elision as a separate bit-exact performance change.
-5. Add explicit plasticity/mutation configuration, `learning_step`, reserve
-   cursor, store-authoritative active iteration, pair views, and no-fail
-   rewrite/append façade.
-6. Implement exact mutation first without reserve recruitment and prove parity.
-7. Add aggregate reserve planning and the alternate-CSR commit.
-8. Add the canonical checkpoint codec, streaming export, new-handle import, and
+8. Add explicit plasticity/mutation configuration, `learning_step`, reserve
+   cursor, and cohort log, then wire the committed store-authoritative row,
+   all-active, preflight, and no-fail commit façade into the runtime transaction.
+9. Implement exact mutation first without reserve recruitment and prove parity.
+10. Add aggregate reserve planning and the alternate-CSR commit.
+11. Add the canonical checkpoint codec, streaming export, new-handle import, and
    semantic index digest.
-9. Add the block adapter and Python seam; remove obsolete shallow mutation or
+12. Add the block adapter and Python seam; remove obsolete shallow mutation or
    restore paths rather than retaining compatibility layers.
-10. Refresh Gate-3/source binding, then run q=4, q=255, and R3-F0 fixtures.
-11. Only after correctness, resume parity, post-create allocation, and
+13. Refresh Gate-3/source binding, then run q=4, q=255, and R3-F0 fixtures.
+14. Only after correctness, resume parity, post-create allocation, and
     final-density cost gates pass should any later Change Note consider C1.
 
 ## Decisive tests
@@ -1154,8 +1302,11 @@ than cloning an existing runtime.
   all four stage-class physics `InvalidInput` paths, categorized-cap, both
   relay-tick overflows, both counters, and store/prepared-plan invariants; make
   a new top-level STOP or physical stage without a mapping a compile failure;
+- retain the `fb973df` simultaneous-failure vectors proving physical failure
+  precedes event overflow and plan/capacity failure precedes learning overflow;
 - compare canonical logical bytes before and after: identical except for the
-  expected stable poison code;
+  expected stable poison code; a serialized checkpoint correspondingly changes
+  only the poison field and logical-state digest;
 - verify retryable failures leave even the latch unchanged and the identical
   retry succeeds;
 - verify block completed-prefix behavior;
@@ -1168,17 +1319,28 @@ than cloning an existing runtime.
 - reproduce the 2,064-byte literal circuit-identity vector and independently
   test protocol/source framing boundaries, raw-vs-hex digest bytes, codebook
   order, threshold `f64` bits, and route-certificate recomputation;
+- reproduce the 106-byte logical-state preimage and digest; independently test
+  its domain terminator, stored-body-digest bytes, scalar order, widths, and
+  little-endian encoding;
+- require the production identity/export precondition to execute protocol
+  object validation, committed Git-blob validation, and live-source validation;
 - uninterrupted versus resumed execution across reset, cohort recruitment,
   allocation, reinforcement, punishment, drop-to-zero, and regrowth;
 - run every source policy, plasticity policy, and prediction-quorum fixture
   without selecting a scientific winner among them;
 - require identical emitted steps, contexts, counters, learning addresses,
   logical checkpoint bytes, and semantic index digests;
-- corrupt truncation, trailing bytes, reserved bits, body hash, protocol/source/
-  circuit identity, partial cohort, cursor, uncommitted owner, 256th owner
-  segment, sentinel gap, zero live tick, nonzero empty tick, out-of-domain,
-  unsorted or duplicate source, malformed pair, unknown poison code, and every
-  forbidden context permutation/policy mixture in the runtime-reachable grammar;
+- corrupt truncation, trailing bytes, reserved bits, body hash, logical-state
+  hash, protocol/source/circuit identity, partial cohort, cursor, uncommitted
+  owner, uncommitted bound-winner source, prematurely recruited or ownerless
+  cohort, 256th owner segment, sentinel gap, zero live tick, nonzero empty tick,
+  out-of-domain, unsorted or duplicate source, malformed pair, unknown poison
+  code, event/context-emptiness mismatch, nonzero growth-off learning step, and
+  every forbidden context permutation/policy mixture in the runtime-reachable
+  grammar;
+- flip each logical scalar to another domain-valid value while retaining the
+  original body, including clearing a nonzero poison code, and require the
+  logical-state digest check to reject it;
 - assert every corrupt import publishes no handle and cannot modify an existing
   runtime;
 - restore poisoned checkpoints and prove the latch cannot be cleared.
