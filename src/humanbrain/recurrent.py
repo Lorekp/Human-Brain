@@ -403,6 +403,8 @@ class RecurrentCellCircuit:
             raise ValueError("a circuit needs at least two token cells")
         self.token_cells = int(token_cells)
         self.config = config or RecurrentCircuitConfig()
+        # R0-c Thread-1 logging seam: optional per-token observer callback.
+        # None by default; when None, observe() is untouched bit-for-bit.
         self._observation_sink = observation_sink
         self.active_reservoir_cells = (
             self.config.active_reservoir_cells or self.config.reservoir_cells
@@ -499,9 +501,6 @@ class RecurrentCellCircuit:
         self._local_updates = 0
         self._observed_tokens = 0
         self._learning_frozen = False
-        # R0-c Thread-1 logging seam: optional per-token observer callback.
-        # None by default; when None, observe() is untouched bit-for-bit.
-        self._observation_sink = None
         # Race-pivot T-P8 reentrancy guard: True while an observation_sink
         # callback is executing; observe/race/reset raise a deliberate
         # RuntimeError instead of letting a driving sink recurse.
