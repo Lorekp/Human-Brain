@@ -110,6 +110,14 @@ pub struct TemporalStore {
 }
 
 impl TemporalStore {
+    /// Construct storage owned by the crate-private deep temporal runtime.
+    ///
+    /// This keeps the public diagnostic C ABI unchanged while avoiding an
+    /// internal round-trip through raw opaque handles.
+    pub(crate) fn new_runtime_owned(config: TemporalStoreConfig) -> Result<Self, u32> {
+        Self::new(config)
+    }
+
     fn new(config: TemporalStoreConfig) -> Result<Self, u32> {
         if config.source_count < PAIRS_PER_SEGMENT
             || config.source_count > u32::MAX as usize
@@ -269,8 +277,8 @@ impl TemporalStore {
             return Err(TEMPORAL_POISONED);
         }
         if owner as usize >= self.config.owner_count
-            || sources.len() != PAIRS_PER_SEGMENT
-            || permanence_ticks.len() != PAIRS_PER_SEGMENT
+            || sources.len() > PAIRS_PER_SEGMENT
+            || permanence_ticks.len() != sources.len()
             || permanence_ticks
                 .iter()
                 .any(|ticks| !(1..=500).contains(ticks))
@@ -300,8 +308,31 @@ impl TemporalStore {
         self.permanences.extend([0; PAIRS_PER_SEGMENT]);
         self.next_pair.extend([NONE; PAIRS_PER_SEGMENT]);
         self.prev_pair.extend([NONE; PAIRS_PER_SEGMENT]);
-        self.rewrite_segment_pairs_canonical(segment_id, &normalized_sources, permanence_ticks);
+        self.rewrite_segment_pairs_canonical(
+            segment_id,
+            &normalized_sources[..sources.len()],
+            permanence_ticks,
+        );
         Ok(segment_id)
+    }
+
+    /// Import one already-materialized learned segment with zero to ten live
+    /// pairs into a runtime-owned store. Runtime inference never calls this
+    /// after construction; the public FFI continues to require exactly ten.
+    pub(crate) fn allocate_runtime_segment(
+        &mut self,
+        owner: u32,
+        sources: &[u32],
+        permanence_ticks: &[u16],
+    ) -> Result<u32, u32> {
+        self.allocate_segment(owner, sources, permanence_ticks)
+    }
+
+    /// Return the authoritative learned load used by runtime homeostasis and
+    /// least-loaded winner eligibility. Mutation must update this same store;
+    /// no parallel runtime-owned load counter is maintained.
+    pub(crate) fn runtime_owner_load(&self, owner: u32) -> Option<u8> {
+        self.owner_segment_counts.get(owner as usize).copied()
     }
 
     fn next_generation(&mut self) -> u32 {
@@ -480,6 +511,16 @@ impl TemporalStore {
             max_connected_contacts,
             padding_zero: [0; 6],
         })
+    }
+
+    /// Fill runtime-owned recognition scratch without exposing a prepared
+    /// classification or mutation seam to callers.
+    pub(crate) fn recognize_runtime_context(
+        &mut self,
+        context_sources: &[u32],
+        out: &mut [TemporalOwnerDiagnostic],
+    ) -> Result<TemporalPrepareSummary, u32> {
+        self.prepare(context_sources, out.as_mut_ptr(), out.len())
     }
 }
 

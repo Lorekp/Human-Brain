@@ -13,6 +13,7 @@ mod procedural;
 mod random123;
 mod temporal;
 mod temporal_physics;
+mod temporal_runtime;
 
 const MIN_PARALLEL_CHUNK_CELLS: usize = 4_096;
 
