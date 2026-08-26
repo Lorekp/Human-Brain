@@ -76,8 +76,8 @@ restriction would be conservative. Coverage recorded per leg.
 Coverage: 11,740 train word types → 1023 word cells + UNK; VAL answer-position
 coverage 561/639 = 87.79%; prompt-token coverage 79.63%.
 
-**Status at commit time:** the cohort is IN FLIGHT (single decisive pass,
-never re-run). Completed arms (logged verbatim from the runner):
+**Status:** the cohort completed (single decisive pass, never re-run). First
+three finishers, logged verbatim mid-run:
 
 | arm | VAL span_acc | TRAIN-self span_acc | median winning spike |
 |---|---|---|---|
@@ -85,18 +85,70 @@ never re-run). Completed arms (logged verbatim from the runner):
 | proportional | **0.145540 (93/639)** | 0.388553 (835/2149) | 1.10 ms |
 | shuffled | 0.035994 (23/639) | 0.069800 (150/2149) | 1.15 ms |
 
-Interim reading (NOT yet the verdict): `proportional` is above the shuffled
+Mid-run reading (superseded by §Verdict below): `proportional` is above the shuffled
 control by +10.95 points (unpaired 2-proportion z ≈ 6.8 vs 23/639) and above
 both frozen comparators (unigram 4.54%, majority-prior 4.07%) by >3x; VAL
 movement is real (14.55% > flag-off 13.15%), so this is NOT the
 38.3%-to-0% memorization signature — bias REDUCED TRAIN-self (65.3% → 38.9%)
-while raising VAL. The decrement± replay arms are still running; the
-mechanical verdict (best primary arm vs shuffled via paired McNemar on
-position flags, plus comparator gates) lands in
-[cohort_results.json](cohort_results.json) + a follow-up commit when the
-cohort exits.
+while raising VAL. The decrement± replay arms finished after this was written;
+their numbers and the mechanical verdict (best primary arm vs shuffled via
+paired McNemar on position flags, plus comparator gates) are recorded in
+§Verdict below and in [cohort_results.json](cohort_results.json).
 
-<!-- COHORT_RESULTS -->
+## Verdict — PASS
+
+Filled verbatim from [cohort_results.json](cohort_results.json) (leg
+`cohort_n1024`, wall clock 45,840.4 s, prereg sha256
+`1fa29c014268bd1814b204ed26d3eb10e6e235891fea7f6ff10bdb51f7781abd`). Mechanical
+mapping as coded in `run_probe.py`: best primary arm = argmax VAL span_acc over
+the primary set {`proportional`, `decrement_plus`} → **`proportional`** (the
+exact VAL tie with diagnostic-only `decrement_minus`, 0.145540, does not enter
+the primary set); verdict rule
+`pass = above_shuffled AND above_unigram AND above_majority_prior` → **true ⇒
+COHORT VERDICT: PASS**.
+
+### All five arms (race-resolved span accuracy)
+
+| arm | VAL span_acc | TRAIN-self span_acc | median winning spike (VAL) |
+|---|---|---|---|
+| off (parity anchor) | 0.131455 (84/639) | 0.652862 (1403/2149) | 18.20 ms |
+| **proportional (PRIMARY)** | **0.145540 (93/639)** | 0.388553 (835/2149) | 1.10 ms |
+| shuffled (control) | 0.035994 (23/639) | 0.069800 (150/2149) | 1.15 ms |
+| decrement_plus (primary candidate) | 0.139280 (89/639) | 0.292694 (629/2149) | 1.10 ms |
+| decrement_minus (diagnostic) | 0.145540 (93/639) | 0.387622 (833/2149) | 1.10 ms |
+
+### Paired McNemar, best arm vs shuffled
+
+Per-position correctness flags, identical eval order (disclosure 3): arm-only
+correct **b = 86**, control-only correct **c = 10**, discordant pairs
+**n = 96**, stored statistic **z = (b − c)/√n = 7.756718** → two-sided
+normal-approximation p ≈ **8.7×10⁻¹⁵** (exact binomial over the discordant
+pairs: ≈ 3.2×10⁻¹⁶). The advantage over matched-magnitude random assignment is
+decisive, and shuffled shares the speed profile (median winning spike 1.15 ms
+vs 1.10 ms), so the effect is assignment-specific, not acceleration per se.
+
+### Comparator gates (all required; all true)
+
+| gate | best-arm VAL | comparator | margin | result |
+|---|---|---|---|---|
+| `above_shuffled_control` | 14.5540% | 3.5994% | +10.95 pts | true |
+| `above_unigram_4.538` | 14.5540% | unigram 4.538341% | 3.21× | true |
+| `above_majority_prior_4.069` | 14.5540% | majority-prior 4.068858% | 3.58× | true |
+
+Trigram 16.275430% was informational/ungated.
+
+### Caveats (honest reading)
+
+- **Memorization component is real:** best-arm TRAIN-self 38.855% ≫ VAL
+  14.554% (`train_self_to_val_ratio` = 0.374569). But the direction argues the
+  bias is not mere memorization: vs flag-off it LOWERED TRAIN-self
+  (65.286% → 38.855%) while RAISING VAL (13.146% → 14.554%) — the opposite of
+  the 38.3%-to-0% failure signature.
+- **Both decrement arms sit at/near proportional** (they run WITH the bias
+  active, disclosure 4): `decrement_minus` ties it exactly on VAL (0.145540)
+  and `decrement_plus` is 0.63 points under (0.139280). Negative-evidence
+  replay at ∓0.04×increment changed little — the proportional somatic bias
+  alone carries the effect.
 
 ## Files
 
