@@ -1,0 +1,1966 @@
+{
+  "arms": {
+    "theta_m10_theta_a13": {
+      "aggregate": {
+        "learned_code_collisions": 0,
+        "learned_code_max_pair_overlap": 8,
+        "learned_code_pair_overlap_rejection_bound": 5,
+        "learned_code_seeds_below_rejection_bound": 0,
+        "learned_contexts_active": 512,
+        "learned_contexts_expected": 512,
+        "novel_active_segments": 0,
+        "novel_false_predictions": 0,
+        "novel_matching_segments": 0,
+        "pre_exposure_active_segments": 0,
+        "pre_exposure_matching_segments": 0,
+        "pre_exposure_predicted_columns": 0,
+        "pre_exposure_predicted_contexts": 0,
+        "recurrent_source_active_segments": 0,
+        "recurrent_source_matching_segments": 0,
+        "screening_verdict": "REJECT_SYNTHETIC_COLLISION_SCREEN",
+        "seed_runs": 4
+      },
+      "seeds": [
+        {
+          "construction_seed": 3,
+          "hashes": {
+            "final_snapshot_sha256": "ce7a5d724c3a083ce74d2c0dd5523539c9cd0e97ec4690356c2f79d84d3d2627",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "1becfb2936135c8a1c79b67a8aa2485e564212c56d5dec2e6f8ab5295c49f88b",
+            "novel_step_signatures_sha256": "172ef0ba982dd7f403df0b398f7c508f0f1048fc5fa87c716bf689333de16378",
+            "target_winner_codes_sha256": "5eeaa6babb247541101a6e3e1597a4eda61b604c760835fedca54bc28e0b2541"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": false,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 5,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2227,
+                "10": 52,
+                "12": 7,
+                "2": 2744,
+                "4": 2004,
+                "6": 870,
+                "8": 224
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2227,
+                "1": 2744,
+                "2": 2004,
+                "3": 870,
+                "4": 224,
+                "5": 52,
+                "6": 7
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5698,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4862,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2189,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        },
+        {
+          "construction_seed": 7,
+          "hashes": {
+            "final_snapshot_sha256": "15121282c5202718c7697123cdb70ea621b2dd7c620f76564a789edffd4e17c6",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "68c43d608e27a3c77c81fe567305df110c63a686835f8af4b9e7a03f8533bc29",
+            "novel_step_signatures_sha256": "dd0429585e338c86f3b3dfb5e24a6efdcd9a4ed829232baaf6346950d6e2033b",
+            "target_winner_codes_sha256": "150c58d9c8b1f92299c0dcee133685f0c320c8c12f9475132ef99b084465ba3a"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": false,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 8,
+            "pair_overlap_rejection_bound": 5,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2253,
+                "10": 49,
+                "12": 6,
+                "16": 1,
+                "2": 2765,
+                "4": 1930,
+                "6": 850,
+                "8": 274
+              },
+              "max_intersection": 16,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2253,
+                "1": 2765,
+                "2": 1930,
+                "3": 850,
+                "4": 274,
+                "5": 49,
+                "6": 6,
+                "8": 1
+              },
+              "max_intersection": 8,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5742,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4950,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2178,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          }
+        },
+        {
+          "construction_seed": 17,
+          "hashes": {
+            "final_snapshot_sha256": "6b83a946c1996cbdc4b160bf9a8a7a8ea874961e65dbaa58ec709a2582e603a3",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "ee6a2ed356f445e86712e442e988077d023c44f0dd157a42fcccf96cbed0c6bf",
+            "novel_step_signatures_sha256": "d858fece69ca85109492ec4e76e479ca16317c8c77e654f9197f6224abfeeda6",
+            "target_winner_codes_sha256": "5947f0cedf58485d0bc13800300c898bf009c0a4b29549df1760eac555ad1e19"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": false,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 5,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2259,
+                "10": 56,
+                "12": 8,
+                "2": 2711,
+                "4": 1999,
+                "6": 857,
+                "8": 238
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2259,
+                "1": 2711,
+                "2": 1999,
+                "3": 857,
+                "4": 238,
+                "5": 56,
+                "6": 8
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5621,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4939,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2079,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        },
+        {
+          "construction_seed": 29,
+          "hashes": {
+            "final_snapshot_sha256": "5bbbf74a02c1bab7159db4af8a9fa778fed8a5e8b37d0199832e835b796df622",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "846478849b513d2d1376d8079406f98129d8e5019b3a9f31505123582ef3d559",
+            "novel_step_signatures_sha256": "444ff81d7d5c0bd16627ebbb9b195fa4529f638690471e95c2eaf4518bb32f4f",
+            "target_winner_codes_sha256": "321e9444385bd2f5f2f0b25fc106b35683a10c4ee46dee9a9481ba699b91e94f"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": false,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 5,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2248,
+                "10": 51,
+                "12": 9,
+                "2": 2738,
+                "4": 1966,
+                "6": 883,
+                "8": 233
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2248,
+                "1": 2738,
+                "2": 1966,
+                "3": 883,
+                "4": 233,
+                "5": 51,
+                "6": 9
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5731,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4895,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2222,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        }
+      ],
+      "thresholds": {
+        "theta_active": 13,
+        "theta_match": 10
+      }
+    },
+    "theta_m16_theta_a18": {
+      "aggregate": {
+        "learned_code_collisions": 0,
+        "learned_code_max_pair_overlap": 8,
+        "learned_code_pair_overlap_rejection_bound": 8,
+        "learned_code_seeds_below_rejection_bound": 3,
+        "learned_contexts_active": 512,
+        "learned_contexts_expected": 512,
+        "novel_active_segments": 0,
+        "novel_false_predictions": 0,
+        "novel_matching_segments": 0,
+        "pre_exposure_active_segments": 0,
+        "pre_exposure_matching_segments": 0,
+        "pre_exposure_predicted_columns": 0,
+        "pre_exposure_predicted_contexts": 0,
+        "recurrent_source_active_segments": 0,
+        "recurrent_source_matching_segments": 0,
+        "screening_verdict": "REJECT_SYNTHETIC_COLLISION_SCREEN",
+        "seed_runs": 4
+      },
+      "seeds": [
+        {
+          "construction_seed": 3,
+          "hashes": {
+            "final_snapshot_sha256": "2f4efe8d87ae8a1f25996b14b6b492d0a22635b04bf5e817799f80cdbc7c3f9a",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "673927f397f3030281108663fb1ddafc0624e5c58691fbe490827c0d29ea85c2",
+            "novel_step_signatures_sha256": "172ef0ba982dd7f403df0b398f7c508f0f1048fc5fa87c716bf689333de16378",
+            "target_winner_codes_sha256": "5eeaa6babb247541101a6e3e1597a4eda61b604c760835fedca54bc28e0b2541"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": true,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 8,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2227,
+                "10": 52,
+                "12": 7,
+                "2": 2744,
+                "4": 2004,
+                "6": 870,
+                "8": 224
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2227,
+                "1": 2744,
+                "2": 2004,
+                "3": 870,
+                "4": 224,
+                "5": 52,
+                "6": 7
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5698,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4862,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2189,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        },
+        {
+          "construction_seed": 7,
+          "hashes": {
+            "final_snapshot_sha256": "aa861c6dcad47006fa54ceacf4d273ec36391f2a17b2f9b0833c5925f10b2b0f",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "a09c4f514494410e2d18b875c215e0dc05fe2e76afe3aaf6ebf0d4707e18ff3d",
+            "novel_step_signatures_sha256": "dd0429585e338c86f3b3dfb5e24a6efdcd9a4ed829232baaf6346950d6e2033b",
+            "target_winner_codes_sha256": "150c58d9c8b1f92299c0dcee133685f0c320c8c12f9475132ef99b084465ba3a"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": false,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 8,
+            "pair_overlap_rejection_bound": 8,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2253,
+                "10": 49,
+                "12": 6,
+                "16": 1,
+                "2": 2765,
+                "4": 1930,
+                "6": 850,
+                "8": 274
+              },
+              "max_intersection": 16,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2253,
+                "1": 2765,
+                "2": 1930,
+                "3": 850,
+                "4": 274,
+                "5": 49,
+                "6": 6,
+                "8": 1
+              },
+              "max_intersection": 8,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5742,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4950,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2178,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          }
+        },
+        {
+          "construction_seed": 17,
+          "hashes": {
+            "final_snapshot_sha256": "29b3ef2c41a43870e8bb1ca77bc4805e09ba64c4d3ced32c7b692bc06a75b1d4",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "4807736946e06b8203513807048c3b6b048da28c469e7bc2710cf1c11c34d6c7",
+            "novel_step_signatures_sha256": "d858fece69ca85109492ec4e76e479ca16317c8c77e654f9197f6224abfeeda6",
+            "target_winner_codes_sha256": "5947f0cedf58485d0bc13800300c898bf009c0a4b29549df1760eac555ad1e19"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": true,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 8,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2259,
+                "10": 56,
+                "12": 8,
+                "2": 2711,
+                "4": 1999,
+                "6": 857,
+                "8": 238
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2259,
+                "1": 2711,
+                "2": 1999,
+                "3": 857,
+                "4": 238,
+                "5": 56,
+                "6": 8
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5621,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4939,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2079,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        },
+        {
+          "construction_seed": 29,
+          "hashes": {
+            "final_snapshot_sha256": "5bfb66bb60f6df7846e021c680284855fca12f3f85c5b353415bd70630deb559",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "8ed583855c07eb5b551f4756ca5b350499c1e382580da7353ef683582d8e1976",
+            "novel_step_signatures_sha256": "444ff81d7d5c0bd16627ebbb9b195fa4529f638690471e95c2eaf4518bb32f4f",
+            "target_winner_codes_sha256": "321e9444385bd2f5f2f0b25fc106b35683a10c4ee46dee9a9481ba699b91e94f"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": true,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 8,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2248,
+                "10": 51,
+                "12": 9,
+                "2": 2738,
+                "4": 1966,
+                "6": 883,
+                "8": 233
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2248,
+                "1": 2738,
+                "2": 1966,
+                "3": 883,
+                "4": 233,
+                "5": 51,
+                "6": 9
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5731,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4895,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2222,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        }
+      ],
+      "thresholds": {
+        "theta_active": 18,
+        "theta_match": 16
+      }
+    },
+    "theta_m18_theta_a20": {
+      "aggregate": {
+        "learned_code_collisions": 0,
+        "learned_code_max_pair_overlap": 8,
+        "learned_code_pair_overlap_rejection_bound": 9,
+        "learned_code_seeds_below_rejection_bound": 4,
+        "learned_contexts_active": 512,
+        "learned_contexts_expected": 512,
+        "novel_active_segments": 0,
+        "novel_false_predictions": 0,
+        "novel_matching_segments": 0,
+        "pre_exposure_active_segments": 0,
+        "pre_exposure_matching_segments": 0,
+        "pre_exposure_predicted_columns": 0,
+        "pre_exposure_predicted_contexts": 0,
+        "recurrent_source_active_segments": 0,
+        "recurrent_source_matching_segments": 0,
+        "screening_verdict": "PASS_SYNTHETIC_COLLISION_SCREEN",
+        "seed_runs": 4
+      },
+      "seeds": [
+        {
+          "construction_seed": 3,
+          "hashes": {
+            "final_snapshot_sha256": "2923ce078ee6ad375559cd8d55a56e7f3405f32ce325505d1555c72cb714bacf",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "ef0864a4c274155303e90864b322beae05174aade2460ecae5c2ba552de93700",
+            "novel_step_signatures_sha256": "172ef0ba982dd7f403df0b398f7c508f0f1048fc5fa87c716bf689333de16378",
+            "target_winner_codes_sha256": "5eeaa6babb247541101a6e3e1597a4eda61b604c760835fedca54bc28e0b2541"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": true,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 9,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2227,
+                "10": 52,
+                "12": 7,
+                "2": 2744,
+                "4": 2004,
+                "6": 870,
+                "8": 224
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2227,
+                "1": 2744,
+                "2": 2004,
+                "3": 870,
+                "4": 224,
+                "5": 52,
+                "6": 7
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5698,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4862,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2189,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        },
+        {
+          "construction_seed": 7,
+          "hashes": {
+            "final_snapshot_sha256": "4571f77352a873e2435f4558ff80467d5b32b9fc11ec9a0082a2c7ad23b325da",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "c21adf4c8340554dfbc18b7c6418478ba881f68029ee307b452bde3ad0ba9f6c",
+            "novel_step_signatures_sha256": "dd0429585e338c86f3b3dfb5e24a6efdcd9a4ed829232baaf6346950d6e2033b",
+            "target_winner_codes_sha256": "150c58d9c8b1f92299c0dcee133685f0c320c8c12f9475132ef99b084465ba3a"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": true,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 8,
+            "pair_overlap_rejection_bound": 9,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2253,
+                "10": 49,
+                "12": 6,
+                "16": 1,
+                "2": 2765,
+                "4": 1930,
+                "6": 850,
+                "8": 274
+              },
+              "max_intersection": 16,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2253,
+                "1": 2765,
+                "2": 1930,
+                "3": 850,
+                "4": 274,
+                "5": 49,
+                "6": 6,
+                "8": 1
+              },
+              "max_intersection": 8,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5742,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4950,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2178,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          }
+        },
+        {
+          "construction_seed": 17,
+          "hashes": {
+            "final_snapshot_sha256": "9b376a0bd646e1bbe059897a2ccd25fc3b6de5f26d4fa3210b2fcae0697c2e74",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "2feaf45bd9d0e4e452494e32bb60ee799fbc7734d68248e6cd22c47300dfeaf2",
+            "novel_step_signatures_sha256": "d858fece69ca85109492ec4e76e479ca16317c8c77e654f9197f6224abfeeda6",
+            "target_winner_codes_sha256": "5947f0cedf58485d0bc13800300c898bf009c0a4b29549df1760eac555ad1e19"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": true,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 9,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2259,
+                "10": 56,
+                "12": 8,
+                "2": 2711,
+                "4": 1999,
+                "6": 857,
+                "8": 238
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2259,
+                "1": 2711,
+                "2": 1999,
+                "3": 857,
+                "4": 238,
+                "5": 56,
+                "6": 8
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5621,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4939,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2079,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        },
+        {
+          "construction_seed": 29,
+          "hashes": {
+            "final_snapshot_sha256": "e257584f72fef2618e0cb58be31f2af244bd335450e2456dd2f364116fe48fea",
+            "learned_contexts_sha256": "8bee6459e70a2ac24a5ac2326f9b19c2b06f925718ed8f81cadb4ae745b98d32",
+            "learned_snapshot_sha256": "398b56081ae95dcfcd2f4a8ec6389fb7fab53baf0152a153fa20f95494d53cc3",
+            "novel_step_signatures_sha256": "444ff81d7d5c0bd16627ebbb9b195fa4529f638690471e95c2eaf4518bb32f4f",
+            "target_winner_codes_sha256": "321e9444385bd2f5f2f0b25fc106b35683a10c4ee46dee9a9481ba699b91e94f"
+          },
+          "learned_codes": {
+            "allocated_segments": 1408,
+            "below_pair_overlap_rejection_bound": true,
+            "collision_count": 0,
+            "contexts": 128,
+            "max_pairwise_winner_intersection": 6,
+            "pair_overlap_rejection_bound": 9,
+            "pairwise_physical_pair_intersections": {
+              "histogram": {
+                "0": 2248,
+                "10": 51,
+                "12": 9,
+                "2": 2738,
+                "4": 1966,
+                "6": 883,
+                "8": 233
+              },
+              "max_intersection": 12,
+              "pairs": 8128,
+              "total_intersection": 21120,
+              "unique_rows": 128
+            },
+            "pairwise_winner_intersections": {
+              "histogram": {
+                "0": 2248,
+                "1": 2738,
+                "2": 1966,
+                "3": 883,
+                "4": 233,
+                "5": 51,
+                "6": 9
+              },
+              "max_intersection": 6,
+              "pairs": 8128,
+              "total_intersection": 10560,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_winner_overlap": true,
+            "predicted_columns_before_exposure": 0,
+            "predicted_contexts_before_exposure": 0,
+            "unique_codes": 128
+          },
+          "learned_context_diagnostics": {
+            "active_segments": 1408,
+            "candidate_segments": 5731,
+            "contexts": 128,
+            "contexts_with_active_segments": 128,
+            "contexts_with_matching_segments": 128,
+            "matching_segments": 1408,
+            "max_connected_contacts": 20,
+            "max_potential_contacts": 20
+          },
+          "learned_source_context_intersections": {
+            "pairwise_physical_sources": {
+              "histogram": {
+                "0": 7914,
+                "2": 213,
+                "4": 1
+              },
+              "max_intersection": 4,
+              "pairs": 8128,
+              "total_intersection": 430,
+              "unique_rows": 128
+            },
+            "pairwise_winner_pairs": {
+              "histogram": {
+                "0": 7914,
+                "1": 213,
+                "2": 1
+              },
+              "max_intersection": 2,
+              "pairs": 8128,
+              "total_intersection": 215,
+              "unique_rows": 128
+            },
+            "physical_overlap_is_exactly_twice_pair_overlap": true
+          },
+          "novel_probe": {
+            "active_segments": 0,
+            "candidate_segments": 4895,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "false_predictions": 0,
+            "grouped_pair_overlap": {
+              "learned_vs_novel_physical_sources": {
+                "histogram": {
+                  "0": 15895,
+                  "2": 486,
+                  "4": 3
+                },
+                "max_intersection": 4,
+                "pairs": 16384,
+                "total_intersection": 984
+              },
+              "learned_vs_novel_winner_pairs": {
+                "histogram": {
+                  "0": 15895,
+                  "1": 486,
+                  "2": 3
+                },
+                "max_intersection": 2,
+                "pairs": 16384,
+                "total_intersection": 492
+              },
+              "physical_overlap_is_exactly_twice_pair_overlap": true
+            },
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4,
+            "max_predicted_columns": 0,
+            "predicted_columns": 0
+          },
+          "parity": {
+            "deep_state_equal": true,
+            "diagnose_context_read_only": true,
+            "learned_state_unchanged": true,
+            "recognition_steps_equal": true
+          },
+          "recurrent_source_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 176,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 2,
+            "max_potential_contacts": 2
+          },
+          "segment_count": 1408,
+          "target_pre_exposure_diagnostics": {
+            "active_segments": 0,
+            "candidate_segments": 2222,
+            "contexts": 128,
+            "contexts_with_active_segments": 0,
+            "contexts_with_matching_segments": 0,
+            "matching_segments": 0,
+            "max_connected_contacts": 4,
+            "max_potential_contacts": 4
+          }
+        }
+      ],
+      "thresholds": {
+        "theta_active": 20,
+        "theta_match": 18
+      }
+    }
+  },
+  "artifact_id": "r3-temporal-code-collision-v2",
+  "claim_boundary": {
+    "capability_evidence": false,
+    "held_out_data_accessed": false,
+    "independent_confirmatory_seed_set": false,
+    "synthetic_collision_calibration": true,
+    "threshold_selection_is_evaluation": false,
+    "transfer_evidence": false
+  },
+  "protocol": {
+    "active_columns": 11,
+    "base_cells_per_column": 8,
+    "column_count": 4096,
+    "construction_seeds": [
+      3,
+      7,
+      17,
+      29
+    ],
+    "contacts_per_segment": 20,
+    "context_physical_width": 22,
+    "context_source_groups": 11,
+    "context_source_structure": "injective (pyramidal winner, relay twin) pairs",
+    "direct_recurrent_source_probe": "diagnose each emitted target context as the next step's W_prev",
+    "learned_contexts": 128,
+    "learned_target_pair_overlap_gate": "reject max winner-pair overlap >= ceil(theta_match/2)",
+    "novel_contexts": 128,
+    "projection_seed": 17,
+    "reject_token_sdr_overlap_at_or_above": 5,
+    "same_token_collision_model": "measured grouped-pair intersections; physical overlap is exactly twice winner-pair overlap",
+    "target_token": 256,
+    "threshold_arms": [
+      [
+        10,
+        13
+      ],
+      [
+        16,
+        18
+      ],
+      [
+        18,
+        20
+      ]
+    ],
+    "token_codebook": "token_sdr_indices(seed=17,n_bits=4096,w_ones=11)"
+  },
+  "schema_version": 2,
+  "selection": {
+    "rule": "first listed arm with every learned context active, zero learned-code collisions, max learned target winner-pair overlap below ceil(theta_match/2) in every seed, zero direct recurrent-source matching/active segments, and zero novel false predictions, matching segments, or active segments; every new learned target exposure must also have zero pre-exposure matching/active segments and zero predicted columns across every construction seed",
+    "rule_frozen_before_stable_source_replay": true,
+    "rule_revision_basis": "paired-source structural correction after a preliminary synthetic artifact exposed unsafe learned-code overlap",
+    "selected_thresholds": [
+      18,
+      20
+    ]
+  },
+  "source_commit": "df26cc2",
+  "source_sha256": {
+    "cortex.py": "16545b390c516b6f5817366946f0f516cec5b049bb9e1f6021184d9e156e0a8c",
+    "sdr_union.py": "1de7f6edd914584c4c72d7e42426254590049cfb69cbbfa730afa3179afa63f9",
+    "sparse_temporal_cortex.py": "0aca721d0c10b88ad91764f499b0b8e6cdde4b08b35e862f7dcfecf42f46fac3"
+  },
+  "synthetic_codebook_overlap": {
+    "histogram": {
+      "0": 31959,
+      "1": 931,
+      "2": 6
+    },
+    "max_intersection": 2,
+    "pairs": 32896,
+    "total_intersection": 943,
+    "unique_rows": 257
+  },
+  "synthetic_codebook_sha256": "4ab66dab1657c4e4353267e7fe58371cfc7e833fe9c50f9bb7e9ce3bc34077a9"
+}

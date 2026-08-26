@@ -1,0 +1,180 @@
+{
+  "artifact_id": "r3-minicolumn-electrical-v1",
+  "boundaries": {
+    "active_vs_matching": {
+      "control_two_spike_trials": 20480,
+      "expected_control_winner_trials": 20480,
+      "expected_inhibited_winner_trials": 20480,
+      "inhibited_single_spike_trials": 20480,
+      "maximum_basket_to_gaba_ticks": 1,
+      "maximum_natural_latency_ticks": 5,
+      "maximum_winner_to_basket_ticks": 1,
+      "minimum_basket_to_gaba_ticks": 1,
+      "minimum_natural_latency_ticks": 3,
+      "minimum_winner_to_basket_ticks": 1,
+      "seed_hashes_sha256": {
+        "17": "341017059ccff7a38a6f5ff3ca9c5af8823277112340ff29638b4ae617b8513f",
+        "29": "4fd723f591e66954e118af79d0336a86453480383451dc7b16beba9029e07df5",
+        "3": "50e01f4d71e9e064503065c893a3527543d87c334fee911577c8a42317f93f03",
+        "43": "2d68276c956e1eb4b4fa437998553159d2c881e4a0b6c232495b8fd2166bd2f5",
+        "7": "03dcf62c6d2144e07be6a6fe348fa7f26879b527247c3e152921be29f3fc3a40"
+      },
+      "trials": 20480,
+      "verdict": "PASS_EXHAUSTIVE_COUPLED_SCREEN"
+    },
+    "matching_vs_novel": {
+      "control_two_spike_trials": 20480,
+      "expected_control_winner_trials": 20480,
+      "expected_inhibited_winner_trials": 20480,
+      "inhibited_single_spike_trials": 20480,
+      "maximum_basket_to_gaba_ticks": 1,
+      "maximum_natural_latency_ticks": 7,
+      "maximum_winner_to_basket_ticks": 1,
+      "minimum_basket_to_gaba_ticks": 1,
+      "minimum_natural_latency_ticks": 4,
+      "minimum_winner_to_basket_ticks": 1,
+      "seed_hashes_sha256": {
+        "17": "212b969bb8e427adb1b085a64e600c8610322314451c70bb78041d33a0069c2f",
+        "29": "306672d431af333e34862dcfd5d06f1d87b9d32d996ad0a0a672b04bf20f0ce8",
+        "3": "3da746c4aca14994dabf6e0bff851ad320e7a9c18de2e14c205739fcfa38aa73",
+        "43": "14ea93c2a7c07f447e37fd84638a0486946a5e3e512f8c6bc1c3d2593e850f01",
+        "7": "6b929db00e45e406a82a79d73374aecfba3aec78be8916ff99be9223916e03f2"
+      },
+      "trials": 20480,
+      "verdict": "PASS_EXHAUSTIVE_COUPLED_SCREEN"
+    },
+    "novel_rank_boundary": {
+      "control_two_spike_trials": 20480,
+      "expected_control_winner_trials": 20480,
+      "expected_inhibited_winner_trials": 20480,
+      "inhibited_single_spike_trials": 20480,
+      "maximum_basket_to_gaba_ticks": 1,
+      "maximum_natural_latency_ticks": 7,
+      "maximum_winner_to_basket_ticks": 1,
+      "minimum_basket_to_gaba_ticks": 1,
+      "minimum_natural_latency_ticks": 3,
+      "minimum_winner_to_basket_ticks": 1,
+      "seed_hashes_sha256": {
+        "17": "eb81fff367cc97929d1753cd3cd999f555d6e8a9ebc5d2e3f2f3b7bd7d7de796",
+        "29": "2ccf74dc0575fd0cbc6bfb4a523411e99827985d12c532c223d180738fe538d0",
+        "3": "df9ffe73f7ab6275f4bb95ec2cde9e9b1d888826d0f54684d83da535726f9418",
+        "43": "e0ce18e4e5c898ce253569d45cb53ddc269aff76c6e5f03c8a7f37130b931042",
+        "7": "b664a76bb24ebbfefe7eb47f111a5ed9b591e9757cbc743f2e339c633ab2776d"
+      },
+      "trials": 20480,
+      "verdict": "PASS_EXHAUSTIVE_COUPLED_SCREEN"
+    }
+  },
+  "claim_boundary": {
+    "capability_evidence": false,
+    "sparse_temporal_integration_evidence": false,
+    "synthetic_electrical_calibration": true,
+    "transfer_evidence": false
+  },
+  "config_sha256": {
+    "human_cell_parameters": "946fe684aea009b78a4d6892dc66cdfdf79aa523c49382bc6e72a6efcf745726",
+    "sparse_electrical_defaults": "f69d0addd9619cae6b0d03eb621ec7ca324b0016058e82aef12a61a0f1cf8515"
+  },
+  "protocol": {
+    "active_current_pa": 670,
+    "base_pyramidal_cells": 32768,
+    "basket_current_pa": 200000,
+    "basket_offset": 262144,
+    "cells_per_column": 8,
+    "columns": 4096,
+    "construction_seeds": [
+      3,
+      7,
+      17,
+      29,
+      43
+    ],
+    "dt_us": 50,
+    "gaba_current_pa": 500,
+    "homeostasis_adversarial_pa": 20,
+    "homeostasis_adversary_rule": "boundary winner receives -20 pA; every competitor receives +20 pA",
+    "latency_must_exceed_us": 100,
+    "matching_current_pa": 620,
+    "max_pyramidal_cells": 131072,
+    "novel_current_ladder_pa": [
+      570,
+      523,
+      476,
+      429,
+      382,
+      335,
+      288,
+      241
+    ],
+    "physical_cell_count": 274432,
+    "proximal_current_pa": 570,
+    "proximal_offset": 266240,
+    "proximal_relay_offset": 270336,
+    "rank_assignment": "rank 0 is assigned to each column's maximum threshold offset, rank 1 to its minimum, and descending remainder currents to ascending remaining thresholds",
+    "relay_current_pa": 20000,
+    "relay_offset": 131072,
+    "scenario_currents_pa": {
+      "active_vs_matching": [
+        650,
+        640,
+        590,
+        543,
+        496,
+        449,
+        402,
+        355
+      ],
+      "matching_vs_novel": [
+        600,
+        590,
+        543,
+        496,
+        449,
+        402,
+        355,
+        308
+      ],
+      "novel_rank_boundary": [
+        550,
+        543,
+        496,
+        449,
+        402,
+        355,
+        308,
+        261
+      ]
+    },
+    "singleton_matching_active_assumption": true
+  },
+  "proximal_channel": {
+    "causal_relay_after_source_trials": 20480,
+    "dedicated_relay_single_spike_trials": 20480,
+    "expected_relay_winner_trials": 20480,
+    "expected_source_winner_trials": 20480,
+    "maximum_causal_relay_ticks": 244,
+    "maximum_relay_intrinsic_ticks": 5,
+    "maximum_source_ticks": 239,
+    "minimum_causal_relay_ticks": 240,
+    "minimum_relay_intrinsic_ticks": 5,
+    "minimum_source_ticks": 235,
+    "seed_hashes_sha256": {
+      "17": "f737aafeba31d38796b8751c03e4515e2f29044dcf86432a50e72dd4ab7443de",
+      "29": "58bd3ace7e059adeb3a31f97e4ec84f7386d5f9f8aeda49b42d79153a17fefa8",
+      "3": "bb629b51f9e2a9115a57085d36e0b2fe5dd1fa9de173a10baf8aff99205098ae",
+      "43": "27d8e02ce7a4aae3ae6822f144f2e03204223f29a9919eb58567d02186aa01fe",
+      "7": "619c956ffbf8428d214dc8aeb5b856c4fc0fb3f8974232aa0275e0bcbbae7de6"
+    },
+    "source_single_spike_trials": 20480,
+    "trials": 20480,
+    "verdict": "PASS_EXHAUSTIVE_PROXIMAL_RELAY_SCREEN"
+  },
+  "schema_version": 1,
+  "source_commit": "df26cc2",
+  "source_sha256": {
+    "cells.py": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6",
+    "cortex.py": "16545b390c516b6f5817366946f0f516cec5b049bb9e1f6021184d9e156e0a8c",
+    "sparse_temporal_cortex.py": "0aca721d0c10b88ad91764f499b0b8e6cdde4b08b35e862f7dcfecf42f46fac3"
+  },
+  "verdict": "PASS_EXHAUSTIVE_COUPLED_SCREEN"
+}
