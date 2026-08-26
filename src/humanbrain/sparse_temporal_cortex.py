@@ -123,14 +123,12 @@ class SparseTemporalConfig:
     """Frozen constants for one sparse temporal-memory circuit."""
 
     column_count: int
+    theta_match: int
+    theta_active: int
     active_columns: int = 11
     base_cells_per_column: int = 8
     max_pyramidal_cells: int = 131_072
     contacts_per_segment: int = 20
-    # Provisional no-reserve collision calibration from 716ae89.  A
-    # reserve-aware calibration may refreeze these executable defaults.
-    theta_match: int = 18
-    theta_active: int = 20
     connected_permanence_ticks: int = 250
     initial_permanence_ticks: int = 255
     permanence_increment_ticks: int = 50

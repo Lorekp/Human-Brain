@@ -52,13 +52,18 @@ def _config(
     )
 
 
-def test_permanence_config_is_tick_native_with_provisional_threshold_defaults() -> None:
+def test_permanence_config_is_tick_native_and_requires_explicit_thresholds() -> None:
+    with pytest.raises(TypeError, match="theta_match"):
+        SparseTemporalConfig(column_count=11)
+
     config = SparseTemporalConfig(
         column_count=11,
         active_columns=11,
         base_cells_per_column=1,
         max_pyramidal_cells=11,
         contacts_per_segment=20,
+        theta_match=18,
+        theta_active=20,
     )
 
     assert config.theta_match == 18
@@ -97,7 +102,11 @@ def test_permanence_config_rejects_non_live_or_non_integer_ticks(
     field: str,
     value: object,
 ) -> None:
-    config = SparseTemporalConfig(column_count=11)
+    config = SparseTemporalConfig(
+        column_count=11,
+        theta_match=18,
+        theta_active=20,
+    )
 
     with pytest.raises(ValueError, match=field):
         replace(config, **{field: value})

@@ -69,7 +69,7 @@ def test_one_trial_replays_coupled_latency_and_inhibition() -> None:
     assert observed["basket_to_gaba_ticks"] == 1
 
 
-def test_committed_electrical_artifact_passes_fast_check() -> None:
+def test_historical_electrical_artifact_fails_closed_after_source_refreeze() -> None:
     completed = subprocess.run(
         [sys.executable, str(SCRIPT), "--check"],
         cwd=ROOT,
@@ -78,8 +78,8 @@ def test_committed_electrical_artifact_passes_fast_check() -> None:
         check=False,
     )
 
-    assert completed.returncode == 0, completed.stdout + completed.stderr
-    assert "minicolumn electrical calibration artifact check: PASS" in completed.stdout
+    assert completed.returncode == 1
+    assert "FAIL: sparse source changed" in completed.stdout
 
 
 def test_artifact_freezes_exhaustive_coupled_evidence() -> None:

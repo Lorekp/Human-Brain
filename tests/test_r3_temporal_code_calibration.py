@@ -14,7 +14,7 @@ SCRIPT = ROOT / "experiments" / "r3_pilot" / "calibrate_temporal_code.py"
 ARTIFACT = ROOT / "experiments" / "r3_pilot" / "temporal_code_calibration.json"
 
 
-def test_committed_temporal_code_artifact_passes_fast_check() -> None:
+def test_historical_temporal_artifact_fails_closed_after_source_refreeze() -> None:
     completed = subprocess.run(
         [sys.executable, str(SCRIPT), "--check"],
         cwd=ROOT,
@@ -23,8 +23,8 @@ def test_committed_temporal_code_artifact_passes_fast_check() -> None:
         check=False,
     )
 
-    assert completed.returncode == 0, completed.stderr
-    assert "temporal-code calibration artifact check: PASS" in completed.stdout
+    assert completed.returncode == 1
+    assert "FAIL: sparse temporal source changed" in completed.stdout
 
 
 def test_artifact_freezes_the_synthetic_threshold_grid() -> None:

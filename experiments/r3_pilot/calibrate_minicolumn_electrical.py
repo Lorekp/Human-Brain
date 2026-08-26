@@ -168,7 +168,13 @@ def _runtime_config_hashes() -> dict[str, str]:
         SparseTemporalConfig,
     )
 
-    sparse = SparseTemporalConfig(column_count=COLUMNS)
+    # Historical v2 artifact values are stated explicitly.  Thresholds have no
+    # executable default until the reserve-aware calibration is accepted.
+    sparse = SparseTemporalConfig(
+        column_count=COLUMNS,
+        theta_match=18,
+        theta_active=20,
+    )
     electrical_defaults = {
         "active_current_pa": sparse.active_current_pa,
         "base_cells_per_column": sparse.base_cells_per_column,
