@@ -9,7 +9,8 @@ crossings; Python never substitutes an integer contact threshold for a spike.
 This is the fixture-scale implementation.  Novel tie-breaking is driven by
 event-local procedural afferents from the previous physical spike population,
 not by a whole-context lookup.  Columns commit already-materialized reserve
-cells transactionally as resident segment capacity is consumed.
+cells as full calibrated race cohorts.  Each source/relay contact pair shares
+one exact integer permanence tick and all learned-state changes are atomic.
 """
 
 from __future__ import annotations
@@ -19,17 +20,86 @@ import json
 from collections import Counter
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Mapping, Sequence
+from typing import Final, Mapping, Sequence
 
 import numpy as np
 
 from humanbrain.cortex import DendriticCortex
+from humanbrain.procedural_topology import _philox2x64_10
 
 
 _UINT64_MASK = (1 << 64) - 1
 _MIX_GAMMA = 0x9E3779B97F4A7C15
 _MIX_A = 0xBF58476D1CE4E5B9
 _MIX_B = 0x94D049BB133111EB
+_INITIAL_CONTACT_DOMAIN: Final = 0x52334630494E4954  # ASCII "R3F0INIT"
+_REGROWTH_CONTACT_DOMAIN: Final = 0x5233463052475257  # ASCII "R3F0RGRW"
+
+
+def contact_position_sampling_contract() -> dict[str, str]:
+    """Return the frozen portable address scheme for paired contact sampling."""
+    return {
+        "protocol": "random123-philox2x64-10-contact-positions-v1",
+        "oracle": "humanbrain.procedural_topology._philox2x64_10",
+        "initial_domain_hex": f"{_INITIAL_CONTACT_DOMAIN:016x}",
+        "regrowth_domain_hex": f"{_REGROWTH_CONTACT_DOMAIN:016x}",
+        "bounded_mapping": "lemire-multiply-high-u64-rejection",
+        "without_replacement": "partial-fisher-yates",
+        "initial_address": (
+            "key=seed^initial_domain,"
+            "counter=(learning_step,(attempt<<32)|draw)"
+        ),
+        "regrowth_address": (
+            "key=philox(owner,segment_id,seed^regrowth_domain)[0],"
+            "counter=(learning_step,(attempt<<32)|draw)"
+        ),
+    }
+
+
+def _bounded_philox_index(
+    bound: int,
+    *,
+    key: int,
+    learning_step: int,
+    draw: int,
+) -> int:
+    """Map Philox words exactly uniformly into ``range(bound)``."""
+    if not 1 <= bound <= 1 << 64 or not 0 <= draw < 1 << 32:
+        raise RuntimeError("STOP: invalid bounded Philox address")
+    rejection_threshold = ((1 << 64) - bound) % bound
+    for attempt in range(1 << 32):
+        counter_1 = (attempt << 32) | draw
+        word, _ = _philox2x64_10(learning_step, counter_1, key)
+        product = word * bound
+        if (product & _UINT64_MASK) >= rejection_threshold:
+            return product >> 64
+    raise RuntimeError("STOP: bounded Philox rejection counter exhausted")
+
+
+def _sample_contact_positions(
+    population_size: int,
+    sample_size: int,
+    *,
+    key: int,
+    learning_step: int,
+) -> tuple[int, ...]:
+    """Sample sorted positions with Philox and partial Fisher-Yates."""
+    if (
+        not 0 <= sample_size <= population_size <= 1 << 64
+        or sample_size >= 1 << 32
+    ):
+        raise RuntimeError("STOP: invalid contact-position sample dimensions")
+    positions = list(range(population_size))
+    for draw in range(sample_size):
+        remaining = population_size - draw
+        selected = draw + _bounded_philox_index(
+            remaining,
+            key=key,
+            learning_step=learning_step,
+            draw=draw,
+        )
+        positions[draw], positions[selected] = positions[selected], positions[draw]
+    return tuple(sorted(positions[:sample_size]))
 
 
 def _mix_u64(value: int) -> int:
@@ -57,12 +127,14 @@ class SparseTemporalConfig:
     base_cells_per_column: int = 8
     max_pyramidal_cells: int = 131_072
     contacts_per_segment: int = 20
-    theta_match: int = 16
-    theta_active: int = 18
-    connected_permanence: float = 0.50
-    initial_permanence: float = 0.51
-    permanence_increment: float = 0.10
-    negative_decrement: float = 0.004
+    # Provisional no-reserve collision calibration from 716ae89.  A
+    # reserve-aware calibration may refreeze these executable defaults.
+    theta_match: int = 18
+    theta_active: int = 20
+    connected_permanence_ticks: int = 250
+    initial_permanence_ticks: int = 255
+    permanence_increment_ticks: int = 50
+    negative_decrement_ticks: int = 2
     max_segments_per_cell: int = 255
     novel_current_pa: float = 570.0
     novel_rank_spacing_pa: float = 47.0
@@ -117,12 +189,19 @@ class SparseTemporalConfig:
             raise ValueError("contacts_per_segment must preserve source/relay pairs")
         if not 1 <= self.theta_match <= self.theta_active <= self.contacts_per_segment:
             raise ValueError("require 1 <= theta_match <= theta_active <= contacts")
-        if not 0.0 < self.connected_permanence < 1.0:
-            raise ValueError("connected_permanence must lie in (0, 1)")
-        if not 0.0 < self.initial_permanence <= 1.0:
-            raise ValueError("initial_permanence must lie in (0, 1]")
-        if self.permanence_increment <= 0.0 or self.negative_decrement <= 0.0:
-            raise ValueError("permanence changes must be positive")
+        if (
+            type(self.connected_permanence_ticks) is not int
+            or not 1 <= self.connected_permanence_ticks <= 500
+        ):
+            raise ValueError("connected_permanence_ticks must be an int in [1, 500]")
+        live_tick_fields = (
+            ("initial_permanence_ticks", self.initial_permanence_ticks),
+            ("permanence_increment_ticks", self.permanence_increment_ticks),
+            ("negative_decrement_ticks", self.negative_decrement_ticks),
+        )
+        for name, value in live_tick_fields:
+            if type(value) is not int or not 1 <= value <= 500:
+                raise ValueError(f"{name} must be an int in [1, 500]")
         currents = (
             self.novel_current_pa,
             self.novel_rank_spacing_pa,
@@ -207,7 +286,7 @@ class LearnedSnapshot:
     """Immutable learned cell/synapse state, excluding transient activity."""
 
     column_cells: tuple[tuple[int, ...], ...]
-    segments: tuple[tuple[int, tuple[int, ...], tuple[float, ...]], ...]
+    segments: tuple[tuple[int, tuple[int, ...], tuple[int, ...]], ...]
     learning_step: int
     next_reserve_cell: int
 
@@ -235,17 +314,17 @@ class ContextDiagnostics:
 
 
 class _Segment:
-    __slots__ = ("owner", "contacts", "permanences")
+    __slots__ = ("owner", "sources", "permanence_ticks")
 
     def __init__(
         self,
         owner: int,
-        contacts: Sequence[int],
-        permanence: float,
+        sources: Sequence[int],
+        permanence_ticks: int,
     ) -> None:
         self.owner = int(owner)
-        self.contacts = [int(value) for value in contacts]
-        self.permanences = [float(permanence)] * len(self.contacts)
+        self.sources = [int(value) for value in sources]
+        self.permanence_ticks = [int(permanence_ticks)] * len(self.sources)
 
 
 class SparseTemporalCortex:
@@ -367,6 +446,22 @@ class SparseTemporalCortex:
             )
             if tuple(cells[: config.base_cells_per_column]) != expected_base:
                 raise ValueError("snapshot changed a column's physical base cells")
+            recruited_cells = tuple(
+                int(cell) for cell in cells[config.base_cells_per_column :]
+            )
+            if len(recruited_cells) % config.novel_race_cap:
+                raise ValueError(
+                    "snapshot column contains a partial reserve cohort"
+                )
+            for offset in range(0, len(recruited_cells), config.novel_race_cap):
+                cohort = recruited_cells[offset : offset + config.novel_race_cap]
+                expected_cohort = tuple(
+                    range(cohort[0], cohort[0] + config.novel_race_cap)
+                )
+                if cohort != expected_cohort:
+                    raise ValueError(
+                        "snapshot column contains a noncontiguous reserve cohort"
+                    )
         next_reserve = int(learned.next_reserve_cell)
         if not circuit._base_pyramidal_cells <= next_reserve <= config.max_pyramidal_cells:
             raise ValueError("snapshot reserve cursor is outside the pyramidal sheet")
@@ -379,39 +474,34 @@ class SparseTemporalCortex:
         circuit._column_cells = [list(cells) for cells in learned.column_cells]
         circuit._segments = []
         circuit._segments_by_cell = {}
-        for owner, contacts, permanences in learned.segments:
+        for owner, sources, permanence_ticks in learned.segments:
             if owner not in committed:
                 raise ValueError("snapshot segment owner is not a committed column cell")
-            if len(contacts) != len(permanences):
-                raise ValueError("snapshot contact/permanence lengths differ")
+            if len(sources) != len(permanence_ticks):
+                raise ValueError("snapshot source/permanence-tick lengths differ")
             if (
-                not contacts
-                or len(contacts) > config.contacts_per_segment
-                or len(contacts) % 2
-                or len(set(contacts)) != len(contacts)
+                not sources
+                or len(sources) > config.contacts_per_segment // 2
+                or len(set(sources)) != len(sources)
             ):
-                raise ValueError("snapshot segment contacts violate grouped capacity")
-            contact_set = {int(value) for value in contacts}
-            source_set: set[int] = set()
-            for contact in contact_set:
+                raise ValueError("snapshot segment sources violate paired capacity")
+            normalized_sources = tuple(int(value) for value in sources)
+            for source in normalized_sources:
                 try:
-                    relay = circuit._relay_for_context_source(contact)
+                    circuit._relay_for_context_source(source)
                 except RuntimeError:
-                    continue
-                if relay in contact_set:
-                    source_set.add(contact)
-            expected_contacts = source_set.union(
-                circuit._relay_for_context_source(source) for source in source_set
-            )
-            if expected_contacts != contact_set:
-                raise ValueError("snapshot segment lost physical source/relay pairing")
+                    raise ValueError(
+                        "snapshot segment contains a non-normalized source"
+                    ) from None
             if any(
-                not np.isfinite(value) or not 0.0 <= float(value) <= 1.0
-                for value in permanences
+                type(value) is not int or not 1 <= value <= 500
+                for value in permanence_ticks
             ):
-                raise ValueError("snapshot permanence is outside [0, 1]")
-            segment = _Segment(owner, contacts, config.initial_permanence)
-            segment.permanences = [float(value) for value in permanences]
+                raise ValueError(
+                    "snapshot live permanence tick is outside integer range [1, 500]"
+                )
+            segment = _Segment(owner, normalized_sources, config.initial_permanence_ticks)
+            segment.permanence_ticks = [int(value) for value in permanence_ticks]
             segment_id = len(circuit._segments)
             circuit._segments.append(segment)
             circuit._segments_by_cell.setdefault(int(owner), []).append(segment_id)
@@ -429,6 +519,12 @@ class SparseTemporalCortex:
                 for cell in circuit._previous_context
             ):
                 raise ValueError("snapshot context contains an out-of-range cell")
+            try:
+                circuit._context_source_pairs(circuit._previous_context)
+            except RuntimeError:
+                raise ValueError(
+                    "snapshot previous_context violates source/relay pairing"
+                ) from None
         circuit._previous_winner_context = tuple(
             int(value) for value in snapshot.previous_winner_context
         )
@@ -444,6 +540,12 @@ class SparseTemporalCortex:
                 for cell in circuit._previous_winner_context
             ):
                 raise ValueError("snapshot winner context contains an out-of-range cell")
+            try:
+                circuit._context_source_pairs(circuit._previous_winner_context)
+            except RuntimeError:
+                raise ValueError(
+                    "snapshot previous_winner_context violates source/relay pairing"
+                ) from None
         circuit._event_step = int(snapshot.event_step)
         if circuit.snapshot() != snapshot:
             raise ValueError("snapshot did not round-trip into identical deep state")
@@ -482,8 +584,8 @@ class SparseTemporalCortex:
             segments=tuple(
                 (
                     segment.owner,
-                    tuple(segment.contacts),
-                    tuple(segment.permanences),
+                    tuple(segment.sources),
+                    tuple(segment.permanence_ticks),
                 )
                 for segment in self._segments
             ),
@@ -500,11 +602,11 @@ class SparseTemporalCortex:
             event_step=self._event_step,
         )
 
-    def permanence_values(self) -> tuple[float, ...]:
+    def permanence_tick_values(self) -> tuple[int, ...]:
         return tuple(
             value
             for segment in self._segments
-            for value in segment.permanences
+            for value in segment.permanence_ticks
         )
 
     def diagnose_context(self, context_spikes: Sequence[int]) -> ContextDiagnostics:
@@ -590,7 +692,7 @@ class SparseTemporalCortex:
                 float(proximal.spike_time_ms + proximal_relay.spike_time_ms)
             )
 
-        reserve_plan: dict[int, int] = {}
+        reserve_plan: dict[int, tuple[int, ...]] = {}
         if mutate and self.config.growth_enabled and self._previous_context:
             reserve_plan = self._plan_required_reserve_cells(
                 columns,
@@ -602,7 +704,7 @@ class SparseTemporalCortex:
             staged = list(self._column_cells[column])
             reserved = reserve_plan.get(int(column))
             if reserved is not None:
-                staged.append(reserved)
+                staged.extend(reserved)
             cells = tuple(staged)
             currents = self._column_currents(
                 cells,
@@ -745,8 +847,8 @@ class SparseTemporalCortex:
                 potential[segment_id] = potential.get(segment_id, 0) + 1
                 segment = self._segments[segment_id]
                 if (
-                    segment.permanences[contact_index]
-                    >= self.config.connected_permanence
+                    segment.permanence_ticks[contact_index]
+                    >= self.config.connected_permanence_ticks
                 ):
                     connected[segment_id] = connected.get(segment_id, 0) + 1
         return potential, connected
@@ -803,6 +905,11 @@ class SparseTemporalCortex:
             )
 
         categorized = set(predicted_cells).union(matching_cells)
+        if len(categorized) > cfg.novel_race_cap:
+            raise RuntimeError(
+                "STOP: categorized owners exceed the calibrated race cap"
+            )
+        novel_limit = cfg.novel_race_cap - len(categorized)
         if self._previous_context:
             novel_pool = [cell for cell in cells if cell not in categorized]
             if novel_pool:
@@ -817,17 +924,13 @@ class SparseTemporalCortex:
             ranked_novel = sorted(
                 novel_pool,
                 key=lambda cell: (-self._afferent_score(cell), int(cell)),
-            )
+            )[:novel_limit]
         else:
             # Book/pass boundaries have no distal source.  Keep the pool-cell
             # code independent of learned load and exclude recruited reserve
             # cells so boundary output remains stable over development.
             ranked_novel = list(cells[: cfg.base_cells_per_column])
 
-        if len(ranked_novel) > cfg.novel_race_cap:
-            raise RuntimeError(
-                "STOP: local novel candidate set exceeds the calibrated race cap"
-            )
         for rank, cell in enumerate(ranked_novel):
             currents[offsets[cell]] = (
                 cfg.novel_current_pa - rank * cfg.novel_rank_spacing_pa
@@ -866,7 +969,7 @@ class SparseTemporalCortex:
         *,
         best_predicted: Mapping[int, int],
         best_matching: Mapping[int, int],
-    ) -> dict[int, int]:
+    ) -> dict[int, tuple[int, ...]]:
         exhausted: list[int] = []
         for column in columns:
             cells = self._column_cells[column]
@@ -881,23 +984,33 @@ class SparseTemporalCortex:
                 for cell in cells
             ):
                 exhausted.append(int(column))
+        cohort_size = self.config.novel_race_cap
+        required = len(exhausted) * cohort_size
         available = self.config.max_pyramidal_cells - self._next_reserve_cell
-        if len(exhausted) > available:
+        if required > available:
             raise RuntimeError(
-                "STOP: column capacity exhausted; physical reserve exhausted "
+                "STOP: column capacity exhausted; full reserve cohort does not fit "
                 "before atomic plasticity"
             )
-        return {
-            column: self._next_reserve_cell + offset
-            for offset, column in enumerate(exhausted)
-        }
+        plan: dict[int, tuple[int, ...]] = {}
+        next_cell = self._next_reserve_cell
+        for column in exhausted:
+            plan[column] = tuple(range(next_cell, next_cell + cohort_size))
+            next_cell += cohort_size
+        return plan
 
-    def _commit_planned_reserve_cells(self, plan: Mapping[int, int]) -> None:
-        for column, cell in plan.items():
-            if cell != self._next_reserve_cell:
-                raise RuntimeError("STOP: reserve plan lost contiguous physical order")
-            self._column_cells[int(column)].append(int(cell))
-            self._next_reserve_cell += 1
+    def _commit_planned_reserve_cells(
+        self,
+        plan: Mapping[int, Sequence[int]],
+    ) -> None:
+        for column, cohort in plan.items():
+            if len(cohort) != self.config.novel_race_cap:
+                raise RuntimeError("STOP: reserve plan lost full-cohort width")
+            for cell in cohort:
+                if cell != self._next_reserve_cell:
+                    raise RuntimeError("STOP: reserve plan lost contiguous physical order")
+                self._column_cells[int(column)].append(int(cell))
+                self._next_reserve_cell += 1
 
     # --------------------------------------------------------------- learning
 
@@ -927,144 +1040,140 @@ class SparseTemporalCortex:
             raise RuntimeError(
                 "STOP: owner segment capacity exhausted after reserve preflight"
             )
-        unique_context = np.unique(np.asarray(context, dtype=np.int64))
-        if unique_context.size < self.config.contacts_per_segment:
+        sources, _relays = self._context_source_pairs(context)
+        pair_count = self.config.contacts_per_segment // 2
+        if len(set(sources)) < pair_count:
             raise RuntimeError(
                 "STOP: physical context is smaller than contacts_per_segment"
             )
-        sources, _relays = self._context_source_pairs(context)
         # The sampled column positions are arm-independent.  A1 and A3 differ
         # only in whether those positions resolve to winner or generic source
         # cells; owner identity must not perturb contact mass or positions.
-        rng = np.random.default_rng(
-            [self.config.construction_seed, self._learning_step, 0xA110C]
-        )
-        chosen_pairs = np.sort(
-            rng.choice(
-                len(sources),
-                size=self.config.contacts_per_segment // 2,
-                replace=False,
+        chosen_pairs = _sample_contact_positions(
+            len(sources),
+            pair_count,
+            key=(
+                self.config.construction_seed ^ _INITIAL_CONTACT_DOMAIN
             )
+            & _UINT64_MASK,
+            learning_step=self._learning_step,
         )
-        chosen_sources = [sources[int(index)] for index in chosen_pairs]
-        chosen = sorted(
-            chosen_sources
-            + [self._relay_for_context_source(source) for source in chosen_sources]
-        )
+        chosen_sources = sorted(sources[int(index)] for index in chosen_pairs)
         segment_id = len(self._segments)
-        segment = _Segment(owner, chosen, self.config.initial_permanence)
+        segment = _Segment(
+            owner,
+            chosen_sources,
+            self.config.initial_permanence_ticks,
+        )
         self._segments.append(segment)
         owned.append(segment_id)
-        for contact_index, presynaptic in enumerate(segment.contacts):
-            self._contact_index.setdefault(presynaptic, []).append(
-                (segment_id, contact_index)
-            )
+        self._index_segment(segment_id)
 
     def _reinforce(self, segment_id: int, context: Sequence[int]) -> None:
-        active = set(int(value) for value in context)
+        active_sources = set(self._context_source_pairs(context)[0])
         segment = self._segments[segment_id]
-        for index, presynaptic in enumerate(segment.contacts):
+        retained: list[tuple[int, int]] = []
+        for source, ticks in zip(
+            segment.sources,
+            segment.permanence_ticks,
+            strict=True,
+        ):
             delta = (
-                self.config.permanence_increment
-                if presynaptic in active
-                else -self.config.permanence_increment
+                self.config.permanence_increment_ticks
+                if source in active_sources
+                else -self.config.permanence_increment_ticks
             )
-            segment.permanences[index] = float(
-                np.clip(segment.permanences[index] + delta, 0.0, 1.0)
-            )
-        self._drop_zero_contacts(segment_id)
-        self._regrow_freed_contacts(segment_id, context)
+            updated = min(500, max(0, ticks + delta))
+            if updated > 0:
+                retained.append((source, updated))
+        sources, permanence_ticks = self._regrow_pairs(
+            segment_id,
+            retained,
+            context,
+        )
+        segment.sources = sources
+        segment.permanence_ticks = permanence_ticks
+        self._rebuild_contact_index()
 
     def _punish(self, segment_id: int, context: Sequence[int]) -> None:
-        active = set(int(value) for value in context)
+        active_sources = set(self._context_source_pairs(context)[0])
         segment = self._segments[segment_id]
-        for index, presynaptic in enumerate(segment.contacts):
-            if (
-                presynaptic in active
-                and segment.permanences[index]
-                >= self.config.connected_permanence
-            ):
-                segment.permanences[index] -= self.config.negative_decrement
-        self._drop_zero_contacts(segment_id)
+        retained: list[tuple[int, int]] = []
+        changed = False
+        for source, ticks in zip(
+            segment.sources,
+            segment.permanence_ticks,
+            strict=True,
+        ):
+            updated = ticks
+            if source in active_sources and ticks >= self.config.connected_permanence_ticks:
+                updated = max(0, ticks - self.config.negative_decrement_ticks)
+            if updated > 0:
+                retained.append((source, updated))
+            changed |= updated != ticks
+        if changed:
+            segment.sources = [source for source, _ticks in retained]
+            segment.permanence_ticks = [ticks for _source, ticks in retained]
+            self._rebuild_contact_index()
 
-    def _drop_zero_contacts(self, segment_id: int) -> None:
-        segment = self._segments[segment_id]
-        if all(value > 0.0 for value in segment.permanences):
-            return
-        retained = [
-            (contact, permanence)
-            for contact, permanence in zip(
-                segment.contacts, segment.permanences, strict=True
-            )
-            if permanence > 0.0
-        ]
-        segment.contacts = [contact for contact, _ in retained]
-        segment.permanences = [permanence for _, permanence in retained]
-        self._rebuild_contact_index()
-
-    def _regrow_freed_contacts(
+    def _regrow_pairs(
         self,
         segment_id: int,
+        retained: Sequence[tuple[int, int]],
         context: Sequence[int],
-    ) -> None:
+    ) -> tuple[list[int], list[int]]:
         segment = self._segments[segment_id]
-        permanence_by_contact = dict(
-            zip(segment.contacts, segment.permanences, strict=True)
-        )
-        complete_sources: set[int] = set()
-        for contact in segment.contacts:
-            try:
-                relay = self._relay_for_context_source(contact)
-            except RuntimeError:
-                continue
-            if relay in permanence_by_contact:
-                complete_sources.add(contact)
+        retained_by_source = dict(retained)
         target_pairs = self.config.contacts_per_segment // 2
-        missing_pairs = target_pairs - len(complete_sources)
-        if missing_pairs <= 0 and len(segment.contacts) == self.config.contacts_per_segment:
-            return
-        context_sources, _context_relays = self._context_source_pairs(context)
-        candidates = np.asarray(
-            sorted(set(context_sources) - complete_sources),
-            dtype=np.int64,
-        )
-        count = min(max(0, missing_pairs), int(candidates.size))
-        rng = np.random.default_rng(
-            [
-                self.config.construction_seed,
-                self._learning_step,
-                int(segment.owner),
-                int(segment_id),
-            ]
-        )
-        selected = (
-            rng.choice(candidates, size=count, replace=False)
-            if count
-            else np.asarray([], dtype=np.int64)
-        )
-        pairs: list[tuple[int, float]] = []
-        for source in sorted(complete_sources):
-            relay = self._relay_for_context_source(source)
-            pairs.append((source, permanence_by_contact[source]))
-            pairs.append((relay, permanence_by_contact[relay]))
-        for raw_source in selected:
-            source = int(raw_source)
-            pairs.append((source, self.config.initial_permanence))
-            pairs.append(
-                (self._relay_for_context_source(source), self.config.initial_permanence)
+        missing_pairs = target_pairs - len(retained_by_source)
+        if missing_pairs <= 0:
+            ordered = sorted(retained_by_source.items())
+            return (
+                [source for source, _ticks in ordered],
+                [ticks for _source, ticks in ordered],
             )
+        context_sources, _context_relays = self._context_source_pairs(context)
+        candidates = sorted(set(context_sources) - retained_by_source.keys())
+        count = min(max(0, missing_pairs), len(candidates))
+        regrowth_key, _ = _philox2x64_10(
+            int(segment.owner),
+            int(segment_id),
+            (
+                self.config.construction_seed ^ _REGROWTH_CONTACT_DOMAIN
+            )
+            & _UINT64_MASK,
+        )
+        selected_positions = _sample_contact_positions(
+            len(candidates),
+            count,
+            key=regrowth_key,
+            learning_step=self._learning_step,
+        )
+        pairs = list(retained_by_source.items())
+        for position in selected_positions:
+            source = candidates[position]
+            pairs.append((source, self.config.initial_permanence_ticks))
         pairs.sort(key=lambda item: item[0])
-        segment.contacts = [contact for contact, _ in pairs]
-        segment.permanences = [permanence for _, permanence in pairs]
-        self._rebuild_contact_index()
+        return (
+            [source for source, _ticks in pairs],
+            [ticks for _source, ticks in pairs],
+        )
+
+    def _index_segment(self, segment_id: int) -> None:
+        segment = self._segments[segment_id]
+        for pair_index, source in enumerate(segment.sources):
+            self._contact_index.setdefault(source, []).append(
+                (segment_id, pair_index)
+            )
+            relay = self._relay_for_context_source(source)
+            self._contact_index.setdefault(relay, []).append(
+                (segment_id, pair_index)
+            )
 
     def _rebuild_contact_index(self) -> None:
         self._contact_index = {}
-        for segment_id, segment in enumerate(self._segments):
-            for contact_index, presynaptic in enumerate(segment.contacts):
-                self._contact_index.setdefault(presynaptic, []).append(
-                    (segment_id, contact_index)
-                )
+        for segment_id in range(len(self._segments)):
+            self._index_segment(segment_id)
 
 
 __all__ = [
@@ -1075,4 +1184,5 @@ __all__ = [
     "SparseTemporalConfig",
     "SparseTemporalCortex",
     "TemporalStep",
+    "contact_position_sampling_contract",
 ]

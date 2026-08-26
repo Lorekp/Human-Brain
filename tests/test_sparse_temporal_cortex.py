@@ -11,6 +11,7 @@ from itertools import combinations
 
 import pytest
 
+import humanbrain.sparse_temporal_cortex as sparse_temporal
 from humanbrain.sparse_temporal_cortex import (
     GrowthPolicy,
     SparseTemporalConfig,
@@ -32,7 +33,7 @@ def _config(
     token_count: int,
     *,
     base_cells_per_column: int = 4,
-    initial_permanence: float = 0.51,
+    initial_permanence_ticks: int = 255,
     growth_policy: GrowthPolicy = GrowthPolicy.BOUND_WINNERS,
     construction_seed: int = 17,
 ) -> SparseTemporalConfig:
@@ -43,12 +44,158 @@ def _config(
         base_cells_per_column=base_cells_per_column,
         max_pyramidal_cells=columns * base_cells_per_column,
         contacts_per_segment=20,
-        theta_match=16,
-        theta_active=18,
-        initial_permanence=initial_permanence,
+        theta_match=18,
+        theta_active=20,
+        initial_permanence_ticks=initial_permanence_ticks,
         growth_policy=growth_policy,
         construction_seed=construction_seed,
     )
+
+
+def test_permanence_config_is_tick_native_with_provisional_threshold_defaults() -> None:
+    config = SparseTemporalConfig(
+        column_count=11,
+        active_columns=11,
+        base_cells_per_column=1,
+        max_pyramidal_cells=11,
+        contacts_per_segment=20,
+    )
+
+    assert config.theta_match == 18
+    assert config.theta_active == 20
+    assert config.connected_permanence_ticks == 250
+    assert config.initial_permanence_ticks == 255
+    assert config.permanence_increment_ticks == 50
+    assert config.negative_decrement_ticks == 2
+    assert not hasattr(config, "connected_permanence")
+    assert not hasattr(config, "initial_permanence")
+    assert not hasattr(config, "permanence_increment")
+    assert not hasattr(config, "negative_decrement")
+    with pytest.raises(TypeError, match="connected_permanence"):
+        SparseTemporalConfig(
+            column_count=11,
+            active_columns=11,
+            base_cells_per_column=1,
+            max_pyramidal_cells=11,
+            contacts_per_segment=20,
+            connected_permanence=0.5,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("connected_permanence_ticks", 0),
+        ("connected_permanence_ticks", 250.0),
+        ("initial_permanence_ticks", 0),
+        ("initial_permanence_ticks", 501),
+        ("permanence_increment_ticks", 0),
+        ("negative_decrement_ticks", True),
+    ],
+)
+def test_permanence_config_rejects_non_live_or_non_integer_ticks(
+    field: str,
+    value: object,
+) -> None:
+    config = SparseTemporalConfig(column_count=11)
+
+    with pytest.raises(ValueError, match=field):
+        replace(config, **{field: value})
+
+
+def test_learned_snapshot_stores_one_integer_tick_per_physical_contact_pair() -> None:
+    codebook = _disjoint_codebook(2)
+    circuit = SparseTemporalCortex(codebook, config=_config(2))
+
+    source, _target = _learn_pair(circuit, 0, 1)
+    learned = circuit.learned_snapshot()
+
+    assert len(learned.segments) == K
+    for _owner, sources, permanence_ticks in learned.segments:
+        assert len(sources) == len(permanence_ticks) == 10
+        assert set(sources).issubset(source.winner_cells)
+        assert permanence_ticks == (255,) * 10
+        assert all(type(value) is int for value in permanence_ticks)
+    assert circuit.permanence_tick_values() == (255,) * (K * 10)
+    assert not hasattr(circuit, "permanence_values")
+
+
+def test_contact_position_sampler_freezes_philox_domains_and_literal_vector() -> None:
+    assert sparse_temporal.contact_position_sampling_contract() == {
+        "protocol": "random123-philox2x64-10-contact-positions-v1",
+        "oracle": "humanbrain.procedural_topology._philox2x64_10",
+        "initial_domain_hex": "52334630494e4954",
+        "regrowth_domain_hex": "5233463052475257",
+        "bounded_mapping": "lemire-multiply-high-u64-rejection",
+        "without_replacement": "partial-fisher-yates",
+        "initial_address": (
+            "key=seed^initial_domain,"
+            "counter=(learning_step,(attempt<<32)|draw)"
+        ),
+        "regrowth_address": (
+            "key=philox(owner,segment_id,seed^regrowth_domain)[0],"
+            "counter=(learning_step,(attempt<<32)|draw)"
+        ),
+    }
+
+    active_columns = 8
+    codebook = {
+        token: tuple(range(token * active_columns, (token + 1) * active_columns))
+        for token in range(2)
+    }
+    config = SparseTemporalConfig(
+        column_count=16,
+        active_columns=active_columns,
+        base_cells_per_column=2,
+        max_pyramidal_cells=32,
+        contacts_per_segment=8,
+        theta_match=6,
+        theta_active=8,
+        construction_seed=17,
+    )
+    circuit = SparseTemporalCortex(codebook, config=config)
+
+    source, _target = _learn_pair(circuit, 0, 1)
+    expected_sources = tuple(source.winner_cells[index] for index in (2, 3, 5, 7))
+
+    assert {segment[1] for segment in circuit.learned_snapshot().segments} == {
+        expected_sources
+    }
+
+    regrowth_key, _ = sparse_temporal._philox2x64_10(
+        44,
+        0,
+        17 ^ sparse_temporal._REGROWTH_CONTACT_DOMAIN,
+    )
+    assert regrowth_key == 0xC5AC1D69C2B8FBC5
+    assert sparse_temporal._sample_contact_positions(
+        11,
+        3,
+        key=regrowth_key,
+        learning_step=3,
+    ) == (2, 6, 7)
+
+
+def test_contact_position_sampler_rejects_biased_low_words(monkeypatch) -> None:
+    calls: list[tuple[int, int, int]] = []
+    words = iter((0, (1 << 64) - 1))
+
+    def fake_philox(counter_0: int, counter_1: int, key: int):
+        calls.append((counter_0, counter_1, key))
+        return next(words), 0
+
+    monkeypatch.setattr(sparse_temporal, "_philox2x64_10", fake_philox)
+
+    assert sparse_temporal._bounded_philox_index(
+        3,
+        key=19,
+        learning_step=23,
+        draw=7,
+    ) == 2
+    assert calls == [
+        (23, 7, 19),
+        (23, (1 << 32) | 7, 19),
+    ]
 
 
 def _learn_pair(circuit: SparseTemporalCortex, left: int, right: int):
@@ -69,7 +216,7 @@ def test_one_exposure_replays_through_glif3_basket_and_relay_spikes() -> None:
     codebook = _disjoint_codebook(3)
     circuit = SparseTemporalCortex(codebook, config=_config(3))
 
-    _a, learned_b = _learn_pair(circuit, 0, 1)
+    source_a, learned_b = _learn_pair(circuit, 0, 1)
     learned_state = circuit.learned_snapshot()
     _a_replay, replayed_b = _recognize_pair(circuit, 0, 1)
 
@@ -108,13 +255,12 @@ def test_one_exposure_replays_through_glif3_basket_and_relay_spikes() -> None:
         for left, right in combinations(physical_populations, 2)
     )
     assert set(replayed_b.winner_cells).isdisjoint(replayed_b.relay_spikes)
-    for _owner, contacts, _permanences in circuit.learned_snapshot().segments:
-        pyramidal = {cell for cell in contacts if cell < circuit.config.max_pyramidal_cells}
-        relays = {cell for cell in contacts if cell >= circuit.config.max_pyramidal_cells}
-        assert len(pyramidal) == len(relays) == K - 1
-        assert relays == {
-            circuit.config.max_pyramidal_cells + cell for cell in pyramidal
-        }
+    for _owner, sources, permanence_ticks in circuit.learned_snapshot().segments:
+        assert len(sources) == len(permanence_ticks) == K - 1
+        assert set(sources).issubset(source_a.winner_cells)
+        assert {
+            circuit.config.max_pyramidal_cells + cell for cell in sources
+        }.issubset(source_a.relay_spikes)
     assert all(time_ms > 0.0 for time_ms in replayed_b.winner_spike_times_ms)
     assert all(time_ms > 0.0 for time_ms in replayed_b.basket_spike_times_ms)
     assert all(time_ms > 0.0 for time_ms in replayed_b.relay_spike_times_ms)
@@ -215,7 +361,7 @@ def test_potential_only_contacts_reconnect_before_becoming_predictive() -> None:
     codebook = _disjoint_codebook(2)
     circuit = SparseTemporalCortex(
         codebook,
-        config=_config(2, initial_permanence=0.41),
+        config=_config(2, initial_permanence_ticks=205),
     )
 
     _learn_pair(circuit, 0, 1)
@@ -247,17 +393,12 @@ def test_reinforcement_regrows_freed_capacity_as_complete_relay_pairs() -> None:
     for _ in range(6):
         context_two, _target = _learn_pair(circuit, 1, 2)
 
-    context_two_pairs = set(context_two.context_spikes)
-    for _owner, contacts, _permanences in circuit.learned_snapshot().segments:
-        assert len(contacts) == 4
-        assert set(contacts) == context_two_pairs
-        pyramidal = {
-            cell for cell in contacts if cell < circuit.config.max_pyramidal_cells
-        }
-        assert {
-            circuit.config.max_pyramidal_cells + cell for cell in pyramidal
-        } == set(contacts) - pyramidal
-    assert set(context_one.context_spikes) != context_two_pairs
+    context_two_sources = set(context_two.winner_cells)
+    for _owner, sources, permanence_ticks in circuit.learned_snapshot().segments:
+        assert len(sources) == len(permanence_ticks) == 2
+        assert set(sources) == context_two_sources
+        assert all(1 <= ticks <= 500 for ticks in permanence_ticks)
+    assert set(context_one.winner_cells) != context_two_sources
 
 
 def test_grouped_contact_counts_cross_each_threshold_at_the_boundary() -> None:
@@ -276,17 +417,17 @@ def test_grouped_contact_counts_cross_each_threshold_at_the_boundary() -> None:
             + [circuit.config.max_pyramidal_cells + cell for cell in selected]
         )
 
-    below_match = circuit.diagnose_context(paired_context(7))
-    at_match = circuit.diagnose_context(paired_context(8))
-    below_active = circuit.diagnose_context(paired_context(8))
-    at_active = circuit.diagnose_context(paired_context(9))
+    below_match = circuit.diagnose_context(paired_context(8))
+    at_match = circuit.diagnose_context(paired_context(9))
+    below_active = circuit.diagnose_context(paired_context(9))
+    at_active = circuit.diagnose_context(paired_context(10))
 
-    assert below_match.max_potential_contacts == 14
+    assert below_match.max_potential_contacts == 16
     assert below_match.matching_segments == 0
-    assert at_match.max_potential_contacts == 16
+    assert at_match.max_potential_contacts == 18
     assert at_match.matching_segments >= 1
     assert below_active.active_segments == 0
-    assert at_active.max_connected_contacts == 18
+    assert at_active.max_connected_contacts == 20
     assert at_active.active_segments >= 1
 
 
@@ -302,7 +443,7 @@ def test_three_wrong_predictions_disconnect_the_confirmed_segments() -> None:
 
     _a, b = _recognize_pair(circuit, 0, 1)
     assert b.predicted is False
-    assert sum(value == pytest.approx(0.498) for value in circuit.permanence_values()) == K * 20
+    assert sum(value == 249 for value in circuit.permanence_tick_values()) == K * 10
 
 
 def test_book_boundary_proximal_code_is_stable_after_segment_load_changes() -> None:
@@ -366,21 +507,19 @@ def test_generic_afferent_control_uses_mass_matched_physical_spikes() -> None:
         strict=True,
     ):
         segment = bound_segment
-        assert len(segment[1]) == 20
-        assert set(segment[1]).issubset(bound_source.winner_context_spikes)
-        assert len(generic_segment[1]) == 20
+        assert len(segment[1]) == 10
+        assert set(segment[1]).issubset(bound_source.winner_cells)
+        assert len(generic_segment[1]) == 10
         assert set(generic_segment[1]).issubset(
-            generic_source.proximal_context_spikes
+            generic_source.proximal_spikes
         )
         bound_positions = {
             bound_source.winner_cells.index(cell)
             for cell in segment[1]
-            if cell in bound_source.winner_cells
         }
         generic_positions = {
             generic_source.proximal_spikes.index(cell)
             for cell in generic_segment[1]
-            if cell in generic_source.proximal_spikes
         }
         assert bound_positions == generic_positions
 
@@ -476,7 +615,122 @@ def test_checkpoint_rejects_a_segment_with_a_non_source_contact() -> None:
         ),
     )
 
-    with pytest.raises(ValueError, match="source/relay pairing"):
+    with pytest.raises(ValueError, match="non-normalized source"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+def test_checkpoint_rejects_unequal_or_zero_live_permanence_ticks() -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    _learn_pair(circuit, 0, 1)
+    snapshot = circuit.snapshot()
+    owner, sources, permanence_ticks = snapshot.learned.segments[0]
+
+    unequal = replace(
+        snapshot,
+        learned=replace(
+            snapshot.learned,
+            segments=((owner, sources, permanence_ticks[:-1]),)
+            + snapshot.learned.segments[1:],
+        ),
+    )
+    with pytest.raises(ValueError, match="source/permanence-tick lengths"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=unequal,
+        )
+
+    zero_live = replace(
+        snapshot,
+        learned=replace(
+            snapshot.learned,
+            segments=((owner, sources, (0,) + permanence_ticks[1:]),)
+            + snapshot.learned.segments[1:],
+        ),
+    )
+    with pytest.raises(ValueError, match="live permanence tick"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=zero_live,
+        )
+
+
+@pytest.mark.parametrize("context_field", ["previous_context", "previous_winner_context"])
+def test_checkpoint_rejects_width_correct_nonpaired_transient_context(
+    context_field: str,
+) -> None:
+    codebook = _disjoint_codebook(2)
+    config = _config(2)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    _source, target = _learn_pair(circuit, 0, 1)
+    snapshot = circuit.snapshot()
+    context = getattr(snapshot, context_field)
+    malformed = context[:K] + (target.basket_spikes[0],) + context[K + 1 :]
+    corrupted = replace(snapshot, **{context_field: malformed})
+
+    with pytest.raises(ValueError, match=f"snapshot {context_field}.*source/relay"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+@pytest.mark.parametrize("corruption", ["partial", "noncontiguous"])
+def test_checkpoint_rejects_malformed_reserve_cohorts(corruption: str) -> None:
+    active_columns = 2
+    context_count = 3
+    target = context_count
+    codebook = {
+        token: tuple(
+            range(token * active_columns, (token + 1) * active_columns)
+        )
+        for token in range(context_count + 1)
+    }
+    base_cells = len(codebook) * active_columns * 2
+    config = SparseTemporalConfig(
+        column_count=len(codebook) * active_columns,
+        active_columns=active_columns,
+        base_cells_per_column=2,
+        max_pyramidal_cells=base_cells + 2 * active_columns,
+        contacts_per_segment=4,
+        theta_match=4,
+        theta_active=4,
+        max_segments_per_cell=1,
+        novel_race_cap=2,
+    )
+    circuit = SparseTemporalCortex(codebook, config=config)
+    _learn_pair(circuit, 0, target)
+    _learn_pair(circuit, 1, target)
+    _learn_pair(circuit, 2, target)
+    snapshot = circuit.snapshot()
+    column_cells = [list(cells) for cells in snapshot.learned.column_cells]
+    left_column, right_column = codebook[target]
+    if corruption == "partial":
+        column_cells[right_column].append(column_cells[left_column].pop())
+    else:
+        left_recruited = -1
+        right_recruited = -2
+        column_cells[left_column][left_recruited], column_cells[right_column][right_recruited] = (
+            column_cells[right_column][right_recruited],
+            column_cells[left_column][left_recruited],
+        )
+    corrupted = replace(
+        snapshot,
+        learned=replace(
+            snapshot.learned,
+            column_cells=tuple(tuple(cells) for cells in column_cells),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="reserve cohort"):
         SparseTemporalCortex.from_snapshot(
             codebook,
             config=config,
@@ -624,38 +878,91 @@ def test_column_capacity_stop_is_global_and_transactional() -> None:
     assert circuit.snapshot() == before
 
 
-def test_exhausted_column_recruits_a_physical_reserve_cell() -> None:
+def test_exhausted_columns_recruit_full_cohorts_for_distinct_replayable_codes(
+    monkeypatch,
+) -> None:
+    active_columns = 2
+    context_count = 4
+    target = context_count
     codebook = {
-        0: (0,),
-        1: (1,),
-        2: (2,),
-        3: (3,),
+        token: tuple(
+            range(token * active_columns, (token + 1) * active_columns)
+        )
+        for token in range(context_count + 1)
     }
+    base_cells = len(codebook) * active_columns * 2
     config = SparseTemporalConfig(
-        column_count=4,
-        active_columns=1,
-        base_cells_per_column=1,
-        max_pyramidal_cells=5,
-        contacts_per_segment=2,
-        theta_match=2,
-        theta_active=2,
+        column_count=len(codebook) * active_columns,
+        active_columns=active_columns,
+        base_cells_per_column=2,
+        max_pyramidal_cells=base_cells + 2 * active_columns,
+        contacts_per_segment=4,
+        theta_match=4,
+        theta_active=4,
         max_segments_per_cell=1,
+        novel_race_cap=2,
     )
     circuit = SparseTemporalCortex(codebook, config=config)
-    assert circuit.committed_pyramidal_cell_count == 4
-    assert circuit.reserve_pyramidal_cells == 1
 
-    _learn_pair(circuit, 0, 3)
-    _learn_pair(circuit, 1, 3)
+    _learn_pair(circuit, 0, target)
+    _learn_pair(circuit, 1, target)
+    _source_two, after_recruit = _learn_pair(circuit, 2, target)
 
-    assert circuit.committed_pyramidal_cell_count == 5
-    assert circuit.reserve_pyramidal_cells == 0
-    assert _recognize_pair(circuit, 0, 3)[1].predicted is True
-    assert _recognize_pair(circuit, 1, 3)[1].predicted is True
+    assert circuit.committed_pyramidal_cell_count == base_cells + 4
+    _source_three, next_cohort_code = _learn_pair(circuit, 3, target)
+    assert next_cohort_code.winner_cells != after_recruit.winner_cells
+    driven_widths: list[int] = []
+    race_currents = circuit._physics.race_currents_with_inhibition
 
+    def record_race_width(cell_ids, currents, **kwargs):
+        driven_widths.append(sum(float(current) > 0.0 for current in currents))
+        return race_currents(cell_ids, currents, **kwargs)
+
+    monkeypatch.setattr(
+        circuit._physics,
+        "race_currents_with_inhibition",
+        record_race_width,
+    )
+    assert _recognize_pair(circuit, 2, target)[1].winner_cells == (
+        after_recruit.winner_cells
+    )
+    assert _recognize_pair(circuit, 3, target)[1].winner_cells == (
+        next_cohort_code.winner_cells
+    )
+    assert driven_widths
+    assert max(driven_widths) <= config.novel_race_cap
+
+
+def test_full_multicolumn_cohort_reservation_stops_atomically_when_short() -> None:
+    active_columns = 2
+    context_count = 3
+    target = context_count
+    codebook = {
+        token: tuple(
+            range(token * active_columns, (token + 1) * active_columns)
+        )
+        for token in range(context_count + 1)
+    }
+    base_cells = len(codebook) * active_columns * 2
+    config = SparseTemporalConfig(
+        column_count=len(codebook) * active_columns,
+        active_columns=active_columns,
+        base_cells_per_column=2,
+        max_pyramidal_cells=base_cells + 3,
+        contacts_per_segment=4,
+        theta_match=4,
+        theta_active=4,
+        max_segments_per_cell=1,
+        novel_race_cap=2,
+    )
+    circuit = SparseTemporalCortex(codebook, config=config)
+    _learn_pair(circuit, 0, target)
+    _learn_pair(circuit, 1, target)
     circuit.reset_transient()
     circuit.learn(2)
     before = circuit.snapshot()
-    with pytest.raises(RuntimeError, match="physical reserve exhausted"):
-        circuit.learn(3)
+
+    with pytest.raises(RuntimeError, match="full reserve cohort"):
+        circuit.learn(target)
+
     assert circuit.snapshot() == before
