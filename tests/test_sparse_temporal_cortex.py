@@ -395,6 +395,34 @@ def _recognize_pair(circuit: SparseTemporalCortex, left: int, right: int):
     return first, second
 
 
+def _two_cohort_checkpoint():
+    active_columns = 2
+    context_count = 5
+    target = context_count
+    codebook = {
+        token: tuple(
+            range(token * active_columns, (token + 1) * active_columns)
+        )
+        for token in range(context_count + 1)
+    }
+    base_cells = len(codebook) * active_columns * 2
+    config = SparseTemporalConfig(
+        column_count=len(codebook) * active_columns,
+        active_columns=active_columns,
+        base_cells_per_column=2,
+        max_pyramidal_cells=base_cells + 4 * active_columns,
+        contacts_per_segment=4,
+        theta_match=4,
+        theta_active=4,
+        max_segments_per_cell=1,
+        novel_race_cap=2,
+    )
+    circuit = SparseTemporalCortex(codebook, config=config)
+    for context_token in range(context_count):
+        _learn_pair(circuit, context_token, target)
+    return codebook, config, target, circuit.snapshot()
+
+
 def test_one_exposure_replays_through_glif3_basket_and_relay_spikes() -> None:
     codebook = _disjoint_codebook(3)
     circuit = SparseTemporalCortex(codebook, config=_config(3))
@@ -1133,6 +1161,41 @@ def test_checkpoint_event_step_must_match_transient_context_presence(
         )
 
 
+def test_growth_off_checkpoint_accepts_its_zero_learning_step() -> None:
+    codebook = _disjoint_codebook(1)
+    config = _config(1, growth_policy=GrowthPolicy.GROWTH_OFF)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    circuit.learn(0)
+    snapshot = circuit.snapshot()
+
+    restored = SparseTemporalCortex.from_snapshot(
+        codebook,
+        config=config,
+        snapshot=snapshot,
+    )
+
+    assert snapshot.learned.learning_step == 0
+    assert restored.snapshot() == snapshot
+
+
+def test_growth_off_checkpoint_rejects_a_nonzero_learning_step() -> None:
+    codebook = _disjoint_codebook(1)
+    config = _config(1, growth_policy=GrowthPolicy.GROWTH_OFF)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    snapshot = circuit.snapshot()
+    corrupted = replace(
+        snapshot,
+        learned=replace(snapshot.learned, learning_step=1),
+    )
+
+    with pytest.raises(ValueError, match="growth-off.*learning_step.*zero"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
 def test_checkpoint_accepts_the_inclusive_uint64_counter_boundary() -> None:
     codebook = _disjoint_codebook(1)
     config = _config(1)
@@ -1613,6 +1676,46 @@ def test_checkpoint_rejects_a_committed_reserve_cohort_without_an_owned_segment(
     )
 
     with pytest.raises(ValueError, match="reserve cohort has no owned segment"):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
+def test_checkpoint_accepts_replayed_two_cohort_owner_load_history() -> None:
+    codebook, config, _target, snapshot = _two_cohort_checkpoint()
+
+    restored = SparseTemporalCortex.from_snapshot(
+        codebook,
+        config=config,
+        snapshot=snapshot,
+    )
+
+    assert restored.snapshot() == snapshot
+
+
+@pytest.mark.parametrize("predecessor_kind", ["base", "earlier_cohort"])
+def test_checkpoint_rejects_a_cohort_recruited_before_predecessor_exhaustion(
+    predecessor_kind: str,
+) -> None:
+    codebook, config, target, snapshot = _two_cohort_checkpoint()
+    column = codebook[target][0]
+    cells = snapshot.learned.column_cells[column]
+    if predecessor_kind == "base":
+        predecessor = cells[0]
+    else:
+        predecessor = cells[config.base_cells_per_column]
+    segments = tuple(
+        row for row in snapshot.learned.segments if row[0] != predecessor
+    )
+    assert len(segments) + 1 == len(snapshot.learned.segments)
+    corrupted = replace(
+        snapshot,
+        learned=replace(snapshot.learned, segments=segments),
+    )
+
+    with pytest.raises(ValueError, match="recruited before.*predecessors.*exhausted"):
         SparseTemporalCortex.from_snapshot(
             codebook,
             config=config,

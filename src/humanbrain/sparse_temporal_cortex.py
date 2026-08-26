@@ -597,20 +597,45 @@ class SparseTemporalCortex:
             segment_id = len(circuit._segments)
             circuit._segments.append(segment)
             circuit._segments_by_cell.setdefault(normalized_owner, []).append(segment_id)
-        for cells in circuit._column_cells:
+        cohort_records: list[tuple[int, int, tuple[int, ...]]] = []
+        column_predecessors: dict[int, list[int]] = {}
+        for column, cells in enumerate(circuit._column_cells):
+            column_predecessors[column] = list(
+                cells[: config.base_cells_per_column]
+            )
             recruited_cells = cells[config.base_cells_per_column :]
             for offset in range(0, len(recruited_cells), config.novel_race_cap):
-                cohort = recruited_cells[offset : offset + config.novel_race_cap]
-                if not any(circuit._segments_by_cell.get(cell) for cell in cohort):
-                    raise ValueError(
-                        "snapshot committed reserve cohort has no owned segment"
-                    )
+                cohort = tuple(
+                    recruited_cells[offset : offset + config.novel_race_cap]
+                )
+                cohort_records.append((cohort[0], column, cohort))
+        for _first_gid, column, cohort in sorted(cohort_records):
+            if not any(circuit._segments_by_cell.get(cell) for cell in cohort):
+                raise ValueError(
+                    "snapshot committed reserve cohort has no owned segment"
+                )
+            predecessors = column_predecessors[column]
+            if any(
+                len(circuit._segments_by_cell.get(cell, ()))
+                != config.max_segments_per_cell
+                for cell in predecessors
+            ):
+                raise ValueError(
+                    "snapshot reserve cohort was recruited before its column "
+                    "predecessors were exhausted"
+                )
+            predecessors.extend(cohort)
         circuit._rebuild_contact_index()
         if (
             type(learned.learning_step) is not int
             or not 0 <= learned.learning_step <= _UINT64_MASK
         ):
             raise ValueError("snapshot learning_step must be a uint64-compatible int")
+        if (
+            config.growth_policy is GrowthPolicy.GROWTH_OFF
+            and learned.learning_step != 0
+        ):
+            raise ValueError("snapshot growth-off learning_step must be zero")
         circuit._learning_step = learned.learning_step
         circuit._next_reserve_cell = next_reserve
         circuit._previous_context = tuple(
