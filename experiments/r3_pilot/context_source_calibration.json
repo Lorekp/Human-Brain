@@ -1,0 +1,269 @@
+{
+  "artifact_id": "r3-context-source-calibration-v1",
+  "deep_state": {
+    "checkpoints": [
+      {
+        "all_finite": true,
+        "step_count": 512,
+        "threshold_voltage_max_abs_order10": 96,
+        "voltage_max_abs_order10": 100
+      },
+      {
+        "all_finite": true,
+        "step_count": 1024,
+        "threshold_voltage_max_abs_order10": 196,
+        "voltage_max_abs_order10": 199
+      },
+      {
+        "all_finite": true,
+        "step_count": 1500,
+        "threshold_voltage_max_abs_order10": 289,
+        "voltage_max_abs_order10": 292
+      },
+      {
+        "all_finite": true,
+        "step_count": 1536,
+        "threshold_voltage_max_abs_order10": 296,
+        "voltage_max_abs_order10": 299
+      }
+    ],
+    "first_nonfinite": {
+      "bad_value_counts": {
+        "threshold_voltage": 2,
+        "voltage": 2
+      },
+      "current_token_active_cells": 5494,
+      "observe_spike_events": 5494,
+      "step_count": 1579,
+      "step_index_zero_based": 1578,
+      "token_id": 109
+    }
+  },
+  "pairing": {
+    "anchors": 1132,
+    "different_previous_lag_median": 14.0,
+    "different_previous_lag_p90": 113.8,
+    "same_previous_lag_median": 78.0,
+    "same_previous_lag_p90": 375.9
+  },
+  "rejection_reasons": [
+    "first-spike assemblies have no same-bigram advantage",
+    "alternative selectors are context-independent stable cores or diagnostics",
+    "dense GLIF5 voltage state diverges before the requested horizon"
+  ],
+  "schema_version": 1,
+  "scope": {
+    "corpus_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
+    "first_200_token_ids_sha256": "de5d527b12968762d6bd614c3a77c705e053e272361a72d20f3c0a21b272ef3c",
+    "held_out_books_decoded": 0,
+    "held_out_books_skipped": 17,
+    "nonfinite_probe_steps": 1600,
+    "selector_prefix_sha256": "0641718a50005794e72e4bdbe279e463a57f19ae3060c45a0a6edbdffc553a95",
+    "selector_steps": 1500,
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_books_decoded": 49
+  },
+  "selectors": {
+    "active_low_gid": {
+      "assembly_rank_sha256": "ffa4e9fe103094f115b430780d7b069ceaf6e0a1d9d5b3ced2cc8519202ef5e1",
+      "by_k": {
+        "20": {
+          "auc_same_vs_different_previous": 0.518674,
+          "different_previous_mean_overlap": 13.249117,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 13.40371,
+          "same_previous_median_overlap": 13.0,
+          "same_previous_theta10_probability": 0.978799,
+          "unrelated_theta10_probability": 0.958481
+        },
+        "32": {
+          "auc_same_vs_different_previous": 0.513621,
+          "different_previous_mean_overlap": 21.633392,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 21.789753,
+          "same_previous_median_overlap": 22.0,
+          "same_previous_theta10_probability": 0.979865,
+          "unrelated_theta10_probability": 0.959487
+        },
+        "64": {
+          "auc_same_vs_different_previous": 0.508563,
+          "different_previous_mean_overlap": 43.898936,
+          "paired_occurrences": 1128,
+          "same_previous_mean_overlap": 44.072695,
+          "same_previous_median_overlap": 44.0,
+          "same_previous_theta10_probability": 0.976021,
+          "unrelated_theta10_probability": 0.958193
+        }
+      },
+      "validity": "diagnostic_only_global_gid_bias"
+    },
+    "count_desc": {
+      "alias_of": "active_low_gid",
+      "assembly_rank_sha256": "ffa4e9fe103094f115b430780d7b069ceaf6e0a1d9d5b3ced2cc8519202ef5e1",
+      "identical": true,
+      "validity": "diagnostic_only_all_counts_tie_at_one"
+    },
+    "earliest_refractory": {
+      "assembly_rank_sha256": "b71c68d7fc952add091b9621a5e79bf64597df25d0538f5932757252c6e988a3",
+      "by_k": {
+        "20": {
+          "auc_same_vs_different_previous": 0.503477,
+          "different_previous_mean_overlap": 0.150177,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 0.132509,
+          "same_previous_median_overlap": 0.0,
+          "same_previous_theta10_probability": 0.0,
+          "unrelated_theta10_probability": 0.004417
+        },
+        "32": {
+          "auc_same_vs_different_previous": 0.497724,
+          "different_previous_mean_overlap": 0.25265,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 0.189046,
+          "same_previous_median_overlap": 0.0,
+          "same_previous_theta10_probability": 0.00041,
+          "unrelated_theta10_probability": 0.003473
+        },
+        "64": {
+          "auc_same_vs_different_previous": 0.513254,
+          "different_previous_mean_overlap": 0.576241,
+          "paired_occurrences": 1128,
+          "same_previous_mean_overlap": 0.503546,
+          "same_previous_median_overlap": 0.0,
+          "same_previous_theta10_probability": 0.000202,
+          "unrelated_theta10_probability": 0.003354
+        }
+      },
+      "validity": "exact_first_spike_proxy_for_this_single_spike_run"
+    },
+    "eligibility_long": {
+      "assembly_rank_sha256": "b1b739febc7798af213c4292327887dbee26d1231f2955002ac54663add12e4f",
+      "by_k": {
+        "20": {
+          "auc_same_vs_different_previous": 0.491783,
+          "different_previous_mean_overlap": 13.060071,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 12.931095,
+          "same_previous_median_overlap": 14.0,
+          "same_previous_theta10_probability": 0.795936,
+          "unrelated_theta10_probability": 0.787102
+        },
+        "32": {
+          "auc_same_vs_different_previous": 0.488843,
+          "different_previous_mean_overlap": 23.417845,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 23.387809,
+          "same_previous_median_overlap": 25.0,
+          "same_previous_theta10_probability": 0.896611,
+          "unrelated_theta10_probability": 0.89087
+        },
+        "64": {
+          "auc_same_vs_different_previous": 0.499272,
+          "different_previous_mean_overlap": 51.35159,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 51.492933,
+          "same_previous_median_overlap": 53.0,
+          "same_previous_theta10_probability": 0.976317,
+          "unrelated_theta10_probability": 0.970093
+        }
+      },
+      "validity": "diagnostic_only_persistent_trace"
+    },
+    "eligibility_short": {
+      "assembly_rank_sha256": "b4e68cda28a83deda86e2dc3045796f2360780639a91f9af61a01564d2bc80dc",
+      "by_k": {
+        "20": {
+          "auc_same_vs_different_previous": 0.489148,
+          "different_previous_mean_overlap": 0.480565,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 0.208481,
+          "same_previous_median_overlap": 0.0,
+          "same_previous_theta10_probability": 0.007067,
+          "unrelated_theta10_probability": 0.020318
+        },
+        "32": {
+          "auc_same_vs_different_previous": 0.487529,
+          "different_previous_mean_overlap": 1.149293,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 0.537102,
+          "same_previous_median_overlap": 0.0,
+          "same_previous_theta10_probability": 0.01223,
+          "unrelated_theta10_probability": 0.023412
+        },
+        "64": {
+          "auc_same_vs_different_previous": 0.487684,
+          "different_previous_mean_overlap": 4.326855,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 2.800353,
+          "same_previous_median_overlap": 0.0,
+          "same_previous_theta10_probability": 0.040426,
+          "unrelated_theta10_probability": 0.036422
+        }
+      },
+      "validity": "diagnostic_only_short_trace"
+    },
+    "voltage_high": {
+      "assembly_rank_sha256": "47e9ed4ff2a920716922f3b55385fdd514c2dee84a16d465aa5eab6cc7818c29",
+      "by_k": {
+        "20": {
+          "auc_same_vs_different_previous": 0.490559,
+          "different_previous_mean_overlap": 18.416961,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 18.387809,
+          "same_previous_median_overlap": 18.0,
+          "same_previous_theta10_probability": 1.0,
+          "unrelated_theta10_probability": 0.987633
+        },
+        "32": {
+          "auc_same_vs_different_previous": 0.505483,
+          "different_previous_mean_overlap": 30.725265,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 30.74735,
+          "same_previous_median_overlap": 31.0,
+          "same_previous_theta10_probability": 1.0,
+          "unrelated_theta10_probability": 0.988149
+        },
+        "64": {
+          "auc_same_vs_different_previous": 0.498388,
+          "different_previous_mean_overlap": 62.291519,
+          "paired_occurrences": 1132,
+          "same_previous_mean_overlap": 62.331272,
+          "same_previous_median_overlap": 63.0,
+          "same_previous_theta10_probability": 0.999883,
+          "unrelated_theta10_probability": 0.987499
+        }
+      },
+      "validity": "diagnostic_only_pathological_voltage_state"
+    }
+  },
+  "simulation": {
+    "active_cells_max": 5579,
+    "active_cells_mean": 5248.715333,
+    "active_cells_median": 5353.5,
+    "active_cells_min": 24,
+    "active_size_sha256": "e8961a12aa5ce1bb45b01f4d774887da1a93c575853eb4122e27398a70258cc7",
+    "input_current_pa": 250000,
+    "lane_cells": 8192,
+    "max_token_spike_count": 1,
+    "seed": 17,
+    "spike_cut_steps": 113,
+    "spike_total_sha256": "e4a192a0a3e180c0a77687da3817ca4e63e4acec5a99c2686a6d1dfa78d24325",
+    "token_steps": 100,
+    "total_spike_events": 7873073,
+    "trace_taus_ms": [
+      80.0,
+      139.894289727211,
+      244.630153728511,
+      427.779520021357,
+      748.048901415439,
+      1308.097121809168,
+      2287.441471871285,
+      4000.0
+    ]
+  },
+  "verdict": {
+    "implement_native_first_k": false,
+    "selected_k": null,
+    "status": "REJECT_CURRENT_GLIF5_CONTEXT_SOURCE"
+  }
+}
