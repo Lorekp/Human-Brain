@@ -286,6 +286,9 @@ class _NativeResident(ctypes.Structure):
         ("threshold_spike_mv", ctypes.c_double),
         ("threshold_voltage_mv", ctypes.c_double),
         ("refractory_steps", ctypes.c_int32),
+        # Explicit alignment padding mirrored from Rust. Native exports write
+        # the complete 72-byte record, so the gap must be a named zero field.
+        ("padding_zero", ctypes.c_uint32),
         ("synaptic_current_pa", ctypes.c_double),
         ("eligibility", ctypes.c_double),
     ]

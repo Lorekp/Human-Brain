@@ -106,6 +106,10 @@ pub struct ProceduralResidentRecord {
     pub threshold_spike_mv: f64,
     pub threshold_voltage_mv: f64,
     pub refractory_steps: i32,
+    /// Explicit alignment padding at offsets 52..56. FFI consumers may read
+    /// and compare the complete 72-byte record, so this must be a declared,
+    /// canonical zero instead of unspecified implicit padding.
+    pub padding_zero: u32,
     pub synaptic_current_pa: f64,
     pub eligibility: f64,
 }
@@ -210,6 +214,7 @@ impl CellState {
             threshold_spike_mv: self.threshold_spike,
             threshold_voltage_mv: self.threshold_voltage,
             refractory_steps: self.refractory,
+            padding_zero: 0,
             synaptic_current_pa: self.synaptic_current,
             eligibility: self.eligibility,
         }
@@ -2394,6 +2399,17 @@ mod tests {
         }
     }
 
+    /// Raw bytes of one resident FFI image. The layout test below proves that
+    /// all 72 bytes belong to declared fields before any test reads them.
+    fn resident_raw_bytes(record: &ProceduralResidentRecord) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                record as *const ProceduralResidentRecord as *const u8,
+                std::mem::size_of::<ProceduralResidentRecord>(),
+            )
+        }
+    }
+
     /// Regression guard: the Python side compares and hashes the RAW bytes of
     /// ``ProceduralCounters`` across independent runs, so all 112 bytes must
     /// be defined. The 4-byte tail used to be implicit (unspecified) padding
@@ -2422,6 +2438,31 @@ mod tests {
         let raw_advanced = counters_raw_bytes(&runtime.counters);
         // Declared fields may be nonzero; the declared padding field must not.
         assert_eq!(&raw_advanced[108..112], &[0u8, 0, 0, 0]);
+    }
+
+    #[test]
+    fn ffi_resident_layout_is_fully_declared_and_padding_stays_zero() {
+        assert_eq!(std::mem::size_of::<ProceduralResidentRecord>(), 72);
+        assert_eq!(
+            std::mem::offset_of!(ProceduralResidentRecord, refractory_steps),
+            48
+        );
+        assert_eq!(
+            std::mem::offset_of!(ProceduralResidentRecord, padding_zero),
+            52
+        );
+        assert_eq!(
+            std::mem::offset_of!(ProceduralResidentRecord, synaptic_current_pa),
+            56
+        );
+        assert_eq!(
+            std::mem::offset_of!(ProceduralResidentRecord, eligibility),
+            64
+        );
+
+        let record = CellState::canonical_rest(7).record();
+        assert_eq!(record.padding_zero, 0);
+        assert_eq!(&resident_raw_bytes(&record)[52..56], &[0u8, 0, 0, 0]);
     }
 
     #[test]
@@ -2941,6 +2982,7 @@ mod tests {
             assert_eq!(*field, 0u64, "absent record must carry canonical +0.0");
         }
         assert_eq!(record.refractory_steps, 0);
+        assert_eq!(record.padding_zero, 0);
     }
 
     #[test]
@@ -2971,9 +3013,14 @@ mod tests {
 
         for (index, requested) in gids.iter().enumerate() {
             assert_eq!(out[index].gid, *requested, "gid must echo request order");
+            assert_eq!(
+                out[index].padding_zero, 0,
+                "present, staged, and absent record padding must be canonical"
+            );
             match expected.get(requested) {
                 Some(snapshot_record) => {
                     assert_eq!(found[index], 1, "gid {requested} must be found");
+                    assert_eq!(snapshot_record.padding_zero, 0);
                     assert_eq!(record_bits(&out[index]), record_bits(snapshot_record));
                 }
                 None => {
@@ -3016,6 +3063,7 @@ mod tests {
                 threshold_spike_mv: sentinel_voltage,
                 threshold_voltage_mv: sentinel_voltage,
                 refractory_steps: -1,
+                padding_zero: 0,
                 synaptic_current_pa: sentinel_voltage,
                 eligibility: sentinel_voltage,
             };
@@ -3140,15 +3188,17 @@ mod tests {
         let (second_status, second_out, second_found) = read_through_ffi(&second, &gids);
         assert_eq!(first_status, super::PROCEDURAL_OK);
         assert_eq!(first_status, second_status);
-        // Raw out-buffer bytes compared as whole u64 words (9 per 72-byte
-        // record), plus the flag bytes.
-        let first_words = unsafe {
-            std::slice::from_raw_parts(first_out.as_ptr() as *const u64, first_out.len() * 9)
-        };
-        let second_words = unsafe {
-            std::slice::from_raw_parts(second_out.as_ptr() as *const u64, second_out.len() * 9)
-        };
-        assert_eq!(first_words, second_words);
+        // Every byte is declared by the pinned layout test, so whole-record
+        // comparison cannot observe implicit padding.
+        let first_bytes: Vec<_> = first_out
+            .iter()
+            .flat_map(|record| resident_raw_bytes(record).iter().copied())
+            .collect();
+        let second_bytes: Vec<_> = second_out
+            .iter()
+            .flat_map(|record| resident_raw_bytes(record).iter().copied())
+            .collect();
+        assert_eq!(first_bytes, second_bytes);
         assert_eq!(first_found, second_found);
         // Sanity: the fixture must actually mix hits and absences.
         assert!(first_found.contains(&1));

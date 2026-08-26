@@ -19,6 +19,8 @@ public binding, locks, and FFI marshalling.
 
 from __future__ import annotations
 
+import ctypes
+
 import numpy as np
 import pytest
 
@@ -31,6 +33,17 @@ from humanbrain.procedural_runtime import (
     ProceduralRuntimeError,
 )
 from humanbrain.procedural_topology import TopologyManifest
+
+
+def test_native_resident_layout_declares_the_complete_ffi_image() -> None:
+    resident = procedural_runtime_module._NativeResident
+
+    assert ctypes.sizeof(resident) == 72
+    assert resident.refractory_steps.offset == 48
+    assert resident.padding_zero.offset == 52
+    assert resident.synaptic_current_pa.offset == 56
+    assert resident.eligibility.offset == 64
+    assert bytes(resident())[52:56] == b"\x00" * 4
 
 
 def _config(
@@ -105,6 +118,42 @@ def _drive(target: int, due_step: int, current_pa: float = 150_000.0):
         edge_slot=0,
         current_pa=current_pa,
     )
+
+
+def test_native_resident_raw_records_are_repeatable_and_zero_padded(
+    stress_native_parameters,
+) -> None:
+    def read_image() -> tuple[bytes, bytes]:
+        runtime = NativeProceduralRuntime(_config(32, "full_touch"))
+        try:
+            runtime.advance(1, [_drive(3, 0, 0.5)])
+            requested = (ctypes.c_uint64 * 3)(3, 17, 3)
+            resident = procedural_runtime_module._NativeResident
+            records = (resident * 3)()
+            found = (ctypes.c_uint8 * 3)()
+            ctypes.memset(ctypes.addressof(records), 0xA5, ctypes.sizeof(records))
+            ctypes.memset(ctypes.addressof(found), 0xA5, ctypes.sizeof(found))
+
+            status = runtime._library.humanbrain_procedural_runtime_read_cells(
+                runtime._handle,
+                requested,
+                len(requested),
+                records,
+                found,
+            )
+
+            assert status == 0
+            assert tuple(found) == (1, 0, 1)
+            assert tuple(record.padding_zero for record in records) == (0, 0, 0)
+            image = bytes(records)
+            for record_index in range(len(records)):
+                padding_start = record_index * 72 + 52
+                assert image[padding_start : padding_start + 4] == b"\x00" * 4
+            return image, bytes(found)
+        finally:
+            runtime.close()
+
+    assert read_image() == read_image()
 
 
 def _drive_to_dormancy(
