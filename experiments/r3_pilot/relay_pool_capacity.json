@@ -1,0 +1,383 @@
+{
+  "architecture": {
+    "basket_cells": 4096,
+    "cells_per_column": 32,
+    "columns": 4096,
+    "contacts_per_segment": 20,
+    "initial_permanence": "0.51",
+    "max_segments_per_cell": 255,
+    "presynaptic_source_cells_with_relays": 262144,
+    "pyramidal_cell_cap": 131072,
+    "relay_cells": 131072,
+    "sdr_seed": 17,
+    "token_sdr": "token_sdr_indices(seed=17,n_bits=4096,w_ones=K)",
+    "total_physical_glif3_cells": 266240
+  },
+  "artifact_id": "r3-relay-pool-capacity-v4-grouped-relays",
+  "claim_boundary": {
+    "capability_evidence": false,
+    "ideal_structural_sizing_only": true,
+    "physical_race_evidence": false
+  },
+  "collision_tails": {
+    "W20": {
+      "theta_a_13": {
+        "approx_probability": "1.11067366570318069962E-47",
+        "assembly_size": 20,
+        "exact_denominator": "519950583870788310814554322560055979999173285355534285984031487225966495461076992",
+        "exact_numerator": "5774954209722775549458756613357897",
+        "population_size": 131072,
+        "threshold": 13
+      },
+      "theta_m_10": {
+        "approx_probability": "8.27387048447932590583E-35",
+        "assembly_size": 20,
+        "exact_denominator": "189072939589377567568928844567293083636063012856557922176011449900351452894937088",
+        "exact_numerator": "15643650142822936942777690642894822105441144693",
+        "population_size": 131072,
+        "threshold": 10
+      }
+    },
+    "W22": {
+      "theta_a_13": {
+        "approx_probability": "3.00324683253978429128E-28",
+        "assembly_pairs": 11,
+        "exact_denominator": "9369889014392930557162210279162272454426624",
+        "exact_numerator": "2814008950372489",
+        "pair_threshold": 7,
+        "paired_sources": true,
+        "physical_contacts_per_pair": 2,
+        "physical_threshold": 13,
+        "population_size": 131072,
+        "sampled_pairs": 10
+      },
+      "theta_m_10": {
+        "approx_probability": "3.61097452568695143448E-19",
+        "assembly_pairs": 11,
+        "exact_denominator": "2342472253598232639290552569790568113606656",
+        "exact_numerator": "845860763487172232034715",
+        "pair_threshold": 5,
+        "paired_sources": true,
+        "physical_contacts_per_pair": 2,
+        "physical_threshold": 10,
+        "population_size": 131072,
+        "sampled_pairs": 10
+      }
+    },
+    "W40": {
+      "theta_a_13": {
+        "approx_probability": "1.72235958714112533745E-42",
+        "assembly_size": 40,
+        "exact_denominator": "85321569631362383627885529343490843715111982133858026508982587531589046272",
+        "exact_numerator": "146954423444506092618414082913957",
+        "population_size": 131072,
+        "threshold": 13
+      },
+      "theta_m_10": {
+        "approx_probability": "3.79078844591331400089E-31",
+        "assembly_size": 40,
+        "exact_denominator": "42660784815681191813942764671745421857555991066929013254491293765794523136",
+        "exact_numerator": "16171801017287840879306357661200267260741661",
+        "population_size": 131072,
+        "threshold": 10
+      }
+    }
+  },
+  "context_demand": {
+    "distinct_contexts": 2116946,
+    "mapping_sha256": "c21745a4ef04404dc6b4e84f4619b273817096ce6647d19e01bffbe5e9617987",
+    "max_context_token_ids": [
+      32
+    ],
+    "max_contexts_per_token": 187263
+  },
+  "developmental_variable_depth": {
+    "base4_K11": {
+      "all_train_unique_states_fit": true,
+      "allocation_rule": "ideal least-loaded local cell with seed17 context permutation; mixed-radix K-tuple uniqueness asserted separately",
+      "base_depth": 4,
+      "capacity_stop": null,
+      "code_capacity_failures": 0,
+      "column_demand_sha256": "0928b64f363130a4b055c5a3109cda39b781abc537ce834e272b08b30c71474a",
+      "contacts": 465728120,
+      "first_pass_segments": 23286406,
+      "global_cell_cap": 131072,
+      "max_column_depth": 1125,
+      "max_segments_per_cell": 255,
+      "memory_estimate": {
+        "assumptions": {
+          "cell_segment_index": "CSR u32 offsets",
+          "column_cell_index": "CSR u32 offsets plus packed 17-bit physical gids",
+          "contact_cell_gid_bits": 18,
+          "permanence_bits": 8,
+          "recognition_inverted_index": "excluded; separately costed",
+          "relay_mapping": "injective arithmetic offset; zero resident projection bits",
+          "token_sdr_storage": "procedural seed; zero resident bytes"
+        },
+        "cell_gid_bits": 1689766,
+        "cell_segment_offset_bits": 3180768,
+        "column_offset_bits": 131104,
+        "contact_bits": 12108931120,
+        "ideal_bitpacked_bytes": 1514241595,
+        "ideal_bitpacked_mib": "1444.093318",
+        "recognition_inverted_index_included": false,
+        "relay_projection_bits": 0
+      },
+      "physical_relay_multiplier": 2,
+      "physical_winner_width": 22,
+      "pyramidal_cells_recruited": 83014,
+      "pyramidal_cells_remaining": 31674,
+      "pyramidal_cells_required": 99398,
+      "relay_population_cells": 131072,
+      "relay_population_cells_sized": true,
+      "relay_population_rule": "one fitted-GLIF3 twin per pyramidal address; relay_id = pyramidal_cap + winner_id",
+      "required_depth_sha256": "9ad3ba688c82b87d38ead7181f6c7ef3fab5d58a29deac6391c3c87d3aa8fff3",
+      "sdr_table_sha256": "1f3385590a09aa6c1e27eca59f52dcd900fe0e96547b965813176dfb8fc96e00",
+      "segments": 23286406,
+      "three_pass_segments_created": 23286406,
+      "winner_cells_per_context": 11
+    },
+    "base8_K11": {
+      "all_train_unique_states_fit": true,
+      "allocation_rule": "ideal least-loaded local cell with seed17 context permutation; mixed-radix K-tuple uniqueness asserted separately",
+      "base_depth": 8,
+      "capacity_stop": null,
+      "code_capacity_failures": 0,
+      "column_demand_sha256": "0928b64f363130a4b055c5a3109cda39b781abc537ce834e272b08b30c71474a",
+      "contacts": 465728120,
+      "first_pass_segments": 23286406,
+      "global_cell_cap": 131072,
+      "max_column_depth": 1125,
+      "max_segments_per_cell": 255,
+      "memory_estimate": {
+        "assumptions": {
+          "cell_segment_index": "CSR u32 offsets",
+          "column_cell_index": "CSR u32 offsets plus packed 17-bit physical gids",
+          "contact_cell_gid_bits": 18,
+          "permanence_bits": 8,
+          "recognition_inverted_index": "excluded; separately costed",
+          "relay_mapping": "injective arithmetic offset; zero resident projection bits",
+          "token_sdr_storage": "procedural seed; zero resident bytes"
+        },
+        "cell_gid_bits": 1856672,
+        "cell_segment_offset_bits": 3494944,
+        "column_offset_bits": 131104,
+        "contact_bits": 12108931120,
+        "ideal_bitpacked_bytes": 1514301730,
+        "ideal_bitpacked_mib": "1444.150667",
+        "recognition_inverted_index_included": false,
+        "relay_projection_bits": 0
+      },
+      "physical_relay_multiplier": 2,
+      "physical_winner_width": 22,
+      "pyramidal_cells_recruited": 76448,
+      "pyramidal_cells_remaining": 21856,
+      "pyramidal_cells_required": 109216,
+      "relay_population_cells": 131072,
+      "relay_population_cells_sized": true,
+      "relay_population_rule": "one fitted-GLIF3 twin per pyramidal address; relay_id = pyramidal_cap + winner_id",
+      "required_depth_sha256": "ebdb355e3961ac009be80504cf82ff1a3501a6ac8eb0cb679b90a984c436fea3",
+      "sdr_table_sha256": "1f3385590a09aa6c1e27eca59f52dcd900fe0e96547b965813176dfb8fc96e00",
+      "segments": 23286406,
+      "three_pass_segments_created": 23286406,
+      "winner_cells_per_context": 11
+    }
+  },
+  "schedule": {
+    "book_boundary_resets": 147,
+    "boundary_rule": "clear prior state; first token emits a token-local code and grows no segment",
+    "exposure_passes": 3,
+    "final_evaluation_included": false,
+    "mapping_persistence": "across books and passes",
+    "pass_replay_method": "literal_three_pass",
+    "passes": [
+      {
+        "boundary_resets": 49,
+        "novel_contexts": 2116946,
+        "pass_index_one_based": 1,
+        "reused_contexts": 417,
+        "transition_events": 2117363,
+        "winner_path_sha256": "49a6f4b2cb467e645508247f799f1ba07e660c8e6cfad86489e41685a1614892"
+      },
+      {
+        "boundary_resets": 49,
+        "novel_contexts": 0,
+        "pass_index_one_based": 2,
+        "reused_contexts": 2117363,
+        "transition_events": 2117363,
+        "winner_path_sha256": "49a6f4b2cb467e645508247f799f1ba07e660c8e6cfad86489e41685a1614892"
+      },
+      {
+        "boundary_resets": 49,
+        "novel_contexts": 0,
+        "pass_index_one_based": 3,
+        "reused_contexts": 2117363,
+        "transition_events": 2117363,
+        "winner_path_sha256": "49a6f4b2cb467e645508247f799f1ba07e660c8e6cfad86489e41685a1614892"
+      }
+    ],
+    "transition_events_per_pass": 2117363
+  },
+  "schema_version": 4,
+  "scope": {
+    "book_token_lengths_sha256": "f6afe1b50deb0c94d48d2c56688fcd52eacc1c573438134d585fe00ddd7ec5f1",
+    "corpus_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
+    "first_200_token_ids_sha256": "de5d527b12968762d6bd614c3a77c705e053e272361a72d20f3c0a21b272ef3c",
+    "held_out_books_decoded": 0,
+    "held_out_books_skipped": 17,
+    "observed_token_ids": 522,
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_books_decoded": 49,
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5",
+    "train_tokens_per_pass": 2117412
+  },
+  "shared_column_arms": {
+    "K11": {
+      "allocation_rule": "base32 context ordinal; invertible prefix mix plus column position modulo 32",
+      "capacity_stop": {
+        "allocation_index_zero_based": 62938,
+        "cell_id": 18262,
+        "load": 256,
+        "token_context_ordinal": 5538,
+        "token_id": 101
+      },
+      "cell_load_sha256": "f11858ead3f76be7787633d5ddf1fd40636c0bacf2de8ad3999f3ab48197af37",
+      "contacts": 465728120,
+      "direct_20_contact_source": false,
+      "distinct_contexts": 2116946,
+      "first_pass_segments": 23286406,
+      "fits_segment_capacity": false,
+      "max_segments_per_cell": 8966,
+      "memory_estimate": {
+        "assumptions": {
+          "cell_segment_index": "CSR u32 offsets",
+          "contact_cell_gid_bits": 18,
+          "permanence_bits": 8,
+          "recognition_inverted_index": "excluded; separately costed",
+          "token_sdr_storage": "procedural seed; zero resident bytes"
+        },
+        "cell_offset_bits": 4194336,
+        "contact_bits": 12108931120,
+        "ideal_bitpacked_bytes": 1514140682,
+        "ideal_bitpacked_mib": "1443.997080",
+        "recognition_inverted_index_included": false
+      },
+      "physical_relay_multiplier": 2,
+      "physical_winner_width": 22,
+      "relay_population_cells": 131072,
+      "relay_population_cells_sized": true,
+      "sdr_table_sha256": "1f3385590a09aa6c1e27eca59f52dcd900fe0e96547b965813176dfb8fc96e00",
+      "segments": 23286406,
+      "three_pass_segments_created": 23286406,
+      "winner_cells_per_context": 11
+    },
+    "K20": {
+      "allocation_rule": "base32 context ordinal; invertible prefix mix plus column position modulo 32",
+      "capacity_stop": {
+        "allocation_index_zero_based": 71211,
+        "cell_id": 108561,
+        "load": 256,
+        "token_context_ordinal": 5056,
+        "token_id": 97
+      },
+      "cell_load_sha256": "c2feb16b87b0ae2abf9376903a3d0566713fe6e13fcb03da3a0e423317c92f06",
+      "contacts": 846778400,
+      "direct_20_contact_source": true,
+      "distinct_contexts": 2116946,
+      "first_pass_segments": 42338920,
+      "fits_segment_capacity": false,
+      "max_segments_per_cell": 7097,
+      "memory_estimate": {
+        "assumptions": {
+          "cell_segment_index": "CSR u32 offsets",
+          "contact_cell_gid_bits": 17,
+          "permanence_bits": 8,
+          "recognition_inverted_index": "excluded; separately costed",
+          "token_sdr_storage": "procedural seed; zero resident bytes"
+        },
+        "cell_offset_bits": 4194336,
+        "contact_bits": 21169460000,
+        "ideal_bitpacked_bytes": 2646706792,
+        "ideal_bitpacked_mib": "2524.096291",
+        "recognition_inverted_index_included": false
+      },
+      "physical_relay_multiplier": 1,
+      "physical_winner_width": 20,
+      "relay_population_cells": 0,
+      "relay_population_cells_sized": true,
+      "sdr_table_sha256": "54fbfc22ce511b483fd39d2d8808f2f048cbb5b10962012e19450ed3a4156815",
+      "segments": 42338920,
+      "three_pass_segments_created": 42338920,
+      "winner_cells_per_context": 20
+    },
+    "K40": {
+      "allocation_rule": "base32 context ordinal; invertible prefix mix plus column position modulo 32",
+      "capacity_stop": {
+        "allocation_index_zero_based": 46117,
+        "cell_id": 16302,
+        "load": 256,
+        "token_context_ordinal": 3912,
+        "token_id": 32
+      },
+      "cell_load_sha256": "d4cf61a92e62aa030cc63c93f2bd0f28fc31fad14e1031e01e5fc01ea758e666",
+      "contacts": 1693556800,
+      "direct_20_contact_source": true,
+      "distinct_contexts": 2116946,
+      "first_pass_segments": 84677840,
+      "fits_segment_capacity": false,
+      "max_segments_per_cell": 11255,
+      "memory_estimate": {
+        "assumptions": {
+          "cell_segment_index": "CSR u32 offsets",
+          "contact_cell_gid_bits": 17,
+          "permanence_bits": 8,
+          "recognition_inverted_index": "excluded; separately costed",
+          "token_sdr_storage": "procedural seed; zero resident bytes"
+        },
+        "cell_offset_bits": 4194336,
+        "contact_bits": 42338920000,
+        "ideal_bitpacked_bytes": 5292889292,
+        "ideal_bitpacked_mib": "5047.692577",
+        "recognition_inverted_index_included": false
+      },
+      "physical_relay_multiplier": 1,
+      "physical_winner_width": 40,
+      "relay_population_cells": 0,
+      "relay_population_cells_sized": true,
+      "sdr_table_sha256": "9011b5d3fefcf8b2df8dac106f96343b2022eda30329667371877ef76ba7f856",
+      "segments": 84677840,
+      "three_pass_segments_created": 84677840,
+      "winner_cells_per_context": 40
+    }
+  },
+  "token_pool_comparisons": {
+    "q1": {
+      "base_cells_per_token": 32,
+      "contexts_exceeding_32_codes": 477,
+      "distinct_contexts": 2116946,
+      "first_pass_segments": 2116946,
+      "max_segments_per_cell_if_aliased": 5852,
+      "rejection_reason": "segments sharing one winner cell emit the same fixed K40 relay projection",
+      "representational_capacity_per_token": 32,
+      "representationally_valid_for_train": false,
+      "three_pass_segments_created": 2116946
+    },
+    "q4": {
+      "base_cells_per_token": 32,
+      "base_context_capacity": 2040,
+      "capacity_formula": "min(C(m,4),floor(m*255/4))",
+      "capacity_stop": true,
+      "contacts": 169355680,
+      "distinct_contexts": 2116946,
+      "first_pass_segments": 8467784,
+      "max_segments_per_cell": 255,
+      "pool_cells_required": 50559,
+      "reserve_cells_available": 24576,
+      "reserve_cells_used": 25983,
+      "segments": 8467784,
+      "three_pass_segments_created": 8467784,
+      "winner_cells_per_context": 4,
+      "winner_projection_targets_per_cell": 10
+    }
+  }
+}
