@@ -178,13 +178,13 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/lib.rs",
-        "size": 62773,
-        "sha256": "6c8bf559aef4a626989eb7a69ee385b9fddac08a6a14dffbc61a2152d1073e6b"
+        "size": 62788,
+        "sha256": "f1c78952f63d5899ad1da4006863c86a04ecfef160f4bbf0df3f73db248625b9"
       },
       {
         "path": "src/humanbrain/_native_src/src/procedural.rs",
-        "size": 155199,
-        "sha256": "c7f23802bf3adbb3431220a9e2e39a34b567e22cfdb4c39f63419617011b1400"
+        "size": 154561,
+        "sha256": "7c0f83c9ac5825d4d36784edb27544edd4ad90e9b74967b0c7b1d6e55088e48f"
       },
       {
         "path": "src/humanbrain/cells.py",
@@ -227,9 +227,14 @@
         "sha256": "897ecdc1416b8fda273253e71a3442509c122521cc02b3327f6aa7bfecc4d01c"
       },
       {
+        "path": "src/humanbrain/_native_src/src/random123.rs",
+        "size": 4525,
+        "sha256": "0a229d96f549ae12f4dc8d7b6765a129fdd3cd0834a4aca0403e80d3a2397435"
+      },
+      {
         "path": "src/humanbrain/_native_src/src/temporal.rs",
-        "size": 30998,
-        "sha256": "8e4c5c0bdd4f5a20d0976a37eb2e349521ff69d7a8ff032db6c9e73b27051f08"
+        "size": 31908,
+        "sha256": "1ae210f03e83aa23f9bd2edbbbdef16ee4f5c0d87e24a55ebb6afb498980489d"
       },
       {
         "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/.cargo-checksum.json",
@@ -1522,11 +1527,11 @@
         "sha256": "7155d4a3ae920eb37d40cc58d538052302cfb45517dbafec685b414305e2c98f"
       }
     ],
-    "bundle_sha256": "b65f824531fc4abb7d6ae50b73c69892affab2da9ac4a37eafefdb3cba4a6e3e",
+    "bundle_sha256": "ecb03ecb1f2c45d875217bb6599ac5d78536ab6f367493cd24876a01b71b9ff5",
     "limits": {
       "maximum_file_bytes": 1048576,
       "maximum_aggregate_bytes": 8388608,
-      "actual_aggregate_bytes": 2298891
+      "actual_aggregate_bytes": 2303703
     }
   },
   "timing": {
