@@ -542,6 +542,11 @@ class SparseTemporalCortex:
                 raise ValueError(
                     "snapshot live permanence tick is outside integer range [1, 500]"
                 )
+            if (
+                len(circuit._segments_by_cell.get(normalized_owner, ()))
+                >= config.max_segments_per_cell
+            ):
+                raise ValueError("snapshot segment owner exceeds max_segments_per_cell")
             segment = _Segment(
                 normalized_owner,
                 normalized_sources,
@@ -706,6 +711,9 @@ class SparseTemporalCortex:
     # ------------------------------------------------------------------ step
 
     def _step(self, token_id: int, *, mutate: bool) -> TemporalStep:
+        columns = self._token_columns.get(token_id)
+        if columns is None:
+            raise ValueError(f"unknown token {token_id}")
         if self._event_step >= _UINT64_MASK:
             raise RuntimeError("STOP: event_step uint64 overflow before state change")
         if (
@@ -716,9 +724,6 @@ class SparseTemporalCortex:
             raise RuntimeError(
                 "STOP: learning_step uint64 overflow before atomic plasticity"
             )
-        columns = self._token_columns.get(token_id)
-        if columns is None:
-            raise ValueError(f"unknown token {token_id}")
 
         potential, connected = self._recognition_counts(self._previous_context)
         predicted_segments = {

@@ -678,6 +678,37 @@ def test_checkpoint_round_trips_segments_after_punishment_drops_all_pairs() -> N
     assert restored.snapshot() == snapshot
 
 
+def test_checkpoint_rejects_allocated_segment_count_above_owner_cap() -> None:
+    codebook = _disjoint_codebook(2)
+    config = replace(_config(2), max_segments_per_cell=1)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    _learn_pair(circuit, 0, 1)
+    snapshot = circuit.snapshot()
+    owner, _sources, _ticks = snapshot.learned.segments[0]
+    empty_segment = (owner, (), ())
+    corrupted = replace(
+        snapshot,
+        learned=replace(
+            snapshot.learned,
+            segments=(
+                empty_segment,
+                empty_segment,
+                *snapshot.learned.segments[1:],
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"snapshot segment owner.*max_segments_per_cell",
+    ):
+        SparseTemporalCortex.from_snapshot(
+            codebook,
+            config=config,
+            snapshot=corrupted,
+        )
+
+
 @pytest.mark.parametrize(
     ("location", "match"),
     [
@@ -831,6 +862,38 @@ def test_uint64_counter_overflow_stops_before_state_changes(
 
     with pytest.raises(RuntimeError, match=f"STOP: {counter}.*uint64 overflow"):
         getattr(circuit, method)(0)
+
+    assert circuit.snapshot() == before
+
+
+@pytest.mark.parametrize(
+    ("counter", "method"),
+    [("learning_step", "learn"), ("event_step", "recognize")],
+)
+def test_unknown_token_preflight_precedes_uint64_counter_stop(
+    counter: str,
+    method: str,
+) -> None:
+    codebook = _disjoint_codebook(1)
+    config = _config(1)
+    circuit = SparseTemporalCortex(codebook, config=config)
+    snapshot = circuit.snapshot()
+    if counter == "learning_step":
+        boundary = replace(
+            snapshot,
+            learned=replace(snapshot.learned, learning_step=(1 << 64) - 1),
+        )
+    else:
+        boundary = replace(snapshot, event_step=(1 << 64) - 1)
+    circuit = SparseTemporalCortex.from_snapshot(
+        codebook,
+        config=config,
+        snapshot=boundary,
+    )
+    before = circuit.snapshot()
+
+    with pytest.raises(ValueError, match="unknown token 1"):
+        getattr(circuit, method)(1)
 
     assert circuit.snapshot() == before
 
