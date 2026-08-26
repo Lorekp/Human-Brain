@@ -28,12 +28,19 @@ from humanbrain.cortex import DendriticCortex
 from humanbrain.procedural_topology import _philox2x64_10
 
 
+_UINT32_MASK = (1 << 32) - 1
 _UINT64_MASK = (1 << 64) - 1
 _MIX_GAMMA = 0x9E3779B97F4A7C15
 _MIX_A = 0xBF58476D1CE4E5B9
 _MIX_B = 0x94D049BB133111EB
 _INITIAL_CONTACT_DOMAIN: Final = 0x52334630494E4954  # ASCII "R3F0INIT"
 _REGROWTH_CONTACT_DOMAIN: Final = 0x5233463052475257  # ASCII "R3F0RGRW"
+
+
+def _require_uint32(value: object, *, label: str) -> int:
+    if type(value) is not int or not 0 <= value <= _UINT32_MASK:
+        raise ValueError(f"{label} must be a uint32-compatible int")
+    return value
 
 
 def contact_position_sampling_contract() -> dict[str, str]:
@@ -149,22 +156,31 @@ class SparseTemporalConfig:
     prediction_quorum: int | None = None
 
     def __post_init__(self) -> None:
+        uint32_population_fields = (
+            ("column_count", self.column_count),
+            ("max_pyramidal_cells", self.max_pyramidal_cells),
+        )
+        for name, value in uint32_population_fields:
+            if type(value) is not int or not 1 <= value <= _UINT32_MASK:
+                raise ValueError(f"{name} must be a positive uint32-compatible int")
         integer_positive = (
-            self.column_count,
             self.active_columns,
             self.base_cells_per_column,
-            self.max_pyramidal_cells,
             self.contacts_per_segment,
             self.theta_match,
             self.theta_active,
-            self.max_segments_per_cell,
             self.novel_race_cap,
         )
         if any(type(value) is not int or value <= 0 for value in integer_positive):
             raise ValueError("population, segment, and threshold sizes must be positive ints")
         if (
+            type(self.max_segments_per_cell) is not int
+            or not 1 <= self.max_segments_per_cell <= 255
+        ):
+            raise ValueError("max_segments_per_cell must be an int in [1, 255]")
+        if (
             type(self.construction_seed) is not int
-            or not 0 <= self.construction_seed < 2**32
+            or not 0 <= self.construction_seed <= _UINT32_MASK
         ):
             raise ValueError("construction_seed must be a uint32-compatible int")
         if self.active_columns > self.column_count:
@@ -175,6 +191,11 @@ class SparseTemporalConfig:
                 "base column population exceeds max_pyramidal_cells: "
                 f"{required} > {self.max_pyramidal_cells}"
             )
+        physical_cell_count = (
+            2 * self.max_pyramidal_cells + 3 * self.column_count
+        )
+        if physical_cell_count > _UINT32_MASK:
+            raise ValueError("physical cell identity layout must fit uint32")
         if self.base_cells_per_column > self.novel_race_cap:
             raise ValueError(
                 "base_cells_per_column exceeds the calibrated novel_race_cap"
@@ -356,8 +377,13 @@ class SparseTemporalCortex:
         self._token_columns: dict[int, tuple[int, ...]] = {}
         seen_codes: dict[tuple[int, ...], int] = {}
         for raw_token, raw_columns in token_columns.items():
-            token = int(raw_token)
-            columns = tuple(sorted(int(value) for value in raw_columns))
+            token = _require_uint32(raw_token, label="token ID")
+            columns = tuple(
+                sorted(
+                    _require_uint32(value, label="column ID")
+                    for value in raw_columns
+                )
+            )
             if len(columns) != config.active_columns or len(set(columns)) != len(columns):
                 raise ValueError(
                     f"token {token} must activate exactly {config.active_columns} unique columns"
@@ -430,7 +456,11 @@ class SparseTemporalCortex:
         learned = snapshot.learned
         if len(learned.column_cells) != config.column_count:
             raise ValueError("snapshot column count does not match config")
-        flattened = [cell for cells in learned.column_cells for cell in cells]
+        flattened = [
+            _require_uint32(cell, label="snapshot column cell ID")
+            for cells in learned.column_cells
+            for cell in cells
+        ]
         if len(flattened) != len(set(flattened)):
             raise ValueError("snapshot assigns one pyramidal cell to multiple columns")
         if any(cell < 0 or cell >= config.max_pyramidal_cells for cell in flattened):
@@ -444,9 +474,7 @@ class SparseTemporalCortex:
             )
             if tuple(cells[: config.base_cells_per_column]) != expected_base:
                 raise ValueError("snapshot changed a column's physical base cells")
-            recruited_cells = tuple(
-                int(cell) for cell in cells[config.base_cells_per_column :]
-            )
+            recruited_cells = tuple(cells[config.base_cells_per_column :])
             if len(recruited_cells) % config.novel_race_cap:
                 raise ValueError(
                     "snapshot column contains a partial reserve cohort"
@@ -460,7 +488,10 @@ class SparseTemporalCortex:
                     raise ValueError(
                         "snapshot column contains a noncontiguous reserve cohort"
                     )
-        next_reserve = int(learned.next_reserve_cell)
+        next_reserve = _require_uint32(
+            learned.next_reserve_cell,
+            label="snapshot reserve cursor",
+        )
         if not circuit._base_pyramidal_cells <= next_reserve <= config.max_pyramidal_cells:
             raise ValueError("snapshot reserve cursor is outside the pyramidal sheet")
         recruited = sorted(
@@ -473,17 +504,20 @@ class SparseTemporalCortex:
         circuit._segments = []
         circuit._segments_by_cell = {}
         for owner, sources, permanence_ticks in learned.segments:
-            if owner not in committed:
+            normalized_owner = _require_uint32(
+                owner,
+                label="snapshot segment owner",
+            )
+            if normalized_owner not in committed:
                 raise ValueError("snapshot segment owner is not a committed column cell")
             if len(sources) != len(permanence_ticks):
                 raise ValueError("snapshot source/permanence-tick lengths differ")
-            if (
-                not sources
-                or len(sources) > config.contacts_per_segment // 2
-                or len(set(sources)) != len(sources)
-            ):
+            if len(sources) > config.contacts_per_segment // 2:
                 raise ValueError("snapshot segment sources violate paired capacity")
-            normalized_sources = tuple(int(value) for value in sources)
+            normalized_sources = tuple(
+                _require_uint32(value, label="snapshot segment source")
+                for value in sources
+            )
             for source in normalized_sources:
                 try:
                     circuit._relay_for_context_source(source)
@@ -492,21 +526,43 @@ class SparseTemporalCortex:
                         "snapshot segment contains a non-normalized source"
                     ) from None
             if any(
+                normalized_sources[index - 1] >= normalized_sources[index]
+                for index in range(
+                    1,
+                    len(normalized_sources),
+                )
+            ):
+                raise ValueError(
+                    "snapshot segment sources must be strictly increasing"
+                )
+            if any(
                 type(value) is not int or not 1 <= value <= 500
                 for value in permanence_ticks
             ):
                 raise ValueError(
                     "snapshot live permanence tick is outside integer range [1, 500]"
                 )
-            segment = _Segment(owner, normalized_sources, config.initial_permanence_ticks)
+            segment = _Segment(
+                normalized_owner,
+                normalized_sources,
+                config.initial_permanence_ticks,
+            )
             segment.permanence_ticks = [int(value) for value in permanence_ticks]
             segment_id = len(circuit._segments)
             circuit._segments.append(segment)
-            circuit._segments_by_cell.setdefault(int(owner), []).append(segment_id)
+            circuit._segments_by_cell.setdefault(normalized_owner, []).append(segment_id)
         circuit._rebuild_contact_index()
-        circuit._learning_step = int(learned.learning_step)
+        if (
+            type(learned.learning_step) is not int
+            or not 0 <= learned.learning_step <= _UINT64_MASK
+        ):
+            raise ValueError("snapshot learning_step must be a uint64-compatible int")
+        circuit._learning_step = learned.learning_step
         circuit._next_reserve_cell = next_reserve
-        circuit._previous_context = tuple(int(value) for value in snapshot.previous_context)
+        circuit._previous_context = tuple(
+            _require_uint32(value, label="snapshot previous_context cell ID")
+            for value in snapshot.previous_context
+        )
         if circuit._previous_context:
             if len(circuit._previous_context) != circuit.context_size:
                 raise ValueError("snapshot context width does not match config")
@@ -524,7 +580,11 @@ class SparseTemporalCortex:
                     "snapshot previous_context violates source/relay pairing"
                 ) from None
         circuit._previous_winner_context = tuple(
-            int(value) for value in snapshot.previous_winner_context
+            _require_uint32(
+                value,
+                label="snapshot previous_winner_context cell ID",
+            )
+            for value in snapshot.previous_winner_context
         )
         if circuit._previous_winner_context:
             if len(circuit._previous_winner_context) != circuit.context_size:
@@ -544,7 +604,12 @@ class SparseTemporalCortex:
                 raise ValueError(
                     "snapshot previous_winner_context violates source/relay pairing"
                 ) from None
-        circuit._event_step = int(snapshot.event_step)
+        if (
+            type(snapshot.event_step) is not int
+            or not 0 <= snapshot.event_step <= _UINT64_MASK
+        ):
+            raise ValueError("snapshot event_step must be a uint64-compatible int")
+        circuit._event_step = snapshot.event_step
         if circuit.snapshot() != snapshot:
             raise ValueError("snapshot did not round-trip into identical deep state")
         return circuit
@@ -609,7 +674,10 @@ class SparseTemporalCortex:
 
     def diagnose_context(self, context_spikes: Sequence[int]) -> ContextDiagnostics:
         """Inspect segment coincidence without racing or changing any state."""
-        context = tuple(int(value) for value in context_spikes)
+        context = tuple(
+            _require_uint32(value, label="context_spikes cell ID")
+            for value in context_spikes
+        )
         if len(context) != len(set(context)):
             raise ValueError("context_spikes must contain unique physical cell ids")
         if any(value < 0 or value >= self.physical_cell_count for value in context):
@@ -628,14 +696,26 @@ class SparseTemporalCortex:
         )
 
     def learn(self, token_id: int) -> TemporalStep:
-        return self._step(int(token_id), mutate=True)
+        token = _require_uint32(token_id, label="token_id")
+        return self._step(token, mutate=True)
 
     def recognize(self, token_id: int) -> TemporalStep:
-        return self._step(int(token_id), mutate=False)
+        token = _require_uint32(token_id, label="token_id")
+        return self._step(token, mutate=False)
 
     # ------------------------------------------------------------------ step
 
     def _step(self, token_id: int, *, mutate: bool) -> TemporalStep:
+        if self._event_step >= _UINT64_MASK:
+            raise RuntimeError("STOP: event_step uint64 overflow before state change")
+        if (
+            mutate
+            and self.config.growth_enabled
+            and self._learning_step >= _UINT64_MASK
+        ):
+            raise RuntimeError(
+                "STOP: learning_step uint64 overflow before atomic plasticity"
+            )
         columns = self._token_columns.get(token_id)
         if columns is None:
             raise ValueError(f"unknown token {token_id}")
