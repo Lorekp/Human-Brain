@@ -27,6 +27,9 @@ Authoritative analysis and repair gates:
 7. **A required tokenizer calibration artifact is missing.**
 8. **Full checkpoint/resume equality and contract tripwires are not proven.**
 9. **The 15-hour arithmetic and live projection are wrong.**
+10. **CN-1's dense activity is not a viable coincidence code.** At its measured
+    ~56.9% occupancy, random 20-contact segments cross θm with probability
+    ~0.80 and θa with probability ~0.31.
 
 ## What is valid
 
@@ -34,7 +37,7 @@ Authoritative analysis and repair gates:
 - Frozen tokenizer reconstruction and pool-feasibility arithmetic.
 - P-B verdict versus its frozen shuffled/unigram/majority controls.
 - Generic segment-growth unit mechanics and deterministic reruns.
-- CN-1 drive measurements.
+- CN-1 rheobase/recruitment measurements (not its dense C1 drive choice).
 - The generic observation-sink/CUDA mirror, restore-time sink attachment, and
   live dynamics capture fixes committed on master as `f721fa9`.
 
@@ -62,6 +65,10 @@ measured current end-to-end mode fits the 15-hour cap.
 - [ ] **R3-F0 neuronal fixture:** physical pool cells, segment-triggered plateau
       drive, fitted-cell first-spike race, growth-off structural zero, and
       repeated/novel/punishment/bit-exact fixtures.
+- [ ] **Sparse context assembly gate:** freeze and compare k-capped actual
+      recurrent spikes; require repeated-context stability, unrelated-context
+      separation, and a bounded coincidence false-positive rate. Supersede the
+      dense CN-1 C1 drive/preflight choice.
 - [ ] **R3-F1 scientific controls:** disposable epoch-0 shadows, exposure-local
       preflight, frozen read-only evaluation, frozen boundary reset policy,
       mass-matched A3, and uninterrupted/resumed deep-state equality.
