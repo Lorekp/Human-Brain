@@ -110,7 +110,7 @@ uv --cache-dir .uv-cache pip install --python .venv\Scripts\python.exe -e ".[vis
 The frozen-protocol gates are re-frozen deliberately after source-changing
 merges, never bypassed by weakening digest checks. The Gate-3 procedural
 binding was regenerated against the post-merge sources (protocol pin
-`31b07ca3…`). The large-scale-capability protocol
+`0adecfa5…`). The large-scale-capability protocol
 (`benchmarks/large_scale_capability_protocol_v1.json`) still pins the
 pre-campaign `cells.py` and related sources, so
 `tests/test_large_scale_capability.py` reports freshness failures until that

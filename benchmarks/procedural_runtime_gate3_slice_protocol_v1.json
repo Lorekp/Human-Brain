@@ -178,8 +178,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/lib.rs",
-        "size": 62788,
-        "sha256": "f1c78952f63d5899ad1da4006863c86a04ecfef160f4bbf0df3f73db248625b9"
+        "size": 62810,
+        "sha256": "02ed78dcb7979264a5ea1be2be2308d075e9031e0dac129860ca8c7280cdf707"
       },
       {
         "path": "src/humanbrain/_native_src/src/procedural.rs",
@@ -233,8 +233,13 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal.rs",
-        "size": 31908,
-        "sha256": "1ae210f03e83aa23f9bd2edbbbdef16ee4f5c0d87e24a55ebb6afb498980489d"
+        "size": 49412,
+        "sha256": "e9ecb27710ec6ca27ac7f32a6ae9b534ffdca0c3208cb48c1eb858474bae7ef9"
+      },
+      {
+        "path": "src/humanbrain/_native_src/src/temporal_physics.rs",
+        "size": 23812,
+        "sha256": "41048e560ecb80c67f0e822edad12133b4e37c9c613933c796765521551df511"
       },
       {
         "path": "src/humanbrain/_native_src/vendor/crossbeam-deque/.cargo-checksum.json",
@@ -1527,11 +1532,11 @@
         "sha256": "7155d4a3ae920eb37d40cc58d538052302cfb45517dbafec685b414305e2c98f"
       }
     ],
-    "bundle_sha256": "ecb03ecb1f2c45d875217bb6599ac5d78536ab6f367493cd24876a01b71b9ff5",
+    "bundle_sha256": "607e05b281e262b537a0479b08c3cf6c2e634f6e61da2274083d7f456de9fcc2",
     "limits": {
       "maximum_file_bytes": 1048576,
       "maximum_aggregate_bytes": 8388608,
-      "actual_aggregate_bytes": 2303703
+      "actual_aggregate_bytes": 2345041
     }
   },
   "timing": {
