@@ -547,7 +547,11 @@ pub unsafe extern "C" fn humanbrain_temporal_store_prepare(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::random123::{philox2x64_10, sample_without_replacement};
     use std::{mem::size_of, ptr};
+
+    const INITIAL_CONTACT_DOMAIN: u64 = 0x5233_4630_494E_4954; // "R3F0INIT"
+    const REGROWTH_CONTACT_DOMAIN: u64 = 0x5233_4630_5247_5257; // "R3F0RGRW"
 
     fn config(
         source_count: usize,
@@ -591,6 +595,22 @@ mod tests {
             block_index = block.next;
         }
         lengths
+    }
+
+    #[test]
+    fn shared_philox_sampler_matches_temporal_oracle_domains_and_vectors() {
+        let mut initial_scratch = [0u64; 8];
+        let initial_key = 17 ^ INITIAL_CONTACT_DOMAIN;
+        let initial = sample_without_replacement(8, 4, initial_key, 1, &mut initial_scratch);
+        assert_eq!(initial, Some(&[2, 3, 5, 7][..]),);
+
+        let regrowth_key = philox2x64_10(44, 0, 17 ^ REGROWTH_CONTACT_DOMAIN).0;
+        assert_eq!(regrowth_key, 0xC5AC_1D69_C2B8_FBC5);
+        let mut regrowth_scratch = [0u64; 11];
+        assert_eq!(
+            sample_without_replacement(11, 3, regrowth_key, 3, &mut regrowth_scratch),
+            Some(&[2, 6, 7][..]),
+        );
     }
 
     #[test]

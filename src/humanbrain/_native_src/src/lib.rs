@@ -10,6 +10,7 @@ use rayon::prelude::*;
 use std::{slice, time::Instant};
 
 mod procedural;
+mod random123;
 mod temporal;
 
 const MIN_PARALLEL_CHUNK_CELLS: usize = 4_096;

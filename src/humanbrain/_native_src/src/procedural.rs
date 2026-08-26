@@ -5,7 +5,10 @@
 //! pending events, and spikes produced by the most recent advance. A separate
 //! dense runtime exists only as a small-domain exactness oracle.
 
-use super::GlifConfig;
+use super::{
+    random123::{philox2x64_10, PHILOX_W64_0},
+    GlifConfig,
+};
 use std::{
     alloc::{alloc, Layout},
     cmp::Ordering,
@@ -25,9 +28,6 @@ unsafe fn allocate_owned<T>(value: T) -> *mut T {
     }
 }
 
-const PHILOX_M2X64_0: u64 = 0xD2B74407B1CE6E93;
-const PHILOX_W64_0: u64 = 0x9E3779B97F4A7C15;
-const PHILOX_ROUNDS: usize = 10;
 const UNIFORM_NO_SELF_STREAM_ID: u64 = 2;
 const GLOBAL_PURPOSE_ID: u64 = 1;
 const GLOBAL_FALLBACK_PURPOSE_ID: u64 = 255;
@@ -261,24 +261,6 @@ fn same_dense_event_key(left: &ProceduralEventRecord, right: &ProceduralEventRec
         && left.target_gid == right.target_gid
         && left.source_gid == right.source_gid
         && left.edge_slot == right.edge_slot
-}
-
-#[inline]
-fn philox2x64_10(counter_0: u64, counter_1: u64, key: u64) -> (u64, u64) {
-    let mut left = counter_0;
-    let mut right = counter_1;
-    let mut round_key = key;
-    for round_index in 0..PHILOX_ROUNDS {
-        let product = (PHILOX_M2X64_0 as u128) * (left as u128);
-        let high = (product >> 64) as u64;
-        let low = product as u64;
-        left = high ^ round_key ^ right;
-        right = low;
-        if round_index != PHILOX_ROUNDS - 1 {
-            round_key = round_key.wrapping_add(PHILOX_W64_0);
-        }
-    }
-    (left, right)
 }
 
 #[inline]
