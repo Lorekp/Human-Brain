@@ -12,6 +12,7 @@ use std::{slice, time::Instant};
 mod procedural;
 mod random123;
 mod temporal;
+mod temporal_physics;
 
 const MIN_PARALLEL_CHUNK_CELLS: usize = 4_096;
 
