@@ -204,3 +204,85 @@ def test_fallback_current_preserves_elapsed_race_steps() -> None:
     assert race.winner == 3
     assert race.simulated_steps > cortex._race_steps
     assert race.spike_time_ms == race.simulated_steps * cortex.parameters.cell.dt_ms
+
+
+def test_coupled_race_without_inhibition_reports_every_pyramidal_spike() -> None:
+    cortex = DendriticCortex(cell_count=8, seed=7)
+
+    race = cortex.race_currents_with_inhibition(
+        [0, 1],
+        [665.0, 550.0],
+        basket_cell_id=2,
+        basket_current_pa=200_000.0,
+        inhibition_current_pa=0.0,
+    )
+
+    assert race.winner == 0
+    assert race.pyramidal_spikes == (0, 1)
+    assert race.pyramidal_spike_times_ms[0] < race.pyramidal_spike_times_ms[1]
+    assert race.basket_spike_time_ms is not None
+    assert race.inhibition_onset_ms is None
+
+
+def test_coupled_race_basket_spike_causally_suppresses_later_competitors() -> None:
+    cortex = DendriticCortex(cell_count=8, seed=7)
+
+    race = cortex.race_currents_with_inhibition(
+        [0, 1],
+        [665.0, 550.0],
+        basket_cell_id=2,
+        basket_current_pa=200_000.0,
+    )
+
+    assert race.pyramidal_spikes == (0,)
+    assert race.basket_spike_time_ms is not None
+    assert race.inhibition_onset_ms is not None
+    assert (
+        race.winner_spike_time_ms
+        < race.basket_spike_time_ms
+        < race.inhibition_onset_ms
+    )
+
+
+def test_coupled_race_does_not_inhibit_without_a_basket_spike() -> None:
+    cortex = DendriticCortex(cell_count=8, seed=7)
+
+    race = cortex.race_currents_with_inhibition(
+        [0, 1],
+        [665.0, 550.0],
+        basket_cell_id=2,
+        basket_current_pa=0.0,
+    )
+
+    assert race.pyramidal_spikes == (0, 1)
+    assert race.basket_spike_time_ms is None
+    assert race.inhibition_onset_ms is None
+
+
+def test_coupled_race_is_bit_exact_across_deterministic_reruns() -> None:
+    cortex = DendriticCortex(cell_count=8, seed=7)
+    kwargs = {
+        "basket_cell_id": 2,
+        "basket_current_pa": 200_000.0,
+    }
+
+    first = cortex.race_currents_with_inhibition(
+        [0, 1], [665.0, 550.0], **kwargs
+    )
+    second = cortex.race_currents_with_inhibition(
+        [0, 1], [665.0, 550.0], **kwargs
+    )
+
+    assert second == first
+
+
+def test_coupled_race_rejects_noninteger_physical_cell_ids() -> None:
+    cortex = DendriticCortex(cell_count=8, seed=7)
+
+    with pytest.raises(ValueError, match="integers"):
+        cortex.race_currents_with_inhibition(
+            [0.5, 1.5],
+            [665.0, 550.0],
+            basket_cell_id=2,
+            basket_current_pa=200_000.0,
+        )

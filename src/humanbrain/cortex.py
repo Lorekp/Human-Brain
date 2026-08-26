@@ -51,6 +51,21 @@ class CellRace:
     simulated_steps: int
 
 
+@dataclass(frozen=True)
+class CoupledCellRace:
+    """Complete first-spike population emitted by one coupled race."""
+
+    winner: int
+    winner_spike_time_ms: float
+    pyramidal_spikes: tuple[int, ...]
+    pyramidal_spike_times_ms: tuple[float, ...]
+    basket_cell: int
+    basket_spike_time_ms: float | None
+    inhibition_onset_ms: float | None
+    active_cells: int
+    simulated_steps: int
+
+
 class DendriticCortex:
     """Token cells with structurally grown context branches.
 
@@ -86,6 +101,7 @@ class DendriticCortex:
         self._grown_transitions = 0
         cell = self.parameters.cell
         self._nmda_decay = np.exp(-cell.dt_ms / self.parameters.tau_nmda_ms)
+        self._gabaa_decay = np.exp(-cell.dt_ms / self.parameters.tau_gabaa_ms)
         self._voltage_step_scale = cell.dt_ms / cell.capacitance_pf
         self._race_steps = max(1, round(self.parameters.race_ms / cell.dt_ms))
 
@@ -294,6 +310,140 @@ class DendriticCortex:
                 simulated_steps=elapsed_steps,
             )
         raise RuntimeError("active human cells did not spike under arousal")
+
+    def race_currents_with_inhibition(
+        self,
+        cell_ids: Sequence[int] | np.ndarray,
+        current_pa: Sequence[float] | np.ndarray,
+        *,
+        basket_cell_id: int,
+        basket_current_pa: float,
+        inhibition_current_pa: float | None = None,
+    ) -> CoupledCellRace:
+        """Timestep a causal pyramidal-to-basket-to-GABA fitted-cell race.
+
+        Every cell begins at rest. Candidate and basket voltages are advanced
+        with the pinned GLIF3 forward-Euler membrane equation. The first
+        pyramidal spike starts a decaying excitatory current in the specified
+        basket cell on the following step. A basket spike starts a decaying
+        inhibitory current in every unspiked candidate on the following step.
+        All pyramidal spikes emitted before or after inhibition are reported;
+        no idealized first-winner cutoff is applied.
+
+        The basket currently uses the same fitted human GLIF3 prototype as the
+        pyramidal cells because no distinct fitted inhibitory-cell artifact is
+        available in this module.
+        """
+        raw_ids = np.asarray(cell_ids)
+        currents = np.asarray(current_pa, dtype=np.float64)
+        if raw_ids.ndim != 1 or raw_ids.size == 0:
+            raise ValueError("cell_ids must be a non-empty vector")
+        if raw_ids.dtype.kind not in {"i", "u"}:
+            raise ValueError("cell_ids must contain integers")
+        active = raw_ids.astype(np.intp, copy=False)
+        if currents.shape != active.shape:
+            raise ValueError(f"current_pa must have shape {active.shape}")
+        if np.any(active < 0) or np.any(active >= self.cell_count):
+            raise ValueError("cell id outside cortical sheet")
+        if np.unique(active).size != active.size:
+            raise ValueError("cell_ids must be unique")
+        if not np.all(np.isfinite(currents)) or np.any(currents < 0.0):
+            raise ValueError("current_pa must be finite and nonnegative")
+        if (
+            type(basket_cell_id) is not int
+            or not 0 <= basket_cell_id < self.cell_count
+        ):
+            raise ValueError("basket_cell_id must identify a physical cell")
+        if basket_cell_id in active:
+            raise ValueError("basket cell must be distinct from pyramidal candidates")
+        if not np.isfinite(basket_current_pa) or basket_current_pa < 0.0:
+            raise ValueError("basket_current_pa must be finite and nonnegative")
+        inhibition = (
+            self.parameters.basket_inhibition_pa
+            if inhibition_current_pa is None
+            else float(inhibition_current_pa)
+        )
+        if not np.isfinite(inhibition) or inhibition < 0.0:
+            raise ValueError("inhibition_current_pa must be finite and nonnegative")
+
+        cell = self.parameters.cell
+        voltage = np.zeros(active.size, dtype=np.float64)
+        threshold = cell.threshold_relative_mv + self._threshold_offset[active]
+        emitted = np.zeros(active.size, dtype=bool)
+        excitatory = currents.copy()
+        inhibitory = 0.0
+        basket_voltage = 0.0
+        basket_excitation = 0.0
+        basket_threshold = (
+            cell.threshold_relative_mv + self._threshold_offset[basket_cell_id]
+        )
+        basket_spike_time: float | None = None
+        inhibition_onset_ms: float | None = None
+        spike_ids: list[int] = []
+        spike_times: list[float] = []
+        simulated_steps = 0
+
+        for step in range(self._race_steps):
+            simulated_steps = step + 1
+            voltage += self._voltage_step_scale * (
+                excitatory - inhibitory - cell.leak_ns * voltage
+            )
+            if basket_spike_time is None:
+                basket_voltage += self._voltage_step_scale * (
+                    basket_excitation - cell.leak_ns * basket_voltage
+                )
+            spiking = np.flatnonzero((~emitted) & (voltage >= threshold))
+            first_pyramidal_spike = not spike_ids and spiking.size > 0
+            if spiking.size:
+                order = sorted(
+                    (int(index) for index in spiking),
+                    key=lambda index: (
+                        -(voltage[index] - threshold[index]),
+                        int(active[index]),
+                    ),
+                )
+                spike_time = (step + 1) * cell.dt_ms
+                for index in order:
+                    emitted[index] = True
+                    spike_ids.append(int(active[index]))
+                    spike_times.append(spike_time)
+
+            basket_spiked = (
+                basket_spike_time is None
+                and basket_voltage >= basket_threshold
+            )
+            if basket_spiked:
+                basket_spike_time = (step + 1) * cell.dt_ms
+
+            excitatory *= self._nmda_decay
+            basket_excitation *= self._nmda_decay
+            inhibitory *= self._gabaa_decay
+            if first_pyramidal_spike:
+                basket_excitation += float(basket_current_pa)
+            if basket_spiked and inhibition > 0.0:
+                inhibitory += inhibition
+                inhibition_onset_ms = (step + 2) * cell.dt_ms
+
+            if emitted.all() and (
+                basket_spike_time is not None or basket_current_pa == 0.0
+            ):
+                break
+
+        if not spike_ids:
+            raise RuntimeError(
+                "active human cells did not spike during the coupled race"
+            )
+        return CoupledCellRace(
+            winner=spike_ids[0],
+            winner_spike_time_ms=spike_times[0],
+            pyramidal_spikes=tuple(spike_ids),
+            pyramidal_spike_times_ms=tuple(spike_times),
+            basket_cell=basket_cell_id,
+            basket_spike_time_ms=basket_spike_time,
+            inhibition_onset_ms=inhibition_onset_ms,
+            active_cells=active.size,
+            simulated_steps=simulated_steps,
+        )
 
     def matching_segments(self, context: Sequence[int]) -> list[tuple[int, int, float]]:
         """Raw segments matching the recent winner history, deterministically.
