@@ -1,8 +1,10 @@
-//! Bounded native storage and recognition for fixed-width distal segments.
+//! Bounded native storage and recognition for fixed-slot distal segments.
 //!
-//! Every segment owns exactly ten logical source/relay pairs.  Only the
-//! normalized source and one shared permanence tick are resident; a posting
-//! visit contributes two physical contacts to the recognition counts.
+//! Every segment owns ten fixed logical slots containing a canonical prefix of
+//! zero to ten live source/relay pairs. Unused suffix slots carry the `NONE`/0
+//! sentinel. Only the normalized source and one shared permanence tick are
+//! resident; a live posting visit contributes two physical contacts to the
+//! recognition counts.
 
 use std::{mem::size_of, ptr, slice};
 
@@ -398,7 +400,10 @@ impl TemporalStore {
 
         let generation = self.next_generation();
         for source in context_sources {
-            let source_index = self.normalize_source(*source).unwrap() as usize;
+            let Some(source_index) = self.normalize_source(*source).map(|value| value as usize)
+            else {
+                return Err(TEMPORAL_INVALID);
+            };
             if self.source_stamps[source_index] == generation {
                 return Err(TEMPORAL_INVALID);
             }
@@ -409,7 +414,10 @@ impl TemporalStore {
         self.touched_owners.clear();
         let mut postings_visited = 0u64;
         for source in context_sources {
-            let source_index = self.normalize_source(*source).unwrap() as usize;
+            let Some(source_index) = self.normalize_source(*source).map(|value| value as usize)
+            else {
+                return Err(TEMPORAL_INVALID);
+            };
             let mut pair_slot = self.source_meta[source_index].head;
             while pair_slot != NONE {
                 let segment_id = pair_slot / PAIRS_PER_SEGMENT as u32;

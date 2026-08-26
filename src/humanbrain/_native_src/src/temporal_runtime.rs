@@ -13,11 +13,12 @@
 use crate::temporal::{TemporalOwnerDiagnostic, TemporalStore, TemporalStoreConfig};
 use crate::temporal_physics::{
     coupled_first_spike_race, singleton_latency_ticks, BasketDrive, CandidateClass, CandidateDrive,
-    SpikeEvent, TemporalPhysicsStop,
+    CoupledRaceScratch, SpikeEvent, TemporalPhysicsStop,
 };
 
 const ACTIVE_COLUMNS: usize = 11;
 const CONTEXT_CELLS: usize = 2 * ACTIVE_COLUMNS;
+const CONTEXT_CELLS_U8: u8 = CONTEXT_CELLS as u8;
 const PAIRS_PER_SEGMENT: usize = 10;
 const NONE: u32 = u32::MAX;
 const BASKET_CURRENT_PA: f64 = 200_000.0;
@@ -69,20 +70,69 @@ pub(crate) enum PhysicalStage {
     ProximalRelay,
     ColumnRace,
     WinnerRelay,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TemporalOverflowStage {
+    ProximalRelayTick,
+    WinnerRelayTick,
     EventCounter,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+/// Stable terminal class persisted by the future canonical checkpoint.
+///
+/// The first failing call still returns the full [`TemporalCircuitStop`]. The
+/// runtime retains only this `Copy` class so poisoning never clones or owns a
+/// diagnostic allocation and all later calls return `Poisoned`.
+#[repr(u16)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TemporalPoisonCode {
+    Unpoisoned = 0,
+    MultipleActiveOwners = 1,
+    MultipleMatchingOwners = 2,
+    CategorizedRaceCapacity = 3,
+    MalformedContextOrPolicy = 4,
+    ProximalPhysics = 5,
+    ProximalRelayPhysics = 6,
+    ColumnRacePhysics = 7,
+    WinnerRelayPhysics = 8,
+    TickOrCounterOverflow = 9,
+    StoreOrPlanInvariant = 10,
+    PhiloxAddressExhaustion = 11,
+    ReserveCellCapacity = 12,
+    GlobalSegmentCapacity = 13,
+    OwnerSegmentCapacity = 14,
+    PreallocatedCapacityInvariant = 15,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct OwnerConflict {
+    pub(crate) first: u32,
+    pub(crate) second: u32,
+    pub(crate) count: u32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TemporalCircuitStop {
     UnknownToken(u32),
     Poisoned,
+    MalformedContextOrPolicy(&'static str),
     MultipleActiveOwners {
         column: u32,
-        owners: Vec<u32>,
+        owners: OwnerConflict,
     },
     MultipleMatchingOwners {
         column: u32,
-        owners: Vec<u32>,
+        owners: OwnerConflict,
+    },
+    CategorizedRaceCapacity {
+        column: u32,
+        categorized_count: u8,
+        race_cap: u8,
+    },
+    TickOrCounterOverflow {
+        stage: TemporalOverflowStage,
+        location: u32,
     },
     Physics {
         stage: PhysicalStage,
@@ -90,6 +140,35 @@ pub(crate) enum TemporalCircuitStop {
         source: TemporalPhysicsStop,
     },
     StoreRecognition(u32),
+    StoreOrPlanInvariant(&'static str),
+    PreallocatedCapacityInvariant(&'static str),
+}
+
+impl TemporalCircuitStop {
+    fn poison_code(&self) -> Option<TemporalPoisonCode> {
+        match self {
+            Self::UnknownToken(_) | Self::Poisoned => None,
+            Self::MalformedContextOrPolicy(_) => Some(TemporalPoisonCode::MalformedContextOrPolicy),
+            Self::MultipleActiveOwners { .. } => Some(TemporalPoisonCode::MultipleActiveOwners),
+            Self::MultipleMatchingOwners { .. } => Some(TemporalPoisonCode::MultipleMatchingOwners),
+            Self::CategorizedRaceCapacity { .. } => {
+                Some(TemporalPoisonCode::CategorizedRaceCapacity)
+            }
+            Self::TickOrCounterOverflow { .. } => Some(TemporalPoisonCode::TickOrCounterOverflow),
+            Self::Physics { stage, .. } => Some(match stage {
+                PhysicalStage::Proximal => TemporalPoisonCode::ProximalPhysics,
+                PhysicalStage::ProximalRelay => TemporalPoisonCode::ProximalRelayPhysics,
+                PhysicalStage::ColumnRace => TemporalPoisonCode::ColumnRacePhysics,
+                PhysicalStage::WinnerRelay => TemporalPoisonCode::WinnerRelayPhysics,
+            }),
+            Self::StoreRecognition(_) | Self::StoreOrPlanInvariant(_) => {
+                Some(TemporalPoisonCode::StoreOrPlanInvariant)
+            }
+            Self::PreallocatedCapacityInvariant(_) => {
+                Some(TemporalPoisonCode::PreallocatedCapacityInvariant)
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -110,9 +189,10 @@ pub(crate) struct TemporalCircuitStep {
     pub(crate) event_count: u64,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct NovelCandidate {
     cell_id: u32,
+    column_offset: usize,
     load: u8,
     afferent_score: u128,
 }
@@ -130,6 +210,17 @@ const EMPTY_SPIKE: SpikeEvent = SpikeEvent {
     cell_id: 0,
     tick: 0,
 };
+const EMPTY_DRIVE: CandidateDrive = CandidateDrive {
+    cell_id: 0,
+    current_pa: 0.0,
+    threshold_offset_mv: 0.0,
+};
+const EMPTY_NOVEL_CANDIDATE: NovelCandidate = NovelCandidate {
+    cell_id: 0,
+    column_offset: 0,
+    load: 0,
+    afferent_score: 0,
+};
 
 pub(crate) struct TemporalCircuitRuntime {
     config: TemporalCircuitConfig,
@@ -139,10 +230,15 @@ pub(crate) struct TemporalCircuitRuntime {
     threshold_offsets_mv: Vec<f64>,
     store: TemporalStore,
     recognition_scratch: Vec<TemporalOwnerDiagnostic>,
-    previous_context: Vec<u32>,
-    previous_winner_context: Vec<u32>,
+    column_drive_scratch: Vec<CandidateDrive>,
+    novel_candidate_scratch: Vec<NovelCandidate>,
+    race_scratch: CoupledRaceScratch,
+    previous_context: [u32; CONTEXT_CELLS],
+    previous_context_len: u8,
+    previous_winner_context: [u32; CONTEXT_CELLS],
+    previous_winner_context_len: u8,
     event_count: u64,
-    scientific_stop: Option<TemporalCircuitStop>,
+    scientific_stop: Option<TemporalPoisonCode>,
     relay_offset: u32,
     basket_offset: u32,
     proximal_offset: u32,
@@ -360,6 +456,17 @@ impl TemporalCircuitRuntime {
                 ));
             }
         }
+        let max_column_occupancy = column_offsets
+            .windows(2)
+            .map(|pair| pair[1] - pair[0])
+            .max()
+            .ok_or(TemporalRuntimeBuildError::Invalid(
+                "temporal circuit must contain at least one column",
+            ))?;
+        let race_scratch = CoupledRaceScratch::try_new(max_column_occupancy)
+            .map_err(TemporalRuntimeBuildError::Invalid)?;
+        let column_drive_scratch = vec![EMPTY_DRIVE; max_column_occupancy];
+        let novel_candidate_scratch = vec![EMPTY_NOVEL_CANDIDATE; max_column_occupancy];
 
         Ok(Self {
             config,
@@ -369,8 +476,13 @@ impl TemporalCircuitRuntime {
             threshold_offsets_mv,
             store,
             recognition_scratch: vec![EMPTY_DIAGNOSTIC; owner_count],
-            previous_context: Vec::new(),
-            previous_winner_context: Vec::new(),
+            column_drive_scratch,
+            novel_candidate_scratch,
+            race_scratch,
+            previous_context: [0; CONTEXT_CELLS],
+            previous_context_len: 0,
+            previous_winner_context: [0; CONTEXT_CELLS],
+            previous_winner_context_len: 0,
             event_count: 0,
             scientific_stop: None,
             relay_offset,
@@ -395,15 +507,20 @@ impl TemporalCircuitRuntime {
             Err(_) => return Err(TemporalCircuitStop::UnknownToken(token_id)),
         };
 
-        let recognition_sources: Vec<u32> = self
-            .previous_context
-            .iter()
-            .take(ACTIVE_COLUMNS)
-            .copied()
-            .collect();
+        let recognition_source_count =
+            match (self.previous_context_len, self.previous_winner_context_len) {
+                (0, 0) => 0,
+                (CONTEXT_CELLS_U8, CONTEXT_CELLS_U8) => ACTIVE_COLUMNS,
+                _ => {
+                    return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                        "prior contexts must both be empty or exactly 22 cells",
+                    ));
+                }
+            };
+        let recognition_sources = &self.previous_context[..recognition_source_count];
         let summary = match self
             .store
-            .recognize_runtime_context(&recognition_sources, &mut self.recognition_scratch)
+            .recognize_runtime_context(recognition_sources, &mut self.recognition_scratch)
         {
             Ok(summary) => summary,
             Err(status) => return self.fail(TemporalCircuitStop::StoreRecognition(status)),
@@ -446,10 +563,9 @@ impl TemporalCircuitRuntime {
                 }
             };
             let Some(relay_tick) = proximal_tick.checked_add(relay_latency) else {
-                return self.fail(TemporalCircuitStop::Physics {
-                    stage: PhysicalStage::ProximalRelay,
+                return self.fail(TemporalCircuitStop::TickOrCounterOverflow {
+                    stage: TemporalOverflowStage::ProximalRelayTick,
                     location: relay_id,
-                    source: TemporalPhysicsStop::InvalidInput("absolute relay tick overflowed u16"),
                 });
             };
             proximal_relay_spikes[index] = SpikeEvent {
@@ -464,19 +580,21 @@ impl TemporalCircuitRuntime {
         let mut column_simulated_ticks = [0u16; ACTIVE_COLUMNS];
         let mut predicted_columns = 0u8;
         for (index, &column) in columns.iter().enumerate() {
-            let candidates = match self.column_drives(column, diagnostic_count) {
-                Ok(candidates) => candidates,
+            let candidate_count = match self.prepare_column_drives(column, diagnostic_count) {
+                Ok(candidate_count) => candidate_count,
                 Err(stop) => return self.fail(stop),
             };
             let basket_id = self.basket_offset + column;
+            let candidates = &self.column_drive_scratch[..candidate_count];
             let race = match coupled_first_spike_race(
-                &candidates,
+                candidates,
                 BasketDrive {
                     cell_id: basket_id,
                     current_pa: BASKET_CURRENT_PA,
                     threshold_offset_mv: self.threshold_offset(basket_id),
                     inhibition_pa: BASKET_INHIBITION_PA,
                 },
+                &mut self.race_scratch,
             ) {
                 Ok(race) => race,
                 Err(source) => {
@@ -519,10 +637,9 @@ impl TemporalCircuitRuntime {
                 }
             };
             let Some(relay_tick) = winner.tick.checked_add(relay_latency) else {
-                return self.fail(TemporalCircuitStop::Physics {
-                    stage: PhysicalStage::WinnerRelay,
+                return self.fail(TemporalCircuitStop::TickOrCounterOverflow {
+                    stage: TemporalOverflowStage::WinnerRelayTick,
                     location: relay_id,
-                    source: TemporalPhysicsStop::InvalidInput("absolute relay tick overflowed u16"),
                 });
             };
             winner_relay_spikes[index] = SpikeEvent {
@@ -550,20 +667,18 @@ impl TemporalCircuitRuntime {
             TemporalContextPolicy::GenericAfferents => proximal_context,
         };
         let Some(event_count) = self.event_count.checked_add(1) else {
-            return self.fail(TemporalCircuitStop::Physics {
-                stage: PhysicalStage::EventCounter,
+            return self.fail(TemporalCircuitStop::TickOrCounterOverflow {
+                stage: TemporalOverflowStage::EventCounter,
                 location: 0,
-                source: TemporalPhysicsStop::InvalidInput("event counter overflowed u64"),
             });
         };
 
         // The only transient commit point. All physical work and every STOP
         // condition above used staged values.
-        self.previous_context.clear();
-        self.previous_context.extend_from_slice(&context);
-        self.previous_winner_context.clear();
-        self.previous_winner_context
-            .extend_from_slice(&winner_context);
+        self.previous_context = context;
+        self.previous_context_len = CONTEXT_CELLS as u8;
+        self.previous_winner_context = winner_context;
+        self.previous_winner_context_len = CONTEXT_CELLS as u8;
         self.event_count = event_count;
 
         Ok(TemporalCircuitStep {
@@ -585,14 +700,20 @@ impl TemporalCircuitRuntime {
     }
 
     pub(crate) fn reset_transient(&mut self) {
-        self.previous_context.clear();
-        self.previous_winner_context.clear();
+        self.previous_context = [0; CONTEXT_CELLS];
+        self.previous_context_len = 0;
+        self.previous_winner_context = [0; CONTEXT_CELLS];
+        self.previous_winner_context_len = 0;
         self.event_count = 0;
     }
 
     fn fail<T>(&mut self, stop: TemporalCircuitStop) -> Result<T, TemporalCircuitStop> {
         debug_assert!(!matches!(stop, TemporalCircuitStop::UnknownToken(_)));
-        self.scientific_stop = Some(stop.clone());
+        if let Some(code) = stop.poison_code() {
+            self.scientific_stop = Some(code);
+        } else {
+            debug_assert!(false, "retryable STOP reached the poison helper");
+        }
         Err(stop)
     }
 
@@ -600,15 +721,12 @@ impl TemporalCircuitRuntime {
         self.threshold_offsets_mv[cell_id as usize]
     }
 
-    fn owner_load(&self, owner: u32) -> u8 {
+    fn owner_load(&self, owner: u32) -> Result<u8, TemporalCircuitStop> {
         self.store
             .runtime_owner_load(owner)
-            .expect("validated column owner remains inside the temporal store")
-    }
-
-    fn column(&self, column: u32) -> &[u32] {
-        let index = column as usize;
-        &self.column_cells[self.column_offsets[index]..self.column_offsets[index + 1]]
+            .ok_or(TemporalCircuitStop::StoreOrPlanInvariant(
+                "column owner is outside the temporal store",
+            ))
     }
 
     fn diagnostic_for_owner(
@@ -623,111 +741,166 @@ impl TemporalCircuitRuntime {
             .map(|index| &diagnostics[index])
     }
 
-    fn column_drives(
-        &self,
+    fn prepare_column_drives(
+        &mut self,
         column: u32,
         diagnostic_count: usize,
-    ) -> Result<Vec<CandidateDrive>, TemporalCircuitStop> {
-        let cells = self.column(column);
-        let active_owners: Vec<u32> = cells
-            .iter()
-            .copied()
-            .filter(|&cell| {
-                self.diagnostic_for_owner(cell, diagnostic_count)
-                    .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
-            })
-            .collect();
-        if active_owners.len() > 1 {
+    ) -> Result<usize, TemporalCircuitStop> {
+        if diagnostic_count > self.recognition_scratch.len() {
+            return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "recognition output exceeds its construction-time scratch",
+            ));
+        }
+        let column_index = column as usize;
+        let Some((&cell_start, &cell_end)) = self
+            .column_offsets
+            .get(column_index)
+            .zip(self.column_offsets.get(column_index + 1))
+        else {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "token code references a missing column",
+            ));
+        };
+        if cell_start > cell_end || cell_end > self.column_cells.len() {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "column CSR bounds are malformed",
+            ));
+        }
+        let cells = &self.column_cells[cell_start..cell_end];
+        if cells.len() > self.column_drive_scratch.len()
+            || cells.len() > self.novel_candidate_scratch.len()
+        {
+            return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "column occupancy exceeds construction-time candidate scratch",
+            ));
+        }
+
+        let mut active_first = NONE;
+        let mut active_second = NONE;
+        let mut active_count = 0u32;
+        let mut active_offset = None;
+        let mut matching_first = NONE;
+        let mut matching_second = NONE;
+        let mut matching_count = 0u32;
+        let mut matching_offset = None;
+        for (offset, &cell) in cells.iter().enumerate() {
+            let Some(diagnostic) = self.diagnostic_for_owner(cell, diagnostic_count) else {
+                continue;
+            };
+            if diagnostic.best_active_segment != NONE {
+                active_count += 1;
+                if active_first == NONE {
+                    active_first = cell;
+                    active_offset = Some(offset);
+                } else if active_second == NONE {
+                    active_second = cell;
+                }
+            }
+            if diagnostic.best_matching_segment != NONE {
+                matching_count += 1;
+                if matching_first == NONE {
+                    matching_first = cell;
+                    matching_offset = Some(offset);
+                } else if matching_second == NONE {
+                    matching_second = cell;
+                }
+            }
+        }
+        if active_count > 1 {
             return Err(TemporalCircuitStop::MultipleActiveOwners {
                 column,
-                owners: active_owners,
+                owners: OwnerConflict {
+                    first: active_first,
+                    second: active_second,
+                    count: active_count,
+                },
             });
         }
-        let matching_owners: Vec<u32> = cells
-            .iter()
-            .copied()
-            .filter(|&cell| {
-                self.diagnostic_for_owner(cell, diagnostic_count)
-                    .is_some_and(|diagnostic| diagnostic.best_matching_segment != NONE)
-            })
-            .collect();
-        if matching_owners.len() > 1 {
+        if matching_count > 1 {
             return Err(TemporalCircuitStop::MultipleMatchingOwners {
                 column,
-                owners: matching_owners,
+                owners: OwnerConflict {
+                    first: matching_first,
+                    second: matching_second,
+                    count: matching_count,
+                },
             });
         }
 
-        let mut categorized = active_owners.clone();
-        for &owner in &matching_owners {
-            if !categorized.contains(&owner) {
-                categorized.push(owner);
-            }
-        }
-        if categorized.len() > usize::from(self.config.novel_race_cap) {
-            return Err(TemporalCircuitStop::Physics {
-                stage: PhysicalStage::ColumnRace,
-                location: column,
-                source: TemporalPhysicsStop::InvalidInput(
-                    "categorized owners exceed the calibrated race cap",
-                ),
+        let categorized_count = usize::from(active_count != 0)
+            + usize::from(matching_count != 0 && matching_first != active_first);
+        if categorized_count > usize::from(self.config.novel_race_cap) {
+            return Err(TemporalCircuitStop::CategorizedRaceCapacity {
+                column,
+                categorized_count: categorized_count as u8,
+                race_cap: self.config.novel_race_cap,
             });
         }
-        let novel_limit = usize::from(self.config.novel_race_cap) - categorized.len();
-        let mut currents_pa = vec![0.0; cells.len()];
-        if self.previous_context.is_empty() {
+        let novel_limit = usize::from(self.config.novel_race_cap) - categorized_count;
+        for (offset, &cell_id) in cells.iter().enumerate() {
+            self.column_drive_scratch[offset] = CandidateDrive {
+                cell_id,
+                current_pa: 0.0,
+                threshold_offset_mv: self.threshold_offset(cell_id),
+            };
+        }
+
+        if self.previous_context_len == 0 {
             for rank in 0..usize::from(self.config.base_cells_per_column) {
-                currents_pa[rank] = CandidateClass::Novel {
+                let Some(&cell_id) = cells.get(rank) else {
+                    return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                        "column lost its validated base-cell prefix",
+                    ));
+                };
+                self.column_drive_scratch[rank].current_pa = CandidateClass::Novel {
                     rank: rank as u8,
-                    load: self.owner_load(cells[rank]),
+                    load: self.owner_load(cell_id)?,
                 }
                 .current_pa();
             }
         } else {
-            let novel_candidates = cells
-                .iter()
-                .copied()
-                .filter(|cell| !categorized.contains(cell))
-                .map(|cell_id| NovelCandidate {
+            let mut novel_candidate_count = 0usize;
+            for (column_offset, &cell_id) in cells.iter().enumerate() {
+                if cell_id == active_first || cell_id == matching_first {
+                    continue;
+                }
+                self.novel_candidate_scratch[novel_candidate_count] = NovelCandidate {
                     cell_id,
-                    load: self.owner_load(cell_id),
+                    column_offset,
+                    load: self.owner_load(cell_id)?,
                     afferent_score: afferent_score(
                         self.config.construction_seed,
-                        &self.previous_context,
+                        &self.previous_context[..usize::from(self.previous_context_len)],
                         cell_id,
                     ),
-                })
-                .collect();
-            for (rank, candidate) in select_novel_candidates(novel_candidates, novel_limit)
-                .into_iter()
-                .enumerate()
-            {
-                let offset = cells
-                    .binary_search(&candidate.cell_id)
-                    .expect("validated column membership remains sorted");
-                currents_pa[offset] = CandidateClass::Novel {
-                    rank: rank as u8,
-                    load: candidate.load,
-                }
-                .current_pa();
+                };
+                novel_candidate_count += 1;
+            }
+            let mut selected = [EMPTY_NOVEL_CANDIDATE; 8];
+            let selected_count = select_novel_candidates(
+                &self.novel_candidate_scratch[..novel_candidate_count],
+                novel_limit,
+                &mut selected,
+            );
+            for (rank, candidate) in selected[..selected_count].iter().enumerate() {
+                self.column_drive_scratch[candidate.column_offset].current_pa =
+                    CandidateClass::Novel {
+                        rank: rank as u8,
+                        load: candidate.load,
+                    }
+                    .current_pa();
             }
         }
 
-        for &owner in &matching_owners {
-            let offset = cells
-                .binary_search(&owner)
-                .expect("recognized owner belongs to the column");
-            currents_pa[offset] = CandidateClass::Matching {
-                load: self.owner_load(owner),
+        if let Some(offset) = matching_offset {
+            self.column_drive_scratch[offset].current_pa = CandidateClass::Matching {
+                load: self.owner_load(matching_first)?,
             }
             .current_pa();
         }
-        for &owner in &active_owners {
-            let offset = cells
-                .binary_search(&owner)
-                .expect("recognized owner belongs to the column");
-            currents_pa[offset] = CandidateClass::Active {
-                load: self.owner_load(owner),
+        if let Some(offset) = active_offset {
+            self.column_drive_scratch[offset].current_pa = CandidateClass::Active {
+                load: self.owner_load(active_first)?,
             }
             .current_pa();
         }
@@ -736,34 +909,46 @@ impl TemporalCircuitRuntime {
         // exact zero-drive cells. This preserves the Python oracle's simulated
         // work and STOP surface; a later sparse elision needs its own parity
         // proof before changing this boundary.
-        Ok(cells
-            .iter()
-            .zip(currents_pa)
-            .map(|(&cell_id, current_pa)| CandidateDrive {
-                cell_id,
-                current_pa,
-                threshold_offset_mv: self.threshold_offset(cell_id),
-            })
-            .collect())
+        Ok(cells.len())
     }
 }
 
 fn select_novel_candidates(
-    mut candidates: Vec<NovelCandidate>,
+    candidates: &[NovelCandidate],
     limit: usize,
-) -> Vec<NovelCandidate> {
+    selected: &mut [NovelCandidate; 8],
+) -> usize {
     let Some(minimum_load) = candidates.iter().map(|candidate| candidate.load).min() else {
-        return Vec::new();
+        return 0;
     };
-    candidates.retain(|candidate| candidate.load == minimum_load);
-    candidates.sort_unstable_by(|left, right| {
-        right
-            .afferent_score
-            .cmp(&left.afferent_score)
-            .then_with(|| left.cell_id.cmp(&right.cell_id))
-    });
-    candidates.truncate(limit);
-    candidates
+    let bounded_limit = limit.min(selected.len());
+    let mut selected_count = 0usize;
+    for &candidate in candidates {
+        if candidate.load != minimum_load {
+            continue;
+        }
+        let mut insertion = 0usize;
+        while insertion < selected_count {
+            let incumbent = selected[insertion];
+            let candidate_is_better = candidate.afferent_score > incumbent.afferent_score
+                || (candidate.afferent_score == incumbent.afferent_score
+                    && candidate.cell_id < incumbent.cell_id);
+            if candidate_is_better {
+                break;
+            }
+            insertion += 1;
+        }
+        if insertion >= bounded_limit {
+            continue;
+        }
+        let next_count = (selected_count + 1).min(bounded_limit);
+        for destination in (insertion + 1..next_count).rev() {
+            selected[destination] = selected[destination - 1];
+        }
+        selected[insertion] = candidate;
+        selected_count = next_count;
+    }
+    selected_count
 }
 
 const MIX_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
@@ -794,6 +979,65 @@ fn afferent_score(construction_seed: u32, context: &[u32], postsynaptic: u32) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::alloc::{GlobalAlloc, Layout, System};
+    use std::cell::Cell;
+
+    struct ThreadCountingAllocator;
+
+    thread_local! {
+        static COUNT_ALLOCATIONS: Cell<bool> = const { Cell::new(false) };
+        static ALLOCATION_COUNT: Cell<usize> = const { Cell::new(0) };
+    }
+
+    #[global_allocator]
+    static TEST_ALLOCATOR: ThreadCountingAllocator = ThreadCountingAllocator;
+
+    unsafe impl GlobalAlloc for ThreadCountingAllocator {
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            COUNT_ALLOCATIONS.with(|enabled| {
+                if enabled.get() {
+                    ALLOCATION_COUNT.with(|count| count.set(count.get() + 1));
+                }
+            });
+            unsafe { System.alloc(layout) }
+        }
+
+        unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+            unsafe { System.dealloc(ptr, layout) }
+        }
+
+        unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+            COUNT_ALLOCATIONS.with(|enabled| {
+                if enabled.get() {
+                    ALLOCATION_COUNT.with(|count| count.set(count.get() + 1));
+                }
+            });
+            unsafe { System.alloc_zeroed(layout) }
+        }
+
+        unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+            COUNT_ALLOCATIONS.with(|enabled| {
+                if enabled.get() {
+                    ALLOCATION_COUNT.with(|count| count.set(count.get() + 1));
+                }
+            });
+            unsafe { System.realloc(ptr, layout, new_size) }
+        }
+    }
+
+    fn count_allocations<T>(operation: impl FnOnce() -> T) -> (T, usize) {
+        ALLOCATION_COUNT.with(|count| count.set(0));
+        COUNT_ALLOCATIONS.with(|enabled| {
+            assert!(
+                !enabled.replace(true),
+                "allocation counter is not reentrant"
+            );
+        });
+        let result = operation();
+        COUNT_ALLOCATIONS.with(|enabled| enabled.set(false));
+        let count = ALLOCATION_COUNT.with(Cell::get);
+        (result, count)
+    }
 
     fn config(
         column_count: u32,
@@ -1119,6 +1363,48 @@ mod tests {
     }
 
     #[test]
+    fn read_only_success_and_stop_make_zero_post_construction_allocations() {
+        let mut runtime = python_oracle_runtime(255);
+        let (trace, success_allocations) = count_allocations(|| {
+            (
+                runtime.recognize(0),
+                runtime.recognize(1),
+                runtime.recognize(0),
+                runtime.recognize(1),
+            )
+        });
+        assert_eq!(success_allocations, 0);
+        assert!(trace.0.is_ok() && trace.1.is_ok() && trace.2.is_ok() && trace.3.is_ok());
+
+        let config = config(22, 2, TemporalContextPolicy::BoundWinners);
+        let sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
+        let segments = [
+            TemporalSegmentInit {
+                owner: 22,
+                sources: sources.clone(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            },
+            TemporalSegmentInit {
+                owner: 23,
+                sources,
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            },
+        ];
+        let mut stopped =
+            runtime_with_offsets(config, vec![0.0; physical_count(config)], &segments);
+        stopped.recognize(0).unwrap();
+        let (first_stop, first_stop_allocations) = count_allocations(|| stopped.recognize(1));
+        assert_eq!(first_stop_allocations, 0);
+        assert!(matches!(
+            first_stop,
+            Err(TemporalCircuitStop::MultipleActiveOwners { .. })
+        ));
+        let (poisoned, poisoned_allocations) = count_allocations(|| stopped.recognize(1));
+        assert_eq!(poisoned_allocations, 0);
+        assert_eq!(poisoned, Err(TemporalCircuitStop::Poisoned));
+    }
+
+    #[test]
     fn literal_python_matching_band_trace_is_bit_exact() {
         let mut runtime = python_oracle_runtime(205);
         runtime.recognize(0).expect("boundary step");
@@ -1235,8 +1521,8 @@ mod tests {
             let mut runtime =
                 runtime_with_offsets(config, vec![0.0; physical_count(config)], &segments);
             runtime.recognize(0).expect("context step");
-            let before_context = runtime.previous_context.clone();
-            let before_winner_context = runtime.previous_winner_context.clone();
+            let before_context = runtime.previous_context;
+            let before_winner_context = runtime.previous_winner_context;
             let before_event = runtime.event_count;
             let stop = runtime.recognize(1).unwrap_err();
             if expect_active {
@@ -1244,7 +1530,11 @@ mod tests {
                     stop,
                     TemporalCircuitStop::MultipleActiveOwners {
                         column: 11,
-                        owners: vec![22, 23],
+                        owners: OwnerConflict {
+                            first: 22,
+                            second: 23,
+                            count: 2,
+                        },
                     }
                 );
             } else {
@@ -1252,7 +1542,11 @@ mod tests {
                     stop,
                     TemporalCircuitStop::MultipleMatchingOwners {
                         column: 11,
-                        owners: vec![22, 23],
+                        owners: OwnerConflict {
+                            first: 22,
+                            second: 23,
+                            count: 2,
+                        },
                     }
                 );
             }
@@ -1296,7 +1590,11 @@ mod tests {
             runtime.recognize(1),
             Err(TemporalCircuitStop::MultipleActiveOwners {
                 column: 11,
-                owners: vec![44, 45],
+                owners: OwnerConflict {
+                    first: 44,
+                    second: 45,
+                    count: 2,
+                },
             })
         );
         assert_eq!(runtime.previous_context, expected_context);
@@ -1304,8 +1602,8 @@ mod tests {
         assert_eq!(runtime.event_count, 1);
 
         runtime.reset_transient();
-        assert!(runtime.previous_context.is_empty());
-        assert!(runtime.previous_winner_context.is_empty());
+        assert_eq!(runtime.previous_context_len, 0);
+        assert_eq!(runtime.previous_winner_context_len, 0);
         assert_eq!(runtime.event_count, 0);
         assert_eq!(runtime.recognize(0), Err(TemporalCircuitStop::Poisoned));
     }
@@ -1391,24 +1689,57 @@ mod tests {
     #[test]
     fn reset_clears_only_transient_context_and_event_counter() {
         let mut runtime = python_oracle_runtime(255);
-        let learned_loads: Vec<u8> = (0..22).map(|owner| runtime.owner_load(owner)).collect();
+        let learned_loads: Vec<u8> = (0..22)
+            .map(|owner| runtime.owner_load(owner).unwrap())
+            .collect();
         runtime.recognize(0).unwrap();
         runtime.recognize(1).unwrap();
         runtime.recognize(0).unwrap();
         assert_eq!(runtime.recognize(1).unwrap().event_count, 4);
         runtime.reset_transient();
 
-        assert!(runtime.previous_context.is_empty());
-        assert!(runtime.previous_winner_context.is_empty());
+        assert_eq!(runtime.previous_context_len, 0);
+        assert_eq!(runtime.previous_winner_context_len, 0);
         assert_eq!(runtime.event_count, 0);
         assert_eq!(
             (0..22)
                 .map(|owner| runtime.owner_load(owner))
-                .collect::<Vec<_>>(),
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
             learned_loads
         );
         assert_python_boundary_step(&runtime.recognize(0).unwrap(), 1);
         assert_python_active_step(&runtime.recognize(1).unwrap(), 2);
+    }
+
+    #[test]
+    fn context_storage_is_fixed_and_keeps_its_address_across_tokens_and_reset() {
+        let mut runtime = python_oracle_runtime(255);
+        let context_address = runtime.previous_context.as_ptr();
+        let winner_context_address = runtime.previous_winner_context.as_ptr();
+        assert_eq!(runtime.previous_context_len, 0);
+        assert_eq!(runtime.previous_winner_context_len, 0);
+
+        runtime.recognize(0).unwrap();
+        runtime.recognize(1).unwrap();
+        assert_eq!(runtime.previous_context_len, CONTEXT_CELLS as u8);
+        assert_eq!(runtime.previous_winner_context_len, CONTEXT_CELLS as u8);
+        assert_eq!(runtime.previous_context.as_ptr(), context_address);
+        assert_eq!(
+            runtime.previous_winner_context.as_ptr(),
+            winner_context_address
+        );
+
+        runtime.reset_transient();
+        assert_eq!(runtime.previous_context_len, 0);
+        assert_eq!(runtime.previous_winner_context_len, 0);
+        assert_eq!(runtime.previous_context, [0; CONTEXT_CELLS]);
+        assert_eq!(runtime.previous_winner_context, [0; CONTEXT_CELLS]);
+        assert_eq!(runtime.previous_context.as_ptr(), context_address);
+        assert_eq!(
+            runtime.previous_winner_context.as_ptr(),
+            winner_context_address
+        );
     }
 
     #[test]
@@ -1546,7 +1877,7 @@ mod tests {
             };
             let mut runtime =
                 runtime_with_offsets(config, vec![0.0; physical_count(config)], &[segment]);
-            assert_eq!(runtime.owner_load(11), 1, "live_pairs={live_pairs}");
+            assert_eq!(runtime.owner_load(11), Ok(1), "live_pairs={live_pairs}");
             runtime.recognize(0).unwrap();
             runtime.recognize(1).unwrap();
         }
@@ -1583,12 +1914,12 @@ mod tests {
             Err(TemporalCircuitStop::UnknownToken(99))
         );
         assert_eq!(runtime.event_count, 0);
-        assert!(runtime.previous_context.is_empty());
+        assert_eq!(runtime.previous_context_len, 0);
         assert!(runtime.scientific_stop.is_none());
 
         runtime.recognize(0).expect("the first token must succeed");
-        let before_context = runtime.previous_context.clone();
-        let before_winner_context = runtime.previous_winner_context.clone();
+        let before_context = runtime.previous_context;
+        let before_winner_context = runtime.previous_winner_context;
         let before_event = runtime.event_count;
         assert!(matches!(
             runtime.recognize(1),
@@ -1605,34 +1936,158 @@ mod tests {
     }
 
     #[test]
-    fn novel_ranking_orders_load_then_afferent_score_then_gid() {
-        let ranked = select_novel_candidates(
-            vec![
-                NovelCandidate {
-                    cell_id: 1,
-                    load: 1,
-                    afferent_score: u128::MAX,
+    fn poison_codes_match_the_canonical_checkpoint_contract() {
+        fn assert_copy<T: Copy>() {}
+        assert_copy::<TemporalPoisonCode>();
+        assert_copy::<TemporalCircuitStop>();
+
+        assert_eq!(TemporalPoisonCode::Unpoisoned as u16, 0);
+        assert_eq!(TemporalPoisonCode::MultipleActiveOwners as u16, 1);
+        assert_eq!(TemporalPoisonCode::MultipleMatchingOwners as u16, 2);
+        assert_eq!(TemporalPoisonCode::CategorizedRaceCapacity as u16, 3);
+        assert_eq!(TemporalPoisonCode::MalformedContextOrPolicy as u16, 4);
+        assert_eq!(TemporalPoisonCode::ProximalPhysics as u16, 5);
+        assert_eq!(TemporalPoisonCode::ProximalRelayPhysics as u16, 6);
+        assert_eq!(TemporalPoisonCode::ColumnRacePhysics as u16, 7);
+        assert_eq!(TemporalPoisonCode::WinnerRelayPhysics as u16, 8);
+        assert_eq!(TemporalPoisonCode::TickOrCounterOverflow as u16, 9);
+        assert_eq!(TemporalPoisonCode::StoreOrPlanInvariant as u16, 10);
+        assert_eq!(TemporalPoisonCode::PhiloxAddressExhaustion as u16, 11);
+        assert_eq!(TemporalPoisonCode::ReserveCellCapacity as u16, 12);
+        assert_eq!(TemporalPoisonCode::GlobalSegmentCapacity as u16, 13);
+        assert_eq!(TemporalPoisonCode::OwnerSegmentCapacity as u16, 14);
+        assert_eq!(TemporalPoisonCode::PreallocatedCapacityInvariant as u16, 15);
+
+        assert_eq!(
+            TemporalCircuitStop::MultipleActiveOwners {
+                column: 11,
+                owners: OwnerConflict {
+                    first: 22,
+                    second: 23,
+                    count: 2,
                 },
-                NovelCandidate {
-                    cell_id: 9,
-                    load: 0,
-                    afferent_score: 7,
+            }
+            .poison_code(),
+            Some(TemporalPoisonCode::MultipleActiveOwners),
+        );
+        let conflict = OwnerConflict {
+            first: 22,
+            second: 23,
+            count: 2,
+        };
+        let mapped = [
+            (
+                TemporalCircuitStop::MultipleMatchingOwners {
+                    column: 11,
+                    owners: conflict,
                 },
-                NovelCandidate {
-                    cell_id: 3,
-                    load: 0,
-                    afferent_score: 7,
+                TemporalPoisonCode::MultipleMatchingOwners,
+            ),
+            (
+                TemporalCircuitStop::MalformedContextOrPolicy("literal fixture"),
+                TemporalPoisonCode::MalformedContextOrPolicy,
+            ),
+            (
+                TemporalCircuitStop::Physics {
+                    stage: PhysicalStage::Proximal,
+                    location: 1,
+                    source: TemporalPhysicsStop::NoPyramidalSpike,
                 },
-                NovelCandidate {
-                    cell_id: 4,
-                    load: 0,
-                    afferent_score: 8,
+                TemporalPoisonCode::ProximalPhysics,
+            ),
+            (
+                TemporalCircuitStop::Physics {
+                    stage: PhysicalStage::ProximalRelay,
+                    location: 2,
+                    source: TemporalPhysicsStop::NoPyramidalSpike,
                 },
-            ],
-            3,
+                TemporalPoisonCode::ProximalRelayPhysics,
+            ),
+            (
+                TemporalCircuitStop::Physics {
+                    stage: PhysicalStage::ColumnRace,
+                    location: 3,
+                    source: TemporalPhysicsStop::NoPyramidalSpike,
+                },
+                TemporalPoisonCode::ColumnRacePhysics,
+            ),
+            (
+                TemporalCircuitStop::Physics {
+                    stage: PhysicalStage::WinnerRelay,
+                    location: 4,
+                    source: TemporalPhysicsStop::NoPyramidalSpike,
+                },
+                TemporalPoisonCode::WinnerRelayPhysics,
+            ),
+            (
+                TemporalCircuitStop::StoreRecognition(1),
+                TemporalPoisonCode::StoreOrPlanInvariant,
+            ),
+            (
+                TemporalCircuitStop::StoreOrPlanInvariant("literal fixture"),
+                TemporalPoisonCode::StoreOrPlanInvariant,
+            ),
+            (
+                TemporalCircuitStop::PreallocatedCapacityInvariant("literal fixture"),
+                TemporalPoisonCode::PreallocatedCapacityInvariant,
+            ),
+        ];
+        for (stop, code) in mapped {
+            assert_eq!(stop.poison_code(), Some(code), "{stop:?}");
+        }
+        assert_eq!(
+            TemporalCircuitStop::CategorizedRaceCapacity {
+                column: 11,
+                categorized_count: 2,
+                race_cap: 1,
+            }
+            .poison_code(),
+            Some(TemporalPoisonCode::CategorizedRaceCapacity),
         );
         assert_eq!(
-            ranked
+            TemporalCircuitStop::TickOrCounterOverflow {
+                stage: TemporalOverflowStage::WinnerRelayTick,
+                location: 33,
+            }
+            .poison_code(),
+            Some(TemporalPoisonCode::TickOrCounterOverflow),
+        );
+        assert_eq!(TemporalCircuitStop::UnknownToken(99).poison_code(), None,);
+        assert_eq!(TemporalCircuitStop::Poisoned.poison_code(), None);
+    }
+
+    #[test]
+    fn novel_ranking_orders_load_then_afferent_score_then_gid() {
+        let candidates = [
+            NovelCandidate {
+                cell_id: 1,
+                column_offset: 0,
+                load: 1,
+                afferent_score: u128::MAX,
+            },
+            NovelCandidate {
+                cell_id: 9,
+                column_offset: 1,
+                load: 0,
+                afferent_score: 7,
+            },
+            NovelCandidate {
+                cell_id: 3,
+                column_offset: 2,
+                load: 0,
+                afferent_score: 7,
+            },
+            NovelCandidate {
+                cell_id: 4,
+                column_offset: 3,
+                load: 0,
+                afferent_score: 8,
+            },
+        ];
+        let mut ranked = [EMPTY_NOVEL_CANDIDATE; 8];
+        let ranked_count = select_novel_candidates(&candidates, 3, &mut ranked);
+        assert_eq!(
+            ranked[..ranked_count]
                 .iter()
                 .map(|candidate| candidate.cell_id)
                 .collect::<Vec<_>>(),

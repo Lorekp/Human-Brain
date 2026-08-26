@@ -78,12 +78,14 @@ fn homeostatic_current_pa(load: u8) -> f64 {
     20.0 / (1.0 + f64::from(load))
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum TemporalPhysicsStop {
     InvalidInput(&'static str),
     NoPyramidalSpike,
     MultiplePyramidalSpikes {
-        spikes: Vec<SpikeEvent>,
+        first: SpikeEvent,
+        second: SpikeEvent,
+        spike_count: usize,
     },
     BasketInhibitionMissing {
         winner: SpikeEvent,
@@ -122,6 +124,70 @@ pub(crate) struct CoupledRaceTicks {
     pub(crate) simulated_ticks: u16,
 }
 
+/// Construction-sized work buffers for one coupled race.
+///
+/// Length stays equal to the maximum materialized column occupancy. Calls use
+/// a prefix and never resize, reserve, or allocate.
+pub(crate) struct CoupledRaceScratch {
+    voltage_mv: Vec<f64>,
+    thresholds_mv: Vec<f64>,
+    excitatory_pa: Vec<f64>,
+    emitted: Vec<u8>,
+    spiking_indices: Vec<usize>,
+}
+
+impl CoupledRaceScratch {
+    pub(crate) fn try_new(max_candidates: usize) -> Result<Self, &'static str> {
+        if max_candidates == 0 {
+            return Err("coupled-race scratch requires nonzero capacity");
+        }
+
+        fn filled<T: Copy>(length: usize, value: T) -> Result<Vec<T>, &'static str> {
+            let mut values = Vec::new();
+            values
+                .try_reserve_exact(length)
+                .map_err(|_| "coupled-race scratch allocation failed")?;
+            values.resize(length, value);
+            Ok(values)
+        }
+
+        Ok(Self {
+            voltage_mv: filled(max_candidates, 0.0)?,
+            thresholds_mv: filled(max_candidates, 0.0)?,
+            excitatory_pa: filled(max_candidates, 0.0)?,
+            emitted: filled(max_candidates, 0)?,
+            spiking_indices: filled(max_candidates, 0)?,
+        })
+    }
+
+    fn capacity(&self) -> usize {
+        self.voltage_mv.len()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn allocation_signature(&self) -> [(usize, usize); 5] {
+        [
+            (
+                self.voltage_mv.as_ptr() as usize,
+                self.voltage_mv.capacity(),
+            ),
+            (
+                self.thresholds_mv.as_ptr() as usize,
+                self.thresholds_mv.capacity(),
+            ),
+            (
+                self.excitatory_pa.as_ptr() as usize,
+                self.excitatory_pa.capacity(),
+            ),
+            (self.emitted.as_ptr() as usize, self.emitted.capacity()),
+            (
+                self.spiking_indices.as_ptr() as usize,
+                self.spiking_indices.capacity(),
+            ),
+        ]
+    }
+}
+
 pub(crate) fn singleton_latency_ticks(
     current_pa: f64,
     threshold_offset_mv: f64,
@@ -157,10 +223,16 @@ pub(crate) fn singleton_latency_ticks(
 pub(crate) fn coupled_first_spike_race(
     candidates: &[CandidateDrive],
     basket: BasketDrive,
+    scratch: &mut CoupledRaceScratch,
 ) -> Result<CoupledRaceTicks, TemporalPhysicsStop> {
     if candidates.is_empty() {
         return Err(TemporalPhysicsStop::InvalidInput(
             "coupled race requires at least one candidate",
+        ));
+    }
+    if candidates.len() > scratch.capacity() {
+        return Err(TemporalPhysicsStop::InvalidInput(
+            "coupled-race scratch is smaller than candidate occupancy",
         ));
     }
     if !basket.current_pa.is_finite()
@@ -193,56 +265,67 @@ pub(crate) fn coupled_first_spike_race(
         }
     }
 
-    let mut voltage_mv = vec![0.0; candidates.len()];
-    let thresholds_mv: Vec<f64> = candidates
-        .iter()
-        .map(|candidate| THRESHOLD_RELATIVE_MV + candidate.threshold_offset_mv)
-        .collect();
-    let mut excitatory_pa: Vec<f64> = candidates
-        .iter()
-        .map(|candidate| candidate.current_pa)
-        .collect();
-    let mut emitted = vec![false; candidates.len()];
+    for (index, candidate) in candidates.iter().enumerate() {
+        scratch.voltage_mv[index] = 0.0;
+        scratch.thresholds_mv[index] = THRESHOLD_RELATIVE_MV + candidate.threshold_offset_mv;
+        scratch.excitatory_pa[index] = candidate.current_pa;
+        scratch.emitted[index] = 0;
+    }
     let mut inhibitory_pa = 0.0;
     let mut basket_voltage_mv = 0.0;
     let mut basket_excitation_pa = 0.0;
     let basket_threshold_mv = THRESHOLD_RELATIVE_MV + basket.threshold_offset_mv;
     let mut basket_tick = None;
     let mut inhibition_onset_tick = None;
-    let mut spikes = Vec::with_capacity(candidates.len());
-    let mut spiking = Vec::with_capacity(candidates.len());
+    let mut first_spike = None;
+    let mut second_spike = None;
+    let mut spike_count = 0usize;
     let mut simulated_ticks = 0;
 
     for tick in 1..=RACE_TICKS {
         simulated_ticks = tick;
         for index in 0..candidates.len() {
-            voltage_mv[index] += VOLTAGE_STEP_SCALE
-                * (excitatory_pa[index] - inhibitory_pa - LEAK_NS * voltage_mv[index]);
+            scratch.voltage_mv[index] += VOLTAGE_STEP_SCALE
+                * (scratch.excitatory_pa[index]
+                    - inhibitory_pa
+                    - LEAK_NS * scratch.voltage_mv[index]);
         }
         if basket_tick.is_none() {
             basket_voltage_mv +=
                 VOLTAGE_STEP_SCALE * (basket_excitation_pa - LEAK_NS * basket_voltage_mv);
         }
 
-        spiking.clear();
-        spiking.extend(
-            (0..candidates.len())
-                .filter(|&index| !emitted[index] && voltage_mv[index] >= thresholds_mv[index]),
-        );
-        spiking.sort_unstable_by(|&left, &right| {
+        let mut spiking_count = 0usize;
+        for index in 0..candidates.len() {
+            if scratch.emitted[index] == 0
+                && scratch.voltage_mv[index] >= scratch.thresholds_mv[index]
+            {
+                scratch.spiking_indices[spiking_count] = index;
+                spiking_count += 1;
+            }
+        }
+        let voltage_mv = &scratch.voltage_mv;
+        let thresholds_mv = &scratch.thresholds_mv;
+        scratch.spiking_indices[..spiking_count].sort_unstable_by(|&left, &right| {
             let left_margin = voltage_mv[left] - thresholds_mv[left];
             let right_margin = voltage_mv[right] - thresholds_mv[right];
             right_margin
                 .total_cmp(&left_margin)
                 .then_with(|| candidates[left].cell_id.cmp(&candidates[right].cell_id))
         });
-        let first_pyramidal_spike = spikes.is_empty() && !spiking.is_empty();
-        for &index in &spiking {
-            emitted[index] = true;
-            spikes.push(SpikeEvent {
+        let first_pyramidal_spike = spike_count == 0 && spiking_count != 0;
+        for &index in &scratch.spiking_indices[..spiking_count] {
+            scratch.emitted[index] = 1;
+            let spike = SpikeEvent {
                 cell_id: candidates[index].cell_id,
                 tick,
-            });
+            };
+            if first_spike.is_none() {
+                first_spike = Some(spike);
+            } else if second_spike.is_none() {
+                second_spike = Some(spike);
+            }
+            spike_count += 1;
         }
 
         let basket_spiked = basket_tick.is_none() && basket_voltage_mv >= basket_threshold_mv;
@@ -250,7 +333,7 @@ pub(crate) fn coupled_first_spike_race(
             basket_tick = Some(tick);
         }
 
-        for current_pa in &mut excitatory_pa {
+        for current_pa in &mut scratch.excitatory_pa[..candidates.len()] {
             *current_pa *= NMDA_DECAY;
         }
         basket_excitation_pa *= NMDA_DECAY;
@@ -263,18 +346,24 @@ pub(crate) fn coupled_first_spike_race(
             inhibition_onset_tick = Some(tick + 1);
         }
 
-        if emitted.iter().all(|&was_emitted| was_emitted)
+        if scratch.emitted[..candidates.len()]
+            .iter()
+            .all(|&was_emitted| was_emitted != 0)
             && (basket_tick.is_some() || basket.current_pa == 0.0)
         {
             break;
         }
     }
 
-    let Some(&winner) = spikes.first() else {
+    let Some(winner) = first_spike else {
         return Err(TemporalPhysicsStop::NoPyramidalSpike);
     };
-    if spikes.len() != 1 {
-        return Err(TemporalPhysicsStop::MultiplePyramidalSpikes { spikes });
+    if let Some(second) = second_spike {
+        return Err(TemporalPhysicsStop::MultiplePyramidalSpikes {
+            first: winner,
+            second,
+            spike_count,
+        });
     }
     let (Some(basket_tick), Some(inhibition_onset_tick)) = (basket_tick, inhibition_onset_tick)
     else {
@@ -298,7 +387,7 @@ pub(crate) fn coupled_first_spike_race(
 mod tests {
     use super::{
         coupled_first_spike_race, singleton_latency_ticks, BasketDrive, CandidateClass,
-        CandidateDrive, CoupledRaceTicks, SpikeEvent,
+        CandidateDrive, CoupledRaceScratch, CoupledRaceTicks, SpikeEvent,
     };
 
     // Literal outputs were generated from the current Python oracle:
@@ -522,9 +611,10 @@ mod tests {
             threshold_offset_mv: -0.012_305_162_963_783_242,
             inhibition_pa: 500.0,
         };
+        let mut scratch = CoupledRaceScratch::try_new(candidates.len()).unwrap();
 
         assert_eq!(
-            coupled_first_spike_race(&candidates, basket),
+            coupled_first_spike_race(&candidates, basket, &mut scratch),
             Ok(CoupledRaceTicks {
                 winner: SpikeEvent {
                     cell_id: 7,
@@ -556,10 +646,11 @@ mod tests {
                     threshold_offset_mv: fixture.basket_offset_mv,
                     inhibition_pa: 500.0,
                 };
+                let mut scratch = CoupledRaceScratch::try_new(candidates.len()).unwrap();
                 let winner_tick = fixture.winner_ticks[scenario];
 
                 assert_eq!(
-                    coupled_first_spike_race(&candidates, basket),
+                    coupled_first_spike_race(&candidates, basket, &mut scratch),
                     Ok(CoupledRaceTicks {
                         winner: SpikeEvent {
                             cell_id: fixture.winner,
@@ -579,18 +670,17 @@ mod tests {
                     ..basket
                 };
                 assert_eq!(
-                    coupled_first_spike_race(&candidates[..2], control_basket),
+                    coupled_first_spike_race(&candidates[..2], control_basket, &mut scratch,),
                     Err(super::TemporalPhysicsStop::MultiplePyramidalSpikes {
-                        spikes: vec![
-                            SpikeEvent {
-                                cell_id: fixture.winner,
-                                tick: winner_tick,
-                            },
-                            SpikeEvent {
-                                cell_id: fixture.runner_up,
-                                tick: fixture.runner_up_ticks[scenario],
-                            },
-                        ],
+                        first: SpikeEvent {
+                            cell_id: fixture.winner,
+                            tick: winner_tick,
+                        },
+                        second: SpikeEvent {
+                            cell_id: fixture.runner_up,
+                            tick: fixture.runner_up_ticks[scenario],
+                        },
+                        spike_count: 2,
                     }),
                     "control seed {} scenario {scenario}",
                     fixture.seed,
@@ -619,20 +709,20 @@ mod tests {
             threshold_offset_mv: 0.0,
             inhibition_pa: 0.0,
         };
+        let mut scratch = CoupledRaceScratch::try_new(tied.len()).unwrap();
 
         assert_eq!(
-            coupled_first_spike_race(&tied, basket),
+            coupled_first_spike_race(&tied, basket, &mut scratch),
             Err(super::TemporalPhysicsStop::MultiplePyramidalSpikes {
-                spikes: vec![
-                    SpikeEvent {
-                        cell_id: 3,
-                        tick: 189
-                    },
-                    SpikeEvent {
-                        cell_id: 9,
-                        tick: 189
-                    },
-                ],
+                first: SpikeEvent {
+                    cell_id: 3,
+                    tick: 189,
+                },
+                second: SpikeEvent {
+                    cell_id: 9,
+                    tick: 189,
+                },
+                spike_count: 2,
             }),
         );
     }
@@ -645,6 +735,7 @@ mod tests {
             threshold_offset_mv: 0.0,
             inhibition_pa: 500.0,
         };
+        let mut scratch = CoupledRaceScratch::try_new(1).unwrap();
         assert_eq!(
             coupled_first_spike_race(
                 &[CandidateDrive {
@@ -653,6 +744,7 @@ mod tests {
                     threshold_offset_mv: 0.0,
                 }],
                 basket,
+                &mut scratch,
             ),
             Err(super::TemporalPhysicsStop::NoPyramidalSpike),
         );
@@ -668,6 +760,7 @@ mod tests {
                     current_pa: 0.0,
                     ..basket
                 },
+                &mut scratch,
             ),
             Err(super::TemporalPhysicsStop::BasketInhibitionMissing {
                 winner: SpikeEvent {
@@ -678,5 +771,51 @@ mod tests {
                 inhibition_onset_tick: None,
             }),
         );
+    }
+
+    #[test]
+    fn coupled_race_scratch_never_reallocates_on_success_or_stop() {
+        let candidates = [
+            CandidateDrive {
+                cell_id: 3,
+                current_pa: 650.0,
+                threshold_offset_mv: 0.0,
+            },
+            CandidateDrive {
+                cell_id: 9,
+                current_pa: 640.0,
+                threshold_offset_mv: 0.0,
+            },
+            CandidateDrive {
+                cell_id: 12,
+                current_pa: 0.0,
+                threshold_offset_mv: 0.0,
+            },
+        ];
+        let basket = BasketDrive {
+            cell_id: 20,
+            current_pa: 200_000.0,
+            threshold_offset_mv: 0.0,
+            inhibition_pa: 500.0,
+        };
+        let mut scratch = CoupledRaceScratch::try_new(candidates.len()).unwrap();
+        let allocation_signature = scratch.allocation_signature();
+
+        for _ in 0..4 {
+            assert!(coupled_first_spike_race(&candidates, basket, &mut scratch).is_ok());
+            assert_eq!(scratch.allocation_signature(), allocation_signature);
+        }
+        assert!(matches!(
+            coupled_first_spike_race(
+                &candidates,
+                BasketDrive {
+                    inhibition_pa: 0.0,
+                    ..basket
+                },
+                &mut scratch,
+            ),
+            Err(super::TemporalPhysicsStop::MultiplePyramidalSpikes { .. })
+        ));
+        assert_eq!(scratch.allocation_signature(), allocation_signature);
     }
 }

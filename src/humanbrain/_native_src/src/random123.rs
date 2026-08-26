@@ -29,20 +29,17 @@ pub(crate) fn philox2x64_10(counter_0: u64, counter_1: u64, key: u64) -> (u64, u
 /// Map one uniform 64-bit word into `0..bound` without modulo bias.
 ///
 /// `None` identifies the exact Lemire low-tail rejection region; callers must
-/// draw another independent word. `bound` is a nonzero protocol invariant.
+/// draw another independent word. A zero `bound` is invalid and returns `None`.
 #[inline]
-#[cfg(test)]
 pub(crate) fn lemire_candidate(word: u64, bound: u64) -> Option<u64> {
-    assert!(
-        bound != 0,
-        "bounded Random123 mapping requires a nonzero bound"
-    );
+    if bound == 0 {
+        return None;
+    }
     let rejection_threshold = bound.wrapping_neg() % bound;
     let product = (word as u128) * (bound as u128);
     ((product as u64) >= rejection_threshold).then_some((product >> 64) as u64)
 }
 
-#[cfg(test)]
 fn bounded_index_with_words<F>(bound: u64, mut word_for_attempt: F) -> Option<u64>
 where
     F: FnMut(u32) -> u64,
@@ -58,8 +55,12 @@ where
     None
 }
 
-#[cfg(test)]
-fn bounded_philox_index(bound: u64, key: u64, learning_step: u64, draw: u32) -> Option<u64> {
+pub(crate) fn bounded_philox_index(
+    bound: u64,
+    key: u64,
+    learning_step: u64,
+    draw: u32,
+) -> Option<u64> {
     bounded_index_with_words(bound, |attempt| {
         let counter_1 = ((attempt as u64) << 32) | draw as u64;
         philox2x64_10(learning_step, counter_1, key).0
@@ -71,14 +72,13 @@ fn bounded_philox_index(bound: u64, key: u64, learning_step: u64, draw: u32) -> 
 /// The caller supplies reusable scratch covering the population so the future
 /// temporal mutation path can remain allocation-free. `None` denotes invalid
 /// dimensions or exhaustion of the exact 32-bit rejection-attempt address.
-#[cfg(test)]
-pub(crate) fn sample_without_replacement<'a>(
+pub(crate) fn sample_without_replacement(
     population_size: usize,
     sample_size: usize,
     key: u64,
     learning_step: u64,
-    scratch: &'a mut [u64],
-) -> Option<&'a [u64]> {
+    scratch: &mut [u64],
+) -> Option<&[u64]> {
     if sample_size > population_size
         || population_size > scratch.len()
         || (sample_size as u64) >= (1u64 << 32)
@@ -119,6 +119,7 @@ mod tests {
 
     #[test]
     fn lemire_mapping_rejects_the_biased_low_tail_exactly() {
+        assert_eq!(lemire_candidate(u64::MAX, 0), None);
         assert_eq!(lemire_candidate(0, 3), None);
         assert_eq!(lemire_candidate(u64::MAX, 3), Some(2));
     }
