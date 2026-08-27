@@ -1054,20 +1054,30 @@ posting bytes must therefore never become checkpoint identity.
 ### Import validation order
 
 Import is a build-and-publish transaction with exactly two validation passes
-before any store allocation. Both passes use checked offsets into the immutable
-checkpoint bytes; neither constructs store vectors, postings, owner storage,
-route buckets, or a publishable handle.
+before any runtime, store, route-bucket, or handle construction. Pass 1
+completes before any size-proportional allocation. Both passes use checked
+offsets into the immutable checkpoint bytes.
 
-1. **Envelope and integrity pass.** Validate magic, version, header size, exact
-   total/body lengths, reserved zeros, and all checked length arithmetic.
-   Compare protocol, source-bundle, and circuit identities supplied by the
-   validated runtime factory. Stream the exact body once and compare its
-   SHA-256. Then recompute and compare the logical-state digest from the verified
-   stored body digest and the exact raw header bytes 192..223, before accepting
-   any decoded logical-state scalar.
-2. **Canonical-state and reachability pass.** Decode and validate segment/cohort
-   counts, cursor bounds, context lengths, counters, poison code, and every
-   checked v1 SoA slice boundary. Require
+1. **Envelope and integrity pass.** Validate all fixed framing: magic, version,
+   header size, exact total/body and section lengths, and reserved zeros.
+   Validate every fixed enum and numeric domain, including the segment/cohort
+   counts, cursor, context lengths, counters, and poison code; validate the
+   route/certificate contract and all checked length, platform-addressability,
+   and allocation-budget arithmetic. Compare protocol, source-bundle, and
+   circuit identities supplied by the validated runtime factory. Stream the
+   exact body once and compare its SHA-256. Then recompute and compare the
+   logical-state digest from the verified stored body digest and the exact raw
+   header bytes 192..223, before treating any decoded logical-state scalar as
+   trusted or making any size-proportional allocation.
+2. **Canonical-state and reachability pass.** Use the already-bounded v1 SoA
+   slices and pass-1-validated scalars to validate dynamic structural domains,
+   cross-field rules, and runtime reachability. This pass may allocate only
+   bounded, typed, fallible transient validation scratch needed for its
+   streaming linear checks, such as per-column owner-load counters and bounded
+   chunk buffers. It never constructs the publishable runtime or store,
+   owner-row storage, route buckets, a handle, or any `S`-length posting array;
+   allocation failure is retryable, and all scratch is dropped on every failure.
+   Require
    `(event_count == 0) == (prior_context_length == 0 &&
    winner_context_length == 0)`; nonzero event count therefore requires both
    lengths to be 22, and a growth-off circuit requires `learning_step == 0`.
@@ -1086,17 +1096,17 @@ route buckets, or a publishable handle.
    against the exact runtime-reachable grammar below: both are empty, or both
    are exactly 22; set equality or a permutation is never sufficient.
 
-Only after both validation passes succeed, allocate one brand-new runtime and
-preallocated store off to the side and perform one bounded rebuild traversal
-over the validated frozen v1 SoA body. Reconstruct column CSR from the cohort
-log, then visit segment IDs and slots only within the checked `S` and `S*10`
-bounds, addressing the separate owner, source, and tick slices directly rather
-than constructing an AoS staging copy. Rebuild owner counts and the selected
-exact generic representation--currently the exact lossless intrusive postings--
-in segment-ID/slot order; route 1 additionally rebuilds its certified physical
-buckets. Compute and compare the semantic index digest, then canonically re-hash
-or re-export logical state. Return or publish the new handle only after every
-check succeeds.
+Only after both validation passes succeed, allocate one brand-new runtime, its
+preallocated store, any route buckets, and its unpublished handle off to the
+side, then perform one bounded rebuild traversal over the validated frozen v1
+SoA body. Reconstruct column CSR from the cohort log, then visit segment IDs and
+slots only within the checked `S` and `S*10` bounds, addressing the separate
+owner, source, and tick slices directly rather than constructing an AoS staging
+copy. Rebuild owner counts and the selected exact generic representation--
+currently the exact lossless intrusive postings--in segment-ID/slot order;
+route 1 additionally rebuilds its certified physical buckets. Compute and
+compare the semantic index digest, then canonically re-hash or re-export logical
+state. Return or publish the new handle only after every check succeeds.
 
 There is no in-place restore. Invalid input publishes nothing and cannot change
 an existing runtime.
