@@ -4,8 +4,9 @@
 //! bytes, the complete fixed header, allocation-free reachability proofs,
 //! fallible export preparation over a borrowed live state, and allocation-free
 //! streaming of a prepared checkpoint into a caller-owned sink. It also owns
-//! allocation-free checkpoint import Pass 1; it does not construct an imported
-//! runtime, publish files, or expose an ABI.
+//! allocation-free checkpoint import Pass 1 and typed-scratch canonical-state
+//! import Pass 2; it does not construct an imported runtime, publish files, or
+//! expose an ABI.
 
 use std::{
     alloc::Layout,
@@ -1395,6 +1396,72 @@ enum CheckpointV1StateError {
     ContextInvariant,
 }
 
+impl fmt::Display for CheckpointV1StateError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::ScalarInvariant => "checkpoint scalar relationships are not canonical",
+            Self::LayoutInvariant => "checkpoint dynamic layout is not canonical",
+            Self::ColumnCsrInvariant => "live runtime column CSR is not canonical",
+            Self::LearnedStateInvariant => "checkpoint learned rows are not canonical",
+            Self::CohortChronologyInvariant => "checkpoint cohort chronology is unreachable",
+            Self::ContextInvariant => "checkpoint context is not runtime-reachable",
+        })
+    }
+}
+
+impl Error for CheckpointV1StateError {}
+
+#[derive(Clone, Copy)]
+enum CheckpointV1U32View<'a> {
+    Native(&'a [u32]),
+    LittleEndian(CheckpointV1LeU32Slice<'a>),
+}
+
+impl CheckpointV1U32View<'_> {
+    fn len(self) -> usize {
+        match self {
+            Self::Native(values) => values.len(),
+            Self::LittleEndian(values) => values.len(),
+        }
+    }
+
+    fn get(self, index: usize) -> Option<u32> {
+        match self {
+            Self::Native(values) => values.get(index).copied(),
+            Self::LittleEndian(values) => values.get(index),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct CheckpointV1LogicalStateView<'a> {
+    config: TemporalCircuitConfig,
+    token_codebook: &'a [TokenCode],
+    cohort_columns: CheckpointV1U32View<'a>,
+    next_reserve_cell: u32,
+    segment_count: u32,
+    previous_context: CheckpointV1U32View<'a>,
+    previous_context_len: u8,
+    previous_winner_context: CheckpointV1U32View<'a>,
+    previous_winner_context_len: u8,
+    event_count: u64,
+    learning_step: u64,
+    scientific_stop: Option<TemporalPoisonCode>,
+    relay_offset: u32,
+    proximal_offset: u32,
+    proximal_relay_offset: u32,
+}
+
+#[derive(Clone, Copy)]
+struct CheckedCheckpointV1LogicalShape {
+    contexts_empty: bool,
+    column_count: usize,
+    base_width: u32,
+    race_cap: u32,
+    base_total: u32,
+    committed_owner_count: u32,
+}
+
 #[derive(Clone, Copy)]
 struct CheckpointV1StateView<'a> {
     config: TemporalCircuitConfig,
@@ -1422,6 +1489,107 @@ struct CheckpointV1OwnedRow {
     row: TemporalSegmentRow,
 }
 
+trait CheckpointV1RowView {
+    fn owner(&self) -> Option<u32>;
+
+    fn declared_live_pair_count(&self) -> Option<usize>;
+
+    fn source(&self, slot: usize) -> Option<u32>;
+
+    fn permanence_ticks(&self, slot: usize) -> Option<u16>;
+}
+
+impl CheckpointV1RowView for CheckpointV1OwnedRow {
+    fn owner(&self) -> Option<u32> {
+        Some(self.owner)
+    }
+
+    fn declared_live_pair_count(&self) -> Option<usize> {
+        Some(usize::from(self.row.live_pair_count))
+    }
+
+    fn source(&self, slot: usize) -> Option<u32> {
+        self.row.normalized_sources.get(slot).copied()
+    }
+
+    fn permanence_ticks(&self, slot: usize) -> Option<u16> {
+        self.row.permanence_ticks.get(slot).copied()
+    }
+}
+
+#[derive(Clone, Copy)]
+struct CheckpointV1SoaRow<'a> {
+    segment_index: usize,
+    owners: CheckpointV1LeU32Slice<'a>,
+    sources: CheckpointV1LeU32Slice<'a>,
+    ticks: CheckpointV1LeU16Slice<'a>,
+}
+
+impl CheckpointV1RowView for CheckpointV1SoaRow<'_> {
+    fn owner(&self) -> Option<u32> {
+        self.owners.get(self.segment_index)
+    }
+
+    fn declared_live_pair_count(&self) -> Option<usize> {
+        None
+    }
+
+    fn source(&self, slot: usize) -> Option<u32> {
+        let index = self
+            .segment_index
+            .checked_mul(PAIRS_PER_SEGMENT)?
+            .checked_add(slot)?;
+        self.sources.get(index)
+    }
+
+    fn permanence_ticks(&self, slot: usize) -> Option<u16> {
+        let index = self
+            .segment_index
+            .checked_mul(PAIRS_PER_SEGMENT)?
+            .checked_add(slot)?;
+        self.ticks.get(index)
+    }
+}
+
+trait CheckpointV1OwnerLoads {
+    fn observe_owner(&mut self, owner: u32) -> Option<u16>;
+
+    fn load(&mut self, owner: u32) -> Option<u16>;
+}
+
+struct CheckpointV1AuthoritativeOwnerLoads<F> {
+    load: F,
+}
+
+impl<F> CheckpointV1OwnerLoads for CheckpointV1AuthoritativeOwnerLoads<F>
+where
+    F: FnMut(u32) -> Option<u8>,
+{
+    fn observe_owner(&mut self, owner: u32) -> Option<u16> {
+        (self.load)(owner).map(u16::from)
+    }
+
+    fn load(&mut self, owner: u32) -> Option<u16> {
+        (self.load)(owner).map(u16::from)
+    }
+}
+
+struct CheckpointV1ReplayedOwnerLoads<'a> {
+    loads: &'a mut [u16],
+}
+
+impl CheckpointV1OwnerLoads for CheckpointV1ReplayedOwnerLoads<'_> {
+    fn observe_owner(&mut self, owner: u32) -> Option<u16> {
+        let load = self.loads.get_mut(usize::try_from(owner).ok()?)?;
+        *load = load.checked_add(1)?;
+        Some(*load)
+    }
+
+    fn load(&mut self, owner: u32) -> Option<u16> {
+        self.loads.get(usize::try_from(owner).ok()?).copied()
+    }
+}
+
 fn checkpoint_v1_state_view(runtime: &TemporalCircuitRuntime) -> CheckpointV1StateView<'_> {
     CheckpointV1StateView {
         config: runtime.config,
@@ -1444,6 +1612,28 @@ fn checkpoint_v1_state_view(runtime: &TemporalCircuitRuntime) -> CheckpointV1Sta
     }
 }
 
+fn checkpoint_v1_logical_state_view(
+    state: CheckpointV1StateView<'_>,
+) -> CheckpointV1LogicalStateView<'_> {
+    CheckpointV1LogicalStateView {
+        config: state.config,
+        token_codebook: state.token_codebook,
+        cohort_columns: CheckpointV1U32View::Native(state.cohort_columns),
+        next_reserve_cell: state.next_reserve_cell,
+        segment_count: state.segment_count,
+        previous_context: CheckpointV1U32View::Native(state.previous_context),
+        previous_context_len: state.previous_context_len,
+        previous_winner_context: CheckpointV1U32View::Native(state.previous_winner_context),
+        previous_winner_context_len: state.previous_winner_context_len,
+        event_count: state.event_count,
+        learning_step: state.learning_step,
+        scientific_stop: state.scientific_stop,
+        relay_offset: state.relay_offset,
+        proximal_offset: state.proximal_offset,
+        proximal_relay_offset: state.proximal_relay_offset,
+    }
+}
+
 fn validate_checkpoint_v1_runtime_state(
     runtime: &TemporalCircuitRuntime,
     column_replay: &mut [u32],
@@ -1463,20 +1653,36 @@ fn validate_checkpoint_v1_runtime_state(
 
 /// Validate one borrowed logical state without allocating.
 ///
-/// Immutable runtime identity (or checkpoint-import pass 1) must already have
-/// succeeded. `row_at` is the exact segment-ID logical-row/checked-SoA view.
-/// `owner_load` is authoritative at this seam: the live-runtime adapter reads
-/// the store-owned cache maintained by construction/mutation, while a future
-/// checked-SoA importer must replay each owner count in a wider checked integer
-/// before converting it to `u8` and supplying it here. This validator
-/// deliberately does not recount rows with quadratic work or require
-/// owner-sized scratch.
+/// Immutable runtime identity must already have succeeded. `row_at` is the
+/// exact segment-ID logical-row view and `owner_load` is the store-owned cache
+/// maintained by live construction and mutation. Checkpoint import uses the
+/// same logical policy through direct checked-SoA rows and replayed typed loads.
 fn validate_checkpoint_v1_state(
     state: CheckpointV1StateView<'_>,
     column_replay: &mut [u32],
     mut row_at: impl FnMut(u32) -> Option<CheckpointV1OwnedRow>,
-    mut owner_load: impl FnMut(u32) -> Option<u8>,
+    owner_load: impl FnMut(u32) -> Option<u8>,
 ) -> Result<(), CheckpointV1StateError> {
+    let logical = checkpoint_v1_logical_state_view(state);
+    let shape = validate_checkpoint_v1_logical_shape(&logical)?;
+    replay_checkpoint_v1_final_occupancies(&logical, shape, column_replay)?;
+    validate_checkpoint_v1_live_csr(state, &logical, shape, column_replay)?;
+    let mut owner_loads = CheckpointV1AuthoritativeOwnerLoads { load: owner_load };
+    validate_checkpoint_v1_logical_content(
+        &logical,
+        shape,
+        column_replay,
+        &mut row_at,
+        &mut owner_loads,
+    )?;
+    Ok(())
+}
+
+/// Prove scalar relationships, dynamic shape, cursor, and cohort domains
+/// without allocating or reading segment-row content.
+fn validate_checkpoint_v1_logical_shape(
+    state: &CheckpointV1LogicalStateView<'_>,
+) -> Result<CheckedCheckpointV1LogicalShape, CheckpointV1StateError> {
     let contexts_empty = match (
         state.previous_context_len,
         state.previous_winner_context_len,
@@ -1516,7 +1722,6 @@ fn validate_checkpoint_v1_state(
             && state.config.theta_match <= state.config.theta_active
             && state.config.theta_active <= PHYSICAL_CONTACTS_PER_PAIR * PAIRS_PER_SEGMENT as u8)
         || state.segment_count > state.config.segment_capacity
-        || column_replay.len() != column_count
     {
         return Err(CheckpointV1StateError::LayoutInvariant);
     }
@@ -1556,22 +1761,65 @@ fn validate_checkpoint_v1_state(
         return Err(CheckpointV1StateError::LayoutInvariant);
     }
 
-    column_replay.fill(base_width);
-    for &column in state.cohort_columns {
+    for index in 0..state.cohort_columns.len() {
+        let column = state
+            .cohort_columns
+            .get(index)
+            .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+        if column >= state.config.column_count {
+            return Err(CheckpointV1StateError::LayoutInvariant);
+        }
+    }
+
+    Ok(CheckedCheckpointV1LogicalShape {
+        contexts_empty,
+        column_count,
+        base_width,
+        race_cap,
+        base_total,
+        committed_owner_count: next_reserve_cell,
+    })
+}
+
+fn replay_checkpoint_v1_final_occupancies(
+    state: &CheckpointV1LogicalStateView<'_>,
+    shape: CheckedCheckpointV1LogicalShape,
+    column_replay: &mut [u32],
+) -> Result<usize, CheckpointV1StateError> {
+    if column_replay.len() != shape.column_count {
+        return Err(CheckpointV1StateError::LayoutInvariant);
+    }
+    column_replay.fill(shape.base_width);
+    for index in 0..state.cohort_columns.len() {
+        let column = state
+            .cohort_columns
+            .get(index)
+            .ok_or(CheckpointV1StateError::LayoutInvariant)?;
         let column_index =
             usize::try_from(column).map_err(|_| CheckpointV1StateError::LayoutInvariant)?;
         let replay = column_replay
             .get_mut(column_index)
             .ok_or(CheckpointV1StateError::LayoutInvariant)?;
         *replay = replay
-            .checked_add(race_cap)
+            .checked_add(shape.race_cap)
             .ok_or(CheckpointV1StateError::LayoutInvariant)?;
     }
 
-    let expected_offset_count = column_count
+    let max = column_replay.iter().copied().max().unwrap_or(0);
+    usize::try_from(max).map_err(|_| CheckpointV1StateError::LayoutInvariant)
+}
+
+fn validate_checkpoint_v1_live_csr(
+    state: CheckpointV1StateView<'_>,
+    logical: &CheckpointV1LogicalStateView<'_>,
+    shape: CheckedCheckpointV1LogicalShape,
+    column_replay: &[u32],
+) -> Result<(), CheckpointV1StateError> {
+    let expected_offset_count = shape
+        .column_count
         .checked_add(1)
         .ok_or(CheckpointV1StateError::ColumnCsrInvariant)?;
-    let committed_count = usize::try_from(next_reserve_cell)
+    let committed_count = usize::try_from(shape.committed_owner_count)
         .map_err(|_| CheckpointV1StateError::ColumnCsrInvariant)?;
     if state.column_offsets.len() != expected_offset_count
         || state.column_offsets.first().copied() != Some(0)
@@ -1579,8 +1827,8 @@ fn validate_checkpoint_v1_state(
     {
         return Err(CheckpointV1StateError::ColumnCsrInvariant);
     }
-    let base_width_usize =
-        usize::try_from(base_width).map_err(|_| CheckpointV1StateError::ColumnCsrInvariant)?;
+    let base_width_usize = usize::try_from(shape.base_width)
+        .map_err(|_| CheckpointV1StateError::ColumnCsrInvariant)?;
     let mut expected_start = 0usize;
     for (column, &replayed_occupancy) in column_replay.iter().enumerate() {
         let occupancy = usize::try_from(replayed_occupancy)
@@ -1600,7 +1848,7 @@ fn validate_checkpoint_v1_state(
         }
         let base_start = u64::try_from(column)
             .ok()
-            .and_then(|column| column.checked_mul(u64::from(base_width)))
+            .and_then(|column| column.checked_mul(u64::from(shape.base_width)))
             .and_then(|start| u32::try_from(start).ok())
             .ok_or(CheckpointV1StateError::ColumnCsrInvariant)?;
         for (offset, &cell) in cells[..base_width_usize].iter().enumerate() {
@@ -1612,12 +1860,12 @@ fn validate_checkpoint_v1_state(
             }
         }
         for &cell in &cells[base_width_usize..] {
-            if !(base_total..next_reserve_cell).contains(&cell) {
+            if !(shape.base_total..shape.committed_owner_count).contains(&cell) {
                 return Err(CheckpointV1StateError::ColumnCsrInvariant);
             }
-            let cohort_index = usize::try_from((cell - base_total) / race_cap)
+            let cohort_index = usize::try_from((cell - shape.base_total) / shape.race_cap)
                 .map_err(|_| CheckpointV1StateError::ColumnCsrInvariant)?;
-            if state.cohort_columns.get(cohort_index).copied() != Some(column as u32) {
+            if logical.cohort_columns.get(cohort_index) != Some(column as u32) {
                 return Err(CheckpointV1StateError::ColumnCsrInvariant);
             }
         }
@@ -1627,86 +1875,150 @@ fn validate_checkpoint_v1_state(
         return Err(CheckpointV1StateError::ColumnCsrInvariant);
     }
 
-    for owner in 0..next_reserve_cell {
-        let load = owner_load(owner).ok_or(CheckpointV1StateError::LearnedStateInvariant)?;
-        if load > state.config.max_segments_per_cell {
-            return Err(CheckpointV1StateError::LearnedStateInvariant);
-        }
-    }
+    Ok(())
+}
+
+fn validate_checkpoint_v1_logical_content<R>(
+    state: &CheckpointV1LogicalStateView<'_>,
+    shape: CheckedCheckpointV1LogicalShape,
+    column_replay: &mut [u32],
+    mut row_at: impl FnMut(u32) -> Option<R>,
+    owner_loads: &mut impl CheckpointV1OwnerLoads,
+) -> Result<usize, CheckpointV1StateError>
+where
+    R: CheckpointV1RowView,
+{
+    let owner_cap = u16::from(state.config.max_segments_per_cell);
     for segment_id in 0..state.segment_count {
-        let owned = row_at(segment_id).ok_or(CheckpointV1StateError::LearnedStateInvariant)?;
-        if checkpoint_v1_owner_column(&state, base_total, owned.owner).is_none()
-            || owner_load(owned.owner)
-                .filter(|load| *load != 0 && *load <= state.config.max_segments_per_cell)
+        let row = row_at(segment_id).ok_or(CheckpointV1StateError::LearnedStateInvariant)?;
+        let owner = row
+            .owner()
+            .ok_or(CheckpointV1StateError::LearnedStateInvariant)?;
+        if checkpoint_v1_owner_column(state, shape, owner).is_none()
+            || owner_loads
+                .observe_owner(owner)
+                .filter(|load| *load != 0 && *load <= owner_cap && *load <= u16::from(u8::MAX))
                 .is_none()
-            || !checkpoint_v1_row_is_reachable(&state, base_total, &owned.row)
+            || !checkpoint_v1_row_is_reachable(state, shape, &row)
         {
             return Err(CheckpointV1StateError::LearnedStateInvariant);
         }
     }
 
-    column_replay.fill(base_width);
-    let race_cap_usize =
-        usize::try_from(race_cap).map_err(|_| CheckpointV1StateError::CohortChronologyInvariant)?;
-    for &column in state.cohort_columns {
+    for owner in 0..shape.committed_owner_count {
+        let load = owner_loads
+            .load(owner)
+            .ok_or(CheckpointV1StateError::LearnedStateInvariant)?;
+        if load > owner_cap || load > u16::from(u8::MAX) {
+            return Err(CheckpointV1StateError::LearnedStateInvariant);
+        }
+    }
+
+    column_replay.fill(0);
+    for cohort_index in 0..state.cohort_columns.len() {
+        let column = state
+            .cohort_columns
+            .get(cohort_index)
+            .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
         let column_index = usize::try_from(column)
             .map_err(|_| CheckpointV1StateError::CohortChronologyInvariant)?;
-        let predecessor_end = usize::try_from(column_replay[column_index])
-            .map_err(|_| CheckpointV1StateError::CohortChronologyInvariant)?;
-        let cells = &state.column_cells
-            [state.column_offsets[column_index]..state.column_offsets[column_index + 1]];
-        let predecessor_start = if predecessor_end == base_width_usize {
-            0
+        let previous_cohort_plus_one = *column_replay
+            .get(column_index)
+            .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
+        let predecessor_start = if previous_cohort_plus_one == 0 {
+            column
+                .checked_mul(shape.base_width)
+                .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?
         } else {
-            predecessor_end
-                .checked_sub(race_cap_usize)
+            shape
+                .base_total
+                .checked_add(
+                    previous_cohort_plus_one
+                        .checked_sub(1)
+                        .and_then(|previous| previous.checked_mul(shape.race_cap))
+                        .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?,
+                )
                 .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?
         };
-        let cohort_end = predecessor_end
-            .checked_add(race_cap_usize)
-            .filter(|end| *end <= cells.len())
+        let predecessor_count = if previous_cohort_plus_one == 0 {
+            shape.base_width
+        } else {
+            shape.race_cap
+        };
+        let predecessor_end = predecessor_start
+            .checked_add(predecessor_count)
             .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
-        if cells[predecessor_start..predecessor_end]
-            .iter()
-            .copied()
-            .any(|owner| owner_load(owner) != Some(state.config.max_segments_per_cell))
-            || !cells[predecessor_end..cohort_end]
-                .iter()
-                .copied()
-                .any(|owner| owner_load(owner).is_some_and(|load| load != 0))
+        if (predecessor_start..predecessor_end)
+            .any(|owner| owner_loads.load(owner) != Some(owner_cap))
         {
             return Err(CheckpointV1StateError::CohortChronologyInvariant);
         }
-        column_replay[column_index] = column_replay[column_index]
-            .checked_add(race_cap)
+
+        let cohort_index = u32::try_from(cohort_index)
+            .map_err(|_| CheckpointV1StateError::CohortChronologyInvariant)?;
+        let cohort_start = shape
+            .base_total
+            .checked_add(
+                cohort_index
+                    .checked_mul(shape.race_cap)
+                    .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?,
+            )
+            .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
+        let cohort_end = cohort_start
+            .checked_add(shape.race_cap)
+            .filter(|end| *end <= shape.committed_owner_count)
+            .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
+        if !(cohort_start..cohort_end)
+            .any(|owner| owner_loads.load(owner).is_some_and(|load| load != 0))
+        {
+            return Err(CheckpointV1StateError::CohortChronologyInvariant);
+        }
+        column_replay[column_index] = cohort_index
+            .checked_add(1)
             .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
     }
 
-    if contexts_empty {
+    validate_checkpoint_v1_context(state, shape)?;
+    replay_checkpoint_v1_final_occupancies(state, shape, column_replay)
+}
+
+fn validate_checkpoint_v1_context(
+    state: &CheckpointV1LogicalStateView<'_>,
+    shape: CheckedCheckpointV1LogicalShape,
+) -> Result<(), CheckpointV1StateError> {
+    if shape.contexts_empty {
         return Ok(());
     }
     let mut context_columns = [0u32; ACTIVE_COLUMNS];
     match state.config.context_policy {
         TemporalContextPolicy::BoundWinners => {
-            if state.previous_context != state.previous_winner_context {
-                return Err(CheckpointV1StateError::ContextInvariant);
+            for index in 0..CONTEXT_CELLS {
+                if state.previous_context.get(index) != state.previous_winner_context.get(index) {
+                    return Err(CheckpointV1StateError::ContextInvariant);
+                }
             }
             for (index, column) in context_columns.iter_mut().enumerate() {
-                let winner = state.previous_context[index];
-                *column = checkpoint_v1_owner_column(&state, base_total, winner)
+                let winner = state
+                    .previous_context
+                    .get(index)
+                    .ok_or(CheckpointV1StateError::ContextInvariant)?;
+                *column = checkpoint_v1_owner_column(state, shape, winner)
                     .ok_or(CheckpointV1StateError::ContextInvariant)?;
                 let expected_relay = state
                     .relay_offset
                     .checked_add(winner)
                     .ok_or(CheckpointV1StateError::ContextInvariant)?;
-                if state.previous_context[ACTIVE_COLUMNS + index] != expected_relay {
+                if state.previous_context.get(ACTIVE_COLUMNS + index) != Some(expected_relay) {
                     return Err(CheckpointV1StateError::ContextInvariant);
                 }
             }
         }
         TemporalContextPolicy::GenericAfferents => {
             for (index, column) in context_columns.iter_mut().enumerate() {
-                let source = state.previous_context[index];
+                let source = state
+                    .previous_context
+                    .get(index)
+                    .ok_or(CheckpointV1StateError::ContextInvariant)?;
                 *column = source
                     .checked_sub(state.proximal_offset)
                     .filter(|column| *column < state.config.column_count)
@@ -1715,19 +2027,25 @@ fn validate_checkpoint_v1_state(
                     .proximal_relay_offset
                     .checked_add(*column)
                     .ok_or(CheckpointV1StateError::ContextInvariant)?;
-                if state.previous_context[ACTIVE_COLUMNS + index] != expected_source_relay {
+                if state.previous_context.get(ACTIVE_COLUMNS + index) != Some(expected_source_relay)
+                {
                     return Err(CheckpointV1StateError::ContextInvariant);
                 }
 
-                let winner = state.previous_winner_context[index];
-                if checkpoint_v1_owner_column(&state, base_total, winner) != Some(*column) {
+                let winner = state
+                    .previous_winner_context
+                    .get(index)
+                    .ok_or(CheckpointV1StateError::ContextInvariant)?;
+                if checkpoint_v1_owner_column(state, shape, winner) != Some(*column) {
                     return Err(CheckpointV1StateError::ContextInvariant);
                 }
                 let expected_winner_relay = state
                     .relay_offset
                     .checked_add(winner)
                     .ok_or(CheckpointV1StateError::ContextInvariant)?;
-                if state.previous_winner_context[ACTIVE_COLUMNS + index] != expected_winner_relay {
+                if state.previous_winner_context.get(ACTIVE_COLUMNS + index)
+                    != Some(expected_winner_relay)
+                {
                     return Err(CheckpointV1StateError::ContextInvariant);
                 }
             }
@@ -1747,53 +2065,62 @@ fn validate_checkpoint_v1_state(
 }
 
 fn checkpoint_v1_owner_column(
-    state: &CheckpointV1StateView<'_>,
-    base_total: u32,
+    state: &CheckpointV1LogicalStateView<'_>,
+    shape: CheckedCheckpointV1LogicalShape,
     owner: u32,
 ) -> Option<u32> {
-    let base_width = u32::from(state.config.base_cells_per_column);
-    if owner < base_total {
-        return Some(owner / base_width);
+    if owner < shape.base_total {
+        return Some(owner / shape.base_width);
     }
-    if owner >= state.next_reserve_cell {
+    if owner >= shape.committed_owner_count {
         return None;
     }
-    let cohort_index =
-        usize::try_from((owner - base_total) / u32::from(state.config.novel_race_cap)).ok()?;
-    state.cohort_columns.get(cohort_index).copied()
+    let cohort_index = usize::try_from((owner - shape.base_total) / shape.race_cap).ok()?;
+    state
+        .cohort_columns
+        .get(cohort_index)
+        .filter(|column| *column < state.config.column_count)
 }
 
 fn checkpoint_v1_row_is_reachable(
-    state: &CheckpointV1StateView<'_>,
-    base_total: u32,
-    row: &TemporalSegmentRow,
+    state: &CheckpointV1LogicalStateView<'_>,
+    shape: CheckedCheckpointV1LogicalShape,
+    row: &impl CheckpointV1RowView,
 ) -> bool {
-    let live_pair_count = usize::from(row.live_pair_count);
-    if live_pair_count > PAIRS_PER_SEGMENT
-        || row.normalized_sources[..live_pair_count]
-            .windows(2)
-            .any(|pair| pair[0] >= pair[1])
-        || row.permanence_ticks[..live_pair_count]
-            .iter()
-            .any(|ticks| !(1..=PERMANENCE_MAX_TICKS).contains(ticks))
-        || row.normalized_sources[live_pair_count..]
-            .iter()
-            .any(|source| *source != u32::MAX)
-        || row.permanence_ticks[live_pair_count..]
-            .iter()
-            .any(|ticks| *ticks != 0)
-    {
-        return false;
-    }
-    row.normalized_sources[..live_pair_count]
-        .iter()
-        .copied()
-        .all(|source| match state.config.context_policy {
-            TemporalContextPolicy::BoundWinners => {
-                checkpoint_v1_owner_column(state, base_total, source).is_some()
+    let mut saw_sentinel = false;
+    let mut live_pair_count = 0usize;
+    let mut previous_source = None;
+    for slot in 0..PAIRS_PER_SEGMENT {
+        let Some(source) = row.source(slot) else {
+            return false;
+        };
+        let Some(ticks) = row.permanence_ticks(slot) else {
+            return false;
+        };
+        if source == u32::MAX {
+            saw_sentinel = true;
+            if ticks != 0 {
+                return false;
             }
-            TemporalContextPolicy::GenericAfferents => source < state.config.column_count,
-        })
+            continue;
+        }
+        if saw_sentinel
+            || !(1..=PERMANENCE_MAX_TICKS).contains(&ticks)
+            || previous_source.is_some_and(|previous| previous >= source)
+            || match state.config.context_policy {
+                TemporalContextPolicy::BoundWinners => {
+                    checkpoint_v1_owner_column(state, shape, source).is_none()
+                }
+                TemporalContextPolicy::GenericAfferents => source >= state.config.column_count,
+            }
+        {
+            return false;
+        }
+        previous_source = Some(source);
+        live_pair_count += 1;
+    }
+    row.declared_live_pair_count()
+        .is_none_or(|declared| declared == live_pair_count)
 }
 
 impl TemporalCircuitRuntime {
@@ -2788,6 +3115,7 @@ struct CheckpointV1ImportAllocationPlan {
 
 struct ValidatedCheckpointV1Pass1<'a> {
     checkpoint: &'a [u8],
+    factory_identity: TemporalCheckpointV1Identity,
     body: CheckpointV1BodyView<'a>,
     layout: CheckpointV1Layout,
     scalars: CheckpointV1Scalars,
@@ -3014,6 +3342,7 @@ fn validate_checkpoint_v1_pass1<'a>(
     semantic_index_digest.copy_from_slice(&header[160..192]);
     Ok(ValidatedCheckpointV1Pass1 {
         checkpoint,
+        factory_identity: factory.identity,
         body: body_view,
         layout,
         scalars: CheckpointV1Scalars {
@@ -3030,6 +3359,149 @@ fn validate_checkpoint_v1_pass1<'a>(
         semantic_index_digest: CheckpointV1Digest::from_raw_bytes(semantic_index_digest),
         poison,
     })
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CheckpointV1Pass2Error {
+    FactoryIdentityMismatch,
+    State(CheckpointV1StateError),
+    RetryableAllocation(CheckpointV1ImportAllocationSite),
+}
+
+impl fmt::Display for CheckpointV1Pass2Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FactoryIdentityMismatch => {
+                formatter.write_str("checkpoint Pass 1 proof belongs to another runtime factory")
+            }
+            Self::State(source) => write!(formatter, "checkpoint Pass 2 rejected state: {source}"),
+            Self::RetryableAllocation(site) => {
+                write!(formatter, "checkpoint allocation failed at {site}")
+            }
+        }
+    }
+}
+
+impl Error for CheckpointV1Pass2Error {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::State(source) => Some(source),
+            _ => None,
+        }
+    }
+}
+
+struct ValidatedCheckpointV1Pass2<'a> {
+    pass1: ValidatedCheckpointV1Pass1<'a>,
+    column_occupancies: Vec<u32>,
+    max_column_occupancy: usize,
+}
+
+fn validate_checkpoint_v1_pass2<'a>(
+    pass1: ValidatedCheckpointV1Pass1<'a>,
+    factory: &ValidatedCheckpointV1RuntimeFactory,
+) -> Result<ValidatedCheckpointV1Pass2<'a>, CheckpointV1Pass2Error> {
+    validate_checkpoint_v1_pass2_inner(pass1, factory, |_, _| false)
+}
+
+fn validate_checkpoint_v1_pass2_inner<'a>(
+    pass1: ValidatedCheckpointV1Pass1<'a>,
+    factory: &ValidatedCheckpointV1RuntimeFactory,
+    mut fail_before_reserve: impl FnMut(CheckpointV1ImportAllocationSite, usize) -> bool,
+) -> Result<ValidatedCheckpointV1Pass2<'a>, CheckpointV1Pass2Error> {
+    if pass1.factory_identity != *factory.identity() {
+        return Err(CheckpointV1Pass2Error::FactoryIdentityMismatch);
+    }
+
+    let definition = factory.definition();
+    let logical = CheckpointV1LogicalStateView {
+        config: definition.config,
+        token_codebook: definition.token_codebook,
+        cohort_columns: CheckpointV1U32View::LittleEndian(pass1.body.cohort_columns()),
+        next_reserve_cell: pass1.scalars.next_reserve_cell,
+        segment_count: pass1.scalars.segment_count,
+        previous_context: CheckpointV1U32View::LittleEndian(pass1.body.prior_context()),
+        previous_context_len: pass1.scalars.prior_context_length,
+        previous_winner_context: CheckpointV1U32View::LittleEndian(pass1.body.winner_context()),
+        previous_winner_context_len: pass1.scalars.winner_context_length,
+        event_count: pass1.scalars.event_count,
+        learning_step: pass1.scalars.learning_step,
+        scientific_stop: pass1.poison,
+        relay_offset: factory.derived.relay_offset,
+        proximal_offset: factory.derived.proximal_offset,
+        proximal_relay_offset: factory.derived.proximal_relay_offset,
+    };
+    let shape =
+        validate_checkpoint_v1_logical_shape(&logical).map_err(CheckpointV1Pass2Error::State)?;
+    if usize::try_from(shape.committed_owner_count).ok()
+        != Some(pass1.allocation_plan.committed_owner_count)
+        || shape.column_count != pass1.allocation_plan.column_count
+    {
+        return Err(CheckpointV1Pass2Error::State(
+            CheckpointV1StateError::LayoutInvariant,
+        ));
+    }
+
+    let mut owner_loads = checkpoint_v1_pass2_zeroed_scratch(
+        pass1.allocation_plan.committed_owner_count,
+        0u16,
+        CheckpointV1ImportAllocationSite::Pass2OwnerLoads,
+        &mut fail_before_reserve,
+    )?;
+    let mut column_occupancies = checkpoint_v1_pass2_zeroed_scratch(
+        pass1.allocation_plan.column_count,
+        0u32,
+        CheckpointV1ImportAllocationSite::Pass2ColumnReplay,
+        &mut fail_before_reserve,
+    )?;
+
+    let owners = pass1.body.segment_owners();
+    let sources = pass1.body.segment_sources();
+    let ticks = pass1.body.segment_ticks();
+    let max_column_occupancy = {
+        let mut replayed_owner_loads = CheckpointV1ReplayedOwnerLoads {
+            loads: &mut owner_loads,
+        };
+        validate_checkpoint_v1_logical_content(
+            &logical,
+            shape,
+            &mut column_occupancies,
+            |segment_id| {
+                Some(CheckpointV1SoaRow {
+                    segment_index: usize::try_from(segment_id).ok()?,
+                    owners,
+                    sources,
+                    ticks,
+                })
+            },
+            &mut replayed_owner_loads,
+        )
+        .map_err(CheckpointV1Pass2Error::State)?
+    };
+    drop(owner_loads);
+
+    Ok(ValidatedCheckpointV1Pass2 {
+        pass1,
+        column_occupancies,
+        max_column_occupancy,
+    })
+}
+
+fn checkpoint_v1_pass2_zeroed_scratch<T: Copy>(
+    element_count: usize,
+    zero: T,
+    site: CheckpointV1ImportAllocationSite,
+    fail_before_reserve: &mut impl FnMut(CheckpointV1ImportAllocationSite, usize) -> bool,
+) -> Result<Vec<T>, CheckpointV1Pass2Error> {
+    if fail_before_reserve(site, element_count) {
+        return Err(CheckpointV1Pass2Error::RetryableAllocation(site));
+    }
+    let mut scratch = Vec::new();
+    scratch
+        .try_reserve_exact(element_count)
+        .map_err(|_| CheckpointV1Pass2Error::RetryableAllocation(site))?;
+    scratch.resize(element_count, zero);
+    Ok(scratch)
 }
 
 fn checked_checkpoint_v1_import_allocation_plan(
@@ -3708,6 +4180,85 @@ mod tests {
         refresh_logical_state_digest(checkpoint);
     }
 
+    #[derive(Clone, Copy)]
+    struct TestCheckpointV1SectionStarts {
+        cohort_columns: usize,
+        prior_context: usize,
+        winner_context: usize,
+        segment_owners: usize,
+        segment_sources: usize,
+        segment_ticks: usize,
+    }
+
+    fn checkpoint_v1_test_section_starts(checkpoint: &[u8]) -> TestCheckpointV1SectionStarts {
+        let layout = CheckpointV1Layout::checked(
+            read_checkpoint_v1_u32(checkpoint, 192),
+            read_checkpoint_v1_u32(checkpoint, 196),
+            checkpoint[220],
+            checkpoint[221],
+        )
+        .expect("test checkpoint must have a representable layout");
+        let cohort_columns = usize::from(CHECKPOINT_V1_HEADER_BYTES);
+        let prior_context = cohort_columns + layout.cohort_columns_bytes as usize;
+        let winner_context = prior_context + layout.prior_context_bytes as usize;
+        let segment_owners = winner_context + layout.winner_context_bytes as usize;
+        let segment_sources = segment_owners + layout.segment_owner_bytes as usize;
+        let segment_ticks = segment_sources + layout.segment_source_bytes as usize;
+        TestCheckpointV1SectionStarts {
+            cohort_columns,
+            prior_context,
+            winner_context,
+            segment_owners,
+            segment_sources,
+            segment_ticks,
+        }
+    }
+
+    fn write_checkpoint_v1_u32(checkpoint: &mut [u8], start: usize, index: usize, value: u32) {
+        let offset = start + index * size_of::<u32>();
+        checkpoint[offset..offset + size_of::<u32>()].copy_from_slice(&value.to_le_bytes());
+    }
+
+    fn write_checkpoint_v1_u16(checkpoint: &mut [u8], start: usize, index: usize, value: u16) {
+        let offset = start + index * size_of::<u16>();
+        checkpoint[offset..offset + size_of::<u16>()].copy_from_slice(&value.to_le_bytes());
+    }
+
+    fn pass2_error(
+        checkpoint: &[u8],
+        factory: &ValidatedCheckpointV1RuntimeFactory,
+    ) -> CheckpointV1Pass2Error {
+        let pass1 = validate_checkpoint_v1_pass1(checkpoint, factory)
+            .expect("digest-refreshed corruption must reach Pass 2");
+        match validate_checkpoint_v1_pass2(pass1, factory) {
+            Ok(_) => panic!("checkpoint unexpectedly passed canonical-state validation"),
+            Err(error) => error,
+        }
+    }
+
+    fn remove_checkpoint_v1_context_section(
+        checkpoint: &mut Vec<u8>,
+        field: CheckpointV1ContextLengthField,
+    ) {
+        let starts = checkpoint_v1_test_section_starts(checkpoint);
+        let (range, length_offset) = match field {
+            CheckpointV1ContextLengthField::Prior => {
+                (starts.prior_context..starts.winner_context, 220)
+            }
+            CheckpointV1ContextLengthField::Winner => {
+                (starts.winner_context..starts.segment_owners, 221)
+            }
+        };
+        let removed = range.len() as u64;
+        checkpoint.drain(range);
+        checkpoint[length_offset] = 0;
+        let total = read_checkpoint_v1_u64(checkpoint, 16) - removed;
+        let body = read_checkpoint_v1_u64(checkpoint, 24) - removed;
+        checkpoint[16..24].copy_from_slice(&total.to_le_bytes());
+        checkpoint[24..32].copy_from_slice(&body.to_le_bytes());
+        refresh_body_and_logical_state_digests(checkpoint);
+    }
+
     fn pass1_error(
         checkpoint: &[u8],
         factory: &ValidatedCheckpointV1RuntimeFactory,
@@ -3729,6 +4280,28 @@ mod tests {
             Vec::new(),
         )
         .expect("empty state fixture must build")
+    }
+
+    fn empty_runtime_with_plasticity(
+        context_policy: TemporalContextPolicy,
+        plasticity_policy: TemporalPlasticityPolicy,
+    ) -> TemporalCircuitRuntime {
+        let baseline = empty_runtime(context_policy);
+        let config = TemporalCircuitConfig {
+            plasticity_policy,
+            ..baseline.config
+        };
+        let members = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        TemporalCircuitRuntime::new(
+            config,
+            baseline.token_codebook.clone(),
+            members,
+            baseline.threshold_offsets_mv.clone(),
+            &[],
+        )
+        .expect("empty policy fixture must build")
     }
 
     fn recruited_runtime(context_policy: TemporalContextPolicy) -> TemporalCircuitRuntime {
@@ -3844,6 +4417,94 @@ mod tests {
         runtime
     }
 
+    fn full_policy_runtime(
+        context_policy: TemporalContextPolicy,
+        plasticity_policy: TemporalPlasticityPolicy,
+    ) -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 26,
+            segment_capacity: 6,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 1,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy,
+            plasticity_policy,
+        };
+        let mut members: Vec<Vec<u32>> = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        members[0].extend([22, 23]);
+        members[1].extend([24, 25]);
+        let segments = [0, 1, 22, 2, 3, 24].map(|owner| TemporalSegmentInit {
+            owner,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        });
+        let mut runtime = TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 85],
+            &segments,
+        )
+        .expect("full policy fixture must build");
+        set_reachable_context(&mut runtime);
+        runtime
+    }
+
+    fn two_cohorts_same_column_runtime() -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 26,
+            segment_capacity: 9,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 2,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy: TemporalContextPolicy::BoundWinners,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let mut members: Vec<Vec<u32>> = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        members[0].extend([22, 23, 24, 25]);
+        let segments = [0, 0, 1, 1, 22, 22, 23, 23, 24].map(|owner| TemporalSegmentInit {
+            owner,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        });
+        TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 85],
+            &segments,
+        )
+        .expect("same-column chronology fixture must build")
+    }
+
     fn semantic_runtime(context_policy: TemporalContextPolicy) -> TemporalCircuitRuntime {
         let config = TemporalCircuitConfig {
             column_count: 11,
@@ -3895,6 +4556,50 @@ mod tests {
             &segments,
         )
         .expect("semantic digest fixture must build")
+    }
+
+    fn multi_code_context_runtime(context_policy: TemporalContextPolicy) -> TemporalCircuitRuntime {
+        let first_columns: [u32; ACTIVE_COLUMNS] = std::array::from_fn(|index| index as u32);
+        let second_columns: [u32; ACTIVE_COLUMNS] = std::array::from_fn(|index| index as u32 + 2);
+        let mut runtime = identity_runtime(
+            13,
+            context_policy,
+            vec![
+                TokenCode {
+                    token_id: 7,
+                    columns: first_columns,
+                },
+                TokenCode {
+                    token_id: 8,
+                    columns: second_columns,
+                },
+            ],
+            Vec::new(),
+        )
+        .expect("multi-code context fixture must build");
+        let winners = second_columns.map(|column| 2 * column);
+        runtime.previous_winner_context = std::array::from_fn(|index| {
+            if index < ACTIVE_COLUMNS {
+                winners[index]
+            } else {
+                runtime.relay_offset + winners[index - ACTIVE_COLUMNS]
+            }
+        });
+        runtime.previous_context = match context_policy {
+            TemporalContextPolicy::BoundWinners => runtime.previous_winner_context,
+            TemporalContextPolicy::GenericAfferents => std::array::from_fn(|index| {
+                let column = second_columns[index % ACTIVE_COLUMNS];
+                if index < ACTIVE_COLUMNS {
+                    runtime.proximal_offset + column
+                } else {
+                    runtime.proximal_relay_offset + column
+                }
+            }),
+        };
+        runtime.previous_context_len = CONTEXT_CELLS_U8;
+        runtime.previous_winner_context_len = CONTEXT_CELLS_U8;
+        runtime.event_count = 1;
+        runtime
     }
 
     fn large_streaming_runtime() -> TemporalCircuitRuntime {
@@ -4773,6 +5478,771 @@ mod tests {
         );
         assert_eq!(sources.get(sources.len()), None);
         assert_eq!(ticks.get(ticks.len()), None);
+    }
+
+    #[test]
+    fn pass2_validates_the_literal_full_fixture_and_retains_exact_assembly_occupancies() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let checkpoint = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        let checkpoint_pointer = checkpoint.as_ptr();
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+            .expect("the literal full fixture must pass envelope validation");
+
+        let validated = validate_checkpoint_v1_pass2(pass1, &factory)
+            .expect("the canonical literal full fixture must pass reachability validation");
+        let ValidatedCheckpointV1Pass2 {
+            pass1,
+            column_occupancies,
+            max_column_occupancy,
+        } = validated;
+
+        assert_eq!(pass1.checkpoint.as_ptr(), checkpoint_pointer);
+        assert_eq!(column_occupancies, [4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2]);
+        assert_eq!(max_column_occupancy, 4);
+        assert_eq!(
+            pass1.semantic_index_digest.raw_bytes().as_slice(),
+            hex_bytes("dc6222193dfca80b9e29b83e57ec1581d6ef6d94a339046249b8b9a7c8c0a1a5")
+                .as_slice()
+        );
+        assert_eq!(*factory.identity(), pass1.factory_identity);
+    }
+
+    #[test]
+    fn pass2_rejects_factory_and_scalar_mismatches_before_any_scratch_reserve() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let foreign_factory = factory_for_runtime_with_authority(
+            &runtime,
+            ValidatedCheckpointAuthority::from_raw_sha256([0x5a; 32], [0x6b; 32]),
+        );
+        let checkpoint = encoded_checkpoint(&runtime);
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+            .expect("the generated fixture must pass envelope validation");
+        let mut allocation_calls = 0usize;
+
+        let error = match validate_checkpoint_v1_pass2_inner(pass1, &foreign_factory, |_, _| {
+            allocation_calls += 1;
+            false
+        }) {
+            Ok(_) => panic!("a proof from another factory must not pass"),
+            Err(error) => error,
+        };
+        assert_eq!(error, CheckpointV1Pass2Error::FactoryIdentityMismatch);
+        assert_eq!(allocation_calls, 0);
+
+        let mut bad_cursor = checkpoint;
+        bad_cursor[200..204].copy_from_slice(&25u32.to_le_bytes());
+        refresh_logical_state_digest(&mut bad_cursor);
+        let pass1 = validate_checkpoint_v1_pass1(&bad_cursor, &factory)
+            .expect("Pass 1 intentionally defers exact cursor reconstruction");
+        let mut allocation_calls = 0usize;
+        let error = match validate_checkpoint_v1_pass2_inner(pass1, &factory, |_, _| {
+            allocation_calls += 1;
+            false
+        }) {
+            Ok(_) => panic!("a noncanonical reserve cursor must not pass"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error,
+            CheckpointV1Pass2Error::State(CheckpointV1StateError::LayoutInvariant)
+        );
+        assert_eq!(allocation_calls, 0);
+    }
+
+    #[test]
+    fn pass2_scratch_reserves_are_typed_ordered_and_retryable() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let checkpoint = encoded_checkpoint(&runtime);
+
+        for (failed_site, expected_calls) in [
+            (
+                CheckpointV1ImportAllocationSite::Pass2OwnerLoads,
+                [
+                    Some((CheckpointV1ImportAllocationSite::Pass2OwnerLoads, 26)),
+                    None,
+                ],
+            ),
+            (
+                CheckpointV1ImportAllocationSite::Pass2ColumnReplay,
+                [
+                    Some((CheckpointV1ImportAllocationSite::Pass2OwnerLoads, 26)),
+                    Some((CheckpointV1ImportAllocationSite::Pass2ColumnReplay, 11)),
+                ],
+            ),
+        ] {
+            let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+                .expect("the generated fixture must pass envelope validation");
+            let mut calls = [None; 2];
+            let mut call_count = 0usize;
+            let error =
+                match validate_checkpoint_v1_pass2_inner(pass1, &factory, |site, element_count| {
+                    calls[call_count] = Some((site, element_count));
+                    call_count += 1;
+                    site == failed_site
+                }) {
+                    Ok(_) => panic!("the selected reserve must fail"),
+                    Err(error) => error,
+                };
+
+            assert_eq!(
+                error,
+                CheckpointV1Pass2Error::RetryableAllocation(failed_site)
+            );
+            assert_eq!(calls, expected_calls);
+
+            let retry = validate_checkpoint_v1_pass2(
+                validate_checkpoint_v1_pass1(&checkpoint, &factory)
+                    .expect("the identical retry must pass envelope validation"),
+                &factory,
+            )
+            .expect("the identical retry must pass canonical validation");
+            assert_eq!(retry.max_column_occupancy, 4);
+        }
+
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+            .expect("the generated fixture must pass envelope validation");
+        let mut calls = [None; 2];
+        let mut call_count = 0usize;
+        let validated =
+            validate_checkpoint_v1_pass2_inner(pass1, &factory, |site, element_count| {
+                calls[call_count] = Some((site, element_count));
+                call_count += 1;
+                false
+            })
+            .expect("successful validation must reserve both planned scratch arrays");
+        assert_eq!(
+            calls,
+            [
+                Some((CheckpointV1ImportAllocationSite::Pass2OwnerLoads, 26)),
+                Some((CheckpointV1ImportAllocationSite::Pass2ColumnReplay, 11)),
+            ]
+        );
+        assert_eq!(validated.max_column_occupancy, 4);
+
+        let large = large_streaming_runtime();
+        let large_factory = factory_for_runtime(&large);
+        let large_checkpoint = encoded_checkpoint(&large);
+        let pass1 = validate_checkpoint_v1_pass1(&large_checkpoint, &large_factory)
+            .expect("the 257-row fixture must pass envelope validation");
+        let mut calls = [None; 2];
+        let mut call_count = 0usize;
+        validate_checkpoint_v1_pass2_inner(pass1, &large_factory, |site, element_count| {
+            calls[call_count] = Some((site, element_count));
+            call_count += 1;
+            false
+        })
+        .expect("the 257-row fixture must not require segment-sized Pass 2 scratch");
+        assert_eq!(
+            calls,
+            [
+                Some((CheckpointV1ImportAllocationSite::Pass2OwnerLoads, 22)),
+                Some((CheckpointV1ImportAllocationSite::Pass2ColumnReplay, 11)),
+            ]
+        );
+
+        let mut corrupt_before_traversal = checkpoint.clone();
+        let starts = checkpoint_v1_test_section_starts(&corrupt_before_traversal);
+        write_checkpoint_v1_u32(
+            &mut corrupt_before_traversal,
+            starts.segment_owners,
+            0,
+            u32::MAX,
+        );
+        refresh_body_and_logical_state_digests(&mut corrupt_before_traversal);
+        let pass1 = validate_checkpoint_v1_pass1(&corrupt_before_traversal, &factory)
+            .expect("row corruption belongs to Pass 2");
+        assert!(matches!(
+            validate_checkpoint_v1_pass2_inner(pass1, &factory, |site, _| {
+                site == CheckpointV1ImportAllocationSite::Pass2ColumnReplay
+            }),
+            Err(CheckpointV1Pass2Error::RetryableAllocation(
+                CheckpointV1ImportAllocationSite::Pass2ColumnReplay
+            ))
+        ));
+    }
+
+    #[test]
+    fn pass2_accepts_all_context_and_plasticity_policies_empty_full_unaligned_and_terminal() {
+        for context_policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            for plasticity_policy in [
+                TemporalPlasticityPolicy::Plastic,
+                TemporalPlasticityPolicy::GrowthOff,
+            ] {
+                let runtime = full_policy_runtime(context_policy, plasticity_policy);
+                let factory = factory_for_runtime(&runtime);
+                let checkpoint = encoded_checkpoint(&runtime);
+                let validated = validate_checkpoint_v1_pass2(
+                    validate_checkpoint_v1_pass1(&checkpoint, &factory)
+                        .expect("full policy fixture must pass envelope validation"),
+                    &factory,
+                )
+                .expect("full policy fixture must pass canonical validation");
+                assert_eq!(
+                    validated.column_occupancies,
+                    [4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+                );
+                assert_eq!(validated.max_column_occupancy, 4);
+
+                let empty = empty_runtime_with_plasticity(context_policy, plasticity_policy);
+                let empty_factory = factory_for_runtime(&empty);
+                let empty_checkpoint = encoded_checkpoint(&empty);
+                let validated = validate_checkpoint_v1_pass2(
+                    validate_checkpoint_v1_pass1(&empty_checkpoint, &empty_factory)
+                        .expect("empty policy fixture must pass envelope validation"),
+                    &empty_factory,
+                )
+                .expect("empty policy fixture must pass canonical validation");
+                assert_eq!(validated.column_occupancies, [2; ACTIVE_COLUMNS]);
+                assert_eq!(validated.max_column_occupancy, 2);
+            }
+        }
+
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let checkpoint = encoded_checkpoint(&runtime);
+        let alignment = std::mem::align_of::<u32>();
+        let mut unaligned = Vec::with_capacity(checkpoint.len() + alignment);
+        let padding = (1..=alignment)
+            .find(|padding| (unaligned.as_ptr() as usize + padding) % alignment != 0)
+            .expect("at least one padding must leave a u32-misaligned address");
+        unaligned.resize(padding, 0xff);
+        unaligned.extend_from_slice(&checkpoint);
+        let unaligned_checkpoint = &unaligned[padding..];
+        assert_ne!(unaligned_checkpoint.as_ptr() as usize % alignment, 0);
+        let validated = validate_checkpoint_v1_pass2(
+            validate_checkpoint_v1_pass1(unaligned_checkpoint, &factory)
+                .expect("unaligned backing must pass envelope validation"),
+            &factory,
+        )
+        .expect("unaligned backing must pass direct SoA validation");
+        assert_eq!(
+            validated.pass1.checkpoint.as_ptr(),
+            unaligned_checkpoint.as_ptr()
+        );
+
+        let mut plastic = empty_runtime(TemporalContextPolicy::BoundWinners);
+        plastic.learning_step = u64::MAX;
+        plastic.scientific_stop = Some(TemporalPoisonCode::PreallocatedCapacityInvariant);
+        let plastic_factory = factory_for_runtime(&plastic);
+        let plastic_checkpoint = encoded_checkpoint(&plastic);
+        let validated = validate_checkpoint_v1_pass2(
+            validate_checkpoint_v1_pass1(&plastic_checkpoint, &plastic_factory)
+                .expect("terminal Plastic state must pass envelope validation"),
+            &plastic_factory,
+        )
+        .expect("Plastic permits a saturated learning counter and stable poison");
+        assert_eq!(
+            validated.pass1.poison,
+            Some(TemporalPoisonCode::PreallocatedCapacityInvariant)
+        );
+    }
+
+    #[test]
+    fn pass2_rejects_all_deferred_shape_rules_before_scratch_allocation() {
+        fn assert_preallocation_rejection(
+            checkpoint: &[u8],
+            factory: &ValidatedCheckpointV1RuntimeFactory,
+            expected: CheckpointV1StateError,
+        ) {
+            let pass1 = validate_checkpoint_v1_pass1(checkpoint, factory)
+                .expect("the cross-field corruption must pass envelope validation");
+            let mut allocation_calls = 0usize;
+            let error = match validate_checkpoint_v1_pass2_inner(pass1, factory, |_, _| {
+                allocation_calls += 1;
+                false
+            }) {
+                Ok(_) => panic!("the deferred shape corruption must not pass"),
+                Err(error) => error,
+            };
+            assert_eq!(error, CheckpointV1Pass2Error::State(expected));
+            assert_eq!(allocation_calls, 0);
+        }
+
+        let full = full_section_generic_runtime();
+        let full_factory = factory_for_runtime(&full);
+        let baseline = encoded_checkpoint(&full);
+
+        let mut zero_event_with_context = baseline.clone();
+        zero_event_with_context[204..212].copy_from_slice(&0u64.to_le_bytes());
+        refresh_logical_state_digest(&mut zero_event_with_context);
+        assert_preallocation_rejection(
+            &zero_event_with_context,
+            &full_factory,
+            CheckpointV1StateError::ScalarInvariant,
+        );
+
+        for field in [
+            CheckpointV1ContextLengthField::Prior,
+            CheckpointV1ContextLengthField::Winner,
+        ] {
+            let mut mismatched_context = baseline.clone();
+            remove_checkpoint_v1_context_section(&mut mismatched_context, field);
+            assert_preallocation_rejection(
+                &mismatched_context,
+                &full_factory,
+                CheckpointV1StateError::ScalarInvariant,
+            );
+        }
+
+        let mut bad_cohort = baseline.clone();
+        let starts = checkpoint_v1_test_section_starts(&bad_cohort);
+        write_checkpoint_v1_u32(
+            &mut bad_cohort,
+            starts.cohort_columns,
+            0,
+            full.config.column_count,
+        );
+        refresh_body_and_logical_state_digests(&mut bad_cohort);
+        assert_preallocation_rejection(
+            &bad_cohort,
+            &full_factory,
+            CheckpointV1StateError::LayoutInvariant,
+        );
+
+        let empty = empty_runtime(TemporalContextPolicy::BoundWinners);
+        let empty_factory = factory_for_runtime(&empty);
+        let mut event_without_context = encoded_checkpoint(&empty);
+        event_without_context[204..212].copy_from_slice(&1u64.to_le_bytes());
+        refresh_logical_state_digest(&mut event_without_context);
+        assert_preallocation_rejection(
+            &event_without_context,
+            &empty_factory,
+            CheckpointV1StateError::ScalarInvariant,
+        );
+
+        let growth_off = nonuniform_generic_route_zero_runtime();
+        let growth_off_factory = factory_for_runtime(&growth_off);
+        let mut advanced_growth_off = encoded_checkpoint(&growth_off);
+        advanced_growth_off[212..220].copy_from_slice(&1u64.to_le_bytes());
+        refresh_logical_state_digest(&mut advanced_growth_off);
+        assert_preallocation_rejection(
+            &advanced_growth_off,
+            &growth_off_factory,
+            CheckpointV1StateError::ScalarInvariant,
+        );
+    }
+
+    #[test]
+    fn pass2_direct_soa_rows_reject_every_canonical_grammar_family() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = encoded_checkpoint(&runtime);
+        let starts = checkpoint_v1_test_section_starts(&baseline);
+        let learned = CheckpointV1Pass2Error::State(CheckpointV1StateError::LearnedStateInvariant);
+
+        for owner in [runtime.next_reserve_cell, u32::MAX] {
+            let mut checkpoint = baseline.clone();
+            write_checkpoint_v1_u32(&mut checkpoint, starts.segment_owners, 0, owner);
+            refresh_body_and_logical_state_digests(&mut checkpoint);
+            assert_eq!(pass2_error(&checkpoint, &factory), learned);
+        }
+
+        let mut overloaded = baseline.clone();
+        write_checkpoint_v1_u32(&mut overloaded, starts.segment_owners, 1, 0);
+        refresh_body_and_logical_state_digests(&mut overloaded);
+        assert_eq!(pass2_error(&overloaded, &factory), learned);
+
+        let mut sentinel_gap = baseline.clone();
+        write_checkpoint_v1_u32(&mut sentinel_gap, starts.segment_sources, 0, u32::MAX);
+        write_checkpoint_v1_u16(&mut sentinel_gap, starts.segment_ticks, 0, 0);
+        refresh_body_and_logical_state_digests(&mut sentinel_gap);
+        assert_eq!(pass2_error(&sentinel_gap, &factory), learned);
+
+        let mut nonzero_sentinel_tick = baseline.clone();
+        write_checkpoint_v1_u16(&mut nonzero_sentinel_tick, starts.segment_ticks, 2, 1);
+        refresh_body_and_logical_state_digests(&mut nonzero_sentinel_tick);
+        assert_eq!(pass2_error(&nonzero_sentinel_tick, &factory), learned);
+
+        for ticks in [0u16, PERMANENCE_MAX_TICKS + 1] {
+            let mut checkpoint = baseline.clone();
+            write_checkpoint_v1_u16(&mut checkpoint, starts.segment_ticks, 0, ticks);
+            refresh_body_and_logical_state_digests(&mut checkpoint);
+            assert_eq!(pass2_error(&checkpoint, &factory), learned);
+        }
+
+        for (first, second) in [(0u32, 0u32), (3, 2)] {
+            let mut checkpoint = baseline.clone();
+            write_checkpoint_v1_u32(&mut checkpoint, starts.segment_sources, 0, first);
+            write_checkpoint_v1_u32(&mut checkpoint, starts.segment_sources, 1, second);
+            refresh_body_and_logical_state_digests(&mut checkpoint);
+            assert_eq!(pass2_error(&checkpoint, &factory), learned);
+        }
+
+        let mut generic_out_of_domain = baseline.clone();
+        write_checkpoint_v1_u32(
+            &mut generic_out_of_domain,
+            starts.segment_sources,
+            1,
+            runtime.config.column_count,
+        );
+        refresh_body_and_logical_state_digests(&mut generic_out_of_domain);
+        assert_eq!(pass2_error(&generic_out_of_domain, &factory), learned);
+
+        let mut full_row = baseline.clone();
+        for slot in 0..PAIRS_PER_SEGMENT {
+            write_checkpoint_v1_u32(&mut full_row, starts.segment_sources, slot, slot as u32);
+            write_checkpoint_v1_u16(&mut full_row, starts.segment_ticks, slot, slot as u16 + 1);
+        }
+        refresh_body_and_logical_state_digests(&mut full_row);
+        full_row[160] ^= 0x80;
+        let mut mutated_semantic_index_digest = [0u8; 32];
+        mutated_semantic_index_digest.copy_from_slice(&full_row[160..192]);
+        let validated = validate_checkpoint_v1_pass2(
+            validate_checkpoint_v1_pass1(&full_row, &factory)
+                .expect("semantic digest remains opaque through Pass 2"),
+            &factory,
+        )
+        .expect("a full ten-pair canonical row must pass");
+        assert_eq!(validated.max_column_occupancy, 4);
+        assert_eq!(
+            validated.pass1.semantic_index_digest.raw_bytes(),
+            &mutated_semantic_index_digest
+        );
+    }
+
+    #[test]
+    fn pass2_owner_load_replay_accepts_255_and_rejects_the_256th_row() {
+        let runtime = large_streaming_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = encoded_checkpoint(&runtime);
+        let starts = checkpoint_v1_test_section_starts(&baseline);
+
+        let mut exact_limit = baseline.clone();
+        for segment_index in 0..255 {
+            write_checkpoint_v1_u32(&mut exact_limit, starts.segment_owners, segment_index, 0);
+        }
+        for segment_index in 255..257 {
+            write_checkpoint_v1_u32(&mut exact_limit, starts.segment_owners, segment_index, 1);
+        }
+        refresh_body_and_logical_state_digests(&mut exact_limit);
+        validate_checkpoint_v1_pass2(
+            validate_checkpoint_v1_pass1(&exact_limit, &factory)
+                .expect("the exact u8 load limit must pass envelope validation"),
+            &factory,
+        )
+        .expect("255 allocated rows for one owner are representable");
+
+        let mut overflow = baseline;
+        for segment_index in 0..256 {
+            write_checkpoint_v1_u32(&mut overflow, starts.segment_owners, segment_index, 0);
+        }
+        write_checkpoint_v1_u32(&mut overflow, starts.segment_owners, 256, 1);
+        refresh_body_and_logical_state_digests(&mut overflow);
+        assert_eq!(
+            pass2_error(&overflow, &factory),
+            CheckpointV1Pass2Error::State(CheckpointV1StateError::LearnedStateInvariant)
+        );
+    }
+
+    #[test]
+    fn pass2_source_domains_distinguish_bound_winners_from_generic_afferents() {
+        let bound = recruited_runtime(TemporalContextPolicy::BoundWinners);
+        let bound_factory = factory_for_runtime(&bound);
+        let mut bound_checkpoint = encoded_checkpoint(&bound);
+        let starts = checkpoint_v1_test_section_starts(&bound_checkpoint);
+        write_checkpoint_v1_u32(&mut bound_checkpoint, starts.segment_sources, 0, 11);
+        write_checkpoint_v1_u16(&mut bound_checkpoint, starts.segment_ticks, 0, 1);
+        refresh_body_and_logical_state_digests(&mut bound_checkpoint);
+        validate_checkpoint_v1_pass2(
+            validate_checkpoint_v1_pass1(&bound_checkpoint, &bound_factory)
+                .expect("committed Bound source must pass envelope validation"),
+            &bound_factory,
+        )
+        .expect("committed owner 11 is a valid Bound source");
+
+        assert_eq!(bound.next_reserve_cell, 24);
+        let committed_upper_bound = bound
+            .next_reserve_cell
+            .checked_sub(1)
+            .expect("recruited fixture must have a committed source");
+        assert_eq!(committed_upper_bound, 23);
+        write_checkpoint_v1_u32(
+            &mut bound_checkpoint,
+            starts.segment_sources,
+            0,
+            committed_upper_bound,
+        );
+        refresh_body_and_logical_state_digests(&mut bound_checkpoint);
+        validate_checkpoint_v1_pass2(
+            validate_checkpoint_v1_pass1(&bound_checkpoint, &bound_factory)
+                .expect("committed Bound upper boundary must pass envelope validation"),
+            &bound_factory,
+        )
+        .expect("next_reserve_cell - 1 is a valid recruited Bound source");
+
+        let generic = recruited_runtime(TemporalContextPolicy::GenericAfferents);
+        let generic_factory = factory_for_runtime(&generic);
+        let mut generic_checkpoint = encoded_checkpoint(&generic);
+        let generic_starts = checkpoint_v1_test_section_starts(&generic_checkpoint);
+        write_checkpoint_v1_u32(
+            &mut generic_checkpoint,
+            generic_starts.segment_sources,
+            0,
+            11,
+        );
+        write_checkpoint_v1_u16(&mut generic_checkpoint, generic_starts.segment_ticks, 0, 1);
+        refresh_body_and_logical_state_digests(&mut generic_checkpoint);
+        assert_eq!(
+            pass2_error(&generic_checkpoint, &generic_factory),
+            CheckpointV1Pass2Error::State(CheckpointV1StateError::LearnedStateInvariant)
+        );
+
+        write_checkpoint_v1_u32(
+            &mut bound_checkpoint,
+            starts.segment_sources,
+            0,
+            bound.next_reserve_cell,
+        );
+        refresh_body_and_logical_state_digests(&mut bound_checkpoint);
+        assert_eq!(
+            pass2_error(&bound_checkpoint, &bound_factory),
+            CheckpointV1Pass2Error::State(CheckpointV1StateError::LearnedStateInvariant)
+        );
+    }
+
+    #[test]
+    fn pass2_context_requires_one_exact_codebook_entry_for_both_policies() {
+        for context_policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            let runtime = multi_code_context_runtime(context_policy);
+            let second_columns: [u32; ACTIVE_COLUMNS] =
+                std::array::from_fn(|index| index as u32 + 2);
+            assert_ne!(runtime.token_codebook[0].columns, second_columns);
+            assert_eq!(runtime.token_codebook[1].columns, second_columns);
+            assert_eq!(runtime.previous_context_len, CONTEXT_CELLS_U8);
+            assert_eq!(runtime.previous_winner_context_len, CONTEXT_CELLS_U8);
+
+            let factory = factory_for_runtime(&runtime);
+            let baseline = encoded_checkpoint(&runtime);
+            validate_checkpoint_v1_pass2(
+                validate_checkpoint_v1_pass1(&baseline, &factory)
+                    .expect("the populated second-code context must pass envelope validation"),
+                &factory,
+            )
+            .expect("the populated context must match the second codebook entry exactly");
+
+            let hybrid_columns: [u32; ACTIVE_COLUMNS] =
+                std::array::from_fn(|index| if index == 0 { 1 } else { index as u32 + 2 });
+            assert!(hybrid_columns.windows(2).all(|pair| pair[0] < pair[1]));
+            assert!(runtime
+                .token_codebook
+                .iter()
+                .all(|code| code.columns != hybrid_columns));
+
+            let mut hybrid = baseline;
+            let starts = checkpoint_v1_test_section_starts(&hybrid);
+            for (index, column) in hybrid_columns.into_iter().enumerate() {
+                let winner = 2 * column;
+                write_checkpoint_v1_u32(&mut hybrid, starts.winner_context, index, winner);
+                write_checkpoint_v1_u32(
+                    &mut hybrid,
+                    starts.winner_context,
+                    ACTIVE_COLUMNS + index,
+                    runtime.relay_offset + winner,
+                );
+                match context_policy {
+                    TemporalContextPolicy::BoundWinners => {
+                        write_checkpoint_v1_u32(&mut hybrid, starts.prior_context, index, winner);
+                        write_checkpoint_v1_u32(
+                            &mut hybrid,
+                            starts.prior_context,
+                            ACTIVE_COLUMNS + index,
+                            runtime.relay_offset + winner,
+                        );
+                    }
+                    TemporalContextPolicy::GenericAfferents => {
+                        write_checkpoint_v1_u32(
+                            &mut hybrid,
+                            starts.prior_context,
+                            index,
+                            runtime.proximal_offset + column,
+                        );
+                        write_checkpoint_v1_u32(
+                            &mut hybrid,
+                            starts.prior_context,
+                            ACTIVE_COLUMNS + index,
+                            runtime.proximal_relay_offset + column,
+                        );
+                    }
+                }
+            }
+            refresh_body_and_logical_state_digests(&mut hybrid);
+            assert_eq!(
+                pass2_error(&hybrid, &factory),
+                CheckpointV1Pass2Error::State(CheckpointV1StateError::ContextInvariant)
+            );
+        }
+    }
+
+    #[test]
+    fn pass2_replays_global_cohort_chronology_without_live_csr() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = encoded_checkpoint(&runtime);
+        let starts = checkpoint_v1_test_section_starts(&baseline);
+        for segment_index in [1usize, 2, 4, 5] {
+            let mut checkpoint = baseline.clone();
+            write_checkpoint_v1_u32(&mut checkpoint, starts.segment_owners, segment_index, 4);
+            refresh_body_and_logical_state_digests(&mut checkpoint);
+            assert_eq!(
+                pass2_error(&checkpoint, &factory),
+                CheckpointV1Pass2Error::State(CheckpointV1StateError::CohortChronologyInvariant)
+            );
+        }
+
+        let same_column = two_cohorts_same_column_runtime();
+        let same_factory = factory_for_runtime(&same_column);
+        let same_checkpoint = encoded_checkpoint(&same_column);
+        let validated = validate_checkpoint_v1_pass2(
+            validate_checkpoint_v1_pass1(&same_checkpoint, &same_factory)
+                .expect("same-column cohorts must pass envelope validation"),
+            &same_factory,
+        )
+        .expect("same-column cohorts must pass inductive chronology replay");
+        assert_eq!(
+            validated.column_occupancies,
+            [6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        );
+        assert_eq!(validated.max_column_occupancy, 6);
+
+        let mut previous_cohort_not_full = same_checkpoint;
+        let starts = checkpoint_v1_test_section_starts(&previous_cohort_not_full);
+        write_checkpoint_v1_u32(&mut previous_cohort_not_full, starts.segment_owners, 7, 25);
+        refresh_body_and_logical_state_digests(&mut previous_cohort_not_full);
+        assert_eq!(
+            pass2_error(&previous_cohort_not_full, &same_factory),
+            CheckpointV1Pass2Error::State(CheckpointV1StateError::CohortChronologyInvariant)
+        );
+    }
+
+    #[test]
+    fn pass2_enforces_exact_context_grammar_for_both_policies_and_plasticities() {
+        for context_policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            for plasticity_policy in [
+                TemporalPlasticityPolicy::Plastic,
+                TemporalPlasticityPolicy::GrowthOff,
+            ] {
+                let runtime = full_policy_runtime(context_policy, plasticity_policy);
+                let factory = factory_for_runtime(&runtime);
+                let baseline = encoded_checkpoint(&runtime);
+                let starts = checkpoint_v1_test_section_starts(&baseline);
+                let context_error =
+                    CheckpointV1Pass2Error::State(CheckpointV1StateError::ContextInvariant);
+
+                let mut wrong_relay = baseline.clone();
+                let relay = read_checkpoint_v1_u32(
+                    &wrong_relay,
+                    starts.prior_context + ACTIVE_COLUMNS * size_of::<u32>(),
+                );
+                write_checkpoint_v1_u32(
+                    &mut wrong_relay,
+                    starts.prior_context,
+                    ACTIVE_COLUMNS,
+                    relay + 1,
+                );
+                if context_policy == TemporalContextPolicy::BoundWinners {
+                    write_checkpoint_v1_u32(
+                        &mut wrong_relay,
+                        starts.winner_context,
+                        ACTIVE_COLUMNS,
+                        relay + 1,
+                    );
+                }
+                refresh_body_and_logical_state_digests(&mut wrong_relay);
+                assert_eq!(pass2_error(&wrong_relay, &factory), context_error);
+
+                let mut permuted = baseline.clone();
+                for context_start in if context_policy == TemporalContextPolicy::BoundWinners {
+                    [Some(starts.prior_context), Some(starts.winner_context)]
+                } else {
+                    [Some(starts.prior_context), None]
+                }
+                .into_iter()
+                .flatten()
+                {
+                    let first = read_checkpoint_v1_u32(&permuted, context_start);
+                    let second =
+                        read_checkpoint_v1_u32(&permuted, context_start + size_of::<u32>());
+                    let first_relay = read_checkpoint_v1_u32(
+                        &permuted,
+                        context_start + ACTIVE_COLUMNS * size_of::<u32>(),
+                    );
+                    let second_relay = read_checkpoint_v1_u32(
+                        &permuted,
+                        context_start + (ACTIVE_COLUMNS + 1) * size_of::<u32>(),
+                    );
+                    write_checkpoint_v1_u32(&mut permuted, context_start, 0, second);
+                    write_checkpoint_v1_u32(&mut permuted, context_start, 1, first);
+                    write_checkpoint_v1_u32(
+                        &mut permuted,
+                        context_start,
+                        ACTIVE_COLUMNS,
+                        second_relay,
+                    );
+                    write_checkpoint_v1_u32(
+                        &mut permuted,
+                        context_start,
+                        ACTIVE_COLUMNS + 1,
+                        first_relay,
+                    );
+                }
+                refresh_body_and_logical_state_digests(&mut permuted);
+                assert_eq!(pass2_error(&permuted, &factory), context_error);
+
+                let mut wrong_winner_column = baseline.clone();
+                let winner = 2u32;
+                write_checkpoint_v1_u32(&mut wrong_winner_column, starts.winner_context, 0, winner);
+                write_checkpoint_v1_u32(
+                    &mut wrong_winner_column,
+                    starts.winner_context,
+                    ACTIVE_COLUMNS,
+                    runtime.relay_offset + winner,
+                );
+                if context_policy == TemporalContextPolicy::BoundWinners {
+                    write_checkpoint_v1_u32(
+                        &mut wrong_winner_column,
+                        starts.prior_context,
+                        0,
+                        winner,
+                    );
+                    write_checkpoint_v1_u32(
+                        &mut wrong_winner_column,
+                        starts.prior_context,
+                        ACTIVE_COLUMNS,
+                        runtime.relay_offset + winner,
+                    );
+                }
+                refresh_body_and_logical_state_digests(&mut wrong_winner_column);
+                assert_eq!(pass2_error(&wrong_winner_column, &factory), context_error);
+
+                if context_policy == TemporalContextPolicy::BoundWinners {
+                    let mut differing_contexts = baseline.clone();
+                    write_checkpoint_v1_u32(&mut differing_contexts, starts.prior_context, 0, 2);
+                    write_checkpoint_v1_u32(
+                        &mut differing_contexts,
+                        starts.prior_context,
+                        ACTIVE_COLUMNS,
+                        runtime.relay_offset + 2,
+                    );
+                    refresh_body_and_logical_state_digests(&mut differing_contexts);
+                    assert_eq!(pass2_error(&differing_contexts, &factory), context_error);
+                }
+            }
+        }
     }
 
     #[test]
