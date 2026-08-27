@@ -4,7 +4,7 @@ import hashlib
 import json
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import pytest
 from experiments.r3_pilot import calibration_v3_protocol as protocol
@@ -12,13 +12,39 @@ from humanbrain.sdr_union import token_sdr_indices
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "experiments" / "r3_pilot" / "calibration_v3_protocol.py"
+EXPECTED_RESUME_PATHS = (
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-10_theta-a-13/resume/transition-0000529340.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-10_theta-a-13/resume/transition-0000529340.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-10_theta-a-13/resume/transition-0001058681.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-10_theta-a-13/resume/transition-0001058681.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-10_theta-a-13/resume/transition-0001588022.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-10_theta-a-13/resume/transition-0001588022.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-16_theta-a-18/resume/transition-0000529340.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-16_theta-a-18/resume/transition-0000529340.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-16_theta-a-18/resume/transition-0001058681.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-16_theta-a-18/resume/transition-0001058681.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-16_theta-a-18/resume/transition-0001588022.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-16_theta-a-18/resume/transition-0001588022.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-18_theta-a-20/resume/transition-0000529340.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-18_theta-a-20/resume/transition-0000529340.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-18_theta-a-20/resume/transition-0001058681.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-18_theta-a-20/resume/transition-0001058681.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-18_theta-a-20/resume/transition-0001588022.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-18_theta-a-20/resume/transition-0001588022.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-20_theta-a-20/resume/transition-0000529340.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-20_theta-a-20/resume/transition-0000529340.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-20_theta-a-20/resume/transition-0001058681.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-20_theta-a-20/resume/transition-0001058681.resume.json",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-20_theta-a-20/resume/transition-0001588022.r3ntcp1",
+    "experiments/r3_pilot/calibration_v3_artifacts/r3-f0/deterministic-confirmation/theta-m-20_theta-a-20/resume/transition-0001588022.resume.json",
+)
 
 
 def test_protocol_separates_fixture_selection_from_the_train_scale_gate() -> None:
     frozen = protocol.build_protocol()
 
     assert frozen["artifact_id"] == "r3-calibration-v3-preregistration"
-    assert frozen["schema_version"] == 3
+    assert frozen["schema_version"] == 4
     assert frozen["circuit_contract"] == {
         "active_columns": 11,
         "base_cells_per_column": 8,
@@ -209,58 +235,78 @@ def test_q255_source_regimes_are_frozen_without_temporal_outcomes() -> None:
     ]
 
 
-def test_capacity_v6_uses_cohort_rounded_train_demand() -> None:
+def test_capacity_binds_schema_seven_train_only_provenance_and_unchanged_structure() -> None:
     assert [
         protocol.cohort_rounded_depth(demand) for demand in (0, 1, 2040, 2041, 4080, 4081, 286874)
     ] == [8, 8, 8, 16, 16, 24, 1128]
 
-    assert protocol.capacity_v6_summary() == {
-        "base_cells_per_column": 8,
-        "cohort_cells": 8,
-        "column_count": 4096,
-        "conditional_on_gate": "r3_f0_train",
-        "configured_physical_cells": 274432,
-        "distinct_train_contexts": 2116946,
-        "ideal_pyramidal_cells": 109216,
-        "lazy_committed_physical_cells_projection": 241088,
-        "lazy_projection_implemented": False,
-        "max_column_depth": 1128,
-        "max_context_demand": 286874,
-        "max_segments_per_cell": 255,
-        "native_temporal_memory": {
-            "a1": {
-                "index_bytes": 1864485344,
-                "requested_payload_bytes": 3590431900,
-                "source_scratch_bytes": 524288,
-            },
-            "a3": {
-                "index_bytes": 1862961632,
-                "requested_payload_bytes": 3588400284,
-                "source_scratch_bytes": 16384,
-            },
-            "allocator_metadata_excluded": True,
-            "claim_scope": "implemented_intrusive_variable_live_pair_payload",
-            "fitted_physics_excluded": True,
-            "learned_soa_bytes": 1490461056,
-            "mutation_transaction_checkpoint_runtime_implemented": False,
-            "owner_scratch_bytes": 2097152,
-            "python_diagnostics_bytes_excluded": 2097152,
-            "segment_scratch_bytes": 232864060,
-            "source_commit": "3dd2c4fa9eefb7ae0d99da2d5363053ba540a838",
-            "store_header_bytes_excluded": 432,
+    assert protocol.capacity_summary() == {
+        "artifact_id": "r3-relay-pool-capacity-v6-cohort-rounded",
+        "artifact_path": "experiments/r3_pilot/relay_pool_capacity.json",
+        "provenance": {
+            "held_out_bytes_live_verified": False,
+            "historical_full_corpus_sha256_not_live_verified": (
+                "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa"
+            ),
+            "train_corpus_bytes_live_verified": 3656777,
+            "train_input_authority_sha256": (
+                "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966"
+            ),
+            "train_stream_sha256": (
+                "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+            ),
         },
-        "pyramidal_cells_remaining": 16672,
-        "pyramidal_cells_required": 114400,
-        "recruited_columns": 1286,
-        "rounding_overhead_cells": 5184,
-        "segment_count": 23286406,
-        "train_stream_sha256": ("f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"),
+        "schema_version": 7,
+        "scientific_payload": {
+            "canonical_hash_rule": (
+                "sha256(canonical JSON of relay_pool_capacity without schema_version and scope)"
+            ),
+            "schema_seven_change_scope": "provenance_only",
+            "sha256": "72665d2fc7360cc1dd32367211d9477e64a61e14e059714b0d1d1274297eb7d1",
+        },
+        "structure": {
+            "base_cells_per_column": 8,
+            "cohort_cells": 8,
+            "column_count": 4096,
+            "conditional_on_gate": "r3_f0_train",
+            "configured_physical_cells": 274432,
+            "distinct_train_contexts": 2116946,
+            "ideal_pyramidal_cells": 109216,
+            "logical_pair_slots": 232864060,
+            "max_column_depth": 1128,
+            "max_context_demand": 286874,
+            "max_segments_per_cell": 255,
+            "physical_contacts": 465728120,
+            "pyramidal_cells_recruited": 81632,
+            "pyramidal_cells_remaining": 16672,
+            "pyramidal_cells_required": 114400,
+            "recruited_columns": 1286,
+            "rounding_overhead_cells": 5184,
+            "segment_count": 23286406,
+        },
     }
 
-    capacity = protocol.build_protocol()["capacity_v6"]
-    assert capacity == protocol.capacity_v6_summary()
-    assert capacity["pyramidal_cells_required"] < 131072
-    assert capacity["lazy_projection_implemented"] is False
+    capacity = protocol.build_protocol()["capacity"]
+    assert capacity == protocol.capacity_summary()
+    assert capacity["structure"]["pyramidal_cells_required"] < 131072
+    assert "capacity_v6" not in protocol.build_protocol()
+    assert not hasattr(protocol, "capacity_v6_summary")
+
+    artifact = json.loads(
+        (ROOT / "experiments" / "r3_pilot" / "relay_pool_capacity.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    scientific_payload = dict(artifact)
+    scientific_payload.pop("schema_version")
+    scientific_payload.pop("scope")
+    assert artifact["artifact_id"] == capacity["artifact_id"]
+    assert artifact["schema_version"] == capacity["schema_version"]
+    assert _canonical_sha256(scientific_payload) == capacity["scientific_payload"]["sha256"]
+    assert {
+        key: artifact["scope"][key] for key in capacity["provenance"]
+    } == capacity["provenance"]
+    assert capacity["artifact_path"] in protocol.build_protocol()["source_binding"]["files"]
 
 
 def test_electrical_v3_covers_reserve_and_winner_relay_domains() -> None:
@@ -401,6 +447,44 @@ def test_r3_f0_is_the_train_order_identity_and_collision_gate() -> None:
         "resume_after_transition_events": [529340, 1058681, 1588022],
         "resume_fraction_rule": "floor(total_transition_events * numerator / 4)",
         "resume_numerators": [1, 2, 3],
+        "resume_milestones": [
+            {
+                "after_transition_event": 529340,
+                "book_name": "Joshua",
+                "book_ordinal_zero_based": 5,
+                "event_count": 529346,
+                "future_book_resets": 43,
+                "last_token_index_zero_based": 42123,
+                "learning_step": 529346,
+                "next_token_index_zero_based": 42124,
+                "remaining_transition_events": 1588023,
+                "reset_before_next_token": False,
+            },
+            {
+                "after_transition_event": 1058681,
+                "book_name": "2 Chronicles",
+                "book_ordinal_zero_based": 13,
+                "event_count": 1058695,
+                "future_book_resets": 35,
+                "last_token_index_zero_based": 82661,
+                "learning_step": 1058695,
+                "next_token_index_zero_based": 82662,
+                "remaining_transition_events": 1058682,
+                "reset_before_next_token": False,
+            },
+            {
+                "after_transition_event": 1588022,
+                "book_name": "Jeremiah",
+                "book_ordinal_zero_based": 23,
+                "event_count": 1588046,
+                "future_book_resets": 25,
+                "last_token_index_zero_based": 33073,
+                "learning_step": 1588046,
+                "next_token_index_zero_based": 33074,
+                "remaining_transition_events": 529341,
+                "reset_before_next_token": False,
+            },
+        ],
         "snapshot_hash_includes": [
             "source_and_protocol_bindings",
             "train_position_and_previous_context",
@@ -414,15 +498,89 @@ def test_r3_f0_is_the_train_order_identity_and_collision_gate() -> None:
     assert screen["required_verdict"] == "PASS_R3_F0_TRAIN_STRUCTURE"
 
 
+def test_timing_contract_is_adopted_without_execution_authority() -> None:
+    frozen = protocol.build_protocol()
+
+    assert frozen["timing_contract"] == {
+        "cap_ns": 54000000000000,
+        "boundaries": {
+            "clean_stop": (
+                "after all scientific work and, at a checkpoint, durable checkpoint "
+                "publication plus fresh reopen, full import validation, derived-index "
+                "rebuild, and identity/parity checks; before bounded manifest or result "
+                "publication"
+            ),
+            "fresh_start": (
+                "before the first of production circuit construction, production "
+                "TRAIN-source access, or frozen output-parent creation"
+            ),
+            "resume_start": "immediately before opening the exact frozen resume manifest",
+        },
+        "cap_check_rule": (
+            "check within books and immediately before and after every atomic persistence "
+            "operation"
+        ),
+        "charged_operations": [
+            "production runtime allocation/construction and exact TRAIN reads and hashes",
+            "simulation, activity transfer, recognition, race, plasticity, evaluation, "
+            "scoring, stream-hash updates, and final state identity",
+            "checkpoint traversal, encoding, staging copy, durable publication, cleanup, "
+            "and parent-directory durability",
+            "fresh checkpoint open/read, full import validation, derived-index rebuild, "
+            "and identity/parity checks",
+            "asynchronous persistence waits and all incidental elapsed time inside the "
+            "closed session",
+        ],
+        "clock": "CPython 3.11 time.perf_counter_ns",
+        "comparison_input": "max(uninterrupted_cumulative_ns,resumed_cumulative_ns)",
+        "contract_id": "r3-cumulative-active-wall-v1",
+        "cumulative_rule": (
+            "first prior_cumulative_ns=0; "
+            "cumulative_active_ns=prior_cumulative_ns+session_active_ns exactly once"
+        ),
+        "excluded_operations": [
+            "bounded resume-manifest construction, publication, reopen, and confirmation",
+            "bounded result-envelope construction, publication, reopen, and confirmation",
+        ],
+        "implementation_status": "DISABLED_BEHIND_EXECUTE_FROZEN_PLAN",
+        "integer_rule": "timing fields are exact non-negative integer nanoseconds",
+        "session_rule": (
+            "one closed active interval with no internal pause; scheduler delay, sleep, "
+            "locks, garbage collection, synchronous I/O, asynchronous waits, and incidental "
+            "error handling remain charged"
+        ),
+        "status": "ADOPTED_PRE_OUTCOME",
+        "stop_rules": {
+            "cap_crossed": (
+                "finish any non-cancellable persistence operation and cleanup, record exact "
+                "overshoot, then STOP"
+            ),
+            "unclean_or_open_session": "TIMING_INDETERMINATE",
+        },
+    }
+    assert frozen["source_binding"]["runnable"] is False
+    assert frozen["execution_status"] == "NOT_RUNNABLE_PRE_OUTCOME"
+
+
 def test_artifact_paths_are_exact_unique_and_exclusive() -> None:
     contract = protocol.artifact_contract()
 
     assert contract["root"] == "experiments/r3_pilot/calibration_v3_artifacts"
     assert contract["write_policy"] == {
+        "checkpoint_api": (
+            "humanbrain.native_temporal_runtime.NativeTemporalCircuit.publish_checkpoint"
+        ),
+        "checkpoint_without_manifest": "manual_STOP",
+        "directory_creation": False,
+        "envelope_api": "humanbrain.native_temporal_runtime.publish_immutable_bytes",
+        "envelope_max_bytes": 1048576,
         "existing_target": "STOP",
+        "fallback": False,
         "force_or_overwrite_option": False,
-        "mode": "exclusive_create",
-        "python_file_mode": "xb",
+        "manifest_commit_point": True,
+        "mode": "exclusive_durable_publish",
+        "overwrite": False,
+        "retry": False,
     }
     assert contract["electrical_v3"]["development"][0] == (
         "experiments/r3_pilot/calibration_v3_artifacts/electrical-v3/"
@@ -448,6 +606,31 @@ def test_artifact_paths_are_exact_unique_and_exclusive() -> None:
         "deterministic-confirmation/theta-m-18_theta-a-20/"
         "construction-seed-0000000017.json"
     )
+    assert tuple(contract["r3_f0_train"]["deterministic_confirmation_resumes"]) == (
+        EXPECTED_RESUME_PATHS
+    )
+    resume_preimage = json.dumps(
+        contract["r3_f0_train"]["deterministic_confirmation_resumes"],
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")
+    assert len(resume_preimage) == 3409
+    assert hashlib.sha256(resume_preimage).hexdigest() == (
+        "82581f614b7ef2766f0c8264d7ea44f59818bc2baca8661ea241d24400b09bb8"
+    )
+    assert contract["path_inventory"] == {
+        "binary_checkpoint_paths": 12,
+        "direct_parent_directories": 39,
+        "full_parent_directory_closure": 54,
+        "json_paths": 126,
+        "resume_path_list_canonical_json_bytes": 3409,
+        "resume_path_list_sha256": (
+            "82581f614b7ef2766f0c8264d7ea44f59818bc2baca8661ea241d24400b09bb8"
+        ),
+        "total_paths": 138,
+    }
     assert contract["selection"] == {
         "development": (
             "experiments/r3_pilot/calibration_v3_artifacts/selection/development-selection.json"
@@ -456,9 +639,22 @@ def test_artifact_paths_are_exact_unique_and_exclusive() -> None:
     }
 
     paths = protocol.artifact_paths(contract)
-    assert len(paths) == 114
+    assert len(paths) == 138
     assert len(set(paths)) == len(paths)
-    assert all(path.endswith(".json") for path in paths)
+    assert sum(path.endswith(".json") for path in paths) == 126
+    assert sum(path.endswith(".r3ntcp1") for path in paths) == 12
+    assert tuple(path for path in paths if "/resume/" in path) == EXPECTED_RESUME_PATHS
+    direct_parents = {str(PurePosixPath(path).parent) for path in paths}
+    ancestor_closure: set[str] = set()
+    for parent in direct_parents:
+        cursor = PurePosixPath(parent)
+        while True:
+            ancestor_closure.add(str(cursor))
+            if str(cursor) == protocol.ARTIFACT_ROOT:
+                break
+            cursor = cursor.parent
+    assert len(direct_parents) == 39
+    assert len(ancestor_closure) == 54
 
 
 def test_development_selection_is_first_pass_in_frozen_arm_order() -> None:
@@ -481,24 +677,26 @@ def test_development_selection_is_first_pass_in_frozen_arm_order() -> None:
         protocol.select_development_arm({"theta-m-10_theta-a-13": True})
 
 
-def test_source_binding_is_exact_and_non_runnable_while_native_work_is_unbound() -> None:
+def test_source_binding_is_exact_nested_gate3_bound_and_non_runnable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     frozen = protocol.build_protocol()
     binding = frozen["source_binding"]
 
     assert binding["runnable"] is False
+    assert binding["governing_gate3_path"] == (
+        "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json"
+    )
     assert binding["canonical_byte_rule"] == (
         "sha256(raw Git blob or live file after CRLF-to-LF normalization; lone CR forbidden)"
     )
     assert binding["baseline_commits"] == {
         "explicit_threshold_oracle": "c67c6c4b960a26ca8227f78d80da306076d1a931",
-        "native_random123": "15963daf1ea74e9e3a2a41c7168ac738d3b61e2e",
-        "native_temporal_physics": "612b2f55373550f6abd39a6b89d9f6cd978cd7eb",
-        "native_temporal_store": "3dd2c4fa9eefb7ae0d99da2d5363053ba540a838",
         "procedural_gate3_refreeze": "1a262b6d11c0c14bd82c4923e8499befb169576c",
     }
     assert binding["blockers"] == [
-        "native temporal mutation/integration runner is not implemented and source-bound",
-        "outcome-bearing electrical, q4, q255, and R3-F0 runners remain disabled",
+        "Official calibration-v3 screen execution, checkpoint/resume orchestration, "
+        "and immutable result publication remain disabled behind `_execute_frozen_plan`."
     ]
     assert binding["files"] == {
         "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json": {
@@ -506,40 +704,12 @@ def test_source_binding_is_exact_and_non_runnable_while_native_work_is_unbound()
             "sha256": "0adecfa53b94ca4f47294e307849b9ae7dd4b6d0b573a4352be5574d6c32d534",
         },
         "experiments/r3_pilot/relay_pool_capacity.json": {
-            "commit": "a745826f50c7a5a65c2885f5f66de78d44dfdb74",
-            "sha256": "ed316960a1088f936fcb4267107b8947af01f1ac736214839233d7cc27e8a844",
-        },
-        "src/humanbrain/_native_src/src/lib.rs": {
-            "commit": "612b2f55373550f6abd39a6b89d9f6cd978cd7eb",
-            "sha256": "02ed78dcb7979264a5ea1be2be2308d075e9031e0dac129860ca8c7280cdf707",
-        },
-        "src/humanbrain/_native_src/src/procedural.rs": {
-            "commit": "15963daf1ea74e9e3a2a41c7168ac738d3b61e2e",
-            "sha256": "7c0f83c9ac5825d4d36784edb27544edd4ad90e9b74967b0c7b1d6e55088e48f",
-        },
-        "src/humanbrain/_native_src/src/random123.rs": {
-            "commit": "15963daf1ea74e9e3a2a41c7168ac738d3b61e2e",
-            "sha256": "0a229d96f549ae12f4dc8d7b6765a129fdd3cd0834a4aca0403e80d3a2397435",
-        },
-        "src/humanbrain/_native_src/src/temporal.rs": {
-            "commit": "3dd2c4fa9eefb7ae0d99da2d5363053ba540a838",
-            "sha256": "e9ecb27710ec6ca27ac7f32a6ae9b534ffdca0c3208cb48c1eb858474bae7ef9",
-        },
-        "src/humanbrain/_native_src/src/temporal_physics.rs": {
-            "commit": "612b2f55373550f6abd39a6b89d9f6cd978cd7eb",
-            "sha256": "41048e560ecb80c67f0e822edad12133b4e37c9c613933c796765521551df511",
-        },
-        "src/humanbrain/cells.py": {
-            "commit": "c323575299637a1e34141277612e6023c6b9e617",
-            "sha256": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6",
+            "commit": "5882bb9d59250c644e8c462428a3908def0f1ee5",
+            "sha256": "45c010fdba9a5a2cb301d70d6e98dd004723aff8d4293aa8f44c7425a74b801b",
         },
         "src/humanbrain/cortex.py": {
             "commit": "6a153c7a2bea5636035e144494ec929f60f50682",
             "sha256": "16545b390c516b6f5817366946f0f516cec5b049bb9e1f6021184d9e156e0a8c",
-        },
-        "src/humanbrain/native_temporal.py": {
-            "commit": "3dd2c4fa9eefb7ae0d99da2d5363053ba540a838",
-            "sha256": "d9034d542755a3747d588e15cf89f3455a265fb6a89c9afd002262d620ffd84b",
         },
         "src/humanbrain/sdr_union.py": {
             "commit": "40a29341dadc3bac903bf62b2c68763f5f5c493f",
@@ -550,6 +720,9 @@ def test_source_binding_is_exact_and_non_runnable_while_native_work_is_unbound()
             "sha256": "22e5ab6bb9e3b1bc7010e8c3ffd11d9c2dd9ea01a33ba15046a32db2228357a8",
         },
     }
+    assert not any(path.startswith("src/humanbrain/_native_src/") for path in binding["files"])
+    assert "src/humanbrain/native_temporal.py" not in binding["files"]
+    assert "src/humanbrain/cells.py" not in binding["files"]
     assert all(
         len(row["commit"]) == 40 and len(row["sha256"]) == 64 for row in binding["files"].values()
     )
@@ -563,6 +736,12 @@ def test_source_binding_is_exact_and_non_runnable_while_native_work_is_unbound()
     )
     with pytest.raises(protocol.ProtocolError, match="canonical protocol"):
         protocol.validate_protocol(tampered, require_runnable=False)
+
+    unbound_gate3 = json.loads(json.dumps(frozen))
+    unbound_gate3["source_binding"]["governing_gate3_path"] = "benchmarks/not-bound.json"
+    monkeypatch.setattr(protocol, "build_protocol", lambda: unbound_gate3)
+    with pytest.raises(protocol.ProtocolError, match="governing Gate3 path is not source-bound"):
+        protocol.validate_protocol(unbound_gate3, require_runnable=False)
 
 
 def test_source_byte_validator_and_cli_fail_closed() -> None:
@@ -613,6 +792,14 @@ def test_source_byte_validator_and_cli_fail_closed() -> None:
     assert "protocol is not runnable" in runnable.stderr
     assert printed.returncode == 0, printed.stderr
     assert json.loads(printed.stdout) == protocol.build_protocol()
+
+
+def test_canonical_json_bytes_are_ascii_and_reject_nonfinite_numbers() -> None:
+    assert protocol.canonical_json_bytes({"snowman": "☃"}) == (
+        b'{"snowman":"\\u2603"}'
+    )
+    with pytest.raises(ValueError, match="Out of range float values are not JSON compliant"):
+        protocol.canonical_json_bytes({"invalid": float("nan")})
 
 
 def test_git_blob_binding_is_cross_checkout_and_draft_tolerates_live_drift(
@@ -728,6 +915,58 @@ def test_execution_order_and_future_result_contract_are_predeclared() -> None:
             "experiments/r3_pilot/calibration_v3_artifacts/selection/final-verdict.json"
         ),
         "protocol_digest": "sha256(canonical_json(build_protocol()))",
+        "envelopes": {
+            "outer_keys": ["artifact_id", "payload", "payload_sha256", "schema_version"],
+            "result": {
+                "artifact_id": "r3-calibration-v3-result-envelope-v1",
+                "payload_keys": [
+                    "artifact_path",
+                    "claim_boundary",
+                    "construction_seeds",
+                    "phase",
+                    "protocol_sha256",
+                    "result",
+                    "screen_id",
+                    "source_binding",
+                    "source_bundle_identity_sha256",
+                    "thresholds",
+                ],
+                "r3_f0_result_keys": [
+                    "arm_slug",
+                    "comparisons",
+                    "kind",
+                    "reference",
+                    "resumes",
+                    "structural_metrics",
+                    "train_input",
+                    "verdict",
+                ],
+            },
+            "resume": {
+                "artifact_id": "r3-f0-resume-manifest-v1",
+                "payload_keys": [
+                    "arm_slug",
+                    "artifact_path",
+                    "checkpoint",
+                    "checkpoint_publication",
+                    "circuit_contract",
+                    "claim_boundary",
+                    "construction_seed",
+                    "cursor",
+                    "phase",
+                    "previous_state",
+                    "protocol_sha256",
+                    "reference_trajectory_id",
+                    "screen_id",
+                    "source_binding",
+                    "source_bundle_identity_sha256",
+                    "stream_prefixes",
+                    "thresholds",
+                    "timing",
+                    "train_input",
+                ],
+            },
+        },
         "required_claim_fields": {
             "capability_evidence": False,
             "held_out_data_accessed": False,

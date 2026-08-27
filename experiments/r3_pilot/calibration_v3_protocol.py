@@ -24,6 +24,7 @@ ARTIFACT_ROOT = "experiments/r3_pilot/calibration_v3_artifacts"
 THRESHOLD_ARMS = ((10, 13), (16, 18), (18, 20), (20, 20))
 DEVELOPMENT_SEEDS = (3, 7, 17, 29)
 CONFIRMATION_SEEDS = (43, 59, 83, 101)
+RESUME_TRANSITION_EVENTS = (529_340, 1_058_681, 1_588_022)
 PRODUCTION_TOKEN_IDS = tuple(range(256)) + tuple(range(1024, 1536))
 PRODUCTION_TARGET_TOKEN = 32
 DISJOINT_TARGET_TOKEN = 2_041
@@ -303,13 +304,49 @@ def artifact_contract() -> dict[str, Any]:
         "production-overlap-ordered-pairs",
         "target-disjoint-isolation-control",
     )
+    deterministic_confirmation_resumes = [
+        "/".join(
+            (
+                ARTIFACT_ROOT,
+                "r3-f0",
+                "deterministic-confirmation",
+                slug,
+                "resume",
+                f"transition-{transition_event:010d}{extension}",
+            )
+        )
+        for slug, _arm in arm_slugs
+        for transition_event in RESUME_TRANSITION_EVENTS
+        for extension in (".r3ntcp1", ".resume.json")
+    ]
     return {
         "root": ARTIFACT_ROOT,
         "write_policy": {
+            "checkpoint_api": (
+                "humanbrain.native_temporal_runtime.NativeTemporalCircuit.publish_checkpoint"
+            ),
+            "checkpoint_without_manifest": "manual_STOP",
+            "directory_creation": False,
+            "envelope_api": "humanbrain.native_temporal_runtime.publish_immutable_bytes",
+            "envelope_max_bytes": 1_048_576,
             "existing_target": "STOP",
+            "fallback": False,
             "force_or_overwrite_option": False,
-            "mode": "exclusive_create",
-            "python_file_mode": "xb",
+            "manifest_commit_point": True,
+            "mode": "exclusive_durable_publish",
+            "overwrite": False,
+            "retry": False,
+        },
+        "path_inventory": {
+            "binary_checkpoint_paths": 12,
+            "direct_parent_directories": 39,
+            "full_parent_directory_closure": 54,
+            "json_paths": 126,
+            "resume_path_list_canonical_json_bytes": 3_409,
+            "resume_path_list_sha256": (
+                "82581f614b7ef2766f0c8264d7ea44f59818bc2baca8661ea241d24400b09bb8"
+            ),
+            "total_paths": 138,
         },
         "electrical_v3": {
             "development": [
@@ -365,6 +402,7 @@ def artifact_contract() -> dict[str, Any]:
                 )
                 for slug, _arm in arm_slugs
             },
+            "deterministic_confirmation_resumes": deterministic_confirmation_resumes,
         },
         "selection": {
             "development": (f"{ARTIFACT_ROOT}/selection/development-selection.json"),
@@ -374,13 +412,13 @@ def artifact_contract() -> dict[str, Any]:
 
 
 def artifact_paths(contract: dict[str, Any] | None = None) -> tuple[str, ...]:
-    """Flatten the exact JSON destinations and reject duplicate names."""
+    """Flatten every exact artifact destination and reject duplicate names."""
 
     frozen = artifact_contract() if contract is None else contract
     paths: list[str] = []
 
     def collect(value: Any) -> None:
-        if isinstance(value, str) and value.endswith(".json"):
+        if isinstance(value, str) and value.endswith((".json", ".r3ntcp1")):
             paths.append(value)
         elif isinstance(value, dict):
             for child in value.values():
@@ -405,50 +443,53 @@ def cohort_rounded_depth(context_demand: int) -> int:
     return 8 * cohorts
 
 
-def capacity_v6_summary() -> dict[str, Any]:
-    """Return static cohort-rounded sizing; no corpus or outcome is opened."""
+def capacity_summary() -> dict[str, Any]:
+    """Return the schema-seven TRAIN-only capacity binding without opening inputs."""
 
     return {
-        "base_cells_per_column": 8,
-        "cohort_cells": 8,
-        "column_count": 4_096,
-        "conditional_on_gate": "r3_f0_train",
-        "configured_physical_cells": 274_432,
-        "distinct_train_contexts": 2_116_946,
-        "ideal_pyramidal_cells": 109_216,
-        "lazy_committed_physical_cells_projection": 241_088,
-        "lazy_projection_implemented": False,
-        "max_column_depth": 1_128,
-        "max_context_demand": 286_874,
-        "max_segments_per_cell": 255,
-        "native_temporal_memory": {
-            "a1": {
-                "index_bytes": 1_864_485_344,
-                "requested_payload_bytes": 3_590_431_900,
-                "source_scratch_bytes": 524_288,
-            },
-            "a3": {
-                "index_bytes": 1_862_961_632,
-                "requested_payload_bytes": 3_588_400_284,
-                "source_scratch_bytes": 16_384,
-            },
-            "allocator_metadata_excluded": True,
-            "claim_scope": "implemented_intrusive_variable_live_pair_payload",
-            "fitted_physics_excluded": True,
-            "learned_soa_bytes": 1_490_461_056,
-            "mutation_transaction_checkpoint_runtime_implemented": False,
-            "owner_scratch_bytes": 2_097_152,
-            "python_diagnostics_bytes_excluded": 2_097_152,
-            "segment_scratch_bytes": 232_864_060,
-            "source_commit": "3dd2c4fa9eefb7ae0d99da2d5363053ba540a838",
-            "store_header_bytes_excluded": 432,
+        "artifact_id": "r3-relay-pool-capacity-v6-cohort-rounded",
+        "artifact_path": "experiments/r3_pilot/relay_pool_capacity.json",
+        "provenance": {
+            "held_out_bytes_live_verified": False,
+            "historical_full_corpus_sha256_not_live_verified": (
+                "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa"
+            ),
+            "train_corpus_bytes_live_verified": 3_656_777,
+            "train_input_authority_sha256": (
+                "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966"
+            ),
+            "train_stream_sha256": (
+                "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+            ),
         },
-        "pyramidal_cells_remaining": 16_672,
-        "pyramidal_cells_required": 114_400,
-        "recruited_columns": 1_286,
-        "rounding_overhead_cells": 5_184,
-        "segment_count": 23_286_406,
-        "train_stream_sha256": ("f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"),
+        "schema_version": 7,
+        "scientific_payload": {
+            "canonical_hash_rule": (
+                "sha256(canonical JSON of relay_pool_capacity without schema_version and scope)"
+            ),
+            "schema_seven_change_scope": "provenance_only",
+            "sha256": "72665d2fc7360cc1dd32367211d9477e64a61e14e059714b0d1d1274297eb7d1",
+        },
+        "structure": {
+            "base_cells_per_column": 8,
+            "cohort_cells": 8,
+            "column_count": 4_096,
+            "conditional_on_gate": "r3_f0_train",
+            "configured_physical_cells": 274_432,
+            "distinct_train_contexts": 2_116_946,
+            "ideal_pyramidal_cells": 109_216,
+            "logical_pair_slots": 232_864_060,
+            "max_column_depth": 1_128,
+            "max_context_demand": 286_874,
+            "max_segments_per_cell": 255,
+            "physical_contacts": 465_728_120,
+            "pyramidal_cells_recruited": 81_632,
+            "pyramidal_cells_remaining": 16_672,
+            "pyramidal_cells_required": 114_400,
+            "recruited_columns": 1_286,
+            "rounding_overhead_cells": 5_184,
+            "segment_count": 23_286_406,
+        },
     }
 
 
@@ -457,14 +498,11 @@ def _source_binding() -> dict[str, Any]:
         "canonical_byte_rule": CANONICAL_SOURCE_BYTE_RULE,
         "baseline_commits": {
             "explicit_threshold_oracle": ("c67c6c4b960a26ca8227f78d80da306076d1a931"),
-            "native_random123": "15963daf1ea74e9e3a2a41c7168ac738d3b61e2e",
-            "native_temporal_physics": "612b2f55373550f6abd39a6b89d9f6cd978cd7eb",
-            "native_temporal_store": "3dd2c4fa9eefb7ae0d99da2d5363053ba540a838",
             "procedural_gate3_refreeze": ("1a262b6d11c0c14bd82c4923e8499befb169576c"),
         },
         "blockers": [
-            ("native temporal mutation/integration runner is not implemented and source-bound"),
-            "outcome-bearing electrical, q4, q255, and R3-F0 runners remain disabled",
+            "Official calibration-v3 screen execution, checkpoint/resume orchestration, "
+            "and immutable result publication remain disabled behind `_execute_frozen_plan`."
         ],
         "files": {
             "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json": {
@@ -472,40 +510,12 @@ def _source_binding() -> dict[str, Any]:
                 "sha256": ("0adecfa53b94ca4f47294e307849b9ae7dd4b6d0b573a4352be5574d6c32d534"),
             },
             "experiments/r3_pilot/relay_pool_capacity.json": {
-                "commit": "a745826f50c7a5a65c2885f5f66de78d44dfdb74",
-                "sha256": ("ed316960a1088f936fcb4267107b8947af01f1ac736214839233d7cc27e8a844"),
-            },
-            "src/humanbrain/_native_src/src/lib.rs": {
-                "commit": "612b2f55373550f6abd39a6b89d9f6cd978cd7eb",
-                "sha256": ("02ed78dcb7979264a5ea1be2be2308d075e9031e0dac129860ca8c7280cdf707"),
-            },
-            "src/humanbrain/_native_src/src/procedural.rs": {
-                "commit": "15963daf1ea74e9e3a2a41c7168ac738d3b61e2e",
-                "sha256": ("7c0f83c9ac5825d4d36784edb27544edd4ad90e9b74967b0c7b1d6e55088e48f"),
-            },
-            "src/humanbrain/_native_src/src/random123.rs": {
-                "commit": "15963daf1ea74e9e3a2a41c7168ac738d3b61e2e",
-                "sha256": ("0a229d96f549ae12f4dc8d7b6765a129fdd3cd0834a4aca0403e80d3a2397435"),
-            },
-            "src/humanbrain/_native_src/src/temporal.rs": {
-                "commit": "3dd2c4fa9eefb7ae0d99da2d5363053ba540a838",
-                "sha256": ("e9ecb27710ec6ca27ac7f32a6ae9b534ffdca0c3208cb48c1eb858474bae7ef9"),
-            },
-            "src/humanbrain/_native_src/src/temporal_physics.rs": {
-                "commit": "612b2f55373550f6abd39a6b89d9f6cd978cd7eb",
-                "sha256": ("41048e560ecb80c67f0e822edad12133b4e37c9c613933c796765521551df511"),
-            },
-            "src/humanbrain/cells.py": {
-                "commit": "c323575299637a1e34141277612e6023c6b9e617",
-                "sha256": ("5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6"),
+                "commit": "5882bb9d59250c644e8c462428a3908def0f1ee5",
+                "sha256": ("45c010fdba9a5a2cb301d70d6e98dd004723aff8d4293aa8f44c7425a74b801b"),
             },
             "src/humanbrain/cortex.py": {
                 "commit": "6a153c7a2bea5636035e144494ec929f60f50682",
                 "sha256": ("16545b390c516b6f5817366946f0f516cec5b049bb9e1f6021184d9e156e0a8c"),
-            },
-            "src/humanbrain/native_temporal.py": {
-                "commit": "3dd2c4fa9eefb7ae0d99da2d5363053ba540a838",
-                "sha256": ("d9034d542755a3747d588e15cf89f3455a265fb6a89c9afd002262d620ffd84b"),
             },
             "src/humanbrain/sdr_union.py": {
                 "commit": "40a29341dadc3bac903bf62b2c68763f5f5c493f",
@@ -516,12 +526,23 @@ def _source_binding() -> dict[str, Any]:
                 "sha256": ("22e5ab6bb9e3b1bc7010e8c3ffd11d9c2dd9ea01a33ba15046a32db2228357a8"),
             },
         },
+        "governing_gate3_path": (
+            "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json"
+        ),
         "runnable": False,
     }
 
 
-def _canonical_json_bytes(value: Any) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+def canonical_json_bytes(value: Any) -> bytes:
+    """Encode one protocol value using the exact canonical JSON rule."""
+
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")
 
 
 def canonical_source_bytes(raw: bytes) -> bytes:
@@ -538,7 +559,7 @@ def build_protocol() -> dict[str, Any]:
 
     return {
         "artifact_id": "r3-calibration-v3-preregistration",
-        "schema_version": 3,
+        "schema_version": 4,
         "circuit_contract": {
             "active_columns": 11,
             "base_cells_per_column": 8,
@@ -552,6 +573,63 @@ def build_protocol() -> dict[str, Any]:
             "source_relay_pairs_per_segment": 10,
         },
         "execution_status": "NOT_RUNNABLE_PRE_OUTCOME",
+        "timing_contract": {
+            "cap_ns": 54_000_000_000_000,
+            "boundaries": {
+                "clean_stop": (
+                    "after all scientific work and, at a checkpoint, durable checkpoint "
+                    "publication plus fresh reopen, full import validation, derived-index "
+                    "rebuild, and identity/parity checks; before bounded manifest or result "
+                    "publication"
+                ),
+                "fresh_start": (
+                    "before the first of production circuit construction, production "
+                    "TRAIN-source access, or frozen output-parent creation"
+                ),
+                "resume_start": "immediately before opening the exact frozen resume manifest",
+            },
+            "cap_check_rule": (
+                "check within books and immediately before and after every atomic persistence "
+                "operation"
+            ),
+            "charged_operations": [
+                "production runtime allocation/construction and exact TRAIN reads and hashes",
+                "simulation, activity transfer, recognition, race, plasticity, evaluation, "
+                "scoring, stream-hash updates, and final state identity",
+                "checkpoint traversal, encoding, staging copy, durable publication, cleanup, "
+                "and parent-directory durability",
+                "fresh checkpoint open/read, full import validation, derived-index rebuild, "
+                "and identity/parity checks",
+                "asynchronous persistence waits and all incidental elapsed time inside the "
+                "closed session",
+            ],
+            "clock": "CPython 3.11 time.perf_counter_ns",
+            "comparison_input": "max(uninterrupted_cumulative_ns,resumed_cumulative_ns)",
+            "contract_id": "r3-cumulative-active-wall-v1",
+            "cumulative_rule": (
+                "first prior_cumulative_ns=0; "
+                "cumulative_active_ns=prior_cumulative_ns+session_active_ns exactly once"
+            ),
+            "excluded_operations": [
+                "bounded resume-manifest construction, publication, reopen, and confirmation",
+                "bounded result-envelope construction, publication, reopen, and confirmation",
+            ],
+            "implementation_status": "DISABLED_BEHIND_EXECUTE_FROZEN_PLAN",
+            "integer_rule": "timing fields are exact non-negative integer nanoseconds",
+            "session_rule": (
+                "one closed active interval with no internal pause; scheduler delay, sleep, "
+                "locks, garbage collection, synchronous I/O, asynchronous waits, and incidental "
+                "error handling remain charged"
+            ),
+            "status": "ADOPTED_PRE_OUTCOME",
+            "stop_rules": {
+                "cap_crossed": (
+                    "finish any non-cancellable persistence operation and cleanup, record exact "
+                    "overshoot, then STOP"
+                ),
+                "unclean_or_open_session": "TIMING_INDETERMINATE",
+            },
+        },
         "execution_order": [
             "electrical_v3_all_development_and_independent_confirmation_seeds",
             "q4_all_candidate_arms_on_development_seeds",
@@ -775,6 +853,44 @@ def build_protocol() -> dict[str, Any]:
                     "resume_after_transition_events": [529_340, 1_058_681, 1_588_022],
                     "resume_fraction_rule": ("floor(total_transition_events * numerator / 4)"),
                     "resume_numerators": [1, 2, 3],
+                    "resume_milestones": [
+                        {
+                            "after_transition_event": 529_340,
+                            "book_name": "Joshua",
+                            "book_ordinal_zero_based": 5,
+                            "event_count": 529_346,
+                            "future_book_resets": 43,
+                            "last_token_index_zero_based": 42_123,
+                            "learning_step": 529_346,
+                            "next_token_index_zero_based": 42_124,
+                            "remaining_transition_events": 1_588_023,
+                            "reset_before_next_token": False,
+                        },
+                        {
+                            "after_transition_event": 1_058_681,
+                            "book_name": "2 Chronicles",
+                            "book_ordinal_zero_based": 13,
+                            "event_count": 1_058_695,
+                            "future_book_resets": 35,
+                            "last_token_index_zero_based": 82_661,
+                            "learning_step": 1_058_695,
+                            "next_token_index_zero_based": 82_662,
+                            "remaining_transition_events": 1_058_682,
+                            "reset_before_next_token": False,
+                        },
+                        {
+                            "after_transition_event": 1_588_022,
+                            "book_name": "Jeremiah",
+                            "book_ordinal_zero_based": 23,
+                            "event_count": 1_588_046,
+                            "future_book_resets": 25,
+                            "last_token_index_zero_based": 33_073,
+                            "learning_step": 1_588_046,
+                            "next_token_index_zero_based": 33_074,
+                            "remaining_transition_events": 529_341,
+                            "reset_before_next_token": False,
+                        },
+                    ],
                     "snapshot_hash_includes": [
                         "source_and_protocol_bindings",
                         "train_position_and_previous_context",
@@ -836,7 +952,7 @@ def build_protocol() -> dict[str, Any]:
                 "required_verdict": "PASS_R3_F0_TRAIN_STRUCTURE",
             },
         },
-        "capacity_v6": capacity_v6_summary(),
+        "capacity": capacity_summary(),
         "result_contract": {
             "artifact_creation_requires_runnable_source_binding": True,
             "confirmation_artifacts_must_contain_selected_arm_only": True,
@@ -844,6 +960,58 @@ def build_protocol() -> dict[str, Any]:
             "development_artifacts_must_report_every_executed_arm": True,
             "final_verdict_path": artifact_contract()["selection"]["final"],
             "protocol_digest": "sha256(canonical_json(build_protocol()))",
+            "envelopes": {
+                "outer_keys": ["artifact_id", "payload", "payload_sha256", "schema_version"],
+                "result": {
+                    "artifact_id": "r3-calibration-v3-result-envelope-v1",
+                    "payload_keys": [
+                        "artifact_path",
+                        "claim_boundary",
+                        "construction_seeds",
+                        "phase",
+                        "protocol_sha256",
+                        "result",
+                        "screen_id",
+                        "source_binding",
+                        "source_bundle_identity_sha256",
+                        "thresholds",
+                    ],
+                    "r3_f0_result_keys": [
+                        "arm_slug",
+                        "comparisons",
+                        "kind",
+                        "reference",
+                        "resumes",
+                        "structural_metrics",
+                        "train_input",
+                        "verdict",
+                    ],
+                },
+                "resume": {
+                    "artifact_id": "r3-f0-resume-manifest-v1",
+                    "payload_keys": [
+                        "arm_slug",
+                        "artifact_path",
+                        "checkpoint",
+                        "checkpoint_publication",
+                        "circuit_contract",
+                        "claim_boundary",
+                        "construction_seed",
+                        "cursor",
+                        "phase",
+                        "previous_state",
+                        "protocol_sha256",
+                        "reference_trajectory_id",
+                        "screen_id",
+                        "source_binding",
+                        "source_bundle_identity_sha256",
+                        "stream_prefixes",
+                        "thresholds",
+                        "timing",
+                        "train_input",
+                    ],
+                },
+            },
             "required_claim_fields": {
                 "capability_evidence": False,
                 "held_out_data_accessed": False,
@@ -876,7 +1044,7 @@ def build_protocol() -> dict[str, Any]:
 def protocol_sha256() -> str:
     """Return the result-envelope digest for the exact frozen manifest."""
 
-    return hashlib.sha256(_canonical_json_bytes(build_protocol())).hexdigest()
+    return hashlib.sha256(canonical_json_bytes(build_protocol())).hexdigest()
 
 
 def validate_protocol(value: dict[str, Any], *, require_runnable: bool) -> None:
@@ -897,6 +1065,8 @@ def validate_protocol(value: dict[str, Any], *, require_runnable: bool) -> None:
             or any(character not in "0123456789abcdef" for character in digest)
         ):
             raise ProtocolError(f"source binding is incomplete for {path}")
+    if binding.get("governing_gate3_path") not in binding["files"]:
+        raise ProtocolError("governing Gate3 path is not source-bound")
     artifact_paths(value["artifact_contract"])
     if binding["runnable"] and binding["blockers"]:
         raise ProtocolError("runnable source binding still declares blockers")

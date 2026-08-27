@@ -11,14 +11,15 @@ does not select a threshold. The committed v1/v2 electrical and temporal JSON
 artifacts remain historical evidence bound to `df26cc2`; they do not justify a
 C1-scale threshold after the cohort allocator and exact-pair changes.
 
-The manifest is deliberately fail-closed. It pins the explicit-threshold
-Python oracle at `c67c6c4`, Random123 at `15963da`, the intrusive temporal
-store and wrapper at `3dd2c4f`, the fitted electrical race module and native
-entry point at `612b2f5`, and the Gate-3 refreeze at `1a262b6`, but reports
-`runnable=false`. Those layers are committed and byte-bound. The remaining
-blockers are the absent native mutation/integration runner and disabled
-outcome-bearing runners. `--check-runnable` must fail until a later pre-outcome
-commit binds that final implementation and removes both blockers.
+Schema 4 is deliberately fail-closed. It pins the explicit-threshold Python
+oracle, the schema-7 TRAIN-only capacity artifact, and the governing nested
+Gate-3 manifest at
+`benchmarks/procedural_runtime_gate3_slice_protocol_v1.json`, but reports
+`runnable=false`. Native source closure is governed transitively by that nested
+manifest; schema 4 does not duplicate its native-file digests. Its exact
+blocker is: "Official calibration-v3 screen execution, checkpoint/resume
+orchestration, and immutable result publication remain disabled behind
+`_execute_frozen_plan`." `--check-runnable` must therefore continue to fail.
 
 Every source digest uses one cross-checkout rule: SHA-256 of raw bytes after
 CRLF-to-LF normalization; a lone CR is invalid. `--check-draft` resolves every
@@ -57,8 +58,10 @@ threshold-only repair is unavailable.
 ### 1.1 Immutable artifact namespace
 
 All possible destinations are expanded literally in the machine-readable
-manifest (114 unique JSON paths) under
-`experiments/r3_pilot/calibration_v3_artifacts`. The finite path grammar is:
+manifest under `experiments/r3_pilot/calibration_v3_artifacts`: 126 JSON paths
+and 12 binary checkpoints, 138 unique paths total. They occupy 39 direct parent
+directories and 54 directories in the full ancestor closure through the
+artifact root. The finite path grammar is:
 
 ```text
 electrical-v3/{development|independent-confirmation}/seed-{seed:010d}.json
@@ -66,6 +69,8 @@ q4/{development|independent-confirmation}/{arm}/seed-{seed:010d}.json
 q255/{development|independent-confirmation}/{regime}/{arm}/seed-{seed:010d}.json
 r3-f0/development/{arm}/construction-seed-0000000017.json
 r3-f0/deterministic-confirmation/{arm}/construction-seed-0000000017.json
+r3-f0/deterministic-confirmation/{arm}/resume/transition-{event:010d}.r3ntcp1
+r3-f0/deterministic-confirmation/{arm}/resume/transition-{event:010d}.resume.json
 selection/development-selection.json
 selection/final-verdict.json
 ```
@@ -74,11 +79,24 @@ Here `arm` is one of `theta-m-10_theta-a-13`, `theta-m-16_theta-a-18`,
 `theta-m-18_theta-a-20`, or `theta-m-20_theta-a-20`; `regime` is
 `production-overlap-ordered-pairs` or
 `target-disjoint-isolation-control`; and seeds come only from the phase set
-above. Every result uses exclusive creation (`xb`). A pre-existing target is a
-STOP, and no force/overwrite option exists. The development-selection file is
-written once after all development gates; the final-verdict file is written
-once after all confirmation gates. Paths reserved for unselected arms remain
-absent.
+above. Resume events are exactly `529340`, `1058681`, and `1588022`. The 24
+resume paths are ordered by the four frozen arms, then those three events, then
+`.r3ntcp1` before `.resume.json`. Canonical JSON of that ordered list uses
+`sort_keys=True`, compact separators, `ensure_ascii=True`, and
+`allow_nan=False`; it is exactly 3,409 bytes with SHA-256
+`82581f614b7ef2766f0c8264d7ea44f59818bc2baca8661ea241d24400b09bb8`.
+
+The large `.r3ntcp1` checkpoint is streamed exclusively through
+`humanbrain.native_temporal_runtime.NativeTemporalCircuit.publish_checkpoint`.
+JSON manifests and results, each bounded to at most 1 MiB, are published through
+`humanbrain.native_temporal_runtime.publish_immutable_bytes`. A pre-existing
+target is a STOP. Both paths forbid overwrite, retry, fallback, force options,
+and publisher-side directory creation. The resume manifest is the transaction
+commit point: a durably published checkpoint without its matching manifest is
+an orphan requiring manual STOP, not an input eligible for automatic recovery.
+The development-selection file is written once after all development gates;
+the final-verdict file is written once after all confirmation gates. Paths
+reserved for unselected arms remain absent.
 
 ## 2. Electrical v3 — reserve-valid fitted-cell fixture
 
@@ -269,6 +287,16 @@ arm's second fresh seed-17 pass and three resumed continuations checkpointed
 after transition events 529,340, 1,058,681, and 1,588,022. These are
 `floor(total_transition_events × n / 4)` for `n=1,2,3`.
 
+The checkpoint cursors are literal, not recomputed at run time:
+
+| Transition event | Book (zero-based ordinal) | Last/next token index | Event and learning count | Remaining transitions | Future resets |
+| ---: | --- | --- | ---: | ---: | ---: |
+| 529,340 | Joshua (5) | 42,123 / 42,124 | 529,346 | 1,588,023 | 43 |
+| 1,058,681 | 2 Chronicles (13) | 82,661 / 82,662 | 1,058,695 | 1,058,682 | 35 |
+| 1,588,022 | Jeremiah (23) | 33,073 / 33,074 | 1,588,046 | 529,341 | 25 |
+
+For all three, `reset_before_next_token=false`.
+
 The final state must have complete eight-cell cohorts, no load above 255,
 114,400 committed pyramidal cells, 1,286 recruited columns, and maximum depth
 1,128. Snapshot hashes include source/protocol identities, TRAIN position,
@@ -278,7 +306,52 @@ counters, recognition-index/rebuild digest, and the ordered winner stream.
 Only `PASS_R3_F0_TRAIN_STRUCTURE` is C1-scale identity/collision evidence. It
 is still TRAIN-only structural evidence, not generalization or capability.
 
-## 6. Capacity-v6 static bound
+### 5.1 Immutable envelopes
+
+Both resume manifests and results use the exact outer keys `artifact_id`,
+`payload`, `payload_sha256`, and `schema_version`. The resume artifact ID is
+`r3-f0-resume-manifest-v1`; its payload keys are `arm_slug`, `artifact_path`,
+`checkpoint`, `checkpoint_publication`, `circuit_contract`, `claim_boundary`,
+`construction_seed`, `cursor`, `phase`, `previous_state`, `protocol_sha256`,
+`reference_trajectory_id`, `screen_id`, `source_binding`,
+`source_bundle_identity_sha256`, `stream_prefixes`, `thresholds`, `timing`, and
+`train_input`.
+
+The result artifact ID is `r3-calibration-v3-result-envelope-v1`; its common
+payload keys are `artifact_path`, `claim_boundary`, `construction_seeds`,
+`phase`, `protocol_sha256`, `result`, `screen_id`, `source_binding`,
+`source_bundle_identity_sha256`, and `thresholds`. An R3-F0 `result` has exactly
+`arm_slug`, `comparisons`, `kind`, `reference`, `resumes`,
+`structural_metrics`, `train_input`, and `verdict`.
+
+### 5.2 Adopted active-wall contract
+
+Schema 4 adopts timing contract `r3-cumulative-active-wall-v1` with the exact
+cap `54,000,000,000,000 ns` while leaving execution disabled. CPython 3.11
+`time.perf_counter_ns` measures one closed active interval without internal
+pauses; scheduler delay, sleep, locks, garbage collection, I/O, asynchronous
+waits, and incidental error handling remain charged.
+
+A fresh session starts before the first of production circuit construction,
+production TRAIN-source access, or frozen output-parent creation. A resumed
+session starts immediately before opening the exact frozen resume manifest, so
+manifest validation, checkpoint read/import, derived-index rebuild, and parity
+checks are charged. A clean checkpoint stop occurs only after all scientific
+work, durable checkpoint publication, fresh reopen, full import validation,
+derived-index reconstruction, and identity/parity checks. Only the bounded
+resume-manifest or terminal-result construction/publication/reopen is outside
+the interval.
+
+Every clean record stores exact non-negative integer `prior_cumulative_ns`,
+`session_active_ns`, and `cumulative_active_ns`, with first prior zero and the
+prior added exactly once. The conservative decision input is
+`max(uninterrupted_cumulative_ns,resumed_cumulative_ns)`. Check the cap within
+books and immediately before and after every atomic persistence operation. A
+crossing finishes any non-cancellable persistence operation and cleanup,
+records the exact overshoot, and emits STOP. An unclean or open session is
+`TIMING_INDETERMINATE`.
+
+## 6. Capacity schema 7 TRAIN-only bound
 
 For column demand `D_c`:
 
@@ -288,23 +361,22 @@ depth_c = max(8, 8 * ceil(D_c / (8 * 255)))
 
 The frozen TRAIN counts produce 114,400 required pyramidal cells versus the
 131,072 ceiling, leaving 16,672. Cohort rounding adds 5,184 cells over the
-109,216 ideal; maximum depth is 1,128 and 1,286 columns recruit.
+109,216 ideal; 81,632 cells are recruited beyond the base, maximum depth is
+1,128, and 1,286 columns recruit. The structure retains 23,286,406 segments,
+232,864,060 logical pair slots, and 465,728,120 physical contacts.
 
-Configured and materialized Python physics remains 274,432 cells. The 241,088
-number is only a hypothetical lazy-commit projection and is not implemented.
-
-At `3dd2c4f`, intrusive variable-live-pair storage is implemented. Its requested
-payload is 3,590,431,900 bytes for A1 (1,490,461,056 learned SoA,
-1,864,485,344 index, 524,288 source scratch, 232,864,060 segment scratch, and
-2,097,152 owner scratch) and 3,588,400,284 bytes for A3 (the same learned,
-segment, and owner arrays plus 1,862,961,632 index and 16,384 source scratch).
-Each number excludes the 432-byte store header, allocator metadata, fitted-cell
-physics, and 2,097,152 bytes of Python diagnostics. Storage existence is not a
-whole mutable-runtime claim: mutation transaction, checkpoint, and production
-runtime integration remain unimplemented.
-
-Capacity-v6 is conditional on R3-F0. Arithmetic fit does not prove code
-injectivity, runtime, or capability.
+The bound artifact deliberately retains scientific artifact ID
+`r3-relay-pool-capacity-v6-cohort-rounded` while its envelope schema is 7.
+Schema 7 changed provenance only: the canonical scientific payload excluding
+`schema_version` and `scope` remains SHA-256
+`72665d2fc7360cc1dd32367211d9477e64a61e14e059714b0d1d1274297eb7d1`.
+Its live TRAIN authority is
+`29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966`,
+covering 3,656,777 bytes and stream SHA-256
+`f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5`.
+`held_out_bytes_live_verified=false`; the historical full-corpus digest is
+recorded explicitly as not live verified. Capacity is conditional on R3-F0.
+Arithmetic fit does not prove code injectivity, runtime, or capability.
 
 ## 7. Claim boundary and unlock
 
@@ -314,12 +386,12 @@ q=255 are fixture evidence; R3-F0 is TRAIN-only structural evidence.
 
 To make this protocol runnable, a later pre-outcome commit must:
 
-1. implement and bind the final native mutation/integration runner to an
-   immutable commit and SHA-256 values; the dedicated fitted-race
-   `src/humanbrain/_native_src/src/temporal_physics.rs` module is already bound;
-2. keep the Gate-3 source pin green after those changes;
-3. implement outcome runners that consume this manifest without changing it;
-4. flip `source_binding.runnable` only after source-byte validation passes;
+1. keep the governing nested Gate-3 source closure green after final changes;
+2. implement the frozen checkpoint/resume, timing, and immutable result
+   contracts behind `_execute_frozen_plan` without changing this protocol;
+3. prove clean fresh/resumed arithmetic, STOP, and indeterminate-session
+   behavior before enabling official screens;
+4. flip `source_binding.runnable` only after all source-byte validation passes;
 5. rerun fixture tests before any calibration outcome is opened.
 
 Until then, `python experiments/r3_pilot/calibration_v3_protocol.py
