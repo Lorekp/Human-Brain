@@ -796,7 +796,7 @@ payload contains alignment padding. The entry order is semantic and fixed:
 | 4 | `physical_contacts_per_pair` | `u8`, exactly 2 |
 | 5 | `context_policy` | `u8`: 1 = `BoundWinners`, 2 = `GenericAfferents`; 0 invalid |
 | 6 | `plasticity_policy` | `u8`: 0 = growth-off, 1 = plastic; all other values invalid |
-| 7 | `recognition_route` | `u8`: 0 = exact full scan, 1 = certified physical-source buckets |
+| 7 | `recognition_route` | `u8`: 0 = exact generic recognition, 1 = certified physical-source buckets |
 | 8 | `column_count` | `u32` |
 | 9 | `base_cells_per_column` | `u8` |
 | 10 | `max_pyramidal_cells` | `u32` |
@@ -868,8 +868,13 @@ Later complete reserve cohorts are checkpoint body state and reconstruct from
 `cohort_columns`; permitting arbitrary initial membership would require a new
 circuit-identity field and therefore a new checkpoint version.
 
-For recognition route 0, `recognition_certificate` has length zero. Route 1
-uses this raw digest:
+`recognition_route` fixes recognition semantics, not the private generic index
+representation. Route 0 is exact generic recognition: it may use either an
+exact full-segment scan or the current exact lossless intrusive per-source
+postings. Both implementations have `recognition_certificate` length zero and
+must be behaviorally identical; choosing between them does not change the
+circuit-identity preimage. Route 1 remains the certified physical-source-bucket
+route and uses this raw digest:
 
 ```text
 SHA256(frame(
@@ -907,7 +912,8 @@ The following mechanically specified route-0 fixture is independent of any
 repository helper:
 
 - entries 1--4 use their fixed values;
-- policies are `BoundWinners` (1), plastic (1), and full scan (0);
+- policies are `BoundWinners` (1), plastic (1), and exact generic recognition
+  (0);
 - `column_count=11`, `base_cells_per_column=2`,
   `max_pyramidal_cells=22`, `segment_capacity=1`, `novel_race_cap=2`,
   `max_segments_per_cell=1`, `prediction_quorum=1`, and
@@ -1047,42 +1053,50 @@ posting bytes must therefore never become checkpoint identity.
 
 ### Import validation order
 
-Import is a build-and-publish transaction:
+Import is a build-and-publish transaction with exactly two validation passes
+before any store allocation. Both passes use checked offsets into the immutable
+checkpoint bytes; neither constructs store vectors, postings, owner storage,
+route buckets, or a publishable handle.
 
-1. Validate magic, version, header size, exact total/body lengths, reserved
-   zeros, and checked length arithmetic.
-2. Compare protocol, source-bundle, and circuit identities before allocating a
-   multi-gigabyte store.
-3. Verify the body SHA-256 by streaming.
-4. Recompute and compare the logical-state digest from the verified stored body
-   digest and the exact raw header bytes 192..223. Do this before accepting any
-   decoded logical-state scalar.
-5. Validate segment/cohort counts, cursor bounds, context lengths, counters, and
-   poison code. Require
+1. **Envelope and integrity pass.** Validate magic, version, header size, exact
+   total/body lengths, reserved zeros, and all checked length arithmetic.
+   Compare protocol, source-bundle, and circuit identities supplied by the
+   validated runtime factory. Stream the exact body once and compare its
+   SHA-256. Then recompute and compare the logical-state digest from the verified
+   stored body digest and the exact raw header bytes 192..223, before accepting
+   any decoded logical-state scalar.
+2. **Canonical-state and reachability pass.** Decode and validate segment/cohort
+   counts, cursor bounds, context lengths, counters, poison code, and every
+   checked v1 SoA slice boundary. Require
    `(event_count == 0) == (prior_context_length == 0 &&
    winner_context_length == 0)`; nonzero event count therefore requires both
-   lengths to be 22. A growth-off circuit requires `learning_step == 0`.
-6. Validate every cohort column, reconstruct deterministic base cells plus each
+   lengths to be 22, and a growth-off circuit requires `learning_step == 0`.
+   Validate every cohort column, reconstruct deterministic base cells plus each
    complete `novel_race_cap` cohort, and require
    `next_reserve_cell = base_total + cohort_count * novel_race_cap <=
-   max_pyramidal_cells`.
-7. Validate every segment owner is committed, count owners with checked
-   arithmetic, and reject any owner above configured cap or 255.
-8. Validate every row's sentinel suffix, strictly increasing normalized live
-   sources, source domain, and ticks in `1..=500`. For `BoundWinners`, also
-   require every live source to be in the reconstructed committed-cell set.
-9. Replay the cohort log in global order against the final owner loads. Before
-   each cohort, require every existing member of its target column to have load
-   exactly `max_segments_per_cell`; require at least one member of the new
-   cohort to own one or more allocated rows.
-10. Validate contexts against the exact runtime-reachable grammar below. Both
-   are empty, or both are exactly 22; set equality or a permutation is never
-   sufficient.
-11. Construct a brand-new runtime and preallocated store off to the side.
-    Rebuild column CSR, owner counts, and postings in segment-ID/slot order.
-12. Compute and compare the semantic index digest, then canonically re-hash or
-    re-export logical state.
-13. Return or publish the new handle only after every check succeeds.
+   max_pyramidal_cells`. Validate every segment owner is committed, count final
+   owner loads with checked arithmetic, and reject any owner above the configured
+   cap or 255. Validate every row's sentinel suffix, strictly increasing
+   normalized live sources, source domain, and ticks in `1..=500`; under
+   `BoundWinners`, every live source must be in the reconstructed committed-cell
+   set. Replay the cohort log in global order against those final owner loads,
+   requiring every existing member of its target column to be exactly at
+   `max_segments_per_cell` before each cohort and at least one member of the new
+   cohort to own one or more allocated rows. Finally validate both contexts
+   against the exact runtime-reachable grammar below: both are empty, or both
+   are exactly 22; set equality or a permutation is never sufficient.
+
+Only after both validation passes succeed, allocate one brand-new runtime and
+preallocated store off to the side and perform one bounded rebuild traversal
+over the validated frozen v1 SoA body. Reconstruct column CSR from the cohort
+log, then visit segment IDs and slots only within the checked `S` and `S*10`
+bounds, addressing the separate owner, source, and tick slices directly rather
+than constructing an AoS staging copy. Rebuild owner counts and the selected
+exact generic representation--currently the exact lossless intrusive postings--
+in segment-ID/slot order; route 1 additionally rebuilds its certified physical
+buckets. Compute and compare the semantic index digest, then canonically re-hash
+or re-export logical state. Return or publish the new handle only after every
+check succeeds.
 
 There is no in-place restore. Invalid input publishes nothing and cannot change
 an existing runtime.
@@ -1413,11 +1427,13 @@ active segments and allocates nothing. Rebuilding CSR once per recruiting token
 is linear in committed cells plus columns; cohort recruitment is bounded and
 all cohorts for a token share that one rebuild.
 
-Checkpoint export is O(S*10) streaming I/O. Import is O(S*10 + source domain +
-owner domain) and rewrites every live posting. Both must be benchmarked at exact
-final density. Ordinary export needs only the live store plus a small I/O
-buffer; import creates one new store and publishes it after validation rather
-than cloning an existing runtime.
+Checkpoint export is O(S*10) streaming I/O. Import performs the two
+pre-allocation validation passes and one bounded SoA rebuild traversal above;
+their combined work remains O(S*10 + source domain + owner domain), and the
+current intrusive representation rewrites every live posting. Both must be
+benchmarked at exact final density. Ordinary export needs only the live store
+plus a small I/O buffer; import creates one new store and publishes it after
+validation rather than cloning an existing runtime.
 
 ## Implementation sequence
 
@@ -1491,7 +1507,8 @@ than cloning an existing runtime.
 
 - reproduce the 2,064-byte literal circuit-identity vector and independently
   test protocol/source framing boundaries, raw-vs-hex digest bytes, codebook
-  order, threshold `f64` bits, and route-certificate recomputation;
+  order, threshold `f64` bits, the empty route-0 certificate and exact
+  full-scan/intrusive parity, and route-1 certificate recomputation;
 - reproduce the 106-byte logical-state preimage and digest; independently test
   its domain terminator, stored-body-digest bytes, scalar order, widths, and
   little-endian encoding;
@@ -1514,6 +1531,10 @@ than cloning an existing runtime.
 - flip each logical scalar to another domain-valid value while retaining the
   original body, including clearing a nonzero poison code, and require the
   logical-state digest check to reject it;
+- instrument import to observe exactly the envelope/integrity and
+  canonical-state/reachability passes before the first store allocation,
+  followed by exactly one checked-bounds traversal rebuilding from the frozen
+  SoA body;
 - assert every corrupt import publishes no handle and cannot modify an existing
   runtime;
 - restore poisoned checkpoints and prove the latch cannot be cleared.
