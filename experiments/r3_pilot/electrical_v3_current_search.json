@@ -1,0 +1,1280 @@
+{
+  "artifact_id": "r3-electrical-v3-current-search-v1",
+  "baseline": {
+    "active_vs_matching": {
+      "currents_pa": [
+        650,
+        640,
+        590,
+        543,
+        496,
+        449,
+        402,
+        355
+      ],
+      "maximum_natural_latency_ticks": 2,
+      "minimum_natural_latency_ticks": 2,
+      "passed": false,
+      "passed_seeds": 0,
+      "per_seed": {
+        "101": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "17": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "29": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "3": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "43": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "59": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "7": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "83": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      }
+    },
+    "matching_vs_novel": {
+      "currents_pa": [
+        600,
+        590,
+        543,
+        496,
+        449,
+        402,
+        355,
+        308
+      ],
+      "maximum_natural_latency_ticks": 4,
+      "minimum_natural_latency_ticks": 3,
+      "passed": true,
+      "passed_seeds": 8,
+      "per_seed": {
+        "101": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "17": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "29": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            217,
+            221
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 4,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "3": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "43": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "59": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "7": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "83": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        }
+      }
+    },
+    "novel_rank_boundary": {
+      "currents_pa": [
+        550,
+        543,
+        496,
+        449,
+        402,
+        355,
+        308,
+        261
+      ],
+      "maximum_natural_latency_ticks": 2,
+      "minimum_natural_latency_ticks": 2,
+      "passed": false,
+      "passed_seeds": 0,
+      "per_seed": {
+        "101": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "17": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "29": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "3": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "43": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "59": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "7": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "83": {
+          "basket_to_gaba_ticks": 1,
+          "control_spike_count": 2,
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner_is_intended": true,
+          "inhibited_spike_count": 1,
+          "inhibited_winner_is_intended": true,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      }
+    }
+  },
+  "claim_boundary": {
+    "c1_executed": false,
+    "held_out_accessed": false,
+    "protocol_modified": false,
+    "synthetic_electrical_search": true,
+    "temporal_fixture_executed": false
+  },
+  "minimal_single_literal_solutions": {
+    "active_vs_matching": [
+      {
+        "change": {
+          "delta_pa": -1,
+          "from_pa": 640,
+          "literal_index": 1,
+          "to_pa": 639
+        },
+        "evidence": {
+          "currents_pa": [
+            650,
+            639,
+            590,
+            543,
+            496,
+            449,
+            402,
+            355
+          ],
+          "maximum_natural_latency_ticks": 3,
+          "minimum_natural_latency_ticks": 3,
+          "passed": true,
+          "passed_seeds": 8,
+          "per_seed": {
+            "101": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                190,
+                193
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "17": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                190,
+                193
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "29": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                190,
+                193
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "3": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                190,
+                193
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "43": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                190,
+                193
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "59": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                190,
+                193
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "7": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                190,
+                193
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "83": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                190,
+                193
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            }
+          }
+        }
+      }
+    ],
+    "novel_rank_boundary": [
+      {
+        "change": {
+          "delta_pa": 1,
+          "from_pa": 550,
+          "literal_index": 0,
+          "to_pa": 551
+        },
+        "evidence": {
+          "currents_pa": [
+            551,
+            543,
+            496,
+            449,
+            402,
+            355,
+            308,
+            261
+          ],
+          "maximum_natural_latency_ticks": 3,
+          "minimum_natural_latency_ticks": 3,
+          "passed": true,
+          "passed_seeds": 8,
+          "per_seed": {
+            "101": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                255,
+                258
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "17": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                255,
+                258
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "29": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                255,
+                258
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "3": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                255,
+                258
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "43": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                255,
+                258
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "59": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                255,
+                258
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "7": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                255,
+                258
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "83": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                255,
+                258
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            }
+          }
+        }
+      },
+      {
+        "change": {
+          "delta_pa": -1,
+          "from_pa": 543,
+          "literal_index": 1,
+          "to_pa": 542
+        },
+        "evidence": {
+          "currents_pa": [
+            550,
+            542,
+            496,
+            449,
+            402,
+            355,
+            308,
+            261
+          ],
+          "maximum_natural_latency_ticks": 3,
+          "minimum_natural_latency_ticks": 3,
+          "passed": true,
+          "passed_seeds": 8,
+          "per_seed": {
+            "101": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                256,
+                259
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "17": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                256,
+                259
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "29": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                256,
+                259
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "3": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                256,
+                259
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "43": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                256,
+                259
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "59": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                256,
+                259
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "7": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                256,
+                259
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            },
+            "83": {
+              "basket_to_gaba_ticks": 1,
+              "control_spike_count": 2,
+              "control_spike_ticks": [
+                256,
+                259
+              ],
+              "control_winner_is_intended": true,
+              "inhibited_spike_count": 1,
+              "inhibited_winner_is_intended": true,
+              "natural_latency_ticks": 3,
+              "passed": true,
+              "winner_to_basket_ticks": 1
+            }
+          }
+        }
+      }
+    ]
+  },
+  "no_solution_rows": [],
+  "recommendation": {
+    "candidate_rows_pa": {
+      "active_vs_matching": [
+        650,
+        639,
+        590,
+        543,
+        496,
+        449,
+        402,
+        355
+      ],
+      "matching_vs_novel": [
+        600,
+        590,
+        543,
+        496,
+        449,
+        402,
+        355,
+        308
+      ],
+      "novel_rank_boundary": [
+        550,
+        542,
+        496,
+        449,
+        402,
+        355,
+        308,
+        261
+      ]
+    },
+    "changed_literals": 2,
+    "changes": [
+      {
+        "delta_pa": -1,
+        "from_pa": 640,
+        "literal_index": 1,
+        "row": "active_vs_matching",
+        "to_pa": 639
+      },
+      {
+        "delta_pa": -1,
+        "from_pa": 543,
+        "literal_index": 1,
+        "row": "novel_rank_boundary",
+        "to_pa": 542
+      }
+    ],
+    "selection_tiebreak": "minimum total |delta_pa|, then common literal-index/direction pattern",
+    "status": "MEASURED_CHANGE_NOTE_CANDIDATE_NOT_FROZEN",
+    "total_absolute_delta_pa": 2,
+    "verification": {
+      "active_vs_matching": {
+        "currents_pa": [
+          650,
+          639,
+          590,
+          543,
+          496,
+          449,
+          402,
+          355
+        ],
+        "maximum_natural_latency_ticks": 3,
+        "minimum_natural_latency_ticks": 3,
+        "passed": true,
+        "passed_seeds": 8,
+        "per_seed": {
+          "101": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              190,
+              193
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "17": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              190,
+              193
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "29": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              190,
+              193
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "3": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              190,
+              193
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "43": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              190,
+              193
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "59": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              190,
+              193
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "7": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              190,
+              193
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "83": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              190,
+              193
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          }
+        }
+      },
+      "matching_vs_novel": {
+        "currents_pa": [
+          600,
+          590,
+          543,
+          496,
+          449,
+          402,
+          355,
+          308
+        ],
+        "maximum_natural_latency_ticks": 4,
+        "minimum_natural_latency_ticks": 3,
+        "passed": true,
+        "passed_seeds": 8,
+        "per_seed": {
+          "101": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              218,
+              221
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "17": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              218,
+              221
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "29": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              217,
+              221
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 4,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "3": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              218,
+              221
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "43": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              218,
+              221
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "59": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              218,
+              221
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "7": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              218,
+              221
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "83": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              218,
+              221
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          }
+        }
+      },
+      "novel_rank_boundary": {
+        "currents_pa": [
+          550,
+          542,
+          496,
+          449,
+          402,
+          355,
+          308,
+          261
+        ],
+        "maximum_natural_latency_ticks": 3,
+        "minimum_natural_latency_ticks": 3,
+        "passed": true,
+        "passed_seeds": 8,
+        "per_seed": {
+          "101": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              256,
+              259
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "17": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              256,
+              259
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "29": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              256,
+              259
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "3": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              256,
+              259
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "43": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              256,
+              259
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "59": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              256,
+              259
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "7": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              256,
+              259
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          },
+          "83": {
+            "basket_to_gaba_ticks": 1,
+            "control_spike_count": 2,
+            "control_spike_ticks": [
+              256,
+              259
+            ],
+            "control_winner_is_intended": true,
+            "inhibited_spike_count": 1,
+            "inhibited_winner_is_intended": true,
+            "natural_latency_ticks": 3,
+            "passed": true,
+            "winner_to_basket_ticks": 1
+          }
+        }
+      }
+    }
+  },
+  "schema_version": 1,
+  "search": {
+    "integer_step_pa": 1,
+    "objective": "one changed literal per failed row; minimize |delta_pa|; preserve strict descending rank order; require all physical gates on all seeds",
+    "window_pa": 100
+  },
+  "source_sha256": {
+    "calibrator": "8af0b9cd7fcc9c0e0223c2208f3576b8e095143f154d4996fd18f52cddc77d81",
+    "rejected_v3_artifact": "39da763041c7047c8d5a1180b271eac112e1edc014723189d3209be7d7944aa4"
+  },
+  "verdict": "PASS_MINIMAL_CURRENT_CHANGE_CANDIDATE"
+}
