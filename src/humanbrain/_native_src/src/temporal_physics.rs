@@ -9,37 +9,97 @@
 
 use std::sync::OnceLock;
 
-const RACE_TICKS: u16 = 600;
-// Exact float64 words produced by the Python oracle for the fitted Allen cell
-// and the 35-ms NMDA / 8-ms GABAA decays. Keeping the words literal prevents a
-// platform libm call from moving a threshold crossing by one tick.
-const LEAK_NS: f64 = f64::from_bits(0x4020_f0a7_d905_53e6);
-const VOLTAGE_STEP_SCALE: f64 = f64::from_bits(0x3f33_ea95_a3d1_e76b);
-const THRESHOLD_RELATIVE_MV: f64 = f64::from_bits(0x4039_a18e_521f_e42e);
-const NMDA_DECAY: f64 = f64::from_bits(0x3fef_f44e_351e_f7e1);
-const GABAA_DECAY: f64 = f64::from_bits(0x3fef_ccf5_acbf_ae90);
+/// Immutable identity of the fitted temporal physics executed by this module.
+///
+/// The fields are the one authoritative source for both the equations below
+/// and the future checkpoint circuit-identity hash. Exact float64 words are
+/// used instead of decimal reconstruction so a platform libm call cannot move
+/// a threshold crossing by one tick. `integration_step_ms` records the tick's
+/// physical unit; `voltage_step_scale` already folds that step into the fitted
+/// membrane coefficient and must not be recomputed from metadata.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct TemporalPhysicsIdentity {
+    pub(crate) integration_step_ms: f64,
+    pub(crate) race_ticks: u16,
+    pub(crate) leak_ns: f64,
+    pub(crate) voltage_step_scale: f64,
+    pub(crate) threshold_relative_mv: f64,
+    pub(crate) nmda_decay: f64,
+    pub(crate) gabaa_decay: f64,
+    pub(crate) novel_base_pa: f64,
+    pub(crate) novel_rank_decrement_pa: f64,
+    pub(crate) matching_pa: f64,
+    pub(crate) active_pa: f64,
+    pub(crate) proximal_pa: f64,
+    pub(crate) relay_pa: f64,
+    pub(crate) homeostatic_numerator_pa: f64,
+    pub(crate) basket_current_pa: f64,
+    pub(crate) basket_inhibition_pa: f64,
+}
+
+impl TemporalPhysicsIdentity {
+    /// Exact checkpoint-v1 `physics_f64` word order.
+    pub(crate) const fn physics_f64_bits(&self) -> [u64; 14] {
+        [
+            self.leak_ns.to_bits(),
+            self.voltage_step_scale.to_bits(),
+            self.threshold_relative_mv.to_bits(),
+            self.nmda_decay.to_bits(),
+            self.gabaa_decay.to_bits(),
+            self.novel_base_pa.to_bits(),
+            self.novel_rank_decrement_pa.to_bits(),
+            self.matching_pa.to_bits(),
+            self.active_pa.to_bits(),
+            self.proximal_pa.to_bits(),
+            self.relay_pa.to_bits(),
+            self.homeostatic_numerator_pa.to_bits(),
+            self.basket_current_pa.to_bits(),
+            self.basket_inhibition_pa.to_bits(),
+        ]
+    }
+}
+
+pub(crate) const TEMPORAL_PHYSICS_IDENTITY: TemporalPhysicsIdentity = TemporalPhysicsIdentity {
+    integration_step_ms: f64::from_bits(0x3fa9_9999_9999_999a),
+    race_ticks: 600,
+    leak_ns: f64::from_bits(0x4020_f0a7_d905_53e6),
+    voltage_step_scale: f64::from_bits(0x3f33_ea95_a3d1_e76b),
+    threshold_relative_mv: f64::from_bits(0x4039_a18e_521f_e42e),
+    nmda_decay: f64::from_bits(0x3fef_f44e_351e_f7e1),
+    gabaa_decay: f64::from_bits(0x3fef_ccf5_acbf_ae90),
+    novel_base_pa: f64::from_bits(0x4081_d000_0000_0000),
+    novel_rank_decrement_pa: f64::from_bits(0x4047_8000_0000_0000),
+    matching_pa: f64::from_bits(0x4083_6000_0000_0000),
+    active_pa: f64::from_bits(0x4084_f000_0000_0000),
+    proximal_pa: f64::from_bits(0x4081_d000_0000_0000),
+    relay_pa: f64::from_bits(0x40d3_8800_0000_0000),
+    homeostatic_numerator_pa: f64::from_bits(0x4034_0000_0000_0000),
+    basket_current_pa: f64::from_bits(0x4108_6a00_0000_0000),
+    basket_inhibition_pa: f64::from_bits(0x407f_4000_0000_0000),
+};
 
 struct NmdaUnitResponse {
-    voltage_mv: [f64; RACE_TICKS as usize],
+    voltage_mv: [f64; TEMPORAL_PHYSICS_IDENTITY.race_ticks as usize],
     rising_len: usize,
 }
 
 fn nmda_unit_response() -> &'static NmdaUnitResponse {
     static RESPONSE: OnceLock<NmdaUnitResponse> = OnceLock::new();
     RESPONSE.get_or_init(|| {
-        let mut voltage_mv = [0.0; RACE_TICKS as usize];
+        let mut voltage_mv = [0.0; TEMPORAL_PHYSICS_IDENTITY.race_ticks as usize];
         let mut voltage = 0.0;
         let mut current = 1.0;
         let mut peak_index = 0;
         let mut peak_voltage = f64::NEG_INFINITY;
         for (index, sample) in voltage_mv.iter_mut().enumerate() {
-            voltage += VOLTAGE_STEP_SCALE * (current - LEAK_NS * voltage);
+            voltage += TEMPORAL_PHYSICS_IDENTITY.voltage_step_scale
+                * (current - TEMPORAL_PHYSICS_IDENTITY.leak_ns * voltage);
             *sample = voltage;
             if voltage > peak_voltage {
                 peak_voltage = voltage;
                 peak_index = index;
             }
-            current *= NMDA_DECAY;
+            current *= TEMPORAL_PHYSICS_IDENTITY.nmda_decay;
         }
         NmdaUnitResponse {
             voltage_mv,
@@ -63,19 +123,25 @@ impl CandidateClass {
         match self {
             Self::Novel { rank, load } => {
                 assert!(rank < 8, "novel rank exceeds the calibrated race cap");
-                570.0 - 47.0 * f64::from(rank) + homeostatic_current_pa(load)
+                TEMPORAL_PHYSICS_IDENTITY.novel_base_pa
+                    - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa * f64::from(rank)
+                    + homeostatic_current_pa(load)
             }
-            Self::Matching { load } => 620.0 + homeostatic_current_pa(load),
-            Self::Active { load } => 670.0 + homeostatic_current_pa(load),
-            Self::Proximal => 570.0,
-            Self::Relay => 20_000.0,
+            Self::Matching { load } => {
+                TEMPORAL_PHYSICS_IDENTITY.matching_pa + homeostatic_current_pa(load)
+            }
+            Self::Active { load } => {
+                TEMPORAL_PHYSICS_IDENTITY.active_pa + homeostatic_current_pa(load)
+            }
+            Self::Proximal => TEMPORAL_PHYSICS_IDENTITY.proximal_pa,
+            Self::Relay => TEMPORAL_PHYSICS_IDENTITY.relay_pa,
         }
     }
 }
 
 #[inline]
 fn homeostatic_current_pa(load: u8) -> f64 {
-    20.0 / (1.0 + f64::from(load))
+    TEMPORAL_PHYSICS_IDENTITY.homeostatic_numerator_pa / (1.0 + f64::from(load))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -201,7 +267,8 @@ pub(crate) fn singleton_latency_ticks(
         return Err(TemporalPhysicsStop::NoPyramidalSpike);
     }
     let response = nmda_unit_response();
-    let response_needed = (THRESHOLD_RELATIVE_MV + threshold_offset_mv) / current_pa;
+    let response_needed =
+        (TEMPORAL_PHYSICS_IDENTITY.threshold_relative_mv + threshold_offset_mv) / current_pa;
     for (index, &voltage_mv) in response.voltage_mv[..response.rising_len]
         .iter()
         .enumerate()
@@ -267,14 +334,16 @@ pub(crate) fn coupled_first_spike_race(
 
     for (index, candidate) in candidates.iter().enumerate() {
         scratch.voltage_mv[index] = 0.0;
-        scratch.thresholds_mv[index] = THRESHOLD_RELATIVE_MV + candidate.threshold_offset_mv;
+        scratch.thresholds_mv[index] =
+            TEMPORAL_PHYSICS_IDENTITY.threshold_relative_mv + candidate.threshold_offset_mv;
         scratch.excitatory_pa[index] = candidate.current_pa;
         scratch.emitted[index] = 0;
     }
     let mut inhibitory_pa = 0.0;
     let mut basket_voltage_mv = 0.0;
     let mut basket_excitation_pa = 0.0;
-    let basket_threshold_mv = THRESHOLD_RELATIVE_MV + basket.threshold_offset_mv;
+    let basket_threshold_mv =
+        TEMPORAL_PHYSICS_IDENTITY.threshold_relative_mv + basket.threshold_offset_mv;
     let mut basket_tick = None;
     let mut inhibition_onset_tick = None;
     let mut first_spike = None;
@@ -282,17 +351,17 @@ pub(crate) fn coupled_first_spike_race(
     let mut spike_count = 0usize;
     let mut simulated_ticks = 0;
 
-    for tick in 1..=RACE_TICKS {
+    for tick in 1..=TEMPORAL_PHYSICS_IDENTITY.race_ticks {
         simulated_ticks = tick;
         for index in 0..candidates.len() {
-            scratch.voltage_mv[index] += VOLTAGE_STEP_SCALE
+            scratch.voltage_mv[index] += TEMPORAL_PHYSICS_IDENTITY.voltage_step_scale
                 * (scratch.excitatory_pa[index]
                     - inhibitory_pa
-                    - LEAK_NS * scratch.voltage_mv[index]);
+                    - TEMPORAL_PHYSICS_IDENTITY.leak_ns * scratch.voltage_mv[index]);
         }
         if basket_tick.is_none() {
-            basket_voltage_mv +=
-                VOLTAGE_STEP_SCALE * (basket_excitation_pa - LEAK_NS * basket_voltage_mv);
+            basket_voltage_mv += TEMPORAL_PHYSICS_IDENTITY.voltage_step_scale
+                * (basket_excitation_pa - TEMPORAL_PHYSICS_IDENTITY.leak_ns * basket_voltage_mv);
         }
 
         let mut spiking_count = 0usize;
@@ -334,10 +403,10 @@ pub(crate) fn coupled_first_spike_race(
         }
 
         for current_pa in &mut scratch.excitatory_pa[..candidates.len()] {
-            *current_pa *= NMDA_DECAY;
+            *current_pa *= TEMPORAL_PHYSICS_IDENTITY.nmda_decay;
         }
-        basket_excitation_pa *= NMDA_DECAY;
-        inhibitory_pa *= GABAA_DECAY;
+        basket_excitation_pa *= TEMPORAL_PHYSICS_IDENTITY.nmda_decay;
+        inhibitory_pa *= TEMPORAL_PHYSICS_IDENTITY.gabaa_decay;
         if first_pyramidal_spike {
             basket_excitation_pa += basket.current_pa;
         }
@@ -388,6 +457,7 @@ mod tests {
     use super::{
         coupled_first_spike_race, singleton_latency_ticks, BasketDrive, CandidateClass,
         CandidateDrive, CoupledRaceScratch, CoupledRaceTicks, SpikeEvent,
+        TEMPORAL_PHYSICS_IDENTITY,
     };
 
     // Literal outputs were generated from the current Python oracle:
@@ -505,6 +575,81 @@ mod tests {
             runner_up_ticks: [193, 222, 259],
         },
     ];
+
+    #[test]
+    fn identity_words_match_checkpoint_v1_and_drive_executed_constants() {
+        let identity = TEMPORAL_PHYSICS_IDENTITY;
+        assert_eq!(
+            identity.integration_step_ms.to_bits(),
+            0x3fa9_9999_9999_999a
+        );
+        assert_eq!(identity.race_ticks, 600);
+        assert_eq!(
+            identity.physics_f64_bits(),
+            [
+                0x4020_f0a7_d905_53e6,
+                0x3f33_ea95_a3d1_e76b,
+                0x4039_a18e_521f_e42e,
+                0x3fef_f44e_351e_f7e1,
+                0x3fef_ccf5_acbf_ae90,
+                0x4081_d000_0000_0000,
+                0x4047_8000_0000_0000,
+                0x4083_6000_0000_0000,
+                0x4084_f000_0000_0000,
+                0x4081_d000_0000_0000,
+                0x40d3_8800_0000_0000,
+                0x4034_0000_0000_0000,
+                0x4108_6a00_0000_0000,
+                0x407f_4000_0000_0000,
+            ]
+        );
+
+        assert_eq!(
+            CandidateClass::Proximal.current_pa().to_bits(),
+            identity.proximal_pa.to_bits()
+        );
+        assert_eq!(
+            CandidateClass::Relay.current_pa().to_bits(),
+            identity.relay_pa.to_bits()
+        );
+        assert_eq!(
+            CandidateClass::Novel { rank: 7, load: 255 }
+                .current_pa()
+                .to_bits(),
+            (identity.novel_base_pa - identity.novel_rank_decrement_pa * 7.0
+                + identity.homeostatic_numerator_pa / 256.0)
+                .to_bits()
+        );
+
+        let candidate = CandidateDrive {
+            cell_id: 7,
+            current_pa: CandidateClass::Active { load: 0 }.current_pa(),
+            threshold_offset_mv: 0.027_531_561_337_646_178,
+        };
+        let mut scratch = CoupledRaceScratch::try_new(1).unwrap();
+        assert_eq!(
+            coupled_first_spike_race(
+                &[candidate],
+                BasketDrive {
+                    cell_id: 8,
+                    current_pa: identity.basket_current_pa,
+                    threshold_offset_mv: 0.0,
+                    inhibition_pa: identity.basket_inhibition_pa,
+                },
+                &mut scratch,
+            ),
+            Ok(CoupledRaceTicks {
+                winner: SpikeEvent {
+                    cell_id: 7,
+                    tick: 173,
+                },
+                basket_cell_id: 8,
+                basket_tick: 174,
+                inhibition_onset_tick: 175,
+                simulated_ticks: 174,
+            })
+        );
+    }
 
     #[test]
     fn singleton_proximal_latency_matches_python_oracle() {

@@ -17,7 +17,7 @@ use crate::temporal::{
 };
 use crate::temporal_physics::{
     coupled_first_spike_race, singleton_latency_ticks, BasketDrive, CandidateClass, CandidateDrive,
-    CoupledRaceScratch, SpikeEvent, TemporalPhysicsStop,
+    CoupledRaceScratch, SpikeEvent, TemporalPhysicsStop, TEMPORAL_PHYSICS_IDENTITY,
 };
 
 const ACTIVE_COLUMNS: usize = 11;
@@ -25,8 +25,6 @@ const CONTEXT_CELLS: usize = 2 * ACTIVE_COLUMNS;
 const CONTEXT_CELLS_U8: u8 = CONTEXT_CELLS as u8;
 const PAIRS_PER_SEGMENT: usize = 10;
 const NONE: u32 = u32::MAX;
-const BASKET_CURRENT_PA: f64 = 200_000.0;
-const BASKET_INHIBITION_PA: f64 = 500.0;
 const INITIAL_CONTACT_DOMAIN: u64 = 0x5233_4630_494E_4954;
 const REGROWTH_CONTACT_DOMAIN: u64 = 0x5233_4630_5247_5257;
 
@@ -872,9 +870,9 @@ impl TemporalCircuitRuntime {
                 candidates,
                 BasketDrive {
                     cell_id: basket_id,
-                    current_pa: BASKET_CURRENT_PA,
+                    current_pa: TEMPORAL_PHYSICS_IDENTITY.basket_current_pa,
                     threshold_offset_mv: self.threshold_offset(basket_id),
-                    inhibition_pa: BASKET_INHIBITION_PA,
+                    inhibition_pa: TEMPORAL_PHYSICS_IDENTITY.basket_inhibition_pa,
                 },
                 &mut self.race_scratch,
             ) {
@@ -2408,6 +2406,21 @@ mod tests {
         assert_python_active_step(&second, 2);
         assert_python_boundary_step(&third, 3);
         assert_python_active_step(&fourth, 4);
+    }
+
+    #[test]
+    fn authoritative_physics_identity_preserves_literal_runtime_state_trace() {
+        let mut runtime = python_oracle_runtime(255);
+        let boundary = runtime.recognize(0).expect("boundary step");
+        let active = runtime.recognize(1).expect("active replay step");
+
+        assert_python_boundary_step(&boundary, 1);
+        assert_python_active_step(&active, 2);
+        assert_eq!(runtime.previous_context, active.context);
+        assert_eq!(runtime.previous_winner_context, active.winner_context);
+        assert_eq!(runtime.event_count, 2);
+        assert_eq!(runtime.learning_step, 0);
+        assert_eq!(runtime.scientific_stop, None);
     }
 
     #[test]
