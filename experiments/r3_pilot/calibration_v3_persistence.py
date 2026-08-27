@@ -1,0 +1,1482 @@
+"""Fail-closed persistence primitives for the frozen R3 calibration-v3 plan.
+
+This module owns only artifact framing and local persistence policy.  It does
+not import the native runtime, open corpus data, execute a fixture, or decide a
+scientific result.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import stat
+from collections.abc import Mapping
+from dataclasses import dataclass
+from enum import StrEnum
+from pathlib import Path
+from typing import Any, ClassVar
+
+MAX_ENVELOPE_BYTES = 1 << 20
+RESUME_ARTIFACT_ID = "r3-f0-resume-manifest-v1"
+RESULT_ARTIFACT_ID = "r3-calibration-v3-result-envelope-v1"
+TIMING_CONTRACT_ID = "r3-cumulative-active-wall-v1"
+ACTIVE_WALL_CAP_NS = 54_000_000_000_000
+
+_OUTER_KEYS = frozenset({"artifact_id", "payload", "payload_sha256", "schema_version"})
+_RESUME_PAYLOAD_KEYS = frozenset(
+    {
+        "arm_slug",
+        "artifact_path",
+        "checkpoint",
+        "checkpoint_publication",
+        "circuit_contract",
+        "claim_boundary",
+        "construction_seed",
+        "cursor",
+        "phase",
+        "previous_state",
+        "protocol_sha256",
+        "reference_trajectory_id",
+        "screen_id",
+        "source_binding",
+        "source_bundle_identity_sha256",
+        "stream_prefixes",
+        "thresholds",
+        "timing",
+        "train_input",
+    }
+)
+_RESULT_PAYLOAD_KEYS = frozenset(
+    {
+        "artifact_path",
+        "claim_boundary",
+        "construction_seeds",
+        "phase",
+        "protocol_sha256",
+        "result",
+        "screen_id",
+        "source_binding",
+        "source_bundle_identity_sha256",
+        "thresholds",
+    }
+)
+_THRESHOLD_KEYS = frozenset({"theta_active", "theta_match"})
+_CURSOR_KEYS = frozenset(
+    {
+        "after_transition_event",
+        "book_name",
+        "book_ordinal_zero_based",
+        "event_count",
+        "future_book_resets",
+        "last_token_index_zero_based",
+        "learning_step",
+        "next_token_index_zero_based",
+        "remaining_transition_events",
+        "reset_before_next_token",
+    }
+)
+_CURSOR_UINT_KEYS = _CURSOR_KEYS - {"book_name", "reset_before_next_token"}
+_TIMING_KEYS = frozenset({"prior_cumulative_ns", "session_active_ns", "cumulative_active_ns"})
+_CLAIM_BOUNDARY_KEYS = frozenset(
+    {"capability_evidence", "held_out_data_accessed", "transfer_evidence"}
+)
+_R3_F0_RESULT_KEYS = frozenset(
+    {
+        "arm_slug",
+        "comparisons",
+        "kind",
+        "reference",
+        "resumes",
+        "structural_metrics",
+        "train_input",
+        "verdict",
+    }
+)
+
+
+class PersistenceStop(RuntimeError):
+    """A fail-closed artifact framing or filesystem STOP."""
+
+
+class EnvelopeStop(PersistenceStop):
+    """An envelope is not the exact canonical schema."""
+
+
+class ArtifactPathStop(PersistenceStop):
+    """An artifact path is outside or unsafe within the frozen namespace."""
+
+
+class ArtifactAuthorityStop(PersistenceStop):
+    """The protocol or caller did not supply authority for an official codec."""
+
+
+class ArtifactPairState(StrEnum):
+    """Pair publication state; COMMITTED does not validate checkpoint semantics."""
+
+    ABSENT = "ABSENT"
+    CHECKPOINT_ONLY = "CHECKPOINT_ONLY"
+    MANIFEST_ONLY = "MANIFEST_ONLY"
+    COMMITTED = "COMMITTED"
+
+
+class ArtifactPairStop(PersistenceStop):
+    """A resume pair is incomplete and requires an operator STOP."""
+
+    def __init__(self, state: ArtifactPairState) -> None:
+        self.state = state
+        super().__init__(f"resume artifact pair is {state.value}")
+
+
+class TimingState(StrEnum):
+    WITHIN_CAP = "WITHIN_CAP"
+    OVER_CAP = "OVER_CAP"
+    TIMING_INDETERMINATE = "TIMING_INDETERMINATE"
+
+
+class ArtifactDestinationKind(StrEnum):
+    BINARY_CHECKPOINT = "BINARY_CHECKPOINT"
+    RESUME_MANIFEST = "RESUME_MANIFEST"
+    R3_RESULT = "R3_RESULT"
+    UNFROZEN_RESULT = "UNFROZEN_RESULT"
+
+
+@dataclass(frozen=True, slots=True)
+class DestinationSpec:
+    """Protocol-derived semantics for one exact frozen artifact destination."""
+
+    relative_path: str
+    kind: ArtifactDestinationKind
+    screen_id: str | None = None
+    phase: str | None = None
+    arm_slug: str | None = None
+    thresholds: tuple[int, int] | None = None
+    construction_seed: int | None = None
+    construction_seeds: tuple[int, ...] | None = None
+    resume_cursor: tuple[tuple[str, object], ...] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CumulativeActiveWallTiming:
+    """One exact clean session receipt, or an irreversible unclean-session state."""
+
+    prior_cumulative_ns: int
+    session_active_ns: int | None
+    cumulative_active_ns: int | None
+
+    contract_id: ClassVar[str] = TIMING_CONTRACT_ID
+    cap_ns: ClassVar[int] = ACTIVE_WALL_CAP_NS
+
+    def __post_init__(self) -> None:
+        if type(self.prior_cumulative_ns) is not int or self.prior_cumulative_ns < 0:
+            raise ValueError("prior_cumulative_ns must be a non-negative exact int")
+        if self.session_active_ns is None or self.cumulative_active_ns is None:
+            if self.session_active_ns is not None or self.cumulative_active_ns is not None:
+                raise ValueError("indeterminate timing must omit session and cumulative together")
+            return
+        if type(self.session_active_ns) is not int or self.session_active_ns < 0:
+            raise ValueError("session_active_ns must be a non-negative exact int")
+        if type(self.cumulative_active_ns) is not int or self.cumulative_active_ns < 0:
+            raise ValueError("cumulative_active_ns must be a non-negative exact int")
+        if self.prior_cumulative_ns + self.session_active_ns != self.cumulative_active_ns:
+            raise ValueError("timing receipt violates prior + session == cumulative")
+
+    @classmethod
+    def complete_fresh_session(cls, session_active_ns: int) -> CumulativeActiveWallTiming:
+        if type(session_active_ns) is not int or session_active_ns < 0:
+            raise ValueError("session_active_ns must be a non-negative exact int")
+        return cls(
+            prior_cumulative_ns=0,
+            session_active_ns=session_active_ns,
+            cumulative_active_ns=session_active_ns,
+        )
+
+    @classmethod
+    def complete_resumed_session(
+        cls,
+        prior_cumulative_ns: int,
+        session_active_ns: int,
+    ) -> CumulativeActiveWallTiming:
+        if type(prior_cumulative_ns) is not int or prior_cumulative_ns < 0:
+            raise ValueError("prior_cumulative_ns must be a non-negative exact int")
+        if type(session_active_ns) is not int or session_active_ns < 0:
+            raise ValueError("session_active_ns must be a non-negative exact int")
+        return cls(
+            prior_cumulative_ns=prior_cumulative_ns,
+            session_active_ns=session_active_ns,
+            cumulative_active_ns=prior_cumulative_ns + session_active_ns,
+        )
+
+    @property
+    def state(self) -> TimingState:
+        if self.cumulative_active_ns is None:
+            return TimingState.TIMING_INDETERMINATE
+        if self.cumulative_active_ns <= self.cap_ns:
+            return TimingState.WITHIN_CAP
+        return TimingState.OVER_CAP
+
+    def plus_completed_session(self, active_ns: int) -> CumulativeActiveWallTiming:
+        if type(active_ns) is not int or active_ns < 0:
+            raise ValueError("active_ns must be a non-negative exact int")
+        if self.cumulative_active_ns is None:
+            return self
+        return CumulativeActiveWallTiming.complete_resumed_session(
+            self.cumulative_active_ns,
+            active_ns,
+        )
+
+    def with_unclean_interruption(self) -> CumulativeActiveWallTiming:
+        prior = (
+            self.prior_cumulative_ns
+            if self.cumulative_active_ns is None
+            else self.cumulative_active_ns
+        )
+        return CumulativeActiveWallTiming(
+            prior_cumulative_ns=prior,
+            session_active_ns=None,
+            cumulative_active_ns=None,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ConfirmationTimingComparison:
+    """Keep fresh/resumed receipts distinct and expose only their conservative max."""
+
+    fresh: CumulativeActiveWallTiming
+    resumed: CumulativeActiveWallTiming
+
+    def __post_init__(self) -> None:
+        if type(self.fresh) is not CumulativeActiveWallTiming:
+            raise TypeError("fresh must be an exact CumulativeActiveWallTiming")
+        if type(self.resumed) is not CumulativeActiveWallTiming:
+            raise TypeError("resumed must be an exact CumulativeActiveWallTiming")
+        if self.fresh.prior_cumulative_ns != 0:
+            raise ValueError("fresh timing must start with prior_cumulative_ns zero")
+
+    @property
+    def conservative_cumulative_active_ns(self) -> int | None:
+        fresh = self.fresh.cumulative_active_ns
+        resumed = self.resumed.cumulative_active_ns
+        if fresh is None or resumed is None:
+            return None
+        return max(fresh, resumed)
+
+    @property
+    def state(self) -> TimingState:
+        cumulative = self.conservative_cumulative_active_ns
+        if cumulative is None:
+            return TimingState.TIMING_INDETERMINATE
+        if cumulative <= ACTIVE_WALL_CAP_NS:
+            return TimingState.WITHIN_CAP
+        return TimingState.OVER_CAP
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactEnvelope:
+    artifact_id: str
+    payload: dict[str, Any]
+    payload_sha256: str
+    schema_version: int
+
+
+def _exact_uint(label: str, value: object, *, bits: int) -> int:
+    if type(value) is not int or not 0 <= value < (1 << bits):
+        raise ValueError(f"{label} must be an exact u{bits}")
+    return value
+
+
+def _exact_uint_tuple(
+    label: str,
+    values: object,
+    *,
+    length: int,
+    bits: int,
+) -> tuple[int, ...]:
+    if type(values) is not tuple or len(values) != length:
+        raise ValueError(f"{label} must contain exactly {length} entries")
+    return tuple(
+        _exact_uint(f"{label}[{index}]", value, bits=bits) for index, value in enumerate(values)
+    )
+
+
+def _u16le(value: int) -> bytes:
+    return value.to_bytes(2, "little", signed=False)
+
+
+def _u32le(value: int) -> bytes:
+    return value.to_bytes(4, "little", signed=False)
+
+
+def _u64le(value: int) -> bytes:
+    return value.to_bytes(8, "little", signed=False)
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalSpikeFrame:
+    cell_id: int
+    tick: int
+
+    def __post_init__(self) -> None:
+        _exact_uint("cell_id", self.cell_id, bits=32)
+        _exact_uint("tick", self.tick, bits=16)
+
+    def canonical_bytes(self) -> bytes:
+        return _u32le(self.cell_id) + _u16le(self.tick)
+
+
+@dataclass(frozen=True, slots=True)
+class WinnerChainFrame:
+    token_id: int
+    event_count: int
+    winner_context: tuple[int, ...]
+
+    def __post_init__(self) -> None:
+        _exact_uint("token_id", self.token_id, bits=32)
+        _exact_uint("event_count", self.event_count, bits=64)
+        winners = _exact_uint_tuple("winner_context", self.winner_context, length=11, bits=32)
+        object.__setattr__(self, "winner_context", winners)
+
+    def canonical_row(self) -> bytes:
+        row = bytearray(_u32le(self.token_id))
+        row.extend(_u64le(self.event_count))
+        for winner in self.winner_context:
+            row.extend(_u32le(winner))
+        if len(row) != 56:  # pragma: no cover - protected by fixed widths above.
+            raise AssertionError("winner chain row lost its frozen 56-byte layout")
+        return bytes(row)
+
+
+def _exact_spike_tuple(label: str, values: object) -> tuple[TemporalSpikeFrame, ...]:
+    if type(values) is not tuple or len(values) != 11:
+        raise ValueError(f"{label} must contain exactly 11 spikes")
+    if any(type(value) is not TemporalSpikeFrame for value in values):
+        raise TypeError(f"{label} entries must be TemporalSpikeFrame values")
+    return values
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalStepFrame:
+    """The exact persisted view of one successful native temporal token call."""
+
+    token_id: int
+    punished_segments: int
+    event_count: int
+    predicted: bool
+    predicted_columns: int
+    allocated_segments: int
+    inhibition_onset_ticks: tuple[int, ...]
+    column_simulated_ticks: tuple[int, ...]
+    winner_spikes: tuple[TemporalSpikeFrame, ...]
+    basket_spikes: tuple[TemporalSpikeFrame, ...]
+    proximal_spikes: tuple[TemporalSpikeFrame, ...]
+    proximal_relay_spikes: tuple[TemporalSpikeFrame, ...]
+    winner_relay_spikes: tuple[TemporalSpikeFrame, ...]
+    winner_context: tuple[int, ...]
+    proximal_context: tuple[int, ...]
+    context: tuple[int, ...]
+
+    def __post_init__(self) -> None:
+        _exact_uint("token_id", self.token_id, bits=32)
+        _exact_uint("punished_segments", self.punished_segments, bits=32)
+        _exact_uint("event_count", self.event_count, bits=64)
+        if type(self.predicted) is not bool:
+            raise TypeError("predicted must be an exact bool")
+        if _exact_uint("predicted_columns", self.predicted_columns, bits=8) > 11:
+            raise ValueError("predicted_columns exceeds the frozen active width")
+        if _exact_uint("allocated_segments", self.allocated_segments, bits=8) > 11:
+            raise ValueError("allocated_segments exceeds the frozen active width")
+        object.__setattr__(
+            self,
+            "inhibition_onset_ticks",
+            _exact_uint_tuple(
+                "inhibition_onset_ticks",
+                self.inhibition_onset_ticks,
+                length=11,
+                bits=16,
+            ),
+        )
+        object.__setattr__(
+            self,
+            "column_simulated_ticks",
+            _exact_uint_tuple(
+                "column_simulated_ticks",
+                self.column_simulated_ticks,
+                length=11,
+                bits=16,
+            ),
+        )
+        for field_name in (
+            "winner_spikes",
+            "basket_spikes",
+            "proximal_spikes",
+            "proximal_relay_spikes",
+            "winner_relay_spikes",
+        ):
+            object.__setattr__(
+                self,
+                field_name,
+                _exact_spike_tuple(field_name, getattr(self, field_name)),
+            )
+        for field_name in ("winner_context", "proximal_context", "context"):
+            object.__setattr__(
+                self,
+                field_name,
+                _exact_uint_tuple(
+                    field_name,
+                    getattr(self, field_name),
+                    length=22,
+                    bits=32,
+                ),
+            )
+
+    def canonical_row(self) -> bytes:
+        row = bytearray()
+        row.extend(_u32le(self.token_id))
+        row.extend(_u32le(self.punished_segments))
+        row.extend(_u64le(self.event_count))
+        row.append(int(self.predicted))
+        row.append(self.predicted_columns)
+        row.append(self.allocated_segments)
+        for tick in self.inhibition_onset_ticks:
+            row.extend(_u16le(tick))
+        for tick in self.column_simulated_ticks:
+            row.extend(_u16le(tick))
+        for spikes in (
+            self.winner_spikes,
+            self.basket_spikes,
+            self.proximal_spikes,
+            self.proximal_relay_spikes,
+            self.winner_relay_spikes,
+        ):
+            for spike in spikes:
+                row.extend(spike.canonical_bytes())
+        for context in (self.winner_context, self.proximal_context, self.context):
+            for cell_id in context:
+                row.extend(_u32le(cell_id))
+        if len(row) != 657:  # pragma: no cover - protected by fixed widths above.
+            raise AssertionError("step chain row lost its frozen 657-byte layout")
+        return bytes(row)
+
+
+class HashChainKind(StrEnum):
+    WINNER = "WINNER"
+    STEP = "STEP"
+
+    @property
+    def domain(self) -> bytes:
+        if self is HashChainKind.WINNER:
+            return b"humanbrain-r3-f0-winner-chain-v1\0"
+        return b"humanbrain-r3-f0-step-chain-v1\0"
+
+
+@dataclass(frozen=True, slots=True)
+class ResumableHashChain:
+    """A canonical prefix digest restored only from a committed manifest."""
+
+    kind: HashChainKind
+    count: int
+    digest: bytes
+
+    def __post_init__(self) -> None:
+        if type(self.kind) is not HashChainKind:
+            raise TypeError("kind must be an exact HashChainKind")
+        _exact_uint("count", self.count, bits=64)
+        if type(self.digest) is not bytes or len(self.digest) != 32:
+            raise ValueError("digest must be exactly 32 bytes")
+
+    @classmethod
+    def start(cls, kind: HashChainKind) -> ResumableHashChain:
+        if type(kind) is not HashChainKind:
+            raise TypeError("kind must be an exact HashChainKind")
+        return cls(kind=kind, count=0, digest=hashlib.sha256(kind.domain).digest())
+
+    @classmethod
+    def restore(
+        cls,
+        *,
+        kind: HashChainKind,
+        count: int,
+        digest_hex: str,
+    ) -> ResumableHashChain:
+        if (
+            type(digest_hex) is not str
+            or len(digest_hex) != 64
+            or any(character not in "0123456789abcdef" for character in digest_hex)
+        ):
+            raise ValueError("digest_hex must be one lowercase SHA-256 identity")
+        return cls(kind=kind, count=count, digest=bytes.fromhex(digest_hex))
+
+    @property
+    def hexdigest(self) -> str:
+        return self.digest.hex()
+
+    def _append(self, row: bytes) -> ResumableHashChain:
+        if self.count == (1 << 64) - 1:
+            raise ValueError("hash-chain count cannot exceed u64")
+        next_count = self.count + 1
+        digest = hashlib.sha256(self.kind.domain + self.digest + _u64le(next_count) + row).digest()
+        return ResumableHashChain(kind=self.kind, count=next_count, digest=digest)
+
+    def append_winner(self, frame: WinnerChainFrame) -> ResumableHashChain:
+        if self.kind is not HashChainKind.WINNER:
+            raise ValueError("winner frames require the winner hash-chain domain")
+        if type(frame) is not WinnerChainFrame:
+            raise TypeError("frame must be an exact WinnerChainFrame")
+        return self._append(frame.canonical_row())
+
+    def append_step(self, frame: TemporalStepFrame) -> ResumableHashChain:
+        if self.kind is not HashChainKind.STEP:
+            raise ValueError("step frames require the step hash-chain domain")
+        if type(frame) is not TemporalStepFrame:
+            raise TypeError("frame must be an exact TemporalStepFrame")
+        return self._append(frame.canonical_row())
+
+
+_FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+
+
+def _is_reparse(value: os.stat_result) -> bool:
+    return bool(int(getattr(value, "st_file_attributes", 0)) & _FILE_ATTRIBUTE_REPARSE_POINT)
+
+
+def _is_plain_directory(value: os.stat_result) -> bool:
+    return (
+        stat.S_ISDIR(value.st_mode) and not stat.S_ISLNK(value.st_mode) and not _is_reparse(value)
+    )
+
+
+def _is_plain_regular_file(value: os.stat_result) -> bool:
+    return (
+        stat.S_ISREG(value.st_mode) and not stat.S_ISLNK(value.st_mode) and not _is_reparse(value)
+    )
+
+
+def _validate_relative_path(value: object, *, label: str) -> str:
+    if type(value) is not str:
+        raise ArtifactPathStop(f"{label} must be a string")
+    parts = value.split("/")
+    if (
+        not value
+        or value.startswith("/")
+        or "\\" in value
+        or ":" in value
+        or "\x00" in value
+        or any(part in {"", ".", ".."} for part in parts)
+    ):
+        raise ArtifactPathStop(f"{label} is not a canonical repository-relative path")
+    return value
+
+
+def _collect_artifact_paths(value: object, *, artifact_root: str) -> tuple[str, ...]:
+    paths: list[str] = []
+
+    def collect(current: object) -> None:
+        if type(current) is str:
+            if current.startswith(f"{artifact_root}/") and current.endswith((".json", ".r3ntcp1")):
+                paths.append(_validate_relative_path(current, label="artifact path"))
+            return
+        if type(current) is dict:
+            for child in current.values():
+                collect(child)
+            return
+        if type(current) is list:
+            for child in current:
+                collect(child)
+
+    collect(value)
+    if not paths:
+        raise ArtifactPathStop("validated protocol supplies no artifact paths")
+    if len(paths) != len(set(paths)):
+        raise ArtifactPathStop("validated protocol supplies duplicate artifact paths")
+    return tuple(paths)
+
+
+def _protocol_object(value: object, *, label: str) -> dict[str, Any]:
+    if type(value) is not dict:
+        raise ArtifactAuthorityStop(f"validated protocol {label} must be an exact object")
+    return value
+
+
+def _protocol_int_list(value: object, *, label: str) -> tuple[int, ...]:
+    if type(value) is not list or not value:
+        raise ArtifactAuthorityStop(f"validated protocol {label} must be a non-empty list")
+    integers: list[int] = []
+    for item in value:
+        if type(item) is not int or item < 0:
+            raise ArtifactAuthorityStop(f"validated protocol {label} has a non-integer entry")
+        integers.append(item)
+    return tuple(integers)
+
+
+def _threshold_arm_map(validated_protocol: Mapping[str, object]) -> dict[str, tuple[int, int]]:
+    selection = _protocol_object(
+        validated_protocol.get("threshold_selection"),
+        label="threshold_selection",
+    )
+    candidates = selection.get("candidate_arms")
+    if type(candidates) is not list or not candidates:
+        raise ArtifactAuthorityStop("validated protocol has no candidate threshold arms")
+    arms: dict[str, tuple[int, int]] = {}
+    for candidate in candidates:
+        if (
+            type(candidate) is not list
+            or len(candidate) != 2
+            or any(type(value) is not int or value < 0 for value in candidate)
+        ):
+            raise ArtifactAuthorityStop("candidate threshold arms must be exact integer pairs")
+        theta_match, theta_active = candidate
+        slug = f"theta-m-{theta_match}_theta-a-{theta_active}"
+        if slug in arms:
+            raise ArtifactAuthorityStop("candidate threshold arms contain a duplicate")
+        arms[slug] = (theta_match, theta_active)
+    return arms
+
+
+def _r3_screen_contract(validated_protocol: Mapping[str, object]) -> dict[str, Any]:
+    screens = _protocol_object(validated_protocol.get("screens"), label="screens")
+    return _protocol_object(screens.get("r3_f0_train"), label="screens.r3_f0_train")
+
+
+def _r3_phase_seeds(screen: dict[str, Any], phase: str) -> tuple[int, ...]:
+    scope = _protocol_object(
+        screen.get("construction_seed_scope"),
+        label="screens.r3_f0_train.construction_seed_scope",
+    )
+    return _protocol_int_list(
+        scope.get(phase),
+        label=f"screens.r3_f0_train.construction_seed_scope.{phase}",
+    )
+
+
+def _resume_milestones(screen: dict[str, Any]) -> dict[int, tuple[tuple[str, object], ...]]:
+    determinism = _protocol_object(
+        screen.get("determinism"),
+        label="screens.r3_f0_train.determinism",
+    )
+    rows = determinism.get("resume_milestones")
+    if type(rows) is not list or not rows:
+        raise ArtifactAuthorityStop("validated protocol has no R3 resume milestones")
+    milestones: dict[int, tuple[tuple[str, object], ...]] = {}
+    for row_value in rows:
+        row = _protocol_object(row_value, label="R3 resume milestone")
+        if frozenset(row) != _CURSOR_KEYS:
+            raise ArtifactAuthorityStop("R3 resume milestone fields differ from cursor schema")
+        event = row["after_transition_event"]
+        if type(event) is not int or event < 0:
+            raise ArtifactAuthorityStop("R3 resume milestone event must be an exact int")
+        if type(row["book_name"]) is not str or not row["book_name"]:
+            raise ArtifactAuthorityStop("R3 resume milestone book_name must be non-empty")
+        if type(row["reset_before_next_token"]) is not bool:
+            raise ArtifactAuthorityStop("R3 resume reset flag must be an exact bool")
+        if any(type(row[key]) is not int or row[key] < 0 for key in _CURSOR_UINT_KEYS):
+            raise ArtifactAuthorityStop("R3 resume milestone counters must be exact ints")
+        if event in milestones:
+            raise ArtifactAuthorityStop("R3 resume milestones contain a duplicate event")
+        milestones[event] = tuple((key, row[key]) for key in sorted(row))
+    return milestones
+
+
+def _seed_from_filename(filename: str, *, prefix: str) -> int:
+    suffix = ".json"
+    if not filename.startswith(prefix) or not filename.endswith(suffix):
+        raise ArtifactPathStop("R3 result path has a noncanonical seed filename")
+    digits = filename[len(prefix) : -len(suffix)]
+    if len(digits) != 10 or not digits.isascii() or not digits.isdigit():
+        raise ArtifactPathStop("R3 result seed filename is not ten decimal digits")
+    return int(digits)
+
+
+def _parse_r3_result_path(
+    path: str,
+    *,
+    artifact_root: str,
+    phase: str,
+    declared_arm_slug: str | None,
+) -> tuple[str, int]:
+    prefix = f"{artifact_root}/"
+    parts = path.removeprefix(prefix).split("/")
+    if (
+        not path.startswith(prefix)
+        or len(parts) != 4
+        or parts[0] != "r3-f0"
+        or parts[1] != phase.replace("_", "-")
+    ):
+        raise ArtifactPathStop("R3 result path does not match its protocol phase")
+    arm_slug = parts[2]
+    if declared_arm_slug is not None and declared_arm_slug != arm_slug:
+        raise ArtifactPathStop("R3 result path does not match its protocol arm key")
+    seed = _seed_from_filename(parts[3], prefix="construction-seed-")
+    return arm_slug, seed
+
+
+def _parse_r3_resume_path(
+    path: str,
+    *,
+    artifact_root: str,
+) -> tuple[str, int, ArtifactDestinationKind]:
+    prefix = f"{artifact_root}/"
+    parts = path.removeprefix(prefix).split("/")
+    if (
+        not path.startswith(prefix)
+        or len(parts) != 5
+        or parts[0:2] != ["r3-f0", "deterministic-confirmation"]
+        or parts[3] != "resume"
+    ):
+        raise ArtifactPathStop("R3 resume destination has a noncanonical path")
+    filename = parts[4]
+    if filename.endswith(".resume.json"):
+        kind = ArtifactDestinationKind.RESUME_MANIFEST
+        digits = filename.removeprefix("transition-").removesuffix(".resume.json")
+    elif filename.endswith(".r3ntcp1"):
+        kind = ArtifactDestinationKind.BINARY_CHECKPOINT
+        digits = filename.removeprefix("transition-").removesuffix(".r3ntcp1")
+    else:
+        raise ArtifactPathStop("R3 resume destination has an unknown file type")
+    if (
+        not filename.startswith("transition-")
+        or len(digits) != 10
+        or not digits.isascii()
+        or not digits.isdigit()
+    ):
+        raise ArtifactPathStop("R3 resume event is not ten decimal digits")
+    return parts[2], int(digits), kind
+
+
+def _derive_destination_specs(
+    validated_protocol: Mapping[str, object],
+    *,
+    contract: dict[str, Any],
+    artifact_root: str,
+    artifact_paths: tuple[str, ...],
+) -> dict[str, DestinationSpec]:
+    arms = _threshold_arm_map(validated_protocol)
+    screen = _r3_screen_contract(validated_protocol)
+    milestones = _resume_milestones(screen)
+    r3_contract = _protocol_object(contract.get("r3_f0_train"), label="R3 artifact contract")
+    destinations: dict[str, DestinationSpec] = {}
+
+    def add(spec: DestinationSpec) -> None:
+        if spec.relative_path in destinations:
+            raise ArtifactPathStop("artifact destination has multiple protocol descriptors")
+        destinations[spec.relative_path] = spec
+
+    for phase in ("development", "deterministic_confirmation"):
+        phase_contract = r3_contract.get(phase)
+        if type(phase_contract) is not dict or not phase_contract:
+            raise ArtifactAuthorityStop(
+                f"R3 {phase} artifact contract must be a non-empty arm-to-path object"
+            )
+        declared_paths = tuple(phase_contract.items())
+        allowed_seeds = _r3_phase_seeds(screen, phase)
+        for declared_slug, path_value in declared_paths:
+            path = _validate_relative_path(path_value, label="R3 result path")
+            arm_slug, seed = _parse_r3_result_path(
+                path,
+                artifact_root=artifact_root,
+                phase=phase,
+                declared_arm_slug=declared_slug,
+            )
+            if arm_slug not in arms:
+                raise ArtifactAuthorityStop("R3 result arm is not a candidate threshold arm")
+            if seed not in allowed_seeds:
+                raise ArtifactAuthorityStop("R3 result seed is outside its protocol phase")
+            add(
+                DestinationSpec(
+                    relative_path=path,
+                    kind=ArtifactDestinationKind.R3_RESULT,
+                    screen_id="r3_f0_train",
+                    phase=phase,
+                    arm_slug=arm_slug,
+                    thresholds=arms[arm_slug],
+                    construction_seeds=(seed,),
+                )
+            )
+
+    resume_paths = r3_contract.get("deterministic_confirmation_resumes")
+    if type(resume_paths) is not list or not resume_paths:
+        raise ArtifactAuthorityStop("R3 artifact contract has no resume destinations")
+    resume_seeds = _r3_phase_seeds(screen, "deterministic_confirmation")
+    if len(resume_seeds) != 1:
+        raise ArtifactAuthorityStop("R3 resume authority requires exactly one construction seed")
+    for path_value in resume_paths:
+        path = _validate_relative_path(path_value, label="R3 resume path")
+        arm_slug, event, kind = _parse_r3_resume_path(path, artifact_root=artifact_root)
+        if arm_slug not in arms:
+            raise ArtifactAuthorityStop("R3 resume arm is not a candidate threshold arm")
+        if event not in milestones:
+            raise ArtifactAuthorityStop("R3 resume path is not a frozen milestone")
+        add(
+            DestinationSpec(
+                relative_path=path,
+                kind=kind,
+                screen_id="r3_f0_train",
+                phase="deterministic_confirmation",
+                arm_slug=arm_slug,
+                thresholds=arms[arm_slug],
+                construction_seed=resume_seeds[0],
+                resume_cursor=milestones[event],
+            )
+        )
+
+    for path in artifact_paths:
+        if path in destinations:
+            continue
+        if path.endswith((".r3ntcp1", ".resume.json")):
+            raise ArtifactAuthorityStop("binary/resume destination lacks an R3 descriptor")
+        destinations[path] = DestinationSpec(
+            relative_path=path,
+            kind=ArtifactDestinationKind.UNFROZEN_RESULT,
+        )
+    return destinations
+
+
+def _canonical_json_bytes(value: object) -> bytes:
+    try:
+        _validate_json_tree(value)
+        return json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        ).encode("utf-8")
+    except EnvelopeStop:
+        raise
+    except (RecursionError, TypeError, ValueError) as exc:
+        raise EnvelopeStop("value is not canonical JSON data") from exc
+
+
+def _validate_json_tree(value: object) -> None:
+    if value is None or type(value) in {bool, int, str}:
+        return
+    if type(value) is float:
+        raise EnvelopeStop("floating-point JSON values are forbidden")
+    if type(value) is list:
+        for child in value:
+            _validate_json_tree(child)
+        return
+    if type(value) is dict:
+        for key, child in value.items():
+            if type(key) is not str:
+                raise EnvelopeStop("JSON object keys must be strings")
+            _validate_json_tree(child)
+        return
+    raise EnvelopeStop("value is not canonical JSON data")
+
+
+def _payload_keys(artifact_id: str) -> frozenset[str]:
+    if artifact_id == RESUME_ARTIFACT_ID:
+        return _RESUME_PAYLOAD_KEYS
+    if artifact_id == RESULT_ARTIFACT_ID:
+        return _RESULT_PAYLOAD_KEYS
+    raise EnvelopeStop("artifact_id is not a frozen calibration-v3 envelope ID")
+
+
+def _require_exact_keys(
+    value: dict[Any, Any],
+    expected_keys: frozenset[str],
+    *,
+    label: str,
+) -> None:
+    if any(type(key) is not str for key in value):
+        raise EnvelopeStop(f"{label} keys must be exact strings")
+    observed = frozenset(value)
+    if observed != expected_keys:
+        missing = sorted(expected_keys - observed)
+        unknown = sorted(observed - expected_keys)
+        raise EnvelopeStop(f"{label} fields differ: missing={missing}, unknown={unknown}")
+
+
+def _require_exact_object(
+    value: object,
+    expected_keys: frozenset[str],
+    *,
+    label: str,
+) -> dict[str, Any]:
+    if type(value) is not dict:
+        raise EnvelopeStop(f"{label} must be a JSON object")
+    _require_exact_keys(value, expected_keys, label=label)
+    return value
+
+
+def _require_nonnegative_int(value: object, *, label: str) -> int:
+    if type(value) is not int or value < 0:
+        raise EnvelopeStop(f"{label} must be a non-negative exact int")
+    return value
+
+
+def _require_nonempty_string(value: object, *, label: str) -> str:
+    if type(value) is not str or not value:
+        raise EnvelopeStop(f"{label} must be a non-empty string")
+    return value
+
+
+def _require_lower_sha256(value: object, *, label: str) -> str:
+    if (
+        type(value) is not str
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
+    ):
+        raise EnvelopeStop(f"{label} must be a lowercase SHA-256 identity")
+    return value
+
+
+def _require_object(value: object, *, label: str) -> dict[str, Any]:
+    if type(value) is not dict:
+        raise EnvelopeStop(f"{label} must be a JSON object")
+    return value
+
+
+def _validate_thresholds(value: object) -> None:
+    thresholds = _require_exact_object(value, _THRESHOLD_KEYS, label="thresholds")
+    _require_nonnegative_int(thresholds["theta_match"], label="theta_match")
+    _require_nonnegative_int(thresholds["theta_active"], label="theta_active")
+
+
+def _validate_claim_boundary(value: object) -> None:
+    claim = _require_exact_object(value, _CLAIM_BOUNDARY_KEYS, label="claim_boundary")
+    if any(claim[key] is not False for key in _CLAIM_BOUNDARY_KEYS):
+        raise EnvelopeStop("claim_boundary must contain the three exact false claims")
+
+
+def _validate_common_payload(payload: dict[str, Any]) -> None:
+    _require_lower_sha256(payload["protocol_sha256"], label="protocol_sha256")
+    _require_lower_sha256(
+        payload["source_bundle_identity_sha256"],
+        label="source_bundle_identity_sha256",
+    )
+    _require_nonempty_string(payload["screen_id"], label="screen_id")
+    _require_nonempty_string(payload["phase"], label="phase")
+    _validate_claim_boundary(payload["claim_boundary"])
+    _require_object(payload["source_binding"], label="source_binding")
+    _validate_thresholds(payload["thresholds"])
+
+
+def _bind_common_destination(payload: dict[str, Any], destination: DestinationSpec) -> None:
+    if destination.screen_id is None or payload["screen_id"] != destination.screen_id:
+        raise EnvelopeStop("screen_id does not match the frozen artifact destination")
+    if destination.phase is None or payload["phase"] != destination.phase:
+        raise EnvelopeStop("phase does not match the frozen artifact destination")
+    if destination.thresholds is None:
+        raise EnvelopeStop("artifact destination has no frozen threshold semantics")
+    theta_match, theta_active = destination.thresholds
+    if payload["thresholds"] != {
+        "theta_active": theta_active,
+        "theta_match": theta_match,
+    }:
+        raise EnvelopeStop("thresholds do not match the frozen artifact destination")
+
+
+def _validate_resume_payload(
+    payload: dict[str, Any],
+    *,
+    destination: DestinationSpec,
+) -> None:
+    _validate_common_payload(payload)
+    if destination.kind is not ArtifactDestinationKind.RESUME_MANIFEST:
+        raise EnvelopeStop("resume payload requires a frozen resume-manifest destination")
+    _bind_common_destination(payload, destination)
+    if (
+        destination.construction_seed is None
+        or _require_nonnegative_int(payload["construction_seed"], label="construction_seed")
+        != destination.construction_seed
+    ):
+        raise EnvelopeStop("construction_seed does not match the frozen resume destination")
+    _require_nonempty_string(payload["arm_slug"], label="arm_slug")
+    if destination.arm_slug is None or payload["arm_slug"] != destination.arm_slug:
+        raise EnvelopeStop("arm_slug does not match the frozen resume destination")
+    _require_nonempty_string(payload["reference_trajectory_id"], label="reference_trajectory_id")
+    for field_name in (
+        "checkpoint",
+        "checkpoint_publication",
+        "circuit_contract",
+        "previous_state",
+        "stream_prefixes",
+        "train_input",
+    ):
+        _require_object(payload[field_name], label=field_name)
+    cursor = _require_exact_object(payload["cursor"], _CURSOR_KEYS, label="cursor")
+    if type(cursor["book_name"]) is not str or not cursor["book_name"]:
+        raise EnvelopeStop("cursor book_name must be a non-empty string")
+    if type(cursor["reset_before_next_token"]) is not bool:
+        raise EnvelopeStop("cursor reset_before_next_token must be an exact bool")
+    for key in _CURSOR_UINT_KEYS:
+        _require_nonnegative_int(cursor[key], label=f"cursor {key}")
+    if destination.resume_cursor is None or cursor != dict(destination.resume_cursor):
+        raise EnvelopeStop("cursor does not match the frozen resume milestone")
+    timing = _require_exact_object(payload["timing"], _TIMING_KEYS, label="timing")
+    prior = _require_nonnegative_int(
+        timing["prior_cumulative_ns"], label="timing prior_cumulative_ns"
+    )
+    session = _require_nonnegative_int(
+        timing["session_active_ns"], label="timing session_active_ns"
+    )
+    cumulative = _require_nonnegative_int(
+        timing["cumulative_active_ns"], label="timing cumulative_active_ns"
+    )
+    try:
+        CumulativeActiveWallTiming(
+            prior_cumulative_ns=prior,
+            session_active_ns=session,
+            cumulative_active_ns=cumulative,
+        )
+    except ValueError as exc:
+        raise EnvelopeStop("timing violates the cumulative active-wall contract") from exc
+
+
+def _validate_result_payload(
+    payload: dict[str, Any],
+    *,
+    destination: DestinationSpec,
+) -> None:
+    _validate_common_payload(payload)
+    if destination.kind is not ArtifactDestinationKind.R3_RESULT:
+        raise EnvelopeStop("result payload requires a frozen R3 result destination")
+    _bind_common_destination(payload, destination)
+    seeds = payload["construction_seeds"]
+    if type(seeds) is not list or not seeds:
+        raise EnvelopeStop("construction_seeds must be a non-empty JSON array")
+    for index, seed in enumerate(seeds):
+        _require_nonnegative_int(seed, label=f"construction_seeds[{index}]")
+    if destination.construction_seeds is None or tuple(seeds) != destination.construction_seeds:
+        raise EnvelopeStop("construction_seeds do not match the frozen result destination")
+    _require_object(payload["result"], label="result")
+    result = _require_exact_object(
+        payload["result"], _R3_F0_RESULT_KEYS, label="r3_f0_train result"
+    )
+    if result["kind"] != "r3_f0_train":
+        raise EnvelopeStop("r3_f0_train result kind is not exact")
+    _require_nonempty_string(result["arm_slug"], label="r3_f0_train arm_slug")
+    if destination.arm_slug is None or result["arm_slug"] != destination.arm_slug:
+        raise EnvelopeStop("R3 arm_slug does not match the frozen result destination")
+    _require_nonempty_string(result["verdict"], label="r3_f0_train verdict")
+    for field_name in (
+        "comparisons",
+        "reference",
+        "structural_metrics",
+        "train_input",
+    ):
+        _require_object(result[field_name], label=f"r3_f0_train {field_name}")
+    if type(result["resumes"]) is not list:
+        raise EnvelopeStop("r3_f0_train resumes must be a JSON array")
+
+
+def _validate_payload(
+    artifact_id: str,
+    payload: object,
+    *,
+    destination: DestinationSpec,
+) -> dict[str, Any]:
+    if type(payload) is not dict:
+        raise EnvelopeStop("payload must be a JSON object")
+    expected = _payload_keys(artifact_id)
+    _require_exact_keys(payload, expected, label="payload")
+    validated = dict(payload)
+    if artifact_id == RESUME_ARTIFACT_ID:
+        _validate_resume_payload(validated, destination=destination)
+    else:
+        _validate_result_payload(validated, destination=destination)
+    return validated
+
+
+def _decode_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    value: dict[str, object] = {}
+    for key, child in pairs:
+        if key in value:
+            raise EnvelopeStop(f"duplicate JSON object key: {key}")
+        value[key] = child
+    return value
+
+
+def _reject_float(_value: str) -> object:
+    raise EnvelopeStop("floating-point JSON values are forbidden")
+
+
+def _reject_constant(_value: str) -> object:
+    raise EnvelopeStop("non-finite JSON constants are forbidden")
+
+
+def _decode_canonical_envelope(
+    raw: bytes,
+    *,
+    destination: DestinationSpec,
+) -> ArtifactEnvelope:
+    if type(raw) is not bytes:
+        raise EnvelopeStop("envelope input must be exact bytes")
+    if len(raw) > MAX_ENVELOPE_BYTES:
+        raise EnvelopeStop("envelope exceeds the one-mebibyte bound")
+    try:
+        text = raw.decode("utf-8", errors="strict")
+        value = json.loads(
+            text,
+            object_pairs_hook=_decode_pairs,
+            parse_float=_reject_float,
+            parse_constant=_reject_constant,
+        )
+    except EnvelopeStop:
+        raise
+    except (RecursionError, UnicodeDecodeError, ValueError) as exc:
+        raise EnvelopeStop("envelope is not strict UTF-8 JSON") from exc
+    if type(value) is not dict or frozenset(value) != _OUTER_KEYS:
+        raise EnvelopeStop("outer envelope fields differ from the frozen schema")
+    artifact_id = value["artifact_id"]
+    if type(artifact_id) is not str:
+        raise EnvelopeStop("artifact_id must be a string")
+    if type(value["schema_version"]) is not int or value["schema_version"] != 1:
+        raise EnvelopeStop("schema_version must be integer 1")
+    payload = _validate_payload(
+        artifact_id,
+        value["payload"],
+        destination=destination,
+    )
+    payload_sha256 = value["payload_sha256"]
+    if (
+        type(payload_sha256) is not str
+        or len(payload_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in payload_sha256)
+    ):
+        raise EnvelopeStop("payload_sha256 must be a lowercase SHA-256 identity")
+    observed_payload_sha256 = hashlib.sha256(_canonical_json_bytes(payload)).hexdigest()
+    if payload_sha256 != observed_payload_sha256:
+        raise EnvelopeStop("payload_sha256 does not bind the canonical payload")
+    if _canonical_json_bytes(value) != raw:
+        raise EnvelopeStop("envelope bytes are not the exact canonical encoding")
+    return ArtifactEnvelope(
+        artifact_id=artifact_id,
+        payload=payload,
+        payload_sha256=payload_sha256,
+        schema_version=1,
+    )
+
+
+class CalibrationV3ArtifactStore:
+    """One deep module for the protocol-supplied immutable artifact namespace."""
+
+    def __init__(
+        self,
+        *,
+        repository_root: Path,
+        artifact_root: str,
+        destinations: Mapping[str, DestinationSpec],
+        protocol_sha256: str,
+        source_binding_bytes: bytes,
+        claim_boundary_bytes: bytes,
+        source_binding_runnable: bool,
+        expected_source_bundle_identity_sha256: str,
+    ) -> None:
+        self._repository_root = repository_root
+        self._artifact_root = artifact_root
+        self._destinations = dict(destinations)
+        self._artifact_paths = frozenset(destinations)
+        self._protocol_sha256 = protocol_sha256
+        self._source_binding_bytes = source_binding_bytes
+        self._claim_boundary_bytes = claim_boundary_bytes
+        self._source_binding_runnable = source_binding_runnable
+        self._expected_source_bundle_identity_sha256 = expected_source_bundle_identity_sha256
+
+    @classmethod
+    def open(
+        cls,
+        *,
+        repository_root: Path,
+        validated_protocol: dict[str, object],
+        expected_source_bundle_identity_sha256: str | None = None,
+    ) -> CalibrationV3ArtifactStore:
+        if expected_source_bundle_identity_sha256 is None:
+            raise ArtifactAuthorityStop(
+                "official store requires an external source-bundle identity"
+            )
+        if (
+            type(expected_source_bundle_identity_sha256) is not str
+            or len(expected_source_bundle_identity_sha256) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in expected_source_bundle_identity_sha256
+            )
+        ):
+            raise ArtifactAuthorityStop(
+                "external source-bundle identity must be one lowercase SHA-256"
+            )
+        if type(validated_protocol) is not dict:
+            raise ArtifactAuthorityStop("validated protocol must be an exact object")
+        root = Path(repository_root).absolute()
+        try:
+            root_stat = os.lstat(root)
+        except OSError as exc:
+            raise ArtifactPathStop("repository root is unavailable") from exc
+        if not _is_plain_directory(root_stat):
+            raise ArtifactPathStop("repository root must be a plain directory")
+        contract = validated_protocol.get("artifact_contract")
+        if type(contract) is not dict:
+            raise ArtifactPathStop("validated protocol has no artifact contract")
+        artifact_root = _validate_relative_path(contract.get("root"), label="artifact root")
+        paths = _collect_artifact_paths(contract, artifact_root=artifact_root)
+        destinations = _derive_destination_specs(
+            validated_protocol,
+            contract=contract,
+            artifact_root=artifact_root,
+            artifact_paths=paths,
+        )
+        source_binding = _protocol_object(
+            validated_protocol.get("source_binding"),
+            label="source_binding",
+        )
+        if type(source_binding.get("runnable")) is not bool:
+            raise ArtifactAuthorityStop("protocol source_binding.runnable must be exact bool")
+        result_contract = _protocol_object(
+            validated_protocol.get("result_contract"),
+            label="result_contract",
+        )
+        if result_contract.get("artifact_creation_requires_runnable_source_binding") is not True:
+            raise ArtifactAuthorityStop("protocol does not require runnable artifact creation")
+        claim_boundary = validated_protocol.get("claim_boundary")
+        try:
+            _validate_claim_boundary(claim_boundary)
+            protocol_bytes = _canonical_json_bytes(validated_protocol)
+            source_binding_bytes = _canonical_json_bytes(source_binding)
+            claim_boundary_bytes = _canonical_json_bytes(claim_boundary)
+        except EnvelopeStop as exc:
+            raise ArtifactAuthorityStop("validated protocol authority is not canonical") from exc
+        return cls(
+            repository_root=root,
+            artifact_root=artifact_root,
+            destinations=destinations,
+            protocol_sha256=hashlib.sha256(protocol_bytes).hexdigest(),
+            source_binding_bytes=source_binding_bytes,
+            claim_boundary_bytes=claim_boundary_bytes,
+            source_binding_runnable=source_binding["runnable"],
+            expected_source_bundle_identity_sha256=(expected_source_bundle_identity_sha256),
+        )
+
+    def _require_member(self, relative_path: object) -> str:
+        path = _validate_relative_path(relative_path, label="artifact path")
+        if path not in self._artifact_paths:
+            raise ArtifactPathStop("artifact path is not in the frozen protocol namespace")
+        return path
+
+    def _destination(self, relative_path: object) -> DestinationSpec:
+        member = self._require_member(relative_path)
+        return self._destinations[member]
+
+    def _authorize_json_destination(
+        self,
+        destination: DestinationSpec,
+        *,
+        artifact_id: str | None,
+        encode: bool,
+    ) -> None:
+        if destination.kind is ArtifactDestinationKind.BINARY_CHECKPOINT:
+            raise ArtifactPathStop("binary checkpoint destinations have no JSON codec")
+        if destination.kind is ArtifactDestinationKind.UNFROZEN_RESULT:
+            raise ArtifactAuthorityStop(
+                "artifact destination has no frozen official result descriptor"
+            )
+        expected_id = (
+            RESUME_ARTIFACT_ID
+            if destination.kind is ArtifactDestinationKind.RESUME_MANIFEST
+            else RESULT_ARTIFACT_ID
+        )
+        if artifact_id is not None and artifact_id != expected_id:
+            raise ArtifactPathStop("artifact ID does not match the destination type")
+        if encode and not self._source_binding_runnable:
+            raise ArtifactAuthorityStop(
+                "official artifact encoding requires runnable protocol source binding"
+            )
+
+    def _bind_payload_authorities(self, payload: dict[str, Any]) -> None:
+        if payload["protocol_sha256"] != self._protocol_sha256:
+            raise EnvelopeStop("protocol_sha256 does not bind the validated protocol")
+        if _canonical_json_bytes(payload["source_binding"]) != self._source_binding_bytes:
+            raise EnvelopeStop("source_binding does not bind the validated protocol")
+        if _canonical_json_bytes(payload["claim_boundary"]) != self._claim_boundary_bytes:
+            raise EnvelopeStop("claim_boundary does not bind the validated protocol")
+        if payload["source_bundle_identity_sha256"] != self._expected_source_bundle_identity_sha256:
+            raise EnvelopeStop("source_bundle_identity_sha256 does not bind the external authority")
+
+    def _absolute_member(self, member: str) -> Path:
+        return self._repository_root.joinpath(*member.split("/"))
+
+    def _require_parent_chain(self, member: str, *, create: bool) -> bool:
+        current = self._repository_root
+        for part in member.split("/")[:-1]:
+            current = current / part
+            try:
+                observed = os.lstat(current)
+            except FileNotFoundError:
+                if not create:
+                    return False
+                try:
+                    os.mkdir(current)
+                except FileExistsError:
+                    pass
+                except OSError as exc:
+                    raise ArtifactPathStop(
+                        f"cannot create frozen artifact parent: {current}"
+                    ) from exc
+                try:
+                    observed = os.lstat(current)
+                except OSError as exc:
+                    raise ArtifactPathStop(
+                        f"created artifact parent is unavailable: {current}"
+                    ) from exc
+            except OSError as exc:
+                raise ArtifactPathStop(f"artifact parent is unavailable: {current}") from exc
+            if not _is_plain_directory(observed):
+                raise ArtifactPathStop(f"artifact parent is not a plain directory: {current}")
+        return True
+
+    def prepare_parent(self, relative_path: str) -> Path:
+        """Create only this frozen member's exact missing parent directories."""
+
+        member = self._require_member(relative_path)
+        self._require_parent_chain(member, create=True)
+        return self._absolute_member(member)
+
+    def _plain_file_presence(self, member: str) -> bool:
+        if not self._require_parent_chain(member, create=False):
+            return False
+        destination = self._absolute_member(member)
+        try:
+            observed = os.lstat(destination)
+        except FileNotFoundError:
+            return False
+        except OSError as exc:
+            raise ArtifactPathStop(f"artifact final is unavailable: {destination}") from exc
+        if not _is_plain_regular_file(observed):
+            raise ArtifactPathStop(f"artifact final is not a plain regular file: {destination}")
+        return True
+
+    def _read_bounded_regular_file(self, member: str) -> bytes:
+        if not self._require_parent_chain(member, create=False):
+            raise ArtifactPathStop("artifact parent does not exist")
+        destination = self._absolute_member(member)
+        try:
+            before = os.lstat(destination)
+        except OSError as exc:
+            raise ArtifactPathStop("artifact final is unavailable") from exc
+        if not _is_plain_regular_file(before):
+            raise ArtifactPathStop("artifact final is not a plain regular file")
+        if before.st_size > MAX_ENVELOPE_BYTES:
+            raise ArtifactPathStop("artifact final exceeds the one-mebibyte bound")
+
+        flags = os.O_RDONLY | int(getattr(os, "O_BINARY", 0))
+        flags |= int(getattr(os, "O_NOFOLLOW", 0))
+        try:
+            descriptor = os.open(destination, flags)
+        except OSError as exc:
+            raise ArtifactPathStop("artifact final cannot be opened safely") from exc
+        try:
+            opened = os.fstat(descriptor)
+            if not _is_plain_regular_file(opened):
+                raise ArtifactPathStop("opened artifact is not a plain regular file")
+            if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+                raise ArtifactPathStop("artifact final changed during safe open")
+            chunks = bytearray()
+            while True:
+                chunk = os.read(descriptor, min(65_536, MAX_ENVELOPE_BYTES + 1 - len(chunks)))
+                if not chunk:
+                    break
+                chunks.extend(chunk)
+                if len(chunks) > MAX_ENVELOPE_BYTES:
+                    raise ArtifactPathStop("artifact final exceeds the one-mebibyte bound")
+            after = os.fstat(descriptor)
+            if (after.st_dev, after.st_ino, after.st_size) != (
+                opened.st_dev,
+                opened.st_ino,
+                opened.st_size,
+            ) or len(chunks) != after.st_size:
+                raise ArtifactPathStop("artifact final changed during bounded read")
+            return bytes(chunks)
+        finally:
+            os.close(descriptor)
+
+    def read(self, relative_path: str) -> ArtifactEnvelope:
+        destination = self._destination(relative_path)
+        self._authorize_json_destination(destination, artifact_id=None, encode=False)
+        member = destination.relative_path
+        return self.decode(member, self._read_bounded_regular_file(member))
+
+    def classify_resume_pair(
+        self,
+        checkpoint_relative_path: str,
+        manifest_relative_path: str,
+    ) -> ArtifactPairState:
+        """Classify publication and canonical-read the manifest commit marker.
+
+        COMMITTED means the authority-bound manifest is canonical and both files
+        exist as plain regular files.  Native checkpoint import and semantic
+        validation remain the future transaction/importer's responsibility.
+        """
+
+        checkpoint_destination = self._destination(checkpoint_relative_path)
+        manifest_destination = self._destination(manifest_relative_path)
+        checkpoint = checkpoint_destination.relative_path
+        manifest = manifest_destination.relative_path
+        if (
+            checkpoint_destination.kind is not ArtifactDestinationKind.BINARY_CHECKPOINT
+            or manifest_destination.kind is not ArtifactDestinationKind.RESUME_MANIFEST
+            or checkpoint.removesuffix(".r3ntcp1") != manifest.removesuffix(".resume.json")
+        ):
+            raise ArtifactPathStop("resume pair names do not share one frozen transition")
+        checkpoint_exists = self._plain_file_presence(checkpoint)
+        manifest_exists = self._plain_file_presence(manifest)
+        if not checkpoint_exists and not manifest_exists:
+            return ArtifactPairState.ABSENT
+        if checkpoint_exists and not manifest_exists:
+            raise ArtifactPairStop(ArtifactPairState.CHECKPOINT_ONLY)
+        if not checkpoint_exists and manifest_exists:
+            raise ArtifactPairStop(ArtifactPairState.MANIFEST_ONLY)
+        self.read(manifest)
+        return ArtifactPairState.COMMITTED
+
+    def _encode(self, artifact_id: str, payload: object) -> bytes:
+        if type(payload) is not dict:
+            raise EnvelopeStop("payload must be a JSON object")
+        expected_keys = _payload_keys(artifact_id)
+        _require_exact_keys(payload, expected_keys, label="payload")
+        destination = self._destination(payload["artifact_path"])
+        self._authorize_json_destination(
+            destination,
+            artifact_id=artifact_id,
+            encode=True,
+        )
+        validated_payload = _validate_payload(
+            artifact_id,
+            payload,
+            destination=destination,
+        )
+        self._bind_payload_authorities(validated_payload)
+        payload_bytes = _canonical_json_bytes(validated_payload)
+        value = {
+            "artifact_id": artifact_id,
+            "payload": validated_payload,
+            "payload_sha256": hashlib.sha256(payload_bytes).hexdigest(),
+            "schema_version": 1,
+        }
+        raw = _canonical_json_bytes(value)
+        if len(raw) > MAX_ENVELOPE_BYTES:
+            raise EnvelopeStop("envelope exceeds the one-mebibyte bound")
+        return raw
+
+    def encode_resume(self, payload: dict[str, object]) -> bytes:
+        return self._encode(RESUME_ARTIFACT_ID, payload)
+
+    def encode_result(self, payload: dict[str, object]) -> bytes:
+        return self._encode(RESULT_ARTIFACT_ID, payload)
+
+    def decode(self, relative_path: str, raw: bytes) -> ArtifactEnvelope:
+        destination = self._destination(relative_path)
+        self._authorize_json_destination(destination, artifact_id=None, encode=False)
+        member = destination.relative_path
+        envelope = _decode_canonical_envelope(raw, destination=destination)
+        if envelope.payload["artifact_path"] != member:
+            raise EnvelopeStop("payload artifact_path does not bind the requested member")
+        expected_id = (
+            RESUME_ARTIFACT_ID
+            if destination.kind is ArtifactDestinationKind.RESUME_MANIFEST
+            else RESULT_ARTIFACT_ID
+        )
+        if envelope.artifact_id != expected_id:
+            raise EnvelopeStop("artifact ID does not match the frozen destination type")
+        self._bind_payload_authorities(envelope.payload)
+        return envelope
