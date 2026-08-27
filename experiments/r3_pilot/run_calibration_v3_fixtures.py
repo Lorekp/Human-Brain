@@ -12,11 +12,11 @@ from __future__ import annotations
 import argparse
 import importlib
 import sys
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Sequence
-
+from typing import Any
 
 EXIT_OK = 0
 EXIT_STOP = 2
@@ -53,6 +53,15 @@ def _governing_protocol() -> ModuleType:
     return importlib.import_module("calibration_v3_protocol")
 
 
+def _gate3_authority_module() -> ModuleType:
+    try:
+        if __package__:
+            return importlib.import_module(f"{__package__}.calibration_v3_gate3_authority")
+        return importlib.import_module("calibration_v3_gate3_authority")
+    except ImportError as exc:
+        raise FixtureRunnerStop("governing calibration-v3 Gate3 authority is unavailable") from exc
+
+
 def _source_bundle_identity(repository_root: Path) -> str:
     """Compute the bounded source closure only after protocol validation."""
 
@@ -62,6 +71,20 @@ def _source_bundle_identity(repository_root: Path) -> str:
     except native.NativeBuildError as exc:
         raise FixtureRunnerStop(
             f"procedural runtime source identity is unavailable: {exc}"
+        ) from exc
+
+
+def _source_manifest(
+    repository_root: Path,
+) -> tuple[dict[str, str | int], ...]:
+    """Compute the bounded live source manifest after Gate3 is parsed."""
+
+    native = importlib.import_module("humanbrain.native")
+    try:
+        return native.procedural_runtime_source_manifest(repository_root)
+    except native.NativeBuildError as exc:
+        raise FixtureRunnerStop(
+            f"procedural runtime source manifest is unavailable: {exc}"
         ) from exc
 
 
@@ -78,31 +101,35 @@ def _exact_sha256(label: str, value: object) -> str:
 def _authorize_frozen_plan(
     *,
     governing: ModuleType | None = None,
+    source_manifest: Callable[[Path], tuple[dict[str, str | int], ...]] | None = None,
     source_bundle_identity: Callable[[Path], str] | None = None,
 ) -> FrozenPlanAuthority:
     """Run the only permitted authority sequence, in its frozen order."""
 
     protocol_module = _governing_protocol() if governing is None else governing
     bundle_identity = (
-        _source_bundle_identity
-        if source_bundle_identity is None
-        else source_bundle_identity
+        _source_bundle_identity if source_bundle_identity is None else source_bundle_identity
     )
+    manifest = _source_manifest if source_manifest is None else source_manifest
 
     try:
         protocol = protocol_module.build_protocol()
         protocol_module.validate_protocol(protocol, require_runnable=True)
         binding = protocol["source_binding"]
-        protocol_module.validate_committed_source_blobs(
-            protocol_module.REPO_ROOT, binding
-        )
+        protocol_module.validate_committed_source_blobs(protocol_module.REPO_ROOT, binding)
         protocol_module.validate_source_bytes(protocol_module.REPO_ROOT, binding)
-        protocol_digest = _exact_sha256(
-            "protocol identity", protocol_module.protocol_sha256()
-        )
-        source_digest = _exact_sha256(
-            "source-bundle identity", bundle_identity(protocol_module.REPO_ROOT)
-        )
+        protocol_digest = _exact_sha256("protocol identity", protocol_module.protocol_sha256())
+        gate3 = _gate3_authority_module()
+        try:
+            source_authority = gate3.authorize_gate3_source(
+                protocol_module.REPO_ROOT,
+                binding,
+                live_manifest=manifest,
+                live_bundle_sha256=bundle_identity,
+            )
+        except gate3.Gate3AuthorityError as exc:
+            raise FixtureRunnerStop(str(exc)) from exc
+        source_digest = source_authority.source_bundle_sha256
     except FixtureRunnerStop:
         raise
     except Exception as exc:
@@ -123,9 +150,7 @@ def _execute_frozen_plan(authority: FrozenPlanAuthority) -> int:
     """Future execution seam; unreachable until a later source-bound change."""
 
     del authority
-    raise FixtureRunnerStop(
-        "outcome-bearing calibration-v3 execution remains disabled pre-outcome"
-    )
+    raise FixtureRunnerStop("outcome-bearing calibration-v3 execution remains disabled pre-outcome")
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:

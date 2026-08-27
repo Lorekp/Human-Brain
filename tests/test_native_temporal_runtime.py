@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import ctypes
 import copy
+import ctypes
 import dataclasses
 import hashlib
 import importlib
 import inspect
+import json
 import math
 import mmap
 import os
@@ -18,10 +19,15 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-
-import pytest
+from types import SimpleNamespace
 
 import humanbrain.native_temporal_runtime as runtime_adapter
+import pytest
+from experiments.r3_pilot.calibration_v3_protocol import (
+    ProtocolError,
+    canonical_source_bytes,
+)
+from humanbrain.native import NativeBuildError, NativeLibraryIdentity
 from humanbrain.native_temporal_runtime import (
     NativeTemporalCircuit,
     NativeTemporalCircuitConfig,
@@ -39,8 +45,69 @@ from humanbrain.native_temporal_runtime import (
     TemporalPlasticityPolicy,
     TemporalStepMode,
 )
-from humanbrain.native import NativeBuildError, NativeLibraryIdentity
-from experiments.r3_pilot.calibration_v3_protocol import ProtocolError
+
+GATE3_PROTOCOL_PATH = "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json"
+GATE3_SOURCE_FRAMING = (
+    "humanbrain-procedural-runtime-source-v1: ordered UTF-8 path length/path "
+    "plus uint64 byte length/raw bytes"
+)
+SYNTHETIC_SOURCE_MANIFEST = (
+    {"path": "src/synthetic.rs", "size": 3, "sha256": "44" * 32},
+)
+
+
+def _synthetic_authority_governing(
+    calls: list[str],
+    repository_root: Path,
+    *,
+    declared_bundle_sha256: str = "22" * 32,
+) -> SimpleNamespace:
+    gate3_path = repository_root.joinpath(*GATE3_PROTOCOL_PATH.split("/"))
+    gate3_path.parent.mkdir(parents=True)
+    gate3_bytes = json.dumps(
+        {
+            "source_binding": {
+                "framing": GATE3_SOURCE_FRAMING,
+                "files": list(SYNTHETIC_SOURCE_MANIFEST),
+                "bundle_sha256": declared_bundle_sha256,
+                "limits": {
+                    "maximum_file_bytes": 1 << 20,
+                    "maximum_aggregate_bytes": 32 << 20,
+                    "actual_aggregate_bytes": 3,
+                },
+            }
+        }
+    ).encode("utf-8")
+    gate3_path.write_bytes(gate3_bytes)
+    binding = {
+        "files": {
+            GATE3_PROTOCOL_PATH: {
+                "commit": "aa" * 20,
+                "sha256": hashlib.sha256(
+                    canonical_source_bytes(gate3_bytes)
+                ).hexdigest(),
+            }
+        },
+        "governing_gate3_path": GATE3_PROTOCOL_PATH,
+        "runnable": True,
+    }
+    protocol = {"source_binding": binding}
+
+    return SimpleNamespace(
+        REPO_ROOT=repository_root,
+        build_protocol=lambda: calls.append("build") or protocol,
+        validate_protocol=lambda value, *, require_runnable: calls.append(
+            f"protocol:{value is protocol}:{require_runnable}"
+        ),
+        validate_committed_source_blobs=lambda _root, value: calls.append(
+            f"committed:{value is binding}"
+        ),
+        validate_source_bytes=lambda _root, value: calls.append(
+            f"live:{value is binding}"
+        ),
+        protocol_sha256=lambda: calls.append("protocol-digest") or "11" * 32,
+        source_binding=binding,
+    )
 
 
 def _tiny_definition() -> NativeTemporalCircuitDefinition:
@@ -708,41 +775,25 @@ def test_frozen_abi_rejects_little_endian_arm64(
 
 def test_fresh_authority_validates_protocol_commit_and_live_bytes_before_digests(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     calls: list[str] = []
-    binding = {"files": {}}
-    protocol = {"source_binding": binding}
-    governing = importlib.import_module(
-        "experiments.r3_pilot.calibration_v3_protocol"
-    )
-    monkeypatch.setattr(runtime_adapter, "_governing_protocol", lambda: governing)
+    governing = _synthetic_authority_governing(calls, tmp_path)
+    gate3_path = tmp_path.joinpath(*GATE3_PROTOCOL_PATH.split("/"))
+    original_open = Path.open
 
+    def observed_open(path: Path, *args: object, **kwargs: object) -> object:
+        if path == gate3_path:
+            calls.append("gate3-read")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", observed_open)
+    monkeypatch.setattr(runtime_adapter, "_governing_protocol", lambda: governing)
     monkeypatch.setattr(
-        governing,
-        "build_protocol",
-        lambda: calls.append("build") or protocol,
-    )
-    monkeypatch.setattr(
-        governing,
-        "validate_protocol",
-        lambda value, *, require_runnable: calls.append(
-            f"protocol:{value is protocol}:{require_runnable}"
-        ),
-    )
-    monkeypatch.setattr(
-        governing,
-        "validate_committed_source_blobs",
-        lambda root, value: calls.append(f"committed:{value is binding}"),
-    )
-    monkeypatch.setattr(
-        governing,
-        "validate_source_bytes",
-        lambda root, value: calls.append(f"live:{value is binding}"),
-    )
-    monkeypatch.setattr(
-        governing,
-        "protocol_sha256",
-        lambda: calls.append("protocol-digest") or "11" * 32,
+        runtime_adapter,
+        "_procedural_runtime_source_manifest",
+        lambda root: calls.append("source-manifest") or SYNTHETIC_SOURCE_MANIFEST,
+        raising=False,
     )
     monkeypatch.setattr(
         runtime_adapter,
@@ -758,10 +809,139 @@ def test_fresh_authority_validates_protocol_commit_and_live_bytes_before_digests
         "committed:True",
         "live:True",
         "protocol-digest",
+        "gate3-read",
+        "source-manifest",
         "source-digest",
     ]
     assert authority.protocol_identity_sha256 == b"\x11" * 32
     assert authority.source_bundle_identity_sha256 == b"\x22" * 32
+
+
+def test_fresh_authority_rejects_live_bundle_not_approved_by_nested_gate3(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+    governing = _synthetic_authority_governing(
+        calls,
+        tmp_path,
+        declared_bundle_sha256="33" * 32,
+    )
+    monkeypatch.setattr(runtime_adapter, "_governing_protocol", lambda: governing)
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_procedural_runtime_source_manifest",
+        lambda _root: SYNTHETIC_SOURCE_MANIFEST,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_procedural_runtime_source_bundle_sha256",
+        lambda _root: "22" * 32,
+    )
+
+    with pytest.raises(RuntimeError, match=r"Gate3.*live source-bundle"):
+        runtime_adapter._fresh_authority()
+
+
+def test_fresh_authority_rejects_live_manifest_before_computing_bundle_digest(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+    governing = _synthetic_authority_governing(calls, tmp_path)
+    mismatched_manifest = (
+        {"path": "src/synthetic.rs", "size": 3, "sha256": "55" * 32},
+    )
+    monkeypatch.setattr(runtime_adapter, "_governing_protocol", lambda: governing)
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_procedural_runtime_source_manifest",
+        lambda _root: mismatched_manifest,
+    )
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_procedural_runtime_source_bundle_sha256",
+        lambda _root: pytest.fail(
+            "bundle digest must not run after a manifest mismatch"
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="Gate3 source manifest"):
+        runtime_adapter._fresh_authority()
+
+
+def test_fresh_authority_surfaces_duplicate_gate3_json_before_live_source(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+    governing = _synthetic_authority_governing(calls, tmp_path)
+    gate3_path = tmp_path.joinpath(*GATE3_PROTOCOL_PATH.split("/"))
+    manifest_json = json.dumps(list(SYNTHETIC_SOURCE_MANIFEST), separators=(",", ":"))
+    gate3_path.write_text(
+        "{"
+        '"source_binding":{'
+        f'"framing":"{GATE3_SOURCE_FRAMING}",'
+        f'"files":{manifest_json},'
+        f'"bundle_sha256":"{"22" * 32}",'
+        f'"bundle_sha256":"{"22" * 32}",'
+        '"limits":{'
+        '"maximum_file_bytes":1048576,'
+        '"maximum_aggregate_bytes":33554432,'
+        '"actual_aggregate_bytes":3'
+        "}}}",
+        encoding="utf-8",
+    )
+    governing.source_binding["files"][GATE3_PROTOCOL_PATH]["sha256"] = hashlib.sha256(
+        canonical_source_bytes(gate3_path.read_bytes())
+    ).hexdigest()
+    monkeypatch.setattr(runtime_adapter, "_governing_protocol", lambda: governing)
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_procedural_runtime_source_manifest",
+        lambda _root: pytest.fail(
+            "live source manifest must not run after duplicate Gate3 JSON"
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_procedural_runtime_source_bundle_sha256",
+        lambda _root: pytest.fail(
+            "live source digest must not run after duplicate Gate3 JSON"
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="duplicate JSON key"):
+        runtime_adapter._fresh_authority()
+
+
+def test_fresh_authority_rejects_oversized_gate3_before_live_source_computation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+    governing = _synthetic_authority_governing(calls, tmp_path)
+    gate3_path = tmp_path.joinpath(*GATE3_PROTOCOL_PATH.split("/"))
+    gate3_path.write_bytes(b" " * ((1 << 20) + 1))
+    monkeypatch.setattr(runtime_adapter, "_governing_protocol", lambda: governing)
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_procedural_runtime_source_manifest",
+        lambda _root: pytest.fail(
+            "live source manifest must not run after an oversized Gate3 file"
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_procedural_runtime_source_bundle_sha256",
+        lambda _root: pytest.fail(
+            "live source digest must not run after an oversized Gate3 file"
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="Gate3 file size is outside"):
+        runtime_adapter._fresh_authority()
 
 
 def test_current_no_go_fails_before_native_load(monkeypatch: pytest.MonkeyPatch) -> None:

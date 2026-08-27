@@ -32,8 +32,8 @@ from humanbrain.native import (
     _source_digest as _current_native_source_digest,
     loaded_library_identity as _loaded_library_identity,
     procedural_runtime_source_bundle_sha256 as _procedural_runtime_source_bundle_sha256,
+    procedural_runtime_source_manifest as _procedural_runtime_source_manifest,
 )
-
 
 _UINT8_MAX: Final = (1 << 8) - 1
 _UINT16_MAX: Final = (1 << 16) - 1
@@ -52,6 +52,9 @@ _CHECKPOINT_LOGICAL_STATE_DOMAIN: Final = (
 _MAX_IMMUTABLE_PAYLOAD_BYTES: Final = 1 << 20
 _GOVERNING_PROTOCOL_MODULE: Final = (
     "experiments.r3_pilot.calibration_v3_protocol"
+)
+_GATE3_AUTHORITY_MODULE: Final = (
+    "experiments.r3_pilot.calibration_v3_gate3_authority"
 )
 
 
@@ -848,9 +851,21 @@ def _fresh_authority() -> _FreshAuthority:
     protocol_digest = _sha256_bytes(
         "protocol identity", governing.protocol_sha256()
     )
+    try:
+        gate3 = importlib.import_module(_GATE3_AUTHORITY_MODULE)
+    except ImportError as exc:
+        raise RuntimeError(
+            "governing calibration-v3 Gate3 authority is unavailable"
+        ) from exc
+    source_authority = gate3.authorize_gate3_source(
+        governing.REPO_ROOT,
+        binding,
+        live_manifest=_procedural_runtime_source_manifest,
+        live_bundle_sha256=_procedural_runtime_source_bundle_sha256,
+    )
     source_digest = _sha256_bytes(
         "procedural runtime source identity",
-        _procedural_runtime_source_bundle_sha256(governing.REPO_ROOT),
+        source_authority.source_bundle_sha256,
     )
     return _FreshAuthority(protocol_digest, source_digest)
 
