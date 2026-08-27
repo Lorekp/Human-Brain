@@ -5,7 +5,7 @@ use std::{
 };
 
 use super::{
-    CleanupErrors, PublicationCompletion, PublicationError, TempName,
+    CleanupErrors, PublicationCompletion, PublicationError, PublicationWriteError, TempName,
     ValidatedCheckpointDestination, ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY,
     ERROR_STAGE_FILE_CLOSE, ERROR_STAGE_FILE_SYNC, ERROR_STAGE_PARENT_IDENTITY,
     ERROR_STAGE_PARENT_OPEN, ERROR_STAGE_PARENT_SYNC, ERROR_STAGE_TEMP_CLEANUP,
@@ -14,7 +14,6 @@ use super::{
     POLICY_INVALID_PARENT, POLICY_TEMP_IDENTITY_CHANGED, POLICY_TEMP_NAME_EXHAUSTED,
     POLICY_UNSUPPORTED_FILESYSTEM,
 };
-use crate::temporal_runtime::checkpoint::PreparedCheckpointV1Export;
 
 const EXT4_SUPER_MAGIC: u64 = 0x0000_0000_0000_ef53;
 const XFS_SUPER_MAGIC: u64 = 0x0000_0000_5846_5342;
@@ -75,11 +74,15 @@ impl CName {
     }
 }
 
-pub(super) fn publish(
-    prepared: &PreparedCheckpointV1Export<'_>,
+pub(super) fn publish<F>(
+    checkpoint_bytes: u64,
+    temp_prefix: &[u8],
     destination: &ValidatedCheckpointDestination,
-) -> PublicationCompletion {
-    let checkpoint_bytes = prepared.encoded_len();
+    write_payload: F,
+) -> PublicationCompletion
+where
+    F: FnOnce(&mut File) -> Result<(), PublicationWriteError>,
+{
     let parent = match open_stable_parent(destination.parent_utf8()) {
         Ok(parent) => parent,
         Err(error) => {
@@ -123,6 +126,7 @@ pub(super) fn publish(
     let (mut temp_fd, temp_name, temp_c_name) = match create_owned_temp(
         parent.raw,
         destination.final_basename_utf8(),
+        temp_prefix,
         name_max as usize,
     ) {
         Ok(created) => created,
@@ -161,7 +165,7 @@ pub(super) fn publish(
 
     let raw = temp_fd.take();
     let mut file = unsafe { File::from_raw_fd(raw) };
-    if let Err(error) = prepared.encode_into(&mut file) {
+    if let Err(error) = write_payload(&mut file) {
         let encoded_bytes = observed_file_length(&file, checkpoint_bytes);
         let mut cleanup = CleanupErrors::new();
         close_file_for_cleanup(file, &mut cleanup);
@@ -170,7 +174,7 @@ pub(super) fn publish(
         {
             cleanup.push(sync_error);
         }
-        return PublicationCompletion::encode_failure(
+        return PublicationCompletion::write_failure(
             error,
             cleanup,
             temp_name.pid,
@@ -368,10 +372,11 @@ fn validate_local_filesystem(parent_fd: RawFd) -> Result<(), PublicationError> {
 fn create_owned_temp(
     parent_fd: RawFd,
     final_basename: &[u8],
+    temp_prefix: &[u8],
     name_max: usize,
 ) -> Result<(OwnedFd, TempName, CName), PublicationError> {
     for _ in 0..TempName::max_attempts() {
-        let temp_name = TempName::next(final_basename);
+        let temp_name = TempName::next(final_basename, temp_prefix);
         if temp_name.as_bytes().len() > name_max {
             return Err(PublicationError::policy(
                 ERROR_STAGE_TEMP_CREATE,

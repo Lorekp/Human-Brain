@@ -37,14 +37,16 @@ use super::{
         ValidatedCheckpointV1RuntimeFactory,
     },
     checkpoint_publisher::{
-        publish_prepared_checkpoint_v1, validate_destination_v1, DestinationInputError,
-        PublicationCompletion, PublicationError, CLEANUP_CLEAN, CLEANUP_NOT_APPLICABLE,
-        CLEANUP_ORPHANED, ERROR_DOMAIN_ENCODER, ERROR_DOMAIN_IO_WITHOUT_OS_CODE, ERROR_DOMAIN_NONE,
-        ERROR_DOMAIN_POLICY, ERROR_DOMAIN_POSIX, ERROR_DOMAIN_WIN32, ERROR_STAGE_ENCODE,
-        ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY, ERROR_STAGE_FILE_CLOSE,
-        ERROR_STAGE_FILE_SYNC, ERROR_STAGE_NONE, ERROR_STAGE_PARENT_IDENTITY,
-        ERROR_STAGE_PARENT_OPEN, ERROR_STAGE_PARENT_SYNC, ERROR_STAGE_TEMP_CLEANUP,
-        ERROR_STAGE_TEMP_CREATE, ERROR_STAGE_TEMP_IDENTITY, OUTCOME_COLLISION,
+        prepare_immutable_bytes_v1, publish_prepared_checkpoint_v1,
+        publish_prepared_immutable_bytes_v1, validate_destination_v1, DestinationInputError,
+        ImmutablePayloadInputError, PublicationCompletion, PublicationError, CLEANUP_CLEAN,
+        CLEANUP_NOT_APPLICABLE, CLEANUP_ORPHANED, ERROR_DOMAIN_ENCODER,
+        ERROR_DOMAIN_IO_WITHOUT_OS_CODE, ERROR_DOMAIN_NONE, ERROR_DOMAIN_POLICY,
+        ERROR_DOMAIN_POSIX, ERROR_DOMAIN_WIN32, ERROR_STAGE_ENCODE, ERROR_STAGE_EXCLUSIVE_PUBLISH,
+        ERROR_STAGE_FILESYSTEM_POLICY, ERROR_STAGE_FILE_CLOSE, ERROR_STAGE_FILE_SYNC,
+        ERROR_STAGE_NONE, ERROR_STAGE_PARENT_IDENTITY, ERROR_STAGE_PARENT_OPEN,
+        ERROR_STAGE_PARENT_SYNC, ERROR_STAGE_TEMP_CLEANUP, ERROR_STAGE_TEMP_CREATE,
+        ERROR_STAGE_TEMP_IDENTITY, MAX_IMMUTABLE_PAYLOAD_BYTES, OUTCOME_COLLISION,
         OUTCOME_DURABLE_PUBLISHED, OUTCOME_NONE, OUTCOME_NOT_PUBLISHED,
         OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
     },
@@ -55,7 +57,9 @@ use super::{
 use crate::temporal_physics::SpikeEvent;
 
 #[cfg(test)]
-use super::checkpoint_publisher::fail_next_destination_allocation;
+use super::checkpoint_publisher::{
+    fail_next_destination_allocation, fail_next_immutable_payload_allocation,
+};
 
 pub const TEMPORAL_RUNTIME_OK: u32 = 0;
 pub const TEMPORAL_RUNTIME_INVALID_ARGUMENT: u32 = 1;
@@ -224,6 +228,18 @@ pub struct TemporalCheckpointPathV1Request {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalImmutableBytesPathV1Request {
+    pub parent_utf8: *const u8,
+    pub parent_len: u64,
+    pub final_basename_utf8: *const u8,
+    pub final_basename_len: u64,
+    pub payload: *const u8,
+    pub payload_len: u64,
+    pub reserved_zero: [u8; 8],
+}
+
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TemporalCheckpointPublicationErrorV1 {
     pub stage: u16,
@@ -259,7 +275,9 @@ pub struct TemporalCheckpointPublicationReportV1 {
     pub cleanup_errors: [TemporalCheckpointPublicationErrorV1; 4],
     pub owned_temp_pid: u32,
     pub owned_temp_nonce: u64,
-    /// Exact canonical checkpoint length prepared under the runtime lock.
+    /// Exact payload length. Checkpoint calls provide the canonical length
+    /// prepared under the runtime lock; immutable-byte calls provide the
+    /// bounded owned-copy length.
     pub checkpoint_bytes: u64,
     /// Best-effort temporary-file length, capped at `checkpoint_bytes`.
     /// Zero means no trustworthy observation, not necessarily zero bytes.
@@ -289,8 +307,10 @@ impl TemporalCheckpointPublicationReportV1 {
         self.cleanup_errors = completion.cleanup_errors.errors().map(Into::into);
         self.owned_temp_pid = completion.owned_temp_pid;
         self.owned_temp_nonce = completion.owned_temp_nonce;
-        self.checkpoint_bytes = completion.checkpoint_bytes;
-        self.encoded_bytes = completion.encoded_bytes;
+        // Preserve the committed checkpoint report ABI: generic payload and
+        // write lengths occupy the historical length fields on the wire.
+        self.checkpoint_bytes = completion.payload_bytes;
+        self.encoded_bytes = completion.written_bytes;
     }
 }
 
@@ -1470,7 +1490,174 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_export_checkpoint_p
     report.required = prepared.encoded_len();
 
     let completion = publish_prepared_checkpoint_v1(&prepared, &destination);
-    report.observed = completion.encoded_bytes;
+    report.observed = completion.written_bytes;
+    publication_report(publication_out).fill(completion);
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+/// Publish one bounded opaque byte string with the same exclusive durable
+/// filesystem contract as checkpoint publication.
+///
+/// This raw symbol validates transport only. The supported Python capability
+/// performs the live protocol/source authority checks before reaching it.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. All three counted inputs
+/// are immutable for the duration of this call and pairwise disjoint from the
+/// request and output records.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_publish_immutable_bytes_path_v1(
+    request: *const TemporalImmutableBytesPathV1Request,
+    publication_out: *mut TemporalCheckpointPublicationReportV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(publication_out.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "publication output is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        publication_out.cast(),
+        size_of::<TemporalCheckpointPublicationReportV1>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "publication and runtime reports overlap",
+        );
+    }
+    let initialized = begin_publication_report(publication_out);
+    debug_assert!(initialized);
+    if !fixed_pointer_is_valid(request) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "immutable-byte request is null or misaligned",
+        );
+    }
+
+    let fixed_regions = [
+        RawRegion {
+            pointer: request.cast(),
+            byte_count: size_of::<TemporalImmutableBytesPathV1Request>(),
+        },
+        RawRegion {
+            pointer: publication_out.cast(),
+            byte_count: size_of::<TemporalCheckpointPublicationReportV1>(),
+        },
+        RawRegion {
+            pointer: report_out.cast(),
+            byte_count: size_of::<TemporalCircuitReportV1>(),
+        },
+    ];
+    if !raw_regions_are_disjoint(&fixed_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "immutable-byte fixed regions overlap",
+        );
+    }
+
+    let request_value = request.read();
+    if request_value.reserved_zero != [0; 8] {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "immutable-byte request reserved bytes must be zero",
+        );
+    }
+    let Some(parent_len) = counted_region(request_value.parent_utf8, request_value.parent_len)
+    else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "immutable-byte parent path geometry is invalid",
+        );
+    };
+    let Some(final_basename_len) = counted_region(
+        request_value.final_basename_utf8,
+        request_value.final_basename_len,
+    ) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "immutable-byte final basename geometry is invalid",
+        );
+    };
+    let Some(payload_len) = counted_region(request_value.payload, request_value.payload_len) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "immutable-byte payload geometry is invalid",
+        );
+    };
+    if !(1..=MAX_IMMUTABLE_PAYLOAD_BYTES).contains(&payload_len) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "immutable-byte payload length is outside the bounded range",
+        );
+    }
+    let all_regions = [
+        fixed_regions[0],
+        fixed_regions[1],
+        fixed_regions[2],
+        RawRegion {
+            pointer: request_value.parent_utf8,
+            byte_count: parent_len,
+        },
+        RawRegion {
+            pointer: request_value.final_basename_utf8,
+            byte_count: final_basename_len,
+        },
+        RawRegion {
+            pointer: request_value.payload,
+            byte_count: payload_len,
+        },
+    ];
+    if !raw_regions_are_disjoint(&all_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "immutable-byte request regions overlap",
+        );
+    }
+
+    let parent_utf8 = foreign_bytes(request_value.parent_utf8, parent_len);
+    let final_basename_utf8 = foreign_bytes(request_value.final_basename_utf8, final_basename_len);
+    let destination = match validate_destination_v1(parent_utf8, final_basename_utf8) {
+        Ok(destination) => destination,
+        Err(DestinationInputError::Invalid) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "immutable-byte destination is invalid",
+            )
+        }
+        Err(DestinationInputError::Allocation) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "immutable-byte destination copy allocation failed",
+            )
+        }
+    };
+    let payload = foreign_bytes(request_value.payload, payload_len);
+    let prepared = match prepare_immutable_bytes_v1(payload) {
+        Ok(prepared) => prepared,
+        Err(ImmutablePayloadInputError::Invalid) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "immutable-byte payload is invalid",
+            )
+        }
+        Err(ImmutablePayloadInputError::Allocation) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "immutable-byte payload copy allocation failed",
+            )
+        }
+    };
+    report.required = payload_len as u64;
+    let completion = publish_prepared_immutable_bytes_v1(&prepared, &destination);
+    report.observed = completion.written_bytes;
     publication_report(publication_out).fill(completion);
     report.finish(TEMPORAL_RUNTIME_OK, "")
 }
@@ -1623,6 +1810,34 @@ mod tests {
         assert_eq!(
             offset_of!(TemporalCheckpointPathV1Request, reserved_zero),
             32
+        );
+
+        assert_eq!(size_of::<TemporalImmutableBytesPathV1Request>(), 56);
+        assert_eq!(align_of::<TemporalImmutableBytesPathV1Request>(), 8);
+        assert_eq!(
+            offset_of!(TemporalImmutableBytesPathV1Request, parent_utf8),
+            0
+        );
+        assert_eq!(
+            offset_of!(TemporalImmutableBytesPathV1Request, parent_len),
+            8
+        );
+        assert_eq!(
+            offset_of!(TemporalImmutableBytesPathV1Request, final_basename_utf8),
+            16
+        );
+        assert_eq!(
+            offset_of!(TemporalImmutableBytesPathV1Request, final_basename_len),
+            24
+        );
+        assert_eq!(offset_of!(TemporalImmutableBytesPathV1Request, payload), 32);
+        assert_eq!(
+            offset_of!(TemporalImmutableBytesPathV1Request, payload_len),
+            40
+        );
+        assert_eq!(
+            offset_of!(TemporalImmutableBytesPathV1Request, reserved_zero),
+            48
         );
 
         assert_eq!(size_of::<TemporalCheckpointPublicationErrorV1>(), 8);
@@ -3390,6 +3605,213 @@ mod tests {
 
             humanbrain_temporal_circuit_runtime_destroy(handle);
         }
+    }
+
+    #[test]
+    fn immutable_bytes_publication_rejects_invalid_transport_with_zero_outcome() {
+        let parent = b"C:\\unused-parent";
+        let basename = b"result.json";
+        let payload = b"{}";
+        let request = TemporalImmutableBytesPathV1Request {
+            parent_utf8: parent.as_ptr(),
+            parent_len: parent.len() as u64,
+            final_basename_utf8: basename.as_ptr(),
+            final_basename_len: basename.len() as u64,
+            payload: payload.as_ptr(),
+            payload_len: payload.len() as u64,
+            reserved_zero: [1; 8],
+        };
+        let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+        let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+
+        unsafe {
+            assert_eq!(
+                humanbrain_temporal_publish_immutable_bytes_path_v1(
+                    &request,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+
+            let zero_payload = TemporalImmutableBytesPathV1Request {
+                payload: ptr::null(),
+                payload_len: 0,
+                reserved_zero: [0; 8],
+                ..request
+            };
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_publish_immutable_bytes_path_v1(
+                    &zero_payload,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+
+            let overlapping_payload = TemporalImmutableBytesPathV1Request {
+                payload: parent.as_ptr(),
+                payload_len: 1,
+                reserved_zero: [0; 8],
+                ..request
+            };
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_publish_immutable_bytes_path_v1(
+                    &overlapping_payload,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+
+            let oversized_payload = TemporalImmutableBytesPathV1Request {
+                payload_len: (MAX_IMMUTABLE_PAYLOAD_BYTES as u64) + 1,
+                reserved_zero: [0; 8],
+                ..request
+            };
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_publish_immutable_bytes_path_v1(
+                    &oversized_payload,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+        }
+    }
+
+    #[test]
+    fn immutable_payload_copy_allocation_failure_precedes_filesystem_access() {
+        let parent = b"C:\\path-does-not-need-to-exist";
+        let basename = b"result.json";
+        let payload = b"{}";
+        let request = TemporalImmutableBytesPathV1Request {
+            parent_utf8: parent.as_ptr(),
+            parent_len: parent.len() as u64,
+            final_basename_utf8: basename.as_ptr(),
+            final_basename_len: basename.len() as u64,
+            payload: payload.as_ptr(),
+            payload_len: payload.len() as u64,
+            reserved_zero: [0; 8],
+        };
+        let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+        let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+
+        fail_next_immutable_payload_allocation();
+        unsafe {
+            assert_eq!(
+                humanbrain_temporal_publish_immutable_bytes_path_v1(
+                    &request,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+            assert_eq!(report.assume_init().required, 0);
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn ntfs_immutable_bytes_publication_is_exclusive_and_bit_exact() {
+        use std::{
+            fs,
+            time::{SystemTime, UNIX_EPOCH},
+        };
+
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let parent = std::env::temp_dir().join(format!(
+            "humanbrain-bytes-publisher-test-{}-{unique}",
+            std::process::id()
+        ));
+        fs::create_dir(&parent).unwrap();
+        let parent_utf8 = parent.to_str().unwrap().as_bytes();
+        let basename = b"result.json";
+        let final_path = parent.join("result.json");
+        let payload = b"{\"completed\":true,\"opaque\":\"\\u0000\"}\0\xff";
+        let request = TemporalImmutableBytesPathV1Request {
+            parent_utf8: parent_utf8.as_ptr(),
+            parent_len: parent_utf8.len() as u64,
+            final_basename_utf8: basename.as_ptr(),
+            final_basename_len: basename.len() as u64,
+            payload: payload.as_ptr(),
+            payload_len: payload.len() as u64,
+            reserved_zero: [0; 8],
+        };
+
+        unsafe {
+            let sentinel = b"preexisting-sentinel-must-not-be-overwritten";
+            fs::write(&final_path, sentinel).unwrap();
+            let mut collision = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_publish_immutable_bytes_path_v1(
+                    &request,
+                    collision.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            let collision = collision.assume_init();
+            assert_eq!(collision.outcome, TEMPORAL_CHECKPOINT_COLLISION);
+            assert_eq!(collision.checkpoint_bytes, payload.len() as u64);
+            assert_eq!(collision.encoded_bytes, payload.len() as u64);
+            assert_eq!(fs::read(&final_path).unwrap(), sentinel);
+            fs::remove_file(&final_path).unwrap();
+
+            let mut published = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_publish_immutable_bytes_path_v1(
+                    &request,
+                    published.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            let published = published.assume_init();
+            assert_eq!(published.outcome, TEMPORAL_CHECKPOINT_DURABLE_PUBLISHED);
+            assert_eq!(published.checkpoint_bytes, payload.len() as u64);
+            assert_eq!(published.encoded_bytes, payload.len() as u64);
+            assert_eq!(fs::read(&final_path).unwrap(), payload);
+        }
+
+        assert!(fs::read_dir(&parent).unwrap().all(|entry| !entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".humanbrain-bytes-v1-")));
+        fs::remove_file(final_path).unwrap();
+        fs::remove_dir(parent).unwrap();
     }
 
     #[cfg(windows)]

@@ -1,12 +1,14 @@
-//! Exclusive, no-overwrite publication of one prepared temporal checkpoint.
+//! Exclusive, no-overwrite publication of prepared immutable payloads.
 //!
-//! The checkpoint codec owns canonical bytes.  This module owns only the
-//! destination namespace, durability boundary, and the four publication
-//! outcomes.  It deliberately exposes no replace, copy, retry, or fallback
-//! option.
+//! The checkpoint codec and bounded byte capability own their payload bytes.
+//! This module owns only the destination namespace, durability boundary, and
+//! the four publication outcomes. It deliberately exposes no replace, retry,
+//! or fallback option.
 
 use std::{
+    fs::File,
     io,
+    io::Write,
     sync::atomic::{AtomicU64, Ordering},
 };
 
@@ -62,10 +64,12 @@ pub(crate) const POLICY_ALLOCATION_FAILED: u32 = 9;
 const MAX_PATH_BYTES: usize = 32 * 1024;
 const MAX_BASENAME_BYTES: usize = 255;
 const MAX_TEMP_ATTEMPTS: usize = 256;
-const TEMP_PREFIX: &[u8] = b".humanbrain-ckpt-v1-";
+const CHECKPOINT_TEMP_PREFIX: &[u8] = b".humanbrain-ckpt-v1-";
+const IMMUTABLE_BYTES_TEMP_PREFIX: &[u8] = b".humanbrain-bytes-v1-";
 const TEMP_SUFFIX: &[u8] = b".tmp";
 const TEMP_NAME_CAPACITY: usize = 64;
 const CLEANUP_ERROR_CAPACITY: usize = 4;
+pub(crate) const MAX_IMMUTABLE_PAYLOAD_BYTES: usize = 1 << 20;
 
 static NEXT_TEMP_NONCE: AtomicU64 = AtomicU64::new(0);
 
@@ -161,11 +165,11 @@ pub(crate) struct PublicationCompletion {
     pub(crate) cleanup_errors: CleanupErrors,
     pub(crate) owned_temp_pid: u32,
     pub(crate) owned_temp_nonce: u64,
-    pub(crate) checkpoint_bytes: u64,
-    // Best-effort temporary-file length, capped at checkpoint_bytes.  Zero
+    pub(crate) payload_bytes: u64,
+    // Best-effort temporary-file length, capped at payload_bytes. Zero
     // means no trustworthy length was observable; it never attests that a
-    // partial encoding is canonical.
-    pub(crate) encoded_bytes: u64,
+    // partial write is canonical.
+    pub(crate) written_bytes: u64,
 }
 
 impl PublicationCompletion {
@@ -175,8 +179,8 @@ impl PublicationCompletion {
         cleanup_errors: CleanupErrors,
         owned_temp_pid: u32,
         owned_temp_nonce: u64,
-        checkpoint_bytes: u64,
-        encoded_bytes: u64,
+        payload_bytes: u64,
+        written_bytes: u64,
     ) -> Self {
         Self {
             outcome,
@@ -185,47 +189,85 @@ impl PublicationCompletion {
             cleanup_errors,
             owned_temp_pid,
             owned_temp_nonce,
-            checkpoint_bytes,
-            encoded_bytes,
+            payload_bytes,
+            written_bytes,
         }
     }
 
     pub(crate) const fn without_temp(
         outcome: u16,
         error: PublicationError,
-        checkpoint_bytes: u64,
+        payload_bytes: u64,
     ) -> Self {
-        let mut completion = Self::terminal(
-            outcome,
-            error,
-            CleanupErrors::new(),
-            0,
-            0,
-            checkpoint_bytes,
-            0,
-        );
+        let mut completion =
+            Self::terminal(outcome, error, CleanupErrors::new(), 0, 0, payload_bytes, 0);
         completion.temp_cleanup = CLEANUP_NOT_APPLICABLE;
         completion
     }
 
-    pub(crate) fn encode_failure(
-        error: CheckpointV1EncodeError,
+    pub(crate) fn write_failure(
+        error: PublicationWriteError,
         cleanup_errors: CleanupErrors,
         pid: u32,
         nonce: u64,
-        checkpoint_bytes: u64,
-        encoded_bytes: u64,
+        payload_bytes: u64,
+        written_bytes: u64,
     ) -> Self {
         Self::terminal(
             OUTCOME_NOT_PUBLISHED,
-            encode_publication_error(&error),
+            publication_write_error(&error),
             cleanup_errors,
             pid,
             nonce,
-            checkpoint_bytes,
-            encoded_bytes,
+            payload_bytes,
+            written_bytes,
         )
     }
+}
+
+pub(crate) enum PublicationWriteError {
+    Checkpoint(CheckpointV1EncodeError),
+    Bytes(io::Error),
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub(crate) enum ImmutablePayloadInputError {
+    Invalid,
+    Allocation,
+}
+
+pub(crate) struct PreparedImmutableBytes {
+    bytes: Vec<u8>,
+}
+
+impl PreparedImmutableBytes {
+    fn payload_len(&self) -> u64 {
+        self.bytes.len() as u64
+    }
+
+    fn write_into(&self, file: &mut File) -> Result<(), PublicationWriteError> {
+        file.write_all(&self.bytes)
+            .and_then(|()| file.flush())
+            .map_err(PublicationWriteError::Bytes)
+    }
+}
+
+pub(crate) fn prepare_immutable_bytes_v1(
+    payload: &[u8],
+) -> Result<PreparedImmutableBytes, ImmutablePayloadInputError> {
+    if payload.is_empty() || payload.len() > MAX_IMMUTABLE_PAYLOAD_BYTES {
+        return Err(ImmutablePayloadInputError::Invalid);
+    }
+    #[cfg(test)]
+    if FAIL_NEXT_IMMUTABLE_PAYLOAD_ALLOCATION.with(|fail| fail.replace(false)) {
+        return Err(ImmutablePayloadInputError::Allocation);
+    }
+    let mut bytes = Vec::new();
+    bytes
+        .try_reserve_exact(payload.len())
+        .map_err(|_| ImmutablePayloadInputError::Allocation)?;
+    bytes.extend_from_slice(payload);
+    Ok(PreparedImmutableBytes { bytes })
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -292,11 +334,17 @@ fn try_copy_bytes(source: &[u8]) -> Result<Vec<u8>, DestinationInputError> {
 #[cfg(test)]
 thread_local! {
     static FAIL_NEXT_DESTINATION_ALLOCATION: Cell<bool> = const { Cell::new(false) };
+    static FAIL_NEXT_IMMUTABLE_PAYLOAD_ALLOCATION: Cell<bool> = const { Cell::new(false) };
 }
 
 #[cfg(test)]
 pub(crate) fn fail_next_destination_allocation() {
     FAIL_NEXT_DESTINATION_ALLOCATION.with(|fail| fail.set(true));
+}
+
+#[cfg(test)]
+pub(crate) fn fail_next_immutable_payload_allocation() {
+    FAIL_NEXT_IMMUTABLE_PAYLOAD_ALLOCATION.with(|fail| fail.set(true));
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -308,14 +356,15 @@ pub(crate) struct TempName {
 }
 
 impl TempName {
-    pub(crate) fn next(final_basename: &[u8]) -> Self {
+    pub(crate) fn next(final_basename: &[u8], temp_prefix: &[u8]) -> Self {
         loop {
             let nonce = NEXT_TEMP_NONCE.fetch_add(1, Ordering::Relaxed);
             let pid = std::process::id();
             let mut bytes = [0; TEMP_NAME_CAPACITY];
             let mut cursor = 0;
-            bytes[..TEMP_PREFIX.len()].copy_from_slice(TEMP_PREFIX);
-            cursor += TEMP_PREFIX.len();
+            debug_assert!(temp_prefix.len() + 8 + 1 + 16 + TEMP_SUFFIX.len() <= bytes.len());
+            bytes[..temp_prefix.len()].copy_from_slice(temp_prefix);
+            cursor += temp_prefix.len();
             write_hex(&mut bytes[cursor..cursor + 8], u64::from(pid), 8);
             cursor += 8;
             bytes[cursor] = b'-';
@@ -357,13 +406,83 @@ pub(crate) fn publish_prepared_checkpoint_v1(
     prepared: &PreparedCheckpointV1Export<'_>,
     destination: &ValidatedCheckpointDestination,
 ) -> PublicationCompletion {
+    let checkpoint_bytes = prepared.encoded_len();
     #[cfg(unix)]
     {
-        unix::publish(prepared, destination)
+        unix::publish(
+            checkpoint_bytes,
+            CHECKPOINT_TEMP_PREFIX,
+            destination,
+            |file| {
+                prepared
+                    .encode_into(file)
+                    .map_err(PublicationWriteError::Checkpoint)
+            },
+        )
     }
     #[cfg(windows)]
     {
-        windows::publish(prepared, destination)
+        windows::publish(
+            checkpoint_bytes,
+            CHECKPOINT_TEMP_PREFIX,
+            destination,
+            |file| {
+                prepared
+                    .encode_into(file)
+                    .map_err(PublicationWriteError::Checkpoint)
+            },
+        )
+    }
+}
+
+pub(crate) fn publish_prepared_immutable_bytes_v1(
+    prepared: &PreparedImmutableBytes,
+    destination: &ValidatedCheckpointDestination,
+) -> PublicationCompletion {
+    let payload_bytes = prepared.payload_len();
+    #[cfg(unix)]
+    {
+        unix::publish(
+            payload_bytes,
+            IMMUTABLE_BYTES_TEMP_PREFIX,
+            destination,
+            |file| prepared.write_into(file),
+        )
+    }
+    #[cfg(windows)]
+    {
+        windows::publish(
+            payload_bytes,
+            IMMUTABLE_BYTES_TEMP_PREFIX,
+            destination,
+            |file| prepared.write_into(file),
+        )
+    }
+}
+
+fn publication_write_error(error: &PublicationWriteError) -> PublicationError {
+    match error {
+        PublicationWriteError::Checkpoint(error) => encode_publication_error(error),
+        PublicationWriteError::Bytes(source) => io_publication_error(source),
+    }
+}
+
+fn io_publication_error(source: &io::Error) -> PublicationError {
+    if let Some(raw) = source.raw_os_error() {
+        return PublicationError {
+            stage: ERROR_STAGE_ENCODE,
+            domain: if cfg!(windows) {
+                ERROR_DOMAIN_WIN32
+            } else {
+                ERROR_DOMAIN_POSIX
+            },
+            code: raw as u32,
+        };
+    }
+    PublicationError {
+        stage: ERROR_STAGE_ENCODE,
+        domain: ERROR_DOMAIN_IO_WITHOUT_OS_CODE,
+        code: io_error_kind_code(source.kind()),
     }
 }
 
@@ -460,13 +579,42 @@ mod tests {
 
     #[test]
     fn generated_temp_names_are_fixed_ascii_unique_and_not_the_destination() {
-        let first = TempName::next(b"state.chk");
-        let second = TempName::next(first.as_bytes());
+        let first = TempName::next(b"state.chk", CHECKPOINT_TEMP_PREFIX);
+        let second = TempName::next(first.as_bytes(), CHECKPOINT_TEMP_PREFIX);
         assert_ne!(first.as_bytes(), second.as_bytes());
-        assert!(first.as_bytes().starts_with(TEMP_PREFIX));
+        assert!(first.as_bytes().starts_with(CHECKPOINT_TEMP_PREFIX));
         assert!(first.as_bytes().ends_with(TEMP_SUFFIX));
-        assert_eq!(first.as_bytes().len(), TEMP_PREFIX.len() + 8 + 1 + 16 + 4);
+        assert_eq!(
+            first.as_bytes().len(),
+            CHECKPOINT_TEMP_PREFIX.len() + 8 + 1 + 16 + 4
+        );
         assert!(first.as_bytes().iter().all(u8::is_ascii));
+    }
+
+    #[test]
+    fn immutable_payload_is_bounded_and_owned_before_publication() {
+        assert!(matches!(
+            prepare_immutable_bytes_v1(b""),
+            Err(ImmutablePayloadInputError::Invalid)
+        ));
+        assert!(prepare_immutable_bytes_v1(&vec![0; MAX_IMMUTABLE_PAYLOAD_BYTES]).is_ok());
+        assert!(matches!(
+            prepare_immutable_bytes_v1(&vec![0; MAX_IMMUTABLE_PAYLOAD_BYTES + 1]),
+            Err(ImmutablePayloadInputError::Invalid)
+        ));
+
+        let mut foreign = b"original\0\xff".to_vec();
+        let prepared = prepare_immutable_bytes_v1(&foreign).unwrap();
+        foreign.fill(b'x');
+        assert_eq!(prepared.bytes, b"original\0\xff");
+    }
+
+    #[test]
+    fn byte_writer_errors_use_the_existing_write_stage_taxonomy() {
+        let error = io_publication_error(&io::Error::from(io::ErrorKind::WriteZero));
+        assert_eq!(error.stage, ERROR_STAGE_ENCODE);
+        assert_eq!(error.domain, ERROR_DOMAIN_IO_WITHOUT_OS_CODE);
+        assert_eq!(error.code, 6);
     }
 
     #[test]

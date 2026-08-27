@@ -24,7 +24,7 @@ use windows_sys::Win32::{
 };
 
 use super::{
-    CleanupErrors, PublicationCompletion, PublicationError, TempName,
+    CleanupErrors, PublicationCompletion, PublicationError, PublicationWriteError, TempName,
     ValidatedCheckpointDestination, ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY,
     ERROR_STAGE_FILE_CLOSE, ERROR_STAGE_FILE_SYNC, ERROR_STAGE_PARENT_IDENTITY,
     ERROR_STAGE_PARENT_OPEN, ERROR_STAGE_TEMP_CLEANUP, ERROR_STAGE_TEMP_CREATE,
@@ -33,7 +33,6 @@ use super::{
     POLICY_PARENT_IS_REPARSE, POLICY_PATH_IDENTITY_CHANGED, POLICY_REMOTE_OR_UNKNOWN_FILESYSTEM,
     POLICY_TEMP_IDENTITY_CHANGED, POLICY_TEMP_NAME_EXHAUSTED, POLICY_UNSUPPORTED_FILESYSTEM,
 };
-use crate::temporal_runtime::checkpoint::PreparedCheckpointV1Export;
 
 const DRIVE_FIXED: u32 = 3;
 const WINDOWS_PATH_CAPACITY: usize = 32 * 1024;
@@ -107,11 +106,15 @@ struct VerifiedTempFailure {
     close_error: Option<PublicationError>,
 }
 
-pub(super) fn publish(
-    prepared: &PreparedCheckpointV1Export<'_>,
+pub(super) fn publish<F>(
+    checkpoint_bytes: u64,
+    temp_prefix: &[u8],
     destination: &ValidatedCheckpointDestination,
-) -> PublicationCompletion {
-    let checkpoint_bytes = prepared.encoded_len();
+    write_payload: F,
+) -> PublicationCompletion
+where
+    F: FnOnce(&mut File) -> Result<(), PublicationWriteError>,
+{
     if !valid_windows_basename(destination.final_basename_utf8()) {
         return PublicationCompletion::without_temp(
             OUTCOME_NOT_PUBLISHED,
@@ -173,6 +176,7 @@ pub(super) fn publish(
     } = match create_owned_temp(
         &parent.canonical,
         destination.final_basename_utf8(),
+        temp_prefix,
         parent.maximum_component_length,
     ) {
         Ok(created) => created,
@@ -204,12 +208,12 @@ pub(super) fn publish(
     };
     let raw = handle.take();
     let mut file = unsafe { File::from_raw_handle(raw as RawHandle) };
-    if let Err(error) = prepared.encode_into(&mut file) {
+    if let Err(error) = write_payload(&mut file) {
         let encoded_bytes = observed_file_length(&file, checkpoint_bytes);
         let mut cleanup = CleanupErrors::new();
         close_file_for_cleanup(file, &mut cleanup);
         cleanup_owned_temp(&temp_path, identity, &mut cleanup);
-        return PublicationCompletion::encode_failure(
+        return PublicationCompletion::write_failure(
             error,
             cleanup,
             temp_name.pid,
@@ -594,10 +598,11 @@ fn is_canonical_local_dos_path(path: &[u16], expected_drive: u16) -> bool {
 fn create_owned_temp(
     canonical_parent: &[u16],
     final_basename: &[u8],
+    temp_prefix: &[u8],
     maximum_component_length: usize,
 ) -> Result<CreatedTemp, TempCreateFailure> {
     for _ in 0..TempName::max_attempts() {
-        let temp_name = TempName::next(final_basename);
+        let temp_name = TempName::next(final_basename, temp_prefix);
         if temp_name.as_bytes().len() > maximum_component_length {
             return Err(TempCreateFailure::BeforeTemp(BackendFailure::Error(
                 PublicationError::policy(ERROR_STAGE_TEMP_CREATE, POLICY_UNSUPPORTED_FILESYSTEM),

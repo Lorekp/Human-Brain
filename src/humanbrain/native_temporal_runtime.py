@@ -44,6 +44,7 @@ _CHECKPOINT_V1_MAGIC: Final = b"R3NTCP1\x00"
 _CHECKPOINT_V1_FORMAT_VERSION: Final = 1
 _CHECKPOINT_V1_HEADER_BYTES: Final = 256
 _CHECKPOINT_V1_BASIC_HEADER_BYTES: Final = 24
+_MAX_IMMUTABLE_PAYLOAD_BYTES: Final = 1 << 20
 _GOVERNING_PROTOCOL_MODULE: Final = (
     "experiments.r3_pilot.calibration_v3_protocol"
 )
@@ -109,6 +110,18 @@ class _NativeCheckpointPathRequest(ctypes.Structure):
         ("parent_len", ctypes.c_uint64),
         ("final_basename_utf8", ctypes.POINTER(ctypes.c_uint8)),
         ("final_basename_len", ctypes.c_uint64),
+        ("reserved_zero", ctypes.c_uint8 * 8),
+    ]
+
+
+class _NativeImmutableBytesPathRequest(ctypes.Structure):
+    _fields_ = [
+        ("parent_utf8", ctypes.POINTER(ctypes.c_uint8)),
+        ("parent_len", ctypes.c_uint64),
+        ("final_basename_utf8", ctypes.POINTER(ctypes.c_uint8)),
+        ("final_basename_len", ctypes.c_uint64),
+        ("payload", ctypes.POINTER(ctypes.c_uint8)),
+        ("payload_len", ctypes.c_uint64),
         ("reserved_zero", ctypes.c_uint8 * 8),
     ]
 
@@ -247,6 +260,12 @@ def _assert_frozen_abi() -> None:
     _require_frozen_layout(_NativeDefinition, 128, 8, (0, 32, 40, 48, 56, 64))
     _require_frozen_layout(_NativeImportRequest, 144, 8, (0, 128, 136))
     _require_frozen_layout(_NativeCheckpointPathRequest, 40, 8, (0, 8, 16, 24, 32))
+    _require_frozen_layout(
+        _NativeImmutableBytesPathRequest,
+        56,
+        8,
+        (0, 8, 16, 24, 32, 40, 48),
+    )
     _require_frozen_layout(_NativeCheckpointPublicationError, 8, 4, (0, 2, 4))
     _require_frozen_layout(
         _NativeCheckpointPublicationReport,
@@ -283,14 +302,16 @@ def _python_buffer_api() -> object:
     return ctypes.pythonapi
 
 
-def _readonly_buffer_api() -> tuple[object, object]:
+def _readonly_buffer_api(
+    purpose: str = "checkpoint path import",
+) -> tuple[object, object]:
     if platform.python_implementation() != "CPython":
         raise RuntimeError(
-            "checkpoint path import requires the CPython stable buffer ABI"
+            f"{purpose} requires the CPython stable buffer ABI"
         )
     if tuple(sys.version_info[:2]) < (3, 11):
         raise RuntimeError(
-            "checkpoint path import requires CPython 3.11 or newer"
+            f"{purpose} requires CPython 3.11 or newer"
         )
     api = _python_buffer_api()
     try:
@@ -298,7 +319,7 @@ def _readonly_buffer_api() -> tuple[object, object]:
         release_buffer = getattr(api, "PyBuffer_Release")
     except AttributeError as exc:
         raise RuntimeError(
-            "checkpoint path import requires PyObject_GetBuffer and PyBuffer_Release"
+            f"{purpose} requires PyObject_GetBuffer and PyBuffer_Release"
         ) from exc
     get_buffer.argtypes = [
         ctypes.py_object,
@@ -393,6 +414,51 @@ class TemporalCheckpointErrorStage(IntEnum):
     PARENT_SYNC = 11
 
 
+class TemporalPublicationOutcome(IntEnum):
+    """Completion-plane outcome for exclusive immutable-byte publication."""
+
+    DURABLE_PUBLISHED = 1
+    COLLISION = 2
+    NOT_PUBLISHED = 3
+    PUBLISHED_BUT_NOT_CONFIRMED_DURABLE = 4
+
+
+class TemporalPublicationCleanup(IntEnum):
+    """Disposition of the publisher-owned temporary artifact."""
+
+    NOT_APPLICABLE = 0
+    CLEAN = 1
+    ORPHANED = 2
+
+
+class TemporalPublicationErrorDomain(IntEnum):
+    """Origin of one immutable-byte publication error code."""
+
+    NONE = 0
+    POSIX = 1
+    WIN32 = 2
+    POLICY = 3
+    CHECKPOINT_ENCODER_RESERVED = 4
+    IO = 5
+
+
+class TemporalPublicationErrorStage(IntEnum):
+    """Ordered stage at which immutable-byte publication encountered an error."""
+
+    NONE = 0
+    PARENT_OPEN = 1
+    PARENT_IDENTITY = 2
+    FILESYSTEM_POLICY = 3
+    TEMP_CREATE = 4
+    WRITE = 5
+    FILE_SYNC = 6
+    FILE_CLOSE = 7
+    TEMP_IDENTITY = 8
+    EXCLUSIVE_PUBLISH = 9
+    TEMP_CLEANUP = 10
+    PARENT_SYNC = 11
+
+
 _PRE_TEMP_PUBLICATION_ERROR_STAGES: Final = frozenset(
     {
         TemporalCheckpointErrorStage.PARENT_OPEN,
@@ -445,6 +511,33 @@ class TemporalCheckpointPublication:
     @property
     def semantically_resumable(self) -> bool:
         return self.outcome is TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalPublicationError:
+    """One native immutable-byte publication error in native cleanup order."""
+
+    stage: TemporalPublicationErrorStage
+    domain: TemporalPublicationErrorDomain
+    code: int
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalImmutableBytesPublication:
+    """Immutable result of one no-overwrite publication attempt."""
+
+    outcome: TemporalPublicationOutcome
+    temp_cleanup: TemporalPublicationCleanup
+    primary_error: TemporalPublicationError | None
+    cleanup_errors: tuple[TemporalPublicationError, ...]
+    owned_temp_pid: int
+    owned_temp_nonce: int
+    payload_bytes: int
+    written_bytes: int
+
+    @property
+    def durably_published(self) -> bool:
+        return self.outcome is TemporalPublicationOutcome.DURABLE_PUBLISHED
 
 
 def _exact_int(label: str, value: object, minimum: int, maximum: int) -> int:
@@ -748,6 +841,9 @@ def _bind_temporal_symbols(library: object) -> None:
         export_checkpoint_path = (
             library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1
         )
+        publish_immutable_bytes_path = (
+            library.humanbrain_temporal_publish_immutable_bytes_path_v1
+        )
         destroy = library.humanbrain_temporal_circuit_runtime_destroy
     except AttributeError as exc:
         raise _NativeBuildError(
@@ -786,6 +882,11 @@ def _bind_temporal_symbols(library: object) -> None:
         ctypes.POINTER(_NativeCheckpointPublicationReport),
         report_output,
     ]
+    publish_immutable_bytes_path.argtypes = [
+        ctypes.POINTER(_NativeImmutableBytesPathRequest),
+        ctypes.POINTER(_NativeCheckpointPublicationReport),
+        report_output,
+    ]
     destroy.argtypes = [ctypes.c_void_p]
     for function in (
         create,
@@ -794,6 +895,7 @@ def _bind_temporal_symbols(library: object) -> None:
         checkpoint_size,
         export_checkpoint,
         export_checkpoint_path,
+        publish_immutable_bytes_path,
     ):
         function.restype = ctypes.c_uint32
     destroy.restype = None
@@ -1129,6 +1231,224 @@ def _decode_publication(
     )
 
 
+def _decode_immutable_publication_error(
+    native: _NativeCheckpointPublicationError,
+    *,
+    label: str,
+) -> TemporalPublicationError | None:
+    raw_stage = int(native.stage)
+    raw_domain = int(native.domain)
+    raw_code = int(native.code)
+    if raw_stage not in TemporalPublicationErrorStage._value2member_map_:
+        raise _invariant_error(f"{label} stage is outside the frozen range")
+    if raw_domain not in TemporalPublicationErrorDomain._value2member_map_:
+        raise _invariant_error(f"{label} domain is outside the frozen range")
+    stage = TemporalPublicationErrorStage(raw_stage)
+    domain = TemporalPublicationErrorDomain(raw_domain)
+    if domain is TemporalPublicationErrorDomain.CHECKPOINT_ENCODER_RESERVED:
+        raise _invariant_error(
+            f"{label} uses the checkpoint-only encoder error domain"
+        )
+    if stage is TemporalPublicationErrorStage.NONE:
+        if domain is not TemporalPublicationErrorDomain.NONE or raw_code != 0:
+            raise _invariant_error(f"{label} has a malformed zero error")
+        return None
+    if domain is TemporalPublicationErrorDomain.NONE:
+        raise _invariant_error(f"{label} has an active stage without an error domain")
+    return TemporalPublicationError(stage, domain, raw_code)
+
+
+def _decode_immutable_bytes_publication(
+    returned_status: object,
+    native: _NativeCheckpointPublicationReport,
+    runtime_report: _NativeReport,
+    *,
+    expected_payload_bytes: int,
+) -> TemporalImmutableBytesPublication:
+    decoded_runtime = _decode_report(
+        returned_status, runtime_report, maximum_completed_prefix=0
+    )
+    if decoded_runtime.status is not NativeTemporalRuntimeStatus.OK:
+        if bytes(native) != bytes(ctypes.sizeof(type(native))):
+            raise _invariant_error(
+                "failed immutable-byte publication changed its zero publication report"
+            )
+        _raise_report(decoded_runtime)
+
+    if any(native.reserved_zero):
+        raise _invariant_error("immutable-byte publication reserved bytes are nonzero")
+    raw_outcome = int(native.outcome)
+    if raw_outcome not in TemporalPublicationOutcome._value2member_map_:
+        raise _invariant_error(
+            "immutable-byte publication outcome is outside the frozen range"
+        )
+    raw_cleanup = int(native.temp_cleanup)
+    if raw_cleanup not in TemporalPublicationCleanup._value2member_map_:
+        raise _invariant_error(
+            "immutable-byte publication cleanup tag is outside the frozen range"
+        )
+    cleanup_error_count = int(native.cleanup_error_count)
+    if cleanup_error_count > len(native.cleanup_errors):
+        raise _invariant_error(
+            "immutable-byte publication cleanup error count exceeds capacity"
+        )
+
+    primary_error = _decode_immutable_publication_error(
+        native.primary_error, label="immutable-byte publication primary error"
+    )
+    decoded_cleanup_slots = tuple(
+        _decode_immutable_publication_error(
+            slot, label=f"immutable-byte publication cleanup error {index}"
+        )
+        for index, slot in enumerate(native.cleanup_errors)
+    )
+    if any(error is None for error in decoded_cleanup_slots[:cleanup_error_count]):
+        raise _invariant_error("immutable-byte publication active cleanup error is zero")
+    if any(error is not None for error in decoded_cleanup_slots[cleanup_error_count:]):
+        raise _invariant_error(
+            "immutable-byte publication unused cleanup error slot is nonzero"
+        )
+    cleanup_errors = tuple(
+        error
+        for error in decoded_cleanup_slots[:cleanup_error_count]
+        if error is not None
+    )
+
+    outcome = TemporalPublicationOutcome(raw_outcome)
+    cleanup = TemporalPublicationCleanup(raw_cleanup)
+    owned_temp_pid = int(native.owned_temp_pid)
+    owned_temp_nonce = int(native.owned_temp_nonce)
+    payload_bytes = int(native.checkpoint_bytes)
+    written_bytes = int(native.encoded_bytes)
+
+    if not 1 <= expected_payload_bytes <= _MAX_IMMUTABLE_PAYLOAD_BYTES:
+        raise _invariant_error(
+            "immutable-byte caller length is outside the bounded range",
+            observed=expected_payload_bytes,
+        )
+    if payload_bytes != expected_payload_bytes:
+        raise _invariant_error(
+            "immutable-byte publication length differs from the caller payload",
+            required=expected_payload_bytes,
+            observed=payload_bytes,
+        )
+    if decoded_runtime.location != 0:
+        raise _invariant_error("immutable-byte publication runtime report has a location")
+    if (
+        decoded_runtime.required != payload_bytes
+        or decoded_runtime.observed != written_bytes
+    ):
+        raise _invariant_error(
+            "immutable-byte publication and runtime report lengths disagree",
+            required=payload_bytes,
+            observed=decoded_runtime.observed,
+        )
+    if not 1 <= payload_bytes <= _MAX_IMMUTABLE_PAYLOAD_BYTES:
+        raise _invariant_error(
+            "immutable-byte publication length is outside the bounded range",
+            observed=payload_bytes,
+        )
+    if written_bytes > payload_bytes:
+        raise _invariant_error(
+            "immutable-byte publication written length exceeds payload length",
+            required=payload_bytes,
+            observed=written_bytes,
+        )
+
+    if cleanup is TemporalPublicationCleanup.NOT_APPLICABLE:
+        if (
+            outcome is not TemporalPublicationOutcome.NOT_PUBLISHED
+            or cleanup_errors
+            or owned_temp_pid != 0
+            or owned_temp_nonce != 0
+            or written_bytes != 0
+        ):
+            raise _invariant_error(
+                "immutable-byte publication N/A cleanup has a temporary artifact"
+            )
+    elif cleanup is TemporalPublicationCleanup.CLEAN:
+        if cleanup_errors or owned_temp_pid == 0:
+            raise _invariant_error(
+                "immutable-byte publication clean disposition is inconsistent"
+            )
+    elif not cleanup_errors or owned_temp_pid == 0:
+        raise _invariant_error(
+            "immutable-byte publication orphaned disposition is inconsistent"
+        )
+
+    if outcome in (
+        TemporalPublicationOutcome.DURABLE_PUBLISHED,
+        TemporalPublicationOutcome.COLLISION,
+    ):
+        if primary_error is not None or written_bytes != payload_bytes:
+            raise _invariant_error(
+                "successful immutable-byte publication outcome is inconsistent"
+            )
+        if cleanup is TemporalPublicationCleanup.NOT_APPLICABLE:
+            raise _invariant_error(
+                "successful immutable-byte publication did not create a temporary artifact"
+            )
+    elif outcome is TemporalPublicationOutcome.NOT_PUBLISHED:
+        if primary_error is None:
+            raise _invariant_error(
+                "not-published immutable-byte outcome has no primary error"
+            )
+        allowed_stages = (
+            frozenset(
+                {
+                    TemporalPublicationErrorStage.PARENT_OPEN,
+                    TemporalPublicationErrorStage.PARENT_IDENTITY,
+                    TemporalPublicationErrorStage.FILESYSTEM_POLICY,
+                    TemporalPublicationErrorStage.TEMP_CREATE,
+                    TemporalPublicationErrorStage.PARENT_SYNC,
+                }
+            )
+            if cleanup is TemporalPublicationCleanup.NOT_APPLICABLE
+            else frozenset(
+                {
+                    TemporalPublicationErrorStage.PARENT_IDENTITY,
+                    TemporalPublicationErrorStage.WRITE,
+                    TemporalPublicationErrorStage.FILE_SYNC,
+                    TemporalPublicationErrorStage.FILE_CLOSE,
+                    TemporalPublicationErrorStage.TEMP_IDENTITY,
+                    TemporalPublicationErrorStage.EXCLUSIVE_PUBLISH,
+                }
+            )
+        )
+        if primary_error.stage not in allowed_stages:
+            raise _invariant_error(
+                "not-published immutable-byte primary stage is inconsistent with cleanup"
+            )
+    elif (
+        primary_error is None
+        or written_bytes != payload_bytes
+        or cleanup is TemporalPublicationCleanup.NOT_APPLICABLE
+    ):
+        raise _invariant_error(
+            "unconfirmed-durability immutable-byte outcome is inconsistent"
+        )
+    elif primary_error.stage not in frozenset(
+        {
+            TemporalPublicationErrorStage.EXCLUSIVE_PUBLISH,
+            TemporalPublicationErrorStage.PARENT_SYNC,
+        }
+    ):
+        raise _invariant_error(
+            "unconfirmed-durability immutable-byte primary stage is inconsistent"
+        )
+
+    return TemporalImmutableBytesPublication(
+        outcome=outcome,
+        temp_cleanup=cleanup,
+        primary_error=primary_error,
+        cleanup_errors=cleanup_errors,
+        owned_temp_pid=owned_temp_pid,
+        owned_temp_nonce=owned_temp_nonce,
+        payload_bytes=payload_bytes,
+        written_bytes=written_bytes,
+    )
+
+
 def _checkpoint_rejected(message: str, *, observed: int = 0) -> NativeTemporalRuntimeError:
     return NativeTemporalRuntimeError(
         NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED,
@@ -1147,6 +1467,115 @@ def _lexical_checkpoint_path_parts(destination: Path) -> tuple[bytes, bytes]:
         )
     except UnicodeEncodeError as exc:
         raise ValueError("checkpoint path must be valid UTF-8") from exc
+
+
+def _lexical_publication_path_parts(destination: Path) -> tuple[bytes, bytes]:
+    if not isinstance(destination, Path):
+        raise TypeError("publication path must be a pathlib.Path")
+    try:
+        return (
+            str(destination.parent).encode("utf-8", errors="strict"),
+            destination.name.encode("utf-8", errors="strict"),
+        )
+    except UnicodeEncodeError as exc:
+        raise ValueError("publication path must be valid UTF-8") from exc
+
+
+def publish_immutable_bytes(
+    destination: Path, payload: bytes
+) -> TemporalImmutableBytesPublication:
+    """Attempt one authority-gated, exclusive publication of opaque bytes.
+
+    The publisher does not interpret JSON or establish cross-file semantics.
+    Callers using a manifest as a commit record must durably publish every
+    referenced data object first and publish that manifest last.
+    """
+
+    if type(payload) is not bytes:
+        raise TypeError("immutable publication payload must be exact bytes")
+    if not 1 <= len(payload) <= _MAX_IMMUTABLE_PAYLOAD_BYTES:
+        raise ValueError(
+            "immutable publication payload length must be in "
+            f"[1, {_MAX_IMMUTABLE_PAYLOAD_BYTES}]"
+        )
+    if not isinstance(destination, Path):
+        raise TypeError("publication path must be a pathlib.Path")
+    authority_before_load = _fresh_authority()
+    library = _temporal_library()
+    authority_after_load = _fresh_authority()
+    if authority_after_load != authority_before_load:
+        raise NativeTemporalRuntimeError(
+            NativeTemporalRuntimeStatus.INVALID_DEFINITION,
+            "fresh authority changed while preparing immutable-byte publication",
+        )
+    _attested_current_library_identity()
+    parent_utf8, final_basename_utf8 = _lexical_publication_path_parts(destination)
+    try:
+        parent_array = (ctypes.c_uint8 * len(parent_utf8)).from_buffer_copy(
+            parent_utf8
+        )
+        basename_array = (
+            ctypes.c_uint8 * len(final_basename_utf8)
+        ).from_buffer_copy(final_basename_utf8)
+    except (MemoryError, OverflowError) as exc:
+        raise NativeTemporalRuntimeError(
+            NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
+            "immutable-byte publication transport allocation failed",
+            required=len(parent_utf8) + len(final_basename_utf8),
+        ) from exc
+    get_buffer, release_buffer = _readonly_buffer_api("immutable-byte publication")
+    buffer_view = _PyBuffer()
+    buffer_acquired = False
+    try:
+        try:
+            acquisition_status = int(
+                get_buffer(payload, ctypes.byref(buffer_view), 0)
+            )
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise _invariant_error(
+                "PyObject_GetBuffer returned an invalid immutable-byte status"
+            ) from exc
+        if acquisition_status != 0:
+            raise _invariant_error(
+                "PyObject_GetBuffer failed for the immutable-byte payload",
+                observed=acquisition_status,
+            )
+        buffer_acquired = True
+        _validate_readonly_simple_buffer(
+            buffer_view,
+            len(payload),
+            subject="immutable-byte payload",
+            expected_length="exact bytes length",
+        )
+        payload_pointer = ctypes.cast(
+            ctypes.c_void_p(buffer_view.buf),
+            ctypes.POINTER(ctypes.c_uint8),
+        )
+        request = _NativeImmutableBytesPathRequest(
+            ctypes.cast(parent_array, ctypes.POINTER(ctypes.c_uint8)),
+            len(parent_utf8),
+            ctypes.cast(basename_array, ctypes.POINTER(ctypes.c_uint8)),
+            len(final_basename_utf8),
+            payload_pointer,
+            len(payload),
+            (ctypes.c_uint8 * 8)(),
+        )
+        publication_report = _NativeCheckpointPublicationReport()
+        runtime_report = _NativeReport()
+        returned = library.humanbrain_temporal_publish_immutable_bytes_path_v1(
+            ctypes.byref(request),
+            ctypes.byref(publication_report),
+            ctypes.byref(runtime_report),
+        )
+    finally:
+        if buffer_acquired:
+            release_buffer(ctypes.byref(buffer_view))
+    return _decode_immutable_bytes_publication(
+        returned,
+        publication_report,
+        runtime_report,
+        expected_payload_bytes=len(payload),
+    )
 
 
 def _checkpoint_file_identity(metadata: os.stat_result) -> tuple[int, int, int]:
@@ -1202,19 +1631,25 @@ def _validate_checkpoint_v1_basic_header(header: bytes, file_size: int) -> None:
         )
 
 
-def _validate_readonly_simple_buffer(view: _PyBuffer, expected_len: int) -> None:
+def _validate_readonly_simple_buffer(
+    view: _PyBuffer,
+    expected_len: int,
+    *,
+    subject: str = "checkpoint mapping",
+    expected_length: str = "descriptor size",
+) -> None:
     if not view.obj or not view.buf:
-        raise _invariant_error("checkpoint mapping returned a null buffer owner or address")
+        raise _invariant_error(f"{subject} returned a null buffer owner or address")
     if int(view.len) != expected_len:
         raise _invariant_error(
-            "checkpoint mapping buffer length differs from the descriptor size",
+            f"{subject} buffer length differs from the {expected_length}",
             required=expected_len,
             observed=int(view.len),
         )
     if int(view.readonly) != 1:
-        raise _invariant_error("checkpoint mapping buffer is not read-only")
+        raise _invariant_error(f"{subject} buffer is not read-only")
     if int(view.itemsize) != 1 or int(view.ndim) != 1:
-        raise _invariant_error("checkpoint mapping buffer has non-simple scalar geometry")
+        raise _invariant_error(f"{subject} buffer has non-simple scalar geometry")
     if any(
         (
             view.format,
@@ -1224,7 +1659,7 @@ def _validate_readonly_simple_buffer(view: _PyBuffer, expected_len: int) -> None
             view.internal,
         )
     ):
-        raise _invariant_error("checkpoint mapping buffer has non-simple pointer geometry")
+        raise _invariant_error(f"{subject} buffer has non-simple pointer geometry")
 
 
 def _convert_spikes(values: Sequence[_NativeSpike]) -> tuple[TemporalSpike, ...]:
@@ -1889,9 +2324,16 @@ __all__ = [
     "TemporalCheckpointPublication",
     "TemporalCheckpointPublicationError",
     "TemporalCheckpointPublicationOutcome",
+    "TemporalImmutableBytesPublication",
+    "TemporalPublicationCleanup",
+    "TemporalPublicationError",
+    "TemporalPublicationErrorDomain",
+    "TemporalPublicationErrorStage",
+    "TemporalPublicationOutcome",
     "TemporalCircuitStep",
     "TemporalContextPolicy",
     "TemporalPlasticityPolicy",
     "TemporalSpike",
     "TemporalStepMode",
+    "publish_immutable_bytes",
 ]
