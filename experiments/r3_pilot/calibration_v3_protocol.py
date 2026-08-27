@@ -852,6 +852,14 @@ def build_protocol() -> dict[str, Any]:
             },
             "compressed_reserve_q4": {
                 "claim_scope": "synthetic_fixture_only",
+                "native_vertical_slice": {
+                    "construction_seed": 17,
+                    "circuit_identity_sha256": (
+                        "1e15d708c81a07c3949097babf94c2c5d7922c3545dac487f8e53e84a3b92220"
+                    ),
+                    "theta_active": 13,
+                    "theta_match": 10,
+                },
                 "context_id_rule": (
                     "literal first 129 target-disjoint IDs in ascending search order"
                 ),

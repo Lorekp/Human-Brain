@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from experiments.r3_pilot import calibration_v3_protocol as protocol_authority
@@ -12,6 +13,7 @@ from humanbrain.native_temporal_runtime import (
     TemporalContextPolicy,
     TemporalPlasticityPolicy,
 )
+from humanbrain.sdr_union import token_sdr_indices
 
 
 def build_r3_f0_definition(
@@ -62,4 +64,43 @@ def build_r3_f0_definition(
         config=config,
         token_codes=protocol_authority.production_codebook_preimage(),
         threshold_offsets_mv=seeded_threshold_offsets_mv(physical_cell_count, seed).tolist(),
+    )
+
+
+def build_compressed_reserve_q4_definition(
+    protocol: dict[str, Any], arm: tuple[int, int], seed: int
+) -> NativeTemporalCircuitDefinition:
+    """Build the bounded native q=4 definition from frozen screen authority."""
+
+    base = build_r3_f0_definition(protocol, arm, seed)
+    screen = protocol["screens"]["compressed_reserve_q4"]
+    config = replace(
+        base.config,
+        max_segments_per_cell=screen["max_segments_per_cell"],
+        segment_capacity=screen["expected_target_segments"],
+    )
+    token_ids = (*screen["context_ids"], screen["target_token"])
+    token_codes = tuple(
+        (
+            token_id,
+            tuple(
+                sorted(
+                    map(
+                        int,
+                        token_sdr_indices(
+                            token_id,
+                            seed=protocol_authority.PROJECTION_SEED,
+                            n_bits=config.column_count,
+                            w_ones=11,
+                        ),
+                    )
+                )
+            ),
+        )
+        for token_id in token_ids
+    )
+    return NativeTemporalCircuitDefinition(
+        config=config,
+        token_codes=token_codes,
+        threshold_offsets_mv=base.threshold_offsets_mv,
     )

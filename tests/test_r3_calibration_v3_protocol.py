@@ -135,6 +135,14 @@ def test_q4_schedule_forces_three_complete_reserve_cohorts_and_a_sentinel() -> N
     ]
 
     screen = protocol.build_protocol()["screens"]["compressed_reserve_q4"]
+    assert screen["native_vertical_slice"] == {
+        "construction_seed": 17,
+        "circuit_identity_sha256": (
+            "1e15d708c81a07c3949097babf94c2c5d7922c3545dac487f8e53e84a3b92220"
+        ),
+        "theta_active": 13,
+        "theta_match": 10,
+    }
     assert screen["max_segments_per_cell"] == 4
     assert screen["target_exposures"] == 129
     assert screen["target_token"] == 2041

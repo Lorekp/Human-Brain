@@ -882,6 +882,51 @@ def test_even_a_synthetic_future_authority_reaches_only_the_disabled_seam(
         source_bundle_identity_sha256="22" * 32,
     )
     monkeypatch.setattr(runner, "_authorize_frozen_plan", lambda: authority)
+    calls: list[str] = []
+    monkeypatch.setattr(
+        runner,
+        "_run_electrical_v3_prerequisite",
+        lambda: calls.append("electrical"),
+    )
+    monkeypatch.setattr(
+        runner,
+        "_run_source_bound_q4_vertical_slice",
+        lambda value: calls.append("q4") or {"authority": value.protocol_sha256},
+    )
 
     assert runner.main(["--run-frozen-plan"]) == runner.EXIT_STOP
-    assert "execution remains disabled" in capsys.readouterr().err
+    assert calls == ["electrical", "q4"]
+    assert "remaining calibration-v3 execution" in capsys.readouterr().err
+
+
+def test_real_native_q4_vertical_slice_reaches_the_frozen_reserve_sentinel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import humanbrain.native_temporal_runtime as native
+
+    protocol = governing_protocol.build_protocol()
+    protocol_sha256 = hashlib.sha256(
+        governing_protocol.canonical_json_bytes(protocol)
+    ).hexdigest()
+    authority = authority_contract.FrozenPlanAuthority(
+        repository_root=ROOT,
+        protocol=protocol,
+        protocol_sha256=protocol_sha256,
+        source_bundle_identity_sha256="22" * 32,
+    )
+    native_authority = native._FreshAuthority(
+        bytes.fromhex(protocol_sha256),
+        bytes.fromhex(authority.source_bundle_identity_sha256),
+    )
+    monkeypatch.setattr(native, "_fresh_authority", lambda: native_authority)
+
+    result = runner._run_source_bound_q4_vertical_slice(authority)
+
+    assert result == {
+        "circuit_identity_sha256": (
+            "1e15d708c81a07c3949097babf94c2c5d7922c3545dac487f8e53e84a3b92220"
+        ),
+        "cohort_count": 44,
+        "next_reserve_cell": 33_120,
+        "segment_count": 1_419,
+    }

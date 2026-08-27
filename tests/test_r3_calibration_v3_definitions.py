@@ -108,3 +108,26 @@ def test_frozen_arm_identity_table_matches_the_native_definition_query() -> None
         assert definitions.build_r3_f0_definition(
             frozen, arm, 17
         ).circuit_identity_sha256() == expected
+
+
+def test_q4_factory_is_bounded_and_matches_its_frozen_native_identity() -> None:
+    frozen = protocol.build_protocol()
+    source_binding = frozen["screens"]["compressed_reserve_q4"][
+        "native_vertical_slice"
+    ]
+    definition = definitions.build_compressed_reserve_q4_definition(
+        frozen,
+        (source_binding["theta_match"], source_binding["theta_active"]),
+        source_binding["construction_seed"],
+    )
+
+    assert definition.config.segment_capacity == 1_419
+    assert definition.config.max_segments_per_cell == 4
+    assert tuple(token for token, _columns in definition.token_codes) == (
+        *protocol.COMPRESSED_RESERVE_CONTEXT_IDS,
+        protocol.DISJOINT_TARGET_TOKEN,
+    )
+    assert (
+        definition.circuit_identity_sha256()
+        == source_binding["circuit_identity_sha256"]
+    )

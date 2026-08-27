@@ -136,11 +136,131 @@ def _authorize_frozen_plan(
         raise FixtureRunnerStop(str(exc)) from exc
 
 
-def _execute_frozen_plan(authority: authority_contract.FrozenPlanAuthority) -> int:
-    """Future execution seam; unreachable until a later source-bound change."""
+def _electrical_v3_module() -> ModuleType:
+    if __package__:
+        return importlib.import_module(f"{__package__}.calibrate_minicolumn_electrical")
+    return importlib.import_module("calibrate_minicolumn_electrical")
 
-    del authority
-    raise FixtureRunnerStop("outcome-bearing calibration-v3 execution remains disabled pre-outcome")
+
+def _definition_module() -> ModuleType:
+    if __package__:
+        return importlib.import_module(f"{__package__}.calibration_v3_definitions")
+    return importlib.import_module("calibration_v3_definitions")
+
+
+def _run_electrical_v3_prerequisite() -> None:
+    """Run the existing GLIF3 coupled-race sweep before any q=4 work."""
+
+    electrical = _electrical_v3_module()
+    try:
+        result = electrical.run_replay()
+    except electrical.CalibrationError as exc:
+        raise FixtureRunnerStop(f"electrical-v3 STOP: {exc}") from exc
+    if type(result) is not dict or result.get("verdict") != (
+        "PASS_EXHAUSTIVE_COUPLED_SCREEN"
+    ):
+        raise FixtureRunnerStop("electrical-v3 STOP: coupled-race verdict did not pass")
+
+
+def _run_source_bound_q4_vertical_slice(
+    authority: authority_contract.FrozenPlanAuthority,
+) -> dict[str, int | str]:
+    """Run one real native q=4 arm after checking its frozen circuit digest."""
+
+    protocol = authority.protocol
+    screen = protocol["screens"]["compressed_reserve_q4"]
+    source_binding = screen["native_vertical_slice"]
+    arm = (source_binding["theta_match"], source_binding["theta_active"])
+    seed = source_binding["construction_seed"]
+    expected_digest = _exact_sha256(
+        "q4 native circuit identity",
+        source_binding["circuit_identity_sha256"],
+    )
+    definitions = _definition_module()
+    native = importlib.import_module("humanbrain.native_temporal_runtime")
+    definition = definitions.build_compressed_reserve_q4_definition(
+        protocol,
+        arm,
+        seed,
+    )
+    observed_digest = definition.circuit_identity_sha256()
+    if observed_digest != expected_digest:
+        raise FixtureRunnerStop(
+            "q4 STOP: native circuit definition identity differs from frozen authority"
+        )
+
+    milestones = {
+        row["exposure"]: row for row in screen["transition_schedule"]
+    }
+    final_identity = None
+    try:
+        with native.NativeTemporalCircuit.fresh(definition) as circuit:
+            for exposure, context_token in enumerate(screen["context_ids"], 1):
+                context_steps = circuit.advance_block(
+                    [context_token],
+                    mode=native.TemporalStepMode.READ_ONLY,
+                    reset_before=True,
+                )
+                target_steps = circuit.advance_block(
+                    [screen["target_token"]],
+                    mode=native.TemporalStepMode.LEARN,
+                    reset_before=False,
+                )
+                if len(context_steps) != 1 or len(target_steps) != 1:
+                    raise FixtureRunnerStop(
+                        f"q4 STOP at exposure {exposure}: native episode length drifted"
+                    )
+                target = target_steps[0]
+                if (
+                    target.allocated_segments != 11
+                    or target.predicted_columns != 0
+                    or target.punished_segments != 0
+                ):
+                    raise FixtureRunnerStop(
+                        f"q4 STOP at exposure {exposure}: novel allocation gate failed"
+                    )
+                milestone = milestones.get(exposure)
+                if milestone is not None:
+                    identity = circuit.checkpoint_identity()
+                    expected_cohorts = (
+                        milestone["target_column_depth"] // 8 - 1
+                    ) * 11
+                    if (
+                        identity.segment_count != exposure * 11
+                        or identity.cohort_count != expected_cohorts
+                        or identity.next_reserve_cell != milestone["reserve_cursor"]
+                    ):
+                        raise FixtureRunnerStop(
+                            f"q4 STOP at exposure {exposure}: reserve transition drifted"
+                        )
+                    final_identity = identity
+    except FixtureRunnerStop:
+        raise
+    except Exception as exc:
+        raise FixtureRunnerStop(f"q4 native execution STOP: {exc}") from exc
+
+    if (
+        final_identity is None
+        or final_identity.segment_count != screen["expected_target_segments"]
+    ):
+        raise FixtureRunnerStop("q4 STOP: final target segment count drifted")
+    return {
+        "circuit_identity_sha256": observed_digest,
+        "cohort_count": final_identity.cohort_count,
+        "next_reserve_cell": final_identity.next_reserve_cell,
+        "segment_count": final_identity.segment_count,
+    }
+
+
+def _execute_frozen_plan(authority: authority_contract.FrozenPlanAuthority) -> int:
+    """Execute the first real vertical slice, then stop before later screens."""
+
+    _run_electrical_v3_prerequisite()
+    _run_source_bound_q4_vertical_slice(authority)
+    raise FixtureRunnerStop(
+        "electrical-to-q4 vertical slice passed; remaining calibration-v3 execution "
+        "remains disabled pre-outcome"
+    )
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
