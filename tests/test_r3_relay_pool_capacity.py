@@ -5,6 +5,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from experiments.r3_pilot.calibrate_relay_pool_capacity import (
+    cohort_rounded_depth,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "experiments" / "r3_pilot" / "calibrate_relay_pool_capacity.py"
@@ -27,8 +31,8 @@ def test_committed_relay_pool_capacity_passes_fast_check() -> None:
 def test_artifact_freezes_the_shared_column_contract() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
 
-    assert artifact["artifact_id"] == "r3-relay-pool-capacity-v5-paired-sources"
-    assert artifact["schema_version"] == 5
+    assert artifact["artifact_id"] == "r3-relay-pool-capacity-v6-cohort-rounded"
+    assert artifact["schema_version"] == 6
     assert artifact["architecture"] == {
         "basket_cells": 4096,
         "basket_offset": 262144,
@@ -38,7 +42,9 @@ def test_artifact_freezes_the_shared_column_contract() -> None:
             "A1": "winner_pyramidal + injective_winner_relay",
             "A3": "generic_proximal + injective_generic_relay",
         },
-        "contacts_per_segment": 20,
+        "logical_pair_slots_per_segment": 10,
+        "physical_contacts_per_pair": 2,
+        "physical_contacts_per_segment": 20,
         "generic_proximal_cells": 4096,
         "generic_proximal_offset": 266240,
         "generic_relay_cells": 4096,
@@ -70,9 +76,16 @@ def test_artifact_freezes_the_shared_column_contract() -> None:
     }
     assert artifact["claim_boundary"] == {
         "capability_evidence": False,
-        "ideal_structural_sizing_only": True,
+        "cohort_rounded_train_structural_sizing_only": True,
         "physical_race_evidence": False,
     }
+
+
+def test_cohort_rounded_depth_freezes_full_eight_cell_reserve_boundaries() -> None:
+    assert [
+        cohort_rounded_depth(demand, base_depth=8)
+        for demand in (0, 1, 2040, 2041, 4080, 4081, 286874)
+    ] == [8, 8, 8, 16, 16, 24, 1128]
 
 
 def test_artifact_freezes_train_capacity_stops_and_developmental_fit() -> None:
@@ -90,17 +103,17 @@ def test_artifact_freezes_train_capacity_stops_and_developmental_fit() -> None:
         "max_context_token_ids": [32],
         "max_contexts_per_token": 187263,
     }
-    assert artifact["schedule"]["pass_replay_method"] == "literal_three_pass"
+    assert artifact["schedule"]["exposure_passes"] == 1
+    assert artifact["schedule"]["book_boundary_resets"] == 49
+    assert artifact["schedule"]["pass_replay_method"] == "single_train_pass"
     assert [row["novel_contexts"] for row in artifact["schedule"]["passes"]] == [
         2116946,
-        0,
-        0,
     ]
 
     fixed = artifact["shared_column_arms"]
     assert fixed["K20"]["fits_segment_capacity"] is False
-    assert fixed["K20"]["first_pass_segments"] == 42338920
-    assert fixed["K20"]["three_pass_segments_created"] == 42338920
+    assert fixed["K20"]["train_pass_segments"] == 42338920
+    assert fixed["K20"]["train_pass_segments_created"] == 42338920
     assert fixed["K20"]["max_segments_per_cell"] == 7097
     assert fixed["K20"]["capacity_stop"] == {
         "allocation_index_zero_based": 71211,
@@ -112,10 +125,19 @@ def test_artifact_freezes_train_capacity_stops_and_developmental_fit() -> None:
 
     developmental = artifact["developmental_variable_depth"]
     assert developmental["base4_K11"]["all_train_unique_states_fit"] is True
-    assert developmental["base4_K11"]["pyramidal_cells_required"] == 99398
-    assert developmental["base4_K11"]["max_column_depth"] == 1125
+    assert developmental["base4_K11"]["ideal_unrounded_pyramidal_cells_required"] == 99398
+    assert developmental["base4_K11"]["cohort_rounding_overhead_cells"] == 7138
+    assert developmental["base4_K11"]["pyramidal_cells_required"] == 106536
+    assert developmental["base4_K11"]["max_column_depth"] == 1132
     assert developmental["base8_K11"]["all_train_unique_states_fit"] is True
-    assert developmental["base8_K11"]["pyramidal_cells_required"] == 109216
+    assert developmental["base8_K11"]["ideal_unrounded_pyramidal_cells_required"] == 109216
+    assert developmental["base8_K11"]["cohort_rounding_overhead_cells"] == 5184
+    assert developmental["base8_K11"]["pyramidal_cells_required"] == 114400
+    assert developmental["base8_K11"]["pyramidal_cells_recruited"] == 81632
+    assert developmental["base8_K11"]["pyramidal_cells_remaining"] == 16672
+    assert developmental["base8_K11"]["max_column_depth"] == 1128
+    assert developmental["base8_K11"]["logical_pair_slots"] == 232864060
+    assert developmental["base8_K11"]["physical_contacts"] == 465728120
     assert developmental["base8_K11"]["relay_population_cells"] == 131072
     assert developmental["base8_K11"]["relay_population_cells_sized"] is True
     memory = developmental["base8_K11"]["memory_estimate"]
@@ -164,22 +186,22 @@ def test_artifact_freezes_train_capacity_stops_and_developmental_fit() -> None:
     }
     assert memory["developmental_column_membership"] == {
         "base_memberships_arithmetic": 32768,
-        "compact_recruited_column_bits": 917376,
-        "compact_recruited_column_bytes": 114672,
+        "compact_recruited_column_bits": 979584,
+        "compact_recruited_column_bytes": 122448,
         "compact_recruited_column_dtype_bits": 12,
-        "hot_cell_gid_bytes": 436864,
+        "hot_cell_gid_bytes": 457600,
         "hot_column_offset_bytes": 16388,
-        "native_hot_soa_bytes": 453252,
-        "recruited_memberships": 76448,
+        "native_hot_soa_bytes": 473988,
+        "recruited_memberships": 81632,
         "restore_rule": (
             "base memberships are arithmetic; recruited physical ids are contiguous "
             "and store one packed column id each; rebuild hot CSR on restore"
         ),
     }
     assert memory["total_excluding_recognition_index"] == {
-        "A1_compact_bitpacked_bytes": 806406480,
-        "A3_compact_bitpacked_bytes": 660866443,
-        "native_hot_soa_bytes": 1490914308,
+        "A1_compact_bitpacked_bytes": 806414256,
+        "A3_compact_bitpacked_bytes": 660874219,
+        "native_hot_soa_bytes": 1490935044,
     }
     assert memory["recognition_inverted_index"] == {
         "excluded_mutable_64_entry_block_ceiling_estimate_bytes": 996199200,

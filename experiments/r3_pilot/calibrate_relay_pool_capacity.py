@@ -7,10 +7,12 @@ per column for the A3 mass-matched control.  A seeded token SDR activates K
 columns and a context-conditioned winner is selected in every active column.
 ``--check`` validates the committed artifact without importing NumPy or
 decoding corpus bytes.  ``--replay-check`` rebuilds the canonical TRAIN stream
-and repeats the three-pass structural allocation.
+and repeats the one-pass TRAIN structural allocation.
 
-This is an ideal capacity model, not capability evidence or proof that a
-physical plateau/race realizes the assumed context code.
+This is a cohort-rounded TRAIN structural capacity model, not capability
+evidence or proof that a physical plateau/race realizes the assumed context
+code.  Unrounded ideal arithmetic is retained only in explicitly named
+comparison fields.
 """
 
 from __future__ import annotations
@@ -33,8 +35,8 @@ from typing import Any, Sequence
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_PATH = Path(__file__).with_name("relay_pool_capacity.json")
 
-ARTIFACT_ID = "r3-relay-pool-capacity-v5-paired-sources"
-SCHEMA_VERSION = 5
+ARTIFACT_ID = "r3-relay-pool-capacity-v6-cohort-rounded"
+SCHEMA_VERSION = 6
 CORPUS_SHA256 = "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa"
 TOKENIZER_SHA256 = "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2"
 PREFIX_200_SHA256 = "de5d527b12968762d6bd614c3a77c705e053e272361a72d20f3c0a21b272ef3c"
@@ -43,7 +45,7 @@ TRAIN_STREAM_SHA256 = "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66
 TRAIN_BOOKS = 49
 HELD_OUT_BOOKS = 17
 TRAIN_TOKENS = 2_117_412
-EXPOSURE_PASSES = 3
+EXPOSURE_PASSES = 1
 TOKEN_IDS = tuple(range(256)) + tuple(range(1024, 1536))
 TOKEN_ID_SET = frozenset(TOKEN_IDS)
 SDR_SEED = 17
@@ -64,6 +66,7 @@ K_VALUES = (11, 20, 40)
 CONTACTS_PER_SEGMENT = 20
 PHYSICAL_CONTACTS_PER_PAIR = 2
 PAIR_SLOTS_PER_SEGMENT = CONTACTS_PER_SEGMENT // PHYSICAL_CONTACTS_PER_PAIR
+RESERVE_COHORT_CELLS = 8
 PYRAMIDAL_GID_BITS = 17
 COLUMN_GID_BITS = 12
 MAX_SEGMENTS_PER_CELL = 255
@@ -106,6 +109,23 @@ def _ceil_div(numerator: int, denominator: int) -> int:
     return (numerator + denominator - 1) // denominator
 
 
+def cohort_rounded_depth(context_demand: int, *, base_depth: int) -> int:
+    """Return a base prefix plus complete eight-cell reserve cohorts."""
+
+    if type(context_demand) is not int or context_demand < 0:
+        raise ValueError("context_demand must be a non-negative int")
+    if type(base_depth) is not int or base_depth <= 0:
+        raise ValueError("base_depth must be a positive int")
+    base_capacity = base_depth * MAX_SEGMENTS_PER_CELL
+    if context_demand <= base_capacity:
+        return base_depth
+    reserve_demand = context_demand - base_capacity
+    reserve_capacity = RESERVE_COHORT_CELLS * MAX_SEGMENTS_PER_CELL
+    return base_depth + RESERVE_COHORT_CELLS * _ceil_div(
+        reserve_demand, reserve_capacity
+    )
+
+
 def _architecture() -> dict[str, Any]:
     return {
         "basket_cells": BASKET_CELLS,
@@ -116,7 +136,9 @@ def _architecture() -> dict[str, Any]:
             "A1": "winner_pyramidal + injective_winner_relay",
             "A3": "generic_proximal + injective_generic_relay",
         },
-        "contacts_per_segment": CONTACTS_PER_SEGMENT,
+        "logical_pair_slots_per_segment": PAIR_SLOTS_PER_SEGMENT,
+        "physical_contacts_per_pair": PHYSICAL_CONTACTS_PER_PAIR,
+        "physical_contacts_per_segment": CONTACTS_PER_SEGMENT,
         "generic_proximal_cells": GENERIC_PROXIMAL_CELLS,
         "generic_proximal_offset": GENERIC_PROXIMAL_OFFSET,
         "generic_relay_cells": GENERIC_RELAY_CELLS,
@@ -158,7 +180,7 @@ def _permanence_encoding() -> dict[str, Any]:
 def _claim_boundary() -> dict[str, bool]:
     return {
         "capability_evidence": False,
-        "ideal_structural_sizing_only": True,
+        "cohort_rounded_train_structural_sizing_only": True,
         "physical_race_evidence": False,
     }
 
@@ -258,13 +280,11 @@ def validate_artifact(artifact: dict[str, Any]) -> None:
         "book/pass reset drift",
     )
     _require(
-        schedule.get("transition_events_per_pass") == TRAIN_TOKENS - TRAIN_BOOKS,
+        schedule.get("transition_events") == TRAIN_TOKENS - TRAIN_BOOKS,
         "transition-count drift",
     )
     passes = schedule.get("passes")
-    _require(isinstance(passes, list) and len(passes) == 3, "pass rows drift")
-    _require(passes[1].get("novel_contexts") == 0, "pass 2 grew mappings")
-    _require(passes[2].get("novel_contexts") == 0, "pass 3 grew mappings")
+    _require(isinstance(passes, list) and len(passes) == 1, "pass rows drift")
 
     arms = artifact.get("shared_column_arms")
     _require(isinstance(arms, dict), "shared-column arms are missing")
@@ -273,7 +293,15 @@ def validate_artifact(artifact: dict[str, Any]) -> None:
         arm = arms[f"K{k}"]
         _require(arm.get("winner_cells_per_context") == k, f"K{k} width drift")
         _require(arm.get("segments") == arm.get("distinct_contexts") * k, "segment drift")
-        _require(arm.get("contacts") == arm.get("segments") * 20, "contact drift")
+        _require(
+            arm.get("physical_contacts") == arm.get("segments") * 20,
+            "physical-contact drift",
+        )
+        if k == 11:
+            _require(
+                arm.get("logical_pair_slots") == arm.get("segments") * 10,
+                "logical-pair-slot drift",
+            )
         _require(arm.get("max_segments_per_cell") >= 0, "negative cell load")
         expected_memory = (
             _paired_memory(arm["segments"])
@@ -452,7 +480,7 @@ def _load_train_books() -> tuple[list[Any], dict[str, Any]]:
 def _context_demand(
     encoded_books: Sequence[Any],
 ) -> tuple[list[int], array, array, list[dict[str, Any]], str]:
-    """Replay an injective abstract context code over all exposure passes."""
+    """Replay one TRAIN pass of the injective abstract context code."""
     mappings: list[dict[int, int]] = [dict() for _ in range(1536)]
     context_counts = [0] * 1536
     allocation_tokens = array("H")
@@ -490,7 +518,7 @@ def _context_demand(
 
     novel = len(allocation_tokens)
     path_sha = path_hasher.hexdigest()
-    first_pass = {
+    train_pass = {
         "boundary_resets": len(encoded_books),
         "novel_contexts": novel,
         "pass_index_one_based": 1,
@@ -498,42 +526,11 @@ def _context_demand(
         "transition_events": transitions,
         "winner_path_sha256": path_sha,
     }
-    pass_rows = [first_pass]
-    for pass_index in (2, 3):
-        replay_hasher = hashlib.sha256()
-        replay_transitions = 0
-        replay_reused = 0
-        for book in encoded_books:
-            previous_state = None
-            for raw_token in book:
-                token = int(raw_token)
-                if previous_state is None:
-                    previous_state = -(token + 1)
-                    replay_hasher.update(struct.pack("<iq", token, previous_state))
-                    continue
-                replay_transitions += 1
-                winner_state = mappings[token].get(previous_state)
-                _require(winner_state is not None, f"pass {pass_index} found novel context")
-                replay_reused += 1
-                replay_hasher.update(struct.pack("<iq", token, winner_state))
-                previous_state = winner_state
-        replay_sha = replay_hasher.hexdigest()
-        _require(replay_sha == path_sha, f"pass {pass_index} winner path drifted")
-        pass_rows.append(
-            {
-                "boundary_resets": len(encoded_books),
-                "novel_contexts": 0,
-                "pass_index_one_based": pass_index,
-                "reused_contexts": replay_reused,
-                "transition_events": replay_transitions,
-                "winner_path_sha256": replay_sha,
-            }
-        )
     return (
         context_counts,
         allocation_tokens,
         allocation_ordinals,
-        pass_rows,
+        [train_pass],
         mapping_hasher.hexdigest(),
     )
 
@@ -811,15 +808,15 @@ def _shared_arm(
     max_load = int(loads.max())
     relay_multiplier = 2 if k == 11 else 1
     physical_width = k * relay_multiplier
-    return {
+    arm = {
         "allocation_rule": (
             "base32 context ordinal; invertible prefix mix plus column position modulo 32"
         ),
         "capacity_stop": first_stop,
-        "contacts": segments * CONTACTS_PER_SEGMENT,
+        "physical_contacts": segments * CONTACTS_PER_SEGMENT,
         "direct_20_contact_source": k >= CONTACTS_PER_SEGMENT,
         "distinct_contexts": distinct_contexts,
-        "first_pass_segments": segments,
+        "train_pass_segments": segments,
         "fits_segment_capacity": first_stop is None,
         "max_segments_per_cell": max_load,
         "memory_estimate": (
@@ -837,9 +834,12 @@ def _shared_arm(
         "cell_load_sha256": _sha256(loads.astype("<u4", copy=False).tobytes()),
         "sdr_table_sha256": sdr_sha,
         "segments": segments,
-        "three_pass_segments_created": segments,
+        "train_pass_segments_created": segments,
         "winner_cells_per_context": k,
     }
+    if relay_multiplier == 2:
+        arm["logical_pair_slots"] = segments * PAIR_SLOTS_PER_SEGMENT
+    return arm
 
 
 def _variable_memory(
@@ -860,7 +860,7 @@ def _variable_depth_arm(
     *,
     base_depth: int,
 ) -> dict[str, Any]:
-    """Exact column demand under an ideal balanced developmental allocator."""
+    """Exact demand with base cells followed by complete reserve cohorts."""
     import numpy as np
 
     sdrs, sdr_sha = _token_sdrs(11)
@@ -869,11 +869,20 @@ def _variable_depth_arm(
         count = context_counts[token]
         if count:
             column_demand[np.asarray(sdrs[token], dtype=np.int64)] += count
-    required_depth = np.maximum(
+    ideal_unrounded_depth = np.maximum(
         base_depth,
         (column_demand + MAX_SEGMENTS_PER_CELL - 1) // MAX_SEGMENTS_PER_CELL,
     ).astype(np.uint32)
+    required_depth = np.fromiter(
+        (
+            cohort_rounded_depth(int(demand), base_depth=base_depth)
+            for demand in column_demand
+        ),
+        dtype=np.uint32,
+        count=COLUMNS,
+    )
     allocated_cells = int(required_depth.sum())
+    ideal_unrounded_cells = int(ideal_unrounded_depth.sum())
     recruited = allocated_cells - COLUMNS * base_depth
     max_depth = int(required_depth.max())
     depth_u64 = required_depth.astype(np.uint64)
@@ -900,17 +909,22 @@ def _variable_depth_arm(
             first_stop is None and code_capacity_failures == 0
         ),
         "allocation_rule": (
-            "ideal least-loaded local cell with seed17 context permutation; "
-            "mixed-radix K-tuple uniqueness asserted separately"
+            "least-loaded local cell with seed17 context permutation; base prefix "
+            "followed by complete eight-cell reserve cohorts; mixed-radix K-tuple "
+            "uniqueness asserted separately"
         ),
         "base_depth": base_depth,
         "capacity_stop": first_stop,
+        "cohort_cells": RESERVE_COHORT_CELLS,
+        "cohort_rounding_overhead_cells": allocated_cells - ideal_unrounded_cells,
         "code_capacity_failures": code_capacity_failures,
         "column_demand_sha256": _sha256(
             column_demand.astype("<u8", copy=False).tobytes()
         ),
-        "contacts": segments_allocated * CONTACTS_PER_SEGMENT,
-        "first_pass_segments": segments_allocated,
+        "ideal_unrounded_pyramidal_cells_required": ideal_unrounded_cells,
+        "logical_pair_slots": segments_allocated * PAIR_SLOTS_PER_SEGMENT,
+        "physical_contacts": segments_allocated * CONTACTS_PER_SEGMENT,
+        "train_pass_segments": segments_allocated,
         "global_cell_cap": TOTAL_CELLS,
         "max_column_depth": max_depth,
         "max_segments_per_cell": max_load,
@@ -930,7 +944,7 @@ def _variable_depth_arm(
         ),
         "sdr_table_sha256": sdr_sha,
         "segments": segments_allocated,
-        "three_pass_segments_created": segments_allocated,
+        "train_pass_segments_created": segments_allocated,
         "winner_cells_per_context": 11,
         "memory_estimate": _variable_memory(
             segments_allocated,
@@ -972,29 +986,29 @@ def _token_pool_comparisons(context_counts: Sequence[int]) -> dict[str, Any]:
             "base_cells_per_token": TOKEN_POOL_BASE_CELLS,
             "contexts_exceeding_32_codes": q1_exhausted,
             "distinct_contexts": total_contexts,
-            "first_pass_segments": total_contexts,
+            "train_pass_segments": total_contexts,
             "max_segments_per_cell_if_aliased": q1_max_load,
             "representational_capacity_per_token": 32,
             "representationally_valid_for_train": False,
             "rejection_reason": (
                 "segments sharing one winner cell emit the same fixed K40 relay projection"
             ),
-            "three_pass_segments_created": total_contexts,
+            "train_pass_segments_created": total_contexts,
         },
         "q4": {
             "base_cells_per_token": TOKEN_POOL_BASE_CELLS,
             "base_context_capacity": _token_pool_capacity(TOKEN_POOL_BASE_CELLS, 4),
             "capacity_formula": "min(C(m,4),floor(m*255/4))",
             "capacity_stop": q4_total_cells > TOKEN_POOL_TOTAL_BUDGET or q4_max_load > 255,
-            "contacts": total_contexts * 4 * CONTACTS_PER_SEGMENT,
+            "physical_contacts": total_contexts * 4 * CONTACTS_PER_SEGMENT,
             "distinct_contexts": total_contexts,
-            "first_pass_segments": total_contexts * 4,
+            "train_pass_segments": total_contexts * 4,
             "max_segments_per_cell": q4_max_load,
             "pool_cells_required": q4_total_cells,
             "reserve_cells_available": TOKEN_POOL_RESERVE,
             "reserve_cells_used": q4_total_cells - len(TOKEN_IDS) * TOKEN_POOL_BASE_CELLS,
             "segments": total_contexts * 4,
-            "three_pass_segments_created": total_contexts * 4,
+            "train_pass_segments_created": total_contexts * 4,
             "winner_cells_per_context": 4,
             "winner_projection_targets_per_cell": 10,
         },
@@ -1081,10 +1095,10 @@ def run_replay() -> dict[str, Any]:
             ),
             "exposure_passes": EXPOSURE_PASSES,
             "final_evaluation_included": False,
-            "mapping_persistence": "across books and passes",
-            "pass_replay_method": "literal_three_pass",
+            "mapping_persistence": "within one TRAIN pass across books",
+            "pass_replay_method": "single_train_pass",
             "passes": pass_rows,
-            "transition_events_per_pass": TRAIN_TOKENS - TRAIN_BOOKS,
+            "transition_events": TRAIN_TOKENS - TRAIN_BOOKS,
         },
         "schema_version": SCHEMA_VERSION,
         "scope": scope,

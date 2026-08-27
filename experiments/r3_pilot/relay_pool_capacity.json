@@ -8,13 +8,15 @@
       "A1": "winner_pyramidal + injective_winner_relay",
       "A3": "generic_proximal + injective_generic_relay"
     },
-    "contacts_per_segment": 20,
     "generic_proximal_cells": 4096,
     "generic_proximal_offset": 266240,
     "generic_relay_cells": 4096,
     "generic_relay_offset": 270336,
     "initial_permanence": "0.51",
+    "logical_pair_slots_per_segment": 10,
     "max_segments_per_cell": 255,
+    "physical_contacts_per_pair": 2,
+    "physical_contacts_per_segment": 20,
     "physical_gid_bits": 19,
     "pyramidal_cell_cap": 131072,
     "sdr_seed": 17,
@@ -23,10 +25,10 @@
     "winner_relay_cells": 131072,
     "winner_relay_offset": 131072
   },
-  "artifact_id": "r3-relay-pool-capacity-v5-paired-sources",
+  "artifact_id": "r3-relay-pool-capacity-v6-cohort-rounded",
   "claim_boundary": {
     "capability_evidence": false,
-    "ideal_structural_sizing_only": true,
+    "cohort_rounded_train_structural_sizing_only": true,
     "physical_race_evidence": false
   },
   "collision_tails": {
@@ -104,26 +106,28 @@
   "developmental_variable_depth": {
     "base4_K11": {
       "all_train_unique_states_fit": true,
-      "allocation_rule": "ideal least-loaded local cell with seed17 context permutation; mixed-radix K-tuple uniqueness asserted separately",
+      "allocation_rule": "least-loaded local cell with seed17 context permutation; base prefix followed by complete eight-cell reserve cohorts; mixed-radix K-tuple uniqueness asserted separately",
       "base_depth": 4,
       "capacity_stop": null,
       "code_capacity_failures": 0,
+      "cohort_cells": 8,
+      "cohort_rounding_overhead_cells": 7138,
       "column_demand_sha256": "0928b64f363130a4b055c5a3109cda39b781abc537ce834e272b08b30c71474a",
-      "contacts": 465728120,
-      "first_pass_segments": 23286406,
       "global_cell_cap": 131072,
-      "max_column_depth": 1125,
+      "ideal_unrounded_pyramidal_cells_required": 99398,
+      "logical_pair_slots": 232864060,
+      "max_column_depth": 1132,
       "max_segments_per_cell": 255,
       "memory_estimate": {
         "developmental_column_membership": {
           "base_memberships_arithmetic": 16384,
-          "compact_recruited_column_bits": 996168,
-          "compact_recruited_column_bytes": 124521,
+          "compact_recruited_column_bits": 1081824,
+          "compact_recruited_column_bytes": 135228,
           "compact_recruited_column_dtype_bits": 12,
-          "hot_cell_gid_bytes": 397592,
+          "hot_cell_gid_bytes": 426144,
           "hot_column_offset_bytes": 16388,
-          "native_hot_soa_bytes": 413980,
-          "recruited_memberships": 83014,
+          "native_hot_soa_bytes": 442532,
+          "recruited_memberships": 90152,
           "restore_rule": "base memberships are arithmetic; recruited physical ids are contiguous and store one packed column id each; rebuild hot CSR on restore"
         },
         "recognition_inverted_index": {
@@ -182,47 +186,51 @@
           "slot_rule": "fixed source/relay pairs; relay identity is arithmetic and both contacts share one permanence tick; tick zero marks an empty slot"
         },
         "total_excluding_recognition_index": {
-          "A1_compact_bitpacked_bytes": 806416329,
-          "A3_compact_bitpacked_bytes": 660876292,
-          "native_hot_soa_bytes": 1490875036
+          "A1_compact_bitpacked_bytes": 806427036,
+          "A3_compact_bitpacked_bytes": 660886999,
+          "native_hot_soa_bytes": 1490903588
         }
       },
+      "physical_contacts": 465728120,
       "physical_relay_multiplier": 2,
       "physical_winner_width": 22,
-      "pyramidal_cells_recruited": 83014,
-      "pyramidal_cells_remaining": 31674,
-      "pyramidal_cells_required": 99398,
+      "pyramidal_cells_recruited": 90152,
+      "pyramidal_cells_remaining": 24536,
+      "pyramidal_cells_required": 106536,
       "relay_population_cells": 131072,
       "relay_population_cells_sized": true,
       "relay_population_rule": "one fitted-GLIF3 twin per pyramidal address; relay_id = pyramidal_cap + winner_id",
-      "required_depth_sha256": "9ad3ba688c82b87d38ead7181f6c7ef3fab5d58a29deac6391c3c87d3aa8fff3",
+      "required_depth_sha256": "b57e54e4396f51dfc1cb2041a5887924f27042aaa2609626f1acdfc20955b035",
       "sdr_table_sha256": "1f3385590a09aa6c1e27eca59f52dcd900fe0e96547b965813176dfb8fc96e00",
       "segments": 23286406,
-      "three_pass_segments_created": 23286406,
+      "train_pass_segments": 23286406,
+      "train_pass_segments_created": 23286406,
       "winner_cells_per_context": 11
     },
     "base8_K11": {
       "all_train_unique_states_fit": true,
-      "allocation_rule": "ideal least-loaded local cell with seed17 context permutation; mixed-radix K-tuple uniqueness asserted separately",
+      "allocation_rule": "least-loaded local cell with seed17 context permutation; base prefix followed by complete eight-cell reserve cohorts; mixed-radix K-tuple uniqueness asserted separately",
       "base_depth": 8,
       "capacity_stop": null,
       "code_capacity_failures": 0,
+      "cohort_cells": 8,
+      "cohort_rounding_overhead_cells": 5184,
       "column_demand_sha256": "0928b64f363130a4b055c5a3109cda39b781abc537ce834e272b08b30c71474a",
-      "contacts": 465728120,
-      "first_pass_segments": 23286406,
       "global_cell_cap": 131072,
-      "max_column_depth": 1125,
+      "ideal_unrounded_pyramidal_cells_required": 109216,
+      "logical_pair_slots": 232864060,
+      "max_column_depth": 1128,
       "max_segments_per_cell": 255,
       "memory_estimate": {
         "developmental_column_membership": {
           "base_memberships_arithmetic": 32768,
-          "compact_recruited_column_bits": 917376,
-          "compact_recruited_column_bytes": 114672,
+          "compact_recruited_column_bits": 979584,
+          "compact_recruited_column_bytes": 122448,
           "compact_recruited_column_dtype_bits": 12,
-          "hot_cell_gid_bytes": 436864,
+          "hot_cell_gid_bytes": 457600,
           "hot_column_offset_bytes": 16388,
-          "native_hot_soa_bytes": 453252,
-          "recruited_memberships": 76448,
+          "native_hot_soa_bytes": 473988,
+          "recruited_memberships": 81632,
           "restore_rule": "base memberships are arithmetic; recruited physical ids are contiguous and store one packed column id each; rebuild hot CSR on restore"
         },
         "recognition_inverted_index": {
@@ -281,23 +289,25 @@
           "slot_rule": "fixed source/relay pairs; relay identity is arithmetic and both contacts share one permanence tick; tick zero marks an empty slot"
         },
         "total_excluding_recognition_index": {
-          "A1_compact_bitpacked_bytes": 806406480,
-          "A3_compact_bitpacked_bytes": 660866443,
-          "native_hot_soa_bytes": 1490914308
+          "A1_compact_bitpacked_bytes": 806414256,
+          "A3_compact_bitpacked_bytes": 660874219,
+          "native_hot_soa_bytes": 1490935044
         }
       },
+      "physical_contacts": 465728120,
       "physical_relay_multiplier": 2,
       "physical_winner_width": 22,
-      "pyramidal_cells_recruited": 76448,
-      "pyramidal_cells_remaining": 21856,
-      "pyramidal_cells_required": 109216,
+      "pyramidal_cells_recruited": 81632,
+      "pyramidal_cells_remaining": 16672,
+      "pyramidal_cells_required": 114400,
       "relay_population_cells": 131072,
       "relay_population_cells_sized": true,
       "relay_population_rule": "one fitted-GLIF3 twin per pyramidal address; relay_id = pyramidal_cap + winner_id",
-      "required_depth_sha256": "ebdb355e3961ac009be80504cf82ff1a3501a6ac8eb0cb679b90a984c436fea3",
+      "required_depth_sha256": "e0cc2721d1c1b7611b05acc54b30b1315f39a56fac49fbbfaa835807c5a49979",
       "sdr_table_sha256": "1f3385590a09aa6c1e27eca59f52dcd900fe0e96547b965813176dfb8fc96e00",
       "segments": 23286406,
-      "three_pass_segments_created": 23286406,
+      "train_pass_segments": 23286406,
+      "train_pass_segments_created": 23286406,
       "winner_cells_per_context": 11
     }
   },
@@ -316,12 +326,12 @@
     "ticks_per_unit": 500
   },
   "schedule": {
-    "book_boundary_resets": 147,
+    "book_boundary_resets": 49,
     "boundary_rule": "clear prior state; first token emits a token-local code and grows no segment",
-    "exposure_passes": 3,
+    "exposure_passes": 1,
     "final_evaluation_included": false,
-    "mapping_persistence": "across books and passes",
-    "pass_replay_method": "literal_three_pass",
+    "mapping_persistence": "within one TRAIN pass across books",
+    "pass_replay_method": "single_train_pass",
     "passes": [
       {
         "boundary_resets": 49,
@@ -330,27 +340,11 @@
         "reused_contexts": 417,
         "transition_events": 2117363,
         "winner_path_sha256": "49a6f4b2cb467e645508247f799f1ba07e660c8e6cfad86489e41685a1614892"
-      },
-      {
-        "boundary_resets": 49,
-        "novel_contexts": 0,
-        "pass_index_one_based": 2,
-        "reused_contexts": 2117363,
-        "transition_events": 2117363,
-        "winner_path_sha256": "49a6f4b2cb467e645508247f799f1ba07e660c8e6cfad86489e41685a1614892"
-      },
-      {
-        "boundary_resets": 49,
-        "novel_contexts": 0,
-        "pass_index_one_based": 3,
-        "reused_contexts": 2117363,
-        "transition_events": 2117363,
-        "winner_path_sha256": "49a6f4b2cb467e645508247f799f1ba07e660c8e6cfad86489e41685a1614892"
       }
     ],
-    "transition_events_per_pass": 2117363
+    "transition_events": 2117363
   },
-  "schema_version": 5,
+  "schema_version": 6,
   "scope": {
     "book_token_lengths_sha256": "f6afe1b50deb0c94d48d2c56688fcd52eacc1c573438134d585fe00ddd7ec5f1",
     "corpus_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
@@ -374,11 +368,10 @@
         "token_id": 101
       },
       "cell_load_sha256": "f11858ead3f76be7787633d5ddf1fd40636c0bacf2de8ad3999f3ab48197af37",
-      "contacts": 465728120,
       "direct_20_contact_source": false,
       "distinct_contexts": 2116946,
-      "first_pass_segments": 23286406,
       "fits_segment_capacity": false,
+      "logical_pair_slots": 232864060,
       "max_segments_per_cell": 8966,
       "memory_estimate": {
         "developmental_column_membership": {
@@ -453,13 +446,15 @@
           "native_hot_soa_bytes": 1490461056
         }
       },
+      "physical_contacts": 465728120,
       "physical_relay_multiplier": 2,
       "physical_winner_width": 22,
       "relay_population_cells": 131072,
       "relay_population_cells_sized": true,
       "sdr_table_sha256": "1f3385590a09aa6c1e27eca59f52dcd900fe0e96547b965813176dfb8fc96e00",
       "segments": 23286406,
-      "three_pass_segments_created": 23286406,
+      "train_pass_segments": 23286406,
+      "train_pass_segments_created": 23286406,
       "winner_cells_per_context": 11
     },
     "K20": {
@@ -472,10 +467,8 @@
         "token_id": 97
       },
       "cell_load_sha256": "c2feb16b87b0ae2abf9376903a3d0566713fe6e13fcb03da3a0e423317c92f06",
-      "contacts": 846778400,
       "direct_20_contact_source": true,
       "distinct_contexts": 2116946,
-      "first_pass_segments": 42338920,
       "fits_segment_capacity": false,
       "max_segments_per_cell": 7097,
       "memory_estimate": {
@@ -492,13 +485,15 @@
         "ideal_bitpacked_mib": "2625.040142",
         "recognition_inverted_index_included": false
       },
+      "physical_contacts": 846778400,
       "physical_relay_multiplier": 1,
       "physical_winner_width": 20,
       "relay_population_cells": 0,
       "relay_population_cells_sized": true,
       "sdr_table_sha256": "54fbfc22ce511b483fd39d2d8808f2f048cbb5b10962012e19450ed3a4156815",
       "segments": 42338920,
-      "three_pass_segments_created": 42338920,
+      "train_pass_segments": 42338920,
+      "train_pass_segments_created": 42338920,
       "winner_cells_per_context": 20
     },
     "K40": {
@@ -511,10 +506,8 @@
         "token_id": 32
       },
       "cell_load_sha256": "d4cf61a92e62aa030cc63c93f2bd0f28fc31fad14e1031e01e5fc01ea758e666",
-      "contacts": 1693556800,
       "direct_20_contact_source": true,
       "distinct_contexts": 2116946,
-      "first_pass_segments": 84677840,
       "fits_segment_capacity": false,
       "max_segments_per_cell": 11255,
       "memory_estimate": {
@@ -531,13 +524,15 @@
         "ideal_bitpacked_mib": "5249.580280",
         "recognition_inverted_index_included": false
       },
+      "physical_contacts": 1693556800,
       "physical_relay_multiplier": 1,
       "physical_winner_width": 40,
       "relay_population_cells": 0,
       "relay_population_cells_sized": true,
       "sdr_table_sha256": "9011b5d3fefcf8b2df8dac106f96343b2022eda30329667371877ef76ba7f856",
       "segments": 84677840,
-      "three_pass_segments_created": 84677840,
+      "train_pass_segments": 84677840,
+      "train_pass_segments_created": 84677840,
       "winner_cells_per_context": 40
     }
   },
@@ -546,27 +541,27 @@
       "base_cells_per_token": 32,
       "contexts_exceeding_32_codes": 477,
       "distinct_contexts": 2116946,
-      "first_pass_segments": 2116946,
       "max_segments_per_cell_if_aliased": 5852,
       "rejection_reason": "segments sharing one winner cell emit the same fixed K40 relay projection",
       "representational_capacity_per_token": 32,
       "representationally_valid_for_train": false,
-      "three_pass_segments_created": 2116946
+      "train_pass_segments": 2116946,
+      "train_pass_segments_created": 2116946
     },
     "q4": {
       "base_cells_per_token": 32,
       "base_context_capacity": 2040,
       "capacity_formula": "min(C(m,4),floor(m*255/4))",
       "capacity_stop": true,
-      "contacts": 169355680,
       "distinct_contexts": 2116946,
-      "first_pass_segments": 8467784,
       "max_segments_per_cell": 255,
+      "physical_contacts": 169355680,
       "pool_cells_required": 50559,
       "reserve_cells_available": 24576,
       "reserve_cells_used": 25983,
       "segments": 8467784,
-      "three_pass_segments_created": 8467784,
+      "train_pass_segments": 8467784,
+      "train_pass_segments_created": 8467784,
       "winner_cells_per_context": 4,
       "winner_projection_targets_per_cell": 10
     }
