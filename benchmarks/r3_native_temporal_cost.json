@@ -1,0 +1,179 @@
+{
+  "authority_mode": "synthetic pre-outcome authority bypass; official calibration remains disabled",
+  "benchmark": "r3-native-temporal-indexed-physical-cost",
+  "claim_boundary": "synthetic TRAIN-safe engineering timing only; no held-out, C1, capability, or cohort evidence",
+  "environment": {
+    "native_binary_sha256": "1effb930247efc8efe4e7fe705bb4a48c6d790ff52852bdde9dc52d8797ab5fd",
+    "native_binary_size": 545280,
+    "native_source_digest": "151b954986fd0bf2c05cf06d56fd86152bc666babd4f09dc8c1fcfd5b7e4ea22",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "generated_at_utc": "2026-08-27T23:12:37.708583+00:00",
+  "method": {
+    "contexts": "disjoint eleven-column codes; one learned segment per target column and context",
+    "gc_during_samples": "disabled",
+    "learn_samples_per_scale": 100,
+    "read_samples_per_scale": 200,
+    "segment_targets": [
+      1023,
+      8008,
+      32010
+    ],
+    "threshold_offsets": "synthetic all-zero finite f64",
+    "timer": "time.perf_counter_ns",
+    "warmup_transitions_per_mode": 20
+  },
+  "results": [
+    {
+      "actual_live_segments": 1023,
+      "configured": {
+        "cohort_count": 0,
+        "column_count": 1034,
+        "committed_pyramidal_cells": 2068,
+        "max_pyramidal_cells": 2068,
+        "physical_cell_count": 7238,
+        "target_column_occupancy": 2
+      },
+      "definition_build_ns": 748900,
+      "learn_confirmed_transition": {
+        "max_ns": 370800,
+        "mean_ns": 280577.0,
+        "median_ns": 293300.0,
+        "min_ns": 158400,
+        "p95_ns": 319100,
+        "samples": 100,
+        "token_steps_per_second_at_median": 6818.956699624958,
+        "transitions_per_second_at_median": 3409.478349812479
+      },
+      "measured_condition": {
+        "all_basket_to_gaba_ticks": true,
+        "all_winner_to_basket_ticks": true,
+        "basket_spikes": 11,
+        "predicted_columns": 11,
+        "recognition_active_segments": 11,
+        "recognition_candidate_segments": 11,
+        "recognition_counts_basis": "exact from the fixture's disjoint ten-pair segments and the native inverted-index contract; the circuit-step ABI directly exposes only predictions and physical spikes",
+        "recognition_postings_visited": 110,
+        "transition_token_steps": 2,
+        "winner_spikes": 11
+      },
+      "native_construction_ns": 2127905400,
+      "population_ns": 16333600,
+      "population_segments_per_second": 62631.63050399177,
+      "read_only_recognized_transition": {
+        "max_ns": 412800,
+        "mean_ns": 263078.0,
+        "median_ns": 279500.0,
+        "min_ns": 148800,
+        "p95_ns": 312300,
+        "samples": 200,
+        "token_steps_per_second_at_median": 7155.6350626118065,
+        "transitions_per_second_at_median": 3577.8175313059032
+      },
+      "requested_live_segments": 1023,
+      "synthetic_contexts": 93
+    },
+    {
+      "actual_live_segments": 8008,
+      "configured": {
+        "cohort_count": 11,
+        "column_count": 8019,
+        "committed_pyramidal_cells": 16060,
+        "max_pyramidal_cells": 16060,
+        "physical_cell_count": 56177,
+        "target_column_occupancy": 4
+      },
+      "definition_build_ns": 6723600,
+      "learn_confirmed_transition": {
+        "max_ns": 666600,
+        "mean_ns": 259600.0,
+        "median_ns": 263200.0,
+        "min_ns": 176100,
+        "p95_ns": 356200,
+        "samples": 100,
+        "token_steps_per_second_at_median": 7598.784194528876,
+        "transitions_per_second_at_median": 3799.392097264438
+      },
+      "measured_condition": {
+        "all_basket_to_gaba_ticks": true,
+        "all_winner_to_basket_ticks": true,
+        "basket_spikes": 11,
+        "predicted_columns": 11,
+        "recognition_active_segments": 11,
+        "recognition_candidate_segments": 11,
+        "recognition_counts_basis": "exact from the fixture's disjoint ten-pair segments and the native inverted-index contract; the circuit-step ABI directly exposes only predictions and physical spikes",
+        "recognition_postings_visited": 110,
+        "transition_token_steps": 2,
+        "winner_spikes": 11
+      },
+      "native_construction_ns": 1271427300,
+      "population_ns": 195130200,
+      "population_segments_per_second": 41039.265065069376,
+      "read_only_recognized_transition": {
+        "max_ns": 749300,
+        "mean_ns": 306979.5,
+        "median_ns": 312600.0,
+        "min_ns": 183800,
+        "p95_ns": 360100,
+        "samples": 200,
+        "token_steps_per_second_at_median": 6397.952655150352,
+        "transitions_per_second_at_median": 3198.976327575176
+      },
+      "requested_live_segments": 8008,
+      "synthetic_contexts": 728
+    },
+    {
+      "actual_live_segments": 32010,
+      "configured": {
+        "cohort_count": 55,
+        "column_count": 32021,
+        "committed_pyramidal_cells": 64152,
+        "max_pyramidal_cells": 64152,
+        "physical_cell_count": 224367,
+        "target_column_occupancy": 12
+      },
+      "definition_build_ns": 19294600,
+      "learn_confirmed_transition": {
+        "max_ns": 944500,
+        "mean_ns": 449230.0,
+        "median_ns": 458400.0,
+        "min_ns": 255400,
+        "p95_ns": 502400,
+        "samples": 100,
+        "token_steps_per_second_at_median": 4363.001745200698,
+        "transitions_per_second_at_median": 2181.500872600349
+      },
+      "measured_condition": {
+        "all_basket_to_gaba_ticks": true,
+        "all_winner_to_basket_ticks": true,
+        "basket_spikes": 11,
+        "predicted_columns": 11,
+        "recognition_active_segments": 11,
+        "recognition_candidate_segments": 11,
+        "recognition_counts_basis": "exact from the fixture's disjoint ten-pair segments and the native inverted-index contract; the circuit-step ABI directly exposes only predictions and physical spikes",
+        "recognition_postings_visited": 110,
+        "transition_token_steps": 2,
+        "winner_spikes": 11
+      },
+      "native_construction_ns": 1235537200,
+      "population_ns": 967032800,
+      "population_segments_per_second": 33101.25571748962,
+      "read_only_recognized_transition": {
+        "max_ns": 761400,
+        "mean_ns": 376993.5,
+        "median_ns": 425200.0,
+        "min_ns": 230800,
+        "p95_ns": 453600,
+        "samples": 200,
+        "token_steps_per_second_at_median": 4703.668861712135,
+        "transitions_per_second_at_median": 2351.8344308560677
+      },
+      "requested_live_segments": 32010,
+      "synthetic_contexts": 2910
+    }
+  ],
+  "runtime_path": "NativeTemporalCircuit.advance_block -> indexed TemporalStore recognition -> fitted GLIF3 plateau/basket first-spike race",
+  "schema_version": 1
+}
