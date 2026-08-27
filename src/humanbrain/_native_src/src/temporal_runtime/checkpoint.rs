@@ -3829,6 +3829,30 @@ pub(crate) enum CheckpointV1ImportError {
     AssemblyInvariant,
 }
 
+fn canonical_empty_checkpoint_v1(
+    factory: &ValidatedCheckpointV1RuntimeFactory,
+) -> Result<[u8; CHECKPOINT_V1_HEADER_BYTES as usize], CheckpointV1CodecError> {
+    let layout = CheckpointV1Layout::checked(0, 0, 0, 0)?;
+    let scalars =
+        CheckpointV1Scalars::new(0, 0, factory.derived.base_population, 0, 0, 0, 0, None)?;
+    let empty_digest = CheckpointV1Digest(Sha256::digest([]).into());
+    checkpoint_v1_header_bytes(
+        factory.identity(),
+        layout,
+        scalars,
+        empty_digest,
+        empty_digest,
+    )
+}
+
+pub(crate) fn import_canonical_empty_checkpoint_v1(
+    factory: ValidatedCheckpointV1RuntimeFactory,
+) -> Result<TemporalCircuitRuntime, CheckpointV1ImportError> {
+    let checkpoint = canonical_empty_checkpoint_v1(&factory)
+        .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+    import_checkpoint_v1(&checkpoint, factory)
+}
+
 impl fmt::Display for CheckpointV1ImportError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -4909,6 +4933,7 @@ pub(in crate::temporal_runtime) mod tests {
     // two recruited cohorts and distinct source/winner context sections.
     const FULL_SECTION_GENERIC_BODY_HEX: &str = "00000000010000003f000000400000004100000042000000430000004400000045000000460000004700000048000000490000004a0000004b0000004c0000004d0000004e0000004f000000500000005100000052000000530000005400000000000000020000000400000006000000080000000a0000000c0000000e0000001000000012000000140000001a0000001c0000001e00000020000000220000002400000026000000280000002a0000002c0000002e0000000000000001000000160000000200000003000000180000000000000002000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff030000000500000007000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000a000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa00fb000000000000000000000000000000000000000000000000000000000000000000000000002c01000000000000000000000000000000000000ff007701f40100000000000000000000000000000000000000000000000000000000000000000000f900900100000000000000000000000000000000";
     const FULL_SECTION_GENERIC_HEADER_HEX: &str = "52334e5443503100010000010000000038030000000000003802000000000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fca61287978e0a7c3b76ce050c9cf4961d00c441a9036eaecbe645ad628088c4fdb5a0520fa90d4bc79531d0b1a77ecba759c42e6d0be9567004753e6e260b669dc6222193dfca80b9e29b83e57ec1581d6ef6d94a339046249b8b9a7c8c0a1a506000000020000001a0000000100000000000000000000000000000016160000ba1e27b132140f8dd0f8eabc3eb75a591ed99feb2a2e8cba5d02fc3ac90c2f38";
+    const EMPTY_FULL_SECTION_GENERIC_HEADER_HEX: &str = "52334e5443503100010000010000000000010000000000000000000000000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fca61287978e0a7c3b76ce050c9cf4961d00c441a9036eaecbe645ad628088c4fe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550000000000000000160000000000000000000000000000000000000000000000bbab675473ff34aa5e25ab8ab46d6d87bc54a54480154a9da152c4a2a1894125";
     const FULL_IMPORT_EXPECTED_ALLOCATIONS: [(CheckpointV1ImportAllocationSite, usize); 31] = [
         (CheckpointV1ImportAllocationSite::RuntimeColumnOffsets, 12),
         (CheckpointV1ImportAllocationSite::RuntimeColumnCells, 26),
@@ -5410,6 +5435,13 @@ pub(in crate::temporal_runtime) mod tests {
             FULL_SECTION_GENERIC_BODY_HEX,
         );
         assert_eq!(checkpoint.len(), 824);
+        checkpoint
+    }
+
+    pub(in crate::temporal_runtime) fn cpython_empty_full_section_generic_checkpoint_v1() -> Vec<u8>
+    {
+        let checkpoint = hex_bytes(EMPTY_FULL_SECTION_GENERIC_HEADER_HEX);
+        assert_eq!(checkpoint.len(), usize::from(CHECKPOINT_V1_HEADER_BYTES));
         checkpoint
     }
 
@@ -6896,6 +6928,52 @@ pub(in crate::temporal_runtime) mod tests {
             assert_eq!(&sink.get_ref()[128..160], &EMPTY_SEMANTIC_DIGEST);
             assert_eq!(&sink.get_ref()[160..192], &EMPTY_SEMANTIC_DIGEST);
         }
+    }
+
+    #[test]
+    fn canonical_empty_checkpoint_is_allocation_free_importer_input_for_every_policy() {
+        for context_policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            for plasticity_policy in [
+                TemporalPlasticityPolicy::GrowthOff,
+                TemporalPlasticityPolicy::Plastic,
+            ] {
+                let runtime = empty_runtime_with_plasticity(context_policy, plasticity_policy);
+                let expected = encoded_checkpoint(&runtime);
+                let factory = factory_for_runtime(&runtime);
+                let (checkpoint, allocations) =
+                    count_allocations(|| canonical_empty_checkpoint_v1(&factory));
+                let checkpoint = checkpoint.expect("empty checkpoint encoding must succeed");
+
+                assert_eq!(allocations, 0);
+                assert_eq!(checkpoint.len(), 256);
+                assert_eq!(checkpoint.as_slice(), expected);
+
+                let imported = import_canonical_empty_checkpoint_v1(factory)
+                    .expect("canonical empty checkpoint must import");
+                assert_eq!(encoded_checkpoint(&imported), expected);
+                assert_eq!(imported.event_count, 0);
+                assert_eq!(imported.learning_step, 0);
+                assert_eq!(imported.scientific_stop, None);
+            }
+        }
+    }
+
+    #[test]
+    fn canonical_empty_checkpoint_matches_the_independent_cpython_oracle() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let checkpoint = canonical_empty_checkpoint_v1(&factory)
+            .expect("independent empty checkpoint must encode");
+        let expected = cpython_empty_full_section_generic_checkpoint_v1();
+
+        assert_eq!(checkpoint.as_slice(), expected);
+        assert_eq!(
+            Sha256::digest(checkpoint).as_slice(),
+            hex_bytes("6aedd76db5a1bb53b33c26b5c7bd6aa117d9eb099fe2ab59b52b9a8ee01e6ee0")
+        );
     }
 
     #[test]

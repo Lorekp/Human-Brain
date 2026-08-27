@@ -32,8 +32,9 @@ use std::cell::Cell;
 
 use super::{
     checkpoint::{
-        import_checkpoint_v1, CheckpointV1ImportError, PrepareCheckpointV1ExportError,
-        ValidatedCheckpointAuthority, ValidatedCheckpointV1RuntimeFactory,
+        import_canonical_empty_checkpoint_v1, import_checkpoint_v1, CheckpointV1ImportError,
+        PrepareCheckpointV1ExportError, ValidatedCheckpointAuthority,
+        ValidatedCheckpointV1RuntimeFactory,
     },
     PhysicalStage, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalCircuitStep,
     TemporalCircuitStop, TemporalContextPolicy, TemporalOverflowStage, TemporalPlasticityPolicy,
@@ -398,6 +399,171 @@ fn try_copy_thresholds(source: *const f64, count: usize) -> Result<Vec<f64>, ()>
     Ok(copied)
 }
 
+#[derive(Clone, Copy)]
+struct DefinitionRegionCounts {
+    token_codes: usize,
+    threshold_offsets: usize,
+}
+
+fn preflight_definition_regions(
+    definition: TemporalCircuitDefinitionV1,
+    report: &mut TemporalCircuitReportV1,
+) -> Result<DefinitionRegionCounts, u32> {
+    let Some(token_codes) = counted_region(definition.token_codes, definition.token_code_count)
+    else {
+        return Err(report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "token-code input geometry is invalid",
+        ));
+    };
+    let Some(threshold_offsets) = counted_region(
+        definition.threshold_offsets_mv,
+        definition.threshold_offset_count,
+    ) else {
+        return Err(report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "threshold input geometry is invalid",
+        ));
+    };
+    Ok(DefinitionRegionCounts {
+        token_codes,
+        threshold_offsets,
+    })
+}
+
+fn build_validated_factory(
+    definition: TemporalCircuitDefinitionV1,
+    counts: DefinitionRegionCounts,
+    report: &mut TemporalCircuitReportV1,
+) -> Result<
+    (
+        ValidatedCheckpointAuthority,
+        ValidatedCheckpointV1RuntimeFactory,
+    ),
+    u32,
+> {
+    let config = definition.config.into_runtime().map_err(|()| {
+        report.finish(
+            TEMPORAL_RUNTIME_INVALID_DEFINITION,
+            "circuit definition contains an invalid policy tag",
+        )
+    })?;
+    let token_codes =
+        try_copy_token_codes(definition.token_codes, counts.token_codes).map_err(|()| {
+            report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "token-code copy allocation failed",
+            )
+        })?;
+    let threshold_offsets_mv =
+        try_copy_thresholds(definition.threshold_offsets_mv, counts.threshold_offsets).map_err(
+            |()| {
+                report.finish(
+                    TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                    "threshold copy allocation failed",
+                )
+            },
+        )?;
+    let authority = definition.authority.into_validated();
+    let factory = ValidatedCheckpointV1RuntimeFactory::new(
+        authority,
+        config,
+        token_codes,
+        threshold_offsets_mv,
+    )
+    .map_err(|_| {
+        report.finish(
+            TEMPORAL_RUNTIME_INVALID_DEFINITION,
+            "circuit definition is not canonical",
+        )
+    })?;
+    Ok((authority, factory))
+}
+
+unsafe fn validate_handle_output(
+    handle_out: *mut *mut TemporalCircuitRuntimeHandle,
+    report: &mut TemporalCircuitReportV1,
+) -> Result<(), u32> {
+    if !fixed_pointer_is_valid(handle_out.cast_const()) {
+        return Err(report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "handle output is null or misaligned",
+        ));
+    }
+    if !handle_out.read().is_null() {
+        return Err(report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "handle output must be initialized to null",
+        ));
+    }
+    Ok(())
+}
+
+unsafe fn publish_runtime_handle(
+    runtime: TemporalCircuitRuntime,
+    authority: ValidatedCheckpointAuthority,
+    handle_out: *mut *mut TemporalCircuitRuntimeHandle,
+    report: &mut TemporalCircuitReportV1,
+) -> u32 {
+    let handle = allocate_owned(TemporalCircuitRuntimeHandle {
+        creation_authority: authority,
+        runtime: Mutex::new(runtime),
+    });
+    if handle.is_null() {
+        return report.finish(
+            TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+            "runtime handle allocation failed",
+        );
+    }
+    handle_out.write(handle);
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+fn checkpoint_import_error(
+    report: &mut TemporalCircuitReportV1,
+    error: CheckpointV1ImportError,
+) -> u32 {
+    match error {
+        CheckpointV1ImportError::RetryableAllocation(_) => report.finish(
+            TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+            "checkpoint import allocation failed",
+        ),
+        CheckpointV1ImportError::Pass1(_)
+        | CheckpointV1ImportError::State
+        | CheckpointV1ImportError::SemanticIndexMismatch
+        | CheckpointV1ImportError::CanonicalReexportMismatch { .. } => report.finish(
+            TEMPORAL_RUNTIME_CHECKPOINT_REJECTED,
+            "checkpoint-v1 was rejected",
+        ),
+        CheckpointV1ImportError::FactoryIdentityMismatch
+        | CheckpointV1ImportError::AssemblyInvariant => report.finish(
+            TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+            "validated checkpoint assembly invariant failed",
+        ),
+    }
+}
+
+fn canonical_empty_import_error(
+    report: &mut TemporalCircuitReportV1,
+    error: CheckpointV1ImportError,
+) -> u32 {
+    match error {
+        CheckpointV1ImportError::RetryableAllocation(_) => report.finish(
+            TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+            "fresh runtime allocation failed",
+        ),
+        CheckpointV1ImportError::Pass1(_)
+        | CheckpointV1ImportError::FactoryIdentityMismatch
+        | CheckpointV1ImportError::State
+        | CheckpointV1ImportError::SemanticIndexMismatch
+        | CheckpointV1ImportError::CanonicalReexportMismatch { .. }
+        | CheckpointV1ImportError::AssemblyInvariant => report.finish(
+            TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+            "canonical empty checkpoint construction failed",
+        ),
+    }
+}
+
 fn prepare_error(
     report: &mut TemporalCircuitReportV1,
     error: PrepareCheckpointV1ExportError,
@@ -616,6 +782,51 @@ impl Seek for FixedCheckpointSink {
     }
 }
 
+/// Create a fresh runtime by importing its canonical empty checkpoint.
+///
+/// The definition selects capacities and immutable circuit identity only. It
+/// cannot inject transient or learned state; nonempty construction remains the
+/// checkpoint-import interface.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. `*handle_out` must be
+/// initialized to null; it remains null on every failure.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_create_v1(
+    definition: *const TemporalCircuitDefinitionV1,
+    handle_out: *mut *mut TemporalCircuitRuntimeHandle,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if let Err(status) = validate_handle_output(handle_out, report) {
+        return status;
+    }
+    if !fixed_pointer_is_valid(definition) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "circuit definition is null or misaligned",
+        );
+    }
+    let definition = definition.read();
+    let counts = match preflight_definition_regions(definition, report) {
+        Ok(counts) => counts,
+        Err(status) => return status,
+    };
+    let (authority, factory) = match build_validated_factory(definition, counts, report) {
+        Ok(built) => built,
+        Err(status) => return status,
+    };
+    let runtime = match import_canonical_empty_checkpoint_v1(factory) {
+        Ok(runtime) => runtime,
+        Err(error) => return canonical_empty_import_error(report, error),
+    };
+    publish_runtime_handle(runtime, authority, handle_out, report)
+}
+
 /// Import one canonical checkpoint and publish a new opaque handle last.
 ///
 /// # Safety
@@ -632,17 +843,8 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_import_checkpoint_v
         return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
     }
     let report = report(report_out);
-    if !fixed_pointer_is_valid(handle_out.cast_const()) {
-        return report.finish(
-            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
-            "handle output is null or misaligned",
-        );
-    }
-    if !handle_out.read().is_null() {
-        return report.finish(
-            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
-            "handle output must be initialized to null",
-        );
+    if let Err(status) = validate_handle_output(handle_out, report) {
+        return status;
     }
     if !fixed_pointer_is_valid(request) {
         return report.finish(
@@ -652,22 +854,9 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_import_checkpoint_v
     }
     let request = request.read();
     let definition = request.definition;
-    let Some(token_code_count) =
-        counted_region(definition.token_codes, definition.token_code_count)
-    else {
-        return report.finish(
-            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
-            "token-code input geometry is invalid",
-        );
-    };
-    let Some(threshold_offset_count) = counted_region(
-        definition.threshold_offsets_mv,
-        definition.threshold_offset_count,
-    ) else {
-        return report.finish(
-            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
-            "threshold input geometry is invalid",
-        );
+    let counts = match preflight_definition_regions(definition, report) {
+        Ok(counts) => counts,
+        Err(status) => return status,
     };
     let Some(checkpoint_len) = counted_region(request.checkpoint_bytes, request.checkpoint_len)
     else {
@@ -676,45 +865,9 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_import_checkpoint_v
             "checkpoint input geometry is invalid",
         );
     };
-    let Ok(config) = definition.config.into_runtime() else {
-        return report.finish(
-            TEMPORAL_RUNTIME_INVALID_DEFINITION,
-            "circuit definition contains an invalid policy tag",
-        );
-    };
-    let token_codes = match try_copy_token_codes(definition.token_codes, token_code_count) {
-        Ok(codes) => codes,
-        Err(()) => {
-            return report.finish(
-                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
-                "token-code copy allocation failed",
-            );
-        }
-    };
-    let threshold_offsets_mv =
-        match try_copy_thresholds(definition.threshold_offsets_mv, threshold_offset_count) {
-            Ok(offsets) => offsets,
-            Err(()) => {
-                return report.finish(
-                    TEMPORAL_RUNTIME_ALLOCATION_FAILED,
-                    "threshold copy allocation failed",
-                );
-            }
-        };
-    let authority = definition.authority.into_validated();
-    let factory = match ValidatedCheckpointV1RuntimeFactory::new(
-        authority,
-        config,
-        token_codes,
-        threshold_offsets_mv,
-    ) {
-        Ok(factory) => factory,
-        Err(_) => {
-            return report.finish(
-                TEMPORAL_RUNTIME_INVALID_DEFINITION,
-                "circuit definition is not canonical",
-            );
-        }
+    let (authority, factory) = match build_validated_factory(definition, counts, report) {
+        Ok(built) => built,
+        Err(status) => return status,
     };
     let checkpoint = if checkpoint_len == 0 {
         &[]
@@ -723,45 +876,9 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_import_checkpoint_v
     };
     let runtime = match import_checkpoint_v1(checkpoint, factory) {
         Ok(runtime) => runtime,
-        Err(CheckpointV1ImportError::RetryableAllocation(_)) => {
-            return report.finish(
-                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
-                "checkpoint import allocation failed",
-            );
-        }
-        Err(
-            CheckpointV1ImportError::Pass1(_)
-            | CheckpointV1ImportError::State
-            | CheckpointV1ImportError::SemanticIndexMismatch
-            | CheckpointV1ImportError::CanonicalReexportMismatch { .. },
-        ) => {
-            return report.finish(
-                TEMPORAL_RUNTIME_CHECKPOINT_REJECTED,
-                "checkpoint-v1 was rejected",
-            );
-        }
-        Err(
-            CheckpointV1ImportError::FactoryIdentityMismatch
-            | CheckpointV1ImportError::AssemblyInvariant,
-        ) => {
-            return report.finish(
-                TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
-                "validated checkpoint assembly invariant failed",
-            );
-        }
+        Err(error) => return checkpoint_import_error(report, error),
     };
-    let handle = allocate_owned(TemporalCircuitRuntimeHandle {
-        creation_authority: authority,
-        runtime: Mutex::new(runtime),
-    });
-    if handle.is_null() {
-        return report.finish(
-            TEMPORAL_RUNTIME_ALLOCATION_FAILED,
-            "runtime handle allocation failed",
-        );
-    }
-    handle_out.write(handle);
-    report.finish(TEMPORAL_RUNTIME_OK, "")
+    publish_runtime_handle(runtime, authority, handle_out, report)
 }
 
 /// Advance a fully preflighted block, committing successful prefix tokens.
@@ -1009,8 +1126,8 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_export_checkpoint_v
 ///
 /// # Safety
 ///
-/// A non-null handle must have been returned by the import function, must not
-/// have been destroyed before, and must not be used concurrently.
+/// A non-null handle must have been returned by the create or import function,
+/// must not have been destroyed before, and must not be used concurrently.
 #[no_mangle]
 pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_destroy(
     handle: *mut TemporalCircuitRuntimeHandle,
@@ -1031,13 +1148,24 @@ mod tests {
 
     use super::*;
     use crate::temporal_runtime::{
-        checkpoint::tests::cpython_full_section_generic_checkpoint_v1, TemporalSegmentInit,
+        checkpoint::tests::{
+            cpython_empty_full_section_generic_checkpoint_v1,
+            cpython_full_section_generic_checkpoint_v1,
+        },
+        tests::count_allocations,
+        TemporalSegmentInit,
     };
 
     fn raw_bytes<T>(value: &T) -> &[u8] {
         // SAFETY: callers use fully initialized repr(C) records whose layout
         // assertions below prove contains no implicit padding.
         unsafe { slice::from_raw_parts((value as *const T).cast(), size_of::<T>()) }
+    }
+
+    fn report_message(report: &TemporalCircuitReportV1) -> &str {
+        let message_len = usize::try_from(report.message_len).expect("message length fits usize");
+        std::str::from_utf8(&report.message_utf8[..message_len])
+            .expect("native report messages are UTF-8")
     }
 
     #[test]
@@ -1313,6 +1441,155 @@ mod tests {
         token_codes: [TemporalTokenCodeV1; 1],
         thresholds: Vec<f64>,
         checkpoint: Vec<u8>,
+    }
+
+    struct EmptyDefinitionFixture {
+        authority: TemporalValidatedCheckpointAuthorityV1,
+        config: TemporalCircuitConfigV1,
+        token_codes: [TemporalTokenCodeV1; 1],
+        thresholds: Vec<f64>,
+    }
+
+    impl EmptyDefinitionFixture {
+        fn new(context_policy: u8, plasticity_policy: u8) -> Self {
+            Self {
+                authority: TemporalValidatedCheckpointAuthorityV1 {
+                    protocol_identity_sha256: [0xa5; 32],
+                    source_bundle_identity_sha256: std::array::from_fn(|index| index as u8),
+                },
+                config: TemporalCircuitConfigV1 {
+                    column_count: 11,
+                    max_pyramidal_cells: 26,
+                    segment_capacity: 6,
+                    construction_seed: 0x0102_0304,
+                    connected_permanence_ticks: 250,
+                    initial_permanence_ticks: 255,
+                    permanence_increment_ticks: 50,
+                    negative_decrement_ticks: 2,
+                    base_cells_per_column: 2,
+                    novel_race_cap: 2,
+                    prediction_quorum: 1,
+                    max_segments_per_cell: 1,
+                    theta_match: 18,
+                    theta_active: 20,
+                    context_policy,
+                    plasticity_policy,
+                },
+                token_codes: [TemporalTokenCodeV1 {
+                    token_id: 7,
+                    columns: std::array::from_fn(|index| index as u32),
+                }],
+                thresholds: vec![0.0; 85],
+            }
+        }
+
+        fn definition(&self) -> TemporalCircuitDefinitionV1 {
+            TemporalCircuitDefinitionV1 {
+                config: self.config,
+                token_codes: self.token_codes.as_ptr(),
+                token_code_count: self.token_codes.len() as u64,
+                threshold_offsets_mv: self.thresholds.as_ptr(),
+                threshold_offset_count: self.thresholds.len() as u64,
+                authority: self.authority,
+            }
+        }
+
+        fn independently_constructed_checkpoint(&self) -> Vec<u8> {
+            let config = self.config.into_runtime().unwrap();
+            let runtime = TemporalCircuitRuntime::new(
+                config,
+                self.token_codes
+                    .iter()
+                    .map(|code| TokenCode {
+                        token_id: code.token_id,
+                        columns: code.columns,
+                    })
+                    .collect(),
+                (0..config.column_count)
+                    .map(|column| {
+                        let base_width = u32::from(config.base_cells_per_column);
+                        (0..base_width)
+                            .map(|offset| column * base_width + offset)
+                            .collect()
+                    })
+                    .collect(),
+                self.thresholds.clone(),
+                &[],
+            )
+            .unwrap();
+            let prepared = runtime
+                .prepare_checkpoint_v1_export(self.authority.into_validated())
+                .unwrap();
+            let mut sink = Cursor::new(Vec::new());
+            prepared.encode_into(&mut sink).unwrap();
+            sink.into_inner()
+        }
+    }
+
+    unsafe fn create_from_definition(
+        definition: &TemporalCircuitDefinitionV1,
+    ) -> (*mut TemporalCircuitRuntimeHandle, TemporalCircuitReportV1) {
+        let mut handle = ptr::null_mut();
+        let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+        let status = humanbrain_temporal_circuit_runtime_create_v1(
+            definition,
+            &mut handle,
+            report.as_mut_ptr(),
+        );
+        let report = report.assume_init();
+        assert_eq!(status, report.status);
+        (handle, report)
+    }
+
+    unsafe fn import_from_definition(
+        definition: TemporalCircuitDefinitionV1,
+        checkpoint: &[u8],
+    ) -> (*mut TemporalCircuitRuntimeHandle, TemporalCircuitReportV1) {
+        let request = TemporalCircuitImportCheckpointV1Request {
+            definition,
+            checkpoint_bytes: checkpoint.as_ptr(),
+            checkpoint_len: checkpoint.len() as u64,
+        };
+        let mut handle = ptr::null_mut();
+        let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+        let status = humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+            &request,
+            &mut handle,
+            report.as_mut_ptr(),
+        );
+        let report = report.assume_init();
+        assert_eq!(status, report.status);
+        (handle, report)
+    }
+
+    unsafe fn export_checkpoint(
+        handle: *const TemporalCircuitRuntimeHandle,
+        authority: &TemporalValidatedCheckpointAuthorityV1,
+    ) -> Vec<u8> {
+        let mut size_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+        assert_eq!(
+            humanbrain_temporal_circuit_runtime_checkpoint_size_v1(
+                handle,
+                authority,
+                size_report.as_mut_ptr(),
+            ),
+            TEMPORAL_RUNTIME_OK
+        );
+        let required = size_report.assume_init().required;
+        let mut checkpoint = vec![0u8; usize::try_from(required).unwrap()];
+        let mut export_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+        assert_eq!(
+            humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                handle,
+                authority,
+                checkpoint.as_mut_ptr(),
+                checkpoint.len() as u64,
+                export_report.as_mut_ptr(),
+            ),
+            TEMPORAL_RUNTIME_OK
+        );
+        assert_eq!(export_report.assume_init().observed, required);
+        checkpoint
     }
 
     fn fixture() -> Fixture {
@@ -1984,6 +2261,365 @@ mod tests {
             assert_eq!(
                 report.assume_init().status,
                 TEMPORAL_RUNTIME_CHECKPOINT_REJECTED
+            );
+        }
+    }
+
+    #[test]
+    fn fresh_create_matches_exact_empty_import_across_all_policy_combinations() {
+        let mut definition_digests = Vec::new();
+        for context_policy in [CONTEXT_BOUND_WINNERS, CONTEXT_GENERIC_AFFERENTS] {
+            for plasticity_policy in [PLASTICITY_GROWTH_OFF, PLASTICITY_PLASTIC] {
+                let fixture = EmptyDefinitionFixture::new(context_policy, plasticity_policy);
+                let definition = fixture.definition();
+                let expected = fixture.independently_constructed_checkpoint();
+                assert_eq!(expected.len(), 256);
+                definition_digests.push(<[u8; 32]>::from(Sha256::digest(&expected)));
+
+                unsafe {
+                    let (created, create_report) = create_from_definition(&definition);
+                    assert_eq!(create_report.status, TEMPORAL_RUNTIME_OK);
+                    assert!(!created.is_null());
+                    assert_eq!(export_checkpoint(created, &fixture.authority), expected);
+
+                    let (imported, import_report) = import_from_definition(definition, &expected);
+                    assert_eq!(import_report.status, TEMPORAL_RUNTIME_OK);
+                    assert!(!imported.is_null());
+                    assert_eq!(export_checkpoint(imported, &fixture.authority), expected);
+
+                    let mut created_step = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+                    let mut imported_step = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+                    assert_eq!(
+                        advance(created, &[7], created_step.as_mut_ptr(), 1, 0).0,
+                        TEMPORAL_RUNTIME_OK
+                    );
+                    assert_eq!(
+                        advance(imported, &[7], imported_step.as_mut_ptr(), 1, 0).0,
+                        TEMPORAL_RUNTIME_OK
+                    );
+                    let created_step = created_step.assume_init();
+                    let imported_step = imported_step.assume_init();
+                    assert_eq!(created_step, imported_step);
+                    assert_eq!(created_step.event_count, 1);
+
+                    humanbrain_temporal_circuit_runtime_destroy(created);
+                    humanbrain_temporal_circuit_runtime_destroy(imported);
+                }
+            }
+        }
+        for left in 0..definition_digests.len() {
+            for right in left + 1..definition_digests.len() {
+                assert_ne!(definition_digests[left], definition_digests[right]);
+            }
+        }
+    }
+
+    #[test]
+    fn fresh_create_matches_the_independent_cpython_empty_checkpoint() {
+        let fixture = EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+        let expected = cpython_empty_full_section_generic_checkpoint_v1();
+        assert_eq!(expected.len(), 256);
+        assert_eq!(
+            hex_digest(&expected),
+            "6aedd76db5a1bb53b33c26b5c7bd6aa117d9eb099fe2ab59b52b9a8ee01e6ee0"
+        );
+
+        unsafe {
+            let (handle, report) = create_from_definition(&fixture.definition());
+            assert_eq!(report.status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(export_checkpoint(handle, &fixture.authority), expected);
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[test]
+    fn fresh_create_owns_foreign_definition_and_resumes_from_its_checkpoint() {
+        let authority = TemporalValidatedCheckpointAuthorityV1 {
+            protocol_identity_sha256: [0xa5; 32],
+            source_bundle_identity_sha256: std::array::from_fn(|index| index as u8),
+        };
+        unsafe {
+            let handle = {
+                let mut fixture =
+                    EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+                let definition = fixture.definition();
+                let (handle, report) = create_from_definition(&definition);
+                assert_eq!(report.status, TEMPORAL_RUNTIME_OK);
+                assert!(!handle.is_null());
+
+                fixture.token_codes[0].token_id = u32::MAX;
+                fixture.thresholds.fill(f64::NAN);
+                assert_eq!(fixture.token_codes[0].token_id, u32::MAX);
+                assert!(fixture.thresholds.iter().all(|value| value.is_nan()));
+                handle
+            };
+
+            let mut first = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let (status, report) = advance(handle, &[7], first.as_mut_ptr(), 1, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(report.completed_prefix, 1);
+            assert_eq!(first.assume_init().event_count, 1);
+
+            let checkpoint = export_checkpoint(handle, &authority);
+            let resume_fixture =
+                EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+            let (resumed, report) =
+                import_from_definition(resume_fixture.definition(), &checkpoint);
+            assert_eq!(report.status, TEMPORAL_RUNTIME_OK);
+
+            let mut uninterrupted = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut resumed_step = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            assert_eq!(
+                advance(handle, &[7], uninterrupted.as_mut_ptr(), 1, 0).0,
+                TEMPORAL_RUNTIME_OK
+            );
+            assert_eq!(
+                advance(resumed, &[7], resumed_step.as_mut_ptr(), 1, 0).0,
+                TEMPORAL_RUNTIME_OK
+            );
+            let uninterrupted = uninterrupted.assume_init();
+            let resumed_step = resumed_step.assume_init();
+            assert_eq!(uninterrupted, resumed_step);
+            assert_eq!(uninterrupted.event_count, 2);
+
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+            humanbrain_temporal_circuit_runtime_destroy(resumed);
+        }
+    }
+
+    #[test]
+    fn fresh_create_error_precedence_and_nonpublication_are_exact() {
+        let fixture = EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+        let definition = fixture.definition();
+        unsafe {
+            let mut handle = ptr::null_mut();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_create_v1(
+                    &definition,
+                    &mut handle,
+                    ptr::null_mut(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert!(handle.is_null());
+
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_create_v1(
+                    &definition,
+                    ptr::null_mut(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+
+            let mut nonnull = ptr::NonNull::<TemporalCircuitRuntimeHandle>::dangling().as_ptr();
+            let retained = nonnull;
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_create_v1(
+                    ptr::null(),
+                    &mut nonnull,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(nonnull, retained);
+
+            let mut handle = ptr::null_mut();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_create_v1(
+                    ptr::null(),
+                    &mut handle,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert!(handle.is_null());
+
+            let definition_backing = vec![0u8; size_of::<TemporalCircuitDefinitionV1>() + 8];
+            let definition_offset = (0..8)
+                .find(|offset| {
+                    !(definition_backing.as_ptr().add(*offset) as usize)
+                        .is_multiple_of(align_of::<TemporalCircuitDefinitionV1>())
+                })
+                .unwrap();
+            let misaligned_definition = definition_backing
+                .as_ptr()
+                .add(definition_offset)
+                .cast::<TemporalCircuitDefinitionV1>();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_create_v1(
+                    misaligned_definition,
+                    &mut handle,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert!(handle.is_null());
+
+            let mut bad_geometry = definition;
+            bad_geometry.token_code_count = u64::MAX;
+            let (bad_handle, bad_report) = create_from_definition(&bad_geometry);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+
+            let mut bad_token_geometry_and_tag = bad_geometry;
+            bad_token_geometry_and_tag.config.context_policy = 0;
+            let (bad_handle, bad_report) = create_from_definition(&bad_token_geometry_and_tag);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+            assert_eq!(
+                report_message(&bad_report),
+                "token-code input geometry is invalid"
+            );
+
+            let token_backing =
+                vec![0u8; size_of::<TemporalTokenCodeV1>() + align_of::<TemporalTokenCodeV1>()];
+            let token_offset = (0..align_of::<TemporalTokenCodeV1>())
+                .find(|offset| {
+                    !(token_backing.as_ptr().add(*offset) as usize)
+                        .is_multiple_of(align_of::<TemporalTokenCodeV1>())
+                })
+                .unwrap();
+            let mut bad_token_geometry = definition;
+            bad_token_geometry.token_codes = token_backing
+                .as_ptr()
+                .add(token_offset)
+                .cast::<TemporalTokenCodeV1>();
+            bad_token_geometry.token_code_count = 1;
+            let (bad_handle, bad_report) = create_from_definition(&bad_token_geometry);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+
+            let mut overflowing_threshold_geometry = definition;
+            overflowing_threshold_geometry.threshold_offset_count = u64::MAX;
+            let (bad_handle, bad_report) = create_from_definition(&overflowing_threshold_geometry);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+
+            let mut bad_threshold_geometry_and_tag = overflowing_threshold_geometry;
+            bad_threshold_geometry_and_tag.config.context_policy = 0;
+            let (bad_handle, bad_report) = create_from_definition(&bad_threshold_geometry_and_tag);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+            assert_eq!(
+                report_message(&bad_report),
+                "threshold input geometry is invalid"
+            );
+
+            let threshold_backing = [0u8; 16];
+            let threshold_offset = (0..8)
+                .find(|offset| {
+                    !(threshold_backing.as_ptr().add(*offset) as usize)
+                        .is_multiple_of(align_of::<f64>())
+                })
+                .unwrap();
+            let mut bad_threshold_geometry = definition;
+            bad_threshold_geometry.threshold_offsets_mv =
+                threshold_backing.as_ptr().add(threshold_offset).cast();
+            bad_threshold_geometry.threshold_offset_count = 1;
+            let (bad_handle, bad_report) = create_from_definition(&bad_threshold_geometry);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+
+            let mut invalid_tag = definition;
+            invalid_tag.config.context_policy = 0;
+            let (bad_handle, bad_report) = create_from_definition(&invalid_tag);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_INVALID_DEFINITION);
+
+            let duplicate_codes = [fixture.token_codes[0], fixture.token_codes[0]];
+            let mut noncanonical = definition;
+            noncanonical.token_codes = duplicate_codes.as_ptr();
+            noncanonical.token_code_count = duplicate_codes.len() as u64;
+            let (bad_handle, bad_report) = create_from_definition(&noncanonical);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_INVALID_DEFINITION);
+
+            fail_next_owned_allocation();
+            let (bad_handle, bad_report) = create_from_definition(&definition);
+            assert!(bad_handle.is_null());
+            assert_eq!(bad_report.status, TEMPORAL_RUNTIME_ALLOCATION_FAILED);
+        }
+    }
+
+    #[test]
+    fn fresh_create_allocation_count_matches_exact_empty_checkpoint_import() {
+        let fixture = EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+        let definition = fixture.definition();
+        let checkpoint = fixture.independently_constructed_checkpoint();
+        let request = TemporalCircuitImportCheckpointV1Request {
+            definition,
+            checkpoint_bytes: checkpoint.as_ptr(),
+            checkpoint_len: checkpoint.len() as u64,
+        };
+
+        unsafe {
+            let mut created = ptr::null_mut();
+            let mut create_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            let (create_status, create_allocations) = count_allocations(|| {
+                humanbrain_temporal_circuit_runtime_create_v1(
+                    &definition,
+                    &mut created,
+                    create_report.as_mut_ptr(),
+                )
+            });
+
+            let mut imported = ptr::null_mut();
+            let mut import_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            let (import_status, import_allocations) = count_allocations(|| {
+                humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                    &request,
+                    &mut imported,
+                    import_report.as_mut_ptr(),
+                )
+            });
+
+            assert_eq!(create_status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(import_status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(create_report.assume_init().status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(import_report.assume_init().status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(create_allocations, import_allocations);
+            assert!(create_allocations > 0);
+            assert_eq!(
+                export_checkpoint(created, &fixture.authority),
+                export_checkpoint(imported, &fixture.authority)
+            );
+
+            humanbrain_temporal_circuit_runtime_destroy(created);
+            humanbrain_temporal_circuit_runtime_destroy(imported);
+        }
+    }
+
+    #[test]
+    fn import_checkpoint_geometry_still_precedes_definition_tag_validation() {
+        let fixture = EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+        let mut definition = fixture.definition();
+        definition.config.context_policy = 0;
+        let request = TemporalCircuitImportCheckpointV1Request {
+            definition,
+            checkpoint_bytes: ptr::null(),
+            checkpoint_len: 1,
+        };
+
+        unsafe {
+            let mut handle = ptr::null_mut();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                    &request,
+                    &mut handle,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert!(handle.is_null());
+            assert_eq!(
+                report.assume_init().status,
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
             );
         }
     }
