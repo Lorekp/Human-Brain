@@ -1,10 +1,10 @@
 //! Checkpoint-v1 identities and pure fixed-header codec for the native runtime.
 //!
 //! This module computes identities, checked byte layout, canonical scalar
-//! bytes, the complete fixed header, and allocation-free reachability proofs
-//! over a borrowed live state. It does not encode or import checkpoint body
-//! bytes, allocate export scratch, touch a sink, publish files, or expose an
-//! ABI.
+//! bytes, the complete fixed header, allocation-free reachability proofs, and
+//! fallible pre-sink export preparation over a borrowed live state. It does not
+//! encode or import checkpoint body bytes, touch a sink, publish files, or
+//! expose an ABI.
 
 use sha2::{Digest, Sha256};
 
@@ -13,7 +13,7 @@ use super::{
     TemporalPoisonCode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS, CONTEXT_CELLS_U8,
     PAIRS_PER_SEGMENT,
 };
-use crate::temporal::TemporalSegmentRow;
+use crate::temporal::{TemporalSegmentRow, TemporalStorePreflightError};
 use crate::temporal_physics::TEMPORAL_PHYSICS_IDENTITY;
 
 const LOGICAL_STATE_DOMAIN: &[u8] = b"humanbrain-r3-checkpoint-logical-state-v1\0";
@@ -761,6 +761,29 @@ fn max_distinct_code_overlap(codebook: &[super::TokenCode]) -> u8 {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1AllocationSite {
+    ColumnReplay,
+    SemanticPostings,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum PrepareCheckpointV1ExportError {
+    Identity(TemporalCheckpointIdentityError),
+    Codec(CheckpointV1CodecError),
+    State,
+    StoreIndex(TemporalStorePreflightError),
+    RetryableAllocation(CheckpointV1AllocationSite),
+}
+
+pub(crate) struct PreparedCheckpointV1Export<'a> {
+    runtime: &'a TemporalCircuitRuntime,
+    identity: TemporalCheckpointV1Identity,
+    layout: CheckpointV1Layout,
+    scalars: CheckpointV1Scalars,
+    semantic_index_digest: CheckpointV1Digest,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::enum_variant_names)] // Every private category names the invariant family it proves.
 enum CheckpointV1StateError {
     ScalarInvariant,
@@ -1172,6 +1195,121 @@ fn checkpoint_v1_row_is_reachable(
         })
 }
 
+impl TemporalCircuitRuntime {
+    /// Freeze the currently executable exact-generic recognition route.
+    ///
+    /// Route 1 remains a certificate-only design and cannot identify a live
+    /// runtime until its physical bucket execution path exists.
+    pub(crate) fn prepare_checkpoint_v1_export(
+        &self,
+        authority: ValidatedCheckpointAuthority,
+    ) -> Result<PreparedCheckpointV1Export<'_>, PrepareCheckpointV1ExportError> {
+        self.prepare_checkpoint_v1_export_inner(authority, |_| false)
+    }
+
+    #[cfg(test)]
+    fn prepare_checkpoint_v1_export_with_failpoint(
+        &self,
+        authority: ValidatedCheckpointAuthority,
+        failpoint: CheckpointV1AllocationSite,
+    ) -> Result<PreparedCheckpointV1Export<'_>, PrepareCheckpointV1ExportError> {
+        self.prepare_checkpoint_v1_export_inner(authority, |site| site == failpoint)
+    }
+
+    fn prepare_checkpoint_v1_export_inner(
+        &self,
+        authority: ValidatedCheckpointAuthority,
+        mut fail_before_reserve: impl FnMut(CheckpointV1AllocationSite) -> bool,
+    ) -> Result<PreparedCheckpointV1Export<'_>, PrepareCheckpointV1ExportError> {
+        let identity = self
+            .checkpoint_v1_identity(authority, TemporalRecognitionRoute::ExactGeneric)
+            .map_err(PrepareCheckpointV1ExportError::Identity)?;
+
+        let segment_count = self.store.runtime_segment_count();
+        let cohort_count = u32::try_from(self.cohort_columns.len()).map_err(|_| {
+            PrepareCheckpointV1ExportError::Codec(CheckpointV1CodecError::LengthOverflow)
+        })?;
+        let scalars = CheckpointV1Scalars::new(
+            segment_count,
+            cohort_count,
+            self.next_reserve_cell,
+            self.event_count,
+            self.learning_step,
+            self.previous_context_len,
+            self.previous_winner_context_len,
+            self.scientific_stop,
+        )
+        .map_err(PrepareCheckpointV1ExportError::Codec)?;
+        let layout = CheckpointV1Layout::checked(
+            segment_count,
+            cohort_count,
+            self.previous_context_len,
+            self.previous_winner_context_len,
+        )
+        .map_err(PrepareCheckpointV1ExportError::Codec)?;
+
+        let column_count = usize::try_from(self.config.column_count).map_err(|_| {
+            PrepareCheckpointV1ExportError::Codec(CheckpointV1CodecError::LengthOverflow)
+        })?;
+        let mut column_replay = checkpoint_v1_zeroed_u32_scratch(
+            column_count,
+            CheckpointV1AllocationSite::ColumnReplay,
+            &mut fail_before_reserve,
+        )?;
+        validate_checkpoint_v1_runtime_state(self, &mut column_replay)
+            .map_err(|_| PrepareCheckpointV1ExportError::State)?;
+
+        let semantic_scratch_required = self
+            .store
+            .runtime_semantic_posting_scratch_required()
+            .map_err(PrepareCheckpointV1ExportError::StoreIndex)?;
+        let semantic_scratch_len = usize::try_from(semantic_scratch_required).map_err(|_| {
+            PrepareCheckpointV1ExportError::Codec(CheckpointV1CodecError::LengthOverflow)
+        })?;
+        let mut semantic_scratch = checkpoint_v1_zeroed_u32_scratch(
+            semantic_scratch_len,
+            CheckpointV1AllocationSite::SemanticPostings,
+            &mut fail_before_reserve,
+        )?;
+        let mut semantic_hasher = Sha256::new();
+        self.store
+            .visit_runtime_semantic_postings(&mut semantic_scratch, |posting| {
+                semantic_hasher.update(posting.normalized_source.to_le_bytes());
+                semantic_hasher.update(posting.segment_id.to_le_bytes());
+                semantic_hasher.update(posting.slot.to_le_bytes());
+            })
+            .map_err(PrepareCheckpointV1ExportError::StoreIndex)?;
+        let semantic_index_digest = CheckpointV1Digest(semantic_hasher.finalize().into());
+
+        Ok(PreparedCheckpointV1Export {
+            runtime: self,
+            identity,
+            layout,
+            scalars,
+            semantic_index_digest,
+        })
+    }
+}
+
+fn checkpoint_v1_zeroed_u32_scratch(
+    element_count: usize,
+    site: CheckpointV1AllocationSite,
+    fail_before_reserve: &mut impl FnMut(CheckpointV1AllocationSite) -> bool,
+) -> Result<Vec<u32>, PrepareCheckpointV1ExportError> {
+    if element_count == 0 {
+        return Ok(Vec::new());
+    }
+    if fail_before_reserve(site) {
+        return Err(PrepareCheckpointV1ExportError::RetryableAllocation(site));
+    }
+    let mut scratch = Vec::new();
+    scratch
+        .try_reserve_exact(element_count)
+        .map_err(|_| PrepareCheckpointV1ExportError::RetryableAllocation(site))?;
+    scratch.resize(element_count, 0);
+    Ok(scratch)
+}
+
 pub(crate) fn checkpoint_v1_logical_state_digest(
     stored_body_digest: &[u8; 32],
     scalar_block: &[u8; 32],
@@ -1190,6 +1328,38 @@ mod tests {
         TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy,
         TemporalPlasticityPolicy, TemporalRuntimeBuildError, TemporalSegmentInit, TokenCode,
     };
+
+    const EMPTY_SEMANTIC_DIGEST: [u8; 32] = [
+        0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9,
+        0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52,
+        0xb8, 0x55,
+    ];
+    // Independent CPython `struct.pack("<III", ...)` + SHA-256 over
+    // [(0,0,0), (0,1,0), (1,1,1), (2,0,1), (2,1,2)].
+    const SEMANTIC_FIXTURE_DIGEST: [u8; 32] = [
+        0x59, 0x56, 0x91, 0x25, 0xdf, 0x76, 0x64, 0x19, 0xd5, 0x69, 0x68, 0x78, 0x5b, 0x84, 0xb7,
+        0x59, 0xb4, 0x57, 0x63, 0x1e, 0xb4, 0x6f, 0x26, 0x08, 0x94, 0x3c, 0xb8, 0x10, 0x59, 0xb6,
+        0xc1, 0xef,
+    ];
+
+    #[derive(Debug, Eq, PartialEq)]
+    struct CheckpointV1LogicalStateSnapshot {
+        column_offsets: Vec<usize>,
+        column_cells: Vec<u32>,
+        alternate_column_offsets: Vec<usize>,
+        alternate_column_cells: Vec<u32>,
+        cohort_columns: Vec<u32>,
+        next_reserve_cell: u32,
+        previous_context: [u32; CONTEXT_CELLS],
+        previous_context_len: u8,
+        previous_winner_context: [u32; CONTEXT_CELLS],
+        previous_winner_context_len: u8,
+        event_count: u64,
+        learning_step: u64,
+        scientific_stop: Option<TemporalPoisonCode>,
+        rows: Vec<(u32, TemporalSegmentRow)>,
+        owner_loads: Vec<Option<u8>>,
+    }
 
     fn identity_runtime(
         column_count: u32,
@@ -1341,6 +1511,107 @@ mod tests {
             &segments,
         )
         .expect("chronologically recruited fixture must build")
+    }
+
+    fn semantic_runtime(context_policy: TemporalContextPolicy) -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 22,
+            segment_capacity: 4,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 2,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let proximal_offset = 55;
+        let source = |normalized| match context_policy {
+            TemporalContextPolicy::BoundWinners => normalized,
+            TemporalContextPolicy::GenericAfferents => proximal_offset + normalized,
+        };
+        let segments = [
+            TemporalSegmentInit {
+                owner: 0,
+                sources: vec![source(0), source(2)],
+                permanence_ticks: vec![250, 251],
+            },
+            TemporalSegmentInit {
+                owner: 2,
+                sources: vec![source(0), source(1), source(2)],
+                permanence_ticks: vec![300, 301, 302],
+            },
+        ];
+        let members = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+
+        TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 77],
+            &segments,
+        )
+        .expect("semantic digest fixture must build")
+    }
+
+    fn checkpoint_v1_logical_state_snapshot(
+        runtime: &TemporalCircuitRuntime,
+    ) -> CheckpointV1LogicalStateSnapshot {
+        CheckpointV1LogicalStateSnapshot {
+            column_offsets: runtime.column_offsets.clone(),
+            column_cells: runtime.column_cells.clone(),
+            alternate_column_offsets: runtime.alternate_column_offsets.clone(),
+            alternate_column_cells: runtime.alternate_column_cells.clone(),
+            cohort_columns: runtime.cohort_columns.clone(),
+            next_reserve_cell: runtime.next_reserve_cell,
+            previous_context: runtime.previous_context,
+            previous_context_len: runtime.previous_context_len,
+            previous_winner_context: runtime.previous_winner_context,
+            previous_winner_context_len: runtime.previous_winner_context_len,
+            event_count: runtime.event_count,
+            learning_step: runtime.learning_step,
+            scientific_stop: runtime.scientific_stop,
+            rows: (0..runtime.store.runtime_segment_count())
+                .map(|segment_id| {
+                    (
+                        runtime
+                            .store
+                            .runtime_segment_owner(segment_id)
+                            .expect("snapshot owner must exist"),
+                        runtime
+                            .store
+                            .runtime_segment_row(segment_id)
+                            .expect("snapshot row must be canonical"),
+                    )
+                })
+                .collect(),
+            owner_loads: (0..runtime.config.max_pyramidal_cells)
+                .map(|owner| runtime.store.runtime_owner_load(owner))
+                .collect(),
+        }
+    }
+
+    fn assert_same_prepared_proof(
+        left: &PreparedCheckpointV1Export<'_>,
+        right: &PreparedCheckpointV1Export<'_>,
+    ) {
+        assert!(std::ptr::eq(left.runtime, right.runtime));
+        assert_eq!(left.identity, right.identity);
+        assert_eq!(left.layout, right.layout);
+        assert_eq!(left.scalars, right.scalars);
+        assert_eq!(left.semantic_index_digest, right.semantic_index_digest);
     }
 
     fn runtime_owned_row(
@@ -1701,6 +1972,223 @@ mod tests {
                 Err(CheckpointV1StateError::ContextInvariant)
             );
         }
+    }
+
+    #[test]
+    fn prepared_checkpoint_export_borrows_an_empty_runtime_and_hashes_no_postings() {
+        for policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            let runtime = empty_runtime(policy);
+
+            let prepared = runtime
+                .prepare_checkpoint_v1_export(authority())
+                .expect("valid empty runtime must prepare");
+
+            assert!(std::ptr::eq(prepared.runtime, &runtime));
+            assert_eq!(
+                prepared.identity.recognition_route(),
+                TemporalRecognitionRoute::ExactGeneric
+            );
+            assert_eq!(prepared.layout.body_bytes, 0);
+            assert_eq!(prepared.layout.total_bytes, 256);
+            assert_eq!(
+                prepared.scalars.to_le_bytes(),
+                [
+                    0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ]
+            );
+            assert_eq!(
+                prepared.semantic_index_digest.raw_bytes(),
+                &EMPTY_SEMANTIC_DIGEST
+            );
+        }
+    }
+
+    #[test]
+    fn prepared_checkpoint_export_column_scratch_failure_is_typed_and_retryable() {
+        let runtime = empty_runtime(TemporalContextPolicy::BoundWinners);
+        let baseline = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("baseline must prepare");
+
+        assert!(matches!(
+            runtime.prepare_checkpoint_v1_export_with_failpoint(
+                authority(),
+                CheckpointV1AllocationSite::ColumnReplay,
+            ),
+            Err(PrepareCheckpointV1ExportError::RetryableAllocation(
+                CheckpointV1AllocationSite::ColumnReplay,
+            ))
+        ));
+
+        let retried = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("the identical retry must succeed");
+        assert_same_prepared_proof(&baseline, &retried);
+    }
+
+    #[test]
+    fn prepared_checkpoint_export_hashes_literal_postings_for_both_context_policies() {
+        for policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            let runtime = semantic_runtime(policy);
+
+            let prepared = runtime
+                .prepare_checkpoint_v1_export(authority())
+                .expect("valid nonempty runtime must prepare");
+
+            assert_eq!(
+                prepared.semantic_index_digest.raw_bytes(),
+                &SEMANTIC_FIXTURE_DIGEST
+            );
+        }
+    }
+
+    #[test]
+    fn prepared_checkpoint_export_semantic_scratch_failure_is_typed_and_retryable() {
+        let runtime = semantic_runtime(TemporalContextPolicy::BoundWinners);
+        let baseline = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("baseline must prepare");
+
+        assert!(matches!(
+            runtime.prepare_checkpoint_v1_export_with_failpoint(
+                authority(),
+                CheckpointV1AllocationSite::SemanticPostings,
+            ),
+            Err(PrepareCheckpointV1ExportError::RetryableAllocation(
+                CheckpointV1AllocationSite::SemanticPostings,
+            ))
+        ));
+
+        let retried = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("the identical retry must succeed");
+        assert_same_prepared_proof(&baseline, &retried);
+    }
+
+    #[test]
+    fn prepared_checkpoint_export_semantic_digest_is_history_independent() {
+        let mut runtime = semantic_runtime(TemporalContextPolicy::BoundWinners);
+        let original = runtime
+            .store
+            .runtime_segment_row(0)
+            .expect("fixture row must exist");
+        let empty = TemporalSegmentRow {
+            normalized_sources: [u32::MAX; PAIRS_PER_SEGMENT],
+            permanence_ticks: [0; PAIRS_PER_SEGMENT],
+            live_pair_count: 0,
+        };
+        let before = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("baseline must prepare")
+            .semantic_index_digest;
+
+        runtime
+            .store
+            .preflight_runtime_canonical_rewrite(0, &empty)
+            .expect("empty rewrite must preflight");
+        runtime
+            .store
+            .commit_prevalidated_runtime_canonical_rewrite(0, &empty);
+        runtime
+            .store
+            .preflight_runtime_canonical_rewrite(0, &original)
+            .expect("restoring rewrite must preflight");
+        runtime
+            .store
+            .commit_prevalidated_runtime_canonical_rewrite(0, &original);
+
+        let after = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("history-only rewrite must still prepare")
+            .semantic_index_digest;
+        assert_eq!(after, before);
+        assert_eq!(after.raw_bytes(), &SEMANTIC_FIXTURE_DIGEST);
+    }
+
+    #[test]
+    fn prepared_checkpoint_export_does_not_consult_failpoint_for_zero_semantic_scratch() {
+        let runtime = empty_runtime(TemporalContextPolicy::BoundWinners);
+
+        let prepared = runtime
+            .prepare_checkpoint_v1_export_with_failpoint(
+                authority(),
+                CheckpointV1AllocationSite::SemanticPostings,
+            )
+            .expect("zero semantic scratch must not reserve");
+
+        assert_eq!(
+            prepared.semantic_index_digest.raw_bytes(),
+            &EMPTY_SEMANTIC_DIGEST
+        );
+    }
+
+    #[test]
+    fn prepared_checkpoint_export_validates_each_layer_before_the_next_allocation() {
+        let mut invalid_identity = empty_runtime(TemporalContextPolicy::BoundWinners);
+        invalid_identity.proximal_offset += 1;
+        invalid_identity.scientific_stop = Some(TemporalPoisonCode::Unpoisoned);
+        assert!(matches!(
+            invalid_identity.prepare_checkpoint_v1_export_with_failpoint(
+                authority(),
+                CheckpointV1AllocationSite::ColumnReplay,
+            ),
+            Err(PrepareCheckpointV1ExportError::Identity(_))
+        ));
+
+        let mut invalid_scalar = empty_runtime(TemporalContextPolicy::BoundWinners);
+        invalid_scalar.scientific_stop = Some(TemporalPoisonCode::Unpoisoned);
+        assert!(matches!(
+            invalid_scalar.prepare_checkpoint_v1_export_with_failpoint(
+                authority(),
+                CheckpointV1AllocationSite::ColumnReplay,
+            ),
+            Err(PrepareCheckpointV1ExportError::Codec(
+                CheckpointV1CodecError::ExplicitUnpoisonedCode,
+            ))
+        ));
+
+        let mut invalid_state = empty_runtime(TemporalContextPolicy::BoundWinners);
+        invalid_state.column_offsets[1] -= 1;
+        assert!(matches!(
+            invalid_state.prepare_checkpoint_v1_export_with_failpoint(
+                authority(),
+                CheckpointV1AllocationSite::ColumnReplay,
+            ),
+            Err(PrepareCheckpointV1ExportError::RetryableAllocation(
+                CheckpointV1AllocationSite::ColumnReplay,
+            ))
+        ));
+        assert!(matches!(
+            invalid_state.prepare_checkpoint_v1_export_with_failpoint(
+                authority(),
+                CheckpointV1AllocationSite::SemanticPostings,
+            ),
+            Err(PrepareCheckpointV1ExportError::State)
+        ));
+        assert!(matches!(
+            invalid_state.prepare_checkpoint_v1_export(authority()),
+            Err(PrepareCheckpointV1ExportError::State)
+        ));
+    }
+
+    #[test]
+    fn prepared_checkpoint_export_borrow_preserves_all_checkpoint_visible_state() {
+        let runtime = semantic_runtime(TemporalContextPolicy::GenericAfferents);
+        let before = checkpoint_v1_logical_state_snapshot(&runtime);
+
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("immutable preparation must succeed");
+
+        assert!(std::ptr::eq(prepared.runtime, &runtime));
+        assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
     }
 
     #[test]
