@@ -6,7 +6,11 @@
 //! resident; a live posting visit contributes two physical contacts to the
 //! recognition counts.
 
-use std::{mem::size_of, ptr, slice};
+use std::{
+    alloc::{Layout, LayoutError},
+    mem::size_of,
+    ptr, slice,
+};
 
 const PAIRS_PER_SEGMENT: usize = 10;
 const PHYSICAL_CONTACTS_PER_PAIR: u8 = 2;
@@ -148,6 +152,14 @@ impl SourceMeta {
         tail: NONE,
         live_count: 0,
     };
+}
+
+/// Check whether the private intrusive source-metadata array is addressable on
+/// this platform without allocating it.
+pub(crate) fn temporal_source_meta_allocation_layout(
+    source_count: usize,
+) -> Result<Layout, LayoutError> {
+    Layout::array::<SourceMeta>(source_count)
 }
 
 const _: [(); 12] = [(); size_of::<SourceMeta>()];
@@ -2029,6 +2041,16 @@ mod tests {
             assert_eq!(size_of::<TemporalStore>(), 440);
         }
         assert_eq!(size_of::<SourceMeta>(), 12);
+    }
+
+    #[test]
+    fn source_meta_layout_preflight_uses_the_private_store_record() {
+        let layout = temporal_source_meta_allocation_layout(3)
+            .expect("three source metadata records must be addressable");
+
+        assert_eq!(layout.size(), 3 * size_of::<SourceMeta>());
+        assert_eq!(layout.align(), std::mem::align_of::<SourceMeta>());
+        assert!(temporal_source_meta_allocation_layout(usize::MAX).is_err());
     }
 
     #[test]

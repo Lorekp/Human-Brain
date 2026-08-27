@@ -3,10 +3,17 @@
 //! This module computes identities, checked byte layout, canonical scalar
 //! bytes, the complete fixed header, allocation-free reachability proofs,
 //! fallible export preparation over a borrowed live state, and allocation-free
-//! streaming of a prepared checkpoint into a caller-owned sink. It does not
-//! import checkpoints, publish files, or expose an ABI.
+//! streaming of a prepared checkpoint into a caller-owned sink. It also owns
+//! allocation-free checkpoint import Pass 1; it does not construct an imported
+//! runtime, publish files, or expose an ABI.
 
-use std::io::{self, Seek, SeekFrom, Write};
+use std::{
+    alloc::Layout,
+    error::Error,
+    fmt,
+    io::{self, Seek, SeekFrom, Write},
+    mem::size_of,
+};
 
 use sha2::{Digest, Sha256};
 
@@ -15,8 +22,11 @@ use super::{
     TemporalPoisonCode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS, CONTEXT_CELLS_U8,
     PAIRS_PER_SEGMENT,
 };
-use crate::temporal::{TemporalSegmentRow, TemporalStorePreflightError};
-use crate::temporal_physics::TEMPORAL_PHYSICS_IDENTITY;
+use crate::temporal::{
+    temporal_source_meta_allocation_layout, TemporalOwnerDiagnostic, TemporalSegmentRow,
+    TemporalStorePreflightError,
+};
+use crate::temporal_physics::{CandidateDrive, TEMPORAL_PHYSICS_IDENTITY};
 
 const LOGICAL_STATE_DOMAIN: &[u8] = b"humanbrain-r3-checkpoint-logical-state-v1\0";
 const CIRCUIT_IDENTITY_DOMAIN: &[u8] = b"humanbrain-r3-temporal-circuit-v1";
@@ -93,11 +103,287 @@ pub(crate) enum TemporalCheckpointIdentityError {
     FramingPayloadLength,
 }
 
+impl fmt::Display for TemporalCheckpointIdentityError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::RuntimeInvariant(message) => write!(formatter, "runtime invariant: {message}"),
+            Self::RouteRequiresGenericAfferents => {
+                formatter.write_str("physical route requires generic afferents")
+            }
+            Self::UnsafePhysicalRouteOverlap {
+                logical_match_pairs,
+                max_distinct_code_overlap,
+            } => write!(
+                formatter,
+                "physical route overlap {max_distinct_code_overlap} is not below logical match threshold {logical_match_pairs}"
+            ),
+            Self::UnsupportedExecutedRecognitionRoute => {
+                formatter.write_str("the requested recognition route is not executable")
+            }
+            Self::FramingLengthOverflow => {
+                formatter.write_str("circuit identity framing length overflowed")
+            }
+            Self::FramingPayloadLength => {
+                formatter.write_str("circuit identity payload length did not match its frame")
+            }
+        }
+    }
+}
+
+impl Error for TemporalCheckpointIdentityError {}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum CheckpointV1CodecError {
     ExplicitUnpoisonedCode,
     LayoutScalarMismatch,
     LengthOverflow,
+}
+
+impl fmt::Display for CheckpointV1CodecError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::ExplicitUnpoisonedCode => {
+                "an explicit unpoisoned enum value cannot be serialized"
+            }
+            Self::LayoutScalarMismatch => "checkpoint layout and scalar counts disagree",
+            Self::LengthOverflow => "checkpoint length arithmetic overflowed",
+        })
+    }
+}
+
+impl Error for CheckpointV1CodecError {}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1PermanenceField {
+    Connected,
+    Initial,
+    Increment,
+    NegativeDecrement,
+}
+
+impl fmt::Display for CheckpointV1PermanenceField {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Connected => "connected",
+            Self::Initial => "initial",
+            Self::Increment => "increment",
+            Self::NegativeDecrement => "negative decrement",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1CircuitDefinitionError {
+    FixedDimensions,
+    ColumnCount {
+        found: u32,
+    },
+    BaseCellsPerColumnZero,
+    NovelRaceCap {
+        found: u8,
+    },
+    BaseCellsExceedNovelRaceCap {
+        base: u8,
+        race_cap: u8,
+    },
+    SegmentCapacity {
+        found: u32,
+    },
+    PredictionQuorum {
+        found: u8,
+    },
+    MaxSegmentsPerCellZero,
+    PermanenceTicks {
+        field: CheckpointV1PermanenceField,
+        found: u16,
+    },
+    ThresholdOrder {
+        theta_match: u8,
+        theta_active: u8,
+    },
+    GenericAfferentsBaseWidth {
+        found: u8,
+    },
+    BasePopulationExceedsMaximum {
+        base: u64,
+        maximum: u32,
+    },
+    PhysicalOffsetsOverflow,
+    ThresholdOffsetCount {
+        expected: u32,
+        actual: usize,
+    },
+    NonFiniteThresholdOffset {
+        index: usize,
+    },
+    EmptyTokenCodebook,
+    TokenCodebookLength {
+        actual: usize,
+    },
+    SentinelTokenId {
+        index: usize,
+    },
+    InvalidTokenColumns {
+        index: usize,
+    },
+    TokenIdsNotStrict {
+        left_index: usize,
+    },
+    DuplicateTokenColumns {
+        left_index: usize,
+        right_index: usize,
+    },
+    PhysicsInvariant,
+}
+
+impl CheckpointV1CircuitDefinitionError {
+    fn runtime_invariant_message(self) -> &'static str {
+        match self {
+            Self::FixedDimensions => "checkpoint-v1 fixed dimensions changed",
+            Self::BasePopulationExceedsMaximum { .. } => {
+                "base population exceeds max_pyramidal_cells"
+            }
+            Self::PhysicalOffsetsOverflow => "physical offsets overflow uint32",
+            Self::ThresholdOffsetCount { .. } | Self::NonFiniteThresholdOffset { .. } => {
+                "threshold offsets are incomplete or non-finite"
+            }
+            Self::EmptyTokenCodebook
+            | Self::TokenCodebookLength { .. }
+            | Self::SentinelTokenId { .. }
+            | Self::InvalidTokenColumns { .. }
+            | Self::TokenIdsNotStrict { .. }
+            | Self::DuplicateTokenColumns { .. } => "token codebook is not canonical",
+            Self::PhysicsInvariant => "temporal physics identity is non-finite or impossible",
+            Self::ColumnCount { .. }
+            | Self::BaseCellsPerColumnZero
+            | Self::NovelRaceCap { .. }
+            | Self::BaseCellsExceedNovelRaceCap { .. }
+            | Self::SegmentCapacity { .. }
+            | Self::PredictionQuorum { .. }
+            | Self::MaxSegmentsPerCellZero
+            | Self::PermanenceTicks { .. }
+            | Self::ThresholdOrder { .. }
+            | Self::GenericAfferentsBaseWidth { .. } => {
+                "runtime configuration is outside checkpoint-v1 domains"
+            }
+        }
+    }
+}
+
+impl fmt::Display for CheckpointV1CircuitDefinitionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FixedDimensions => formatter.write_str("checkpoint-v1 fixed dimensions changed"),
+            Self::ColumnCount { found } => write!(
+                formatter,
+                "column_count {found} is below the required {ACTIVE_COLUMNS}"
+            ),
+            Self::BaseCellsPerColumnZero => {
+                formatter.write_str("base_cells_per_column must be nonzero")
+            }
+            Self::NovelRaceCap { found } => {
+                write!(formatter, "novel_race_cap {found} is outside 1..=8")
+            }
+            Self::BaseCellsExceedNovelRaceCap { base, race_cap } => write!(
+                formatter,
+                "base_cells_per_column {base} exceeds novel_race_cap {race_cap}"
+            ),
+            Self::SegmentCapacity { found } => write!(
+                formatter,
+                "segment_capacity {found} is outside the checkpoint-v1 domain"
+            ),
+            Self::PredictionQuorum { found } => write!(
+                formatter,
+                "prediction_quorum {found} is outside 1..={ACTIVE_COLUMNS}"
+            ),
+            Self::MaxSegmentsPerCellZero => {
+                formatter.write_str("max_segments_per_cell must be nonzero")
+            }
+            Self::PermanenceTicks { field, found } => write!(
+                formatter,
+                "{field} permanence ticks {found} is outside 1..={PERMANENCE_MAX_TICKS}"
+            ),
+            Self::ThresholdOrder {
+                theta_match,
+                theta_active,
+            } => write!(
+                formatter,
+                "thresholds must satisfy 1 <= theta_match ({theta_match}) <= theta_active ({theta_active}) <= {}",
+                PHYSICAL_CONTACTS_PER_PAIR * PAIRS_PER_SEGMENT as u8
+            ),
+            Self::GenericAfferentsBaseWidth { found } => write!(
+                formatter,
+                "generic afferents require at least two base cells, found {found}"
+            ),
+            Self::BasePopulationExceedsMaximum { base, maximum } => write!(
+                formatter,
+                "base population {base} exceeds max_pyramidal_cells {maximum}"
+            ),
+            Self::PhysicalOffsetsOverflow => {
+                formatter.write_str("physical cell offsets overflow uint32")
+            }
+            Self::ThresholdOffsetCount { expected, actual } => write!(
+                formatter,
+                "threshold offset count {actual} does not equal physical cell count {expected}"
+            ),
+            Self::NonFiniteThresholdOffset { index } => {
+                write!(formatter, "threshold offset {index} is non-finite")
+            }
+            Self::EmptyTokenCodebook => formatter.write_str("token codebook is empty"),
+            Self::TokenCodebookLength { actual } => write!(
+                formatter,
+                "token codebook length {actual} exceeds the uint32 domain"
+            ),
+            Self::SentinelTokenId { index } => {
+                write!(formatter, "token codebook record {index} uses the sentinel token ID")
+            }
+            Self::InvalidTokenColumns { index } => write!(
+                formatter,
+                "token codebook record {index} has noncanonical columns"
+            ),
+            Self::TokenIdsNotStrict { left_index } => write!(
+                formatter,
+                "token IDs are not strictly increasing at records {left_index} and {}",
+                left_index + 1
+            ),
+            Self::DuplicateTokenColumns {
+                left_index,
+                right_index,
+            } => write!(
+                formatter,
+                "token records {left_index} and {right_index} share one column code"
+            ),
+            Self::PhysicsInvariant => {
+                formatter.write_str("temporal physics identity is non-finite or impossible")
+            }
+        }
+    }
+}
+
+impl Error for CheckpointV1CircuitDefinitionError {}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1FactoryError {
+    Definition(CheckpointV1CircuitDefinitionError),
+    Identity(TemporalCheckpointIdentityError),
+}
+
+impl fmt::Display for CheckpointV1FactoryError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Definition(source) => write!(formatter, "invalid circuit definition: {source}"),
+            Self::Identity(source) => write!(formatter, "circuit identity failed: {source}"),
+        }
+    }
+}
+
+impl Error for CheckpointV1FactoryError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Definition(source) => Some(source),
+            Self::Identity(source) => Some(source),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -386,6 +672,7 @@ impl FramedSha256 {
 
 #[derive(Clone, Copy)]
 struct DerivedCircuitIdentity {
+    base_population: u32,
     relay_offset: u32,
     basket_offset: u32,
     proximal_offset: u32,
@@ -395,27 +682,106 @@ struct DerivedCircuitIdentity {
     source_count: u32,
 }
 
+#[derive(Clone, Copy)]
+struct CheckpointV1CircuitDefinition<'a> {
+    config: TemporalCircuitConfig,
+    token_codebook: &'a [TokenCode],
+    threshold_offsets_mv: &'a [f64],
+}
+
+impl<'a> CheckpointV1CircuitDefinition<'a> {
+    fn from_runtime(runtime: &'a TemporalCircuitRuntime) -> Self {
+        Self {
+            config: runtime.config,
+            token_codebook: &runtime.token_codebook,
+            threshold_offsets_mv: &runtime.threshold_offsets_mv,
+        }
+    }
+}
+
+pub(crate) struct ValidatedCheckpointV1RuntimeFactory {
+    config: TemporalCircuitConfig,
+    token_codebook: Vec<TokenCode>,
+    threshold_offsets_mv: Vec<f64>,
+    identity: TemporalCheckpointV1Identity,
+    derived: DerivedCircuitIdentity,
+}
+
+impl ValidatedCheckpointV1RuntimeFactory {
+    pub(crate) fn new(
+        authority: ValidatedCheckpointAuthority,
+        config: TemporalCircuitConfig,
+        token_codebook: Vec<TokenCode>,
+        threshold_offsets_mv: Vec<f64>,
+    ) -> Result<Self, CheckpointV1FactoryError> {
+        let definition = CheckpointV1CircuitDefinition {
+            config,
+            token_codebook: &token_codebook,
+            threshold_offsets_mv: &threshold_offsets_mv,
+        };
+        let derived = validate_checkpoint_v1_circuit_definition(definition)
+            .map_err(CheckpointV1FactoryError::Definition)?;
+        let identity = checkpoint_v1_identity_from_definition(
+            authority,
+            definition,
+            derived,
+            TemporalRecognitionRoute::ExactGeneric,
+        )
+        .map_err(CheckpointV1FactoryError::Identity)?;
+
+        Ok(Self {
+            config,
+            token_codebook,
+            threshold_offsets_mv,
+            identity,
+            derived,
+        })
+    }
+
+    pub(crate) const fn identity(&self) -> &TemporalCheckpointV1Identity {
+        &self.identity
+    }
+
+    fn definition(&self) -> CheckpointV1CircuitDefinition<'_> {
+        CheckpointV1CircuitDefinition {
+            config: self.config,
+            token_codebook: &self.token_codebook,
+            threshold_offsets_mv: &self.threshold_offsets_mv,
+        }
+    }
+}
+
 impl TemporalCircuitRuntime {
     pub(crate) fn checkpoint_v1_identity(
         &self,
         authority: ValidatedCheckpointAuthority,
         recognition_route: TemporalRecognitionRoute,
     ) -> Result<TemporalCheckpointV1Identity, TemporalCheckpointIdentityError> {
-        let derived = validate_runtime_identity_inputs(self)?;
-        if recognition_route == TemporalRecognitionRoute::CertifiedPhysicalBuckets {
-            return Err(TemporalCheckpointIdentityError::UnsupportedExecutedRecognitionRoute);
-        }
-
-        let (circuit_identity, circuit_preimage_bytes) =
-            circuit_identity_route_zero(self, derived)?;
-        Ok(TemporalCheckpointV1Identity {
-            authority,
-            circuit_identity,
-            recognition_route,
-            recognition_certificate: None,
-            circuit_preimage_bytes,
-        })
+        let definition = CheckpointV1CircuitDefinition::from_runtime(self);
+        let derived = validate_runtime_identity_inputs(self, definition)?;
+        checkpoint_v1_identity_from_definition(authority, definition, derived, recognition_route)
     }
+}
+
+fn checkpoint_v1_identity_from_definition(
+    authority: ValidatedCheckpointAuthority,
+    definition: CheckpointV1CircuitDefinition<'_>,
+    derived: DerivedCircuitIdentity,
+    recognition_route: TemporalRecognitionRoute,
+) -> Result<TemporalCheckpointV1Identity, TemporalCheckpointIdentityError> {
+    if recognition_route == TemporalRecognitionRoute::CertifiedPhysicalBuckets {
+        return Err(TemporalCheckpointIdentityError::UnsupportedExecutedRecognitionRoute);
+    }
+
+    let (circuit_identity, circuit_preimage_bytes) =
+        circuit_identity_route_zero(definition, derived)?;
+    Ok(TemporalCheckpointV1Identity {
+        authority,
+        circuit_identity,
+        recognition_route,
+        recognition_certificate: None,
+        circuit_preimage_bytes,
+    })
 }
 
 /// Recompute only the route-1 codebook eligibility certificate.
@@ -426,11 +792,12 @@ impl TemporalCircuitRuntime {
 pub(crate) fn recompute_checkpoint_v1_physical_route_certificate(
     runtime: &TemporalCircuitRuntime,
 ) -> Result<CheckpointV1Digest, TemporalCheckpointIdentityError> {
-    validate_runtime_identity_inputs(runtime)?;
-    if runtime.config.context_policy != TemporalContextPolicy::GenericAfferents {
+    let definition = CheckpointV1CircuitDefinition::from_runtime(runtime);
+    validate_runtime_identity_inputs(runtime, definition)?;
+    if definition.config.context_policy != TemporalContextPolicy::GenericAfferents {
         return Err(TemporalCheckpointIdentityError::RouteRequiresGenericAfferents);
     }
-    let logical_match_pairs = runtime
+    let logical_match_pairs = definition
         .config
         .theta_match
         .checked_add(PHYSICAL_CONTACTS_PER_PAIR - 1)
@@ -443,7 +810,7 @@ pub(crate) fn recompute_checkpoint_v1_physical_route_certificate(
             "theta_match is outside the physical contact domain",
         ));
     }
-    let max_distinct_code_overlap = max_distinct_code_overlap(&runtime.token_codebook);
+    let max_distinct_code_overlap = max_distinct_code_overlap(definition.token_codebook);
     if max_distinct_code_overlap >= logical_match_pairs {
         return Err(
             TemporalCheckpointIdentityError::UnsafePhysicalRouteOverlap {
@@ -456,15 +823,15 @@ pub(crate) fn recompute_checkpoint_v1_physical_route_certificate(
     let mut framed = FramedSha256::new(PHYSICAL_ROUTE_CERTIFICATE_DOMAIN)?;
     framed.entry_bytes(b"logical_match_pairs", &[logical_match_pairs])?;
     framed.entry_bytes(b"max_distinct_code_overlap", &[max_distinct_code_overlap])?;
-    emit_token_codebook_entry(&mut framed, &runtime.token_codebook)?;
+    emit_token_codebook_entry(&mut framed, definition.token_codebook)?;
     Ok(framed.finish().0)
 }
 
 fn circuit_identity_route_zero(
-    runtime: &TemporalCircuitRuntime,
+    definition: CheckpointV1CircuitDefinition<'_>,
     derived: DerivedCircuitIdentity,
 ) -> Result<(CheckpointV1Digest, u64), TemporalCheckpointIdentityError> {
-    let config = runtime.config;
+    let config = definition.config;
     let context_policy = match config.context_policy {
         TemporalContextPolicy::BoundWinners => 1,
         TemporalContextPolicy::GenericAfferents => 2,
@@ -547,8 +914,8 @@ fn circuit_identity_route_zero(
         }
         Ok(())
     })?;
-    emit_token_codebook_entry(&mut framed, &runtime.token_codebook)?;
-    emit_threshold_offsets_entry(&mut framed, &runtime.threshold_offsets_mv)?;
+    emit_token_codebook_entry(&mut framed, definition.token_codebook)?;
+    emit_threshold_offsets_entry(&mut framed, definition.threshold_offsets_mv)?;
     framed.entry_bytes(b"recognition_certificate", &[])?;
     Ok(framed.finish())
 }
@@ -608,107 +975,188 @@ fn emit_threshold_offsets_entry(
 
 fn validate_runtime_identity_inputs(
     runtime: &TemporalCircuitRuntime,
+    definition: CheckpointV1CircuitDefinition<'_>,
 ) -> Result<DerivedCircuitIdentity, TemporalCheckpointIdentityError> {
-    if ACTIVE_COLUMNS != 11 || CONTEXT_CELLS != 22 || PAIRS_PER_SEGMENT != 10 {
-        return Err(TemporalCheckpointIdentityError::RuntimeInvariant(
-            "checkpoint-v1 fixed dimensions changed",
-        ));
-    }
-    let config = runtime.config;
-    if config.column_count < ACTIVE_COLUMNS as u32
-        || config.base_cells_per_column == 0
-        || config.novel_race_cap == 0
-        || config.novel_race_cap > 8
-        || config.base_cells_per_column > config.novel_race_cap
-        || config.segment_capacity == 0
-        || config.segment_capacity > u32::MAX / PAIRS_PER_SEGMENT as u32
-        || !(1..=ACTIVE_COLUMNS as u8).contains(&config.prediction_quorum)
-        || config.max_segments_per_cell == 0
-        || !(1..=PERMANENCE_MAX_TICKS).contains(&config.connected_permanence_ticks)
-        || !(1..=PERMANENCE_MAX_TICKS).contains(&config.initial_permanence_ticks)
-        || !(1..=PERMANENCE_MAX_TICKS).contains(&config.permanence_increment_ticks)
-        || !(1..=PERMANENCE_MAX_TICKS).contains(&config.negative_decrement_ticks)
-        || !(1 <= config.theta_match
-            && config.theta_match <= config.theta_active
-            && config.theta_active <= PHYSICAL_CONTACTS_PER_PAIR * PAIRS_PER_SEGMENT as u8)
-        || (config.context_policy == TemporalContextPolicy::GenericAfferents
-            && config.base_cells_per_column < 2)
-    {
-        return Err(TemporalCheckpointIdentityError::RuntimeInvariant(
-            "runtime configuration is outside checkpoint-v1 domains",
-        ));
-    }
-    let base_population = u64::from(config.column_count)
-        .checked_mul(u64::from(config.base_cells_per_column))
-        .ok_or(TemporalCheckpointIdentityError::RuntimeInvariant(
-            "base population overflows uint64",
-        ))?;
-    if base_population > u64::from(config.max_pyramidal_cells) {
-        return Err(TemporalCheckpointIdentityError::RuntimeInvariant(
-            "base population exceeds max_pyramidal_cells",
-        ));
-    }
-
-    let relay_offset = config.max_pyramidal_cells;
-    let basket_offset =
-        relay_offset
-            .checked_mul(2)
-            .ok_or(TemporalCheckpointIdentityError::RuntimeInvariant(
-                "physical offsets overflow uint32",
-            ))?;
-    let proximal_offset = basket_offset.checked_add(config.column_count).ok_or(
-        TemporalCheckpointIdentityError::RuntimeInvariant("physical offsets overflow uint32"),
-    )?;
-    let proximal_relay_offset = proximal_offset.checked_add(config.column_count).ok_or(
-        TemporalCheckpointIdentityError::RuntimeInvariant("physical offsets overflow uint32"),
-    )?;
-    let physical_cell_count = proximal_relay_offset
-        .checked_add(config.column_count)
-        .ok_or(TemporalCheckpointIdentityError::RuntimeInvariant(
-            "physical offsets overflow uint32",
-        ))?;
-    if runtime.relay_offset != relay_offset
-        || runtime.basket_offset != basket_offset
-        || runtime.proximal_offset != proximal_offset
-        || runtime.proximal_relay_offset != proximal_relay_offset
+    let derived = validate_checkpoint_v1_circuit_definition(definition).map_err(|error| {
+        TemporalCheckpointIdentityError::RuntimeInvariant(error.runtime_invariant_message())
+    })?;
+    if runtime.relay_offset != derived.relay_offset
+        || runtime.basket_offset != derived.basket_offset
+        || runtime.proximal_offset != derived.proximal_offset
+        || runtime.proximal_relay_offset != derived.proximal_relay_offset
     {
         return Err(TemporalCheckpointIdentityError::RuntimeInvariant(
             "stored runtime offsets disagree with executed configuration",
         ));
     }
-    if runtime.threshold_offsets_mv.len() != physical_cell_count as usize
-        || runtime
-            .threshold_offsets_mv
-            .iter()
-            .any(|offset| !offset.is_finite())
-    {
-        return Err(TemporalCheckpointIdentityError::RuntimeInvariant(
-            "threshold offsets are incomplete or non-finite",
-        ));
+    Ok(derived)
+}
+
+fn validate_checkpoint_v1_circuit_definition(
+    definition: CheckpointV1CircuitDefinition<'_>,
+) -> Result<DerivedCircuitIdentity, CheckpointV1CircuitDefinitionError> {
+    if ACTIVE_COLUMNS != 11 || CONTEXT_CELLS != 22 || PAIRS_PER_SEGMENT != 10 {
+        return Err(CheckpointV1CircuitDefinitionError::FixedDimensions);
     }
-    if runtime.token_codebook.is_empty()
-        || u32::try_from(runtime.token_codebook.len()).is_err()
-        || runtime.token_codebook.iter().any(|code| {
-            code.token_id == u32::MAX
-                || code
-                    .columns
-                    .iter()
-                    .any(|&column| column >= config.column_count)
-                || code.columns.windows(2).any(|pair| pair[0] >= pair[1])
-        })
-        || runtime
-            .token_codebook
-            .windows(2)
-            .any(|pair| pair[0].token_id >= pair[1].token_id)
-        || (0..runtime.token_codebook.len()).any(|left| {
-            runtime.token_codebook[left + 1..]
-                .iter()
-                .any(|right| right.columns == runtime.token_codebook[left].columns)
-        })
+    let config = definition.config;
+    if config.column_count < ACTIVE_COLUMNS as u32 {
+        return Err(CheckpointV1CircuitDefinitionError::ColumnCount {
+            found: config.column_count,
+        });
+    }
+    if config.base_cells_per_column == 0 {
+        return Err(CheckpointV1CircuitDefinitionError::BaseCellsPerColumnZero);
+    }
+    if !(1..=8).contains(&config.novel_race_cap) {
+        return Err(CheckpointV1CircuitDefinitionError::NovelRaceCap {
+            found: config.novel_race_cap,
+        });
+    }
+    if config.base_cells_per_column > config.novel_race_cap {
+        return Err(
+            CheckpointV1CircuitDefinitionError::BaseCellsExceedNovelRaceCap {
+                base: config.base_cells_per_column,
+                race_cap: config.novel_race_cap,
+            },
+        );
+    }
+    if config.segment_capacity == 0 || config.segment_capacity > u32::MAX / PAIRS_PER_SEGMENT as u32
     {
-        return Err(TemporalCheckpointIdentityError::RuntimeInvariant(
-            "token codebook is not canonical",
-        ));
+        return Err(CheckpointV1CircuitDefinitionError::SegmentCapacity {
+            found: config.segment_capacity,
+        });
+    }
+    if !(1..=ACTIVE_COLUMNS as u8).contains(&config.prediction_quorum) {
+        return Err(CheckpointV1CircuitDefinitionError::PredictionQuorum {
+            found: config.prediction_quorum,
+        });
+    }
+    if config.max_segments_per_cell == 0 {
+        return Err(CheckpointV1CircuitDefinitionError::MaxSegmentsPerCellZero);
+    }
+    for (field, found) in [
+        (
+            CheckpointV1PermanenceField::Connected,
+            config.connected_permanence_ticks,
+        ),
+        (
+            CheckpointV1PermanenceField::Initial,
+            config.initial_permanence_ticks,
+        ),
+        (
+            CheckpointV1PermanenceField::Increment,
+            config.permanence_increment_ticks,
+        ),
+        (
+            CheckpointV1PermanenceField::NegativeDecrement,
+            config.negative_decrement_ticks,
+        ),
+    ] {
+        if !(1..=PERMANENCE_MAX_TICKS).contains(&found) {
+            return Err(CheckpointV1CircuitDefinitionError::PermanenceTicks { field, found });
+        }
+    }
+    if !(1 <= config.theta_match
+        && config.theta_match <= config.theta_active
+        && config.theta_active <= PHYSICAL_CONTACTS_PER_PAIR * PAIRS_PER_SEGMENT as u8)
+    {
+        return Err(CheckpointV1CircuitDefinitionError::ThresholdOrder {
+            theta_match: config.theta_match,
+            theta_active: config.theta_active,
+        });
+    }
+    if config.context_policy == TemporalContextPolicy::GenericAfferents
+        && config.base_cells_per_column < 2
+    {
+        return Err(
+            CheckpointV1CircuitDefinitionError::GenericAfferentsBaseWidth {
+                found: config.base_cells_per_column,
+            },
+        );
+    }
+    let base_population = u64::from(config.column_count) * u64::from(config.base_cells_per_column);
+    if base_population > u64::from(config.max_pyramidal_cells) {
+        return Err(
+            CheckpointV1CircuitDefinitionError::BasePopulationExceedsMaximum {
+                base: base_population,
+                maximum: config.max_pyramidal_cells,
+            },
+        );
+    }
+    let base_population_u32 = config
+        .column_count
+        .checked_mul(u32::from(config.base_cells_per_column))
+        .ok_or(
+            CheckpointV1CircuitDefinitionError::BasePopulationExceedsMaximum {
+                base: base_population,
+                maximum: config.max_pyramidal_cells,
+            },
+        )?;
+
+    let relay_offset = config.max_pyramidal_cells;
+    let basket_offset = relay_offset
+        .checked_mul(2)
+        .ok_or(CheckpointV1CircuitDefinitionError::PhysicalOffsetsOverflow)?;
+    let proximal_offset = basket_offset
+        .checked_add(config.column_count)
+        .ok_or(CheckpointV1CircuitDefinitionError::PhysicalOffsetsOverflow)?;
+    let proximal_relay_offset = proximal_offset
+        .checked_add(config.column_count)
+        .ok_or(CheckpointV1CircuitDefinitionError::PhysicalOffsetsOverflow)?;
+    let physical_cell_count = proximal_relay_offset
+        .checked_add(config.column_count)
+        .ok_or(CheckpointV1CircuitDefinitionError::PhysicalOffsetsOverflow)?;
+    if definition.threshold_offsets_mv.len() != physical_cell_count as usize {
+        return Err(CheckpointV1CircuitDefinitionError::ThresholdOffsetCount {
+            expected: physical_cell_count,
+            actual: definition.threshold_offsets_mv.len(),
+        });
+    }
+    if let Some(index) = definition
+        .threshold_offsets_mv
+        .iter()
+        .position(|offset| !offset.is_finite())
+    {
+        return Err(CheckpointV1CircuitDefinitionError::NonFiniteThresholdOffset { index });
+    }
+    if definition.token_codebook.is_empty() {
+        return Err(CheckpointV1CircuitDefinitionError::EmptyTokenCodebook);
+    }
+    if u32::try_from(definition.token_codebook.len()).is_err() {
+        return Err(CheckpointV1CircuitDefinitionError::TokenCodebookLength {
+            actual: definition.token_codebook.len(),
+        });
+    }
+    for (index, code) in definition.token_codebook.iter().enumerate() {
+        if code.token_id == u32::MAX {
+            return Err(CheckpointV1CircuitDefinitionError::SentinelTokenId { index });
+        }
+        if code
+            .columns
+            .iter()
+            .any(|&column| column >= config.column_count)
+            || code.columns.windows(2).any(|pair| pair[0] >= pair[1])
+        {
+            return Err(CheckpointV1CircuitDefinitionError::InvalidTokenColumns { index });
+        }
+    }
+    if let Some(left_index) = definition
+        .token_codebook
+        .windows(2)
+        .position(|pair| pair[0].token_id >= pair[1].token_id)
+    {
+        return Err(CheckpointV1CircuitDefinitionError::TokenIdsNotStrict { left_index });
+    }
+    for left_index in 0..definition.token_codebook.len() {
+        if let Some(relative_right) = definition.token_codebook[left_index + 1..]
+            .iter()
+            .position(|right| right.columns == definition.token_codebook[left_index].columns)
+        {
+            return Err(CheckpointV1CircuitDefinitionError::DuplicateTokenColumns {
+                left_index,
+                right_index: left_index + 1 + relative_right,
+            });
+        }
     }
     let physics = TEMPORAL_PHYSICS_IDENTITY;
     if !physics.integration_step_ms.is_finite()
@@ -719,9 +1167,7 @@ fn validate_runtime_identity_inputs(
             .iter()
             .any(|bits| !f64::from_bits(*bits).is_finite())
     {
-        return Err(TemporalCheckpointIdentityError::RuntimeInvariant(
-            "temporal physics identity is non-finite or impossible",
-        ));
+        return Err(CheckpointV1CircuitDefinitionError::PhysicsInvariant);
     }
 
     let (source_gid_base, source_count) = match config.context_policy {
@@ -729,6 +1175,7 @@ fn validate_runtime_identity_inputs(
         TemporalContextPolicy::GenericAfferents => (proximal_offset, config.column_count),
     };
     Ok(DerivedCircuitIdentity {
+        base_population: base_population_u32,
         relay_offset,
         basket_offset,
         proximal_offset,
@@ -1913,6 +2360,1015 @@ pub(crate) fn checkpoint_v1_logical_state_digest(
     hasher.finalize().into()
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1ContextLengthField {
+    Prior,
+    Winner,
+}
+
+impl fmt::Display for CheckpointV1ContextLengthField {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Prior => "prior context",
+            Self::Winner => "winner context",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1IdentityField {
+    Protocol,
+    SourceBundle,
+    Circuit,
+}
+
+impl fmt::Display for CheckpointV1IdentityField {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Protocol => "protocol",
+            Self::SourceBundle => "source-bundle",
+            Self::Circuit => "circuit",
+        })
+    }
+}
+
+impl fmt::Display for CheckpointV1BodySection {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::CohortColumns => "cohort columns",
+            Self::PriorContext => "prior context",
+            Self::WinnerContext => "winner context",
+            Self::SegmentOwners => "segment owners",
+            Self::SegmentSources => "segment sources",
+            Self::SegmentTicks => "segment ticks",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1ImportAllocationSite {
+    Pass2OwnerLoads,
+    Pass2ColumnReplay,
+    RuntimeColumnOffsets,
+    RuntimeColumnCells,
+    RuntimeAlternateColumnOffsets,
+    RuntimeAlternateColumnCells,
+    RuntimeCohortColumns,
+    RuntimeRecognitionDiagnostics,
+    RuntimeActiveSegments,
+    RuntimeColumnDrive,
+    RuntimeNovelCandidates,
+    RuntimeRaceVoltage,
+    RuntimeRaceThresholds,
+    RuntimeRaceExcitatory,
+    RuntimeRaceEmitted,
+    RuntimeRaceSpikingIndices,
+    StoreOwners,
+    StoreSources,
+    StorePermanences,
+    StoreOwnerSegmentCounts,
+    StoreSourceMeta,
+    StoreNextPair,
+    StorePreviousPair,
+    StoreSourceStamps,
+    StoreSegmentStamps,
+    StorePotentialContacts,
+    StoreConnectedContacts,
+    StoreTouchedSegments,
+    StoreOwnerStamps,
+    StoreBestMatching,
+    StoreBestActive,
+    StoreTouchedOwners,
+    VerificationColumnReplay,
+    VerificationSemanticPostings,
+}
+
+impl fmt::Display for CheckpointV1ImportAllocationSite {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Pass2OwnerLoads => "Pass 2 owner loads",
+            Self::Pass2ColumnReplay => "Pass 2 column replay",
+            Self::RuntimeColumnOffsets => "runtime column offsets",
+            Self::RuntimeColumnCells => "runtime column cells",
+            Self::RuntimeAlternateColumnOffsets => "runtime alternate column offsets",
+            Self::RuntimeAlternateColumnCells => "runtime alternate column cells",
+            Self::RuntimeCohortColumns => "runtime cohort columns",
+            Self::RuntimeRecognitionDiagnostics => "runtime recognition diagnostics",
+            Self::RuntimeActiveSegments => "runtime active segments",
+            Self::RuntimeColumnDrive => "runtime column drive",
+            Self::RuntimeNovelCandidates => "runtime novel candidates",
+            Self::RuntimeRaceVoltage => "runtime race voltage",
+            Self::RuntimeRaceThresholds => "runtime race thresholds",
+            Self::RuntimeRaceExcitatory => "runtime race excitatory current",
+            Self::RuntimeRaceEmitted => "runtime race emitted flags",
+            Self::RuntimeRaceSpikingIndices => "runtime race spiking indices",
+            Self::StoreOwners => "store owners",
+            Self::StoreSources => "store sources",
+            Self::StorePermanences => "store permanences",
+            Self::StoreOwnerSegmentCounts => "store owner segment counts",
+            Self::StoreSourceMeta => "store source metadata",
+            Self::StoreNextPair => "store next-pair postings",
+            Self::StorePreviousPair => "store previous-pair postings",
+            Self::StoreSourceStamps => "store source stamps",
+            Self::StoreSegmentStamps => "store segment stamps",
+            Self::StorePotentialContacts => "store potential contacts",
+            Self::StoreConnectedContacts => "store connected contacts",
+            Self::StoreTouchedSegments => "store touched segments",
+            Self::StoreOwnerStamps => "store owner stamps",
+            Self::StoreBestMatching => "store best matching segments",
+            Self::StoreBestActive => "store best active segments",
+            Self::StoreTouchedOwners => "store touched owners",
+            Self::VerificationColumnReplay => "verification column replay",
+            Self::VerificationSemanticPostings => "verification semantic postings",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1Pass1Error {
+    HeaderTooShort {
+        actual: usize,
+        required: usize,
+    },
+    MagicMismatch,
+    UnsupportedFormatVersion {
+        found: u16,
+    },
+    HeaderSizeMismatch {
+        found: u16,
+    },
+    ReservedHeaderByte {
+        offset: usize,
+        found: u8,
+    },
+    ContextLength {
+        field: CheckpointV1ContextLengthField,
+        found: u8,
+    },
+    PoisonCode {
+        found: u16,
+    },
+    SegmentCountExceedsCapacity {
+        declared: u32,
+        capacity: u32,
+    },
+    CohortCountExceedsCapacity {
+        declared: u32,
+        capacity: u32,
+    },
+    ReserveCursorOutsideCapacity {
+        declared: u32,
+        minimum: u32,
+        maximum: u32,
+    },
+    Layout(CheckpointV1CodecError),
+    BodyLengthMismatch {
+        declared: u64,
+        expected: u64,
+    },
+    TotalLengthMismatch {
+        declared: u64,
+        expected: u64,
+    },
+    InputLengthUnrepresentable {
+        actual: usize,
+    },
+    InputLengthMismatch {
+        declared: u64,
+        actual: u64,
+    },
+    SectionRangeOverflow {
+        section: CheckpointV1BodySection,
+    },
+    SectionNotAddressable {
+        section: CheckpointV1BodySection,
+        end: u64,
+        platform_limit: u64,
+    },
+    AllocationCountArithmetic {
+        site: CheckpointV1ImportAllocationSite,
+    },
+    AllocationLayout {
+        site: CheckpointV1ImportAllocationSite,
+        element_count: usize,
+    },
+    IdentityMismatch {
+        field: CheckpointV1IdentityField,
+    },
+    BodyDigestMismatch,
+    LogicalStateDigestMismatch,
+}
+
+impl fmt::Display for CheckpointV1Pass1Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::HeaderTooShort { actual, required } => write!(
+                formatter,
+                "checkpoint header is truncated: {actual} bytes, requires {required}"
+            ),
+            Self::MagicMismatch => formatter.write_str("checkpoint magic does not match v1"),
+            Self::UnsupportedFormatVersion { found } => {
+                write!(formatter, "unsupported checkpoint format version {found}")
+            }
+            Self::HeaderSizeMismatch { found } => write!(
+                formatter,
+                "checkpoint header size {found} does not equal {CHECKPOINT_V1_HEADER_BYTES}"
+            ),
+            Self::ReservedHeaderByte { offset, found } => write!(
+                formatter,
+                "reserved checkpoint header byte {offset} is nonzero ({found})"
+            ),
+            Self::ContextLength { field, found } => {
+                write!(
+                    formatter,
+                    "{field} length {found} is not 0 or {CONTEXT_CELLS}"
+                )
+            }
+            Self::PoisonCode { found } => {
+                write!(
+                    formatter,
+                    "checkpoint poison code {found} is outside 0..=15"
+                )
+            }
+            Self::SegmentCountExceedsCapacity { declared, capacity } => write!(
+                formatter,
+                "checkpoint segment count {declared} exceeds capacity {capacity}"
+            ),
+            Self::CohortCountExceedsCapacity { declared, capacity } => write!(
+                formatter,
+                "checkpoint cohort count {declared} exceeds capacity {capacity}"
+            ),
+            Self::ReserveCursorOutsideCapacity {
+                declared,
+                minimum,
+                maximum,
+            } => write!(
+                formatter,
+                "checkpoint reserve cursor {declared} is outside {minimum}..={maximum}"
+            ),
+            Self::Layout(source) => write!(formatter, "checkpoint layout is invalid: {source}"),
+            Self::BodyLengthMismatch { declared, expected } => write!(
+                formatter,
+                "checkpoint body length {declared} does not equal canonical length {expected}"
+            ),
+            Self::TotalLengthMismatch { declared, expected } => write!(
+                formatter,
+                "checkpoint total length {declared} does not equal canonical length {expected}"
+            ),
+            Self::InputLengthUnrepresentable { actual } => write!(
+                formatter,
+                "checkpoint input length {actual} is outside the u64 format domain"
+            ),
+            Self::InputLengthMismatch { declared, actual } => write!(
+                formatter,
+                "checkpoint declares {declared} total bytes but input contains {actual}"
+            ),
+            Self::SectionRangeOverflow { section } => {
+                write!(formatter, "checkpoint {section} byte range overflowed")
+            }
+            Self::SectionNotAddressable {
+                section,
+                end,
+                platform_limit,
+            } => write!(
+                formatter,
+                "checkpoint {section} end {end} exceeds platform address limit {platform_limit}"
+            ),
+            Self::AllocationCountArithmetic { site } => {
+                write!(
+                    formatter,
+                    "checkpoint {site} element-count arithmetic overflowed"
+                )
+            }
+            Self::AllocationLayout {
+                site,
+                element_count,
+            } => write!(
+                formatter,
+                "checkpoint {site} layout cannot address {element_count} elements on this platform"
+            ),
+            Self::IdentityMismatch { field } => {
+                write!(formatter, "checkpoint {field} identity does not match")
+            }
+            Self::BodyDigestMismatch => {
+                formatter.write_str("checkpoint body digest does not match the body")
+            }
+            Self::LogicalStateDigestMismatch => {
+                formatter.write_str("checkpoint logical-state digest does not match")
+            }
+        }
+    }
+}
+
+impl Error for CheckpointV1Pass1Error {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Layout(source) => Some(source),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct CheckpointV1BodyView<'a> {
+    cohort_columns: &'a [u8],
+    prior_context: &'a [u8],
+    winner_context: &'a [u8],
+    segment_owners: &'a [u8],
+    segment_sources: &'a [u8],
+    segment_ticks: &'a [u8],
+}
+
+impl<'a> CheckpointV1BodyView<'a> {
+    fn sections(&self) -> [&'a [u8]; 6] {
+        [
+            self.cohort_columns,
+            self.prior_context,
+            self.winner_context,
+            self.segment_owners,
+            self.segment_sources,
+            self.segment_ticks,
+        ]
+    }
+
+    fn cohort_columns(&self) -> CheckpointV1LeU32Slice<'a> {
+        CheckpointV1LeU32Slice::from_checked_bytes(self.cohort_columns)
+    }
+
+    fn prior_context(&self) -> CheckpointV1LeU32Slice<'a> {
+        CheckpointV1LeU32Slice::from_checked_bytes(self.prior_context)
+    }
+
+    fn winner_context(&self) -> CheckpointV1LeU32Slice<'a> {
+        CheckpointV1LeU32Slice::from_checked_bytes(self.winner_context)
+    }
+
+    fn segment_owners(&self) -> CheckpointV1LeU32Slice<'a> {
+        CheckpointV1LeU32Slice::from_checked_bytes(self.segment_owners)
+    }
+
+    fn segment_sources(&self) -> CheckpointV1LeU32Slice<'a> {
+        CheckpointV1LeU32Slice::from_checked_bytes(self.segment_sources)
+    }
+
+    fn segment_ticks(&self) -> CheckpointV1LeU16Slice<'a> {
+        CheckpointV1LeU16Slice::from_checked_bytes(self.segment_ticks)
+    }
+}
+
+#[derive(Clone, Copy)]
+struct CheckpointV1LeU32Slice<'a> {
+    bytes: &'a [u8],
+}
+
+impl<'a> CheckpointV1LeU32Slice<'a> {
+    /// Wrap a section whose byte length was proved to be an exact multiple of
+    /// four by the checked checkpoint-v1 layout.
+    fn from_checked_bytes(bytes: &'a [u8]) -> Self {
+        debug_assert_eq!(bytes.len() % size_of::<u32>(), 0);
+        Self { bytes }
+    }
+
+    fn len(self) -> usize {
+        self.bytes.len() / size_of::<u32>()
+    }
+
+    fn get(self, index: usize) -> Option<u32> {
+        let start = index.checked_mul(size_of::<u32>())?;
+        let bytes: [u8; 4] = self
+            .bytes
+            .get(start..start.checked_add(4)?)?
+            .try_into()
+            .ok()?;
+        Some(u32::from_le_bytes(bytes))
+    }
+}
+
+#[derive(Clone, Copy)]
+struct CheckpointV1LeU16Slice<'a> {
+    bytes: &'a [u8],
+}
+
+impl<'a> CheckpointV1LeU16Slice<'a> {
+    /// Wrap a section whose byte length was proved to be an exact multiple of
+    /// two by the checked checkpoint-v1 layout.
+    fn from_checked_bytes(bytes: &'a [u8]) -> Self {
+        debug_assert_eq!(bytes.len() % size_of::<u16>(), 0);
+        Self { bytes }
+    }
+
+    fn len(self) -> usize {
+        self.bytes.len() / size_of::<u16>()
+    }
+
+    fn get(self, index: usize) -> Option<u16> {
+        let start = index.checked_mul(size_of::<u16>())?;
+        let bytes: [u8; 2] = self
+            .bytes
+            .get(start..start.checked_add(2)?)?
+            .try_into()
+            .ok()?;
+        Some(u16::from_le_bytes(bytes))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct CheckpointV1ImportAllocationPlan {
+    committed_owner_count: usize,
+    column_count: usize,
+    owner_capacity: usize,
+    segment_capacity: usize,
+    posting_capacity: usize,
+    source_count: usize,
+    cohort_capacity: usize,
+    prospective_column_occupancy_limit: usize,
+    active_segment_capacity: usize,
+    semantic_posting_scratch: usize,
+}
+
+struct ValidatedCheckpointV1Pass1<'a> {
+    checkpoint: &'a [u8],
+    body: CheckpointV1BodyView<'a>,
+    layout: CheckpointV1Layout,
+    scalars: CheckpointV1Scalars,
+    allocation_plan: CheckpointV1ImportAllocationPlan,
+    semantic_index_digest: CheckpointV1Digest,
+    poison: Option<TemporalPoisonCode>,
+}
+
+fn validate_checkpoint_v1_pass1<'a>(
+    checkpoint: &'a [u8],
+    factory: &ValidatedCheckpointV1RuntimeFactory,
+) -> Result<ValidatedCheckpointV1Pass1<'a>, CheckpointV1Pass1Error> {
+    let definition = factory.definition();
+    let header_bytes = usize::from(CHECKPOINT_V1_HEADER_BYTES);
+    if checkpoint.len() < header_bytes {
+        return Err(CheckpointV1Pass1Error::HeaderTooShort {
+            actual: checkpoint.len(),
+            required: header_bytes,
+        });
+    }
+    let header = &checkpoint[..header_bytes];
+    if header[..8] != CHECKPOINT_V1_MAGIC {
+        return Err(CheckpointV1Pass1Error::MagicMismatch);
+    }
+    let format_version = read_checkpoint_v1_u16(header, 8);
+    if format_version != CHECKPOINT_V1_FORMAT_VERSION {
+        return Err(CheckpointV1Pass1Error::UnsupportedFormatVersion {
+            found: format_version,
+        });
+    }
+    let declared_header_bytes = read_checkpoint_v1_u16(header, 10);
+    if declared_header_bytes != CHECKPOINT_V1_HEADER_BYTES {
+        return Err(CheckpointV1Pass1Error::HeaderSizeMismatch {
+            found: declared_header_bytes,
+        });
+    }
+    if let Some((relative, &found)) = header[12..16]
+        .iter()
+        .enumerate()
+        .find(|(_, byte)| **byte != 0)
+    {
+        return Err(CheckpointV1Pass1Error::ReservedHeaderByte {
+            offset: 12 + relative,
+            found,
+        });
+    }
+
+    let declared_total_bytes = read_checkpoint_v1_u64(header, 16);
+    let declared_body_bytes = read_checkpoint_v1_u64(header, 24);
+    let segment_count = read_checkpoint_v1_u32(header, 192);
+    let cohort_count = read_checkpoint_v1_u32(header, 196);
+    let next_reserve_cell = read_checkpoint_v1_u32(header, 200);
+    let event_count = read_checkpoint_v1_u64(header, 204);
+    let learning_step = read_checkpoint_v1_u64(header, 212);
+    let prior_context_length = header[220];
+    let winner_context_length = header[221];
+    let poison_code = read_checkpoint_v1_u16(header, 222);
+
+    for (field, found) in [
+        (CheckpointV1ContextLengthField::Prior, prior_context_length),
+        (
+            CheckpointV1ContextLengthField::Winner,
+            winner_context_length,
+        ),
+    ] {
+        if found != 0 && found != CONTEXT_CELLS_U8 {
+            return Err(CheckpointV1Pass1Error::ContextLength { field, found });
+        }
+    }
+    let poison = decode_checkpoint_v1_poison_code(poison_code)?;
+    if segment_count > definition.config.segment_capacity {
+        return Err(CheckpointV1Pass1Error::SegmentCountExceedsCapacity {
+            declared: segment_count,
+            capacity: definition.config.segment_capacity,
+        });
+    }
+    let base_population = factory.derived.base_population;
+    let cohort_capacity = (definition.config.max_pyramidal_cells - base_population)
+        / u32::from(definition.config.novel_race_cap);
+    if cohort_count > cohort_capacity {
+        return Err(CheckpointV1Pass1Error::CohortCountExceedsCapacity {
+            declared: cohort_count,
+            capacity: cohort_capacity,
+        });
+    }
+    if !(base_population..=definition.config.max_pyramidal_cells).contains(&next_reserve_cell) {
+        return Err(CheckpointV1Pass1Error::ReserveCursorOutsideCapacity {
+            declared: next_reserve_cell,
+            minimum: base_population,
+            maximum: definition.config.max_pyramidal_cells,
+        });
+    }
+
+    let layout = CheckpointV1Layout::checked(
+        segment_count,
+        cohort_count,
+        prior_context_length,
+        winner_context_length,
+    )
+    .map_err(CheckpointV1Pass1Error::Layout)?;
+    if declared_body_bytes != layout.body_bytes {
+        return Err(CheckpointV1Pass1Error::BodyLengthMismatch {
+            declared: declared_body_bytes,
+            expected: layout.body_bytes,
+        });
+    }
+    if declared_total_bytes != layout.total_bytes {
+        return Err(CheckpointV1Pass1Error::TotalLengthMismatch {
+            declared: declared_total_bytes,
+            expected: layout.total_bytes,
+        });
+    }
+    let actual_total_bytes = u64::try_from(checkpoint.len()).map_err(|_| {
+        CheckpointV1Pass1Error::InputLengthUnrepresentable {
+            actual: checkpoint.len(),
+        }
+    })?;
+    if declared_total_bytes != actual_total_bytes {
+        return Err(CheckpointV1Pass1Error::InputLengthMismatch {
+            declared: declared_total_bytes,
+            actual: actual_total_bytes,
+        });
+    }
+
+    let platform_limit = usize::MAX as u64;
+    let mut section_start = u64::from(CHECKPOINT_V1_HEADER_BYTES);
+    let cohort_columns = checked_checkpoint_v1_section_range(
+        CheckpointV1BodySection::CohortColumns,
+        section_start,
+        layout.cohort_columns_bytes,
+        platform_limit,
+    )?;
+    section_start = cohort_columns.1;
+    let prior_context = checked_checkpoint_v1_section_range(
+        CheckpointV1BodySection::PriorContext,
+        section_start,
+        layout.prior_context_bytes,
+        platform_limit,
+    )?;
+    section_start = prior_context.1;
+    let winner_context = checked_checkpoint_v1_section_range(
+        CheckpointV1BodySection::WinnerContext,
+        section_start,
+        layout.winner_context_bytes,
+        platform_limit,
+    )?;
+    section_start = winner_context.1;
+    let segment_owners = checked_checkpoint_v1_section_range(
+        CheckpointV1BodySection::SegmentOwners,
+        section_start,
+        layout.segment_owner_bytes,
+        platform_limit,
+    )?;
+    section_start = segment_owners.1;
+    let segment_sources = checked_checkpoint_v1_section_range(
+        CheckpointV1BodySection::SegmentSources,
+        section_start,
+        layout.segment_source_bytes,
+        platform_limit,
+    )?;
+    section_start = segment_sources.1;
+    let segment_ticks = checked_checkpoint_v1_section_range(
+        CheckpointV1BodySection::SegmentTicks,
+        section_start,
+        layout.segment_tick_bytes,
+        platform_limit,
+    )?;
+    if segment_ticks.1 != layout.total_bytes {
+        return Err(CheckpointV1Pass1Error::TotalLengthMismatch {
+            declared: segment_ticks.1,
+            expected: layout.total_bytes,
+        });
+    }
+    let allocation_plan =
+        checked_checkpoint_v1_import_allocation_plan(factory, segment_count, cohort_count)?;
+
+    validate_checkpoint_v1_identity_field(
+        header,
+        32,
+        factory.identity.authority.protocol_identity.raw_bytes(),
+        CheckpointV1IdentityField::Protocol,
+    )?;
+    validate_checkpoint_v1_identity_field(
+        header,
+        64,
+        factory
+            .identity
+            .authority
+            .source_bundle_identity
+            .raw_bytes(),
+        CheckpointV1IdentityField::SourceBundle,
+    )?;
+    validate_checkpoint_v1_identity_field(
+        header,
+        96,
+        factory.identity.circuit_identity.raw_bytes(),
+        CheckpointV1IdentityField::Circuit,
+    )?;
+
+    let body = &checkpoint[header_bytes..];
+    let computed_body_digest: [u8; 32] = Sha256::digest(body).into();
+    if header[128..160] != computed_body_digest {
+        return Err(CheckpointV1Pass1Error::BodyDigestMismatch);
+    }
+    let mut stored_body_digest = [0u8; 32];
+    stored_body_digest.copy_from_slice(&header[128..160]);
+    let mut scalar_block = [0u8; 32];
+    scalar_block.copy_from_slice(&header[192..224]);
+    let logical_state_digest =
+        checkpoint_v1_logical_state_digest(&stored_body_digest, &scalar_block);
+    if header[224..256] != logical_state_digest {
+        return Err(CheckpointV1Pass1Error::LogicalStateDigestMismatch);
+    }
+
+    let body_view = CheckpointV1BodyView {
+        cohort_columns: &checkpoint[cohort_columns.0 as usize..cohort_columns.1 as usize],
+        prior_context: &checkpoint[prior_context.0 as usize..prior_context.1 as usize],
+        winner_context: &checkpoint[winner_context.0 as usize..winner_context.1 as usize],
+        segment_owners: &checkpoint[segment_owners.0 as usize..segment_owners.1 as usize],
+        segment_sources: &checkpoint[segment_sources.0 as usize..segment_sources.1 as usize],
+        segment_ticks: &checkpoint[segment_ticks.0 as usize..segment_ticks.1 as usize],
+    };
+    let mut semantic_index_digest = [0u8; 32];
+    semantic_index_digest.copy_from_slice(&header[160..192]);
+    Ok(ValidatedCheckpointV1Pass1 {
+        checkpoint,
+        body: body_view,
+        layout,
+        scalars: CheckpointV1Scalars {
+            segment_count,
+            cohort_count,
+            next_reserve_cell,
+            event_count,
+            learning_step,
+            prior_context_length,
+            winner_context_length,
+            poison_code,
+        },
+        allocation_plan,
+        semantic_index_digest: CheckpointV1Digest::from_raw_bytes(semantic_index_digest),
+        poison,
+    })
+}
+
+fn checked_checkpoint_v1_import_allocation_plan(
+    factory: &ValidatedCheckpointV1RuntimeFactory,
+    segment_count: u32,
+    cohort_count: u32,
+) -> Result<CheckpointV1ImportAllocationPlan, CheckpointV1Pass1Error> {
+    let definition = factory.definition();
+    let column_count = checkpoint_v1_allocation_usize(
+        CheckpointV1ImportAllocationSite::RuntimeColumnOffsets,
+        definition.config.column_count,
+    )?;
+    let owner_capacity = checkpoint_v1_allocation_usize(
+        CheckpointV1ImportAllocationSite::RuntimeColumnCells,
+        definition.config.max_pyramidal_cells,
+    )?;
+    let segment_capacity = checkpoint_v1_allocation_usize(
+        CheckpointV1ImportAllocationSite::StoreOwners,
+        definition.config.segment_capacity,
+    )?;
+    let source_count = checkpoint_v1_allocation_usize(
+        CheckpointV1ImportAllocationSite::StoreSourceMeta,
+        factory.derived.source_count,
+    )?;
+    let base_population = checkpoint_v1_allocation_usize(
+        CheckpointV1ImportAllocationSite::Pass2OwnerLoads,
+        factory.derived.base_population,
+    )?;
+    let cohort_count = checkpoint_v1_allocation_usize(
+        CheckpointV1ImportAllocationSite::Pass2OwnerLoads,
+        cohort_count,
+    )?;
+    let segment_count = checkpoint_v1_allocation_usize(
+        CheckpointV1ImportAllocationSite::VerificationSemanticPostings,
+        segment_count,
+    )?;
+    let race_cap = usize::from(definition.config.novel_race_cap);
+    let base_width = usize::from(definition.config.base_cells_per_column);
+    let cohort_capacity = owner_capacity.checked_sub(base_population).ok_or(
+        CheckpointV1Pass1Error::AllocationCountArithmetic {
+            site: CheckpointV1ImportAllocationSite::RuntimeCohortColumns,
+        },
+    )? / race_cap;
+    let recruited_count = cohort_count.checked_mul(race_cap).ok_or(
+        CheckpointV1Pass1Error::AllocationCountArithmetic {
+            site: CheckpointV1ImportAllocationSite::Pass2OwnerLoads,
+        },
+    )?;
+    let committed_owner_count = base_population.checked_add(recruited_count).ok_or(
+        CheckpointV1Pass1Error::AllocationCountArithmetic {
+            site: CheckpointV1ImportAllocationSite::Pass2OwnerLoads,
+        },
+    )?;
+    if committed_owner_count > owner_capacity {
+        return Err(CheckpointV1Pass1Error::AllocationCountArithmetic {
+            site: CheckpointV1ImportAllocationSite::Pass2OwnerLoads,
+        });
+    }
+    let posting_capacity = segment_capacity.checked_mul(PAIRS_PER_SEGMENT).ok_or(
+        CheckpointV1Pass1Error::AllocationCountArithmetic {
+            site: CheckpointV1ImportAllocationSite::StoreSources,
+        },
+    )?;
+    let prospective_column_occupancy_limit =
+        checked_checkpoint_v1_prospective_occupancy_limit(base_width, race_cap, cohort_capacity)
+            .ok_or(CheckpointV1Pass1Error::AllocationCountArithmetic {
+                site: CheckpointV1ImportAllocationSite::RuntimeColumnDrive,
+            })?;
+    let column_offset_count =
+        column_count
+            .checked_add(1)
+            .ok_or(CheckpointV1Pass1Error::AllocationCountArithmetic {
+                site: CheckpointV1ImportAllocationSite::RuntimeColumnOffsets,
+            })?;
+    let active_segment_capacity = match definition.config.plasticity_policy {
+        TemporalPlasticityPolicy::GrowthOff => 0,
+        TemporalPlasticityPolicy::Plastic => segment_capacity,
+    };
+
+    checkpoint_v1_preflight_layout::<u16>(
+        CheckpointV1ImportAllocationSite::Pass2OwnerLoads,
+        committed_owner_count,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::Pass2ColumnReplay,
+        column_count,
+    )?;
+    checkpoint_v1_preflight_layout::<usize>(
+        CheckpointV1ImportAllocationSite::RuntimeColumnOffsets,
+        column_offset_count,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::RuntimeColumnCells,
+        owner_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<usize>(
+        CheckpointV1ImportAllocationSite::RuntimeAlternateColumnOffsets,
+        column_offset_count,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::RuntimeAlternateColumnCells,
+        owner_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::RuntimeCohortColumns,
+        cohort_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<TemporalOwnerDiagnostic>(
+        CheckpointV1ImportAllocationSite::RuntimeRecognitionDiagnostics,
+        owner_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::RuntimeActiveSegments,
+        active_segment_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<CandidateDrive>(
+        CheckpointV1ImportAllocationSite::RuntimeColumnDrive,
+        prospective_column_occupancy_limit,
+    )?;
+    checkpoint_v1_preflight_layout::<super::NovelCandidate>(
+        CheckpointV1ImportAllocationSite::RuntimeNovelCandidates,
+        prospective_column_occupancy_limit,
+    )?;
+    for site in [
+        CheckpointV1ImportAllocationSite::RuntimeRaceVoltage,
+        CheckpointV1ImportAllocationSite::RuntimeRaceThresholds,
+        CheckpointV1ImportAllocationSite::RuntimeRaceExcitatory,
+    ] {
+        checkpoint_v1_preflight_layout::<f64>(site, prospective_column_occupancy_limit)?;
+    }
+    checkpoint_v1_preflight_layout::<u8>(
+        CheckpointV1ImportAllocationSite::RuntimeRaceEmitted,
+        prospective_column_occupancy_limit,
+    )?;
+    checkpoint_v1_preflight_layout::<usize>(
+        CheckpointV1ImportAllocationSite::RuntimeRaceSpikingIndices,
+        prospective_column_occupancy_limit,
+    )?;
+
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::StoreOwners,
+        segment_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::StoreSources,
+        posting_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u16>(
+        CheckpointV1ImportAllocationSite::StorePermanences,
+        posting_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u8>(
+        CheckpointV1ImportAllocationSite::StoreOwnerSegmentCounts,
+        owner_capacity,
+    )?;
+    temporal_source_meta_allocation_layout(source_count).map_err(|_| {
+        CheckpointV1Pass1Error::AllocationLayout {
+            site: CheckpointV1ImportAllocationSite::StoreSourceMeta,
+            element_count: source_count,
+        }
+    })?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::StoreNextPair,
+        posting_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::StorePreviousPair,
+        posting_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::StoreSourceStamps,
+        source_count,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::StoreSegmentStamps,
+        segment_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u8>(
+        CheckpointV1ImportAllocationSite::StorePotentialContacts,
+        segment_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u8>(
+        CheckpointV1ImportAllocationSite::StoreConnectedContacts,
+        segment_capacity,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::StoreTouchedSegments,
+        segment_capacity,
+    )?;
+    for site in [
+        CheckpointV1ImportAllocationSite::StoreOwnerStamps,
+        CheckpointV1ImportAllocationSite::StoreBestMatching,
+        CheckpointV1ImportAllocationSite::StoreBestActive,
+    ] {
+        checkpoint_v1_preflight_layout::<u32>(site, owner_capacity)?;
+    }
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::StoreTouchedOwners,
+        owner_capacity.min(segment_capacity),
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::VerificationColumnReplay,
+        column_count,
+    )?;
+    checkpoint_v1_preflight_layout::<u32>(
+        CheckpointV1ImportAllocationSite::VerificationSemanticPostings,
+        segment_count,
+    )?;
+
+    Ok(CheckpointV1ImportAllocationPlan {
+        committed_owner_count,
+        column_count,
+        owner_capacity,
+        segment_capacity,
+        posting_capacity,
+        source_count,
+        cohort_capacity,
+        prospective_column_occupancy_limit,
+        active_segment_capacity,
+        semantic_posting_scratch: segment_count,
+    })
+}
+
+/// Envelope-only upper bound for every current and future column occupancy.
+///
+/// Pass 1 deliberately does not inspect cohort columns. If all `Kcap` cohorts
+/// target one column, that column has `B + R*Kcap` cells; after any prefix of
+/// `k` cohorts it has at most `B + R*k`, with exactly `R*(Kcap-k)` recruitable
+/// cells remaining, so the same bound covers the runtime's full lifetime.
+fn checked_checkpoint_v1_prospective_occupancy_limit(
+    base_width: usize,
+    race_cap: usize,
+    cohort_capacity: usize,
+) -> Option<usize> {
+    race_cap
+        .checked_mul(cohort_capacity)
+        .and_then(|reserve| base_width.checked_add(reserve))
+}
+
+fn checkpoint_v1_allocation_usize(
+    site: CheckpointV1ImportAllocationSite,
+    count: u32,
+) -> Result<usize, CheckpointV1Pass1Error> {
+    usize::try_from(count).map_err(|_| CheckpointV1Pass1Error::AllocationCountArithmetic { site })
+}
+
+fn checkpoint_v1_preflight_layout<T>(
+    site: CheckpointV1ImportAllocationSite,
+    element_count: usize,
+) -> Result<(), CheckpointV1Pass1Error> {
+    Layout::array::<T>(element_count).map(|_| ()).map_err(|_| {
+        CheckpointV1Pass1Error::AllocationLayout {
+            site,
+            element_count,
+        }
+    })
+}
+
+fn read_checkpoint_v1_u16(bytes: &[u8], offset: usize) -> u16 {
+    u16::from_le_bytes([bytes[offset], bytes[offset + 1]])
+}
+
+fn read_checkpoint_v1_u32(bytes: &[u8], offset: usize) -> u32 {
+    u32::from_le_bytes([
+        bytes[offset],
+        bytes[offset + 1],
+        bytes[offset + 2],
+        bytes[offset + 3],
+    ])
+}
+
+fn read_checkpoint_v1_u64(bytes: &[u8], offset: usize) -> u64 {
+    u64::from_le_bytes([
+        bytes[offset],
+        bytes[offset + 1],
+        bytes[offset + 2],
+        bytes[offset + 3],
+        bytes[offset + 4],
+        bytes[offset + 5],
+        bytes[offset + 6],
+        bytes[offset + 7],
+    ])
+}
+
+fn decode_checkpoint_v1_poison_code(
+    code: u16,
+) -> Result<Option<TemporalPoisonCode>, CheckpointV1Pass1Error> {
+    Ok(match code {
+        0 => None,
+        1 => Some(TemporalPoisonCode::MultipleActiveOwners),
+        2 => Some(TemporalPoisonCode::MultipleMatchingOwners),
+        3 => Some(TemporalPoisonCode::CategorizedRaceCapacity),
+        4 => Some(TemporalPoisonCode::MalformedContextOrPolicy),
+        5 => Some(TemporalPoisonCode::ProximalPhysics),
+        6 => Some(TemporalPoisonCode::ProximalRelayPhysics),
+        7 => Some(TemporalPoisonCode::ColumnRacePhysics),
+        8 => Some(TemporalPoisonCode::WinnerRelayPhysics),
+        9 => Some(TemporalPoisonCode::TickOrCounterOverflow),
+        10 => Some(TemporalPoisonCode::StoreOrPlanInvariant),
+        11 => Some(TemporalPoisonCode::PhiloxAddressExhaustion),
+        12 => Some(TemporalPoisonCode::ReserveCellCapacity),
+        13 => Some(TemporalPoisonCode::GlobalSegmentCapacity),
+        14 => Some(TemporalPoisonCode::OwnerSegmentCapacity),
+        15 => Some(TemporalPoisonCode::PreallocatedCapacityInvariant),
+        found => return Err(CheckpointV1Pass1Error::PoisonCode { found }),
+    })
+}
+
+fn checked_checkpoint_v1_section_range(
+    section: CheckpointV1BodySection,
+    start: u64,
+    byte_count: u64,
+    platform_limit: u64,
+) -> Result<(u64, u64), CheckpointV1Pass1Error> {
+    let end = start
+        .checked_add(byte_count)
+        .ok_or(CheckpointV1Pass1Error::SectionRangeOverflow { section })?;
+    if start > platform_limit || end > platform_limit {
+        return Err(CheckpointV1Pass1Error::SectionNotAddressable {
+            section,
+            end,
+            platform_limit,
+        });
+    }
+    Ok((start, end))
+}
+
+fn validate_checkpoint_v1_identity_field(
+    header: &[u8],
+    offset: usize,
+    expected: &[u8; 32],
+    field: CheckpointV1IdentityField,
+) -> Result<(), CheckpointV1Pass1Error> {
+    if header[offset..offset + 32] != expected[..] {
+        return Err(CheckpointV1Pass1Error::IdentityMismatch { field });
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2193,6 +3649,73 @@ mod tests {
             [0xa5; 32],
             std::array::from_fn(|index| index as u8),
         )
+    }
+
+    fn factory_for_runtime(
+        runtime: &TemporalCircuitRuntime,
+    ) -> ValidatedCheckpointV1RuntimeFactory {
+        ValidatedCheckpointV1RuntimeFactory::new(
+            authority(),
+            runtime.config,
+            runtime.token_codebook.clone(),
+            runtime.threshold_offsets_mv.clone(),
+        )
+        .expect("runtime fixture must define one validated checkpoint factory")
+    }
+
+    fn factory_for_runtime_with_authority(
+        runtime: &TemporalCircuitRuntime,
+        checkpoint_authority: ValidatedCheckpointAuthority,
+    ) -> ValidatedCheckpointV1RuntimeFactory {
+        ValidatedCheckpointV1RuntimeFactory::new(
+            checkpoint_authority,
+            runtime.config,
+            runtime.token_codebook.clone(),
+            runtime.threshold_offsets_mv.clone(),
+        )
+        .expect("runtime fixture must define one validated checkpoint factory")
+    }
+
+    fn encoded_checkpoint(runtime: &TemporalCircuitRuntime) -> Vec<u8> {
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("fixture must prepare for checkpoint export");
+        let mut sink = Cursor::new(Vec::new());
+        prepared
+            .encode_into(&mut sink)
+            .expect("fixture checkpoint must encode");
+        sink.into_inner()
+    }
+
+    fn literal_checkpoint(header_hex: &str, body_hex: &str) -> Vec<u8> {
+        let mut checkpoint = hex_bytes(header_hex);
+        checkpoint.extend_from_slice(&hex_bytes(body_hex));
+        checkpoint
+    }
+
+    fn refresh_logical_state_digest(checkpoint: &mut [u8]) {
+        let mut stored_body_digest = [0u8; 32];
+        stored_body_digest.copy_from_slice(&checkpoint[128..160]);
+        let mut scalar_block = [0u8; 32];
+        scalar_block.copy_from_slice(&checkpoint[192..224]);
+        let digest = checkpoint_v1_logical_state_digest(&stored_body_digest, &scalar_block);
+        checkpoint[224..256].copy_from_slice(&digest);
+    }
+
+    fn refresh_body_and_logical_state_digests(checkpoint: &mut [u8]) {
+        let body_digest: [u8; 32] = Sha256::digest(&checkpoint[256..]).into();
+        checkpoint[128..160].copy_from_slice(&body_digest);
+        refresh_logical_state_digest(checkpoint);
+    }
+
+    fn pass1_error(
+        checkpoint: &[u8],
+        factory: &ValidatedCheckpointV1RuntimeFactory,
+    ) -> CheckpointV1Pass1Error {
+        match validate_checkpoint_v1_pass1(checkpoint, factory) {
+            Ok(_) => panic!("checkpoint unexpectedly passed envelope validation"),
+            Err(error) => error,
+        }
     }
 
     fn empty_runtime(context_policy: TemporalContextPolicy) -> TemporalCircuitRuntime {
@@ -3175,6 +4698,615 @@ mod tests {
     }
 
     #[test]
+    fn pass1_borrows_the_exact_six_full_fixture_sections() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let mut checkpoint = hex_bytes(FULL_SECTION_GENERIC_HEADER_HEX);
+        checkpoint.extend_from_slice(&hex_bytes(FULL_SECTION_GENERIC_BODY_HEX));
+
+        let validated = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+            .expect("the literal full-section checkpoint must pass envelope validation");
+        let base = checkpoint.as_ptr() as usize;
+        let sections = validated.body.sections();
+        let expected_boundaries = [256usize, 264, 352, 440, 464, 704, 824];
+
+        assert_eq!(validated.checkpoint.as_ptr(), checkpoint.as_ptr());
+        assert_eq!(validated.checkpoint.len(), checkpoint.len());
+        assert_eq!(validated.layout.body_bytes, 568);
+        assert_eq!(validated.layout.total_bytes, 824);
+        assert_eq!(validated.scalars.segment_count, 6);
+        assert_eq!(validated.scalars.cohort_count, 2);
+        assert_eq!(
+            validated.allocation_plan,
+            CheckpointV1ImportAllocationPlan {
+                committed_owner_count: 26,
+                column_count: 11,
+                owner_capacity: 26,
+                segment_capacity: 6,
+                posting_capacity: 60,
+                source_count: 11,
+                cohort_capacity: 2,
+                prospective_column_occupancy_limit: 6,
+                active_segment_capacity: 6,
+                semantic_posting_scratch: 6,
+            }
+        );
+        assert_eq!(
+            validated.semantic_index_digest.raw_bytes().as_slice(),
+            hex_bytes("dc6222193dfca80b9e29b83e57ec1581d6ef6d94a339046249b8b9a7c8c0a1a5")
+                .as_slice()
+        );
+        assert_eq!(validated.poison, None);
+        for (section, expected) in sections.iter().zip(expected_boundaries.windows(2)) {
+            assert_eq!(section.as_ptr() as usize - base, expected[0]);
+            assert_eq!(section.len(), expected[1] - expected[0]);
+        }
+        let cohorts = validated.body.cohort_columns();
+        let prior = validated.body.prior_context();
+        let winner = validated.body.winner_context();
+        let owners = validated.body.segment_owners();
+        let sources = validated.body.segment_sources();
+        let ticks = validated.body.segment_ticks();
+        assert_eq!(
+            (cohorts.len(), cohorts.get(0), cohorts.get(1)),
+            (2, Some(0), Some(1))
+        );
+        assert_eq!(
+            (prior.len(), prior.get(0), prior.get(21)),
+            (22, Some(63), Some(84))
+        );
+        assert_eq!(
+            (winner.len(), winner.get(0), winner.get(10), winner.get(11)),
+            (22, Some(0), Some(20), Some(26))
+        );
+        assert_eq!(
+            std::array::from_fn::<Option<u32>, 6, _>(|index| owners.get(index)),
+            [Some(0), Some(1), Some(22), Some(2), Some(3), Some(24)]
+        );
+        assert_eq!(
+            (sources.len(), sources.get(0), sources.get(1)),
+            (60, Some(0), Some(2))
+        );
+        assert_eq!(
+            (ticks.len(), ticks.get(0), ticks.get(1)),
+            (60, Some(250), Some(251))
+        );
+        assert_eq!(sources.get(sources.len()), None);
+        assert_eq!(ticks.get(ticks.len()), None);
+    }
+
+    #[test]
+    fn pass1_round_trips_all_empty_and_literal_nonempty_encoder_fixtures() {
+        for policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            let runtime = empty_runtime(policy);
+            let checkpoint = encoded_checkpoint(&runtime);
+            let factory = factory_for_runtime(&runtime);
+            let validated = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+                .expect("empty encoder fixture must pass envelope validation");
+
+            assert_eq!(checkpoint.len(), 256);
+            assert_eq!(validated.layout.body_bytes, 0);
+            assert!(validated
+                .body
+                .sections()
+                .iter()
+                .all(|section| section.is_empty()));
+        }
+
+        for (policy, header) in [
+            (
+                TemporalContextPolicy::BoundWinners,
+                SEMANTIC_FIXTURE_BOUND_HEADER_HEX,
+            ),
+            (
+                TemporalContextPolicy::GenericAfferents,
+                SEMANTIC_FIXTURE_GENERIC_HEADER_HEX,
+            ),
+        ] {
+            let runtime = semantic_runtime(policy);
+            let checkpoint = literal_checkpoint(header, SEMANTIC_FIXTURE_BODY_HEX);
+            let factory = factory_for_runtime(&runtime);
+            let validated = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+                .expect("literal semantic fixture must pass envelope validation");
+
+            assert_eq!(validated.layout.total_bytes, 384);
+            assert_eq!(validated.scalars.segment_count, 2);
+            assert_eq!(validated.body.segment_owners.len(), 8);
+            assert_eq!(validated.body.segment_sources.len(), 80);
+            assert_eq!(validated.body.segment_ticks.len(), 40);
+        }
+    }
+
+    #[test]
+    fn pass1_rejects_each_fixed_header_family_before_identity_or_hashes() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+
+        for offset in 0..8 {
+            let mut checkpoint = baseline.clone();
+            checkpoint[offset] ^= 0x80;
+            assert_eq!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::MagicMismatch
+            );
+        }
+        for version in [0u16, 2, u16::MAX] {
+            let mut checkpoint = baseline.clone();
+            checkpoint[8..10].copy_from_slice(&version.to_le_bytes());
+            assert_eq!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::UnsupportedFormatVersion { found: version }
+            );
+        }
+        for header_bytes in [0u16, 255, 257, u16::MAX] {
+            let mut checkpoint = baseline.clone();
+            checkpoint[10..12].copy_from_slice(&header_bytes.to_le_bytes());
+            assert_eq!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::HeaderSizeMismatch {
+                    found: header_bytes
+                }
+            );
+        }
+        for offset in 12..16 {
+            let mut checkpoint = baseline.clone();
+            checkpoint[offset] = (offset - 11) as u8;
+            assert_eq!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::ReservedHeaderByte {
+                    offset,
+                    found: (offset - 11) as u8,
+                }
+            );
+        }
+
+        for declared in [567u64, 569, u64::MAX] {
+            let mut checkpoint = baseline.clone();
+            checkpoint[24..32].copy_from_slice(&declared.to_le_bytes());
+            assert_eq!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::BodyLengthMismatch {
+                    declared,
+                    expected: 568,
+                }
+            );
+        }
+        for declared in [823u64, 825, u64::MAX] {
+            let mut checkpoint = baseline.clone();
+            checkpoint[16..24].copy_from_slice(&declared.to_le_bytes());
+            assert_eq!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::TotalLengthMismatch {
+                    declared,
+                    expected: 824,
+                }
+            );
+        }
+        let mut trailing = baseline.clone();
+        trailing.push(0);
+        assert_eq!(
+            pass1_error(&trailing, &factory),
+            CheckpointV1Pass1Error::InputLengthMismatch {
+                declared: 824,
+                actual: 825,
+            }
+        );
+    }
+
+    #[test]
+    fn pass1_validates_scalar_domains_and_budget_before_layout_and_hashes() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+
+        let mut segment_count = baseline.clone();
+        segment_count[192..196].copy_from_slice(&7u32.to_le_bytes());
+        assert_eq!(
+            pass1_error(&segment_count, &factory),
+            CheckpointV1Pass1Error::SegmentCountExceedsCapacity {
+                declared: 7,
+                capacity: 6,
+            }
+        );
+        let mut cohort_count = baseline.clone();
+        cohort_count[196..200].copy_from_slice(&3u32.to_le_bytes());
+        assert_eq!(
+            pass1_error(&cohort_count, &factory),
+            CheckpointV1Pass1Error::CohortCountExceedsCapacity {
+                declared: 3,
+                capacity: 2,
+            }
+        );
+        for cursor in [21u32, 27] {
+            let mut checkpoint = baseline.clone();
+            checkpoint[200..204].copy_from_slice(&cursor.to_le_bytes());
+            assert_eq!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::ReserveCursorOutsideCapacity {
+                    declared: cursor,
+                    minimum: 22,
+                    maximum: 26,
+                }
+            );
+        }
+        for (offset, field) in [
+            (220, CheckpointV1ContextLengthField::Prior),
+            (221, CheckpointV1ContextLengthField::Winner),
+        ] {
+            for found in [1u8, 21, 23, u8::MAX] {
+                let mut checkpoint = baseline.clone();
+                checkpoint[offset] = found;
+                assert_eq!(
+                    pass1_error(&checkpoint, &factory),
+                    CheckpointV1Pass1Error::ContextLength { field, found }
+                );
+            }
+        }
+        for found in [16u16, u16::MAX] {
+            let mut checkpoint = baseline.clone();
+            checkpoint[222..224].copy_from_slice(&found.to_le_bytes());
+            assert_eq!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::PoisonCode { found }
+            );
+        }
+
+        let mut layout_shaping = baseline.clone();
+        layout_shaping[192..196].copy_from_slice(&5u32.to_le_bytes());
+        assert_eq!(
+            pass1_error(&layout_shaping, &factory),
+            CheckpointV1Pass1Error::BodyLengthMismatch {
+                declared: 568,
+                expected: 504,
+            }
+        );
+    }
+
+    #[test]
+    fn pass1_checks_authority_and_route_zero_circuit_identity_in_order() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+
+        let wrong_authority = ValidatedCheckpointAuthority::from_raw_sha256([0x5a; 32], [0xc3; 32]);
+        let wrong_authority_factory = factory_for_runtime_with_authority(&runtime, wrong_authority);
+        assert_eq!(
+            pass1_error(&baseline, &wrong_authority_factory),
+            CheckpointV1Pass1Error::IdentityMismatch {
+                field: CheckpointV1IdentityField::Protocol,
+            }
+        );
+
+        let source_only_authority =
+            ValidatedCheckpointAuthority::from_raw_sha256([0xa5; 32], [0xc3; 32]);
+        let source_factory = factory_for_runtime_with_authority(&runtime, source_only_authority);
+        assert_eq!(
+            pass1_error(&baseline, &source_factory),
+            CheckpointV1Pass1Error::IdentityMismatch {
+                field: CheckpointV1IdentityField::SourceBundle,
+            }
+        );
+
+        let mut changed_config = runtime.config;
+        changed_config.construction_seed ^= 1;
+        let changed_factory = ValidatedCheckpointV1RuntimeFactory::new(
+            authority(),
+            changed_config,
+            runtime.token_codebook.clone(),
+            runtime.threshold_offsets_mv.clone(),
+        )
+        .expect("the alternate route-0 definition remains valid");
+        assert_eq!(
+            pass1_error(&baseline, &changed_factory),
+            CheckpointV1Pass1Error::IdentityMismatch {
+                field: CheckpointV1IdentityField::Circuit,
+            }
+        );
+
+        for (range, field) in [
+            (32..64, CheckpointV1IdentityField::Protocol),
+            (64..96, CheckpointV1IdentityField::SourceBundle),
+            (96..128, CheckpointV1IdentityField::Circuit),
+        ] {
+            for offset in range {
+                let mut checkpoint = baseline.clone();
+                checkpoint[offset] ^= 1;
+                assert_eq!(
+                    pass1_error(&checkpoint, &factory),
+                    CheckpointV1Pass1Error::IdentityMismatch { field }
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn pass1_accepts_complete_scalar_domains_but_defers_cross_field_rules() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+
+        let poison_cases: [(u16, Option<TemporalPoisonCode>); 16] = [
+            (0, None),
+            (1, Some(TemporalPoisonCode::MultipleActiveOwners)),
+            (2, Some(TemporalPoisonCode::MultipleMatchingOwners)),
+            (3, Some(TemporalPoisonCode::CategorizedRaceCapacity)),
+            (4, Some(TemporalPoisonCode::MalformedContextOrPolicy)),
+            (5, Some(TemporalPoisonCode::ProximalPhysics)),
+            (6, Some(TemporalPoisonCode::ProximalRelayPhysics)),
+            (7, Some(TemporalPoisonCode::ColumnRacePhysics)),
+            (8, Some(TemporalPoisonCode::WinnerRelayPhysics)),
+            (9, Some(TemporalPoisonCode::TickOrCounterOverflow)),
+            (10, Some(TemporalPoisonCode::StoreOrPlanInvariant)),
+            (11, Some(TemporalPoisonCode::PhiloxAddressExhaustion)),
+            (12, Some(TemporalPoisonCode::ReserveCellCapacity)),
+            (13, Some(TemporalPoisonCode::GlobalSegmentCapacity)),
+            (14, Some(TemporalPoisonCode::OwnerSegmentCapacity)),
+            (15, Some(TemporalPoisonCode::PreallocatedCapacityInvariant)),
+        ];
+        for (poison_code, expected) in poison_cases {
+            let mut checkpoint = baseline.clone();
+            checkpoint[222..224].copy_from_slice(&poison_code.to_le_bytes());
+            refresh_logical_state_digest(&mut checkpoint);
+            let validated = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+                .expect("every frozen poison code must pass its fixed domain");
+            assert_eq!(validated.scalars.poison_code, poison_code);
+            assert_eq!(validated.poison, expected);
+        }
+
+        let mut deferred = baseline.clone();
+        deferred[200..204].copy_from_slice(&22u32.to_le_bytes());
+        deferred[204..212].copy_from_slice(&u64::MAX.to_le_bytes());
+        deferred[212..220].copy_from_slice(&u64::MAX.to_le_bytes());
+        refresh_logical_state_digest(&mut deferred);
+        let validated = validate_checkpoint_v1_pass1(&deferred, &factory)
+            .expect("cursor chronology and counter cross-rules belong to Pass 2");
+        assert_eq!(validated.scalars.next_reserve_cell, 22);
+        assert_eq!(validated.scalars.event_count, u64::MAX);
+        assert_eq!(validated.scalars.learning_step, u64::MAX);
+
+        for (offset, found) in [(192usize, u32::MAX), (196, u32::MAX)] {
+            let mut checkpoint = baseline.clone();
+            checkpoint[offset..offset + 4].copy_from_slice(&found.to_le_bytes());
+            assert!(matches!(
+                pass1_error(&checkpoint, &factory),
+                CheckpointV1Pass1Error::SegmentCountExceedsCapacity { .. }
+                    | CheckpointV1Pass1Error::CohortCountExceedsCapacity { .. }
+            ));
+        }
+    }
+
+    #[test]
+    fn pass1_keeps_all_body_content_opaque_after_integrity_refresh() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+
+        for offset in [256usize, 264, 352, 440, 464, 704] {
+            let mut checkpoint = baseline.clone();
+            checkpoint[offset..offset + 2].copy_from_slice(&u16::MAX.to_le_bytes());
+            refresh_body_and_logical_state_digests(&mut checkpoint);
+
+            validate_checkpoint_v1_pass1(&checkpoint, &factory)
+                .expect("cohort, context, row, and tick content belongs to Pass 2");
+        }
+    }
+
+    #[test]
+    fn pass1_hash_precedence_keeps_semantic_digest_opaque() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+
+        let mut body = baseline.clone();
+        body[256] ^= 1;
+        assert_eq!(
+            pass1_error(&body, &factory),
+            CheckpointV1Pass1Error::BodyDigestMismatch
+        );
+        let mut stored_body_digest = baseline.clone();
+        stored_body_digest[128] ^= 1;
+        assert_eq!(
+            pass1_error(&stored_body_digest, &factory),
+            CheckpointV1Pass1Error::BodyDigestMismatch
+        );
+        let mut logical = baseline.clone();
+        logical[224] ^= 1;
+        assert_eq!(
+            pass1_error(&logical, &factory),
+            CheckpointV1Pass1Error::LogicalStateDigestMismatch
+        );
+        let mut cursor = baseline.clone();
+        cursor[200..204].copy_from_slice(&25u32.to_le_bytes());
+        assert_eq!(
+            pass1_error(&cursor, &factory),
+            CheckpointV1Pass1Error::LogicalStateDigestMismatch
+        );
+        for scalar_offset in [204usize, 212] {
+            let mut scalar = baseline.clone();
+            scalar[scalar_offset] ^= 1;
+            assert_eq!(
+                pass1_error(&scalar, &factory),
+                CheckpointV1Pass1Error::LogicalStateDigestMismatch
+            );
+        }
+
+        let mut nonzero_poison = baseline.clone();
+        nonzero_poison[222..224].copy_from_slice(&15u16.to_le_bytes());
+        refresh_logical_state_digest(&mut nonzero_poison);
+        let poisoned = validate_checkpoint_v1_pass1(&nonzero_poison, &factory)
+            .expect("a domain-valid stable poison code must pass Pass 1");
+        assert_eq!(
+            poisoned.poison,
+            Some(TemporalPoisonCode::PreallocatedCapacityInvariant)
+        );
+        nonzero_poison[222..224].copy_from_slice(&0u16.to_le_bytes());
+        assert_eq!(
+            pass1_error(&nonzero_poison, &factory),
+            CheckpointV1Pass1Error::LogicalStateDigestMismatch
+        );
+
+        let mut semantic = baseline.clone();
+        semantic[160] ^= 1;
+        let validated = validate_checkpoint_v1_pass1(&semantic, &factory)
+            .expect("semantic-index verification belongs to the later rebuild");
+        assert_eq!(
+            validated.semantic_index_digest.raw_bytes()[0],
+            baseline[160] ^ 1
+        );
+    }
+
+    #[test]
+    fn pass1_rejects_every_truncation_length() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let baseline = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        for length in 0..baseline.len() {
+            let truncated = &baseline[..length];
+            let error = pass1_error(truncated, &factory);
+            if length < 256 {
+                assert_eq!(
+                    error,
+                    CheckpointV1Pass1Error::HeaderTooShort {
+                        actual: length,
+                        required: 256,
+                    }
+                );
+            } else {
+                assert_eq!(
+                    error,
+                    CheckpointV1Pass1Error::InputLengthMismatch {
+                        declared: 824,
+                        actual: length as u64,
+                    }
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn pass1_accepts_unaligned_backing_and_preserves_all_owned_storage() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let checkpoint = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        let mut unaligned = Vec::with_capacity(checkpoint.len() + 1);
+        unaligned.push(0xff);
+        unaligned.extend_from_slice(&checkpoint);
+        let input_pointer = unaligned.as_ptr();
+        let input_capacity = unaligned.capacity();
+        let codebook_pointer = factory.token_codebook.as_ptr();
+        let codebook_capacity = factory.token_codebook.capacity();
+        let threshold_pointer = factory.threshold_offsets_mv.as_ptr();
+        let threshold_capacity = factory.threshold_offsets_mv.capacity();
+
+        let validated = validate_checkpoint_v1_pass1(&unaligned[1..], &factory)
+            .expect("Pass 1 must parse unaligned byte backing");
+
+        assert_eq!(
+            validated.body.cohort_columns.as_ptr(),
+            unaligned[1 + 256..].as_ptr()
+        );
+        assert_eq!(unaligned.as_ptr(), input_pointer);
+        assert_eq!(unaligned.capacity(), input_capacity);
+        assert_eq!(factory.token_codebook.as_ptr(), codebook_pointer);
+        assert_eq!(factory.token_codebook.capacity(), codebook_capacity);
+        assert_eq!(factory.threshold_offsets_mv.as_ptr(), threshold_pointer);
+        assert_eq!(factory.threshold_offsets_mv.capacity(), threshold_capacity);
+    }
+
+    #[test]
+    fn pass1_range_helper_reports_overflow_and_platform_limits() {
+        assert_eq!(
+            checked_checkpoint_v1_section_range(
+                CheckpointV1BodySection::SegmentSources,
+                u64::MAX,
+                1,
+                u64::MAX,
+            ),
+            Err(CheckpointV1Pass1Error::SectionRangeOverflow {
+                section: CheckpointV1BodySection::SegmentSources,
+            })
+        );
+        assert_eq!(
+            checked_checkpoint_v1_section_range(CheckpointV1BodySection::SegmentTicks, 255, 2, 256,),
+            Err(CheckpointV1Pass1Error::SectionNotAddressable {
+                section: CheckpointV1BodySection::SegmentTicks,
+                end: 257,
+                platform_limit: 256,
+            })
+        );
+        assert_eq!(
+            checkpoint_v1_preflight_layout::<u64>(
+                CheckpointV1ImportAllocationSite::VerificationSemanticPostings,
+                usize::MAX,
+            ),
+            Err(CheckpointV1Pass1Error::AllocationLayout {
+                site: CheckpointV1ImportAllocationSite::VerificationSemanticPostings,
+                element_count: usize::MAX,
+            })
+        );
+    }
+
+    #[test]
+    fn pass1_prospective_occupancy_bound_covers_every_cohort_prefix() {
+        for column_count in 1usize..=11 {
+            for base_width in 1usize..=4 {
+                for race_cap in base_width..=8 {
+                    let base_population = column_count * base_width;
+                    for reserve_cells in 0usize..=25 {
+                        let owner_capacity = base_population + reserve_cells;
+                        let cohort_capacity = (owner_capacity - base_population) / race_cap;
+                        let bound = checked_checkpoint_v1_prospective_occupancy_limit(
+                            base_width,
+                            race_cap,
+                            cohort_capacity,
+                        )
+                        .expect("small literal occupancy arithmetic must fit");
+
+                        assert!(bound <= owner_capacity);
+                        for cohort_prefix in 0..=cohort_capacity {
+                            let current = base_width + race_cap * cohort_prefix;
+                            let recruitable = race_cap * (cohort_capacity - cohort_prefix);
+                            assert_eq!(current + recruitable, bound);
+                        }
+                    }
+                }
+            }
+        }
+        assert_eq!(
+            checked_checkpoint_v1_prospective_occupancy_limit(1, usize::MAX, 2),
+            None
+        );
+    }
+
+    #[test]
     fn checkpoint_encoder_chunks_large_sections_through_the_fixed_stack_buffer() {
         let runtime = large_streaming_runtime();
         let prepared = runtime
@@ -4007,6 +6139,156 @@ mod tests {
         assert_eq!(
             identity.authority().source_bundle_identity().raw_bytes(),
             &std::array::from_fn::<u8, 32, _>(|index| index as u8)
+        );
+    }
+
+    #[test]
+    fn validated_factory_and_live_runtime_share_the_exact_route_zero_identity() {
+        let runtime = full_section_generic_runtime();
+        let expected = runtime
+            .checkpoint_v1_identity(authority(), TemporalRecognitionRoute::ExactGeneric)
+            .expect("live runtime must identify");
+        let codebook = runtime.token_codebook.clone();
+        let thresholds = runtime.threshold_offsets_mv.clone();
+        let codebook_pointer = codebook.as_ptr();
+        let threshold_pointer = thresholds.as_ptr();
+        let codebook_capacity = codebook.capacity();
+        let threshold_capacity = thresholds.capacity();
+        let factory = ValidatedCheckpointV1RuntimeFactory::new(
+            authority(),
+            runtime.config,
+            codebook,
+            thresholds,
+        )
+        .expect("canonical owned definition must validate");
+
+        assert_eq!(factory.identity(), &expected);
+        assert_eq!(factory.token_codebook.as_ptr(), codebook_pointer);
+        assert_eq!(factory.threshold_offsets_mv.as_ptr(), threshold_pointer);
+        assert_eq!(factory.token_codebook.capacity(), codebook_capacity);
+        assert_eq!(factory.threshold_offsets_mv.capacity(), threshold_capacity);
+    }
+
+    #[test]
+    fn validated_factory_rejects_noncanonical_owned_inputs_without_repair() {
+        let runtime = nonuniform_generic_route_zero_runtime();
+
+        let mut descending = runtime.token_codebook.clone();
+        descending.swap(0, 1);
+        assert_eq!(
+            ValidatedCheckpointV1RuntimeFactory::new(
+                authority(),
+                runtime.config,
+                descending,
+                runtime.threshold_offsets_mv.clone(),
+            )
+            .err(),
+            Some(CheckpointV1FactoryError::Definition(
+                CheckpointV1CircuitDefinitionError::TokenIdsNotStrict { left_index: 0 }
+            ))
+        );
+
+        let mut duplicate_columns = runtime.token_codebook.clone();
+        duplicate_columns[1].columns = duplicate_columns[0].columns;
+        assert_eq!(
+            ValidatedCheckpointV1RuntimeFactory::new(
+                authority(),
+                runtime.config,
+                duplicate_columns,
+                runtime.threshold_offsets_mv.clone(),
+            )
+            .err(),
+            Some(CheckpointV1FactoryError::Definition(
+                CheckpointV1CircuitDefinitionError::DuplicateTokenColumns {
+                    left_index: 0,
+                    right_index: 1,
+                }
+            ))
+        );
+
+        let mut unsorted_columns = runtime.token_codebook.clone();
+        unsorted_columns[0].columns.swap(0, 1);
+        assert_eq!(
+            ValidatedCheckpointV1RuntimeFactory::new(
+                authority(),
+                runtime.config,
+                unsorted_columns,
+                runtime.threshold_offsets_mv.clone(),
+            )
+            .err(),
+            Some(CheckpointV1FactoryError::Definition(
+                CheckpointV1CircuitDefinitionError::InvalidTokenColumns { index: 0 }
+            ))
+        );
+
+        let mut sentinel = runtime.token_codebook.clone();
+        sentinel[0].token_id = u32::MAX;
+        assert_eq!(
+            ValidatedCheckpointV1RuntimeFactory::new(
+                authority(),
+                runtime.config,
+                sentinel,
+                runtime.threshold_offsets_mv.clone(),
+            )
+            .err(),
+            Some(CheckpointV1FactoryError::Definition(
+                CheckpointV1CircuitDefinitionError::SentinelTokenId { index: 0 }
+            ))
+        );
+
+        let mut short_thresholds = runtime.threshold_offsets_mv.clone();
+        short_thresholds.pop();
+        assert_eq!(
+            ValidatedCheckpointV1RuntimeFactory::new(
+                authority(),
+                runtime.config,
+                runtime.token_codebook.clone(),
+                short_thresholds,
+            )
+            .err(),
+            Some(CheckpointV1FactoryError::Definition(
+                CheckpointV1CircuitDefinitionError::ThresholdOffsetCount {
+                    expected: 373,
+                    actual: 372,
+                }
+            ))
+        );
+
+        let mut nonfinite_thresholds = runtime.threshold_offsets_mv.clone();
+        nonfinite_thresholds[17] = f64::NAN;
+        assert_eq!(
+            ValidatedCheckpointV1RuntimeFactory::new(
+                authority(),
+                runtime.config,
+                runtime.token_codebook.clone(),
+                nonfinite_thresholds,
+            )
+            .err(),
+            Some(CheckpointV1FactoryError::Definition(
+                CheckpointV1CircuitDefinitionError::NonFiniteThresholdOffset { index: 17 }
+            ))
+        );
+
+        let mut invalid_config = runtime.config;
+        invalid_config.segment_capacity = 0;
+        let error = ValidatedCheckpointV1RuntimeFactory::new(
+            authority(),
+            invalid_config,
+            runtime.token_codebook.clone(),
+            runtime.threshold_offsets_mv.clone(),
+        )
+        .err()
+        .expect("zero segment capacity must be rejected");
+        assert_eq!(
+            error,
+            CheckpointV1FactoryError::Definition(
+                CheckpointV1CircuitDefinitionError::SegmentCapacity { found: 0 }
+            )
+        );
+        assert!(Error::source(&error).is_some());
+        assert_eq!(
+            error.to_string(),
+            "invalid circuit definition: segment_capacity 0 is outside the checkpoint-v1 domain"
         );
     }
 
