@@ -1159,13 +1159,21 @@ requires the returned position to be exactly 0. A nonzero end is rejected
 without writing; the encoder never falls back to truncating, overwriting, or
 appending to a nonempty sink.
 
-Both operations hold the runtime lock long enough to observe one immutable
-logical state. Reserve the first 256 bytes, stream the canonical body once while
-computing the body and semantic-index hashes, seek back only after every header
-value exists, compute the logical-state digest over the stored body digest plus
-the canonical scalar block, and write the complete header. The encoder must not
-clone the learned store into another 1.5 GB buffer. This sequence preserves the
-checkpoint bytes and every identity contract above.
+The current crate-private encoder's `&self` borrow spans the entire operation
+and is its proof that one immutable logical state is observed. A future
+ABI/handle adapter must hold its runtime lock across authority and state
+preparation, the sink-empty check, body emission, header backfill, the final
+seek, and flush.
+
+Pre-sink preparation may complete the semantic-index traversal, its full
+store/index validation, and its digest before the first sink write, so every
+store or index error precedes that write. Then reserve the first 256 bytes and
+write the canonical body exactly once while computing its body SHA-256. Seek
+back only after every header value exists, compute the logical-state digest
+over the stored body digest plus the canonical scalar block, write the complete
+header, seek to the logical end, and flush. This timing changes no checkpoint
+byte, digest, field order, or semantic ordering. The encoder must not clone the
+learned store into another 1.5 GB buffer.
 
 Every byte-encoder seek, write, or flush failure leaves neuronal state and the
 poison latch unchanged, but gives no rollback guarantee for the caller-owned
