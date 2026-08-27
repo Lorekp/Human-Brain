@@ -121,6 +121,7 @@ pub(crate) struct TemporalSemanticPosting {
 /// Non-poisoning failures while rebuilding a fresh store from checkpoint rows.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TemporalCheckpointRebuildError {
+    AllocationFailed,
     StoreConstruction(u32),
     DeclaredSegmentCountExceedsCapacity { declared: u32, capacity: u32 },
     DeclaredSegmentCountExceeded { declared: u32 },
@@ -151,7 +152,50 @@ impl SourceMeta {
 
 const _: [(); 12] = [(); size_of::<SourceMeta>()];
 
+#[cfg(test)]
+std::thread_local! {
+    static FAIL_NEXT_TEMPORAL_RESERVATION: std::cell::Cell<bool> =
+        const { std::cell::Cell::new(false) };
+    static SOURCE_CHAIN_PAIR_VISITS: std::cell::Cell<usize> =
+        const { std::cell::Cell::new(0) };
+}
+
+#[cfg(test)]
+struct TemporalReservationFailureForTest;
+
+#[cfg(test)]
+impl Drop for TemporalReservationFailureForTest {
+    fn drop(&mut self) {
+        FAIL_NEXT_TEMPORAL_RESERVATION.with(|failure| failure.set(false));
+    }
+}
+
+#[cfg(test)]
+fn fail_next_temporal_reservation_for_test() -> TemporalReservationFailureForTest {
+    FAIL_NEXT_TEMPORAL_RESERVATION.with(|failure| {
+        assert!(
+            !failure.replace(true),
+            "temporal reservation failure injection is not reentrant"
+        );
+    });
+    TemporalReservationFailureForTest
+}
+
+#[cfg(test)]
+fn record_source_chain_pair_visit_for_test() {
+    SOURCE_CHAIN_PAIR_VISITS.with(|visits| visits.set(visits.get().saturating_add(1)));
+}
+
+#[cfg(test)]
+fn take_source_chain_pair_visits_for_test() -> usize {
+    SOURCE_CHAIN_PAIR_VISITS.with(|visits| visits.replace(0))
+}
+
 fn reserved_vec<T>(capacity: usize) -> Result<Vec<T>, u32> {
+    #[cfg(test)]
+    if FAIL_NEXT_TEMPORAL_RESERVATION.with(|failure| failure.replace(false)) {
+        return Err(TEMPORAL_ALLOCATION_FAILED);
+    }
     let mut values = Vec::new();
     values
         .try_reserve_exact(capacity)
@@ -319,7 +363,7 @@ impl TemporalStoreCheckpointRebuild {
         declared_segment_count: u32,
     ) -> Result<Self, TemporalCheckpointRebuildError> {
         let segment_capacity = u32::try_from(config.segment_capacity)
-            .map_err(|_| TemporalCheckpointRebuildError::StoreConstruction(TEMPORAL_INVALID))?;
+            .map_err(|_| checkpoint_rebuild_store_construction_error(TEMPORAL_INVALID))?;
         if declared_segment_count > segment_capacity {
             return Err(
                 TemporalCheckpointRebuildError::DeclaredSegmentCountExceedsCapacity {
@@ -329,7 +373,7 @@ impl TemporalStoreCheckpointRebuild {
             );
         }
         let store = TemporalStore::new_runtime_owned(config)
-            .map_err(TemporalCheckpointRebuildError::StoreConstruction)?;
+            .map_err(checkpoint_rebuild_store_construction_error)?;
         Ok(Self {
             store,
             declared_segment_count,
@@ -353,9 +397,7 @@ impl TemporalStoreCheckpointRebuild {
                 },
             );
         }
-        self.store.preflight_runtime_canonical_append(owner, row)?;
-        self.store
-            .preflight_runtime_mutation_backing(std::slice::from_ref(&owner), u8::MAX)?;
+        self.store.preflight_checkpoint_rebuild_append(owner, row)?;
         Ok(self
             .store
             .commit_prevalidated_runtime_canonical_append(owner, row))
@@ -372,6 +414,14 @@ impl TemporalStoreCheckpointRebuild {
         }
         self.store.preflight_runtime_backing_shape()?;
         Ok(self.store)
+    }
+}
+
+fn checkpoint_rebuild_store_construction_error(status: u32) -> TemporalCheckpointRebuildError {
+    if status == TEMPORAL_ALLOCATION_FAILED {
+        TemporalCheckpointRebuildError::AllocationFailed
+    } else {
+        TemporalCheckpointRebuildError::StoreConstruction(status)
     }
 }
 
@@ -788,6 +838,8 @@ impl TemporalStore {
             if visited >= live_count || visited >= self.sources.len() {
                 return Err(TemporalStorePreflightError::BackingInvariant);
             }
+            #[cfg(test)]
+            record_source_chain_pair_visit_for_test();
             let pair_index = pair_slot as usize;
             if self.sources.get(pair_index).copied() != Some(source)
                 || self.prev_pair.get(pair_index).copied() != Some(previous)
@@ -925,6 +977,25 @@ impl TemporalStore {
             self.preflight_source_posting_chain(source, None)?;
         }
         Ok(())
+    }
+
+    /// Validate one canonical checkpoint row for linear rebuild into a fresh
+    /// store without revisiting source chains already built by earlier rows.
+    ///
+    /// Owner, row, backing-shape, owner-load, and reserved-capacity checks all
+    /// precede the no-fail append. The complete semantic posting visitor is the
+    /// post-rebuild authority for source-chain integrity and exact coverage.
+    fn preflight_checkpoint_rebuild_append(
+        &mut self,
+        owner: u32,
+        row: &TemporalSegmentRow,
+    ) -> Result<TemporalStoreMutationPreflight, TemporalStorePreflightError> {
+        self.preflight_runtime_backing_shape()?;
+        if owner as usize >= self.config.owner_count {
+            return Err(TemporalStorePreflightError::InvalidOwner);
+        }
+        self.validate_normalized_row(row)?;
+        self.preflight_runtime_mutation_backing(std::slice::from_ref(&owner), u8::MAX)
     }
 
     /// Validate one normalized fixed row for a later no-fail rewrite commit.
@@ -2884,6 +2955,74 @@ mod tests {
     }
 
     #[test]
+    fn checkpoint_rebuild_reports_typed_allocation_failure_without_collapsing_invalid_config() {
+        let failure = fail_next_temporal_reservation_for_test();
+        assert!(matches!(
+            TemporalStoreCheckpointRebuild::new(config(10, 1, 1), 0),
+            Err(TemporalCheckpointRebuildError::AllocationFailed)
+        ));
+        drop(failure);
+
+        let mut invalid = config(10, 1, 1);
+        invalid.source_count = PAIRS_PER_SEGMENT - 1;
+        assert!(matches!(
+            TemporalStoreCheckpointRebuild::new(invalid, 0),
+            Err(TemporalCheckpointRebuildError::StoreConstruction(
+                TEMPORAL_INVALID
+            ))
+        ));
+    }
+
+    #[test]
+    fn checkpoint_rebuild_appends_empty_and_full_rows_before_one_semantic_index_proof() {
+        const SEGMENT_COUNT: usize = 257;
+        const FULL_ROW_COUNT: usize = SEGMENT_COUNT / 2;
+        const LIVE_PAIR_COUNT: usize = FULL_ROW_COUNT * PAIRS_PER_SEGMENT;
+
+        let empty = normalized_row(&[], &[]);
+        let full = normalized_row(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], &[250; PAIRS_PER_SEGMENT]);
+        let mut rebuild =
+            TemporalStoreCheckpointRebuild::new(config(10, 2, SEGMENT_COUNT), SEGMENT_COUNT as u32)
+                .unwrap();
+
+        let _ = take_source_chain_pair_visits_for_test();
+        for segment_id in 0..SEGMENT_COUNT {
+            let row = if segment_id % 2 == 0 { &empty } else { &full };
+            assert_eq!(
+                rebuild.append_canonical_row((segment_id % 2) as u32, row),
+                Ok(segment_id as u32)
+            );
+        }
+        assert_eq!(
+            take_source_chain_pair_visits_for_test(),
+            0,
+            "checkpoint row append must not revisit existing source chains"
+        );
+
+        let store = rebuild.finish().unwrap();
+        assert_eq!(store.runtime_segment_count(), SEGMENT_COUNT as u32);
+        assert_eq!(store.runtime_segment_row(0), Ok(empty));
+        assert_eq!(store.runtime_segment_row(1), Ok(full));
+        assert_eq!(
+            store.runtime_segment_row((SEGMENT_COUNT - 1) as u32),
+            Ok(empty)
+        );
+
+        let mut scratch = vec![NONE; FULL_ROW_COUNT];
+        let mut emitted = 0usize;
+        assert_eq!(
+            store.visit_runtime_semantic_postings(&mut scratch, |_| emitted += 1),
+            Ok(LIVE_PAIR_COUNT as u32)
+        );
+        assert_eq!(emitted, LIVE_PAIR_COUNT);
+        assert_eq!(
+            take_source_chain_pair_visits_for_test(),
+            LIVE_PAIR_COUNT,
+            "the complete semantic visitor owns the index-validation traversal"
+        );
+    }
+
+    #[test]
     fn checkpoint_rebuild_empty_wrong_count_and_capacity_fail_closed() {
         let empty = TemporalStoreCheckpointRebuild::new(config(10, 1, 1), 0)
             .unwrap()
@@ -2968,6 +3107,17 @@ mod tests {
             ))
         );
         assert_eq!(canonical_logical_bytes(&rebuild.store), logical_before);
+
+        assert_eq!(rebuild.store.permanences.pop(), Some(0));
+        assert_eq!(
+            rebuild.append_canonical_row(1, &valid),
+            Err(TemporalCheckpointRebuildError::Store(
+                TemporalStorePreflightError::BackingCapacityInvariant,
+            ))
+        );
+        assert_eq!(rebuild.store.runtime_segment_count(), 1);
+        assert_eq!(rebuild.store.poisoned, TEMPORAL_OK);
+        rebuild.store.permanences.push(0);
 
         let retry = normalized_row(&[1, 4], &[251, 499]);
         assert_eq!(rebuild.append_canonical_row(1, &retry), Ok(1));
