@@ -1,10 +1,12 @@
 //! Checkpoint-v1 identities and pure fixed-header codec for the native runtime.
 //!
 //! This module computes identities, checked byte layout, canonical scalar
-//! bytes, the complete fixed header, allocation-free reachability proofs, and
-//! fallible pre-sink export preparation over a borrowed live state. It does not
-//! encode or import checkpoint body bytes, touch a sink, publish files, or
-//! expose an ABI.
+//! bytes, the complete fixed header, allocation-free reachability proofs,
+//! fallible export preparation over a borrowed live state, and allocation-free
+//! streaming of a prepared checkpoint into a caller-owned sink. It does not
+//! import checkpoints, publish files, or expose an ABI.
+
+use std::io::{self, Seek, SeekFrom, Write};
 
 use sha2::{Digest, Sha256};
 
@@ -21,6 +23,7 @@ const CIRCUIT_IDENTITY_DOMAIN: &[u8] = b"humanbrain-r3-temporal-circuit-v1";
 const PHYSICAL_ROUTE_CERTIFICATE_DOMAIN: &[u8] = b"humanbrain-r3-physical-route-certificate-v1";
 const PHYSICAL_CONTACTS_PER_PAIR: u8 = 2;
 const PERMANENCE_MAX_TICKS: u16 = 500;
+const CHECKPOINT_V1_STREAM_BUFFER_BYTES: usize = 8 * 1024;
 pub(crate) const CHECKPOINT_V1_MAGIC: [u8; 8] = *b"R3NTCP1\0";
 pub(crate) const CHECKPOINT_V1_FORMAT_VERSION: u16 = 1;
 pub(crate) const CHECKPOINT_V1_HEADER_BYTES: u16 = 256;
@@ -784,6 +787,157 @@ pub(crate) struct PreparedCheckpointV1Export<'a> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1BodySection {
+    CohortColumns,
+    PriorContext,
+    WinnerContext,
+    SegmentOwners,
+    SegmentSources,
+    SegmentTicks,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1SeekStage {
+    InspectLogicalEnd,
+    HeaderBackfill,
+    VerifyLogicalEnd,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1WriteStage {
+    ReserveHeader,
+    Body(CheckpointV1BodySection),
+    BackfillHeader,
+}
+
+#[derive(Debug)]
+pub(crate) enum CheckpointV1EncodeError {
+    PreparedCodec(CheckpointV1CodecError),
+    PreparedScalarsMismatch,
+    PreparedPairCountMismatch {
+        declared: u64,
+        observed: u64,
+    },
+    BodySectionCount {
+        section: CheckpointV1BodySection,
+        declared: u64,
+        observed: u64,
+    },
+    BodyByteCount {
+        declared: u64,
+        observed: u64,
+    },
+    TotalByteCount {
+        declared: u64,
+        observed: u64,
+    },
+    BodyBufferInvariant(CheckpointV1BodySection),
+    SinkNotEmpty {
+        logical_end: u64,
+    },
+    Seek {
+        stage: CheckpointV1SeekStage,
+        source: io::Error,
+    },
+    SeekPosition {
+        stage: CheckpointV1SeekStage,
+        expected: u64,
+        actual: u64,
+    },
+    Write {
+        stage: CheckpointV1WriteStage,
+        source: io::Error,
+    },
+    WriteCount {
+        stage: CheckpointV1WriteStage,
+        requested: usize,
+        reported: usize,
+    },
+    HeaderCodec(CheckpointV1CodecError),
+    Flush {
+        source: io::Error,
+    },
+}
+
+impl std::fmt::Display for CheckpointV1EncodeError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::PreparedCodec(source) => {
+                write!(formatter, "prepared checkpoint codec contradiction: {source:?}")
+            }
+            Self::PreparedScalarsMismatch => {
+                formatter.write_str("prepared checkpoint scalars no longer match the runtime")
+            }
+            Self::PreparedPairCountMismatch { declared, observed } => write!(
+                formatter,
+                "prepared checkpoint pair count mismatch: declared {declared}, observed {observed}",
+            ),
+            Self::BodySectionCount {
+                section,
+                declared,
+                observed,
+            } => write!(
+                formatter,
+                "checkpoint body section {section:?} byte count mismatch: declared {declared}, observed {observed}",
+            ),
+            Self::BodyByteCount { declared, observed } => write!(
+                formatter,
+                "checkpoint body byte count mismatch: declared {declared}, observed {observed}",
+            ),
+            Self::TotalByteCount { declared, observed } => write!(
+                formatter,
+                "checkpoint total byte count mismatch: declared {declared}, observed {observed}",
+            ),
+            Self::BodyBufferInvariant(section) => write!(
+                formatter,
+                "checkpoint body buffer invariant failed in section {section:?}",
+            ),
+            Self::SinkNotEmpty { logical_end } => write!(
+                formatter,
+                "checkpoint sink must be empty, but its logical end is {logical_end}",
+            ),
+            Self::Seek { stage, source } => {
+                write!(formatter, "checkpoint seek failed at {stage:?}: {source}")
+            }
+            Self::SeekPosition {
+                stage,
+                expected,
+                actual,
+            } => write!(
+                formatter,
+                "checkpoint seek at {stage:?} reported {actual}, expected {expected}",
+            ),
+            Self::Write { stage, source } => {
+                write!(formatter, "checkpoint write failed at {stage:?}: {source}")
+            }
+            Self::WriteCount {
+                stage,
+                requested,
+                reported,
+            } => write!(
+                formatter,
+                "checkpoint write at {stage:?} reported {reported} bytes for a {requested}-byte request",
+            ),
+            Self::HeaderCodec(source) => {
+                write!(formatter, "checkpoint header codec contradiction: {source:?}")
+            }
+            Self::Flush { source } => write!(formatter, "checkpoint flush failed: {source}"),
+        }
+    }
+}
+
+impl std::error::Error for CheckpointV1EncodeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Seek { source, .. } | Self::Write { source, .. } | Self::Flush { source } => {
+                Some(source)
+            }
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::enum_variant_names)] // Every private category names the invariant family it proves.
 enum CheckpointV1StateError {
     ScalarInvariant,
@@ -1310,6 +1464,444 @@ fn checkpoint_v1_zeroed_u32_scratch(
     Ok(scratch)
 }
 
+impl PreparedCheckpointV1Export<'_> {
+    pub(crate) fn encode_into<W: Write + Seek>(
+        &self,
+        sink: &mut W,
+    ) -> Result<(), CheckpointV1EncodeError> {
+        self.validate_encoding_proof()?;
+
+        let logical_end = checkpoint_v1_seek(
+            sink,
+            SeekFrom::End(0),
+            CheckpointV1SeekStage::InspectLogicalEnd,
+        )?;
+        if logical_end != 0 {
+            return Err(CheckpointV1EncodeError::SinkNotEmpty { logical_end });
+        }
+
+        let zero_header = [0u8; CHECKPOINT_V1_HEADER_BYTES as usize];
+        checkpoint_v1_write_all(sink, &zero_header, CheckpointV1WriteStage::ReserveHeader)?;
+        let body_digest = self.encode_body_into(sink)?;
+        let header = checkpoint_v1_header_bytes(
+            &self.identity,
+            self.layout,
+            self.scalars,
+            body_digest,
+            self.semantic_index_digest,
+        )
+        .map_err(CheckpointV1EncodeError::HeaderCodec)?;
+
+        let header_position = checkpoint_v1_seek(
+            sink,
+            SeekFrom::Start(0),
+            CheckpointV1SeekStage::HeaderBackfill,
+        )?;
+        if header_position != 0 {
+            return Err(CheckpointV1EncodeError::SeekPosition {
+                stage: CheckpointV1SeekStage::HeaderBackfill,
+                expected: 0,
+                actual: header_position,
+            });
+        }
+        checkpoint_v1_write_all(sink, &header, CheckpointV1WriteStage::BackfillHeader)?;
+
+        let final_position = checkpoint_v1_seek(
+            sink,
+            SeekFrom::End(0),
+            CheckpointV1SeekStage::VerifyLogicalEnd,
+        )?;
+        if final_position != self.layout.total_bytes {
+            return Err(CheckpointV1EncodeError::SeekPosition {
+                stage: CheckpointV1SeekStage::VerifyLogicalEnd,
+                expected: self.layout.total_bytes,
+                actual: final_position,
+            });
+        }
+        checkpoint_v1_flush(sink)
+    }
+
+    fn validate_encoding_proof(&self) -> Result<(), CheckpointV1EncodeError> {
+        let segment_count = self.runtime.store.runtime_segment_count();
+        let cohort_count = u32::try_from(self.runtime.cohort_columns.len()).map_err(|_| {
+            CheckpointV1EncodeError::PreparedCodec(CheckpointV1CodecError::LengthOverflow)
+        })?;
+        let observed_scalars = CheckpointV1Scalars::new(
+            segment_count,
+            cohort_count,
+            self.runtime.next_reserve_cell,
+            self.runtime.event_count,
+            self.runtime.learning_step,
+            self.runtime.previous_context_len,
+            self.runtime.previous_winner_context_len,
+            self.runtime.scientific_stop,
+        )
+        .map_err(CheckpointV1EncodeError::PreparedCodec)?;
+        if observed_scalars != self.scalars {
+            return Err(CheckpointV1EncodeError::PreparedScalarsMismatch);
+        }
+        let observed_layout = CheckpointV1Layout::checked(
+            segment_count,
+            cohort_count,
+            self.runtime.previous_context_len,
+            self.runtime.previous_winner_context_len,
+        )
+        .map_err(CheckpointV1EncodeError::PreparedCodec)?;
+        if self.layout.pair_count != observed_layout.pair_count {
+            return Err(CheckpointV1EncodeError::PreparedPairCountMismatch {
+                declared: self.layout.pair_count,
+                observed: observed_layout.pair_count,
+            });
+        }
+        for (section, declared, observed) in [
+            (
+                CheckpointV1BodySection::CohortColumns,
+                self.layout.cohort_columns_bytes,
+                observed_layout.cohort_columns_bytes,
+            ),
+            (
+                CheckpointV1BodySection::PriorContext,
+                self.layout.prior_context_bytes,
+                observed_layout.prior_context_bytes,
+            ),
+            (
+                CheckpointV1BodySection::WinnerContext,
+                self.layout.winner_context_bytes,
+                observed_layout.winner_context_bytes,
+            ),
+            (
+                CheckpointV1BodySection::SegmentOwners,
+                self.layout.segment_owner_bytes,
+                observed_layout.segment_owner_bytes,
+            ),
+            (
+                CheckpointV1BodySection::SegmentSources,
+                self.layout.segment_source_bytes,
+                observed_layout.segment_source_bytes,
+            ),
+            (
+                CheckpointV1BodySection::SegmentTicks,
+                self.layout.segment_tick_bytes,
+                observed_layout.segment_tick_bytes,
+            ),
+        ] {
+            if declared != observed {
+                return Err(CheckpointV1EncodeError::BodySectionCount {
+                    section,
+                    declared,
+                    observed,
+                });
+            }
+        }
+        if self.layout.body_bytes != observed_layout.body_bytes {
+            return Err(CheckpointV1EncodeError::BodyByteCount {
+                declared: self.layout.body_bytes,
+                observed: observed_layout.body_bytes,
+            });
+        }
+        if self.layout.total_bytes != observed_layout.total_bytes {
+            return Err(CheckpointV1EncodeError::TotalByteCount {
+                declared: self.layout.total_bytes,
+                observed: observed_layout.total_bytes,
+            });
+        }
+        Ok(())
+    }
+
+    fn encode_body_into<W: Write>(
+        &self,
+        sink: &mut W,
+    ) -> Result<CheckpointV1Digest, CheckpointV1EncodeError> {
+        let mut body = CheckpointV1BodyWriter::new(sink);
+
+        for column in self.runtime.cohort_columns.iter().copied() {
+            body.push_u32(CheckpointV1BodySection::CohortColumns, column)?;
+        }
+        body.finish_section(
+            CheckpointV1BodySection::CohortColumns,
+            self.layout.cohort_columns_bytes,
+        )?;
+
+        for source in self
+            .runtime
+            .previous_context
+            .iter()
+            .take(usize::from(self.scalars.prior_context_length))
+            .copied()
+        {
+            body.push_u32(CheckpointV1BodySection::PriorContext, source)?;
+        }
+        body.finish_section(
+            CheckpointV1BodySection::PriorContext,
+            self.layout.prior_context_bytes,
+        )?;
+
+        for source in self
+            .runtime
+            .previous_winner_context
+            .iter()
+            .take(usize::from(self.scalars.winner_context_length))
+            .copied()
+        {
+            body.push_u32(CheckpointV1BodySection::WinnerContext, source)?;
+        }
+        body.finish_section(
+            CheckpointV1BodySection::WinnerContext,
+            self.layout.winner_context_bytes,
+        )?;
+
+        for segment_id in 0..self.scalars.segment_count {
+            let owner = self
+                .runtime
+                .store
+                .commit_prevalidated_runtime_segment_owner(segment_id);
+            body.push_u32(CheckpointV1BodySection::SegmentOwners, owner)?;
+        }
+        body.finish_section(
+            CheckpointV1BodySection::SegmentOwners,
+            self.layout.segment_owner_bytes,
+        )?;
+
+        for segment_id in 0..self.scalars.segment_count {
+            let row = self
+                .runtime
+                .store
+                .commit_prevalidated_runtime_segment_row(segment_id);
+            for source in row.normalized_sources {
+                body.push_u32(CheckpointV1BodySection::SegmentSources, source)?;
+            }
+        }
+        body.finish_section(
+            CheckpointV1BodySection::SegmentSources,
+            self.layout.segment_source_bytes,
+        )?;
+
+        for segment_id in 0..self.scalars.segment_count {
+            let row = self
+                .runtime
+                .store
+                .commit_prevalidated_runtime_segment_row(segment_id);
+            for ticks in row.permanence_ticks {
+                body.push_u16(CheckpointV1BodySection::SegmentTicks, ticks)?;
+            }
+        }
+        body.finish_section(
+            CheckpointV1BodySection::SegmentTicks,
+            self.layout.segment_tick_bytes,
+        )?;
+
+        body.finish(self.layout.body_bytes)
+    }
+}
+
+struct CheckpointV1BodyWriter<'a, W> {
+    sink: &'a mut W,
+    buffer: [u8; CHECKPOINT_V1_STREAM_BUFFER_BYTES],
+    buffered: usize,
+    successful_bytes: u64,
+    section_start: u64,
+    hasher: Sha256,
+}
+
+impl<'a, W: Write> CheckpointV1BodyWriter<'a, W> {
+    fn new(sink: &'a mut W) -> Self {
+        Self {
+            sink,
+            buffer: [0; CHECKPOINT_V1_STREAM_BUFFER_BYTES],
+            buffered: 0,
+            successful_bytes: 0,
+            section_start: 0,
+            hasher: Sha256::new(),
+        }
+    }
+
+    fn push_u32(
+        &mut self,
+        section: CheckpointV1BodySection,
+        value: u32,
+    ) -> Result<(), CheckpointV1EncodeError> {
+        self.push_bytes(section, &value.to_le_bytes())
+    }
+
+    fn push_u16(
+        &mut self,
+        section: CheckpointV1BodySection,
+        value: u16,
+    ) -> Result<(), CheckpointV1EncodeError> {
+        self.push_bytes(section, &value.to_le_bytes())
+    }
+
+    fn push_bytes(
+        &mut self,
+        section: CheckpointV1BodySection,
+        mut bytes: &[u8],
+    ) -> Result<(), CheckpointV1EncodeError> {
+        while !bytes.is_empty() {
+            if self.buffered == self.buffer.len() {
+                self.drain(section)?;
+            }
+            let available = self
+                .buffer
+                .len()
+                .checked_sub(self.buffered)
+                .ok_or(CheckpointV1EncodeError::BodyBufferInvariant(section))?;
+            let copied = available.min(bytes.len());
+            let end = self
+                .buffered
+                .checked_add(copied)
+                .ok_or(CheckpointV1EncodeError::BodyBufferInvariant(section))?;
+            let destination = self
+                .buffer
+                .get_mut(self.buffered..end)
+                .ok_or(CheckpointV1EncodeError::BodyBufferInvariant(section))?;
+            destination.copy_from_slice(&bytes[..copied]);
+            self.buffered = end;
+            bytes = &bytes[copied..];
+        }
+        Ok(())
+    }
+
+    fn finish_section(
+        &mut self,
+        section: CheckpointV1BodySection,
+        declared: u64,
+    ) -> Result<(), CheckpointV1EncodeError> {
+        self.drain(section)?;
+        let observed = self
+            .successful_bytes
+            .checked_sub(self.section_start)
+            .ok_or(CheckpointV1EncodeError::BodyBufferInvariant(section))?;
+        if observed != declared {
+            return Err(CheckpointV1EncodeError::BodySectionCount {
+                section,
+                declared,
+                observed,
+            });
+        }
+        self.section_start = self.successful_bytes;
+        Ok(())
+    }
+
+    fn drain(&mut self, section: CheckpointV1BodySection) -> Result<(), CheckpointV1EncodeError> {
+        let mut offset = 0usize;
+        while offset < self.buffered {
+            let bytes = self
+                .buffer
+                .get(offset..self.buffered)
+                .ok_or(CheckpointV1EncodeError::BodyBufferInvariant(section))?;
+            let requested = bytes.len();
+            match self.sink.write(bytes) {
+                Ok(0) => {
+                    return Err(CheckpointV1EncodeError::Write {
+                        stage: CheckpointV1WriteStage::Body(section),
+                        source: io::Error::from(io::ErrorKind::WriteZero),
+                    });
+                }
+                Ok(reported) if reported > requested => {
+                    return Err(CheckpointV1EncodeError::WriteCount {
+                        stage: CheckpointV1WriteStage::Body(section),
+                        requested,
+                        reported,
+                    });
+                }
+                Ok(reported) => {
+                    let end = offset
+                        .checked_add(reported)
+                        .ok_or(CheckpointV1EncodeError::BodyBufferInvariant(section))?;
+                    let successful = self
+                        .buffer
+                        .get(offset..end)
+                        .ok_or(CheckpointV1EncodeError::BodyBufferInvariant(section))?;
+                    let successful_bytes = self
+                        .successful_bytes
+                        .checked_add(reported as u64)
+                        .ok_or(CheckpointV1EncodeError::BodyBufferInvariant(section))?;
+                    self.hasher.update(successful);
+                    self.successful_bytes = successful_bytes;
+                    offset = end;
+                }
+                Err(source) if source.kind() == io::ErrorKind::Interrupted => {}
+                Err(source) => {
+                    return Err(CheckpointV1EncodeError::Write {
+                        stage: CheckpointV1WriteStage::Body(section),
+                        source,
+                    });
+                }
+            }
+        }
+        self.buffered = 0;
+        Ok(())
+    }
+
+    fn finish(self, declared: u64) -> Result<CheckpointV1Digest, CheckpointV1EncodeError> {
+        if self.buffered != 0 {
+            return Err(CheckpointV1EncodeError::BodyBufferInvariant(
+                CheckpointV1BodySection::SegmentTicks,
+            ));
+        }
+        if self.successful_bytes != declared {
+            return Err(CheckpointV1EncodeError::BodyByteCount {
+                declared,
+                observed: self.successful_bytes,
+            });
+        }
+        Ok(CheckpointV1Digest(self.hasher.finalize().into()))
+    }
+}
+
+fn checkpoint_v1_seek<W: Seek>(
+    sink: &mut W,
+    position: SeekFrom,
+    stage: CheckpointV1SeekStage,
+) -> Result<u64, CheckpointV1EncodeError> {
+    loop {
+        match sink.seek(position) {
+            Ok(actual) => return Ok(actual),
+            Err(source) if source.kind() == io::ErrorKind::Interrupted => {}
+            Err(source) => return Err(CheckpointV1EncodeError::Seek { stage, source }),
+        }
+    }
+}
+
+fn checkpoint_v1_write_all<W: Write>(
+    sink: &mut W,
+    mut bytes: &[u8],
+    stage: CheckpointV1WriteStage,
+) -> Result<(), CheckpointV1EncodeError> {
+    while !bytes.is_empty() {
+        let requested = bytes.len();
+        match sink.write(bytes) {
+            Ok(0) => {
+                return Err(CheckpointV1EncodeError::Write {
+                    stage,
+                    source: io::Error::from(io::ErrorKind::WriteZero),
+                });
+            }
+            Ok(reported) if reported > requested => {
+                return Err(CheckpointV1EncodeError::WriteCount {
+                    stage,
+                    requested,
+                    reported,
+                });
+            }
+            Ok(reported) => bytes = &bytes[reported..],
+            Err(source) if source.kind() == io::ErrorKind::Interrupted => {}
+            Err(source) => return Err(CheckpointV1EncodeError::Write { stage, source }),
+        }
+    }
+    Ok(())
+}
+
+fn checkpoint_v1_flush<W: Write>(sink: &mut W) -> Result<(), CheckpointV1EncodeError> {
+    loop {
+        match sink.flush() {
+            Ok(()) => return Ok(()),
+            Err(source) if source.kind() == io::ErrorKind::Interrupted => {}
+            Err(source) => return Err(CheckpointV1EncodeError::Flush { source }),
+        }
+    }
+}
+
 pub(crate) fn checkpoint_v1_logical_state_digest(
     stored_body_digest: &[u8; 32],
     scalar_block: &[u8; 32],
@@ -1324,6 +1916,8 @@ pub(crate) fn checkpoint_v1_logical_state_digest(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
+
     use crate::temporal_runtime::{
         TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy,
         TemporalPlasticityPolicy, TemporalRuntimeBuildError, TemporalSegmentInit, TokenCode,
@@ -1341,6 +1935,13 @@ mod tests {
         0x59, 0xb4, 0x57, 0x63, 0x1e, 0xb4, 0x6f, 0x26, 0x08, 0x94, 0x3c, 0xb8, 0x10, 0x59, 0xb6,
         0xc1, 0xef,
     ];
+    const SEMANTIC_FIXTURE_BODY_HEX: &str = "00000000020000000000000002000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000100000002000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffa00fb00000000000000000000000000000000002c012d012e010000000000000000000000000000";
+    const SEMANTIC_FIXTURE_BOUND_HEADER_HEX: &str = "52334e5443503100010000010000000080010000000000008000000000000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f4fa5c0a71a3de926a135486658bb1388b6bcf3f149d98b8f38489c29ad227c5371b9e70f4a7cf28df3e381695159e7f84b3fe1990bd9dadf75bfcc5de9c3427959569125df766419d56968785b84b759b457631eb46f2608943cb81059b6c1ef0200000000000000160000000000000000000000000000000000000000000000ef9373a4c6e5435b1d26aac601496812015351e33aefd3bbe13e1e45aedb3d9b";
+    const SEMANTIC_FIXTURE_GENERIC_HEADER_HEX: &str = "52334e5443503100010000010000000080010000000000008000000000000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f006c48cd29d0cb25494383ee70390eeffda0adde2014c28041d99b3027ac531171b9e70f4a7cf28df3e381695159e7f84b3fe1990bd9dadf75bfcc5de9c3427959569125df766419d56968785b84b759b457631eb46f2608943cb81059b6c1ef0200000000000000160000000000000000000000000000000000000000000000ef9373a4c6e5435b1d26aac601496812015351e33aefd3bbe13e1e45aedb3d9b";
+    // Independent CPython stdlib oracle over a GenericAfferents runtime with
+    // two recruited cohorts and distinct source/winner context sections.
+    const FULL_SECTION_GENERIC_BODY_HEX: &str = "00000000010000003f000000400000004100000042000000430000004400000045000000460000004700000048000000490000004a0000004b0000004c0000004d0000004e0000004f000000500000005100000052000000530000005400000000000000020000000400000006000000080000000a0000000c0000000e0000001000000012000000140000001a0000001c0000001e00000020000000220000002400000026000000280000002a0000002c0000002e0000000000000001000000160000000200000003000000180000000000000002000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff030000000500000007000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000a000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa00fb000000000000000000000000000000000000000000000000000000000000000000000000002c01000000000000000000000000000000000000ff007701f40100000000000000000000000000000000000000000000000000000000000000000000f900900100000000000000000000000000000000";
+    const FULL_SECTION_GENERIC_HEADER_HEX: &str = "52334e5443503100010000010000000038030000000000003802000000000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fca61287978e0a7c3b76ce050c9cf4961d00c441a9036eaecbe645ad628088c4fdb5a0520fa90d4bc79531d0b1a77ecba759c42e6d0be9567004753e6e260b669dc6222193dfca80b9e29b83e57ec1581d6ef6d94a339046249b8b9a7c8c0a1a506000000020000001a0000000100000000000000000000000000000016160000ba1e27b132140f8dd0f8eabc3eb75a591ed99feb2a2e8cba5d02fc3ac90c2f38";
 
     #[derive(Debug, Eq, PartialEq)]
     struct CheckpointV1LogicalStateSnapshot {
@@ -1359,6 +1960,142 @@ mod tests {
         scientific_stop: Option<TemporalPoisonCode>,
         rows: Vec<(u32, TemporalSegmentRow)>,
         owner_loads: Vec<Option<u8>>,
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    enum TestSinkCall {
+        SeekStart(u64),
+        SeekEnd(i64),
+        SeekCurrent(i64),
+        Write(usize),
+        Flush,
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    enum TestWriteFault {
+        Error(io::ErrorKind),
+        Zero,
+        Overreport,
+    }
+
+    struct TestSink {
+        inner: Cursor<Vec<u8>>,
+        calls: Vec<TestSinkCall>,
+        seek_calls: usize,
+        write_calls: usize,
+        flush_calls: usize,
+        seek_fault: Option<(usize, io::ErrorKind)>,
+        seek_position: Option<(usize, u64)>,
+        write_fault: Option<(usize, TestWriteFault)>,
+        flush_fault: Option<(usize, io::ErrorKind)>,
+        max_write: Option<usize>,
+    }
+
+    impl TestSink {
+        fn new() -> Self {
+            Self::with_bytes(Vec::new())
+        }
+
+        fn with_bytes(bytes: Vec<u8>) -> Self {
+            Self {
+                inner: Cursor::new(bytes),
+                calls: Vec::new(),
+                seek_calls: 0,
+                write_calls: 0,
+                flush_calls: 0,
+                seek_fault: None,
+                seek_position: None,
+                write_fault: None,
+                flush_fault: None,
+                max_write: None,
+            }
+        }
+
+        fn bytes(&self) -> &[u8] {
+            self.inner.get_ref()
+        }
+
+        fn position(&self) -> u64 {
+            self.inner.position()
+        }
+    }
+
+    impl Write for TestSink {
+        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+            self.write_calls += 1;
+            self.calls.push(TestSinkCall::Write(bytes.len()));
+            if self
+                .write_fault
+                .as_ref()
+                .is_some_and(|(call, _)| *call == self.write_calls)
+            {
+                let (_, fault) = self.write_fault.take().expect("matching fault must exist");
+                return match fault {
+                    TestWriteFault::Error(kind) => Err(io::Error::new(kind, "injected write")),
+                    TestWriteFault::Zero => Ok(0),
+                    TestWriteFault::Overreport => Ok(bytes.len().saturating_add(1)),
+                };
+            }
+            let accepted = self.max_write.unwrap_or(bytes.len()).min(bytes.len());
+            self.inner.write(&bytes[..accepted])
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            self.flush_calls += 1;
+            self.calls.push(TestSinkCall::Flush);
+            if self
+                .flush_fault
+                .as_ref()
+                .is_some_and(|(call, _)| *call == self.flush_calls)
+            {
+                let (_, kind) = self.flush_fault.take().expect("matching fault must exist");
+                return Err(io::Error::new(kind, "injected flush"));
+            }
+            self.inner.flush()
+        }
+    }
+
+    impl Seek for TestSink {
+        fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+            self.seek_calls += 1;
+            self.calls.push(match position {
+                SeekFrom::Start(offset) => TestSinkCall::SeekStart(offset),
+                SeekFrom::End(offset) => TestSinkCall::SeekEnd(offset),
+                SeekFrom::Current(offset) => TestSinkCall::SeekCurrent(offset),
+            });
+            if self
+                .seek_fault
+                .as_ref()
+                .is_some_and(|(call, _)| *call == self.seek_calls)
+            {
+                let (_, kind) = self.seek_fault.take().expect("matching fault must exist");
+                return Err(io::Error::new(kind, "injected seek"));
+            }
+            let actual = self.inner.seek(position)?;
+            if self
+                .seek_position
+                .as_ref()
+                .is_some_and(|(call, _)| *call == self.seek_calls)
+            {
+                return Ok(self
+                    .seek_position
+                    .take()
+                    .expect("matching position must exist")
+                    .1);
+            }
+            Ok(actual)
+        }
+    }
+
+    fn hex_bytes(hex: &str) -> Vec<u8> {
+        assert_eq!(hex.len() % 2, 0);
+        hex.as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let pair = std::str::from_utf8(pair).expect("literal hex must be ASCII");
+                u8::from_str_radix(pair, 16).expect("literal hex must be valid")
+            })
+            .collect()
     }
 
     fn identity_runtime(
@@ -1513,6 +2250,77 @@ mod tests {
         .expect("chronologically recruited fixture must build")
     }
 
+    fn full_section_generic_runtime() -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 26,
+            segment_capacity: 6,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 1,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy: TemporalContextPolicy::GenericAfferents,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let mut members: Vec<Vec<u32>> = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        members[0].extend([22, 23]);
+        members[1].extend([24, 25]);
+        let segments = [
+            TemporalSegmentInit {
+                owner: 0,
+                sources: vec![63, 65],
+                permanence_ticks: vec![250, 251],
+            },
+            TemporalSegmentInit {
+                owner: 1,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            },
+            TemporalSegmentInit {
+                owner: 22,
+                sources: vec![64],
+                permanence_ticks: vec![300],
+            },
+            TemporalSegmentInit {
+                owner: 2,
+                sources: vec![66, 68, 70],
+                permanence_ticks: vec![255, 375, 500],
+            },
+            TemporalSegmentInit {
+                owner: 3,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            },
+            TemporalSegmentInit {
+                owner: 24,
+                sources: vec![63, 73],
+                permanence_ticks: vec![249, 400],
+            },
+        ];
+        let mut runtime = TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 85],
+            &segments,
+        )
+        .expect("full-section generic fixture must build");
+        set_reachable_context(&mut runtime);
+        runtime
+    }
+
     fn semantic_runtime(context_policy: TemporalContextPolicy) -> TemporalCircuitRuntime {
         let config = TemporalCircuitConfig {
             column_count: 11,
@@ -1564,6 +2372,50 @@ mod tests {
             &segments,
         )
         .expect("semantic digest fixture must build")
+    }
+
+    fn large_streaming_runtime() -> TemporalCircuitRuntime {
+        const SEGMENTS: u32 = 257;
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 22,
+            segment_capacity: SEGMENTS,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: u8::MAX,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy: TemporalContextPolicy::BoundWinners,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let members = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        let segments: Vec<_> = (0..SEGMENTS)
+            .map(|segment_id| TemporalSegmentInit {
+                owner: segment_id % 2,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            })
+            .collect();
+
+        TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 77],
+            &segments,
+        )
+        .expect("large streaming fixture must build")
     }
 
     fn checkpoint_v1_logical_state_snapshot(
@@ -2189,6 +3041,530 @@ mod tests {
 
         assert!(std::ptr::eq(prepared.runtime, &runtime));
         assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+    }
+
+    #[test]
+    fn checkpoint_encoder_writes_exact_empty_checkpoint_for_both_policies() {
+        for policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            let runtime = empty_runtime(policy);
+            let prepared = runtime
+                .prepare_checkpoint_v1_export(authority())
+                .expect("empty runtime must prepare");
+            let mut sink = Cursor::new(Vec::new());
+
+            prepared
+                .encode_into(&mut sink)
+                .expect("empty checkpoint must encode");
+
+            assert_eq!(sink.position(), u64::from(CHECKPOINT_V1_HEADER_BYTES));
+            assert_eq!(
+                sink.get_ref().len(),
+                usize::from(CHECKPOINT_V1_HEADER_BYTES)
+            );
+            assert_eq!(&sink.get_ref()[0..8], &CHECKPOINT_V1_MAGIC);
+            assert_eq!(&sink.get_ref()[128..160], &EMPTY_SEMANTIC_DIGEST);
+            assert_eq!(&sink.get_ref()[160..192], &EMPTY_SEMANTIC_DIGEST);
+        }
+    }
+
+    #[test]
+    fn checkpoint_encoder_matches_independent_header_body_and_digest_vectors() {
+        for (policy, header_hex, full_digest_hex) in [
+            (
+                TemporalContextPolicy::BoundWinners,
+                SEMANTIC_FIXTURE_BOUND_HEADER_HEX,
+                "64a4f703fc32423f2a26635eee1ae8afd284a9c3bac1e83698b1cb27ccab44fb",
+            ),
+            (
+                TemporalContextPolicy::GenericAfferents,
+                SEMANTIC_FIXTURE_GENERIC_HEADER_HEX,
+                "6fae68243c443547eeb7f5c06119961adaa265ad7617c411eb0f735ec0264584",
+            ),
+        ] {
+            let runtime = semantic_runtime(policy);
+            let prepared = runtime
+                .prepare_checkpoint_v1_export(authority())
+                .expect("semantic fixture must prepare");
+            let mut sink = Cursor::new(Vec::new());
+
+            prepared
+                .encode_into(&mut sink)
+                .expect("semantic fixture must encode");
+
+            let bytes = sink.get_ref();
+            assert_eq!(sink.position(), 384);
+            assert_eq!(bytes.len(), 384);
+            assert_eq!(&bytes[..256], hex_bytes(header_hex));
+            assert_eq!(&bytes[256..], hex_bytes(SEMANTIC_FIXTURE_BODY_HEX));
+            assert_eq!(
+                &bytes[128..160],
+                hex_bytes("71b9e70f4a7cf28df3e381695159e7f84b3fe1990bd9dadf75bfcc5de9c34279")
+            );
+            assert_eq!(&bytes[160..192], &SEMANTIC_FIXTURE_DIGEST);
+            assert_eq!(
+                &bytes[192..224],
+                hex_bytes("0200000000000000160000000000000000000000000000000000000000000000")
+            );
+            assert_eq!(
+                &bytes[224..256],
+                hex_bytes("ef9373a4c6e5435b1d26aac601496812015351e33aefd3bbe13e1e45aedb3d9b")
+            );
+            assert_eq!(Sha256::digest(bytes).as_slice(), hex_bytes(full_digest_hex));
+        }
+    }
+
+    #[test]
+    fn checkpoint_encoder_matches_independent_full_section_generic_vector() {
+        let runtime = full_section_generic_runtime();
+        let before = checkpoint_v1_logical_state_snapshot(&runtime);
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("full-section generic fixture must prepare");
+        let expected_header = hex_bytes(FULL_SECTION_GENERIC_HEADER_HEX);
+        let expected_body = hex_bytes(FULL_SECTION_GENERIC_BODY_HEX);
+        let mut expected_file = expected_header.clone();
+        expected_file.extend_from_slice(&expected_body);
+        let mut sink = Cursor::new(Vec::new());
+
+        prepared
+            .encode_into(&mut sink)
+            .expect("full-section generic fixture must encode");
+
+        let bytes = sink.get_ref();
+        assert_eq!(prepared.identity.circuit_preimage_bytes(), 2_128);
+        assert_eq!(prepared.layout.body_bytes, 568);
+        assert_eq!(prepared.layout.total_bytes, 824);
+        assert_eq!(sink.position(), 824);
+        assert_eq!(expected_header.len(), 256);
+        assert_eq!(expected_body.len(), 568);
+        assert_eq!(bytes, &expected_file);
+        assert_eq!(&bytes[..256], expected_header);
+        assert_eq!(&bytes[256..], expected_body);
+        assert_eq!(
+            &bytes[96..128],
+            hex_bytes("ca61287978e0a7c3b76ce050c9cf4961d00c441a9036eaecbe645ad628088c4f")
+        );
+        assert_eq!(
+            Sha256::digest(&bytes[256..]).as_slice(),
+            hex_bytes("db5a0520fa90d4bc79531d0b1a77ecba759c42e6d0be9567004753e6e260b669")
+        );
+        assert_eq!(
+            &bytes[128..160],
+            hex_bytes("db5a0520fa90d4bc79531d0b1a77ecba759c42e6d0be9567004753e6e260b669")
+        );
+        assert_eq!(
+            &bytes[160..192],
+            hex_bytes("dc6222193dfca80b9e29b83e57ec1581d6ef6d94a339046249b8b9a7c8c0a1a5")
+        );
+        assert_eq!(
+            &bytes[192..224],
+            hex_bytes("06000000020000001a0000000100000000000000000000000000000016160000")
+        );
+        assert_eq!(
+            &bytes[224..256],
+            hex_bytes("ba1e27b132140f8dd0f8eabc3eb75a591ed99feb2a2e8cba5d02fc3ac90c2f38")
+        );
+        assert_eq!(
+            Sha256::digest(bytes).as_slice(),
+            hex_bytes("d64cf550c30b6bcf7b499d39cbdc9c7bafeaef6a2e23b795ffe512e37117eb80")
+        );
+        assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+    }
+
+    #[test]
+    fn checkpoint_encoder_chunks_large_sections_through_the_fixed_stack_buffer() {
+        let runtime = large_streaming_runtime();
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("large runtime must prepare");
+        let total_bytes = prepared.layout.total_bytes;
+        let mut sink = TestSink::new();
+
+        prepared
+            .encode_into(&mut sink)
+            .expect("large runtime must stream");
+
+        let write_sizes: Vec<_> = sink
+            .calls
+            .iter()
+            .filter_map(|call| match call {
+                TestSinkCall::Write(bytes) => Some(*bytes),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(write_sizes, vec![256, 1_028, 8_192, 2_088, 5_140, 256]);
+        assert_eq!(write_sizes.iter().copied().max(), Some(8_192));
+        assert_eq!(sink.bytes().len() as u64, total_bytes);
+        assert_eq!(sink.position(), total_bytes);
+        assert_eq!(
+            &sink.bytes()[128..160],
+            Sha256::digest(&sink.bytes()[256..]).as_slice()
+        );
+    }
+
+    #[test]
+    fn checkpoint_encoder_rejects_nonempty_and_wrong_seek_positions() {
+        let runtime = semantic_runtime(TemporalContextPolicy::BoundWinners);
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("fixture must prepare");
+
+        let original = vec![0xaa, 0x55];
+        let mut nonempty = TestSink::with_bytes(original.clone());
+        assert!(matches!(
+            prepared.encode_into(&mut nonempty),
+            Err(CheckpointV1EncodeError::SinkNotEmpty { logical_end: 2 })
+        ));
+        assert_eq!(nonempty.bytes(), original);
+        assert_eq!(nonempty.write_calls, 0);
+
+        let mut wrong_backfill = TestSink::new();
+        wrong_backfill.seek_position = Some((2, 7));
+        assert!(matches!(
+            prepared.encode_into(&mut wrong_backfill),
+            Err(CheckpointV1EncodeError::SeekPosition {
+                stage: CheckpointV1SeekStage::HeaderBackfill,
+                expected: 0,
+                actual: 7,
+            })
+        ));
+
+        let mut wrong_end = TestSink::new();
+        wrong_end.seek_position = Some((3, 383));
+        assert!(matches!(
+            prepared.encode_into(&mut wrong_end),
+            Err(CheckpointV1EncodeError::SeekPosition {
+                stage: CheckpointV1SeekStage::VerifyLogicalEnd,
+                expected: 384,
+                actual: 383,
+            })
+        ));
+    }
+
+    #[test]
+    fn checkpoint_encoder_handles_short_writes_interrupted_and_write_contract_failures() {
+        let runtime = semantic_runtime(TemporalContextPolicy::BoundWinners);
+        let before = checkpoint_v1_logical_state_snapshot(&runtime);
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("fixture must prepare");
+        let mut short = TestSink::new();
+        short.max_write = Some(3);
+        prepared
+            .encode_into(&mut short)
+            .expect("short writes must be completed");
+        assert_eq!(
+            &short.bytes()[..256],
+            hex_bytes(SEMANTIC_FIXTURE_BOUND_HEADER_HEX)
+        );
+        assert_eq!(&short.bytes()[256..], hex_bytes(SEMANTIC_FIXTURE_BODY_HEX));
+
+        let mut interrupted = TestSink::new();
+        interrupted.seek_fault = Some((1, io::ErrorKind::Interrupted));
+        interrupted.write_fault = Some((1, TestWriteFault::Error(io::ErrorKind::Interrupted)));
+        interrupted.flush_fault = Some((1, io::ErrorKind::Interrupted));
+        prepared
+            .encode_into(&mut interrupted)
+            .expect("Interrupted operations must retry");
+        assert_eq!(interrupted.bytes(), short.bytes());
+        assert_eq!(interrupted.seek_calls, 4);
+        assert_eq!(interrupted.flush_calls, 2);
+
+        let mut body_interrupted = TestSink::new();
+        body_interrupted.write_fault = Some((2, TestWriteFault::Error(io::ErrorKind::Interrupted)));
+        prepared
+            .encode_into(&mut body_interrupted)
+            .expect("an Interrupted body write must retry");
+        assert_eq!(body_interrupted.bytes(), short.bytes());
+
+        let mut write_zero = TestSink::new();
+        write_zero.write_fault = Some((2, TestWriteFault::Zero));
+        match prepared.encode_into(&mut write_zero) {
+            Err(CheckpointV1EncodeError::Write { stage, source }) => {
+                assert_eq!(
+                    stage,
+                    CheckpointV1WriteStage::Body(CheckpointV1BodySection::SegmentOwners)
+                );
+                assert_eq!(source.kind(), io::ErrorKind::WriteZero);
+            }
+            other => panic!("unexpected WriteZero result: {other:?}"),
+        }
+
+        let mut body_overreported = TestSink::new();
+        body_overreported.write_fault = Some((2, TestWriteFault::Overreport));
+        assert!(matches!(
+            prepared.encode_into(&mut body_overreported),
+            Err(CheckpointV1EncodeError::WriteCount {
+                stage: CheckpointV1WriteStage::Body(CheckpointV1BodySection::SegmentOwners,),
+                requested: 8,
+                reported: 9,
+            })
+        ));
+
+        let mut overreported = TestSink::new();
+        overreported.write_fault = Some((1, TestWriteFault::Overreport));
+        assert!(matches!(
+            prepared.encode_into(&mut overreported),
+            Err(CheckpointV1EncodeError::WriteCount {
+                stage: CheckpointV1WriteStage::ReserveHeader,
+                requested: 256,
+                reported: 257,
+            })
+        ));
+        assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+    }
+
+    #[test]
+    fn checkpoint_encoder_types_every_io_failure_and_retries_only_into_a_fresh_sink() {
+        let mut runtime = recruited_runtime(TemporalContextPolicy::BoundWinners);
+        set_reachable_context(&mut runtime);
+        let before = checkpoint_v1_logical_state_snapshot(&runtime);
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("all-section fixture must prepare");
+        let mut baseline = TestSink::new();
+        prepared
+            .encode_into(&mut baseline)
+            .expect("baseline must encode");
+        assert_eq!(
+            baseline.calls,
+            vec![
+                TestSinkCall::SeekEnd(0),
+                TestSinkCall::Write(256),
+                TestSinkCall::Write(4),
+                TestSinkCall::Write(88),
+                TestSinkCall::Write(88),
+                TestSinkCall::Write(20),
+                TestSinkCall::Write(200),
+                TestSinkCall::Write(100),
+                TestSinkCall::SeekStart(0),
+                TestSinkCall::Write(256),
+                TestSinkCall::SeekEnd(0),
+                TestSinkCall::Flush,
+            ]
+        );
+
+        for (call, expected_stage) in [
+            (1, CheckpointV1SeekStage::InspectLogicalEnd),
+            (2, CheckpointV1SeekStage::HeaderBackfill),
+            (3, CheckpointV1SeekStage::VerifyLogicalEnd),
+        ] {
+            let mut failed = TestSink::new();
+            failed.seek_fault = Some((call, io::ErrorKind::Other));
+            let error = prepared
+                .encode_into(&mut failed)
+                .expect_err("injected seek must fail");
+            let io_source = std::error::Error::source(&error)
+                .and_then(|source| source.downcast_ref::<io::Error>())
+                .expect("seek error must preserve its I/O source");
+            assert_eq!(io_source.kind(), io::ErrorKind::Other);
+            assert!(error.to_string().contains("checkpoint seek failed"));
+            match error {
+                CheckpointV1EncodeError::Seek { stage, source } => {
+                    assert_eq!(stage, expected_stage);
+                    assert_eq!(source.kind(), io::ErrorKind::Other);
+                }
+                other => panic!("unexpected seek failure at call {call}: {other:?}"),
+            }
+            if call == 2 {
+                assert_eq!(&failed.bytes()[..256], &[0; 256]);
+            }
+            assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+            let mut retry = TestSink::new();
+            prepared
+                .encode_into(&mut retry)
+                .expect("fresh-sink seek retry must succeed");
+            assert_eq!(retry.bytes(), baseline.bytes());
+            assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+        }
+
+        for (call, expected_stage) in [
+            (1, CheckpointV1WriteStage::ReserveHeader),
+            (
+                2,
+                CheckpointV1WriteStage::Body(CheckpointV1BodySection::CohortColumns),
+            ),
+            (
+                3,
+                CheckpointV1WriteStage::Body(CheckpointV1BodySection::PriorContext),
+            ),
+            (
+                4,
+                CheckpointV1WriteStage::Body(CheckpointV1BodySection::WinnerContext),
+            ),
+            (
+                5,
+                CheckpointV1WriteStage::Body(CheckpointV1BodySection::SegmentOwners),
+            ),
+            (
+                6,
+                CheckpointV1WriteStage::Body(CheckpointV1BodySection::SegmentSources),
+            ),
+            (
+                7,
+                CheckpointV1WriteStage::Body(CheckpointV1BodySection::SegmentTicks),
+            ),
+            (8, CheckpointV1WriteStage::BackfillHeader),
+        ] {
+            let mut failed = TestSink::new();
+            failed.write_fault = Some((call, TestWriteFault::Error(io::ErrorKind::Other)));
+            let error = prepared
+                .encode_into(&mut failed)
+                .expect_err("injected write must fail");
+            let io_source = std::error::Error::source(&error)
+                .and_then(|source| source.downcast_ref::<io::Error>())
+                .expect("write error must preserve its I/O source");
+            assert_eq!(io_source.kind(), io::ErrorKind::Other);
+            assert!(error.to_string().contains("checkpoint write failed"));
+            match error {
+                CheckpointV1EncodeError::Write { stage, source } => {
+                    assert_eq!(stage, expected_stage);
+                    assert_eq!(source.kind(), io::ErrorKind::Other);
+                }
+                other => panic!("unexpected write failure at call {call}: {other:?}"),
+            }
+            assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+            let mut retry = TestSink::new();
+            prepared
+                .encode_into(&mut retry)
+                .expect("fresh-sink write retry must succeed");
+            assert_eq!(retry.bytes(), baseline.bytes());
+            assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+        }
+
+        let mut failed = TestSink::new();
+        failed.flush_fault = Some((1, io::ErrorKind::Other));
+        let error = prepared
+            .encode_into(&mut failed)
+            .expect_err("injected flush must fail");
+        let io_source = std::error::Error::source(&error)
+            .and_then(|source| source.downcast_ref::<io::Error>())
+            .expect("flush error must preserve its I/O source");
+        assert_eq!(io_source.kind(), io::ErrorKind::Other);
+        assert!(error.to_string().contains("checkpoint flush failed"));
+        match error {
+            CheckpointV1EncodeError::Flush { source } => {
+                assert_eq!(source.kind(), io::ErrorKind::Other);
+            }
+            other => panic!("unexpected flush failure: {other:?}"),
+        }
+        assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+        let mut retry = TestSink::new();
+        prepared
+            .encode_into(&mut retry)
+            .expect("fresh-sink flush retry must succeed");
+        assert_eq!(retry.bytes(), baseline.bytes());
+        assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+    }
+
+    #[test]
+    fn checkpoint_encoder_rejects_tampered_prepared_counts_before_touching_the_sink() {
+        fn fail_before_sink(prepared: &PreparedCheckpointV1Export<'_>) -> CheckpointV1EncodeError {
+            let mut sink = TestSink::new();
+            let error = prepared
+                .encode_into(&mut sink)
+                .expect_err("tampered prepared proof must fail");
+            assert!(sink.calls.is_empty());
+            assert!(sink.bytes().is_empty());
+            error
+        }
+
+        let runtime = semantic_runtime(TemporalContextPolicy::BoundWinners);
+        let mut prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("fixture must prepare");
+        let scalars = prepared.scalars;
+        let layout = prepared.layout;
+
+        prepared.scalars.event_count += 1;
+        let error = fail_before_sink(&prepared);
+        assert!(std::error::Error::source(&error).is_none());
+        assert!(matches!(
+            error,
+            CheckpointV1EncodeError::PreparedScalarsMismatch
+        ));
+        prepared.scalars = scalars;
+
+        prepared.layout.pair_count += 1;
+        match fail_before_sink(&prepared) {
+            CheckpointV1EncodeError::PreparedPairCountMismatch { declared, observed } => {
+                assert_eq!(declared, layout.pair_count + 1);
+                assert_eq!(observed, layout.pair_count);
+            }
+            other => panic!("unexpected pair-count mismatch: {other:?}"),
+        }
+        prepared.layout = layout;
+
+        for section in [
+            CheckpointV1BodySection::CohortColumns,
+            CheckpointV1BodySection::PriorContext,
+            CheckpointV1BodySection::WinnerContext,
+            CheckpointV1BodySection::SegmentOwners,
+            CheckpointV1BodySection::SegmentSources,
+            CheckpointV1BodySection::SegmentTicks,
+        ] {
+            let observed = match section {
+                CheckpointV1BodySection::CohortColumns => {
+                    prepared.layout.cohort_columns_bytes += 1;
+                    layout.cohort_columns_bytes
+                }
+                CheckpointV1BodySection::PriorContext => {
+                    prepared.layout.prior_context_bytes += 1;
+                    layout.prior_context_bytes
+                }
+                CheckpointV1BodySection::WinnerContext => {
+                    prepared.layout.winner_context_bytes += 1;
+                    layout.winner_context_bytes
+                }
+                CheckpointV1BodySection::SegmentOwners => {
+                    prepared.layout.segment_owner_bytes += 1;
+                    layout.segment_owner_bytes
+                }
+                CheckpointV1BodySection::SegmentSources => {
+                    prepared.layout.segment_source_bytes += 1;
+                    layout.segment_source_bytes
+                }
+                CheckpointV1BodySection::SegmentTicks => {
+                    prepared.layout.segment_tick_bytes += 1;
+                    layout.segment_tick_bytes
+                }
+            };
+            match fail_before_sink(&prepared) {
+                CheckpointV1EncodeError::BodySectionCount {
+                    section: actual,
+                    declared,
+                    observed: actual_observed,
+                } => {
+                    assert_eq!(actual, section);
+                    assert_eq!(declared, observed + 1);
+                    assert_eq!(actual_observed, observed);
+                }
+                other => panic!("unexpected {section:?} mismatch: {other:?}"),
+            }
+            prepared.layout = layout;
+        }
+
+        prepared.layout.body_bytes += 1;
+        match fail_before_sink(&prepared) {
+            CheckpointV1EncodeError::BodyByteCount { declared, observed } => {
+                assert_eq!(declared, layout.body_bytes + 1);
+                assert_eq!(observed, layout.body_bytes);
+            }
+            other => panic!("unexpected body-byte mismatch: {other:?}"),
+        }
+        prepared.layout = layout;
+
+        prepared.layout.total_bytes += 1;
+        match fail_before_sink(&prepared) {
+            CheckpointV1EncodeError::TotalByteCount { declared, observed } => {
+                assert_eq!(declared, layout.total_bytes + 1);
+                assert_eq!(observed, layout.total_bytes);
+            }
+            other => panic!("unexpected total-byte mismatch: {other:?}"),
+        }
     }
 
     #[test]
