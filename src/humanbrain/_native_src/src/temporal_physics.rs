@@ -202,27 +202,147 @@ pub(crate) struct CoupledRaceScratch {
     spiking_indices: Vec<usize>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CoupledRaceScratchBuildError {
+    ZeroCapacity,
+    CapacityOverflow,
+    AllocationFailed,
+}
+
+impl CoupledRaceScratchBuildError {
+    pub(crate) const fn legacy_message(self) -> &'static str {
+        match self {
+            Self::ZeroCapacity => "coupled-race scratch requires nonzero capacity",
+            Self::CapacityOverflow | Self::AllocationFailed => {
+                "coupled-race scratch allocation failed"
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CoupledRaceScratchReserveSite {
+    Voltage,
+    Thresholds,
+    Excitatory,
+    Emitted,
+    SpikingIndices,
+}
+
+#[cfg(test)]
+impl CoupledRaceScratchReserveSite {
+    const fn ordinal(self) -> usize {
+        match self {
+            Self::Voltage => 0,
+            Self::Thresholds => 1,
+            Self::Excitatory => 2,
+            Self::Emitted => 3,
+            Self::SpikingIndices => 4,
+        }
+    }
+}
+
+#[cfg(test)]
+std::thread_local! {
+    static FAIL_NEXT_COUPLED_RACE_RESERVE: std::cell::Cell<Option<CoupledRaceScratchReserveSite>> =
+        const { std::cell::Cell::new(None) };
+    static COUPLED_RACE_RESERVE_ATTEMPTS: std::cell::Cell<usize> =
+        const { std::cell::Cell::new(0) };
+}
+
+#[cfg(test)]
+struct CoupledRaceReserveFailureForTest;
+
+#[cfg(test)]
+impl Drop for CoupledRaceReserveFailureForTest {
+    fn drop(&mut self) {
+        FAIL_NEXT_COUPLED_RACE_RESERVE.with(|failure| failure.set(None));
+    }
+}
+
+#[cfg(test)]
+fn fail_next_coupled_race_reserve_for_test(
+    site: CoupledRaceScratchReserveSite,
+) -> CoupledRaceReserveFailureForTest {
+    FAIL_NEXT_COUPLED_RACE_RESERVE.with(|failure| {
+        assert!(
+            failure.replace(Some(site)).is_none(),
+            "coupled-race reserve failure injection is not reentrant"
+        );
+    });
+    CoupledRaceReserveFailureForTest
+}
+
+#[cfg(test)]
+fn take_coupled_race_reserve_attempts_for_test() -> usize {
+    COUPLED_RACE_RESERVE_ATTEMPTS.with(|attempts| attempts.replace(0))
+}
+
+#[cfg(test)]
+fn fail_coupled_race_reserve_for_test(site: CoupledRaceScratchReserveSite) -> bool {
+    COUPLED_RACE_RESERVE_ATTEMPTS.with(|attempts| {
+        assert_eq!(
+            attempts.get(),
+            site.ordinal(),
+            "coupled-race reserves changed order"
+        );
+        attempts.set(site.ordinal() + 1);
+    });
+    FAIL_NEXT_COUPLED_RACE_RESERVE.with(|failure| {
+        if failure.get() == Some(site) {
+            failure.set(None);
+            true
+        } else {
+            false
+        }
+    })
+}
+
 impl CoupledRaceScratch {
-    pub(crate) fn try_new(max_candidates: usize) -> Result<Self, &'static str> {
+    pub(crate) fn try_new(max_candidates: usize) -> Result<Self, CoupledRaceScratchBuildError> {
+        #[cfg(test)]
+        COUPLED_RACE_RESERVE_ATTEMPTS.with(|attempts| attempts.set(0));
         if max_candidates == 0 {
-            return Err("coupled-race scratch requires nonzero capacity");
+            return Err(CoupledRaceScratchBuildError::ZeroCapacity);
         }
 
-        fn filled<T: Copy>(length: usize, value: T) -> Result<Vec<T>, &'static str> {
+        fn filled<T: Copy>(
+            length: usize,
+            value: T,
+            _site: CoupledRaceScratchReserveSite,
+        ) -> Result<Vec<T>, CoupledRaceScratchBuildError> {
+            std::alloc::Layout::array::<T>(length)
+                .map_err(|_| CoupledRaceScratchBuildError::CapacityOverflow)?;
+            #[cfg(test)]
+            if fail_coupled_race_reserve_for_test(_site) {
+                return Err(CoupledRaceScratchBuildError::AllocationFailed);
+            }
             let mut values = Vec::new();
             values
                 .try_reserve_exact(length)
-                .map_err(|_| "coupled-race scratch allocation failed")?;
+                .map_err(|_| CoupledRaceScratchBuildError::AllocationFailed)?;
             values.resize(length, value);
             Ok(values)
         }
 
         Ok(Self {
-            voltage_mv: filled(max_candidates, 0.0)?,
-            thresholds_mv: filled(max_candidates, 0.0)?,
-            excitatory_pa: filled(max_candidates, 0.0)?,
-            emitted: filled(max_candidates, 0)?,
-            spiking_indices: filled(max_candidates, 0)?,
+            voltage_mv: filled(max_candidates, 0.0, CoupledRaceScratchReserveSite::Voltage)?,
+            thresholds_mv: filled(
+                max_candidates,
+                0.0,
+                CoupledRaceScratchReserveSite::Thresholds,
+            )?,
+            excitatory_pa: filled(
+                max_candidates,
+                0.0,
+                CoupledRaceScratchReserveSite::Excitatory,
+            )?,
+            emitted: filled(max_candidates, 0, CoupledRaceScratchReserveSite::Emitted)?,
+            spiking_indices: filled(
+                max_candidates,
+                0,
+                CoupledRaceScratchReserveSite::SpikingIndices,
+            )?,
         })
     }
 
@@ -455,9 +575,10 @@ pub(crate) fn coupled_first_spike_race(
 #[cfg(test)]
 mod tests {
     use super::{
-        coupled_first_spike_race, singleton_latency_ticks, BasketDrive, CandidateClass,
-        CandidateDrive, CoupledRaceScratch, CoupledRaceTicks, SpikeEvent,
-        TEMPORAL_PHYSICS_IDENTITY,
+        coupled_first_spike_race, fail_next_coupled_race_reserve_for_test, singleton_latency_ticks,
+        take_coupled_race_reserve_attempts_for_test, BasketDrive, CandidateClass, CandidateDrive,
+        CoupledRaceScratch, CoupledRaceScratchBuildError, CoupledRaceScratchReserveSite,
+        CoupledRaceTicks, SpikeEvent, TEMPORAL_PHYSICS_IDENTITY,
     };
 
     // Literal outputs were generated from the current Python oracle:
@@ -916,6 +1037,56 @@ mod tests {
                 inhibition_onset_tick: None,
             }),
         );
+    }
+
+    #[test]
+    fn coupled_race_scratch_rejects_invalid_capacity_before_reserving() {
+        assert!(matches!(
+            CoupledRaceScratch::try_new(0),
+            Err(CoupledRaceScratchBuildError::ZeroCapacity)
+        ));
+        assert!(matches!(
+            CoupledRaceScratch::try_new(usize::MAX),
+            Err(CoupledRaceScratchBuildError::CapacityOverflow)
+        ));
+    }
+
+    #[test]
+    fn coupled_race_scratch_allocation_failure_is_typed_and_retryable_at_every_reserve() {
+        const SITES: [CoupledRaceScratchReserveSite; 5] = [
+            CoupledRaceScratchReserveSite::Voltage,
+            CoupledRaceScratchReserveSite::Thresholds,
+            CoupledRaceScratchReserveSite::Excitatory,
+            CoupledRaceScratchReserveSite::Emitted,
+            CoupledRaceScratchReserveSite::SpikingIndices,
+        ];
+
+        for (ordinal, site) in SITES.into_iter().enumerate() {
+            assert_eq!(take_coupled_race_reserve_attempts_for_test(), 0);
+            let failure = fail_next_coupled_race_reserve_for_test(site);
+            assert!(matches!(
+                CoupledRaceScratch::try_new(3),
+                Err(CoupledRaceScratchBuildError::AllocationFailed)
+            ));
+            assert_eq!(
+                take_coupled_race_reserve_attempts_for_test(),
+                ordinal + 1,
+                "failure must occur at the armed ordered reserve {site:?}"
+            );
+
+            let retry = CoupledRaceScratch::try_new(3).unwrap();
+            assert_eq!(take_coupled_race_reserve_attempts_for_test(), SITES.len());
+            assert_eq!(retry.voltage_mv.as_slice(), &[0.0; 3]);
+            assert_eq!(retry.thresholds_mv.as_slice(), &[0.0; 3]);
+            assert_eq!(retry.excitatory_pa.as_slice(), &[0.0; 3]);
+            assert_eq!(retry.emitted.as_slice(), &[0; 3]);
+            assert_eq!(retry.spiking_indices.as_slice(), &[0; 3]);
+            assert!(retry
+                .allocation_signature()
+                .into_iter()
+                .all(|(_, capacity)| capacity >= 3));
+            drop(failure);
+        }
     }
 
     #[test]

@@ -688,7 +688,7 @@ impl TemporalCircuitRuntime {
                 "prospective column occupancy overflows usize",
             ))?;
         let race_scratch = CoupledRaceScratch::try_new(max_prospective_column_occupancy)
-            .map_err(TemporalRuntimeBuildError::Invalid)?;
+            .map_err(|error| TemporalRuntimeBuildError::Invalid(error.legacy_message()))?;
         let column_drive_scratch = vec![EMPTY_DRIVE; max_prospective_column_occupancy];
         let novel_candidate_scratch = vec![EMPTY_NOVEL_CANDIDATE; max_prospective_column_occupancy];
         let active_segment_scratch = match config.plasticity_policy {
