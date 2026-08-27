@@ -780,6 +780,15 @@ the discovered native build inputs, missing fixed inputs or native build trees,
 and per-file or aggregate size-limit violations fail before an identity exists.
 The 64-character helper result is hex-decoded into the 32-byte header field.
 
+The crate-private native encoder accepts `ValidatedCheckpointAuthority` only as
+caller-held proof that production validation has already succeeded; it does not
+validate raw digest bytes itself. A production adapter may construct that proof
+only after the exact three-step protocol sequence above and the bounded
+source-bundle validation and computation in this section both succeed.
+`ValidatedCheckpointAuthority::from_raw_sha256` is a test/internal seam for
+literal fixtures, not a production validation path; possession of the two raw
+digests alone grants no authority.
+
 #### Circuit-identity framing
 
 The circuit identity uses the same unambiguous framing under the distinct
@@ -1144,7 +1153,13 @@ sources in token-code order, then their eleven relays in the same order.
 ### Export and exclusive atomic publication
 
 Checkpoint byte production and destination-name publication are separate
-operations. Both hold the runtime lock long enough to observe one immutable
+operations. The caller-provided `Write + Seek` encoder requires a fresh logical
+zero-length sink. Before reserving the header, it seeks to the logical end and
+requires the returned position to be exactly 0. A nonzero end is rejected
+without writing; the encoder never falls back to truncating, overwriting, or
+appending to a nonempty sink.
+
+Both operations hold the runtime lock long enough to observe one immutable
 logical state. Reserve the first 256 bytes, stream the canonical body once while
 computing the body and semantic-index hashes, seek back only after every header
 value exists, compute the logical-state digest over the stored body digest plus
@@ -1152,9 +1167,14 @@ the canonical scalar block, and write the complete header. The encoder must not
 clone the learned store into another 1.5 GB buffer. This sequence preserves the
 checkpoint bytes and every identity contract above.
 
-A caller-provided seekable sink ends at byte encoding and sink flush; it makes
-no namespace or durability claim. The destination-path API additionally runs
-the platform publisher below and returns exactly one of these outcomes:
+Every byte-encoder seek, write, or flush failure leaves neuronal state and the
+poison latch unchanged, but gives no rollback guarantee for the caller-owned
+sink: its bytes and position are incomplete or unspecified, and the sink is
+disposable. Retry requires a newly reinitialized empty sink; reuse of the
+partial sink is forbidden. The byte-encoder result concerns only byte encoding
+and sink flush and makes no publication or durability claim. The
+destination-path API additionally runs the platform publisher below and returns
+exactly one of these outcomes:
 
 Here **exclusive atomic publication** means that final-name creation is
 no-overwrite and that readers can observe only a complete checkpoint. It is not
