@@ -72,6 +72,7 @@ pub(crate) enum TemporalStorePreflightError {
     SegmentCapacity,
     OwnerCapacity { owner: u32 },
     PreallocatedCapacity,
+    BackingCapacityInvariant,
     BackingInvariant,
     StorePoisoned,
 }
@@ -562,13 +563,13 @@ impl TemporalStore {
         }
         let segment_count = self.owners.len();
         let Some(pair_count) = segment_count.checked_mul(PAIRS_PER_SEGMENT) else {
-            return Err(TemporalStorePreflightError::BackingInvariant);
+            return Err(TemporalStorePreflightError::BackingCapacityInvariant);
         };
         let configured_pair_capacity = self
             .config
             .segment_capacity
             .checked_mul(PAIRS_PER_SEGMENT)
-            .ok_or(TemporalStorePreflightError::BackingInvariant)?;
+            .ok_or(TemporalStorePreflightError::BackingCapacityInvariant)?;
         let owner_result_capacity = self.config.owner_count.min(self.config.segment_capacity);
         if segment_count > self.config.segment_capacity
             || self.sources.len() != pair_count
@@ -592,7 +593,7 @@ impl TemporalStore {
             || self.touched_segments.capacity() < self.config.segment_capacity
             || self.touched_owners.capacity() < owner_result_capacity
         {
-            return Err(TemporalStorePreflightError::BackingInvariant);
+            return Err(TemporalStorePreflightError::BackingCapacityInvariant);
         }
         Ok(())
     }
@@ -937,13 +938,13 @@ impl TemporalStore {
             return Err(TemporalStorePreflightError::BackingInvariant);
         }
         let Some(first_pair) = segment_index.checked_mul(PAIRS_PER_SEGMENT) else {
-            return Err(TemporalStorePreflightError::BackingInvariant);
+            return Err(TemporalStorePreflightError::BackingCapacityInvariant);
         };
         let Some(pair_end) = first_pair.checked_add(PAIRS_PER_SEGMENT) else {
-            return Err(TemporalStorePreflightError::BackingInvariant);
+            return Err(TemporalStorePreflightError::BackingCapacityInvariant);
         };
         if pair_end > self.sources.len() || pair_end > self.permanences.len() {
-            return Err(TemporalStorePreflightError::BackingInvariant);
+            return Err(TemporalStorePreflightError::BackingCapacityInvariant);
         }
         let row = self.copy_runtime_segment_row(first_pair, pair_end);
         if self.validate_normalized_row(&row).is_err() {
@@ -961,7 +962,7 @@ impl TemporalStore {
         &self,
     ) -> Result<u32, TemporalStorePreflightError> {
         let (required, _) = self.semantic_posting_shape()?;
-        u32::try_from(required).map_err(|_| TemporalStorePreflightError::BackingInvariant)
+        u32::try_from(required).map_err(|_| TemporalStorePreflightError::BackingCapacityInvariant)
     }
 
     /// Visit the complete logical posting relation in canonical source-major
@@ -2504,6 +2505,33 @@ mod tests {
         );
         assert_eq!(canonical_logical_bytes(&store), full_logical);
         assert_eq!(store.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn backing_capacity_and_logical_index_invariants_are_distinct() {
+        let mut short_backing = TemporalStore::new(config(10, 1, 1)).unwrap();
+        assert_eq!(
+            short_backing.allocate_runtime_segment(0, &[100], &[250]),
+            Ok(0)
+        );
+        short_backing.permanences.pop();
+        assert_eq!(
+            short_backing.preflight_runtime_mutation_backing(&[], 1),
+            Err(TemporalStorePreflightError::BackingCapacityInvariant)
+        );
+        assert_eq!(short_backing.poisoned, TEMPORAL_OK);
+
+        let mut corrupt_posting = TemporalStore::new(config(10, 1, 1)).unwrap();
+        assert_eq!(
+            corrupt_posting.allocate_runtime_segment(0, &[100], &[250]),
+            Ok(0)
+        );
+        corrupt_posting.next_pair[0] = 0;
+        assert_eq!(
+            corrupt_posting.preflight_runtime_canonical_rewrite(0, &normalized_row(&[], &[])),
+            Err(TemporalStorePreflightError::BackingInvariant)
+        );
+        assert_eq!(corrupt_posting.poisoned, TEMPORAL_OK);
     }
 
     #[test]

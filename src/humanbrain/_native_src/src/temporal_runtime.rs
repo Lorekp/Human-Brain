@@ -1934,7 +1934,8 @@ fn map_store_preflight_error(
             TemporalCircuitStop::StoreOrPlanInvariant("temporal store mutation preflight failed")
         }
         TemporalStorePreflightError::OutputCapacity { .. }
-        | TemporalStorePreflightError::PreallocatedCapacity => {
+        | TemporalStorePreflightError::PreallocatedCapacity
+        | TemporalStorePreflightError::BackingCapacityInvariant => {
             TemporalCircuitStop::PreallocatedCapacityInvariant(
                 "temporal store mutation scratch or backing capacity is insufficient",
             )
@@ -3253,6 +3254,26 @@ mod tests {
                 owner_cap_config.max_segments_per_cell,
             ),
             TemporalCircuitStop::OwnerSegmentCapacity { owner: 11, cap: 7 },
+        );
+        assert_eq!(
+            map_store_preflight_error(
+                TemporalStorePreflightError::BackingInvariant,
+                &owner_cap_runtime.store,
+                0,
+                owner_cap_config.max_segments_per_cell,
+            ),
+            TemporalCircuitStop::StoreOrPlanInvariant("temporal store mutation preflight failed"),
+        );
+        assert_eq!(
+            map_store_preflight_error(
+                TemporalStorePreflightError::BackingCapacityInvariant,
+                &owner_cap_runtime.store,
+                0,
+                owner_cap_config.max_segments_per_cell,
+            ),
+            TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "temporal store mutation scratch or backing capacity is insufficient",
+            ),
         );
     }
 
