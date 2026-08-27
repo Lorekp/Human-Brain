@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import copy
+import dataclasses
 import hashlib
 import importlib
 import inspect
@@ -30,6 +31,7 @@ from humanbrain.native_temporal_runtime import (
     TemporalCheckpointCleanup,
     TemporalCheckpointErrorDomain,
     TemporalCheckpointErrorStage,
+    TemporalCheckpointIdentity,
     TemporalCheckpointPublication,
     TemporalCheckpointPublicationError,
     TemporalCheckpointPublicationOutcome,
@@ -85,7 +87,18 @@ def _basic_checkpoint_v1(size: int = 256) -> bytes:
     checkpoint = bytearray(size)
     checkpoint[:8] = b"R3NTCP1\x00"
     struct.pack_into("<HH", checkpoint, 8, 1, 256)
-    struct.pack_into("<Q", checkpoint, 16, size)
+    struct.pack_into("<QQ", checkpoint, 16, size, size - 256)
+    checkpoint[32:64] = b"\x11" * 32
+    checkpoint[64:96] = b"\x22" * 32
+    checkpoint[96:128] = hashlib.sha256(b"fake-circuit").digest()
+    checkpoint[128:160] = hashlib.sha256(checkpoint[256:]).digest()
+    checkpoint[160:192] = hashlib.sha256(b"").digest()
+    struct.pack_into("<IIIQQBBH", checkpoint, 192, 0, 0, 11, 17, 19, 0, 0, 0)
+    checkpoint[224:256] = hashlib.sha256(
+        b"humanbrain-r3-checkpoint-logical-state-v1\x00"
+        + checkpoint[128:160]
+        + checkpoint[192:224]
+    ).digest()
     return bytes(checkpoint)
 
 
@@ -98,6 +111,7 @@ class _FakeTemporalLibrary:
         self.import_calls = 0
         self.size_calls = 0
         self.export_calls = 0
+        self.identity_calls = 0
         self.publish_calls = 0
         self.immutable_publish_calls = 0
         self.published_paths: list[tuple[bytes, bytes]] = []
@@ -105,6 +119,7 @@ class _FakeTemporalLibrary:
         self.published_payload_addresses: list[int] = []
         self.advance_override: object | None = None
         self.import_override: object | None = None
+        self.identity_override: object | None = None
         self.publish_override: object | None = None
         self.immutable_publish_override: object | None = None
         self.humanbrain_temporal_circuit_runtime_create_v1 = _FakeFunction(self._create)
@@ -116,6 +131,9 @@ class _FakeTemporalLibrary:
         )
         self.humanbrain_temporal_circuit_runtime_checkpoint_size_v1 = _FakeFunction(
             self._size
+        )
+        self.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1 = _FakeFunction(
+            self._identity
         )
         self.humanbrain_temporal_circuit_runtime_export_checkpoint_v1 = _FakeFunction(
             self._export
@@ -216,6 +234,25 @@ class _FakeTemporalLibrary:
         report = self._report(report_out)
         report.required = len(self.checkpoint_bytes)
         report.observed = len(self.checkpoint_bytes)
+        return 0
+
+    def _identity(
+        self,
+        handle: object,
+        authority: object,
+        output: object,
+        report_out: object,
+    ) -> int:
+        self.identity_calls += 1
+        if self.identity_override is not None:
+            return self.identity_override(  # type: ignore[operator,no-any-return]
+                handle, authority, output, report_out
+            )
+        del handle, authority
+        ctypes.memmove(output, self.checkpoint_bytes, 256)
+        report = self._report(report_out)
+        report.required = 256
+        report.observed = 256
         return 0
 
     def _publish(
@@ -766,6 +803,20 @@ def test_missing_governing_protocol_fails_before_native_load(
     assert not reached_loader
 
 
+def test_checkpoint_identity_symbol_is_mandatory_without_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    del library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
+
+    with pytest.raises(NativeBuildError, match="ABI symbols are unavailable"):
+        NativeTemporalCircuit.fresh(_tiny_definition())
+
+    assert library.create_calls == 0
+    assert library.size_calls == 0
+    assert library.export_calls == 0
+
+
 def test_public_capability_owns_handle_and_round_trips_checkpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -867,6 +918,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "TemporalCheckpointCleanup",
         "TemporalCheckpointErrorDomain",
         "TemporalCheckpointErrorStage",
+        "TemporalCheckpointIdentity",
         "TemporalCheckpointPublication",
         "TemporalCheckpointPublicationError",
         "TemporalCheckpointPublicationOutcome",
@@ -890,6 +942,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         NativeTemporalCircuit.advance_block,
         NativeTemporalCircuit.publish_checkpoint,
         NativeTemporalCircuit.checkpoint,
+        NativeTemporalCircuit.checkpoint_identity,
     ):
         parameters = set(inspect.signature(method).parameters)
         assert not parameters.intersection(
@@ -908,6 +961,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         NativeTemporalCircuit.from_checkpoint,
         NativeTemporalCircuit.advance_block,
         NativeTemporalCircuit.checkpoint,
+        NativeTemporalCircuit.checkpoint_identity,
     ):
         assert "path" not in inspect.signature(method).parameters
     assert set(inspect.signature(NativeTemporalCircuit.from_checkpoint_path).parameters) == {
@@ -918,6 +972,9 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "self",
         "destination",
     }
+    assert set(inspect.signature(NativeTemporalCircuit.checkpoint_identity).parameters) == {
+        "self"
+    }
     assert set(inspect.signature(runtime_adapter.publish_immutable_bytes).parameters) == {
         "destination",
         "payload",
@@ -927,6 +984,9 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
     advance = library.humanbrain_temporal_circuit_runtime_advance_block_v1
     size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
+    checkpoint_identity = (
+        library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
+    )
     export = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
     publish = (
         library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1
@@ -938,6 +998,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         imported,
         advance,
         size,
+        checkpoint_identity,
         export,
         publish,
         publish_bytes,
@@ -948,6 +1009,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         3,
         3,
         3,
+        4,
         5,
         5,
         3,
@@ -960,12 +1022,223 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
             imported,
             advance,
             size,
+            checkpoint_identity,
             export,
             publish,
             publish_bytes,
         )
     )
     assert destroy.restype is None
+
+
+def test_checkpoint_identity_decodes_the_complete_frozen_header_without_export(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+
+    with NativeTemporalCircuit.fresh(_tiny_definition()) as circuit:
+        identity = circuit.checkpoint_identity()
+
+    header = library.checkpoint_bytes[:256]
+    assert identity == runtime_adapter.TemporalCheckpointIdentity(
+        format_version=1,
+        header_bytes=256,
+        checkpoint_bytes=256,
+        body_bytes=0,
+        protocol_identity_sha256="11" * 32,
+        source_bundle_identity_sha256="22" * 32,
+        circuit_identity_sha256=header[96:128].hex(),
+        body_sha256=header[128:160].hex(),
+        semantic_index_sha256=header[160:192].hex(),
+        segment_count=0,
+        cohort_count=0,
+        next_reserve_cell=11,
+        event_count=17,
+        learning_step=19,
+        prior_context_length=0,
+        winner_context_length=0,
+        poison_code=0,
+        logical_state_sha256=header[224:256].hex(),
+    )
+    assert library.identity_calls == 1
+    assert library.size_calls == 0
+    assert library.export_calls == 0
+    assert tuple(field.name for field in dataclasses.fields(identity)) == (
+        "format_version",
+        "header_bytes",
+        "checkpoint_bytes",
+        "body_bytes",
+        "protocol_identity_sha256",
+        "source_bundle_identity_sha256",
+        "circuit_identity_sha256",
+        "body_sha256",
+        "semantic_index_sha256",
+        "segment_count",
+        "cohort_count",
+        "next_reserve_cell",
+        "event_count",
+        "learning_step",
+        "prior_context_length",
+        "winner_context_length",
+        "poison_code",
+        "logical_state_sha256",
+    )
+    assert identity == TemporalCheckpointIdentity(**dataclasses.asdict(identity))
+    assert identity != dataclasses.asdict(identity)
+    assert not hasattr(identity, "__dict__")
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        identity.event_count = 18  # type: ignore[misc]
+
+
+@pytest.mark.parametrize(
+    "defect",
+    (
+        "magic",
+        "version",
+        "header-bytes",
+        "reserved",
+        "framing",
+        "protocol-authority",
+        "source-authority",
+        "prior-context-length",
+        "winner-context-length",
+        "poison-code",
+        "scalar-body-length",
+        "logical-state-digest",
+        "report-required",
+        "report-observed",
+        "report-location",
+    ),
+)
+def test_checkpoint_identity_rejects_malformed_headers_and_reports(
+    monkeypatch: pytest.MonkeyPatch,
+    defect: str,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    header = bytearray(library.checkpoint_bytes[:256])
+
+    def refresh_logical_state() -> None:
+        header[224:256] = hashlib.sha256(
+            b"humanbrain-r3-checkpoint-logical-state-v1\x00"
+            + header[128:160]
+            + header[192:224]
+        ).digest()
+
+    if defect == "magic":
+        header[0] ^= 1
+    elif defect == "version":
+        struct.pack_into("<H", header, 8, 2)
+    elif defect == "header-bytes":
+        struct.pack_into("<H", header, 10, 255)
+    elif defect == "reserved":
+        header[12] = 1
+    elif defect == "framing":
+        struct.pack_into("<Q", header, 16, 257)
+    elif defect == "protocol-authority":
+        header[32] ^= 1
+    elif defect == "source-authority":
+        header[64] ^= 1
+    elif defect == "prior-context-length":
+        header[220] = 23
+        refresh_logical_state()
+    elif defect == "winner-context-length":
+        header[221] = 23
+        refresh_logical_state()
+    elif defect == "poison-code":
+        struct.pack_into("<H", header, 222, 16)
+        refresh_logical_state()
+    elif defect == "scalar-body-length":
+        struct.pack_into("<I", header, 192, 1)
+        refresh_logical_state()
+    elif defect == "logical-state-digest":
+        header[224] ^= 1
+
+    def malformed_identity(
+        handle: object,
+        authority: object,
+        output: object,
+        report_out: object,
+    ) -> int:
+        del handle, authority
+        ctypes.memmove(output, bytes(header), len(header))
+        report = library._report(report_out)
+        report.required = 255 if defect == "report-required" else 256
+        report.observed = 255 if defect == "report-observed" else 256
+        report.location = 1 if defect == "report-location" else 0
+        return 0
+
+    library.identity_override = malformed_identity
+    with NativeTemporalCircuit.fresh(_tiny_definition()) as circuit:
+        with pytest.raises(NativeTemporalRuntimeError) as rejected:
+            circuit.checkpoint_identity()
+
+    assert rejected.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
+    assert "native ABI invariant failed" in rejected.value.message
+    assert library.identity_calls == 1
+
+
+def test_checkpoint_identity_propagates_failure_only_with_zero_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+
+    def authority_failure(
+        handle: object,
+        authority: object,
+        output: object,
+        report_out: object,
+    ) -> int:
+        del handle, authority, output
+        report = library._report(report_out)
+        report.status = NativeTemporalRuntimeStatus.INVALID_DEFINITION
+        message = b"fresh authority does not match handle creation authority"
+        report.message_len = len(message)
+        report.message_utf8[: len(message)] = message
+        return int(NativeTemporalRuntimeStatus.INVALID_DEFINITION)
+
+    library.identity_override = authority_failure
+    circuit = NativeTemporalCircuit.fresh(_tiny_definition())
+    try:
+        with pytest.raises(NativeTemporalRuntimeError) as rejected:
+            circuit.checkpoint_identity()
+        assert rejected.value.status is NativeTemporalRuntimeStatus.INVALID_DEFINITION
+        assert "handle creation authority" in rejected.value.message
+
+        def nonzero_failure(
+            handle: object,
+            authority: object,
+            output: object,
+            report_out: object,
+        ) -> int:
+            status = authority_failure(handle, authority, output, report_out)
+            ctypes.cast(
+                output, ctypes.POINTER(runtime_adapter._NativeCheckpointIdentity)
+            ).contents.header[0] = 1
+            return status
+
+        library.identity_override = nonzero_failure
+        with pytest.raises(NativeTemporalRuntimeError) as malformed:
+            circuit.checkpoint_identity()
+        assert malformed.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
+        assert "nonzero output" in malformed.value.message
+
+        def diagnostic_failure(
+            handle: object,
+            authority: object,
+            output: object,
+            report_out: object,
+        ) -> int:
+            status = authority_failure(handle, authority, output, report_out)
+            library._report(report_out).poison_code = 1
+            return status
+
+        library.identity_override = diagnostic_failure
+        with pytest.raises(NativeTemporalRuntimeError) as diagnostic:
+            circuit.checkpoint_identity()
+        assert diagnostic.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
+        assert "scalar diagnostics" in diagnostic.value.message
+    finally:
+        circuit.close()
 
 
 @pytest.mark.parametrize(
@@ -2222,6 +2495,160 @@ def test_checkpoint_stops_before_native_export_when_authority_or_binary_drifts(
         circuit.close()
 
 
+def test_checkpoint_identity_stops_before_native_when_authority_or_binary_drifts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, identity = _install_fake_runtime(monkeypatch)
+    circuit = NativeTemporalCircuit.fresh(_tiny_definition())
+    try:
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_current_native_source_digest",
+            lambda: "ef" * 32,
+        )
+        with pytest.raises(NativeBuildError, match="current native build inputs"):
+            circuit.checkpoint_identity()
+        assert library.identity_calls == 0
+
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_current_native_source_digest",
+            lambda: identity.source_digest,
+        )
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_fresh_authority",
+            lambda: runtime_adapter._FreshAuthority(b"\x33" * 32, b"\x22" * 32),
+        )
+        with pytest.raises(NativeTemporalRuntimeError) as authority_error:
+            circuit.checkpoint_identity()
+        assert authority_error.value.status is NativeTemporalRuntimeStatus.INVALID_DEFINITION
+        assert library.identity_calls == 0
+
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_fresh_authority",
+            lambda: runtime_adapter._FreshAuthority(b"\x11" * 32, b"\x22" * 32),
+        )
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_loaded_library_identity",
+            lambda: NativeLibraryIdentity(
+                identity.source_digest,
+                identity.binary_size,
+                "cd" * 32,
+            ),
+        )
+        with pytest.raises(NativeTemporalRuntimeError) as binary_error:
+            circuit.checkpoint_identity()
+        assert binary_error.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
+        assert "library identity changed" in binary_error.value.message
+        assert library.identity_calls == 0
+    finally:
+        circuit.close()
+
+    with pytest.raises(RuntimeError, match="closed"):
+        circuit.checkpoint_identity()
+    assert library.identity_calls == 0
+
+
+def test_checkpoint_identity_orders_open_authority_attestation_native_and_decode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, library_identity = _install_fake_runtime(monkeypatch)
+    live = NativeTemporalCircuit.fresh(_tiny_definition())
+    closed = NativeTemporalCircuit.fresh(_tiny_definition())
+    closed.close()
+    trace: list[str] = []
+
+    def fresh_authority(
+        protocol_byte: int = 0x11,
+    ) -> runtime_adapter._FreshAuthority:
+        trace.append("fresh-authority")
+        return runtime_adapter._FreshAuthority(
+            bytes([protocol_byte]) * 32,
+            b"\x22" * 32,
+        )
+
+    monkeypatch.setattr(runtime_adapter, "_fresh_authority", fresh_authority)
+    with pytest.raises(RuntimeError, match="closed"):
+        closed.checkpoint_identity()
+    assert trace == []
+    assert library.identity_calls == 0
+
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_fresh_authority",
+        lambda: fresh_authority(0x33),
+    )
+
+    def forbidden_attestation() -> NativeLibraryIdentity:
+        raise AssertionError(
+            "checkpoint identity must reject authority before binary attestation"
+        )
+
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_attested_current_library_identity",
+        forbidden_attestation,
+    )
+    with pytest.raises(NativeTemporalRuntimeError) as authority_error:
+        live.checkpoint_identity()
+    assert authority_error.value.status is NativeTemporalRuntimeStatus.INVALID_DEFINITION
+    assert trace == ["fresh-authority"]
+    assert library.identity_calls == 0
+
+    trace.clear()
+    monkeypatch.setattr(runtime_adapter, "_fresh_authority", fresh_authority)
+
+    def attest() -> NativeLibraryIdentity:
+        trace.append("binary-attestation")
+        return library_identity
+
+    monkeypatch.setattr(runtime_adapter, "_attested_current_library_identity", attest)
+    strict_decode = runtime_adapter._decode_checkpoint_identity
+
+    def decode(
+        returned_status: object,
+        native: runtime_adapter._NativeCheckpointIdentity,
+        report: runtime_adapter._NativeReport,
+        authority: runtime_adapter._FreshAuthority,
+    ) -> TemporalCheckpointIdentity:
+        trace.append("strict-decode")
+        return strict_decode(returned_status, native, report, authority)
+
+    monkeypatch.setattr(runtime_adapter, "_decode_checkpoint_identity", decode)
+
+    def native_identity(
+        handle: object,
+        authority: object,
+        output: object,
+        report_out: object,
+    ) -> int:
+        del handle, authority
+        trace.append("native-identity")
+        ctypes.memmove(output, library.checkpoint_bytes, 256)
+        report = library._report(report_out)
+        report.required = 256
+        report.observed = 256
+        return 0
+
+    library.identity_override = native_identity
+    try:
+        decoded = live.checkpoint_identity()
+    finally:
+        live.close()
+
+    assert trace == [
+        "fresh-authority",
+        "binary-attestation",
+        "native-identity",
+        "strict-decode",
+    ]
+    assert decoded.logical_state_sha256 == library.checkpoint_bytes[224:256].hex()
+    assert library.identity_calls == 1
+
+
 def test_close_waits_for_inflight_advance_before_destroying_handle(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2269,6 +2696,57 @@ def test_close_waits_for_inflight_advance_before_destroying_handle(
         circuit.checkpoint()
 
 
+def test_close_waits_for_inflight_checkpoint_identity_before_destroying_handle(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    circuit = NativeTemporalCircuit.fresh(_tiny_definition())
+    entered_native = threading.Event()
+    release_native = threading.Event()
+    close_started = threading.Event()
+
+    def blocked_identity(
+        handle: object,
+        authority: object,
+        output: object,
+        report_out: object,
+    ) -> int:
+        del handle, authority
+        entered_native.set()
+        if not release_native.wait(timeout=5.0):
+            raise AssertionError("test did not release native checkpoint identity")
+        ctypes.memmove(output, library.checkpoint_bytes, 256)
+        report = library._report(report_out)
+        report.required = 256
+        report.observed = 256
+        return 0
+
+    library.identity_override = blocked_identity
+
+    def close_circuit() -> None:
+        close_started.set()
+        circuit.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        identity_future = executor.submit(circuit.checkpoint_identity)
+        assert entered_native.wait(timeout=5.0)
+        close_future = executor.submit(close_circuit)
+        assert close_started.wait(timeout=5.0)
+        try:
+            assert not close_future.done()
+            assert library.destroyed == []
+        finally:
+            release_native.set()
+        identity = identity_future.result(timeout=5.0)
+        close_future.result(timeout=5.0)
+
+    assert identity.logical_state_sha256 == library.checkpoint_bytes[224:256].hex()
+    assert library.identity_calls == 1
+    assert library.destroyed == [0x1234]
+    circuit.close()
+    assert library.destroyed == [0x1234]
+
+
 def test_actual_native_fresh_checkpoint_import_round_trip(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -2278,11 +2756,35 @@ def test_actual_native_fresh_checkpoint_import_round_trip(
     definition = _tiny_definition()
 
     with NativeTemporalCircuit.fresh(definition) as fresh:
-        assert len(fresh.checkpoint()) == 256
+        empty_identity = fresh.checkpoint_identity()
+        assert empty_identity.checkpoint_bytes == len(fresh.checkpoint()) == 256
         steps = fresh.advance_block([7], mode=TemporalStepMode.READ_ONLY)
         assert len(steps) == 1
         assert steps[0].token_id == 7
+        identity = fresh.checkpoint_identity()
         checkpoint = fresh.checkpoint()
+        header = checkpoint[:256]
+        assert identity != empty_identity
+        assert identity.format_version == int.from_bytes(header[8:10], "little")
+        assert identity.header_bytes == int.from_bytes(header[10:12], "little")
+        assert identity.checkpoint_bytes == int.from_bytes(header[16:24], "little")
+        assert identity.body_bytes == int.from_bytes(header[24:32], "little")
+        assert identity.protocol_identity_sha256 == header[32:64].hex()
+        assert identity.source_bundle_identity_sha256 == header[64:96].hex()
+        assert identity.circuit_identity_sha256 == header[96:128].hex()
+        assert identity.body_sha256 == header[128:160].hex()
+        assert identity.semantic_index_sha256 == header[160:192].hex()
+        assert (
+            identity.segment_count,
+            identity.cohort_count,
+            identity.next_reserve_cell,
+            identity.event_count,
+            identity.learning_step,
+            identity.prior_context_length,
+            identity.winner_context_length,
+            identity.poison_code,
+        ) == struct.unpack("<IIIQQBBH", header[192:224])
+        assert identity.logical_state_sha256 == header[224:256].hex()
         checkpoint_path = tmp_path / "published.chk"
         publication = fresh.publish_checkpoint(checkpoint_path)
         assert publication.outcome is TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED
@@ -2299,8 +2801,10 @@ def test_actual_native_fresh_checkpoint_import_round_trip(
         definition, checkpoint_path
     ) as mapped:
         assert mapped.checkpoint() == checkpoint
+        assert mapped.checkpoint_identity() == identity
     with NativeTemporalCircuit.from_checkpoint(definition, checkpoint) as restored:
         assert restored.checkpoint() == checkpoint
+        assert restored.checkpoint_identity() == identity
 
 
 def test_actual_native_immutable_bytes_publication_is_exclusive_and_bit_exact(

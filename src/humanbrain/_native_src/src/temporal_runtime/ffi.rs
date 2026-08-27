@@ -34,7 +34,7 @@ use super::{
     checkpoint::{
         import_canonical_empty_checkpoint_v1, import_checkpoint_v1, CheckpointV1ImportError,
         PrepareCheckpointV1ExportError, ValidatedCheckpointAuthority,
-        ValidatedCheckpointV1RuntimeFactory,
+        ValidatedCheckpointV1RuntimeFactory, CHECKPOINT_V1_HEADER_BYTES,
     },
     checkpoint_publisher::{
         prepare_immutable_bytes_v1, publish_prepared_checkpoint_v1,
@@ -126,6 +126,18 @@ const PLASTICITY_PLASTIC: u8 = 1;
 pub struct TemporalValidatedCheckpointAuthorityV1 {
     pub protocol_identity_sha256: [u8; 32],
     pub source_bundle_identity_sha256: [u8; 32],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalCheckpointIdentityV1 {
+    pub header: [u8; CHECKPOINT_V1_HEADER_BYTES as usize],
+}
+
+impl TemporalCheckpointIdentityV1 {
+    const ZERO: Self = Self {
+        header: [0; CHECKPOINT_V1_HEADER_BYTES as usize],
+    };
 }
 
 impl TemporalValidatedCheckpointAuthorityV1 {
@@ -1238,6 +1250,108 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_checkpoint_size_v1(
     report.finish(TEMPORAL_RUNTIME_OK, "")
 }
 
+/// Return the exact canonical checkpoint-v1 header for the live runtime
+/// without materializing or publishing a full checkpoint.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. `output` may be
+/// uninitialized and is written as all zeroes before any authority or runtime
+/// validation; the canonical header replaces it only on success.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_checkpoint_identity_v1(
+    handle: *const TemporalCircuitRuntimeHandle,
+    fresh_authority: *const TemporalValidatedCheckpointAuthorityV1,
+    output: *mut TemporalCheckpointIdentityV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(output.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint identity output is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        output.cast(),
+        size_of::<TemporalCheckpointIdentityV1>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint identity output and report overlap",
+        );
+    }
+    output.write(TemporalCheckpointIdentityV1::ZERO);
+    if !fixed_pointer_is_valid(handle) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "runtime handle is null or misaligned",
+        );
+    }
+    if !fixed_pointer_is_valid(fresh_authority) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "fresh authority is null or misaligned",
+        );
+    }
+    let fixed_regions = [
+        RawRegion {
+            pointer: handle.cast(),
+            byte_count: size_of::<TemporalCircuitRuntimeHandle>(),
+        },
+        RawRegion {
+            pointer: fresh_authority.cast(),
+            byte_count: size_of::<TemporalValidatedCheckpointAuthorityV1>(),
+        },
+        RawRegion {
+            pointer: output.cast(),
+            byte_count: size_of::<TemporalCheckpointIdentityV1>(),
+        },
+        RawRegion {
+            pointer: report_out.cast(),
+            byte_count: size_of::<TemporalCircuitReportV1>(),
+        },
+    ];
+    if !raw_regions_are_disjoint(&fixed_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint identity fixed regions overlap",
+        );
+    }
+
+    let authority = fresh_authority.read().into_validated();
+    let handle = &*handle;
+    let runtime = lock_runtime(handle);
+    if authority != handle.creation_authority {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_DEFINITION,
+            "fresh authority does not match handle creation authority",
+        );
+    }
+    let prepared = match runtime.prepare_checkpoint_v1_export(authority) {
+        Ok(prepared) => prepared,
+        Err(error) => return prepare_error(report, error),
+    };
+    let header = match prepared.identity_header() {
+        Ok(header) => header,
+        Err(_) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+                "canonical checkpoint identity encoding failed",
+            )
+        }
+    };
+    report.required = CHECKPOINT_V1_HEADER_BYTES.into();
+    report.observed = CHECKPOINT_V1_HEADER_BYTES.into();
+    output.write(TemporalCheckpointIdentityV1 { header });
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
 /// Encode a canonical checkpoint into caller-owned, potentially uninitialized
 /// bytes. A short buffer is rejected before any output write.
 ///
@@ -1719,6 +1833,10 @@ mod tests {
             ),
             32
         );
+
+        assert_eq!(size_of::<TemporalCheckpointIdentityV1>(), 256);
+        assert_eq!(align_of::<TemporalCheckpointIdentityV1>(), 1);
+        assert_eq!(offset_of!(TemporalCheckpointIdentityV1, header), 0);
 
         assert_eq!(size_of::<TemporalCircuitConfigV1>(), 32);
         assert_eq!(align_of::<TemporalCircuitConfigV1>(), 4);
@@ -2536,6 +2654,95 @@ mod tests {
 
             humanbrain_temporal_circuit_runtime_destroy(handle);
             humanbrain_temporal_circuit_runtime_destroy(ptr::null_mut());
+        }
+    }
+
+    #[test]
+    fn checkpoint_identity_matches_the_canonical_checkpoint_header() {
+        let fixture = fixture();
+        unsafe {
+            let (handle, imported) = import_fixture(&fixture);
+            assert_eq!(imported.status, TEMPORAL_RUNTIME_OK);
+
+            let mut identity = MaybeUninit::<TemporalCheckpointIdentityV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            let status = humanbrain_temporal_circuit_runtime_checkpoint_identity_v1(
+                handle,
+                &fixture.authority,
+                identity.as_mut_ptr(),
+                report.as_mut_ptr(),
+            );
+
+            assert_eq!(status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(identity.assume_init().header, fixture.checkpoint[..256]);
+            let report = report.assume_init();
+            assert_eq!(report.status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(report.required, 256);
+            assert_eq!(report.observed, 256);
+            assert_eq!(report.location, 0);
+
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[test]
+    fn checkpoint_identity_rejects_invalid_inputs_and_wrong_authority_with_zero_output() {
+        let fixture = fixture();
+        unsafe {
+            let (handle, imported) = import_fixture(&fixture);
+            assert_eq!(imported.status, TEMPORAL_RUNTIME_OK);
+            let wrong_authority = TemporalValidatedCheckpointAuthorityV1 {
+                protocol_identity_sha256: [0x5b; 32],
+                ..fixture.authority
+            };
+            let mut identity = TemporalCheckpointIdentityV1 {
+                header: [0xa5; CHECKPOINT_V1_HEADER_BYTES as usize],
+            };
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+
+            let status = humanbrain_temporal_circuit_runtime_checkpoint_identity_v1(
+                handle,
+                &wrong_authority,
+                &mut identity,
+                report.as_mut_ptr(),
+            );
+
+            assert_eq!(status, TEMPORAL_RUNTIME_INVALID_DEFINITION);
+            assert_eq!(identity, TemporalCheckpointIdentityV1::ZERO);
+            let report = report.assume_init();
+            assert_eq!(report.status, status);
+            assert_eq!(report.required, 0);
+            assert_eq!(report.observed, 0);
+            assert_eq!(report.location, 0);
+
+            identity.header.fill(0xb6);
+            let mut null_handle_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            let null_handle_status = humanbrain_temporal_circuit_runtime_checkpoint_identity_v1(
+                ptr::null(),
+                &fixture.authority,
+                &mut identity,
+                null_handle_report.as_mut_ptr(),
+            );
+            assert_eq!(null_handle_status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+            assert_eq!(identity, TemporalCheckpointIdentityV1::ZERO);
+            assert_eq!(null_handle_report.assume_init().status, null_handle_status);
+
+            identity.header.fill(0xc7);
+            let mut null_authority_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            let null_authority_status = humanbrain_temporal_circuit_runtime_checkpoint_identity_v1(
+                handle,
+                ptr::null(),
+                &mut identity,
+                null_authority_report.as_mut_ptr(),
+            );
+            assert_eq!(null_authority_status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+            assert_eq!(identity, TemporalCheckpointIdentityV1::ZERO);
+            assert_eq!(
+                null_authority_report.assume_init().status,
+                null_authority_status
+            );
+
+            humanbrain_temporal_circuit_runtime_destroy(handle);
         }
     }
 

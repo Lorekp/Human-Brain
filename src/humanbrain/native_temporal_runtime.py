@@ -8,12 +8,14 @@ by :class:`NativeTemporalCircuit` before any native entry point is reached.
 from __future__ import annotations
 
 import ctypes
+import hashlib
 import importlib
 import math
 import mmap
 import os
 import platform
 import stat
+import struct
 import sys
 import threading
 from collections.abc import Mapping, Sequence
@@ -44,6 +46,9 @@ _CHECKPOINT_V1_MAGIC: Final = b"R3NTCP1\x00"
 _CHECKPOINT_V1_FORMAT_VERSION: Final = 1
 _CHECKPOINT_V1_HEADER_BYTES: Final = 256
 _CHECKPOINT_V1_BASIC_HEADER_BYTES: Final = 24
+_CHECKPOINT_LOGICAL_STATE_DOMAIN: Final = (
+    b"humanbrain-r3-checkpoint-logical-state-v1\x00"
+)
 _MAX_IMMUTABLE_PAYLOAD_BYTES: Final = 1 << 20
 _GOVERNING_PROTOCOL_MODULE: Final = (
     "experiments.r3_pilot.calibration_v3_protocol"
@@ -55,6 +60,10 @@ class _NativeAuthority(ctypes.Structure):
         ("protocol_identity_sha256", ctypes.c_uint8 * 32),
         ("source_bundle_identity_sha256", ctypes.c_uint8 * 32),
     ]
+
+
+class _NativeCheckpointIdentity(ctypes.Structure):
+    _fields_ = [("header", ctypes.c_uint8 * _CHECKPOINT_V1_HEADER_BYTES)]
 
 
 class _NativeConfig(ctypes.Structure):
@@ -250,6 +259,7 @@ def _assert_frozen_abi() -> None:
     ):
         raise RuntimeError("native temporal runtime requires little-endian x64 Python")
     _require_frozen_layout(_NativeAuthority, 64, 1, (0, 32))
+    _require_frozen_layout(_NativeCheckpointIdentity, 256, 1, (0,))
     _require_frozen_layout(
         _NativeConfig,
         32,
@@ -484,6 +494,30 @@ _UNCONFIRMED_PUBLICATION_ERROR_STAGES: Final = frozenset(
         TemporalCheckpointErrorStage.PARENT_SYNC,
     }
 )
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalCheckpointIdentity:
+    """Canonical checkpoint-v1 identity and state fields for one live circuit."""
+
+    format_version: int
+    header_bytes: int
+    checkpoint_bytes: int
+    body_bytes: int
+    protocol_identity_sha256: str
+    source_bundle_identity_sha256: str
+    circuit_identity_sha256: str
+    body_sha256: str
+    semantic_index_sha256: str
+    segment_count: int
+    cohort_count: int
+    next_reserve_cell: int
+    event_count: int
+    learning_step: int
+    prior_context_length: int
+    winner_context_length: int
+    poison_code: int
+    logical_state_sha256: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -835,6 +869,9 @@ def _bind_temporal_symbols(library: object) -> None:
         checkpoint_size = (
             library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
         )
+        checkpoint_identity = (
+            library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
+        )
         export_checkpoint = (
             library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
         )
@@ -868,6 +905,12 @@ def _bind_temporal_symbols(library: object) -> None:
         ctypes.POINTER(_NativeAuthority),
         report_output,
     ]
+    checkpoint_identity.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(_NativeAuthority),
+        ctypes.POINTER(_NativeCheckpointIdentity),
+        report_output,
+    ]
     export_checkpoint.argtypes = [
         ctypes.c_void_p,
         ctypes.POINTER(_NativeAuthority),
@@ -893,6 +936,7 @@ def _bind_temporal_symbols(library: object) -> None:
         import_checkpoint,
         advance,
         checkpoint_size,
+        checkpoint_identity,
         export_checkpoint,
         export_checkpoint_path,
         publish_immutable_bytes_path,
@@ -1056,6 +1100,142 @@ def _raise_report(
         poison_code=decoded.poison_code,
         stage_code=decoded.stage_code,
         completed_steps=completed_steps,
+    )
+
+
+def _decode_checkpoint_identity(
+    returned_status: object,
+    native: _NativeCheckpointIdentity,
+    report: _NativeReport,
+    authority: _FreshAuthority,
+) -> TemporalCheckpointIdentity:
+    decoded = _decode_report(
+        returned_status, report, maximum_completed_prefix=0
+    )
+    header = bytes(native.header)
+    if decoded.status is not NativeTemporalRuntimeStatus.OK:
+        if any(header):
+            raise _invariant_error(
+                "failed checkpoint identity call returned nonzero output"
+            )
+        if (
+            decoded.required
+            or decoded.observed
+            or decoded.location
+            or decoded.poison_code
+            or decoded.stage_code
+        ):
+            raise _invariant_error(
+                "failed checkpoint identity report carries scalar diagnostics"
+            )
+        _raise_report(decoded)
+    if (
+        decoded.required != _CHECKPOINT_V1_HEADER_BYTES
+        or decoded.observed != _CHECKPOINT_V1_HEADER_BYTES
+        or decoded.location != 0
+    ):
+        raise _invariant_error(
+            "checkpoint identity report does not describe one exact header",
+            required=_CHECKPOINT_V1_HEADER_BYTES,
+            observed=decoded.observed,
+        )
+    if header[:8] != _CHECKPOINT_V1_MAGIC:
+        raise _invariant_error("checkpoint identity magic does not match")
+    format_version = int.from_bytes(header[8:10], "little")
+    if format_version != _CHECKPOINT_V1_FORMAT_VERSION:
+        raise _invariant_error(
+            "checkpoint identity format version is unsupported",
+            observed=format_version,
+        )
+    header_bytes = int.from_bytes(header[10:12], "little")
+    if header_bytes != _CHECKPOINT_V1_HEADER_BYTES:
+        raise _invariant_error(
+            "checkpoint identity header length does not match",
+            observed=header_bytes,
+        )
+    if any(header[12:16]):
+        raise _invariant_error("checkpoint identity reserved bytes are nonzero")
+
+    checkpoint_bytes = int.from_bytes(header[16:24], "little")
+    body_bytes = int.from_bytes(header[24:32], "little")
+    if (
+        checkpoint_bytes < _CHECKPOINT_V1_HEADER_BYTES
+        or body_bytes != checkpoint_bytes - _CHECKPOINT_V1_HEADER_BYTES
+    ):
+        raise _invariant_error(
+            "checkpoint identity framing lengths are inconsistent",
+            required=checkpoint_bytes - _CHECKPOINT_V1_HEADER_BYTES,
+            observed=body_bytes,
+        )
+    if header[32:64] != authority.protocol_identity_sha256:
+        raise _invariant_error(
+            "checkpoint identity protocol authority does not match"
+        )
+    if header[64:96] != authority.source_bundle_identity_sha256:
+        raise _invariant_error(
+            "checkpoint identity source authority does not match"
+        )
+
+    (
+        segment_count,
+        cohort_count,
+        next_reserve_cell,
+        event_count,
+        learning_step,
+        prior_context_length,
+        winner_context_length,
+        poison_code,
+    ) = struct.unpack("<IIIQQBBH", header[192:224])
+    if prior_context_length > _CONTEXT_CELLS:
+        raise _invariant_error(
+            "checkpoint identity prior-context length exceeds the frozen capacity"
+        )
+    if winner_context_length > _CONTEXT_CELLS:
+        raise _invariant_error(
+            "checkpoint identity winner-context length exceeds the frozen capacity"
+        )
+    if poison_code > 15:
+        raise _invariant_error(
+            "checkpoint identity poison code is outside the frozen range"
+        )
+    expected_body_bytes = (
+        cohort_count * 4
+        + prior_context_length * 4
+        + winner_context_length * 4
+        + segment_count * (4 + _PAIRS_PER_SEGMENT * 4 + _PAIRS_PER_SEGMENT * 2)
+    )
+    if body_bytes != expected_body_bytes:
+        raise _invariant_error(
+            "checkpoint identity scalar counts disagree with the body length",
+            required=expected_body_bytes,
+            observed=body_bytes,
+        )
+    logical_state = hashlib.sha256(
+        _CHECKPOINT_LOGICAL_STATE_DOMAIN + header[128:160] + header[192:224]
+    ).digest()
+    if header[224:256] != logical_state:
+        raise _invariant_error(
+            "checkpoint identity logical-state digest does not match"
+        )
+    return TemporalCheckpointIdentity(
+        format_version=format_version,
+        header_bytes=header_bytes,
+        checkpoint_bytes=checkpoint_bytes,
+        body_bytes=body_bytes,
+        protocol_identity_sha256=header[32:64].hex(),
+        source_bundle_identity_sha256=header[64:96].hex(),
+        circuit_identity_sha256=header[96:128].hex(),
+        body_sha256=header[128:160].hex(),
+        semantic_index_sha256=header[160:192].hex(),
+        segment_count=segment_count,
+        cohort_count=cohort_count,
+        next_reserve_cell=next_reserve_cell,
+        event_count=event_count,
+        learning_step=learning_step,
+        prior_context_length=prior_context_length,
+        winner_context_length=winner_context_length,
+        poison_code=poison_code,
+        logical_state_sha256=header[224:256].hex(),
     )
 
 
@@ -2311,6 +2491,31 @@ class NativeTemporalCircuit:
                 )
             return bytes(output)
 
+    def checkpoint_identity(self) -> TemporalCheckpointIdentity:
+        with self._operation_lock:
+            handle = self._require_open()
+            fresh_authority = _fresh_authority()
+            if fresh_authority != self._creation_authority:
+                raise NativeTemporalRuntimeError(
+                    NativeTemporalRuntimeStatus.INVALID_DEFINITION,
+                    "fresh authority does not match circuit creation authority",
+                )
+            current_identity = _attested_current_library_identity()
+            if current_identity != self._library_identity:
+                raise _invariant_error("loaded native library identity changed")
+            native_authority = fresh_authority.native()
+            native_identity = _NativeCheckpointIdentity()
+            report = _NativeReport()
+            returned = self._library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1(
+                handle,
+                ctypes.byref(native_authority),
+                ctypes.byref(native_identity),
+                ctypes.byref(report),
+            )
+            return _decode_checkpoint_identity(
+                returned, native_identity, report, fresh_authority
+            )
+
 
 __all__ = [
     "NativeTemporalCircuitConfig",
@@ -2321,6 +2526,7 @@ __all__ = [
     "TemporalCheckpointCleanup",
     "TemporalCheckpointErrorDomain",
     "TemporalCheckpointErrorStage",
+    "TemporalCheckpointIdentity",
     "TemporalCheckpointPublication",
     "TemporalCheckpointPublicationError",
     "TemporalCheckpointPublicationOutcome",

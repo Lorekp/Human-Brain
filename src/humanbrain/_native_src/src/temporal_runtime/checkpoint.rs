@@ -2545,6 +2545,21 @@ impl PreparedCheckpointV1Export<'_> {
         self.layout.total_bytes
     }
 
+    pub(crate) fn identity_header(
+        &self,
+    ) -> Result<[u8; CHECKPOINT_V1_HEADER_BYTES as usize], CheckpointV1EncodeError> {
+        self.validate_encoding_proof()?;
+        let body_digest = self.encode_body_into(&mut io::sink())?;
+        checkpoint_v1_header_bytes(
+            &self.identity,
+            self.layout,
+            self.scalars,
+            body_digest,
+            self.semantic_index_digest,
+        )
+        .map_err(CheckpointV1EncodeError::HeaderCodec)
+    }
+
     fn compare_canonical_bytes(
         &self,
         expected: &[u8],

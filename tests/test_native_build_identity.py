@@ -268,7 +268,7 @@ def test_loaded_native_identity_uses_the_complete_build_input_digest() -> None:
     assert identity.source_digest == native._source_digest()
 
 
-def test_source_addressed_release_exports_temporal_path_publishers() -> None:
+def test_source_addressed_release_exports_temporal_checkpoint_capabilities() -> None:
     identity = native.loaded_library_identity()
     build = native.loaded_build_info()
     library = native._load_library()
@@ -283,6 +283,11 @@ def test_source_addressed_release_exports_temporal_path_publishers() -> None:
     assert getattr(
         library,
         "humanbrain_temporal_publish_immutable_bytes_path_v1",
+        None,
+    ) is not None
+    assert getattr(
+        library,
+        "humanbrain_temporal_circuit_runtime_checkpoint_identity_v1",
         None,
     ) is not None
 
