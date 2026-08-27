@@ -21,7 +21,6 @@ import argparse
 import hashlib
 import json
 import math
-import os
 import struct
 import sys
 import time
@@ -34,10 +33,26 @@ from typing import Any, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_PATH = Path(__file__).with_name("relay_pool_capacity.json")
+sys.path.insert(0, str(REPO_ROOT))
+
+from experiments.r3_pilot.r3_f0_train_input import (  # noqa: E402
+    load_verified_train_input,
+)
 
 ARTIFACT_ID = "r3-relay-pool-capacity-v6-cohort-rounded"
-SCHEMA_VERSION = 6
-CORPUS_SHA256 = "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa"
+SCHEMA_VERSION = 7
+HISTORICAL_FULL_CORPUS_SHA256 = (
+    "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa"
+)
+TRAIN_INPUT_AUTHORITY_SHA256 = (
+    "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966"
+)
+FREEZE_MANIFEST_SHA256 = (
+    "361c83907d9b353c8128a55ea2b4ca49a01c2aa8c8d1f6224db4661c4c9e166c"
+)
+SPAN_MANIFEST_SHA256 = (
+    "5ccee9ef81e2bde85715fd4c985864a7be896ed66545370626f81349f6f994eb"
+)
 TOKENIZER_SHA256 = "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2"
 PREFIX_200_SHA256 = "de5d527b12968762d6bd614c3a77c705e053e272361a72d20f3c0a21b272ef3c"
 TRAIN_STREAM_SHA256 = "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
@@ -45,6 +60,7 @@ TRAIN_STREAM_SHA256 = "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66
 TRAIN_BOOKS = 49
 HELD_OUT_BOOKS = 17
 TRAIN_TOKENS = 2_117_412
+TRAIN_CORPUS_BYTES = 3_656_777
 EXPOSURE_PASSES = 1
 TOKEN_IDS = tuple(range(256)) + tuple(range(1024, 1536))
 TOKEN_ID_SET = frozenset(TOKEN_IDS)
@@ -256,7 +272,45 @@ def validate_artifact(artifact: dict[str, Any]) -> None:
 
     scope = artifact.get("scope")
     _require(isinstance(scope, dict), "scope is missing")
-    _require(scope.get("corpus_sha256") == CORPUS_SHA256, "corpus hash mismatch")
+    _require(
+        set(scope)
+        == {
+            "book_token_lengths_sha256",
+            "first_200_token_ids_sha256",
+            "freeze_manifest_sha256",
+            "held_out_books_decoded",
+            "held_out_books_skipped",
+            "held_out_bytes_live_verified",
+            "historical_full_corpus_sha256_not_live_verified",
+            "observed_token_ids",
+            "span_manifest_sha256",
+            "tokenizer_sha256",
+            "train_books_decoded",
+            "train_corpus_bytes_live_verified",
+            "train_input_authority_sha256",
+            "train_stream_sha256",
+            "train_tokens_per_pass",
+        },
+        "scope schema drifted",
+    )
+    _require(
+        scope.get("historical_full_corpus_sha256_not_live_verified")
+        == HISTORICAL_FULL_CORPUS_SHA256,
+        "historical corpus identity drifted",
+    )
+    _require(
+        scope.get("train_input_authority_sha256")
+        == TRAIN_INPUT_AUTHORITY_SHA256,
+        "TRAIN input authority drifted",
+    )
+    _require(
+        scope.get("freeze_manifest_sha256") == FREEZE_MANIFEST_SHA256,
+        "freeze manifest drifted",
+    )
+    _require(
+        scope.get("span_manifest_sha256") == SPAN_MANIFEST_SHA256,
+        "span manifest drifted",
+    )
     _require(scope.get("tokenizer_sha256") == TOKENIZER_SHA256, "tokenizer drift")
     _require(
         scope.get("first_200_token_ids_sha256") == PREFIX_200_SHA256,
@@ -270,6 +324,14 @@ def validate_artifact(artifact: dict[str, Any]) -> None:
     _require(scope.get("train_books_decoded") == TRAIN_BOOKS, "TRAIN split drift")
     _require(scope.get("held_out_books_skipped") == HELD_OUT_BOOKS, "VAL split drift")
     _require(scope.get("held_out_books_decoded") == 0, "HELD-OUT was decoded")
+    _require(
+        scope.get("held_out_bytes_live_verified") is False,
+        "HELD-OUT byte claim drifted",
+    )
+    _require(
+        scope.get("train_corpus_bytes_live_verified") == TRAIN_CORPUS_BYTES,
+        "live-verified TRAIN bytes drifted",
+    )
     _require(scope.get("train_tokens_per_pass") == TRAIN_TOKENS, "token drift")
 
     schedule = artifact.get("schedule")
@@ -384,96 +446,78 @@ def load_and_validate(path: Path) -> dict[str, Any]:
 
 
 def _load_train_books() -> tuple[list[Any], dict[str, Any]]:
-    """Encode canonical TRAIN books; the role branch precedes every decode."""
+    """Load the already-authenticated, TRAIN-only per-book token chunks."""
     import numpy as np
 
-    sys.path.insert(0, str(REPO_ROOT))
-    sys.path.insert(0, str(REPO_ROOT / "src"))
-    from experiments.r3_pilot.run_c1_cohort import (  # noqa: PLC0415
-        build_concept_stack,
-        segment_verses,
-    )
-
-    freeze_dir = Path(
-        os.environ.get("TEMP", os.environ.get("LOCALAPPDATA", ""))
-    ) / "hb_bible_freeze"
-    freeze = json.loads(
-        (freeze_dir / "FREEZE-CANDIDATE-v3-BIBLE.json").read_text(encoding="utf-8")
-    )
-    spans = json.loads(
-        (freeze_dir / "evidence" / "pg10_book_spans_v3.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    trimmed = (freeze_dir / "evidence_pg10.trimmed.bin").read_bytes()
-    corpus_sha = _sha256(trimmed)
-    _require(corpus_sha == CORPUS_SHA256, "canonical corpus bytes drifted")
+    verified = load_verified_train_input()
     _require(
-        corpus_sha == freeze["corpus"]["sha256_trimmed"],
-        "freeze manifest disagrees with corpus bytes",
+        verified.train_input_authority_sha256 == TRAIN_INPUT_AUTHORITY_SHA256,
+        "TRAIN input authority drifted",
     )
-
-    train_books: list[tuple[str, str]] = []
-    skipped_held_out = 0
-    decoded_held_out = 0
-    for book in spans["books"]:
-        if book["role"] != "train":
-            skipped_held_out += 1
-            continue
-        start, end = book["span_offsets"]
-        train_books.append(
-            (book["short_name"], trimmed[start:end].decode("utf-8"))
-        )
-    _require(len(train_books) == TRAIN_BOOKS, "TRAIN split must contain 49 books")
-    _require(skipped_held_out == HELD_OUT_BOOKS, "HELD-OUT split must contain 17 books")
-    _require(decoded_held_out == 0, "held-out decode counter must stay zero")
-
-    stack, stack_info = build_concept_stack([text for _, text in train_books])
-    tokenizer_payload = {
-        "concepts_hex": [payload.hex() for payload in stack.concepts],
-        "tag": stack_info["tokenizer"],
-    }
-    tokenizer_sha = _sha256(_canonical_json_bytes(tokenizer_payload))
-    _require(tokenizer_sha == TOKENIZER_SHA256, "canonical tokenizer drifted")
-
+    _require(
+        verified.freeze_manifest_sha256 == FREEZE_MANIFEST_SHA256,
+        "freeze manifest drifted",
+    )
+    _require(
+        verified.span_manifest_sha256 == SPAN_MANIFEST_SHA256,
+        "span manifest drifted",
+    )
+    _require(
+        verified.train_corpus_bytes_live_verified == TRAIN_CORPUS_BYTES,
+        "live-verified TRAIN bytes drifted",
+    )
+    _require(
+        verified.historical_full_corpus_sha256_not_live_verified
+        == HISTORICAL_FULL_CORPUS_SHA256,
+        "historical corpus identity drifted",
+    )
+    _require(verified.tokenizer_sha256 == TOKENIZER_SHA256, "canonical tokenizer drifted")
+    _require(
+        verified.train_stream_sha256 == TRAIN_STREAM_SHA256,
+        "canonical TRAIN stream drifted",
+    )
+    _require(verified.token_count == TRAIN_TOKENS, "canonical TRAIN token count drifted")
+    _require(
+        verified.first_200_comma_joined_sha256 == PREFIX_200_SHA256,
+        "canonical TRAIN prefix drifted",
+    )
     encoded_books: list[Any] = []
     book_lengths: list[tuple[str, int]] = []
-    first_ids: list[int] = []
     observed_ids: set[int] = set()
-    full_hasher = hashlib.sha256()
-    for name, text in train_books:
-        ids: list[int] = []
-        for verse in segment_verses(text):
-            ids.extend(int(token) for token in stack.encode(verse))
-        array = np.asarray(ids, dtype="<i4")
-        _require(array.size > 0, f"TRAIN book {name} encoded empty")
+    for chunk in verified.iter_books():
+        array = np.frombuffer(chunk.token_bytes_le_i32, dtype="<i4")
+        _require(array.size == chunk.token_count, f"TRAIN book {chunk.short_name} size drifted")
         encoded_books.append(array)
-        book_lengths.append((name, int(array.size)))
-        full_hasher.update(array.tobytes())
+        book_lengths.append((chunk.short_name, int(array.size)))
         observed_ids.update(int(token) for token in np.unique(array))
-        if len(first_ids) < 200:
-            first_ids.extend(ids[: 200 - len(first_ids)])
-
-    total_tokens = sum(length for _, length in book_lengths)
-    _require(total_tokens == TRAIN_TOKENS, "canonical TRAIN token count drifted")
+    _require(len(encoded_books) == TRAIN_BOOKS, "TRAIN split must contain 49 books")
     _require(observed_ids <= TOKEN_ID_SET, "TRAIN stream left the sparse vocabulary")
-    first_200_sha = _sha256(",".join(map(str, first_ids)).encode("utf-8"))
-    _require(first_200_sha == PREFIX_200_SHA256, "canonical TRAIN prefix drifted")
-    stream_sha = full_hasher.hexdigest()
-    if TRAIN_STREAM_SHA256 != "DISCOVER_ON_FIRST_REPLAY":
-        _require(stream_sha == TRAIN_STREAM_SHA256, "canonical TRAIN stream drifted")
+    book_lengths_sha = _sha256(_canonical_json_bytes(book_lengths))
+    _require(
+        book_lengths_sha == verified.book_token_lengths_sha256,
+        "canonical TRAIN book lengths drifted",
+    )
 
     return encoded_books, {
-        "book_token_lengths_sha256": _sha256(_canonical_json_bytes(book_lengths)),
-        "corpus_sha256": corpus_sha,
-        "first_200_token_ids_sha256": first_200_sha,
-        "held_out_books_decoded": decoded_held_out,
-        "held_out_books_skipped": skipped_held_out,
+        "book_token_lengths_sha256": book_lengths_sha,
+        "first_200_token_ids_sha256": verified.first_200_comma_joined_sha256,
+        "freeze_manifest_sha256": verified.freeze_manifest_sha256,
+        "held_out_books_decoded": 0,
+        "held_out_books_skipped": HELD_OUT_BOOKS,
+        "held_out_bytes_live_verified": False,
+        "historical_full_corpus_sha256_not_live_verified": (
+            verified.historical_full_corpus_sha256_not_live_verified
+        ),
         "observed_token_ids": len(observed_ids),
-        "tokenizer_sha256": tokenizer_sha,
-        "train_books_decoded": len(train_books),
-        "train_stream_sha256": stream_sha,
-        "train_tokens_per_pass": total_tokens,
+        "span_manifest_sha256": verified.span_manifest_sha256,
+        "tokenizer_sha256": verified.tokenizer_sha256,
+        "train_books_decoded": len(encoded_books),
+        "train_corpus_bytes_live_verified": (
+            verified.train_corpus_bytes_live_verified
+        ),
+        "train_input_authority_sha256": verified.train_input_authority_sha256,
+        "train_stream_sha256": verified.train_stream_sha256,
+        "train_tokens_per_pass": verified.token_count,
     }
 
 

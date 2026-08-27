@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+from experiments.r3_pilot import calibrate_relay_pool_capacity as capacity
 from experiments.r3_pilot.calibrate_relay_pool_capacity import (
     cohort_rounded_depth,
 )
@@ -13,6 +17,21 @@ from experiments.r3_pilot.calibrate_relay_pool_capacity import (
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "experiments" / "r3_pilot" / "calibrate_relay_pool_capacity.py"
 ARTIFACT = ROOT / "experiments" / "r3_pilot" / "relay_pool_capacity.json"
+
+
+def test_replay_delegates_input_authority_before_capacity_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Delegated(RuntimeError):
+        pass
+
+    def stop_at_train_provider() -> object:
+        raise Delegated
+
+    monkeypatch.setattr(capacity, "load_verified_train_input", stop_at_train_provider)
+
+    with pytest.raises(Delegated):
+        capacity._load_train_books()
 
 
 def test_committed_relay_pool_capacity_passes_fast_check() -> None:
@@ -32,7 +51,7 @@ def test_artifact_freezes_the_shared_column_contract() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
 
     assert artifact["artifact_id"] == "r3-relay-pool-capacity-v6-cohort-rounded"
-    assert artifact["schema_version"] == 6
+    assert artifact["schema_version"] == 7
     assert artifact["architecture"] == {
         "basket_cells": 4096,
         "basket_offset": 262144,
@@ -91,6 +110,39 @@ def test_cohort_rounded_depth_freezes_full_eight_cell_reserve_boundaries() -> No
 def test_artifact_freezes_train_capacity_stops_and_developmental_fit() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
 
+    assert artifact["scope"] == {
+        "book_token_lengths_sha256": (
+            "f6afe1b50deb0c94d48d2c56688fcd52eacc1c573438134d585fe00ddd7ec5f1"
+        ),
+        "first_200_token_ids_sha256": (
+            "de5d527b12968762d6bd614c3a77c705e053e272361a72d20f3c0a21b272ef3c"
+        ),
+        "freeze_manifest_sha256": (
+            "361c83907d9b353c8128a55ea2b4ca49a01c2aa8c8d1f6224db4661c4c9e166c"
+        ),
+        "held_out_books_decoded": 0,
+        "held_out_books_skipped": 17,
+        "held_out_bytes_live_verified": False,
+        "historical_full_corpus_sha256_not_live_verified": (
+            "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa"
+        ),
+        "observed_token_ids": 522,
+        "span_manifest_sha256": (
+            "5ccee9ef81e2bde85715fd4c985864a7be896ed66545370626f81349f6f994eb"
+        ),
+        "tokenizer_sha256": (
+            "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2"
+        ),
+        "train_books_decoded": 49,
+        "train_corpus_bytes_live_verified": 3_656_777,
+        "train_input_authority_sha256": (
+            "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966"
+        ),
+        "train_stream_sha256": (
+            "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+        ),
+        "train_tokens_per_pass": 2_117_412,
+    }
     assert artifact["scope"]["held_out_books_decoded"] == 0
     assert artifact["scope"]["train_stream_sha256"] == (
         "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
@@ -103,6 +155,22 @@ def test_artifact_freezes_train_capacity_stops_and_developmental_fit() -> None:
         "max_context_token_ids": [32],
         "max_contexts_per_token": 187263,
     }
+
+
+def test_schema_seven_changes_only_capacity_provenance() -> None:
+    artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
+    scientific_payload = dict(artifact)
+    scientific_payload.pop("schema_version")
+    scientific_payload.pop("scope")
+    canonical = json.dumps(
+        scientific_payload,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+    assert hashlib.sha256(canonical).hexdigest() == (
+        "72665d2fc7360cc1dd32367211d9477e64a61e14e059714b0d1d1274297eb7d1"
+    )
     assert artifact["schedule"]["exposure_passes"] == 1
     assert artifact["schedule"]["book_boundary_resets"] == 49
     assert artifact["schedule"]["pass_replay_method"] == "single_train_pass"

@@ -344,16 +344,21 @@
     ],
     "transition_events": 2117363
   },
-  "schema_version": 6,
+  "schema_version": 7,
   "scope": {
     "book_token_lengths_sha256": "f6afe1b50deb0c94d48d2c56688fcd52eacc1c573438134d585fe00ddd7ec5f1",
-    "corpus_sha256": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
     "first_200_token_ids_sha256": "de5d527b12968762d6bd614c3a77c705e053e272361a72d20f3c0a21b272ef3c",
+    "freeze_manifest_sha256": "361c83907d9b353c8128a55ea2b4ca49a01c2aa8c8d1f6224db4661c4c9e166c",
     "held_out_books_decoded": 0,
     "held_out_books_skipped": 17,
+    "held_out_bytes_live_verified": false,
+    "historical_full_corpus_sha256_not_live_verified": "d585e5644505b34ca516446f9b4fa2e95ee8ffa860d27858a7ca6450ee9ad3aa",
     "observed_token_ids": 522,
+    "span_manifest_sha256": "5ccee9ef81e2bde85715fd4c985864a7be896ed66545370626f81349f6f994eb",
     "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
     "train_books_decoded": 49,
+    "train_corpus_bytes_live_verified": 3656777,
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
     "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5",
     "train_tokens_per_pass": 2117412
   },
