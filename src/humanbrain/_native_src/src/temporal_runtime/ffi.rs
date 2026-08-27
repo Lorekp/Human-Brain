@@ -37,17 +37,19 @@ use super::{
         ValidatedCheckpointV1RuntimeFactory, CHECKPOINT_V1_HEADER_BYTES,
     },
     checkpoint_publisher::{
-        prepare_immutable_bytes_v1, publish_prepared_checkpoint_v1,
-        publish_prepared_immutable_bytes_v1, validate_destination_v1, DestinationInputError,
-        ImmutablePayloadInputError, PublicationCompletion, PublicationError, CLEANUP_CLEAN,
-        CLEANUP_NOT_APPLICABLE, CLEANUP_ORPHANED, ERROR_DOMAIN_ENCODER,
-        ERROR_DOMAIN_IO_WITHOUT_OS_CODE, ERROR_DOMAIN_NONE, ERROR_DOMAIN_POLICY,
-        ERROR_DOMAIN_POSIX, ERROR_DOMAIN_WIN32, ERROR_STAGE_ENCODE, ERROR_STAGE_EXCLUSIVE_PUBLISH,
-        ERROR_STAGE_FILESYSTEM_POLICY, ERROR_STAGE_FILE_CLOSE, ERROR_STAGE_FILE_SYNC,
-        ERROR_STAGE_NONE, ERROR_STAGE_PARENT_IDENTITY, ERROR_STAGE_PARENT_OPEN,
-        ERROR_STAGE_PARENT_SYNC, ERROR_STAGE_TEMP_CLEANUP, ERROR_STAGE_TEMP_CREATE,
-        ERROR_STAGE_TEMP_IDENTITY, MAX_IMMUTABLE_PAYLOAD_BYTES, OUTCOME_COLLISION,
-        OUTCOME_DURABLE_PUBLISHED, OUTCOME_NONE, OUTCOME_NOT_PUBLISHED,
+        prepare_durable_directory_v1, prepare_immutable_bytes_v1, publish_prepared_checkpoint_v1,
+        publish_prepared_immutable_bytes_v1, reconcile_existing_immutable_bytes_v1,
+        validate_destination_v1, validate_durable_directory_v1, DestinationInputError,
+        ImmutablePayloadInputError, PathDurabilityCompletion, PublicationCompletion,
+        PublicationError, CLEANUP_CLEAN, CLEANUP_NOT_APPLICABLE, CLEANUP_ORPHANED,
+        DURABILITY_OUTCOME_DURABLE, DURABILITY_OUTCOME_NONE, DURABILITY_OUTCOME_NOT_DURABLE,
+        ERROR_DOMAIN_ENCODER, ERROR_DOMAIN_IO_WITHOUT_OS_CODE, ERROR_DOMAIN_NONE,
+        ERROR_DOMAIN_POLICY, ERROR_DOMAIN_POSIX, ERROR_DOMAIN_WIN32, ERROR_STAGE_ENCODE,
+        ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY, ERROR_STAGE_FILE_CLOSE,
+        ERROR_STAGE_FILE_SYNC, ERROR_STAGE_NONE, ERROR_STAGE_PARENT_IDENTITY,
+        ERROR_STAGE_PARENT_OPEN, ERROR_STAGE_PARENT_SYNC, ERROR_STAGE_TEMP_CLEANUP,
+        ERROR_STAGE_TEMP_CREATE, ERROR_STAGE_TEMP_IDENTITY, MAX_IMMUTABLE_PAYLOAD_BYTES,
+        OUTCOME_COLLISION, OUTCOME_DURABLE_PUBLISHED, OUTCOME_NONE, OUTCOME_NOT_PUBLISHED,
         OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
     },
     PhysicalStage, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalCircuitStep,
@@ -103,6 +105,10 @@ pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_TEMP_IDENTITY: u16 = ERROR_STAGE_TEMP_
 pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_EXCLUSIVE_PUBLISH: u16 = ERROR_STAGE_EXCLUSIVE_PUBLISH;
 pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_TEMP_CLEANUP: u16 = ERROR_STAGE_TEMP_CLEANUP;
 pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_PARENT_SYNC: u16 = ERROR_STAGE_PARENT_SYNC;
+
+pub const TEMPORAL_DURABILITY_NONE: u16 = DURABILITY_OUTCOME_NONE;
+pub const TEMPORAL_DURABILITY_DURABLE: u16 = DURABILITY_OUTCOME_DURABLE;
+pub const TEMPORAL_DURABILITY_NOT_DURABLE: u16 = DURABILITY_OUTCOME_NOT_DURABLE;
 
 const STAGE_NONE: u16 = 0;
 const STAGE_PROXIMAL: u16 = 1;
@@ -252,6 +258,16 @@ pub struct TemporalImmutableBytesPathV1Request {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalDurableDirectoryPathV1Request {
+    pub root_utf8: *const u8,
+    pub root_len: u64,
+    pub relative_directory_utf8: *const u8,
+    pub relative_directory_len: u64,
+    pub reserved_zero: [u8; 8],
+}
+
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TemporalCheckpointPublicationErrorV1 {
     pub stage: u16,
@@ -323,6 +339,86 @@ impl TemporalCheckpointPublicationReportV1 {
         // write lengths occupy the historical length fields on the wire.
         self.checkpoint_bytes = completion.payload_bytes;
         self.encoded_bytes = completion.written_bytes;
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalImmutableBytesReconciliationReportV1 {
+    pub outcome: u16,
+    pub cleanup_error_count: u8,
+    pub reserved_zero_u8: u8,
+    pub primary_error: TemporalCheckpointPublicationErrorV1,
+    pub cleanup_errors: [TemporalCheckpointPublicationErrorV1; 2],
+    pub reserved_zero_u32: u32,
+    pub required_bytes: u64,
+    pub verified_bytes: u64,
+    pub reserved_zero: [u8; 16],
+}
+
+impl TemporalImmutableBytesReconciliationReportV1 {
+    const ZERO: Self = Self {
+        outcome: TEMPORAL_DURABILITY_NONE,
+        cleanup_error_count: 0,
+        reserved_zero_u8: 0,
+        primary_error: TemporalCheckpointPublicationErrorV1::ZERO,
+        cleanup_errors: [TemporalCheckpointPublicationErrorV1::ZERO; 2],
+        reserved_zero_u32: 0,
+        required_bytes: 0,
+        verified_bytes: 0,
+        reserved_zero: [0; 16],
+    };
+
+    fn fill(&mut self, completion: PathDurabilityCompletion) {
+        self.outcome = completion.outcome;
+        self.cleanup_error_count = completion.cleanup_errors.len();
+        self.primary_error = completion.primary_error.into();
+        self.cleanup_errors = completion.cleanup_errors.errors().map(Into::into);
+        self.required_bytes = completion.expected_bytes;
+        self.verified_bytes = completion.verified_bytes;
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalDurableDirectoryPreparationReportV1 {
+    pub outcome: u16,
+    pub cleanup_error_count: u8,
+    pub reserved_zero_u8: u8,
+    pub primary_error: TemporalCheckpointPublicationErrorV1,
+    pub cleanup_errors: [TemporalCheckpointPublicationErrorV1; 2],
+    pub required_component_count: u32,
+    pub confirmed_component_count: u32,
+    pub created_component_count: u32,
+    pub failed_component_index: u32,
+    pub reserved_zero_u32: u32,
+    pub reserved_zero: [u8; 16],
+}
+
+impl TemporalDurableDirectoryPreparationReportV1 {
+    const ZERO: Self = Self {
+        outcome: TEMPORAL_DURABILITY_NONE,
+        cleanup_error_count: 0,
+        reserved_zero_u8: 0,
+        primary_error: TemporalCheckpointPublicationErrorV1::ZERO,
+        cleanup_errors: [TemporalCheckpointPublicationErrorV1::ZERO; 2],
+        required_component_count: 0,
+        confirmed_component_count: 0,
+        created_component_count: 0,
+        failed_component_index: 0,
+        reserved_zero_u32: 0,
+        reserved_zero: [0; 16],
+    };
+
+    fn fill(&mut self, completion: PathDurabilityCompletion) {
+        self.outcome = completion.outcome;
+        self.cleanup_error_count = completion.cleanup_errors.len();
+        self.primary_error = completion.primary_error.into();
+        self.cleanup_errors = completion.cleanup_errors.errors().map(Into::into);
+        self.required_component_count = completion.component_count;
+        self.confirmed_component_count = completion.completed_component_count;
+        self.created_component_count = completion.created_component_count;
+        self.failed_component_index = completion.failed_component_index;
     }
 }
 
@@ -493,6 +589,26 @@ unsafe fn begin_publication_report(
         return false;
     }
     publication_out.write(TemporalCheckpointPublicationReportV1::ZERO);
+    true
+}
+
+unsafe fn begin_reconciliation_report(
+    durability_out: *mut TemporalImmutableBytesReconciliationReportV1,
+) -> bool {
+    if !fixed_pointer_is_valid(durability_out.cast_const()) {
+        return false;
+    }
+    durability_out.write(TemporalImmutableBytesReconciliationReportV1::ZERO);
+    true
+}
+
+unsafe fn begin_directory_preparation_report(
+    durability_out: *mut TemporalDurableDirectoryPreparationReportV1,
+) -> bool {
+    if !fixed_pointer_is_valid(durability_out.cast_const()) {
+        return false;
+    }
+    durability_out.write(TemporalDurableDirectoryPreparationReportV1::ZERO);
     true
 }
 
@@ -1773,6 +1889,299 @@ pub unsafe extern "C" fn humanbrain_temporal_publish_immutable_bytes_path_v1(
     let completion = publish_prepared_immutable_bytes_v1(&prepared, &destination);
     report.observed = completion.written_bytes;
     publication_report(publication_out).fill(completion);
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+/// Re-establish durability for one already-existing immutable byte artifact.
+///
+/// This operation never creates, renames, replaces, truncates, writes, or
+/// deletes a filesystem object. It verifies the exact bounded payload before
+/// and after flushing the stable file and parent-directory identities.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. All three counted inputs
+/// are immutable and pairwise disjoint from the request and output records.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1(
+    request: *const TemporalImmutableBytesPathV1Request,
+    durability_out: *mut TemporalImmutableBytesReconciliationReportV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(durability_out.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation output is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        durability_out.cast(),
+        size_of::<TemporalImmutableBytesReconciliationReportV1>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation and runtime reports overlap",
+        );
+    }
+    let initialized = begin_reconciliation_report(durability_out);
+    debug_assert!(initialized);
+    if !fixed_pointer_is_valid(request) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation request is null or misaligned",
+        );
+    }
+    let fixed_regions = [
+        RawRegion {
+            pointer: request.cast(),
+            byte_count: size_of::<TemporalImmutableBytesPathV1Request>(),
+        },
+        RawRegion {
+            pointer: durability_out.cast(),
+            byte_count: size_of::<TemporalImmutableBytesReconciliationReportV1>(),
+        },
+        RawRegion {
+            pointer: report_out.cast(),
+            byte_count: size_of::<TemporalCircuitReportV1>(),
+        },
+    ];
+    if !raw_regions_are_disjoint(&fixed_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation fixed regions overlap",
+        );
+    }
+    let request_value = request.read();
+    if request_value.reserved_zero != [0; 8] {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation request reserved bytes must be zero",
+        );
+    }
+    let Some(parent_len) = counted_region(request_value.parent_utf8, request_value.parent_len)
+    else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation parent path geometry is invalid",
+        );
+    };
+    let Some(final_basename_len) = counted_region(
+        request_value.final_basename_utf8,
+        request_value.final_basename_len,
+    ) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation final basename geometry is invalid",
+        );
+    };
+    let Some(payload_len) = counted_region(request_value.payload, request_value.payload_len) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation payload geometry is invalid",
+        );
+    };
+    if !(1..=MAX_IMMUTABLE_PAYLOAD_BYTES).contains(&payload_len) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation payload length is outside the bounded range",
+        );
+    }
+    let all_regions = [
+        fixed_regions[0],
+        fixed_regions[1],
+        fixed_regions[2],
+        RawRegion {
+            pointer: request_value.parent_utf8,
+            byte_count: parent_len,
+        },
+        RawRegion {
+            pointer: request_value.final_basename_utf8,
+            byte_count: final_basename_len,
+        },
+        RawRegion {
+            pointer: request_value.payload,
+            byte_count: payload_len,
+        },
+    ];
+    if !raw_regions_are_disjoint(&all_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reconciliation request regions overlap",
+        );
+    }
+    let parent_utf8 = foreign_bytes(request_value.parent_utf8, parent_len);
+    let final_basename_utf8 = foreign_bytes(request_value.final_basename_utf8, final_basename_len);
+    let destination = match validate_destination_v1(parent_utf8, final_basename_utf8) {
+        Ok(destination) => destination,
+        Err(DestinationInputError::Invalid) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "reconciliation destination is invalid",
+            )
+        }
+        Err(DestinationInputError::Allocation) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "reconciliation destination copy allocation failed",
+            )
+        }
+    };
+    let expected = foreign_bytes(request_value.payload, payload_len);
+    let prepared = match prepare_immutable_bytes_v1(expected) {
+        Ok(prepared) => prepared,
+        Err(ImmutablePayloadInputError::Invalid) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "reconciliation payload is invalid",
+            )
+        }
+        Err(ImmutablePayloadInputError::Allocation) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "reconciliation payload copy allocation failed",
+            )
+        }
+    };
+    report.required = payload_len as u64;
+    let completion = reconcile_existing_immutable_bytes_v1(&prepared, &destination);
+    report.observed = completion.verified_bytes;
+    (*durability_out).fill(completion);
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+/// Idempotently create or reconcile a relative directory closure beneath one
+/// existing trusted root, flushing every child and parent directory.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. Both counted path inputs
+/// are immutable and pairwise disjoint from the request and output records.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_prepare_durable_directory_path_v1(
+    request: *const TemporalDurableDirectoryPathV1Request,
+    durability_out: *mut TemporalDurableDirectoryPreparationReportV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(durability_out.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "directory durability output is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        durability_out.cast(),
+        size_of::<TemporalDurableDirectoryPreparationReportV1>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "directory durability and runtime reports overlap",
+        );
+    }
+    let initialized = begin_directory_preparation_report(durability_out);
+    debug_assert!(initialized);
+    if !fixed_pointer_is_valid(request) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "directory durability request is null or misaligned",
+        );
+    }
+    let fixed_regions = [
+        RawRegion {
+            pointer: request.cast(),
+            byte_count: size_of::<TemporalDurableDirectoryPathV1Request>(),
+        },
+        RawRegion {
+            pointer: durability_out.cast(),
+            byte_count: size_of::<TemporalDurableDirectoryPreparationReportV1>(),
+        },
+        RawRegion {
+            pointer: report_out.cast(),
+            byte_count: size_of::<TemporalCircuitReportV1>(),
+        },
+    ];
+    if !raw_regions_are_disjoint(&fixed_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "directory durability fixed regions overlap",
+        );
+    }
+    let request_value = request.read();
+    if request_value.reserved_zero != [0; 8] {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "directory durability request reserved bytes must be zero",
+        );
+    }
+    let Some(root_len) = counted_region(request_value.root_utf8, request_value.root_len) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "directory durability root geometry is invalid",
+        );
+    };
+    let Some(relative_directory_len) = counted_region(
+        request_value.relative_directory_utf8,
+        request_value.relative_directory_len,
+    ) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "directory durability relative path geometry is invalid",
+        );
+    };
+    let all_regions = [
+        fixed_regions[0],
+        fixed_regions[1],
+        fixed_regions[2],
+        RawRegion {
+            pointer: request_value.root_utf8,
+            byte_count: root_len,
+        },
+        RawRegion {
+            pointer: request_value.relative_directory_utf8,
+            byte_count: relative_directory_len,
+        },
+    ];
+    if !raw_regions_are_disjoint(&all_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "directory durability request regions overlap",
+        );
+    }
+    let root_utf8 = foreign_bytes(request_value.root_utf8, root_len);
+    let relative_directory_utf8 = foreign_bytes(
+        request_value.relative_directory_utf8,
+        relative_directory_len,
+    );
+    let directory = match validate_durable_directory_v1(root_utf8, relative_directory_utf8) {
+        Ok(directory) => directory,
+        Err(DestinationInputError::Invalid) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "directory durability path is invalid",
+            )
+        }
+        Err(DestinationInputError::Allocation) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "directory durability path copy allocation failed",
+            )
+        }
+    };
+    report.required = u64::from(directory.component_count());
+    let completion = prepare_durable_directory_v1(&directory);
+    report.observed = u64::from(completion.completed_component_count);
+    (*durability_out).fill(completion);
     report.finish(TEMPORAL_RUNTIME_OK, "")
 }
 

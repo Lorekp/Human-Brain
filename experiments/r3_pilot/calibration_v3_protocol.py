@@ -319,27 +319,36 @@ def artifact_contract() -> dict[str, Any]:
         for transition_event in RESUME_TRANSITION_EVENTS
         for extension in (".r3ntcp1", ".resume.json")
     ]
-    return {
+    contract = {
         "root": ARTIFACT_ROOT,
         "write_policy": {
             "checkpoint_api": (
                 "humanbrain.native_temporal_runtime.NativeTemporalCircuit.publish_checkpoint"
             ),
             "checkpoint_without_manifest": "manual_STOP",
-            "directory_creation": False,
             "envelope_api": "humanbrain.native_temporal_runtime.publish_immutable_bytes",
             "envelope_max_bytes": 1_048_576,
             "existing_target": "STOP",
             "fallback": False,
             "force_or_overwrite_option": False,
-            "manifest_commit_point": True,
+            "manifest_commit_evidence": [
+                "same_process_TemporalPublicationOutcome.DURABLE_PUBLISHED_receipt",
+                "later_open_resume_TemporalDurabilityOutcome.DURABLE_exact_bytes_"
+                "reconciliation_receipt",
+            ],
+            "manifest_presence_alone_is_commit_evidence": False,
             "mode": "exclusive_durable_publish",
             "overwrite": False,
+            "publisher_directory_creation": False,
             "retry": False,
         },
         "path_inventory": {
             "binary_checkpoint_paths": 12,
             "direct_parent_directories": 39,
+            "directory_list_canonical_json_bytes": 5_305,
+            "directory_list_sha256": (
+                "20be5eb10a661a1ec91c693d336a9e024367cb4a2165285eab8fc6f812fd9055"
+            ),
             "full_parent_directory_closure": 54,
             "json_paths": 126,
             "resume_path_list_canonical_json_bytes": 3_409,
@@ -409,6 +418,45 @@ def artifact_contract() -> dict[str, Any]:
             "final": f"{ARTIFACT_ROOT}/selection/final-verdict.json",
         },
     }
+    parent_directories = artifact_parent_directories(contract)
+    contract["directory_preparation"] = {
+        "active_time_directory_creation": "forbidden",
+        "authority_source": "exact_frozen_artifact_path_parent_closure",
+        "clock_order": "complete_before_first_fresh_or_resume_clock_sample",
+        "derivation": (
+            "all POSIX parent ancestors of every frozen artifact path, stopping at and "
+            "including artifact root"
+        ),
+        "directories": list(parent_directories),
+        "failure_rule": "STOP_before_session_start_or_checkpoint_import",
+        "native_api": "humanbrain.native_temporal_runtime.prepare_durable_directory",
+        "order_rule": "ascending_component_count_then_UTF-8_bytewise_path",
+        "required_outcome": "TemporalDurabilityOutcome.DURABLE",
+    }
+    contract["resume_admission"] = {
+        "exact_bytes": (
+            "bounded stable-read manifest bytes accepted by the decoder; no reserialization"
+        ),
+        "manifest_presence_alone_is_sufficient": False,
+        "native_api": ("humanbrain.native_temporal_runtime.reconcile_existing_immutable_bytes"),
+        "ordering": "after_resume_clock_start_and_before_checkpoint_open_or_import",
+        "persistent_sidecar_receipt": False,
+        "required_outcome": "TemporalDurabilityOutcome.DURABLE",
+        "same_process_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE_rule": ("terminal_STOP_without_retry"),
+        "scope": "every_open_resume",
+    }
+    contract["filesystem_threat_model"] = {
+        "in_scope": [
+            "process_crash",
+            "power_loss",
+            "benign_concurrent_directory_preparation",
+            "symlink_or_reparse_point_traversal_and_substitution_detection",
+        ],
+        "out_of_scope": [
+            "malicious_concurrent_namespace_writer_with_repository_write_or_delete_access"
+        ],
+    }
+    return contract
 
 
 def artifact_paths(contract: dict[str, Any] | None = None) -> tuple[str, ...]:
@@ -431,6 +479,32 @@ def artifact_paths(contract: dict[str, Any] | None = None) -> tuple[str, ...]:
     if len(paths) != len(set(paths)):
         raise ProtocolError("artifact contract contains duplicate paths")
     return tuple(paths)
+
+
+def artifact_parent_directories(
+    contract: dict[str, Any] | None = None,
+) -> tuple[str, ...]:
+    """Derive the exact root-first directory authority from frozen artifact paths."""
+
+    frozen = artifact_contract() if contract is None else contract
+    root = frozen.get("root")
+    if type(root) is not str or not root or root.startswith("/"):
+        raise ProtocolError("artifact root must be a non-empty relative POSIX path")
+    root_parts = root.split("/")
+    if any(not part or part in {".", ".."} for part in root_parts):
+        raise ProtocolError("artifact root contains an invalid path component")
+
+    directories: set[str] = set()
+    for path in artifact_paths(frozen):
+        parts = path.split("/")
+        if parts[: len(root_parts)] != root_parts or len(parts) <= len(root_parts):
+            raise ProtocolError("artifact path escapes the frozen artifact root")
+        if any(not part or part in {".", ".."} for part in parts):
+            raise ProtocolError("artifact path contains an invalid path component")
+        for component_count in range(len(root_parts), len(parts)):
+            directories.add("/".join(parts[:component_count]))
+
+    return tuple(sorted(directories, key=lambda path: (path.count("/"), path.encode("utf-8"))))
 
 
 def cohort_rounded_depth(context_demand: int) -> int:
@@ -526,9 +600,7 @@ def _source_binding() -> dict[str, Any]:
                 "sha256": ("22e5ab6bb9e3b1bc7010e8c3ffd11d9c2dd9ea01a33ba15046a32db2228357a8"),
             },
         },
-        "governing_gate3_path": (
-            "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json"
-        ),
+        "governing_gate3_path": ("benchmarks/procedural_runtime_gate3_slice_protocol_v1.json"),
         "runnable": False,
     }
 
@@ -559,7 +631,10 @@ def build_protocol() -> dict[str, Any]:
 
     return {
         "artifact_id": "r3-calibration-v3-preregistration",
-        "schema_version": 4,
+        "schema_version": 5,
+        "change_notes": [
+            "docs/research/r3-calibration-v3-change-note-1.md",
+        ],
         "circuit_contract": {
             "active_columns": 11,
             "base_cells_per_column": 8,
@@ -583,10 +658,14 @@ def build_protocol() -> dict[str, Any]:
                     "publication"
                 ),
                 "fresh_start": (
-                    "before the first of production circuit construction, production "
-                    "TRAIN-source access, or frozen output-parent creation"
+                    "after durable preparation of the full authority-derived output-directory "
+                    "closure; immediately before the first of production circuit construction "
+                    "or production TRAIN-source access"
                 ),
-                "resume_start": "immediately before opening the exact frozen resume manifest",
+                "resume_start": (
+                    "after durable preparation of the full authority-derived output-directory "
+                    "closure; immediately before opening the exact frozen resume manifest"
+                ),
             },
             "cap_check_rule": (
                 "check within books and immediately before and after every atomic persistence "
@@ -598,6 +677,8 @@ def build_protocol() -> dict[str, Any]:
                 "scoring, stream-hash updates, and final state identity",
                 "checkpoint traversal, encoding, staging copy, durable publication, cleanup, "
                 "and parent-directory durability",
+                "resume-manifest open and validation plus exact existing-byte file-and-parent "
+                "durability reconciliation",
                 "fresh checkpoint open/read, full import validation, derived-index rebuild, "
                 "and identity/parity checks",
                 "asynchronous persistence waits and all incidental elapsed time inside the "
@@ -605,12 +686,14 @@ def build_protocol() -> dict[str, Any]:
             ],
             "clock": "CPython 3.11 time.perf_counter_ns",
             "comparison_input": "max(uninterrupted_cumulative_ns,resumed_cumulative_ns)",
-            "contract_id": "r3-cumulative-active-wall-v1",
+            "contract_id": "r3-cumulative-active-wall-v2",
             "cumulative_rule": (
                 "first prior_cumulative_ns=0; "
                 "cumulative_active_ns=prior_cumulative_ns+session_active_ns exactly once"
             ),
             "excluded_operations": [
+                "authority-derived output-directory closure derivation, durable preparation, "
+                "and confirmation before the first fresh or resume clock sample",
                 "bounded resume-manifest construction, publication, reopen, and confirmation",
                 "bounded result-envelope construction, publication, reopen, and confirmation",
             ],

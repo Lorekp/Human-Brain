@@ -52,6 +52,27 @@ pub(crate) const ERROR_STAGE_EXCLUSIVE_PUBLISH: u16 = 9;
 pub(crate) const ERROR_STAGE_TEMP_CLEANUP: u16 = 10;
 pub(crate) const ERROR_STAGE_PARENT_SYNC: u16 = 11;
 
+pub(crate) const DURABILITY_OUTCOME_NONE: u16 = 0;
+pub(crate) const DURABILITY_OUTCOME_DURABLE: u16 = 1;
+pub(crate) const DURABILITY_OUTCOME_NOT_DURABLE: u16 = 2;
+pub(crate) const DURABILITY_NO_FAILED_COMPONENT: u32 = u32::MAX;
+
+pub(crate) const DURABILITY_STAGE_NONE: u16 = 0;
+pub(crate) const DURABILITY_STAGE_PARENT_OPEN: u16 = 1;
+pub(crate) const DURABILITY_STAGE_PARENT_IDENTITY: u16 = 2;
+pub(crate) const DURABILITY_STAGE_FILESYSTEM_POLICY: u16 = 3;
+pub(crate) const DURABILITY_STAGE_FINAL_OPEN: u16 = 4;
+pub(crate) const DURABILITY_STAGE_FINAL_IDENTITY: u16 = 5;
+pub(crate) const DURABILITY_STAGE_FINAL_READ: u16 = 6;
+pub(crate) const DURABILITY_STAGE_PAYLOAD_MISMATCH: u16 = 7;
+pub(crate) const DURABILITY_STAGE_FILE_SYNC: u16 = 8;
+pub(crate) const DURABILITY_STAGE_DIRECTORY_CREATE: u16 = 9;
+pub(crate) const DURABILITY_STAGE_DIRECTORY_OPEN: u16 = 10;
+pub(crate) const DURABILITY_STAGE_DIRECTORY_IDENTITY: u16 = 11;
+pub(crate) const DURABILITY_STAGE_DIRECTORY_SYNC: u16 = 12;
+pub(crate) const DURABILITY_STAGE_FILE_CLOSE: u16 = 13;
+pub(crate) const DURABILITY_STAGE_PATH_IDENTITY: u16 = 14;
+
 pub(crate) const POLICY_INVALID_PARENT: u32 = 1;
 pub(crate) const POLICY_PARENT_IS_REPARSE: u32 = 2;
 pub(crate) const POLICY_REMOTE_OR_UNKNOWN_FILESYSTEM: u32 = 3;
@@ -60,6 +81,10 @@ pub(crate) const POLICY_TEMP_IDENTITY_CHANGED: u32 = 6;
 pub(crate) const POLICY_TEMP_NAME_EXHAUSTED: u32 = 7;
 pub(crate) const POLICY_PATH_IDENTITY_CHANGED: u32 = 8;
 pub(crate) const POLICY_ALLOCATION_FAILED: u32 = 9;
+pub(crate) const POLICY_NOT_REGULAR_FILE: u32 = 10;
+pub(crate) const POLICY_BYTE_MISMATCH: u32 = 11;
+pub(crate) const POLICY_SIZE_MISMATCH: u32 = 12;
+pub(crate) const POLICY_NOT_DIRECTORY: u32 = 13;
 
 const MAX_PATH_BYTES: usize = 32 * 1024;
 const MAX_BASENAME_BYTES: usize = 255;
@@ -69,7 +94,127 @@ const IMMUTABLE_BYTES_TEMP_PREFIX: &[u8] = b".humanbrain-bytes-v1-";
 const TEMP_SUFFIX: &[u8] = b".tmp";
 const TEMP_NAME_CAPACITY: usize = 64;
 const CLEANUP_ERROR_CAPACITY: usize = 4;
+const DURABILITY_CLEANUP_ERROR_CAPACITY: usize = 2;
 pub(crate) const MAX_IMMUTABLE_PAYLOAD_BYTES: usize = 1 << 20;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct DurabilityCleanupErrors {
+    errors: [PublicationError; DURABILITY_CLEANUP_ERROR_CAPACITY],
+    len: u8,
+}
+
+impl DurabilityCleanupErrors {
+    pub(crate) const fn new() -> Self {
+        Self {
+            errors: [PublicationError::ZERO; DURABILITY_CLEANUP_ERROR_CAPACITY],
+            len: 0,
+        }
+    }
+
+    pub(crate) fn push(&mut self, error: PublicationError) {
+        let index = usize::from(self.len);
+        if let Some(slot) = self.errors.get_mut(index) {
+            *slot = error;
+            self.len += 1;
+        }
+    }
+
+    pub(crate) const fn len(&self) -> u8 {
+        self.len
+    }
+
+    pub(crate) const fn errors(&self) -> &[PublicationError; DURABILITY_CLEANUP_ERROR_CAPACITY] {
+        &self.errors
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct PathDurabilityCompletion {
+    pub(crate) outcome: u16,
+    pub(crate) primary_error: PublicationError,
+    pub(crate) cleanup_errors: DurabilityCleanupErrors,
+    pub(crate) component_count: u32,
+    pub(crate) completed_component_count: u32,
+    pub(crate) created_component_count: u32,
+    pub(crate) failed_component_index: u32,
+    pub(crate) expected_bytes: u64,
+    pub(crate) verified_bytes: u64,
+}
+
+impl PathDurabilityCompletion {
+    pub(crate) const fn reconciled(payload_bytes: u64) -> Self {
+        Self {
+            outcome: DURABILITY_OUTCOME_DURABLE,
+            primary_error: PublicationError::ZERO,
+            cleanup_errors: DurabilityCleanupErrors::new(),
+            component_count: 0,
+            completed_component_count: 0,
+            created_component_count: 0,
+            failed_component_index: DURABILITY_NO_FAILED_COMPONENT,
+            expected_bytes: payload_bytes,
+            verified_bytes: payload_bytes,
+        }
+    }
+
+    pub(crate) const fn reconciliation_failed(
+        error: PublicationError,
+        payload_bytes: u64,
+        verified_bytes: u64,
+    ) -> Self {
+        Self {
+            outcome: DURABILITY_OUTCOME_NOT_DURABLE,
+            primary_error: error,
+            cleanup_errors: DurabilityCleanupErrors::new(),
+            component_count: 0,
+            completed_component_count: 0,
+            created_component_count: 0,
+            failed_component_index: DURABILITY_NO_FAILED_COMPONENT,
+            expected_bytes: payload_bytes,
+            verified_bytes,
+        }
+    }
+
+    pub(crate) const fn directory_prepared(
+        component_count: u32,
+        created_component_count: u32,
+    ) -> Self {
+        Self {
+            outcome: DURABILITY_OUTCOME_DURABLE,
+            primary_error: PublicationError::ZERO,
+            cleanup_errors: DurabilityCleanupErrors::new(),
+            component_count,
+            completed_component_count: component_count,
+            created_component_count,
+            failed_component_index: DURABILITY_NO_FAILED_COMPONENT,
+            expected_bytes: 0,
+            verified_bytes: 0,
+        }
+    }
+
+    pub(crate) const fn directory_failed(
+        error: PublicationError,
+        component_count: u32,
+        completed_component_count: u32,
+        created_component_count: u32,
+        failed_component_index: u32,
+    ) -> Self {
+        Self {
+            outcome: DURABILITY_OUTCOME_NOT_DURABLE,
+            primary_error: error,
+            cleanup_errors: DurabilityCleanupErrors::new(),
+            component_count,
+            completed_component_count,
+            created_component_count,
+            failed_component_index,
+            expected_bytes: 0,
+            verified_bytes: 0,
+        }
+    }
+
+    pub(crate) fn push_cleanup(&mut self, error: PublicationError) {
+        self.cleanup_errors.push(error);
+    }
+}
 
 static NEXT_TEMP_NONCE: AtomicU64 = AtomicU64::new(0);
 
@@ -250,6 +395,10 @@ impl PreparedImmutableBytes {
             .and_then(|()| file.flush())
             .map_err(PublicationWriteError::Bytes)
     }
+
+    fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
 }
 
 pub(crate) fn prepare_immutable_bytes_v1(
@@ -280,6 +429,27 @@ pub(crate) enum DestinationInputError {
 pub(crate) struct ValidatedCheckpointDestination {
     parent_utf8: Vec<u8>,
     final_basename_utf8: Vec<u8>,
+}
+
+#[derive(Debug)]
+pub(crate) struct ValidatedDurableDirectory {
+    root_utf8: Vec<u8>,
+    relative_directory_utf8: Vec<u8>,
+    component_count: u32,
+}
+
+impl ValidatedDurableDirectory {
+    pub(crate) fn root_utf8(&self) -> &[u8] {
+        &self.root_utf8
+    }
+
+    pub(crate) fn relative_directory_utf8(&self) -> &[u8] {
+        &self.relative_directory_utf8
+    }
+
+    pub(crate) const fn component_count(&self) -> u32 {
+        self.component_count
+    }
 }
 
 impl ValidatedCheckpointDestination {
@@ -315,6 +485,47 @@ pub(crate) fn validate_destination_v1(
     Ok(ValidatedCheckpointDestination {
         parent_utf8: try_copy_bytes(parent_utf8)?,
         final_basename_utf8: try_copy_bytes(final_basename_utf8)?,
+    })
+}
+
+pub(crate) fn validate_durable_directory_v1(
+    root_utf8: &[u8],
+    relative_directory_utf8: &[u8],
+) -> Result<ValidatedDurableDirectory, DestinationInputError> {
+    if root_utf8.is_empty()
+        || root_utf8.len() > MAX_PATH_BYTES
+        || relative_directory_utf8.is_empty()
+        || relative_directory_utf8.len() > MAX_PATH_BYTES
+        || root_utf8.contains(&0)
+        || relative_directory_utf8.contains(&0)
+        || relative_directory_utf8.starts_with(b"/")
+        || relative_directory_utf8.ends_with(b"/")
+        || relative_directory_utf8.contains(&b'\\')
+        || std::str::from_utf8(root_utf8).is_err()
+        || std::str::from_utf8(relative_directory_utf8).is_err()
+    {
+        return Err(DestinationInputError::Invalid);
+    }
+    let mut component_count = 0u32;
+    for component in relative_directory_utf8.split(|byte| *byte == b'/') {
+        if component.is_empty()
+            || component == b"."
+            || component == b".."
+            || component.len() > MAX_BASENAME_BYTES
+        {
+            return Err(DestinationInputError::Invalid);
+        }
+        component_count = component_count
+            .checked_add(1)
+            .ok_or(DestinationInputError::Invalid)?;
+    }
+    if component_count == 0 {
+        return Err(DestinationInputError::Invalid);
+    }
+    Ok(ValidatedDurableDirectory {
+        root_utf8: try_copy_bytes(root_utf8)?,
+        relative_directory_utf8: try_copy_bytes(relative_directory_utf8)?,
+        component_count,
     })
 }
 
@@ -457,6 +668,33 @@ pub(crate) fn publish_prepared_immutable_bytes_v1(
             destination,
             |file| prepared.write_into(file),
         )
+    }
+}
+
+pub(crate) fn reconcile_existing_immutable_bytes_v1(
+    prepared: &PreparedImmutableBytes,
+    destination: &ValidatedCheckpointDestination,
+) -> PathDurabilityCompletion {
+    #[cfg(unix)]
+    {
+        unix::reconcile_existing_immutable_bytes(prepared.bytes(), destination)
+    }
+    #[cfg(windows)]
+    {
+        windows::reconcile_existing_immutable_bytes(prepared.bytes(), destination)
+    }
+}
+
+pub(crate) fn prepare_durable_directory_v1(
+    directory: &ValidatedDurableDirectory,
+) -> PathDurabilityCompletion {
+    #[cfg(unix)]
+    {
+        unix::prepare_durable_directory(directory)
+    }
+    #[cfg(windows)]
+    {
+        windows::prepare_durable_directory(directory)
     }
 }
 

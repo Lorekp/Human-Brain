@@ -66,6 +66,10 @@ def _validated_protocol() -> dict[str, object]:
     return {
         "artifact_contract": {
             "root": ARTIFACT_ROOT,
+            "path_inventory": {
+                "direct_parent_directories": 3,
+                "full_parent_directory_closure": 7,
+            },
             "r3_f0_train": {
                 "development": {
                     "theta-m-18_theta-a-20": DEVELOPMENT_RESULT_PATH,
@@ -109,6 +113,35 @@ def _open_store(
         validated_protocol=validated_protocol,
         expected_source_bundle_identity_sha256=EXPECTED_SOURCE_BUNDLE_SHA256,
     )
+
+
+def _refresh_parent_inventory(frozen: dict[str, object]) -> None:
+    contract = frozen["artifact_contract"]
+    assert type(contract) is dict
+    root = contract["root"]
+    assert type(root) is str
+    paths = persistence._collect_artifact_paths(contract, artifact_root=root)
+    direct, closure = persistence._artifact_parent_directories(
+        paths,
+        artifact_root=root,
+    )
+    contract["path_inventory"] = {
+        "direct_parent_directories": len(direct),
+        "full_parent_directory_closure": len(closure),
+    }
+
+
+def _prepare_store_namespace(
+    store: persistence.CalibrationV3ArtifactStore,
+) -> None:
+    requests = store.durable_directory_requests()
+    repository_root, first_relative_directory = requests[0]
+    repository_root.joinpath(*first_relative_directory.split("/")).parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    for repository_root, relative_directory in requests:
+        repository_root.joinpath(*relative_directory.split("/")).mkdir(exist_ok=True)
 
 
 def _resume_payload() -> dict[str, object]:
@@ -179,6 +212,12 @@ def _artifact_path(root: Path, relative_path: str) -> Path:
     return root.joinpath(*relative_path.split("/"))
 
 
+def _artifact_path_with_parent(root: Path, relative_path: str) -> Path:
+    path = _artifact_path(root, relative_path)
+    path.parent.mkdir(parents=True)
+    return path
+
+
 def test_store_derives_membership_from_the_validated_schema_four_protocol(
     tmp_path: Path,
 ) -> None:
@@ -190,7 +229,31 @@ def test_store_derives_membership_from_the_validated_schema_four_protocol(
         validated_protocol=frozen,
     )
 
-    assert store.prepare_parent(RESUME_PATH) == _artifact_path(tmp_path, RESUME_PATH)
+    assert store.require_resume_manifest_destination(RESUME_PATH).relative_path == RESUME_PATH
+    directory_requests = store.durable_directory_requests()
+    assert len(directory_requests) == 54
+    assert directory_requests[0] == (tmp_path.absolute(), ARTIFACT_ROOT)
+    assert len(set(directory_requests)) == len(directory_requests)
+    assert [path.count("/") for _root, path in directory_requests] == sorted(
+        path.count("/") for _root, path in directory_requests
+    )
+
+
+def test_store_rejects_parent_inventory_that_does_not_match_frozen_paths(
+    tmp_path: Path,
+) -> None:
+    frozen = _validated_protocol()
+    contract = frozen["artifact_contract"]
+    assert type(contract) is dict
+    inventory = contract["path_inventory"]
+    assert type(inventory) is dict
+    inventory["full_parent_directory_closure"] = 8
+
+    with pytest.raises(
+        persistence.ArtifactAuthorityStop,
+        match="parent-directory inventory",
+    ):
+        _open_store(repository_root=tmp_path, validated_protocol=frozen)
 
 
 def test_official_store_requires_an_external_source_bundle_authority(tmp_path: Path) -> None:
@@ -283,6 +346,7 @@ def test_unfrozen_result_family_has_no_official_json_codec(tmp_path: Path) -> No
     contract = dict(frozen["artifact_contract"])
     contract["electrical_v3"] = {"development": [electrical_path]}
     frozen["artifact_contract"] = contract
+    _refresh_parent_inventory(frozen)
     store = _open_store(repository_root=tmp_path, validated_protocol=frozen)
     payload = _result_payload()
     payload.update(
@@ -464,7 +528,7 @@ def test_binary_checkpoint_destination_rejects_json_encode_decode_and_read(
     with pytest.raises(persistence.ArtifactPathStop):
         store.decode(CHECKPOINT_PATH, raw)
 
-    checkpoint = store.prepare_parent(CHECKPOINT_PATH)
+    checkpoint = _artifact_path_with_parent(tmp_path, CHECKPOINT_PATH)
     checkpoint.write_bytes(raw)
     with pytest.raises(persistence.ArtifactPathStop):
         store.read(CHECKPOINT_PATH)
@@ -787,7 +851,7 @@ def test_encoder_normalizes_deep_json_recursion_failure(tmp_path: Path) -> None:
         store.encode_resume(payload)
 
 
-def test_namespace_prepares_only_the_exact_member_parent_and_rejects_escape(
+def test_resume_pair_requires_prepared_frozen_namespace_and_rejects_escape(
     tmp_path: Path,
 ) -> None:
     store = _open_store(
@@ -795,15 +859,23 @@ def test_namespace_prepares_only_the_exact_member_parent_and_rejects_escape(
         validated_protocol=_validated_protocol(),
     )
 
-    destination = store.prepare_parent(RESUME_PATH)
+    with pytest.raises(
+        persistence.ArtifactPathStop,
+        match="not prepared before active time",
+    ):
+        store.prepare_absent_resume_pair(RESUME_PATH)
+    assert list(tmp_path.iterdir()) == []
+
+    _prepare_store_namespace(store)
+    destination = store.prepare_absent_resume_pair(RESUME_PATH).manifest_path
 
     assert destination == _artifact_path(tmp_path, RESUME_PATH)
     assert destination.parent.is_dir()
     assert not destination.exists()
     with pytest.raises(persistence.ArtifactPathStop):
-        store.prepare_parent("../escape.resume.json")
+        store.prepare_absent_resume_pair("../escape.resume.json")
     with pytest.raises(persistence.ArtifactPathStop):
-        store.prepare_parent(f"{ARTIFACT_ROOT}/not-frozen.resume.json")
+        store.prepare_absent_resume_pair(f"{ARTIFACT_ROOT}/not-frozen.resume.json")
 
 
 def test_namespace_rejects_non_directory_parent(tmp_path: Path) -> None:
@@ -815,7 +887,7 @@ def test_namespace_rejects_non_directory_parent(tmp_path: Path) -> None:
     )
 
     with pytest.raises(persistence.ArtifactPathStop):
-        store.prepare_parent(RESUME_PATH)
+        store.prepare_absent_resume_pair(RESUME_PATH)
 
 
 def test_namespace_rejects_symlink_or_reparse_parent(tmp_path: Path) -> None:
@@ -833,7 +905,7 @@ def test_namespace_rejects_symlink_or_reparse_parent(tmp_path: Path) -> None:
     )
 
     with pytest.raises(persistence.ArtifactPathStop):
-        store.prepare_parent(RESUME_PATH)
+        store.prepare_absent_resume_pair(RESUME_PATH)
 
 
 def test_namespace_rejects_windows_reparse_metadata_without_host_privilege(
@@ -843,7 +915,7 @@ def test_namespace_rejects_windows_reparse_metadata_without_host_privilege(
         repository_root=tmp_path,
         validated_protocol=_validated_protocol(),
     )
-    store.prepare_parent(RESUME_PATH)
+    _artifact_path_with_parent(tmp_path, RESUME_PATH)
     reparse_parent = tmp_path / "experiments" / "r3_pilot"
     real_lstat = persistence.os.lstat
 
@@ -859,7 +931,7 @@ def test_namespace_rejects_windows_reparse_metadata_without_host_privilege(
     monkeypatch.setattr(persistence.os, "lstat", lstat_with_reparse)
 
     with pytest.raises(persistence.ArtifactPathStop):
-        store.prepare_parent(RESUME_PATH)
+        store.prepare_absent_resume_pair(RESUME_PATH)
 
 
 def test_bounded_reader_accepts_one_plain_file_and_rejects_oversize_or_nonregular(
@@ -871,7 +943,7 @@ def test_bounded_reader_accepts_one_plain_file_and_rejects_oversize_or_nonregula
         repository_root=valid_root,
         validated_protocol=_validated_protocol(),
     )
-    valid_path = valid_store.prepare_parent(RESUME_PATH)
+    valid_path = _artifact_path_with_parent(valid_root, RESUME_PATH)
     valid_path.write_bytes(valid_store.encode_resume(_resume_payload()))
     assert valid_store.read(RESUME_PATH).payload == _resume_payload()
 
@@ -881,7 +953,7 @@ def test_bounded_reader_accepts_one_plain_file_and_rejects_oversize_or_nonregula
         repository_root=large_root,
         validated_protocol=_validated_protocol(),
     )
-    large_path = large_store.prepare_parent(RESUME_PATH)
+    large_path = _artifact_path_with_parent(large_root, RESUME_PATH)
     large_path.write_bytes(b"x" * (persistence.MAX_ENVELOPE_BYTES + 1))
     with pytest.raises(persistence.ArtifactPathStop):
         large_store.read(RESUME_PATH)
@@ -892,10 +964,143 @@ def test_bounded_reader_accepts_one_plain_file_and_rejects_oversize_or_nonregula
         repository_root=directory_root,
         validated_protocol=_validated_protocol(),
     )
-    directory_path = directory_store.prepare_parent(RESUME_PATH)
+    directory_path = _artifact_path_with_parent(directory_root, RESUME_PATH)
     directory_path.mkdir()
     with pytest.raises(persistence.ArtifactPathStop):
         directory_store.read(RESUME_PATH)
+
+
+def test_bounded_read_clean_close_oserror_is_normalized(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    destination = _artifact_path_with_parent(tmp_path, RESUME_PATH)
+    destination.write_bytes(store.encode_resume(_resume_payload()))
+    real_close = persistence.os.close
+
+    def close_then_fail(descriptor: int) -> None:
+        real_close(descriptor)
+        raise OSError("synthetic descriptor close failure")
+
+    monkeypatch.setattr(persistence.os, "close", close_then_fail)
+
+    with pytest.raises(persistence.ArtifactPathStop, match="close"):
+        store.read(RESUME_PATH)
+
+
+def test_bounded_read_preserves_primary_artifact_path_stop_when_close_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    destination = _artifact_path_with_parent(tmp_path, RESUME_PATH)
+    destination.write_bytes(store.encode_resume(_resume_payload()))
+    real_close = persistence.os.close
+    real_fstat = persistence.os.fstat
+    fstat_calls = 0
+
+    def drifting_fstat(descriptor: int) -> object:
+        nonlocal fstat_calls
+        observed = real_fstat(descriptor)
+        fstat_calls += 1
+        if fstat_calls == 2:
+            return SimpleNamespace(
+                st_mode=observed.st_mode,
+                st_dev=observed.st_dev,
+                st_ino=observed.st_ino,
+                st_size=observed.st_size + 1,
+                st_mtime_ns=observed.st_mtime_ns,
+                st_ctime_ns=observed.st_ctime_ns,
+                st_file_attributes=getattr(observed, "st_file_attributes", 0),
+            )
+        return observed
+
+    def close_then_fail(descriptor: int) -> None:
+        real_close(descriptor)
+        raise OSError("synthetic descriptor close failure")
+
+    monkeypatch.setattr(persistence.os, "fstat", drifting_fstat)
+    monkeypatch.setattr(persistence.os, "close", close_then_fail)
+
+    with pytest.raises(
+        persistence.ArtifactPathStop,
+        match="changed during bounded read",
+    ) as stopped:
+        store.read(RESUME_PATH)
+    assert stopped.value.__notes__ == ["artifact descriptor close also failed: OSError"]
+
+
+def test_bounded_read_normalizes_descriptor_operation_oserror(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    destination = _artifact_path_with_parent(tmp_path, RESUME_PATH)
+    destination.write_bytes(store.encode_resume(_resume_payload()))
+
+    def fail_read(descriptor: int, count: int) -> bytes:
+        del descriptor, count
+        raise OSError("synthetic descriptor read failure")
+
+    monkeypatch.setattr(persistence.os, "read", fail_read)
+
+    with pytest.raises(persistence.ArtifactPathStop, match="descriptor operation"):
+        store.read(RESUME_PATH)
+
+
+def test_bounded_read_primary_stop_survives_baseexception_from_close(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    destination = _artifact_path_with_parent(tmp_path, RESUME_PATH)
+    destination.write_bytes(store.encode_resume(_resume_payload()))
+    real_close = persistence.os.close
+    real_fstat = persistence.os.fstat
+    fstat_calls = 0
+
+    def drifting_fstat(descriptor: int) -> object:
+        nonlocal fstat_calls
+        observed = real_fstat(descriptor)
+        fstat_calls += 1
+        if fstat_calls == 2:
+            return SimpleNamespace(
+                st_mode=observed.st_mode,
+                st_dev=observed.st_dev,
+                st_ino=observed.st_ino,
+                st_size=observed.st_size + 1,
+                st_mtime_ns=observed.st_mtime_ns,
+                st_ctime_ns=observed.st_ctime_ns,
+                st_file_attributes=getattr(observed, "st_file_attributes", 0),
+            )
+        return observed
+
+    def close_then_interrupt(descriptor: int) -> None:
+        real_close(descriptor)
+        raise KeyboardInterrupt("synthetic descriptor close interrupt")
+
+    monkeypatch.setattr(persistence.os, "fstat", drifting_fstat)
+    monkeypatch.setattr(persistence.os, "close", close_then_interrupt)
+
+    with pytest.raises(
+        persistence.ArtifactPathStop,
+        match="changed during bounded read",
+    ) as stopped:
+        store.read(RESUME_PATH)
+    assert stopped.value.__notes__ == ["artifact descriptor close also failed: KeyboardInterrupt"]
 
 
 def test_bounded_reader_rejects_symlink_or_reparse_final(tmp_path: Path) -> None:
@@ -903,7 +1108,7 @@ def test_bounded_reader_rejects_symlink_or_reparse_final(tmp_path: Path) -> None
         repository_root=tmp_path,
         validated_protocol=_validated_protocol(),
     )
-    destination = store.prepare_parent(RESUME_PATH)
+    destination = _artifact_path_with_parent(tmp_path, RESUME_PATH)
     outside = tmp_path / "outside.json"
     outside.write_bytes(store.encode_resume(_resume_payload()))
     try:
@@ -922,7 +1127,7 @@ def test_bounded_reader_rejects_windows_reparse_final_metadata(
         repository_root=tmp_path,
         validated_protocol=_validated_protocol(),
     )
-    destination = store.prepare_parent(RESUME_PATH)
+    destination = _artifact_path_with_parent(tmp_path, RESUME_PATH)
     destination.write_bytes(store.encode_resume(_resume_payload()))
     real_lstat = persistence.os.lstat
 
@@ -942,12 +1147,12 @@ def test_bounded_reader_rejects_windows_reparse_final_metadata(
 
 
 @pytest.mark.parametrize(
-    ("checkpoint_present", "manifest_present", "expected", "stops"),
+    ("checkpoint_present", "manifest_present", "expected"),
     [
-        (False, False, "ABSENT", False),
-        (True, False, "CHECKPOINT_ONLY", True),
-        (False, True, "MANIFEST_ONLY", True),
-        (True, True, "COMMITTED", False),
+        (False, False, "ABSENT"),
+        (True, False, "CHECKPOINT_ONLY"),
+        (False, True, "MANIFEST_ONLY"),
+        (True, True, "COMMITTED"),
     ],
 )
 def test_resume_pair_state_matrix_is_fail_closed(
@@ -955,26 +1160,34 @@ def test_resume_pair_state_matrix_is_fail_closed(
     checkpoint_present: bool,
     manifest_present: bool,
     expected: str,
-    stops: bool,
 ) -> None:
     store = _open_store(
         repository_root=tmp_path,
         validated_protocol=_validated_protocol(),
     )
-    checkpoint = store.prepare_parent(CHECKPOINT_PATH)
-    manifest = store.prepare_parent(RESUME_PATH)
+    checkpoint = _artifact_path(tmp_path, CHECKPOINT_PATH)
+    manifest = _artifact_path(tmp_path, RESUME_PATH)
+    checkpoint.parent.mkdir(parents=True)
     if checkpoint_present:
         checkpoint.write_bytes(b"checkpoint")
     if manifest_present:
         manifest.write_bytes(store.encode_resume(_resume_payload()))
 
-    if stops:
+    if expected == "ABSENT":
+        prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+        assert prepared.checkpoint_path == checkpoint
+        assert prepared.manifest_path == manifest
+    elif expected == "CHECKPOINT_ONLY":
         with pytest.raises(persistence.ArtifactPairStop) as caught:
-            store.classify_resume_pair(CHECKPOINT_PATH, RESUME_PATH)
-        assert caught.value.state.value == expected
+            store.prepare_absent_resume_pair(RESUME_PATH)
+        assert caught.value.state is persistence.ArtifactPairState.CHECKPOINT_ONLY
+    elif expected == "MANIFEST_ONLY":
+        with pytest.raises(persistence.ArtifactPairStop) as caught:
+            store.open_committed_resume_pair(RESUME_PATH)
+        assert caught.value.state is persistence.ArtifactPairState.MANIFEST_ONLY
     else:
-        state = store.classify_resume_pair(CHECKPOINT_PATH, RESUME_PATH)
-        assert state.value == expected
+        committed = store.open_committed_resume_pair(RESUME_PATH)
+        assert committed.checkpoint_path == checkpoint
 
 
 def test_resume_pair_rejects_noncanonical_manifest_before_committed(tmp_path: Path) -> None:
@@ -982,13 +1195,196 @@ def test_resume_pair_rejects_noncanonical_manifest_before_committed(tmp_path: Pa
         repository_root=tmp_path,
         validated_protocol=_validated_protocol(),
     )
-    checkpoint = store.prepare_parent(CHECKPOINT_PATH)
-    manifest = store.prepare_parent(RESUME_PATH)
+    checkpoint = _artifact_path(tmp_path, CHECKPOINT_PATH)
+    manifest = _artifact_path(tmp_path, RESUME_PATH)
+    checkpoint.parent.mkdir(parents=True)
     checkpoint.write_bytes(b"native checkpoint validation is deferred")
     manifest.write_bytes(b"not a canonical resume manifest")
 
     with pytest.raises(persistence.EnvelopeStop):
-        store.classify_resume_pair(CHECKPOINT_PATH, RESUME_PATH)
+        store.open_committed_resume_pair(RESUME_PATH)
+
+
+def test_narrow_resume_write_seam_derives_pair_and_rejects_any_existing_final(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    _prepare_store_namespace(store)
+
+    assert not hasattr(store, "prepare_parent")
+    assert store.require_r3_result_destination(RESULT_PATH).kind is (
+        persistence.ArtifactDestinationKind.R3_RESULT
+    )
+    prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+
+    assert prepared.checkpoint_path == _artifact_path(tmp_path, CHECKPOINT_PATH)
+    assert prepared.manifest_path == _artifact_path(tmp_path, RESUME_PATH)
+    prepared.checkpoint_path.write_bytes(b"checkpoint")
+    with pytest.raises(persistence.ArtifactPairStop) as stopped:
+        store.prepare_absent_resume_pair(RESUME_PATH)
+    assert stopped.value.state is persistence.ArtifactPairState.CHECKPOINT_ONLY
+
+
+def test_committed_resume_open_reads_manifest_before_requiring_checkpoint(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    _prepare_store_namespace(store)
+    prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+    prepared.manifest_path.write_bytes(b"not canonical")
+
+    with pytest.raises(persistence.EnvelopeStop):
+        store.open_committed_resume_pair(RESUME_PATH)
+
+    prepared.manifest_path.write_bytes(store.encode_resume(_resume_payload()))
+    with pytest.raises(persistence.ArtifactPairStop) as stopped:
+        store.open_committed_resume_pair(RESUME_PATH)
+    assert stopped.value.state is persistence.ArtifactPairState.MANIFEST_ONLY
+
+    prepared.checkpoint_path.write_bytes(b"checkpoint")
+    committed = store.open_committed_resume_pair(RESUME_PATH)
+    assert committed.checkpoint_path == prepared.checkpoint_path
+    assert committed.manifest.payload == _resume_payload()
+    assert committed.manifest_bytes == store.encode_resume(_resume_payload())
+
+
+def test_checkpoint_final_pin_confirms_the_same_final_after_manifest_publication(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    _prepare_store_namespace(store)
+    prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+    prepared.checkpoint_path.write_bytes(b"checkpoint-v1")
+
+    pin = store.pin_checkpoint_final(RESUME_PATH)
+    prepared.manifest_path.write_bytes(store.encode_resume(_resume_payload()))
+
+    assert store.confirm_checkpoint_final(pin) == prepared.checkpoint_path
+
+
+def test_checkpoint_final_pin_rejects_deletion_after_manifest_publication(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    _prepare_store_namespace(store)
+    prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+    prepared.checkpoint_path.write_bytes(b"checkpoint-v1")
+    pin = store.pin_checkpoint_final(RESUME_PATH)
+    prepared.manifest_path.write_bytes(store.encode_resume(_resume_payload()))
+
+    prepared.checkpoint_path.unlink()
+
+    with pytest.raises(persistence.ArtifactPathStop, match="unavailable"):
+        store.confirm_checkpoint_final(pin)
+
+
+def test_checkpoint_final_pin_rejects_replacement_after_manifest_publication(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    _prepare_store_namespace(store)
+    prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+    prepared.checkpoint_path.write_bytes(b"checkpoint-v1")
+    pin = store.pin_checkpoint_final(RESUME_PATH)
+    prepared.manifest_path.write_bytes(store.encode_resume(_resume_payload()))
+
+    replacement = prepared.checkpoint_path.with_name("replacement.r3ntcp1")
+    replacement.write_bytes(b"checkpoint-v2")
+    replacement.replace(prepared.checkpoint_path)
+
+    with pytest.raises(persistence.ArtifactPathStop, match="identity changed"):
+        store.confirm_checkpoint_final(pin)
+
+
+def test_manifest_final_pin_rejects_replacement_during_resume_import(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    _prepare_store_namespace(store)
+    prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+    prepared.checkpoint_path.write_bytes(b"checkpoint-v1")
+    prepared.manifest_path.write_bytes(store.encode_resume(_resume_payload()))
+    pair = store.open_committed_resume_pair(RESUME_PATH)
+
+    replacement = prepared.manifest_path.with_name("replacement.resume.json")
+    replacement.write_bytes(prepared.manifest_path.read_bytes())
+    replacement.replace(prepared.manifest_path)
+
+    with pytest.raises(persistence.ArtifactPathStop, match="manifest final identity changed"):
+        store.confirm_manifest_final(pair.manifest_pin)
+
+
+def test_confirm_exact_never_adopts_different_existing_bytes(tmp_path: Path) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    _prepare_store_namespace(store)
+    prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+    expected = store.encode_resume(_resume_payload())
+    prepared.manifest_path.write_bytes(expected)
+
+    assert store.confirm_exact(RESUME_PATH, expected).payload == _resume_payload()
+    with pytest.raises(persistence.EnvelopeStop, match="differ"):
+        store.confirm_exact(RESUME_PATH, expected + b"\n")
+
+
+def test_confirm_resume_pair_rejects_manifest_path_replacement_during_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+    _prepare_store_namespace(store)
+    prepared = store.prepare_absent_resume_pair(RESUME_PATH)
+    prepared.checkpoint_path.write_bytes(b"checkpoint")
+    expected = store.encode_resume(_resume_payload())
+    prepared.manifest_path.write_bytes(expected)
+    real_lstat = persistence.os.lstat
+    manifest_lstats = 0
+
+    def lstat_with_atomic_replacement(path: object) -> object:
+        nonlocal manifest_lstats
+        observed = real_lstat(path)
+        if Path(path) != prepared.manifest_path:
+            return observed
+        manifest_lstats += 1
+        if manifest_lstats == 1:
+            return observed
+        return SimpleNamespace(
+            st_mode=observed.st_mode,
+            st_dev=observed.st_dev,
+            st_ino=observed.st_ino + 1,
+            st_size=observed.st_size,
+            st_mtime_ns=observed.st_mtime_ns,
+            st_ctime_ns=observed.st_ctime_ns,
+            st_file_attributes=getattr(observed, "st_file_attributes", 0),
+        )
+
+    monkeypatch.setattr(persistence.os, "lstat", lstat_with_atomic_replacement)
+
+    with pytest.raises(persistence.ArtifactPathStop, match=r"changed|identity"):
+        store.confirm_committed_resume_pair(RESUME_PATH, expected)
 
 
 def test_cumulative_active_wall_arithmetic_enforces_exact_cap_and_integer_types() -> None:

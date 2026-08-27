@@ -11,7 +11,8 @@ import hashlib
 import json
 import os
 import stat
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -107,6 +108,43 @@ class ArtifactPathStop(PersistenceStop):
     """An artifact path is outside or unsafe within the frozen namespace."""
 
 
+@contextmanager
+def _read_only_descriptor(destination: Path) -> Iterator[int]:
+    """Open one read descriptor and normalize close without masking a primary STOP."""
+
+    flags = os.O_RDONLY | int(getattr(os, "O_BINARY", 0))
+    flags |= int(getattr(os, "O_NOFOLLOW", 0))
+    try:
+        descriptor = os.open(destination, flags)
+    except OSError as exc:
+        raise ArtifactPathStop("artifact final cannot be opened safely") from exc
+    try:
+        yield descriptor
+    except BaseException as primary:
+        close_failure: BaseException | None = None
+        try:
+            os.close(descriptor)
+        except BaseException as exc:
+            close_failure = exc
+        if isinstance(primary, OSError):
+            stopped = ArtifactPathStop("artifact descriptor operation failed")
+            if close_failure is not None:
+                stopped.add_note(
+                    f"artifact descriptor close also failed: {type(close_failure).__name__}"
+                )
+            raise stopped from primary
+        if close_failure is not None:
+            primary.add_note(
+                f"artifact descriptor close also failed: {type(close_failure).__name__}"
+            )
+        raise
+    else:
+        try:
+            os.close(descriptor)
+        except OSError as exc:
+            raise ArtifactPathStop("artifact descriptor close failed") from exc
+
+
 class ArtifactAuthorityStop(PersistenceStop):
     """The protocol or caller did not supply authority for an official codec."""
 
@@ -154,6 +192,43 @@ class DestinationSpec:
     construction_seed: int | None = None
     construction_seeds: tuple[int, ...] | None = None
     resume_cursor: tuple[tuple[str, object], ...] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedResumePair:
+    """One absent, protocol-derived checkpoint/manifest destination pair."""
+
+    checkpoint_path: Path
+    manifest_path: Path
+
+
+@dataclass(frozen=True, slots=True)
+class CheckpointFinalPin:
+    """Opaque identity of one verified immutable checkpoint final."""
+
+    checkpoint_path: Path
+    _checkpoint_relative_path: str
+    _filesystem_identity: tuple[int, int, int, int, int]
+
+
+@dataclass(frozen=True, slots=True)
+class ManifestFinalPin:
+    """Exact bounded manifest bytes and filesystem identity read before import."""
+
+    manifest_path: Path
+    _manifest_relative_path: str
+    _filesystem_identity: tuple[int, int, int, int, int]
+    _manifest_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class ManifestCommittedResumePair:
+    """One canonical manifest followed by its exact plain checkpoint final."""
+
+    checkpoint_path: Path
+    manifest: ArtifactEnvelope
+    manifest_bytes: bytes
+    manifest_pin: ManifestFinalPin
 
 
 @dataclass(frozen=True, slots=True)
@@ -589,6 +664,28 @@ def _collect_artifact_paths(value: object, *, artifact_root: str) -> tuple[str, 
     if len(paths) != len(set(paths)):
         raise ArtifactPathStop("validated protocol supplies duplicate artifact paths")
     return tuple(paths)
+
+
+def _artifact_parent_directories(
+    artifact_paths: tuple[str, ...],
+    *,
+    artifact_root: str,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Derive direct parents and their complete repository-relative closure."""
+
+    direct: set[str] = set()
+    closure: set[str] = set()
+    root_depth = len(artifact_root.split("/"))
+    for artifact_path in artifact_paths:
+        parts = artifact_path.split("/")[:-1]
+        direct.add("/".join(parts))
+        for length in range(root_depth, len(parts) + 1):
+            closure.add("/".join(parts[:length]))
+
+    def order(value: str) -> tuple[int, str]:
+        return value.count("/"), value
+
+    return tuple(sorted(direct, key=order)), tuple(sorted(closure, key=order))
 
 
 def _protocol_object(value: object, *, label: str) -> dict[str, Any]:
@@ -1163,6 +1260,7 @@ class CalibrationV3ArtifactStore:
         claim_boundary_bytes: bytes,
         source_binding_runnable: bool,
         expected_source_bundle_identity_sha256: str,
+        durable_parent_directories: tuple[str, ...],
     ) -> None:
         self._repository_root = repository_root
         self._artifact_root = artifact_root
@@ -1173,6 +1271,7 @@ class CalibrationV3ArtifactStore:
         self._claim_boundary_bytes = claim_boundary_bytes
         self._source_binding_runnable = source_binding_runnable
         self._expected_source_bundle_identity_sha256 = expected_source_bundle_identity_sha256
+        self._durable_parent_directories = durable_parent_directories
 
     @classmethod
     def open(
@@ -1199,18 +1298,28 @@ class CalibrationV3ArtifactStore:
             )
         if type(validated_protocol) is not dict:
             raise ArtifactAuthorityStop("validated protocol must be an exact object")
-        root = Path(repository_root).absolute()
-        try:
-            root_stat = os.lstat(root)
-        except OSError as exc:
-            raise ArtifactPathStop("repository root is unavailable") from exc
-        if not _is_plain_directory(root_stat):
-            raise ArtifactPathStop("repository root must be a plain directory")
         contract = validated_protocol.get("artifact_contract")
         if type(contract) is not dict:
             raise ArtifactPathStop("validated protocol has no artifact contract")
         artifact_root = _validate_relative_path(contract.get("root"), label="artifact root")
         paths = _collect_artifact_paths(contract, artifact_root=artifact_root)
+        direct_parents, parent_closure = _artifact_parent_directories(
+            paths,
+            artifact_root=artifact_root,
+        )
+        inventory = _protocol_object(
+            contract.get("path_inventory"),
+            label="artifact_contract.path_inventory",
+        )
+        if (
+            type(inventory.get("direct_parent_directories")) is not int
+            or inventory["direct_parent_directories"] != len(direct_parents)
+            or type(inventory.get("full_parent_directory_closure")) is not int
+            or inventory["full_parent_directory_closure"] != len(parent_closure)
+        ):
+            raise ArtifactAuthorityStop(
+                "artifact parent-directory inventory differs from frozen paths"
+            )
         destinations = _derive_destination_specs(
             validated_protocol,
             contract=contract,
@@ -1237,6 +1346,13 @@ class CalibrationV3ArtifactStore:
             claim_boundary_bytes = _canonical_json_bytes(claim_boundary)
         except EnvelopeStop as exc:
             raise ArtifactAuthorityStop("validated protocol authority is not canonical") from exc
+        root = Path(repository_root).absolute()
+        try:
+            root_stat = os.lstat(root)
+        except OSError as exc:
+            raise ArtifactPathStop("repository root is unavailable") from exc
+        if not _is_plain_directory(root_stat):
+            raise ArtifactPathStop("repository root must be a plain directory")
         return cls(
             repository_root=root,
             artifact_root=artifact_root,
@@ -1246,6 +1362,15 @@ class CalibrationV3ArtifactStore:
             claim_boundary_bytes=claim_boundary_bytes,
             source_binding_runnable=source_binding["runnable"],
             expected_source_bundle_identity_sha256=(expected_source_bundle_identity_sha256),
+            durable_parent_directories=parent_closure,
+        )
+
+    def durable_directory_requests(self) -> tuple[tuple[Path, str], ...]:
+        """Return the exact root-relative directory closure in parent-first order."""
+
+        return tuple(
+            (self._repository_root, relative_directory)
+            for relative_directory in self._durable_parent_directories
         )
 
     def _require_member(self, relative_path: object) -> str:
@@ -1296,44 +1421,262 @@ class CalibrationV3ArtifactStore:
     def _absolute_member(self, member: str) -> Path:
         return self._repository_root.joinpath(*member.split("/"))
 
-    def _require_parent_chain(self, member: str, *, create: bool) -> bool:
+    def _require_parent_chain(self, member: str) -> bool:
         current = self._repository_root
         for part in member.split("/")[:-1]:
             current = current / part
             try:
                 observed = os.lstat(current)
             except FileNotFoundError:
-                if not create:
-                    return False
-                try:
-                    os.mkdir(current)
-                except FileExistsError:
-                    pass
-                except OSError as exc:
-                    raise ArtifactPathStop(
-                        f"cannot create frozen artifact parent: {current}"
-                    ) from exc
-                try:
-                    observed = os.lstat(current)
-                except OSError as exc:
-                    raise ArtifactPathStop(
-                        f"created artifact parent is unavailable: {current}"
-                    ) from exc
+                return False
             except OSError as exc:
                 raise ArtifactPathStop(f"artifact parent is unavailable: {current}") from exc
             if not _is_plain_directory(observed):
                 raise ArtifactPathStop(f"artifact parent is not a plain directory: {current}")
         return True
 
-    def prepare_parent(self, relative_path: str) -> Path:
-        """Create only this frozen member's exact missing parent directories."""
+    def require_r3_result_destination(self, relative_path: str) -> DestinationSpec:
+        """Return the exact frozen R3 result descriptor without creating files."""
 
-        member = self._require_member(relative_path)
-        self._require_parent_chain(member, create=True)
-        return self._absolute_member(member)
+        destination = self._destination(relative_path)
+        if (
+            destination.kind is not ArtifactDestinationKind.R3_RESULT
+            or destination.screen_id != "r3_f0_train"
+            or destination.phase not in {"development", "deterministic_confirmation"}
+            or destination.arm_slug is None
+            or destination.thresholds is None
+            or destination.construction_seeds is None
+            or len(destination.construction_seeds) != 1
+        ):
+            raise ArtifactPathStop("destination is not one exact frozen R3 result")
+        return destination
+
+    def _resume_pair_destinations(
+        self,
+        manifest_relative_path: str,
+    ) -> tuple[DestinationSpec, DestinationSpec]:
+        manifest = self._destination(manifest_relative_path)
+        if (
+            manifest.kind is not ArtifactDestinationKind.RESUME_MANIFEST
+            or not manifest.relative_path.endswith(".resume.json")
+        ):
+            raise ArtifactPathStop("resume transaction requires a manifest destination")
+        checkpoint_path = manifest.relative_path.removesuffix(".resume.json") + ".r3ntcp1"
+        checkpoint = self._destination(checkpoint_path)
+        if (
+            checkpoint.kind is not ArtifactDestinationKind.BINARY_CHECKPOINT
+            or checkpoint.relative_path.removesuffix(".r3ntcp1")
+            != manifest.relative_path.removesuffix(".resume.json")
+            or checkpoint.screen_id != manifest.screen_id
+            or checkpoint.phase != manifest.phase
+            or checkpoint.arm_slug != manifest.arm_slug
+            or checkpoint.thresholds != manifest.thresholds
+            or checkpoint.construction_seed != manifest.construction_seed
+            or checkpoint.resume_cursor != manifest.resume_cursor
+        ):
+            raise ArtifactPathStop("resume pair descriptors do not share exact semantics")
+        return checkpoint, manifest
+
+    def require_resume_manifest_destination(
+        self,
+        manifest_relative_path: str,
+    ) -> DestinationSpec:
+        """Return one exact resume descriptor without opening or creating files."""
+
+        _checkpoint, manifest = self._resume_pair_destinations(manifest_relative_path)
+        return manifest
+
+    def require_resume_manifest_for(
+        self,
+        *,
+        arm_slug: str,
+        after_transition_event: int,
+    ) -> DestinationSpec:
+        """Return the unique frozen manifest for one arm and milestone event."""
+
+        if type(arm_slug) is not str or not arm_slug:
+            raise ArtifactPathStop("resume arm slug must be one exact non-empty string")
+        if type(after_transition_event) is not int or after_transition_event < 0:
+            raise ArtifactPathStop("resume milestone event must be one non-negative exact int")
+        matches = tuple(
+            destination
+            for destination in self._destinations.values()
+            if destination.kind is ArtifactDestinationKind.RESUME_MANIFEST
+            and destination.arm_slug == arm_slug
+            and destination.resume_cursor is not None
+            and dict(destination.resume_cursor).get("after_transition_event")
+            == after_transition_event
+        )
+        if len(matches) != 1:
+            raise ArtifactPathStop("resume arm and milestone do not select one frozen manifest")
+        return matches[0]
+
+    def prepare_absent_resume_pair(
+        self,
+        manifest_relative_path: str,
+    ) -> PreparedResumePair:
+        """Require a prebuilt parent namespace and prove both exact finals absent."""
+
+        if not self._source_binding_runnable:
+            raise ArtifactAuthorityStop(
+                "resume pair preparation requires runnable protocol source binding"
+            )
+        checkpoint, manifest = self._resume_pair_destinations(manifest_relative_path)
+
+        if not self._require_parent_chain(
+            checkpoint.relative_path
+        ) or not self._require_parent_chain(manifest.relative_path):
+            raise ArtifactPathStop(
+                "resume pair parent namespace was not prepared before active time"
+            )
+
+        checkpoint_exists = self._plain_file_presence(checkpoint.relative_path)
+        manifest_exists = self._plain_file_presence(manifest.relative_path)
+        if checkpoint_exists or manifest_exists:
+            if checkpoint_exists and manifest_exists:
+                state = ArtifactPairState.COMMITTED
+            elif checkpoint_exists:
+                state = ArtifactPairState.CHECKPOINT_ONLY
+            else:
+                state = ArtifactPairState.MANIFEST_ONLY
+            raise ArtifactPairStop(state)
+
+        checkpoint_path = self._absolute_member(checkpoint.relative_path)
+        manifest_path = self._absolute_member(manifest.relative_path)
+        checkpoint_exists = self._plain_file_presence(checkpoint.relative_path)
+        manifest_exists = self._plain_file_presence(manifest.relative_path)
+        if checkpoint_exists or manifest_exists:
+            if checkpoint_exists and manifest_exists:
+                state = ArtifactPairState.COMMITTED
+            elif checkpoint_exists:
+                state = ArtifactPairState.CHECKPOINT_ONLY
+            else:
+                state = ArtifactPairState.MANIFEST_ONLY
+            raise ArtifactPairStop(state)
+        return PreparedResumePair(
+            checkpoint_path=checkpoint_path,
+            manifest_path=manifest_path,
+        )
+
+    def open_committed_resume_pair(
+        self,
+        manifest_relative_path: str,
+    ) -> ManifestCommittedResumePair:
+        """Canonical-read the manifest first, then require its paired checkpoint."""
+
+        checkpoint, manifest = self._resume_pair_destinations(manifest_relative_path)
+        raw, manifest_identity = self._read_bounded_regular_file_with_identity(
+            manifest.relative_path
+        )
+        envelope = self.decode(manifest.relative_path, raw)
+        if not self._plain_file_presence(checkpoint.relative_path):
+            raise ArtifactPairStop(ArtifactPairState.MANIFEST_ONLY)
+        return ManifestCommittedResumePair(
+            checkpoint_path=self._absolute_member(checkpoint.relative_path),
+            manifest=envelope,
+            manifest_bytes=raw,
+            manifest_pin=ManifestFinalPin(
+                manifest_path=self._absolute_member(manifest.relative_path),
+                _manifest_relative_path=manifest.relative_path,
+                _filesystem_identity=manifest_identity,
+                _manifest_sha256=hashlib.sha256(raw).hexdigest(),
+            ),
+        )
+
+    def confirm_committed_resume_pair(
+        self,
+        manifest_relative_path: str,
+        expected_manifest_bytes: bytes,
+    ) -> ManifestCommittedResumePair:
+        """Reopen exact manifest bytes first, then re-require the checkpoint final."""
+
+        if type(expected_manifest_bytes) is not bytes:
+            raise EnvelopeStop("expected immutable bytes must be exact bytes")
+        checkpoint, manifest = self._resume_pair_destinations(manifest_relative_path)
+        observed, manifest_identity = self._read_bounded_regular_file_with_identity(
+            manifest.relative_path
+        )
+        if observed != expected_manifest_bytes:
+            raise EnvelopeStop("published resume manifest differs from expected bytes")
+        envelope = self.decode(manifest.relative_path, observed)
+        if not self._plain_file_presence(checkpoint.relative_path):
+            raise ArtifactPairStop(ArtifactPairState.MANIFEST_ONLY)
+        return ManifestCommittedResumePair(
+            checkpoint_path=self._absolute_member(checkpoint.relative_path),
+            manifest=envelope,
+            manifest_bytes=observed,
+            manifest_pin=ManifestFinalPin(
+                manifest_path=self._absolute_member(manifest.relative_path),
+                _manifest_relative_path=manifest.relative_path,
+                _filesystem_identity=manifest_identity,
+                _manifest_sha256=hashlib.sha256(observed).hexdigest(),
+            ),
+        )
+
+    def pin_checkpoint_final(self, manifest_relative_path: str) -> CheckpointFinalPin:
+        """Pin the exact paired checkpoint before native verification and commit."""
+
+        checkpoint, _manifest = self._resume_pair_destinations(manifest_relative_path)
+        identity = self._stable_plain_file_identity(checkpoint.relative_path)
+        return CheckpointFinalPin(
+            checkpoint_path=self._absolute_member(checkpoint.relative_path),
+            _checkpoint_relative_path=checkpoint.relative_path,
+            _filesystem_identity=identity,
+        )
+
+    def confirm_checkpoint_final(self, pin: CheckpointFinalPin) -> Path:
+        """Require that a pinned checkpoint final still has its exact identity."""
+
+        if type(pin) is not CheckpointFinalPin:
+            raise TypeError("checkpoint final pin must be an exact CheckpointFinalPin")
+        destination = self._destination(pin._checkpoint_relative_path)
+        expected_path = self._absolute_member(destination.relative_path)
+        if (
+            destination.kind is not ArtifactDestinationKind.BINARY_CHECKPOINT
+            or pin.checkpoint_path != expected_path
+        ):
+            raise ArtifactPathStop("checkpoint final pin is outside this frozen store")
+        observed = self._stable_plain_file_identity(destination.relative_path)
+        if observed != pin._filesystem_identity:
+            raise ArtifactPathStop("checkpoint final identity changed after native verification")
+        return expected_path
+
+    def confirm_manifest_final(self, pin: ManifestFinalPin) -> Path:
+        """Require that the exact bounded manifest read before import is unchanged."""
+
+        if type(pin) is not ManifestFinalPin:
+            raise TypeError("manifest final pin must be an exact ManifestFinalPin")
+        destination = self._destination(pin._manifest_relative_path)
+        expected_path = self._absolute_member(destination.relative_path)
+        if (
+            destination.kind is not ArtifactDestinationKind.RESUME_MANIFEST
+            or pin.manifest_path != expected_path
+        ):
+            raise ArtifactPathStop("manifest final pin is outside this frozen store")
+        observed, identity = self._read_bounded_regular_file_with_identity(
+            destination.relative_path
+        )
+        if (
+            identity != pin._filesystem_identity
+            or hashlib.sha256(observed).hexdigest() != pin._manifest_sha256
+        ):
+            raise ArtifactPathStop("manifest final identity changed during native import")
+        return expected_path
+
+    def confirm_exact(self, relative_path: str, expected_bytes: bytes) -> ArtifactEnvelope:
+        """Bounded-reopen exact JSON bytes without reinterpreting publisher state."""
+
+        if type(expected_bytes) is not bytes:
+            raise EnvelopeStop("expected immutable bytes must be exact bytes")
+        destination = self._destination(relative_path)
+        self._authorize_json_destination(destination, artifact_id=None, encode=False)
+        observed = self._read_bounded_regular_file(destination.relative_path)
+        if observed != expected_bytes:
+            raise EnvelopeStop("published artifact bytes differ from the expected envelope")
+        return self.decode(destination.relative_path, observed)
 
     def _plain_file_presence(self, member: str) -> bool:
-        if not self._require_parent_chain(member, create=False):
+        if not self._require_parent_chain(member):
             return False
         destination = self._absolute_member(member)
         try:
@@ -1346,8 +1689,50 @@ class CalibrationV3ArtifactStore:
             raise ArtifactPathStop(f"artifact final is not a plain regular file: {destination}")
         return True
 
-    def _read_bounded_regular_file(self, member: str) -> bytes:
-        if not self._require_parent_chain(member, create=False):
+    @staticmethod
+    def _filesystem_identity(value: os.stat_result) -> tuple[int, int, int, int, int]:
+        return (
+            int(value.st_dev),
+            int(value.st_ino),
+            int(value.st_size),
+            int(value.st_mtime_ns),
+            int(value.st_ctime_ns),
+        )
+
+    def _stable_plain_file_identity(self, member: str) -> tuple[int, int, int, int, int]:
+        if not self._require_parent_chain(member):
+            raise ArtifactPathStop("artifact parent does not exist")
+        destination = self._absolute_member(member)
+        try:
+            before = os.lstat(destination)
+        except OSError as exc:
+            raise ArtifactPathStop("artifact final is unavailable") from exc
+        if not _is_plain_regular_file(before):
+            raise ArtifactPathStop("artifact final is not a plain regular file")
+
+        with _read_only_descriptor(destination) as descriptor:
+            opened = os.fstat(descriptor)
+            if not _is_plain_regular_file(opened):
+                raise ArtifactPathStop("opened artifact is not a plain regular file")
+            opened_identity = self._filesystem_identity(opened)
+            if opened_identity != self._filesystem_identity(before):
+                raise ArtifactPathStop("artifact final changed during safe open")
+            try:
+                after = os.lstat(destination)
+            except OSError as exc:
+                raise ArtifactPathStop("artifact final changed during identity pin") from exc
+            if (
+                not _is_plain_regular_file(after)
+                or self._filesystem_identity(after) != opened_identity
+            ):
+                raise ArtifactPathStop("artifact final changed during identity pin")
+            return opened_identity
+
+    def _read_bounded_regular_file_with_identity(
+        self,
+        member: str,
+    ) -> tuple[bytes, tuple[int, int, int, int, int]]:
+        if not self._require_parent_chain(member):
             raise ArtifactPathStop("artifact parent does not exist")
         destination = self._absolute_member(member)
         try:
@@ -1359,17 +1744,12 @@ class CalibrationV3ArtifactStore:
         if before.st_size > MAX_ENVELOPE_BYTES:
             raise ArtifactPathStop("artifact final exceeds the one-mebibyte bound")
 
-        flags = os.O_RDONLY | int(getattr(os, "O_BINARY", 0))
-        flags |= int(getattr(os, "O_NOFOLLOW", 0))
-        try:
-            descriptor = os.open(destination, flags)
-        except OSError as exc:
-            raise ArtifactPathStop("artifact final cannot be opened safely") from exc
-        try:
+        with _read_only_descriptor(destination) as descriptor:
             opened = os.fstat(descriptor)
             if not _is_plain_regular_file(opened):
                 raise ArtifactPathStop("opened artifact is not a plain regular file")
-            if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+            opened_identity = self._filesystem_identity(opened)
+            if opened_identity != self._filesystem_identity(before):
                 raise ArtifactPathStop("artifact final changed during safe open")
             chunks = bytearray()
             while True:
@@ -1380,54 +1760,29 @@ class CalibrationV3ArtifactStore:
                 if len(chunks) > MAX_ENVELOPE_BYTES:
                     raise ArtifactPathStop("artifact final exceeds the one-mebibyte bound")
             after = os.fstat(descriptor)
-            if (after.st_dev, after.st_ino, after.st_size) != (
-                opened.st_dev,
-                opened.st_ino,
-                opened.st_size,
-            ) or len(chunks) != after.st_size:
+            after_identity = self._filesystem_identity(after)
+            if after_identity != opened_identity or len(chunks) != after.st_size:
                 raise ArtifactPathStop("artifact final changed during bounded read")
-            return bytes(chunks)
-        finally:
-            os.close(descriptor)
+            try:
+                named_after = os.lstat(destination)
+            except OSError as exc:
+                raise ArtifactPathStop("artifact final changed during bounded read") from exc
+            if (
+                not _is_plain_regular_file(named_after)
+                or self._filesystem_identity(named_after) != after_identity
+            ):
+                raise ArtifactPathStop("artifact final changed during bounded read")
+            return bytes(chunks), after_identity
+
+    def _read_bounded_regular_file(self, member: str) -> bytes:
+        observed, _identity = self._read_bounded_regular_file_with_identity(member)
+        return observed
 
     def read(self, relative_path: str) -> ArtifactEnvelope:
         destination = self._destination(relative_path)
         self._authorize_json_destination(destination, artifact_id=None, encode=False)
         member = destination.relative_path
         return self.decode(member, self._read_bounded_regular_file(member))
-
-    def classify_resume_pair(
-        self,
-        checkpoint_relative_path: str,
-        manifest_relative_path: str,
-    ) -> ArtifactPairState:
-        """Classify publication and canonical-read the manifest commit marker.
-
-        COMMITTED means the authority-bound manifest is canonical and both files
-        exist as plain regular files.  Native checkpoint import and semantic
-        validation remain the future transaction/importer's responsibility.
-        """
-
-        checkpoint_destination = self._destination(checkpoint_relative_path)
-        manifest_destination = self._destination(manifest_relative_path)
-        checkpoint = checkpoint_destination.relative_path
-        manifest = manifest_destination.relative_path
-        if (
-            checkpoint_destination.kind is not ArtifactDestinationKind.BINARY_CHECKPOINT
-            or manifest_destination.kind is not ArtifactDestinationKind.RESUME_MANIFEST
-            or checkpoint.removesuffix(".r3ntcp1") != manifest.removesuffix(".resume.json")
-        ):
-            raise ArtifactPathStop("resume pair names do not share one frozen transition")
-        checkpoint_exists = self._plain_file_presence(checkpoint)
-        manifest_exists = self._plain_file_presence(manifest)
-        if not checkpoint_exists and not manifest_exists:
-            return ArtifactPairState.ABSENT
-        if checkpoint_exists and not manifest_exists:
-            raise ArtifactPairStop(ArtifactPairState.CHECKPOINT_ONLY)
-        if not checkpoint_exists and manifest_exists:
-            raise ArtifactPairStop(ArtifactPairState.MANIFEST_ONLY)
-        self.read(manifest)
-        return ArtifactPairState.COMMITTED
 
     def _encode(self, artifact_id: str, payload: object) -> bytes:
         if type(payload) is not dict:

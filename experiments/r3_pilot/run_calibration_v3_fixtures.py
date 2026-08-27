@@ -13,10 +13,13 @@ import argparse
 import importlib
 import sys
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+
+if __package__:
+    from . import calibration_v3_authority as authority_contract
+else:
+    import calibration_v3_authority as authority_contract
 
 EXIT_OK = 0
 EXIT_STOP = 2
@@ -24,22 +27,6 @@ EXIT_STOP = 2
 
 class FixtureRunnerStop(RuntimeError):
     """A fail-closed pre-outcome or protocol STOP."""
-
-
-@dataclass(frozen=True, slots=True)
-class FrozenPlanAuthority:
-    """Authority handed to the future outcome implementation exactly once.
-
-    ``protocol`` is the canonical object that passed all three governing
-    validations.  The executor must treat it as immutable; the two retained
-    identities bind result and checkpoint envelopes without rebuilding an
-    authority from unvalidated digest strings.
-    """
-
-    repository_root: Path
-    protocol: dict[str, Any]
-    protocol_sha256: str
-    source_bundle_identity_sha256: str
 
 
 class _FailClosedArgumentParser(argparse.ArgumentParser):
@@ -103,7 +90,7 @@ def _authorize_frozen_plan(
     governing: ModuleType | None = None,
     source_manifest: Callable[[Path], tuple[dict[str, str | int], ...]] | None = None,
     source_bundle_identity: Callable[[Path], str] | None = None,
-) -> FrozenPlanAuthority:
+) -> authority_contract.FrozenPlanAuthority:
     """Run the only permitted authority sequence, in its frozen order."""
 
     protocol_module = _governing_protocol() if governing is None else governing
@@ -138,15 +125,18 @@ def _authorize_frozen_plan(
             raise FixtureRunnerStop(str(exc)) from exc
         raise
 
-    return FrozenPlanAuthority(
-        repository_root=protocol_module.REPO_ROOT,
-        protocol=protocol,
-        protocol_sha256=protocol_digest,
-        source_bundle_identity_sha256=source_digest,
-    )
+    try:
+        return authority_contract.FrozenPlanAuthority(
+            repository_root=protocol_module.REPO_ROOT,
+            protocol=protocol,
+            protocol_sha256=protocol_digest,
+            source_bundle_identity_sha256=source_digest,
+        )
+    except authority_contract.FrozenPlanAuthorityError as exc:
+        raise FixtureRunnerStop(str(exc)) from exc
 
 
-def _execute_frozen_plan(authority: FrozenPlanAuthority) -> int:
+def _execute_frozen_plan(authority: authority_contract.FrozenPlanAuthority) -> int:
     """Future execution seam; unreachable until a later source-bound change."""
 
     del authority

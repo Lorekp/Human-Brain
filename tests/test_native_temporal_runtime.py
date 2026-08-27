@@ -181,14 +181,20 @@ class _FakeTemporalLibrary:
         self.identity_calls = 0
         self.publish_calls = 0
         self.immutable_publish_calls = 0
+        self.reconcile_calls = 0
+        self.prepare_directory_calls = 0
         self.published_paths: list[tuple[bytes, bytes]] = []
         self.published_payloads: list[tuple[bytes, bytes, bytes]] = []
         self.published_payload_addresses: list[int] = []
+        self.reconciled_payloads: list[tuple[bytes, bytes, bytes]] = []
+        self.prepared_directories: list[tuple[bytes, bytes]] = []
         self.advance_override: object | None = None
         self.import_override: object | None = None
         self.identity_override: object | None = None
         self.publish_override: object | None = None
         self.immutable_publish_override: object | None = None
+        self.reconcile_override: object | None = None
+        self.prepare_directory_override: object | None = None
         self.humanbrain_temporal_circuit_runtime_create_v1 = _FakeFunction(self._create)
         self.humanbrain_temporal_circuit_runtime_import_checkpoint_v1 = _FakeFunction(
             self._import
@@ -210,6 +216,12 @@ class _FakeTemporalLibrary:
         )
         self.humanbrain_temporal_publish_immutable_bytes_path_v1 = _FakeFunction(
             self._publish_immutable_bytes
+        )
+        self.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1 = (
+            _FakeFunction(self._reconcile_existing_immutable_bytes)
+        )
+        self.humanbrain_temporal_prepare_durable_directory_path_v1 = _FakeFunction(
+            self._prepare_durable_directory
         )
         self.humanbrain_temporal_circuit_runtime_destroy = _FakeFunction(self._destroy)
 
@@ -406,6 +418,77 @@ class _FakeTemporalLibrary:
         report = self._report(report_out)
         report.required = len(payload)
         report.observed = len(payload)
+        return 0
+
+    def _reconcile_existing_immutable_bytes(
+        self,
+        request: object,
+        durability_out: object,
+        report_out: object,
+    ) -> int:
+        self.reconcile_calls += 1
+        native_request = _pointed(
+            request, runtime_adapter._NativeImmutableBytesPathRequest
+        )
+        payload = ctypes.string_at(native_request.payload, native_request.payload_len)
+        self.reconciled_payloads.append(
+            (
+                ctypes.string_at(native_request.parent_utf8, native_request.parent_len),
+                ctypes.string_at(
+                    native_request.final_basename_utf8,
+                    native_request.final_basename_len,
+                ),
+                payload,
+            )
+        )
+        if self.reconcile_override is not None:
+            return self.reconcile_override(  # type: ignore[operator,no-any-return]
+                request, durability_out, report_out
+            )
+        durability = _pointed(
+            durability_out,
+            runtime_adapter._NativeImmutableBytesReconciliationReport,
+        )
+        durability.outcome = runtime_adapter.TemporalDurabilityOutcome.DURABLE
+        durability.required_bytes = len(payload)
+        durability.verified_bytes = len(payload)
+        report = self._report(report_out)
+        report.required = len(payload)
+        report.observed = len(payload)
+        return 0
+
+    def _prepare_durable_directory(
+        self,
+        request: object,
+        durability_out: object,
+        report_out: object,
+    ) -> int:
+        self.prepare_directory_calls += 1
+        native_request = _pointed(
+            request, runtime_adapter._NativeDurableDirectoryPathRequest
+        )
+        root = ctypes.string_at(native_request.root_utf8, native_request.root_len)
+        relative = ctypes.string_at(
+            native_request.relative_directory_utf8,
+            native_request.relative_directory_len,
+        )
+        self.prepared_directories.append((root, relative))
+        if self.prepare_directory_override is not None:
+            return self.prepare_directory_override(  # type: ignore[operator,no-any-return]
+                request, durability_out, report_out
+            )
+        component_count = relative.count(b"/") + 1
+        durability = _pointed(
+            durability_out, runtime_adapter._NativeDurableDirectoryPreparationReport
+        )
+        durability.outcome = runtime_adapter.TemporalDurabilityOutcome.DURABLE
+        durability.required_component_count = component_count
+        durability.confirmed_component_count = component_count
+        durability.created_component_count = component_count
+        durability.failed_component_index = (1 << 32) - 1
+        report = self._report(report_out)
+        report.required = component_count
+        report.observed = component_count
         return 0
 
 
@@ -633,11 +716,26 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
             8,
             (0, 8, 16, 24, 32, 40, 48),
         ),
+        runtime_adapter._NativeDurableDirectoryPathRequest: (
+            40,
+            8,
+            (0, 8, 16, 24, 32),
+        ),
         runtime_adapter._NativeCheckpointPublicationError: (8, 4, (0, 2, 4)),
         runtime_adapter._NativeCheckpointPublicationReport: (
             80,
             8,
             (0, 2, 3, 4, 12, 44, 48, 56, 64, 72),
+        ),
+        runtime_adapter._NativeImmutableBytesReconciliationReport: (
+            64,
+            8,
+            (0, 2, 3, 4, 12, 28, 32, 40, 48),
+        ),
+        runtime_adapter._NativeDurableDirectoryPreparationReport: (
+            64,
+            4,
+            (0, 2, 3, 4, 12, 28, 32, 36, 40, 44, 48),
         ),
         runtime_adapter._PyBuffer: (
             80,
@@ -1103,6 +1201,12 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "TemporalCheckpointPublicationError",
         "TemporalCheckpointPublicationOutcome",
         "TemporalImmutableBytesPublication",
+        "TemporalImmutableBytesReconciliation",
+        "TemporalDurableDirectoryPreparation",
+        "TemporalDurabilityError",
+        "TemporalDurabilityErrorDomain",
+        "TemporalDurabilityErrorStage",
+        "TemporalDurabilityOutcome",
         "TemporalPublicationCleanup",
         "TemporalPublicationError",
         "TemporalPublicationErrorDomain",
@@ -1114,6 +1218,8 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "TemporalSpike",
         "TemporalStepMode",
         "publish_immutable_bytes",
+        "prepare_durable_directory",
+        "reconcile_existing_immutable_bytes",
     }
     for method in (
         NativeTemporalCircuit.fresh,
@@ -1159,6 +1265,13 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "destination",
         "payload",
     }
+    assert set(
+        inspect.signature(runtime_adapter.reconcile_existing_immutable_bytes).parameters
+    ) == {"destination", "expected_payload"}
+    assert set(inspect.signature(runtime_adapter.prepare_durable_directory).parameters) == {
+        "root",
+        "relative_directory",
+    }
 
     create = library.humanbrain_temporal_circuit_runtime_create_v1
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
@@ -1172,6 +1285,10 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1
     )
     publish_bytes = library.humanbrain_temporal_publish_immutable_bytes_path_v1
+    reconcile_bytes = (
+        library.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1
+    )
+    prepare_directory = library.humanbrain_temporal_prepare_durable_directory_path_v1
     destroy = library.humanbrain_temporal_circuit_runtime_destroy
     functions = (
         create,
@@ -1182,6 +1299,8 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         export,
         publish,
         publish_bytes,
+        reconcile_bytes,
+        prepare_directory,
         destroy,
     )
     assert [len(function.argtypes or ()) for function in functions] == [
@@ -1192,6 +1311,8 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         4,
         5,
         5,
+        3,
+        3,
         3,
         1,
     ]
@@ -1206,6 +1327,8 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
             export,
             publish,
             publish_bytes,
+            reconcile_bytes,
+            prepare_directory,
         )
     )
     assert destroy.restype is None
@@ -1511,6 +1634,52 @@ def test_publish_immutable_bytes_is_a_standalone_bit_exact_capability(
         (b"folder", b"result.json", payload)
     ]
     assert library.published_payload_addresses == [expected_payload_address]
+
+
+def test_reconcile_existing_immutable_bytes_is_a_bit_exact_durability_capability(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    payload = b'{"kind":"resume-manifest","generation":7}\x00\xff'
+
+    receipt = runtime_adapter.reconcile_existing_immutable_bytes(
+        Path("folder") / "result.json", payload
+    )
+
+    assert receipt.outcome is runtime_adapter.TemporalDurabilityOutcome.DURABLE
+    assert receipt.durably_reconciled
+    assert receipt.primary_error is None
+    assert receipt.expected_bytes == len(payload)
+    assert receipt.verified_bytes == len(payload)
+    assert library.reconciled_payloads == [(b"folder", b"result.json", payload)]
+    assert library.reconcile_calls == 1
+    with pytest.raises((AttributeError, dataclasses.FrozenInstanceError)):
+        receipt.outcome = runtime_adapter.TemporalDurabilityOutcome.NOT_DURABLE
+
+
+def test_prepare_durable_directory_reports_the_complete_relative_closure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    root = Path.cwd()
+
+    receipt = runtime_adapter.prepare_durable_directory(
+        root, Path("artifacts") / "resume" / "generation-7"
+    )
+
+    assert receipt.outcome is runtime_adapter.TemporalDurabilityOutcome.DURABLE
+    assert receipt.durably_prepared
+    assert receipt.required_component_count == 3
+    assert receipt.confirmed_component_count == 3
+    assert receipt.created_component_count == 3
+    assert receipt.failed_component_index is None
+    assert library.prepared_directories == [
+        (
+            str(root).encode("utf-8"),
+            b"artifacts/resume/generation-7",
+        )
+    ]
+    assert library.prepare_directory_calls == 1
 
 
 def test_publish_immutable_bytes_releases_buffer_when_native_raises(
@@ -3008,3 +3177,23 @@ def test_actual_native_immutable_bytes_publication_is_exclusive_and_bit_exact(
     assert collision.outcome is runtime_adapter.TemporalPublicationOutcome.COLLISION
     assert not collision.durably_published
     assert destination.read_bytes() == payload
+
+    reconciled = runtime_adapter.reconcile_existing_immutable_bytes(destination, payload)
+    assert reconciled.durably_reconciled
+    assert reconciled.verified_bytes == len(payload)
+    mismatch = runtime_adapter.reconcile_existing_immutable_bytes(destination, b"different")
+    assert mismatch.outcome is runtime_adapter.TemporalDurabilityOutcome.NOT_DURABLE
+    assert destination.read_bytes() == payload
+
+    prepared = runtime_adapter.prepare_durable_directory(
+        tmp_path, Path("durable") / "generation-7"
+    )
+    assert prepared.durably_prepared
+    assert prepared.required_component_count == 2
+    assert prepared.confirmed_component_count == 2
+    assert (tmp_path / "durable" / "generation-7").is_dir()
+    repeated = runtime_adapter.prepare_durable_directory(
+        tmp_path, Path("durable") / "generation-7"
+    )
+    assert repeated.durably_prepared
+    assert repeated.created_component_count == 0

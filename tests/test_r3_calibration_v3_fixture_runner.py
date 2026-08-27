@@ -17,9 +17,10 @@ RUNNER_DIR = ROOT / "experiments" / "r3_pilot"
 if str(RUNNER_DIR) not in sys.path:
     sys.path.insert(0, str(RUNNER_DIR))
 
-import calibration_v3_gate3_authority as gate3_authority
-import calibration_v3_protocol as governing_protocol
-import run_calibration_v3_fixtures as runner
+import calibration_v3_authority as authority_contract  # noqa: E402
+import calibration_v3_gate3_authority as gate3_authority  # noqa: E402
+import calibration_v3_protocol as governing_protocol  # noqa: E402
+import run_calibration_v3_fixtures as runner  # noqa: E402
 
 GATE3_PROTOCOL_PATH = "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json"
 GATE3_SOURCE_FRAMING = (
@@ -102,7 +103,7 @@ def _synthetic_governing(
 
     def protocol_sha256() -> str:
         calls.append("protocol_sha256")
-        return "11" * 32
+        return hashlib.sha256(governing_protocol.canonical_json_bytes(protocol)).hexdigest()
 
     return SimpleNamespace(
         ProtocolError=_SyntheticProtocolError,
@@ -112,6 +113,7 @@ def _synthetic_governing(
         validate_committed_source_blobs=validate_committed_source_blobs,
         validate_source_bytes=validate_source_bytes,
         protocol_sha256=protocol_sha256,
+        protocol=protocol,
         source_binding=binding,
     )
 
@@ -225,6 +227,7 @@ def test_authority_gate_order_is_exact_and_retained(
         source_bundle_identity=source_bundle_identity,
     )
 
+    assert type(authority) is authority_contract.FrozenPlanAuthority
     assert calls == [
         "build_protocol",
         "validate_protocol:runnable",
@@ -237,8 +240,39 @@ def test_authority_gate_order_is_exact_and_retained(
     ]
     assert authority.repository_root == governing.REPO_ROOT
     assert authority.protocol["source_binding"] is not None
-    assert authority.protocol_sha256 == "11" * 32
+    assert (
+        authority.protocol_sha256
+        == hashlib.sha256(governing_protocol.canonical_json_bytes(governing.protocol)).hexdigest()
+    )
     assert authority.source_bundle_identity_sha256 == "22" * 32
+
+
+def test_atomic_authority_snapshot_failure_stops_before_execution(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls: list[str] = []
+    governing = _synthetic_governing(calls, tmp_path)
+    reached: list[str] = []
+
+    def mutate_after_protocol_digest(root: Path) -> str:
+        assert root == governing.REPO_ROOT
+        governing.protocol["late_nested_mutation"] = {"split": True}
+        return "22" * 32
+
+    monkeypatch.setattr(runner, "_governing_protocol", lambda: governing)
+    monkeypatch.setattr(runner, "_source_manifest", lambda _root: SYNTHETIC_SOURCE_MANIFEST)
+    monkeypatch.setattr(runner, "_source_bundle_identity", mutate_after_protocol_digest)
+    monkeypatch.setattr(
+        runner,
+        "_execute_frozen_plan",
+        lambda _authority: reached.append("execution") or runner.EXIT_OK,
+    )
+
+    assert runner.main(["--run-frozen-plan"]) == runner.EXIT_STOP
+    assert reached == []
+    assert "canonical snapshot" in capsys.readouterr().err
 
 
 def test_authority_binds_the_exact_gate3_bytes_read_after_live_source_validation(
@@ -819,7 +853,7 @@ def test_failed_authority_has_no_execution_fallback(
 ) -> None:
     reached: list[str] = []
 
-    def stop() -> runner.FrozenPlanAuthority:
+    def stop() -> authority_contract.FrozenPlanAuthority:
         reached.append("authority")
         raise runner.FixtureRunnerStop("synthetic authority STOP")
 
@@ -838,10 +872,13 @@ def test_even_a_synthetic_future_authority_reaches_only_the_disabled_seam(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    authority = runner.FrozenPlanAuthority(
+    protocol = {"source_binding": {"runnable": True}}
+    authority = authority_contract.FrozenPlanAuthority(
         repository_root=ROOT,
-        protocol={"source_binding": {"runnable": True}},
-        protocol_sha256="11" * 32,
+        protocol=protocol,
+        protocol_sha256=hashlib.sha256(
+            governing_protocol.canonical_json_bytes(protocol)
+        ).hexdigest(),
         source_bundle_identity_sha256="22" * 32,
     )
     monkeypatch.setattr(runner, "_authorize_frozen_plan", lambda: authority)

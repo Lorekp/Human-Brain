@@ -1,36 +1,49 @@
 use std::{
     ffi::c_void,
     fs::File,
+    io::{Read, Seek, SeekFrom},
     mem::{size_of, MaybeUninit},
     os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle},
     ptr,
 };
 
+use windows_sys::Wdk::Storage::FileSystem::NtFlushBuffersFileEx;
 use windows_sys::Win32::{
     Foundation::{
-        CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, ERROR_FILE_NOT_FOUND,
-        ERROR_PATH_NOT_FOUND, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE,
+        CloseHandle, GetLastError, RtlNtStatusToDosError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS,
+        ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND, GENERIC_READ, GENERIC_WRITE, HANDLE,
+        INVALID_HANDLE_VALUE,
     },
     Storage::FileSystem::{
-        CreateFileW, FileAttributeTagInfo, FileDispositionInfo, FileIdInfo, FlushFileBuffers,
-        GetDriveTypeW, GetFileInformationByHandleEx, GetFinalPathNameByHandleW,
-        GetVolumeInformationByHandleW, MoveFileExW, SetFileInformationByHandle, CREATE_NEW, DELETE,
-        FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_ATTRIBUTE_REPARSE_POINT,
-        FILE_ATTRIBUTE_TAG_INFO, FILE_DISPOSITION_INFO, FILE_FLAG_BACKUP_SEMANTICS,
-        FILE_FLAG_OPEN_REPARSE_POINT, FILE_ID_INFO, FILE_NAME_NORMALIZED, FILE_READ_ATTRIBUTES,
-        FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, MOVEFILE_WRITE_THROUGH,
+        CreateDirectoryW, CreateFileW, FileAttributeTagInfo, FileDispositionInfo, FileIdInfo,
+        FileStandardInfo, FlushFileBuffers, GetDriveTypeW, GetFileInformationByHandleEx,
+        GetFinalPathNameByHandleW, GetVolumeInformationByHandleW, MoveFileExW,
+        SetFileInformationByHandle, CREATE_NEW, DELETE, FILE_ATTRIBUTE_DIRECTORY,
+        FILE_ATTRIBUTE_NORMAL, FILE_ATTRIBUTE_REPARSE_POINT, FILE_ATTRIBUTE_TAG_INFO,
+        FILE_DISPOSITION_INFO, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT,
+        FILE_ID_INFO, FILE_NAME_NORMALIZED, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE,
+        FILE_SHARE_READ, FILE_SHARE_WRITE, FILE_STANDARD_INFO, MOVEFILE_WRITE_THROUGH,
         OPEN_EXISTING, VOLUME_NAME_DOS,
     },
+    System::IO::IO_STATUS_BLOCK,
 };
 
 use super::{
-    CleanupErrors, PublicationCompletion, PublicationError, PublicationWriteError, TempName,
-    ValidatedCheckpointDestination, ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY,
-    ERROR_STAGE_FILE_CLOSE, ERROR_STAGE_FILE_SYNC, ERROR_STAGE_PARENT_IDENTITY,
-    ERROR_STAGE_PARENT_OPEN, ERROR_STAGE_TEMP_CLEANUP, ERROR_STAGE_TEMP_CREATE,
-    ERROR_STAGE_TEMP_IDENTITY, OUTCOME_COLLISION, OUTCOME_DURABLE_PUBLISHED, OUTCOME_NOT_PUBLISHED,
-    OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE, POLICY_ALLOCATION_FAILED, POLICY_INVALID_PARENT,
-    POLICY_PARENT_IS_REPARSE, POLICY_PATH_IDENTITY_CHANGED, POLICY_REMOTE_OR_UNKNOWN_FILESYSTEM,
+    CleanupErrors, PathDurabilityCompletion, PublicationCompletion, PublicationError,
+    PublicationWriteError, TempName, ValidatedCheckpointDestination, ValidatedDurableDirectory,
+    DURABILITY_NO_FAILED_COMPONENT, DURABILITY_STAGE_DIRECTORY_CREATE,
+    DURABILITY_STAGE_DIRECTORY_IDENTITY, DURABILITY_STAGE_DIRECTORY_OPEN,
+    DURABILITY_STAGE_DIRECTORY_SYNC, DURABILITY_STAGE_FILESYSTEM_POLICY,
+    DURABILITY_STAGE_FILE_CLOSE, DURABILITY_STAGE_FILE_SYNC, DURABILITY_STAGE_FINAL_IDENTITY,
+    DURABILITY_STAGE_FINAL_OPEN, DURABILITY_STAGE_FINAL_READ, DURABILITY_STAGE_PARENT_OPEN,
+    DURABILITY_STAGE_PATH_IDENTITY, DURABILITY_STAGE_PAYLOAD_MISMATCH,
+    ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY, ERROR_STAGE_FILE_CLOSE,
+    ERROR_STAGE_FILE_SYNC, ERROR_STAGE_PARENT_IDENTITY, ERROR_STAGE_PARENT_OPEN,
+    ERROR_STAGE_TEMP_CLEANUP, ERROR_STAGE_TEMP_CREATE, ERROR_STAGE_TEMP_IDENTITY,
+    OUTCOME_COLLISION, OUTCOME_DURABLE_PUBLISHED, OUTCOME_NOT_PUBLISHED,
+    OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE, POLICY_ALLOCATION_FAILED, POLICY_BYTE_MISMATCH,
+    POLICY_INVALID_PARENT, POLICY_NOT_REGULAR_FILE, POLICY_PARENT_IS_REPARSE,
+    POLICY_PATH_IDENTITY_CHANGED, POLICY_REMOTE_OR_UNKNOWN_FILESYSTEM, POLICY_SIZE_MISMATCH,
     POLICY_TEMP_IDENTITY_CHANGED, POLICY_TEMP_NAME_EXHAUSTED, POLICY_UNSUPPORTED_FILESYSTEM,
 };
 
@@ -72,10 +85,16 @@ struct FileIdentity {
 
 #[derive(Debug)]
 struct WindowsParent {
-    _handle: OwnedHandle,
+    handle: OwnedHandle,
     identity: FileIdentity,
     canonical: Vec<u16>,
     maximum_component_length: usize,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct StableFileIdentity {
+    file: FileIdentity,
+    size: u64,
 }
 
 enum BackendFailure {
@@ -323,6 +342,382 @@ where
     )
 }
 
+pub(super) fn reconcile_existing_immutable_bytes(
+    expected: &[u8],
+    destination: &ValidatedCheckpointDestination,
+) -> PathDurabilityCompletion {
+    let expected_len = expected.len() as u64;
+    if !valid_windows_basename(destination.final_basename_utf8()) {
+        return PathDurabilityCompletion::reconciliation_failed(
+            PublicationError::policy(DURABILITY_STAGE_FINAL_OPEN, POLICY_INVALID_PARENT),
+            expected_len,
+            0,
+        );
+    }
+    let parent = match open_validated_parent_for_durability(destination.parent_utf8()) {
+        Ok(parent) => parent,
+        Err(failure) => {
+            return PathDurabilityCompletion::reconciliation_failed(
+                durability_backend_error(failure, DURABILITY_STAGE_PARENT_OPEN),
+                expected_len,
+                0,
+            )
+        }
+    };
+    let basename_wide = match utf8_to_wide(destination.final_basename_utf8()) {
+        Ok(name) => name,
+        Err(()) => {
+            return PathDurabilityCompletion::reconciliation_failed(
+                PublicationError::policy(DURABILITY_STAGE_FINAL_OPEN, POLICY_ALLOCATION_FAILED),
+                expected_len,
+                0,
+            )
+        }
+    };
+    let final_path =
+        match join_parent_name(&parent.canonical, &basename_wide[..basename_wide.len() - 1]) {
+            Ok(path) => path,
+            Err(()) => {
+                return PathDurabilityCompletion::reconciliation_failed(
+                    PublicationError::policy(DURABILITY_STAGE_FINAL_OPEN, POLICY_ALLOCATION_FAILED),
+                    expected_len,
+                    0,
+                )
+            }
+        };
+    let raw = unsafe {
+        CreateFileW(
+            final_path.as_ptr(),
+            GENERIC_READ | GENERIC_WRITE | FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ,
+            ptr::null(),
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT,
+            ptr::null_mut(),
+        )
+    };
+    if raw == INVALID_HANDLE_VALUE {
+        return PathDurabilityCompletion::reconciliation_failed(
+            last_win32(DURABILITY_STAGE_FINAL_OPEN),
+            expected_len,
+            0,
+        );
+    }
+    let mut owned = OwnedHandle::new(raw);
+    let identity = match stable_regular_identity(raw, DURABILITY_STAGE_FINAL_IDENTITY) {
+        Ok(identity) => identity,
+        Err(error) => return reconcile_handle_failure(&mut owned, error, expected_len, 0),
+    };
+    if identity.size != expected_len {
+        return reconcile_handle_failure(
+            &mut owned,
+            PublicationError::policy(DURABILITY_STAGE_PAYLOAD_MISMATCH, POLICY_SIZE_MISMATCH),
+            expected_len,
+            0,
+        );
+    }
+    let file_raw = owned.take();
+    let mut file = unsafe { File::from_raw_handle(file_raw as RawHandle) };
+    let verified = match verify_exact_file_bytes(&mut file, expected) {
+        Ok(verified) => verified,
+        Err((error, verified)) => {
+            return reconcile_file_failure(file, error, expected_len, verified)
+        }
+    };
+    if unsafe { FlushFileBuffers(file.as_raw_handle() as HANDLE) } == 0 {
+        let error = last_win32(DURABILITY_STAGE_FILE_SYNC);
+        return reconcile_file_failure(file, error, expected_len, verified);
+    }
+    if let Err(error) = flush_directory_durably(parent.handle.raw) {
+        return reconcile_file_failure(file, error, expected_len, verified);
+    }
+    let after = match stable_regular_identity(
+        file.as_raw_handle() as HANDLE,
+        DURABILITY_STAGE_FINAL_IDENTITY,
+    ) {
+        Ok(after) => after,
+        Err(error) => return reconcile_file_failure(file, error, expected_len, verified),
+    };
+    if after != identity {
+        return reconcile_file_failure(
+            file,
+            PublicationError::policy(
+                DURABILITY_STAGE_FINAL_IDENTITY,
+                POLICY_PATH_IDENTITY_CHANGED,
+            ),
+            expected_len,
+            verified,
+        );
+    }
+    if let Err(error) = verify_stable_regular_path(&final_path, identity) {
+        return reconcile_file_failure(file, error, expected_len, verified);
+    }
+    if let Err(error) = verify_parent_identity(&parent) {
+        return reconcile_file_failure(
+            file,
+            PublicationError {
+                stage: DURABILITY_STAGE_PATH_IDENTITY,
+                ..error
+            },
+            expected_len,
+            verified,
+        );
+    }
+    let verified_after = match verify_exact_file_bytes(&mut file, expected) {
+        Ok(verified_after) => verified_after,
+        Err((error, verified_after)) => {
+            return reconcile_file_failure(file, error, expected_len, verified_after)
+        }
+    };
+    if let Err(error) = close_durability_file_checked(file) {
+        return PathDurabilityCompletion::reconciliation_failed(
+            error,
+            expected_len,
+            verified_after,
+        );
+    }
+    PathDurabilityCompletion::reconciled(expected_len)
+}
+
+pub(super) fn prepare_durable_directory(
+    directory: &ValidatedDurableDirectory,
+) -> PathDurabilityCompletion {
+    let component_count = directory.component_count();
+    let mut current = match open_validated_parent_for_durability(directory.root_utf8()) {
+        Ok(root) => root,
+        Err(failure) => {
+            return PathDurabilityCompletion::directory_failed(
+                durability_backend_error(failure, DURABILITY_STAGE_PARENT_OPEN),
+                component_count,
+                0,
+                0,
+                DURABILITY_NO_FAILED_COMPONENT,
+            )
+        }
+    };
+    if let Err(error) = flush_directory_durably(current.handle.raw) {
+        return PathDurabilityCompletion::directory_failed(
+            error,
+            component_count,
+            0,
+            0,
+            DURABILITY_NO_FAILED_COMPONENT,
+        );
+    }
+
+    let mut confirmed = 0u32;
+    let mut created = 0u32;
+    for (index, component) in directory
+        .relative_directory_utf8()
+        .split(|byte| *byte == b'/')
+        .enumerate()
+    {
+        let failed_index = index as u32;
+        if !valid_windows_basename(component) {
+            return PathDurabilityCompletion::directory_failed(
+                PublicationError::policy(DURABILITY_STAGE_DIRECTORY_CREATE, POLICY_INVALID_PARENT),
+                component_count,
+                confirmed,
+                created,
+                failed_index,
+            );
+        }
+        let component_wide = match utf8_to_wide(component) {
+            Ok(component_wide) => component_wide,
+            Err(()) => {
+                return PathDurabilityCompletion::directory_failed(
+                    PublicationError::policy(
+                        DURABILITY_STAGE_DIRECTORY_CREATE,
+                        POLICY_ALLOCATION_FAILED,
+                    ),
+                    component_count,
+                    confirmed,
+                    created,
+                    failed_index,
+                )
+            }
+        };
+        if component_wide.len().saturating_sub(1) > current.maximum_component_length {
+            return PathDurabilityCompletion::directory_failed(
+                PublicationError::policy(
+                    DURABILITY_STAGE_FILESYSTEM_POLICY,
+                    POLICY_UNSUPPORTED_FILESYSTEM,
+                ),
+                component_count,
+                confirmed,
+                created,
+                failed_index,
+            );
+        }
+        let child_path = match join_parent_name(
+            &current.canonical,
+            &component_wide[..component_wide.len() - 1],
+        ) {
+            Ok(path) => path,
+            Err(()) => {
+                return PathDurabilityCompletion::directory_failed(
+                    PublicationError::policy(
+                        DURABILITY_STAGE_DIRECTORY_CREATE,
+                        POLICY_ALLOCATION_FAILED,
+                    ),
+                    component_count,
+                    confirmed,
+                    created,
+                    failed_index,
+                )
+            }
+        };
+        if unsafe { CreateDirectoryW(child_path.as_ptr(), ptr::null()) } != 0 {
+            created += 1;
+        } else {
+            let code = unsafe { GetLastError() };
+            if code != ERROR_ALREADY_EXISTS && code != ERROR_FILE_EXISTS {
+                return PathDurabilityCompletion::directory_failed(
+                    PublicationError::win32(DURABILITY_STAGE_DIRECTORY_CREATE, code),
+                    component_count,
+                    confirmed,
+                    created,
+                    failed_index,
+                );
+            }
+        }
+        let child_handle =
+            match open_directory_with_access(&child_path, GENERIC_WRITE | FILE_READ_ATTRIBUTES) {
+                Ok(handle) => handle,
+                Err(failure) => {
+                    return PathDurabilityCompletion::directory_failed(
+                        durability_backend_error(failure, DURABILITY_STAGE_DIRECTORY_OPEN),
+                        component_count,
+                        confirmed,
+                        created,
+                        failed_index,
+                    )
+                }
+            };
+        if let Err(failure) = validate_directory_handle(child_handle.raw) {
+            return PathDurabilityCompletion::directory_failed(
+                durability_backend_error(failure, DURABILITY_STAGE_DIRECTORY_IDENTITY),
+                component_count,
+                confirmed,
+                created,
+                failed_index,
+            );
+        }
+        let identity = match handle_identity(child_handle.raw, DURABILITY_STAGE_DIRECTORY_IDENTITY)
+        {
+            Ok(identity) => identity,
+            Err(error) => {
+                return PathDurabilityCompletion::directory_failed(
+                    error,
+                    component_count,
+                    confirmed,
+                    created,
+                    failed_index,
+                )
+            }
+        };
+        let (maximum_component_length, is_ntfs) = match volume_information(child_handle.raw) {
+            Ok(information) => information,
+            Err(failure) => {
+                return PathDurabilityCompletion::directory_failed(
+                    durability_backend_error(failure, DURABILITY_STAGE_FILESYSTEM_POLICY),
+                    component_count,
+                    confirmed,
+                    created,
+                    failed_index,
+                )
+            }
+        };
+        if !is_ntfs || identity.volume_serial != current.identity.volume_serial {
+            return PathDurabilityCompletion::directory_failed(
+                PublicationError::policy(
+                    DURABILITY_STAGE_FILESYSTEM_POLICY,
+                    POLICY_UNSUPPORTED_FILESYSTEM,
+                ),
+                component_count,
+                confirmed,
+                created,
+                failed_index,
+            );
+        }
+        let canonical = match canonical_handle_path(child_handle.raw, current.canonical[4]) {
+            Ok(canonical) => canonical,
+            Err(failure) => {
+                return PathDurabilityCompletion::directory_failed(
+                    durability_backend_error(failure, DURABILITY_STAGE_DIRECTORY_IDENTITY),
+                    component_count,
+                    confirmed,
+                    created,
+                    failed_index,
+                )
+            }
+        };
+        let mut child = WindowsParent {
+            handle: child_handle,
+            identity,
+            canonical,
+            maximum_component_length,
+        };
+        if let Err(error) = flush_directory_durably(child.handle.raw)
+            .and_then(|()| flush_directory_durably(current.handle.raw))
+        {
+            return PathDurabilityCompletion::directory_failed(
+                error,
+                component_count,
+                confirmed,
+                created,
+                failed_index,
+            );
+        }
+        if let Err(error) = verify_directory_path_identity(&child_path, identity) {
+            return PathDurabilityCompletion::directory_failed(
+                error,
+                component_count,
+                confirmed,
+                created,
+                failed_index,
+            );
+        }
+        if let Err(error) = verify_parent_identity(&current) {
+            return PathDurabilityCompletion::directory_failed(
+                PublicationError {
+                    stage: DURABILITY_STAGE_PATH_IDENTITY,
+                    ..error
+                },
+                component_count,
+                confirmed,
+                created,
+                failed_index,
+            );
+        }
+        confirmed += 1;
+        if let Err(error) = close_durability_handle_checked(&mut current.handle) {
+            let mut failure = PathDurabilityCompletion::directory_failed(
+                error,
+                component_count,
+                confirmed,
+                created,
+                failed_index,
+            );
+            if let Err(cleanup) = close_durability_handle_checked(&mut child.handle) {
+                failure.push_cleanup(cleanup);
+            }
+            return failure;
+        }
+        current = child;
+    }
+    if let Err(error) = close_durability_handle_checked(&mut current.handle) {
+        return PathDurabilityCompletion::directory_failed(
+            error,
+            component_count,
+            confirmed,
+            created,
+            DURABILITY_NO_FAILED_COMPONENT,
+        );
+    }
+    PathDurabilityCompletion::directory_prepared(component_count, created)
+}
+
 fn classify_move_failure(code: u32) -> (u16, PublicationError) {
     if code == ERROR_FILE_EXISTS || code == ERROR_ALREADY_EXISTS {
         (OUTCOME_COLLISION, PublicationError::ZERO)
@@ -335,6 +730,19 @@ fn classify_move_failure(code: u32) -> (u16, PublicationError) {
 }
 
 fn open_validated_parent(parent_utf8: &[u8]) -> Result<WindowsParent, BackendFailure> {
+    open_validated_parent_with_access(parent_utf8, FILE_READ_ATTRIBUTES)
+}
+
+fn open_validated_parent_for_durability(
+    parent_utf8: &[u8],
+) -> Result<WindowsParent, BackendFailure> {
+    open_validated_parent_with_access(parent_utf8, GENERIC_WRITE | FILE_READ_ATTRIBUTES)
+}
+
+fn open_validated_parent_with_access(
+    parent_utf8: &[u8],
+    desired_access: u32,
+) -> Result<WindowsParent, BackendFailure> {
     let parent = std::str::from_utf8(parent_utf8)
         .map_err(|_| BackendFailure::Error(invalid_parent(ERROR_STAGE_PARENT_OPEN)))?;
     let normalized = normalized_drive_path(parent)?;
@@ -351,7 +759,7 @@ fn open_validated_parent(parent_utf8: &[u8]) -> Result<WindowsParent, BackendFai
     // only the canonical local DOS/NTFS target obtained from that handle.
     // Publication thereafter uses only that canonical path and rechecks the
     // final parent's identity immediately before MoveFileExW.
-    let current = open_directory(normalized.as_slice())?;
+    let current = open_directory_with_access(normalized.as_slice(), desired_access)?;
     validate_directory_handle(current.raw)?;
 
     let identity =
@@ -365,7 +773,7 @@ fn open_validated_parent(parent_utf8: &[u8]) -> Result<WindowsParent, BackendFai
     }
     let canonical = canonical_handle_path(current.raw, normalized[0])?;
     Ok(WindowsParent {
-        _handle: current,
+        handle: current,
         identity,
         canonical,
         maximum_component_length,
@@ -438,11 +846,18 @@ fn normalized_drive_path(parent: &str) -> Result<Vec<u16>, BackendFailure> {
 }
 
 fn open_directory(path_without_nul: &[u16]) -> Result<OwnedHandle, BackendFailure> {
+    open_directory_with_access(path_without_nul, FILE_READ_ATTRIBUTES)
+}
+
+fn open_directory_with_access(
+    path_without_nul: &[u16],
+    desired_access: u32,
+) -> Result<OwnedHandle, BackendFailure> {
     let path = nul_terminated_copy(path_without_nul).map_err(|_| BackendFailure::Allocation)?;
     let raw = unsafe {
         CreateFileW(
             path.as_ptr(),
-            FILE_READ_ATTRIBUTES,
+            desired_access,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             ptr::null(),
             OPEN_EXISTING,
@@ -512,6 +927,208 @@ fn handle_identity(handle: HANDLE, stage: u16) -> Result<FileIdentity, Publicati
         volume_serial: info.VolumeSerialNumber,
         file_id: info.FileId.Identifier,
     })
+}
+
+fn stable_regular_identity(
+    handle: HANDLE,
+    stage: u16,
+) -> Result<StableFileIdentity, PublicationError> {
+    let attributes = file_attribute_tag(handle, stage)?;
+    if attributes.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0
+        || attributes.FileAttributes & FILE_ATTRIBUTE_DIRECTORY != 0
+    {
+        return Err(PublicationError::policy(stage, POLICY_NOT_REGULAR_FILE));
+    }
+    let mut standard = MaybeUninit::<FILE_STANDARD_INFO>::uninit();
+    if unsafe {
+        GetFileInformationByHandleEx(
+            handle,
+            FileStandardInfo,
+            standard.as_mut_ptr().cast::<c_void>(),
+            size_of::<FILE_STANDARD_INFO>() as u32,
+        )
+    } == 0
+    {
+        return Err(last_win32(stage));
+    }
+    let standard = unsafe { standard.assume_init() };
+    if standard.EndOfFile < 0 {
+        return Err(PublicationError::policy(stage, POLICY_SIZE_MISMATCH));
+    }
+    Ok(StableFileIdentity {
+        file: handle_identity(handle, stage)?,
+        size: standard.EndOfFile as u64,
+    })
+}
+
+fn verify_stable_regular_path(
+    path: &[u16],
+    expected: StableFileIdentity,
+) -> Result<(), PublicationError> {
+    let raw = unsafe {
+        CreateFileW(
+            path.as_ptr(),
+            FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ,
+            ptr::null(),
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT,
+            ptr::null_mut(),
+        )
+    };
+    if raw == INVALID_HANDLE_VALUE {
+        return Err(last_win32(DURABILITY_STAGE_PATH_IDENTITY));
+    }
+    let mut handle = OwnedHandle::new(raw);
+    let observed = stable_regular_identity(raw, DURABILITY_STAGE_PATH_IDENTITY);
+    let close = close_durability_handle_checked(&mut handle);
+    match (observed, close) {
+        (Err(error), _) => Err(error),
+        (Ok(_), Err(error)) => Err(error),
+        (Ok(observed), Ok(())) if observed == expected => Ok(()),
+        (Ok(_), Ok(())) => Err(PublicationError::policy(
+            DURABILITY_STAGE_PATH_IDENTITY,
+            POLICY_PATH_IDENTITY_CHANGED,
+        )),
+    }
+}
+
+fn verify_directory_path_identity(
+    path: &[u16],
+    expected: FileIdentity,
+) -> Result<(), PublicationError> {
+    let mut handle = open_directory(path)
+        .map_err(|failure| durability_backend_error(failure, DURABILITY_STAGE_PATH_IDENTITY))?;
+    validate_directory_handle(handle.raw)
+        .map_err(|failure| durability_backend_error(failure, DURABILITY_STAGE_PATH_IDENTITY))?;
+    let observed = handle_identity(handle.raw, DURABILITY_STAGE_PATH_IDENTITY)?;
+    close_durability_handle_checked(&mut handle)?;
+    if observed == expected {
+        Ok(())
+    } else {
+        Err(PublicationError::policy(
+            DURABILITY_STAGE_PATH_IDENTITY,
+            POLICY_PATH_IDENTITY_CHANGED,
+        ))
+    }
+}
+
+fn verify_exact_file_bytes(
+    file: &mut File,
+    expected: &[u8],
+) -> Result<u64, (PublicationError, u64)> {
+    if let Err(error) = file.seek(SeekFrom::Start(0)) {
+        return Err((durability_io_error(DURABILITY_STAGE_FINAL_READ, &error), 0));
+    }
+    let mut offset = 0usize;
+    let mut buffer = [0u8; 8192];
+    while offset < expected.len() {
+        let requested = buffer.len().min(expected.len() - offset);
+        let read = match file.read(&mut buffer[..requested]) {
+            Ok(0) => {
+                return Err((
+                    PublicationError::policy(
+                        DURABILITY_STAGE_PAYLOAD_MISMATCH,
+                        POLICY_SIZE_MISMATCH,
+                    ),
+                    offset as u64,
+                ))
+            }
+            Ok(read) => read,
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(error) => {
+                return Err((
+                    durability_io_error(DURABILITY_STAGE_FINAL_READ, &error),
+                    offset as u64,
+                ))
+            }
+        };
+        if let Some(relative) = buffer[..read]
+            .iter()
+            .zip(&expected[offset..offset + read])
+            .position(|(observed, expected)| observed != expected)
+        {
+            return Err((
+                PublicationError::policy(DURABILITY_STAGE_PAYLOAD_MISMATCH, POLICY_BYTE_MISMATCH),
+                (offset + relative) as u64,
+            ));
+        }
+        offset += read;
+    }
+    Ok(offset as u64)
+}
+
+fn flush_directory_durably(handle: HANDLE) -> Result<(), PublicationError> {
+    let mut io_status = IO_STATUS_BLOCK::default();
+    let status = unsafe { NtFlushBuffersFileEx(handle, 0, ptr::null(), 0, &mut io_status) };
+    if status >= 0 {
+        Ok(())
+    } else {
+        Err(PublicationError::win32(
+            DURABILITY_STAGE_DIRECTORY_SYNC,
+            unsafe { RtlNtStatusToDosError(status) },
+        ))
+    }
+}
+
+fn durability_backend_error(failure: BackendFailure, stage: u16) -> PublicationError {
+    match failure {
+        BackendFailure::Error(error) => PublicationError { stage, ..error },
+        BackendFailure::Allocation => PublicationError::policy(stage, POLICY_ALLOCATION_FAILED),
+    }
+}
+
+fn durability_io_error(stage: u16, source: &std::io::Error) -> PublicationError {
+    source.raw_os_error().map_or_else(
+        || PublicationError::policy(stage, POLICY_INVALID_PARENT),
+        |code| PublicationError::win32(stage, code as u32),
+    )
+}
+
+fn reconcile_handle_failure(
+    handle: &mut OwnedHandle,
+    error: PublicationError,
+    expected_bytes: u64,
+    verified_bytes: u64,
+) -> PathDurabilityCompletion {
+    let mut completion =
+        PathDurabilityCompletion::reconciliation_failed(error, expected_bytes, verified_bytes);
+    if let Err(cleanup) = close_durability_handle_checked(handle) {
+        completion.push_cleanup(cleanup);
+    }
+    completion
+}
+
+fn reconcile_file_failure(
+    file: File,
+    error: PublicationError,
+    expected_bytes: u64,
+    verified_bytes: u64,
+) -> PathDurabilityCompletion {
+    let mut completion =
+        PathDurabilityCompletion::reconciliation_failed(error, expected_bytes, verified_bytes);
+    if let Err(cleanup) = close_durability_file_checked(file) {
+        completion.push_cleanup(cleanup);
+    }
+    completion
+}
+
+fn close_durability_handle_checked(handle: &mut OwnedHandle) -> Result<(), PublicationError> {
+    let raw = handle.take();
+    if raw == INVALID_HANDLE_VALUE || unsafe { CloseHandle(raw) } != 0 {
+        Ok(())
+    } else {
+        Err(last_win32(DURABILITY_STAGE_FILE_CLOSE))
+    }
+}
+
+fn close_durability_file_checked(file: File) -> Result<(), PublicationError> {
+    let raw = file.into_raw_handle() as HANDLE;
+    if unsafe { CloseHandle(raw) } != 0 {
+        Ok(())
+    } else {
+        Err(last_win32(DURABILITY_STAGE_FILE_CLOSE))
+    }
 }
 
 fn volume_information(handle: HANDLE) -> Result<(usize, bool), BackendFailure> {

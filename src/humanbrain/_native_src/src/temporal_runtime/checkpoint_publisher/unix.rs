@@ -5,14 +5,20 @@ use std::{
 };
 
 use super::{
-    CleanupErrors, PublicationCompletion, PublicationError, PublicationWriteError, TempName,
-    ValidatedCheckpointDestination, ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY,
-    ERROR_STAGE_FILE_CLOSE, ERROR_STAGE_FILE_SYNC, ERROR_STAGE_PARENT_IDENTITY,
-    ERROR_STAGE_PARENT_OPEN, ERROR_STAGE_PARENT_SYNC, ERROR_STAGE_TEMP_CLEANUP,
-    ERROR_STAGE_TEMP_CREATE, ERROR_STAGE_TEMP_IDENTITY, OUTCOME_COLLISION,
-    OUTCOME_DURABLE_PUBLISHED, OUTCOME_NOT_PUBLISHED, OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
-    POLICY_INVALID_PARENT, POLICY_TEMP_IDENTITY_CHANGED, POLICY_TEMP_NAME_EXHAUSTED,
-    POLICY_UNSUPPORTED_FILESYSTEM,
+    CleanupErrors, PathDurabilityCompletion, PublicationCompletion, PublicationError,
+    PublicationWriteError, TempName, ValidatedCheckpointDestination, ValidatedDurableDirectory,
+    DURABILITY_NO_FAILED_COMPONENT, DURABILITY_STAGE_DIRECTORY_CREATE,
+    DURABILITY_STAGE_DIRECTORY_IDENTITY, DURABILITY_STAGE_DIRECTORY_OPEN,
+    DURABILITY_STAGE_DIRECTORY_SYNC, DURABILITY_STAGE_FILE_CLOSE, DURABILITY_STAGE_FILE_SYNC,
+    DURABILITY_STAGE_FINAL_IDENTITY, DURABILITY_STAGE_FINAL_OPEN, DURABILITY_STAGE_FINAL_READ,
+    DURABILITY_STAGE_PATH_IDENTITY, DURABILITY_STAGE_PAYLOAD_MISMATCH,
+    ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY, ERROR_STAGE_FILE_CLOSE,
+    ERROR_STAGE_FILE_SYNC, ERROR_STAGE_PARENT_IDENTITY, ERROR_STAGE_PARENT_OPEN,
+    ERROR_STAGE_PARENT_SYNC, ERROR_STAGE_TEMP_CLEANUP, ERROR_STAGE_TEMP_CREATE,
+    ERROR_STAGE_TEMP_IDENTITY, OUTCOME_COLLISION, OUTCOME_DURABLE_PUBLISHED, OUTCOME_NOT_PUBLISHED,
+    OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE, POLICY_BYTE_MISMATCH, POLICY_INVALID_PARENT,
+    POLICY_NOT_DIRECTORY, POLICY_NOT_REGULAR_FILE, POLICY_SIZE_MISMATCH,
+    POLICY_TEMP_IDENTITY_CHANGED, POLICY_TEMP_NAME_EXHAUSTED, POLICY_UNSUPPORTED_FILESYSTEM,
 };
 
 const EXT4_SUPER_MAGIC: u64 = 0x0000_0000_0000_ef53;
@@ -51,6 +57,13 @@ impl Drop for OwnedFd {
 struct FileIdentity {
     device: libc::dev_t,
     inode: libc::ino_t,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct StableIdentity {
+    device: libc::dev_t,
+    inode: libc::ino_t,
+    size: libc::off_t,
 }
 
 struct CName {
@@ -269,6 +282,262 @@ where
     )
 }
 
+pub(super) fn reconcile_existing_immutable_bytes(
+    expected: &[u8],
+    destination: &ValidatedCheckpointDestination,
+) -> PathDurabilityCompletion {
+    let expected_len = expected.len() as u64;
+    let parent = match open_stable_parent(destination.parent_utf8()) {
+        Ok(parent) => parent,
+        Err(error) => {
+            return PathDurabilityCompletion::reconciliation_failed(error, expected_len, 0)
+        }
+    };
+    if let Err(error) = validate_local_filesystem(parent.raw) {
+        return PathDurabilityCompletion::reconciliation_failed(error, expected_len, 0);
+    }
+    let Some(final_name) = CName::new(destination.final_basename_utf8()) else {
+        return PathDurabilityCompletion::reconciliation_failed(
+            PublicationError::policy(DURABILITY_STAGE_FINAL_OPEN, POLICY_INVALID_PARENT),
+            expected_len,
+            0,
+        );
+    };
+    let raw = unsafe {
+        libc::openat(
+            parent.raw,
+            final_name.as_ptr(),
+            libc::O_RDONLY | libc::O_NOFOLLOW | libc::O_CLOEXEC,
+        )
+    };
+    if raw < 0 {
+        return PathDurabilityCompletion::reconciliation_failed(
+            PublicationError::last_posix(DURABILITY_STAGE_FINAL_OPEN),
+            expected_len,
+            0,
+        );
+    }
+    let mut file = OwnedFd::new(raw);
+    let identity = match stable_regular_identity(file.raw, DURABILITY_STAGE_FINAL_IDENTITY) {
+        Ok(identity) => identity,
+        Err(error) => return reconcile_failure(&mut file, error, expected_len, 0),
+    };
+    if identity.size < 0 || identity.size as u64 != expected_len {
+        return reconcile_failure(
+            &mut file,
+            PublicationError::policy(DURABILITY_STAGE_PAYLOAD_MISMATCH, POLICY_SIZE_MISMATCH),
+            expected_len,
+            0,
+        );
+    }
+    let verified = match verify_exact_bytes(file.raw, expected) {
+        Ok(verified) => verified,
+        Err((error, verified)) => {
+            return reconcile_failure(&mut file, error, expected_len, verified)
+        }
+    };
+    if unsafe { libc::fsync(file.raw) } != 0 {
+        return reconcile_failure(
+            &mut file,
+            PublicationError::last_posix(DURABILITY_STAGE_FILE_SYNC),
+            expected_len,
+            verified,
+        );
+    }
+    if unsafe { libc::fsync(parent.raw) } != 0 {
+        return reconcile_failure(
+            &mut file,
+            PublicationError::last_posix(DURABILITY_STAGE_DIRECTORY_SYNC),
+            expected_len,
+            verified,
+        );
+    }
+    let after = match stable_regular_identity(file.raw, DURABILITY_STAGE_FINAL_IDENTITY) {
+        Ok(after) => after,
+        Err(error) => return reconcile_failure(&mut file, error, expected_len, verified),
+    };
+    if after != identity {
+        return reconcile_failure(
+            &mut file,
+            PublicationError::policy(
+                DURABILITY_STAGE_FINAL_IDENTITY,
+                POLICY_TEMP_IDENTITY_CHANGED,
+            ),
+            expected_len,
+            verified,
+        );
+    }
+    if let Err(error) = verify_named_stable_identity(parent.raw, &final_name, identity, false) {
+        return reconcile_failure(&mut file, error, expected_len, verified);
+    }
+    let verified_after = match verify_exact_bytes(file.raw, expected) {
+        Ok(verified_after) => verified_after,
+        Err((error, verified_after)) => {
+            return reconcile_failure(&mut file, error, expected_len, verified_after)
+        }
+    };
+    if let Err(error) = close_owned_fd_checked(&mut file) {
+        return PathDurabilityCompletion::reconciliation_failed(
+            error,
+            expected_len,
+            verified_after,
+        );
+    }
+    PathDurabilityCompletion::reconciled(expected_len)
+}
+
+pub(super) fn prepare_durable_directory(
+    directory: &ValidatedDurableDirectory,
+) -> PathDurabilityCompletion {
+    let component_count = directory.component_count();
+    let mut current = match open_stable_parent(directory.root_utf8()) {
+        Ok(root) => root,
+        Err(error) => {
+            return PathDurabilityCompletion::directory_failed(
+                error,
+                component_count,
+                0,
+                0,
+                DURABILITY_NO_FAILED_COMPONENT,
+            )
+        }
+    };
+    if let Err(error) = validate_local_filesystem(current.raw) {
+        return PathDurabilityCompletion::directory_failed(
+            error,
+            component_count,
+            0,
+            0,
+            DURABILITY_NO_FAILED_COMPONENT,
+        );
+    }
+    if unsafe { libc::fsync(current.raw) } != 0 {
+        return PathDurabilityCompletion::directory_failed(
+            PublicationError::last_posix(DURABILITY_STAGE_DIRECTORY_SYNC),
+            component_count,
+            0,
+            0,
+            DURABILITY_NO_FAILED_COMPONENT,
+        );
+    }
+
+    let mut completed = 0u32;
+    let mut created = 0u32;
+    for (index, component) in directory
+        .relative_directory_utf8()
+        .split(|byte| *byte == b'/')
+        .enumerate()
+    {
+        let failed_index = index as u32;
+        let Some(name) = CName::new(component) else {
+            return PathDurabilityCompletion::directory_failed(
+                PublicationError::policy(DURABILITY_STAGE_DIRECTORY_CREATE, POLICY_INVALID_PARENT),
+                component_count,
+                completed,
+                created,
+                failed_index,
+            );
+        };
+        let mkdir_result = unsafe { libc::mkdirat(current.raw, name.as_ptr(), 0o700) };
+        if mkdir_result == 0 {
+            created += 1;
+        } else {
+            let error = PublicationError::last_posix(DURABILITY_STAGE_DIRECTORY_CREATE);
+            if error.code != libc::EEXIST as u32 {
+                return PathDurabilityCompletion::directory_failed(
+                    error,
+                    component_count,
+                    completed,
+                    created,
+                    failed_index,
+                );
+            }
+        }
+        let child_raw = unsafe {
+            libc::openat(
+                current.raw,
+                name.as_ptr(),
+                libc::O_RDONLY | libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC,
+            )
+        };
+        if child_raw < 0 {
+            return PathDurabilityCompletion::directory_failed(
+                PublicationError::last_posix(DURABILITY_STAGE_DIRECTORY_OPEN),
+                component_count,
+                completed,
+                created,
+                failed_index,
+            );
+        }
+        let mut child = OwnedFd::new(child_raw);
+        let identity =
+            match stable_directory_identity(child.raw, DURABILITY_STAGE_DIRECTORY_IDENTITY) {
+                Ok(identity) => identity,
+                Err(error) => {
+                    return PathDurabilityCompletion::directory_failed(
+                        error,
+                        component_count,
+                        completed,
+                        created,
+                        failed_index,
+                    )
+                }
+            };
+        if let Err(error) = validate_local_filesystem(child.raw) {
+            return PathDurabilityCompletion::directory_failed(
+                error,
+                component_count,
+                completed,
+                created,
+                failed_index,
+            );
+        }
+        if unsafe { libc::fsync(child.raw) } != 0 || unsafe { libc::fsync(current.raw) } != 0 {
+            return PathDurabilityCompletion::directory_failed(
+                PublicationError::last_posix(DURABILITY_STAGE_DIRECTORY_SYNC),
+                component_count,
+                completed,
+                created,
+                failed_index,
+            );
+        }
+        if let Err(error) = verify_named_stable_identity(current.raw, &name, identity, true) {
+            return PathDurabilityCompletion::directory_failed(
+                error,
+                component_count,
+                completed,
+                created,
+                failed_index,
+            );
+        }
+        completed += 1;
+        if let Err(error) = close_owned_fd_checked(&mut current) {
+            let mut failure = PathDurabilityCompletion::directory_failed(
+                error,
+                component_count,
+                completed,
+                created,
+                failed_index,
+            );
+            if let Err(cleanup) = close_owned_fd_checked(&mut child) {
+                failure.push_cleanup(cleanup);
+            }
+            return failure;
+        }
+        current = child;
+    }
+    if let Err(error) = close_owned_fd_checked(&mut current) {
+        return PathDurabilityCompletion::directory_failed(
+            error,
+            component_count,
+            completed,
+            created,
+            DURABILITY_NO_FAILED_COMPONENT,
+        );
+    }
+    PathDurabilityCompletion::directory_prepared(component_count, created)
+}
+
 fn classify_link_attempt(
     link_error: Option<PublicationError>,
     parent_sync_error: Option<PublicationError>,
@@ -427,6 +696,137 @@ fn file_identity(raw: RawFd) -> Result<FileIdentity, PublicationError> {
         device: metadata.st_dev,
         inode: metadata.st_ino,
     })
+}
+
+fn stable_regular_identity(raw: RawFd, stage: u16) -> Result<StableIdentity, PublicationError> {
+    stable_identity(raw, stage, libc::S_IFREG, POLICY_NOT_REGULAR_FILE)
+}
+
+fn stable_directory_identity(raw: RawFd, stage: u16) -> Result<StableIdentity, PublicationError> {
+    stable_identity(raw, stage, libc::S_IFDIR, POLICY_NOT_DIRECTORY)
+}
+
+fn stable_identity(
+    raw: RawFd,
+    stage: u16,
+    expected_kind: libc::mode_t,
+    policy_code: u32,
+) -> Result<StableIdentity, PublicationError> {
+    let mut metadata = MaybeUninit::<libc::stat>::uninit();
+    if unsafe { libc::fstat(raw, metadata.as_mut_ptr()) } != 0 {
+        return Err(PublicationError::last_posix(stage));
+    }
+    let metadata = unsafe { metadata.assume_init() };
+    if metadata.st_mode & libc::S_IFMT != expected_kind {
+        return Err(PublicationError::policy(stage, policy_code));
+    }
+    Ok(StableIdentity {
+        device: metadata.st_dev,
+        inode: metadata.st_ino,
+        size: metadata.st_size,
+    })
+}
+
+fn verify_named_stable_identity(
+    parent_fd: RawFd,
+    name: &CName,
+    expected: StableIdentity,
+    directory: bool,
+) -> Result<(), PublicationError> {
+    let mut metadata = MaybeUninit::<libc::stat>::uninit();
+    if unsafe {
+        libc::fstatat(
+            parent_fd,
+            name.as_ptr(),
+            metadata.as_mut_ptr(),
+            libc::AT_SYMLINK_NOFOLLOW,
+        )
+    } != 0
+    {
+        return Err(PublicationError::last_posix(DURABILITY_STAGE_PATH_IDENTITY));
+    }
+    let metadata = unsafe { metadata.assume_init() };
+    let expected_kind = if directory {
+        libc::S_IFDIR
+    } else {
+        libc::S_IFREG
+    };
+    if metadata.st_mode & libc::S_IFMT != expected_kind
+        || metadata.st_dev != expected.device
+        || metadata.st_ino != expected.inode
+        || metadata.st_size != expected.size
+    {
+        return Err(PublicationError::policy(
+            DURABILITY_STAGE_PATH_IDENTITY,
+            POLICY_TEMP_IDENTITY_CHANGED,
+        ));
+    }
+    Ok(())
+}
+
+fn verify_exact_bytes(raw: RawFd, expected: &[u8]) -> Result<u64, (PublicationError, u64)> {
+    let mut offset = 0usize;
+    let mut buffer = [0u8; 8192];
+    while offset < expected.len() {
+        let requested = buffer.len().min(expected.len() - offset);
+        let read = unsafe {
+            libc::pread(
+                raw,
+                buffer.as_mut_ptr().cast(),
+                requested,
+                offset as libc::off_t,
+            )
+        };
+        if read < 0 {
+            let error = PublicationError::last_posix(DURABILITY_STAGE_FINAL_READ);
+            if error.code == libc::EINTR as u32 {
+                continue;
+            }
+            return Err((error, offset as u64));
+        }
+        if read == 0 {
+            return Err((
+                PublicationError::policy(DURABILITY_STAGE_PAYLOAD_MISMATCH, POLICY_SIZE_MISMATCH),
+                offset as u64,
+            ));
+        }
+        let read = read as usize;
+        if let Some(relative) = buffer[..read]
+            .iter()
+            .zip(&expected[offset..offset + read])
+            .position(|(observed, expected)| observed != expected)
+        {
+            return Err((
+                PublicationError::policy(DURABILITY_STAGE_PAYLOAD_MISMATCH, POLICY_BYTE_MISMATCH),
+                (offset + relative) as u64,
+            ));
+        }
+        offset += read;
+    }
+    Ok(offset as u64)
+}
+
+fn reconcile_failure(
+    file: &mut OwnedFd,
+    error: PublicationError,
+    expected_bytes: u64,
+    verified_bytes: u64,
+) -> PathDurabilityCompletion {
+    let mut completion =
+        PathDurabilityCompletion::reconciliation_failed(error, expected_bytes, verified_bytes);
+    if let Err(cleanup) = close_owned_fd_checked(file) {
+        completion.push_cleanup(cleanup);
+    }
+    completion
+}
+
+fn close_owned_fd_checked(fd: &mut OwnedFd) -> Result<(), PublicationError> {
+    let raw = fd.take();
+    if raw < 0 || unsafe { libc::close(raw) } == 0 {
+        Ok(())
+    } else {
+        Err(PublicationError::last_posix(DURABILITY_STAGE_FILE_CLOSE))
+    }
 }
 
 fn verify_named_identity(

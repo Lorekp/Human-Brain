@@ -290,6 +290,16 @@ def test_source_addressed_release_exports_temporal_checkpoint_capabilities() -> 
         "humanbrain_temporal_circuit_runtime_checkpoint_identity_v1",
         None,
     ) is not None
+    assert getattr(
+        library,
+        "humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1",
+        None,
+    ) is not None
+    assert getattr(
+        library,
+        "humanbrain_temporal_prepare_durable_directory_path_v1",
+        None,
+    ) is not None
 
 
 def test_native_build_plan_rejects_ambient_encoded_flags_before_cache_lookup(

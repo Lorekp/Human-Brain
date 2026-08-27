@@ -44,7 +44,8 @@ def test_protocol_separates_fixture_selection_from_the_train_scale_gate() -> Non
     frozen = protocol.build_protocol()
 
     assert frozen["artifact_id"] == "r3-calibration-v3-preregistration"
-    assert frozen["schema_version"] == 4
+    assert frozen["schema_version"] == 5
+    assert frozen["change_notes"] == ["docs/research/r3-calibration-v3-change-note-1.md"]
     assert frozen["circuit_contract"] == {
         "active_columns": 11,
         "base_cells_per_column": 8,
@@ -293,9 +294,7 @@ def test_capacity_binds_schema_seven_train_only_provenance_and_unchanged_structu
     assert not hasattr(protocol, "capacity_v6_summary")
 
     artifact = json.loads(
-        (ROOT / "experiments" / "r3_pilot" / "relay_pool_capacity.json").read_text(
-            encoding="utf-8"
-        )
+        (ROOT / "experiments" / "r3_pilot" / "relay_pool_capacity.json").read_text(encoding="utf-8")
     )
     scientific_payload = dict(artifact)
     scientific_payload.pop("schema_version")
@@ -303,9 +302,7 @@ def test_capacity_binds_schema_seven_train_only_provenance_and_unchanged_structu
     assert artifact["artifact_id"] == capacity["artifact_id"]
     assert artifact["schema_version"] == capacity["schema_version"]
     assert _canonical_sha256(scientific_payload) == capacity["scientific_payload"]["sha256"]
-    assert {
-        key: artifact["scope"][key] for key in capacity["provenance"]
-    } == capacity["provenance"]
+    assert {key: artifact["scope"][key] for key in capacity["provenance"]} == capacity["provenance"]
     assert capacity["artifact_path"] in protocol.build_protocol()["source_binding"]["files"]
 
 
@@ -511,14 +508,17 @@ def test_timing_contract_is_adopted_without_execution_authority() -> None:
                 "publication"
             ),
             "fresh_start": (
-                "before the first of production circuit construction, production "
-                "TRAIN-source access, or frozen output-parent creation"
+                "after durable preparation of the full authority-derived output-directory "
+                "closure; immediately before the first of production circuit construction "
+                "or production TRAIN-source access"
             ),
-            "resume_start": "immediately before opening the exact frozen resume manifest",
+            "resume_start": (
+                "after durable preparation of the full authority-derived output-directory "
+                "closure; immediately before opening the exact frozen resume manifest"
+            ),
         },
         "cap_check_rule": (
-            "check within books and immediately before and after every atomic persistence "
-            "operation"
+            "check within books and immediately before and after every atomic persistence operation"
         ),
         "charged_operations": [
             "production runtime allocation/construction and exact TRAIN reads and hashes",
@@ -526,6 +526,8 @@ def test_timing_contract_is_adopted_without_execution_authority() -> None:
             "scoring, stream-hash updates, and final state identity",
             "checkpoint traversal, encoding, staging copy, durable publication, cleanup, "
             "and parent-directory durability",
+            "resume-manifest open and validation plus exact existing-byte file-and-parent "
+            "durability reconciliation",
             "fresh checkpoint open/read, full import validation, derived-index rebuild, "
             "and identity/parity checks",
             "asynchronous persistence waits and all incidental elapsed time inside the "
@@ -533,12 +535,14 @@ def test_timing_contract_is_adopted_without_execution_authority() -> None:
         ],
         "clock": "CPython 3.11 time.perf_counter_ns",
         "comparison_input": "max(uninterrupted_cumulative_ns,resumed_cumulative_ns)",
-        "contract_id": "r3-cumulative-active-wall-v1",
+        "contract_id": "r3-cumulative-active-wall-v2",
         "cumulative_rule": (
             "first prior_cumulative_ns=0; "
             "cumulative_active_ns=prior_cumulative_ns+session_active_ns exactly once"
         ),
         "excluded_operations": [
+            "authority-derived output-directory closure derivation, durable preparation, "
+            "and confirmation before the first fresh or resume clock sample",
             "bounded resume-manifest construction, publication, reopen, and confirmation",
             "bounded result-envelope construction, publication, reopen, and confirmation",
         ],
@@ -571,15 +575,20 @@ def test_artifact_paths_are_exact_unique_and_exclusive() -> None:
             "humanbrain.native_temporal_runtime.NativeTemporalCircuit.publish_checkpoint"
         ),
         "checkpoint_without_manifest": "manual_STOP",
-        "directory_creation": False,
         "envelope_api": "humanbrain.native_temporal_runtime.publish_immutable_bytes",
         "envelope_max_bytes": 1048576,
         "existing_target": "STOP",
         "fallback": False,
         "force_or_overwrite_option": False,
-        "manifest_commit_point": True,
+        "manifest_commit_evidence": [
+            "same_process_TemporalPublicationOutcome.DURABLE_PUBLISHED_receipt",
+            "later_open_resume_TemporalDurabilityOutcome.DURABLE_exact_bytes_"
+            "reconciliation_receipt",
+        ],
+        "manifest_presence_alone_is_commit_evidence": False,
         "mode": "exclusive_durable_publish",
         "overwrite": False,
+        "publisher_directory_creation": False,
         "retry": False,
     }
     assert contract["electrical_v3"]["development"][0] == (
@@ -623,6 +632,10 @@ def test_artifact_paths_are_exact_unique_and_exclusive() -> None:
     assert contract["path_inventory"] == {
         "binary_checkpoint_paths": 12,
         "direct_parent_directories": 39,
+        "directory_list_canonical_json_bytes": 5305,
+        "directory_list_sha256": (
+            "20be5eb10a661a1ec91c693d336a9e024367cb4a2165285eab8fc6f812fd9055"
+        ),
         "full_parent_directory_closure": 54,
         "json_paths": 126,
         "resume_path_list_canonical_json_bytes": 3409,
@@ -655,6 +668,55 @@ def test_artifact_paths_are_exact_unique_and_exclusive() -> None:
             cursor = cursor.parent
     assert len(direct_parents) == 39
     assert len(ancestor_closure) == 54
+    ordered_parent_directories = tuple(
+        sorted(
+            ancestor_closure,
+            key=lambda path: (path.count("/"), path.encode("utf-8")),
+        )
+    )
+    assert protocol.artifact_parent_directories(contract) == ordered_parent_directories
+    assert contract["directory_preparation"] == {
+        "active_time_directory_creation": "forbidden",
+        "authority_source": "exact_frozen_artifact_path_parent_closure",
+        "clock_order": "complete_before_first_fresh_or_resume_clock_sample",
+        "derivation": (
+            "all POSIX parent ancestors of every frozen artifact path, stopping at and "
+            "including artifact root"
+        ),
+        "directories": list(ordered_parent_directories),
+        "failure_rule": "STOP_before_session_start_or_checkpoint_import",
+        "native_api": "humanbrain.native_temporal_runtime.prepare_durable_directory",
+        "order_rule": "ascending_component_count_then_UTF-8_bytewise_path",
+        "required_outcome": "TemporalDurabilityOutcome.DURABLE",
+    }
+    directory_preimage = protocol.canonical_json_bytes(list(ordered_parent_directories))
+    assert len(directory_preimage) == 5305
+    assert hashlib.sha256(directory_preimage).hexdigest() == (
+        "20be5eb10a661a1ec91c693d336a9e024367cb4a2165285eab8fc6f812fd9055"
+    )
+    assert contract["resume_admission"] == {
+        "exact_bytes": (
+            "bounded stable-read manifest bytes accepted by the decoder; no reserialization"
+        ),
+        "manifest_presence_alone_is_sufficient": False,
+        "native_api": ("humanbrain.native_temporal_runtime.reconcile_existing_immutable_bytes"),
+        "ordering": "after_resume_clock_start_and_before_checkpoint_open_or_import",
+        "persistent_sidecar_receipt": False,
+        "required_outcome": "TemporalDurabilityOutcome.DURABLE",
+        "same_process_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE_rule": ("terminal_STOP_without_retry"),
+        "scope": "every_open_resume",
+    }
+    assert contract["filesystem_threat_model"] == {
+        "in_scope": [
+            "process_crash",
+            "power_loss",
+            "benign_concurrent_directory_preparation",
+            "symlink_or_reparse_point_traversal_and_substitution_detection",
+        ],
+        "out_of_scope": [
+            "malicious_concurrent_namespace_writer_with_repository_write_or_delete_access"
+        ],
+    }
 
 
 def test_development_selection_is_first_pass_in_frozen_arm_order() -> None:
@@ -795,9 +857,7 @@ def test_source_byte_validator_and_cli_fail_closed() -> None:
 
 
 def test_canonical_json_bytes_are_ascii_and_reject_nonfinite_numbers() -> None:
-    assert protocol.canonical_json_bytes({"snowman": "☃"}) == (
-        b'{"snowman":"\\u2603"}'
-    )
+    assert protocol.canonical_json_bytes({"snowman": "☃"}) == (b'{"snowman":"\\u2603"}')
     with pytest.raises(ValueError, match="Out of range float values are not JSON compliant"):
         protocol.canonical_json_bytes({"invalid": float("nan")})
 

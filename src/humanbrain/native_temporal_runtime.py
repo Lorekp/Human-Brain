@@ -138,6 +138,16 @@ class _NativeImmutableBytesPathRequest(ctypes.Structure):
     ]
 
 
+class _NativeDurableDirectoryPathRequest(ctypes.Structure):
+    _fields_ = [
+        ("root_utf8", ctypes.POINTER(ctypes.c_uint8)),
+        ("root_len", ctypes.c_uint64),
+        ("relative_directory_utf8", ctypes.POINTER(ctypes.c_uint8)),
+        ("relative_directory_len", ctypes.c_uint64),
+        ("reserved_zero", ctypes.c_uint8 * 8),
+    ]
+
+
 class _NativeCheckpointPublicationError(ctypes.Structure):
     _fields_ = [
         ("stage", ctypes.c_uint16),
@@ -158,6 +168,36 @@ class _NativeCheckpointPublicationReport(ctypes.Structure):
         ("checkpoint_bytes", ctypes.c_uint64),
         ("encoded_bytes", ctypes.c_uint64),
         ("reserved_zero", ctypes.c_uint8 * 8),
+    ]
+
+
+class _NativeImmutableBytesReconciliationReport(ctypes.Structure):
+    _fields_ = [
+        ("outcome", ctypes.c_uint16),
+        ("cleanup_error_count", ctypes.c_uint8),
+        ("reserved_zero_u8", ctypes.c_uint8),
+        ("primary_error", _NativeCheckpointPublicationError),
+        ("cleanup_errors", _NativeCheckpointPublicationError * 2),
+        ("reserved_zero_u32", ctypes.c_uint32),
+        ("required_bytes", ctypes.c_uint64),
+        ("verified_bytes", ctypes.c_uint64),
+        ("reserved_zero", ctypes.c_uint8 * 16),
+    ]
+
+
+class _NativeDurableDirectoryPreparationReport(ctypes.Structure):
+    _fields_ = [
+        ("outcome", ctypes.c_uint16),
+        ("cleanup_error_count", ctypes.c_uint8),
+        ("reserved_zero_u8", ctypes.c_uint8),
+        ("primary_error", _NativeCheckpointPublicationError),
+        ("cleanup_errors", _NativeCheckpointPublicationError * 2),
+        ("required_component_count", ctypes.c_uint32),
+        ("confirmed_component_count", ctypes.c_uint32),
+        ("created_component_count", ctypes.c_uint32),
+        ("failed_component_index", ctypes.c_uint32),
+        ("reserved_zero_u32", ctypes.c_uint32),
+        ("reserved_zero", ctypes.c_uint8 * 16),
     ]
 
 
@@ -279,12 +319,30 @@ def _assert_frozen_abi() -> None:
         8,
         (0, 8, 16, 24, 32, 40, 48),
     )
+    _require_frozen_layout(
+        _NativeDurableDirectoryPathRequest,
+        40,
+        8,
+        (0, 8, 16, 24, 32),
+    )
     _require_frozen_layout(_NativeCheckpointPublicationError, 8, 4, (0, 2, 4))
     _require_frozen_layout(
         _NativeCheckpointPublicationReport,
         80,
         8,
         (0, 2, 3, 4, 12, 44, 48, 56, 64, 72),
+    )
+    _require_frozen_layout(
+        _NativeImmutableBytesReconciliationReport,
+        64,
+        8,
+        (0, 2, 3, 4, 12, 28, 32, 40, 48),
+    )
+    _require_frozen_layout(
+        _NativeDurableDirectoryPreparationReport,
+        64,
+        4,
+        (0, 2, 3, 4, 12, 28, 32, 36, 40, 44, 48),
     )
     _require_frozen_layout(
         _PyBuffer,
@@ -472,6 +530,44 @@ class TemporalPublicationErrorStage(IntEnum):
     PARENT_SYNC = 11
 
 
+class TemporalDurabilityOutcome(IntEnum):
+    """Whether native storage durability was established by this call."""
+
+    DURABLE = 1
+    NOT_DURABLE = 2
+
+
+class TemporalDurabilityErrorDomain(IntEnum):
+    """Origin of one immutable-path durability error."""
+
+    NONE = 0
+    POSIX = 1
+    WIN32 = 2
+    POLICY = 3
+    CHECKPOINT_ENCODER_RESERVED = 4
+    IO = 5
+
+
+class TemporalDurabilityErrorStage(IntEnum):
+    """Frozen stage at which durability establishment failed."""
+
+    NONE = 0
+    PARENT_OPEN = 1
+    PARENT_IDENTITY = 2
+    FILESYSTEM_POLICY = 3
+    FINAL_OPEN = 4
+    FINAL_IDENTITY = 5
+    FINAL_READ = 6
+    PAYLOAD_MISMATCH = 7
+    FILE_SYNC = 8
+    DIRECTORY_CREATE = 9
+    DIRECTORY_OPEN = 10
+    DIRECTORY_IDENTITY = 11
+    DIRECTORY_SYNC = 12
+    FILE_CLOSE = 13
+    PATH_IDENTITY = 14
+
+
 _PRE_TEMP_PUBLICATION_ERROR_STAGES: Final = frozenset(
     {
         TemporalCheckpointErrorStage.PARENT_OPEN,
@@ -575,6 +671,47 @@ class TemporalImmutableBytesPublication:
     @property
     def durably_published(self) -> bool:
         return self.outcome is TemporalPublicationOutcome.DURABLE_PUBLISHED
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalDurabilityError:
+    """One native durability error in preserved cleanup order."""
+
+    stage: TemporalDurabilityErrorStage
+    domain: TemporalDurabilityErrorDomain
+    code: int
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalImmutableBytesReconciliation:
+    """Receipt for flushing an existing exact immutable byte artifact."""
+
+    outcome: TemporalDurabilityOutcome
+    primary_error: TemporalDurabilityError | None
+    cleanup_errors: tuple[TemporalDurabilityError, ...]
+    expected_bytes: int
+    verified_bytes: int
+
+    @property
+    def durably_reconciled(self) -> bool:
+        return self.outcome is TemporalDurabilityOutcome.DURABLE
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalDurableDirectoryPreparation:
+    """Receipt for one recursively flushed relative directory closure."""
+
+    outcome: TemporalDurabilityOutcome
+    primary_error: TemporalDurabilityError | None
+    cleanup_errors: tuple[TemporalDurabilityError, ...]
+    required_component_count: int
+    confirmed_component_count: int
+    created_component_count: int
+    failed_component_index: int | None
+
+    @property
+    def durably_prepared(self) -> bool:
+        return self.outcome is TemporalDurabilityOutcome.DURABLE
 
 
 def _exact_int(label: str, value: object, minimum: int, maximum: int) -> int:
@@ -896,6 +1033,12 @@ def _bind_temporal_symbols(library: object) -> None:
         publish_immutable_bytes_path = (
             library.humanbrain_temporal_publish_immutable_bytes_path_v1
         )
+        reconcile_existing_immutable_bytes_path = (
+            library.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1
+        )
+        prepare_durable_directory_path = (
+            library.humanbrain_temporal_prepare_durable_directory_path_v1
+        )
         destroy = library.humanbrain_temporal_circuit_runtime_destroy
     except AttributeError as exc:
         raise _NativeBuildError(
@@ -945,6 +1088,16 @@ def _bind_temporal_symbols(library: object) -> None:
         ctypes.POINTER(_NativeCheckpointPublicationReport),
         report_output,
     ]
+    reconcile_existing_immutable_bytes_path.argtypes = [
+        ctypes.POINTER(_NativeImmutableBytesPathRequest),
+        ctypes.POINTER(_NativeImmutableBytesReconciliationReport),
+        report_output,
+    ]
+    prepare_durable_directory_path.argtypes = [
+        ctypes.POINTER(_NativeDurableDirectoryPathRequest),
+        ctypes.POINTER(_NativeDurableDirectoryPreparationReport),
+        report_output,
+    ]
     destroy.argtypes = [ctypes.c_void_p]
     for function in (
         create,
@@ -955,6 +1108,8 @@ def _bind_temporal_symbols(library: object) -> None:
         export_checkpoint,
         export_checkpoint_path,
         publish_immutable_bytes_path,
+        reconcile_existing_immutable_bytes_path,
+        prepare_durable_directory_path,
     ):
         function.restype = ctypes.c_uint32
     destroy.restype = None
@@ -1644,6 +1799,173 @@ def _decode_immutable_bytes_publication(
     )
 
 
+def _decode_durability_error(
+    native: _NativeCheckpointPublicationError,
+    *,
+    label: str,
+) -> TemporalDurabilityError | None:
+    raw_stage = int(native.stage)
+    raw_domain = int(native.domain)
+    raw_code = int(native.code)
+    if raw_stage not in TemporalDurabilityErrorStage._value2member_map_:
+        raise _invariant_error(f"{label} stage is outside the frozen range")
+    if raw_domain not in TemporalDurabilityErrorDomain._value2member_map_:
+        raise _invariant_error(f"{label} domain is outside the frozen range")
+    stage = TemporalDurabilityErrorStage(raw_stage)
+    domain = TemporalDurabilityErrorDomain(raw_domain)
+    if domain is TemporalDurabilityErrorDomain.CHECKPOINT_ENCODER_RESERVED:
+        raise _invariant_error(f"{label} uses the checkpoint-only encoder domain")
+    if stage is TemporalDurabilityErrorStage.NONE:
+        if domain is not TemporalDurabilityErrorDomain.NONE or raw_code != 0:
+            raise _invariant_error(f"{label} has a malformed zero error")
+        return None
+    if domain is TemporalDurabilityErrorDomain.NONE:
+        raise _invariant_error(f"{label} has an active stage without an error domain")
+    return TemporalDurabilityError(stage, domain, raw_code)
+
+
+def _decode_durability_errors(
+    primary_native: _NativeCheckpointPublicationError,
+    cleanup_native: Sequence[_NativeCheckpointPublicationError],
+    cleanup_error_count: int,
+    *,
+    label: str,
+) -> tuple[TemporalDurabilityError | None, tuple[TemporalDurabilityError, ...]]:
+    if cleanup_error_count > len(cleanup_native):
+        raise _invariant_error(f"{label} cleanup error count exceeds capacity")
+    primary = _decode_durability_error(primary_native, label=f"{label} primary error")
+    slots = tuple(
+        _decode_durability_error(error, label=f"{label} cleanup error {index}")
+        for index, error in enumerate(cleanup_native)
+    )
+    if any(error is None for error in slots[:cleanup_error_count]):
+        raise _invariant_error(f"{label} active cleanup error is zero")
+    if any(error is not None for error in slots[cleanup_error_count:]):
+        raise _invariant_error(f"{label} unused cleanup error slot is nonzero")
+    return primary, tuple(
+        error for error in slots[:cleanup_error_count] if error is not None
+    )
+
+
+def _decode_immutable_bytes_reconciliation(
+    returned_status: object,
+    native: _NativeImmutableBytesReconciliationReport,
+    runtime_report: _NativeReport,
+    *,
+    expected_bytes: int,
+) -> TemporalImmutableBytesReconciliation:
+    decoded_runtime = _decode_report(
+        returned_status, runtime_report, maximum_completed_prefix=0
+    )
+    if decoded_runtime.status is not NativeTemporalRuntimeStatus.OK:
+        if bytes(native) != bytes(ctypes.sizeof(type(native))):
+            raise _invariant_error(
+                "failed immutable-byte reconciliation changed its zero receipt"
+            )
+        _raise_report(decoded_runtime)
+    if native.reserved_zero_u8 or native.reserved_zero_u32 or any(native.reserved_zero):
+        raise _invariant_error("immutable-byte reconciliation reserved fields are nonzero")
+    if int(native.outcome) not in TemporalDurabilityOutcome._value2member_map_:
+        raise _invariant_error("immutable-byte reconciliation outcome is outside the frozen range")
+    primary, cleanup = _decode_durability_errors(
+        native.primary_error,
+        native.cleanup_errors,
+        int(native.cleanup_error_count),
+        label="immutable-byte reconciliation",
+    )
+    required = int(native.required_bytes)
+    verified = int(native.verified_bytes)
+    if required != expected_bytes or verified > required:
+        raise _invariant_error(
+            "immutable-byte reconciliation lengths are inconsistent",
+            required=expected_bytes,
+            observed=verified,
+        )
+    if (
+        decoded_runtime.required != required
+        or decoded_runtime.observed != verified
+        or decoded_runtime.location != 0
+    ):
+        raise _invariant_error("immutable-byte reconciliation runtime lengths disagree")
+    outcome = TemporalDurabilityOutcome(int(native.outcome))
+    if outcome is TemporalDurabilityOutcome.DURABLE:
+        if primary is not None or cleanup or verified != required:
+            raise _invariant_error("durable immutable-byte reconciliation is inconsistent")
+    elif primary is None:
+        raise _invariant_error("failed immutable-byte reconciliation has no primary error")
+    return TemporalImmutableBytesReconciliation(
+        outcome=outcome,
+        primary_error=primary,
+        cleanup_errors=cleanup,
+        expected_bytes=required,
+        verified_bytes=verified,
+    )
+
+
+def _decode_durable_directory_preparation(
+    returned_status: object,
+    native: _NativeDurableDirectoryPreparationReport,
+    runtime_report: _NativeReport,
+    *,
+    expected_component_count: int,
+) -> TemporalDurableDirectoryPreparation:
+    decoded_runtime = _decode_report(
+        returned_status, runtime_report, maximum_completed_prefix=0
+    )
+    if decoded_runtime.status is not NativeTemporalRuntimeStatus.OK:
+        if bytes(native) != bytes(ctypes.sizeof(type(native))):
+            raise _invariant_error(
+                "failed durable-directory preparation changed its zero receipt"
+            )
+        _raise_report(decoded_runtime)
+    if native.reserved_zero_u8 or native.reserved_zero_u32 or any(native.reserved_zero):
+        raise _invariant_error("durable-directory preparation reserved fields are nonzero")
+    if int(native.outcome) not in TemporalDurabilityOutcome._value2member_map_:
+        raise _invariant_error("durable-directory outcome is outside the frozen range")
+    primary, cleanup = _decode_durability_errors(
+        native.primary_error,
+        native.cleanup_errors,
+        int(native.cleanup_error_count),
+        label="durable-directory preparation",
+    )
+    required = int(native.required_component_count)
+    confirmed = int(native.confirmed_component_count)
+    created = int(native.created_component_count)
+    failed_raw = int(native.failed_component_index)
+    if (
+        required != expected_component_count
+        or confirmed > required
+        or created > required
+        or decoded_runtime.required != required
+        or decoded_runtime.observed != confirmed
+        or decoded_runtime.location != 0
+    ):
+        raise _invariant_error("durable-directory component counts are inconsistent")
+    outcome = TemporalDurabilityOutcome(int(native.outcome))
+    if outcome is TemporalDurabilityOutcome.DURABLE:
+        if (
+            primary is not None
+            or cleanup
+            or confirmed != required
+            or failed_raw != _UINT32_MAX
+        ):
+            raise _invariant_error("durable-directory success receipt is inconsistent")
+        failed_component_index = None
+    else:
+        if primary is None or (failed_raw != _UINT32_MAX and failed_raw >= required):
+            raise _invariant_error("durable-directory failure receipt is inconsistent")
+        failed_component_index = None if failed_raw == _UINT32_MAX else failed_raw
+    return TemporalDurableDirectoryPreparation(
+        outcome=outcome,
+        primary_error=primary,
+        cleanup_errors=cleanup,
+        required_component_count=required,
+        confirmed_component_count=confirmed,
+        created_component_count=created,
+        failed_component_index=failed_component_index,
+    )
+
+
 def _checkpoint_rejected(message: str, *, observed: int = 0) -> NativeTemporalRuntimeError:
     return NativeTemporalRuntimeError(
         NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED,
@@ -1770,6 +2092,150 @@ def publish_immutable_bytes(
         publication_report,
         runtime_report,
         expected_payload_bytes=len(payload),
+    )
+
+
+def reconcile_existing_immutable_bytes(
+    destination: Path,
+    expected_payload: bytes,
+) -> TemporalImmutableBytesReconciliation:
+    """Verify and flush one existing exact immutable artifact without mutation."""
+
+    if type(expected_payload) is not bytes:
+        raise TypeError("reconciliation payload must be exact bytes")
+    if not 1 <= len(expected_payload) <= _MAX_IMMUTABLE_PAYLOAD_BYTES:
+        raise ValueError(
+            "reconciliation payload length must be in "
+            f"[1, {_MAX_IMMUTABLE_PAYLOAD_BYTES}]"
+        )
+    if not isinstance(destination, Path):
+        raise TypeError("reconciliation path must be a pathlib.Path")
+    authority_before_load = _fresh_authority()
+    library = _temporal_library()
+    authority_after_load = _fresh_authority()
+    if authority_after_load != authority_before_load:
+        raise NativeTemporalRuntimeError(
+            NativeTemporalRuntimeStatus.INVALID_DEFINITION,
+            "fresh authority changed while preparing immutable-byte reconciliation",
+        )
+    _attested_current_library_identity()
+    parent_utf8, final_basename_utf8 = _lexical_publication_path_parts(destination)
+    try:
+        parent_array = (ctypes.c_uint8 * len(parent_utf8)).from_buffer_copy(parent_utf8)
+        basename_array = (
+            ctypes.c_uint8 * len(final_basename_utf8)
+        ).from_buffer_copy(final_basename_utf8)
+        payload_array = (
+            ctypes.c_uint8 * len(expected_payload)
+        ).from_buffer_copy(expected_payload)
+    except (MemoryError, OverflowError) as exc:
+        raise NativeTemporalRuntimeError(
+            NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
+            "immutable-byte reconciliation transport allocation failed",
+            required=(
+                len(parent_utf8)
+                + len(final_basename_utf8)
+                + len(expected_payload)
+            ),
+        ) from exc
+    request = _NativeImmutableBytesPathRequest(
+        ctypes.cast(parent_array, ctypes.POINTER(ctypes.c_uint8)),
+        len(parent_utf8),
+        ctypes.cast(basename_array, ctypes.POINTER(ctypes.c_uint8)),
+        len(final_basename_utf8),
+        ctypes.cast(payload_array, ctypes.POINTER(ctypes.c_uint8)),
+        len(expected_payload),
+        (ctypes.c_uint8 * 8)(),
+    )
+    durability_report = _NativeImmutableBytesReconciliationReport()
+    runtime_report = _NativeReport()
+    returned = library.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1(
+        ctypes.byref(request),
+        ctypes.byref(durability_report),
+        ctypes.byref(runtime_report),
+    )
+    return _decode_immutable_bytes_reconciliation(
+        returned,
+        durability_report,
+        runtime_report,
+        expected_bytes=len(expected_payload),
+    )
+
+
+def _lexical_durable_directory_parts(
+    root: Path,
+    relative_directory: Path,
+) -> tuple[bytes, bytes, int]:
+    if not isinstance(root, Path) or not isinstance(relative_directory, Path):
+        raise TypeError("durable directory paths must be pathlib.Path values")
+    if not root.is_absolute():
+        raise ValueError("durable directory root must be absolute")
+    if relative_directory.is_absolute():
+        raise ValueError("durable directory child must be relative")
+    components = relative_directory.parts
+    if not components or any(
+        component in {"", ".", ".."} or "/" in component or "\\" in component
+        for component in components
+    ):
+        raise ValueError("durable directory child must contain plain relative components")
+    try:
+        return (
+            str(root).encode("utf-8", errors="strict"),
+            "/".join(components).encode("utf-8", errors="strict"),
+            len(components),
+        )
+    except UnicodeEncodeError as exc:
+        raise ValueError("durable directory paths must be valid UTF-8") from exc
+
+
+def prepare_durable_directory(
+    root: Path,
+    relative_directory: Path,
+) -> TemporalDurableDirectoryPreparation:
+    """Create or reconcile and flush every component below an existing root."""
+
+    root_utf8, relative_utf8, component_count = _lexical_durable_directory_parts(
+        root, relative_directory
+    )
+    authority_before_load = _fresh_authority()
+    library = _temporal_library()
+    authority_after_load = _fresh_authority()
+    if authority_after_load != authority_before_load:
+        raise NativeTemporalRuntimeError(
+            NativeTemporalRuntimeStatus.INVALID_DEFINITION,
+            "fresh authority changed while preparing durable directory",
+        )
+    _attested_current_library_identity()
+    try:
+        root_array = (ctypes.c_uint8 * len(root_utf8)).from_buffer_copy(root_utf8)
+        relative_array = (
+            ctypes.c_uint8 * len(relative_utf8)
+        ).from_buffer_copy(relative_utf8)
+    except (MemoryError, OverflowError) as exc:
+        raise NativeTemporalRuntimeError(
+            NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
+            "durable-directory transport allocation failed",
+            required=len(root_utf8) + len(relative_utf8),
+        ) from exc
+    request = _NativeDurableDirectoryPathRequest(
+        ctypes.cast(root_array, ctypes.POINTER(ctypes.c_uint8)),
+        len(root_utf8),
+        ctypes.cast(relative_array, ctypes.POINTER(ctypes.c_uint8)),
+        len(relative_utf8),
+        (ctypes.c_uint8 * 8)(),
+    )
+    durability_report = _NativeDurableDirectoryPreparationReport()
+    runtime_report = _NativeReport()
+    returned = library.humanbrain_temporal_prepare_durable_directory_path_v1(
+        ctypes.byref(request),
+        ctypes.byref(durability_report),
+        ctypes.byref(runtime_report),
+    )
+    return _decode_durable_directory_preparation(
+        returned,
+        durability_report,
+        runtime_report,
+        expected_component_count=component_count,
     )
 
 
@@ -2546,6 +3012,12 @@ __all__ = [
     "TemporalCheckpointPublicationError",
     "TemporalCheckpointPublicationOutcome",
     "TemporalImmutableBytesPublication",
+    "TemporalImmutableBytesReconciliation",
+    "TemporalDurableDirectoryPreparation",
+    "TemporalDurabilityError",
+    "TemporalDurabilityErrorDomain",
+    "TemporalDurabilityErrorStage",
+    "TemporalDurabilityOutcome",
     "TemporalPublicationCleanup",
     "TemporalPublicationError",
     "TemporalPublicationErrorDomain",
@@ -2557,4 +3029,6 @@ __all__ = [
     "TemporalSpike",
     "TemporalStepMode",
     "publish_immutable_bytes",
+    "prepare_durable_directory",
+    "reconcile_existing_immutable_bytes",
 ]

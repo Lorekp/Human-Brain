@@ -11,12 +11,13 @@ does not select a threshold. The committed v1/v2 electrical and temporal JSON
 artifacts remain historical evidence bound to `df26cc2`; they do not justify a
 C1-scale threshold after the cohort allocator and exact-pair changes.
 
-Schema 4 is deliberately fail-closed. It pins the explicit-threshold Python
+Schema 5 is deliberately fail-closed and incorporates
+[`CHANGE NOTE 1`](r3-calibration-v3-change-note-1.md). It pins the explicit-threshold Python
 oracle, the schema-7 TRAIN-only capacity artifact, and the governing nested
 Gate-3 manifest at
 `benchmarks/procedural_runtime_gate3_slice_protocol_v1.json`, but reports
 `runnable=false`. Native source closure is governed transitively by that nested
-manifest; schema 4 does not duplicate its native-file digests. Its exact
+manifest; schema 5 does not duplicate its native-file digests. Its exact
 blocker is: "Official calibration-v3 screen execution, checkpoint/resume
 orchestration, and immutable result publication remain disabled behind
 `_execute_frozen_plan`." `--check-runnable` must therefore continue to fail.
@@ -86,17 +87,43 @@ resume paths are ordered by the four frozen arms, then those three events, then
 `allow_nan=False`; it is exactly 3,409 bytes with SHA-256
 `82581f614b7ef2766f0c8264d7ea44f59818bc2baca8661ea241d24400b09bb8`.
 
+The 54-directory closure is itself frozen in root-first order: ascending path
+component count, then UTF-8 bytewise path. Its canonical compact JSON is exactly
+5,305 bytes with SHA-256
+`20be5eb10a661a1ec91c693d336a9e024367cb4a2165285eab8fc6f812fd9055`.
+Before the first fresh or resume clock sample, every directory in that exact
+authority-derived list must return `TemporalDurabilityOutcome.DURABLE` from
+`humanbrain.native_temporal_runtime.prepare_durable_directory(REPO_ROOT,
+relative_directory)`. This operation durably creates missing entries and
+reconciles existing entries. A failure is a pre-session STOP. Directory creation
+during active time is forbidden.
+
 The large `.r3ntcp1` checkpoint is streamed exclusively through
 `humanbrain.native_temporal_runtime.NativeTemporalCircuit.publish_checkpoint`.
 JSON manifests and results, each bounded to at most 1 MiB, are published through
 `humanbrain.native_temporal_runtime.publish_immutable_bytes`. A pre-existing
 target is a STOP. Both paths forbid overwrite, retry, fallback, force options,
-and publisher-side directory creation. The resume manifest is the transaction
-commit point: a durably published checkpoint without its matching manifest is
-an orphan requiring manual STOP, not an input eligible for automatic recovery.
+and publisher-side directory creation. A manifest has commit evidence only from
+a same-process `DURABLE` publication receipt or, on a later `open_resume`, a
+`DURABLE` exact-byte reconciliation receipt. Presence alone is insufficient.
+Every `open_resume` must stably read and decode the manifest, then pass those
+exact accepted bytes without reserialization to
+`humanbrain.native_temporal_runtime.reconcile_existing_immutable_bytes`; its
+file-and-parent reconciliation must return `DURABLE` before checkpoint open or
+import. A same-process `PUBLISHED_BUT_NOT_CONFIRMED_DURABLE` remains terminal
+STOP without retry, and no
+persistent receipt sidecar is allowed. A durably published checkpoint without
+its matching manifest is an orphan requiring manual STOP, not an input eligible
+for automatic recovery.
 The development-selection file is written once after all development gates;
 the final-verdict file is written once after all confirmation gates. Paths
 reserved for unselected arms remain absent.
+
+The filesystem threat model includes process crash, power loss, benign
+concurrent directory preparation, and symlink or Windows reparse-point traversal
+and substitution detection. A malicious concurrent namespace writer with
+repository write or delete access is outside the C1 threat model; the path-based
+protocol makes no descriptor-relative isolation claim against that attacker.
 
 ## 2. Electrical v3 — reserve-valid fitted-cell fixture
 
@@ -326,17 +353,21 @@ payload keys are `artifact_path`, `claim_boundary`, `construction_seeds`,
 
 ### 5.2 Adopted active-wall contract
 
-Schema 4 adopts timing contract `r3-cumulative-active-wall-v1` with the exact
+Schema 5 adopts timing contract `r3-cumulative-active-wall-v2` with the exact
 cap `54,000,000,000,000 ns` while leaving execution disabled. CPython 3.11
 `time.perf_counter_ns` measures one closed active interval without internal
 pauses; scheduler delay, sleep, locks, garbage collection, I/O, asynchronous
 waits, and incidental error handling remain charged.
 
-A fresh session starts before the first of production circuit construction,
-production TRAIN-source access, or frozen output-parent creation. A resumed
-session starts immediately before opening the exact frozen resume manifest, so
-manifest validation, checkpoint read/import, derived-index rebuild, and parity
-checks are charged. A clean checkpoint stop occurs only after all scientific
+A fresh session starts after the full authority-derived output-directory
+closure has been durably prepared, immediately before the first production
+circuit construction or TRAIN-source access. A resumed session starts after the
+same preparation, immediately before opening the exact frozen resume manifest.
+Directory derivation, preparation, and confirmation are therefore outside the
+interval; directory creation inside it is forbidden. Manifest open, validation,
+exact existing-byte file-and-parent durability reconciliation, checkpoint
+read/import, derived-index rebuild, and parity checks are charged. A clean
+checkpoint stop occurs only after all scientific
 work, durable checkpoint publication, fresh reopen, full import validation,
 derived-index reconstruction, and identity/parity checks. Only the bounded
 resume-manifest or terminal-result construction/publication/reopen is outside
@@ -387,8 +418,9 @@ q=255 are fixture evidence; R3-F0 is TRAIN-only structural evidence.
 To make this protocol runnable, a later pre-outcome commit must:
 
 1. keep the governing nested Gate-3 source closure green after final changes;
-2. implement the frozen checkpoint/resume, timing, and immutable result
-   contracts behind `_execute_frozen_plan` without changing this protocol;
+2. implement the frozen durable-directory preparation, exact-byte resume
+   reconciliation, checkpoint/resume, timing, and immutable result contracts
+   behind `_execute_frozen_plan` without changing this protocol;
 3. prove clean fresh/resumed arithmetic, STOP, and indeterminate-session
    behavior before enabling official screens;
 4. flip `source_binding.runnable` only after all source-byte validation passes;
