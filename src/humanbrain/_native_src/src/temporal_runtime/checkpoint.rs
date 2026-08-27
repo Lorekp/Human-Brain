@@ -4,9 +4,9 @@
 //! bytes, the complete fixed header, allocation-free reachability proofs,
 //! fallible export preparation over a borrowed live state, and allocation-free
 //! streaming of a prepared checkpoint into a caller-owned sink. It also owns
-//! allocation-free checkpoint import Pass 1 and typed-scratch canonical-state
-//! import Pass 2; it does not construct an imported runtime, publish files, or
-//! expose an ABI.
+//! allocation-free checkpoint import Pass 1, typed-scratch canonical-state
+//! import Pass 2, and the direct one-shot runtime assembler; it does not publish
+//! files or expose an ABI.
 
 use std::{
     alloc::Layout,
@@ -19,15 +19,20 @@ use std::{
 use sha2::{Digest, Sha256};
 
 use super::{
-    TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy, TemporalPlasticityPolicy,
-    TemporalPoisonCode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS, CONTEXT_CELLS_U8,
+    NovelCandidate, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy,
+    TemporalPlasticityPolicy, TemporalPoisonCode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS,
+    CONTEXT_CELLS_U8, EMPTY_DIAGNOSTIC, EMPTY_DRIVE, EMPTY_NOVEL_CANDIDATE, NONE,
     PAIRS_PER_SEGMENT,
 };
 use crate::temporal::{
-    temporal_source_meta_allocation_layout, TemporalOwnerDiagnostic, TemporalSegmentRow,
-    TemporalStorePreflightError,
+    temporal_source_meta_allocation_layout, TemporalCheckpointRebuildError,
+    TemporalOwnerDiagnostic, TemporalSegmentRow, TemporalStoreAllocationSite,
+    TemporalStoreCheckpointRebuild, TemporalStoreConfig, TemporalStorePreflightError,
 };
-use crate::temporal_physics::{CandidateDrive, TEMPORAL_PHYSICS_IDENTITY};
+use crate::temporal_physics::{
+    CandidateDrive, CoupledRaceScratch, CoupledRaceScratchBuildError,
+    CoupledRaceScratchReserveSite, TEMPORAL_PHYSICS_IDENTITY,
+};
 
 const LOGICAL_STATE_DOMAIN: &[u8] = b"humanbrain-r3-checkpoint-logical-state-v1\0";
 const CIRCUIT_IDENTITY_DOMAIN: &[u8] = b"humanbrain-r3-temporal-circuit-v1";
@@ -1235,6 +1240,52 @@ pub(crate) struct PreparedCheckpointV1Export<'a> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CheckpointV1CanonicalMismatch {
+    ByteMismatch {
+        offset: u64,
+        expected: u8,
+        actual: u8,
+    },
+    ExpectedEnded {
+        offset: u64,
+        actual: u8,
+    },
+    ExpectedTrailing {
+        offset: u64,
+        expected: u8,
+    },
+}
+
+impl CheckpointV1CanonicalMismatch {
+    const fn offset(self) -> u64 {
+        match self {
+            Self::ByteMismatch { offset, .. }
+            | Self::ExpectedEnded { offset, .. }
+            | Self::ExpectedTrailing { offset, .. } => offset,
+        }
+    }
+}
+
+#[derive(Debug)]
+enum CompareCheckpointV1CanonicalBytesError {
+    Mismatch(CheckpointV1CanonicalMismatch),
+    Encode(CheckpointV1EncodeError),
+}
+
+struct CheckpointV1ExportPreparation<'a> {
+    runtime: &'a TemporalCircuitRuntime,
+    identity: TemporalCheckpointV1Identity,
+    layout: CheckpointV1Layout,
+    scalars: CheckpointV1Scalars,
+    column_scratch_len: usize,
+}
+
+struct CheckpointV1ValidatedExportState<'a> {
+    preparation: CheckpointV1ExportPreparation<'a>,
+    semantic_scratch_len: usize,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum CheckpointV1BodySection {
     CohortColumns,
     PriorContext,
@@ -2149,6 +2200,25 @@ impl TemporalCircuitRuntime {
         authority: ValidatedCheckpointAuthority,
         mut fail_before_reserve: impl FnMut(CheckpointV1AllocationSite) -> bool,
     ) -> Result<PreparedCheckpointV1Export<'_>, PrepareCheckpointV1ExportError> {
+        let preparation = self.begin_checkpoint_v1_export(authority)?;
+        let mut column_replay = checkpoint_v1_zeroed_u32_scratch(
+            preparation.column_scratch_len(),
+            CheckpointV1AllocationSite::ColumnReplay,
+            &mut fail_before_reserve,
+        )?;
+        let validated = preparation.validate_state(&mut column_replay)?;
+        let mut semantic_scratch = checkpoint_v1_zeroed_u32_scratch(
+            validated.semantic_scratch_len(),
+            CheckpointV1AllocationSite::SemanticPostings,
+            &mut fail_before_reserve,
+        )?;
+        validated.finish(&mut semantic_scratch)
+    }
+
+    fn begin_checkpoint_v1_export(
+        &self,
+        authority: ValidatedCheckpointAuthority,
+    ) -> Result<CheckpointV1ExportPreparation<'_>, PrepareCheckpointV1ExportError> {
         let identity = self
             .checkpoint_v1_identity(authority, TemporalRecognitionRoute::ExactGeneric)
             .map_err(PrepareCheckpointV1ExportError::Identity)?;
@@ -2179,29 +2249,61 @@ impl TemporalCircuitRuntime {
         let column_count = usize::try_from(self.config.column_count).map_err(|_| {
             PrepareCheckpointV1ExportError::Codec(CheckpointV1CodecError::LengthOverflow)
         })?;
-        let mut column_replay = checkpoint_v1_zeroed_u32_scratch(
-            column_count,
-            CheckpointV1AllocationSite::ColumnReplay,
-            &mut fail_before_reserve,
-        )?;
-        validate_checkpoint_v1_runtime_state(self, &mut column_replay)
+
+        Ok(CheckpointV1ExportPreparation {
+            runtime: self,
+            identity,
+            layout,
+            scalars,
+            column_scratch_len: column_count,
+        })
+    }
+}
+
+impl<'a> CheckpointV1ExportPreparation<'a> {
+    const fn column_scratch_len(&self) -> usize {
+        self.column_scratch_len
+    }
+
+    fn validate_state(
+        self,
+        column_replay: &mut [u32],
+    ) -> Result<CheckpointV1ValidatedExportState<'a>, PrepareCheckpointV1ExportError> {
+        let provided = column_replay.len().min(self.column_scratch_len);
+        validate_checkpoint_v1_runtime_state(self.runtime, &mut column_replay[..provided])
             .map_err(|_| PrepareCheckpointV1ExportError::State)?;
 
         let semantic_scratch_required = self
+            .runtime
             .store
             .runtime_semantic_posting_scratch_required()
             .map_err(PrepareCheckpointV1ExportError::StoreIndex)?;
         let semantic_scratch_len = usize::try_from(semantic_scratch_required).map_err(|_| {
             PrepareCheckpointV1ExportError::Codec(CheckpointV1CodecError::LengthOverflow)
         })?;
-        let mut semantic_scratch = checkpoint_v1_zeroed_u32_scratch(
+
+        Ok(CheckpointV1ValidatedExportState {
+            preparation: self,
             semantic_scratch_len,
-            CheckpointV1AllocationSite::SemanticPostings,
-            &mut fail_before_reserve,
-        )?;
+        })
+    }
+}
+
+impl<'a> CheckpointV1ValidatedExportState<'a> {
+    const fn semantic_scratch_len(&self) -> usize {
+        self.semantic_scratch_len
+    }
+
+    fn finish(
+        self,
+        semantic_scratch: &mut [u32],
+    ) -> Result<PreparedCheckpointV1Export<'a>, PrepareCheckpointV1ExportError> {
+        let provided = semantic_scratch.len().min(self.semantic_scratch_len);
         let mut semantic_hasher = Sha256::new();
-        self.store
-            .visit_runtime_semantic_postings(&mut semantic_scratch, |posting| {
+        self.preparation
+            .runtime
+            .store
+            .visit_runtime_semantic_postings(&mut semantic_scratch[..provided], |posting| {
                 semantic_hasher.update(posting.normalized_source.to_le_bytes());
                 semantic_hasher.update(posting.segment_id.to_le_bytes());
                 semantic_hasher.update(posting.slot.to_le_bytes());
@@ -2210,10 +2312,10 @@ impl TemporalCircuitRuntime {
         let semantic_index_digest = CheckpointV1Digest(semantic_hasher.finalize().into());
 
         Ok(PreparedCheckpointV1Export {
-            runtime: self,
-            identity,
-            layout,
-            scalars,
+            runtime: self.preparation.runtime,
+            identity: self.preparation.identity,
+            layout: self.preparation.layout,
+            scalars: self.preparation.scalars,
             semantic_index_digest,
         })
     }
@@ -2238,7 +2340,217 @@ fn checkpoint_v1_zeroed_u32_scratch(
     Ok(scratch)
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CheckpointV1ComparePhase {
+    ReserveHeader,
+    Body,
+    BackfillHeader,
+    Backfilled,
+    VerifyEnd,
+    Flushed,
+}
+
+struct CheckpointV1CompareSink<'a> {
+    expected: &'a [u8],
+    position: u64,
+    logical_end: u64,
+    phase: CheckpointV1ComparePhase,
+    first_mismatch: Option<CheckpointV1CanonicalMismatch>,
+}
+
+impl<'a> CheckpointV1CompareSink<'a> {
+    const fn new(expected: &'a [u8]) -> Self {
+        Self {
+            expected,
+            position: 0,
+            logical_end: 0,
+            phase: CheckpointV1ComparePhase::ReserveHeader,
+            first_mismatch: None,
+        }
+    }
+
+    fn record_mismatch(&mut self, mismatch: CheckpointV1CanonicalMismatch) {
+        if self
+            .first_mismatch
+            .is_none_or(|current| mismatch.offset() < current.offset())
+        {
+            self.first_mismatch = Some(mismatch);
+        }
+    }
+
+    fn compare_at_position(&mut self, bytes: &[u8]) -> io::Result<()> {
+        for (index, &actual) in bytes.iter().enumerate() {
+            let index =
+                u64::try_from(index).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+            let offset = self
+                .position
+                .checked_add(index)
+                .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
+            let expected = usize::try_from(offset)
+                .ok()
+                .and_then(|offset| self.expected.get(offset))
+                .copied();
+            let mismatch = match expected {
+                Some(expected) if expected != actual => {
+                    Some(CheckpointV1CanonicalMismatch::ByteMismatch {
+                        offset,
+                        expected,
+                        actual,
+                    })
+                }
+                None => Some(CheckpointV1CanonicalMismatch::ExpectedEnded { offset, actual }),
+                _ => None,
+            };
+            if let Some(mismatch) = mismatch {
+                self.record_mismatch(mismatch);
+            }
+        }
+        Ok(())
+    }
+
+    fn finish(self) -> Result<(), CompareCheckpointV1CanonicalBytesError> {
+        if let Some(mismatch) = self.first_mismatch {
+            return Err(CompareCheckpointV1CanonicalBytesError::Mismatch(mismatch));
+        }
+        if self.phase != CheckpointV1ComparePhase::Flushed || self.position != self.logical_end {
+            return Err(CompareCheckpointV1CanonicalBytesError::Encode(
+                CheckpointV1EncodeError::Flush {
+                    source: io::Error::from(io::ErrorKind::InvalidData),
+                },
+            ));
+        }
+        let expected_len = u64::try_from(self.expected.len()).map_err(|_| {
+            CompareCheckpointV1CanonicalBytesError::Encode(CheckpointV1EncodeError::Flush {
+                source: io::Error::from(io::ErrorKind::InvalidInput),
+            })
+        })?;
+        if expected_len > self.logical_end {
+            let offset = self.logical_end;
+            let expected = usize::try_from(offset)
+                .ok()
+                .and_then(|offset| self.expected.get(offset))
+                .copied()
+                .ok_or_else(|| {
+                    CompareCheckpointV1CanonicalBytesError::Encode(CheckpointV1EncodeError::Flush {
+                        source: io::Error::from(io::ErrorKind::InvalidData),
+                    })
+                })?;
+            return Err(CompareCheckpointV1CanonicalBytesError::Mismatch(
+                CheckpointV1CanonicalMismatch::ExpectedTrailing { offset, expected },
+            ));
+        }
+        if expected_len != self.logical_end {
+            return Err(CompareCheckpointV1CanonicalBytesError::Encode(
+                CheckpointV1EncodeError::Flush {
+                    source: io::Error::from(io::ErrorKind::InvalidData),
+                },
+            ));
+        }
+        Ok(())
+    }
+}
+
+impl Write for CheckpointV1CompareSink<'_> {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        let byte_count =
+            u64::try_from(bytes.len()).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+        match self.phase {
+            CheckpointV1ComparePhase::ReserveHeader => {
+                if self.position != 0
+                    || self.logical_end != 0
+                    || bytes.len() != usize::from(CHECKPOINT_V1_HEADER_BYTES)
+                {
+                    return Err(io::Error::from(io::ErrorKind::InvalidInput));
+                }
+                if bytes.iter().any(|&byte| byte != 0) {
+                    return Err(io::Error::from(io::ErrorKind::InvalidData));
+                }
+                self.position = byte_count;
+                self.logical_end = byte_count;
+                self.phase = CheckpointV1ComparePhase::Body;
+                Ok(bytes.len())
+            }
+            CheckpointV1ComparePhase::Body => {
+                if bytes.is_empty() || self.position != self.logical_end {
+                    return Err(io::Error::from(io::ErrorKind::InvalidInput));
+                }
+                self.compare_at_position(bytes)?;
+                let end = self
+                    .position
+                    .checked_add(byte_count)
+                    .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
+                self.position = end;
+                self.logical_end = end;
+                Ok(bytes.len())
+            }
+            CheckpointV1ComparePhase::BackfillHeader => {
+                if self.position != 0
+                    || self.logical_end < u64::from(CHECKPOINT_V1_HEADER_BYTES)
+                    || bytes.len() != usize::from(CHECKPOINT_V1_HEADER_BYTES)
+                {
+                    return Err(io::Error::from(io::ErrorKind::InvalidInput));
+                }
+                self.compare_at_position(bytes)?;
+                self.position = byte_count;
+                self.phase = CheckpointV1ComparePhase::Backfilled;
+                Ok(bytes.len())
+            }
+            CheckpointV1ComparePhase::Backfilled
+            | CheckpointV1ComparePhase::VerifyEnd
+            | CheckpointV1ComparePhase::Flushed => {
+                Err(io::Error::from(io::ErrorKind::InvalidInput))
+            }
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        if self.phase != CheckpointV1ComparePhase::VerifyEnd || self.position != self.logical_end {
+            return Err(io::Error::from(io::ErrorKind::InvalidInput));
+        }
+        self.phase = CheckpointV1ComparePhase::Flushed;
+        Ok(())
+    }
+}
+
+impl Seek for CheckpointV1CompareSink<'_> {
+    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+        match (self.phase, position) {
+            (CheckpointV1ComparePhase::ReserveHeader, SeekFrom::End(0))
+                if self.position == 0 && self.logical_end == 0 =>
+            {
+                Ok(0)
+            }
+            (CheckpointV1ComparePhase::Body, SeekFrom::Start(0))
+                if self.position == self.logical_end
+                    && self.logical_end >= u64::from(CHECKPOINT_V1_HEADER_BYTES) =>
+            {
+                self.position = 0;
+                self.phase = CheckpointV1ComparePhase::BackfillHeader;
+                Ok(0)
+            }
+            (CheckpointV1ComparePhase::Backfilled, SeekFrom::End(0))
+                if self.position == u64::from(CHECKPOINT_V1_HEADER_BYTES) =>
+            {
+                self.position = self.logical_end;
+                self.phase = CheckpointV1ComparePhase::VerifyEnd;
+                Ok(self.logical_end)
+            }
+            _ => Err(io::Error::from(io::ErrorKind::InvalidInput)),
+        }
+    }
+}
+
 impl PreparedCheckpointV1Export<'_> {
+    fn compare_canonical_bytes(
+        &self,
+        expected: &[u8],
+    ) -> Result<(), CompareCheckpointV1CanonicalBytesError> {
+        let mut sink = CheckpointV1CompareSink::new(expected);
+        self.encode_into(&mut sink)
+            .map_err(CompareCheckpointV1CanonicalBytesError::Encode)?;
+        sink.finish()
+    }
+
     pub(crate) fn encode_into<W: Write + Seek>(
         &self,
         sink: &mut W,
@@ -2766,7 +3078,6 @@ pub(crate) enum CheckpointV1ImportAllocationSite {
     StoreBestMatching,
     StoreBestActive,
     StoreTouchedOwners,
-    VerificationColumnReplay,
     VerificationSemanticPostings,
 }
 
@@ -2805,7 +3116,6 @@ impl fmt::Display for CheckpointV1ImportAllocationSite {
             Self::StoreBestMatching => "store best matching segments",
             Self::StoreBestActive => "store best active segments",
             Self::StoreTouchedOwners => "store touched owners",
-            Self::VerificationColumnReplay => "verification column replay",
             Self::VerificationSemanticPostings => "verification semantic postings",
         })
     }
@@ -3504,6 +3814,733 @@ fn checkpoint_v1_pass2_zeroed_scratch<T: Copy>(
     Ok(scratch)
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CheckpointV1ImportError {
+    Pass1(CheckpointV1Pass1Error),
+    FactoryIdentityMismatch,
+    State,
+    RetryableAllocation(CheckpointV1ImportAllocationSite),
+    SemanticIndexMismatch,
+    CanonicalReexportMismatch { offset: u64 },
+    AssemblyInvariant,
+}
+
+impl fmt::Display for CheckpointV1ImportError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Pass1(source) => write!(formatter, "checkpoint Pass 1 failed: {source}"),
+            Self::FactoryIdentityMismatch => {
+                formatter.write_str("checkpoint proof belongs to another runtime factory")
+            }
+            Self::State => formatter.write_str("checkpoint state is not runtime-reachable"),
+            Self::RetryableAllocation(site) => {
+                write!(formatter, "checkpoint allocation failed at {site}")
+            }
+            Self::SemanticIndexMismatch => {
+                formatter.write_str("rebuilt semantic index digest does not match checkpoint")
+            }
+            Self::CanonicalReexportMismatch { offset } => write!(
+                formatter,
+                "rebuilt checkpoint differs from canonical input at byte {offset}"
+            ),
+            Self::AssemblyInvariant => {
+                formatter.write_str("validated checkpoint could not be assembled")
+            }
+        }
+    }
+}
+
+impl Error for CheckpointV1ImportError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Pass1(source) => Some(source),
+            _ => None,
+        }
+    }
+}
+
+pub(crate) fn import_checkpoint_v1(
+    checkpoint: &[u8],
+    factory: ValidatedCheckpointV1RuntimeFactory,
+) -> Result<TemporalCircuitRuntime, CheckpointV1ImportError> {
+    let pass1 = validate_checkpoint_v1_pass1(checkpoint, &factory)
+        .map_err(CheckpointV1ImportError::Pass1)?;
+    let pass2 = validate_checkpoint_v1_pass2(pass1, &factory).map_err(|error| match error {
+        CheckpointV1Pass2Error::FactoryIdentityMismatch => {
+            CheckpointV1ImportError::FactoryIdentityMismatch
+        }
+        CheckpointV1Pass2Error::State(_) => CheckpointV1ImportError::State,
+        CheckpointV1Pass2Error::RetryableAllocation(site) => {
+            CheckpointV1ImportError::RetryableAllocation(site)
+        }
+    })?;
+    assemble_validated_checkpoint_v1_inner(pass2, factory, &mut |_, _| false)
+}
+
+fn assemble_validated_checkpoint_v1_inner<'a>(
+    pass2: ValidatedCheckpointV1Pass2<'a>,
+    factory: ValidatedCheckpointV1RuntimeFactory,
+    fail_before_reserve: &mut impl FnMut(CheckpointV1ImportAllocationSite, usize) -> bool,
+) -> Result<TemporalCircuitRuntime, CheckpointV1ImportError> {
+    if pass2.pass1.factory_identity != factory.identity {
+        return Err(CheckpointV1ImportError::FactoryIdentityMismatch);
+    }
+
+    let plan = pass2.pass1.allocation_plan;
+    let scalars = pass2.pass1.scalars;
+    let body = pass2.pass1.body;
+    let checkpoint = pass2.pass1.checkpoint;
+    let layout = pass2.pass1.layout;
+    let retained_semantic_digest = pass2.pass1.semantic_index_digest;
+    let poison = pass2.pass1.poison;
+    let config = factory.config;
+    let derived = factory.derived;
+
+    let column_offset_count = plan
+        .column_count
+        .checked_add(1)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    let race_cap = usize::from(config.novel_race_cap);
+    if race_cap == 0 {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    let base_width = usize::from(config.base_cells_per_column);
+    let base_population = usize::try_from(derived.base_population)
+        .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+    let cohort_count = usize::try_from(scalars.cohort_count)
+        .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+    let segment_count = usize::try_from(scalars.segment_count)
+        .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+    let committed_owner_count = usize::try_from(scalars.next_reserve_cell)
+        .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+    let expected_base_population = plan
+        .column_count
+        .checked_mul(base_width)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    let committed_reserve_count = cohort_count
+        .checked_mul(race_cap)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    let expected_committed_count = base_population
+        .checked_add(committed_reserve_count)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    let expected_posting_capacity = plan
+        .segment_capacity
+        .checked_mul(PAIRS_PER_SEGMENT)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    let live_pair_slots = segment_count
+        .checked_mul(PAIRS_PER_SEGMENT)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    if base_population != expected_base_population
+        || committed_owner_count != plan.committed_owner_count
+        || expected_committed_count != committed_owner_count
+        || committed_owner_count > plan.owner_capacity
+        || cohort_count > plan.cohort_capacity
+        || segment_count > plan.segment_capacity
+        || expected_posting_capacity != plan.posting_capacity
+        || plan.semantic_posting_scratch != segment_count
+        || usize::try_from(derived.source_count).ok() != Some(plan.source_count)
+        || body.cohort_columns().len() != cohort_count
+        || body.segment_owners().len() != segment_count
+        || body.segment_sources().len() != live_pair_slots
+        || body.segment_ticks().len() != live_pair_slots
+    {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    let expected_active_capacity = match config.plasticity_policy {
+        TemporalPlasticityPolicy::GrowthOff => 0,
+        TemporalPlasticityPolicy::Plastic => plan.segment_capacity,
+    };
+    if plan.active_segment_capacity != expected_active_capacity {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+
+    if pass2.column_occupancies.len() != plan.column_count {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    let mut replayed_committed = 0usize;
+    let mut replayed_maximum = 0usize;
+    for occupancy in pass2.column_occupancies.iter().copied() {
+        let occupancy =
+            usize::try_from(occupancy).map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+        let recruited = occupancy
+            .checked_sub(base_width)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        if recruited % race_cap != 0 {
+            return Err(CheckpointV1ImportError::AssemblyInvariant);
+        }
+        replayed_committed = replayed_committed
+            .checked_add(occupancy)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        replayed_maximum = replayed_maximum.max(occupancy);
+    }
+    if replayed_committed != committed_owner_count || replayed_maximum != pass2.max_column_occupancy
+    {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    for index in 0..cohort_count {
+        let column = body
+            .cohort_columns()
+            .get(index)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        if usize::try_from(column)
+            .ok()
+            .is_none_or(|column| column >= plan.column_count)
+        {
+            return Err(CheckpointV1ImportError::AssemblyInvariant);
+        }
+    }
+
+    let remaining_owner_count = plan
+        .owner_capacity
+        .checked_sub(committed_owner_count)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    let remaining_full_cohort_cells = (remaining_owner_count / race_cap)
+        .checked_mul(race_cap)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    let race_capacity = pass2
+        .max_column_occupancy
+        .checked_add(remaining_full_cohort_cells)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    if race_capacity == 0 || race_capacity > plan.prospective_column_occupancy_limit {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+
+    let previous_context =
+        checkpoint_v1_import_context(body.prior_context(), scalars.prior_context_length)?;
+    let previous_winner_context =
+        checkpoint_v1_import_context(body.winner_context(), scalars.winner_context_length)?;
+
+    let mut column_offsets = checkpoint_v1_import_filled_vec(
+        column_offset_count,
+        column_offset_count,
+        0usize,
+        CheckpointV1ImportAllocationSite::RuntimeColumnOffsets,
+        fail_before_reserve,
+    )?;
+    let mut column_cells = checkpoint_v1_import_filled_vec(
+        plan.owner_capacity,
+        committed_owner_count,
+        NONE,
+        CheckpointV1ImportAllocationSite::RuntimeColumnCells,
+        fail_before_reserve,
+    )?;
+    let alternate_column_offsets = checkpoint_v1_import_filled_vec(
+        column_offset_count,
+        0,
+        0usize,
+        CheckpointV1ImportAllocationSite::RuntimeAlternateColumnOffsets,
+        fail_before_reserve,
+    )?;
+    let alternate_column_cells = checkpoint_v1_import_filled_vec(
+        plan.owner_capacity,
+        0,
+        0u32,
+        CheckpointV1ImportAllocationSite::RuntimeAlternateColumnCells,
+        fail_before_reserve,
+    )?;
+    let mut cohort_columns = checkpoint_v1_import_filled_vec(
+        plan.cohort_capacity,
+        cohort_count,
+        0u32,
+        CheckpointV1ImportAllocationSite::RuntimeCohortColumns,
+        fail_before_reserve,
+    )?;
+    let recognition_scratch = checkpoint_v1_import_filled_vec(
+        plan.owner_capacity,
+        plan.owner_capacity,
+        EMPTY_DIAGNOSTIC,
+        CheckpointV1ImportAllocationSite::RuntimeRecognitionDiagnostics,
+        fail_before_reserve,
+    )?;
+    let active_segment_scratch = checkpoint_v1_import_filled_vec(
+        plan.active_segment_capacity,
+        plan.active_segment_capacity,
+        NONE,
+        CheckpointV1ImportAllocationSite::RuntimeActiveSegments,
+        fail_before_reserve,
+    )?;
+    let column_drive_scratch = checkpoint_v1_import_filled_vec(
+        race_capacity,
+        race_capacity,
+        EMPTY_DRIVE,
+        CheckpointV1ImportAllocationSite::RuntimeColumnDrive,
+        fail_before_reserve,
+    )?;
+    let novel_candidate_scratch: Vec<NovelCandidate> = checkpoint_v1_import_filled_vec(
+        race_capacity,
+        race_capacity,
+        EMPTY_NOVEL_CANDIDATE,
+        CheckpointV1ImportAllocationSite::RuntimeNovelCandidates,
+        fail_before_reserve,
+    )?;
+
+    let mut column_occupancies = pass2.column_occupancies;
+    checkpoint_v1_import_populate_csr(
+        &mut column_offsets,
+        &mut column_cells,
+        &mut cohort_columns,
+        &mut column_occupancies,
+        body.cohort_columns(),
+        base_population,
+        base_width,
+        race_cap,
+    )?;
+
+    let race_scratch =
+        CoupledRaceScratch::try_new_with_reserve(race_capacity, |site, element_count| {
+            fail_before_reserve(checkpoint_v1_import_race_site(site), element_count)
+        })
+        .map_err(checkpoint_v1_import_race_error)?;
+
+    let store_config = TemporalStoreConfig {
+        source_count: plan.source_count,
+        owner_count: plan.owner_capacity,
+        segment_capacity: plan.segment_capacity,
+        source_gid_base: derived.source_gid_base,
+        connected_permanence_ticks: config.connected_permanence_ticks,
+        theta_match: config.theta_match,
+        theta_active: config.theta_active,
+        padding_zero: 0,
+    };
+    let mut rebuild = TemporalStoreCheckpointRebuild::new_with_reserve(
+        store_config,
+        scalars.segment_count,
+        |site, element_count| {
+            fail_before_reserve(checkpoint_v1_import_store_site(site), element_count)
+        },
+    )
+    .map_err(checkpoint_v1_import_store_error)?;
+    let owners = body.segment_owners();
+    let sources = body.segment_sources();
+    let ticks = body.segment_ticks();
+    for segment_index in 0..segment_count {
+        let owner = owners
+            .get(segment_index)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let first_pair = segment_index
+            .checked_mul(PAIRS_PER_SEGMENT)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let mut row = TemporalSegmentRow {
+            normalized_sources: [NONE; PAIRS_PER_SEGMENT],
+            permanence_ticks: [0; PAIRS_PER_SEGMENT],
+            live_pair_count: 0,
+        };
+        for slot in 0..PAIRS_PER_SEGMENT {
+            let pair_index = first_pair
+                .checked_add(slot)
+                .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+            *row.normalized_sources
+                .get_mut(slot)
+                .ok_or(CheckpointV1ImportError::AssemblyInvariant)? = sources
+                .get(pair_index)
+                .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+            *row.permanence_ticks
+                .get_mut(slot)
+                .ok_or(CheckpointV1ImportError::AssemblyInvariant)? = ticks
+                .get(pair_index)
+                .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        }
+        let live_pair_count = row
+            .normalized_sources
+            .iter()
+            .position(|&source| source == NONE)
+            .unwrap_or(PAIRS_PER_SEGMENT);
+        row.live_pair_count = u8::try_from(live_pair_count)
+            .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+        let appended = rebuild
+            .append_canonical_row(owner, &row)
+            .map_err(checkpoint_v1_import_store_error)?;
+        if usize::try_from(appended).ok() != Some(segment_index) {
+            return Err(CheckpointV1ImportError::AssemblyInvariant);
+        }
+    }
+    let store = rebuild.finish().map_err(checkpoint_v1_import_store_error)?;
+
+    let ValidatedCheckpointV1RuntimeFactory {
+        config,
+        token_codebook,
+        threshold_offsets_mv,
+        identity,
+        derived,
+    } = factory;
+    let runtime = TemporalCircuitRuntime {
+        config,
+        token_codebook,
+        column_offsets,
+        column_cells,
+        alternate_column_offsets,
+        alternate_column_cells,
+        cohort_columns,
+        next_reserve_cell: scalars.next_reserve_cell,
+        threshold_offsets_mv,
+        store,
+        recognition_scratch,
+        active_segment_scratch,
+        column_drive_scratch,
+        novel_candidate_scratch,
+        race_scratch,
+        previous_context,
+        previous_context_len: scalars.prior_context_length,
+        previous_winner_context,
+        previous_winner_context_len: scalars.winner_context_length,
+        event_count: scalars.event_count,
+        learning_step: scalars.learning_step,
+        scientific_stop: poison,
+        relay_offset: derived.relay_offset,
+        basket_offset: derived.basket_offset,
+        proximal_offset: derived.proximal_offset,
+        proximal_relay_offset: derived.proximal_relay_offset,
+    };
+
+    let preparation = CheckpointV1ExportPreparation {
+        runtime: &runtime,
+        identity,
+        layout,
+        scalars,
+        column_scratch_len: plan.column_count,
+    };
+    let validated = preparation
+        .validate_state(&mut column_occupancies)
+        .map_err(checkpoint_v1_import_preparation_error)?;
+    if validated.semantic_scratch_len() > plan.semantic_posting_scratch {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    let mut semantic_scratch = checkpoint_v1_import_filled_vec(
+        plan.semantic_posting_scratch,
+        plan.semantic_posting_scratch,
+        0u32,
+        CheckpointV1ImportAllocationSite::VerificationSemanticPostings,
+        fail_before_reserve,
+    )?;
+    let prepared = validated
+        .finish(&mut semantic_scratch)
+        .map_err(checkpoint_v1_import_preparation_error)?;
+    if prepared.semantic_index_digest != retained_semantic_digest {
+        return Err(CheckpointV1ImportError::SemanticIndexMismatch);
+    }
+    prepared
+        .compare_canonical_bytes(checkpoint)
+        .map_err(|error| match error {
+            CompareCheckpointV1CanonicalBytesError::Mismatch(mismatch) => {
+                CheckpointV1ImportError::CanonicalReexportMismatch {
+                    offset: mismatch.offset(),
+                }
+            }
+            CompareCheckpointV1CanonicalBytesError::Encode(_) => {
+                CheckpointV1ImportError::AssemblyInvariant
+            }
+        })?;
+
+    Ok(runtime)
+}
+
+fn checkpoint_v1_import_context(
+    encoded: CheckpointV1LeU32Slice<'_>,
+    encoded_length: u8,
+) -> Result<[u32; CONTEXT_CELLS], CheckpointV1ImportError> {
+    let expected_length = match encoded_length {
+        0 => 0,
+        CONTEXT_CELLS_U8 => CONTEXT_CELLS,
+        _ => return Err(CheckpointV1ImportError::AssemblyInvariant),
+    };
+    if encoded.len() != expected_length {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    let mut context = [0; CONTEXT_CELLS];
+    for index in 0..expected_length {
+        *context
+            .get_mut(index)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)? = encoded
+            .get(index)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    }
+    Ok(context)
+}
+
+fn checkpoint_v1_import_filled_vec<T: Copy>(
+    capacity: usize,
+    length: usize,
+    value: T,
+    site: CheckpointV1ImportAllocationSite,
+    fail_before_reserve: &mut impl FnMut(CheckpointV1ImportAllocationSite, usize) -> bool,
+) -> Result<Vec<T>, CheckpointV1ImportError> {
+    if length > capacity {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    if capacity == 0 {
+        return Ok(Vec::new());
+    }
+    if fail_before_reserve(site, capacity) {
+        return Err(CheckpointV1ImportError::RetryableAllocation(site));
+    }
+    let mut values = Vec::new();
+    values
+        .try_reserve_exact(capacity)
+        .map_err(|_| CheckpointV1ImportError::RetryableAllocation(site))?;
+    values.resize(length, value);
+    Ok(values)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn checkpoint_v1_import_populate_csr(
+    column_offsets: &mut [usize],
+    column_cells: &mut [u32],
+    cohort_columns: &mut [u32],
+    column_cursors: &mut [u32],
+    encoded_cohort_columns: CheckpointV1LeU32Slice<'_>,
+    base_population: usize,
+    base_width: usize,
+    race_cap: usize,
+) -> Result<(), CheckpointV1ImportError> {
+    let expected_offset_count = column_cursors
+        .len()
+        .checked_add(1)
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+    if column_offsets.len() != expected_offset_count
+        || cohort_columns.len() != encoded_cohort_columns.len()
+    {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    let mut next_offset = 0usize;
+    *column_offsets
+        .first_mut()
+        .ok_or(CheckpointV1ImportError::AssemblyInvariant)? = 0;
+    for (column, occupancy) in column_cursors.iter().copied().enumerate() {
+        let occupancy =
+            usize::try_from(occupancy).map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+        next_offset = next_offset
+            .checked_add(occupancy)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        *column_offsets
+            .get_mut(column + 1)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)? = next_offset;
+    }
+    if next_offset != column_cells.len() {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+
+    for column in 0..column_cursors.len() {
+        let column_start = *column_offsets
+            .get(column)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let base_start = column
+            .checked_mul(base_width)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let base_end = base_start
+            .checked_add(base_width)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let destination_end = column_start
+            .checked_add(base_width)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        if base_end > base_population {
+            return Err(CheckpointV1ImportError::AssemblyInvariant);
+        }
+        let destination = column_cells
+            .get_mut(column_start..destination_end)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        for (offset, cell) in destination.iter_mut().enumerate() {
+            *cell = u32::try_from(
+                base_start
+                    .checked_add(offset)
+                    .ok_or(CheckpointV1ImportError::AssemblyInvariant)?,
+            )
+            .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+        }
+    }
+    let base_cursor =
+        u32::try_from(base_width).map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+    column_cursors.fill(base_cursor);
+
+    for cohort_index in 0..cohort_columns.len() {
+        let column = encoded_cohort_columns
+            .get(cohort_index)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        *cohort_columns
+            .get_mut(cohort_index)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)? = column;
+        let column =
+            usize::try_from(column).map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+        let local_start = usize::try_from(
+            *column_cursors
+                .get(column)
+                .ok_or(CheckpointV1ImportError::AssemblyInvariant)?,
+        )
+        .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+        let local_end = local_start
+            .checked_add(race_cap)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let column_start = *column_offsets
+            .get(column)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let destination_start = column_start
+            .checked_add(local_start)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let destination_end = column_start
+            .checked_add(local_end)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let first_gid = base_population
+            .checked_add(
+                cohort_index
+                    .checked_mul(race_cap)
+                    .ok_or(CheckpointV1ImportError::AssemblyInvariant)?,
+            )
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let destination = column_cells
+            .get_mut(destination_start..destination_end)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        for (offset, cell) in destination.iter_mut().enumerate() {
+            *cell = u32::try_from(
+                first_gid
+                    .checked_add(offset)
+                    .ok_or(CheckpointV1ImportError::AssemblyInvariant)?,
+            )
+            .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+        }
+        *column_cursors
+            .get_mut(column)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)? =
+            u32::try_from(local_end).map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
+    }
+
+    for column in 0..column_cursors.len() {
+        let start = *column_offsets
+            .get(column)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let end = *column_offsets
+            .get(column + 1)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        let expected = end
+            .checked_sub(start)
+            .ok_or(CheckpointV1ImportError::AssemblyInvariant)?;
+        if usize::try_from(
+            *column_cursors
+                .get(column)
+                .ok_or(CheckpointV1ImportError::AssemblyInvariant)?,
+        )
+        .ok()
+            != Some(expected)
+        {
+            return Err(CheckpointV1ImportError::AssemblyInvariant);
+        }
+    }
+    if column_cells.contains(&NONE) {
+        return Err(CheckpointV1ImportError::AssemblyInvariant);
+    }
+    Ok(())
+}
+
+const fn checkpoint_v1_import_race_site(
+    site: CoupledRaceScratchReserveSite,
+) -> CheckpointV1ImportAllocationSite {
+    match site {
+        CoupledRaceScratchReserveSite::Voltage => {
+            CheckpointV1ImportAllocationSite::RuntimeRaceVoltage
+        }
+        CoupledRaceScratchReserveSite::Thresholds => {
+            CheckpointV1ImportAllocationSite::RuntimeRaceThresholds
+        }
+        CoupledRaceScratchReserveSite::Excitatory => {
+            CheckpointV1ImportAllocationSite::RuntimeRaceExcitatory
+        }
+        CoupledRaceScratchReserveSite::Emitted => {
+            CheckpointV1ImportAllocationSite::RuntimeRaceEmitted
+        }
+        CoupledRaceScratchReserveSite::SpikingIndices => {
+            CheckpointV1ImportAllocationSite::RuntimeRaceSpikingIndices
+        }
+    }
+}
+
+fn checkpoint_v1_import_race_error(error: CoupledRaceScratchBuildError) -> CheckpointV1ImportError {
+    match error {
+        CoupledRaceScratchBuildError::RetryableAllocation(site) => {
+            CheckpointV1ImportError::RetryableAllocation(checkpoint_v1_import_race_site(site))
+        }
+        CoupledRaceScratchBuildError::ZeroCapacity
+        | CoupledRaceScratchBuildError::CapacityOverflow => {
+            CheckpointV1ImportError::AssemblyInvariant
+        }
+    }
+}
+
+const fn checkpoint_v1_import_store_site(
+    site: TemporalStoreAllocationSite,
+) -> CheckpointV1ImportAllocationSite {
+    match site {
+        TemporalStoreAllocationSite::Owners => CheckpointV1ImportAllocationSite::StoreOwners,
+        TemporalStoreAllocationSite::Sources => CheckpointV1ImportAllocationSite::StoreSources,
+        TemporalStoreAllocationSite::Permanences => {
+            CheckpointV1ImportAllocationSite::StorePermanences
+        }
+        TemporalStoreAllocationSite::OwnerSegmentCounts => {
+            CheckpointV1ImportAllocationSite::StoreOwnerSegmentCounts
+        }
+        TemporalStoreAllocationSite::SourceMeta => {
+            CheckpointV1ImportAllocationSite::StoreSourceMeta
+        }
+        TemporalStoreAllocationSite::NextPair => CheckpointV1ImportAllocationSite::StoreNextPair,
+        TemporalStoreAllocationSite::PreviousPair => {
+            CheckpointV1ImportAllocationSite::StorePreviousPair
+        }
+        TemporalStoreAllocationSite::SourceStamps => {
+            CheckpointV1ImportAllocationSite::StoreSourceStamps
+        }
+        TemporalStoreAllocationSite::SegmentStamps => {
+            CheckpointV1ImportAllocationSite::StoreSegmentStamps
+        }
+        TemporalStoreAllocationSite::PotentialContacts => {
+            CheckpointV1ImportAllocationSite::StorePotentialContacts
+        }
+        TemporalStoreAllocationSite::ConnectedContacts => {
+            CheckpointV1ImportAllocationSite::StoreConnectedContacts
+        }
+        TemporalStoreAllocationSite::TouchedSegments => {
+            CheckpointV1ImportAllocationSite::StoreTouchedSegments
+        }
+        TemporalStoreAllocationSite::OwnerStamps => {
+            CheckpointV1ImportAllocationSite::StoreOwnerStamps
+        }
+        TemporalStoreAllocationSite::BestMatching => {
+            CheckpointV1ImportAllocationSite::StoreBestMatching
+        }
+        TemporalStoreAllocationSite::BestActive => {
+            CheckpointV1ImportAllocationSite::StoreBestActive
+        }
+        TemporalStoreAllocationSite::TouchedOwners => {
+            CheckpointV1ImportAllocationSite::StoreTouchedOwners
+        }
+    }
+}
+
+fn checkpoint_v1_import_store_error(
+    error: TemporalCheckpointRebuildError,
+) -> CheckpointV1ImportError {
+    match error {
+        TemporalCheckpointRebuildError::RetryableAllocation(site) => {
+            CheckpointV1ImportError::RetryableAllocation(checkpoint_v1_import_store_site(site))
+        }
+        TemporalCheckpointRebuildError::StoreConstruction(_)
+        | TemporalCheckpointRebuildError::DeclaredSegmentCountExceedsCapacity { .. }
+        | TemporalCheckpointRebuildError::DeclaredSegmentCountExceeded { .. }
+        | TemporalCheckpointRebuildError::SegmentCountMismatch { .. }
+        | TemporalCheckpointRebuildError::Store(_) => CheckpointV1ImportError::AssemblyInvariant,
+    }
+}
+
+fn checkpoint_v1_import_preparation_error(
+    error: PrepareCheckpointV1ExportError,
+) -> CheckpointV1ImportError {
+    match error {
+        PrepareCheckpointV1ExportError::State => CheckpointV1ImportError::State,
+        PrepareCheckpointV1ExportError::Identity(_)
+        | PrepareCheckpointV1ExportError::Codec(_)
+        | PrepareCheckpointV1ExportError::StoreIndex(_)
+        | PrepareCheckpointV1ExportError::RetryableAllocation(_) => {
+            CheckpointV1ImportError::AssemblyInvariant
+        }
+    }
+}
+
 fn checked_checkpoint_v1_import_allocation_plan(
     factory: &ValidatedCheckpointV1RuntimeFactory,
     segment_count: u32,
@@ -3703,10 +4740,6 @@ fn checked_checkpoint_v1_import_allocation_plan(
         owner_capacity.min(segment_capacity),
     )?;
     checkpoint_v1_preflight_layout::<u32>(
-        CheckpointV1ImportAllocationSite::VerificationColumnReplay,
-        column_count,
-    )?;
-    checkpoint_v1_preflight_layout::<u32>(
         CheckpointV1ImportAllocationSite::VerificationSemanticPostings,
         segment_count,
     )?;
@@ -3846,9 +4879,11 @@ mod tests {
     use super::*;
     use std::io::Cursor;
 
+    use crate::temporal_runtime::tests::count_allocations;
     use crate::temporal_runtime::{
-        TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy,
-        TemporalPlasticityPolicy, TemporalRuntimeBuildError, TemporalSegmentInit, TokenCode,
+        TemporalCircuitConfig, TemporalCircuitRuntime, TemporalCircuitStop, TemporalContextPolicy,
+        TemporalPlasticityPolicy, TemporalRuntimeBuildError, TemporalSegmentInit, TemporalStepMode,
+        TokenCode,
     };
 
     const EMPTY_SEMANTIC_DIGEST: [u8; 32] = [
@@ -3870,6 +4905,206 @@ mod tests {
     // two recruited cohorts and distinct source/winner context sections.
     const FULL_SECTION_GENERIC_BODY_HEX: &str = "00000000010000003f000000400000004100000042000000430000004400000045000000460000004700000048000000490000004a0000004b0000004c0000004d0000004e0000004f000000500000005100000052000000530000005400000000000000020000000400000006000000080000000a0000000c0000000e0000001000000012000000140000001a0000001c0000001e00000020000000220000002400000026000000280000002a0000002c0000002e0000000000000001000000160000000200000003000000180000000000000002000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff030000000500000007000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000a000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa00fb000000000000000000000000000000000000000000000000000000000000000000000000002c01000000000000000000000000000000000000ff007701f40100000000000000000000000000000000000000000000000000000000000000000000f900900100000000000000000000000000000000";
     const FULL_SECTION_GENERIC_HEADER_HEX: &str = "52334e5443503100010000010000000038030000000000003802000000000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fca61287978e0a7c3b76ce050c9cf4961d00c441a9036eaecbe645ad628088c4fdb5a0520fa90d4bc79531d0b1a77ecba759c42e6d0be9567004753e6e260b669dc6222193dfca80b9e29b83e57ec1581d6ef6d94a339046249b8b9a7c8c0a1a506000000020000001a0000000100000000000000000000000000000016160000ba1e27b132140f8dd0f8eabc3eb75a591ed99feb2a2e8cba5d02fc3ac90c2f38";
+    const FULL_IMPORT_EXPECTED_ALLOCATIONS: [(CheckpointV1ImportAllocationSite, usize); 31] = [
+        (CheckpointV1ImportAllocationSite::RuntimeColumnOffsets, 12),
+        (CheckpointV1ImportAllocationSite::RuntimeColumnCells, 26),
+        (
+            CheckpointV1ImportAllocationSite::RuntimeAlternateColumnOffsets,
+            12,
+        ),
+        (
+            CheckpointV1ImportAllocationSite::RuntimeAlternateColumnCells,
+            26,
+        ),
+        (CheckpointV1ImportAllocationSite::RuntimeCohortColumns, 2),
+        (
+            CheckpointV1ImportAllocationSite::RuntimeRecognitionDiagnostics,
+            26,
+        ),
+        (CheckpointV1ImportAllocationSite::RuntimeActiveSegments, 6),
+        (CheckpointV1ImportAllocationSite::RuntimeColumnDrive, 4),
+        (CheckpointV1ImportAllocationSite::RuntimeNovelCandidates, 4),
+        (CheckpointV1ImportAllocationSite::RuntimeRaceVoltage, 4),
+        (CheckpointV1ImportAllocationSite::RuntimeRaceThresholds, 4),
+        (CheckpointV1ImportAllocationSite::RuntimeRaceExcitatory, 4),
+        (CheckpointV1ImportAllocationSite::RuntimeRaceEmitted, 4),
+        (
+            CheckpointV1ImportAllocationSite::RuntimeRaceSpikingIndices,
+            4,
+        ),
+        (CheckpointV1ImportAllocationSite::StoreOwners, 6),
+        (CheckpointV1ImportAllocationSite::StoreSources, 60),
+        (CheckpointV1ImportAllocationSite::StorePermanences, 60),
+        (
+            CheckpointV1ImportAllocationSite::StoreOwnerSegmentCounts,
+            26,
+        ),
+        (CheckpointV1ImportAllocationSite::StoreSourceMeta, 11),
+        (CheckpointV1ImportAllocationSite::StoreNextPair, 60),
+        (CheckpointV1ImportAllocationSite::StorePreviousPair, 60),
+        (CheckpointV1ImportAllocationSite::StoreSourceStamps, 11),
+        (CheckpointV1ImportAllocationSite::StoreSegmentStamps, 6),
+        (CheckpointV1ImportAllocationSite::StorePotentialContacts, 6),
+        (CheckpointV1ImportAllocationSite::StoreConnectedContacts, 6),
+        (CheckpointV1ImportAllocationSite::StoreTouchedSegments, 6),
+        (CheckpointV1ImportAllocationSite::StoreOwnerStamps, 26),
+        (CheckpointV1ImportAllocationSite::StoreBestMatching, 26),
+        (CheckpointV1ImportAllocationSite::StoreBestActive, 26),
+        (CheckpointV1ImportAllocationSite::StoreTouchedOwners, 6),
+        (
+            CheckpointV1ImportAllocationSite::VerificationSemanticPostings,
+            6,
+        ),
+    ];
+
+    fn expected_bound_import_allocations(
+        owner_capacity: usize,
+        segment_capacity: usize,
+        cohort_capacity: usize,
+        active_segment_capacity: usize,
+        race_capacity: usize,
+        semantic_posting_count: usize,
+    ) -> Vec<(CheckpointV1ImportAllocationSite, usize)> {
+        let column_offset_count = 12;
+        let posting_capacity = PAIRS_PER_SEGMENT * segment_capacity;
+        let source_count = owner_capacity;
+        let touched_owner_capacity = owner_capacity.min(segment_capacity);
+        let mut expected = vec![
+            (
+                CheckpointV1ImportAllocationSite::RuntimeColumnOffsets,
+                column_offset_count,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeColumnCells,
+                owner_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeAlternateColumnOffsets,
+                column_offset_count,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeAlternateColumnCells,
+                owner_capacity,
+            ),
+        ];
+        if cohort_capacity != 0 {
+            expected.push((
+                CheckpointV1ImportAllocationSite::RuntimeCohortColumns,
+                cohort_capacity,
+            ));
+        }
+        expected.push((
+            CheckpointV1ImportAllocationSite::RuntimeRecognitionDiagnostics,
+            owner_capacity,
+        ));
+        if active_segment_capacity != 0 {
+            expected.push((
+                CheckpointV1ImportAllocationSite::RuntimeActiveSegments,
+                active_segment_capacity,
+            ));
+        }
+        expected.extend([
+            (
+                CheckpointV1ImportAllocationSite::RuntimeColumnDrive,
+                race_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeNovelCandidates,
+                race_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeRaceVoltage,
+                race_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeRaceThresholds,
+                race_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeRaceExcitatory,
+                race_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeRaceEmitted,
+                race_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::RuntimeRaceSpikingIndices,
+                race_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreOwners,
+                segment_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreSources,
+                posting_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StorePermanences,
+                posting_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreOwnerSegmentCounts,
+                owner_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreSourceMeta,
+                source_count,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreNextPair,
+                posting_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StorePreviousPair,
+                posting_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreSourceStamps,
+                source_count,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreSegmentStamps,
+                segment_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StorePotentialContacts,
+                segment_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreConnectedContacts,
+                segment_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreTouchedSegments,
+                segment_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreOwnerStamps,
+                owner_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreBestMatching,
+                owner_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreBestActive,
+                owner_capacity,
+            ),
+            (
+                CheckpointV1ImportAllocationSite::StoreTouchedOwners,
+                touched_owner_capacity,
+            ),
+        ]);
+        if semantic_posting_count != 0 {
+            expected.push((
+                CheckpointV1ImportAllocationSite::VerificationSemanticPostings,
+                semantic_posting_count,
+            ));
+        }
+        expected
+    }
 
     #[derive(Debug, Eq, PartialEq)]
     struct CheckpointV1LogicalStateSnapshot {
@@ -4462,6 +5697,233 @@ mod tests {
         .expect("full policy fixture must build");
         set_reachable_context(&mut runtime);
         runtime
+    }
+
+    fn capacity_only_policy_runtime(
+        context_policy: TemporalContextPolicy,
+        plasticity_policy: TemporalPlasticityPolicy,
+    ) -> TemporalCircuitRuntime {
+        let full = full_policy_runtime(context_policy, plasticity_policy);
+        let members = (0..full.config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        TemporalCircuitRuntime::new(
+            full.config,
+            full.token_codebook.clone(),
+            members,
+            full.threshold_offsets_mv.clone(),
+            &[],
+        )
+        .expect("capacity-only import fixture must build")
+    }
+
+    fn bound_winner_source_runtime() -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 26,
+            segment_capacity: 6,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 1,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy: TemporalContextPolicy::BoundWinners,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let mut members: Vec<Vec<u32>> = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        members[0].extend([22, 23]);
+        members[1].extend([24, 25]);
+        let segments = [
+            TemporalSegmentInit {
+                owner: 0,
+                sources: vec![23],
+                permanence_ticks: vec![300],
+            },
+            TemporalSegmentInit {
+                owner: 1,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            },
+            TemporalSegmentInit {
+                owner: 22,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            },
+            TemporalSegmentInit {
+                owner: 2,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            },
+            TemporalSegmentInit {
+                owner: 3,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            },
+            TemporalSegmentInit {
+                owner: 24,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            },
+        ];
+        let mut runtime = TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 85],
+            &segments,
+        )
+        .expect("nonempty bound-winner fixture must build");
+        set_reachable_context(&mut runtime);
+        runtime
+    }
+
+    fn growth_ready_bound_runtime() -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 22,
+            base_cells_per_column: 1,
+            max_pyramidal_cells: 110,
+            segment_capacity: 512,
+            novel_race_cap: 8,
+            prediction_quorum: ACTIVE_COLUMNS as u8,
+            construction_seed: 17,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 1,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy: TemporalContextPolicy::BoundWinners,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let members = (0..config.column_count)
+            .map(|column| vec![column])
+            .collect();
+        let segments: Vec<_> = (11..22)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: (11..21).collect(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let codebook = vec![
+            TokenCode {
+                token_id: 0,
+                columns: std::array::from_fn(|index| index as u32),
+            },
+            TokenCode {
+                token_id: 1,
+                columns: std::array::from_fn(|index| (ACTIVE_COLUMNS + index) as u32),
+            },
+        ];
+        let physical_count = (2 * config.max_pyramidal_cells + 3 * config.column_count) as usize;
+
+        TemporalCircuitRuntime::new(
+            config,
+            codebook,
+            members,
+            vec![0.0; physical_count],
+            &segments,
+        )
+        .expect("growth-ready bound-winner fixture must build")
+    }
+
+    fn interleaved_cohort_runtime() -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 28,
+            segment_capacity: 8,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 1,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy: TemporalContextPolicy::BoundWinners,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let mut members: Vec<Vec<u32>> = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        members[0].extend([22, 23, 26, 27]);
+        members[1].extend([24, 25]);
+        let segments = [0, 1, 22, 23, 26, 2, 3, 24].map(|owner| TemporalSegmentInit {
+            owner,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        });
+        TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 89],
+            &segments,
+        )
+        .expect("interleaved cohort fixture must build")
+    }
+
+    fn every_row_width_generic_runtime() -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 22,
+            segment_capacity: 11,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 1,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy: TemporalContextPolicy::GenericAfferents,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let proximal_offset = 55;
+        let segments: Vec<_> = (0u32..=10)
+            .map(|width| TemporalSegmentInit {
+                owner: width,
+                sources: (0..width).map(|source| proximal_offset + source).collect(),
+                permanence_ticks: (0..width)
+                    .map(|slot| 250 + u16::try_from(slot).unwrap())
+                    .collect(),
+            })
+            .collect();
+        let members = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 77],
+            &segments,
+        )
+        .expect("every-width generic row fixture must build")
     }
 
     fn two_cohorts_same_column_runtime() -> TemporalCircuitRuntime {
@@ -5088,6 +6550,131 @@ mod tests {
     }
 
     #[test]
+    fn caller_owned_export_scratch_matches_allocating_proof_without_allocation_or_mutation() {
+        const SENTINEL: u32 = 0xa5a5_5a5a;
+        let runtime = full_section_generic_runtime();
+        let before = checkpoint_v1_logical_state_snapshot(&runtime);
+        let baseline = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("allocating baseline must prepare");
+        let mut column_scratch = vec![SENTINEL; 13];
+        let mut semantic_scratch = vec![SENTINEL; 6];
+        let column_pointer = column_scratch.as_ptr();
+        let column_capacity = column_scratch.capacity();
+        let semantic_pointer = semantic_scratch.as_ptr();
+        let semantic_capacity = semantic_scratch.capacity();
+
+        let (prepared, allocations) = count_allocations(|| {
+            let preparation = runtime
+                .begin_checkpoint_v1_export(authority())
+                .expect("begin must validate identity and codec without allocation");
+            assert_eq!(preparation.column_scratch_len(), 11);
+            let validated = preparation
+                .validate_state(&mut column_scratch)
+                .expect("caller column scratch must validate the full state");
+            assert_eq!(validated.semantic_scratch_len(), 2);
+            validated
+                .finish(&mut semantic_scratch)
+                .expect("caller semantic scratch must finish the proof")
+        });
+
+        assert_eq!(allocations, 0);
+        assert_same_prepared_proof(&baseline, &prepared);
+        assert_eq!(&column_scratch[..11], &[4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2]);
+        assert_eq!(&column_scratch[11..], &[SENTINEL; 2]);
+        assert_eq!(&semantic_scratch[2..], &[SENTINEL; 4]);
+        assert_eq!(column_scratch.as_ptr(), column_pointer);
+        assert_eq!(column_scratch.capacity(), column_capacity);
+        assert_eq!(semantic_scratch.as_ptr(), semantic_pointer);
+        assert_eq!(semantic_scratch.capacity(), semantic_capacity);
+        assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+    }
+
+    #[test]
+    fn caller_owned_export_rejects_short_column_scratch_unchanged_and_retries_exactly() {
+        const SENTINEL: u32 = 0x55aa_33cc;
+        let runtime = full_section_generic_runtime();
+        let baseline = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("allocating baseline must prepare");
+        let mut short = [SENTINEL; 10];
+
+        let (result, allocations) = count_allocations(|| {
+            runtime
+                .begin_checkpoint_v1_export(authority())
+                .expect("begin must remain allocation-free")
+                .validate_state(&mut short)
+        });
+
+        assert_eq!(allocations, 0);
+        assert!(matches!(result, Err(PrepareCheckpointV1ExportError::State)));
+        assert_eq!(short, [SENTINEL; 10]);
+
+        let mut exact_columns = [SENTINEL; 11];
+        let mut exact_semantic = [SENTINEL; 2];
+        let (retried, retry_allocations) = count_allocations(|| {
+            runtime
+                .begin_checkpoint_v1_export(authority())
+                .expect("fresh retry must begin")
+                .validate_state(&mut exact_columns)
+                .expect("exact column scratch must validate")
+                .finish(&mut exact_semantic)
+                .expect("exact semantic scratch must finish")
+        });
+        assert_eq!(retry_allocations, 0);
+        assert_same_prepared_proof(&baseline, &retried);
+    }
+
+    #[test]
+    fn caller_owned_export_types_short_semantic_scratch_and_retries_oversized() {
+        const SENTINEL: u32 = 0x5aa5_c33c;
+        let runtime = full_section_generic_runtime();
+        let baseline = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("allocating baseline must prepare");
+        let mut columns = [SENTINEL; 11];
+        let validated = runtime
+            .begin_checkpoint_v1_export(authority())
+            .expect("begin must succeed")
+            .validate_state(&mut columns)
+            .expect("column scratch must validate");
+        let mut short = [SENTINEL; 1];
+
+        let (result, allocations) = count_allocations(|| validated.finish(&mut short));
+
+        assert_eq!(allocations, 0);
+        assert!(matches!(
+            result,
+            Err(PrepareCheckpointV1ExportError::StoreIndex(
+                TemporalStorePreflightError::OutputCapacity {
+                    required: 2,
+                    provided: 1,
+                }
+            ))
+        ));
+        assert_eq!(short, [SENTINEL; 1]);
+
+        let mut retry_columns = [SENTINEL; 11];
+        let mut oversized = vec![SENTINEL; 6];
+        let pointer = oversized.as_ptr();
+        let capacity = oversized.capacity();
+        let (retried, retry_allocations) = count_allocations(|| {
+            runtime
+                .begin_checkpoint_v1_export(authority())
+                .expect("fresh retry must begin")
+                .validate_state(&mut retry_columns)
+                .expect("fresh retry must validate")
+                .finish(&mut oversized)
+                .expect("oversized semantic scratch must finish")
+        });
+        assert_eq!(retry_allocations, 0);
+        assert_same_prepared_proof(&baseline, &retried);
+        assert_eq!(&oversized[2..], &[SENTINEL; 4]);
+        assert_eq!(oversized.as_ptr(), pointer);
+        assert_eq!(oversized.capacity(), capacity);
+    }
+
+    #[test]
     fn prepared_checkpoint_export_column_scratch_failure_is_typed_and_retryable() {
         let runtime = empty_runtime(TemporalContextPolicy::BoundWinners);
         let baseline = runtime
@@ -5400,6 +6987,191 @@ mod tests {
             hex_bytes("d64cf550c30b6bcf7b499d39cbdc9c7bafeaef6a2e23b795ffe512e37117eb80")
         );
         assert_eq!(checkpoint_v1_logical_state_snapshot(&runtime), before);
+    }
+
+    #[test]
+    fn prepared_checkpoint_compares_independent_canonical_bytes_without_allocation_or_mutation() {
+        let runtime = full_section_generic_runtime();
+        let before_runtime = checkpoint_v1_logical_state_snapshot(&runtime);
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("full-section fixture must prepare");
+        let expected = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        let before_expected = expected.clone();
+
+        let (result, allocations) =
+            count_allocations(|| prepared.compare_canonical_bytes(&expected));
+
+        assert_eq!(allocations, 0);
+        assert!(result.is_ok());
+        assert_eq!(expected, before_expected);
+        assert_eq!(
+            checkpoint_v1_logical_state_snapshot(&runtime),
+            before_runtime
+        );
+    }
+
+    #[test]
+    fn prepared_checkpoint_comparison_types_header_body_and_length_mismatches_exactly() {
+        let runtime = full_section_generic_runtime();
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("full-section fixture must prepare");
+        let canonical = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        assert_eq!(canonical.len(), 824);
+
+        let mut final_header_mismatch = canonical.clone();
+        final_header_mismatch[0] = 0;
+        let (result, allocations) =
+            count_allocations(|| prepared.compare_canonical_bytes(&final_header_mismatch));
+        assert_eq!(allocations, 0);
+        assert!(matches!(
+            result,
+            Err(CompareCheckpointV1CanonicalBytesError::Mismatch(
+                CheckpointV1CanonicalMismatch::ByteMismatch {
+                    offset: 0,
+                    expected: 0,
+                    actual: 0x52,
+                }
+            ))
+        ));
+
+        let mut first_body_mismatch = canonical.clone();
+        first_body_mismatch[256] = 0xa5;
+        let (result, allocations) =
+            count_allocations(|| prepared.compare_canonical_bytes(&first_body_mismatch));
+        assert_eq!(allocations, 0);
+        assert!(matches!(
+            result,
+            Err(CompareCheckpointV1CanonicalBytesError::Mismatch(
+                CheckpointV1CanonicalMismatch::ByteMismatch {
+                    offset: 256,
+                    expected: 0xa5,
+                    actual: 0,
+                }
+            ))
+        ));
+
+        let mut simultaneous_header_and_body_mismatch = canonical.clone();
+        simultaneous_header_and_body_mismatch[0] = 0;
+        simultaneous_header_and_body_mismatch[256] = 0xa5;
+        let (result, allocations) = count_allocations(|| {
+            prepared.compare_canonical_bytes(&simultaneous_header_and_body_mismatch)
+        });
+        assert_eq!(allocations, 0);
+        assert!(matches!(
+            result,
+            Err(CompareCheckpointV1CanonicalBytesError::Mismatch(
+                CheckpointV1CanonicalMismatch::ByteMismatch {
+                    offset: 0,
+                    expected: 0,
+                    actual: 0x52,
+                }
+            ))
+        ));
+
+        let (result, allocations) =
+            count_allocations(|| prepared.compare_canonical_bytes(&canonical[..823]));
+        assert_eq!(allocations, 0);
+        assert!(matches!(
+            result,
+            Err(CompareCheckpointV1CanonicalBytesError::Mismatch(
+                CheckpointV1CanonicalMismatch::ExpectedEnded {
+                    offset: 823,
+                    actual: 0,
+                }
+            ))
+        ));
+
+        let (result, allocations) =
+            count_allocations(|| prepared.compare_canonical_bytes(&canonical[..32]));
+        assert_eq!(allocations, 0);
+        assert!(matches!(
+            result,
+            Err(CompareCheckpointV1CanonicalBytesError::Mismatch(
+                CheckpointV1CanonicalMismatch::ExpectedEnded {
+                    offset: 32,
+                    actual: 0xa5,
+                }
+            ))
+        ));
+
+        let mut trailing = canonical;
+        trailing.push(0xa5);
+        let (result, allocations) =
+            count_allocations(|| prepared.compare_canonical_bytes(&trailing));
+        assert_eq!(allocations, 0);
+        assert!(matches!(
+            result,
+            Err(CompareCheckpointV1CanonicalBytesError::Mismatch(
+                CheckpointV1CanonicalMismatch::ExpectedTrailing {
+                    offset: 824,
+                    expected: 0xa5,
+                }
+            ))
+        ));
+    }
+
+    #[test]
+    fn prepared_checkpoint_comparison_accepts_actually_unaligned_expected_bytes() {
+        let runtime = full_section_generic_runtime();
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("full-section fixture must prepare");
+        let canonical = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        let alignment = std::mem::align_of::<u32>();
+        let mut backing = vec![0xcc; canonical.len() + alignment];
+        let start = (0..alignment)
+            .find(|&start| (backing.as_ptr().wrapping_add(start + 256) as usize) % alignment != 0)
+            .expect("one short prefix must make the body unaligned");
+        let end = start + canonical.len();
+        backing[start..end].copy_from_slice(&canonical);
+        let before = backing.clone();
+        let expected = &backing[start..end];
+        assert_ne!(expected.as_ptr().wrapping_add(256) as usize % alignment, 0);
+
+        let (result, allocations) =
+            count_allocations(|| prepared.compare_canonical_bytes(expected));
+
+        assert_eq!(allocations, 0);
+        assert!(result.is_ok());
+        assert_eq!(backing, before);
+    }
+
+    #[test]
+    fn prepared_checkpoint_comparison_keeps_proof_errors_distinct_from_byte_mismatches() {
+        let runtime = full_section_generic_runtime();
+        let mut prepared = runtime
+            .prepare_checkpoint_v1_export(authority())
+            .expect("full-section fixture must prepare");
+        let mut expected = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        expected[256] = 0xa5;
+        let before = expected.clone();
+        prepared.scalars.event_count += 1;
+
+        let (result, allocations) =
+            count_allocations(|| prepared.compare_canonical_bytes(&expected));
+
+        assert_eq!(allocations, 0);
+        assert!(matches!(
+            result,
+            Err(CompareCheckpointV1CanonicalBytesError::Encode(
+                CheckpointV1EncodeError::PreparedScalarsMismatch
+            ))
+        ));
+        assert_eq!(expected, before);
     }
 
     #[test]
@@ -7966,5 +9738,729 @@ mod tests {
                 .unwrap()
                 .circuit_identity()
         );
+    }
+
+    #[test]
+    fn checkpoint_import_full_fixture_records_exact_post_pass2_allocation_contract() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let checkpoint = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory).unwrap();
+        let pass2 = validate_checkpoint_v1_pass2(pass1, &factory).unwrap();
+        let mut observed = Vec::new();
+
+        let imported =
+            assemble_validated_checkpoint_v1_inner(pass2, factory, &mut |site, count| {
+                observed.push((site, count));
+                false
+            })
+            .expect("the literal full checkpoint must import directly");
+
+        assert_eq!(observed, FULL_IMPORT_EXPECTED_ALLOCATIONS);
+        assert_eq!(encoded_checkpoint(&imported), checkpoint);
+    }
+
+    #[test]
+    fn checkpoint_import_every_post_pass2_reserve_is_retryable_at_the_exact_site() {
+        for target_index in 0..FULL_IMPORT_EXPECTED_ALLOCATIONS.len() {
+            let runtime = full_section_generic_runtime();
+            let checkpoint = literal_checkpoint(
+                FULL_SECTION_GENERIC_HEADER_HEX,
+                FULL_SECTION_GENERIC_BODY_HEX,
+            );
+            let factory = factory_for_runtime(&runtime);
+            let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory).unwrap();
+            let pass2 = validate_checkpoint_v1_pass2(pass1, &factory).unwrap();
+            let target = FULL_IMPORT_EXPECTED_ALLOCATIONS[target_index].0;
+            let mut observed = Vec::new();
+
+            let error =
+                match assemble_validated_checkpoint_v1_inner(pass2, factory, &mut |site, count| {
+                    observed.push((site, count));
+                    site == target
+                }) {
+                    Ok(_) => panic!("the selected reserve unexpectedly succeeded"),
+                    Err(error) => error,
+                };
+
+            assert_eq!(error, CheckpointV1ImportError::RetryableAllocation(target));
+            assert_eq!(
+                observed.as_slice(),
+                &FULL_IMPORT_EXPECTED_ALLOCATIONS[..=target_index]
+            );
+
+            let retried = import_checkpoint_v1(&checkpoint, factory_for_runtime(&runtime))
+                .expect("a fresh identical factory must retry successfully");
+            assert_eq!(encoded_checkpoint(&retried), checkpoint);
+        }
+    }
+
+    #[test]
+    fn checkpoint_import_skips_only_zero_sized_policy_and_semantic_sites() {
+        for (plasticity_policy, live, active_segment_capacity, race_capacity, semantic_count) in [
+            (
+                TemporalPlasticityPolicy::Plastic,
+                true,
+                6usize,
+                4usize,
+                6usize,
+            ),
+            (TemporalPlasticityPolicy::Plastic, false, 6, 6, 0),
+            (TemporalPlasticityPolicy::GrowthOff, true, 0, 4, 6),
+            (TemporalPlasticityPolicy::GrowthOff, false, 0, 6, 0),
+        ] {
+            let runtime = if live {
+                full_policy_runtime(TemporalContextPolicy::BoundWinners, plasticity_policy)
+            } else {
+                capacity_only_policy_runtime(TemporalContextPolicy::BoundWinners, plasticity_policy)
+            };
+            let checkpoint = encoded_checkpoint(&runtime);
+            let factory = factory_for_runtime(&runtime);
+            let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory).unwrap();
+            let pass2 = validate_checkpoint_v1_pass2(pass1, &factory).unwrap();
+            let mut observed = Vec::new();
+
+            let imported =
+                assemble_validated_checkpoint_v1_inner(pass2, factory, &mut |site, count| {
+                    assert_ne!(count, 0, "zero-sized sites must not be observed");
+                    observed.push((site, count));
+                    false
+                })
+                .expect("each policy/semantic combination must import");
+
+            assert_eq!(
+                observed,
+                expected_bound_import_allocations(
+                    26,
+                    6,
+                    2,
+                    active_segment_capacity,
+                    race_capacity,
+                    semantic_count,
+                )
+            );
+            assert_eq!(encoded_checkpoint(&imported), checkpoint);
+        }
+    }
+
+    #[test]
+    fn checkpoint_import_rejects_a_different_factory_before_observation() {
+        let runtime = full_section_generic_runtime();
+        let checkpoint = encoded_checkpoint(&runtime);
+        let original_factory = factory_for_runtime(&runtime);
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &original_factory).unwrap();
+        let pass2 = validate_checkpoint_v1_pass2(pass1, &original_factory).unwrap();
+        let changed_authority =
+            ValidatedCheckpointAuthority::from_raw_sha256([0x5a; 32], [0xc3; 32]);
+        let changed_factory = factory_for_runtime_with_authority(&runtime, changed_authority);
+        let mut observed = Vec::new();
+
+        let error = match assemble_validated_checkpoint_v1_inner(
+            pass2,
+            changed_factory,
+            &mut |site, count| {
+                observed.push((site, count));
+                false
+            },
+        ) {
+            Ok(_) => panic!("a proof paired with another factory unexpectedly imported"),
+            Err(error) => error,
+        };
+
+        assert_eq!(error, CheckpointV1ImportError::FactoryIdentityMismatch);
+        assert!(observed.is_empty());
+    }
+
+    #[test]
+    fn checkpoint_import_lower_allocation_mappings_are_exhaustive_and_exact() {
+        assert_eq!(
+            [
+                TemporalStoreAllocationSite::Owners,
+                TemporalStoreAllocationSite::Sources,
+                TemporalStoreAllocationSite::Permanences,
+                TemporalStoreAllocationSite::OwnerSegmentCounts,
+                TemporalStoreAllocationSite::SourceMeta,
+                TemporalStoreAllocationSite::NextPair,
+                TemporalStoreAllocationSite::PreviousPair,
+                TemporalStoreAllocationSite::SourceStamps,
+                TemporalStoreAllocationSite::SegmentStamps,
+                TemporalStoreAllocationSite::PotentialContacts,
+                TemporalStoreAllocationSite::ConnectedContacts,
+                TemporalStoreAllocationSite::TouchedSegments,
+                TemporalStoreAllocationSite::OwnerStamps,
+                TemporalStoreAllocationSite::BestMatching,
+                TemporalStoreAllocationSite::BestActive,
+                TemporalStoreAllocationSite::TouchedOwners,
+            ]
+            .map(checkpoint_v1_import_store_site),
+            [
+                CheckpointV1ImportAllocationSite::StoreOwners,
+                CheckpointV1ImportAllocationSite::StoreSources,
+                CheckpointV1ImportAllocationSite::StorePermanences,
+                CheckpointV1ImportAllocationSite::StoreOwnerSegmentCounts,
+                CheckpointV1ImportAllocationSite::StoreSourceMeta,
+                CheckpointV1ImportAllocationSite::StoreNextPair,
+                CheckpointV1ImportAllocationSite::StorePreviousPair,
+                CheckpointV1ImportAllocationSite::StoreSourceStamps,
+                CheckpointV1ImportAllocationSite::StoreSegmentStamps,
+                CheckpointV1ImportAllocationSite::StorePotentialContacts,
+                CheckpointV1ImportAllocationSite::StoreConnectedContacts,
+                CheckpointV1ImportAllocationSite::StoreTouchedSegments,
+                CheckpointV1ImportAllocationSite::StoreOwnerStamps,
+                CheckpointV1ImportAllocationSite::StoreBestMatching,
+                CheckpointV1ImportAllocationSite::StoreBestActive,
+                CheckpointV1ImportAllocationSite::StoreTouchedOwners,
+            ]
+        );
+        assert_eq!(
+            [
+                CoupledRaceScratchReserveSite::Voltage,
+                CoupledRaceScratchReserveSite::Thresholds,
+                CoupledRaceScratchReserveSite::Excitatory,
+                CoupledRaceScratchReserveSite::Emitted,
+                CoupledRaceScratchReserveSite::SpikingIndices,
+            ]
+            .map(checkpoint_v1_import_race_site),
+            [
+                CheckpointV1ImportAllocationSite::RuntimeRaceVoltage,
+                CheckpointV1ImportAllocationSite::RuntimeRaceThresholds,
+                CheckpointV1ImportAllocationSite::RuntimeRaceExcitatory,
+                CheckpointV1ImportAllocationSite::RuntimeRaceEmitted,
+                CheckpointV1ImportAllocationSite::RuntimeRaceSpikingIndices,
+            ]
+        );
+    }
+
+    #[test]
+    fn checkpoint_import_rebuilds_repeated_and_interleaved_cohort_csr_directly() {
+        for (runtime, expected_log, expected_columns) in [
+            (
+                two_cohorts_same_column_runtime(),
+                vec![0, 0],
+                vec![(0usize, vec![0, 1, 22, 23, 24, 25])],
+            ),
+            (
+                interleaved_cohort_runtime(),
+                vec![0, 1, 0],
+                vec![
+                    (0usize, vec![0, 1, 22, 23, 26, 27]),
+                    (1usize, vec![2, 3, 24, 25]),
+                ],
+            ),
+        ] {
+            let before = checkpoint_v1_logical_state_snapshot(&runtime);
+            let checkpoint = encoded_checkpoint(&runtime);
+            let imported = import_checkpoint_v1(&checkpoint, factory_for_runtime(&runtime))
+                .expect("canonical cohort chronology must import");
+
+            assert_eq!(imported.cohort_columns, expected_log);
+            for (column, expected_cells) in expected_columns {
+                let start = imported.column_offsets[column];
+                let end = imported.column_offsets[column + 1];
+                assert_eq!(&imported.column_cells[start..end], expected_cells);
+            }
+            assert!(imported.alternate_column_offsets.is_empty());
+            assert!(imported.alternate_column_cells.is_empty());
+            assert_eq!(checkpoint_v1_logical_state_snapshot(&imported), before);
+            assert_eq!(encoded_checkpoint(&imported), checkpoint);
+        }
+    }
+
+    #[test]
+    fn checkpoint_import_streams_all_row_widths_without_renormalizing_sources() {
+        let runtime = every_row_width_generic_runtime();
+        let checkpoint = encoded_checkpoint(&runtime);
+        let imported = import_checkpoint_v1(&checkpoint, factory_for_runtime(&runtime))
+            .expect("all canonical fixed row widths must import");
+
+        for segment_id in 0u32..=10 {
+            let row = imported
+                .store
+                .runtime_segment_row(segment_id)
+                .expect("the rebuilt row must exist");
+            let width = usize::try_from(segment_id).unwrap();
+            assert_eq!(usize::from(row.live_pair_count), width);
+            assert_eq!(
+                &row.normalized_sources[..width],
+                &(0..segment_id).collect::<Vec<_>>()
+            );
+            assert!(row.normalized_sources[width..]
+                .iter()
+                .all(|&source| source == NONE));
+            assert_eq!(
+                &row.permanence_ticks[..width],
+                &(0..segment_id)
+                    .map(|slot| 250 + u16::try_from(slot).unwrap())
+                    .collect::<Vec<_>>()
+            );
+            assert!(row.permanence_ticks[width..]
+                .iter()
+                .all(|&ticks| ticks == 0));
+        }
+        assert_eq!(encoded_checkpoint(&imported), checkpoint);
+    }
+
+    #[test]
+    fn checkpoint_import_rebuilds_nonempty_bound_winner_source_and_continues_exactly() {
+        let mut uninterrupted = bound_winner_source_runtime();
+        let checkpoint = encoded_checkpoint(&uninterrupted);
+        let mut imported = import_checkpoint_v1(&checkpoint, factory_for_runtime(&uninterrupted))
+            .expect("a nonempty bound-winner store must import");
+        let mut normalized_sources = [NONE; PAIRS_PER_SEGMENT];
+        normalized_sources[0] = 23;
+        let mut permanence_ticks = [0; PAIRS_PER_SEGMENT];
+        permanence_ticks[0] = 300;
+
+        assert_eq!(imported.store.runtime_segment_count(), 6);
+        assert_eq!(imported.store.runtime_segment_owner(0), Some(0));
+        assert_eq!(
+            imported
+                .store
+                .runtime_segment_row(0)
+                .expect("the rebuilt bound-winner row must exist"),
+            TemporalSegmentRow {
+                normalized_sources,
+                permanence_ticks,
+                live_pair_count: 1,
+            }
+        );
+        assert_eq!(encoded_checkpoint(&imported), checkpoint);
+
+        let uninterrupted_step = uninterrupted.recognize(7);
+        let imported_step = imported.recognize(7);
+        assert_eq!(imported_step, uninterrupted_step);
+        assert_eq!(
+            checkpoint_v1_logical_state_snapshot(&imported),
+            checkpoint_v1_logical_state_snapshot(&uninterrupted)
+        );
+        assert_eq!(
+            encoded_checkpoint(&imported),
+            encoded_checkpoint(&uninterrupted)
+        );
+    }
+
+    #[test]
+    fn checkpoint_import_moves_factory_vectors_and_outlives_unaligned_input_backing() {
+        let mut uninterrupted = capacity_only_policy_runtime(
+            TemporalContextPolicy::GenericAfferents,
+            TemporalPlasticityPolicy::Plastic,
+        );
+        let checkpoint = encoded_checkpoint(&uninterrupted);
+        let factory = factory_for_runtime(&uninterrupted);
+        let codebook_pointer = factory.token_codebook.as_ptr();
+        let codebook_capacity = factory.token_codebook.capacity();
+        let threshold_pointer = factory.threshold_offsets_mv.as_ptr();
+        let threshold_capacity = factory.threshold_offsets_mv.capacity();
+        let mut backing = vec![0u8; checkpoint.len() + 4];
+        let prefix = (0..4)
+            .find(|&prefix| {
+                !(backing.as_ptr() as usize + prefix).is_multiple_of(std::mem::align_of::<u32>())
+            })
+            .expect("one of four consecutive addresses must be u32-misaligned");
+        backing[prefix..prefix + checkpoint.len()].copy_from_slice(&checkpoint);
+        let input = &backing[prefix..prefix + checkpoint.len()];
+        assert_ne!(
+            input.as_ptr() as usize % std::mem::align_of::<u32>(),
+            0,
+            "the test must exercise actually unaligned LE backing"
+        );
+
+        let mut imported = import_checkpoint_v1(input, factory)
+            .expect("the one-shot importer must own all rebuilt state");
+
+        assert_eq!(imported.token_codebook.as_ptr(), codebook_pointer);
+        assert_eq!(imported.token_codebook.capacity(), codebook_capacity);
+        assert_eq!(imported.threshold_offsets_mv.as_ptr(), threshold_pointer);
+        assert_eq!(imported.threshold_offsets_mv.capacity(), threshold_capacity);
+        drop(backing);
+        assert_eq!(encoded_checkpoint(&imported), checkpoint);
+
+        let uninterrupted_step = uninterrupted.step(7, TemporalStepMode::Learn);
+        let imported_step = imported.step(7, TemporalStepMode::Learn);
+        assert_eq!(imported_step, uninterrupted_step);
+        assert_eq!(
+            encoded_checkpoint(&imported),
+            encoded_checkpoint(&uninterrupted)
+        );
+    }
+
+    #[test]
+    fn checkpoint_import_retains_capacity_for_allocation_free_growth_and_recruitment() {
+        let mut uninterrupted = growth_ready_bound_runtime();
+        let checkpoint = encoded_checkpoint(&uninterrupted);
+        let mut imported = import_checkpoint_v1(&checkpoint, factory_for_runtime(&uninterrupted))
+            .expect("the growth-ready runtime must import");
+
+        assert_eq!(imported.column_offsets.len(), 23);
+        assert!(imported.column_offsets.capacity() >= 23);
+        assert_eq!(imported.column_cells.len(), 22);
+        assert!(imported.column_cells.capacity() >= 110);
+        assert!(imported.alternate_column_offsets.is_empty());
+        assert!(imported.alternate_column_offsets.capacity() >= 23);
+        assert!(imported.alternate_column_cells.is_empty());
+        assert!(imported.alternate_column_cells.capacity() >= 110);
+        assert!(imported.cohort_columns.is_empty());
+        assert!(imported.cohort_columns.capacity() >= 11);
+        assert_eq!(imported.recognition_scratch.len(), 110);
+        assert!(imported.recognition_scratch.capacity() >= 110);
+        assert_eq!(imported.active_segment_scratch.len(), 512);
+        assert!(imported.active_segment_scratch.capacity() >= 512);
+        assert_eq!(imported.column_drive_scratch.len(), 89);
+        assert!(imported.column_drive_scratch.capacity() >= 89);
+        assert_eq!(imported.novel_candidate_scratch.len(), 89);
+        assert!(imported.novel_candidate_scratch.capacity() >= 89);
+
+        let pointers = (
+            imported.column_offsets.as_ptr(),
+            imported.column_cells.as_ptr(),
+            imported.alternate_column_offsets.as_ptr(),
+            imported.alternate_column_cells.as_ptr(),
+            imported.cohort_columns.as_ptr(),
+            imported.recognition_scratch.as_ptr(),
+            imported.active_segment_scratch.as_ptr(),
+            imported.column_drive_scratch.as_ptr(),
+            imported.novel_candidate_scratch.as_ptr(),
+        );
+        let capacities = (
+            imported.column_offsets.capacity(),
+            imported.column_cells.capacity(),
+            imported.alternate_column_offsets.capacity(),
+            imported.alternate_column_cells.capacity(),
+            imported.cohort_columns.capacity(),
+            imported.recognition_scratch.capacity(),
+            imported.active_segment_scratch.capacity(),
+            imported.column_drive_scratch.capacity(),
+            imported.novel_candidate_scratch.capacity(),
+        );
+
+        let (imported_steps, allocations) = count_allocations(|| {
+            [
+                imported.step(0, TemporalStepMode::Learn),
+                imported.step(1, TemporalStepMode::Learn),
+            ]
+        });
+        let uninterrupted_steps = [
+            uninterrupted.step(0, TemporalStepMode::Learn),
+            uninterrupted.step(1, TemporalStepMode::Learn),
+        ];
+
+        assert_eq!(allocations, 0);
+        assert_eq!(imported_steps, uninterrupted_steps);
+        assert!(
+            imported_steps.iter().all(Result::is_ok),
+            "{imported_steps:?}"
+        );
+        assert_eq!(
+            imported_steps[1]
+                .as_ref()
+                .expect("the recruiting step must succeed")
+                .allocated_segments,
+            ACTIVE_COLUMNS as u8
+        );
+        assert_eq!(imported.cohort_columns, (11..22).collect::<Vec<_>>());
+        assert_eq!(imported.next_reserve_cell, 110);
+        assert_eq!(imported.store.runtime_segment_count(), 22);
+        assert_eq!(
+            (
+                imported.column_offsets.as_ptr(),
+                imported.column_cells.as_ptr(),
+                imported.alternate_column_offsets.as_ptr(),
+                imported.alternate_column_cells.as_ptr(),
+                imported.cohort_columns.as_ptr(),
+                imported.recognition_scratch.as_ptr(),
+                imported.active_segment_scratch.as_ptr(),
+                imported.column_drive_scratch.as_ptr(),
+                imported.novel_candidate_scratch.as_ptr(),
+            ),
+            (
+                pointers.2, pointers.3, pointers.0, pointers.1, pointers.4, pointers.5, pointers.6,
+                pointers.7, pointers.8,
+            )
+        );
+        assert_eq!(
+            (
+                imported.column_offsets.capacity(),
+                imported.column_cells.capacity(),
+                imported.alternate_column_offsets.capacity(),
+                imported.alternate_column_cells.capacity(),
+                imported.cohort_columns.capacity(),
+                imported.recognition_scratch.capacity(),
+                imported.active_segment_scratch.capacity(),
+                imported.column_drive_scratch.capacity(),
+                imported.novel_candidate_scratch.capacity(),
+            ),
+            (
+                capacities.2,
+                capacities.3,
+                capacities.0,
+                capacities.1,
+                capacities.4,
+                capacities.5,
+                capacities.6,
+                capacities.7,
+                capacities.8,
+            )
+        );
+        assert_eq!(
+            encoded_checkpoint(&imported),
+            encoded_checkpoint(&uninterrupted)
+        );
+    }
+
+    #[test]
+    fn checkpoint_import_preserves_all_policy_snapshots_and_next_read_only_transition() {
+        for context_policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            for plasticity_policy in [
+                TemporalPlasticityPolicy::Plastic,
+                TemporalPlasticityPolicy::GrowthOff,
+            ] {
+                let mut uninterrupted = full_policy_runtime(context_policy, plasticity_policy);
+                let before = checkpoint_v1_logical_state_snapshot(&uninterrupted);
+                let checkpoint = encoded_checkpoint(&uninterrupted);
+                let mut imported =
+                    import_checkpoint_v1(&checkpoint, factory_for_runtime(&uninterrupted))
+                        .expect("every runtime-reachable policy combination must import");
+
+                assert_eq!(checkpoint_v1_logical_state_snapshot(&imported), before);
+                assert_eq!(encoded_checkpoint(&imported), checkpoint);
+                assert_eq!(imported.recognize(7), uninterrupted.recognize(7));
+                assert_eq!(
+                    encoded_checkpoint(&imported),
+                    encoded_checkpoint(&uninterrupted)
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn checkpoint_import_checks_the_exact_opaque_semantic_digest_before_reexport() {
+        let runtime = full_section_generic_runtime();
+        let factory = factory_for_runtime(&runtime);
+        let mut checkpoint = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        checkpoint[160] ^= 1;
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory)
+            .expect("Pass 1 must retain the semantic digest opaquely");
+        assert_eq!(pass1.semantic_index_digest.raw_bytes()[0], checkpoint[160]);
+        let pass2 = validate_checkpoint_v1_pass2(pass1, &factory)
+            .expect("the opaque semantic digest must pass reachability validation");
+        let mut observed = Vec::new();
+
+        let error =
+            match assemble_validated_checkpoint_v1_inner(pass2, factory, &mut |site, count| {
+                observed.push((site, count));
+                false
+            }) {
+                Ok(_) => panic!("a mismatched semantic-index digest unexpectedly imported"),
+                Err(error) => error,
+            };
+
+        assert_eq!(error, CheckpointV1ImportError::SemanticIndexMismatch);
+        assert_eq!(observed, FULL_IMPORT_EXPECTED_ALLOCATIONS);
+    }
+
+    #[test]
+    fn checkpoint_import_maps_nonzero_and_dual_canonical_mismatches_to_exact_offsets() {
+        let runtime = full_section_generic_runtime();
+        let checkpoint = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        let mut nonzero_mismatch = checkpoint.clone();
+        nonzero_mismatch[300] ^= 1;
+        let nonzero_factory = factory_for_runtime(&runtime);
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &nonzero_factory).unwrap();
+        let mut pass2 = validate_checkpoint_v1_pass2(pass1, &nonzero_factory).unwrap();
+        pass2.pass1.checkpoint = &nonzero_mismatch;
+
+        let error =
+            match assemble_validated_checkpoint_v1_inner(pass2, nonzero_factory, &mut |_, _| false)
+            {
+                Ok(_) => panic!("a noncanonical expected byte slice unexpectedly matched"),
+                Err(error) => error,
+            };
+
+        assert_eq!(
+            error,
+            CheckpointV1ImportError::CanonicalReexportMismatch { offset: 300 }
+        );
+
+        let mut mismatched_expected = checkpoint.clone();
+        mismatched_expected[0] ^= 1;
+        mismatched_expected[300] ^= 1;
+        let dual_factory = factory_for_runtime(&runtime);
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &dual_factory).unwrap();
+        let mut pass2 = validate_checkpoint_v1_pass2(pass1, &dual_factory).unwrap();
+        pass2.pass1.checkpoint = &mismatched_expected;
+
+        let error =
+            match assemble_validated_checkpoint_v1_inner(pass2, dual_factory, &mut |_, _| false) {
+                Ok(_) => panic!("a noncanonical expected byte slice unexpectedly matched"),
+                Err(error) => error,
+            };
+
+        assert_eq!(
+            error,
+            CheckpointV1ImportError::CanonicalReexportMismatch { offset: 0 }
+        );
+    }
+
+    #[test]
+    fn checkpoint_import_preserves_every_stable_poison_code() {
+        const EXPECTED: [Option<TemporalPoisonCode>; 16] = [
+            None,
+            Some(TemporalPoisonCode::MultipleActiveOwners),
+            Some(TemporalPoisonCode::MultipleMatchingOwners),
+            Some(TemporalPoisonCode::CategorizedRaceCapacity),
+            Some(TemporalPoisonCode::MalformedContextOrPolicy),
+            Some(TemporalPoisonCode::ProximalPhysics),
+            Some(TemporalPoisonCode::ProximalRelayPhysics),
+            Some(TemporalPoisonCode::ColumnRacePhysics),
+            Some(TemporalPoisonCode::WinnerRelayPhysics),
+            Some(TemporalPoisonCode::TickOrCounterOverflow),
+            Some(TemporalPoisonCode::StoreOrPlanInvariant),
+            Some(TemporalPoisonCode::PhiloxAddressExhaustion),
+            Some(TemporalPoisonCode::ReserveCellCapacity),
+            Some(TemporalPoisonCode::GlobalSegmentCapacity),
+            Some(TemporalPoisonCode::OwnerSegmentCapacity),
+            Some(TemporalPoisonCode::PreallocatedCapacityInvariant),
+        ];
+        let runtime = capacity_only_policy_runtime(
+            TemporalContextPolicy::BoundWinners,
+            TemporalPlasticityPolicy::Plastic,
+        );
+        let baseline = encoded_checkpoint(&runtime);
+
+        for (code, expected) in EXPECTED.into_iter().enumerate() {
+            let mut checkpoint = baseline.clone();
+            checkpoint[222..224].copy_from_slice(&(code as u16).to_le_bytes());
+            refresh_logical_state_digest(&mut checkpoint);
+            let mut imported = import_checkpoint_v1(&checkpoint, factory_for_runtime(&runtime))
+                .expect("every stable poison code must import exactly");
+
+            assert_eq!(imported.scientific_stop, expected);
+            assert_eq!(encoded_checkpoint(&imported), checkpoint);
+            if expected.is_some() {
+                assert_eq!(imported.recognize(7), Err(TemporalCircuitStop::Poisoned));
+            }
+        }
+    }
+
+    #[test]
+    fn checkpoint_import_one_shot_has_exactly_two_plus_thirty_one_allocations() {
+        let runtime = full_section_generic_runtime();
+        let checkpoint = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        let factory = factory_for_runtime(&runtime);
+
+        let (result, allocations) =
+            count_allocations(|| import_checkpoint_v1(&checkpoint, factory));
+        let imported = result.expect("the full one-shot import must succeed");
+
+        assert_eq!(allocations, 33);
+        assert_eq!(encoded_checkpoint(&imported), checkpoint);
+    }
+
+    #[test]
+    fn checkpoint_import_rejects_impossible_tight_q_before_observation() {
+        let runtime = full_section_generic_runtime();
+        let checkpoint = encoded_checkpoint(&runtime);
+        let factory = factory_for_runtime(&runtime);
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory).unwrap();
+        let mut pass2 = validate_checkpoint_v1_pass2(pass1, &factory).unwrap();
+        assert_eq!(pass2.max_column_occupancy, 4);
+        assert_eq!(
+            pass2
+                .pass1
+                .allocation_plan
+                .prospective_column_occupancy_limit,
+            6
+        );
+        pass2
+            .pass1
+            .allocation_plan
+            .prospective_column_occupancy_limit = 3;
+        let mut observed = Vec::new();
+
+        let error =
+            match assemble_validated_checkpoint_v1_inner(pass2, factory, &mut |site, count| {
+                observed.push((site, count));
+                false
+            }) {
+                Ok(_) => panic!("an impossible tight-Q proof unexpectedly assembled"),
+                Err(error) => error,
+            };
+
+        assert_eq!(error, CheckpointV1ImportError::AssemblyInvariant);
+        assert!(observed.is_empty());
+    }
+
+    #[test]
+    fn checkpoint_import_never_observes_a_zero_cohort_capacity() {
+        let runtime = empty_runtime_with_plasticity(
+            TemporalContextPolicy::BoundWinners,
+            TemporalPlasticityPolicy::Plastic,
+        );
+        let checkpoint = encoded_checkpoint(&runtime);
+        let factory = factory_for_runtime(&runtime);
+        let pass1 = validate_checkpoint_v1_pass1(&checkpoint, &factory).unwrap();
+        assert_eq!(pass1.allocation_plan.cohort_capacity, 0);
+        let pass2 = validate_checkpoint_v1_pass2(pass1, &factory).unwrap();
+        let mut observed = Vec::new();
+
+        let imported =
+            assemble_validated_checkpoint_v1_inner(pass2, factory, &mut |site, count| {
+                assert_ne!(count, 0);
+                observed.push((site, count));
+                false
+            })
+            .expect("a runtime without reserve cohorts must import");
+
+        assert_eq!(
+            observed,
+            expected_bound_import_allocations(22, 1, 0, 1, 2, 0)
+        );
+        assert_eq!(encoded_checkpoint(&imported), checkpoint);
+    }
+
+    #[test]
+    fn checkpoint_import_maps_envelope_and_reachability_failures_without_assembly() {
+        let runtime = full_section_generic_runtime();
+        let checkpoint = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        let mut invalid_magic = checkpoint.clone();
+        invalid_magic[0] ^= 1;
+        let invalid_magic_error =
+            match import_checkpoint_v1(&invalid_magic, factory_for_runtime(&runtime)) {
+                Ok(_) => panic!("an invalid magic unexpectedly imported"),
+                Err(error) => error,
+            };
+        assert_eq!(
+            invalid_magic_error,
+            CheckpointV1ImportError::Pass1(CheckpointV1Pass1Error::MagicMismatch)
+        );
+
+        let mut invalid_state = checkpoint;
+        let starts = checkpoint_v1_test_section_starts(&invalid_state);
+        write_checkpoint_v1_u32(&mut invalid_state, starts.cohort_columns, 0, 11);
+        refresh_body_and_logical_state_digests(&mut invalid_state);
+        let invalid_state_error =
+            match import_checkpoint_v1(&invalid_state, factory_for_runtime(&runtime)) {
+                Ok(_) => panic!("an unreachable cohort column unexpectedly imported"),
+                Err(error) => error,
+            };
+        assert_eq!(invalid_state_error, CheckpointV1ImportError::State);
     }
 }

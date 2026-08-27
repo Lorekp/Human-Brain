@@ -206,14 +206,14 @@ pub(crate) struct CoupledRaceScratch {
 pub(crate) enum CoupledRaceScratchBuildError {
     ZeroCapacity,
     CapacityOverflow,
-    AllocationFailed,
+    RetryableAllocation(CoupledRaceScratchReserveSite),
 }
 
 impl CoupledRaceScratchBuildError {
     pub(crate) const fn legacy_message(self) -> &'static str {
         match self {
             Self::ZeroCapacity => "coupled-race scratch requires nonzero capacity",
-            Self::CapacityOverflow | Self::AllocationFailed => {
+            Self::CapacityOverflow | Self::RetryableAllocation(_) => {
                 "coupled-race scratch allocation failed"
             }
         }
@@ -221,7 +221,7 @@ impl CoupledRaceScratchBuildError {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum CoupledRaceScratchReserveSite {
+pub(crate) enum CoupledRaceScratchReserveSite {
     Voltage,
     Thresholds,
     Excitatory,
@@ -229,119 +229,77 @@ enum CoupledRaceScratchReserveSite {
     SpikingIndices,
 }
 
-#[cfg(test)]
-impl CoupledRaceScratchReserveSite {
-    const fn ordinal(self) -> usize {
-        match self {
-            Self::Voltage => 0,
-            Self::Thresholds => 1,
-            Self::Excitatory => 2,
-            Self::Emitted => 3,
-            Self::SpikingIndices => 4,
-        }
-    }
-}
-
-#[cfg(test)]
-std::thread_local! {
-    static FAIL_NEXT_COUPLED_RACE_RESERVE: std::cell::Cell<Option<CoupledRaceScratchReserveSite>> =
-        const { std::cell::Cell::new(None) };
-    static COUPLED_RACE_RESERVE_ATTEMPTS: std::cell::Cell<usize> =
-        const { std::cell::Cell::new(0) };
-}
-
-#[cfg(test)]
-struct CoupledRaceReserveFailureForTest;
-
-#[cfg(test)]
-impl Drop for CoupledRaceReserveFailureForTest {
-    fn drop(&mut self) {
-        FAIL_NEXT_COUPLED_RACE_RESERVE.with(|failure| failure.set(None));
-    }
-}
-
-#[cfg(test)]
-fn fail_next_coupled_race_reserve_for_test(
-    site: CoupledRaceScratchReserveSite,
-) -> CoupledRaceReserveFailureForTest {
-    FAIL_NEXT_COUPLED_RACE_RESERVE.with(|failure| {
-        assert!(
-            failure.replace(Some(site)).is_none(),
-            "coupled-race reserve failure injection is not reentrant"
-        );
-    });
-    CoupledRaceReserveFailureForTest
-}
-
-#[cfg(test)]
-fn take_coupled_race_reserve_attempts_for_test() -> usize {
-    COUPLED_RACE_RESERVE_ATTEMPTS.with(|attempts| attempts.replace(0))
-}
-
-#[cfg(test)]
-fn fail_coupled_race_reserve_for_test(site: CoupledRaceScratchReserveSite) -> bool {
-    COUPLED_RACE_RESERVE_ATTEMPTS.with(|attempts| {
-        assert_eq!(
-            attempts.get(),
-            site.ordinal(),
-            "coupled-race reserves changed order"
-        );
-        attempts.set(site.ordinal() + 1);
-    });
-    FAIL_NEXT_COUPLED_RACE_RESERVE.with(|failure| {
-        if failure.get() == Some(site) {
-            failure.set(None);
-            true
-        } else {
-            false
-        }
-    })
-}
-
 impl CoupledRaceScratch {
     pub(crate) fn try_new(max_candidates: usize) -> Result<Self, CoupledRaceScratchBuildError> {
-        #[cfg(test)]
-        COUPLED_RACE_RESERVE_ATTEMPTS.with(|attempts| attempts.set(0));
+        Self::try_new_with_reserve(max_candidates, |_, _| false)
+    }
+
+    pub(crate) fn try_new_with_reserve(
+        max_candidates: usize,
+        mut fail_before_reserve: impl FnMut(CoupledRaceScratchReserveSite, usize) -> bool,
+    ) -> Result<Self, CoupledRaceScratchBuildError> {
         if max_candidates == 0 {
             return Err(CoupledRaceScratchBuildError::ZeroCapacity);
         }
 
+        std::alloc::Layout::array::<f64>(max_candidates)
+            .map_err(|_| CoupledRaceScratchBuildError::CapacityOverflow)?;
+        std::alloc::Layout::array::<f64>(max_candidates)
+            .map_err(|_| CoupledRaceScratchBuildError::CapacityOverflow)?;
+        std::alloc::Layout::array::<f64>(max_candidates)
+            .map_err(|_| CoupledRaceScratchBuildError::CapacityOverflow)?;
+        std::alloc::Layout::array::<u8>(max_candidates)
+            .map_err(|_| CoupledRaceScratchBuildError::CapacityOverflow)?;
+        std::alloc::Layout::array::<usize>(max_candidates)
+            .map_err(|_| CoupledRaceScratchBuildError::CapacityOverflow)?;
+
         fn filled<T: Copy>(
             length: usize,
             value: T,
-            _site: CoupledRaceScratchReserveSite,
+            site: CoupledRaceScratchReserveSite,
+            fail_before_reserve: &mut impl FnMut(CoupledRaceScratchReserveSite, usize) -> bool,
         ) -> Result<Vec<T>, CoupledRaceScratchBuildError> {
-            std::alloc::Layout::array::<T>(length)
-                .map_err(|_| CoupledRaceScratchBuildError::CapacityOverflow)?;
-            #[cfg(test)]
-            if fail_coupled_race_reserve_for_test(_site) {
-                return Err(CoupledRaceScratchBuildError::AllocationFailed);
+            if fail_before_reserve(site, length) {
+                return Err(CoupledRaceScratchBuildError::RetryableAllocation(site));
             }
             let mut values = Vec::new();
             values
                 .try_reserve_exact(length)
-                .map_err(|_| CoupledRaceScratchBuildError::AllocationFailed)?;
+                .map_err(|_| CoupledRaceScratchBuildError::RetryableAllocation(site))?;
             values.resize(length, value);
             Ok(values)
         }
 
         Ok(Self {
-            voltage_mv: filled(max_candidates, 0.0, CoupledRaceScratchReserveSite::Voltage)?,
+            voltage_mv: filled(
+                max_candidates,
+                0.0,
+                CoupledRaceScratchReserveSite::Voltage,
+                &mut fail_before_reserve,
+            )?,
             thresholds_mv: filled(
                 max_candidates,
                 0.0,
                 CoupledRaceScratchReserveSite::Thresholds,
+                &mut fail_before_reserve,
             )?,
             excitatory_pa: filled(
                 max_candidates,
                 0.0,
                 CoupledRaceScratchReserveSite::Excitatory,
+                &mut fail_before_reserve,
             )?,
-            emitted: filled(max_candidates, 0, CoupledRaceScratchReserveSite::Emitted)?,
+            emitted: filled(
+                max_candidates,
+                0,
+                CoupledRaceScratchReserveSite::Emitted,
+                &mut fail_before_reserve,
+            )?,
             spiking_indices: filled(
                 max_candidates,
                 0,
                 CoupledRaceScratchReserveSite::SpikingIndices,
+                &mut fail_before_reserve,
             )?,
         })
     }
@@ -575,10 +533,9 @@ pub(crate) fn coupled_first_spike_race(
 #[cfg(test)]
 mod tests {
     use super::{
-        coupled_first_spike_race, fail_next_coupled_race_reserve_for_test, singleton_latency_ticks,
-        take_coupled_race_reserve_attempts_for_test, BasketDrive, CandidateClass, CandidateDrive,
-        CoupledRaceScratch, CoupledRaceScratchBuildError, CoupledRaceScratchReserveSite,
-        CoupledRaceTicks, SpikeEvent, TEMPORAL_PHYSICS_IDENTITY,
+        coupled_first_spike_race, singleton_latency_ticks, BasketDrive, CandidateClass,
+        CandidateDrive, CoupledRaceScratch, CoupledRaceScratchBuildError,
+        CoupledRaceScratchReserveSite, CoupledRaceTicks, SpikeEvent, TEMPORAL_PHYSICS_IDENTITY,
     };
 
     // Literal outputs were generated from the current Python oracle:
@@ -1041,6 +998,23 @@ mod tests {
 
     #[test]
     fn coupled_race_scratch_rejects_invalid_capacity_before_reserving() {
+        let mut reserve_calls = 0usize;
+        assert!(matches!(
+            CoupledRaceScratch::try_new_with_reserve(0, |_, _| {
+                reserve_calls += 1;
+                false
+            }),
+            Err(CoupledRaceScratchBuildError::ZeroCapacity)
+        ));
+        assert!(matches!(
+            CoupledRaceScratch::try_new_with_reserve(usize::MAX, |_, _| {
+                reserve_calls += 1;
+                false
+            }),
+            Err(CoupledRaceScratchBuildError::CapacityOverflow)
+        ));
+        assert_eq!(reserve_calls, 0);
+
         assert!(matches!(
             CoupledRaceScratch::try_new(0),
             Err(CoupledRaceScratchBuildError::ZeroCapacity)
@@ -1053,40 +1027,46 @@ mod tests {
 
     #[test]
     fn coupled_race_scratch_allocation_failure_is_typed_and_retryable_at_every_reserve() {
-        const SITES: [CoupledRaceScratchReserveSite; 5] = [
-            CoupledRaceScratchReserveSite::Voltage,
-            CoupledRaceScratchReserveSite::Thresholds,
-            CoupledRaceScratchReserveSite::Excitatory,
-            CoupledRaceScratchReserveSite::Emitted,
-            CoupledRaceScratchReserveSite::SpikingIndices,
+        const EXPECTED: [(CoupledRaceScratchReserveSite, usize); 5] = [
+            (CoupledRaceScratchReserveSite::Voltage, 3),
+            (CoupledRaceScratchReserveSite::Thresholds, 3),
+            (CoupledRaceScratchReserveSite::Excitatory, 3),
+            (CoupledRaceScratchReserveSite::Emitted, 3),
+            (CoupledRaceScratchReserveSite::SpikingIndices, 3),
         ];
 
-        for (ordinal, site) in SITES.into_iter().enumerate() {
-            assert_eq!(take_coupled_race_reserve_attempts_for_test(), 0);
-            let failure = fail_next_coupled_race_reserve_for_test(site);
-            assert!(matches!(
-                CoupledRaceScratch::try_new(3),
-                Err(CoupledRaceScratchBuildError::AllocationFailed)
-            ));
+        for (failed_index, &(failed_site, _)) in EXPECTED.iter().enumerate() {
+            let mut calls = Vec::new();
+            let error = match CoupledRaceScratch::try_new_with_reserve(3, |site, element_count| {
+                calls.push((site, element_count));
+                site == failed_site
+            }) {
+                Ok(_) => panic!("the selected reserve must fail"),
+                Err(error) => error,
+            };
             assert_eq!(
-                take_coupled_race_reserve_attempts_for_test(),
-                ordinal + 1,
-                "failure must occur at the armed ordered reserve {site:?}"
+                error,
+                CoupledRaceScratchBuildError::RetryableAllocation(failed_site)
             );
-
-            let retry = CoupledRaceScratch::try_new(3).unwrap();
-            assert_eq!(take_coupled_race_reserve_attempts_for_test(), SITES.len());
-            assert_eq!(retry.voltage_mv.as_slice(), &[0.0; 3]);
-            assert_eq!(retry.thresholds_mv.as_slice(), &[0.0; 3]);
-            assert_eq!(retry.excitatory_pa.as_slice(), &[0.0; 3]);
-            assert_eq!(retry.emitted.as_slice(), &[0; 3]);
-            assert_eq!(retry.spiking_indices.as_slice(), &[0; 3]);
-            assert!(retry
-                .allocation_signature()
-                .into_iter()
-                .all(|(_, capacity)| capacity >= 3));
-            drop(failure);
+            assert_eq!(calls, EXPECTED[..=failed_index]);
         }
+
+        let mut retry_calls = Vec::new();
+        let retry = CoupledRaceScratch::try_new_with_reserve(3, |site, element_count| {
+            retry_calls.push((site, element_count));
+            false
+        })
+        .expect("a fresh identical retry must reserve every race buffer");
+        assert_eq!(retry_calls, EXPECTED);
+        assert_eq!(retry.voltage_mv.as_slice(), &[0.0; 3]);
+        assert_eq!(retry.thresholds_mv.as_slice(), &[0.0; 3]);
+        assert_eq!(retry.excitatory_pa.as_slice(), &[0.0; 3]);
+        assert_eq!(retry.emitted.as_slice(), &[0; 3]);
+        assert_eq!(retry.spiking_indices.as_slice(), &[0; 3]);
+        assert!(retry
+            .allocation_signature()
+            .into_iter()
+            .all(|(_, capacity)| capacity >= 3));
     }
 
     #[test]

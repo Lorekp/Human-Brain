@@ -7,11 +7,10 @@
 //! can inject winners, segment classes, currents, or a prepared mutation.
 //!
 //! Claim boundary: this module owns deterministic physical recognition and the
-//! aggregate reserve-aware native learning transaction. It has crate-private
-//! checkpoint-v1 identity/header codecs plus allocation-free live-state
-//! reachability validation, but no checkpoint body encoding, state
-//! import/export, sink I/O, filesystem publisher, public ABI, Python wrapper,
-//! or outcome-evaluation path.
+//! aggregate reserve-aware native learning transaction. Its crate-private
+//! checkpoint-v1 child module owns identity, canonical streaming export,
+//! reachability validation, and direct one-shot import, but no filesystem
+//! publisher, public ABI, Python wrapper, or outcome-evaluation path.
 
 use crate::random123::{philox2x64_10, sample_without_replacement};
 use crate::temporal::{
@@ -2072,7 +2071,7 @@ mod tests {
         }
     }
 
-    fn count_allocations<T>(operation: impl FnOnce() -> T) -> (T, usize) {
+    pub(super) fn count_allocations<T>(operation: impl FnOnce() -> T) -> (T, usize) {
         ALLOCATION_COUNT.with(|count| count.set(0));
         COUNT_ALLOCATIONS.with(|enabled| {
             assert!(

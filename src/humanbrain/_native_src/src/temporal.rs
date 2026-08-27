@@ -122,10 +122,46 @@ pub(crate) struct TemporalSemanticPosting {
     pub(crate) slot: u32,
 }
 
+/// Owning-module reserve sites in exact `TemporalStore` field order.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TemporalStoreAllocationSite {
+    Owners,
+    Sources,
+    Permanences,
+    OwnerSegmentCounts,
+    SourceMeta,
+    NextPair,
+    PreviousPair,
+    SourceStamps,
+    SegmentStamps,
+    PotentialContacts,
+    ConnectedContacts,
+    TouchedSegments,
+    OwnerStamps,
+    BestMatching,
+    BestActive,
+    TouchedOwners,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TemporalStoreBuildError {
+    StoreConstruction(u32),
+    RetryableAllocation(TemporalStoreAllocationSite),
+}
+
+impl TemporalStoreBuildError {
+    const fn legacy_status(self) -> u32 {
+        match self {
+            Self::StoreConstruction(status) => status,
+            Self::RetryableAllocation(_) => TEMPORAL_ALLOCATION_FAILED,
+        }
+    }
+}
+
 /// Non-poisoning failures while rebuilding a fresh store from checkpoint rows.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TemporalCheckpointRebuildError {
-    AllocationFailed,
+    RetryableAllocation(TemporalStoreAllocationSite),
     StoreConstruction(u32),
     DeclaredSegmentCountExceedsCapacity { declared: u32, capacity: u32 },
     DeclaredSegmentCountExceeded { declared: u32 },
@@ -166,31 +202,8 @@ const _: [(); 12] = [(); size_of::<SourceMeta>()];
 
 #[cfg(test)]
 std::thread_local! {
-    static FAIL_NEXT_TEMPORAL_RESERVATION: std::cell::Cell<bool> =
-        const { std::cell::Cell::new(false) };
     static SOURCE_CHAIN_PAIR_VISITS: std::cell::Cell<usize> =
         const { std::cell::Cell::new(0) };
-}
-
-#[cfg(test)]
-struct TemporalReservationFailureForTest;
-
-#[cfg(test)]
-impl Drop for TemporalReservationFailureForTest {
-    fn drop(&mut self) {
-        FAIL_NEXT_TEMPORAL_RESERVATION.with(|failure| failure.set(false));
-    }
-}
-
-#[cfg(test)]
-fn fail_next_temporal_reservation_for_test() -> TemporalReservationFailureForTest {
-    FAIL_NEXT_TEMPORAL_RESERVATION.with(|failure| {
-        assert!(
-            !failure.replace(true),
-            "temporal reservation failure injection is not reentrant"
-        );
-    });
-    TemporalReservationFailureForTest
 }
 
 #[cfg(test)]
@@ -203,20 +216,28 @@ fn take_source_chain_pair_visits_for_test() -> usize {
     SOURCE_CHAIN_PAIR_VISITS.with(|visits| visits.replace(0))
 }
 
-fn reserved_vec<T>(capacity: usize) -> Result<Vec<T>, u32> {
-    #[cfg(test)]
-    if FAIL_NEXT_TEMPORAL_RESERVATION.with(|failure| failure.replace(false)) {
-        return Err(TEMPORAL_ALLOCATION_FAILED);
+fn reserved_vec<T>(
+    capacity: usize,
+    site: TemporalStoreAllocationSite,
+    fail_before_reserve: &mut impl FnMut(TemporalStoreAllocationSite, usize) -> bool,
+) -> Result<Vec<T>, TemporalStoreBuildError> {
+    if fail_before_reserve(site, capacity) {
+        return Err(TemporalStoreBuildError::RetryableAllocation(site));
     }
     let mut values = Vec::new();
     values
         .try_reserve_exact(capacity)
-        .map_err(|_| TEMPORAL_ALLOCATION_FAILED)?;
+        .map_err(|_| TemporalStoreBuildError::RetryableAllocation(site))?;
     Ok(values)
 }
 
-fn filled_vec<T: Copy>(length: usize, value: T) -> Result<Vec<T>, u32> {
-    let mut values = reserved_vec(length)?;
+fn filled_vec<T: Copy>(
+    length: usize,
+    value: T,
+    site: TemporalStoreAllocationSite,
+    fail_before_reserve: &mut impl FnMut(TemporalStoreAllocationSite, usize) -> bool,
+) -> Result<Vec<T>, TemporalStoreBuildError> {
+    let mut values = reserved_vec(length, site, fail_before_reserve)?;
     values.resize(length, value);
     Ok(values)
 }
@@ -374,8 +395,16 @@ impl TemporalStoreCheckpointRebuild {
         config: TemporalStoreConfig,
         declared_segment_count: u32,
     ) -> Result<Self, TemporalCheckpointRebuildError> {
+        Self::new_with_reserve(config, declared_segment_count, |_, _| false)
+    }
+
+    pub(crate) fn new_with_reserve(
+        config: TemporalStoreConfig,
+        declared_segment_count: u32,
+        fail_before_reserve: impl FnMut(TemporalStoreAllocationSite, usize) -> bool,
+    ) -> Result<Self, TemporalCheckpointRebuildError> {
         let segment_capacity = u32::try_from(config.segment_capacity)
-            .map_err(|_| checkpoint_rebuild_store_construction_error(TEMPORAL_INVALID))?;
+            .map_err(|_| TemporalCheckpointRebuildError::StoreConstruction(TEMPORAL_INVALID))?;
         if declared_segment_count > segment_capacity {
             return Err(
                 TemporalCheckpointRebuildError::DeclaredSegmentCountExceedsCapacity {
@@ -384,8 +413,8 @@ impl TemporalStoreCheckpointRebuild {
                 },
             );
         }
-        let store = TemporalStore::new_runtime_owned(config)
-            .map_err(checkpoint_rebuild_store_construction_error)?;
+        let store = TemporalStore::new_with_reserve(config, fail_before_reserve)
+            .map_err(checkpoint_rebuild_store_build_error)?;
         Ok(Self {
             store,
             declared_segment_count,
@@ -429,11 +458,16 @@ impl TemporalStoreCheckpointRebuild {
     }
 }
 
-fn checkpoint_rebuild_store_construction_error(status: u32) -> TemporalCheckpointRebuildError {
-    if status == TEMPORAL_ALLOCATION_FAILED {
-        TemporalCheckpointRebuildError::AllocationFailed
-    } else {
-        TemporalCheckpointRebuildError::StoreConstruction(status)
+fn checkpoint_rebuild_store_build_error(
+    error: TemporalStoreBuildError,
+) -> TemporalCheckpointRebuildError {
+    match error {
+        TemporalStoreBuildError::StoreConstruction(status) => {
+            TemporalCheckpointRebuildError::StoreConstruction(status)
+        }
+        TemporalStoreBuildError::RetryableAllocation(site) => {
+            TemporalCheckpointRebuildError::RetryableAllocation(site)
+        }
     }
 }
 
@@ -447,6 +481,13 @@ impl TemporalStore {
     }
 
     fn new(config: TemporalStoreConfig) -> Result<Self, u32> {
+        Self::new_with_reserve(config, |_, _| false).map_err(TemporalStoreBuildError::legacy_status)
+    }
+
+    fn new_with_reserve(
+        config: TemporalStoreConfig,
+        mut fail_before_reserve: impl FnMut(TemporalStoreAllocationSite, usize) -> bool,
+    ) -> Result<Self, TemporalStoreBuildError> {
         if config.source_count < PAIRS_PER_SEGMENT
             || config.source_count > u32::MAX as usize
             || config.owner_count == 0
@@ -460,31 +501,104 @@ impl TemporalStore {
                 && config.theta_active <= (PAIRS_PER_SEGMENT as u8 * PHYSICAL_CONTACTS_PER_PAIR))
             || config.padding_zero != 0
         {
-            return Err(TEMPORAL_INVALID);
+            return Err(TemporalStoreBuildError::StoreConstruction(TEMPORAL_INVALID));
         }
         let posting_capacity = config
             .segment_capacity
             .checked_mul(PAIRS_PER_SEGMENT)
-            .ok_or(TEMPORAL_INVALID)?;
+            .ok_or(TemporalStoreBuildError::StoreConstruction(TEMPORAL_INVALID))?;
         let owner_result_capacity = config.owner_count.min(config.segment_capacity);
         Ok(Self {
             config,
-            owners: reserved_vec(config.segment_capacity)?,
-            sources: reserved_vec(posting_capacity)?,
-            permanences: reserved_vec(posting_capacity)?,
-            owner_segment_counts: filled_vec(config.owner_count, 0)?,
-            source_meta: filled_vec(config.source_count, SourceMeta::EMPTY)?,
-            next_pair: reserved_vec(posting_capacity)?,
-            prev_pair: reserved_vec(posting_capacity)?,
-            source_stamps: filled_vec(config.source_count, 0)?,
-            segment_stamps: filled_vec(config.segment_capacity, 0)?,
-            potential_contacts: filled_vec(config.segment_capacity, 0)?,
-            connected_contacts: filled_vec(config.segment_capacity, 0)?,
-            touched_segments: reserved_vec(config.segment_capacity)?,
-            owner_stamps: filled_vec(config.owner_count, 0)?,
-            best_matching: filled_vec(config.owner_count, NONE)?,
-            best_active: filled_vec(config.owner_count, NONE)?,
-            touched_owners: reserved_vec(owner_result_capacity)?,
+            owners: reserved_vec(
+                config.segment_capacity,
+                TemporalStoreAllocationSite::Owners,
+                &mut fail_before_reserve,
+            )?,
+            sources: reserved_vec(
+                posting_capacity,
+                TemporalStoreAllocationSite::Sources,
+                &mut fail_before_reserve,
+            )?,
+            permanences: reserved_vec(
+                posting_capacity,
+                TemporalStoreAllocationSite::Permanences,
+                &mut fail_before_reserve,
+            )?,
+            owner_segment_counts: filled_vec(
+                config.owner_count,
+                0,
+                TemporalStoreAllocationSite::OwnerSegmentCounts,
+                &mut fail_before_reserve,
+            )?,
+            source_meta: filled_vec(
+                config.source_count,
+                SourceMeta::EMPTY,
+                TemporalStoreAllocationSite::SourceMeta,
+                &mut fail_before_reserve,
+            )?,
+            next_pair: reserved_vec(
+                posting_capacity,
+                TemporalStoreAllocationSite::NextPair,
+                &mut fail_before_reserve,
+            )?,
+            prev_pair: reserved_vec(
+                posting_capacity,
+                TemporalStoreAllocationSite::PreviousPair,
+                &mut fail_before_reserve,
+            )?,
+            source_stamps: filled_vec(
+                config.source_count,
+                0,
+                TemporalStoreAllocationSite::SourceStamps,
+                &mut fail_before_reserve,
+            )?,
+            segment_stamps: filled_vec(
+                config.segment_capacity,
+                0,
+                TemporalStoreAllocationSite::SegmentStamps,
+                &mut fail_before_reserve,
+            )?,
+            potential_contacts: filled_vec(
+                config.segment_capacity,
+                0,
+                TemporalStoreAllocationSite::PotentialContacts,
+                &mut fail_before_reserve,
+            )?,
+            connected_contacts: filled_vec(
+                config.segment_capacity,
+                0,
+                TemporalStoreAllocationSite::ConnectedContacts,
+                &mut fail_before_reserve,
+            )?,
+            touched_segments: reserved_vec(
+                config.segment_capacity,
+                TemporalStoreAllocationSite::TouchedSegments,
+                &mut fail_before_reserve,
+            )?,
+            owner_stamps: filled_vec(
+                config.owner_count,
+                0,
+                TemporalStoreAllocationSite::OwnerStamps,
+                &mut fail_before_reserve,
+            )?,
+            best_matching: filled_vec(
+                config.owner_count,
+                NONE,
+                TemporalStoreAllocationSite::BestMatching,
+                &mut fail_before_reserve,
+            )?,
+            best_active: filled_vec(
+                config.owner_count,
+                NONE,
+                TemporalStoreAllocationSite::BestActive,
+                &mut fail_before_reserve,
+            )?,
+            touched_owners: reserved_vec(
+                owner_result_capacity,
+                TemporalStoreAllocationSite::TouchedOwners,
+                &mut fail_before_reserve,
+            )?,
             generation: 0,
             posting_validation_generation: 0,
             poisoned: TEMPORAL_OK,
@@ -3027,22 +3141,74 @@ mod tests {
     }
 
     #[test]
-    fn checkpoint_rebuild_reports_typed_allocation_failure_without_collapsing_invalid_config() {
-        let failure = fail_next_temporal_reservation_for_test();
-        assert!(matches!(
-            TemporalStoreCheckpointRebuild::new(config(10, 1, 1), 0),
-            Err(TemporalCheckpointRebuildError::AllocationFailed)
-        ));
-        drop(failure);
+    fn checkpoint_rebuild_reserves_are_typed_ordered_and_retryable() {
+        const EXPECTED: [(TemporalStoreAllocationSite, usize); 16] = [
+            (TemporalStoreAllocationSite::Owners, 4),
+            (TemporalStoreAllocationSite::Sources, 40),
+            (TemporalStoreAllocationSite::Permanences, 40),
+            (TemporalStoreAllocationSite::OwnerSegmentCounts, 3),
+            (TemporalStoreAllocationSite::SourceMeta, 10),
+            (TemporalStoreAllocationSite::NextPair, 40),
+            (TemporalStoreAllocationSite::PreviousPair, 40),
+            (TemporalStoreAllocationSite::SourceStamps, 10),
+            (TemporalStoreAllocationSite::SegmentStamps, 4),
+            (TemporalStoreAllocationSite::PotentialContacts, 4),
+            (TemporalStoreAllocationSite::ConnectedContacts, 4),
+            (TemporalStoreAllocationSite::TouchedSegments, 4),
+            (TemporalStoreAllocationSite::OwnerStamps, 3),
+            (TemporalStoreAllocationSite::BestMatching, 3),
+            (TemporalStoreAllocationSite::BestActive, 3),
+            (TemporalStoreAllocationSite::TouchedOwners, 3),
+        ];
 
-        let mut invalid = config(10, 1, 1);
+        for (failed_index, &(failed_site, _)) in EXPECTED.iter().enumerate() {
+            let mut calls = Vec::new();
+            let error = match TemporalStoreCheckpointRebuild::new_with_reserve(
+                config(10, 3, 4),
+                0,
+                |site, element_count| {
+                    calls.push((site, element_count));
+                    site == failed_site
+                },
+            ) {
+                Ok(_) => panic!("the selected reserve must fail"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                error,
+                TemporalCheckpointRebuildError::RetryableAllocation(failed_site)
+            );
+            assert_eq!(calls, EXPECTED[..=failed_index]);
+        }
+
+        let mut retry_calls = Vec::new();
+        let retry = TemporalStoreCheckpointRebuild::new_with_reserve(
+            config(10, 3, 4),
+            0,
+            |site, element_count| {
+                retry_calls.push((site, element_count));
+                false
+            },
+        )
+        .expect("a fresh identical retry must reserve every backing array");
+        assert_eq!(retry_calls, EXPECTED);
+        retry
+            .finish()
+            .expect("an empty declared rebuild must finish after retry");
+
+        let mut invalid = config(10, 3, 4);
         invalid.source_count = PAIRS_PER_SEGMENT - 1;
+        let mut invalid_calls = 0usize;
         assert!(matches!(
-            TemporalStoreCheckpointRebuild::new(invalid, 0),
+            TemporalStoreCheckpointRebuild::new_with_reserve(invalid, 0, |_, _| {
+                invalid_calls += 1;
+                false
+            }),
             Err(TemporalCheckpointRebuildError::StoreConstruction(
                 TEMPORAL_INVALID
             ))
         ));
+        assert_eq!(invalid_calls, 0);
     }
 
     #[test]
