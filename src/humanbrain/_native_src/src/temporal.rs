@@ -179,6 +179,80 @@ fn append_reserved<T: Copy, const N: usize>(values: &mut Vec<T>, appended: [T; N
     }
 }
 
+const U32_RADIX_INSERTION_CUTOFF: usize = 24;
+
+/// Sort fixed-width pair-slot identities without allocation or fanout-sized
+/// auxiliary storage.
+///
+/// This is an MSD American-flag radix sort over four bytes. Recursion is
+/// bounded to those four byte positions, and every stack frame owns only two
+/// fixed 256-entry offset tables. Slices at or below the fixed insertion-sort
+/// cutoff avoid paying for 256 buckets; the cutoff keeps that comparison work
+/// bounded independently of fanout. Four radix levels plus that constant
+/// cutoff keep total work linear in the input length.
+fn sort_u32_in_place_radix(values: &mut [u32]) {
+    sort_u32_in_place_radix_byte(values, 24);
+}
+
+fn sort_u32_in_place_radix_byte(values: &mut [u32], shift: u32) {
+    if values.len() < 2 {
+        return;
+    }
+    if values.len() <= U32_RADIX_INSERTION_CUTOFF {
+        for index in 1..values.len() {
+            let mut cursor = index;
+            while cursor != 0 && values[cursor] < values[cursor - 1] {
+                values.swap(cursor, cursor - 1);
+                cursor -= 1;
+            }
+        }
+        return;
+    }
+
+    let mut bucket_ends = [0usize; 256];
+    for value in values.iter().copied() {
+        bucket_ends[((value >> shift) & 0xff) as usize] += 1;
+    }
+    let mut end = 0usize;
+    for bucket_end in &mut bucket_ends {
+        end += *bucket_end;
+        *bucket_end = end;
+    }
+
+    let mut next = [0usize; 256];
+    let mut start = 0usize;
+    for (next_slot, bucket_end) in next.iter_mut().zip(bucket_ends.iter().copied()) {
+        *next_slot = start;
+        start = bucket_end;
+    }
+
+    for bucket in 0..256 {
+        while next[bucket] < bucket_ends[bucket] {
+            let index = next[bucket];
+            let destination_bucket = ((values[index] >> shift) & 0xff) as usize;
+            if destination_bucket == bucket {
+                next[bucket] += 1;
+            } else {
+                let destination = next[destination_bucket];
+                debug_assert!(destination < bucket_ends[destination_bucket]);
+                values.swap(index, destination);
+                next[destination_bucket] += 1;
+            }
+        }
+    }
+
+    if shift == 0 {
+        return;
+    }
+    let mut start = 0usize;
+    for end in bucket_ends {
+        if end - start > 1 {
+            sort_u32_in_place_radix_byte(&mut values[start..end], shift - 8);
+        }
+        start = end;
+    }
+}
+
 pub struct TemporalStore {
     config: TemporalStoreConfig,
     owners: Vec<u32>,
@@ -734,6 +808,25 @@ impl TemporalStore {
         Ok(visited)
     }
 
+    /// Copy one already-validated source chain into caller-owned scratch.
+    ///
+    /// The semantic visitor calls this only after an immutable first pass has
+    /// validated every row, metadata record, chain link, and global coverage.
+    /// The same borrow prevents the relation from changing before emission, so
+    /// this second-pass copy cannot discover a new fallible condition.
+    fn copy_validated_source_posting_chain(&self, source: u32, pair_slots: &mut [u32]) -> usize {
+        let meta = self.source_meta[source as usize];
+        let live_count = meta.live_count as usize;
+        let mut pair_slot = meta.head;
+        for output in &mut pair_slots[..live_count] {
+            debug_assert_ne!(pair_slot, NONE);
+            *output = pair_slot;
+            pair_slot = self.next_pair[pair_slot as usize];
+        }
+        debug_assert_eq!(pair_slot, NONE);
+        live_count
+    }
+
     /// Prove one touched source's complete declared posting chain exactly once
     /// per aggregate mutation preflight. `source_stamps` is scratch after
     /// recognition, so a fresh generation deduplicates high-fanout sources
@@ -953,16 +1046,30 @@ impl TemporalStore {
         Ok(row)
     }
 
-    /// Return the largest declared source fanout after validating canonical
-    /// rows, empty-slot links, and aggregate posting cardinality.
+    /// Return the largest declared source fanout after validating backing and
+    /// source-metadata capacity facts.
     ///
     /// A checkpoint codec can fallibly allocate this many `u32` pair slots
-    /// once, then reuse that scratch for every semantic-index traversal.
+    /// once, then reuse that scratch for every semantic-index traversal. This
+    /// bound query deliberately does not scan canonical rows or complete source
+    /// chains, so its work is `O(source_count)`; [`Self::visit_runtime_semantic_postings`]
+    /// validates the full semantic relation before its first callback.
     pub(crate) fn runtime_semantic_posting_scratch_required(
         &self,
     ) -> Result<u32, TemporalStorePreflightError> {
-        let (required, _) = self.semantic_posting_shape()?;
-        u32::try_from(required).map_err(|_| TemporalStorePreflightError::BackingCapacityInvariant)
+        self.preflight_runtime_backing_shape()?;
+        let mut required = 0u32;
+        for meta in &self.source_meta {
+            let live_count = meta.live_count as usize;
+            if live_count > self.owners.len()
+                || (live_count == 0 && (meta.head != NONE || meta.tail != NONE))
+                || (live_count != 0 && (meta.head == NONE || meta.tail == NONE))
+            {
+                return Err(TemporalStorePreflightError::BackingInvariant);
+            }
+            required = required.max(meta.live_count);
+        }
+        Ok(required)
     }
 
     /// Visit the complete logical posting relation in canonical source-major
@@ -973,9 +1080,11 @@ impl TemporalStore {
     /// are unique within a valid chain; because every visited slot is also
     /// proved to store the current source, chains for distinct sources are
     /// disjoint. Equality between the total visits and all live canonical row
-    /// slots therefore proves exact one-to-one coverage. A second immutable
-    /// pass sorts each source's slots in caller-owned reusable scratch and
-    /// emits `(source, segment, slot)` lexicographically.
+    /// slots therefore proves exact one-to-one coverage. This validation pass
+    /// invokes no callback and performs no comparison sorting. A second
+    /// immutable pass fixed-width radix-orders each source's slots in
+    /// caller-owned reusable scratch and emits `(source, segment, slot)`
+    /// lexicographically.
     pub(crate) fn visit_runtime_semantic_postings<F>(
         &self,
         pair_slot_scratch: &mut [u32],
@@ -995,18 +1104,7 @@ impl TemporalStore {
         let mut validated_pairs = 0usize;
         for source_index in 0..self.config.source_count {
             let source = source_index as u32;
-            let visited = self.validate_source_posting_chain_into::<true>(
-                source,
-                None,
-                Some(pair_slot_scratch),
-            )?;
-            pair_slot_scratch[..visited].sort_unstable();
-            if pair_slot_scratch[..visited]
-                .windows(2)
-                .any(|pair| pair[0] == pair[1])
-            {
-                return Err(TemporalStorePreflightError::BackingInvariant);
-            }
+            let visited = self.validate_source_posting_chain_into::<true>(source, None, None)?;
             validated_pairs = validated_pairs
                 .checked_add(visited)
                 .ok_or(TemporalStorePreflightError::BackingInvariant)?;
@@ -1014,16 +1112,14 @@ impl TemporalStore {
         if validated_pairs != logical_live_pairs {
             return Err(TemporalStorePreflightError::BackingInvariant);
         }
+        let logical_live_pairs = u32::try_from(logical_live_pairs)
+            .map_err(|_| TemporalStorePreflightError::BackingInvariant)?;
 
         let mut emitted_pairs = 0usize;
         for source_index in 0..self.config.source_count {
             let source = source_index as u32;
-            let visited = self.validate_source_posting_chain_into::<true>(
-                source,
-                None,
-                Some(pair_slot_scratch),
-            )?;
-            pair_slot_scratch[..visited].sort_unstable();
+            let visited = self.copy_validated_source_posting_chain(source, pair_slot_scratch);
+            sort_u32_in_place_radix(&mut pair_slot_scratch[..visited]);
             for pair_slot in pair_slot_scratch[..visited].iter().copied() {
                 visitor(TemporalSemanticPosting {
                     normalized_source: source,
@@ -1033,10 +1129,8 @@ impl TemporalStore {
                 emitted_pairs += 1;
             }
         }
-        if emitted_pairs != logical_live_pairs {
-            return Err(TemporalStorePreflightError::BackingInvariant);
-        }
-        u32::try_from(emitted_pairs).map_err(|_| TemporalStorePreflightError::BackingInvariant)
+        debug_assert_eq!(emitted_pairs, logical_live_pairs as usize);
+        Ok(logical_live_pairs)
     }
 
     fn semantic_posting_shape(&self) -> Result<(usize, usize), TemporalStorePreflightError> {
@@ -2879,6 +2973,92 @@ mod tests {
     }
 
     #[test]
+    fn in_place_u32_radix_matches_independent_sort_across_boundaries_and_histories() {
+        fn assert_matches(mut actual: Vec<u32>) {
+            let mut expected = actual.clone();
+            expected.sort_unstable();
+            sort_u32_in_place_radix(&mut actual);
+            assert_eq!(actual, expected);
+        }
+
+        for values in [vec![], vec![0], vec![u32::MAX], vec![7, 7, 7, 7]] {
+            assert_matches(values);
+        }
+        assert_matches(vec![
+            u32::MAX,
+            0,
+            1,
+            255,
+            256,
+            257,
+            65_535,
+            65_536,
+            65_537,
+            0x00ff_ffff,
+            0x0100_0000,
+            0x7fff_ffff,
+            0x8000_0000,
+            u32::MAX - 1,
+        ]);
+        for len in [
+            U32_RADIX_INSERTION_CUTOFF - 1,
+            U32_RADIX_INSERTION_CUTOFF,
+            U32_RADIX_INSERTION_CUTOFF + 1,
+            U32_RADIX_INSERTION_CUTOFF + 2,
+            U32_RADIX_INSERTION_CUTOFF * 2 + 1,
+        ] {
+            assert_matches(
+                (0..len)
+                    .rev()
+                    .map(|index| {
+                        let value = index as u32;
+                        value.wrapping_mul(0x9e37_79b9)
+                            ^ (len as u32 - value).rotate_left((index % 31) as u32)
+                    })
+                    .collect(),
+            );
+        }
+        assert_matches((0..1_025).rev().collect());
+
+        let mut alternating = Vec::with_capacity(514);
+        for value in 0..257u32 {
+            alternating.push(u32::MAX - value);
+            alternating.push(value);
+        }
+        assert_matches(alternating);
+
+        let mut state = 0xA5A5_5A5A_0123_4567u64;
+        let random = (0..4_097)
+            .map(|_| {
+                state = state
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1_442_695_040_888_963_407);
+                (state >> 16) as u32
+            })
+            .collect();
+        assert_matches(random);
+    }
+
+    #[test]
+    fn semantic_scratch_bound_defers_full_row_validation_to_callback_free_visitor() {
+        let mut rebuild = TemporalStoreCheckpointRebuild::new(config(10, 1, 1), 1).unwrap();
+        rebuild
+            .append_canonical_row(0, &normalized_row(&[0], &[250]))
+            .unwrap();
+        let mut store = rebuild.finish().unwrap();
+        store.permanences[0] = 0;
+
+        assert_eq!(store.runtime_semantic_posting_scratch_required(), Ok(1));
+        let mut scratch = [NONE; 1];
+        let mut visits = 0;
+        assert_eq!(
+            store.visit_runtime_semantic_postings(&mut scratch, |_| visits += 1),
+            Err(TemporalStorePreflightError::BackingInvariant)
+        );
+        assert_eq!(visits, 0);
+    }
+
+    #[test]
     fn semantic_posting_visitor_is_source_major_and_history_independent() {
         let mut rebuild = TemporalStoreCheckpointRebuild::new(config(10, 3, 3), 3).unwrap();
         rebuild
@@ -2925,6 +3105,71 @@ mod tests {
             ]
         );
         assert_eq!(store.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn semantic_posting_visitor_radix_orders_large_reverse_history() {
+        const FANOUT: usize = 257;
+
+        let mut rebuild =
+            TemporalStoreCheckpointRebuild::new(config(10, 2, FANOUT), FANOUT as u32).unwrap();
+        let row = normalized_row(&[0], &[250]);
+        for segment_id in 0..FANOUT {
+            rebuild
+                .append_canonical_row((segment_id % 2) as u32, &row)
+                .unwrap();
+        }
+        let mut store = rebuild.finish().unwrap();
+
+        let rewritten = normalized_row(&[0], &[251]);
+        for segment_id in (0..FANOUT as u32).rev() {
+            store
+                .preflight_runtime_canonical_rewrite(segment_id, &rewritten)
+                .unwrap();
+            store
+                .preflight_runtime_mutation_backing(&[], u8::MAX)
+                .unwrap();
+            store.commit_prevalidated_runtime_canonical_rewrite(segment_id, &rewritten);
+        }
+        assert_eq!(
+            posting_slots(&store, 0),
+            (0..FANOUT as u32)
+                .rev()
+                .map(|segment_id| segment_id * PAIRS_PER_SEGMENT as u32)
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            store.runtime_semantic_posting_scratch_required(),
+            Ok(FANOUT as u32)
+        );
+
+        let mut too_small = vec![NONE; FANOUT - 1];
+        let mut visits = 0;
+        assert_eq!(
+            store.visit_runtime_semantic_postings(&mut too_small, |_| visits += 1),
+            Err(TemporalStorePreflightError::OutputCapacity {
+                required: FANOUT as u32,
+                provided: FANOUT as u32 - 1,
+            })
+        );
+        assert_eq!(visits, 0);
+
+        let mut scratch = vec![NONE; FANOUT];
+        let mut postings = Vec::new();
+        assert_eq!(
+            store.visit_runtime_semantic_postings(&mut scratch, |posting| postings.push(posting)),
+            Ok(FANOUT as u32)
+        );
+        assert_eq!(
+            postings,
+            (0..FANOUT as u32)
+                .map(|segment_id| TemporalSemanticPosting {
+                    normalized_source: 0,
+                    segment_id,
+                    slot: 0,
+                })
+                .collect::<Vec<_>>()
+        );
     }
 
     #[test]
