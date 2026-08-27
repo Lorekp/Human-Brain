@@ -110,7 +110,23 @@ def test_every_vendored_cargo_file_matches_its_frozen_checksum() -> None:
     vendor_root = ROOT / "src" / "humanbrain" / "_native_src" / "vendor"
     checksum_paths = sorted(vendor_root.glob("*/.cargo-checksum.json"))
 
-    assert len(checksum_paths) == 6
+    assert tuple(path.parent.name for path in checksum_paths) == (
+        "block-buffer",
+        "cfg-if",
+        "cpufeatures",
+        "crossbeam-deque",
+        "crossbeam-epoch",
+        "crossbeam-utils",
+        "crypto-common",
+        "digest",
+        "either",
+        "hybrid-array",
+        "libc",
+        "rayon",
+        "rayon-core",
+        "sha2",
+        "typenum",
+    )
     for checksum_path in checksum_paths:
         crate_root = checksum_path.parent
         record = json.loads(checksum_path.read_text(encoding="utf-8"))
@@ -125,6 +141,15 @@ def test_every_vendored_cargo_file_matches_its_frozen_checksum() -> None:
         for relative_path, expected_digest in expected.items():
             payload = (crate_root / relative_path).read_bytes()
             assert hashlib.sha256(payload).hexdigest() == expected_digest
+
+
+def test_sha2_vendor_closure_fits_the_raised_native_source_bundle_bound() -> None:
+    source_bytes = sum(
+        path.stat().st_size for _name, path in native._native_build_input_paths()
+    )
+
+    assert 8 * 1024 * 1024 < source_bytes <= native._MAX_NATIVE_SOURCE_BUNDLE_BYTES
+    assert native._MAX_NATIVE_SOURCE_BUNDLE_BYTES == 16 * 1024 * 1024
 
 
 def test_native_source_digest_covers_every_recursive_cargo_input(tmp_path: Path) -> None:

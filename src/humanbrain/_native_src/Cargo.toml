@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rayon = "1.12.0"
+sha2 = { version = "0.11.0", default-features = false }
 
 [profile.release]
 codegen-units = 1
