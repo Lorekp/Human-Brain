@@ -235,11 +235,15 @@ class _NativeSpike(ctypes.Structure):
     ]
 
 
-class _NativeStep(ctypes.Structure):
+class _NativeStepV2(ctypes.Structure):
     _fields_ = [
         ("token_id", ctypes.c_uint32),
         ("punished_segments", ctypes.c_uint32),
         ("event_count", ctypes.c_uint64),
+        ("candidate_segments", ctypes.c_uint64),
+        ("matching_segments", ctypes.c_uint64),
+        ("active_segments", ctypes.c_uint64),
+        ("postings_visited", ctypes.c_uint64),
         ("predicted", ctypes.c_uint8),
         ("predicted_columns", ctypes.c_uint8),
         ("allocated_segments", ctypes.c_uint8),
@@ -257,10 +261,10 @@ class _NativeStep(ctypes.Structure):
     ]
 
 
-class _NativeAdvanceRequest(ctypes.Structure):
+class _NativeAdvanceRequestV2(ctypes.Structure):
     _fields_ = [
         ("token_ids", ctypes.POINTER(ctypes.c_uint32)),
-        ("output", ctypes.POINTER(_NativeStep)),
+        ("output", ctypes.POINTER(_NativeStepV2)),
         ("token_count", ctypes.c_uint64),
         ("output_capacity", ctypes.c_uint64),
         ("mode", ctypes.c_uint8),
@@ -360,12 +364,34 @@ def _assert_frozen_abi() -> None:
     )
     _require_frozen_layout(_NativeSpike, 8, 4, (0, 4, 6))
     _require_frozen_layout(
-        _NativeStep,
-        768,
+        _NativeStepV2,
+        800,
         8,
-        (0, 4, 8, 16, 17, 18, 19, 20, 42, 64, 152, 240, 328, 416, 504, 592, 680),
+        (
+            0,
+            4,
+            8,
+            16,
+            24,
+            32,
+            40,
+            48,
+            49,
+            50,
+            51,
+            52,
+            74,
+            96,
+            184,
+            272,
+            360,
+            448,
+            536,
+            624,
+            712,
+        ),
     )
-    _require_frozen_layout(_NativeAdvanceRequest, 40, 8, (0, 8, 16, 24, 32, 33, 34))
+    _require_frozen_layout(_NativeAdvanceRequestV2, 40, 8, (0, 8, 16, 24, 32, 33, 34))
     _require_frozen_layout(
         _NativeReport,
         512,
@@ -905,6 +931,10 @@ class TemporalCircuitStep:
     token_id: int
     punished_segments: int
     event_count: int
+    candidate_segments: int
+    matching_segments: int
+    active_segments: int
+    postings_visited: int
     predicted: bool
     predicted_columns: int
     allocated_segments: int
@@ -1031,7 +1061,7 @@ def _bind_temporal_symbols(library: object) -> None:
         definition_identity = library.humanbrain_temporal_circuit_definition_identity_v1
         create = library.humanbrain_temporal_circuit_runtime_create_v1
         import_checkpoint = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
-        advance = library.humanbrain_temporal_circuit_runtime_advance_block_v1
+        advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
         checkpoint_size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
         checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
         export_checkpoint = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
@@ -1064,7 +1094,7 @@ def _bind_temporal_symbols(library: object) -> None:
     ]
     advance.argtypes = [
         ctypes.c_void_p,
-        ctypes.POINTER(_NativeAdvanceRequest),
+        ctypes.POINTER(_NativeAdvanceRequestV2),
         report_output,
     ]
     checkpoint_size.argtypes = [
@@ -2237,7 +2267,7 @@ def _convert_spikes(values: Sequence[_NativeSpike]) -> tuple[TemporalSpike, ...]
     return tuple(converted)
 
 
-def _convert_step(step: _NativeStep) -> TemporalCircuitStep:
+def _convert_step(step: _NativeStepV2) -> TemporalCircuitStep:
     if step.reserved_zero != 0:
         raise _invariant_error("step reserved field is nonzero")
     if step.predicted not in (0, 1):
@@ -2246,10 +2276,24 @@ def _convert_step(step: _NativeStep) -> TemporalCircuitStep:
         raise _invariant_error("step predicted-column count exceeds the active width")
     if step.allocated_segments > _ACTIVE_COLUMNS:
         raise _invariant_error("step allocation count exceeds the active width")
+    candidate_segments = int(step.candidate_segments)
+    matching_segments = int(step.matching_segments)
+    active_segments = int(step.active_segments)
+    postings_visited = int(step.postings_visited)
+    if matching_segments > candidate_segments:
+        raise _invariant_error("step matching-segment count exceeds candidates")
+    if active_segments > matching_segments:
+        raise _invariant_error("step active-segment count exceeds matches")
+    if candidate_segments > postings_visited:
+        raise _invariant_error("step candidate-segment count exceeds posting visits")
     return TemporalCircuitStep(
         token_id=int(step.token_id),
         punished_segments=int(step.punished_segments),
         event_count=int(step.event_count),
+        candidate_segments=candidate_segments,
+        matching_segments=matching_segments,
+        active_segments=active_segments,
+        postings_visited=postings_visited,
         predicted=bool(step.predicted),
         predicted_columns=int(step.predicted_columns),
         allocated_segments=int(step.allocated_segments),
@@ -2665,10 +2709,10 @@ class NativeTemporalCircuit:
         if reset_before and not normalized:
             raise ValueError("reset_before requires at least one token")
         token_array = (ctypes.c_uint32 * len(normalized))(*normalized)
-        output_array = (_NativeStep * len(normalized))()
+        output_array = (_NativeStepV2 * len(normalized))()
         token_pointer = ctypes.cast(token_array, ctypes.POINTER(ctypes.c_uint32))
-        output_pointer = ctypes.cast(output_array, ctypes.POINTER(_NativeStep))
-        request = _NativeAdvanceRequest(
+        output_pointer = ctypes.cast(output_array, ctypes.POINTER(_NativeStepV2))
+        request = _NativeAdvanceRequestV2(
             token_pointer,
             output_pointer,
             len(normalized),
@@ -2680,7 +2724,7 @@ class NativeTemporalCircuit:
         report = _NativeReport()
         with self._operation_lock:
             handle = self._require_open()
-            returned = self._library.humanbrain_temporal_circuit_runtime_advance_block_v1(
+            returned = self._library.humanbrain_temporal_circuit_runtime_advance_block_v2(
                 handle, ctypes.byref(request), ctypes.byref(report)
             )
             try:

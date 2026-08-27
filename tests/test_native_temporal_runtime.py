@@ -193,7 +193,7 @@ class _FakeTemporalLibrary:
         )
         self.humanbrain_temporal_circuit_runtime_create_v1 = _FakeFunction(self._create)
         self.humanbrain_temporal_circuit_runtime_import_checkpoint_v1 = _FakeFunction(self._import)
-        self.humanbrain_temporal_circuit_runtime_advance_block_v1 = _FakeFunction(self._advance)
+        self.humanbrain_temporal_circuit_runtime_advance_block_v2 = _FakeFunction(self._advance)
         self.humanbrain_temporal_circuit_runtime_checkpoint_size_v1 = _FakeFunction(self._size)
         self.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1 = _FakeFunction(
             self._identity
@@ -260,13 +260,17 @@ class _FakeTemporalLibrary:
             return self.advance_override(  # type: ignore[operator,no-any-return]
                 handle, request, report_out
             )
-        native = _pointed(request, runtime_adapter._NativeAdvanceRequest)
+        native = _pointed(request, runtime_adapter._NativeAdvanceRequestV2)
         report = self._report(report_out)
         for index in range(native.token_count):
             step = native.output[index]
             step.token_id = native.token_ids[index]
             step.punished_segments = index + 3
             step.event_count = index + 101
+            step.candidate_segments = index + 13
+            step.matching_segments = index + 11
+            step.active_segments = index + 7
+            step.postings_visited = index + 1013
             step.predicted = index % 2
             step.predicted_columns = index + 1
             step.allocated_segments = index + 2
@@ -718,12 +722,34 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
             (0, 8, 16, 24, 32, 36, 40, 48, 56, 64, 72),
         ),
         runtime_adapter._NativeSpike: (8, 4, (0, 4, 6)),
-        runtime_adapter._NativeStep: (
-            768,
+        runtime_adapter._NativeStepV2: (
+            800,
             8,
-            (0, 4, 8, 16, 17, 18, 19, 20, 42, 64, 152, 240, 328, 416, 504, 592, 680),
+            (
+                0,
+                4,
+                8,
+                16,
+                24,
+                32,
+                40,
+                48,
+                49,
+                50,
+                51,
+                52,
+                74,
+                96,
+                184,
+                272,
+                360,
+                448,
+                536,
+                624,
+                712,
+            ),
         ),
-        runtime_adapter._NativeAdvanceRequest: (40, 8, (0, 8, 16, 24, 32, 33, 34)),
+        runtime_adapter._NativeAdvanceRequestV2: (40, 8, (0, 8, 16, 24, 32, 33, 34)),
         runtime_adapter._NativeReport: (512, 8, (0, 4, 8, 16, 24, 32, 40, 42, 44, 48)),
     }
     for record, (size, alignment, offsets) in expected_layouts.items():
@@ -766,26 +792,30 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
     report.message_utf8[: len(message)] = message
     assert bytes(report) == report_bytes
 
-    step_bytes = bytearray(768)
+    step_bytes = bytearray(800)
     struct.pack_into(
-        "<IIQBBBB",
+        "<IIQQQQQBBBB",
         step_bytes,
         0,
         0x0A1B_2C3D,
         0x1E2F_4051,
         0x6273_8495_A6B7_C8D9,
+        0x0102_0304_0506_0708,
+        0x1112_1314_1516_1718,
+        0x2122_2324_2526_2728,
+        0x3132_3334_3536_3738,
         1,
         7,
         5,
         0,
     )
-    struct.pack_into("<11H", step_bytes, 20, *(101 + 2 * index for index in range(11)))
-    struct.pack_into("<11H", step_bytes, 42, *(102 + 2 * index for index in range(11)))
+    struct.pack_into("<11H", step_bytes, 52, *(101 + 2 * index for index in range(11)))
+    struct.pack_into("<11H", step_bytes, 74, *(102 + 2 * index for index in range(11)))
     for index in range(55):
         struct.pack_into(
             "<IHH",
             step_bytes,
-            64 + 8 * index,
+            96 + 8 * index,
             0x1020_3040 + index * 0x0001_0101,
             201 + index,
             0,
@@ -794,15 +824,15 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
         struct.pack_into(
             "<I",
             step_bytes,
-            504 + 4 * index,
+            536 + 4 * index,
             0x5060_7080 + index * 0x0001_0003,
         )
-    assert step_bytes[42:64] == bytes.fromhex("660068006a006c006e00700072007400760078007a00")
+    assert step_bytes[74:96] == bytes.fromhex("660068006a006c006e00700072007400760078007a00")
     assert hashlib.sha256(step_bytes).hexdigest() == (
-        "16b918d572aa21cc6323d16545f5567e67f8dde07f6599af911b1180a4825bda"
+        "375b3a3e8996a37633df078068fbf8fb0e5d7863cb8a2276df1e552cbab33f92"
     )
 
-    step = runtime_adapter._NativeStep.from_buffer_copy(step_bytes)
+    step = runtime_adapter._NativeStepV2.from_buffer_copy(step_bytes)
     assert bytes(step) == step_bytes
 
     publication = runtime_adapter._NativeCheckpointPublicationReport()
@@ -1236,7 +1266,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     definition_identity = library.humanbrain_temporal_circuit_definition_identity_v1
     create = library.humanbrain_temporal_circuit_runtime_create_v1
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
-    advance = library.humanbrain_temporal_circuit_runtime_advance_block_v1
+    advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
     size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
     checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
     export = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
@@ -2563,7 +2593,7 @@ def test_advance_error_retains_only_the_committed_prefix(
 
     def fail_third_token(handle: object, request: object, report_out: object) -> int:
         del handle
-        native = _pointed(request, runtime_adapter._NativeAdvanceRequest)
+        native = _pointed(request, runtime_adapter._NativeAdvanceRequestV2)
         for index in range(2):
             native.output[index].token_id = native.token_ids[index]
             native.output[index].event_count = 50 + index
@@ -2603,7 +2633,7 @@ def test_fake_native_transport_defects_fail_as_internal_invariants(
 
     def malformed(handle: object, request: object, report_out: object) -> int:
         del handle
-        native = _pointed(request, runtime_adapter._NativeAdvanceRequest)
+        native = _pointed(request, runtime_adapter._NativeAdvanceRequestV2)
         report = library._report(report_out)
         native.output[0].token_id = native.token_ids[0]
         native.output[0].predicted = 2 if defect == "step-flag" else 0
@@ -2899,7 +2929,7 @@ def test_close_waits_for_inflight_advance_before_destroying_handle(
         entered_native.set()
         if not release_native.wait(timeout=5.0):
             raise AssertionError("test did not release native advance")
-        native = _pointed(request, runtime_adapter._NativeAdvanceRequest)
+        native = _pointed(request, runtime_adapter._NativeAdvanceRequestV2)
         native.output[0].token_id = native.token_ids[0]
         library._report(report_out).completed_prefix = 1
         return 0

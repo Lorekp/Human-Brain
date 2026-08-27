@@ -464,10 +464,14 @@ impl From<SpikeEvent> for TemporalSpikeV1 {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct TemporalCircuitStepV1 {
+pub struct TemporalCircuitStepV2 {
     pub token_id: u32,
     pub punished_segments: u32,
     pub event_count: u64,
+    pub candidate_segments: u64,
+    pub matching_segments: u64,
+    pub active_segments: u64,
+    pub postings_visited: u64,
     pub predicted: u8,
     pub predicted_columns: u8,
     pub allocated_segments: u8,
@@ -484,12 +488,16 @@ pub struct TemporalCircuitStepV1 {
     pub context: [u32; CONTEXT_CELLS],
 }
 
-impl From<TemporalCircuitStep> for TemporalCircuitStepV1 {
+impl From<TemporalCircuitStep> for TemporalCircuitStepV2 {
     fn from(step: TemporalCircuitStep) -> Self {
         Self {
             token_id: step.token_id,
             punished_segments: step.punished_segments,
             event_count: step.event_count,
+            candidate_segments: step.candidate_segments as u64,
+            matching_segments: step.matching_segments as u64,
+            active_segments: step.active_segments as u64,
+            postings_visited: step.postings_visited,
             predicted: u8::from(step.predicted),
             predicted_columns: step.predicted_columns,
             allocated_segments: step.allocated_segments,
@@ -510,9 +518,9 @@ impl From<TemporalCircuitStep> for TemporalCircuitStepV1 {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct TemporalCircuitAdvanceBlockV1Request {
+pub struct TemporalCircuitAdvanceBlockV2Request {
     pub token_ids: *const u32,
-    pub output: *mut TemporalCircuitStepV1,
+    pub output: *mut TemporalCircuitStepV2,
     pub token_count: u64,
     pub output_capacity: u64,
     pub mode: u8,
@@ -1384,9 +1392,9 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_import_checkpoint_v
 /// uninitialized; this function constructs a complete record locally and
 /// publishes it with `ptr::write` only after its token commits.
 #[no_mangle]
-pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_advance_block_v1(
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_advance_block_v2(
     handle: *mut TemporalCircuitRuntimeHandle,
-    request: *const TemporalCircuitAdvanceBlockV1Request,
+    request: *const TemporalCircuitAdvanceBlockV2Request,
     report_out: *mut TemporalCircuitReportV1,
 ) -> u32 {
     if !begin_report(report_out) {
@@ -1459,7 +1467,7 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_advance_block_v1(
         );
     }
     let token_bytes = token_count * size_of::<u32>();
-    let output_bytes = output_capacity * size_of::<TemporalCircuitStepV1>();
+    let output_bytes = output_capacity * size_of::<TemporalCircuitStepV2>();
     if regions_overlap(
         request.token_ids.cast(),
         token_bytes,
@@ -1486,7 +1494,7 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_advance_block_v1(
         };
         match result {
             Ok(step) => {
-                let output = TemporalCircuitStepV1::from(step);
+                let output = TemporalCircuitStepV2::from(step);
                 request.output.add(index).write(output);
                 report.completed_prefix = (index + 1) as u64;
             }
@@ -2634,57 +2642,61 @@ mod tests {
         assert_eq!(offset_of!(TemporalSpikeV1, tick), 4);
         assert_eq!(offset_of!(TemporalSpikeV1, reserved_zero), 6);
 
-        assert_eq!(size_of::<TemporalCircuitStepV1>(), 768);
-        assert_eq!(align_of::<TemporalCircuitStepV1>(), 8);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, token_id), 0);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, punished_segments), 4);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, event_count), 8);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, predicted), 16);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, predicted_columns), 17);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, allocated_segments), 18);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, reserved_zero), 19);
+        assert_eq!(size_of::<TemporalCircuitStepV2>(), 800);
+        assert_eq!(align_of::<TemporalCircuitStepV2>(), 8);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, token_id), 0);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, punished_segments), 4);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, event_count), 8);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, candidate_segments), 16);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, matching_segments), 24);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, active_segments), 32);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, postings_visited), 40);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, predicted), 48);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, predicted_columns), 49);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, allocated_segments), 50);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, reserved_zero), 51);
         assert_eq!(
-            offset_of!(TemporalCircuitStepV1, inhibition_onset_ticks),
-            20
+            offset_of!(TemporalCircuitStepV2, inhibition_onset_ticks),
+            52
         );
         assert_eq!(
-            offset_of!(TemporalCircuitStepV1, column_simulated_ticks),
-            42
+            offset_of!(TemporalCircuitStepV2, column_simulated_ticks),
+            74
         );
-        assert_eq!(offset_of!(TemporalCircuitStepV1, winner_spikes), 64);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, basket_spikes), 152);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, proximal_spikes), 240);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, winner_spikes), 96);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, basket_spikes), 184);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, proximal_spikes), 272);
         assert_eq!(
-            offset_of!(TemporalCircuitStepV1, proximal_relay_spikes),
-            328
+            offset_of!(TemporalCircuitStepV2, proximal_relay_spikes),
+            360
         );
-        assert_eq!(offset_of!(TemporalCircuitStepV1, winner_relay_spikes), 416);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, winner_context), 504);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, proximal_context), 592);
-        assert_eq!(offset_of!(TemporalCircuitStepV1, context), 680);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, winner_relay_spikes), 448);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, winner_context), 536);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, proximal_context), 624);
+        assert_eq!(offset_of!(TemporalCircuitStepV2, context), 712);
 
-        assert_eq!(size_of::<TemporalCircuitAdvanceBlockV1Request>(), 40);
-        assert_eq!(align_of::<TemporalCircuitAdvanceBlockV1Request>(), 8);
+        assert_eq!(size_of::<TemporalCircuitAdvanceBlockV2Request>(), 40);
+        assert_eq!(align_of::<TemporalCircuitAdvanceBlockV2Request>(), 8);
         assert_eq!(
-            offset_of!(TemporalCircuitAdvanceBlockV1Request, token_ids),
+            offset_of!(TemporalCircuitAdvanceBlockV2Request, token_ids),
             0
         );
-        assert_eq!(offset_of!(TemporalCircuitAdvanceBlockV1Request, output), 8);
+        assert_eq!(offset_of!(TemporalCircuitAdvanceBlockV2Request, output), 8);
         assert_eq!(
-            offset_of!(TemporalCircuitAdvanceBlockV1Request, token_count),
+            offset_of!(TemporalCircuitAdvanceBlockV2Request, token_count),
             16
         );
         assert_eq!(
-            offset_of!(TemporalCircuitAdvanceBlockV1Request, output_capacity),
+            offset_of!(TemporalCircuitAdvanceBlockV2Request, output_capacity),
             24
         );
-        assert_eq!(offset_of!(TemporalCircuitAdvanceBlockV1Request, mode), 32);
+        assert_eq!(offset_of!(TemporalCircuitAdvanceBlockV2Request, mode), 32);
         assert_eq!(
-            offset_of!(TemporalCircuitAdvanceBlockV1Request, reset_before),
+            offset_of!(TemporalCircuitAdvanceBlockV2Request, reset_before),
             33
         );
         assert_eq!(
-            offset_of!(TemporalCircuitAdvanceBlockV1Request, reserved_zero),
+            offset_of!(TemporalCircuitAdvanceBlockV2Request, reserved_zero),
             34
         );
 
@@ -2744,10 +2756,14 @@ mod tests {
                 0x5060_7080 + (n as u32) * 0x0001_0003
             })
         });
-        let step = TemporalCircuitStepV1 {
+        let step = TemporalCircuitStepV2 {
             token_id: 0x0A1B_2C3D,
             punished_segments: 0x1E2F_4051,
             event_count: 0x6273_8495_A6B7_C8D9,
+            candidate_segments: 0x0102_0304_0506_0708,
+            matching_segments: 0x1112_1314_1516_1718,
+            active_segments: 0x2122_2324_2526_2728,
+            postings_visited: 0x3132_3334_3536_3738,
             predicted: 1,
             predicted_columns: 7,
             allocated_segments: 5,
@@ -2765,20 +2781,22 @@ mod tests {
         };
         let step_bytes = raw_bytes(&step);
         assert_eq!(
-            &step_bytes[..20],
-            &hex_bytes("3d2c1b0a51402f1ed9c8b7a69584736201070500")[..]
+            &step_bytes[..52],
+            &hex_bytes(
+                "3d2c1b0a51402f1ed9c8b7a695847362080706050403020118171615141312112827262524232221383736353433323101070500"
+            )[..]
         );
         assert_eq!(
-            &step_bytes[20..42],
+            &step_bytes[52..74],
             &hex_bytes("6500670069006b006d006f0071007300750077007900")[..]
         );
         assert_eq!(
-            &step_bytes[42..64],
+            &step_bytes[74..96],
             &hex_bytes("660068006a006c006e00700072007400760078007a00")[..]
         );
         assert_eq!(
             hex_digest(step_bytes),
-            "16b918d572aa21cc6323d16545f5567e67f8dde07f6599af911b1180a4825bda"
+            "375b3a3e8996a37633df078068fbf8fb0e5d7863cb8a2276df1e552cbab33f92"
         );
     }
 
@@ -3117,11 +3135,11 @@ mod tests {
     unsafe fn advance(
         handle: *mut TemporalCircuitRuntimeHandle,
         tokens: &[u32],
-        output: *mut TemporalCircuitStepV1,
+        output: *mut TemporalCircuitStepV2,
         output_capacity: u64,
         reset_before: u8,
     ) -> (u32, TemporalCircuitReportV1) {
-        let request = TemporalCircuitAdvanceBlockV1Request {
+        let request = TemporalCircuitAdvanceBlockV2Request {
             token_ids: if tokens.is_empty() {
                 ptr::null()
             } else {
@@ -3135,7 +3153,7 @@ mod tests {
             reserved_zero: [0; 6],
         };
         let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
-        let status = humanbrain_temporal_circuit_runtime_advance_block_v1(
+        let status = humanbrain_temporal_circuit_runtime_advance_block_v2(
             handle,
             &request,
             report.as_mut_ptr(),
@@ -3143,16 +3161,20 @@ mod tests {
         (status, report.assume_init())
     }
 
-    fn sentinel_step(token_id: u32) -> TemporalCircuitStepV1 {
+    fn sentinel_step(token_id: u32) -> TemporalCircuitStepV2 {
         let spike = TemporalSpikeV1 {
             cell_id: 0xa1b2_c3d4,
             tick: 0x5e6f,
             reserved_zero: 0,
         };
-        TemporalCircuitStepV1 {
+        TemporalCircuitStepV2 {
             token_id,
             punished_segments: 0x1122_3344,
             event_count: u64::MAX,
+            candidate_segments: u64::MAX,
+            matching_segments: u64::MAX,
+            active_segments: u64::MAX,
+            postings_visited: u64::MAX,
             predicted: 0,
             predicted_columns: 0,
             allocated_segments: 0,
@@ -3373,7 +3395,7 @@ mod tests {
         unsafe {
             let (handle, _) = import_fixture(&fixture);
 
-            let mut ordinary = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut ordinary = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             let (status, report) = advance(handle, &[7], ordinary.as_mut_ptr(), 1, 0);
             assert_eq!(status, TEMPORAL_RUNTIME_OK);
             assert_eq!(report.completed_prefix, 1);
@@ -3383,18 +3405,18 @@ mod tests {
             assert_eq!(status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
             assert_eq!(report.completed_prefix, 0);
 
-            let mut unknown_output = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut unknown_output = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             let (status, report) = advance(handle, &[99], unknown_output.as_mut_ptr(), 1, 1);
             assert_eq!(status, TEMPORAL_RUNTIME_UNKNOWN_TOKEN);
             assert_eq!(report.completed_prefix, 0);
             assert_eq!(report.observed, 99);
 
-            let mut after_unknown = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut after_unknown = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             let (status, _) = advance(handle, &[7], after_unknown.as_mut_ptr(), 1, 0);
             assert_eq!(status, TEMPORAL_RUNTIME_OK);
             assert_eq!(after_unknown.assume_init().event_count, 3);
 
-            let mut reset = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut reset = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             let (status, _) = advance(handle, &[7], reset.as_mut_ptr(), 1, 1);
             assert_eq!(status, TEMPORAL_RUNTIME_OK);
             assert_eq!(reset.assume_init().event_count, 1);
@@ -3404,10 +3426,14 @@ mod tests {
             assert_eq!(report.required, 1);
             assert_eq!(report.observed, 0);
 
-            let sentinel = TemporalCircuitStepV1 {
+            let sentinel = TemporalCircuitStepV2 {
                 token_id: 0xfeed_beef,
                 punished_segments: 0,
                 event_count: u64::MAX,
+                candidate_segments: 0,
+                matching_segments: 0,
+                active_segments: 0,
+                postings_visited: 0,
                 predicted: 0,
                 predicted_columns: 0,
                 allocated_segments: 0,
@@ -3473,7 +3499,7 @@ mod tests {
                 before
             };
 
-            let mut output = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut output = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             let (status, report) = advance(handle, &[7], output.as_mut_ptr(), 1, 1);
             assert_eq!(status, TEMPORAL_RUNTIME_SCIENTIFIC_STOP);
             assert_eq!(report.completed_prefix, 0);
@@ -3561,7 +3587,7 @@ mod tests {
             );
             assert_eq!(exported, fixture.checkpoint);
 
-            let mut step = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut step = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             let (status, report) = advance(handle, &[7], step.as_mut_ptr(), 1, 0);
             assert_eq!(status, TEMPORAL_RUNTIME_OK);
             assert_eq!(report.completed_prefix, 1);
@@ -3627,7 +3653,7 @@ mod tests {
             ] {
                 let mut output = MaybeUninit::new(sentinel_step(0xfeed_beef));
                 let before = raw_bytes(output.assume_init_ref()).to_vec();
-                let request = TemporalCircuitAdvanceBlockV1Request {
+                let request = TemporalCircuitAdvanceBlockV2Request {
                     token_ids: &token,
                     output: output.as_mut_ptr(),
                     token_count: 1,
@@ -3638,7 +3664,7 @@ mod tests {
                 };
                 let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
                 assert_eq!(
-                    humanbrain_temporal_circuit_runtime_advance_block_v1(
+                    humanbrain_temporal_circuit_runtime_advance_block_v2(
                         handle,
                         &request,
                         report.as_mut_ptr(),
@@ -3655,7 +3681,7 @@ mod tests {
             token_backing[token_offset..token_offset + 4].copy_from_slice(&7u32.to_ne_bytes());
             let mut output = MaybeUninit::new(sentinel_step(0xfeed_beef));
             let before = raw_bytes(output.assume_init_ref()).to_vec();
-            let request = TemporalCircuitAdvanceBlockV1Request {
+            let request = TemporalCircuitAdvanceBlockV2Request {
                 token_ids: token_backing.as_ptr().add(token_offset).cast(),
                 output: output.as_mut_ptr(),
                 token_count: 1,
@@ -3666,7 +3692,7 @@ mod tests {
             };
             let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
             assert_eq!(
-                humanbrain_temporal_circuit_runtime_advance_block_v1(
+                humanbrain_temporal_circuit_runtime_advance_block_v2(
                     handle,
                     &request,
                     report.as_mut_ptr(),
@@ -3675,7 +3701,7 @@ mod tests {
             );
             assert_eq!(raw_bytes(output.assume_init_ref()), before.as_slice());
 
-            let overflow_request = TemporalCircuitAdvanceBlockV1Request {
+            let overflow_request = TemporalCircuitAdvanceBlockV2Request {
                 token_ids: &token,
                 output: output.as_mut_ptr(),
                 token_count: u64::MAX,
@@ -3686,7 +3712,7 @@ mod tests {
             };
             let mut overflow_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
             assert_eq!(
-                humanbrain_temporal_circuit_runtime_advance_block_v1(
+                humanbrain_temporal_circuit_runtime_advance_block_v2(
                     handle,
                     &overflow_request,
                     overflow_report.as_mut_ptr(),
@@ -3801,8 +3827,8 @@ mod tests {
                     assert!(!imported.is_null());
                     assert_eq!(export_checkpoint(imported, &fixture.authority), expected);
 
-                    let mut created_step = MaybeUninit::<TemporalCircuitStepV1>::uninit();
-                    let mut imported_step = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+                    let mut created_step = MaybeUninit::<TemporalCircuitStepV2>::uninit();
+                    let mut imported_step = MaybeUninit::<TemporalCircuitStepV2>::uninit();
                     assert_eq!(
                         advance(created, &[7], created_step.as_mut_ptr(), 1, 0).0,
                         TEMPORAL_RUNTIME_OK
@@ -3868,7 +3894,7 @@ mod tests {
                 handle
             };
 
-            let mut first = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut first = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             let (status, report) = advance(handle, &[7], first.as_mut_ptr(), 1, 0);
             assert_eq!(status, TEMPORAL_RUNTIME_OK);
             assert_eq!(report.completed_prefix, 1);
@@ -3881,8 +3907,8 @@ mod tests {
                 import_from_definition(resume_fixture.definition(), &checkpoint);
             assert_eq!(report.status, TEMPORAL_RUNTIME_OK);
 
-            let mut uninterrupted = MaybeUninit::<TemporalCircuitStepV1>::uninit();
-            let mut resumed_step = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut uninterrupted = MaybeUninit::<TemporalCircuitStepV2>::uninit();
+            let mut resumed_step = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             assert_eq!(
                 advance(handle, &[7], uninterrupted.as_mut_ptr(), 1, 0).0,
                 TEMPORAL_RUNTIME_OK
@@ -4237,7 +4263,7 @@ mod tests {
             assert_eq!(report.observed, 824);
             assert_eq!(exported, literal);
 
-            let mut output = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let mut output = MaybeUninit::<TemporalCircuitStepV2>::uninit();
             let (status, report) = advance(handle, &[7], output.as_mut_ptr(), 1, 0);
             assert_eq!(status, TEMPORAL_RUNTIME_OK);
             assert_eq!(report.completed_prefix, 1);

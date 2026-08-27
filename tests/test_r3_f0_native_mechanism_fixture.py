@@ -187,11 +187,29 @@ def test_below_connected_segments_cross_then_emit_physical_predicted_winners(
 
     assert allocated.allocated_segments == ACTIVE_COLUMNS
     assert allocated.predicted_columns == 0
+    assert (
+        allocated.candidate_segments,
+        allocated.matching_segments,
+        allocated.active_segments,
+        allocated.postings_visited,
+    ) == (0, 0, 0, 0)
     assert matching_reinforcement.allocated_segments == 0
     assert matching_reinforcement.predicted_columns == 0
+    assert (
+        matching_reinforcement.candidate_segments,
+        matching_reinforcement.matching_segments,
+        matching_reinforcement.active_segments,
+        matching_reinforcement.postings_visited,
+    ) == (ACTIVE_COLUMNS, ACTIVE_COLUMNS, 0, 10 * ACTIVE_COLUMNS)
     assert active.allocated_segments == 0
     assert active.predicted is True
     assert active.predicted_columns == ACTIVE_COLUMNS
+    assert (
+        active.candidate_segments,
+        active.matching_segments,
+        active.active_segments,
+        active.postings_visited,
+    ) == (ACTIVE_COLUMNS, ACTIVE_COLUMNS, ACTIVE_COLUMNS, 10 * ACTIVE_COLUMNS)
     assert matching_winners == allocated_winners
     assert active_winners == allocated_winners
     assert all(
