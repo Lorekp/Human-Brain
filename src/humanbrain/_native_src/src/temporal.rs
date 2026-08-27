@@ -169,6 +169,7 @@ pub struct TemporalStore {
     best_active: Vec<u32>,
     touched_owners: Vec<u32>,
     generation: u32,
+    posting_validation_generation: u32,
     poisoned: u32,
 }
 
@@ -188,7 +189,7 @@ impl TemporalStore {
             || config.owner_count > u32::MAX as usize
             || config.segment_capacity == 0
             || config.segment_capacity > (u32::MAX as usize) / PAIRS_PER_SEGMENT
-            || (config.source_gid_base as u64 + config.source_count as u64) > (u32::MAX as u64 + 1)
+            || (config.source_gid_base as u64 + config.source_count as u64) > u32::MAX as u64
             || !(1..=500).contains(&config.connected_permanence_ticks)
             || !(1 <= config.theta_match
                 && config.theta_match <= config.theta_active
@@ -221,6 +222,7 @@ impl TemporalStore {
             best_active: filled_vec(config.owner_count, NONE)?,
             touched_owners: reserved_vec(owner_result_capacity)?,
             generation: 0,
+            posting_validation_generation: 0,
             poisoned: TEMPORAL_OK,
         })
     }
@@ -231,6 +233,9 @@ impl TemporalStore {
     }
 
     fn normalize_source(&self, source_gid: u32) -> Option<u32> {
+        if source_gid == NONE {
+            return None;
+        }
         let normalized = source_gid.checked_sub(self.config.source_gid_base)?;
         ((normalized as usize) < self.config.source_count).then_some(normalized)
     }
@@ -279,6 +284,7 @@ impl TemporalStore {
         normalized_sources: &[u32],
         permanence_ticks: &[u16],
     ) {
+        self.posting_validation_generation = 0;
         let first_pair = segment_id as usize * PAIRS_PER_SEGMENT;
         for pair_index in first_pair..first_pair + PAIRS_PER_SEGMENT {
             if self.sources[pair_index] != NONE {
@@ -413,6 +419,14 @@ impl TemporalStore {
         self.owners.get(segment_id as usize).copied()
     }
 
+    /// Return an authoritative owner during the no-fail commit phase.
+    ///
+    /// The caller may use this infallible seam only after the same transaction
+    /// has preflighted `segment_id` and the complete store backing.
+    pub(crate) fn commit_prevalidated_runtime_segment_owner(&self, segment_id: u32) -> u32 {
+        self.owners[segment_id as usize]
+    }
+
     fn validate_normalized_row(
         &self,
         row: &TemporalSegmentRow,
@@ -482,10 +496,145 @@ impl TemporalStore {
         Ok(())
     }
 
-    fn preflight_existing_segment_postings(
+    fn preflight_posting_pair_local(
         &self,
-        segment_id: u32,
+        pair_slot: u32,
+        source: u32,
     ) -> Result<(), TemporalStorePreflightError> {
+        let pair_index = pair_slot as usize;
+        let Some(meta) = self.source_meta.get(source as usize).copied() else {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        };
+        if self.sources.get(pair_index).copied() != Some(source) {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        let Some(previous) = self.prev_pair.get(pair_index).copied() else {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        };
+        let Some(next) = self.next_pair.get(pair_index).copied() else {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        };
+        if previous == pair_slot
+            || next == pair_slot
+            || (previous != NONE && previous == next)
+            || (meta.live_count == 1 && (previous != NONE || next != NONE))
+            || (meta.live_count > 1 && previous == NONE && next == NONE)
+        {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        let previous_valid = if previous == NONE {
+            meta.head == pair_slot
+        } else {
+            let previous_index = previous as usize;
+            self.sources.get(previous_index).copied() == Some(source)
+                && self.next_pair.get(previous_index).copied() == Some(pair_slot)
+                && self.prev_pair.get(previous_index).copied() != Some(pair_slot)
+        };
+        let next_valid = if next == NONE {
+            meta.tail == pair_slot
+        } else {
+            let next_index = next as usize;
+            self.sources.get(next_index).copied() == Some(source)
+                && self.prev_pair.get(next_index).copied() == Some(pair_slot)
+                && self.next_pair.get(next_index).copied() != Some(pair_slot)
+        };
+        if meta.live_count == 0 || !previous_valid || !next_valid {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        Ok(())
+    }
+
+    /// Prove one touched source's complete declared posting chain exactly once
+    /// per aggregate mutation preflight. `source_stamps` is scratch after
+    /// recognition, so a fresh generation deduplicates high-fanout sources
+    /// without allocating another source-domain array.
+    fn preflight_source_posting_chain(
+        &mut self,
+        source: u32,
+        required_pair_slot: Option<u32>,
+    ) -> Result<(), TemporalStorePreflightError> {
+        let source_index = source as usize;
+        let Some(meta) = self.source_meta.get(source_index).copied() else {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        };
+        let validation_generation = self.posting_validation_generation;
+        if validation_generation != 0
+            && self.source_stamps.get(source_index).copied() == Some(validation_generation)
+        {
+            if let Some(pair_slot) = required_pair_slot {
+                // A valid store is built from empty chains and mutated only by
+                // the splice primitives below. Once this source's complete
+                // chain is proved in the current transaction, reciprocal local
+                // membership is sufficient for another touched pair.
+                self.preflight_posting_pair_local(pair_slot, source)?;
+            }
+            return Ok(());
+        }
+
+        let live_count = meta.live_count as usize;
+        if live_count > self.owners.len()
+            || (live_count == 0 && (meta.head != NONE || meta.tail != NONE))
+            || (live_count != 0 && (meta.head == NONE || meta.tail == NONE))
+        {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+
+        let mut pair_slot = meta.head;
+        let mut previous = NONE;
+        let mut visited = 0usize;
+        let mut required_found = required_pair_slot.is_none();
+        while pair_slot != NONE {
+            if visited >= live_count || visited >= self.sources.len() {
+                return Err(TemporalStorePreflightError::BackingInvariant);
+            }
+            let pair_index = pair_slot as usize;
+            if self.sources.get(pair_index).copied() != Some(source)
+                || self.prev_pair.get(pair_index).copied() != Some(previous)
+            {
+                return Err(TemporalStorePreflightError::BackingInvariant);
+            }
+            let segment_id = (pair_index / PAIRS_PER_SEGMENT) as u32;
+            let row = self.runtime_segment_row(segment_id)?;
+            let row_slot = pair_index % PAIRS_PER_SEGMENT;
+            if row_slot >= usize::from(row.live_pair_count)
+                || row.normalized_sources[row_slot] != source
+            {
+                return Err(TemporalStorePreflightError::BackingInvariant);
+            }
+            required_found |= required_pair_slot == Some(pair_slot);
+
+            let Some(next) = self.next_pair.get(pair_index).copied() else {
+                return Err(TemporalStorePreflightError::BackingInvariant);
+            };
+            if next == NONE {
+                if pair_slot != meta.tail {
+                    return Err(TemporalStorePreflightError::BackingInvariant);
+                }
+            } else {
+                let next_index = next as usize;
+                if self.sources.get(next_index).copied() != Some(source)
+                    || self.prev_pair.get(next_index).copied() != Some(pair_slot)
+                {
+                    return Err(TemporalStorePreflightError::BackingInvariant);
+                }
+            }
+            previous = pair_slot;
+            pair_slot = next;
+            visited += 1;
+        }
+        if visited != live_count || previous != meta.tail || !required_found {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        if validation_generation != 0 {
+            self.source_stamps[source_index] = validation_generation;
+        }
+        Ok(())
+    }
+
+    fn preflight_existing_segment_postings(
+        &mut self,
+        segment_id: u32,
+    ) -> Result<TemporalSegmentRow, TemporalStorePreflightError> {
         let row = self.runtime_segment_row(segment_id)?;
         let first_pair = segment_id as usize * PAIRS_PER_SEGMENT;
         let live_pair_count = usize::from(row.live_pair_count);
@@ -493,75 +642,39 @@ impl TemporalStore {
             let pair_index = first_pair + slot;
             let pair_slot = pair_index as u32;
             let source = row.normalized_sources[slot];
-            let source_index = source as usize;
-            let meta = self.source_meta[source_index];
-            let previous = self.prev_pair[pair_index];
-            let next = self.next_pair[pair_index];
-            if previous == pair_slot
-                || next == pair_slot
-                || (previous != NONE && previous == next)
-                || (meta.live_count == 1 && (previous != NONE || next != NONE))
-                || (meta.live_count > 1 && previous == NONE && next == NONE)
-            {
-                return Err(TemporalStorePreflightError::BackingInvariant);
-            }
-            let previous_valid = if previous == NONE {
-                meta.head == pair_slot
-            } else {
-                let previous_index = previous as usize;
-                previous_index < self.sources.len()
-                    && self.sources[previous_index] == source
-                    && self.next_pair[previous_index] == pair_slot
-                    && self.prev_pair[previous_index] != pair_slot
-            };
-            let next_valid = if next == NONE {
-                meta.tail == pair_slot
-            } else {
-                let next_index = next as usize;
-                next_index < self.sources.len()
-                    && self.sources[next_index] == source
-                    && self.prev_pair[next_index] == pair_slot
-                    && self.next_pair[next_index] != pair_slot
-            };
-            // These local conditions are sufficient for unlink safety: the
-            // operation updates either an endpoint or two distinct reciprocal
-            // neighbors, and no immediate second edge can retain pair_slot.
-            // Whole-chain acyclicity remains a construction/commit invariant;
-            // rescanning a high-fanout source for every touched row would make
-            // mutation proportional to total store density.
-            if meta.live_count == 0 || !previous_valid || !next_valid {
-                return Err(TemporalStorePreflightError::BackingInvariant);
-            }
+            self.preflight_source_posting_chain(source, Some(pair_slot))?;
+            self.preflight_posting_pair_local(pair_slot, source)?;
         }
         for pair_index in first_pair + live_pair_count..first_pair + PAIRS_PER_SEGMENT {
             if self.next_pair[pair_index] != NONE || self.prev_pair[pair_index] != NONE {
                 return Err(TemporalStorePreflightError::BackingInvariant);
             }
         }
-        Ok(())
+        Ok(row)
     }
 
     /// Validate a normalized fixed row for a later no-fail append commit.
     /// Aggregate backing and owner-load capacity is checked separately after
     /// all prospective append owners are known.
     pub(crate) fn preflight_runtime_canonical_append(
-        &self,
+        &mut self,
         owner: u32,
         row: &TemporalSegmentRow,
     ) -> Result<(), TemporalStorePreflightError> {
-        if self.poisoned != TEMPORAL_OK {
-            return Err(TemporalStorePreflightError::StorePoisoned);
-        }
+        self.preflight_runtime_backing_shape()?;
         if owner as usize >= self.config.owner_count {
             return Err(TemporalStorePreflightError::InvalidOwner);
         }
-        self.validate_normalized_row(row)?;
+        let live_pair_count = self.validate_normalized_row(row)?;
+        for source in row.normalized_sources[..live_pair_count].iter().copied() {
+            self.preflight_source_posting_chain(source, None)?;
+        }
         Ok(())
     }
 
     /// Validate one normalized fixed row for a later no-fail rewrite commit.
     pub(crate) fn preflight_runtime_canonical_rewrite(
-        &self,
+        &mut self,
         segment_id: u32,
         row: &TemporalSegmentRow,
     ) -> Result<(), TemporalStorePreflightError> {
@@ -570,7 +683,10 @@ impl TemporalStore {
             return Err(TemporalStorePreflightError::InvalidSegmentId);
         }
         self.preflight_existing_segment_postings(segment_id)?;
-        self.validate_normalized_row(row)?;
+        let live_pair_count = self.validate_normalized_row(row)?;
+        for source in row.normalized_sources[..live_pair_count].iter().copied() {
+            self.preflight_source_posting_chain(source, None)?;
+        }
         Ok(())
     }
 
@@ -581,7 +697,7 @@ impl TemporalStore {
     /// length is therefore the exact append cardinality. Duplicate owners are
     /// counted together without allocating scratch.
     pub(crate) fn preflight_runtime_mutation_backing(
-        &self,
+        &mut self,
         prospective_append_owners: &[u32],
         max_segments_per_cell: u8,
     ) -> Result<TemporalStoreMutationPreflight, TemporalStorePreflightError> {
@@ -631,8 +747,10 @@ impl TemporalStore {
         }
         let prospective_append_count = u32::try_from(append_count)
             .map_err(|_| TemporalStorePreflightError::SegmentCapacity)?;
+        let first_append_segment_id = self.owners.len() as u32;
+        self.posting_validation_generation = self.next_generation();
         Ok(TemporalStoreMutationPreflight {
-            first_append_segment_id: self.owners.len() as u32,
+            first_append_segment_id,
             prospective_append_count,
         })
     }
@@ -692,6 +810,14 @@ impl TemporalStore {
         if pair_end > self.sources.len() || pair_end > self.permanences.len() {
             return Err(TemporalStorePreflightError::BackingInvariant);
         }
+        let row = self.copy_runtime_segment_row(first_pair, pair_end);
+        if self.validate_normalized_row(&row).is_err() {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        Ok(row)
+    }
+
+    fn copy_runtime_segment_row(&self, first_pair: usize, pair_end: usize) -> TemporalSegmentRow {
         let mut row = TemporalSegmentRow {
             normalized_sources: [NONE; PAIRS_PER_SEGMENT],
             permanence_ticks: [0; PAIRS_PER_SEGMENT],
@@ -706,10 +832,20 @@ impl TemporalStore {
             .iter()
             .position(|source| *source == NONE)
             .unwrap_or(PAIRS_PER_SEGMENT) as u8;
-        if self.validate_normalized_row(&row).is_err() {
-            return Err(TemporalStorePreflightError::BackingInvariant);
-        }
-        Ok(row)
+        row
+    }
+
+    /// Copy a canonical row during the no-fail commit phase.
+    ///
+    /// The caller may use this infallible seam only after the same transaction
+    /// has preflighted `segment_id`, its canonical row, and the complete store
+    /// backing. It performs no validation or allocation after commit entry.
+    pub(crate) fn commit_prevalidated_runtime_segment_row(
+        &self,
+        segment_id: u32,
+    ) -> TemporalSegmentRow {
+        let first_pair = segment_id as usize * PAIRS_PER_SEGMENT;
+        self.copy_runtime_segment_row(first_pair, first_pair + PAIRS_PER_SEGMENT)
     }
 
     /// Materialize every active segment from the latest recognition in
@@ -805,6 +941,7 @@ impl TemporalStore {
             return Err(TEMPORAL_INVALID);
         }
 
+        self.posting_validation_generation = 0;
         let generation = self.next_generation();
         for source in context_sources {
             let Some(source_index) = self.normalize_source(*source).map(|value| value as usize)
@@ -821,14 +958,44 @@ impl TemporalStore {
         self.touched_owners.clear();
         let mut postings_visited = 0u64;
         for source in context_sources {
-            let Some(source_index) = self.normalize_source(*source).map(|value| value as usize)
-            else {
+            let Some(normalized_source) = self.normalize_source(*source) else {
                 return Err(TEMPORAL_INVALID);
             };
-            let mut pair_slot = self.source_meta[source_index].head;
+            let source_index = normalized_source as usize;
+            let Some(meta) = self.source_meta.get(source_index).copied() else {
+                return Err(TEMPORAL_INVALID);
+            };
+            let live_count = meta.live_count as usize;
+            if live_count > self.owners.len()
+                || (live_count == 0 && (meta.head != NONE || meta.tail != NONE))
+                || (live_count != 0 && (meta.head == NONE || meta.tail == NONE))
+            {
+                return Err(TEMPORAL_INVALID);
+            }
+            let mut pair_slot = meta.head;
+            let mut previous = NONE;
+            let mut visited = 0usize;
             while pair_slot != NONE {
+                if visited >= live_count || visited >= self.sources.len() {
+                    return Err(TEMPORAL_INVALID);
+                }
+                let pair_index = pair_slot as usize;
+                if self.sources.get(pair_index).copied() != Some(normalized_source)
+                    || self.prev_pair.get(pair_index).copied() != Some(previous)
+                {
+                    return Err(TEMPORAL_INVALID);
+                }
                 let segment_id = pair_slot / PAIRS_PER_SEGMENT as u32;
                 let segment_index = segment_id as usize;
+                if segment_index >= self.owners.len()
+                    || segment_index >= self.segment_stamps.len()
+                    || segment_index >= self.potential_contacts.len()
+                    || segment_index >= self.connected_contacts.len()
+                    || pair_index >= self.permanences.len()
+                    || pair_index >= self.next_pair.len()
+                {
+                    return Err(TEMPORAL_INVALID);
+                }
                 if self.segment_stamps[segment_index] != generation {
                     self.segment_stamps[segment_index] = generation;
                     self.potential_contacts[segment_index] = 0;
@@ -839,8 +1006,26 @@ impl TemporalStore {
                 if self.permanences[pair_slot as usize] >= self.config.connected_permanence_ticks {
                     self.connected_contacts[segment_index] += PHYSICAL_CONTACTS_PER_PAIR;
                 }
-                postings_visited += 1;
-                pair_slot = self.next_pair[pair_slot as usize];
+                postings_visited = postings_visited.checked_add(1).ok_or(TEMPORAL_INVALID)?;
+                let next = self.next_pair[pair_index];
+                if next == NONE {
+                    if pair_slot != meta.tail {
+                        return Err(TEMPORAL_INVALID);
+                    }
+                } else {
+                    let next_index = next as usize;
+                    if self.sources.get(next_index).copied() != Some(normalized_source)
+                        || self.prev_pair.get(next_index).copied() != Some(pair_slot)
+                    {
+                        return Err(TEMPORAL_INVALID);
+                    }
+                }
+                previous = pair_slot;
+                pair_slot = next;
+                visited += 1;
+            }
+            if visited != live_count || previous != meta.tail {
+                return Err(TEMPORAL_INVALID);
             }
         }
         self.touched_segments.sort_unstable();
@@ -1380,15 +1565,15 @@ mod tests {
             assert_eq!(size_of::<TemporalStoreConfig>(), 40);
             assert_eq!(size_of::<TemporalOwnerDiagnostic>(), 16);
             assert_eq!(size_of::<TemporalPrepareSummary>(), 48);
-            assert_eq!(size_of::<TemporalStore>(), 432);
+            assert_eq!(size_of::<TemporalStore>(), 440);
         }
         assert_eq!(size_of::<SourceMeta>(), 12);
     }
 
     #[test]
     fn c1_intrusive_store_logical_payload_layout_is_exact() {
-        // Element payloads requested from Vec; allocator metadata and the
-        // separately pinned TemporalStore header are intentionally excluded.
+        // Element payloads requested from Vec plus the separately pinned
+        // TemporalStore header. Allocator metadata remains excluded.
         const SOURCES: usize = 131_072;
         const OWNERS: usize = 131_072;
         const SEGMENTS: usize = 23_286_406;
@@ -1407,6 +1592,8 @@ mod tests {
         const OWNER_SCRATCH: usize = OWNERS * size_of::<u32>() * 4;
         const NATIVE_RESERVED_PAYLOAD: usize =
             LEARNED_SOA + INTRUSIVE_INDEX + SOURCE_SCRATCH + SEGMENT_SCRATCH + OWNER_SCRATCH;
+        const STORE_HEADER: usize = 440;
+        const NATIVE_RESIDENT_BYTES: usize = NATIVE_RESERVED_PAYLOAD + STORE_HEADER;
         const PYTHON_DIAGNOSTIC_OUTPUT: usize = OWNERS * size_of::<TemporalOwnerDiagnostic>();
 
         assert_eq!(PAIRS, 232_864_060);
@@ -1416,10 +1603,12 @@ mod tests {
         assert_eq!(SEGMENT_SCRATCH, 232_864_060);
         assert_eq!(OWNER_SCRATCH, 2_097_152);
         assert_eq!(NATIVE_RESERVED_PAYLOAD, 3_590_431_900);
+        assert_eq!(STORE_HEADER, size_of::<TemporalStore>());
+        assert_eq!(NATIVE_RESIDENT_BYTES, 3_590_432_340);
         assert_eq!(PYTHON_DIAGNOSTIC_OUTPUT, 2_097_152);
         assert_eq!(
-            NATIVE_RESERVED_PAYLOAD + PYTHON_DIAGNOSTIC_OUTPUT,
-            3_592_529_052
+            NATIVE_RESIDENT_BYTES + PYTHON_DIAGNOSTIC_OUTPUT,
+            3_592_529_492
         );
     }
 
@@ -1979,6 +2168,21 @@ mod tests {
     }
 
     #[test]
+    fn commit_prevalidated_reads_return_authoritative_owner_and_canonical_row() {
+        let mut store = TemporalStore::new(config(12, 3, 2)).unwrap();
+        let row = normalized_row(&[0, 3, 7], &[250, 375, 500]);
+        assert_eq!(
+            store.allocate_runtime_segment(2, &[100, 103, 107], &[250, 375, 500]),
+            Ok(0)
+        );
+        store.preflight_runtime_mutation_backing(&[], 2).unwrap();
+        store.preflight_runtime_canonical_rewrite(0, &row).unwrap();
+
+        assert_eq!(store.commit_prevalidated_runtime_segment_owner(0), 2);
+        assert_eq!(store.commit_prevalidated_runtime_segment_row(0), row);
+    }
+
+    #[test]
     fn mutation_preflight_failures_are_nonpoisoning_atomic_and_retryable() {
         let mut store = TemporalStore::new(config(10, 2, 256)).unwrap();
         let empty = normalized_row(&[], &[]);
@@ -2038,6 +2242,126 @@ mod tests {
         );
         assert_eq!(canonical_logical_bytes(&store), full_logical);
         assert_eq!(store.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn live_physical_source_domain_reserves_u32_max_for_the_sentinel() {
+        let mut includes_sentinel = config(10, 1, 1);
+        includes_sentinel.source_gid_base = u32::MAX - 9;
+        assert!(matches!(
+            TemporalStore::new(includes_sentinel),
+            Err(TEMPORAL_INVALID)
+        ));
+
+        let mut below_sentinel = config(10, 1, 1);
+        below_sentinel.source_gid_base = u32::MAX - 10;
+        let mut store = TemporalStore::new(below_sentinel).unwrap();
+        let sources: [u32; PAIRS_PER_SEGMENT] =
+            std::array::from_fn(|index| below_sentinel.source_gid_base + index as u32);
+        assert_eq!(sources[PAIRS_PER_SEGMENT - 1], u32::MAX - 1);
+        assert_eq!(
+            store.allocate_runtime_segment(0, &sources, &[250; PAIRS_PER_SEGMENT]),
+            Ok(0)
+        );
+    }
+
+    #[test]
+    fn append_preflight_rejects_a_stale_destination_tail_without_mutation() {
+        let mut store = TemporalStore::new(config(10, 2, 3)).unwrap();
+        assert_eq!(store.allocate_runtime_segment(0, &[100], &[250]), Ok(0));
+        store.source_meta[0].tail = store.sources.len() as u32;
+        let logical_before = canonical_logical_bytes(&store);
+        let segment_count_before = store.runtime_segment_count();
+        let owner_load_before = store.runtime_owner_load(1);
+        let row = normalized_row(&[0], &[250]);
+
+        store.preflight_runtime_mutation_backing(&[1], 2).unwrap();
+        assert_eq!(
+            store.preflight_runtime_canonical_append(1, &row),
+            Err(TemporalStorePreflightError::BackingInvariant)
+        );
+        assert_eq!(canonical_logical_bytes(&store), logical_before);
+        assert_eq!(store.runtime_segment_count(), segment_count_before);
+        assert_eq!(store.runtime_owner_load(1), owner_load_before);
+        assert_eq!(store.poisoned, TEMPORAL_OK);
+    }
+
+    fn reciprocal_three_node_cycle() -> TemporalStore {
+        let mut store = TemporalStore::new(config(10, 3, 4)).unwrap();
+        for owner in 0..3 {
+            assert_eq!(
+                store.allocate_runtime_segment(owner, &[100], &[250]),
+                Ok(owner)
+            );
+        }
+        store.prev_pair[0] = 20;
+        store.next_pair[0] = 10;
+        store.prev_pair[10] = 0;
+        store.next_pair[10] = 20;
+        store.prev_pair[20] = 10;
+        store.next_pair[20] = 0;
+        store
+    }
+
+    #[test]
+    fn rewrite_preflight_rejects_a_reciprocal_three_node_cycle_without_mutation() {
+        let mut store = reciprocal_three_node_cycle();
+        let logical_before = canonical_logical_bytes(&store);
+        let owner_loads_before = [
+            store.runtime_owner_load(0),
+            store.runtime_owner_load(1),
+            store.runtime_owner_load(2),
+        ];
+
+        store.preflight_runtime_mutation_backing(&[], 2).unwrap();
+        assert_eq!(
+            store.preflight_runtime_canonical_rewrite(1, &normalized_row(&[], &[])),
+            Err(TemporalStorePreflightError::BackingInvariant)
+        );
+        assert_eq!(canonical_logical_bytes(&store), logical_before);
+        assert_eq!(
+            [
+                store.runtime_owner_load(0),
+                store.runtime_owner_load(1),
+                store.runtime_owner_load(2),
+            ],
+            owner_loads_before
+        );
+        assert_eq!(store.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn rewrite_preflight_rejects_a_disconnected_target_posting() {
+        let mut store = TemporalStore::new(config(10, 3, 4)).unwrap();
+        for owner in 0..3 {
+            assert_eq!(
+                store.allocate_runtime_segment(owner, &[100], &[250]),
+                Ok(owner)
+            );
+        }
+        store.source_meta[0].tail = 10;
+        store.source_meta[0].live_count = 2;
+        store.next_pair[10] = NONE;
+        store.prev_pair[20] = NONE;
+        let logical_before = canonical_logical_bytes(&store);
+
+        store.preflight_runtime_mutation_backing(&[], 2).unwrap();
+        assert_eq!(
+            store.preflight_runtime_canonical_rewrite(2, &normalized_row(&[], &[])),
+            Err(TemporalStorePreflightError::BackingInvariant)
+        );
+        assert_eq!(canonical_logical_bytes(&store), logical_before);
+        assert_eq!(store.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn recognition_rejects_a_posting_cycle_in_a_bounded_walk() {
+        let mut store = reciprocal_three_node_cycle();
+        let mut diagnostics = [empty_diagnostic(); 3];
+        assert!(matches!(
+            store.recognize_runtime_context(&[100], &mut diagnostics),
+            Err(TEMPORAL_INVALID)
+        ));
     }
 
     #[test]
