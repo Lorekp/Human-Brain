@@ -43,15 +43,18 @@ def _write_build_tree(root: Path) -> None:
     (root / "target" / "release" / "cached.rs").write_bytes(b"not a build input\n")
 
 
-def test_package_data_declares_config_and_recursive_vendored_inputs() -> None:
+def test_package_data_declares_recursive_native_and_vendored_inputs() -> None:
     pyproject = tomllib.loads(
         (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
     )
     patterns = pyproject["tool"]["setuptools"]["package-data"]["humanbrain"]
 
     assert "_native_src/.cargo/config.toml" in patterns
+    assert "_native_src/src/**/*.rs" in patterns
+    assert "_native_src/src/**/*.cu" in patterns
     assert "_native_src/vendor/**/*" in patterns
     assert "_native_src/vendor/**/.*" in patterns
+    assert "_native_src/vendor/**/.*/**/*" in patterns
 
 
 def test_native_manifest_remains_its_own_workspace_under_a_hostile_parent(
