@@ -8,6 +8,7 @@ import hashlib
 import importlib
 import inspect
 import math
+import mmap
 import os
 import platform
 import struct
@@ -26,6 +27,12 @@ from humanbrain.native_temporal_runtime import (
     NativeTemporalCircuitDefinition,
     NativeTemporalRuntimeError,
     NativeTemporalRuntimeStatus,
+    TemporalCheckpointCleanup,
+    TemporalCheckpointErrorDomain,
+    TemporalCheckpointErrorStage,
+    TemporalCheckpointPublication,
+    TemporalCheckpointPublicationError,
+    TemporalCheckpointPublicationOutcome,
     TemporalContextPolicy,
     TemporalPlasticityPolicy,
     TemporalStepMode,
@@ -74,16 +81,28 @@ def _pointed(pointer: object, record: type[ctypes.Structure]) -> ctypes.Structur
     return ctypes.cast(pointer, ctypes.POINTER(record)).contents
 
 
+def _basic_checkpoint_v1(size: int = 256) -> bytes:
+    checkpoint = bytearray(size)
+    checkpoint[:8] = b"R3NTCP1\x00"
+    struct.pack_into("<HH", checkpoint, 8, 1, 256)
+    struct.pack_into("<Q", checkpoint, 16, size)
+    return bytes(checkpoint)
+
+
 class _FakeTemporalLibrary:
     def __init__(self) -> None:
-        self.checkpoint_bytes = b"CPV1" + bytes(range(252))
+        self.checkpoint_bytes = _basic_checkpoint_v1()
         self.destroyed: list[int] = []
         self.next_handle = 0x1234
         self.create_calls = 0
         self.import_calls = 0
         self.size_calls = 0
         self.export_calls = 0
+        self.publish_calls = 0
+        self.published_paths: list[tuple[bytes, bytes]] = []
         self.advance_override: object | None = None
+        self.import_override: object | None = None
+        self.publish_override: object | None = None
         self.humanbrain_temporal_circuit_runtime_create_v1 = _FakeFunction(self._create)
         self.humanbrain_temporal_circuit_runtime_import_checkpoint_v1 = _FakeFunction(
             self._import
@@ -96,6 +115,9 @@ class _FakeTemporalLibrary:
         )
         self.humanbrain_temporal_circuit_runtime_export_checkpoint_v1 = _FakeFunction(
             self._export
+        )
+        self.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1 = (
+            _FakeFunction(self._publish)
         )
         self.humanbrain_temporal_circuit_runtime_destroy = _FakeFunction(self._destroy)
 
@@ -121,6 +143,10 @@ class _FakeTemporalLibrary:
 
     def _import(self, request: object, handle_out: object, report_out: object) -> int:
         self.import_calls += 1
+        if self.import_override is not None:
+            return self.import_override(  # type: ignore[operator,no-any-return]
+                request, handle_out, report_out
+            )
         native = _pointed(request, runtime_adapter._NativeImportRequest)
         assert ctypes.string_at(native.checkpoint_bytes, native.checkpoint_len) == (
             self.checkpoint_bytes
@@ -185,6 +211,46 @@ class _FakeTemporalLibrary:
         report.observed = len(self.checkpoint_bytes)
         return 0
 
+    def _publish(
+        self,
+        handle: object,
+        authority: object,
+        request: object,
+        publication_out: object,
+        report_out: object,
+    ) -> int:
+        self.publish_calls += 1
+        native_request = _pointed(
+            request, runtime_adapter._NativeCheckpointPathRequest
+        )
+        self.published_paths.append(
+            (
+                ctypes.string_at(native_request.parent_utf8, native_request.parent_len),
+                ctypes.string_at(
+                    native_request.final_basename_utf8,
+                    native_request.final_basename_len,
+                ),
+            )
+        )
+        if self.publish_override is not None:
+            return self.publish_override(  # type: ignore[operator,no-any-return]
+                handle, authority, request, publication_out, report_out
+            )
+        del handle, authority
+        publication = _pointed(
+            publication_out, runtime_adapter._NativeCheckpointPublicationReport
+        )
+        publication.outcome = TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED
+        publication.temp_cleanup = TemporalCheckpointCleanup.CLEAN
+        publication.owned_temp_pid = 123
+        publication.owned_temp_nonce = 456
+        publication.checkpoint_bytes = len(self.checkpoint_bytes)
+        publication.encoded_bytes = len(self.checkpoint_bytes)
+        report = self._report(report_out)
+        report.required = len(self.checkpoint_bytes)
+        report.observed = len(self.checkpoint_bytes)
+        return 0
+
     def _destroy(self, handle: object) -> None:
         value = handle.value if isinstance(handle, ctypes.c_void_p) else int(handle)
         self.destroyed.append(value)
@@ -208,6 +274,66 @@ def _install_fake_runtime(
         lambda: identity.source_digest,
     )
     return library, identity
+
+
+def _set_publication_error(
+    error: runtime_adapter._NativeCheckpointPublicationError,
+    stage: TemporalCheckpointErrorStage,
+    domain: TemporalCheckpointErrorDomain,
+    code: int,
+) -> None:
+    error.stage = stage
+    error.domain = domain
+    error.code = code
+
+
+def _completion_override(
+    library: _FakeTemporalLibrary,
+    outcome: TemporalCheckpointPublicationOutcome,
+    *,
+    cleanup: TemporalCheckpointCleanup,
+    primary: tuple[
+        TemporalCheckpointErrorStage, TemporalCheckpointErrorDomain, int
+    ]
+    | None = None,
+    cleanup_errors: tuple[
+        tuple[TemporalCheckpointErrorStage, TemporalCheckpointErrorDomain, int],
+        ...,
+    ] = (),
+) -> object:
+    def complete(
+        handle: object,
+        authority: object,
+        request: object,
+        publication_out: object,
+        report_out: object,
+    ) -> int:
+        del handle, authority, request
+        publication = _pointed(
+            publication_out, runtime_adapter._NativeCheckpointPublicationReport
+        )
+        publication.outcome = outcome
+        publication.temp_cleanup = cleanup
+        publication.cleanup_error_count = len(cleanup_errors)
+        if primary is not None:
+            _set_publication_error(publication.primary_error, *primary)
+        for index, error in enumerate(cleanup_errors):
+            _set_publication_error(publication.cleanup_errors[index], *error)
+        if cleanup is not TemporalCheckpointCleanup.NOT_APPLICABLE:
+            publication.owned_temp_pid = 321
+            publication.owned_temp_nonce = 654
+        publication.checkpoint_bytes = len(library.checkpoint_bytes)
+        publication.encoded_bytes = (
+            0
+            if cleanup is TemporalCheckpointCleanup.NOT_APPLICABLE
+            else len(library.checkpoint_bytes)
+        )
+        report = library._report(report_out)
+        report.required = publication.checkpoint_bytes
+        report.observed = publication.encoded_bytes
+        return 0
+
+    return complete
 
 
 def test_definition_canonicalizes_owned_inputs_without_policy_defaults() -> None:
@@ -290,6 +416,18 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
         runtime_adapter._NativeTokenCode: (48, 4, (0, 4)),
         runtime_adapter._NativeDefinition: (128, 8, (0, 32, 40, 48, 56, 64)),
         runtime_adapter._NativeImportRequest: (144, 8, (0, 128, 136)),
+        runtime_adapter._NativeCheckpointPathRequest: (40, 8, (0, 8, 16, 24, 32)),
+        runtime_adapter._NativeCheckpointPublicationError: (8, 4, (0, 2, 4)),
+        runtime_adapter._NativeCheckpointPublicationReport: (
+            80,
+            8,
+            (0, 2, 3, 4, 12, 44, 48, 56, 64, 72),
+        ),
+        runtime_adapter._PyBuffer: (
+            80,
+            8,
+            (0, 8, 16, 24, 32, 36, 40, 48, 56, 64, 72),
+        ),
         runtime_adapter._NativeSpike: (8, 4, (0, 4, 6)),
         runtime_adapter._NativeStep: (
             768,
@@ -379,6 +517,35 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
 
     step = runtime_adapter._NativeStep.from_buffer_copy(step_bytes)
     assert bytes(step) == step_bytes
+
+    publication = runtime_adapter._NativeCheckpointPublicationReport()
+    publication.outcome = 4
+    publication.temp_cleanup = 2
+    publication.cleanup_error_count = 4
+    publication.primary_error.stage = 9
+    publication.primary_error.domain = 2
+    publication.primary_error.code = 0x1122_3344
+    publication.cleanup_errors[0].stage = 10
+    publication.cleanup_errors[0].domain = 3
+    publication.cleanup_errors[0].code = 0x0102_0304
+    publication.cleanup_errors[1].stage = 11
+    publication.cleanup_errors[1].domain = 1
+    publication.cleanup_errors[1].code = 0x5566_7788
+    publication.cleanup_errors[2].stage = 7
+    publication.cleanup_errors[2].domain = 2
+    publication.cleanup_errors[2].code = 0x99AA_BBCC
+    publication.cleanup_errors[3].stage = 8
+    publication.cleanup_errors[3].domain = 4
+    publication.cleanup_errors[3].code = 0xDDEE_FF00
+    publication.owned_temp_pid = 0xA1B2_C3D4
+    publication.owned_temp_nonce = 0x0102_0304_0506_0708
+    publication.checkpoint_bytes = 0x1112_1314_1516_1718
+    publication.encoded_bytes = 0x2122_2324_2526_2728
+    assert bytes(publication) == bytes.fromhex(
+        "0400020409000200443322110a000300040302010b00010088776655"
+        "07000200ccbbaa990800040000ffeeddd4c3b2a10807060504030201"
+        "181716151413121128272625242322210000000000000000"
+    )
 
 
 def test_frozen_abi_rejects_little_endian_arm64(
@@ -525,12 +692,33 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     assert set(NativeTemporalRuntimeStatus) == {
         NativeTemporalRuntimeStatus(code) for code in range(11)
     }
+    assert {
+        member.name: member.value for member in TemporalCheckpointPublicationOutcome
+    } == {
+        "DURABLE_PUBLISHED": 1,
+        "COLLISION": 2,
+        "NOT_PUBLISHED": 3,
+        "PUBLISHED_BUT_NOT_CONFIRMED_DURABLE": 4,
+    }
+    assert {member.name: member.value for member in TemporalCheckpointCleanup} == {
+        "NOT_APPLICABLE": 0,
+        "CLEAN": 1,
+        "ORPHANED": 2,
+    }
+    assert {member.value for member in TemporalCheckpointErrorDomain} == set(range(6))
+    assert {member.value for member in TemporalCheckpointErrorStage} == set(range(12))
     assert set(runtime_adapter.__all__) == {
         "NativeTemporalCircuit",
         "NativeTemporalCircuitConfig",
         "NativeTemporalCircuitDefinition",
         "NativeTemporalRuntimeError",
         "NativeTemporalRuntimeStatus",
+        "TemporalCheckpointCleanup",
+        "TemporalCheckpointErrorDomain",
+        "TemporalCheckpointErrorStage",
+        "TemporalCheckpointPublication",
+        "TemporalCheckpointPublicationError",
+        "TemporalCheckpointPublicationOutcome",
         "TemporalCircuitStep",
         "TemporalContextPolicy",
         "TemporalPlasticityPolicy",
@@ -540,14 +728,15 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     for method in (
         NativeTemporalCircuit.fresh,
         NativeTemporalCircuit.from_checkpoint,
+        NativeTemporalCircuit.from_checkpoint_path,
         NativeTemporalCircuit.advance_block,
+        NativeTemporalCircuit.publish_checkpoint,
         NativeTemporalCircuit.checkpoint,
     ):
         parameters = set(inspect.signature(method).parameters)
         assert not parameters.intersection(
             {
                 "authority",
-                "path",
                 "current",
                 "currents",
                 "winner",
@@ -556,20 +745,705 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
                 "contexts",
             }
         )
+    for method in (
+        NativeTemporalCircuit.fresh,
+        NativeTemporalCircuit.from_checkpoint,
+        NativeTemporalCircuit.advance_block,
+        NativeTemporalCircuit.checkpoint,
+    ):
+        assert "path" not in inspect.signature(method).parameters
+    assert set(inspect.signature(NativeTemporalCircuit.from_checkpoint_path).parameters) == {
+        "definition",
+        "path",
+    }
+    assert set(inspect.signature(NativeTemporalCircuit.publish_checkpoint).parameters) == {
+        "self",
+        "destination",
+    }
 
     create = library.humanbrain_temporal_circuit_runtime_create_v1
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
     advance = library.humanbrain_temporal_circuit_runtime_advance_block_v1
     size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
     export = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
+    publish = (
+        library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1
+    )
     destroy = library.humanbrain_temporal_circuit_runtime_destroy
-    functions = (create, imported, advance, size, export, destroy)
-    assert [len(function.argtypes or ()) for function in functions] == [3, 3, 3, 3, 5, 1]
+    functions = (create, imported, advance, size, export, publish, destroy)
+    assert [len(function.argtypes or ()) for function in functions] == [3, 3, 3, 3, 5, 5, 1]
     assert all(
         function.restype is ctypes.c_uint32
-        for function in (create, imported, advance, size, export)
+        for function in (create, imported, advance, size, export, publish)
     )
     assert destroy.restype is None
+
+
+@pytest.mark.parametrize(
+    ("outcome", "cleanup", "primary", "resumable"),
+    (
+        (
+            TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED,
+            TemporalCheckpointCleanup.CLEAN,
+            None,
+            True,
+        ),
+        (
+            TemporalCheckpointPublicationOutcome.COLLISION,
+            TemporalCheckpointCleanup.CLEAN,
+            None,
+            False,
+        ),
+        (
+            TemporalCheckpointPublicationOutcome.NOT_PUBLISHED,
+            TemporalCheckpointCleanup.NOT_APPLICABLE,
+            (
+                TemporalCheckpointErrorStage.PARENT_OPEN,
+                TemporalCheckpointErrorDomain.POLICY,
+                1,
+            ),
+            False,
+        ),
+        (
+            TemporalCheckpointPublicationOutcome.PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
+            TemporalCheckpointCleanup.CLEAN,
+            (
+                TemporalCheckpointErrorStage.PARENT_SYNC,
+                TemporalCheckpointErrorDomain.POSIX,
+                5,
+            ),
+            False,
+        ),
+    ),
+)
+def test_publish_checkpoint_returns_every_completion_outcome_and_only_durable_resumes(
+    monkeypatch: pytest.MonkeyPatch,
+    outcome: TemporalCheckpointPublicationOutcome,
+    cleanup: TemporalCheckpointCleanup,
+    primary: tuple[
+        TemporalCheckpointErrorStage, TemporalCheckpointErrorDomain, int
+    ]
+    | None,
+    resumable: bool,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    library.publish_override = _completion_override(
+        library, outcome, cleanup=cleanup, primary=primary
+    )
+
+    with NativeTemporalCircuit.fresh(_tiny_definition()) as circuit:
+        completion = circuit.publish_checkpoint(Path("folder") / ".." / "state.chk")
+
+    assert completion.outcome is outcome
+    assert completion.temp_cleanup is cleanup
+    assert completion.semantically_resumable is resumable
+    assert completion.primary_error == (
+        None if primary is None else TemporalCheckpointPublicationError(*primary)
+    )
+    assert library.publish_calls == 1
+    with pytest.raises(AttributeError):
+        completion.outcome = TemporalCheckpointPublicationOutcome.COLLISION  # type: ignore[misc]
+
+
+def test_publish_checkpoint_preserves_cleanup_error_order_and_uses_path_lexically(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    cleanup_errors = (
+        (
+            TemporalCheckpointErrorStage.FILE_CLOSE,
+            TemporalCheckpointErrorDomain.WIN32,
+            91,
+        ),
+        (
+            TemporalCheckpointErrorStage.TEMP_CLEANUP,
+            TemporalCheckpointErrorDomain.POLICY,
+            92,
+        ),
+    )
+    library.publish_override = _completion_override(
+        library,
+        TemporalCheckpointPublicationOutcome.NOT_PUBLISHED,
+        cleanup=TemporalCheckpointCleanup.ORPHANED,
+        primary=(
+            TemporalCheckpointErrorStage.ENCODE,
+            TemporalCheckpointErrorDomain.ENCODER,
+            7,
+        ),
+        cleanup_errors=cleanup_errors,
+    )
+    filesystem_calls = 0
+
+    def forbidden_filesystem(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        nonlocal filesystem_calls
+        filesystem_calls += 1
+        raise AssertionError("path publisher wrapper must not touch the filesystem")
+
+    with NativeTemporalCircuit.fresh(_tiny_definition()) as circuit:
+        monkeypatch.setattr(runtime_adapter.os, "lstat", forbidden_filesystem)
+        monkeypatch.setattr(runtime_adapter.os, "open", forbidden_filesystem)
+        destination = Path("lexical-☃") / "nested" / ".." / "final-☃.chk"
+        completion = circuit.publish_checkpoint(destination)
+
+    assert filesystem_calls == 0
+    assert library.published_paths == [
+        (
+            (
+                b"lexical-\xe2\x98\x83\\nested\\.."
+                if os.name == "nt"
+                else b"lexical-\xe2\x98\x83/nested/.."
+            ),
+            b"final-\xe2\x98\x83.chk",
+        )
+    ]
+    assert completion.cleanup_errors == tuple(
+        TemporalCheckpointPublicationError(*error) for error in cleanup_errors
+    )
+
+
+@pytest.mark.parametrize(
+    "defect",
+    (
+        "reserved",
+        "outcome",
+        "cleanup-tag",
+        "cleanup-count",
+        "active-cleanup-zero",
+        "unused-cleanup-active",
+        "malformed-primary",
+        "durable-primary",
+        "clean-with-error",
+        "encoded-overflow",
+        "runtime-length-mismatch",
+        "not-applicable-temp-stage",
+        "temp-backed-pre-temp-stage",
+        "unconfirmed-wrong-stage",
+        "failure-changed-publication",
+    ),
+)
+def test_checkpoint_publication_decoder_rejects_every_malformed_field_cross_product(
+    defect: str,
+) -> None:
+    publication = runtime_adapter._NativeCheckpointPublicationReport()
+    publication.outcome = TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED
+    publication.temp_cleanup = TemporalCheckpointCleanup.CLEAN
+    publication.owned_temp_pid = 123
+    publication.owned_temp_nonce = 456
+    publication.checkpoint_bytes = 256
+    publication.encoded_bytes = 256
+    report = runtime_adapter._NativeReport()
+    report.required = 256
+    report.observed = 256
+    returned: int = NativeTemporalRuntimeStatus.OK
+
+    if defect == "reserved":
+        publication.reserved_zero[7] = 1
+    elif defect == "outcome":
+        publication.outcome = 0
+    elif defect == "cleanup-tag":
+        publication.temp_cleanup = 3
+    elif defect == "cleanup-count":
+        publication.cleanup_error_count = 5
+    elif defect == "active-cleanup-zero":
+        publication.cleanup_error_count = 1
+    elif defect == "unused-cleanup-active":
+        _set_publication_error(
+            publication.cleanup_errors[3],
+            TemporalCheckpointErrorStage.TEMP_CLEANUP,
+            TemporalCheckpointErrorDomain.POLICY,
+            1,
+        )
+    elif defect == "malformed-primary":
+        publication.primary_error.domain = TemporalCheckpointErrorDomain.POLICY
+    elif defect == "durable-primary":
+        _set_publication_error(
+            publication.primary_error,
+            TemporalCheckpointErrorStage.FILE_SYNC,
+            TemporalCheckpointErrorDomain.POSIX,
+            5,
+        )
+    elif defect == "clean-with-error":
+        publication.cleanup_error_count = 1
+        _set_publication_error(
+            publication.cleanup_errors[0],
+            TemporalCheckpointErrorStage.TEMP_CLEANUP,
+            TemporalCheckpointErrorDomain.POLICY,
+            1,
+        )
+    elif defect == "encoded-overflow":
+        publication.encoded_bytes = 257
+        report.observed = 257
+    elif defect == "runtime-length-mismatch":
+        report.required = 257
+    elif defect == "not-applicable-temp-stage":
+        publication.outcome = TemporalCheckpointPublicationOutcome.NOT_PUBLISHED
+        publication.temp_cleanup = TemporalCheckpointCleanup.NOT_APPLICABLE
+        publication.owned_temp_pid = 0
+        publication.owned_temp_nonce = 0
+        publication.encoded_bytes = 0
+        report.observed = 0
+        _set_publication_error(
+            publication.primary_error,
+            TemporalCheckpointErrorStage.ENCODE,
+            TemporalCheckpointErrorDomain.ENCODER,
+            1,
+        )
+    elif defect == "temp-backed-pre-temp-stage":
+        publication.outcome = TemporalCheckpointPublicationOutcome.NOT_PUBLISHED
+        _set_publication_error(
+            publication.primary_error,
+            TemporalCheckpointErrorStage.PARENT_OPEN,
+            TemporalCheckpointErrorDomain.POLICY,
+            1,
+        )
+    elif defect == "unconfirmed-wrong-stage":
+        publication.outcome = (
+            TemporalCheckpointPublicationOutcome.PUBLISHED_BUT_NOT_CONFIRMED_DURABLE
+        )
+        _set_publication_error(
+            publication.primary_error,
+            TemporalCheckpointErrorStage.ENCODE,
+            TemporalCheckpointErrorDomain.ENCODER,
+            1,
+        )
+    else:
+        returned = NativeTemporalRuntimeStatus.INVALID_ARGUMENT
+        report.status = NativeTemporalRuntimeStatus.INVALID_ARGUMENT
+        message = b"bad request"
+        report.message_len = len(message)
+        report.message_utf8[: len(message)] = message
+
+    with pytest.raises(NativeTemporalRuntimeError) as rejected:
+        runtime_adapter._decode_publication(returned, publication, report)
+    assert rejected.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
+
+
+def test_publish_checkpoint_revalidates_authority_and_binary_before_native_call(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, identity = _install_fake_runtime(monkeypatch)
+    circuit = NativeTemporalCircuit.fresh(_tiny_definition())
+    try:
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_fresh_authority",
+            lambda: runtime_adapter._FreshAuthority(b"\x33" * 32, b"\x22" * 32),
+        )
+        with pytest.raises(NativeTemporalRuntimeError) as authority_error:
+            circuit.publish_checkpoint(Path("unused.chk"))
+        assert authority_error.value.status is NativeTemporalRuntimeStatus.INVALID_DEFINITION
+        assert library.publish_calls == 0
+
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_fresh_authority",
+            lambda: runtime_adapter._FreshAuthority(b"\x11" * 32, b"\x22" * 32),
+        )
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_loaded_library_identity",
+            lambda: NativeLibraryIdentity(
+                identity.source_digest, identity.binary_size, "ef" * 32
+            ),
+        )
+        with pytest.raises(NativeTemporalRuntimeError) as binary_error:
+            circuit.publish_checkpoint(Path("unused.chk"))
+        assert binary_error.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
+        assert library.publish_calls == 0
+    finally:
+        circuit.close()
+
+
+@pytest.mark.parametrize("gate", ("authority", "binary"))
+def test_checkpoint_path_import_completes_all_authority_checks_before_file_io(
+    monkeypatch: pytest.MonkeyPatch,
+    gate: str,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    if gate == "authority":
+        authorities = iter(
+            (
+                runtime_adapter._FreshAuthority(b"\x11" * 32, b"\x22" * 32),
+                runtime_adapter._FreshAuthority(b"\x33" * 32, b"\x22" * 32),
+            )
+        )
+        monkeypatch.setattr(
+            runtime_adapter, "_fresh_authority", lambda: next(authorities)
+        )
+    else:
+        monkeypatch.setattr(
+            runtime_adapter,
+            "_current_native_source_digest",
+            lambda: "ef" * 32,
+        )
+    filesystem_calls = {"lstat": 0, "open": 0}
+
+    def forbidden_lstat(path: object) -> object:
+        del path
+        filesystem_calls["lstat"] += 1
+        raise AssertionError("authority gate must precede checkpoint lstat")
+
+    def forbidden_open(path: object, flags: int) -> object:
+        del path, flags
+        filesystem_calls["open"] += 1
+        raise AssertionError("authority gate must precede checkpoint open")
+
+    monkeypatch.setattr(runtime_adapter.os, "lstat", forbidden_lstat)
+    monkeypatch.setattr(runtime_adapter.os, "open", forbidden_open)
+
+    expected_error = NativeTemporalRuntimeError if gate == "authority" else NativeBuildError
+    with pytest.raises(expected_error):
+        NativeTemporalCircuit.from_checkpoint_path(
+            _tiny_definition(), Path("must-not-be-opened.chk")
+        )
+
+    assert filesystem_calls == {"lstat": 0, "open": 0}
+    assert library.import_calls == 0
+    assert library.destroyed == []
+
+
+@pytest.mark.parametrize("unsupported", ("vm", "version", "symbols"))
+def test_checkpoint_path_import_rejects_unsupported_buffer_abi_before_file_io(
+    monkeypatch: pytest.MonkeyPatch,
+    unsupported: str,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    if unsupported == "vm":
+        monkeypatch.setattr(platform, "python_implementation", lambda: "PyPy")
+    elif unsupported == "version":
+        monkeypatch.setattr(runtime_adapter.sys, "version_info", (3, 10, 99))
+    else:
+        monkeypatch.setattr(runtime_adapter, "_python_buffer_api", lambda: object())
+    filesystem_calls = {"lstat": 0, "open": 0}
+
+    def forbidden_lstat(path: object) -> object:
+        del path
+        filesystem_calls["lstat"] += 1
+        raise AssertionError("buffer ABI validation must precede checkpoint lstat")
+
+    def forbidden_open(path: object, flags: int) -> object:
+        del path, flags
+        filesystem_calls["open"] += 1
+        raise AssertionError("buffer ABI validation must precede checkpoint open")
+
+    monkeypatch.setattr(runtime_adapter.os, "lstat", forbidden_lstat)
+    monkeypatch.setattr(runtime_adapter.os, "open", forbidden_open)
+
+    with pytest.raises(RuntimeError, match="checkpoint path import requires"):
+        NativeTemporalCircuit.from_checkpoint_path(
+            _tiny_definition(), Path("must-not-be-opened.chk")
+        )
+    assert filesystem_calls == {"lstat": 0, "open": 0}
+    assert library.import_calls == 0
+    assert library.destroyed == []
+
+
+@pytest.mark.parametrize(
+    "defect",
+    (
+        "acquisition-failed",
+        "null-owner",
+        "null-address",
+        "length",
+        "writable",
+        "itemsize",
+        "dimensions",
+        "format",
+        "shape",
+        "strides",
+        "suboffsets",
+        "internal",
+    ),
+)
+def test_checkpoint_path_import_rejects_malformed_stable_abi_buffers_and_cleans_up(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    defect: str,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    checkpoint_path = tmp_path / f"malformed-buffer-{defect}.chk"
+    checkpoint_path.write_bytes(library.checkpoint_bytes)
+    backing = ctypes.create_string_buffer(library.checkpoint_bytes)
+    get_calls = 0
+    release_calls = 0
+
+    def malformed_get_buffer(owner: object, pointer: object, flags: int) -> int:
+        nonlocal get_calls
+        get_calls += 1
+        assert flags == 0
+        if defect == "acquisition-failed":
+            return -1
+        view = ctypes.cast(
+            pointer, ctypes.POINTER(runtime_adapter._PyBuffer)
+        ).contents
+        view.obj = id(owner)
+        view.buf = ctypes.addressof(backing)
+        view.len = len(library.checkpoint_bytes)
+        view.itemsize = 1
+        view.readonly = 1
+        view.ndim = 1
+        if defect == "null-owner":
+            view.obj = None
+        elif defect == "null-address":
+            view.buf = None
+        elif defect == "length":
+            view.len += 1
+        elif defect == "writable":
+            view.readonly = 0
+        elif defect == "itemsize":
+            view.itemsize = 2
+        elif defect == "dimensions":
+            view.ndim = 2
+        else:
+            setattr(view, defect, 1)
+        return 0
+
+    def tracking_release_buffer(pointer: object) -> None:
+        del pointer
+        nonlocal release_calls
+        release_calls += 1
+
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_readonly_buffer_api",
+        lambda: (malformed_get_buffer, tracking_release_buffer),
+    )
+
+    with pytest.raises(NativeTemporalRuntimeError) as rejected:
+        NativeTemporalCircuit.from_checkpoint_path(
+            _tiny_definition(), checkpoint_path
+        )
+    assert rejected.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
+    assert get_calls == 1
+    assert release_calls == (0 if defect == "acquisition-failed" else 1)
+    assert library.import_calls == 0
+    assert library.destroyed == []
+    checkpoint_path.unlink()
+
+
+def test_checkpoint_path_import_holds_readonly_buffer_and_releases_in_order(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    checkpoint_path = tmp_path / "state.chk"
+    checkpoint_path.write_bytes(library.checkpoint_bytes)
+    events: list[str] = []
+    real_mmap = mmap.mmap
+    real_fdopen = os.fdopen
+    real_get_buffer, real_release_buffer = runtime_adapter._readonly_buffer_api()
+
+    class TrackingMmap(real_mmap):
+        def __new__(cls, *args: object, **kwargs: object) -> TrackingMmap:
+            assert kwargs["access"] == mmap.ACCESS_READ
+            events.append("mmap-read")
+            return super().__new__(cls, *args, **kwargs)
+
+        def close(self) -> None:
+            events.append("mmap-close")
+            super().close()
+
+    class TrackingFile:
+        def __init__(self, descriptor: int, mode: str, buffering: int) -> None:
+            self._file = real_fdopen(descriptor, mode, buffering)
+
+        def fileno(self) -> int:
+            return self._file.fileno()
+
+        def read(self, size: int) -> bytes:
+            return self._file.read(size)
+
+        def close(self) -> None:
+            events.append("file-close")
+            self._file.close()
+
+    def tracking_fdopen(
+        descriptor: int, mode: str, *, buffering: int
+    ) -> TrackingFile:
+        return TrackingFile(descriptor, mode, buffering)
+
+    def tracking_get_buffer(
+        owner: object, view: object, flags: int
+    ) -> int:
+        assert flags == 0
+        events.append("buffer-get")
+        return real_get_buffer(owner, view, flags)
+
+    def tracking_release_buffer(view: object) -> None:
+        events.append("buffer-release")
+        real_release_buffer(view)
+
+    def import_while_buffer_is_live(
+        request: object, handle_out: object, report_out: object
+    ) -> int:
+        events.append("native-import")
+        native = _pointed(request, runtime_adapter._NativeImportRequest)
+        assert ctypes.string_at(native.checkpoint_bytes, native.checkpoint_len) == (
+            library.checkpoint_bytes
+        )
+        return library._publish_handle(handle_out, report_out)
+
+    monkeypatch.setattr(runtime_adapter.mmap, "mmap", TrackingMmap)
+    monkeypatch.setattr(runtime_adapter.os, "fdopen", tracking_fdopen)
+    monkeypatch.setattr(
+        runtime_adapter,
+        "_readonly_buffer_api",
+        lambda: (tracking_get_buffer, tracking_release_buffer),
+    )
+    library.import_override = import_while_buffer_is_live
+
+    with NativeTemporalCircuit.from_checkpoint_path(
+        _tiny_definition(), checkpoint_path
+    ) as restored:
+        assert library.import_calls == 1
+        assert restored.checkpoint() == library.checkpoint_bytes
+
+    assert events == [
+        "mmap-read",
+        "buffer-get",
+        "native-import",
+        "buffer-release",
+        "mmap-close",
+        "file-close",
+    ]
+    checkpoint_path.unlink()
+    assert not checkpoint_path.exists()
+    assert library.destroyed == [0x1234]
+
+
+@pytest.mark.parametrize(
+    "defect", ("short", "magic", "version", "header-size", "reserved", "total")
+)
+def test_checkpoint_path_import_rejects_bad_basic_v1_headers_before_native_import(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    defect: str,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    checkpoint = bytearray(_basic_checkpoint_v1())
+    if defect == "short":
+        checkpoint = checkpoint[:255]
+    elif defect == "magic":
+        checkpoint[0] ^= 1
+    elif defect == "version":
+        struct.pack_into("<H", checkpoint, 8, 2)
+    elif defect == "header-size":
+        struct.pack_into("<H", checkpoint, 10, 255)
+    elif defect == "reserved":
+        checkpoint[15] = 1
+    else:
+        struct.pack_into("<Q", checkpoint, 16, len(checkpoint) + 1)
+    checkpoint_path = tmp_path / f"bad-{defect}.chk"
+    checkpoint_path.write_bytes(checkpoint)
+
+    with pytest.raises(NativeTemporalRuntimeError) as rejected:
+        NativeTemporalCircuit.from_checkpoint_path(
+            _tiny_definition(), checkpoint_path
+        )
+
+    assert rejected.value.status is NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED
+    assert library.import_calls == 0
+    assert library.destroyed == []
+    checkpoint_path.unlink()
+
+
+def test_checkpoint_path_import_rejects_final_symlink_and_nonregular_file(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    with pytest.raises(NativeTemporalRuntimeError) as directory_error:
+        NativeTemporalCircuit.from_checkpoint_path(_tiny_definition(), tmp_path)
+    assert directory_error.value.status is NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED
+
+    target = tmp_path / "target.chk"
+    target.write_bytes(library.checkpoint_bytes)
+    link = tmp_path / "link.chk"
+    try:
+        link.symlink_to(target)
+    except OSError as exc:
+        del exc
+        symlink_metadata = os.stat_result(
+            (0o120777, 17, 23, 1, 0, 0, len(library.checkpoint_bytes), 0, 0, 0)
+        )
+        monkeypatch.setattr(
+            runtime_adapter.os, "lstat", lambda _path: symlink_metadata
+        )
+        reached_open = False
+
+        def forbidden_open(path: object, flags: int) -> object:
+            del path, flags
+            nonlocal reached_open
+            reached_open = True
+            raise AssertionError("symlink rejection must precede descriptor open")
+
+        monkeypatch.setattr(runtime_adapter.os, "open", forbidden_open)
+    with pytest.raises(NativeTemporalRuntimeError) as symlink_error:
+        NativeTemporalCircuit.from_checkpoint_path(_tiny_definition(), link)
+    assert symlink_error.value.status is NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED
+    assert library.import_calls == 0
+    if link.exists() or link.is_symlink():
+        link.unlink()
+    else:
+        assert reached_open is False
+    target.unlink()
+
+
+def test_checkpoint_path_import_destroys_native_handle_and_releases_mapping_on_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    checkpoint_path = tmp_path / "malformed-native-report.chk"
+    checkpoint_path.write_bytes(library.checkpoint_bytes)
+
+    def malformed_import(
+        request: object, handle_out: object, report_out: object
+    ) -> int:
+        native = _pointed(request, runtime_adapter._NativeImportRequest)
+        assert ctypes.string_at(native.checkpoint_bytes, native.checkpoint_len) == (
+            library.checkpoint_bytes
+        )
+        returned = library._publish_handle(handle_out, report_out)
+        library._report(report_out).required = 1
+        return returned
+
+    library.import_override = malformed_import
+    with pytest.raises(NativeTemporalRuntimeError) as rejected:
+        NativeTemporalCircuit.from_checkpoint_path(
+            _tiny_definition(), checkpoint_path
+        )
+    assert rejected.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
+    assert library.destroyed == [0x1234]
+    checkpoint_path.unlink()
+    assert not checkpoint_path.exists()
+
+
+def test_checkpoint_path_import_revalidates_descriptor_identity_and_size_after_native(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+    checkpoint_path = tmp_path / "changed-during-import.chk"
+    checkpoint_path.write_bytes(library.checkpoint_bytes)
+
+    def mutate_during_import(
+        request: object, handle_out: object, report_out: object
+    ) -> int:
+        del request
+        with checkpoint_path.open("ab") as stream:
+            stream.write(b"x")
+        return library._publish_handle(handle_out, report_out)
+
+    library.import_override = mutate_during_import
+    with pytest.raises(NativeTemporalRuntimeError) as rejected:
+        NativeTemporalCircuit.from_checkpoint_path(
+            _tiny_definition(), checkpoint_path
+        )
+    assert rejected.value.status is NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED
+    assert library.destroyed == [0x1234]
+    checkpoint_path.unlink()
 
 
 def test_advance_error_retains_only_the_committed_prefix(
@@ -800,6 +1674,7 @@ def test_close_waits_for_inflight_advance_before_destroying_handle(
 
 def test_actual_native_fresh_checkpoint_import_round_trip(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     authority = runtime_adapter._FreshAuthority(b"\x41" * 32, b"\x92" * 32)
     monkeypatch.setattr(runtime_adapter, "_fresh_authority", lambda: authority)
@@ -811,7 +1686,21 @@ def test_actual_native_fresh_checkpoint_import_round_trip(
         assert len(steps) == 1
         assert steps[0].token_id == 7
         checkpoint = fresh.checkpoint()
+        checkpoint_path = tmp_path / "published.chk"
+        publication = fresh.publish_checkpoint(checkpoint_path)
+        assert publication.outcome is TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED
+        assert publication.semantically_resumable is True
+        assert publication.checkpoint_bytes == len(checkpoint)
+        assert publication.encoded_bytes == len(checkpoint)
+        assert checkpoint_path.read_bytes() == checkpoint
+        collision = fresh.publish_checkpoint(checkpoint_path)
+        assert collision.outcome is TemporalCheckpointPublicationOutcome.COLLISION
+        assert collision.semantically_resumable is False
     assert len(checkpoint) > 256
 
+    with NativeTemporalCircuit.from_checkpoint_path(
+        definition, checkpoint_path
+    ) as mapped:
+        assert mapped.checkpoint() == checkpoint
     with NativeTemporalCircuit.from_checkpoint(definition, checkpoint) as restored:
         assert restored.checkpoint() == checkpoint

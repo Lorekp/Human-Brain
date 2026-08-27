@@ -10,14 +10,18 @@ from __future__ import annotations
 import ctypes
 import importlib
 import math
+import mmap
+import os
 import platform
+import stat
 import sys
 import threading
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import IntEnum
+from pathlib import Path
 from types import ModuleType
-from typing import Final
+from typing import BinaryIO, Final
 
 from humanbrain.native import (
     NativeBuildError as _NativeBuildError,
@@ -36,6 +40,10 @@ _ACTIVE_COLUMNS: Final = 11
 _CONTEXT_CELLS: Final = 22
 _PAIRS_PER_SEGMENT: Final = 10
 _MAX_PERMANENCE_TICKS: Final = 500
+_CHECKPOINT_V1_MAGIC: Final = b"R3NTCP1\x00"
+_CHECKPOINT_V1_FORMAT_VERSION: Final = 1
+_CHECKPOINT_V1_HEADER_BYTES: Final = 256
+_CHECKPOINT_V1_BASIC_HEADER_BYTES: Final = 24
 _GOVERNING_PROTOCOL_MODULE: Final = (
     "experiments.r3_pilot.calibration_v3_protocol"
 )
@@ -92,6 +100,57 @@ class _NativeImportRequest(ctypes.Structure):
         ("definition", _NativeDefinition),
         ("checkpoint_bytes", ctypes.POINTER(ctypes.c_uint8)),
         ("checkpoint_len", ctypes.c_uint64),
+    ]
+
+
+class _NativeCheckpointPathRequest(ctypes.Structure):
+    _fields_ = [
+        ("parent_utf8", ctypes.POINTER(ctypes.c_uint8)),
+        ("parent_len", ctypes.c_uint64),
+        ("final_basename_utf8", ctypes.POINTER(ctypes.c_uint8)),
+        ("final_basename_len", ctypes.c_uint64),
+        ("reserved_zero", ctypes.c_uint8 * 8),
+    ]
+
+
+class _NativeCheckpointPublicationError(ctypes.Structure):
+    _fields_ = [
+        ("stage", ctypes.c_uint16),
+        ("domain", ctypes.c_uint16),
+        ("code", ctypes.c_uint32),
+    ]
+
+
+class _NativeCheckpointPublicationReport(ctypes.Structure):
+    _fields_ = [
+        ("outcome", ctypes.c_uint16),
+        ("temp_cleanup", ctypes.c_uint8),
+        ("cleanup_error_count", ctypes.c_uint8),
+        ("primary_error", _NativeCheckpointPublicationError),
+        ("cleanup_errors", _NativeCheckpointPublicationError * 4),
+        ("owned_temp_pid", ctypes.c_uint32),
+        ("owned_temp_nonce", ctypes.c_uint64),
+        ("checkpoint_bytes", ctypes.c_uint64),
+        ("encoded_bytes", ctypes.c_uint64),
+        ("reserved_zero", ctypes.c_uint8 * 8),
+    ]
+
+
+class _PyBuffer(ctypes.Structure):
+    """CPython 3.11+ stable-ABI ``Py_buffer`` transport layout."""
+
+    _fields_ = [
+        ("buf", ctypes.c_void_p),
+        ("obj", ctypes.c_void_p),
+        ("len", ctypes.c_ssize_t),
+        ("itemsize", ctypes.c_ssize_t),
+        ("readonly", ctypes.c_int),
+        ("ndim", ctypes.c_int),
+        ("format", ctypes.c_void_p),
+        ("shape", ctypes.c_void_p),
+        ("strides", ctypes.c_void_p),
+        ("suboffsets", ctypes.c_void_p),
+        ("internal", ctypes.c_void_p),
     ]
 
 
@@ -187,6 +246,20 @@ def _assert_frozen_abi() -> None:
     _require_frozen_layout(_NativeTokenCode, 48, 4, (0, 4))
     _require_frozen_layout(_NativeDefinition, 128, 8, (0, 32, 40, 48, 56, 64))
     _require_frozen_layout(_NativeImportRequest, 144, 8, (0, 128, 136))
+    _require_frozen_layout(_NativeCheckpointPathRequest, 40, 8, (0, 8, 16, 24, 32))
+    _require_frozen_layout(_NativeCheckpointPublicationError, 8, 4, (0, 2, 4))
+    _require_frozen_layout(
+        _NativeCheckpointPublicationReport,
+        80,
+        8,
+        (0, 2, 3, 4, 12, 44, 48, 56, 64, 72),
+    )
+    _require_frozen_layout(
+        _PyBuffer,
+        80,
+        8,
+        (0, 8, 16, 24, 32, 36, 40, 48, 56, 64, 72),
+    )
     _require_frozen_layout(_NativeSpike, 8, 4, (0, 4, 6))
     _require_frozen_layout(
         _NativeStep,
@@ -204,6 +277,38 @@ def _assert_frozen_abi() -> None:
 
 
 _assert_frozen_abi()
+
+
+def _python_buffer_api() -> object:
+    return ctypes.pythonapi
+
+
+def _readonly_buffer_api() -> tuple[object, object]:
+    if platform.python_implementation() != "CPython":
+        raise RuntimeError(
+            "checkpoint path import requires the CPython stable buffer ABI"
+        )
+    if tuple(sys.version_info[:2]) < (3, 11):
+        raise RuntimeError(
+            "checkpoint path import requires CPython 3.11 or newer"
+        )
+    api = _python_buffer_api()
+    try:
+        get_buffer = getattr(api, "PyObject_GetBuffer")
+        release_buffer = getattr(api, "PyBuffer_Release")
+    except AttributeError as exc:
+        raise RuntimeError(
+            "checkpoint path import requires PyObject_GetBuffer and PyBuffer_Release"
+        ) from exc
+    get_buffer.argtypes = [
+        ctypes.py_object,
+        ctypes.POINTER(_PyBuffer),
+        ctypes.c_int,
+    ]
+    get_buffer.restype = ctypes.c_int
+    release_buffer.argtypes = [ctypes.POINTER(_PyBuffer)]
+    release_buffer.restype = None
+    return get_buffer, release_buffer
 
 
 class TemporalContextPolicy(IntEnum):
@@ -241,6 +346,105 @@ class NativeTemporalRuntimeStatus(IntEnum):
     SCIENTIFIC_STOP = 8
     CAPACITY_STOP = 9
     INTERNAL_INVARIANT = 10
+
+
+class TemporalCheckpointPublicationOutcome(IntEnum):
+    """Frozen completion-plane outcome for exclusive checkpoint publication."""
+
+    DURABLE_PUBLISHED = 1
+    COLLISION = 2
+    NOT_PUBLISHED = 3
+    PUBLISHED_BUT_NOT_CONFIRMED_DURABLE = 4
+
+
+class TemporalCheckpointCleanup(IntEnum):
+    """Frozen disposition of the publisher-owned temporary artifact."""
+
+    NOT_APPLICABLE = 0
+    CLEAN = 1
+    ORPHANED = 2
+
+
+class TemporalCheckpointErrorDomain(IntEnum):
+    """Frozen origin of one checkpoint-publication error code."""
+
+    NONE = 0
+    POSIX = 1
+    WIN32 = 2
+    POLICY = 3
+    ENCODER = 4
+    IO = 5
+
+
+class TemporalCheckpointErrorStage(IntEnum):
+    """Frozen ordered stage at which checkpoint publication encountered an error."""
+
+    NONE = 0
+    PARENT_OPEN = 1
+    PARENT_IDENTITY = 2
+    FILESYSTEM_POLICY = 3
+    TEMP_CREATE = 4
+    ENCODE = 5
+    FILE_SYNC = 6
+    FILE_CLOSE = 7
+    TEMP_IDENTITY = 8
+    EXCLUSIVE_PUBLISH = 9
+    TEMP_CLEANUP = 10
+    PARENT_SYNC = 11
+
+
+_PRE_TEMP_PUBLICATION_ERROR_STAGES: Final = frozenset(
+    {
+        TemporalCheckpointErrorStage.PARENT_OPEN,
+        TemporalCheckpointErrorStage.PARENT_IDENTITY,
+        TemporalCheckpointErrorStage.FILESYSTEM_POLICY,
+        TemporalCheckpointErrorStage.TEMP_CREATE,
+        TemporalCheckpointErrorStage.PARENT_SYNC,
+    }
+)
+_TEMP_BACKED_NOT_PUBLISHED_ERROR_STAGES: Final = frozenset(
+    {
+        TemporalCheckpointErrorStage.PARENT_IDENTITY,
+        TemporalCheckpointErrorStage.ENCODE,
+        TemporalCheckpointErrorStage.FILE_SYNC,
+        TemporalCheckpointErrorStage.FILE_CLOSE,
+        TemporalCheckpointErrorStage.TEMP_IDENTITY,
+        TemporalCheckpointErrorStage.EXCLUSIVE_PUBLISH,
+    }
+)
+_UNCONFIRMED_PUBLICATION_ERROR_STAGES: Final = frozenset(
+    {
+        TemporalCheckpointErrorStage.EXCLUSIVE_PUBLISH,
+        TemporalCheckpointErrorStage.PARENT_SYNC,
+    }
+)
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalCheckpointPublicationError:
+    """One native publication error; tuple order is the native cleanup order."""
+
+    stage: TemporalCheckpointErrorStage
+    domain: TemporalCheckpointErrorDomain
+    code: int
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalCheckpointPublication:
+    """Immutable completion report; only durable publication is resumable."""
+
+    outcome: TemporalCheckpointPublicationOutcome
+    temp_cleanup: TemporalCheckpointCleanup
+    primary_error: TemporalCheckpointPublicationError | None
+    cleanup_errors: tuple[TemporalCheckpointPublicationError, ...]
+    owned_temp_pid: int
+    owned_temp_nonce: int
+    checkpoint_bytes: int
+    encoded_bytes: int
+
+    @property
+    def semantically_resumable(self) -> bool:
+        return self.outcome is TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED
 
 
 def _exact_int(label: str, value: object, minimum: int, maximum: int) -> int:
@@ -541,6 +745,9 @@ def _bind_temporal_symbols(library: object) -> None:
         export_checkpoint = (
             library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
         )
+        export_checkpoint_path = (
+            library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1
+        )
         destroy = library.humanbrain_temporal_circuit_runtime_destroy
     except AttributeError as exc:
         raise _NativeBuildError(
@@ -572,8 +779,22 @@ def _bind_temporal_symbols(library: object) -> None:
         ctypes.c_uint64,
         report_output,
     ]
+    export_checkpoint_path.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(_NativeAuthority),
+        ctypes.POINTER(_NativeCheckpointPathRequest),
+        ctypes.POINTER(_NativeCheckpointPublicationReport),
+        report_output,
+    ]
     destroy.argtypes = [ctypes.c_void_p]
-    for function in (create, import_checkpoint, advance, checkpoint_size, export_checkpoint):
+    for function in (
+        create,
+        import_checkpoint,
+        advance,
+        checkpoint_size,
+        export_checkpoint,
+        export_checkpoint_path,
+    ):
         function.restype = ctypes.c_uint32
     destroy.restype = None
 
@@ -736,6 +957,276 @@ def _raise_report(
     )
 
 
+def _decode_publication_error(
+    native: _NativeCheckpointPublicationError,
+    *,
+    label: str,
+) -> TemporalCheckpointPublicationError | None:
+    raw_stage = int(native.stage)
+    raw_domain = int(native.domain)
+    raw_code = int(native.code)
+    if raw_stage not in TemporalCheckpointErrorStage._value2member_map_:
+        raise _invariant_error(f"{label} stage is outside the frozen range")
+    if raw_domain not in TemporalCheckpointErrorDomain._value2member_map_:
+        raise _invariant_error(f"{label} domain is outside the frozen range")
+    stage = TemporalCheckpointErrorStage(raw_stage)
+    domain = TemporalCheckpointErrorDomain(raw_domain)
+    if stage is TemporalCheckpointErrorStage.NONE:
+        if domain is not TemporalCheckpointErrorDomain.NONE or raw_code != 0:
+            raise _invariant_error(f"{label} has a malformed zero error")
+        return None
+    if domain is TemporalCheckpointErrorDomain.NONE:
+        raise _invariant_error(f"{label} has an active stage without an error domain")
+    return TemporalCheckpointPublicationError(stage, domain, raw_code)
+
+
+def _decode_publication(
+    returned_status: object,
+    native: _NativeCheckpointPublicationReport,
+    runtime_report: _NativeReport,
+) -> TemporalCheckpointPublication:
+    decoded_runtime = _decode_report(
+        returned_status, runtime_report, maximum_completed_prefix=0
+    )
+    if decoded_runtime.status is not NativeTemporalRuntimeStatus.OK:
+        if bytes(native) != bytes(ctypes.sizeof(type(native))):
+            raise _invariant_error(
+                "failed checkpoint-path export changed its zero publication report"
+            )
+        _raise_report(decoded_runtime)
+
+    if any(native.reserved_zero):
+        raise _invariant_error("checkpoint publication reserved bytes are nonzero")
+    raw_outcome = int(native.outcome)
+    if raw_outcome not in TemporalCheckpointPublicationOutcome._value2member_map_:
+        raise _invariant_error("checkpoint publication outcome is outside the frozen range")
+    raw_cleanup = int(native.temp_cleanup)
+    if raw_cleanup not in TemporalCheckpointCleanup._value2member_map_:
+        raise _invariant_error("checkpoint publication cleanup tag is outside the frozen range")
+    cleanup_error_count = int(native.cleanup_error_count)
+    if cleanup_error_count > len(native.cleanup_errors):
+        raise _invariant_error("checkpoint publication cleanup error count exceeds capacity")
+
+    primary_error = _decode_publication_error(
+        native.primary_error, label="checkpoint publication primary error"
+    )
+    decoded_cleanup_slots = tuple(
+        _decode_publication_error(
+            slot, label=f"checkpoint publication cleanup error {index}"
+        )
+        for index, slot in enumerate(native.cleanup_errors)
+    )
+    if any(error is None for error in decoded_cleanup_slots[:cleanup_error_count]):
+        raise _invariant_error("checkpoint publication active cleanup error is zero")
+    if any(error is not None for error in decoded_cleanup_slots[cleanup_error_count:]):
+        raise _invariant_error("checkpoint publication unused cleanup error slot is nonzero")
+    cleanup_errors = tuple(
+        error
+        for error in decoded_cleanup_slots[:cleanup_error_count]
+        if error is not None
+    )
+
+    outcome = TemporalCheckpointPublicationOutcome(raw_outcome)
+    cleanup = TemporalCheckpointCleanup(raw_cleanup)
+    owned_temp_pid = int(native.owned_temp_pid)
+    owned_temp_nonce = int(native.owned_temp_nonce)
+    checkpoint_bytes = int(native.checkpoint_bytes)
+    encoded_bytes = int(native.encoded_bytes)
+
+    if decoded_runtime.location != 0:
+        raise _invariant_error("checkpoint publication runtime report has a location")
+    if (
+        decoded_runtime.required != checkpoint_bytes
+        or decoded_runtime.observed != encoded_bytes
+    ):
+        raise _invariant_error(
+            "checkpoint publication and runtime report lengths disagree",
+            required=checkpoint_bytes,
+            observed=decoded_runtime.observed,
+        )
+    if checkpoint_bytes < _CHECKPOINT_V1_HEADER_BYTES or checkpoint_bytes > sys.maxsize:
+        raise _invariant_error(
+            "checkpoint publication length is outside the canonical host range",
+            observed=checkpoint_bytes,
+        )
+    if encoded_bytes > checkpoint_bytes:
+        raise _invariant_error(
+            "checkpoint publication encoded length exceeds its checkpoint length",
+            required=checkpoint_bytes,
+            observed=encoded_bytes,
+        )
+
+    if cleanup is TemporalCheckpointCleanup.NOT_APPLICABLE:
+        if (
+            outcome is not TemporalCheckpointPublicationOutcome.NOT_PUBLISHED
+            or cleanup_errors
+            or owned_temp_pid != 0
+            or owned_temp_nonce != 0
+            or encoded_bytes != 0
+        ):
+            raise _invariant_error(
+                "checkpoint publication N/A cleanup has a temporary artifact"
+            )
+    elif cleanup is TemporalCheckpointCleanup.CLEAN:
+        if cleanup_errors or owned_temp_pid == 0:
+            raise _invariant_error(
+                "checkpoint publication clean disposition is inconsistent"
+            )
+    elif not cleanup_errors or owned_temp_pid == 0:
+        raise _invariant_error(
+            "checkpoint publication orphaned disposition is inconsistent"
+        )
+
+    if outcome in (
+        TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED,
+        TemporalCheckpointPublicationOutcome.COLLISION,
+    ):
+        if primary_error is not None or encoded_bytes != checkpoint_bytes:
+            raise _invariant_error(
+                "successful checkpoint publication outcome is inconsistent"
+            )
+        if cleanup is TemporalCheckpointCleanup.NOT_APPLICABLE:
+            raise _invariant_error(
+                "successful checkpoint publication did not create a temporary artifact"
+            )
+    elif outcome is TemporalCheckpointPublicationOutcome.NOT_PUBLISHED:
+        if primary_error is None:
+            raise _invariant_error(
+                "not-published checkpoint outcome has no primary error"
+            )
+        allowed_stages = (
+            _PRE_TEMP_PUBLICATION_ERROR_STAGES
+            if cleanup is TemporalCheckpointCleanup.NOT_APPLICABLE
+            else _TEMP_BACKED_NOT_PUBLISHED_ERROR_STAGES
+        )
+        if primary_error.stage not in allowed_stages:
+            raise _invariant_error(
+                "not-published checkpoint primary stage is inconsistent with cleanup"
+            )
+    else:
+        if (
+            primary_error is None
+            or encoded_bytes != checkpoint_bytes
+            or cleanup is TemporalCheckpointCleanup.NOT_APPLICABLE
+        ):
+            raise _invariant_error(
+                "unconfirmed-durability checkpoint outcome is inconsistent"
+            )
+        if primary_error.stage not in _UNCONFIRMED_PUBLICATION_ERROR_STAGES:
+            raise _invariant_error(
+                "unconfirmed-durability checkpoint primary stage is inconsistent"
+            )
+
+    return TemporalCheckpointPublication(
+        outcome=outcome,
+        temp_cleanup=cleanup,
+        primary_error=primary_error,
+        cleanup_errors=cleanup_errors,
+        owned_temp_pid=owned_temp_pid,
+        owned_temp_nonce=owned_temp_nonce,
+        checkpoint_bytes=checkpoint_bytes,
+        encoded_bytes=encoded_bytes,
+    )
+
+
+def _checkpoint_rejected(message: str, *, observed: int = 0) -> NativeTemporalRuntimeError:
+    return NativeTemporalRuntimeError(
+        NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED,
+        message,
+        observed=observed,
+    )
+
+
+def _lexical_checkpoint_path_parts(destination: Path) -> tuple[bytes, bytes]:
+    if not isinstance(destination, Path):
+        raise TypeError("checkpoint path must be a pathlib.Path")
+    try:
+        return (
+            str(destination.parent).encode("utf-8", errors="strict"),
+            destination.name.encode("utf-8", errors="strict"),
+        )
+    except UnicodeEncodeError as exc:
+        raise ValueError("checkpoint path must be valid UTF-8") from exc
+
+
+def _checkpoint_file_identity(metadata: os.stat_result) -> tuple[int, int, int]:
+    return (int(metadata.st_dev), int(metadata.st_ino), int(metadata.st_size))
+
+
+def _checkpoint_path_is_reparse(metadata: os.stat_result) -> bool:
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+    return bool(reparse_flag and getattr(metadata, "st_file_attributes", 0) & reparse_flag)
+
+
+def _validate_checkpoint_regular_file(
+    metadata: os.stat_result,
+    *,
+    descriptor: bool,
+) -> tuple[int, int, int]:
+    subject = "checkpoint descriptor" if descriptor else "checkpoint path"
+    if stat.S_ISLNK(metadata.st_mode) or _checkpoint_path_is_reparse(metadata):
+        raise _checkpoint_rejected(f"{subject} is a symlink or reparse point")
+    if not stat.S_ISREG(metadata.st_mode):
+        raise _checkpoint_rejected(f"{subject} is not a regular file")
+    identity = _checkpoint_file_identity(metadata)
+    if identity[2] < _CHECKPOINT_V1_HEADER_BYTES or identity[2] > sys.maxsize:
+        raise _checkpoint_rejected(
+            f"{subject} size is outside the checkpoint-v1 host range",
+            observed=identity[2],
+        )
+    return identity
+
+
+def _validate_checkpoint_v1_basic_header(header: bytes, file_size: int) -> None:
+    if len(header) != _CHECKPOINT_V1_BASIC_HEADER_BYTES:
+        raise _checkpoint_rejected("checkpoint-v1 basic header is truncated")
+    if header[:8] != _CHECKPOINT_V1_MAGIC:
+        raise _checkpoint_rejected("checkpoint-v1 magic does not match")
+    version = int.from_bytes(header[8:10], "little")
+    if version != _CHECKPOINT_V1_FORMAT_VERSION:
+        raise _checkpoint_rejected(
+            "checkpoint-v1 format version is unsupported", observed=version
+        )
+    header_bytes = int.from_bytes(header[10:12], "little")
+    if header_bytes != _CHECKPOINT_V1_HEADER_BYTES:
+        raise _checkpoint_rejected(
+            "checkpoint-v1 header length does not match", observed=header_bytes
+        )
+    if any(header[12:16]):
+        raise _checkpoint_rejected("checkpoint-v1 reserved basic-header bytes are nonzero")
+    declared_total = int.from_bytes(header[16:24], "little")
+    if declared_total != file_size:
+        raise _checkpoint_rejected(
+            "checkpoint-v1 declared total does not equal the file size",
+            observed=declared_total,
+        )
+
+
+def _validate_readonly_simple_buffer(view: _PyBuffer, expected_len: int) -> None:
+    if not view.obj or not view.buf:
+        raise _invariant_error("checkpoint mapping returned a null buffer owner or address")
+    if int(view.len) != expected_len:
+        raise _invariant_error(
+            "checkpoint mapping buffer length differs from the descriptor size",
+            required=expected_len,
+            observed=int(view.len),
+        )
+    if int(view.readonly) != 1:
+        raise _invariant_error("checkpoint mapping buffer is not read-only")
+    if int(view.itemsize) != 1 or int(view.ndim) != 1:
+        raise _invariant_error("checkpoint mapping buffer has non-simple scalar geometry")
+    if any(
+        (
+            view.format,
+            view.shape,
+            view.strides,
+            view.suboffsets,
+            view.internal,
+        )
+    ):
+        raise _invariant_error("checkpoint mapping buffer has non-simple pointer geometry")
+
+
 def _convert_spikes(values: Sequence[_NativeSpike]) -> tuple[TemporalSpike, ...]:
     converted: list[TemporalSpike] = []
     for spike in values:
@@ -828,7 +1319,10 @@ class NativeTemporalCircuit:
     )
 
     def __init__(self, *_: object, **__: object) -> None:
-        raise TypeError("use NativeTemporalCircuit.fresh() or from_checkpoint()")
+        raise TypeError(
+            "use NativeTemporalCircuit.fresh(), from_checkpoint(), or "
+            "from_checkpoint_path()"
+        )
 
     @classmethod
     def fresh(
@@ -847,12 +1341,175 @@ class NativeTemporalCircuit:
         return cls._open(definition, checkpoint=checkpoint)
 
     @classmethod
-    def _open(
+    def from_checkpoint_path(
         cls,
         definition: NativeTemporalCircuitDefinition,
-        *,
-        checkpoint: bytes | None,
+        path: Path,
     ) -> NativeTemporalCircuit:
+        """Import one controlled immutable local checkpoint without copying it.
+
+        This bounded-memory path is only for regular files produced by the
+        exclusive checkpoint publisher and held immutable with no concurrent
+        writer.  It is not an adversarial or general persistence boundary.
+        The supplied path is used lexically and a final-component symlink or
+        reparse point is rejected.
+        """
+
+        if not isinstance(path, Path):
+            raise TypeError("checkpoint path must be a pathlib.Path")
+        self, library, native_definition, definition_keepalive = cls._prepare_open(
+            definition
+        )
+        get_buffer, release_buffer = _readonly_buffer_api()
+        handle_out = ctypes.c_void_p()
+        report = _NativeReport()
+        descriptor: int | None = None
+        file_object: BinaryIO | None = None
+        mapping: mmap.mmap | None = None
+        buffer_view = _PyBuffer()
+        buffer_acquired = False
+        checkpoint_pointer: object | None = None
+        request: _NativeImportRequest | None = None
+        validated_handle: int | None = None
+        try:
+            path_before = os.lstat(path)
+            path_identity = _validate_checkpoint_regular_file(
+                path_before, descriptor=False
+            )
+            open_flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+            if hasattr(os, "O_NOFOLLOW"):
+                open_flags |= os.O_NOFOLLOW
+            descriptor = os.open(path, open_flags)
+            try:
+                file_object = os.fdopen(descriptor, "rb", buffering=0)
+            except BaseException:
+                os.close(descriptor)
+                descriptor = None
+                raise
+            descriptor = None
+            descriptor_before = os.fstat(file_object.fileno())
+            descriptor_identity = _validate_checkpoint_regular_file(
+                descriptor_before, descriptor=True
+            )
+            if descriptor_identity != path_identity:
+                raise _checkpoint_rejected(
+                    "checkpoint path identity changed while opening the file"
+                )
+            basic_header = file_object.read(_CHECKPOINT_V1_BASIC_HEADER_BYTES)
+            _validate_checkpoint_v1_basic_header(basic_header, descriptor_identity[2])
+            try:
+                mapping = mmap.mmap(
+                    file_object.fileno(),
+                    descriptor_identity[2],
+                    access=mmap.ACCESS_READ,
+                )
+            except (MemoryError, OverflowError) as exc:
+                raise NativeTemporalRuntimeError(
+                    NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
+                    "checkpoint read-only mapping allocation failed",
+                    required=descriptor_identity[2],
+                ) from exc
+            if len(mapping) != descriptor_identity[2]:
+                raise _checkpoint_rejected(
+                    "checkpoint mapping length differs from the descriptor size"
+                )
+            try:
+                acquisition_status = int(
+                    get_buffer(mapping, ctypes.byref(buffer_view), 0)
+                )
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise _invariant_error(
+                    "PyObject_GetBuffer returned a non-integer status"
+                ) from exc
+            if acquisition_status != 0:
+                raise _invariant_error(
+                    "PyObject_GetBuffer failed for a read-only checkpoint mapping",
+                    observed=acquisition_status,
+                )
+            buffer_acquired = True
+            _validate_readonly_simple_buffer(buffer_view, descriptor_identity[2])
+            checkpoint_pointer = ctypes.cast(
+                ctypes.c_void_p(buffer_view.buf),
+                ctypes.POINTER(ctypes.c_uint8),
+            )
+            request = _NativeImportRequest(
+                native_definition,
+                checkpoint_pointer,
+                descriptor_identity[2],
+            )
+            returned = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                ctypes.byref(request),
+                ctypes.byref(handle_out),
+                ctypes.byref(report),
+            )
+            descriptor_after = os.fstat(file_object.fileno())
+            path_after = os.lstat(path)
+            if (
+                _validate_checkpoint_regular_file(descriptor_after, descriptor=True)
+                != descriptor_identity
+                or _validate_checkpoint_regular_file(path_after, descriptor=False)
+                != path_identity
+            ):
+                raise _checkpoint_rejected(
+                    "checkpoint descriptor identity or size changed during import"
+                )
+            validated_handle = self._validated_open_handle(
+                returned, report, handle_out
+            )
+            del definition_keepalive
+        except BaseException:
+            if handle_out.value:
+                library.humanbrain_temporal_circuit_runtime_destroy(handle_out.value)
+            raise
+        finally:
+            active_exception = sys.exc_info()[0] is not None
+            request = None
+            checkpoint_pointer = None
+            cleanup_error: BaseException | None = None
+            if buffer_acquired:
+                buffer_acquired = False
+                try:
+                    release_buffer(ctypes.byref(buffer_view))
+                except BaseException as exc:
+                    cleanup_error = exc
+            if mapping is not None:
+                try:
+                    mapping.close()
+                except BaseException as exc:
+                    if cleanup_error is None:
+                        cleanup_error = exc
+            if file_object is not None:
+                try:
+                    file_object.close()
+                except BaseException as exc:
+                    if cleanup_error is None:
+                        cleanup_error = exc
+            elif descriptor is not None:
+                try:
+                    os.close(descriptor)
+                except BaseException as exc:
+                    if cleanup_error is None:
+                        cleanup_error = exc
+            if cleanup_error is not None and not active_exception:
+                if handle_out.value:
+                    library.humanbrain_temporal_circuit_runtime_destroy(handle_out.value)
+                    handle_out.value = None
+                raise cleanup_error
+        if validated_handle is None:
+            raise _invariant_error("checkpoint-path import did not validate a handle")
+        self._handle = validated_handle
+        return self
+
+    @classmethod
+    def _prepare_open(
+        cls,
+        definition: NativeTemporalCircuitDefinition,
+    ) -> tuple[
+        NativeTemporalCircuit,
+        ctypes.CDLL,
+        _NativeDefinition,
+        tuple[object, object],
+    ]:
         if type(definition) is not NativeTemporalCircuitDefinition:
             raise TypeError("definition must be a NativeTemporalCircuitDefinition")
         self = cls.__new__(cls)
@@ -878,9 +1535,39 @@ class NativeTemporalCircuit:
         native_definition, token_array, threshold_array = _native_definition(
             definition, authority
         )
+        return self, library, native_definition, (token_array, threshold_array)
+
+    @staticmethod
+    def _validated_open_handle(
+        returned: object,
+        report: _NativeReport,
+        handle_out: ctypes.c_void_p,
+    ) -> int:
+        decoded = _decode_report(returned, report, maximum_completed_prefix=0)
+        if decoded.status is not NativeTemporalRuntimeStatus.OK:
+            if handle_out.value:
+                raise _invariant_error("failed creation published a runtime handle")
+            _raise_report(decoded)
+        if decoded.required or decoded.observed or decoded.location:
+            raise _invariant_error(
+                "successful creation carries unexpected scalar diagnostics"
+            )
+        if not handle_out.value:
+            raise _invariant_error("successful creation did not publish a runtime handle")
+        return int(handle_out.value)
+
+    @classmethod
+    def _open(
+        cls,
+        definition: NativeTemporalCircuitDefinition,
+        *,
+        checkpoint: bytes | None,
+    ) -> NativeTemporalCircuit:
+        self, library, native_definition, definition_keepalive = cls._prepare_open(
+            definition
+        )
         # These owning arrays stay in local variables until the native create
         # or import returns; Rust copies them before publishing the handle.
-        _definition_keepalive = (token_array, threshold_array)
         report = _NativeReport()
         handle_out = ctypes.c_void_p()
         try:
@@ -909,28 +1596,15 @@ class NativeTemporalCircuit:
                         ctypes.byref(report),
                     )
                 )
-            del _definition_keepalive
+            del definition_keepalive
+            validated_handle = self._validated_open_handle(
+                returned, report, handle_out
+            )
         except BaseException:
             if handle_out.value:
                 library.humanbrain_temporal_circuit_runtime_destroy(handle_out.value)
             raise
-        try:
-            decoded = _decode_report(returned, report, maximum_completed_prefix=0)
-            if decoded.status is not NativeTemporalRuntimeStatus.OK:
-                if handle_out.value:
-                    raise _invariant_error("failed creation published a runtime handle")
-                _raise_report(decoded)
-            if decoded.required or decoded.observed or decoded.location:
-                raise _invariant_error(
-                    "successful creation carries unexpected scalar diagnostics"
-                )
-            if not handle_out.value:
-                raise _invariant_error("successful creation did not publish a runtime handle")
-        except BaseException:
-            if handle_out.value:
-                library.humanbrain_temporal_circuit_runtime_destroy(handle_out.value)
-            raise
-        self._handle = int(handle_out.value)
+        self._handle = validated_handle
         return self
 
     @property
@@ -1082,6 +1756,57 @@ class NativeTemporalCircuit:
                 )
             return completed_steps
 
+    def publish_checkpoint(self, destination: Path) -> TemporalCheckpointPublication:
+        """Attempt one exclusive lexical-path publication with no wrapper retry."""
+
+        with self._operation_lock:
+            handle = self._require_open()
+            fresh_authority = _fresh_authority()
+            if fresh_authority != self._creation_authority:
+                raise NativeTemporalRuntimeError(
+                    NativeTemporalRuntimeStatus.INVALID_DEFINITION,
+                    "fresh authority does not match circuit creation authority",
+                )
+            current_identity = _attested_current_library_identity()
+            if current_identity != self._library_identity:
+                raise _invariant_error("loaded native library identity changed")
+            parent_utf8, final_basename_utf8 = _lexical_checkpoint_path_parts(
+                destination
+            )
+            try:
+                parent_array = (ctypes.c_uint8 * len(parent_utf8)).from_buffer_copy(
+                    parent_utf8
+                )
+                basename_array = (
+                    ctypes.c_uint8 * len(final_basename_utf8)
+                ).from_buffer_copy(final_basename_utf8)
+            except (MemoryError, OverflowError) as exc:
+                raise NativeTemporalRuntimeError(
+                    NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
+                    "checkpoint path transport allocation failed",
+                    required=len(parent_utf8) + len(final_basename_utf8),
+                ) from exc
+            request = _NativeCheckpointPathRequest(
+                ctypes.cast(parent_array, ctypes.POINTER(ctypes.c_uint8)),
+                len(parent_utf8),
+                ctypes.cast(basename_array, ctypes.POINTER(ctypes.c_uint8)),
+                len(final_basename_utf8),
+                (ctypes.c_uint8 * 8)(),
+            )
+            native_authority = fresh_authority.native()
+            publication_report = _NativeCheckpointPublicationReport()
+            runtime_report = _NativeReport()
+            returned = self._library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                handle,
+                ctypes.byref(native_authority),
+                ctypes.byref(request),
+                ctypes.byref(publication_report),
+                ctypes.byref(runtime_report),
+            )
+            return _decode_publication(
+                returned, publication_report, runtime_report
+            )
+
     def checkpoint(self) -> bytes:
         with self._operation_lock:
             handle = self._require_open()
@@ -1158,6 +1883,12 @@ __all__ = [
     "NativeTemporalCircuit",
     "NativeTemporalRuntimeError",
     "NativeTemporalRuntimeStatus",
+    "TemporalCheckpointCleanup",
+    "TemporalCheckpointErrorDomain",
+    "TemporalCheckpointErrorStage",
+    "TemporalCheckpointPublication",
+    "TemporalCheckpointPublicationError",
+    "TemporalCheckpointPublicationOutcome",
     "TemporalCircuitStep",
     "TemporalContextPolicy",
     "TemporalPlasticityPolicy",
