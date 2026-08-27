@@ -29,6 +29,10 @@ sources and generic afferent sources.
 5. Preserve exact Python-oracle pair, permanence, ordering, punishment, reserve,
    and Random123 semantics. Optimization may change representation and derived
    indexes, but not those semantics.
+6. Publish a destination path only through the platform-specific **exclusive
+   atomic publication** contract below. Its four outcomes distinguish final-name
+   visibility from confirmed durability; no path overwrites an existing
+   destination.
 
 ## Provenance and claim boundary
 
@@ -60,6 +64,11 @@ facade, and `9f55a87` completed Python-oracle cohort-history and growth-off
 counter validation. The numbered audit near the end reflects those commits and
 supersedes the old working-tree hash inventory and intermediate `bd6a036`
 assessment.
+
+The publication audit completed on 2026-08-27 freezes the path-publication
+algorithm and result taxonomy in this revision. It changes no checkpoint byte,
+identity preimage, logical-state field, protocol choice, policy, quorum, or C1
+authority.
 
 No outcome or held-out data were used. This is an implementation design under
 the existing protocol, not a Change Note.
@@ -427,17 +436,24 @@ remains a derived, nonserialized implementation detail.
 
 ### Retryable, non-poisoning
 
-The failing token or operation makes no state change:
+The failing token or import operation makes no neuronal-state change:
 
 - unknown token;
 - invalid external mode, pointer, length, or argument combination;
 - insufficient external step-output or checkpoint-output capacity;
-- checkpoint destination collision or transient I/O failure;
 - checkpoint magic, version, length, hash, identity, or structural rejection;
 - allocation failure while constructing a replacement runtime before publish.
 
 Retrying the same valid operation against the same runtime must produce the
 same result.
+
+Checkpoint path export is also non-poisoning and never changes neuronal state
+or the latch, but its filesystem effects are not described by a blanket
+retryable/not-published rule. It returns one of the four exclusive-publication
+outcomes below. `NotPublished` and `Collision` both prove that this call did not
+create the final name; `Collision` additionally reports that an existing final
+name was left unchanged. A published or publication-ambiguous result forbids
+blind retry.
 
 ### Scientific or integrity poison
 
@@ -549,8 +565,10 @@ for checkpoint v1:
 
 Codes `1..=11` are scientific/integrity poisons; `12..=15` are capacity
 poisons. Checkpoint import rejects every other `u16` value. `UnknownToken`,
-external argument/output failures, and checkpoint validation/I/O failures are
-retryable and therefore never receive a poison code.
+external argument/output failures, checkpoint-import validation failures, and
+every checkpoint-publication outcome are non-poisoning and never receive a
+poison code. Retryability of a path export follows its explicit publication
+outcome rather than the poison taxonomy.
 
 The stable code deliberately retains less detail than the first caller-visible
 STOP. The mapping is exact:
@@ -1099,18 +1117,172 @@ another column, mixed token codes, or a bound-winner context differing from the
 winner context. This is precisely what `e5a775e` can emit: first all eleven
 sources in token-code order, then their eleven relays in the same order.
 
-### Export and publish
+### Export and exclusive atomic publication
 
-Checkpoint export holds the runtime lock and streams canonical rows directly to
-an exclusive new temporary file or caller-provided seekable sink while hashing.
-Reserve the first 256 bytes, stream the body once, then seek back only after all
-header values exist. It must not clone the learned store into another 1.5 GB
-buffer. After body and semantic hashes are complete, encode the canonical
-scalar block, compute the logical-state digest over the stored body digest plus
-that block, and write the complete header. Then flush and fsync the file and its
-directory and atomically rename without overwriting an existing destination.
-Destination collision or I/O failure is retryable and does not poison or roll
-back neuronal state.
+Checkpoint byte production and destination-name publication are separate
+operations. Both hold the runtime lock long enough to observe one immutable
+logical state. Reserve the first 256 bytes, stream the canonical body once while
+computing the body and semantic-index hashes, seek back only after every header
+value exists, compute the logical-state digest over the stored body digest plus
+the canonical scalar block, and write the complete header. The encoder must not
+clone the learned store into another 1.5 GB buffer. This sequence preserves the
+checkpoint bytes and every identity contract above.
+
+A caller-provided seekable sink ends at byte encoding and sink flush; it makes
+no namespace or durability claim. The destination-path API additionally runs
+the platform publisher below and returns exactly one of these outcomes:
+
+Here **exclusive atomic publication** means that final-name creation is
+no-overwrite and that readers can observe only a complete checkpoint. It is not
+a literal atomic-rename contract, and the separate result state reports whether
+durability was confirmed.
+
+```text
+TempCleanup =
+    Clean
+  | Orphaned { cleanup_errors: nonempty ordered list }
+
+ExportOutcome =
+    DurablePublished { temp_cleanup: TempCleanup }
+  | Collision { temp_cleanup: TempCleanup }
+  | NotPublished {
+        primary_error: PublicationError,
+        temp_cleanup: TempCleanup,
+    }
+  | PublishedButNotConfirmedDurable {
+        primary_error: PublicationError,
+        temp_cleanup: TempCleanup,
+    }
+```
+
+`Clean` means the owned temporary name is absent and no cleanup error remains to
+report. `Orphaned` means it may remain or cleanup could not be completed; the
+ordered error list preserves every cleanup failure rather than replacing the
+primary error.
+The four publication states mean:
+
+- `DurablePublished`: this call exclusively created the complete final name and
+  completed the platform durability sequence. A failed temporary unlink may
+  still yield this outcome with `temp_cleanup = Orphaned` when the subsequent
+  POSIX parent-directory sync succeeds.
+- `Collision`: the exclusive final-name operation found an existing object and
+  did not modify it. Temporary cleanup success or failure remains separately
+  observable.
+- `NotPublished`: this call definitely did not create the final name. Every
+  failure before the exclusive final-name operation has this state, as does a
+  noncollision POSIX `linkat` failure on the supported local filesystems below.
+- `PublishedButNotConfirmedDurable`: the complete final name is visible or may
+  have become visible, but the call cannot confirm durable publication. This is
+  mandatory after a successful POSIX `linkat` followed by parent-sync failure,
+  and after any noncollision Windows move error.
+
+Every outcome preserves the runtime's neuronal state and poison latch. Cleanup
+may remove only the exact temporary name owned by this call. No branch opens the
+final destination for replacement, truncates it, unlinks it, renames it aside,
+or otherwise deletes it. Blind retry is forbidden after both
+`DurablePublished` and `PublishedButNotConfirmedDurable`: the former is final;
+the latter requires independent reconciliation of the final file through a new
+handle before any operator action because it may collide with this call's own
+published checkpoint.
+`NotPublished` may be retried only after its reported orphan state is resolved.
+A collision never authorizes overwrite or destination deletion.
+
+The durability claim is restricted to supported **local filesystems**. The
+production path publisher must establish that the validated parent uses local
+filesystem semantics compatible with the required primitives before it attempts
+final-name publication. A remote, network, virtual, or unknown filesystem is
+rejected as `NotPublished`; an implementation that cannot establish this
+precondition must not call the exclusive final-name operation and cannot return
+`DurablePublished`.
+
+#### POSIX/Unix publication
+
+Use one stable, no-follow descriptor for the existing parent directory. Resolve
+and open parent components without following symbolic links, retain the final
+directory descriptor for the complete operation, and pass only validated single
+basenames to descriptor-relative calls. The final path itself is never resolved
+through an existing destination.
+
+Perform these operations in order:
+
+1. Create one owned same-parent temporary regular file relative to the stable
+   directory descriptor with `O_CREAT | O_EXCL | O_NOFOLLOW` plus the required
+   write and close-on-exec flags. Validate the opened object through its handle.
+2. Stream the canonical bytes, flush the userspace writer, and synchronize the
+   file contents and metadata with file `fsync` before publication.
+3. Call `linkat(parent_fd, temp_name, parent_fd, final_name, 0)`. This is the one
+   exclusive atomic publication point: the final name appears as one complete,
+   already-synchronized file, and an existing final name is never overwritten.
+   `EEXIST` is `Collision`; any other failure is `NotPublished` on a supported
+   local filesystem.
+4. After the `linkat` attempt, always attempt `unlinkat` of the owned temporary
+   name and then `fsync(parent_fd)`; a failed unlink must not suppress the
+   directory sync. Preserve the `linkat`, unlink, and directory-sync errors in
+   their distinct outcome fields.
+
+Any failure after temporary creation but before the `linkat` attempt is
+`NotPublished` with that failure as `primary_error`. Cleanup must still attempt
+owned-temp `unlinkat` and then parent-directory `fsync` so both temp creation and
+removal namespace mutations are synchronized. `temp_cleanup` is `Clean` only if
+both cleanup operations succeed; otherwise it is `Orphaned` with the cleanup
+errors in operation order.
+
+After successful `linkat`, final-name publication has happened and cannot be
+reported as `NotPublished`. If the parent-directory sync succeeds, return
+`DurablePublished`, with `Clean` or `Orphaned` determined by temporary unlink.
+If that sync fails, return `PublishedButNotConfirmedDurable` with the sync error
+as `primary_error`; preserve any unlink error in `temp_cleanup`. Following a
+collision, cleanup failure remains `Collision { temp_cleanup: Orphaned }` and
+the existing destination remains untouched.
+
+Hard-link publication and directory `fsync` are mandatory. A filesystem that
+does not support either primitive fails closed, and there is no `rename`, copy,
+overwrite, or weaker publication fallback. If unsupported directory sync is
+discovered only after successful `linkat`, the truthful result is
+`PublishedButNotConfirmedDurable`, not `NotPublished`.
+
+#### Windows publication
+
+Canonicalize and validate the existing parent directory only. Require one local,
+plain, non-reparse parent and a validated single final basename; do not
+canonicalize through, delete, or replace a destination object. Create one owned
+same-parent temporary file with exclusive `create_new`/`CREATE_NEW` semantics.
+Stream the canonical bytes, flush the writer, synchronize the file with
+`sync_all`/`FlushFileBuffers`, and close the file handle before publication.
+
+Publish with `MoveFileExW(temp, final, MOVEFILE_WRITE_THROUGH)` using flags
+**exactly** `MOVEFILE_WRITE_THROUGH = 0x00000008`. Omit
+`MOVEFILE_REPLACE_EXISTING` and `MOVEFILE_COPY_ALLOWED`; the same-parent
+precondition keeps the operation on one volume. Success returns
+`DurablePublished { temp_cleanup: Clean }`. Windows errors 80
+(`ERROR_FILE_EXISTS`) and 183 (`ERROR_ALREADY_EXISTS`) return `Collision` after
+attempting cleanup of only the owned temporary. Any other move error is
+conservatively `PublishedButNotConfirmedDurable`, even if a subsequent path
+inspection appears to show no destination; attempt owned-temp cleanup, preserve
+its state, and require new-handle reconciliation rather than blind retry.
+
+Every error before `MoveFileExW` is `NotPublished` with its independent cleanup
+state. No code path calls a destination-delete API.
+
+#### Platform and precedent
+
+The publisher is compiled only for `cfg(unix)` or `cfg(windows)`. Any other
+target must hit a compile-time refusal; a generic `std::fs::rename`, copy, or
+best-effort fallback is forbidden.
+
+The existing [typed-composition runner](../../src/humanbrain/typed_composition_runner.py)
+and [frozen typed-composition contract](../typed-composition-a012-v1.md) establish
+the repository precedent for fsynced temporary files, POSIX exclusive hard-link
+publication plus directory sync, and Windows write-through no-replace moves.
+This checkpoint contract strengthens that pattern with a stable POSIX parent
+descriptor and explicit publication-state outcomes. The normative operating
+system references are POSIX [`openat`](https://pubs.opengroup.org/onlinepubs/9799919799/functions/open.html),
+[`linkat`](https://pubs.opengroup.org/onlinepubs/9799919799/functions/link.html),
+and [directory synchronization](https://pubs.opengroup.org/onlinepubs/9799919799/xrat/V4_xbd_chap01.html),
+plus Microsoft [`CreateFileW`](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew),
+[`FlushFileBuffers`](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers),
+[`MoveFileExW`](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw),
+and [system error codes](https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-).
 
 A poisoned runtime may be exported; the stable latch code must be preserved so
 restore cannot clear a terminal STOP. Rich one-shot diagnostic payloads need
@@ -1271,8 +1443,9 @@ than cloning an existing runtime.
    all-active, preflight, and no-fail commit façade into the runtime transaction.
 9. Implement exact mutation first without reserve recruitment and prove parity.
 10. Add aggregate reserve planning and the alternate-CSR commit.
-11. Add the canonical checkpoint codec, streaming export, new-handle import, and
-   semantic index digest.
+11. Add the canonical checkpoint codec, streaming export, new-handle import,
+    semantic index digest, and the platform-specific exclusive atomic path
+    publisher with its four publication outcomes.
 12. Add the block adapter and Python seam; remove obsolete shallow mutation or
    restore paths rather than retaining compatibility layers.
 13. Refresh Gate-3/source binding, then run q=4, q=255, and R3-F0 fixtures.
@@ -1344,6 +1517,55 @@ than cloning an existing runtime.
 - assert every corrupt import publishes no handle and cannot modify an existing
   runtime;
 - restore poisoned checkpoints and prove the latch cannot be cleared.
+
+### Exclusive checkpoint publication
+
+- fault-inject every file, namespace, synchronization, close, and cleanup
+  boundary in the actual platform publisher, not merely its error mapper; assert
+  the exact `ExportOutcome`, ordered primary/cleanup errors, unchanged neuronal
+  state and latch, and byte-for-byte preservation of every pre-existing
+  destination;
+- on POSIX, prove the complete result matrix: every pre-`linkat` failure is
+  `NotPublished`; `EEXIST` is `Collision`; a successful link plus failed temp
+  unlink plus successful parent sync is `DurablePublished { Orphaned }`; and a
+  successful link plus failed parent sync is
+  `PublishedButNotConfirmedDurable`, retaining the independent temp-cleanup
+  state. A collision plus either cleanup failure remains
+  `Collision { Orphaned }`;
+- prove that every POSIX path after a `linkat` attempt calls owned-temp unlink
+  and then parent-directory `fsync`, even when unlink fails, and preserves two
+  simultaneous errors rather than replacing either one. Prove that pre-link
+  cleanup also syncs the parent after its temp-name namespace mutations;
+- on Windows, spy on the actual `MoveFileExW` call and require flags exactly
+  `0x00000008`; prove errors 80 and 183 are `Collision`, every other move error
+  is conservatively `PublishedButNotConfirmedDurable`, and every pre-move error
+  is `NotPublished`, all with independent owned-temp cleanup state and no
+  destination-delete call;
+- reject unsupported hard links, directory synchronization, remote or unknown
+  filesystem semantics, and reparse/symbolic-link parents without falling back
+  to rename, copy, or overwrite; compile-test that non-Unix/Windows targets have
+  no publisher implementation;
+- race many independent writers against one absent final name on each supported
+  platform: exactly one complete checkpoint becomes the winner, every other
+  writer reports `Collision`, and no writer observes or produces a partial
+  destination. Repeat against a pre-existing destination and prove its bytes
+  and file identity never change;
+- continuously open the final name through fresh reader handles while export is
+  paused at every publication barrier. A reader may observe absence, the intact
+  pre-existing file, or the complete newly published checkpoint, never the
+  temporary prefix, an intermediate length, or mixed bytes;
+- crash a separate writer process before file sync, after file sync, immediately
+  before and after the exclusive publication point, after temp cleanup, and
+  before and after directory/write-through completion. On restart, inspect only
+  through new handles: the final name is absent or a complete hash-valid
+  checkpoint, and any owned orphan temp remains separately named and is never
+  interpreted as the final checkpoint. Separately prove that no caller
+  automatically retries an ambiguous returned outcome;
+- on a supported local-filesystem durability harness, including an actual
+  storage/VM restart boundary, prove that an acknowledged `DurablePublished`
+  checkpoint remains complete and discoverable. Faults that prevent this proof
+  must return `PublishedButNotConfirmedDurable` rather than making a durability
+  claim.
 
 ### Cost gates
 
