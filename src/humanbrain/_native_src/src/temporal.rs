@@ -189,8 +189,34 @@ const U32_RADIX_INSERTION_CUTOFF: usize = 24;
 /// fixed 256-entry offset tables. Slices at or below the fixed insertion-sort
 /// cutoff avoid paying for 256 buckets; the cutoff keeps that comparison work
 /// bounded independently of fanout. Four radix levels plus that constant
-/// cutoff keep total work linear in the input length.
+/// cutoff keep total work linear in the input length. Larger monotonic slices
+/// return or reverse after one allocation-free classification pass.
 fn sort_u32_in_place_radix(values: &mut [u32]) {
+    if values.len() <= U32_RADIX_INSERTION_CUTOFF {
+        sort_u32_in_place_radix_byte(values, 24);
+        return;
+    }
+
+    let mut nondecreasing = true;
+    let mut nonincreasing = true;
+    for adjacent in values.windows(2) {
+        if adjacent[0] < adjacent[1] {
+            nonincreasing = false;
+        } else if adjacent[0] > adjacent[1] {
+            nondecreasing = false;
+        }
+        if !nondecreasing && !nonincreasing {
+            break;
+        }
+    }
+    if nondecreasing {
+        return;
+    }
+    if nonincreasing {
+        values.reverse();
+        return;
+    }
+
     sort_u32_in_place_radix_byte(values, 24);
 }
 
@@ -3037,6 +3063,43 @@ mod tests {
             })
             .collect();
         assert_matches(random);
+    }
+
+    #[test]
+    fn in_place_u32_radix_matches_independent_sort_for_monotonic_and_mixed_paths() {
+        fn assert_matches(mut actual: Vec<u32>) {
+            let pointer = actual.as_ptr();
+            let capacity = actual.capacity();
+            let mut expected = actual.clone();
+            expected.sort_unstable();
+            sort_u32_in_place_radix(&mut actual);
+            assert_eq!(actual, expected);
+            assert_eq!(actual.as_ptr(), pointer);
+            assert_eq!(actual.capacity(), capacity);
+        }
+
+        assert_matches((0..65_537).collect());
+        assert_matches((0..65_537).rev().collect());
+        assert_matches(vec![0xA5A5_5A5A; 65_537]);
+
+        for len in [
+            U32_RADIX_INSERTION_CUTOFF - 1,
+            U32_RADIX_INSERTION_CUTOFF,
+            U32_RADIX_INSERTION_CUTOFF + 1,
+            U32_RADIX_INSERTION_CUTOFF + 2,
+        ] {
+            assert_matches((0..len).rev().map(|index| (index / 3) as u32).collect());
+        }
+
+        let mixed = (0..4_097)
+            .map(|index| match index % 4 {
+                0 => index as u32,
+                1 => u32::MAX - index as u32,
+                2 => 256,
+                _ => 255,
+            })
+            .collect();
+        assert_matches(mixed);
     }
 
     #[test]
