@@ -51,9 +51,7 @@ GATE3_SOURCE_FRAMING = (
     "humanbrain-procedural-runtime-source-v1: ordered UTF-8 path length/path "
     "plus uint64 byte length/raw bytes"
 )
-SYNTHETIC_SOURCE_MANIFEST = (
-    {"path": "src/synthetic.rs", "size": 3, "sha256": "44" * 32},
-)
+SYNTHETIC_SOURCE_MANIFEST = ({"path": "src/synthetic.rs", "size": 3, "sha256": "44" * 32},)
 
 
 def _synthetic_authority_governing(
@@ -83,9 +81,7 @@ def _synthetic_authority_governing(
         "files": {
             GATE3_PROTOCOL_PATH: {
                 "commit": "aa" * 20,
-                "sha256": hashlib.sha256(
-                    canonical_source_bytes(gate3_bytes)
-                ).hexdigest(),
+                "sha256": hashlib.sha256(canonical_source_bytes(gate3_bytes)).hexdigest(),
             }
         },
         "governing_gate3_path": GATE3_PROTOCOL_PATH,
@@ -102,9 +98,7 @@ def _synthetic_authority_governing(
         validate_committed_source_blobs=lambda _root, value: calls.append(
             f"committed:{value is binding}"
         ),
-        validate_source_bytes=lambda _root, value: calls.append(
-            f"live:{value is binding}"
-        ),
+        validate_source_bytes=lambda _root, value: calls.append(f"live:{value is binding}"),
         protocol_sha256=lambda: calls.append("protocol-digest") or "11" * 32,
         source_binding=binding,
     )
@@ -162,9 +156,7 @@ def _basic_checkpoint_v1(size: int = 256) -> bytes:
     checkpoint[160:192] = hashlib.sha256(b"").digest()
     struct.pack_into("<IIIQQBBH", checkpoint, 192, 0, 0, 11, 17, 19, 0, 0, 0)
     checkpoint[224:256] = hashlib.sha256(
-        b"humanbrain-r3-checkpoint-logical-state-v1\x00"
-        + checkpoint[128:160]
-        + checkpoint[192:224]
+        b"humanbrain-r3-checkpoint-logical-state-v1\x00" + checkpoint[128:160] + checkpoint[192:224]
     ).digest()
     return bytes(checkpoint)
 
@@ -174,6 +166,7 @@ class _FakeTemporalLibrary:
         self.checkpoint_bytes = _basic_checkpoint_v1()
         self.destroyed: list[int] = []
         self.next_handle = 0x1234
+        self.definition_identity_calls = 0
         self.create_calls = 0
         self.import_calls = 0
         self.size_calls = 0
@@ -195,30 +188,25 @@ class _FakeTemporalLibrary:
         self.immutable_publish_override: object | None = None
         self.reconcile_override: object | None = None
         self.prepare_directory_override: object | None = None
+        self.humanbrain_temporal_circuit_definition_identity_v1 = _FakeFunction(
+            self._definition_identity
+        )
         self.humanbrain_temporal_circuit_runtime_create_v1 = _FakeFunction(self._create)
-        self.humanbrain_temporal_circuit_runtime_import_checkpoint_v1 = _FakeFunction(
-            self._import
-        )
-        self.humanbrain_temporal_circuit_runtime_advance_block_v1 = _FakeFunction(
-            self._advance
-        )
-        self.humanbrain_temporal_circuit_runtime_checkpoint_size_v1 = _FakeFunction(
-            self._size
-        )
+        self.humanbrain_temporal_circuit_runtime_import_checkpoint_v1 = _FakeFunction(self._import)
+        self.humanbrain_temporal_circuit_runtime_advance_block_v1 = _FakeFunction(self._advance)
+        self.humanbrain_temporal_circuit_runtime_checkpoint_size_v1 = _FakeFunction(self._size)
         self.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1 = _FakeFunction(
             self._identity
         )
-        self.humanbrain_temporal_circuit_runtime_export_checkpoint_v1 = _FakeFunction(
-            self._export
-        )
-        self.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1 = (
-            _FakeFunction(self._publish)
+        self.humanbrain_temporal_circuit_runtime_export_checkpoint_v1 = _FakeFunction(self._export)
+        self.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1 = _FakeFunction(
+            self._publish
         )
         self.humanbrain_temporal_publish_immutable_bytes_path_v1 = _FakeFunction(
             self._publish_immutable_bytes
         )
-        self.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1 = (
-            _FakeFunction(self._reconcile_existing_immutable_bytes)
+        self.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1 = _FakeFunction(
+            self._reconcile_existing_immutable_bytes
         )
         self.humanbrain_temporal_prepare_durable_directory_path_v1 = _FakeFunction(
             self._prepare_durable_directory
@@ -227,14 +215,24 @@ class _FakeTemporalLibrary:
 
     @staticmethod
     def _report(pointer: object) -> runtime_adapter._NativeReport:
-        return ctypes.cast(
-            pointer, ctypes.POINTER(runtime_adapter._NativeReport)
-        ).contents
+        return ctypes.cast(pointer, ctypes.POINTER(runtime_adapter._NativeReport)).contents
 
     def _publish_handle(self, handle_out: object, report_out: object) -> int:
         ctypes.cast(handle_out, ctypes.POINTER(ctypes.c_void_p))[0] = self.next_handle
         self.next_handle += 1
         self._report(report_out).status = 0
+        return 0
+
+    def _definition_identity(self, request: object, output: object, report_out: object) -> int:
+        self.definition_identity_calls += 1
+        native = _pointed(request, runtime_adapter._NativeDefinitionIdentityRequest)
+        assert native.token_code_count == 1
+        assert native.token_codes[0].token_id == 7
+        assert tuple(native.token_codes[0].columns) == tuple(range(11))
+        ctypes.memmove(output, self.checkpoint_bytes[96:128], 32)
+        report = self._report(report_out)
+        report.required = 32
+        report.observed = 32
         return 0
 
     def _create(self, definition: object, handle_out: object, report_out: object) -> int:
@@ -343,9 +341,7 @@ class _FakeTemporalLibrary:
         report_out: object,
     ) -> int:
         self.publish_calls += 1
-        native_request = _pointed(
-            request, runtime_adapter._NativeCheckpointPathRequest
-        )
+        native_request = _pointed(request, runtime_adapter._NativeCheckpointPathRequest)
         self.published_paths.append(
             (
                 ctypes.string_at(native_request.parent_utf8, native_request.parent_len),
@@ -360,9 +356,7 @@ class _FakeTemporalLibrary:
                 handle, authority, request, publication_out, report_out
             )
         del handle, authority
-        publication = _pointed(
-            publication_out, runtime_adapter._NativeCheckpointPublicationReport
-        )
+        publication = _pointed(publication_out, runtime_adapter._NativeCheckpointPublicationReport)
         publication.outcome = TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED
         publication.temp_cleanup = TemporalCheckpointCleanup.CLEAN
         publication.owned_temp_pid = 123
@@ -385,9 +379,7 @@ class _FakeTemporalLibrary:
         report_out: object,
     ) -> int:
         self.immutable_publish_calls += 1
-        native_request = _pointed(
-            request, runtime_adapter._NativeImmutableBytesPathRequest
-        )
+        native_request = _pointed(request, runtime_adapter._NativeImmutableBytesPathRequest)
         payload = ctypes.string_at(native_request.payload, native_request.payload_len)
         self.published_payload_addresses.append(
             int(ctypes.cast(native_request.payload, ctypes.c_void_p).value or 0)
@@ -406,9 +398,7 @@ class _FakeTemporalLibrary:
             return self.immutable_publish_override(  # type: ignore[operator,no-any-return]
                 request, publication_out, report_out
             )
-        publication = _pointed(
-            publication_out, runtime_adapter._NativeCheckpointPublicationReport
-        )
+        publication = _pointed(publication_out, runtime_adapter._NativeCheckpointPublicationReport)
         publication.outcome = runtime_adapter.TemporalPublicationOutcome.DURABLE_PUBLISHED
         publication.temp_cleanup = runtime_adapter.TemporalPublicationCleanup.CLEAN
         publication.owned_temp_pid = 123
@@ -427,9 +417,7 @@ class _FakeTemporalLibrary:
         report_out: object,
     ) -> int:
         self.reconcile_calls += 1
-        native_request = _pointed(
-            request, runtime_adapter._NativeImmutableBytesPathRequest
-        )
+        native_request = _pointed(request, runtime_adapter._NativeImmutableBytesPathRequest)
         payload = ctypes.string_at(native_request.payload, native_request.payload_len)
         self.reconciled_payloads.append(
             (
@@ -464,9 +452,7 @@ class _FakeTemporalLibrary:
         report_out: object,
     ) -> int:
         self.prepare_directory_calls += 1
-        native_request = _pointed(
-            request, runtime_adapter._NativeDurableDirectoryPathRequest
-        )
+        native_request = _pointed(request, runtime_adapter._NativeDurableDirectoryPathRequest)
         root = ctypes.string_at(native_request.root_utf8, native_request.root_len)
         relative = ctypes.string_at(
             native_request.relative_directory_utf8,
@@ -528,10 +514,7 @@ def _completion_override(
     outcome: TemporalCheckpointPublicationOutcome,
     *,
     cleanup: TemporalCheckpointCleanup,
-    primary: tuple[
-        TemporalCheckpointErrorStage, TemporalCheckpointErrorDomain, int
-    ]
-    | None = None,
+    primary: tuple[TemporalCheckpointErrorStage, TemporalCheckpointErrorDomain, int] | None = None,
     cleanup_errors: tuple[
         tuple[TemporalCheckpointErrorStage, TemporalCheckpointErrorDomain, int],
         ...,
@@ -545,9 +528,7 @@ def _completion_override(
         report_out: object,
     ) -> int:
         del handle, authority, request
-        publication = _pointed(
-            publication_out, runtime_adapter._NativeCheckpointPublicationReport
-        )
+        publication = _pointed(publication_out, runtime_adapter._NativeCheckpointPublicationReport)
         publication.outcome = outcome
         publication.temp_cleanup = cleanup
         publication.cleanup_error_count = len(cleanup_errors)
@@ -596,12 +577,8 @@ def _immutable_completion_override(
         publication_out: object,
         report_out: object,
     ) -> int:
-        native_request = _pointed(
-            request, runtime_adapter._NativeImmutableBytesPathRequest
-        )
-        publication = _pointed(
-            publication_out, runtime_adapter._NativeCheckpointPublicationReport
-        )
+        native_request = _pointed(request, runtime_adapter._NativeImmutableBytesPathRequest)
+        publication = _pointed(publication_out, runtime_adapter._NativeCheckpointPublicationReport)
         publication.outcome = outcome
         publication.temp_cleanup = cleanup
         publication.cleanup_error_count = len(cleanup_errors)
@@ -663,9 +640,7 @@ def test_definition_canonicalizes_owned_inputs_without_policy_defaults() -> None
     mutable_columns = list(reversed(range(11)))
     mutable_codes = {7: mutable_columns}
     mutable_thresholds = [0.0] * 55
-    owned = NativeTemporalCircuitDefinition(
-        definition.config, mutable_codes, mutable_thresholds
-    )
+    owned = NativeTemporalCircuitDefinition(definition.config, mutable_codes, mutable_thresholds)
     mutable_columns[0] = 999
     mutable_codes[8] = list(range(11))
     mutable_thresholds[0] = 17.0
@@ -822,9 +797,7 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
             504 + 4 * index,
             0x5060_7080 + index * 0x0001_0003,
         )
-    assert step_bytes[42:64] == bytes.fromhex(
-        "660068006a006c006e00700072007400760078007a00"
-    )
+    assert step_bytes[42:64] == bytes.fromhex("660068006a006c006e00700072007400760078007a00")
     assert hashlib.sha256(step_bytes).hexdigest() == (
         "16b918d572aa21cc6323d16545f5567e67f8dde07f6599af911b1180a4825bda"
     )
@@ -948,9 +921,7 @@ def test_fresh_authority_rejects_live_manifest_before_computing_bundle_digest(
 ) -> None:
     calls: list[str] = []
     governing = _synthetic_authority_governing(calls, tmp_path)
-    mismatched_manifest = (
-        {"path": "src/synthetic.rs", "size": 3, "sha256": "55" * 32},
-    )
+    mismatched_manifest = ({"path": "src/synthetic.rs", "size": 3, "sha256": "55" * 32},)
     monkeypatch.setattr(runtime_adapter, "_governing_protocol", lambda: governing)
     monkeypatch.setattr(
         runtime_adapter,
@@ -960,9 +931,7 @@ def test_fresh_authority_rejects_live_manifest_before_computing_bundle_digest(
     monkeypatch.setattr(
         runtime_adapter,
         "_procedural_runtime_source_bundle_sha256",
-        lambda _root: pytest.fail(
-            "bundle digest must not run after a manifest mismatch"
-        ),
+        lambda _root: pytest.fail("bundle digest must not run after a manifest mismatch"),
     )
 
     with pytest.raises(RuntimeError, match="Gate3 source manifest"):
@@ -998,16 +967,12 @@ def test_fresh_authority_surfaces_duplicate_gate3_json_before_live_source(
     monkeypatch.setattr(
         runtime_adapter,
         "_procedural_runtime_source_manifest",
-        lambda _root: pytest.fail(
-            "live source manifest must not run after duplicate Gate3 JSON"
-        ),
+        lambda _root: pytest.fail("live source manifest must not run after duplicate Gate3 JSON"),
     )
     monkeypatch.setattr(
         runtime_adapter,
         "_procedural_runtime_source_bundle_sha256",
-        lambda _root: pytest.fail(
-            "live source digest must not run after duplicate Gate3 JSON"
-        ),
+        lambda _root: pytest.fail("live source digest must not run after duplicate Gate3 JSON"),
     )
 
     with pytest.raises(RuntimeError, match="duplicate JSON key"):
@@ -1033,9 +998,7 @@ def test_fresh_authority_rejects_oversized_gate3_before_live_source_computation(
     monkeypatch.setattr(
         runtime_adapter,
         "_procedural_runtime_source_bundle_sha256",
-        lambda _root: pytest.fail(
-            "live source digest must not run after an oversized Gate3 file"
-        ),
+        lambda _root: pytest.fail("live source digest must not run after an oversized Gate3 file"),
     )
 
     with pytest.raises(RuntimeError, match="Gate3 file size is outside"):
@@ -1124,18 +1087,14 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     with pytest.raises(RuntimeError, match="closed"):
         circuit.advance_block([7], mode=TemporalStepMode.READ_ONLY)
 
-    with NativeTemporalCircuit.from_checkpoint(
-        definition, checkpoint
-    ) as restored:
+    with NativeTemporalCircuit.from_checkpoint(definition, checkpoint) as restored:
         assert restored.checkpoint() == checkpoint
 
     assert library.destroyed == [0x1234, 0x1235]
     assert set(NativeTemporalRuntimeStatus) == {
         NativeTemporalRuntimeStatus(code) for code in range(11)
     }
-    assert {
-        member.name: member.value for member in TemporalCheckpointPublicationOutcome
-    } == {
+    assert {member.name: member.value for member in TemporalCheckpointPublicationOutcome} == {
         "DURABLE_PUBLISHED": 1,
         "COLLISION": 2,
         "NOT_PUBLISHED": 3,
@@ -1148,20 +1107,19 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     }
     assert {member.value for member in TemporalCheckpointErrorDomain} == set(range(6))
     assert {member.value for member in TemporalCheckpointErrorStage} == set(range(12))
-    assert {
-        member.name: member.value for member in runtime_adapter.TemporalPublicationOutcome
-    } == {
+    assert {member.name: member.value for member in runtime_adapter.TemporalPublicationOutcome} == {
         "DURABLE_PUBLISHED": 1,
         "COLLISION": 2,
         "NOT_PUBLISHED": 3,
         "PUBLISHED_BUT_NOT_CONFIRMED_DURABLE": 4,
     }
+    assert {member.name: member.value for member in runtime_adapter.TemporalPublicationCleanup} == {
+        "NOT_APPLICABLE": 0,
+        "CLEAN": 1,
+        "ORPHANED": 2,
+    }
     assert {
-        member.name: member.value for member in runtime_adapter.TemporalPublicationCleanup
-    } == {"NOT_APPLICABLE": 0, "CLEAN": 1, "ORPHANED": 2}
-    assert {
-        member.name: member.value
-        for member in runtime_adapter.TemporalPublicationErrorDomain
+        member.name: member.value for member in runtime_adapter.TemporalPublicationErrorDomain
     } == {
         "NONE": 0,
         "POSIX": 1,
@@ -1171,8 +1129,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "IO": 5,
     }
     assert {
-        member.name: member.value
-        for member in runtime_adapter.TemporalPublicationErrorStage
+        member.name: member.value for member in runtime_adapter.TemporalPublicationErrorStage
     } == {
         "NONE": 0,
         "PARENT_OPEN": 1,
@@ -1222,6 +1179,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "reconcile_existing_immutable_bytes",
     }
     for method in (
+        NativeTemporalCircuitDefinition.circuit_identity_sha256,
         NativeTemporalCircuit.fresh,
         NativeTemporalCircuit.from_checkpoint,
         NativeTemporalCircuit.from_checkpoint_path,
@@ -1243,6 +1201,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
             }
         )
     for method in (
+        NativeTemporalCircuitDefinition.circuit_identity_sha256,
         NativeTemporalCircuit.fresh,
         NativeTemporalCircuit.from_checkpoint,
         NativeTemporalCircuit.advance_block,
@@ -1258,9 +1217,10 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "self",
         "destination",
     }
-    assert set(inspect.signature(NativeTemporalCircuit.checkpoint_identity).parameters) == {
-        "self"
-    }
+    assert set(inspect.signature(NativeTemporalCircuit.checkpoint_identity).parameters) == {"self"}
+    assert set(
+        inspect.signature(NativeTemporalCircuitDefinition.circuit_identity_sha256).parameters
+    ) == {"self"}
     assert set(inspect.signature(runtime_adapter.publish_immutable_bytes).parameters) == {
         "destination",
         "payload",
@@ -1273,24 +1233,20 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "relative_directory",
     }
 
+    definition_identity = library.humanbrain_temporal_circuit_definition_identity_v1
     create = library.humanbrain_temporal_circuit_runtime_create_v1
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
     advance = library.humanbrain_temporal_circuit_runtime_advance_block_v1
     size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
-    checkpoint_identity = (
-        library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
-    )
+    checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
     export = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
-    publish = (
-        library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1
-    )
+    publish = library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1
     publish_bytes = library.humanbrain_temporal_publish_immutable_bytes_path_v1
-    reconcile_bytes = (
-        library.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1
-    )
+    reconcile_bytes = library.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1
     prepare_directory = library.humanbrain_temporal_prepare_durable_directory_path_v1
     destroy = library.humanbrain_temporal_circuit_runtime_destroy
     functions = (
+        definition_identity,
         create,
         imported,
         advance,
@@ -1308,6 +1264,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         3,
         3,
         3,
+        3,
         4,
         5,
         5,
@@ -1319,6 +1276,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     assert all(
         function.restype is ctypes.c_uint32
         for function in (
+            definition_identity,
             create,
             imported,
             advance,
@@ -1422,9 +1380,7 @@ def test_checkpoint_identity_rejects_malformed_headers_and_reports(
 
     def refresh_logical_state() -> None:
         header[224:256] = hashlib.sha256(
-            b"humanbrain-r3-checkpoint-logical-state-v1\x00"
-            + header[128:160]
-            + header[192:224]
+            b"humanbrain-r3-checkpoint-logical-state-v1\x00" + header[128:160] + header[192:224]
         ).digest()
 
     if defect == "magic":
@@ -1585,10 +1541,7 @@ def test_publish_checkpoint_returns_every_completion_outcome_and_only_durable_re
     monkeypatch: pytest.MonkeyPatch,
     outcome: TemporalCheckpointPublicationOutcome,
     cleanup: TemporalCheckpointCleanup,
-    primary: tuple[
-        TemporalCheckpointErrorStage, TemporalCheckpointErrorDomain, int
-    ]
-    | None,
+    primary: tuple[TemporalCheckpointErrorStage, TemporalCheckpointErrorDomain, int] | None,
     resumable: bool,
 ) -> None:
     library, _identity = _install_fake_runtime(monkeypatch)
@@ -1615,24 +1568,18 @@ def test_publish_immutable_bytes_is_a_standalone_bit_exact_capability(
 ) -> None:
     library, _identity = _install_fake_runtime(monkeypatch)
     payload = b'{"kind":"resume-manifest","generation":7}\x00\xff'
-    get_buffer, release_buffer = runtime_adapter._readonly_buffer_api(
-        "immutable-byte test"
-    )
+    get_buffer, release_buffer = runtime_adapter._readonly_buffer_api("immutable-byte test")
     view = runtime_adapter._PyBuffer()
     assert int(get_buffer(payload, ctypes.byref(view), 0)) == 0
     expected_payload_address = int(view.buf)
     release_buffer(ctypes.byref(view))
 
-    completion = runtime_adapter.publish_immutable_bytes(
-        Path("folder") / "result.json", payload
-    )
+    completion = runtime_adapter.publish_immutable_bytes(Path("folder") / "result.json", payload)
 
     assert completion.payload_bytes == len(payload)
     assert completion.written_bytes == len(payload)
     assert completion.durably_published
-    assert library.published_payloads == [
-        (b"folder", b"result.json", payload)
-    ]
+    assert library.published_payloads == [(b"folder", b"result.json", payload)]
     assert library.published_payload_addresses == [expected_payload_address]
 
 
@@ -1774,9 +1721,7 @@ def test_publish_immutable_bytes_revalidates_authority_and_binary_before_native(
         path_encoding_calls += 1
         raise AssertionError("authority and binary attestation must precede path encoding")
 
-    monkeypatch.setattr(
-        runtime_adapter, "_lexical_publication_path_parts", forbidden_path_encoding
-    )
+    monkeypatch.setattr(runtime_adapter, "_lexical_publication_path_parts", forbidden_path_encoding)
     authorities = iter(
         (
             runtime_adapter._FreshAuthority(b"\x11" * 32, b"\x22" * 32),
@@ -1861,9 +1806,7 @@ def test_publish_immutable_bytes_returns_all_outcomes_without_retry(
         outcome, cleanup=cleanup, primary=primary
     )
 
-    completion = runtime_adapter.publish_immutable_bytes(
-        Path("result.json"), b'{"ok":true}'
-    )
+    completion = runtime_adapter.publish_immutable_bytes(Path("result.json"), b'{"ok":true}')
 
     assert completion.outcome is outcome
     assert completion.temp_cleanup is cleanup
@@ -1961,17 +1904,13 @@ def test_immutable_bytes_publication_decoder_rejects_malformed_reports(
     elif defect == "active-cleanup-zero":
         publication.cleanup_error_count = 1
     elif defect == "unused-cleanup-active":
-        publication.cleanup_errors[3].stage = (
-            runtime_adapter.TemporalPublicationErrorStage.TEMP_CLEANUP
-        )
-        publication.cleanup_errors[3].domain = (
-            runtime_adapter.TemporalPublicationErrorDomain.POLICY
-        )
+        publication.cleanup_errors[
+            3
+        ].stage = runtime_adapter.TemporalPublicationErrorStage.TEMP_CLEANUP
+        publication.cleanup_errors[3].domain = runtime_adapter.TemporalPublicationErrorDomain.POLICY
         publication.cleanup_errors[3].code = 1
     elif defect == "malformed-primary":
-        publication.primary_error.domain = (
-            runtime_adapter.TemporalPublicationErrorDomain.POLICY
-        )
+        publication.primary_error.domain = runtime_adapter.TemporalPublicationErrorDomain.POLICY
     elif defect == "payload-length":
         publication.checkpoint_bytes = 0
         publication.encoded_bytes = 0
@@ -1985,65 +1924,43 @@ def test_immutable_bytes_publication_decoder_rejects_malformed_reports(
     elif defect == "runtime-length-mismatch":
         report.required = 2
     elif defect == "durable-primary":
-        publication.primary_error.stage = (
-            runtime_adapter.TemporalPublicationErrorStage.FILE_SYNC
-        )
-        publication.primary_error.domain = (
-            runtime_adapter.TemporalPublicationErrorDomain.POSIX
-        )
+        publication.primary_error.stage = runtime_adapter.TemporalPublicationErrorStage.FILE_SYNC
+        publication.primary_error.domain = runtime_adapter.TemporalPublicationErrorDomain.POSIX
         publication.primary_error.code = 5
     elif defect == "clean-with-error":
         publication.cleanup_error_count = 1
-        publication.cleanup_errors[0].stage = (
-            runtime_adapter.TemporalPublicationErrorStage.TEMP_CLEANUP
-        )
-        publication.cleanup_errors[0].domain = (
-            runtime_adapter.TemporalPublicationErrorDomain.POLICY
-        )
+        publication.cleanup_errors[
+            0
+        ].stage = runtime_adapter.TemporalPublicationErrorStage.TEMP_CLEANUP
+        publication.cleanup_errors[0].domain = runtime_adapter.TemporalPublicationErrorDomain.POLICY
         publication.cleanup_errors[0].code = 1
     elif defect == "orphan-without-error":
         publication.temp_cleanup = runtime_adapter.TemporalPublicationCleanup.ORPHANED
     elif defect == "not-applicable-temp-stage":
         publication.outcome = runtime_adapter.TemporalPublicationOutcome.NOT_PUBLISHED
-        publication.temp_cleanup = (
-            runtime_adapter.TemporalPublicationCleanup.NOT_APPLICABLE
-        )
+        publication.temp_cleanup = runtime_adapter.TemporalPublicationCleanup.NOT_APPLICABLE
         publication.owned_temp_pid = 0
         publication.owned_temp_nonce = 0
         publication.encoded_bytes = 0
         report.observed = 0
-        publication.primary_error.stage = (
-            runtime_adapter.TemporalPublicationErrorStage.WRITE
-        )
-        publication.primary_error.domain = (
-            runtime_adapter.TemporalPublicationErrorDomain.IO
-        )
+        publication.primary_error.stage = runtime_adapter.TemporalPublicationErrorStage.WRITE
+        publication.primary_error.domain = runtime_adapter.TemporalPublicationErrorDomain.IO
         publication.primary_error.code = 1
     elif defect == "temp-backed-pre-temp-stage":
         publication.outcome = runtime_adapter.TemporalPublicationOutcome.NOT_PUBLISHED
-        publication.primary_error.stage = (
-            runtime_adapter.TemporalPublicationErrorStage.PARENT_OPEN
-        )
-        publication.primary_error.domain = (
-            runtime_adapter.TemporalPublicationErrorDomain.POLICY
-        )
+        publication.primary_error.stage = runtime_adapter.TemporalPublicationErrorStage.PARENT_OPEN
+        publication.primary_error.domain = runtime_adapter.TemporalPublicationErrorDomain.POLICY
         publication.primary_error.code = 1
     elif defect == "unconfirmed-wrong-stage":
         publication.outcome = (
             runtime_adapter.TemporalPublicationOutcome.PUBLISHED_BUT_NOT_CONFIRMED_DURABLE
         )
-        publication.primary_error.stage = (
-            runtime_adapter.TemporalPublicationErrorStage.WRITE
-        )
-        publication.primary_error.domain = (
-            runtime_adapter.TemporalPublicationErrorDomain.IO
-        )
+        publication.primary_error.stage = runtime_adapter.TemporalPublicationErrorStage.WRITE
+        publication.primary_error.domain = runtime_adapter.TemporalPublicationErrorDomain.IO
         publication.primary_error.code = 1
     elif defect == "checkpoint-encoder-domain":
         publication.outcome = runtime_adapter.TemporalPublicationOutcome.NOT_PUBLISHED
-        publication.primary_error.stage = (
-            runtime_adapter.TemporalPublicationErrorStage.WRITE
-        )
+        publication.primary_error.stage = runtime_adapter.TemporalPublicationErrorStage.WRITE
         publication.primary_error.domain = 4
         publication.primary_error.code = 1
     else:
@@ -2262,9 +2179,7 @@ def test_publish_checkpoint_revalidates_authority_and_binary_before_native_call(
         monkeypatch.setattr(
             runtime_adapter,
             "_loaded_library_identity",
-            lambda: NativeLibraryIdentity(
-                identity.source_digest, identity.binary_size, "ef" * 32
-            ),
+            lambda: NativeLibraryIdentity(identity.source_digest, identity.binary_size, "ef" * 32),
         )
         with pytest.raises(NativeTemporalRuntimeError) as binary_error:
             circuit.publish_checkpoint(Path("unused.chk"))
@@ -2287,9 +2202,7 @@ def test_checkpoint_path_import_completes_all_authority_checks_before_file_io(
                 runtime_adapter._FreshAuthority(b"\x33" * 32, b"\x22" * 32),
             )
         )
-        monkeypatch.setattr(
-            runtime_adapter, "_fresh_authority", lambda: next(authorities)
-        )
+        monkeypatch.setattr(runtime_adapter, "_fresh_authority", lambda: next(authorities))
     else:
         monkeypatch.setattr(
             runtime_adapter,
@@ -2393,9 +2306,7 @@ def test_checkpoint_path_import_rejects_malformed_stable_abi_buffers_and_cleans_
         assert flags == 0
         if defect == "acquisition-failed":
             return -1
-        view = ctypes.cast(
-            pointer, ctypes.POINTER(runtime_adapter._PyBuffer)
-        ).contents
+        view = ctypes.cast(pointer, ctypes.POINTER(runtime_adapter._PyBuffer)).contents
         view.obj = id(owner)
         view.buf = ctypes.addressof(backing)
         view.len = len(library.checkpoint_bytes)
@@ -2430,9 +2341,7 @@ def test_checkpoint_path_import_rejects_malformed_stable_abi_buffers_and_cleans_
     )
 
     with pytest.raises(NativeTemporalRuntimeError) as rejected:
-        NativeTemporalCircuit.from_checkpoint_path(
-            _tiny_definition(), checkpoint_path
-        )
+        NativeTemporalCircuit.from_checkpoint_path(_tiny_definition(), checkpoint_path)
     assert rejected.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
     assert get_calls == 1
     assert release_calls == (0 if defect == "acquisition-failed" else 1)
@@ -2477,14 +2386,10 @@ def test_checkpoint_path_import_holds_readonly_buffer_and_releases_in_order(
             events.append("file-close")
             self._file.close()
 
-    def tracking_fdopen(
-        descriptor: int, mode: str, *, buffering: int
-    ) -> TrackingFile:
+    def tracking_fdopen(descriptor: int, mode: str, *, buffering: int) -> TrackingFile:
         return TrackingFile(descriptor, mode, buffering)
 
-    def tracking_get_buffer(
-        owner: object, view: object, flags: int
-    ) -> int:
+    def tracking_get_buffer(owner: object, view: object, flags: int) -> int:
         assert flags == 0
         events.append("buffer-get")
         return real_get_buffer(owner, view, flags)
@@ -2493,9 +2398,7 @@ def test_checkpoint_path_import_holds_readonly_buffer_and_releases_in_order(
         events.append("buffer-release")
         real_release_buffer(view)
 
-    def import_while_buffer_is_live(
-        request: object, handle_out: object, report_out: object
-    ) -> int:
+    def import_while_buffer_is_live(request: object, handle_out: object, report_out: object) -> int:
         events.append("native-import")
         native = _pointed(request, runtime_adapter._NativeImportRequest)
         assert ctypes.string_at(native.checkpoint_bytes, native.checkpoint_len) == (
@@ -2557,9 +2460,7 @@ def test_checkpoint_path_import_rejects_bad_basic_v1_headers_before_native_impor
     checkpoint_path.write_bytes(checkpoint)
 
     with pytest.raises(NativeTemporalRuntimeError) as rejected:
-        NativeTemporalCircuit.from_checkpoint_path(
-            _tiny_definition(), checkpoint_path
-        )
+        NativeTemporalCircuit.from_checkpoint_path(_tiny_definition(), checkpoint_path)
 
     assert rejected.value.status is NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED
     assert library.import_calls == 0
@@ -2586,9 +2487,7 @@ def test_checkpoint_path_import_rejects_final_symlink_and_nonregular_file(
         symlink_metadata = os.stat_result(
             (0o120777, 17, 23, 1, 0, 0, len(library.checkpoint_bytes), 0, 0, 0)
         )
-        monkeypatch.setattr(
-            runtime_adapter.os, "lstat", lambda _path: symlink_metadata
-        )
+        monkeypatch.setattr(runtime_adapter.os, "lstat", lambda _path: symlink_metadata)
         reached_open = False
 
         def forbidden_open(path: object, flags: int) -> object:
@@ -2617,9 +2516,7 @@ def test_checkpoint_path_import_destroys_native_handle_and_releases_mapping_on_f
     checkpoint_path = tmp_path / "malformed-native-report.chk"
     checkpoint_path.write_bytes(library.checkpoint_bytes)
 
-    def malformed_import(
-        request: object, handle_out: object, report_out: object
-    ) -> int:
+    def malformed_import(request: object, handle_out: object, report_out: object) -> int:
         native = _pointed(request, runtime_adapter._NativeImportRequest)
         assert ctypes.string_at(native.checkpoint_bytes, native.checkpoint_len) == (
             library.checkpoint_bytes
@@ -2630,9 +2527,7 @@ def test_checkpoint_path_import_destroys_native_handle_and_releases_mapping_on_f
 
     library.import_override = malformed_import
     with pytest.raises(NativeTemporalRuntimeError) as rejected:
-        NativeTemporalCircuit.from_checkpoint_path(
-            _tiny_definition(), checkpoint_path
-        )
+        NativeTemporalCircuit.from_checkpoint_path(_tiny_definition(), checkpoint_path)
     assert rejected.value.status is NativeTemporalRuntimeStatus.INTERNAL_INVARIANT
     assert library.destroyed == [0x1234]
     checkpoint_path.unlink()
@@ -2647,9 +2542,7 @@ def test_checkpoint_path_import_revalidates_descriptor_identity_and_size_after_n
     checkpoint_path = tmp_path / "changed-during-import.chk"
     checkpoint_path.write_bytes(library.checkpoint_bytes)
 
-    def mutate_during_import(
-        request: object, handle_out: object, report_out: object
-    ) -> int:
+    def mutate_during_import(request: object, handle_out: object, report_out: object) -> int:
         del request
         with checkpoint_path.open("ab") as stream:
             stream.write(b"x")
@@ -2657,9 +2550,7 @@ def test_checkpoint_path_import_revalidates_descriptor_identity_and_size_after_n
 
     library.import_override = mutate_during_import
     with pytest.raises(NativeTemporalRuntimeError) as rejected:
-        NativeTemporalCircuit.from_checkpoint_path(
-            _tiny_definition(), checkpoint_path
-        )
+        NativeTemporalCircuit.from_checkpoint_path(_tiny_definition(), checkpoint_path)
     assert rejected.value.status is NativeTemporalRuntimeStatus.CHECKPOINT_REJECTED
     assert library.destroyed == [0x1234]
     checkpoint_path.unlink()
@@ -2703,9 +2594,7 @@ def test_advance_error_retains_only_the_committed_prefix(
     assert error.observed == 99
 
 
-@pytest.mark.parametrize(
-    "defect", ("status-mismatch", "message-tail", "message-utf8", "step-flag")
-)
+@pytest.mark.parametrize("defect", ("status-mismatch", "message-tail", "message-utf8", "step-flag"))
 def test_fake_native_transport_defects_fail_as_internal_invariants(
     monkeypatch: pytest.MonkeyPatch,
     defect: str,
@@ -2932,9 +2821,7 @@ def test_checkpoint_identity_orders_open_authority_attestation_native_and_decode
     )
 
     def forbidden_attestation() -> NativeLibraryIdentity:
-        raise AssertionError(
-            "checkpoint identity must reject authority before binary attestation"
-        )
+        raise AssertionError("checkpoint identity must reject authority before binary attestation")
 
     monkeypatch.setattr(
         runtime_adapter,
@@ -3101,8 +2988,16 @@ def test_actual_native_fresh_checkpoint_import_round_trip(
     tmp_path: Path,
 ) -> None:
     authority = runtime_adapter._FreshAuthority(b"\x41" * 32, b"\x92" * 32)
-    monkeypatch.setattr(runtime_adapter, "_fresh_authority", lambda: authority)
+    authority_calls: list[None] = []
+
+    def fresh_authority() -> runtime_adapter._FreshAuthority:
+        authority_calls.append(None)
+        return authority
+
+    monkeypatch.setattr(runtime_adapter, "_fresh_authority", fresh_authority)
     definition = _tiny_definition()
+    definition_identity = definition.circuit_identity_sha256()
+    assert authority_calls == []
 
     with NativeTemporalCircuit.fresh(definition) as fresh:
         empty_identity = fresh.checkpoint_identity()
@@ -3121,6 +3016,7 @@ def test_actual_native_fresh_checkpoint_import_round_trip(
         assert identity.protocol_identity_sha256 == header[32:64].hex()
         assert identity.source_bundle_identity_sha256 == header[64:96].hex()
         assert identity.circuit_identity_sha256 == header[96:128].hex()
+        assert identity.circuit_identity_sha256 == definition_identity
         assert identity.body_sha256 == header[128:160].hex()
         assert identity.semantic_index_sha256 == header[160:192].hex()
         assert (
@@ -3146,9 +3042,7 @@ def test_actual_native_fresh_checkpoint_import_round_trip(
         assert collision.semantically_resumable is False
     assert len(checkpoint) > 256
 
-    with NativeTemporalCircuit.from_checkpoint_path(
-        definition, checkpoint_path
-    ) as mapped:
+    with NativeTemporalCircuit.from_checkpoint_path(definition, checkpoint_path) as mapped:
         assert mapped.checkpoint() == checkpoint
         assert mapped.checkpoint_identity() == identity
     with NativeTemporalCircuit.from_checkpoint(definition, checkpoint) as restored:
@@ -3185,15 +3079,11 @@ def test_actual_native_immutable_bytes_publication_is_exclusive_and_bit_exact(
     assert mismatch.outcome is runtime_adapter.TemporalDurabilityOutcome.NOT_DURABLE
     assert destination.read_bytes() == payload
 
-    prepared = runtime_adapter.prepare_durable_directory(
-        tmp_path, Path("durable") / "generation-7"
-    )
+    prepared = runtime_adapter.prepare_durable_directory(tmp_path, Path("durable") / "generation-7")
     assert prepared.durably_prepared
     assert prepared.required_component_count == 2
     assert prepared.confirmed_component_count == 2
     assert (tmp_path / "durable" / "generation-7").is_dir()
-    repeated = runtime_adapter.prepare_durable_directory(
-        tmp_path, Path("durable") / "generation-7"
-    )
+    repeated = runtime_adapter.prepare_durable_directory(tmp_path, Path("durable") / "generation-7")
     assert repeated.durably_prepared
     assert repeated.created_component_count == 0

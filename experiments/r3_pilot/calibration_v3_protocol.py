@@ -631,7 +631,7 @@ def build_protocol() -> dict[str, Any]:
 
     return {
         "artifact_id": "r3-calibration-v3-preregistration",
-        "schema_version": 5,
+        "schema_version": 6,
         "change_notes": [
             "docs/research/r3-calibration-v3-change-note-1.md",
         ],
@@ -646,6 +646,43 @@ def build_protocol() -> dict[str, Any]:
             "novel_race_cap": 8,
             "projection_seed": PROJECTION_SEED,
             "source_relay_pairs_per_segment": 10,
+        },
+        "native_definition_contract": {
+            "config": {
+                "base_cells_per_column": 8,
+                "column_count": 4_096,
+                "connected_permanence_ticks": 250,
+                "construction_seed_scope": [17],
+                "context_policy": "BOUND_WINNERS",
+                "initial_permanence_ticks": 255,
+                "max_pyramidal_cells": 131_072,
+                "max_segments_per_cell": 255,
+                "negative_decrement_ticks": 2,
+                "novel_race_cap": 8,
+                "permanence_increment_ticks": 50,
+                "plasticity_policy": "PLASTIC",
+                "prediction_quorum": 11,
+                "segment_capacity": 23_286_406,
+                "theta_arm_scope": [list(arm) for arm in THRESHOLD_ARMS],
+            },
+            "threshold_offsets_mv": {
+                "dtype": "float64",
+                "generator": "numpy.random.default_rng(seed).normal",
+                "mean_microvolts": 0,
+                "ordering": "ascending_physical_gid",
+                "physical_cell_count_rule": ("2 * max_pyramidal_cells + 3 * column_count"),
+                "seed_source": "construction_seed",
+                "standard_deviation_microvolts": 25,
+            },
+            "token_codebook": {
+                "active_columns_per_token": 11,
+                "builder": "production_codebook_preimage",
+                "canonical_json_sha256": (
+                    "388177db5f1d8cba9f0606d5e065148498418b10d27d7abf6117d09b44238a9c"
+                ),
+                "projection_seed": 17,
+                "token_count": 768,
+            },
         },
         "execution_status": "NOT_RUNNABLE_PRE_OUTCOME",
         "timing_contract": {
@@ -919,6 +956,28 @@ def build_protocol() -> dict[str, Any]:
                     "development": [17],
                     "deterministic_confirmation": [17],
                     "independent_seed_confirmation": ("forbidden_by_governing_C1_protocol"),
+                },
+                "native_circuit_identity_sha256_by_arm_and_seed": {
+                    "theta-m-10_theta-a-13": {
+                        "construction-seed-0000000017": (
+                            "be6d5470a8cab36cd8a8d52b456c2d7601012a71d4b689999233b6c37e84874a"
+                        ),
+                    },
+                    "theta-m-16_theta-a-18": {
+                        "construction-seed-0000000017": (
+                            "efcd70c8f0a1deeb04ffa32b7d905f42c01000caa33ed18d61ac366594ed9502"
+                        ),
+                    },
+                    "theta-m-18_theta-a-20": {
+                        "construction-seed-0000000017": (
+                            "ec92505afdccf245b8b61e8fdbd0dbb52efecd73a29a78c28df6a7bb934aaf80"
+                        ),
+                    },
+                    "theta-m-20_theta-a-20": {
+                        "construction-seed-0000000017": (
+                            "095b58957ecc2a25a73cebe57c5ee17183936c202d3b2481b67b5e7fb563915a"
+                        ),
+                    },
                 },
                 "cohort_invariants": {
                     "cohort_width": 8,

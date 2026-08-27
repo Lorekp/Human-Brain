@@ -11,6 +11,20 @@ import numpy as np
 from humanbrain.cells import AllenGlif3Parameters
 from humanbrain.race_bias import PredictiveBiasConfig, apply_predictive_bias
 
+THRESHOLD_OFFSET_GENERATOR = "numpy.random.default_rng(seed).normal"
+THRESHOLD_OFFSET_MEAN_MV = 0.0
+THRESHOLD_OFFSET_STANDARD_DEVIATION_MV = 0.025
+
+
+def seeded_threshold_offsets_mv(cell_count: int, seed: int) -> np.ndarray:
+    """Return the established threshold offsets in ascending physical-cell order."""
+
+    return np.random.default_rng(seed).normal(
+        THRESHOLD_OFFSET_MEAN_MV,
+        THRESHOLD_OFFSET_STANDARD_DEVIATION_MV,
+        cell_count,
+    )
+
 
 @dataclass(frozen=True)
 class HumanCellParameters:
@@ -96,8 +110,7 @@ class DendriticCortex:
         self.predictive_bias = predictive_bias
         self._branches: dict[tuple[int, ...], dict[int, float]] = {}
         self._unigram = np.zeros(self.cell_count, dtype=np.float64)
-        rng = np.random.default_rng(seed)
-        self._threshold_offset = rng.normal(0.0, 0.025, self.cell_count)
+        self._threshold_offset = seeded_threshold_offsets_mv(self.cell_count, seed)
         self._grown_transitions = 0
         cell = self.parameters.cell
         self._nmda_decay = np.exp(-cell.dt_ms / self.parameters.tau_nmda_ms)

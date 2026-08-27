@@ -76,6 +76,7 @@ pub(crate) struct TemporalCircuitConfig {
     pub(crate) plasticity_policy: TemporalPlasticityPolicy,
 }
 
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct TokenCode {
     pub(crate) token_id: u32,

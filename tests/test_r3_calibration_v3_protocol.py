@@ -44,7 +44,7 @@ def test_protocol_separates_fixture_selection_from_the_train_scale_gate() -> Non
     frozen = protocol.build_protocol()
 
     assert frozen["artifact_id"] == "r3-calibration-v3-preregistration"
-    assert frozen["schema_version"] == 5
+    assert frozen["schema_version"] == 6
     assert frozen["change_notes"] == ["docs/research/r3-calibration-v3-change-note-1.md"]
     assert frozen["circuit_contract"] == {
         "active_columns": 11,

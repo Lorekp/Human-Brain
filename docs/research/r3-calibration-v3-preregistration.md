@@ -11,14 +11,17 @@ does not select a threshold. The committed v1/v2 electrical and temporal JSON
 artifacts remain historical evidence bound to `df26cc2`; they do not justify a
 C1-scale threshold after the cohort allocator and exact-pair changes.
 
-Schema 5 is deliberately fail-closed and incorporates
+Schema 6 is deliberately fail-closed and incorporates
 [`CHANGE NOTE 1`](r3-calibration-v3-change-note-1.md). It pins the explicit-threshold Python
 oracle, the schema-7 TRAIN-only capacity artifact, and the governing nested
 Gate-3 manifest at
 `benchmarks/procedural_runtime_gate3_slice_protocol_v1.json`, but reports
 `runnable=false`. Native source closure is governed transitively by that nested
-manifest; schema 5 does not duplicate its native-file digests. Its exact
-blocker is: "Official calibration-v3 screen execution, checkpoint/resume
+manifest; schema 6 does not duplicate its native-file digests. Its native
+identity contract now also makes the established permanence, policy, codebook,
+threshold-offset generator, and four seed-17 definition digests literal; this
+selects no arm and opens no outcome data. Its exact blocker is: "Official
+calibration-v3 screen execution, checkpoint/resume
 orchestration, and immutable result publication remain disabled behind
 `_execute_frozen_plan`." `--check-runnable` must therefore continue to fail.
 
@@ -353,7 +356,7 @@ payload keys are `artifact_path`, `claim_boundary`, `construction_seeds`,
 
 ### 5.2 Adopted active-wall contract
 
-Schema 5 adopts timing contract `r3-cumulative-active-wall-v2` with the exact
+Schema 6 retains timing contract `r3-cumulative-active-wall-v2` with the exact
 cap `54,000,000,000,000 ns` while leaving execution disabled. CPython 3.11
 `time.perf_counter_ns` measures one closed active interval without internal
 pauses; scheduler delay, sleep, locks, garbage collection, I/O, asynchronous

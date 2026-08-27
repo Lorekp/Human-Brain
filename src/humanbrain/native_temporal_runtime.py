@@ -46,16 +46,10 @@ _CHECKPOINT_V1_MAGIC: Final = b"R3NTCP1\x00"
 _CHECKPOINT_V1_FORMAT_VERSION: Final = 1
 _CHECKPOINT_V1_HEADER_BYTES: Final = 256
 _CHECKPOINT_V1_BASIC_HEADER_BYTES: Final = 24
-_CHECKPOINT_LOGICAL_STATE_DOMAIN: Final = (
-    b"humanbrain-r3-checkpoint-logical-state-v1\x00"
-)
+_CHECKPOINT_LOGICAL_STATE_DOMAIN: Final = b"humanbrain-r3-checkpoint-logical-state-v1\x00"
 _MAX_IMMUTABLE_PAYLOAD_BYTES: Final = 1 << 20
-_GOVERNING_PROTOCOL_MODULE: Final = (
-    "experiments.r3_pilot.calibration_v3_protocol"
-)
-_GATE3_AUTHORITY_MODULE: Final = (
-    "experiments.r3_pilot.calibration_v3_gate3_authority"
-)
+_GOVERNING_PROTOCOL_MODULE: Final = "experiments.r3_pilot.calibration_v3_protocol"
+_GATE3_AUTHORITY_MODULE: Final = "experiments.r3_pilot.calibration_v3_gate3_authority"
 
 
 class _NativeAuthority(ctypes.Structure):
@@ -106,6 +100,20 @@ class _NativeDefinition(ctypes.Structure):
         ("threshold_offset_count", ctypes.c_uint64),
         ("authority", _NativeAuthority),
     ]
+
+
+class _NativeDefinitionIdentityRequest(ctypes.Structure):
+    _fields_ = [
+        ("config", _NativeConfig),
+        ("token_codes", ctypes.POINTER(_NativeTokenCode)),
+        ("token_code_count", ctypes.c_uint64),
+        ("threshold_offsets_mv", ctypes.POINTER(ctypes.c_double)),
+        ("threshold_offset_count", ctypes.c_uint64),
+    ]
+
+
+class _NativeDefinitionIdentity(ctypes.Structure):
+    _fields_ = [("circuit_identity_sha256", ctypes.c_uint8 * 32)]
 
 
 class _NativeImportRequest(ctypes.Structure):
@@ -282,9 +290,7 @@ def _require_frozen_layout(
     alignment: int,
     offsets: tuple[int, ...],
 ) -> None:
-    observed_offsets = tuple(
-        getattr(record, name).offset for name, _ctype in record._fields_
-    )
+    observed_offsets = tuple(getattr(record, name).offset for name, _ctype in record._fields_)
     if (
         ctypes.sizeof(record) != size
         or ctypes.alignment(record) != alignment
@@ -311,6 +317,8 @@ def _assert_frozen_abi() -> None:
     )
     _require_frozen_layout(_NativeTokenCode, 48, 4, (0, 4))
     _require_frozen_layout(_NativeDefinition, 128, 8, (0, 32, 40, 48, 56, 64))
+    _require_frozen_layout(_NativeDefinitionIdentityRequest, 64, 8, (0, 32, 40, 48, 56))
+    _require_frozen_layout(_NativeDefinitionIdentity, 32, 1, (0,))
     _require_frozen_layout(_NativeImportRequest, 144, 8, (0, 128, 136))
     _require_frozen_layout(_NativeCheckpointPathRequest, 40, 8, (0, 8, 16, 24, 32))
     _require_frozen_layout(
@@ -377,21 +385,15 @@ def _readonly_buffer_api(
     purpose: str = "checkpoint path import",
 ) -> tuple[object, object]:
     if platform.python_implementation() != "CPython":
-        raise RuntimeError(
-            f"{purpose} requires the CPython stable buffer ABI"
-        )
+        raise RuntimeError(f"{purpose} requires the CPython stable buffer ABI")
     if tuple(sys.version_info[:2]) < (3, 11):
-        raise RuntimeError(
-            f"{purpose} requires CPython 3.11 or newer"
-        )
+        raise RuntimeError(f"{purpose} requires CPython 3.11 or newer")
     api = _python_buffer_api()
     try:
         get_buffer = getattr(api, "PyObject_GetBuffer")
         release_buffer = getattr(api, "PyBuffer_Release")
     except AttributeError as exc:
-        raise RuntimeError(
-            f"{purpose} requires PyObject_GetBuffer and PyBuffer_Release"
-        ) from exc
+        raise RuntimeError(f"{purpose} requires PyObject_GetBuffer and PyBuffer_Release") from exc
     get_buffer.argtypes = [
         ctypes.py_object,
         ctypes.POINTER(_PyBuffer),
@@ -745,9 +747,7 @@ class NativeTemporalCircuitConfig:
 
     def __post_init__(self) -> None:
         _exact_int("column_count", self.column_count, _ACTIVE_COLUMNS, _UINT32_MAX)
-        _exact_int(
-            "max_pyramidal_cells", self.max_pyramidal_cells, 1, _UINT32_MAX
-        )
+        _exact_int("max_pyramidal_cells", self.max_pyramidal_cells, 1, _UINT32_MAX)
         _exact_int(
             "segment_capacity",
             self.segment_capacity,
@@ -762,14 +762,10 @@ class NativeTemporalCircuitConfig:
             ("negative_decrement_ticks", self.negative_decrement_ticks),
         ):
             _exact_int(label, value, 1, _MAX_PERMANENCE_TICKS)
-        _exact_int(
-            "base_cells_per_column", self.base_cells_per_column, 1, _UINT8_MAX
-        )
+        _exact_int("base_cells_per_column", self.base_cells_per_column, 1, _UINT8_MAX)
         _exact_int("novel_race_cap", self.novel_race_cap, 1, 8)
         _exact_int("prediction_quorum", self.prediction_quorum, 1, _ACTIVE_COLUMNS)
-        _exact_int(
-            "max_segments_per_cell", self.max_segments_per_cell, 1, _UINT8_MAX
-        )
+        _exact_int("max_segments_per_cell", self.max_segments_per_cell, 1, _UINT8_MAX)
         _exact_int("theta_match", self.theta_match, 1, 2 * _PAIRS_PER_SEGMENT)
         _exact_int("theta_active", self.theta_active, 1, 2 * _PAIRS_PER_SEGMENT)
         if self.theta_match > self.theta_active:
@@ -792,9 +788,7 @@ class NativeTemporalCircuitConfig:
             raise ValueError("configured physical cell offsets overflow uint32")
 
 
-_TokenCodeInput = (
-    Mapping[int, Sequence[int]] | Sequence[tuple[int, Sequence[int]]]
-)
+_TokenCodeInput = Mapping[int, Sequence[int]] | Sequence[tuple[int, Sequence[int]]]
 
 
 def _physical_cell_count(config: NativeTemporalCircuitConfig) -> int:
@@ -847,9 +841,7 @@ class NativeTemporalCircuitDefinition:
                 )
             duplicate = seen_columns.get(columns)
             if duplicate is not None:
-                raise ValueError(
-                    f"tokens {duplicate} and {token} must not share one column code"
-                )
+                raise ValueError(f"tokens {duplicate} and {token} must not share one column code")
             seen_columns[columns] = token
             normalized.append((token, columns))
         if not normalized:
@@ -860,8 +852,7 @@ class NativeTemporalCircuitDefinition:
         physical_cell_count = _physical_cell_count(config)
         if len(thresholds) != physical_cell_count:
             raise ValueError(
-                "threshold_offsets_mv must contain exactly "
-                f"{physical_cell_count} entries"
+                f"threshold_offsets_mv must contain exactly {physical_cell_count} entries"
             )
         if any(type(value) is not float or not math.isfinite(value) for value in thresholds):
             raise ValueError("threshold_offsets_mv entries must be finite exact f64 values")
@@ -869,6 +860,38 @@ class NativeTemporalCircuitDefinition:
         object.__setattr__(self, "config", config)
         object.__setattr__(self, "token_codes", tuple(normalized))
         object.__setattr__(self, "threshold_offsets_mv", thresholds)
+
+    def circuit_identity_sha256(self) -> str:
+        """Return the native Route-0 identity without opening a runtime."""
+
+        library = _temporal_library()
+        _attested_current_library_identity()
+        request, token_array, threshold_array = _native_definition_identity_request(self)
+        output = _NativeDefinitionIdentity()
+        report = _NativeReport()
+        returned = library.humanbrain_temporal_circuit_definition_identity_v1(
+            ctypes.byref(request),
+            ctypes.byref(output),
+            ctypes.byref(report),
+        )
+        # Keep borrowed ctypes arrays alive until the native call has returned.
+        del token_array, threshold_array
+        decoded = _decode_report(returned, report, maximum_completed_prefix=0)
+        identity = bytes(output.circuit_identity_sha256)
+        if decoded.status is not NativeTemporalRuntimeStatus.OK:
+            if any(identity):
+                raise _invariant_error(
+                    "failed circuit definition identity call returned nonzero output"
+                )
+            _raise_report(decoded)
+        if decoded.required != 32 or decoded.observed != 32 or decoded.location != 0:
+            raise _invariant_error(
+                "successful circuit definition identity has invalid diagnostics",
+                required=32,
+                observed=decoded.observed,
+                location=decoded.location,
+            )
+        return identity.hex()
 
 
 @dataclass(frozen=True, slots=True)
@@ -918,9 +941,7 @@ class NativeTemporalRuntimeError(RuntimeError):
         if type(message) is not str:
             raise TypeError("message must be text")
         if not 0 <= len(completed_steps) <= completed_prefix:
-            raise ValueError(
-                "retained steps cannot exceed the native committed prefix"
-            )
+            raise ValueError("retained steps cannot exceed the native committed prefix")
         self.status = status
         self.message = message
         self.completed_prefix = completed_prefix
@@ -973,9 +994,7 @@ def _governing_protocol() -> ModuleType:
     try:
         return importlib.import_module(_GOVERNING_PROTOCOL_MODULE)
     except ImportError as exc:
-        raise RuntimeError(
-            "governing calibration-v3 protocol is unavailable"
-        ) from exc
+        raise RuntimeError("governing calibration-v3 protocol is unavailable") from exc
 
 
 def _fresh_authority() -> _FreshAuthority:
@@ -985,15 +1004,11 @@ def _fresh_authority() -> _FreshAuthority:
     binding = protocol["source_binding"]
     governing.validate_committed_source_blobs(governing.REPO_ROOT, binding)
     governing.validate_source_bytes(governing.REPO_ROOT, binding)
-    protocol_digest = _sha256_bytes(
-        "protocol identity", governing.protocol_sha256()
-    )
+    protocol_digest = _sha256_bytes("protocol identity", governing.protocol_sha256())
     try:
         gate3 = importlib.import_module(_GATE3_AUTHORITY_MODULE)
     except ImportError as exc:
-        raise RuntimeError(
-            "governing calibration-v3 Gate3 authority is unavailable"
-        ) from exc
+        raise RuntimeError("governing calibration-v3 Gate3 authority is unavailable") from exc
     source_authority = gate3.authorize_gate3_source(
         governing.REPO_ROOT,
         binding,
@@ -1013,26 +1028,17 @@ _BOUND_LIBRARY: object | None = None
 
 def _bind_temporal_symbols(library: object) -> None:
     try:
+        definition_identity = library.humanbrain_temporal_circuit_definition_identity_v1
         create = library.humanbrain_temporal_circuit_runtime_create_v1
-        import_checkpoint = (
-            library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
-        )
+        import_checkpoint = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
         advance = library.humanbrain_temporal_circuit_runtime_advance_block_v1
-        checkpoint_size = (
-            library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
-        )
-        checkpoint_identity = (
-            library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
-        )
-        export_checkpoint = (
-            library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
-        )
+        checkpoint_size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
+        checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
+        export_checkpoint = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
         export_checkpoint_path = (
             library.humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1
         )
-        publish_immutable_bytes_path = (
-            library.humanbrain_temporal_publish_immutable_bytes_path_v1
-        )
+        publish_immutable_bytes_path = library.humanbrain_temporal_publish_immutable_bytes_path_v1
         reconcile_existing_immutable_bytes_path = (
             library.humanbrain_temporal_reconcile_existing_immutable_bytes_path_v1
         )
@@ -1041,12 +1047,15 @@ def _bind_temporal_symbols(library: object) -> None:
         )
         destroy = library.humanbrain_temporal_circuit_runtime_destroy
     except AttributeError as exc:
-        raise _NativeBuildError(
-            "native temporal runtime ABI symbols are unavailable"
-        ) from exc
+        raise _NativeBuildError("native temporal runtime ABI symbols are unavailable") from exc
 
     handle_output = ctypes.POINTER(ctypes.c_void_p)
     report_output = ctypes.POINTER(_NativeReport)
+    definition_identity.argtypes = [
+        ctypes.POINTER(_NativeDefinitionIdentityRequest),
+        ctypes.POINTER(_NativeDefinitionIdentity),
+        report_output,
+    ]
     create.argtypes = [ctypes.POINTER(_NativeDefinition), handle_output, report_output]
     import_checkpoint.argtypes = [
         ctypes.POINTER(_NativeImportRequest),
@@ -1100,6 +1109,7 @@ def _bind_temporal_symbols(library: object) -> None:
     ]
     destroy.argtypes = [ctypes.c_void_p]
     for function in (
+        definition_identity,
         create,
         import_checkpoint,
         advance,
@@ -1161,11 +1171,7 @@ def _invariant_error(
     return NativeTemporalRuntimeError(
         NativeTemporalRuntimeStatus.INTERNAL_INVARIANT,
         f"native ABI invariant failed: {message}",
-        completed_prefix=(
-            len(completed_steps)
-            if completed_prefix is None
-            else completed_prefix
-        ),
+        completed_prefix=(len(completed_steps) if completed_prefix is None else completed_prefix),
         required=required,
         observed=observed,
         location=location,
@@ -1181,9 +1187,7 @@ def _decode_report(
 ) -> _DecodedReport:
     raw_completed_prefix = int(report.completed_prefix)
     preserved_completed_prefix = (
-        raw_completed_prefix
-        if raw_completed_prefix <= maximum_completed_prefix
-        else 0
+        raw_completed_prefix if raw_completed_prefix <= maximum_completed_prefix else 0
     )
 
     def invariant(
@@ -1206,13 +1210,9 @@ def _decode_report(
     except (TypeError, ValueError, OverflowError) as exc:
         raise invariant("native return status is not an integer") from exc
     if returned not in NativeTemporalRuntimeStatus._value2member_map_:
-        raise invariant(
-            "native return status is outside the frozen range", observed=returned
-        )
+        raise invariant("native return status is outside the frozen range", observed=returned)
     if int(report.status) not in NativeTemporalRuntimeStatus._value2member_map_:
-        raise invariant(
-            "report status is outside the frozen range", observed=int(report.status)
-        )
+        raise invariant("report status is outside the frozen range", observed=int(report.status))
     if returned != int(report.status):
         raise invariant(
             "return and report statuses disagree", required=returned, observed=int(report.status)
@@ -1279,15 +1279,11 @@ def _decode_checkpoint_identity(
     report: _NativeReport,
     authority: _FreshAuthority,
 ) -> TemporalCheckpointIdentity:
-    decoded = _decode_report(
-        returned_status, report, maximum_completed_prefix=0
-    )
+    decoded = _decode_report(returned_status, report, maximum_completed_prefix=0)
     header = bytes(native.header)
     if decoded.status is not NativeTemporalRuntimeStatus.OK:
         if any(header):
-            raise _invariant_error(
-                "failed checkpoint identity call returned nonzero output"
-            )
+            raise _invariant_error("failed checkpoint identity call returned nonzero output")
         if (
             decoded.required
             or decoded.observed
@@ -1295,9 +1291,7 @@ def _decode_checkpoint_identity(
             or decoded.poison_code
             or decoded.stage_code
         ):
-            raise _invariant_error(
-                "failed checkpoint identity report carries scalar diagnostics"
-            )
+            raise _invariant_error("failed checkpoint identity report carries scalar diagnostics")
         _raise_report(decoded)
     if (
         decoded.required != _CHECKPOINT_V1_HEADER_BYTES
@@ -1338,13 +1332,9 @@ def _decode_checkpoint_identity(
             observed=body_bytes,
         )
     if header[32:64] != authority.protocol_identity_sha256:
-        raise _invariant_error(
-            "checkpoint identity protocol authority does not match"
-        )
+        raise _invariant_error("checkpoint identity protocol authority does not match")
     if header[64:96] != authority.source_bundle_identity_sha256:
-        raise _invariant_error(
-            "checkpoint identity source authority does not match"
-        )
+        raise _invariant_error("checkpoint identity source authority does not match")
 
     (
         segment_count,
@@ -1365,9 +1355,7 @@ def _decode_checkpoint_identity(
             "checkpoint identity winner-context length exceeds the frozen capacity"
         )
     if poison_code > 15:
-        raise _invariant_error(
-            "checkpoint identity poison code is outside the frozen range"
-        )
+        raise _invariant_error("checkpoint identity poison code is outside the frozen range")
     expected_body_bytes = (
         cohort_count * 4
         + prior_context_length * 4
@@ -1384,9 +1372,7 @@ def _decode_checkpoint_identity(
         _CHECKPOINT_LOGICAL_STATE_DOMAIN + header[128:160] + header[192:224]
     ).digest()
     if header[224:256] != logical_state:
-        raise _invariant_error(
-            "checkpoint identity logical-state digest does not match"
-        )
+        raise _invariant_error("checkpoint identity logical-state digest does not match")
     return TemporalCheckpointIdentity(
         format_version=format_version,
         header_bytes=header_bytes,
@@ -1437,9 +1423,7 @@ def _decode_publication(
     native: _NativeCheckpointPublicationReport,
     runtime_report: _NativeReport,
 ) -> TemporalCheckpointPublication:
-    decoded_runtime = _decode_report(
-        returned_status, runtime_report, maximum_completed_prefix=0
-    )
+    decoded_runtime = _decode_report(returned_status, runtime_report, maximum_completed_prefix=0)
     if decoded_runtime.status is not NativeTemporalRuntimeStatus.OK:
         if bytes(native) != bytes(ctypes.sizeof(type(native))):
             raise _invariant_error(
@@ -1463,9 +1447,7 @@ def _decode_publication(
         native.primary_error, label="checkpoint publication primary error"
     )
     decoded_cleanup_slots = tuple(
-        _decode_publication_error(
-            slot, label=f"checkpoint publication cleanup error {index}"
-        )
+        _decode_publication_error(slot, label=f"checkpoint publication cleanup error {index}")
         for index, slot in enumerate(native.cleanup_errors)
     )
     if any(error is None for error in decoded_cleanup_slots[:cleanup_error_count]):
@@ -1473,9 +1455,7 @@ def _decode_publication(
     if any(error is not None for error in decoded_cleanup_slots[cleanup_error_count:]):
         raise _invariant_error("checkpoint publication unused cleanup error slot is nonzero")
     cleanup_errors = tuple(
-        error
-        for error in decoded_cleanup_slots[:cleanup_error_count]
-        if error is not None
+        error for error in decoded_cleanup_slots[:cleanup_error_count] if error is not None
     )
 
     outcome = TemporalCheckpointPublicationOutcome(raw_outcome)
@@ -1487,10 +1467,7 @@ def _decode_publication(
 
     if decoded_runtime.location != 0:
         raise _invariant_error("checkpoint publication runtime report has a location")
-    if (
-        decoded_runtime.required != checkpoint_bytes
-        or decoded_runtime.observed != encoded_bytes
-    ):
+    if decoded_runtime.required != checkpoint_bytes or decoded_runtime.observed != encoded_bytes:
         raise _invariant_error(
             "checkpoint publication and runtime report lengths disagree",
             required=checkpoint_bytes,
@@ -1516,36 +1493,26 @@ def _decode_publication(
             or owned_temp_nonce != 0
             or encoded_bytes != 0
         ):
-            raise _invariant_error(
-                "checkpoint publication N/A cleanup has a temporary artifact"
-            )
+            raise _invariant_error("checkpoint publication N/A cleanup has a temporary artifact")
     elif cleanup is TemporalCheckpointCleanup.CLEAN:
         if cleanup_errors or owned_temp_pid == 0:
-            raise _invariant_error(
-                "checkpoint publication clean disposition is inconsistent"
-            )
+            raise _invariant_error("checkpoint publication clean disposition is inconsistent")
     elif not cleanup_errors or owned_temp_pid == 0:
-        raise _invariant_error(
-            "checkpoint publication orphaned disposition is inconsistent"
-        )
+        raise _invariant_error("checkpoint publication orphaned disposition is inconsistent")
 
     if outcome in (
         TemporalCheckpointPublicationOutcome.DURABLE_PUBLISHED,
         TemporalCheckpointPublicationOutcome.COLLISION,
     ):
         if primary_error is not None or encoded_bytes != checkpoint_bytes:
-            raise _invariant_error(
-                "successful checkpoint publication outcome is inconsistent"
-            )
+            raise _invariant_error("successful checkpoint publication outcome is inconsistent")
         if cleanup is TemporalCheckpointCleanup.NOT_APPLICABLE:
             raise _invariant_error(
                 "successful checkpoint publication did not create a temporary artifact"
             )
     elif outcome is TemporalCheckpointPublicationOutcome.NOT_PUBLISHED:
         if primary_error is None:
-            raise _invariant_error(
-                "not-published checkpoint outcome has no primary error"
-            )
+            raise _invariant_error("not-published checkpoint outcome has no primary error")
         allowed_stages = (
             _PRE_TEMP_PUBLICATION_ERROR_STAGES
             if cleanup is TemporalCheckpointCleanup.NOT_APPLICABLE
@@ -1561,9 +1528,7 @@ def _decode_publication(
             or encoded_bytes != checkpoint_bytes
             or cleanup is TemporalCheckpointCleanup.NOT_APPLICABLE
         ):
-            raise _invariant_error(
-                "unconfirmed-durability checkpoint outcome is inconsistent"
-            )
+            raise _invariant_error("unconfirmed-durability checkpoint outcome is inconsistent")
         if primary_error.stage not in _UNCONFIRMED_PUBLICATION_ERROR_STAGES:
             raise _invariant_error(
                 "unconfirmed-durability checkpoint primary stage is inconsistent"
@@ -1596,9 +1561,7 @@ def _decode_immutable_publication_error(
     stage = TemporalPublicationErrorStage(raw_stage)
     domain = TemporalPublicationErrorDomain(raw_domain)
     if domain is TemporalPublicationErrorDomain.CHECKPOINT_ENCODER_RESERVED:
-        raise _invariant_error(
-            f"{label} uses the checkpoint-only encoder error domain"
-        )
+        raise _invariant_error(f"{label} uses the checkpoint-only encoder error domain")
     if stage is TemporalPublicationErrorStage.NONE:
         if domain is not TemporalPublicationErrorDomain.NONE or raw_code != 0:
             raise _invariant_error(f"{label} has a malformed zero error")
@@ -1615,9 +1578,7 @@ def _decode_immutable_bytes_publication(
     *,
     expected_payload_bytes: int,
 ) -> TemporalImmutableBytesPublication:
-    decoded_runtime = _decode_report(
-        returned_status, runtime_report, maximum_completed_prefix=0
-    )
+    decoded_runtime = _decode_report(returned_status, runtime_report, maximum_completed_prefix=0)
     if decoded_runtime.status is not NativeTemporalRuntimeStatus.OK:
         if bytes(native) != bytes(ctypes.sizeof(type(native))):
             raise _invariant_error(
@@ -1629,19 +1590,13 @@ def _decode_immutable_bytes_publication(
         raise _invariant_error("immutable-byte publication reserved bytes are nonzero")
     raw_outcome = int(native.outcome)
     if raw_outcome not in TemporalPublicationOutcome._value2member_map_:
-        raise _invariant_error(
-            "immutable-byte publication outcome is outside the frozen range"
-        )
+        raise _invariant_error("immutable-byte publication outcome is outside the frozen range")
     raw_cleanup = int(native.temp_cleanup)
     if raw_cleanup not in TemporalPublicationCleanup._value2member_map_:
-        raise _invariant_error(
-            "immutable-byte publication cleanup tag is outside the frozen range"
-        )
+        raise _invariant_error("immutable-byte publication cleanup tag is outside the frozen range")
     cleanup_error_count = int(native.cleanup_error_count)
     if cleanup_error_count > len(native.cleanup_errors):
-        raise _invariant_error(
-            "immutable-byte publication cleanup error count exceeds capacity"
-        )
+        raise _invariant_error("immutable-byte publication cleanup error count exceeds capacity")
 
     primary_error = _decode_immutable_publication_error(
         native.primary_error, label="immutable-byte publication primary error"
@@ -1655,13 +1610,9 @@ def _decode_immutable_bytes_publication(
     if any(error is None for error in decoded_cleanup_slots[:cleanup_error_count]):
         raise _invariant_error("immutable-byte publication active cleanup error is zero")
     if any(error is not None for error in decoded_cleanup_slots[cleanup_error_count:]):
-        raise _invariant_error(
-            "immutable-byte publication unused cleanup error slot is nonzero"
-        )
+        raise _invariant_error("immutable-byte publication unused cleanup error slot is nonzero")
     cleanup_errors = tuple(
-        error
-        for error in decoded_cleanup_slots[:cleanup_error_count]
-        if error is not None
+        error for error in decoded_cleanup_slots[:cleanup_error_count] if error is not None
     )
 
     outcome = TemporalPublicationOutcome(raw_outcome)
@@ -1684,10 +1635,7 @@ def _decode_immutable_bytes_publication(
         )
     if decoded_runtime.location != 0:
         raise _invariant_error("immutable-byte publication runtime report has a location")
-    if (
-        decoded_runtime.required != payload_bytes
-        or decoded_runtime.observed != written_bytes
-    ):
+    if decoded_runtime.required != payload_bytes or decoded_runtime.observed != written_bytes:
         raise _invariant_error(
             "immutable-byte publication and runtime report lengths disagree",
             required=payload_bytes,
@@ -1718,31 +1666,23 @@ def _decode_immutable_bytes_publication(
             )
     elif cleanup is TemporalPublicationCleanup.CLEAN:
         if cleanup_errors or owned_temp_pid == 0:
-            raise _invariant_error(
-                "immutable-byte publication clean disposition is inconsistent"
-            )
+            raise _invariant_error("immutable-byte publication clean disposition is inconsistent")
     elif not cleanup_errors or owned_temp_pid == 0:
-        raise _invariant_error(
-            "immutable-byte publication orphaned disposition is inconsistent"
-        )
+        raise _invariant_error("immutable-byte publication orphaned disposition is inconsistent")
 
     if outcome in (
         TemporalPublicationOutcome.DURABLE_PUBLISHED,
         TemporalPublicationOutcome.COLLISION,
     ):
         if primary_error is not None or written_bytes != payload_bytes:
-            raise _invariant_error(
-                "successful immutable-byte publication outcome is inconsistent"
-            )
+            raise _invariant_error("successful immutable-byte publication outcome is inconsistent")
         if cleanup is TemporalPublicationCleanup.NOT_APPLICABLE:
             raise _invariant_error(
                 "successful immutable-byte publication did not create a temporary artifact"
             )
     elif outcome is TemporalPublicationOutcome.NOT_PUBLISHED:
         if primary_error is None:
-            raise _invariant_error(
-                "not-published immutable-byte outcome has no primary error"
-            )
+            raise _invariant_error("not-published immutable-byte outcome has no primary error")
         allowed_stages = (
             frozenset(
                 {
@@ -1774,9 +1714,7 @@ def _decode_immutable_bytes_publication(
         or written_bytes != payload_bytes
         or cleanup is TemporalPublicationCleanup.NOT_APPLICABLE
     ):
-        raise _invariant_error(
-            "unconfirmed-durability immutable-byte outcome is inconsistent"
-        )
+        raise _invariant_error("unconfirmed-durability immutable-byte outcome is inconsistent")
     elif primary_error.stage not in frozenset(
         {
             TemporalPublicationErrorStage.EXCLUSIVE_PUBLISH,
@@ -1842,9 +1780,7 @@ def _decode_durability_errors(
         raise _invariant_error(f"{label} active cleanup error is zero")
     if any(error is not None for error in slots[cleanup_error_count:]):
         raise _invariant_error(f"{label} unused cleanup error slot is nonzero")
-    return primary, tuple(
-        error for error in slots[:cleanup_error_count] if error is not None
-    )
+    return primary, tuple(error for error in slots[:cleanup_error_count] if error is not None)
 
 
 def _decode_immutable_bytes_reconciliation(
@@ -1854,14 +1790,10 @@ def _decode_immutable_bytes_reconciliation(
     *,
     expected_bytes: int,
 ) -> TemporalImmutableBytesReconciliation:
-    decoded_runtime = _decode_report(
-        returned_status, runtime_report, maximum_completed_prefix=0
-    )
+    decoded_runtime = _decode_report(returned_status, runtime_report, maximum_completed_prefix=0)
     if decoded_runtime.status is not NativeTemporalRuntimeStatus.OK:
         if bytes(native) != bytes(ctypes.sizeof(type(native))):
-            raise _invariant_error(
-                "failed immutable-byte reconciliation changed its zero receipt"
-            )
+            raise _invariant_error("failed immutable-byte reconciliation changed its zero receipt")
         _raise_report(decoded_runtime)
     if native.reserved_zero_u8 or native.reserved_zero_u32 or any(native.reserved_zero):
         raise _invariant_error("immutable-byte reconciliation reserved fields are nonzero")
@@ -1909,14 +1841,10 @@ def _decode_durable_directory_preparation(
     *,
     expected_component_count: int,
 ) -> TemporalDurableDirectoryPreparation:
-    decoded_runtime = _decode_report(
-        returned_status, runtime_report, maximum_completed_prefix=0
-    )
+    decoded_runtime = _decode_report(returned_status, runtime_report, maximum_completed_prefix=0)
     if decoded_runtime.status is not NativeTemporalRuntimeStatus.OK:
         if bytes(native) != bytes(ctypes.sizeof(type(native))):
-            raise _invariant_error(
-                "failed durable-directory preparation changed its zero receipt"
-            )
+            raise _invariant_error("failed durable-directory preparation changed its zero receipt")
         _raise_report(decoded_runtime)
     if native.reserved_zero_u8 or native.reserved_zero_u32 or any(native.reserved_zero):
         raise _invariant_error("durable-directory preparation reserved fields are nonzero")
@@ -1943,12 +1871,7 @@ def _decode_durable_directory_preparation(
         raise _invariant_error("durable-directory component counts are inconsistent")
     outcome = TemporalDurabilityOutcome(int(native.outcome))
     if outcome is TemporalDurabilityOutcome.DURABLE:
-        if (
-            primary is not None
-            or cleanup
-            or confirmed != required
-            or failed_raw != _UINT32_MAX
-        ):
+        if primary is not None or cleanup or confirmed != required or failed_raw != _UINT32_MAX:
             raise _invariant_error("durable-directory success receipt is inconsistent")
         failed_component_index = None
     else:
@@ -1998,9 +1921,7 @@ def _lexical_publication_path_parts(destination: Path) -> tuple[bytes, bytes]:
         raise ValueError("publication path must be valid UTF-8") from exc
 
 
-def publish_immutable_bytes(
-    destination: Path, payload: bytes
-) -> TemporalImmutableBytesPublication:
+def publish_immutable_bytes(destination: Path, payload: bytes) -> TemporalImmutableBytesPublication:
     """Attempt one authority-gated, exclusive publication of opaque bytes.
 
     The publisher does not interpret JSON or establish cross-file semantics.
@@ -2012,8 +1933,7 @@ def publish_immutable_bytes(
         raise TypeError("immutable publication payload must be exact bytes")
     if not 1 <= len(payload) <= _MAX_IMMUTABLE_PAYLOAD_BYTES:
         raise ValueError(
-            "immutable publication payload length must be in "
-            f"[1, {_MAX_IMMUTABLE_PAYLOAD_BYTES}]"
+            f"immutable publication payload length must be in [1, {_MAX_IMMUTABLE_PAYLOAD_BYTES}]"
         )
     if not isinstance(destination, Path):
         raise TypeError("publication path must be a pathlib.Path")
@@ -2028,12 +1948,10 @@ def publish_immutable_bytes(
     _attested_current_library_identity()
     parent_utf8, final_basename_utf8 = _lexical_publication_path_parts(destination)
     try:
-        parent_array = (ctypes.c_uint8 * len(parent_utf8)).from_buffer_copy(
-            parent_utf8
+        parent_array = (ctypes.c_uint8 * len(parent_utf8)).from_buffer_copy(parent_utf8)
+        basename_array = (ctypes.c_uint8 * len(final_basename_utf8)).from_buffer_copy(
+            final_basename_utf8
         )
-        basename_array = (
-            ctypes.c_uint8 * len(final_basename_utf8)
-        ).from_buffer_copy(final_basename_utf8)
     except (MemoryError, OverflowError) as exc:
         raise NativeTemporalRuntimeError(
             NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
@@ -2045,9 +1963,7 @@ def publish_immutable_bytes(
     buffer_acquired = False
     try:
         try:
-            acquisition_status = int(
-                get_buffer(payload, ctypes.byref(buffer_view), 0)
-            )
+            acquisition_status = int(get_buffer(payload, ctypes.byref(buffer_view), 0))
         except (TypeError, ValueError, OverflowError) as exc:
             raise _invariant_error(
                 "PyObject_GetBuffer returned an invalid immutable-byte status"
@@ -2105,8 +2021,7 @@ def reconcile_existing_immutable_bytes(
         raise TypeError("reconciliation payload must be exact bytes")
     if not 1 <= len(expected_payload) <= _MAX_IMMUTABLE_PAYLOAD_BYTES:
         raise ValueError(
-            "reconciliation payload length must be in "
-            f"[1, {_MAX_IMMUTABLE_PAYLOAD_BYTES}]"
+            f"reconciliation payload length must be in [1, {_MAX_IMMUTABLE_PAYLOAD_BYTES}]"
         )
     if not isinstance(destination, Path):
         raise TypeError("reconciliation path must be a pathlib.Path")
@@ -2122,21 +2037,15 @@ def reconcile_existing_immutable_bytes(
     parent_utf8, final_basename_utf8 = _lexical_publication_path_parts(destination)
     try:
         parent_array = (ctypes.c_uint8 * len(parent_utf8)).from_buffer_copy(parent_utf8)
-        basename_array = (
-            ctypes.c_uint8 * len(final_basename_utf8)
-        ).from_buffer_copy(final_basename_utf8)
-        payload_array = (
-            ctypes.c_uint8 * len(expected_payload)
-        ).from_buffer_copy(expected_payload)
+        basename_array = (ctypes.c_uint8 * len(final_basename_utf8)).from_buffer_copy(
+            final_basename_utf8
+        )
+        payload_array = (ctypes.c_uint8 * len(expected_payload)).from_buffer_copy(expected_payload)
     except (MemoryError, OverflowError) as exc:
         raise NativeTemporalRuntimeError(
             NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
             "immutable-byte reconciliation transport allocation failed",
-            required=(
-                len(parent_utf8)
-                + len(final_basename_utf8)
-                + len(expected_payload)
-            ),
+            required=(len(parent_utf8) + len(final_basename_utf8) + len(expected_payload)),
         ) from exc
     request = _NativeImmutableBytesPathRequest(
         ctypes.cast(parent_array, ctypes.POINTER(ctypes.c_uint8)),
@@ -2208,9 +2117,7 @@ def prepare_durable_directory(
     _attested_current_library_identity()
     try:
         root_array = (ctypes.c_uint8 * len(root_utf8)).from_buffer_copy(root_utf8)
-        relative_array = (
-            ctypes.c_uint8 * len(relative_utf8)
-        ).from_buffer_copy(relative_utf8)
+        relative_array = (ctypes.c_uint8 * len(relative_utf8)).from_buffer_copy(relative_utf8)
     except (MemoryError, OverflowError) as exc:
         raise NativeTemporalRuntimeError(
             NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
@@ -2274,9 +2181,7 @@ def _validate_checkpoint_v1_basic_header(header: bytes, file_size: int) -> None:
         raise _checkpoint_rejected("checkpoint-v1 magic does not match")
     version = int.from_bytes(header[8:10], "little")
     if version != _CHECKPOINT_V1_FORMAT_VERSION:
-        raise _checkpoint_rejected(
-            "checkpoint-v1 format version is unsupported", observed=version
-        )
+        raise _checkpoint_rejected("checkpoint-v1 format version is unsupported", observed=version)
     header_bytes = int.from_bytes(header[10:12], "little")
     if header_bytes != _CHECKPOINT_V1_HEADER_BYTES:
         raise _checkpoint_rejected(
@@ -2361,10 +2266,9 @@ def _convert_step(step: _NativeStep) -> TemporalCircuitStep:
     )
 
 
-def _native_definition(
+def _native_definition_inputs(
     definition: NativeTemporalCircuitDefinition,
-    authority: _FreshAuthority,
-) -> tuple[_NativeDefinition, object, object]:
+) -> tuple[_NativeConfig, object, object]:
     config = definition.config
     native_config = _NativeConfig(
         config.column_count,
@@ -2391,6 +2295,14 @@ def _native_definition(
     threshold_array = (ctypes.c_double * len(definition.threshold_offsets_mv))(
         *definition.threshold_offsets_mv
     )
+    return native_config, token_array, threshold_array
+
+
+def _native_definition(
+    definition: NativeTemporalCircuitDefinition,
+    authority: _FreshAuthority,
+) -> tuple[_NativeDefinition, object, object]:
+    native_config, token_array, threshold_array = _native_definition_inputs(definition)
     native = _NativeDefinition(
         native_config,
         ctypes.cast(token_array, ctypes.POINTER(_NativeTokenCode)),
@@ -2400,6 +2312,20 @@ def _native_definition(
         authority.native(),
     )
     return native, token_array, threshold_array
+
+
+def _native_definition_identity_request(
+    definition: NativeTemporalCircuitDefinition,
+) -> tuple[_NativeDefinitionIdentityRequest, object, object]:
+    native_config, token_array, threshold_array = _native_definition_inputs(definition)
+    request = _NativeDefinitionIdentityRequest(
+        native_config,
+        ctypes.cast(token_array, ctypes.POINTER(_NativeTokenCode)),
+        len(token_array),
+        ctypes.cast(threshold_array, ctypes.POINTER(ctypes.c_double)),
+        len(threshold_array),
+    )
+    return request, token_array, threshold_array
 
 
 class NativeTemporalCircuit:
@@ -2416,14 +2342,11 @@ class NativeTemporalCircuit:
 
     def __init__(self, *_: object, **__: object) -> None:
         raise TypeError(
-            "use NativeTemporalCircuit.fresh(), from_checkpoint(), or "
-            "from_checkpoint_path()"
+            "use NativeTemporalCircuit.fresh(), from_checkpoint(), or from_checkpoint_path()"
         )
 
     @classmethod
-    def fresh(
-        cls, definition: NativeTemporalCircuitDefinition
-    ) -> NativeTemporalCircuit:
+    def fresh(cls, definition: NativeTemporalCircuitDefinition) -> NativeTemporalCircuit:
         return cls._open(definition, checkpoint=None)
 
     @classmethod
@@ -2453,9 +2376,7 @@ class NativeTemporalCircuit:
 
         if not isinstance(path, Path):
             raise TypeError("checkpoint path must be a pathlib.Path")
-        self, library, native_definition, definition_keepalive = cls._prepare_open(
-            definition
-        )
+        self, library, native_definition, definition_keepalive = cls._prepare_open(definition)
         get_buffer, release_buffer = _readonly_buffer_api()
         handle_out = ctypes.c_void_p()
         report = _NativeReport()
@@ -2469,9 +2390,7 @@ class NativeTemporalCircuit:
         validated_handle: int | None = None
         try:
             path_before = os.lstat(path)
-            path_identity = _validate_checkpoint_regular_file(
-                path_before, descriptor=False
-            )
+            path_identity = _validate_checkpoint_regular_file(path_before, descriptor=False)
             open_flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
             if hasattr(os, "O_NOFOLLOW"):
                 open_flags |= os.O_NOFOLLOW
@@ -2510,13 +2429,9 @@ class NativeTemporalCircuit:
                     "checkpoint mapping length differs from the descriptor size"
                 )
             try:
-                acquisition_status = int(
-                    get_buffer(mapping, ctypes.byref(buffer_view), 0)
-                )
+                acquisition_status = int(get_buffer(mapping, ctypes.byref(buffer_view), 0))
             except (TypeError, ValueError, OverflowError) as exc:
-                raise _invariant_error(
-                    "PyObject_GetBuffer returned a non-integer status"
-                ) from exc
+                raise _invariant_error("PyObject_GetBuffer returned a non-integer status") from exc
             if acquisition_status != 0:
                 raise _invariant_error(
                     "PyObject_GetBuffer failed for a read-only checkpoint mapping",
@@ -2543,15 +2458,12 @@ class NativeTemporalCircuit:
             if (
                 _validate_checkpoint_regular_file(descriptor_after, descriptor=True)
                 != descriptor_identity
-                or _validate_checkpoint_regular_file(path_after, descriptor=False)
-                != path_identity
+                or _validate_checkpoint_regular_file(path_after, descriptor=False) != path_identity
             ):
                 raise _checkpoint_rejected(
                     "checkpoint descriptor identity or size changed during import"
                 )
-            validated_handle = self._validated_open_handle(
-                returned, report, handle_out
-            )
+            validated_handle = self._validated_open_handle(returned, report, handle_out)
             del definition_keepalive
         except BaseException:
             if handle_out.value:
@@ -2628,9 +2540,7 @@ class NativeTemporalCircuit:
         self._library = library
         self._creation_authority = authority
         self._library_identity = library_identity
-        native_definition, token_array, threshold_array = _native_definition(
-            definition, authority
-        )
+        native_definition, token_array, threshold_array = _native_definition(definition, authority)
         return self, library, native_definition, (token_array, threshold_array)
 
     @staticmethod
@@ -2645,9 +2555,7 @@ class NativeTemporalCircuit:
                 raise _invariant_error("failed creation published a runtime handle")
             _raise_report(decoded)
         if decoded.required or decoded.observed or decoded.location:
-            raise _invariant_error(
-                "successful creation carries unexpected scalar diagnostics"
-            )
+            raise _invariant_error("successful creation carries unexpected scalar diagnostics")
         if not handle_out.value:
             raise _invariant_error("successful creation did not publish a runtime handle")
         return int(handle_out.value)
@@ -2659,9 +2567,7 @@ class NativeTemporalCircuit:
         *,
         checkpoint: bytes | None,
     ) -> NativeTemporalCircuit:
-        self, library, native_definition, definition_keepalive = cls._prepare_open(
-            definition
-        )
+        self, library, native_definition, definition_keepalive = cls._prepare_open(definition)
         # These owning arrays stay in local variables until the native create
         # or import returns; Rust copies them before publishing the handle.
         report = _NativeReport()
@@ -2674,28 +2580,20 @@ class NativeTemporalCircuit:
                     ctypes.byref(report),
                 )
             else:
-                checkpoint_array = (ctypes.c_uint8 * len(checkpoint)).from_buffer_copy(
-                    checkpoint
-                )
-                checkpoint_pointer = ctypes.cast(
-                    checkpoint_array, ctypes.POINTER(ctypes.c_uint8)
-                )
+                checkpoint_array = (ctypes.c_uint8 * len(checkpoint)).from_buffer_copy(checkpoint)
+                checkpoint_pointer = ctypes.cast(checkpoint_array, ctypes.POINTER(ctypes.c_uint8))
                 request = _NativeImportRequest(
                     native_definition,
                     checkpoint_pointer,
                     len(checkpoint),
                 )
-                returned = (
-                    library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
-                        ctypes.byref(request),
-                        ctypes.byref(handle_out),
-                        ctypes.byref(report),
-                    )
+                returned = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                    ctypes.byref(request),
+                    ctypes.byref(handle_out),
+                    ctypes.byref(report),
                 )
             del definition_keepalive
-            validated_handle = self._validated_open_handle(
-                returned, report, handle_out
-            )
+            validated_handle = self._validated_open_handle(returned, report, handle_out)
         except BaseException:
             if handle_out.value:
                 library.humanbrain_temporal_circuit_runtime_destroy(handle_out.value)
@@ -2760,8 +2658,7 @@ class NativeTemporalCircuit:
             raise TypeError("token_ids must be a sequence of exact integers")
         try:
             normalized = tuple(
-                _exact_int("token ID", token_id, 0, _UINT32_MAX - 1)
-                for token_id in token_ids
+                _exact_int("token ID", token_id, 0, _UINT32_MAX - 1) for token_id in token_ids
             )
         except TypeError:
             raise
@@ -2787,9 +2684,7 @@ class NativeTemporalCircuit:
                 handle, ctypes.byref(request), ctypes.byref(report)
             )
             try:
-                decoded = _decode_report(
-                    returned, report, maximum_completed_prefix=len(normalized)
-                )
+                decoded = _decode_report(returned, report, maximum_completed_prefix=len(normalized))
             except NativeTemporalRuntimeError as exc:
                 recovered: list[TemporalCircuitStep] = []
                 for index in range(exc.completed_prefix):
@@ -2816,9 +2711,7 @@ class NativeTemporalCircuit:
                 try:
                     step = _convert_step(output_array[index])
                 except NativeTemporalRuntimeError as exc:
-                    detail = exc.message.removeprefix(
-                        "native ABI invariant failed: "
-                    )
+                    detail = exc.message.removeprefix("native ABI invariant failed: ")
                     raise _invariant_error(
                         detail,
                         completed_prefix=decoded.completed_prefix,
@@ -2866,16 +2759,12 @@ class NativeTemporalCircuit:
             current_identity = _attested_current_library_identity()
             if current_identity != self._library_identity:
                 raise _invariant_error("loaded native library identity changed")
-            parent_utf8, final_basename_utf8 = _lexical_checkpoint_path_parts(
-                destination
-            )
+            parent_utf8, final_basename_utf8 = _lexical_checkpoint_path_parts(destination)
             try:
-                parent_array = (ctypes.c_uint8 * len(parent_utf8)).from_buffer_copy(
-                    parent_utf8
+                parent_array = (ctypes.c_uint8 * len(parent_utf8)).from_buffer_copy(parent_utf8)
+                basename_array = (ctypes.c_uint8 * len(final_basename_utf8)).from_buffer_copy(
+                    final_basename_utf8
                 )
-                basename_array = (
-                    ctypes.c_uint8 * len(final_basename_utf8)
-                ).from_buffer_copy(final_basename_utf8)
             except (MemoryError, OverflowError) as exc:
                 raise NativeTemporalRuntimeError(
                     NativeTemporalRuntimeStatus.ALLOCATION_FAILED,
@@ -2899,9 +2788,7 @@ class NativeTemporalCircuit:
                 ctypes.byref(publication_report),
                 ctypes.byref(runtime_report),
             )
-            return _decode_publication(
-                returned, publication_report, runtime_report
-            )
+            return _decode_publication(returned, publication_report, runtime_report)
 
     def checkpoint(self) -> bytes:
         with self._operation_lock:
@@ -2917,14 +2804,10 @@ class NativeTemporalCircuit:
                 raise _invariant_error("loaded native library identity changed")
             native_authority = fresh_authority.native()
             size_report = _NativeReport()
-            size_status = (
-                self._library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1(
-                    handle, ctypes.byref(native_authority), ctypes.byref(size_report)
-                )
+            size_status = self._library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1(
+                handle, ctypes.byref(native_authority), ctypes.byref(size_report)
             )
-            decoded_size = _decode_report(
-                size_status, size_report, maximum_completed_prefix=0
-            )
+            decoded_size = _decode_report(size_status, size_report, maximum_completed_prefix=0)
             if decoded_size.status is not NativeTemporalRuntimeStatus.OK:
                 _raise_report(decoded_size)
             if decoded_size.observed or decoded_size.location:
@@ -2946,14 +2829,12 @@ class NativeTemporalCircuit:
                     required=required,
                 ) from exc
             export_report = _NativeReport()
-            export_status = (
-                self._library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
-                    handle,
-                    ctypes.byref(native_authority),
-                    output,
-                    required,
-                    ctypes.byref(export_report),
-                )
+            export_status = self._library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                handle,
+                ctypes.byref(native_authority),
+                output,
+                required,
+                ctypes.byref(export_report),
             )
             decoded_export = _decode_report(
                 export_status, export_report, maximum_completed_prefix=0
@@ -2993,9 +2874,7 @@ class NativeTemporalCircuit:
                 ctypes.byref(native_identity),
                 ctypes.byref(report),
             )
-            return _decode_checkpoint_identity(
-                returned, native_identity, report, fresh_authority
-            )
+            return _decode_checkpoint_identity(returned, native_identity, report, fresh_authority)
 
 
 __all__ = [

@@ -229,6 +229,28 @@ pub struct TemporalCircuitDefinitionV1 {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct TemporalCircuitDefinitionIdentityV1Request {
+    pub config: TemporalCircuitConfigV1,
+    pub token_codes: *const TemporalTokenCodeV1,
+    pub token_code_count: u64,
+    pub threshold_offsets_mv: *const f64,
+    pub threshold_offset_count: u64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalCircuitDefinitionIdentityV1 {
+    pub circuit_identity_sha256: [u8; 32],
+}
+
+impl TemporalCircuitDefinitionIdentityV1 {
+    const ZERO: Self = Self {
+        circuit_identity_sha256: [0; 32],
+    };
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct TemporalCircuitImportCheckpointV1Request {
     pub definition: TemporalCircuitDefinitionV1,
     pub checkpoint_bytes: *const u8,
@@ -729,20 +751,20 @@ struct DefinitionRegionCounts {
 }
 
 fn preflight_definition_regions(
-    definition: TemporalCircuitDefinitionV1,
+    token_codes: *const TemporalTokenCodeV1,
+    token_code_count: u64,
+    threshold_offsets_mv: *const f64,
+    threshold_offset_count: u64,
     report: &mut TemporalCircuitReportV1,
 ) -> Result<DefinitionRegionCounts, u32> {
-    let Some(token_codes) = counted_region(definition.token_codes, definition.token_code_count)
-    else {
+    let Some(token_codes) = counted_region(token_codes, token_code_count) else {
         return Err(report.finish(
             TEMPORAL_RUNTIME_INVALID_ARGUMENT,
             "token-code input geometry is invalid",
         ));
     };
-    let Some(threshold_offsets) = counted_region(
-        definition.threshold_offsets_mv,
-        definition.threshold_offset_count,
-    ) else {
+    let Some(threshold_offsets) = counted_region(threshold_offsets_mv, threshold_offset_count)
+    else {
         return Err(report.finish(
             TEMPORAL_RUNTIME_INVALID_ARGUMENT,
             "threshold input geometry is invalid",
@@ -752,6 +774,27 @@ fn preflight_definition_regions(
         token_codes,
         threshold_offsets,
     })
+}
+
+unsafe fn borrow_token_codes<'a>(
+    source: *const TemporalTokenCodeV1,
+    count: usize,
+) -> &'a [TokenCode] {
+    debug_assert_eq!(size_of::<TemporalTokenCodeV1>(), size_of::<TokenCode>());
+    debug_assert_eq!(align_of::<TemporalTokenCodeV1>(), align_of::<TokenCode>());
+    if count == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(source.cast::<TokenCode>(), count)
+    }
+}
+
+unsafe fn borrow_threshold_offsets<'a>(source: *const f64, count: usize) -> &'a [f64] {
+    if count == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(source, count)
+    }
 }
 
 fn build_validated_factory(
@@ -1105,6 +1148,123 @@ impl Seek for FixedCheckpointSink {
     }
 }
 
+/// Return the route-0 circuit identity for one canonical immutable definition.
+///
+/// This query borrows the caller's definition arrays only for the duration of
+/// the call. It does not construct a runtime, consume checkpoint authority, or
+/// allocate native heap storage.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. `output` may be
+/// uninitialized and is zeroed before definition validation.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_definition_identity_v1(
+    request: *const TemporalCircuitDefinitionIdentityV1Request,
+    output: *mut TemporalCircuitDefinitionIdentityV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(output.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "circuit identity output is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        output.cast(),
+        size_of::<TemporalCircuitDefinitionIdentityV1>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "circuit identity output and report overlap",
+        );
+    }
+    output.write(TemporalCircuitDefinitionIdentityV1::ZERO);
+    if !fixed_pointer_is_valid(request) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "circuit identity request is null or misaligned",
+        );
+    }
+    let request_value = request.read();
+    let counts = match preflight_definition_regions(
+        request_value.token_codes,
+        request_value.token_code_count,
+        request_value.threshold_offsets_mv,
+        request_value.threshold_offset_count,
+        report,
+    ) {
+        Ok(counts) => counts,
+        Err(status) => return status,
+    };
+    let regions = [
+        RawRegion {
+            pointer: request.cast(),
+            byte_count: size_of::<TemporalCircuitDefinitionIdentityV1Request>(),
+        },
+        RawRegion {
+            pointer: request_value.token_codes.cast(),
+            byte_count: counts.token_codes * size_of::<TemporalTokenCodeV1>(),
+        },
+        RawRegion {
+            pointer: request_value.threshold_offsets_mv.cast(),
+            byte_count: counts.threshold_offsets * size_of::<f64>(),
+        },
+        RawRegion {
+            pointer: output.cast(),
+            byte_count: size_of::<TemporalCircuitDefinitionIdentityV1>(),
+        },
+        RawRegion {
+            pointer: report_out.cast(),
+            byte_count: size_of::<TemporalCircuitReportV1>(),
+        },
+    ];
+    if !raw_regions_are_disjoint(&regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "circuit identity input and output regions overlap",
+        );
+    }
+    let config = match request_value.config.into_runtime() {
+        Ok(config) => config,
+        Err(()) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_DEFINITION,
+                "circuit definition contains an invalid policy tag",
+            )
+        }
+    };
+    let token_codes = borrow_token_codes(request_value.token_codes, counts.token_codes);
+    let threshold_offsets =
+        borrow_threshold_offsets(request_value.threshold_offsets_mv, counts.threshold_offsets);
+    let circuit_identity =
+        match ValidatedCheckpointV1RuntimeFactory::circuit_identity_for_definition(
+            config,
+            token_codes,
+            threshold_offsets,
+        ) {
+            Ok(identity) => identity,
+            Err(_) => {
+                return report.finish(
+                    TEMPORAL_RUNTIME_INVALID_DEFINITION,
+                    "circuit definition is not canonical",
+                )
+            }
+        };
+    output.write(TemporalCircuitDefinitionIdentityV1 {
+        circuit_identity_sha256: circuit_identity,
+    });
+    report.required = 32;
+    report.observed = 32;
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
 /// Create a fresh runtime by importing its canonical empty checkpoint.
 ///
 /// The definition selects capacities and immutable circuit identity only. It
@@ -1135,7 +1295,13 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_create_v1(
         );
     }
     let definition = definition.read();
-    let counts = match preflight_definition_regions(definition, report) {
+    let counts = match preflight_definition_regions(
+        definition.token_codes,
+        definition.token_code_count,
+        definition.threshold_offsets_mv,
+        definition.threshold_offset_count,
+        report,
+    ) {
         Ok(counts) => counts,
         Err(status) => return status,
     };
@@ -1177,7 +1343,13 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_import_checkpoint_v
     }
     let request = request.read();
     let definition = request.definition;
-    let counts = match preflight_definition_regions(definition, report) {
+    let counts = match preflight_definition_regions(
+        definition.token_codes,
+        definition.token_code_count,
+        definition.threshold_offsets_mv,
+        definition.threshold_offset_count,
+        report,
+    ) {
         Ok(counts) => counts,
         Err(status) => return status,
     };
@@ -2288,6 +2460,10 @@ mod tests {
         assert_eq!(align_of::<TemporalTokenCodeV1>(), 4);
         assert_eq!(offset_of!(TemporalTokenCodeV1, token_id), 0);
         assert_eq!(offset_of!(TemporalTokenCodeV1, columns), 4);
+        assert_eq!(size_of::<TemporalTokenCodeV1>(), size_of::<TokenCode>());
+        assert_eq!(align_of::<TemporalTokenCodeV1>(), align_of::<TokenCode>());
+        assert_eq!(offset_of!(TokenCode, token_id), 0);
+        assert_eq!(offset_of!(TokenCode, columns), 4);
 
         assert_eq!(size_of::<TemporalCircuitDefinitionV1>(), 128);
         assert_eq!(align_of::<TemporalCircuitDefinitionV1>(), 8);
@@ -2306,6 +2482,42 @@ mod tests {
             56
         );
         assert_eq!(offset_of!(TemporalCircuitDefinitionV1, authority), 64);
+
+        assert_eq!(size_of::<TemporalCircuitDefinitionIdentityV1Request>(), 64);
+        assert_eq!(align_of::<TemporalCircuitDefinitionIdentityV1Request>(), 8);
+        assert_eq!(
+            offset_of!(TemporalCircuitDefinitionIdentityV1Request, config),
+            0
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitDefinitionIdentityV1Request, token_codes),
+            32
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitDefinitionIdentityV1Request, token_code_count),
+            40
+        );
+        assert_eq!(
+            offset_of!(
+                TemporalCircuitDefinitionIdentityV1Request,
+                threshold_offsets_mv
+            ),
+            48
+        );
+        assert_eq!(
+            offset_of!(
+                TemporalCircuitDefinitionIdentityV1Request,
+                threshold_offset_count
+            ),
+            56
+        );
+
+        assert_eq!(size_of::<TemporalCircuitDefinitionIdentityV1>(), 32);
+        assert_eq!(align_of::<TemporalCircuitDefinitionIdentityV1>(), 1);
+        assert_eq!(
+            offset_of!(TemporalCircuitDefinitionIdentityV1, circuit_identity_sha256),
+            0
+        );
 
         assert_eq!(size_of::<TemporalCircuitImportCheckpointV1Request>(), 144);
         assert_eq!(align_of::<TemporalCircuitImportCheckpointV1Request>(), 8);

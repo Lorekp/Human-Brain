@@ -32,6 +32,9 @@ SECOND_MANIFEST_PATH = (
 )
 CHECKPOINT_PATH = MANIFEST_PATH.removesuffix(".resume.json") + ".r3ntcp1"
 SOURCE_BUNDLE_SHA256 = "3" * 64
+ARM_CIRCUIT_IDENTITY_SHA256 = (
+    "be6d5470a8cab36cd8a8d52b456c2d7601012a71d4b689999233b6c37e84874a"
+)
 REFERENCE_TRAJECTORY_ID = (
     "r3-f0/deterministic-confirmation/theta-m-10_theta-a-13/construction-seed-0000000017/fresh"
 )
@@ -92,19 +95,10 @@ def _canonical_bytes(value: object) -> bytes:
     ).encode("utf-8")
 
 
-def _runnable_protocol(
-    *,
-    expected_circuit_identity_sha256: str = "4" * 64,
-) -> dict[str, Any]:
+def _runnable_protocol() -> dict[str, Any]:
     frozen = json.loads(json.dumps(protocol.build_protocol()))
     frozen["source_binding"]["runnable"] = True
     frozen["source_binding"]["blockers"] = []
-    frozen["screens"]["r3_f0_train"]["native_circuit_identity_sha256_by_arm_and_seed"] = {
-        f"theta-m-{theta_match}_theta-a-{theta_active}": {
-            "construction-seed-0000000017": expected_circuit_identity_sha256,
-        }
-        for theta_match, theta_active in frozen["threshold_selection"]["candidate_arms"]
-    }
     return frozen
 
 
@@ -162,7 +156,11 @@ class _Clock:
         return self.now_ns
 
 
-def _identity(native: ModuleType, protocol_sha256: str) -> object:
+def _identity(
+    native: ModuleType,
+    protocol_sha256: str,
+    circuit_identity_sha256: str = ARM_CIRCUIT_IDENTITY_SHA256,
+) -> object:
     segment_count = 56
     cohort_count = 20
     next_reserve_cell = 81_632
@@ -194,7 +192,7 @@ def _identity(native: ModuleType, protocol_sha256: str) -> object:
         body_bytes=3_840,
         protocol_identity_sha256=protocol_sha256,
         source_bundle_identity_sha256=SOURCE_BUNDLE_SHA256,
-        circuit_identity_sha256="4" * 64,
+        circuit_identity_sha256=circuit_identity_sha256,
         body_sha256=body_sha256,
         semantic_index_sha256="6" * 64,
         segment_count=segment_count,
@@ -798,15 +796,13 @@ def _environment(
     after_checkpoint: Callable[[], None] | None = None,
     during_import: Callable[[Path], None] | None = None,
     clock: _Clock | None = None,
-    expected_circuit_identity_sha256: str = "4" * 64,
+    live_circuit_identity_sha256: str = ARM_CIRCUIT_IDENTITY_SHA256,
 ) -> _Environment:
     authority_module, transaction = _production_modules()
     native = importlib.import_module("humanbrain.native_temporal_runtime")
-    frozen = _runnable_protocol(
-        expected_circuit_identity_sha256=expected_circuit_identity_sha256,
-    )
+    frozen = _runnable_protocol()
     digest = _protocol_sha256(frozen)
-    identity = _identity(native, digest)
+    identity = _identity(native, digest, live_circuit_identity_sha256)
     imported_identity = (
         identity if imported_identity_mutator is None else imported_identity_mutator(identity)
     )
@@ -1029,7 +1025,7 @@ def test_runnable_authority_requires_matching_native_circuit_identity(
     environment = _environment(
         mismatch_root,
         monkeypatch,
-        expected_circuit_identity_sha256="9" * 64,
+        live_circuit_identity_sha256="9" * 64,
     )
     with pytest.raises(
         transaction.CalibrationV3TransactionStop,

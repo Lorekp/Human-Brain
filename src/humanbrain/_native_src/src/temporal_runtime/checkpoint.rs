@@ -714,6 +714,23 @@ pub(crate) struct ValidatedCheckpointV1RuntimeFactory {
 }
 
 impl ValidatedCheckpointV1RuntimeFactory {
+    pub(crate) fn circuit_identity_for_definition(
+        config: TemporalCircuitConfig,
+        token_codebook: &[TokenCode],
+        threshold_offsets_mv: &[f64],
+    ) -> Result<[u8; 32], CheckpointV1FactoryError> {
+        let definition = CheckpointV1CircuitDefinition {
+            config,
+            token_codebook,
+            threshold_offsets_mv,
+        };
+        let derived = validate_checkpoint_v1_circuit_definition(definition)
+            .map_err(CheckpointV1FactoryError::Definition)?;
+        let (identity, _) = circuit_identity_route_zero(definition, derived)
+            .map_err(CheckpointV1FactoryError::Identity)?;
+        Ok(*identity.raw_bytes())
+    }
+
     pub(crate) fn new(
         authority: ValidatedCheckpointAuthority,
         config: TemporalCircuitConfig,
