@@ -36,11 +36,26 @@ use super::{
         PrepareCheckpointV1ExportError, ValidatedCheckpointAuthority,
         ValidatedCheckpointV1RuntimeFactory,
     },
+    checkpoint_publisher::{
+        publish_prepared_checkpoint_v1, validate_destination_v1, DestinationInputError,
+        PublicationCompletion, PublicationError, CLEANUP_CLEAN, CLEANUP_NOT_APPLICABLE,
+        CLEANUP_ORPHANED, ERROR_DOMAIN_ENCODER, ERROR_DOMAIN_IO_WITHOUT_OS_CODE, ERROR_DOMAIN_NONE,
+        ERROR_DOMAIN_POLICY, ERROR_DOMAIN_POSIX, ERROR_DOMAIN_WIN32, ERROR_STAGE_ENCODE,
+        ERROR_STAGE_EXCLUSIVE_PUBLISH, ERROR_STAGE_FILESYSTEM_POLICY, ERROR_STAGE_FILE_CLOSE,
+        ERROR_STAGE_FILE_SYNC, ERROR_STAGE_NONE, ERROR_STAGE_PARENT_IDENTITY,
+        ERROR_STAGE_PARENT_OPEN, ERROR_STAGE_PARENT_SYNC, ERROR_STAGE_TEMP_CLEANUP,
+        ERROR_STAGE_TEMP_CREATE, ERROR_STAGE_TEMP_IDENTITY, OUTCOME_COLLISION,
+        OUTCOME_DURABLE_PUBLISHED, OUTCOME_NONE, OUTCOME_NOT_PUBLISHED,
+        OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
+    },
     PhysicalStage, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalCircuitStep,
     TemporalCircuitStop, TemporalContextPolicy, TemporalOverflowStage, TemporalPlasticityPolicy,
     TemporalPoisonCode, TemporalStepMode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS,
 };
 use crate::temporal_physics::SpikeEvent;
+
+#[cfg(test)]
+use super::checkpoint_publisher::fail_next_destination_allocation;
 
 pub const TEMPORAL_RUNTIME_OK: u32 = 0;
 pub const TEMPORAL_RUNTIME_INVALID_ARGUMENT: u32 = 1;
@@ -53,6 +68,37 @@ pub const TEMPORAL_RUNTIME_POISONED: u32 = 7;
 pub const TEMPORAL_RUNTIME_SCIENTIFIC_STOP: u32 = 8;
 pub const TEMPORAL_RUNTIME_CAPACITY_STOP: u32 = 9;
 pub const TEMPORAL_RUNTIME_INTERNAL_INVARIANT: u32 = 10;
+
+pub const TEMPORAL_CHECKPOINT_PUBLICATION_NONE: u16 = OUTCOME_NONE;
+pub const TEMPORAL_CHECKPOINT_DURABLE_PUBLISHED: u16 = OUTCOME_DURABLE_PUBLISHED;
+pub const TEMPORAL_CHECKPOINT_COLLISION: u16 = OUTCOME_COLLISION;
+pub const TEMPORAL_CHECKPOINT_NOT_PUBLISHED: u16 = OUTCOME_NOT_PUBLISHED;
+pub const TEMPORAL_CHECKPOINT_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE: u16 =
+    OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE;
+
+pub const TEMPORAL_CHECKPOINT_CLEANUP_NOT_APPLICABLE: u8 = CLEANUP_NOT_APPLICABLE;
+pub const TEMPORAL_CHECKPOINT_CLEANUP_CLEAN: u8 = CLEANUP_CLEAN;
+pub const TEMPORAL_CHECKPOINT_CLEANUP_ORPHANED: u8 = CLEANUP_ORPHANED;
+
+pub const TEMPORAL_CHECKPOINT_ERROR_DOMAIN_NONE: u16 = ERROR_DOMAIN_NONE;
+pub const TEMPORAL_CHECKPOINT_ERROR_DOMAIN_POSIX: u16 = ERROR_DOMAIN_POSIX;
+pub const TEMPORAL_CHECKPOINT_ERROR_DOMAIN_WIN32: u16 = ERROR_DOMAIN_WIN32;
+pub const TEMPORAL_CHECKPOINT_ERROR_DOMAIN_POLICY: u16 = ERROR_DOMAIN_POLICY;
+pub const TEMPORAL_CHECKPOINT_ERROR_DOMAIN_ENCODER: u16 = ERROR_DOMAIN_ENCODER;
+pub const TEMPORAL_CHECKPOINT_ERROR_DOMAIN_IO: u16 = ERROR_DOMAIN_IO_WITHOUT_OS_CODE;
+
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_NONE: u16 = ERROR_STAGE_NONE;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_PARENT_OPEN: u16 = ERROR_STAGE_PARENT_OPEN;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_PARENT_IDENTITY: u16 = ERROR_STAGE_PARENT_IDENTITY;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_FILESYSTEM_POLICY: u16 = ERROR_STAGE_FILESYSTEM_POLICY;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_TEMP_CREATE: u16 = ERROR_STAGE_TEMP_CREATE;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_ENCODE: u16 = ERROR_STAGE_ENCODE;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_FILE_SYNC: u16 = ERROR_STAGE_FILE_SYNC;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_FILE_CLOSE: u16 = ERROR_STAGE_FILE_CLOSE;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_TEMP_IDENTITY: u16 = ERROR_STAGE_TEMP_IDENTITY;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_EXCLUSIVE_PUBLISH: u16 = ERROR_STAGE_EXCLUSIVE_PUBLISH;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_TEMP_CLEANUP: u16 = ERROR_STAGE_TEMP_CLEANUP;
+pub const TEMPORAL_CHECKPOINT_ERROR_STAGE_PARENT_SYNC: u16 = ERROR_STAGE_PARENT_SYNC;
 
 const STAGE_NONE: u16 = 0;
 const STAGE_PROXIMAL: u16 = 1;
@@ -165,6 +211,87 @@ pub struct TemporalCircuitImportCheckpointV1Request {
     pub definition: TemporalCircuitDefinitionV1,
     pub checkpoint_bytes: *const u8,
     pub checkpoint_len: u64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalCheckpointPathV1Request {
+    pub parent_utf8: *const u8,
+    pub parent_len: u64,
+    pub final_basename_utf8: *const u8,
+    pub final_basename_len: u64,
+    pub reserved_zero: [u8; 8],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalCheckpointPublicationErrorV1 {
+    pub stage: u16,
+    pub domain: u16,
+    pub code: u32,
+}
+
+impl TemporalCheckpointPublicationErrorV1 {
+    const ZERO: Self = Self {
+        stage: TEMPORAL_CHECKPOINT_ERROR_STAGE_NONE,
+        domain: TEMPORAL_CHECKPOINT_ERROR_DOMAIN_NONE,
+        code: 0,
+    };
+}
+
+impl From<PublicationError> for TemporalCheckpointPublicationErrorV1 {
+    fn from(error: PublicationError) -> Self {
+        Self {
+            stage: error.stage,
+            domain: error.domain,
+            code: error.code,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalCheckpointPublicationReportV1 {
+    pub outcome: u16,
+    pub temp_cleanup: u8,
+    pub cleanup_error_count: u8,
+    pub primary_error: TemporalCheckpointPublicationErrorV1,
+    pub cleanup_errors: [TemporalCheckpointPublicationErrorV1; 4],
+    pub owned_temp_pid: u32,
+    pub owned_temp_nonce: u64,
+    /// Exact canonical checkpoint length prepared under the runtime lock.
+    pub checkpoint_bytes: u64,
+    /// Best-effort temporary-file length, capped at `checkpoint_bytes`.
+    /// Zero means no trustworthy observation, not necessarily zero bytes.
+    pub encoded_bytes: u64,
+    pub reserved_zero: [u8; 8],
+}
+
+impl TemporalCheckpointPublicationReportV1 {
+    const ZERO: Self = Self {
+        outcome: TEMPORAL_CHECKPOINT_PUBLICATION_NONE,
+        temp_cleanup: TEMPORAL_CHECKPOINT_CLEANUP_NOT_APPLICABLE,
+        cleanup_error_count: 0,
+        primary_error: TemporalCheckpointPublicationErrorV1::ZERO,
+        cleanup_errors: [TemporalCheckpointPublicationErrorV1::ZERO; 4],
+        owned_temp_pid: 0,
+        owned_temp_nonce: 0,
+        checkpoint_bytes: 0,
+        encoded_bytes: 0,
+        reserved_zero: [0; 8],
+    };
+
+    fn fill(&mut self, completion: PublicationCompletion) {
+        self.outcome = completion.outcome;
+        self.temp_cleanup = completion.temp_cleanup;
+        self.cleanup_error_count = completion.cleanup_errors.len();
+        self.primary_error = completion.primary_error.into();
+        self.cleanup_errors = completion.cleanup_errors.errors().map(Into::into);
+        self.owned_temp_pid = completion.owned_temp_pid;
+        self.owned_temp_nonce = completion.owned_temp_nonce;
+        self.checkpoint_bytes = completion.checkpoint_bytes;
+        self.encoded_bytes = completion.encoded_bytes;
+    }
 }
 
 #[repr(C)]
@@ -327,8 +454,56 @@ unsafe fn begin_report(report_out: *mut TemporalCircuitReportV1) -> bool {
     true
 }
 
+unsafe fn begin_publication_report(
+    publication_out: *mut TemporalCheckpointPublicationReportV1,
+) -> bool {
+    if !fixed_pointer_is_valid(publication_out.cast_const()) {
+        return false;
+    }
+    publication_out.write(TemporalCheckpointPublicationReportV1::ZERO);
+    true
+}
+
 unsafe fn report<'a>(report_out: *mut TemporalCircuitReportV1) -> &'a mut TemporalCircuitReportV1 {
     &mut *report_out
+}
+
+unsafe fn publication_report<'a>(
+    publication_out: *mut TemporalCheckpointPublicationReportV1,
+) -> &'a mut TemporalCheckpointPublicationReportV1 {
+    &mut *publication_out
+}
+
+#[derive(Clone, Copy)]
+struct RawRegion {
+    pointer: *const u8,
+    byte_count: usize,
+}
+
+fn raw_regions_are_disjoint(regions: &[RawRegion]) -> bool {
+    for left_index in 0..regions.len() {
+        for right_index in left_index + 1..regions.len() {
+            let left = regions[left_index];
+            let right = regions[right_index];
+            if regions_overlap(
+                left.pointer,
+                left.byte_count,
+                right.pointer,
+                right.byte_count,
+            ) {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+unsafe fn foreign_bytes<'a>(pointer: *const u8, count: usize) -> &'a [u8] {
+    if count == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(pointer, count)
+    }
 }
 
 unsafe fn allocate_owned<T>(value: T) -> *mut T {
@@ -1122,6 +1297,184 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_export_checkpoint_v
     report.finish(TEMPORAL_RUNTIME_OK, "")
 }
 
+/// Stream a canonical checkpoint to a same-parent temporary file and publish
+/// its final basename with the platform's audited no-overwrite primitive.
+///
+/// Publication outcomes are completion-plane results: once authority and
+/// canonical preparation succeed, filesystem and encoder failures return
+/// `TEMPORAL_RUNTIME_OK` and are described only by `publication_out`. Outcome
+/// zero is reserved for ABI, authority, and preparation failures.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. Both path inputs are
+/// immutable counted UTF-8 bytes. `publication_out` may be uninitialized; it
+/// is initialized to the all-zero/N/A report before any request read and is
+/// never read by this function.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+    handle: *const TemporalCircuitRuntimeHandle,
+    fresh_authority: *const TemporalValidatedCheckpointAuthorityV1,
+    request: *const TemporalCheckpointPathV1Request,
+    publication_out: *mut TemporalCheckpointPublicationReportV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(publication_out.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "publication output is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        publication_out.cast(),
+        size_of::<TemporalCheckpointPublicationReportV1>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "publication and runtime reports overlap",
+        );
+    }
+    let initialized = begin_publication_report(publication_out);
+    debug_assert!(initialized);
+
+    if !fixed_pointer_is_valid(handle) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "runtime handle is null or misaligned",
+        );
+    }
+    if !fixed_pointer_is_valid(fresh_authority) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "fresh authority is null or misaligned",
+        );
+    }
+    if !fixed_pointer_is_valid(request) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint path request is null or misaligned",
+        );
+    }
+
+    let fixed_regions = [
+        RawRegion {
+            pointer: handle.cast(),
+            byte_count: size_of::<TemporalCircuitRuntimeHandle>(),
+        },
+        RawRegion {
+            pointer: fresh_authority.cast(),
+            byte_count: size_of::<TemporalValidatedCheckpointAuthorityV1>(),
+        },
+        RawRegion {
+            pointer: request.cast(),
+            byte_count: size_of::<TemporalCheckpointPathV1Request>(),
+        },
+        RawRegion {
+            pointer: publication_out.cast(),
+            byte_count: size_of::<TemporalCheckpointPublicationReportV1>(),
+        },
+        RawRegion {
+            pointer: report_out.cast(),
+            byte_count: size_of::<TemporalCircuitReportV1>(),
+        },
+    ];
+    if !raw_regions_are_disjoint(&fixed_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint path fixed regions overlap",
+        );
+    }
+
+    let request_value = request.read();
+    if request_value.reserved_zero != [0; 8] {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint path request reserved bytes must be zero",
+        );
+    }
+    let Some(parent_len) = counted_region(request_value.parent_utf8, request_value.parent_len)
+    else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint parent path geometry is invalid",
+        );
+    };
+    let Some(final_basename_len) = counted_region(
+        request_value.final_basename_utf8,
+        request_value.final_basename_len,
+    ) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint final basename geometry is invalid",
+        );
+    };
+    let all_regions = [
+        fixed_regions[0],
+        fixed_regions[1],
+        fixed_regions[2],
+        fixed_regions[3],
+        fixed_regions[4],
+        RawRegion {
+            pointer: request_value.parent_utf8,
+            byte_count: parent_len,
+        },
+        RawRegion {
+            pointer: request_value.final_basename_utf8,
+            byte_count: final_basename_len,
+        },
+    ];
+    if !raw_regions_are_disjoint(&all_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint path regions overlap",
+        );
+    }
+
+    let parent_utf8 = foreign_bytes(request_value.parent_utf8, parent_len);
+    let final_basename_utf8 = foreign_bytes(request_value.final_basename_utf8, final_basename_len);
+    let destination = match validate_destination_v1(parent_utf8, final_basename_utf8) {
+        Ok(destination) => destination,
+        Err(DestinationInputError::Invalid) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "checkpoint destination is invalid",
+            )
+        }
+        Err(DestinationInputError::Allocation) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "checkpoint destination copy allocation failed",
+            )
+        }
+    };
+
+    let authority = fresh_authority.read().into_validated();
+    let handle = &*handle;
+    let runtime = lock_runtime(handle);
+    if authority != handle.creation_authority {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_DEFINITION,
+            "fresh authority does not match handle creation authority",
+        );
+    }
+    let prepared = match runtime.prepare_checkpoint_v1_export(authority) {
+        Ok(prepared) => prepared,
+        Err(error) => return prepare_error(report, error),
+    };
+    report.required = prepared.encoded_len();
+
+    let completion = publish_prepared_checkpoint_v1(&prepared, &destination);
+    report.observed = completion.encoded_bytes;
+    publication_report(publication_out).fill(completion);
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
 /// Destroy an opaque handle. Null is a no-op.
 ///
 /// # Safety
@@ -1253,6 +1606,72 @@ mod tests {
         assert_eq!(
             offset_of!(TemporalCircuitImportCheckpointV1Request, checkpoint_len),
             136
+        );
+
+        assert_eq!(size_of::<TemporalCheckpointPathV1Request>(), 40);
+        assert_eq!(align_of::<TemporalCheckpointPathV1Request>(), 8);
+        assert_eq!(offset_of!(TemporalCheckpointPathV1Request, parent_utf8), 0);
+        assert_eq!(offset_of!(TemporalCheckpointPathV1Request, parent_len), 8);
+        assert_eq!(
+            offset_of!(TemporalCheckpointPathV1Request, final_basename_utf8),
+            16
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPathV1Request, final_basename_len),
+            24
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPathV1Request, reserved_zero),
+            32
+        );
+
+        assert_eq!(size_of::<TemporalCheckpointPublicationErrorV1>(), 8);
+        assert_eq!(align_of::<TemporalCheckpointPublicationErrorV1>(), 4);
+        assert_eq!(offset_of!(TemporalCheckpointPublicationErrorV1, stage), 0);
+        assert_eq!(offset_of!(TemporalCheckpointPublicationErrorV1, domain), 2);
+        assert_eq!(offset_of!(TemporalCheckpointPublicationErrorV1, code), 4);
+
+        assert_eq!(size_of::<TemporalCheckpointPublicationReportV1>(), 80);
+        assert_eq!(align_of::<TemporalCheckpointPublicationReportV1>(), 8);
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, outcome),
+            0
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, temp_cleanup),
+            2
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, cleanup_error_count),
+            3
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, primary_error),
+            4
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, cleanup_errors),
+            12
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, owned_temp_pid),
+            44
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, owned_temp_nonce),
+            48
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, checkpoint_bytes),
+            56
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, encoded_bytes),
+            64
+        );
+        assert_eq!(
+            offset_of!(TemporalCheckpointPublicationReportV1, reserved_zero),
+            72
         );
 
         assert_eq!(size_of::<TemporalSpikeV1>(), 8);
@@ -1406,6 +1825,58 @@ mod tests {
         assert_eq!(
             hex_digest(step_bytes),
             "16b918d572aa21cc6323d16545f5567e67f8dde07f6599af911b1180a4825bda"
+        );
+    }
+
+    #[test]
+    fn publication_report_bytes_match_the_independent_cpython_oracle() {
+        let report = TemporalCheckpointPublicationReportV1 {
+            outcome: TEMPORAL_CHECKPOINT_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
+            temp_cleanup: TEMPORAL_CHECKPOINT_CLEANUP_ORPHANED,
+            cleanup_error_count: 4,
+            primary_error: TemporalCheckpointPublicationErrorV1 {
+                stage: TEMPORAL_CHECKPOINT_ERROR_STAGE_EXCLUSIVE_PUBLISH,
+                domain: TEMPORAL_CHECKPOINT_ERROR_DOMAIN_WIN32,
+                code: 0x1122_3344,
+            },
+            cleanup_errors: [
+                TemporalCheckpointPublicationErrorV1 {
+                    stage: TEMPORAL_CHECKPOINT_ERROR_STAGE_TEMP_CLEANUP,
+                    domain: TEMPORAL_CHECKPOINT_ERROR_DOMAIN_POLICY,
+                    code: 0x0102_0304,
+                },
+                TemporalCheckpointPublicationErrorV1 {
+                    stage: TEMPORAL_CHECKPOINT_ERROR_STAGE_PARENT_SYNC,
+                    domain: TEMPORAL_CHECKPOINT_ERROR_DOMAIN_POSIX,
+                    code: 0x5566_7788,
+                },
+                TemporalCheckpointPublicationErrorV1 {
+                    stage: TEMPORAL_CHECKPOINT_ERROR_STAGE_FILE_CLOSE,
+                    domain: TEMPORAL_CHECKPOINT_ERROR_DOMAIN_WIN32,
+                    code: 0x99aa_bbcc,
+                },
+                TemporalCheckpointPublicationErrorV1 {
+                    stage: TEMPORAL_CHECKPOINT_ERROR_STAGE_TEMP_IDENTITY,
+                    domain: TEMPORAL_CHECKPOINT_ERROR_DOMAIN_ENCODER,
+                    code: 0xddee_ff00,
+                },
+            ],
+            owned_temp_pid: 0xa1b2_c3d4,
+            owned_temp_nonce: 0x0102_0304_0506_0708,
+            checkpoint_bytes: 0x1112_1314_1516_1718,
+            encoded_bytes: 0x2122_2324_2526_2728,
+            reserved_zero: [0; 8],
+        };
+        let bytes = raw_bytes(&report);
+        assert_eq!(
+            bytes,
+            hex_bytes(
+                "0400020409000200443322110a000300040302010b0001008877665507000200ccbbaa990800040000ffeeddd4c3b2a10807060504030201181716151413121128272625242322210000000000000000"
+            )
+        );
+        assert_eq!(
+            hex_digest(bytes),
+            "bc3eb339a272206fc54074faa215cffb00b4a0469c5250efdea0eaecc0d63d5a"
         );
     }
 
@@ -2765,5 +3236,410 @@ mod tests {
                 TEMPORAL_RUNTIME_ALLOCATION_FAILED
             );
         }
+    }
+
+    #[test]
+    fn path_publication_precedence_keeps_outcome_zero_until_preparation_completes() {
+        let fixture = EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+        let definition = fixture.definition();
+        unsafe {
+            let (handle, create_report) = create_from_definition(&definition);
+            assert_eq!(create_report.status, TEMPORAL_RUNTIME_OK);
+            let before = export_checkpoint(handle, &fixture.authority);
+            let parent = b"relative-parent";
+            let basename = b"state.chk";
+            let request = TemporalCheckpointPathV1Request {
+                parent_utf8: parent.as_ptr(),
+                parent_len: parent.len() as u64,
+                final_basename_utf8: basename.as_ptr(),
+                final_basename_len: basename.len() as u64,
+                reserved_zero: [0; 8],
+            };
+
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                    handle,
+                    &fixture.authority,
+                    ptr::null(),
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+
+            let wrong_authority = TemporalValidatedCheckpointAuthorityV1 {
+                protocol_identity_sha256: [0x5b; 32],
+                ..fixture.authority
+            };
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                    handle,
+                    &wrong_authority,
+                    &request,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_DEFINITION
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+
+            fail_next_destination_allocation();
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                    handle,
+                    &fixture.authority,
+                    &request,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                    handle,
+                    &fixture.authority,
+                    &request,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            let publication = publication.assume_init();
+            assert_eq!(publication.outcome, TEMPORAL_CHECKPOINT_NOT_PUBLISHED);
+            assert_eq!(
+                publication.temp_cleanup,
+                TEMPORAL_CHECKPOINT_CLEANUP_NOT_APPLICABLE
+            );
+            assert_eq!(publication.cleanup_error_count, 0);
+            assert_eq!(
+                publication.primary_error.domain,
+                TEMPORAL_CHECKPOINT_ERROR_DOMAIN_POLICY
+            );
+            assert_eq!(
+                publication.primary_error.stage,
+                TEMPORAL_CHECKPOINT_ERROR_STAGE_PARENT_OPEN
+            );
+            assert_eq!(report.assume_init().status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(export_checkpoint(handle, &fixture.authority), before);
+
+            let overlap = b"same-region";
+            let overlap_request = TemporalCheckpointPathV1Request {
+                parent_utf8: overlap.as_ptr(),
+                parent_len: overlap.len() as u64,
+                final_basename_utf8: overlap.as_ptr(),
+                final_basename_len: overlap.len() as u64,
+                reserved_zero: [0; 8],
+            };
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                    handle,
+                    &fixture.authority,
+                    &overlap_request,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+
+            let bad_geometry = TemporalCheckpointPathV1Request {
+                parent_len: u64::MAX,
+                ..request
+            };
+            let mut publication = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                    handle,
+                    &fixture.authority,
+                    &bad_geometry,
+                    publication.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(
+                publication.assume_init(),
+                TemporalCheckpointPublicationReportV1::ZERO
+            );
+
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn ntfs_path_publication_is_exclusive_and_import_bit_exact() {
+        use std::{
+            fs,
+            time::{SystemTime, UNIX_EPOCH},
+        };
+
+        let fixture = EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+        let definition = fixture.definition();
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let parent = std::env::temp_dir().join(format!(
+            "humanbrain-ckpt-publisher-test-{}-{unique}",
+            std::process::id()
+        ));
+        fs::create_dir(&parent).unwrap();
+        let parent_utf8 = parent.to_str().unwrap().as_bytes();
+        let basename = b"checkpoint-v1.bin";
+        let final_path = parent.join("checkpoint-v1.bin");
+        let request = TemporalCheckpointPathV1Request {
+            parent_utf8: parent_utf8.as_ptr(),
+            parent_len: parent_utf8.len() as u64,
+            final_basename_utf8: basename.as_ptr(),
+            final_basename_len: basename.len() as u64,
+            reserved_zero: [0; 8],
+        };
+
+        unsafe {
+            let (handle, create_report) = create_from_definition(&definition);
+            assert_eq!(create_report.status, TEMPORAL_RUNTIME_OK);
+            let expected = export_checkpoint(handle, &fixture.authority);
+
+            let sentinel = b"preexisting-sentinel-must-not-be-overwritten";
+            fs::write(&final_path, sentinel).unwrap();
+
+            let mut collision = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                    handle,
+                    &fixture.authority,
+                    &request,
+                    collision.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            let collision = collision.assume_init();
+            assert_eq!(collision.outcome, TEMPORAL_CHECKPOINT_COLLISION);
+            assert_eq!(
+                collision.primary_error,
+                TemporalCheckpointPublicationErrorV1::ZERO
+            );
+            assert_eq!(fs::read(&final_path).unwrap(), sentinel);
+            assert!(fs::read_dir(&parent).unwrap().all(|entry| !entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .starts_with(".humanbrain-ckpt-v1-")));
+            fs::remove_file(&final_path).unwrap();
+
+            let mut published = MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                    handle,
+                    &fixture.authority,
+                    &request,
+                    published.as_mut_ptr(),
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            let published = published.assume_init();
+            assert_eq!(
+                published.outcome, TEMPORAL_CHECKPOINT_DURABLE_PUBLISHED,
+                "{published:?}"
+            );
+            assert_eq!(published.temp_cleanup, TEMPORAL_CHECKPOINT_CLEANUP_CLEAN);
+            assert_eq!(published.checkpoint_bytes, expected.len() as u64);
+            assert_eq!(published.encoded_bytes, expected.len() as u64);
+            assert_eq!(fs::read(&final_path).unwrap(), expected);
+
+            let checkpoint = fs::read(&final_path).unwrap();
+            let import_request = TemporalCircuitImportCheckpointV1Request {
+                definition,
+                checkpoint_bytes: checkpoint.as_ptr(),
+                checkpoint_len: checkpoint.len() as u64,
+            };
+            let mut imported = ptr::null_mut();
+            let mut import_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                    &import_request,
+                    &mut imported,
+                    import_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            assert_eq!(export_checkpoint(imported, &fixture.authority), checkpoint);
+
+            humanbrain_temporal_circuit_runtime_destroy(imported);
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+        fs::remove_file(&final_path).unwrap();
+        fs::remove_dir(&parent).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn ntfs_many_writers_publish_exactly_one_complete_checkpoint() {
+        use std::{
+            fs,
+            io::ErrorKind,
+            sync::{
+                atomic::{AtomicBool, Ordering},
+                Arc, Barrier,
+            },
+            thread,
+            time::{SystemTime, UNIX_EPOCH},
+        };
+
+        const WRITERS: usize = 8;
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let parent = std::env::temp_dir().join(format!(
+            "humanbrain-ckpt-publisher-race-{}-{unique}",
+            std::process::id()
+        ));
+        fs::create_dir(&parent).unwrap();
+        let parent_utf8 = parent.to_str().unwrap().as_bytes().to_vec();
+        let final_path = parent.join("checkpoint-v1.bin");
+
+        let expected = unsafe {
+            let fixture =
+                EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+            let definition = fixture.definition();
+            let (handle, report) = create_from_definition(&definition);
+            assert_eq!(report.status, TEMPORAL_RUNTIME_OK);
+            let expected = export_checkpoint(handle, &fixture.authority);
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+            expected
+        };
+        let expected = Arc::new(expected);
+        let stop_reader = Arc::new(AtomicBool::new(false));
+        let reader_ready = Arc::new(AtomicBool::new(false));
+        let reader = {
+            let expected = Arc::clone(&expected);
+            let final_path = final_path.clone();
+            let stop_reader = Arc::clone(&stop_reader);
+            let reader_ready = Arc::clone(&reader_ready);
+            thread::spawn(move || {
+                reader_ready.store(true, Ordering::Release);
+                while !stop_reader.load(Ordering::Acquire) {
+                    match fs::read(&final_path) {
+                        Ok(observed) => assert_eq!(observed.as_slice(), expected.as_slice()),
+                        Err(error) if error.kind() == ErrorKind::NotFound => {}
+                        Err(error) => panic!("fresh reader failed: {error}"),
+                    }
+                    thread::yield_now();
+                }
+            })
+        };
+        while !reader_ready.load(Ordering::Acquire) {
+            thread::yield_now();
+        }
+
+        let barrier = Arc::new(Barrier::new(WRITERS + 1));
+        let writers = (0..WRITERS)
+            .map(|_| {
+                let parent_utf8 = parent_utf8.clone();
+                let barrier = Arc::clone(&barrier);
+                thread::spawn(move || unsafe {
+                    let fixture =
+                        EmptyDefinitionFixture::new(CONTEXT_GENERIC_AFFERENTS, PLASTICITY_PLASTIC);
+                    let definition = fixture.definition();
+                    let (handle, create_report) = create_from_definition(&definition);
+                    assert_eq!(create_report.status, TEMPORAL_RUNTIME_OK);
+                    let basename = b"checkpoint-v1.bin";
+                    let request = TemporalCheckpointPathV1Request {
+                        parent_utf8: parent_utf8.as_ptr(),
+                        parent_len: parent_utf8.len() as u64,
+                        final_basename_utf8: basename.as_ptr(),
+                        final_basename_len: basename.len() as u64,
+                        reserved_zero: [0; 8],
+                    };
+                    let mut publication =
+                        MaybeUninit::<TemporalCheckpointPublicationReportV1>::uninit();
+                    let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+                    barrier.wait();
+                    let status = humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1(
+                        handle,
+                        &fixture.authority,
+                        &request,
+                        publication.as_mut_ptr(),
+                        report.as_mut_ptr(),
+                    );
+                    let publication = publication.assume_init();
+                    let report = report.assume_init();
+                    humanbrain_temporal_circuit_runtime_destroy(handle);
+                    assert_eq!(status, TEMPORAL_RUNTIME_OK);
+                    assert_eq!(report.status, TEMPORAL_RUNTIME_OK);
+                    publication
+                })
+            })
+            .collect::<Vec<_>>();
+        barrier.wait();
+        let publications = writers
+            .into_iter()
+            .map(|writer| writer.join().unwrap())
+            .collect::<Vec<_>>();
+        stop_reader.store(true, Ordering::Release);
+        reader.join().unwrap();
+
+        assert_eq!(
+            publications
+                .iter()
+                .filter(|report| report.outcome == TEMPORAL_CHECKPOINT_DURABLE_PUBLISHED)
+                .count(),
+            1
+        );
+        assert_eq!(
+            publications
+                .iter()
+                .filter(|report| report.outcome == TEMPORAL_CHECKPOINT_COLLISION)
+                .count(),
+            WRITERS - 1
+        );
+        assert!(publications.iter().all(|report| {
+            report.temp_cleanup == TEMPORAL_CHECKPOINT_CLEANUP_CLEAN
+                && report.cleanup_error_count == 0
+        }));
+        assert_eq!(
+            fs::read(&final_path).unwrap().as_slice(),
+            expected.as_slice()
+        );
+        assert!(fs::read_dir(&parent).unwrap().all(|entry| !entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".humanbrain-ckpt-v1-")));
+
+        fs::remove_file(&final_path).unwrap();
+        fs::remove_dir(&parent).unwrap();
     }
 }

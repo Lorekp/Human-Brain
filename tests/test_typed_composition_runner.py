@@ -40,9 +40,68 @@ from humanbrain.typed_program import Completion, Program, ProgramRaceAudit
 
 ROOT = Path(__file__).parents[1]
 PROTOCOL_PATH = ROOT / "benchmarks" / "typed_composition_protocol_v1.json"
+_LIVE_NATIVE_BUILD_INPUT_PATHS = native_runtime._native_build_input_paths
 
 
-def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution() -> None:
+@pytest.fixture(autouse=True)
+def _test_only_historical_a012_native_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Keep generic runner tests on the exact native path subset sealed by A012."""
+    bound_paths = set(load_composition_protocol(PROTOCOL_PATH).source_bundle_paths)
+
+    def historical_native_inputs(
+        source_root: Path | None = None,
+    ) -> tuple[tuple[str, Path], ...]:
+        return tuple(
+            (relative_path, path)
+            for relative_path, path in _LIVE_NATIVE_BUILD_INPUT_PATHS(source_root)
+            if f"src/humanbrain/_native_src/{relative_path}" in bound_paths
+        )
+
+    monkeypatch.setattr(
+        native_runtime,
+        "_native_build_input_paths",
+        historical_native_inputs,
+    )
+
+
+@pytest.fixture
+def _live_native_inputs_for_a012_staleness(
+    _test_only_historical_a012_native_inputs: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        native_runtime,
+        "_native_build_input_paths",
+        _LIVE_NATIVE_BUILD_INPUT_PATHS,
+    )
+
+
+def test_live_a012_fails_closed_on_omitted_current_native_inputs(
+    _live_native_inputs_for_a012_staleness: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    protocol = load_composition_protocol(PROTOCOL_PATH)
+    bound_paths = set(protocol.source_bundle_paths)
+    live_native_paths = {
+        f"src/humanbrain/_native_src/{relative_path}"
+        for relative_path, _path in _LIVE_NATIVE_BUILD_INPUT_PATHS()
+    }
+    missing_native_paths = live_native_paths - bound_paths
+
+    assert missing_native_paths
+    assert any("/_native_src/vendor/windows-sys/" in path for path in missing_native_paths)
+
+    def forbidden_read(*_args: object, **_kwargs: object) -> bytes:
+        raise AssertionError("stale A012 must fail before source payload reads")
+
+    monkeypatch.setattr(runner, "_bounded_source_bytes", forbidden_read)
+    with pytest.raises(ValueError, match="omits a native Cargo build input"):
+        build_execution_plan(ROOT, PROTOCOL_PATH)
+
+
+def test_generic_plan_binds_historical_a012_source_fixture_without_execution() -> None:
     protocol = load_composition_protocol(PROTOCOL_PATH)
     plan = build_execution_plan(ROOT, PROTOCOL_PATH)
 
@@ -54,7 +113,7 @@ def test_plan_binds_exact_protocol_and_complete_source_bundle_without_execution(
     assert all(len(item["sha256"]) == 64 for item in plan["source_bundle"])
     assert plan["source_bundle_limits"] == {
         "maximum_file_bytes": 1024 * 1024,
-        "maximum_aggregate_bytes": 8 * 1024 * 1024,
+        "maximum_aggregate_bytes": 32 * 1024 * 1024,
         "actual_aggregate_bytes": sum(
             item["byte_count"] for item in plan["source_bundle"]
         ),

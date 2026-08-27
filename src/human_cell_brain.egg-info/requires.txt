@@ -1,7 +1,0 @@
-numpy>=2.0
-
-[swe]
-mini-swe-agent==2.4.6
-
-[test]
-pytest>=8.0

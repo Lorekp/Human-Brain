@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tomllib
 from dataclasses import replace
+from glob import glob
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -43,18 +44,35 @@ def _write_build_tree(root: Path) -> None:
     (root / "target" / "release" / "cached.rs").write_bytes(b"not a build input\n")
 
 
-def test_package_data_declares_recursive_native_and_vendored_inputs() -> None:
+def test_package_data_exactly_covers_current_native_build_inputs() -> None:
     pyproject = tomllib.loads(
         (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
     )
     patterns = pyproject["tool"]["setuptools"]["package-data"]["humanbrain"]
+    package_root = ROOT / "src" / "humanbrain"
+    packaged_native_paths = {
+        Path(match)
+        .resolve()
+        .relative_to(package_root.resolve())
+        .as_posix()
+        for pattern in patterns
+        for match in glob(str(package_root / pattern), recursive=True)
+        if Path(match).is_file()
+    }
+    expected_native_paths = {
+        f"_native_src/{relative_path}"
+        for relative_path, _path in native._native_build_input_paths()
+    }
 
     assert "_native_src/.cargo/config.toml" in patterns
-    assert "_native_src/src/**/*.rs" in patterns
-    assert "_native_src/src/**/*.cu" in patterns
+    assert "_native_src/build.rs" in patterns
+    assert "_native_src/src/**/*" in patterns
+    assert "_native_src/src/**/.*" in patterns
+    assert "_native_src/src/**/.*/**/*" in patterns
     assert "_native_src/vendor/**/*" in patterns
     assert "_native_src/vendor/**/.*" in patterns
     assert "_native_src/vendor/**/.*/**/*" in patterns
+    assert packaged_native_paths == expected_native_paths
 
 
 def test_native_manifest_remains_its_own_workspace_under_a_hostile_parent(
@@ -129,6 +147,8 @@ def test_every_vendored_cargo_file_matches_its_frozen_checksum() -> None:
         "rayon-core",
         "sha2",
         "typenum",
+        "windows-link",
+        "windows-sys",
     )
     for checksum_path in checksum_paths:
         crate_root = checksum_path.parent
@@ -146,13 +166,21 @@ def test_every_vendored_cargo_file_matches_its_frozen_checksum() -> None:
             assert hashlib.sha256(payload).hexdigest() == expected_digest
 
 
-def test_sha2_vendor_closure_fits_the_raised_native_source_bundle_bound() -> None:
+def test_target_specific_vendor_closure_fits_the_native_source_bundle_bound() -> None:
     source_bytes = sum(
         path.stat().st_size for _name, path in native._native_build_input_paths()
     )
+    vendor_root = ROOT / "src" / "humanbrain" / "_native_src" / "vendor"
+    windows_closure_bytes = sum(
+        path.stat().st_size
+        for crate in ("windows-link", "windows-sys")
+        for path in (vendor_root / crate).rglob("*")
+        if path.is_file()
+    )
 
-    assert 8 * 1024 * 1024 < source_bytes <= native._MAX_NATIVE_SOURCE_BUNDLE_BYTES
-    assert native._MAX_NATIVE_SOURCE_BUNDLE_BYTES == 16 * 1024 * 1024
+    assert windows_closure_bytes == 18_229_435
+    assert 26 * 1024 * 1024 < source_bytes <= native._MAX_NATIVE_SOURCE_BUNDLE_BYTES
+    assert native._MAX_NATIVE_SOURCE_BUNDLE_BYTES == 32 * 1024 * 1024
 
 
 def test_native_source_digest_covers_every_recursive_cargo_input(tmp_path: Path) -> None:
@@ -238,6 +266,20 @@ def test_loaded_native_identity_uses_the_complete_build_input_digest() -> None:
     identity = native.loaded_library_identity()
 
     assert identity.source_digest == native._source_digest()
+
+
+def test_source_addressed_release_exports_temporal_checkpoint_path_publisher() -> None:
+    identity = native.loaded_library_identity()
+    build = native.loaded_build_info()
+    library = native._load_library()
+
+    assert identity.source_digest == build.source_digest == native._source_digest()
+    assert build.library_path.resolve() == native._LIBRARY_PATH
+    assert getattr(
+        library,
+        "humanbrain_temporal_circuit_runtime_export_checkpoint_path_v1",
+        None,
+    ) is not None
 
 
 def test_native_build_plan_rejects_ambient_encoded_flags_before_cache_lookup(

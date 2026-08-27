@@ -45,8 +45,9 @@ _LIBRARY_PATH: Path | None = None
 _LOADED_BUILD_PLAN: _NativeBuildPlan | None = None
 _TARGET_ROOT_PLACEHOLDER = "@HUMANBRAIN_NATIVE_TARGET_ROOT@"
 _MAX_NATIVE_SOURCE_FILE_BYTES = 1024 * 1024
-# The frozen sha2 closure lifts the checked-in Cargo source bundle above 8 MiB.
-_MAX_NATIVE_SOURCE_BUNDLE_BYTES = 16 * 1024 * 1024
+# The audited sha2 plus target-specific libc/windows-sys closure is 26--27 MiB.
+# Keep one explicit bounded envelope for recursive wheel/sdist/build identity.
+_MAX_NATIVE_SOURCE_BUNDLE_BYTES = 32 * 1024 * 1024
 _MAX_TARGET_LIBRARY_FILE_BYTES = 128 * 1024 * 1024
 _MAX_TARGET_LIBRARY_BUNDLE_BYTES = 512 * 1024 * 1024
 _VENDORED_CARGO_CONFIG = (

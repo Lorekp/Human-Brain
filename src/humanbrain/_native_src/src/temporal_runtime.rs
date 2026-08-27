@@ -23,7 +23,12 @@ use crate::temporal_physics::{
 };
 
 pub(crate) mod checkpoint;
+#[cfg(any(unix, windows))]
+mod checkpoint_publisher;
 mod ffi;
+
+#[cfg(not(any(unix, windows)))]
+compile_error!("checkpoint path publication requires an audited Unix or Windows backend");
 
 const ACTIVE_COLUMNS: usize = 11;
 const CONTEXT_CELLS: usize = 2 * ACTIVE_COLUMNS;

@@ -6,6 +6,7 @@
 .target/
 .uv-cache/
 .venv/
+*.egg-info/
 __pycache__/
 target/
 *.pyc

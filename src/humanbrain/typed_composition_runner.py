@@ -61,7 +61,9 @@ class EvidenceExistsError(RuntimeError):
 
 
 _MAX_SOURCE_FILE_BYTES = 1024 * 1024
-_MAX_SOURCE_BUNDLE_BYTES = 8 * 1024 * 1024
+# Recursive native build inputs include the audited target-specific Windows
+# bindings even when a plan is produced on another host.
+_MAX_SOURCE_BUNDLE_BYTES = 32 * 1024 * 1024
 _MOVEFILE_WRITE_THROUGH = 0x00000008
 _WINDOWS_ALREADY_EXISTS = frozenset({80, 183})
 _PROTOCOL_RELATIVE_PATH = Path("benchmarks/typed_composition_protocol_v1.json")
