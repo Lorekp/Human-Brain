@@ -8,9 +8,9 @@
 //!
 //! Claim boundary: this module owns deterministic physical recognition and the
 //! aggregate reserve-aware native learning transaction. It has crate-private
-//! checkpoint-v1 identity hashing, but no header/body codec, state
-//! import/export, filesystem publisher, public ABI, Python wrapper, or
-//! outcome-evaluation path.
+//! checkpoint-v1 identity hashing plus a pure fixed-header codec, but no body
+//! traversal, state import/export, sink I/O, filesystem publisher, public ABI,
+//! Python wrapper, or outcome-evaluation path.
 
 use crate::random123::{philox2x64_10, sample_without_replacement};
 use crate::temporal::{
