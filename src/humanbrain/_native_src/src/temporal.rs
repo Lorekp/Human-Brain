@@ -673,8 +673,12 @@ impl TemporalStore {
 
     /// Return an authoritative owner during the no-fail commit phase.
     ///
-    /// The caller may use this infallible seam only after the same transaction
-    /// has preflighted `segment_id` and the complete store backing.
+    /// The caller may use this infallible seam only after either the same
+    /// transaction has preflighted `segment_id` and the complete store backing,
+    /// or full checkpoint store-backing, segment-ID, and state/layout validation
+    /// has succeeded and the same immutable store borrow spans validation and
+    /// this read. It indexes owner storage directly and performs no validation
+    /// or allocation.
     pub(crate) fn commit_prevalidated_runtime_segment_owner(&self, segment_id: u32) -> u32 {
         self.owners[segment_id as usize]
     }
@@ -1291,9 +1295,12 @@ impl TemporalStore {
 
     /// Copy a canonical row during the no-fail commit phase.
     ///
-    /// The caller may use this infallible seam only after the same transaction
-    /// has preflighted `segment_id`, its canonical row, and the complete store
-    /// backing. It performs no validation or allocation after commit entry.
+    /// The caller may use this infallible seam only after either the same
+    /// transaction has preflighted `segment_id`, its canonical row, and the
+    /// complete store backing, or full checkpoint store-backing, segment-ID,
+    /// and state/layout validation has succeeded and the same immutable store
+    /// borrow spans validation and this read. It performs no validation or
+    /// allocation.
     pub(crate) fn commit_prevalidated_runtime_segment_row(
         &self,
         segment_id: u32,
@@ -2634,6 +2641,49 @@ mod tests {
 
         assert_eq!(store.commit_prevalidated_runtime_segment_owner(0), 2);
         assert_eq!(store.commit_prevalidated_runtime_segment_row(0), row);
+    }
+
+    #[test]
+    fn checkpoint_validated_reads_preserve_every_owner_row_and_backing_allocation() {
+        let mut store = TemporalStore::new(config(12, 3, 3)).unwrap();
+        let row_zero = normalized_row(&[0, 3, 7], &[250, 375, 500]);
+        let row_one = normalized_row(&[], &[]);
+        let row_two = normalized_row(&[1, 3], &[251, 499]);
+        assert_eq!(
+            store.allocate_runtime_segment(2, &[100, 103, 107], &[250, 375, 500]),
+            Ok(0)
+        );
+        assert_eq!(store.allocate_runtime_segment(0, &[], &[]), Ok(1));
+        assert_eq!(
+            store.allocate_runtime_segment(1, &[101, 103], &[251, 499]),
+            Ok(2)
+        );
+
+        let expected = [(2, row_zero), (0, row_one), (1, row_two)];
+        let mut semantic_scratch = [NONE; 2];
+        let layout = backing_layout(&store);
+        let validated_store = &store;
+        assert_eq!(
+            validated_store.visit_runtime_semantic_postings(&mut semantic_scratch, |_| {}),
+            Ok(5)
+        );
+        for (segment_id, (owner, row)) in expected.into_iter().enumerate() {
+            let segment_id = segment_id as u32;
+            assert_eq!(
+                validated_store.runtime_segment_owner(segment_id),
+                Some(owner)
+            );
+            assert_eq!(validated_store.runtime_segment_row(segment_id), Ok(row));
+            assert_eq!(
+                validated_store.commit_prevalidated_runtime_segment_owner(segment_id),
+                owner
+            );
+            assert_eq!(
+                validated_store.commit_prevalidated_runtime_segment_row(segment_id),
+                row
+            );
+        }
+        assert_eq!(backing_layout(validated_store), layout);
     }
 
     #[test]
