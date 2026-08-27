@@ -41,6 +41,12 @@ TARGET_TOKEN = 1
 FIRST_CONTEXT_TOKEN = 1_000
 DEFAULT_SEGMENT_TARGETS = (1_023, 8_008, 32_010)
 DEFAULT_OUTPUT = Path(__file__).with_name("r3_native_temporal_cost.json")
+INCIDENCE_TOTAL_SEGMENTS = 32_010
+INCIDENCE_BATCH_COUNT = INCIDENCE_TOTAL_SEGMENTS // ACTIVE_COLUMNS
+DEFAULT_INCIDENCE_HOT_BATCHES = (1, 728, INCIDENCE_BATCH_COUNT)
+DEFAULT_INCIDENCE_OUTPUT = Path(__file__).with_name(
+    "r3_native_temporal_incidence_cost.json"
+)
 
 
 @contextlib.contextmanager
@@ -118,13 +124,34 @@ def _definition(segment_target: int) -> tuple[NativeTemporalCircuitDefinition, i
     )
 
 
+def _incidence_definition() -> NativeTemporalCircuitDefinition:
+    """Build one fixed definition whose learned incidence alone may vary."""
+
+    reference, _reserve_cells = _definition(INCIDENCE_TOTAL_SEGMENTS)
+    token_codes = {
+        TARGET_TOKEN: tuple(range(ACTIVE_COLUMNS)),
+    }
+    for batch_index in range(INCIDENCE_BATCH_COUNT):
+        first_column = (batch_index + 1) * ACTIVE_COLUMNS
+        token_codes[FIRST_CONTEXT_TOKEN + batch_index] = tuple(
+            range(first_column, first_column + ACTIVE_COLUMNS)
+        )
+    return NativeTemporalCircuitDefinition(
+        reference.config,
+        token_codes,
+        reference.threshold_offsets_mv,
+    )
+
+
 def _transition(
     circuit: NativeTemporalCircuit,
     context_token: int,
     mode: TemporalStepMode,
+    *,
+    target_token: int = TARGET_TOKEN,
 ) -> TemporalCircuitStep:
     steps = circuit.advance_block(
-        [context_token, TARGET_TOKEN],
+        [context_token, target_token],
         mode=mode,
         reset_before=True,
     )
@@ -158,6 +185,48 @@ def _populate(
     return time.perf_counter_ns() - started_ns
 
 
+def _populate_incidence(
+    circuit: NativeTemporalCircuit,
+    hot_batches: int,
+) -> tuple[int, int]:
+    """Create a fixed segment mass with a selected queried-context incidence."""
+
+    started_ns = time.perf_counter_ns()
+    punished_segments = 0
+    for batch_index in range(INCIDENCE_BATCH_COUNT):
+        batch_token = FIRST_CONTEXT_TOKEN + batch_index
+        if batch_index < hot_batches:
+            context_token = TARGET_TOKEN
+            target_token = batch_token
+        else:
+            context_token = batch_token
+            target_token = TARGET_TOKEN
+        target = _transition(
+            circuit,
+            context_token,
+            TemporalStepMode.LEARN,
+            target_token=target_token,
+        )
+        expected_punished = (
+            min(batch_index, 3) * ACTIVE_COLUMNS
+            if batch_index < hot_batches
+            else 0
+        )
+        if (
+            target.allocated_segments != ACTIVE_COLUMNS
+            or target.predicted_columns != 0
+            or target.punished_segments != expected_punished
+        ):
+            raise RuntimeError("incidence population transition violated novelty")
+        punished_segments += target.punished_segments
+        if batch_index and batch_index % 500 == 0:
+            print(
+                f"  populated {batch_index}/{INCIDENCE_BATCH_COUNT} batches",
+                flush=True,
+            )
+    return time.perf_counter_ns() - started_ns, punished_segments
+
+
 def _timing_summary(samples_ns: Sequence[int]) -> dict[str, float | int]:
     ordered = sorted(samples_ns)
     median_ns = statistics.median(ordered)
@@ -174,6 +243,17 @@ def _timing_summary(samples_ns: Sequence[int]) -> dict[str, float | int]:
     }
 
 
+def _recognized_step_timing_summary(
+    samples_ns: Sequence[int],
+) -> dict[str, float | int]:
+    summary = _timing_summary(samples_ns)
+    summary["steps_per_second_at_median"] = summary.pop(
+        "transitions_per_second_at_median"
+    )
+    del summary["token_steps_per_second_at_median"]
+    return summary
+
+
 def _measure_transitions(
     circuit: NativeTemporalCircuit,
     *,
@@ -181,10 +261,16 @@ def _measure_transitions(
     mode: TemporalStepMode,
     warmup: int,
     samples: int,
+    target_token: int = TARGET_TOKEN,
 ) -> tuple[dict[str, float | int], TemporalCircuitStep]:
     last: TemporalCircuitStep | None = None
     for _ in range(warmup):
-        last = _transition(circuit, context_token, mode)
+        last = _transition(
+            circuit,
+            context_token,
+            mode,
+            target_token=target_token,
+        )
 
     durations: list[int] = []
     gc_enabled = gc.isenabled()
@@ -192,7 +278,12 @@ def _measure_transitions(
     try:
         for _ in range(samples):
             started_ns = time.perf_counter_ns()
-            last = _transition(circuit, context_token, mode)
+            last = _transition(
+                circuit,
+                context_token,
+                mode,
+                target_token=target_token,
+            )
             durations.append(time.perf_counter_ns() - started_ns)
     finally:
         if gc_enabled:
@@ -200,6 +291,58 @@ def _measure_transitions(
     if last is None:
         raise RuntimeError("timing loop emitted no transition")
     return _timing_summary(durations), last
+
+
+def _measure_recognized_steps(
+    circuit: NativeTemporalCircuit,
+    *,
+    context_token: int,
+    target_token: int,
+    warmup: int,
+    samples: int,
+) -> tuple[dict[str, float | int], TemporalCircuitStep]:
+    """Time only the recognized token step after an untimed context prime."""
+
+    last: TemporalCircuitStep | None = None
+    for _ in range(warmup):
+        primed = circuit.advance_block(
+            [context_token],
+            mode=TemporalStepMode.READ_ONLY,
+            reset_before=True,
+        )
+        last = circuit.advance_block(
+            [target_token],
+            mode=TemporalStepMode.READ_ONLY,
+            reset_before=False,
+        )[0]
+        if len(primed) != 1:
+            raise RuntimeError("recognized-step prime emitted the wrong output length")
+
+    durations: list[int] = []
+    gc_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        for _ in range(samples):
+            primed = circuit.advance_block(
+                [context_token],
+                mode=TemporalStepMode.READ_ONLY,
+                reset_before=True,
+            )
+            if len(primed) != 1:
+                raise RuntimeError("recognized-step prime emitted the wrong output length")
+            started_ns = time.perf_counter_ns()
+            last = circuit.advance_block(
+                [target_token],
+                mode=TemporalStepMode.READ_ONLY,
+                reset_before=False,
+            )[0]
+            durations.append(time.perf_counter_ns() - started_ns)
+    finally:
+        if gc_enabled:
+            gc.enable()
+    if last is None:
+        raise RuntimeError("recognized-step timing loop emitted no step")
+    return _recognized_step_timing_summary(durations), last
 
 
 def _run_scale(
@@ -315,6 +458,115 @@ def _run_scale(
     }
 
 
+def _run_incidence_point(
+    definition: NativeTemporalCircuitDefinition,
+    hot_batches: int,
+    *,
+    warmup: int,
+    read_samples: int,
+) -> dict[str, object]:
+    expected_candidates = hot_batches * ACTIVE_COLUMNS
+    expected_postings = expected_candidates * PAIRS_PER_SEGMENT
+    expected_active = min(hot_batches, 3) * ACTIVE_COLUMNS
+    query_target_token = FIRST_CONTEXT_TOKEN + hot_batches - 1
+    print(
+        f"building {expected_candidates:,}-candidate incidence point",
+        flush=True,
+    )
+
+    native_started_ns = time.perf_counter_ns()
+    with NativeTemporalCircuit.fresh(definition) as circuit:
+        native_construction_ns = time.perf_counter_ns() - native_started_ns
+        population_ns, population_punished_segments = _populate_incidence(
+            circuit,
+            hot_batches,
+        )
+        populated_identity = circuit.checkpoint_identity()
+        if populated_identity.segment_count != INCIDENCE_TOTAL_SEGMENTS:
+            raise RuntimeError("incidence population did not fill the fixed segment mass")
+
+        read_timing, read_last = _measure_transitions(
+            circuit,
+            context_token=TARGET_TOKEN,
+            target_token=query_target_token,
+            mode=TemporalStepMode.READ_ONLY,
+            warmup=warmup,
+            samples=read_samples,
+        )
+        step_timing, step_last = _measure_recognized_steps(
+            circuit,
+            context_token=TARGET_TOKEN,
+            target_token=query_target_token,
+            warmup=warmup,
+            samples=read_samples,
+        )
+        final_identity = circuit.checkpoint_identity()
+
+    if (
+        read_last.predicted_columns != ACTIVE_COLUMNS
+        or step_last.predicted_columns != ACTIVE_COLUMNS
+        or len(read_last.winner_spikes) != ACTIVE_COLUMNS
+        or len(step_last.winner_spikes) != ACTIVE_COLUMNS
+        or len(read_last.basket_spikes) != ACTIVE_COLUMNS
+        or len(step_last.basket_spikes) != ACTIVE_COLUMNS
+        or final_identity.segment_count != INCIDENCE_TOTAL_SEGMENTS
+    ):
+        raise RuntimeError("incidence query did not preserve its physical output condition")
+
+    return {
+        "total_live_segments": final_identity.segment_count,
+        "hot_batches": hot_batches,
+        "cold_batches": INCIDENCE_BATCH_COUNT - hot_batches,
+        "native_construction_ns": native_construction_ns,
+        "population_ns": population_ns,
+        "population_punished_segments": population_punished_segments,
+        "population_segments_per_second": (
+            INCIDENCE_TOTAL_SEGMENTS * 1_000_000_000.0 / population_ns
+        ),
+        "configured": {
+            "column_count": definition.config.column_count,
+            "max_pyramidal_cells": definition.config.max_pyramidal_cells,
+            "physical_cell_count": len(definition.threshold_offsets_mv),
+            "committed_pyramidal_cells": final_identity.next_reserve_cell,
+            "cohort_count": final_identity.cohort_count,
+        },
+        "measured_condition": {
+            "recognition_counts_basis": (
+                "exact from fixed disjoint ten-pair segment geometry and the native "
+                "inverted-index contract; the circuit-step ABI directly exposes only "
+                "predictions and physical spikes"
+            ),
+            "query_prior_winner_sources": ACTIVE_COLUMNS,
+            "recognition_candidate_segments": expected_candidates,
+            "recognition_matching_segments": expected_candidates,
+            "recognition_active_segments": expected_active,
+            "recognition_postings_visited": expected_postings,
+            "query_target_hot_batch": hot_batches - 1,
+            "predicted_columns": read_last.predicted_columns,
+            "winner_spikes": len(read_last.winner_spikes),
+            "basket_spikes": len(read_last.basket_spikes),
+            "all_winner_to_basket_ticks": all(
+                basket.tick == winner.tick + 1
+                for winner, basket in zip(
+                    read_last.winner_spikes,
+                    read_last.basket_spikes,
+                    strict=True,
+                )
+            ),
+            "all_basket_to_gaba_ticks": all(
+                onset == basket.tick + 1
+                for basket, onset in zip(
+                    read_last.basket_spikes,
+                    read_last.inhibition_onset_ticks,
+                    strict=True,
+                )
+            ),
+        },
+        "read_only_recognized_transition": read_timing,
+        "read_only_recognized_step": step_timing,
+    }
+
+
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -331,31 +583,109 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--warmup", type=int, default=20)
     parser.add_argument("--read-samples", type=int, default=200)
     parser.add_argument("--learn-samples", type=int, default=100)
+    parser.add_argument(
+        "--incidence-curve",
+        action="store_true",
+        help="hold 32,010 live segments fixed and vary queried-context incidence",
+    )
+    parser.add_argument(
+        "--incidence-hot-batches",
+        type=int,
+        nargs="+",
+        default=list(DEFAULT_INCIDENCE_HOT_BATCHES),
+    )
     args = parser.parse_args(argv)
     if args.warmup < 0 or args.read_samples <= 0 or args.learn_samples <= 0:
         parser.error("warmup must be nonnegative and sample counts must be positive")
     for target in args.segment_targets:
         _exact_context_count(target)
+    if any(
+        hot_batches < 1 or hot_batches > INCIDENCE_BATCH_COUNT
+        for hot_batches in args.incidence_hot_batches
+    ):
+        parser.error(
+            f"incidence hot batches must be in [1, {INCIDENCE_BATCH_COUNT}]"
+        )
     return args
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
     with _synthetic_preoutcome_authority():
-        rows = [
-            _run_scale(
-                target,
-                warmup=args.warmup,
-                read_samples=args.read_samples,
-                learn_samples=args.learn_samples,
-            )
-            for target in args.segment_targets
-        ]
+        if args.incidence_curve:
+            definition = _incidence_definition()
+            definition_identity = definition.circuit_identity_sha256()
+            rows = [
+                _run_incidence_point(
+                    definition,
+                    hot_batches,
+                    warmup=args.warmup,
+                    read_samples=args.read_samples,
+                )
+                for hot_batches in args.incidence_hot_batches
+            ]
+        else:
+            definition_identity = None
+            rows = [
+                _run_scale(
+                    target,
+                    warmup=args.warmup,
+                    read_samples=args.read_samples,
+                    learn_samples=args.learn_samples,
+                )
+                for target in args.segment_targets
+            ]
         native_identity = loaded_library_identity()
+
+    if args.incidence_curve:
+        benchmark = "r3-native-temporal-incidence-cost"
+        output_path = (
+            DEFAULT_INCIDENCE_OUTPUT
+            if args.output == DEFAULT_OUTPUT
+            else args.output
+        )
+        method = {
+            "fixed_total_live_segments": INCIDENCE_TOTAL_SEGMENTS,
+            "fixed_definition_identity_sha256": definition_identity,
+            "hot_batches": list(args.incidence_hot_batches),
+            "candidate_segments": [
+                hot_batches * ACTIVE_COLUMNS
+                for hot_batches in args.incidence_hot_batches
+            ],
+            "warmup_transitions_per_point": args.warmup,
+            "read_samples_per_point": args.read_samples,
+            "recognized_step_timing": (
+                "one READ_ONLY target token through the public ABI after an untimed "
+                "one-token context prime; use this rate for per-step cap arithmetic"
+            ),
+            "timer": "time.perf_counter_ns",
+            "gc_during_samples": "disabled",
+            "threshold_offsets": "synthetic all-zero finite f64",
+            "contexts": (
+                "one eleven-winner query context; hot segments share ten source "
+                "pairs with it, cold segments use disjoint sources"
+            ),
+        }
+    else:
+        benchmark = "r3-native-temporal-indexed-physical-cost"
+        output_path = args.output
+        method = {
+            "segment_targets": list(args.segment_targets),
+            "warmup_transitions_per_mode": args.warmup,
+            "read_samples_per_scale": args.read_samples,
+            "learn_samples_per_scale": args.learn_samples,
+            "timer": "time.perf_counter_ns",
+            "gc_during_samples": "disabled",
+            "threshold_offsets": "synthetic all-zero finite f64",
+            "contexts": (
+                "disjoint eleven-column codes; one learned segment per target column "
+                "and context"
+            ),
+        }
 
     payload = {
         "schema_version": 1,
-        "benchmark": "r3-native-temporal-indexed-physical-cost",
+        "benchmark": benchmark,
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "claim_boundary": (
             "synthetic TRAIN-safe engineering timing only; no held-out, C1, "
@@ -368,19 +698,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "NativeTemporalCircuit.advance_block -> indexed TemporalStore recognition -> "
             "fitted GLIF3 plateau/basket first-spike race"
         ),
-        "method": {
-            "segment_targets": list(args.segment_targets),
-            "warmup_transitions_per_mode": args.warmup,
-            "read_samples_per_scale": args.read_samples,
-            "learn_samples_per_scale": args.learn_samples,
-            "timer": "time.perf_counter_ns",
-            "gc_during_samples": "disabled",
-            "threshold_offsets": "synthetic all-zero finite f64",
-            "contexts": (
-                "disjoint eleven-column codes; one learned segment per target column "
-                "and context"
-            ),
-        },
+        "method": method,
         "environment": {
             "python": sys.version,
             "platform": platform.platform(),
@@ -391,12 +709,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         },
         "results": rows,
     }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
         json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
-    print(f"wrote {args.output}", flush=True)
+    print(f"wrote {output_path}", flush=True)
     return 0
 
 
