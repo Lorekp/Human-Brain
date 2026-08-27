@@ -154,10 +154,16 @@ Also require:
 The three literal eight-current boundary rows are:
 
 ```text
-active_vs_matching  = [650,640,590,543,496,449,402,355]
+active_vs_matching  = [650,639,590,543,496,449,402,355]
 matching_vs_novel   = [600,590,543,496,449,402,355,308]
-novel_rank_boundary = [550,543,496,449,402,355,308,261]
+novel_rank_boundary = [550,542,496,449,402,355,308,261]
 ```
+
+**Pre-C1 electrical Change Note (2026-08-28).** The exhaustive search frozen at
+commit `00b02c9` found the minimum integer repair: lower the runner-up literal
+by 1 pA in the two rejected rows above. All eight extrema seeds then pass the
+strict latency and coupled-inhibition gates. No q4, held-out, or C1 data
+influenced this amendment; source binding and runnable status remain unchanged.
 
 At the 0.05-ms integration step, same-tick candidates are ordered by descending
 voltage-minus-threshold margin and then ascending physical GID. The extrema

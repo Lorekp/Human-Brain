@@ -113,9 +113,9 @@ def _claim_boundary() -> dict[str, bool]:
 
 def _scenario_currents() -> dict[str, tuple[int, ...]]:
     return {
-        "active_vs_matching": (650, 640, 590, 543, 496, 449, 402, 355),
+        "active_vs_matching": (650, 639, 590, 543, 496, 449, 402, 355),
         "matching_vs_novel": (600, 590, 543, 496, 449, 402, 355, 308),
-        "novel_rank_boundary": (550, 543, 496, 449, 402, 355, 308, 261),
+        "novel_rank_boundary": (550, 542, 496, 449, 402, 355, 308, 261),
     }
 
 

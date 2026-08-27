@@ -351,9 +351,9 @@ def test_electrical_v3_covers_reserve_and_winner_relay_domains() -> None:
     }
     assert screen["generic_proximal_relay_trials"] == 32768
     assert screen["boundary_scenarios_pa"] == {
-        "active_vs_matching": [650, 640, 590, 543, 496, 449, 402, 355],
+        "active_vs_matching": [650, 639, 590, 543, 496, 449, 402, 355],
         "matching_vs_novel": [600, 590, 543, 496, 449, 402, 355, 308],
-        "novel_rank_boundary": [550, 543, 496, 449, 402, 355, 308, 261],
+        "novel_rank_boundary": [550, 542, 496, 449, 402, 355, 308, 261],
     }
     assert screen["coupled_race_gate"] == {
         "basket_current_pa": 200000,

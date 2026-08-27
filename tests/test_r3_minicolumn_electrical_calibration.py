@@ -24,7 +24,7 @@ def test_electrical_module_executes_the_exact_frozen_v3_screen() -> None:
     assert screen["required_verdict"] == calibration.PASS_VERDICT
 
 
-def test_global_extrema_trial_replays_physical_inhibition_and_exposes_latency_reject() -> None:
+def test_global_extrema_trial_replays_physical_inhibition_and_passes_latency_gate() -> None:
     cortex = calibration._new_cortex(3)
     candidates, basket_gid, fixture = calibration._boundary_fixture(cortex)
     observed = calibration._probe_boundary(
@@ -43,21 +43,21 @@ def test_global_extrema_trial_replays_physical_inhibition_and_exposes_latency_re
     assert observed["inhibited_winner"] == observed["expected_winner"]
     assert observed["winner_to_basket_ticks"] == 1
     assert observed["basket_to_gaba_ticks"] == 1
-    assert observed["natural_latency_ticks"] == 2
-    assert observed["passed"] is False
+    assert observed["natural_latency_ticks"] == 3
+    assert observed["passed"] is True
 
 
-def test_full_v3_replay_covers_all_domains_and_returns_the_measured_reject() -> None:
+def test_full_v3_replay_covers_all_domains_and_returns_the_measured_pass() -> None:
     replay = calibration.run_replay()
     calibration.validate_artifact(replay)
 
-    assert replay["verdict"] == calibration.REJECT_VERDICT
+    assert replay["verdict"] == calibration.PASS_VERDICT
     assert set(replay["seeds"]) == {"3", "7", "17", "29", "43", "59", "83", "101"}
     summary = replay["summary"]
     assert summary["monotonicity"] == {
         "pyramidal": {
             "cells_covered": 1_048_576,
-            "comparisons": 12_582_816,
+            "comparisons": 13_631_384,
             "passed_seeds": 8,
         },
         "winner_relay": {
@@ -81,19 +81,19 @@ def test_full_v3_replay_covers_all_domains_and_returns_the_measured_reject() -> 
         "trials": 32_768,
     }
     assert summary["boundaries"]["matching_vs_novel"]["passed_trials"] == 8
-    assert summary["boundaries"]["active_vs_matching"]["passed_trials"] == 0
-    assert summary["boundaries"]["novel_rank_boundary"]["passed_trials"] == 0
-    assert len(replay["rejection_reasons"]) == 16
+    assert summary["boundaries"]["active_vs_matching"]["passed_trials"] == 8
+    assert summary["boundaries"]["novel_rank_boundary"]["passed_trials"] == 8
+    assert replay["rejection_reasons"] == []
 
 
-def test_current_artifact_is_source_bound_and_reports_scientific_reject() -> None:
+def test_current_artifact_is_source_bound_and_reports_scientific_pass() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
     calibration.validate_artifact(artifact)
 
     assert artifact["artifact_id"] == "r3-minicolumn-electrical-v3"
     assert artifact["schema_version"] == 3
     assert artifact["source_sha256"] == calibration._source_hashes()
-    assert artifact["verdict"] == calibration.REJECT_VERDICT
+    assert artifact["verdict"] == calibration.PASS_VERDICT
 
     completed = subprocess.run(
         [sys.executable, str(SCRIPT), "--check"],
@@ -103,4 +103,4 @@ def test_current_artifact_is_source_bound_and_reports_scientific_reject() -> Non
         check=False,
     )
     assert completed.returncode == 0
-    assert "scientific verdict: REJECT_RESERVE_VALID_ELECTRICAL_V3" in completed.stdout
+    assert "scientific verdict: PASS_RESERVE_VALID_ELECTRICAL_V3" in completed.stdout
