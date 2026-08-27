@@ -156,10 +156,8 @@ def _run_electrical_v3_prerequisite() -> None:
         result = electrical.run_replay()
     except electrical.CalibrationError as exc:
         raise FixtureRunnerStop(f"electrical-v3 STOP: {exc}") from exc
-    if type(result) is not dict or result.get("verdict") != (
-        "PASS_EXHAUSTIVE_COUPLED_SCREEN"
-    ):
-        raise FixtureRunnerStop("electrical-v3 STOP: coupled-race verdict did not pass")
+    if type(result) is not dict or result.get("verdict") != ("PASS_RESERVE_VALID_ELECTRICAL_V3"):
+        raise FixtureRunnerStop("electrical-v3 STOP: reserve-valid verdict did not pass")
 
 
 def _run_source_bound_q4_vertical_slice(
@@ -189,9 +187,7 @@ def _run_source_bound_q4_vertical_slice(
             "q4 STOP: native circuit definition identity differs from frozen authority"
         )
 
-    milestones = {
-        row["exposure"]: row for row in screen["transition_schedule"]
-    }
+    milestones = {row["exposure"]: row for row in screen["transition_schedule"]}
     final_identity = None
     try:
         with native.NativeTemporalCircuit.fresh(definition) as circuit:
@@ -222,9 +218,7 @@ def _run_source_bound_q4_vertical_slice(
                 milestone = milestones.get(exposure)
                 if milestone is not None:
                     identity = circuit.checkpoint_identity()
-                    expected_cohorts = (
-                        milestone["target_column_depth"] // 8 - 1
-                    ) * 11
+                    expected_cohorts = (milestone["target_column_depth"] // 8 - 1) * 11
                     if (
                         identity.segment_count != exposure * 11
                         or identity.cohort_count != expected_cohorts
@@ -239,10 +233,7 @@ def _run_source_bound_q4_vertical_slice(
     except Exception as exc:
         raise FixtureRunnerStop(f"q4 native execution STOP: {exc}") from exc
 
-    if (
-        final_identity is None
-        or final_identity.segment_count != screen["expected_target_segments"]
-    ):
+    if final_identity is None or final_identity.segment_count != screen["expected_target_segments"]:
         raise FixtureRunnerStop("q4 STOP: final target segment count drifted")
     return {
         "circuit_identity_sha256": observed_digest,

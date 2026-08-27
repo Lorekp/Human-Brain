@@ -1,119 +1,27 @@
 {
-  "artifact_id": "r3-minicolumn-electrical-v1",
-  "boundaries": {
-    "active_vs_matching": {
-      "control_two_spike_trials": 20480,
-      "expected_control_winner_trials": 20480,
-      "expected_inhibited_winner_trials": 20480,
-      "inhibited_single_spike_trials": 20480,
-      "maximum_basket_to_gaba_ticks": 1,
-      "maximum_natural_latency_ticks": 5,
-      "maximum_winner_to_basket_ticks": 1,
-      "minimum_basket_to_gaba_ticks": 1,
-      "minimum_natural_latency_ticks": 3,
-      "minimum_winner_to_basket_ticks": 1,
-      "seed_hashes_sha256": {
-        "17": "341017059ccff7a38a6f5ff3ca9c5af8823277112340ff29638b4ae617b8513f",
-        "29": "4fd723f591e66954e118af79d0336a86453480383451dc7b16beba9029e07df5",
-        "3": "50e01f4d71e9e064503065c893a3527543d87c334fee911577c8a42317f93f03",
-        "43": "2d68276c956e1eb4b4fa437998553159d2c881e4a0b6c232495b8fd2166bd2f5",
-        "7": "03dcf62c6d2144e07be6a6fe348fa7f26879b527247c3e152921be29f3fc3a40"
-      },
-      "trials": 20480,
-      "verdict": "PASS_EXHAUSTIVE_COUPLED_SCREEN"
-    },
-    "matching_vs_novel": {
-      "control_two_spike_trials": 20480,
-      "expected_control_winner_trials": 20480,
-      "expected_inhibited_winner_trials": 20480,
-      "inhibited_single_spike_trials": 20480,
-      "maximum_basket_to_gaba_ticks": 1,
-      "maximum_natural_latency_ticks": 7,
-      "maximum_winner_to_basket_ticks": 1,
-      "minimum_basket_to_gaba_ticks": 1,
-      "minimum_natural_latency_ticks": 4,
-      "minimum_winner_to_basket_ticks": 1,
-      "seed_hashes_sha256": {
-        "17": "212b969bb8e427adb1b085a64e600c8610322314451c70bb78041d33a0069c2f",
-        "29": "306672d431af333e34862dcfd5d06f1d87b9d32d996ad0a0a672b04bf20f0ce8",
-        "3": "3da746c4aca14994dabf6e0bff851ad320e7a9c18de2e14c205739fcfa38aa73",
-        "43": "14ea93c2a7c07f447e37fd84638a0486946a5e3e512f8c6bc1c3d2593e850f01",
-        "7": "6b929db00e45e406a82a79d73374aecfba3aec78be8916ff99be9223916e03f2"
-      },
-      "trials": 20480,
-      "verdict": "PASS_EXHAUSTIVE_COUPLED_SCREEN"
-    },
-    "novel_rank_boundary": {
-      "control_two_spike_trials": 20480,
-      "expected_control_winner_trials": 20480,
-      "expected_inhibited_winner_trials": 20480,
-      "inhibited_single_spike_trials": 20480,
-      "maximum_basket_to_gaba_ticks": 1,
-      "maximum_natural_latency_ticks": 7,
-      "maximum_winner_to_basket_ticks": 1,
-      "minimum_basket_to_gaba_ticks": 1,
-      "minimum_natural_latency_ticks": 3,
-      "minimum_winner_to_basket_ticks": 1,
-      "seed_hashes_sha256": {
-        "17": "eb81fff367cc97929d1753cd3cd999f555d6e8a9ebc5d2e3f2f3b7bd7d7de796",
-        "29": "2ccf74dc0575fd0cbc6bfb4a523411e99827985d12c532c223d180738fe538d0",
-        "3": "df9ffe73f7ab6275f4bb95ec2cde9e9b1d888826d0f54684d83da535726f9418",
-        "43": "e0ce18e4e5c898ce253569d45cb53ddc269aff76c6e5f03c8a7f37130b931042",
-        "7": "b664a76bb24ebbfefe7eb47f111a5ed9b591e9757cbc743f2e339c633ab2776d"
-      },
-      "trials": 20480,
-      "verdict": "PASS_EXHAUSTIVE_COUPLED_SCREEN"
-    }
-  },
+  "artifact_id": "r3-minicolumn-electrical-v3",
   "claim_boundary": {
     "capability_evidence": false,
-    "sparse_temporal_integration_evidence": false,
+    "held_out_accessed": false,
+    "reserve_valid_electrical_fixture": true,
     "synthetic_electrical_calibration": true,
+    "temporal_learning_evidence": false,
     "transfer_evidence": false
   },
   "config_sha256": {
     "human_cell_parameters": "946fe684aea009b78a4d6892dc66cdfdf79aa523c49382bc6e72a6efcf745726",
-    "sparse_electrical_defaults": "f69d0addd9619cae6b0d03eb621ec7ca324b0016058e82aef12a61a0f1cf8515"
+    "sparse_electrical_defaults": "3f5f0d14b76a305b5c3110574357b50d9bd4b70a3ed8c20b928c471810e98ae2"
   },
   "protocol": {
-    "active_current_pa": 670,
-    "base_pyramidal_cells": 32768,
-    "basket_current_pa": 200000,
-    "basket_offset": 262144,
-    "cells_per_column": 8,
-    "columns": 4096,
-    "construction_seeds": [
-      3,
-      7,
-      17,
-      29,
-      43
-    ],
-    "dt_us": 50,
-    "gaba_current_pa": 500,
-    "homeostasis_adversarial_pa": 20,
-    "homeostasis_adversary_rule": "boundary winner receives -20 pA; every competitor receives +20 pA",
-    "latency_must_exceed_us": 100,
-    "matching_current_pa": 620,
-    "max_pyramidal_cells": 131072,
-    "novel_current_ladder_pa": [
-      570,
-      523,
-      476,
-      429,
-      382,
-      335,
-      288,
-      241
-    ],
-    "physical_cell_count": 274432,
-    "proximal_current_pa": 570,
-    "proximal_offset": 266240,
-    "proximal_relay_offset": 270336,
-    "rank_assignment": "rank 0 is assigned to each column's maximum threshold offset, rank 1 to its minimum, and descending remainder currents to ascending remaining thresholds",
-    "relay_current_pa": 20000,
-    "relay_offset": 131072,
-    "scenario_currents_pa": {
+    "basket_domain": {
+      "count": 4096,
+      "coverage_rule": "per-seed global-worst basket threshold",
+      "ids": [
+        262144,
+        266240
+      ]
+    },
+    "boundary_scenarios_pa": {
       "active_vs_matching": [
         650,
         640,
@@ -145,36 +53,2440 @@
         261
       ]
     },
-    "singleton_matching_active_assumption": true
-  },
-  "proximal_channel": {
-    "causal_relay_after_source_trials": 20480,
-    "dedicated_relay_single_spike_trials": 20480,
-    "expected_relay_winner_trials": 20480,
-    "expected_source_winner_trials": 20480,
-    "maximum_causal_relay_ticks": 244,
-    "maximum_relay_intrinsic_ticks": 5,
-    "maximum_source_ticks": 239,
-    "minimum_causal_relay_ticks": 240,
-    "minimum_relay_intrinsic_ticks": 5,
-    "minimum_source_ticks": 235,
-    "seed_hashes_sha256": {
-      "17": "f737aafeba31d38796b8751c03e4515e2f29044dcf86432a50e72dd4ab7443de",
-      "29": "58bd3ace7e059adeb3a31f97e4ec84f7386d5f9f8aeda49b42d79153a17fefa8",
-      "3": "bb629b51f9e2a9115a57085d36e0b2fe5dd1fa9de173a10baf8aff99205098ae",
-      "43": "27d8e02ce7a4aae3ae6822f144f2e03204223f29a9919eb58567d02186aa01fe",
-      "7": "619c956ffbf8428d214dc8aeb5b856c4fc0fb3f8974232aa0275e0bcbbae7de6"
+    "claim_scope": "synthetic_fixture_only",
+    "construction_seeds": [
+      3,
+      7,
+      17,
+      29,
+      43,
+      59,
+      83,
+      101
+    ],
+    "coupled_race_gate": {
+      "basket_current_pa": 200000,
+      "basket_to_gaba_ticks": 1,
+      "control_pyramidal_spikes": 2,
+      "dt_us": 50,
+      "gaba_current_pa": 500,
+      "inhibited_pyramidal_spikes": 1,
+      "minimum_natural_latency_strictly_greater_us": 100,
+      "winner_to_basket_ticks": 1
     },
-    "source_single_spike_trials": 20480,
-    "trials": 20480,
-    "verdict": "PASS_EXHAUSTIVE_PROXIMAL_RELAY_SCREEN"
+    "generic_proximal_domain": {
+      "count": 4096,
+      "current_pa": 570,
+      "ids": [
+        266240,
+        270336
+      ]
+    },
+    "generic_proximal_relay_domain": {
+      "count": 4096,
+      "current_pa": 20000,
+      "ids": [
+        270336,
+        274432
+      ]
+    },
+    "generic_proximal_relay_trials": 32768,
+    "monotonicity_criterion": "at fixed current and rest state, first-spike tick is nondecreasing in threshold offset over the full configured domain; otherwise replay every recruited cohort mapping",
+    "pyramidal_domain": {
+      "base_ids": [
+        0,
+        32768
+      ],
+      "cohort_width": 8,
+      "configured_ids": [
+        0,
+        131072
+      ],
+      "coverage_rule": "per-seed global-worst threshold assignment over all configured IDs; replay every recruited mapping if monotonicity is not proved"
+    },
+    "rank_assignment": "rank 0 receives the maximum threshold; rank 1 receives the minimum; remaining descending currents map to ascending thresholds",
+    "relay_claim": "orchestrated source-then-relay latency ordering, not synaptic causality",
+    "required_verdict": "PASS_RESERVE_VALID_ELECTRICAL_V3",
+    "same_tick_tie_break": "descending voltage-minus-threshold margin, then ascending physical GID",
+    "winner_relay_domain": {
+      "count": 131072,
+      "coverage_rule": "full-domain global-worst singleton",
+      "current_pa": 20000,
+      "ids": [
+        131072,
+        262144
+      ]
+    }
   },
-  "schema_version": 1,
-  "source_commit": "df26cc2",
+  "rejection_reasons": [
+    "seed-3:active_vs_matching:natural_latency_ticks=2 (must be >2)",
+    "seed-7:active_vs_matching:natural_latency_ticks=2 (must be >2)",
+    "seed-17:active_vs_matching:natural_latency_ticks=2 (must be >2)",
+    "seed-29:active_vs_matching:natural_latency_ticks=2 (must be >2)",
+    "seed-43:active_vs_matching:natural_latency_ticks=2 (must be >2)",
+    "seed-59:active_vs_matching:natural_latency_ticks=2 (must be >2)",
+    "seed-83:active_vs_matching:natural_latency_ticks=2 (must be >2)",
+    "seed-101:active_vs_matching:natural_latency_ticks=2 (must be >2)",
+    "seed-3:novel_rank_boundary:natural_latency_ticks=2 (must be >2)",
+    "seed-7:novel_rank_boundary:natural_latency_ticks=2 (must be >2)",
+    "seed-17:novel_rank_boundary:natural_latency_ticks=2 (must be >2)",
+    "seed-29:novel_rank_boundary:natural_latency_ticks=2 (must be >2)",
+    "seed-43:novel_rank_boundary:natural_latency_ticks=2 (must be >2)",
+    "seed-59:novel_rank_boundary:natural_latency_ticks=2 (must be >2)",
+    "seed-83:novel_rank_boundary:natural_latency_ticks=2 (must be >2)",
+    "seed-101:novel_rank_boundary:natural_latency_ticks=2 (must be >2)"
+  ],
+  "runtime_versions": {
+    "numpy": "2.4.6",
+    "python": "3.11.15"
+  },
+  "schema_version": 3,
+  "seeds": {
+    "101": {
+      "boundaries": {
+        "active_vs_matching": {
+          "basket_gid": 266026,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            68509,
+            73215,
+            80719,
+            26396,
+            60666,
+            7520,
+            90270,
+            5185
+          ],
+          "control_spike_gids": [
+            68509,
+            73215
+          ],
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner": 68509,
+          "expected_winner": 68509,
+          "inhibited_spike_gids": [
+            68509
+          ],
+          "inhibited_spike_ticks": [
+            190
+          ],
+          "inhibited_winner": 68509,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "matching_vs_novel": {
+          "basket_gid": 266026,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            68509,
+            73215,
+            80719,
+            26396,
+            60666,
+            7520,
+            90270,
+            5185
+          ],
+          "control_spike_gids": [
+            68509,
+            73215
+          ],
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner": 68509,
+          "expected_winner": 68509,
+          "inhibited_spike_gids": [
+            68509
+          ],
+          "inhibited_spike_ticks": [
+            218
+          ],
+          "inhibited_winner": 68509,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "novel_rank_boundary": {
+          "basket_gid": 266026,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            68509,
+            73215,
+            80719,
+            26396,
+            60666,
+            7520,
+            90270,
+            5185
+          ],
+          "control_spike_gids": [
+            68509,
+            73215
+          ],
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner": 68509,
+          "expected_winner": 68509,
+          "inhibited_spike_gids": [
+            68509
+          ],
+          "inhibited_spike_ticks": [
+            256
+          ],
+          "inhibited_winner": 68509,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      },
+      "fixture": {
+        "basket": {
+          "cells": 4096,
+          "maximum_gid": 266026,
+          "maximum_offset_mv_hex": "0x1.b2a6dba1b9294p-4",
+          "minimum_gid": 264749,
+          "minimum_offset_mv_hex": "-0x1.6f36cb0f17c6fp-4",
+          "threshold_offsets_sha256": "a7bae8cf8ed6dd993bb779afe954cea77b23a74cd2050eef662033433a29dcaf"
+        },
+        "candidate_gids_by_rank": [
+          68509,
+          73215,
+          80719,
+          26396,
+          60666,
+          7520,
+          90270,
+          5185
+        ],
+        "pyramidal": {
+          "cells": 131072,
+          "maximum_gid": 68509,
+          "maximum_offset_mv_hex": "0x1.c2fb123c8f29ap-4",
+          "minimum_gid": 73215,
+          "minimum_offset_mv_hex": "-0x1.bc9b41b64ad8cp-4",
+          "threshold_offsets_sha256": "762b55ac29c286bda270d7a628754f6fec4f85f10e665606ce101dfb2ca8a543"
+        }
+      },
+      "monotonicity": {
+        "pyramidal": {
+          "cells": 131072,
+          "comparisons": 1572852,
+          "currents_pa": [
+            261,
+            308,
+            355,
+            402,
+            449,
+            496,
+            543,
+            550,
+            590,
+            600,
+            640,
+            650
+          ],
+          "first_spike_ticks_sha256": "41eb3b41c219e72d75018d1bb53f9923ac2b5ee54b007b05da84d8fbc8d05a1b",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "261": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "308": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "355": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "402": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "449": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "496": {
+              "maximum_tick": 325,
+              "minimum_tick": 318,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "543": {
+              "maximum_tick": 263,
+              "minimum_tick": 258,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "550": {
+              "maximum_tick": 256,
+              "minimum_tick": 252,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "590": {
+              "maximum_tick": 224,
+              "minimum_tick": 221,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "600": {
+              "maximum_tick": 218,
+              "minimum_tick": 214,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "640": {
+              "maximum_tick": 195,
+              "minimum_tick": 192,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "650": {
+              "maximum_tick": 190,
+              "minimum_tick": 188,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        },
+        "winner_relay": {
+          "cells": 131072,
+          "comparisons": 131071,
+          "currents_pa": [
+            20000
+          ],
+          "first_spike_ticks_sha256": "dd7bba8e37a37ca854565a2ff8376276c3287d37782962449845c1694bfcd77d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "20000": {
+              "maximum_tick": 5,
+              "minimum_tick": 5,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        }
+      },
+      "proximal_channel": {
+        "causal_relay_after_source_trials": 4096,
+        "dedicated_relay_single_spike_trials": 4096,
+        "expected_relay_winner_trials": 4096,
+        "expected_source_winner_trials": 4096,
+        "maximum_causal_relay_tick": 244,
+        "maximum_relay_intrinsic_tick": 5,
+        "maximum_source_tick": 239,
+        "minimum_causal_relay_tick": 240,
+        "minimum_relay_intrinsic_tick": 5,
+        "minimum_source_tick": 235,
+        "observations_sha256": "ce21da67e55636ea53e135c9f1c7c4b5fc87d3a1fec475e18f8fcd45b20cbb81",
+        "passed": true,
+        "source_single_spike_trials": 4096,
+        "trials": 4096
+      },
+      "seed": 101,
+      "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+      "winner_relay": {
+        "domain": {
+          "cells": 131072,
+          "maximum_gid": 244225,
+          "maximum_offset_mv_hex": "0x1.bd6fc6e638984p-4",
+          "minimum_gid": 147121,
+          "minimum_offset_mv_hex": "-0x1.d43617267b7dcp-4",
+          "threshold_offsets_sha256": "46c5d5df4762f07982718703e7503f3435579df665e7e46ef388693526ac084d"
+        },
+        "singleton_global_worst": {
+          "active_cells": 1,
+          "expected_winner": 244225,
+          "passed": true,
+          "spike_tick": 5,
+          "winner": 244225
+        }
+      }
+    },
+    "17": {
+      "boundaries": {
+        "active_vs_matching": {
+          "basket_gid": 265456,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            60633,
+            106294,
+            112272,
+            126276,
+            109970,
+            121629,
+            119070,
+            62657
+          ],
+          "control_spike_gids": [
+            60633,
+            106294
+          ],
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner": 60633,
+          "expected_winner": 60633,
+          "inhibited_spike_gids": [
+            60633
+          ],
+          "inhibited_spike_ticks": [
+            190
+          ],
+          "inhibited_winner": 60633,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "matching_vs_novel": {
+          "basket_gid": 265456,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            60633,
+            106294,
+            112272,
+            126276,
+            109970,
+            121629,
+            119070,
+            62657
+          ],
+          "control_spike_gids": [
+            60633,
+            106294
+          ],
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner": 60633,
+          "expected_winner": 60633,
+          "inhibited_spike_gids": [
+            60633
+          ],
+          "inhibited_spike_ticks": [
+            218
+          ],
+          "inhibited_winner": 60633,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "novel_rank_boundary": {
+          "basket_gid": 265456,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            60633,
+            106294,
+            112272,
+            126276,
+            109970,
+            121629,
+            119070,
+            62657
+          ],
+          "control_spike_gids": [
+            60633,
+            106294
+          ],
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner": 60633,
+          "expected_winner": 60633,
+          "inhibited_spike_gids": [
+            60633
+          ],
+          "inhibited_spike_ticks": [
+            256
+          ],
+          "inhibited_winner": 60633,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      },
+      "fixture": {
+        "basket": {
+          "cells": 4096,
+          "maximum_gid": 265456,
+          "maximum_offset_mv_hex": "0x1.61e519aa9c9e1p-4",
+          "minimum_gid": 266076,
+          "minimum_offset_mv_hex": "-0x1.7a6f7e0f6b390p-4",
+          "threshold_offsets_sha256": "9d0d21b2feac5c9c182377398fbfe5a21392dda489f256940f90e31dfef7d7e3"
+        },
+        "candidate_gids_by_rank": [
+          60633,
+          106294,
+          112272,
+          126276,
+          109970,
+          121629,
+          119070,
+          62657
+        ],
+        "pyramidal": {
+          "cells": 131072,
+          "maximum_gid": 60633,
+          "maximum_offset_mv_hex": "0x1.ceedd2de973f2p-4",
+          "minimum_gid": 106294,
+          "minimum_offset_mv_hex": "-0x1.c46aaccc1e20ap-4",
+          "threshold_offsets_sha256": "e0b888ca3716cb87fc01d2bb92942fb2d4d4dc1eab4108c238305e300a948556"
+        }
+      },
+      "monotonicity": {
+        "pyramidal": {
+          "cells": 131072,
+          "comparisons": 1572852,
+          "currents_pa": [
+            261,
+            308,
+            355,
+            402,
+            449,
+            496,
+            543,
+            550,
+            590,
+            600,
+            640,
+            650
+          ],
+          "first_spike_ticks_sha256": "b30ae3e23b9869066897232592430c90be26a633899ebc741c0fec86fb1e49de",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "261": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "308": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "355": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "402": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "449": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "496": {
+              "maximum_tick": 325,
+              "minimum_tick": 318,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "543": {
+              "maximum_tick": 263,
+              "minimum_tick": 258,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "550": {
+              "maximum_tick": 256,
+              "minimum_tick": 252,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "590": {
+              "maximum_tick": 224,
+              "minimum_tick": 221,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "600": {
+              "maximum_tick": 218,
+              "minimum_tick": 214,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "640": {
+              "maximum_tick": 195,
+              "minimum_tick": 192,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "650": {
+              "maximum_tick": 190,
+              "minimum_tick": 188,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        },
+        "winner_relay": {
+          "cells": 131072,
+          "comparisons": 131071,
+          "currents_pa": [
+            20000
+          ],
+          "first_spike_ticks_sha256": "dd7bba8e37a37ca854565a2ff8376276c3287d37782962449845c1694bfcd77d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "20000": {
+              "maximum_tick": 5,
+              "minimum_tick": 5,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        }
+      },
+      "proximal_channel": {
+        "causal_relay_after_source_trials": 4096,
+        "dedicated_relay_single_spike_trials": 4096,
+        "expected_relay_winner_trials": 4096,
+        "expected_source_winner_trials": 4096,
+        "maximum_causal_relay_tick": 244,
+        "maximum_relay_intrinsic_tick": 5,
+        "maximum_source_tick": 239,
+        "minimum_causal_relay_tick": 240,
+        "minimum_relay_intrinsic_tick": 5,
+        "minimum_source_tick": 235,
+        "observations_sha256": "f737aafeba31d38796b8751c03e4515e2f29044dcf86432a50e72dd4ab7443de",
+        "passed": true,
+        "source_single_spike_trials": 4096,
+        "trials": 4096
+      },
+      "seed": 17,
+      "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+      "winner_relay": {
+        "domain": {
+          "cells": 131072,
+          "maximum_gid": 170035,
+          "maximum_offset_mv_hex": "0x1.986cbfb54238fp-4",
+          "minimum_gid": 241303,
+          "minimum_offset_mv_hex": "-0x1.a5b079decdfafp-4",
+          "threshold_offsets_sha256": "e97e5ca2f1f252acdaaab2f9b7bb0538e57d8741629c6bcabde944cfc76719c3"
+        },
+        "singleton_global_worst": {
+          "active_cells": 1,
+          "expected_winner": 170035,
+          "passed": true,
+          "spike_tick": 5,
+          "winner": 170035
+        }
+      }
+    },
+    "29": {
+      "boundaries": {
+        "active_vs_matching": {
+          "basket_gid": 265442,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            110249,
+            3854,
+            12450,
+            55202,
+            58150,
+            116500,
+            117469,
+            64814
+          ],
+          "control_spike_gids": [
+            110249,
+            3854
+          ],
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner": 110249,
+          "expected_winner": 110249,
+          "inhibited_spike_gids": [
+            110249
+          ],
+          "inhibited_spike_ticks": [
+            190
+          ],
+          "inhibited_winner": 110249,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "matching_vs_novel": {
+          "basket_gid": 265442,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            110249,
+            3854,
+            12450,
+            55202,
+            58150,
+            116500,
+            117469,
+            64814
+          ],
+          "control_spike_gids": [
+            110249,
+            3854
+          ],
+          "control_spike_ticks": [
+            217,
+            221
+          ],
+          "control_winner": 110249,
+          "expected_winner": 110249,
+          "inhibited_spike_gids": [
+            110249
+          ],
+          "inhibited_spike_ticks": [
+            217
+          ],
+          "inhibited_winner": 110249,
+          "natural_latency_ticks": 4,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "novel_rank_boundary": {
+          "basket_gid": 265442,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            110249,
+            3854,
+            12450,
+            55202,
+            58150,
+            116500,
+            117469,
+            64814
+          ],
+          "control_spike_gids": [
+            110249,
+            3854
+          ],
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner": 110249,
+          "expected_winner": 110249,
+          "inhibited_spike_gids": [
+            110249
+          ],
+          "inhibited_spike_ticks": [
+            256
+          ],
+          "inhibited_winner": 110249,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      },
+      "fixture": {
+        "basket": {
+          "cells": 4096,
+          "maximum_gid": 265442,
+          "maximum_offset_mv_hex": "0x1.79ba74438e09ap-4",
+          "minimum_gid": 265182,
+          "minimum_offset_mv_hex": "-0x1.90aaadb559a74p-4",
+          "threshold_offsets_sha256": "10d4b8735e1f1d6783352577e1e4025958f175d1fe0787e5615fb35756b2db28"
+        },
+        "candidate_gids_by_rank": [
+          110249,
+          3854,
+          12450,
+          55202,
+          58150,
+          116500,
+          117469,
+          64814
+        ],
+        "pyramidal": {
+          "cells": 131072,
+          "maximum_gid": 110249,
+          "maximum_offset_mv_hex": "0x1.ae48b3c909680p-4",
+          "minimum_gid": 3854,
+          "minimum_offset_mv_hex": "-0x1.d6e746da63cacp-4",
+          "threshold_offsets_sha256": "a33179fc981387c0616120c1cfc204fa47e48e0872b9fe8ede33832fbd4e8278"
+        }
+      },
+      "monotonicity": {
+        "pyramidal": {
+          "cells": 131072,
+          "comparisons": 1572852,
+          "currents_pa": [
+            261,
+            308,
+            355,
+            402,
+            449,
+            496,
+            543,
+            550,
+            590,
+            600,
+            640,
+            650
+          ],
+          "first_spike_ticks_sha256": "3fae1029b7fe1041af708502d203dd8119772f04528a016d638529abce770cc7",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "261": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "308": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "355": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "402": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "449": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "496": {
+              "maximum_tick": 325,
+              "minimum_tick": 318,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "543": {
+              "maximum_tick": 263,
+              "minimum_tick": 258,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "550": {
+              "maximum_tick": 256,
+              "minimum_tick": 252,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "590": {
+              "maximum_tick": 224,
+              "minimum_tick": 221,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "600": {
+              "maximum_tick": 217,
+              "minimum_tick": 214,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "640": {
+              "maximum_tick": 195,
+              "minimum_tick": 192,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "650": {
+              "maximum_tick": 190,
+              "minimum_tick": 188,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        },
+        "winner_relay": {
+          "cells": 131072,
+          "comparisons": 131071,
+          "currents_pa": [
+            20000
+          ],
+          "first_spike_ticks_sha256": "dd7bba8e37a37ca854565a2ff8376276c3287d37782962449845c1694bfcd77d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "20000": {
+              "maximum_tick": 5,
+              "minimum_tick": 5,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        }
+      },
+      "proximal_channel": {
+        "causal_relay_after_source_trials": 4096,
+        "dedicated_relay_single_spike_trials": 4096,
+        "expected_relay_winner_trials": 4096,
+        "expected_source_winner_trials": 4096,
+        "maximum_causal_relay_tick": 243,
+        "maximum_relay_intrinsic_tick": 5,
+        "maximum_source_tick": 238,
+        "minimum_causal_relay_tick": 240,
+        "minimum_relay_intrinsic_tick": 5,
+        "minimum_source_tick": 235,
+        "observations_sha256": "58bd3ace7e059adeb3a31f97e4ec84f7386d5f9f8aeda49b42d79153a17fefa8",
+        "passed": true,
+        "source_single_spike_trials": 4096,
+        "trials": 4096
+      },
+      "seed": 29,
+      "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+      "winner_relay": {
+        "domain": {
+          "cells": 131072,
+          "maximum_gid": 132778,
+          "maximum_offset_mv_hex": "0x1.c60d82845492ap-4",
+          "minimum_gid": 215637,
+          "minimum_offset_mv_hex": "-0x1.c1acfb332ccf4p-4",
+          "threshold_offsets_sha256": "c8b00d96906f4ad9ce021ed9c02a1bb6519c64f04d75f697b141980bddcc5d49"
+        },
+        "singleton_global_worst": {
+          "active_cells": 1,
+          "expected_winner": 132778,
+          "passed": true,
+          "spike_tick": 5,
+          "winner": 132778
+        }
+      }
+    },
+    "3": {
+      "boundaries": {
+        "active_vs_matching": {
+          "basket_gid": 264576,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            90385,
+            111667,
+            49246,
+            54821,
+            71962,
+            101789,
+            97905,
+            75158
+          ],
+          "control_spike_gids": [
+            90385,
+            111667
+          ],
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner": 90385,
+          "expected_winner": 90385,
+          "inhibited_spike_gids": [
+            90385
+          ],
+          "inhibited_spike_ticks": [
+            190
+          ],
+          "inhibited_winner": 90385,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "matching_vs_novel": {
+          "basket_gid": 264576,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            90385,
+            111667,
+            49246,
+            54821,
+            71962,
+            101789,
+            97905,
+            75158
+          ],
+          "control_spike_gids": [
+            90385,
+            111667
+          ],
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner": 90385,
+          "expected_winner": 90385,
+          "inhibited_spike_gids": [
+            90385
+          ],
+          "inhibited_spike_ticks": [
+            218
+          ],
+          "inhibited_winner": 90385,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "novel_rank_boundary": {
+          "basket_gid": 264576,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            90385,
+            111667,
+            49246,
+            54821,
+            71962,
+            101789,
+            97905,
+            75158
+          ],
+          "control_spike_gids": [
+            90385,
+            111667
+          ],
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner": 90385,
+          "expected_winner": 90385,
+          "inhibited_spike_gids": [
+            90385
+          ],
+          "inhibited_spike_ticks": [
+            256
+          ],
+          "inhibited_winner": 90385,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      },
+      "fixture": {
+        "basket": {
+          "cells": 4096,
+          "maximum_gid": 264576,
+          "maximum_offset_mv_hex": "0x1.3f0e6b0192bd0p-4",
+          "minimum_gid": 265917,
+          "minimum_offset_mv_hex": "-0x1.7218bec8dfa48p-4",
+          "threshold_offsets_sha256": "5730fd5d164e6df9ebfa3d65dab9c1d404da3ec41b43b75939fda56beaf3bf24"
+        },
+        "candidate_gids_by_rank": [
+          90385,
+          111667,
+          49246,
+          54821,
+          71962,
+          101789,
+          97905,
+          75158
+        ],
+        "pyramidal": {
+          "cells": 131072,
+          "maximum_gid": 90385,
+          "maximum_offset_mv_hex": "0x1.bf6f3b9ebcdcap-4",
+          "minimum_gid": 111667,
+          "minimum_offset_mv_hex": "-0x1.d472419936c0dp-4",
+          "threshold_offsets_sha256": "c9b9de132099b2c998e0d6e1b3b9b1fb7442f427602fbc8a047470b352a41303"
+        }
+      },
+      "monotonicity": {
+        "pyramidal": {
+          "cells": 131072,
+          "comparisons": 1572852,
+          "currents_pa": [
+            261,
+            308,
+            355,
+            402,
+            449,
+            496,
+            543,
+            550,
+            590,
+            600,
+            640,
+            650
+          ],
+          "first_spike_ticks_sha256": "2404c81a841f4ac6638f4eb34c6973bc25eb799adad36df73b8706244a4b20f6",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "261": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "308": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "355": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "402": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "449": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "496": {
+              "maximum_tick": 325,
+              "minimum_tick": 318,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "543": {
+              "maximum_tick": 263,
+              "minimum_tick": 258,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "550": {
+              "maximum_tick": 256,
+              "minimum_tick": 252,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "590": {
+              "maximum_tick": 224,
+              "minimum_tick": 221,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "600": {
+              "maximum_tick": 218,
+              "minimum_tick": 214,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "640": {
+              "maximum_tick": 195,
+              "minimum_tick": 192,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "650": {
+              "maximum_tick": 190,
+              "minimum_tick": 188,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        },
+        "winner_relay": {
+          "cells": 131072,
+          "comparisons": 131071,
+          "currents_pa": [
+            20000
+          ],
+          "first_spike_ticks_sha256": "dd7bba8e37a37ca854565a2ff8376276c3287d37782962449845c1694bfcd77d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "20000": {
+              "maximum_tick": 5,
+              "minimum_tick": 5,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        }
+      },
+      "proximal_channel": {
+        "causal_relay_after_source_trials": 4096,
+        "dedicated_relay_single_spike_trials": 4096,
+        "expected_relay_winner_trials": 4096,
+        "expected_source_winner_trials": 4096,
+        "maximum_causal_relay_tick": 244,
+        "maximum_relay_intrinsic_tick": 5,
+        "maximum_source_tick": 239,
+        "minimum_causal_relay_tick": 240,
+        "minimum_relay_intrinsic_tick": 5,
+        "minimum_source_tick": 235,
+        "observations_sha256": "bb629b51f9e2a9115a57085d36e0b2fe5dd1fa9de173a10baf8aff99205098ae",
+        "passed": true,
+        "source_single_spike_trials": 4096,
+        "trials": 4096
+      },
+      "seed": 3,
+      "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+      "winner_relay": {
+        "domain": {
+          "cells": 131072,
+          "maximum_gid": 234131,
+          "maximum_offset_mv_hex": "0x1.ad6e88f0bd294p-4",
+          "minimum_gid": 135788,
+          "minimum_offset_mv_hex": "-0x1.a77fdbe69c518p-4",
+          "threshold_offsets_sha256": "84f65a701fd1891caee29c4af94b71ce03f1ab1b5b3d991f85cf283f53f96599"
+        },
+        "singleton_global_worst": {
+          "active_cells": 1,
+          "expected_winner": 234131,
+          "passed": true,
+          "spike_tick": 5,
+          "winner": 234131
+        }
+      }
+    },
+    "43": {
+      "boundaries": {
+        "active_vs_matching": {
+          "basket_gid": 264143,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            115516,
+            89176,
+            44931,
+            88960,
+            130386,
+            83626,
+            60252,
+            48644
+          ],
+          "control_spike_gids": [
+            115516,
+            89176
+          ],
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner": 115516,
+          "expected_winner": 115516,
+          "inhibited_spike_gids": [
+            115516
+          ],
+          "inhibited_spike_ticks": [
+            190
+          ],
+          "inhibited_winner": 115516,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "matching_vs_novel": {
+          "basket_gid": 264143,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            115516,
+            89176,
+            44931,
+            88960,
+            130386,
+            83626,
+            60252,
+            48644
+          ],
+          "control_spike_gids": [
+            115516,
+            89176
+          ],
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner": 115516,
+          "expected_winner": 115516,
+          "inhibited_spike_gids": [
+            115516
+          ],
+          "inhibited_spike_ticks": [
+            218
+          ],
+          "inhibited_winner": 115516,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "novel_rank_boundary": {
+          "basket_gid": 264143,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            115516,
+            89176,
+            44931,
+            88960,
+            130386,
+            83626,
+            60252,
+            48644
+          ],
+          "control_spike_gids": [
+            115516,
+            89176
+          ],
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner": 115516,
+          "expected_winner": 115516,
+          "inhibited_spike_gids": [
+            115516
+          ],
+          "inhibited_spike_ticks": [
+            256
+          ],
+          "inhibited_winner": 115516,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      },
+      "fixture": {
+        "basket": {
+          "cells": 4096,
+          "maximum_gid": 264143,
+          "maximum_offset_mv_hex": "0x1.ba8172b97aca8p-4",
+          "minimum_gid": 262311,
+          "minimum_offset_mv_hex": "-0x1.7edd9f6ee0b42p-4",
+          "threshold_offsets_sha256": "a97f633a27b42b29043c023f4d8494e04769181cbaa172ad193d293255217127"
+        },
+        "candidate_gids_by_rank": [
+          115516,
+          89176,
+          44931,
+          88960,
+          130386,
+          83626,
+          60252,
+          48644
+        ],
+        "pyramidal": {
+          "cells": 131072,
+          "maximum_gid": 115516,
+          "maximum_offset_mv_hex": "0x1.c79425d606c0cp-4",
+          "minimum_gid": 89176,
+          "minimum_offset_mv_hex": "-0x1.dadd94dfd4e75p-4",
+          "threshold_offsets_sha256": "7eb93e996f674ec862614142db411afc3e0c1c27d359e5b48f7db5cc508d7f66"
+        }
+      },
+      "monotonicity": {
+        "pyramidal": {
+          "cells": 131072,
+          "comparisons": 1572852,
+          "currents_pa": [
+            261,
+            308,
+            355,
+            402,
+            449,
+            496,
+            543,
+            550,
+            590,
+            600,
+            640,
+            650
+          ],
+          "first_spike_ticks_sha256": "43fa55c64a038d2bb165b0a8806b3c6daf6ff8509b9b4678ca3cbe2db6e5c19d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "261": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "308": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "355": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "402": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "449": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "496": {
+              "maximum_tick": 325,
+              "minimum_tick": 318,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "543": {
+              "maximum_tick": 263,
+              "minimum_tick": 258,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "550": {
+              "maximum_tick": 256,
+              "minimum_tick": 251,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "590": {
+              "maximum_tick": 224,
+              "minimum_tick": 221,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "600": {
+              "maximum_tick": 218,
+              "minimum_tick": 214,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "640": {
+              "maximum_tick": 195,
+              "minimum_tick": 192,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "650": {
+              "maximum_tick": 190,
+              "minimum_tick": 188,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        },
+        "winner_relay": {
+          "cells": 131072,
+          "comparisons": 131071,
+          "currents_pa": [
+            20000
+          ],
+          "first_spike_ticks_sha256": "dd7bba8e37a37ca854565a2ff8376276c3287d37782962449845c1694bfcd77d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "20000": {
+              "maximum_tick": 5,
+              "minimum_tick": 5,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        }
+      },
+      "proximal_channel": {
+        "causal_relay_after_source_trials": 4096,
+        "dedicated_relay_single_spike_trials": 4096,
+        "expected_relay_winner_trials": 4096,
+        "expected_source_winner_trials": 4096,
+        "maximum_causal_relay_tick": 243,
+        "maximum_relay_intrinsic_tick": 5,
+        "maximum_source_tick": 238,
+        "minimum_causal_relay_tick": 240,
+        "minimum_relay_intrinsic_tick": 5,
+        "minimum_source_tick": 235,
+        "observations_sha256": "27d8e02ce7a4aae3ae6822f144f2e03204223f29a9919eb58567d02186aa01fe",
+        "passed": true,
+        "source_single_spike_trials": 4096,
+        "trials": 4096
+      },
+      "seed": 43,
+      "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+      "winner_relay": {
+        "domain": {
+          "cells": 131072,
+          "maximum_gid": 161252,
+          "maximum_offset_mv_hex": "0x1.ed75939a717b8p-4",
+          "minimum_gid": 158952,
+          "minimum_offset_mv_hex": "-0x1.ab40cc47bc6b7p-4",
+          "threshold_offsets_sha256": "2fddb49e4b5ee37b5a1eaf415b935861a83742974c120f9f0a7aed62fbd78d33"
+        },
+        "singleton_global_worst": {
+          "active_cells": 1,
+          "expected_winner": 161252,
+          "passed": true,
+          "spike_tick": 5,
+          "winner": 161252
+        }
+      }
+    },
+    "59": {
+      "boundaries": {
+        "active_vs_matching": {
+          "basket_gid": 262391,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            103941,
+            124963,
+            60204,
+            104976,
+            38987,
+            88518,
+            23402,
+            96524
+          ],
+          "control_spike_gids": [
+            103941,
+            124963
+          ],
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner": 103941,
+          "expected_winner": 103941,
+          "inhibited_spike_gids": [
+            103941
+          ],
+          "inhibited_spike_ticks": [
+            190
+          ],
+          "inhibited_winner": 103941,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "matching_vs_novel": {
+          "basket_gid": 262391,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            103941,
+            124963,
+            60204,
+            104976,
+            38987,
+            88518,
+            23402,
+            96524
+          ],
+          "control_spike_gids": [
+            103941,
+            124963
+          ],
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner": 103941,
+          "expected_winner": 103941,
+          "inhibited_spike_gids": [
+            103941
+          ],
+          "inhibited_spike_ticks": [
+            218
+          ],
+          "inhibited_winner": 103941,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "novel_rank_boundary": {
+          "basket_gid": 262391,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            103941,
+            124963,
+            60204,
+            104976,
+            38987,
+            88518,
+            23402,
+            96524
+          ],
+          "control_spike_gids": [
+            103941,
+            124963
+          ],
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner": 103941,
+          "expected_winner": 103941,
+          "inhibited_spike_gids": [
+            103941
+          ],
+          "inhibited_spike_ticks": [
+            256
+          ],
+          "inhibited_winner": 103941,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      },
+      "fixture": {
+        "basket": {
+          "cells": 4096,
+          "maximum_gid": 262391,
+          "maximum_offset_mv_hex": "0x1.501f29f6cd249p-4",
+          "minimum_gid": 263948,
+          "minimum_offset_mv_hex": "-0x1.50431b40cb657p-4",
+          "threshold_offsets_sha256": "944ea3ddc17f433b71e058fbf8a1f8b4e4c0f47cb7272daf49ff2b7f75e1eb75"
+        },
+        "candidate_gids_by_rank": [
+          103941,
+          124963,
+          60204,
+          104976,
+          38987,
+          88518,
+          23402,
+          96524
+        ],
+        "pyramidal": {
+          "cells": 131072,
+          "maximum_gid": 103941,
+          "maximum_offset_mv_hex": "0x1.b8a43aa10d95ap-4",
+          "minimum_gid": 124963,
+          "minimum_offset_mv_hex": "-0x1.d9554e19f9e30p-4",
+          "threshold_offsets_sha256": "b82fc28dbdf6c37ce6bb1fbdadc12491fbffbad60b15a17ba125a575b3bc6a84"
+        }
+      },
+      "monotonicity": {
+        "pyramidal": {
+          "cells": 131072,
+          "comparisons": 1572852,
+          "currents_pa": [
+            261,
+            308,
+            355,
+            402,
+            449,
+            496,
+            543,
+            550,
+            590,
+            600,
+            640,
+            650
+          ],
+          "first_spike_ticks_sha256": "bc9625355d8d70e5c1c0778d535b014005745b22b402275477918c9ce8a239f3",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "261": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "308": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "355": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "402": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "449": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "496": {
+              "maximum_tick": 325,
+              "minimum_tick": 318,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "543": {
+              "maximum_tick": 263,
+              "minimum_tick": 258,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "550": {
+              "maximum_tick": 256,
+              "minimum_tick": 252,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "590": {
+              "maximum_tick": 224,
+              "minimum_tick": 221,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "600": {
+              "maximum_tick": 218,
+              "minimum_tick": 214,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "640": {
+              "maximum_tick": 195,
+              "minimum_tick": 192,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "650": {
+              "maximum_tick": 190,
+              "minimum_tick": 188,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        },
+        "winner_relay": {
+          "cells": 131072,
+          "comparisons": 131071,
+          "currents_pa": [
+            20000
+          ],
+          "first_spike_ticks_sha256": "dd7bba8e37a37ca854565a2ff8376276c3287d37782962449845c1694bfcd77d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "20000": {
+              "maximum_tick": 5,
+              "minimum_tick": 5,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        }
+      },
+      "proximal_channel": {
+        "causal_relay_after_source_trials": 4096,
+        "dedicated_relay_single_spike_trials": 4096,
+        "expected_relay_winner_trials": 4096,
+        "expected_source_winner_trials": 4096,
+        "maximum_causal_relay_tick": 243,
+        "maximum_relay_intrinsic_tick": 5,
+        "maximum_source_tick": 238,
+        "minimum_causal_relay_tick": 240,
+        "minimum_relay_intrinsic_tick": 5,
+        "minimum_source_tick": 235,
+        "observations_sha256": "e487dee0247e4780a1b0dc9c8cdb3a68b2b0c699db4b902ec7109784b9b8e589",
+        "passed": true,
+        "source_single_spike_trials": 4096,
+        "trials": 4096
+      },
+      "seed": 59,
+      "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+      "winner_relay": {
+        "domain": {
+          "cells": 131072,
+          "maximum_gid": 216980,
+          "maximum_offset_mv_hex": "0x1.b475c3ec83fd0p-4",
+          "minimum_gid": 200220,
+          "minimum_offset_mv_hex": "-0x1.ba221eaf30328p-4",
+          "threshold_offsets_sha256": "5cfcb2f697d59bb9c8943f35a7b11750d2bc2bb325c429755b1c17731061085c"
+        },
+        "singleton_global_worst": {
+          "active_cells": 1,
+          "expected_winner": 216980,
+          "passed": true,
+          "spike_tick": 5,
+          "winner": 216980
+        }
+      }
+    },
+    "7": {
+      "boundaries": {
+        "active_vs_matching": {
+          "basket_gid": 264878,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            100929,
+            33110,
+            25634,
+            123258,
+            85580,
+            44693,
+            117491,
+            29875
+          ],
+          "control_spike_gids": [
+            100929,
+            33110
+          ],
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner": 100929,
+          "expected_winner": 100929,
+          "inhibited_spike_gids": [
+            100929
+          ],
+          "inhibited_spike_ticks": [
+            190
+          ],
+          "inhibited_winner": 100929,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "matching_vs_novel": {
+          "basket_gid": 264878,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            100929,
+            33110,
+            25634,
+            123258,
+            85580,
+            44693,
+            117491,
+            29875
+          ],
+          "control_spike_gids": [
+            100929,
+            33110
+          ],
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner": 100929,
+          "expected_winner": 100929,
+          "inhibited_spike_gids": [
+            100929
+          ],
+          "inhibited_spike_ticks": [
+            218
+          ],
+          "inhibited_winner": 100929,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "novel_rank_boundary": {
+          "basket_gid": 264878,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            100929,
+            33110,
+            25634,
+            123258,
+            85580,
+            44693,
+            117491,
+            29875
+          ],
+          "control_spike_gids": [
+            100929,
+            33110
+          ],
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner": 100929,
+          "expected_winner": 100929,
+          "inhibited_spike_gids": [
+            100929
+          ],
+          "inhibited_spike_ticks": [
+            256
+          ],
+          "inhibited_winner": 100929,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      },
+      "fixture": {
+        "basket": {
+          "cells": 4096,
+          "maximum_gid": 264878,
+          "maximum_offset_mv_hex": "0x1.9571b0f650e28p-4",
+          "minimum_gid": 262727,
+          "minimum_offset_mv_hex": "-0x1.6f51898340006p-4",
+          "threshold_offsets_sha256": "2a3d450d225db1c307ea7656d55ce91a9aa5c508ef4586df2a9ab89685c0b6c5"
+        },
+        "candidate_gids_by_rank": [
+          100929,
+          33110,
+          25634,
+          123258,
+          85580,
+          44693,
+          117491,
+          29875
+        ],
+        "pyramidal": {
+          "cells": 131072,
+          "maximum_gid": 100929,
+          "maximum_offset_mv_hex": "0x1.cf234419ccb07p-4",
+          "minimum_gid": 33110,
+          "minimum_offset_mv_hex": "-0x1.cd070e01f017ap-4",
+          "threshold_offsets_sha256": "2fbb50e645665784034136086cb90bfdadc47e4e2ec57896dbf9caeecaaf4fdc"
+        }
+      },
+      "monotonicity": {
+        "pyramidal": {
+          "cells": 131072,
+          "comparisons": 1572852,
+          "currents_pa": [
+            261,
+            308,
+            355,
+            402,
+            449,
+            496,
+            543,
+            550,
+            590,
+            600,
+            640,
+            650
+          ],
+          "first_spike_ticks_sha256": "9e74960342b9706ff1b4bcaadbdf9076fdaab7da6bd14b2a170f544a09bc81e2",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "261": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "308": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "355": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "402": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "449": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "496": {
+              "maximum_tick": 325,
+              "minimum_tick": 318,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "543": {
+              "maximum_tick": 263,
+              "minimum_tick": 258,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "550": {
+              "maximum_tick": 256,
+              "minimum_tick": 252,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "590": {
+              "maximum_tick": 224,
+              "minimum_tick": 221,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "600": {
+              "maximum_tick": 218,
+              "minimum_tick": 214,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "640": {
+              "maximum_tick": 195,
+              "minimum_tick": 192,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "650": {
+              "maximum_tick": 190,
+              "minimum_tick": 188,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        },
+        "winner_relay": {
+          "cells": 131072,
+          "comparisons": 131071,
+          "currents_pa": [
+            20000
+          ],
+          "first_spike_ticks_sha256": "dd7bba8e37a37ca854565a2ff8376276c3287d37782962449845c1694bfcd77d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "20000": {
+              "maximum_tick": 5,
+              "minimum_tick": 5,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        }
+      },
+      "proximal_channel": {
+        "causal_relay_after_source_trials": 4096,
+        "dedicated_relay_single_spike_trials": 4096,
+        "expected_relay_winner_trials": 4096,
+        "expected_source_winner_trials": 4096,
+        "maximum_causal_relay_tick": 243,
+        "maximum_relay_intrinsic_tick": 5,
+        "maximum_source_tick": 238,
+        "minimum_causal_relay_tick": 240,
+        "minimum_relay_intrinsic_tick": 5,
+        "minimum_source_tick": 235,
+        "observations_sha256": "619c956ffbf8428d214dc8aeb5b856c4fc0fb3f8974232aa0275e0bcbbae7de6",
+        "passed": true,
+        "source_single_spike_trials": 4096,
+        "trials": 4096
+      },
+      "seed": 7,
+      "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+      "winner_relay": {
+        "domain": {
+          "cells": 131072,
+          "maximum_gid": 131612,
+          "maximum_offset_mv_hex": "0x1.a6b212f0c00d4p-4",
+          "minimum_gid": 224880,
+          "minimum_offset_mv_hex": "-0x1.a64a1484926ffp-4",
+          "threshold_offsets_sha256": "80c181078ffdcef5ab766410978ff1c4c6f26e990b6c6bad76b3179af70d77b4"
+        },
+        "singleton_global_worst": {
+          "active_cells": 1,
+          "expected_winner": 131612,
+          "passed": true,
+          "spike_tick": 5,
+          "winner": 131612
+        }
+      }
+    },
+    "83": {
+      "boundaries": {
+        "active_vs_matching": {
+          "basket_gid": 265967,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            110481,
+            126781,
+            18901,
+            73660,
+            13475,
+            124328,
+            12128,
+            106836
+          ],
+          "control_spike_gids": [
+            110481,
+            126781
+          ],
+          "control_spike_ticks": [
+            190,
+            192
+          ],
+          "control_winner": 110481,
+          "expected_winner": 110481,
+          "inhibited_spike_gids": [
+            110481
+          ],
+          "inhibited_spike_ticks": [
+            190
+          ],
+          "inhibited_winner": 110481,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        },
+        "matching_vs_novel": {
+          "basket_gid": 265967,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            110481,
+            126781,
+            18901,
+            73660,
+            13475,
+            124328,
+            12128,
+            106836
+          ],
+          "control_spike_gids": [
+            110481,
+            126781
+          ],
+          "control_spike_ticks": [
+            218,
+            221
+          ],
+          "control_winner": 110481,
+          "expected_winner": 110481,
+          "inhibited_spike_gids": [
+            110481
+          ],
+          "inhibited_spike_ticks": [
+            218
+          ],
+          "inhibited_winner": 110481,
+          "natural_latency_ticks": 3,
+          "passed": true,
+          "winner_to_basket_ticks": 1
+        },
+        "novel_rank_boundary": {
+          "basket_gid": 265967,
+          "basket_to_gaba_ticks": 1,
+          "candidate_gids_by_rank": [
+            110481,
+            126781,
+            18901,
+            73660,
+            13475,
+            124328,
+            12128,
+            106836
+          ],
+          "control_spike_gids": [
+            110481,
+            126781
+          ],
+          "control_spike_ticks": [
+            256,
+            258
+          ],
+          "control_winner": 110481,
+          "expected_winner": 110481,
+          "inhibited_spike_gids": [
+            110481
+          ],
+          "inhibited_spike_ticks": [
+            256
+          ],
+          "inhibited_winner": 110481,
+          "natural_latency_ticks": 2,
+          "passed": false,
+          "winner_to_basket_ticks": 1
+        }
+      },
+      "fixture": {
+        "basket": {
+          "cells": 4096,
+          "maximum_gid": 265967,
+          "maximum_offset_mv_hex": "0x1.5905aa3e6310fp-4",
+          "minimum_gid": 262480,
+          "minimum_offset_mv_hex": "-0x1.882b0312f2e1cp-4",
+          "threshold_offsets_sha256": "f4dcde0b5cbc93e1c97dba82bac1cc81d599a49cd454bad31b96b0745260c56f"
+        },
+        "candidate_gids_by_rank": [
+          110481,
+          126781,
+          18901,
+          73660,
+          13475,
+          124328,
+          12128,
+          106836
+        ],
+        "pyramidal": {
+          "cells": 131072,
+          "maximum_gid": 110481,
+          "maximum_offset_mv_hex": "0x1.d464f64793f5cp-4",
+          "minimum_gid": 126781,
+          "minimum_offset_mv_hex": "-0x1.c31ccd68ead4fp-4",
+          "threshold_offsets_sha256": "5b61a3068e6d63dc835440d20b5b36079d4809865253ab1e805c197b24f4bc91"
+        }
+      },
+      "monotonicity": {
+        "pyramidal": {
+          "cells": 131072,
+          "comparisons": 1572852,
+          "currents_pa": [
+            261,
+            308,
+            355,
+            402,
+            449,
+            496,
+            543,
+            550,
+            590,
+            600,
+            640,
+            650
+          ],
+          "first_spike_ticks_sha256": "3200a4ea7a4e23aa350c5558143146fe6b56c6e576a276a69ace242299d18daf",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "261": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "308": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "355": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "402": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "449": {
+              "maximum_tick": 601,
+              "minimum_tick": 601,
+              "no_spike_cells": 131072,
+              "order_violations": 0
+            },
+            "496": {
+              "maximum_tick": 325,
+              "minimum_tick": 318,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "543": {
+              "maximum_tick": 263,
+              "minimum_tick": 258,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "550": {
+              "maximum_tick": 256,
+              "minimum_tick": 252,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "590": {
+              "maximum_tick": 224,
+              "minimum_tick": 221,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "600": {
+              "maximum_tick": 218,
+              "minimum_tick": 214,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "640": {
+              "maximum_tick": 195,
+              "minimum_tick": 192,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            },
+            "650": {
+              "maximum_tick": 190,
+              "minimum_tick": 188,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        },
+        "winner_relay": {
+          "cells": 131072,
+          "comparisons": 131071,
+          "currents_pa": [
+            20000
+          ],
+          "first_spike_ticks_sha256": "dd7bba8e37a37ca854565a2ff8376276c3287d37782962449845c1694bfcd77d",
+          "method": "exact compiled rising-response search used by DendriticCortex.race_currents",
+          "nondecreasing": true,
+          "rows": {
+            "20000": {
+              "maximum_tick": 5,
+              "minimum_tick": 5,
+              "no_spike_cells": 0,
+              "order_violations": 0
+            }
+          },
+          "total_order_violations": 0
+        }
+      },
+      "proximal_channel": {
+        "causal_relay_after_source_trials": 4096,
+        "dedicated_relay_single_spike_trials": 4096,
+        "expected_relay_winner_trials": 4096,
+        "expected_source_winner_trials": 4096,
+        "maximum_causal_relay_tick": 243,
+        "maximum_relay_intrinsic_tick": 5,
+        "maximum_source_tick": 238,
+        "minimum_causal_relay_tick": 240,
+        "minimum_relay_intrinsic_tick": 5,
+        "minimum_source_tick": 235,
+        "observations_sha256": "1b424cc2ae4503c23b7f8afda93789291fb1b21d280814fca12f1cd0bc1e8c16",
+        "passed": true,
+        "source_single_spike_trials": 4096,
+        "trials": 4096
+      },
+      "seed": 83,
+      "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+      "winner_relay": {
+        "domain": {
+          "cells": 131072,
+          "maximum_gid": 154512,
+          "maximum_offset_mv_hex": "0x1.d3a84e527be1ap-4",
+          "minimum_gid": 139992,
+          "minimum_offset_mv_hex": "-0x1.03fcca0e0fc73p-3",
+          "threshold_offsets_sha256": "bcaf6447d24b3b84408c447db7944744cef54796eb01c7e39d469f530299398a"
+        },
+        "singleton_global_worst": {
+          "active_cells": 1,
+          "expected_winner": 154512,
+          "passed": true,
+          "spike_tick": 5,
+          "winner": 154512
+        }
+      }
+    }
+  },
+  "source_identity_rule": "sha256(live file after CRLF-to-LF normalization; lone CR forbidden)",
   "source_sha256": {
-    "cells.py": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6",
-    "cortex.py": "16545b390c516b6f5817366946f0f516cec5b049bb9e1f6021184d9e156e0a8c",
-    "sparse_temporal_cortex.py": "0aca721d0c10b88ad91764f499b0b8e6cdde4b08b35e862f7dcfecf42f46fac3"
+    "experiments/r3_pilot/calibrate_minicolumn_electrical.py": "8af0b9cd7fcc9c0e0223c2208f3576b8e095143f154d4996fd18f52cddc77d81",
+    "experiments/r3_pilot/calibration_v3_protocol.py": "cd8caaafad6d0c6d81e179f220bd67309dfa429afbf2deaab5e5c708bf8fa9c4",
+    "src/humanbrain/cells.py": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6",
+    "src/humanbrain/cortex.py": "7a7704a14324203d2cce427a11fbd58ffbbc345185ba34633449f59cf294624d",
+    "src/humanbrain/sparse_temporal_cortex.py": "8fe89f50d5e78aa4127fce205e038d68509e5a8f77dfb4cdd73323a08eed4400"
   },
-  "verdict": "PASS_EXHAUSTIVE_COUPLED_SCREEN"
+  "summary": {
+    "boundaries": {
+      "active_vs_matching": {
+        "maximum_natural_latency_ticks": 2,
+        "minimum_natural_latency_ticks": 2,
+        "passed_trials": 0,
+        "trials": 8
+      },
+      "matching_vs_novel": {
+        "maximum_natural_latency_ticks": 4,
+        "minimum_natural_latency_ticks": 3,
+        "passed_trials": 8,
+        "trials": 8
+      },
+      "novel_rank_boundary": {
+        "maximum_natural_latency_ticks": 2,
+        "minimum_natural_latency_ticks": 2,
+        "passed_trials": 0,
+        "trials": 8
+      }
+    },
+    "construction_seeds": 8,
+    "monotonicity": {
+      "pyramidal": {
+        "cells_covered": 1048576,
+        "comparisons": 12582816,
+        "passed_seeds": 8
+      },
+      "winner_relay": {
+        "cells_covered": 1048576,
+        "comparisons": 1048568,
+        "passed_seeds": 8
+      }
+    },
+    "proximal_channel": {
+      "causal_relay_after_source_trials": 32768,
+      "dedicated_relay_single_spike_trials": 32768,
+      "expected_relay_winner_trials": 32768,
+      "expected_source_winner_trials": 32768,
+      "passed_seeds": 8,
+      "source_single_spike_trials": 32768,
+      "trials": 32768
+    },
+    "winner_relay": {
+      "domain_cells_covered": 1048576,
+      "passed_global_worst_singletons": 8,
+      "singleton_trials": 8
+    }
+  },
+  "verdict": "REJECT_RESERVE_VALID_ELECTRICAL_V3"
 }

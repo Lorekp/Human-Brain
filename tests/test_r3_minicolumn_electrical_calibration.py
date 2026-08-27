@@ -6,70 +6,95 @@ import sys
 from pathlib import Path
 
 from experiments.r3_pilot import calibrate_minicolumn_electrical as calibration
-
+from experiments.r3_pilot import calibration_v3_protocol
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "experiments" / "r3_pilot" / "calibrate_minicolumn_electrical.py"
 ARTIFACT = ROOT / "experiments" / "r3_pilot" / "minicolumn_electrical_calibration.json"
 
 
-def test_electrical_protocol_freezes_physical_defaults_and_adversaries() -> None:
-    assert calibration._protocol() == {
-        "active_current_pa": 670,
-        "basket_current_pa": 200000,
-        "basket_offset": 262144,
-        "base_pyramidal_cells": 32768,
-        "cells_per_column": 8,
-        "columns": 4096,
-        "construction_seeds": [3, 7, 17, 29, 43],
-        "dt_us": 50,
-        "gaba_current_pa": 500,
-        "homeostasis_adversary_rule": (
-            "boundary winner receives -20 pA; every competitor receives +20 pA"
-        ),
-        "homeostasis_adversarial_pa": 20,
-        "latency_must_exceed_us": 100,
-        "matching_current_pa": 620,
-        "max_pyramidal_cells": 131072,
-        "novel_current_ladder_pa": [570, 523, 476, 429, 382, 335, 288, 241],
-        "physical_cell_count": 274432,
-        "proximal_current_pa": 570,
-        "proximal_offset": 266240,
-        "proximal_relay_offset": 270336,
-        "rank_assignment": (
-            "rank 0 is assigned to each column's maximum threshold offset, rank 1 "
-            "to its minimum, and descending remainder currents to ascending "
-            "remaining thresholds"
-        ),
-        "relay_offset": 131072,
-        "relay_current_pa": 20000,
-        "scenario_currents_pa": {
-            "active_vs_matching": [650, 640, 590, 543, 496, 449, 402, 355],
-            "matching_vs_novel": [600, 590, 543, 496, 449, 402, 355, 308],
-            "novel_rank_boundary": [550, 543, 496, 449, 402, 355, 308, 261],
-        },
-        "singleton_matching_active_assumption": True,
-    }
+def test_electrical_module_executes_the_exact_frozen_v3_screen() -> None:
+    screen = calibration_v3_protocol.build_protocol()["screens"]["electrical_v3"]
+
+    assert calibration._protocol() == screen
+    assert screen["construction_seeds"] == [3, 7, 17, 29, 43, 59, 83, 101]
+    assert screen["pyramidal_domain"]["configured_ids"] == [0, 131072]
+    assert screen["winner_relay_domain"]["ids"] == [131072, 262144]
+    assert screen["generic_proximal_relay_trials"] == 32768
+    assert screen["required_verdict"] == calibration.PASS_VERDICT
 
 
-def test_one_trial_replays_coupled_latency_and_inhibition() -> None:
+def test_global_extrema_trial_replays_physical_inhibition_and_exposes_latency_reject() -> None:
     cortex = calibration._new_cortex(3)
-    observed = calibration._probe_trial(
+    candidates, basket_gid, fixture = calibration._boundary_fixture(cortex)
+    observed = calibration._probe_boundary(
         cortex,
-        column=0,
+        basket_gid=basket_gid,
+        candidate_gids=candidates,
         currents=calibration._scenario_currents()["novel_rank_boundary"],
     )
 
-    assert observed["control_spike_count"] == 2
-    assert observed["natural_latency_ticks"] > 2
+    assert candidates[0] == fixture["pyramidal"]["maximum_gid"]
+    assert candidates[1] == fixture["pyramidal"]["minimum_gid"]
+    assert basket_gid == fixture["basket"]["maximum_gid"]
+    assert len(observed["control_spike_gids"]) == 2
     assert observed["control_winner"] == observed["expected_winner"]
-    assert observed["inhibited_spike_count"] == 1
+    assert len(observed["inhibited_spike_gids"]) == 1
     assert observed["inhibited_winner"] == observed["expected_winner"]
     assert observed["winner_to_basket_ticks"] == 1
     assert observed["basket_to_gaba_ticks"] == 1
+    assert observed["natural_latency_ticks"] == 2
+    assert observed["passed"] is False
 
 
-def test_historical_electrical_artifact_fails_closed_after_source_refreeze() -> None:
+def test_full_v3_replay_covers_all_domains_and_returns_the_measured_reject() -> None:
+    replay = calibration.run_replay()
+    calibration.validate_artifact(replay)
+
+    assert replay["verdict"] == calibration.REJECT_VERDICT
+    assert set(replay["seeds"]) == {"3", "7", "17", "29", "43", "59", "83", "101"}
+    summary = replay["summary"]
+    assert summary["monotonicity"] == {
+        "pyramidal": {
+            "cells_covered": 1_048_576,
+            "comparisons": 12_582_816,
+            "passed_seeds": 8,
+        },
+        "winner_relay": {
+            "cells_covered": 1_048_576,
+            "comparisons": 1_048_568,
+            "passed_seeds": 8,
+        },
+    }
+    assert summary["winner_relay"] == {
+        "domain_cells_covered": 1_048_576,
+        "passed_global_worst_singletons": 8,
+        "singleton_trials": 8,
+    }
+    assert summary["proximal_channel"] == {
+        "causal_relay_after_source_trials": 32_768,
+        "dedicated_relay_single_spike_trials": 32_768,
+        "expected_relay_winner_trials": 32_768,
+        "expected_source_winner_trials": 32_768,
+        "passed_seeds": 8,
+        "source_single_spike_trials": 32_768,
+        "trials": 32_768,
+    }
+    assert summary["boundaries"]["matching_vs_novel"]["passed_trials"] == 8
+    assert summary["boundaries"]["active_vs_matching"]["passed_trials"] == 0
+    assert summary["boundaries"]["novel_rank_boundary"]["passed_trials"] == 0
+    assert len(replay["rejection_reasons"]) == 16
+
+
+def test_current_artifact_is_source_bound_and_reports_scientific_reject() -> None:
+    artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
+    calibration.validate_artifact(artifact)
+
+    assert artifact["artifact_id"] == "r3-minicolumn-electrical-v3"
+    assert artifact["schema_version"] == 3
+    assert artifact["source_sha256"] == calibration._source_hashes()
+    assert artifact["verdict"] == calibration.REJECT_VERDICT
+
     completed = subprocess.run(
         [sys.executable, str(SCRIPT), "--check"],
         cwd=ROOT,
@@ -77,47 +102,5 @@ def test_historical_electrical_artifact_fails_closed_after_source_refreeze() -> 
         text=True,
         check=False,
     )
-
-    assert completed.returncode == 1
-    assert "FAIL: sparse source changed" in completed.stdout
-
-
-def test_artifact_freezes_exhaustive_coupled_evidence() -> None:
-    artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
-
-    assert artifact["artifact_id"] == "r3-minicolumn-electrical-v1"
-    assert artifact["schema_version"] == 1
-    assert artifact["source_commit"] == "df26cc2"
-    assert artifact["protocol"] == calibration._protocol()
-    assert artifact["claim_boundary"] == {
-        "capability_evidence": False,
-        "sparse_temporal_integration_evidence": False,
-        "synthetic_electrical_calibration": True,
-        "transfer_evidence": False,
-    }
-    assert set(artifact["boundaries"]) == {
-        "active_vs_matching",
-        "matching_vs_novel",
-        "novel_rank_boundary",
-    }
-    proximal = artifact["proximal_channel"]
-    assert proximal["trials"] == 20480
-    assert proximal["source_single_spike_trials"] == 20480
-    assert proximal["dedicated_relay_single_spike_trials"] == 20480
-    assert proximal["expected_source_winner_trials"] == 20480
-    assert proximal["expected_relay_winner_trials"] == 20480
-    assert proximal["causal_relay_after_source_trials"] == 20480
-    assert proximal["verdict"] == "PASS_EXHAUSTIVE_PROXIMAL_RELAY_SCREEN"
-    for boundary in artifact["boundaries"].values():
-        assert boundary["trials"] == 20480
-        assert boundary["control_two_spike_trials"] == 20480
-        assert boundary["inhibited_single_spike_trials"] == 20480
-        assert boundary["expected_control_winner_trials"] == 20480
-        assert boundary["expected_inhibited_winner_trials"] == 20480
-        assert boundary["minimum_natural_latency_ticks"] > 2
-        assert boundary["minimum_winner_to_basket_ticks"] == 1
-        assert boundary["maximum_winner_to_basket_ticks"] == 1
-        assert boundary["minimum_basket_to_gaba_ticks"] == 1
-        assert boundary["maximum_basket_to_gaba_ticks"] == 1
-        assert boundary["verdict"] == "PASS_EXHAUSTIVE_COUPLED_SCREEN"
-        assert len(boundary["seed_hashes_sha256"]) == 5
+    assert completed.returncode == 0
+    assert "scientific verdict: REJECT_RESERVE_VALID_ELECTRICAL_V3" in completed.stdout
