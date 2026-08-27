@@ -7,8 +7,10 @@
 //! can inject winners, segment classes, currents, or a prepared mutation.
 //!
 //! Claim boundary: this module owns deterministic physical recognition and the
-//! aggregate reserve-aware native learning transaction. It has no checkpoint
-//! format, public ABI, Python wrapper, or outcome-evaluation path.
+//! aggregate reserve-aware native learning transaction. It has crate-private
+//! checkpoint-v1 identity hashing, but no header/body codec, state
+//! import/export, filesystem publisher, public ABI, Python wrapper, or
+//! outcome-evaluation path.
 
 use crate::random123::{philox2x64_10, sample_without_replacement};
 use crate::temporal::{
@@ -19,6 +21,8 @@ use crate::temporal_physics::{
     coupled_first_spike_race, singleton_latency_ticks, BasketDrive, CandidateClass, CandidateDrive,
     CoupledRaceScratch, SpikeEvent, TemporalPhysicsStop, TEMPORAL_PHYSICS_IDENTITY,
 };
+
+pub(crate) mod checkpoint;
 
 const ACTIVE_COLUMNS: usize = 11;
 const CONTEXT_CELLS: usize = 2 * ACTIVE_COLUMNS;
