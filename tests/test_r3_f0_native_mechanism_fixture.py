@@ -16,6 +16,10 @@ from humanbrain.native_temporal_runtime import (
 SOURCE_TOKEN = 100
 TARGET_TOKEN = 101
 UNCONFIRMED_TARGET_TOKEN = 102
+CONTEXT_A_TOKEN = 200
+CONTEXT_B_TOKEN = 201
+NOVEL_CONTEXT_TOKEN = 202
+SHARED_ARRIVING_TOKEN = 203
 ACTIVE_COLUMNS = 11
 COLUMN_COUNT = 22
 BASE_CELLS_PER_COLUMN = 2
@@ -99,12 +103,50 @@ def _negative_evidence_definition() -> NativeTemporalCircuitDefinition:
     )
 
 
+def _context_conditioned_definition() -> NativeTemporalCircuitDefinition:
+    column_count = 4 * ACTIVE_COLUMNS
+    base_pyramidal_cells = column_count * BASE_CELLS_PER_COLUMN
+    max_pyramidal_cells = base_pyramidal_cells + 2 * ACTIVE_COLUMNS
+    config = NativeTemporalCircuitConfig(
+        column_count=column_count,
+        max_pyramidal_cells=max_pyramidal_cells,
+        segment_capacity=3 * ACTIVE_COLUMNS,
+        construction_seed=17,
+        connected_permanence_ticks=250,
+        initial_permanence_ticks=255,
+        permanence_increment_ticks=50,
+        negative_decrement_ticks=2,
+        base_cells_per_column=BASE_CELLS_PER_COLUMN,
+        novel_race_cap=BASE_CELLS_PER_COLUMN,
+        prediction_quorum=ACTIVE_COLUMNS,
+        max_segments_per_cell=1,
+        theta_match=18,
+        theta_active=20,
+        context_policy=TemporalContextPolicy.BOUND_WINNERS,
+        plasticity_policy=TemporalPlasticityPolicy.PLASTIC,
+    )
+    token_codes = {
+        CONTEXT_A_TOKEN: tuple(range(ACTIVE_COLUMNS)),
+        CONTEXT_B_TOKEN: tuple(range(ACTIVE_COLUMNS, 2 * ACTIVE_COLUMNS)),
+        NOVEL_CONTEXT_TOKEN: tuple(range(2 * ACTIVE_COLUMNS, 3 * ACTIVE_COLUMNS)),
+        SHARED_ARRIVING_TOKEN: tuple(range(3 * ACTIVE_COLUMNS, 4 * ACTIVE_COLUMNS)),
+    }
+    physical_cell_count = 2 * max_pyramidal_cells + 3 * column_count
+    return NativeTemporalCircuitDefinition(
+        config,
+        token_codes,
+        (0.0,) * physical_cell_count,
+    )
+
+
 def _learn_transition(
     circuit: NativeTemporalCircuit,
     target_token: int = TARGET_TOKEN,
+    *,
+    source_token: int = SOURCE_TOKEN,
 ):
     return circuit.advance_block(
-        [SOURCE_TOKEN, target_token],
+        [source_token, target_token],
         mode=TemporalStepMode.LEARN,
         reset_before=True,
     )[1]
@@ -113,9 +155,11 @@ def _learn_transition(
 def _read_transition(
     circuit: NativeTemporalCircuit,
     target_token: int = TARGET_TOKEN,
+    *,
+    source_token: int = SOURCE_TOKEN,
 ):
     return circuit.advance_block(
-        [SOURCE_TOKEN, target_token],
+        [source_token, target_token],
         mode=TemporalStepMode.READ_ONLY,
         reset_before=True,
     )[1]
@@ -253,3 +297,84 @@ def test_unconfirmed_active_prediction_is_punished_while_confirmed_path_survives
     )
     assert identity.segment_count == 2 * ACTIVE_COLUMNS
     assert identity.poison_code == 0
+
+
+def test_same_arriving_token_reuses_distinct_context_conditioned_winners(
+    native_fixture_authority: None,
+) -> None:
+    definition = _context_conditioned_definition()
+    base_pyramidal_cells = definition.config.column_count * definition.config.base_cells_per_column
+
+    with NativeTemporalCircuit.fresh(definition) as circuit:
+        before = circuit.checkpoint_identity()
+        context_a_exposure = _learn_transition(
+            circuit,
+            SHARED_ARRIVING_TOKEN,
+            source_token=CONTEXT_A_TOKEN,
+        )
+        after_a = circuit.checkpoint_identity()
+        context_b_exposure = _learn_transition(
+            circuit,
+            SHARED_ARRIVING_TOKEN,
+            source_token=CONTEXT_B_TOKEN,
+        )
+        after_b = circuit.checkpoint_identity()
+        novel_context_exposure = _learn_transition(
+            circuit,
+            SHARED_ARRIVING_TOKEN,
+            source_token=NOVEL_CONTEXT_TOKEN,
+        )
+        after_novel = circuit.checkpoint_identity()
+
+        context_a_replay = _read_transition(
+            circuit,
+            SHARED_ARRIVING_TOKEN,
+            source_token=CONTEXT_A_TOKEN,
+        )
+        context_b_replay = _read_transition(
+            circuit,
+            SHARED_ARRIVING_TOKEN,
+            source_token=CONTEXT_B_TOKEN,
+        )
+        novel_context_replay = _read_transition(
+            circuit,
+            SHARED_ARRIVING_TOKEN,
+            source_token=NOVEL_CONTEXT_TOKEN,
+        )
+
+    context_a_winners = tuple(spike.cell_id for spike in context_a_exposure.winner_spikes)
+    context_b_winners = tuple(spike.cell_id for spike in context_b_exposure.winner_spikes)
+    novel_context_winners = tuple(spike.cell_id for spike in novel_context_exposure.winner_spikes)
+
+    assert context_a_exposure.predicted_columns == 0
+    assert context_b_exposure.predicted_columns == 0
+    assert novel_context_exposure.predicted_columns == 0
+    assert context_a_exposure.allocated_segments == ACTIVE_COLUMNS
+    assert context_b_exposure.allocated_segments == ACTIVE_COLUMNS
+    assert novel_context_exposure.allocated_segments == ACTIVE_COLUMNS
+    assert set(context_a_winners).isdisjoint(context_b_winners)
+    assert set(context_a_winners).isdisjoint(novel_context_winners)
+    assert set(context_b_winners).isdisjoint(novel_context_winners)
+
+    assert context_a_replay.predicted_columns == ACTIVE_COLUMNS
+    assert context_b_replay.predicted_columns == ACTIVE_COLUMNS
+    assert novel_context_replay.predicted_columns == ACTIVE_COLUMNS
+    assert tuple(spike.cell_id for spike in context_a_replay.winner_spikes) == (context_a_winners)
+    assert tuple(spike.cell_id for spike in context_b_replay.winner_spikes) == (context_b_winners)
+    assert tuple(spike.cell_id for spike in novel_context_replay.winner_spikes) == (
+        novel_context_winners
+    )
+
+    assert before.segment_count == before.cohort_count == 0
+    assert before.next_reserve_cell == base_pyramidal_cells
+    assert after_a.segment_count == ACTIVE_COLUMNS
+    assert after_a.cohort_count == 0
+    assert after_a.next_reserve_cell == base_pyramidal_cells
+    assert after_b.segment_count == 2 * ACTIVE_COLUMNS
+    assert after_b.cohort_count == 0
+    assert after_b.next_reserve_cell == base_pyramidal_cells
+    assert after_novel.segment_count == 3 * ACTIVE_COLUMNS
+    assert after_novel.cohort_count == ACTIVE_COLUMNS
+    assert after_novel.next_reserve_cell == definition.config.max_pyramidal_cells
+    assert all(cell_id >= base_pyramidal_cells for cell_id in novel_context_winners)
+    assert after_novel.poison_code == 0
