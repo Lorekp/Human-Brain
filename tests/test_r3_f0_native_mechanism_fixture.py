@@ -15,6 +15,7 @@ from humanbrain.native_temporal_runtime import (
 
 SOURCE_TOKEN = 100
 TARGET_TOKEN = 101
+UNCONFIRMED_TARGET_TOKEN = 102
 ACTIVE_COLUMNS = 11
 COLUMN_COUNT = 22
 BASE_CELLS_PER_COLUMN = 2
@@ -64,17 +65,57 @@ def _definition(
     )
 
 
-def _learn_transition(circuit: NativeTemporalCircuit):
+def _negative_evidence_definition() -> NativeTemporalCircuitDefinition:
+    column_count = 3 * ACTIVE_COLUMNS
+    max_pyramidal_cells = column_count * BASE_CELLS_PER_COLUMN
+    config = NativeTemporalCircuitConfig(
+        column_count=column_count,
+        max_pyramidal_cells=max_pyramidal_cells,
+        segment_capacity=2 * ACTIVE_COLUMNS,
+        construction_seed=17,
+        connected_permanence_ticks=250,
+        initial_permanence_ticks=255,
+        permanence_increment_ticks=50,
+        negative_decrement_ticks=2,
+        base_cells_per_column=BASE_CELLS_PER_COLUMN,
+        novel_race_cap=BASE_CELLS_PER_COLUMN,
+        prediction_quorum=ACTIVE_COLUMNS,
+        max_segments_per_cell=4,
+        theta_match=18,
+        theta_active=20,
+        context_policy=TemporalContextPolicy.BOUND_WINNERS,
+        plasticity_policy=TemporalPlasticityPolicy.PLASTIC,
+    )
+    token_codes = {
+        SOURCE_TOKEN: tuple(range(ACTIVE_COLUMNS)),
+        TARGET_TOKEN: tuple(range(ACTIVE_COLUMNS, 2 * ACTIVE_COLUMNS)),
+        UNCONFIRMED_TARGET_TOKEN: tuple(range(2 * ACTIVE_COLUMNS, 3 * ACTIVE_COLUMNS)),
+    }
+    physical_cell_count = 2 * max_pyramidal_cells + 3 * column_count
+    return NativeTemporalCircuitDefinition(
+        config,
+        token_codes,
+        (0.0,) * physical_cell_count,
+    )
+
+
+def _learn_transition(
+    circuit: NativeTemporalCircuit,
+    target_token: int = TARGET_TOKEN,
+):
     return circuit.advance_block(
-        [SOURCE_TOKEN, TARGET_TOKEN],
+        [SOURCE_TOKEN, target_token],
         mode=TemporalStepMode.LEARN,
         reset_before=True,
     )[1]
 
 
-def _read_transition(circuit: NativeTemporalCircuit):
+def _read_transition(
+    circuit: NativeTemporalCircuit,
+    target_token: int = TARGET_TOKEN,
+):
     return circuit.advance_block(
-        [SOURCE_TOKEN, TARGET_TOKEN],
+        [SOURCE_TOKEN, target_token],
         mode=TemporalStepMode.READ_ONLY,
         reset_before=True,
     )[1]
@@ -149,3 +190,66 @@ def test_growth_off_learn_keeps_native_segment_store_structurally_empty(
     assert before.next_reserve_cell == after.next_reserve_cell
     assert before.semantic_index_sha256 == after.semantic_index_sha256
     assert before.circuit_identity_sha256 == after.circuit_identity_sha256
+
+
+def test_unconfirmed_active_prediction_is_punished_while_confirmed_path_survives(
+    native_fixture_authority: None,
+) -> None:
+    definition = _negative_evidence_definition()
+    assert (
+        definition.config.negative_decrement_ticks * 25
+        == definition.config.permanence_increment_ticks
+    )
+
+    with NativeTemporalCircuit.fresh(definition) as circuit:
+        confirmed_allocation = _learn_transition(circuit)
+        unconfirmed_allocation = _learn_transition(
+            circuit,
+            UNCONFIRMED_TARGET_TOKEN,
+        )
+        confirmed_before = _read_transition(circuit)
+        unconfirmed_before = _read_transition(
+            circuit,
+            UNCONFIRMED_TARGET_TOKEN,
+        )
+
+        first_confirmation = _learn_transition(circuit)
+        unconfirmed_after_one = _read_transition(
+            circuit,
+            UNCONFIRMED_TARGET_TOKEN,
+        )
+        second_confirmation = _learn_transition(circuit)
+        unconfirmed_after_two = _read_transition(
+            circuit,
+            UNCONFIRMED_TARGET_TOKEN,
+        )
+        third_confirmation = _learn_transition(circuit)
+        unconfirmed_after_three = _read_transition(
+            circuit,
+            UNCONFIRMED_TARGET_TOKEN,
+        )
+        confirmed_after_three = _read_transition(circuit)
+        identity = circuit.checkpoint_identity()
+
+    assert confirmed_allocation.allocated_segments == ACTIVE_COLUMNS
+    assert unconfirmed_allocation.allocated_segments == ACTIVE_COLUMNS
+    assert confirmed_before.predicted_columns == ACTIVE_COLUMNS
+    assert unconfirmed_before.predicted_columns == ACTIVE_COLUMNS
+    assert (
+        first_confirmation.punished_segments
+        == second_confirmation.punished_segments
+        == third_confirmation.punished_segments
+        == ACTIVE_COLUMNS
+    )
+    assert unconfirmed_after_one.predicted_columns == ACTIVE_COLUMNS
+    assert unconfirmed_after_two.predicted_columns == ACTIVE_COLUMNS
+    assert unconfirmed_after_three.predicted_columns == 0
+    assert confirmed_after_three.predicted_columns == ACTIVE_COLUMNS
+    assert tuple(spike.cell_id for spike in confirmed_after_three.winner_spikes) == tuple(
+        spike.cell_id for spike in confirmed_before.winner_spikes
+    )
+    assert tuple(spike.cell_id for spike in unconfirmed_after_three.winner_spikes) == tuple(
+        spike.cell_id for spike in unconfirmed_before.winner_spikes
+    )
+    assert identity.segment_count == 2 * ACTIVE_COLUMNS
+    assert identity.poison_code == 0
