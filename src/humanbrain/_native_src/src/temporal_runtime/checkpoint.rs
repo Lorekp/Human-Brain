@@ -1,16 +1,19 @@
 //! Checkpoint-v1 identities and pure fixed-header codec for the native runtime.
 //!
-//! This module deliberately stops before body traversal or I/O. It computes
-//! identities, checked byte layout, canonical scalar bytes, and the complete
-//! fixed header. It does not encode or import body state, touch a sink, publish
-//! files, or expose an ABI.
+//! This module computes identities, checked byte layout, canonical scalar
+//! bytes, the complete fixed header, and allocation-free reachability proofs
+//! over a borrowed live state. It does not encode or import checkpoint body
+//! bytes, allocate export scratch, touch a sink, publish files, or expose an
+//! ABI.
 
 use sha2::{Digest, Sha256};
 
 use super::{
-    TemporalCircuitRuntime, TemporalContextPolicy, TemporalPlasticityPolicy, TemporalPoisonCode,
-    ACTIVE_COLUMNS, CONTEXT_CELLS, PAIRS_PER_SEGMENT,
+    TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy, TemporalPlasticityPolicy,
+    TemporalPoisonCode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS, CONTEXT_CELLS_U8,
+    PAIRS_PER_SEGMENT,
 };
+use crate::temporal::TemporalSegmentRow;
 use crate::temporal_physics::TEMPORAL_PHYSICS_IDENTITY;
 
 const LOGICAL_STATE_DOMAIN: &[u8] = b"humanbrain-r3-checkpoint-logical-state-v1\0";
@@ -757,6 +760,418 @@ fn max_distinct_code_overlap(codebook: &[super::TokenCode]) -> u8 {
     maximum
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[allow(clippy::enum_variant_names)] // Every private category names the invariant family it proves.
+enum CheckpointV1StateError {
+    ScalarInvariant,
+    LayoutInvariant,
+    ColumnCsrInvariant,
+    LearnedStateInvariant,
+    CohortChronologyInvariant,
+    ContextInvariant,
+}
+
+#[derive(Clone, Copy)]
+struct CheckpointV1StateView<'a> {
+    config: TemporalCircuitConfig,
+    token_codebook: &'a [TokenCode],
+    column_offsets: &'a [usize],
+    column_cells: &'a [u32],
+    cohort_columns: &'a [u32],
+    next_reserve_cell: u32,
+    segment_count: u32,
+    previous_context: &'a [u32; CONTEXT_CELLS],
+    previous_context_len: u8,
+    previous_winner_context: &'a [u32; CONTEXT_CELLS],
+    previous_winner_context_len: u8,
+    event_count: u64,
+    learning_step: u64,
+    scientific_stop: Option<TemporalPoisonCode>,
+    relay_offset: u32,
+    proximal_offset: u32,
+    proximal_relay_offset: u32,
+}
+
+#[derive(Clone, Copy)]
+struct CheckpointV1OwnedRow {
+    owner: u32,
+    row: TemporalSegmentRow,
+}
+
+fn checkpoint_v1_state_view(runtime: &TemporalCircuitRuntime) -> CheckpointV1StateView<'_> {
+    CheckpointV1StateView {
+        config: runtime.config,
+        token_codebook: &runtime.token_codebook,
+        column_offsets: &runtime.column_offsets,
+        column_cells: &runtime.column_cells,
+        cohort_columns: &runtime.cohort_columns,
+        next_reserve_cell: runtime.next_reserve_cell,
+        segment_count: runtime.store.runtime_segment_count(),
+        previous_context: &runtime.previous_context,
+        previous_context_len: runtime.previous_context_len,
+        previous_winner_context: &runtime.previous_winner_context,
+        previous_winner_context_len: runtime.previous_winner_context_len,
+        event_count: runtime.event_count,
+        learning_step: runtime.learning_step,
+        scientific_stop: runtime.scientific_stop,
+        relay_offset: runtime.relay_offset,
+        proximal_offset: runtime.proximal_offset,
+        proximal_relay_offset: runtime.proximal_relay_offset,
+    }
+}
+
+fn validate_checkpoint_v1_runtime_state(
+    runtime: &TemporalCircuitRuntime,
+    column_replay: &mut [u32],
+) -> Result<(), CheckpointV1StateError> {
+    validate_checkpoint_v1_state(
+        checkpoint_v1_state_view(runtime),
+        column_replay,
+        |segment_id| {
+            Some(CheckpointV1OwnedRow {
+                owner: runtime.store.runtime_segment_owner(segment_id)?,
+                row: runtime.store.runtime_segment_row(segment_id).ok()?,
+            })
+        },
+        |owner| runtime.store.runtime_owner_load(owner),
+    )
+}
+
+/// Validate one borrowed logical state without allocating.
+///
+/// Immutable runtime identity (or checkpoint-import pass 1) must already have
+/// succeeded. `row_at` is the exact segment-ID logical-row/checked-SoA view.
+/// `owner_load` is authoritative at this seam: the live-runtime adapter reads
+/// the store-owned cache maintained by construction/mutation, while a future
+/// checked-SoA importer must replay each owner count in a wider checked integer
+/// before converting it to `u8` and supplying it here. This validator
+/// deliberately does not recount rows with quadratic work or require
+/// owner-sized scratch.
+fn validate_checkpoint_v1_state(
+    state: CheckpointV1StateView<'_>,
+    column_replay: &mut [u32],
+    mut row_at: impl FnMut(u32) -> Option<CheckpointV1OwnedRow>,
+    mut owner_load: impl FnMut(u32) -> Option<u8>,
+) -> Result<(), CheckpointV1StateError> {
+    let contexts_empty = match (
+        state.previous_context_len,
+        state.previous_winner_context_len,
+    ) {
+        (0, 0) => true,
+        (CONTEXT_CELLS_U8, CONTEXT_CELLS_U8) => false,
+        _ => return Err(CheckpointV1StateError::ScalarInvariant),
+    };
+    if (state.event_count == 0) != contexts_empty
+        || (state.config.plasticity_policy == TemporalPlasticityPolicy::GrowthOff
+            && state.learning_step != 0)
+        || checkpoint_v1_poison_code(state.scientific_stop).is_err()
+    {
+        return Err(CheckpointV1StateError::ScalarInvariant);
+    }
+
+    let column_count = usize::try_from(state.config.column_count)
+        .map_err(|_| CheckpointV1StateError::LayoutInvariant)?;
+    let base_width = u32::from(state.config.base_cells_per_column);
+    let race_cap = u32::from(state.config.novel_race_cap);
+    if column_count < ACTIVE_COLUMNS
+        || base_width == 0
+        || race_cap == 0
+        || race_cap > 8
+        || base_width > race_cap
+        || (state.config.context_policy == TemporalContextPolicy::GenericAfferents
+            && base_width < 2)
+        || state.config.segment_capacity == 0
+        || state.config.segment_capacity > u32::MAX / PAIRS_PER_SEGMENT as u32
+        || !(1..=ACTIVE_COLUMNS as u8).contains(&state.config.prediction_quorum)
+        || state.config.max_segments_per_cell == 0
+        || !(1..=PERMANENCE_MAX_TICKS).contains(&state.config.connected_permanence_ticks)
+        || !(1..=PERMANENCE_MAX_TICKS).contains(&state.config.initial_permanence_ticks)
+        || !(1..=PERMANENCE_MAX_TICKS).contains(&state.config.permanence_increment_ticks)
+        || !(1..=PERMANENCE_MAX_TICKS).contains(&state.config.negative_decrement_ticks)
+        || !(1 <= state.config.theta_match
+            && state.config.theta_match <= state.config.theta_active
+            && state.config.theta_active <= PHYSICAL_CONTACTS_PER_PAIR * PAIRS_PER_SEGMENT as u8)
+        || state.segment_count > state.config.segment_capacity
+        || column_replay.len() != column_count
+    {
+        return Err(CheckpointV1StateError::LayoutInvariant);
+    }
+    let base_total = u64::from(state.config.column_count)
+        .checked_mul(u64::from(base_width))
+        .filter(|total| *total <= u64::from(state.config.max_pyramidal_cells))
+        .and_then(|total| u32::try_from(total).ok())
+        .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+    let relay_offset = state.config.max_pyramidal_cells;
+    let basket_offset = relay_offset
+        .checked_mul(2)
+        .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+    let proximal_offset = basket_offset
+        .checked_add(state.config.column_count)
+        .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+    let proximal_relay_offset = proximal_offset
+        .checked_add(state.config.column_count)
+        .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+    proximal_relay_offset
+        .checked_add(state.config.column_count)
+        .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+    if state.relay_offset != relay_offset
+        || state.proximal_offset != proximal_offset
+        || state.proximal_relay_offset != proximal_relay_offset
+    {
+        return Err(CheckpointV1StateError::LayoutInvariant);
+    }
+    let cohort_count = u32::try_from(state.cohort_columns.len())
+        .map_err(|_| CheckpointV1StateError::LayoutInvariant)?;
+    let next_reserve_cell = u64::from(cohort_count)
+        .checked_mul(u64::from(race_cap))
+        .and_then(|reserve_cells| reserve_cells.checked_add(u64::from(base_total)))
+        .filter(|next| *next <= u64::from(state.config.max_pyramidal_cells))
+        .and_then(|next| u32::try_from(next).ok())
+        .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+    if state.next_reserve_cell != next_reserve_cell {
+        return Err(CheckpointV1StateError::LayoutInvariant);
+    }
+
+    column_replay.fill(base_width);
+    for &column in state.cohort_columns {
+        let column_index =
+            usize::try_from(column).map_err(|_| CheckpointV1StateError::LayoutInvariant)?;
+        let replay = column_replay
+            .get_mut(column_index)
+            .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+        *replay = replay
+            .checked_add(race_cap)
+            .ok_or(CheckpointV1StateError::LayoutInvariant)?;
+    }
+
+    let expected_offset_count = column_count
+        .checked_add(1)
+        .ok_or(CheckpointV1StateError::ColumnCsrInvariant)?;
+    let committed_count = usize::try_from(next_reserve_cell)
+        .map_err(|_| CheckpointV1StateError::ColumnCsrInvariant)?;
+    if state.column_offsets.len() != expected_offset_count
+        || state.column_offsets.first().copied() != Some(0)
+        || state.column_cells.len() != committed_count
+    {
+        return Err(CheckpointV1StateError::ColumnCsrInvariant);
+    }
+    let base_width_usize =
+        usize::try_from(base_width).map_err(|_| CheckpointV1StateError::ColumnCsrInvariant)?;
+    let mut expected_start = 0usize;
+    for (column, &replayed_occupancy) in column_replay.iter().enumerate() {
+        let occupancy = usize::try_from(replayed_occupancy)
+            .map_err(|_| CheckpointV1StateError::ColumnCsrInvariant)?;
+        let expected_end = expected_start
+            .checked_add(occupancy)
+            .ok_or(CheckpointV1StateError::ColumnCsrInvariant)?;
+        if state.column_offsets[column] != expected_start
+            || state.column_offsets[column + 1] != expected_end
+            || expected_end > state.column_cells.len()
+        {
+            return Err(CheckpointV1StateError::ColumnCsrInvariant);
+        }
+        let cells = &state.column_cells[expected_start..expected_end];
+        if cells.windows(2).any(|pair| pair[0] >= pair[1]) {
+            return Err(CheckpointV1StateError::ColumnCsrInvariant);
+        }
+        let base_start = u64::try_from(column)
+            .ok()
+            .and_then(|column| column.checked_mul(u64::from(base_width)))
+            .and_then(|start| u32::try_from(start).ok())
+            .ok_or(CheckpointV1StateError::ColumnCsrInvariant)?;
+        for (offset, &cell) in cells[..base_width_usize].iter().enumerate() {
+            let expected = base_start
+                .checked_add(offset as u32)
+                .ok_or(CheckpointV1StateError::ColumnCsrInvariant)?;
+            if cell != expected {
+                return Err(CheckpointV1StateError::ColumnCsrInvariant);
+            }
+        }
+        for &cell in &cells[base_width_usize..] {
+            if !(base_total..next_reserve_cell).contains(&cell) {
+                return Err(CheckpointV1StateError::ColumnCsrInvariant);
+            }
+            let cohort_index = usize::try_from((cell - base_total) / race_cap)
+                .map_err(|_| CheckpointV1StateError::ColumnCsrInvariant)?;
+            if state.cohort_columns.get(cohort_index).copied() != Some(column as u32) {
+                return Err(CheckpointV1StateError::ColumnCsrInvariant);
+            }
+        }
+        expected_start = expected_end;
+    }
+    if expected_start != state.column_cells.len() {
+        return Err(CheckpointV1StateError::ColumnCsrInvariant);
+    }
+
+    for owner in 0..next_reserve_cell {
+        let load = owner_load(owner).ok_or(CheckpointV1StateError::LearnedStateInvariant)?;
+        if load > state.config.max_segments_per_cell {
+            return Err(CheckpointV1StateError::LearnedStateInvariant);
+        }
+    }
+    for segment_id in 0..state.segment_count {
+        let owned = row_at(segment_id).ok_or(CheckpointV1StateError::LearnedStateInvariant)?;
+        if checkpoint_v1_owner_column(&state, base_total, owned.owner).is_none()
+            || owner_load(owned.owner)
+                .filter(|load| *load != 0 && *load <= state.config.max_segments_per_cell)
+                .is_none()
+            || !checkpoint_v1_row_is_reachable(&state, base_total, &owned.row)
+        {
+            return Err(CheckpointV1StateError::LearnedStateInvariant);
+        }
+    }
+
+    column_replay.fill(base_width);
+    let race_cap_usize =
+        usize::try_from(race_cap).map_err(|_| CheckpointV1StateError::CohortChronologyInvariant)?;
+    for &column in state.cohort_columns {
+        let column_index = usize::try_from(column)
+            .map_err(|_| CheckpointV1StateError::CohortChronologyInvariant)?;
+        let predecessor_end = usize::try_from(column_replay[column_index])
+            .map_err(|_| CheckpointV1StateError::CohortChronologyInvariant)?;
+        let cells = &state.column_cells
+            [state.column_offsets[column_index]..state.column_offsets[column_index + 1]];
+        let predecessor_start = if predecessor_end == base_width_usize {
+            0
+        } else {
+            predecessor_end
+                .checked_sub(race_cap_usize)
+                .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?
+        };
+        let cohort_end = predecessor_end
+            .checked_add(race_cap_usize)
+            .filter(|end| *end <= cells.len())
+            .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
+        if cells[predecessor_start..predecessor_end]
+            .iter()
+            .copied()
+            .any(|owner| owner_load(owner) != Some(state.config.max_segments_per_cell))
+            || !cells[predecessor_end..cohort_end]
+                .iter()
+                .copied()
+                .any(|owner| owner_load(owner).is_some_and(|load| load != 0))
+        {
+            return Err(CheckpointV1StateError::CohortChronologyInvariant);
+        }
+        column_replay[column_index] = column_replay[column_index]
+            .checked_add(race_cap)
+            .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
+    }
+
+    if contexts_empty {
+        return Ok(());
+    }
+    let mut context_columns = [0u32; ACTIVE_COLUMNS];
+    match state.config.context_policy {
+        TemporalContextPolicy::BoundWinners => {
+            if state.previous_context != state.previous_winner_context {
+                return Err(CheckpointV1StateError::ContextInvariant);
+            }
+            for (index, column) in context_columns.iter_mut().enumerate() {
+                let winner = state.previous_context[index];
+                *column = checkpoint_v1_owner_column(&state, base_total, winner)
+                    .ok_or(CheckpointV1StateError::ContextInvariant)?;
+                let expected_relay = state
+                    .relay_offset
+                    .checked_add(winner)
+                    .ok_or(CheckpointV1StateError::ContextInvariant)?;
+                if state.previous_context[ACTIVE_COLUMNS + index] != expected_relay {
+                    return Err(CheckpointV1StateError::ContextInvariant);
+                }
+            }
+        }
+        TemporalContextPolicy::GenericAfferents => {
+            for (index, column) in context_columns.iter_mut().enumerate() {
+                let source = state.previous_context[index];
+                *column = source
+                    .checked_sub(state.proximal_offset)
+                    .filter(|column| *column < state.config.column_count)
+                    .ok_or(CheckpointV1StateError::ContextInvariant)?;
+                let expected_source_relay = state
+                    .proximal_relay_offset
+                    .checked_add(*column)
+                    .ok_or(CheckpointV1StateError::ContextInvariant)?;
+                if state.previous_context[ACTIVE_COLUMNS + index] != expected_source_relay {
+                    return Err(CheckpointV1StateError::ContextInvariant);
+                }
+
+                let winner = state.previous_winner_context[index];
+                if checkpoint_v1_owner_column(&state, base_total, winner) != Some(*column) {
+                    return Err(CheckpointV1StateError::ContextInvariant);
+                }
+                let expected_winner_relay = state
+                    .relay_offset
+                    .checked_add(winner)
+                    .ok_or(CheckpointV1StateError::ContextInvariant)?;
+                if state.previous_winner_context[ACTIVE_COLUMNS + index] != expected_winner_relay {
+                    return Err(CheckpointV1StateError::ContextInvariant);
+                }
+            }
+        }
+    }
+    if context_columns.windows(2).any(|pair| pair[0] >= pair[1])
+        || state
+            .token_codebook
+            .iter()
+            .filter(|code| code.columns == context_columns)
+            .count()
+            != 1
+    {
+        return Err(CheckpointV1StateError::ContextInvariant);
+    }
+    Ok(())
+}
+
+fn checkpoint_v1_owner_column(
+    state: &CheckpointV1StateView<'_>,
+    base_total: u32,
+    owner: u32,
+) -> Option<u32> {
+    let base_width = u32::from(state.config.base_cells_per_column);
+    if owner < base_total {
+        return Some(owner / base_width);
+    }
+    if owner >= state.next_reserve_cell {
+        return None;
+    }
+    let cohort_index =
+        usize::try_from((owner - base_total) / u32::from(state.config.novel_race_cap)).ok()?;
+    state.cohort_columns.get(cohort_index).copied()
+}
+
+fn checkpoint_v1_row_is_reachable(
+    state: &CheckpointV1StateView<'_>,
+    base_total: u32,
+    row: &TemporalSegmentRow,
+) -> bool {
+    let live_pair_count = usize::from(row.live_pair_count);
+    if live_pair_count > PAIRS_PER_SEGMENT
+        || row.normalized_sources[..live_pair_count]
+            .windows(2)
+            .any(|pair| pair[0] >= pair[1])
+        || row.permanence_ticks[..live_pair_count]
+            .iter()
+            .any(|ticks| !(1..=PERMANENCE_MAX_TICKS).contains(ticks))
+        || row.normalized_sources[live_pair_count..]
+            .iter()
+            .any(|source| *source != u32::MAX)
+        || row.permanence_ticks[live_pair_count..]
+            .iter()
+            .any(|ticks| *ticks != 0)
+    {
+        return false;
+    }
+    row.normalized_sources[..live_pair_count]
+        .iter()
+        .copied()
+        .all(|source| match state.config.context_policy {
+            TemporalContextPolicy::BoundWinners => {
+                checkpoint_v1_owner_column(state, base_total, source).is_some()
+            }
+            TemporalContextPolicy::GenericAfferents => source < state.config.column_count,
+        })
+}
+
 pub(crate) fn checkpoint_v1_logical_state_digest(
     stored_body_digest: &[u8; 32],
     scalar_block: &[u8; 32],
@@ -773,7 +1188,7 @@ mod tests {
     use super::*;
     use crate::temporal_runtime::{
         TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy,
-        TemporalPlasticityPolicy, TemporalRuntimeBuildError, TokenCode,
+        TemporalPlasticityPolicy, TemporalRuntimeBuildError, TemporalSegmentInit, TokenCode,
     };
 
     fn identity_runtime(
@@ -871,6 +1286,421 @@ mod tests {
             [0xa5; 32],
             std::array::from_fn(|index| index as u8),
         )
+    }
+
+    fn empty_runtime(context_policy: TemporalContextPolicy) -> TemporalCircuitRuntime {
+        identity_runtime(
+            11,
+            context_policy,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            Vec::new(),
+        )
+        .expect("empty state fixture must build")
+    }
+
+    fn recruited_runtime(context_policy: TemporalContextPolicy) -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 24,
+            segment_capacity: 8,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 2,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let mut members: Vec<Vec<u32>> = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        members[0].extend([22, 23]);
+        let segments = [0, 0, 1, 1, 22].map(|owner| TemporalSegmentInit {
+            owner,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        });
+
+        TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 81],
+            &segments,
+        )
+        .expect("chronologically recruited fixture must build")
+    }
+
+    fn runtime_owned_row(
+        runtime: &TemporalCircuitRuntime,
+        segment_id: u32,
+    ) -> Option<CheckpointV1OwnedRow> {
+        Some(CheckpointV1OwnedRow {
+            owner: runtime.store.runtime_segment_owner(segment_id)?,
+            row: runtime.store.runtime_segment_row(segment_id).ok()?,
+        })
+    }
+
+    fn validate_view(
+        runtime: &TemporalCircuitRuntime,
+        state: CheckpointV1StateView<'_>,
+        column_replay: &mut [u32],
+    ) -> Result<(), CheckpointV1StateError> {
+        validate_checkpoint_v1_state(
+            state,
+            column_replay,
+            |segment_id| runtime_owned_row(runtime, segment_id),
+            |owner| runtime.store.runtime_owner_load(owner),
+        )
+    }
+
+    fn set_reachable_context(runtime: &mut TemporalCircuitRuntime) {
+        let winners: [u32; ACTIVE_COLUMNS] = std::array::from_fn(|index| 2 * index as u32);
+        let winner_context = std::array::from_fn(|index| {
+            if index < ACTIVE_COLUMNS {
+                winners[index]
+            } else {
+                runtime.relay_offset + winners[index - ACTIVE_COLUMNS]
+            }
+        });
+        runtime.previous_winner_context = winner_context;
+        runtime.previous_context = match runtime.config.context_policy {
+            TemporalContextPolicy::BoundWinners => winner_context,
+            TemporalContextPolicy::GenericAfferents => std::array::from_fn(|index| {
+                if index < ACTIVE_COLUMNS {
+                    runtime.proximal_offset + index as u32
+                } else {
+                    runtime.proximal_relay_offset + (index - ACTIVE_COLUMNS) as u32
+                }
+            }),
+        };
+        runtime.previous_context_len = CONTEXT_CELLS_U8;
+        runtime.previous_winner_context_len = CONTEXT_CELLS_U8;
+        runtime.event_count = 1;
+    }
+
+    #[test]
+    fn checkpoint_state_validator_accepts_empty_recruited_and_context_states_for_both_policies() {
+        for policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            let empty = empty_runtime(policy);
+            let mut column_replay = [0u32; ACTIVE_COLUMNS];
+            assert_eq!(
+                validate_checkpoint_v1_runtime_state(&empty, &mut column_replay),
+                Ok(())
+            );
+
+            let recruited = recruited_runtime(policy);
+            assert_eq!(
+                validate_checkpoint_v1_runtime_state(&recruited, &mut column_replay),
+                Ok(())
+            );
+
+            let mut with_context = empty_runtime(policy);
+            set_reachable_context(&mut with_context);
+            assert_eq!(
+                validate_checkpoint_v1_runtime_state(&with_context, &mut column_replay),
+                Ok(())
+            );
+        }
+    }
+
+    #[test]
+    fn checkpoint_state_validator_rejects_scalar_domain_corruption() {
+        let runtime = empty_runtime(TemporalContextPolicy::BoundWinners);
+        let baseline = checkpoint_v1_state_view(&runtime);
+        let mut column_replay = [0u32; ACTIVE_COLUMNS];
+
+        let mut mismatched_lengths = baseline;
+        mismatched_lengths.previous_context_len = CONTEXT_CELLS_U8;
+        assert_eq!(
+            validate_view(&runtime, mismatched_lengths, &mut column_replay),
+            Err(CheckpointV1StateError::ScalarInvariant)
+        );
+
+        let mut impossible_event = baseline;
+        impossible_event.event_count = 1;
+        assert_eq!(
+            validate_view(&runtime, impossible_event, &mut column_replay),
+            Err(CheckpointV1StateError::ScalarInvariant)
+        );
+
+        let mut growth_off_advanced = baseline;
+        growth_off_advanced.config.plasticity_policy = TemporalPlasticityPolicy::GrowthOff;
+        growth_off_advanced.learning_step = 1;
+        assert_eq!(
+            validate_view(&runtime, growth_off_advanced, &mut column_replay),
+            Err(CheckpointV1StateError::ScalarInvariant)
+        );
+
+        let mut explicit_unpoisoned = baseline;
+        explicit_unpoisoned.scientific_stop = Some(TemporalPoisonCode::Unpoisoned);
+        assert_eq!(
+            validate_view(&runtime, explicit_unpoisoned, &mut column_replay),
+            Err(CheckpointV1StateError::ScalarInvariant)
+        );
+    }
+
+    #[test]
+    fn checkpoint_state_validator_rejects_cohort_cursor_and_csr_corruption() {
+        let mut cursor = recruited_runtime(TemporalContextPolicy::BoundWinners);
+        cursor.next_reserve_cell += 1;
+        let mut column_replay = [0u32; ACTIVE_COLUMNS];
+        assert_eq!(
+            validate_checkpoint_v1_runtime_state(&cursor, &mut column_replay),
+            Err(CheckpointV1StateError::LayoutInvariant)
+        );
+
+        let mut cohort = recruited_runtime(TemporalContextPolicy::BoundWinners);
+        cohort.cohort_columns[0] = cohort.config.column_count;
+        assert_eq!(
+            validate_checkpoint_v1_runtime_state(&cohort, &mut column_replay),
+            Err(CheckpointV1StateError::LayoutInvariant)
+        );
+
+        let mut csr = recruited_runtime(TemporalContextPolicy::BoundWinners);
+        csr.column_offsets[1] -= 1;
+        assert_eq!(
+            validate_checkpoint_v1_runtime_state(&csr, &mut column_replay),
+            Err(CheckpointV1StateError::ColumnCsrInvariant)
+        );
+
+        assert_eq!(
+            validate_checkpoint_v1_runtime_state(&csr, &mut column_replay[..ACTIVE_COLUMNS - 1]),
+            Err(CheckpointV1StateError::LayoutInvariant)
+        );
+    }
+
+    #[test]
+    fn checkpoint_state_validator_rederives_offsets_and_fixed_config_domains() {
+        let runtime = empty_runtime(TemporalContextPolicy::BoundWinners);
+        let baseline = checkpoint_v1_state_view(&runtime);
+        let mut column_replay = [0u32; ACTIVE_COLUMNS];
+
+        let mut corrupt_offset = baseline;
+        corrupt_offset.proximal_offset += 1;
+        assert_eq!(
+            validate_view(&runtime, corrupt_offset, &mut column_replay),
+            Err(CheckpointV1StateError::LayoutInvariant)
+        );
+
+        let mut unsupported_race_cap = baseline;
+        unsupported_race_cap.config.novel_race_cap = 9;
+        assert_eq!(
+            validate_view(&runtime, unsupported_race_cap, &mut column_replay),
+            Err(CheckpointV1StateError::LayoutInvariant)
+        );
+
+        let mut oversized_segment_capacity = baseline;
+        oversized_segment_capacity.config.segment_capacity =
+            u32::MAX / PAIRS_PER_SEGMENT as u32 + 1;
+        assert_eq!(
+            validate_view(&runtime, oversized_segment_capacity, &mut column_replay,),
+            Err(CheckpointV1StateError::LayoutInvariant)
+        );
+    }
+
+    #[test]
+    fn checkpoint_state_validator_rejects_owner_row_source_and_load_corruption() {
+        let bound = recruited_runtime(TemporalContextPolicy::BoundWinners);
+        let state = checkpoint_v1_state_view(&bound);
+        let mut column_replay = [0u32; ACTIVE_COLUMNS];
+
+        assert_eq!(
+            validate_checkpoint_v1_state(
+                state,
+                &mut column_replay,
+                |segment_id| {
+                    let mut owned = runtime_owned_row(&bound, segment_id)?;
+                    if segment_id == 0 {
+                        owned.owner = state.next_reserve_cell;
+                    }
+                    Some(owned)
+                },
+                |owner| bound.store.runtime_owner_load(owner),
+            ),
+            Err(CheckpointV1StateError::LearnedStateInvariant)
+        );
+
+        assert_eq!(
+            validate_checkpoint_v1_state(
+                state,
+                &mut column_replay,
+                |segment_id| {
+                    let mut owned = runtime_owned_row(&bound, segment_id)?;
+                    if segment_id == 0 {
+                        owned.row.live_pair_count = 1;
+                        owned.row.normalized_sources[0] = 0;
+                        owned.row.permanence_ticks[0] = 1;
+                        owned.row.normalized_sources[1] = 0;
+                    }
+                    Some(owned)
+                },
+                |owner| bound.store.runtime_owner_load(owner),
+            ),
+            Err(CheckpointV1StateError::LearnedStateInvariant)
+        );
+
+        assert_eq!(
+            validate_checkpoint_v1_state(
+                state,
+                &mut column_replay,
+                |segment_id| {
+                    let mut owned = runtime_owned_row(&bound, segment_id)?;
+                    if segment_id == 0 {
+                        owned.row.live_pair_count = 1;
+                        owned.row.normalized_sources[0] = state.next_reserve_cell;
+                        owned.row.permanence_ticks[0] = 1;
+                    }
+                    Some(owned)
+                },
+                |owner| bound.store.runtime_owner_load(owner),
+            ),
+            Err(CheckpointV1StateError::LearnedStateInvariant)
+        );
+
+        assert_eq!(
+            validate_checkpoint_v1_state(
+                state,
+                &mut column_replay,
+                |segment_id| runtime_owned_row(&bound, segment_id),
+                |owner| {
+                    if owner == 0 {
+                        Some(state.config.max_segments_per_cell + 1)
+                    } else {
+                        bound.store.runtime_owner_load(owner)
+                    }
+                },
+            ),
+            Err(CheckpointV1StateError::LearnedStateInvariant)
+        );
+
+        let generic = recruited_runtime(TemporalContextPolicy::GenericAfferents);
+        let generic_state = checkpoint_v1_state_view(&generic);
+        assert_eq!(
+            validate_checkpoint_v1_state(
+                generic_state,
+                &mut column_replay,
+                |segment_id| {
+                    let mut owned = runtime_owned_row(&generic, segment_id)?;
+                    if segment_id == 0 {
+                        owned.row.live_pair_count = 1;
+                        owned.row.normalized_sources[0] = generic_state.config.column_count;
+                        owned.row.permanence_ticks[0] = 1;
+                    }
+                    Some(owned)
+                },
+                |owner| generic.store.runtime_owner_load(owner),
+            ),
+            Err(CheckpointV1StateError::LearnedStateInvariant)
+        );
+    }
+
+    #[test]
+    fn checkpoint_state_validator_rejects_chronology_without_recount_scratch() {
+        let runtime = recruited_runtime(TemporalContextPolicy::BoundWinners);
+        let state = checkpoint_v1_state_view(&runtime);
+        let mut column_replay = [0u32; ACTIVE_COLUMNS];
+
+        assert_eq!(
+            validate_checkpoint_v1_state(
+                state,
+                &mut column_replay,
+                |segment_id| runtime_owned_row(&runtime, segment_id),
+                |owner| {
+                    if owner == 0 {
+                        Some(1)
+                    } else {
+                        runtime.store.runtime_owner_load(owner)
+                    }
+                },
+            ),
+            Err(CheckpointV1StateError::CohortChronologyInvariant)
+        );
+
+        assert_eq!(
+            validate_checkpoint_v1_state(
+                state,
+                &mut column_replay,
+                |segment_id| {
+                    let mut owned = runtime_owned_row(&runtime, segment_id)?;
+                    if owned.owner == 22 {
+                        owned.owner = 0;
+                    }
+                    Some(owned)
+                },
+                |owner| {
+                    if owner == 22 {
+                        Some(0)
+                    } else {
+                        runtime.store.runtime_owner_load(owner)
+                    }
+                },
+            ),
+            Err(CheckpointV1StateError::CohortChronologyInvariant)
+        );
+    }
+
+    #[test]
+    fn checkpoint_state_validator_rejects_context_order_relay_and_token_column_corruption() {
+        for policy in [
+            TemporalContextPolicy::BoundWinners,
+            TemporalContextPolicy::GenericAfferents,
+        ] {
+            let mut runtime = empty_runtime(policy);
+            set_reachable_context(&mut runtime);
+            let mut column_replay = [0u32; ACTIVE_COLUMNS];
+
+            let source_context = if policy == TemporalContextPolicy::BoundWinners {
+                &mut runtime.previous_winner_context
+            } else {
+                &mut runtime.previous_context
+            };
+            source_context.swap(0, 1);
+            source_context.swap(ACTIVE_COLUMNS, ACTIVE_COLUMNS + 1);
+            if policy == TemporalContextPolicy::BoundWinners {
+                runtime.previous_context = runtime.previous_winner_context;
+            }
+            assert_eq!(
+                validate_checkpoint_v1_runtime_state(&runtime, &mut column_replay),
+                Err(CheckpointV1StateError::ContextInvariant)
+            );
+
+            set_reachable_context(&mut runtime);
+            runtime.previous_context[ACTIVE_COLUMNS + 3] += 1;
+            if policy == TemporalContextPolicy::BoundWinners {
+                runtime.previous_winner_context = runtime.previous_context;
+            }
+            assert_eq!(
+                validate_checkpoint_v1_runtime_state(&runtime, &mut column_replay),
+                Err(CheckpointV1StateError::ContextInvariant)
+            );
+
+            set_reachable_context(&mut runtime);
+            runtime.previous_winner_context[4] = 2 * 5;
+            runtime.previous_winner_context[ACTIVE_COLUMNS + 4] = runtime.relay_offset + 2 * 5;
+            if policy == TemporalContextPolicy::BoundWinners {
+                runtime.previous_context = runtime.previous_winner_context;
+            }
+            assert_eq!(
+                validate_checkpoint_v1_runtime_state(&runtime, &mut column_replay),
+                Err(CheckpointV1StateError::ContextInvariant)
+            );
+        }
     }
 
     #[test]
