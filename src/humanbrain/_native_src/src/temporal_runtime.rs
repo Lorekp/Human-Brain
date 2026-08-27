@@ -7,8 +7,8 @@
 //! can inject winners, segment classes, currents, or a prepared mutation.
 //!
 //! Claim boundary: this module owns deterministic physical recognition and the
-//! reserve-free native learning transaction. It has no reserve growth,
-//! checkpoint format, public ABI, Python wrapper, or outcome-evaluation path.
+//! aggregate reserve-aware native learning transaction. It has no checkpoint
+//! format, public ABI, Python wrapper, or outcome-evaluation path.
 
 use crate::random123::{philox2x64_10, sample_without_replacement};
 use crate::temporal::{
@@ -245,7 +245,25 @@ struct NovelCandidate {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct PreparedReservePlan {
+    cohort_columns: [u32; ACTIVE_COLUMNS],
+    cohort_count: u8,
+    next_reserve_cell: u32,
+}
+
+impl PreparedReservePlan {
+    fn cohort_count(self) -> usize {
+        usize::from(self.cohort_count)
+    }
+
+    fn recruits(self) -> bool {
+        self.cohort_count != 0
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct PreparedLearnStep {
+    reserve: PreparedReservePlan,
     active_segment_count: usize,
     winner_cells: [u32; ACTIVE_COLUMNS],
     winner_best_active: [u32; ACTIVE_COLUMNS],
@@ -283,17 +301,44 @@ const EMPTY_NOVEL_CANDIDATE: NovelCandidate = NovelCandidate {
     load: 0,
     afferent_score: 0,
 };
+const EMPTY_RESERVE_PLAN: PreparedReservePlan = PreparedReservePlan {
+    cohort_columns: [NONE; ACTIVE_COLUMNS],
+    cohort_count: 0,
+    next_reserve_cell: 0,
+};
 const EMPTY_SEGMENT_ROW: TemporalSegmentRow = TemporalSegmentRow {
     normalized_sources: [NONE; PAIRS_PER_SEGMENT],
     permanence_ticks: [0; PAIRS_PER_SEGMENT],
     live_pair_count: 0,
 };
 
+/// Append into capacity proven by the aggregate transaction preflight without
+/// making an allocation-capable `Vec::push` call after commit entry.
+fn append_prevalidated_slice<T: Copy>(values: &mut Vec<T>, appended: &[T]) {
+    let original_len = values.len();
+    debug_assert!(values.capacity() - original_len >= appended.len());
+    for (destination, value) in values.spare_capacity_mut()[..appended.len()]
+        .iter_mut()
+        .zip(appended.iter().copied())
+    {
+        destination.write(value);
+    }
+    // SAFETY: aggregate preflight proved the spare capacity and the loop above
+    // initialized exactly `appended.len()` consecutive elements.
+    unsafe {
+        values.set_len(original_len + appended.len());
+    }
+}
+
 pub(crate) struct TemporalCircuitRuntime {
     config: TemporalCircuitConfig,
     token_codebook: Vec<TokenCode>,
     column_offsets: Vec<usize>,
     column_cells: Vec<u32>,
+    alternate_column_offsets: Vec<usize>,
+    alternate_column_cells: Vec<u32>,
+    cohort_columns: Vec<u32>,
+    next_reserve_cell: u32,
     threshold_offsets_mv: Vec<f64>,
     store: TemporalStore,
     recognition_scratch: Vec<TemporalOwnerDiagnostic>,
@@ -394,9 +439,10 @@ impl TemporalCircuitRuntime {
         }
 
         let mut column_offsets = Vec::with_capacity(column_count + 1);
-        let mut column_cells = Vec::new();
+        let mut column_cells = Vec::with_capacity(owner_count);
         let mut committed = vec![false; owner_count];
-        let mut recruited = Vec::new();
+        let mut recruited = Vec::with_capacity(owner_count - base_total);
+        let mut cohort_records = Vec::new();
         column_offsets.push(0);
         for (column, cells) in column_members.iter().enumerate() {
             if cells.len() < base_width
@@ -436,7 +482,7 @@ impl TemporalCircuitRuntime {
                 }
                 committed[cell_index] = true;
             }
-            for cohort in cells[base_width..].chunks_exact(race_cap) {
+            for (cohort_index, cohort) in cells[base_width..].chunks_exact(race_cap).enumerate() {
                 if cohort
                     .windows(2)
                     .any(|pair| pair[1] != pair[0].saturating_add(1))
@@ -445,6 +491,7 @@ impl TemporalCircuitRuntime {
                         "reserve cohorts must be contiguous physical identities",
                     ));
                 }
+                cohort_records.push((cohort[0], column, base_width + cohort_index * race_cap));
             }
             column_cells.extend_from_slice(cells);
             column_offsets.push(column_cells.len());
@@ -459,6 +506,35 @@ impl TemporalCircuitRuntime {
                 "committed reserve cells must form one contiguous global prefix",
             ));
         }
+        cohort_records.sort_unstable_by_key(|record| record.0);
+        let maximum_cohort_count = (owner_count - base_total) / race_cap;
+        let mut cohort_columns = Vec::with_capacity(maximum_cohort_count);
+        for (cohort_index, &(first_gid, column, _column_offset)) in
+            cohort_records.iter().enumerate()
+        {
+            let expected_first = base_total
+                .checked_add(cohort_index.checked_mul(race_cap).ok_or(
+                    TemporalRuntimeBuildError::Invalid("reserve cohort identity overflows usize"),
+                )?)
+                .ok_or(TemporalRuntimeBuildError::Invalid(
+                    "reserve cohort identity overflows usize",
+                ))?;
+            if first_gid as usize != expected_first {
+                return Err(TemporalRuntimeBuildError::Invalid(
+                    "reserve cohorts do not cover the deterministic global prefix",
+                ));
+            }
+            cohort_columns.push(column as u32);
+        }
+        let next_reserve_index =
+            base_total
+                .checked_add(recruited.len())
+                .ok_or(TemporalRuntimeBuildError::Invalid(
+                    "reserve cursor overflows usize",
+                ))?;
+        let next_reserve_cell = u32::try_from(next_reserve_index).map_err(|_| {
+            TemporalRuntimeBuildError::Invalid("reserve cursor exceeds the uint32 domain")
+        })?;
 
         if token_codebook.is_empty() {
             return Err(TemporalRuntimeBuildError::Invalid(
@@ -556,6 +632,45 @@ impl TemporalCircuitRuntime {
                 ));
             }
         }
+        let mut predecessor_counts = vec![base_width; column_count];
+        for &(_first_gid, column, cohort_offset) in &cohort_records {
+            let cells = &column_members[column];
+            let predecessor_end = predecessor_counts[column];
+            let cohort_end =
+                cohort_offset
+                    .checked_add(race_cap)
+                    .ok_or(TemporalRuntimeBuildError::Invalid(
+                        "reserve cohort bounds overflow usize",
+                    ))?;
+            if cohort_offset != predecessor_end || cohort_end > cells.len() {
+                return Err(TemporalRuntimeBuildError::Invalid(
+                    "reserve cohort order does not match its target column",
+                ));
+            }
+            if !cells[cohort_offset..cohort_end]
+                .iter()
+                .copied()
+                .any(|owner| {
+                    store
+                        .runtime_owner_load(owner)
+                        .is_some_and(|load| load != 0)
+                })
+            {
+                return Err(TemporalRuntimeBuildError::Invalid(
+                    "committed reserve cohort has no owned segment",
+                ));
+            }
+            if cells[..predecessor_end]
+                .iter()
+                .copied()
+                .any(|owner| store.runtime_owner_load(owner) != Some(config.max_segments_per_cell))
+            {
+                return Err(TemporalRuntimeBuildError::Invalid(
+                    "reserve cohort was recruited before its column predecessors were exhausted",
+                ));
+            }
+            predecessor_counts[column] = cohort_end;
+        }
         let max_column_occupancy = column_offsets
             .windows(2)
             .map(|pair| pair[1] - pair[0])
@@ -563,20 +678,34 @@ impl TemporalCircuitRuntime {
             .ok_or(TemporalRuntimeBuildError::Invalid(
                 "temporal circuit must contain at least one column",
             ))?;
-        let race_scratch = CoupledRaceScratch::try_new(max_column_occupancy)
+        let remaining_full_cohort_cells = (owner_count - column_cells.len()) / race_cap * race_cap;
+        let max_prospective_column_occupancy = max_column_occupancy
+            .checked_add(remaining_full_cohort_cells)
+            .ok_or(TemporalRuntimeBuildError::Invalid(
+                "prospective column occupancy overflows usize",
+            ))?;
+        let race_scratch = CoupledRaceScratch::try_new(max_prospective_column_occupancy)
             .map_err(TemporalRuntimeBuildError::Invalid)?;
-        let column_drive_scratch = vec![EMPTY_DRIVE; max_column_occupancy];
-        let novel_candidate_scratch = vec![EMPTY_NOVEL_CANDIDATE; max_column_occupancy];
+        let column_drive_scratch = vec![EMPTY_DRIVE; max_prospective_column_occupancy];
+        let novel_candidate_scratch = vec![EMPTY_NOVEL_CANDIDATE; max_prospective_column_occupancy];
+        let active_segment_scratch = match config.plasticity_policy {
+            TemporalPlasticityPolicy::GrowthOff => Vec::new(),
+            TemporalPlasticityPolicy::Plastic => vec![NONE; segment_capacity],
+        };
 
         Ok(Self {
             config,
             token_codebook,
             column_offsets,
             column_cells,
+            alternate_column_offsets: Vec::with_capacity(column_count + 1),
+            alternate_column_cells: Vec::with_capacity(owner_count),
+            cohort_columns,
+            next_reserve_cell,
             threshold_offsets_mv,
             store,
             recognition_scratch: vec![EMPTY_DIAGNOSTIC; owner_count],
-            active_segment_scratch: vec![NONE; segment_capacity],
+            active_segment_scratch,
             column_drive_scratch,
             novel_candidate_scratch,
             race_scratch,
@@ -709,14 +838,20 @@ impl TemporalCircuitRuntime {
             };
         }
 
-        if mode == TemporalStepMode::Learn
+        let reserve_plan = if mode == TemporalStepMode::Learn
             && self.config.plasticity_policy == TemporalPlasticityPolicy::Plastic
             && self.previous_context_len != 0
         {
-            if let Err(stop) = self.preflight_reserve_requirement(&columns, diagnostic_count) {
-                return self.fail(stop);
+            match self.preflight_reserve_plan(&columns, diagnostic_count) {
+                Ok(plan) => plan,
+                Err(stop) => return self.fail(stop),
             }
-        }
+        } else {
+            PreparedReservePlan {
+                next_reserve_cell: self.next_reserve_cell,
+                ..EMPTY_RESERVE_PLAN
+            }
+        };
 
         let mut winner_spikes = [EMPTY_SPIKE; ACTIVE_COLUMNS];
         let mut basket_spikes = [EMPTY_SPIKE; ACTIVE_COLUMNS];
@@ -726,10 +861,11 @@ impl TemporalCircuitRuntime {
         let mut winner_best_matching = [NONE; ACTIVE_COLUMNS];
         let mut predicted_columns = 0u8;
         for (index, &column) in columns.iter().enumerate() {
-            let candidate_count = match self.prepare_column_drives(column, diagnostic_count) {
-                Ok(candidate_count) => candidate_count,
-                Err(stop) => return self.fail(stop),
-            };
+            let candidate_count =
+                match self.prepare_column_drives(column, diagnostic_count, reserve_plan) {
+                    Ok(candidate_count) => candidate_count,
+                    Err(stop) => return self.fail(stop),
+                };
             let basket_id = self.basket_offset + column;
             let candidates = &self.column_drive_scratch[..candidate_count];
             let race = match coupled_first_spike_race(
@@ -830,6 +966,7 @@ impl TemporalCircuitRuntime {
                 winner_spikes.map(|spike| spike.cell_id),
                 winner_best_active,
                 winner_best_matching,
+                reserve_plan,
             ) {
                 Ok(prepared) => Some(prepared),
                 Err(stop) => return self.fail(stop),
@@ -901,6 +1038,20 @@ impl TemporalCircuitRuntime {
             ))
     }
 
+    fn prospective_owner_load(
+        &self,
+        owner: u32,
+        reserve: PreparedReservePlan,
+    ) -> Result<u8, TemporalCircuitStop> {
+        if reserve.recruits()
+            && owner >= self.next_reserve_cell
+            && owner < reserve.next_reserve_cell
+        {
+            return Ok(0);
+        }
+        self.owner_load(owner)
+    }
+
     fn diagnostic_for_owner(
         &self,
         owner: u32,
@@ -917,6 +1068,7 @@ impl TemporalCircuitRuntime {
         &mut self,
         column: u32,
         diagnostic_count: usize,
+        reserve: PreparedReservePlan,
     ) -> Result<usize, TemporalCircuitStop> {
         if diagnostic_count > self.recognition_scratch.len() {
             return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
@@ -924,21 +1076,25 @@ impl TemporalCircuitRuntime {
             ));
         }
         let column_index = column as usize;
-        let Some((&cell_start, &cell_end)) = self
-            .column_offsets
+        let (column_offsets, column_cells) = if reserve.recruits() {
+            (&self.alternate_column_offsets, &self.alternate_column_cells)
+        } else {
+            (&self.column_offsets, &self.column_cells)
+        };
+        let Some((&cell_start, &cell_end)) = column_offsets
             .get(column_index)
-            .zip(self.column_offsets.get(column_index + 1))
+            .zip(column_offsets.get(column_index + 1))
         else {
             return Err(TemporalCircuitStop::StoreOrPlanInvariant(
                 "token code references a missing column",
             ));
         };
-        if cell_start > cell_end || cell_end > self.column_cells.len() {
+        if cell_start > cell_end || cell_end > column_cells.len() {
             return Err(TemporalCircuitStop::StoreOrPlanInvariant(
                 "column CSR bounds are malformed",
             ));
         }
-        let cells = &self.column_cells[cell_start..cell_end];
+        let cells = &column_cells[cell_start..cell_end];
         if cells.len() > self.column_drive_scratch.len()
             || cells.len() > self.novel_candidate_scratch.len()
         {
@@ -1026,7 +1182,7 @@ impl TemporalCircuitRuntime {
                 };
                 self.column_drive_scratch[rank].current_pa = CandidateClass::Novel {
                     rank: rank as u8,
-                    load: self.owner_load(cell_id)?,
+                    load: self.prospective_owner_load(cell_id, reserve)?,
                 }
                 .current_pa();
             }
@@ -1039,7 +1195,7 @@ impl TemporalCircuitRuntime {
                 self.novel_candidate_scratch[novel_candidate_count] = NovelCandidate {
                     cell_id,
                     column_offset,
-                    load: self.owner_load(cell_id)?,
+                    load: self.prospective_owner_load(cell_id, reserve)?,
                     afferent_score: afferent_score(
                         self.config.construction_seed,
                         &self.previous_context[..usize::from(self.previous_context_len)],
@@ -1066,13 +1222,13 @@ impl TemporalCircuitRuntime {
 
         if let Some(offset) = matching_offset {
             self.column_drive_scratch[offset].current_pa = CandidateClass::Matching {
-                load: self.owner_load(matching_first)?,
+                load: self.prospective_owner_load(matching_first, reserve)?,
             }
             .current_pa();
         }
         if let Some(offset) = active_offset {
             self.column_drive_scratch[offset].current_pa = CandidateClass::Active {
-                load: self.owner_load(active_first)?,
+                load: self.prospective_owner_load(active_first, reserve)?,
             }
             .current_pa();
         }
@@ -1084,11 +1240,45 @@ impl TemporalCircuitRuntime {
         Ok(cells.len())
     }
 
-    fn preflight_reserve_requirement(
-        &self,
+    fn preflight_reserve_plan(
+        &mut self,
         columns: &[u32; ACTIVE_COLUMNS],
         diagnostic_count: usize,
-    ) -> Result<(), TemporalCircuitStop> {
+    ) -> Result<PreparedReservePlan, TemporalCircuitStop> {
+        if diagnostic_count > self.recognition_scratch.len() {
+            return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "recognition output exceeds its construction-time scratch",
+            ));
+        }
+        let column_count = usize::try_from(self.config.column_count).map_err(|_| {
+            TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "column count exceeds the runtime usize domain",
+            )
+        })?;
+        let expected_offset_count = column_count.checked_add(1).ok_or(
+            TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "column-offset shape overflows usize",
+            ),
+        )?;
+        if self.column_offsets.len() != expected_offset_count
+            || self.column_offsets.first().copied() != Some(0)
+            || self.column_offsets.last().copied() != Some(self.column_cells.len())
+            || self.column_offsets.windows(2).any(|pair| pair[0] > pair[1])
+            || self.column_offsets.capacity() < expected_offset_count
+            || self.alternate_column_offsets.capacity() < expected_offset_count
+            || self.column_cells.capacity() < self.config.max_pyramidal_cells as usize
+            || self.alternate_column_cells.capacity() < self.config.max_pyramidal_cells as usize
+            || u32::try_from(self.column_cells.len()).ok() != Some(self.next_reserve_cell)
+        {
+            return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "column CSR backing violates its construction-time contract",
+            ));
+        }
+
+        let mut plan = PreparedReservePlan {
+            next_reserve_cell: self.next_reserve_cell,
+            ..EMPTY_RESERVE_PLAN
+        };
         for &column in columns {
             let column_index = column as usize;
             let Some((&cell_start, &cell_end)) = self
@@ -1124,10 +1314,110 @@ impl TemporalCircuitRuntime {
                 }
             }
             if exhausted {
-                return Err(TemporalCircuitStop::ReserveCellCapacity { column });
+                let plan_index = plan.cohort_count();
+                if plan_index >= plan.cohort_columns.len() {
+                    return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                        "one token requested more reserve cohorts than fixed plan scratch",
+                    ));
+                }
+                plan.cohort_columns[plan_index] = column;
+                plan.cohort_count += 1;
             }
         }
-        Ok(())
+        if !plan.recruits() {
+            return Ok(plan);
+        }
+
+        let required_cells = u64::from(plan.cohort_count)
+            .checked_mul(u64::from(self.config.novel_race_cap))
+            .ok_or(TemporalCircuitStop::ReserveCellCapacity {
+                column: plan.cohort_columns[0],
+            })?;
+        let prospective_next = u64::from(self.next_reserve_cell)
+            .checked_add(required_cells)
+            .filter(|next| *next <= u64::from(self.config.max_pyramidal_cells))
+            .ok_or(TemporalCircuitStop::ReserveCellCapacity {
+                column: plan.cohort_columns[0],
+            })?;
+        plan.next_reserve_cell = prospective_next as u32;
+
+        let prospective_cohort_count = self
+            .cohort_columns
+            .len()
+            .checked_add(plan.cohort_count())
+            .ok_or(
+            TemporalCircuitStop::PreallocatedCapacityInvariant("cohort log length overflows usize"),
+        )?;
+        let required_cells_usize = usize::try_from(required_cells).map_err(|_| {
+            TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "prospective reserve cells exceed the runtime usize domain",
+            )
+        })?;
+        let prospective_cell_count = self
+            .column_cells
+            .len()
+            .checked_add(required_cells_usize)
+            .ok_or(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "prospective column CSR length overflows usize",
+            ))?;
+        if prospective_cohort_count > self.cohort_columns.capacity()
+            || prospective_cell_count > self.alternate_column_cells.capacity()
+        {
+            return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "reserve plan exceeds construction-time CSR or cohort-log capacity",
+            ));
+        }
+
+        self.alternate_column_offsets.clear();
+        self.alternate_column_cells.clear();
+        self.alternate_column_offsets.push(0);
+        let mut planned_index = 0usize;
+        for column_index in 0..column_count {
+            let cell_start = self.column_offsets[column_index];
+            let cell_end = self.column_offsets[column_index + 1];
+            if cell_start > cell_end || cell_end > self.column_cells.len() {
+                return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                    "column CSR bounds are malformed",
+                ));
+            }
+            self.alternate_column_cells
+                .extend_from_slice(&self.column_cells[cell_start..cell_end]);
+            if planned_index < plan.cohort_count()
+                && plan.cohort_columns[planned_index] as usize == column_index
+            {
+                let cohort_start = u64::from(self.next_reserve_cell)
+                    .checked_add(
+                        (planned_index as u64)
+                            .checked_mul(u64::from(self.config.novel_race_cap))
+                            .ok_or(TemporalCircuitStop::StoreOrPlanInvariant(
+                                "prospective cohort address overflows u64",
+                            ))?,
+                    )
+                    .ok_or(TemporalCircuitStop::StoreOrPlanInvariant(
+                        "prospective cohort address overflows u64",
+                    ))?;
+                for offset in 0..u32::from(self.config.novel_race_cap) {
+                    let cell = u32::try_from(cohort_start + u64::from(offset)).map_err(|_| {
+                        TemporalCircuitStop::StoreOrPlanInvariant(
+                            "prospective cohort identity exceeds uint32",
+                        )
+                    })?;
+                    self.alternate_column_cells.push(cell);
+                }
+                planned_index += 1;
+            }
+            self.alternate_column_offsets
+                .push(self.alternate_column_cells.len());
+        }
+        if planned_index != plan.cohort_count()
+            || self.alternate_column_offsets.len() != expected_offset_count
+            || self.alternate_column_cells.len() != prospective_cell_count
+        {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "prospective reserve CSR does not match the aggregate plan",
+            ));
+        }
+        Ok(plan)
     }
 
     fn normalized_prior_sources(
@@ -1216,6 +1506,7 @@ impl TemporalCircuitRuntime {
         winner_cells: [u32; ACTIVE_COLUMNS],
         winner_best_active: [u32; ACTIVE_COLUMNS],
         winner_best_matching: [u32; ACTIVE_COLUMNS],
+        reserve: PreparedReservePlan,
     ) -> Result<PreparedLearnStep, TemporalCircuitStop> {
         if active_segment_count > self.active_segment_scratch.len() {
             return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
@@ -1384,6 +1675,7 @@ impl TemporalCircuitRuntime {
             },
         )?;
         Ok(PreparedLearnStep {
+            reserve,
             active_segment_count,
             winner_cells,
             winner_best_active,
@@ -1401,6 +1693,24 @@ impl TemporalCircuitRuntime {
     fn commit_prevalidated_learning(&mut self, prepared: PreparedLearnStep) {
         debug_assert!(prepared.active_segment_count <= self.active_segment_scratch.len());
         debug_assert!(usize::from(prepared.append_count) <= ACTIVE_COLUMNS);
+        if prepared.reserve.recruits() {
+            debug_assert_eq!(self.next_reserve_cell, self.column_cells.len() as u32);
+            debug_assert!(
+                self.cohort_columns.len() + prepared.reserve.cohort_count()
+                    <= self.cohort_columns.capacity()
+            );
+            debug_assert_eq!(
+                self.alternate_column_cells.len() as u32,
+                prepared.reserve.next_reserve_cell
+            );
+            std::mem::swap(&mut self.column_offsets, &mut self.alternate_column_offsets);
+            std::mem::swap(&mut self.column_cells, &mut self.alternate_column_cells);
+            self.next_reserve_cell = prepared.reserve.next_reserve_cell;
+            append_prevalidated_slice(
+                &mut self.cohort_columns,
+                &prepared.reserve.cohort_columns[..prepared.reserve.cohort_count()],
+            );
+        }
         for active_index in 0..prepared.active_segment_count {
             let segment_id = self.active_segment_scratch[active_index];
             let mut reinforced = false;
@@ -2553,18 +2863,56 @@ mod tests {
     fn construction_requires_complete_compact_reserve_cohorts_and_explicit_capacity() {
         let mut reserve_config = config(22, 1, TemporalContextPolicy::BoundWinners);
         reserve_config.max_pyramidal_cells = 24;
-        reserve_config.segment_capacity = 1;
+        reserve_config.segment_capacity = 3;
+        reserve_config.max_segments_per_cell = 1;
         let mut complete = base_members(reserve_config);
         complete[0].extend([22, 23]);
         let offsets = vec![0.0; physical_count(reserve_config)];
-        assert!(TemporalCircuitRuntime::new(
+        let predecessor = TemporalSegmentInit {
+            owner: 0,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        };
+        let cohort_witness = TemporalSegmentInit {
+            owner: 22,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        };
+        let runtime = TemporalCircuitRuntime::new(
             reserve_config,
             two_token_codebook(),
             complete.clone(),
             offsets.clone(),
-            &[],
+            &[predecessor.clone(), cohort_witness.clone()],
         )
-        .is_ok());
+        .unwrap();
+        assert_eq!(runtime.cohort_columns, vec![0]);
+        assert_eq!(runtime.next_reserve_cell, 24);
+
+        assert!(matches!(
+            TemporalCircuitRuntime::new(
+                reserve_config,
+                two_token_codebook(),
+                complete.clone(),
+                offsets.clone(),
+                std::slice::from_ref(&predecessor),
+            ),
+            Err(TemporalRuntimeBuildError::Invalid(
+                "committed reserve cohort has no owned segment"
+            ))
+        ));
+        assert!(matches!(
+            TemporalCircuitRuntime::new(
+                reserve_config,
+                two_token_codebook(),
+                complete.clone(),
+                offsets.clone(),
+                &[cohort_witness],
+            ),
+            Err(TemporalRuntimeBuildError::Invalid(
+                "reserve cohort was recruited before its column predecessors were exhausted"
+            ))
+        ));
 
         complete[0].pop();
         assert!(matches!(
@@ -2573,7 +2921,7 @@ mod tests {
                 two_token_codebook(),
                 complete,
                 offsets,
-                &[],
+                &[predecessor],
             ),
             Err(TemporalRuntimeBuildError::Invalid(_))
         ));
@@ -2599,6 +2947,60 @@ mod tests {
                 &[],
             ),
             Err(TemporalRuntimeBuildError::Invalid(_))
+        ));
+    }
+
+    #[test]
+    fn construction_rebuilds_global_cohort_order_and_replays_earlier_predecessors() {
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.max_pyramidal_cells = 28;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.segment_capacity = 6;
+        let mut members = base_members(circuit_config);
+        members[0].extend([24, 25]);
+        members[5].extend([22, 23, 26, 27]);
+        let empty_row = |owner| TemporalSegmentInit {
+            owner,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        };
+        let valid = [
+            empty_row(5),
+            empty_row(22),
+            empty_row(23),
+            empty_row(0),
+            empty_row(24),
+            empty_row(26),
+        ];
+        let runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            two_token_codebook(),
+            members.clone(),
+            vec![0.0; physical_count(circuit_config)],
+            &valid,
+        )
+        .unwrap();
+        assert_eq!(runtime.cohort_columns, vec![5, 0, 5]);
+        assert_eq!(runtime.next_reserve_cell, 28);
+
+        let premature_later = [
+            empty_row(5),
+            empty_row(22),
+            empty_row(0),
+            empty_row(24),
+            empty_row(26),
+        ];
+        assert!(matches!(
+            TemporalCircuitRuntime::new(
+                circuit_config,
+                two_token_codebook(),
+                members,
+                vec![0.0; physical_count(circuit_config)],
+                &premature_later,
+            ),
+            Err(TemporalRuntimeBuildError::Invalid(
+                "reserve cohort was recruited before its column predecessors were exhausted"
+            ))
         ));
     }
 
@@ -2916,6 +3318,8 @@ mod tests {
             PYTHON_OFFSET_BITS.map(f64::from_bits).to_vec(),
             &[],
         );
+        assert!(runtime.active_segment_scratch.is_empty());
+        assert_eq!(runtime.active_segment_scratch.capacity(), 0);
         let segment_count = runtime.store.runtime_segment_count();
 
         let learned = runtime
@@ -3076,11 +3480,12 @@ mod tests {
     }
 
     #[test]
-    fn reserve_required_stop_is_atomic_and_latches_the_frozen_capacity_code() {
+    fn eleven_exhausted_columns_recruit_full_cohorts_in_token_order_atomically() {
         let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
         circuit_config.novel_race_cap = 8;
         circuit_config.max_segments_per_cell = 1;
-        circuit_config.max_pyramidal_cells += u32::from(circuit_config.novel_race_cap);
+        circuit_config.max_pyramidal_cells +=
+            ACTIVE_COLUMNS as u32 * u32::from(circuit_config.novel_race_cap);
         let unrelated_sources = vec![11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
         let segments: Vec<_> = (11..22)
             .map(|owner| TemporalSegmentInit {
@@ -3095,35 +3500,619 @@ mod tests {
             &segments,
         );
         runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let step = runtime.step(1, TemporalStepMode::Learn).unwrap();
+
+        assert_eq!(runtime.cohort_columns, (11..22).collect::<Vec<_>>());
+        assert_eq!(runtime.next_reserve_cell, 110);
+        assert_eq!(
+            runtime.column_offsets,
+            vec![
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 20, 29, 38, 47, 56, 65, 74, 83, 92, 101, 110,
+            ]
+        );
+        for (token_offset, column) in (11usize..22).enumerate() {
+            let cell_start = runtime.column_offsets[column];
+            let cell_end = runtime.column_offsets[column + 1];
+            let cohort_start = 22 + token_offset as u32 * 8;
+            let mut expected = vec![column as u32];
+            expected.extend(cohort_start..cohort_start + 8);
+            assert_eq!(&runtime.column_cells[cell_start..cell_end], expected);
+            assert!((cohort_start..cohort_start + 8)
+                .contains(&step.winner_spikes[token_offset].cell_id));
+            assert_eq!(
+                runtime
+                    .store
+                    .runtime_owner_load(step.winner_spikes[token_offset].cell_id),
+                Some(1)
+            );
+        }
+        assert_eq!(step.allocated_segments, ACTIVE_COLUMNS as u8);
+        assert_eq!(runtime.store.runtime_segment_count(), 22);
+        assert_eq!(runtime.learning_step, 2);
+        assert_eq!(runtime.event_count, 2);
+        assert_eq!(runtime.scientific_stop, None);
+    }
+
+    #[test]
+    fn generic_afferent_policy_recruits_the_same_full_prospective_cohorts() {
+        let mut circuit_config = config(22, 2, TemporalContextPolicy::GenericAfferents);
+        circuit_config.novel_race_cap = 2;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.max_pyramidal_cells +=
+            ACTIVE_COLUMNS as u32 * u32::from(circuit_config.novel_race_cap);
+        let proximal_offset = 2 * circuit_config.max_pyramidal_cells + circuit_config.column_count;
+        let unrelated_sources: Vec<_> = (proximal_offset + 11..proximal_offset + 21).collect();
+        let segments: Vec<_> = (22..44)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: unrelated_sources.clone(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut runtime = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &segments,
+        );
+
+        runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let step = runtime.step(1, TemporalStepMode::Learn).unwrap();
+
+        assert_eq!(runtime.cohort_columns, (11..22).collect::<Vec<_>>());
+        assert_eq!(runtime.next_reserve_cell, 66);
+        for (token_offset, column) in (11usize..22).enumerate() {
+            let start = runtime.column_offsets[column];
+            let end = runtime.column_offsets[column + 1];
+            let cohort_start = 44 + token_offset as u32 * 2;
+            assert_eq!(
+                &runtime.column_cells[start..end],
+                &[
+                    2 * column as u32,
+                    2 * column as u32 + 1,
+                    cohort_start,
+                    cohort_start + 1,
+                ]
+            );
+            assert!((cohort_start..cohort_start + 2)
+                .contains(&step.winner_spikes[token_offset].cell_id));
+        }
+        assert_eq!(step.allocated_segments, ACTIVE_COLUMNS as u8);
+        assert_eq!(runtime.store.runtime_segment_count(), 33);
+    }
+
+    #[test]
+    fn recruiting_step_uses_prospective_scratch_without_allocation_or_capacity_change() {
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.novel_race_cap = 8;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.max_pyramidal_cells +=
+            ACTIVE_COLUMNS as u32 * u32::from(circuit_config.novel_race_cap);
+        let segments: Vec<_> = (11..22)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: (11..21).collect(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut runtime = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &segments,
+        );
+        assert_eq!(runtime.column_drive_scratch.len(), 89);
+        assert_eq!(runtime.novel_candidate_scratch.len(), 89);
+        let pointers = (
+            runtime.column_offsets.as_ptr(),
+            runtime.column_cells.as_ptr(),
+            runtime.alternate_column_offsets.as_ptr(),
+            runtime.alternate_column_cells.as_ptr(),
+            runtime.cohort_columns.as_ptr(),
+            runtime.column_drive_scratch.as_ptr(),
+            runtime.novel_candidate_scratch.as_ptr(),
+        );
+        let capacities = (
+            runtime.column_offsets.capacity(),
+            runtime.column_cells.capacity(),
+            runtime.alternate_column_offsets.capacity(),
+            runtime.alternate_column_cells.capacity(),
+            runtime.cohort_columns.capacity(),
+            runtime.column_drive_scratch.capacity(),
+            runtime.novel_candidate_scratch.capacity(),
+        );
+
+        let (trace, allocations) = count_allocations(|| {
+            [
+                runtime.step(0, TemporalStepMode::Learn),
+                runtime.step(1, TemporalStepMode::Learn),
+            ]
+        });
+        assert!(trace.iter().all(Result::is_ok), "{trace:?}");
+        assert_eq!(allocations, 0);
+        assert_eq!(
+            (
+                runtime.column_offsets.as_ptr(),
+                runtime.column_cells.as_ptr(),
+                runtime.alternate_column_offsets.as_ptr(),
+                runtime.alternate_column_cells.as_ptr(),
+                runtime.cohort_columns.as_ptr(),
+                runtime.column_drive_scratch.as_ptr(),
+                runtime.novel_candidate_scratch.as_ptr(),
+            ),
+            (pointers.2, pointers.3, pointers.0, pointers.1, pointers.4, pointers.5, pointers.6,)
+        );
+        assert_eq!(
+            (
+                runtime.column_offsets.capacity(),
+                runtime.column_cells.capacity(),
+                runtime.alternate_column_offsets.capacity(),
+                runtime.alternate_column_cells.capacity(),
+                runtime.cohort_columns.capacity(),
+                runtime.column_drive_scratch.capacity(),
+                runtime.novel_candidate_scratch.capacity(),
+            ),
+            (
+                capacities.2,
+                capacities.3,
+                capacities.0,
+                capacities.1,
+                capacities.4,
+                capacities.5,
+                capacities.6,
+            )
+        );
+    }
+
+    #[test]
+    fn a_filled_recruited_cohort_crosses_the_next_full_cohort_boundary() {
+        let mut circuit_config = config(44, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.novel_race_cap = 2;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.max_pyramidal_cells += 4 * ACTIVE_COLUMNS as u32;
+        let codebook: Vec<_> = (0..4u32)
+            .map(|token_id| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|index| {
+                    token_id * ACTIVE_COLUMNS as u32 + index as u32
+                }),
+            })
+            .collect();
+        let initial_sources: Vec<_> = (33..43).collect();
+        let segments: Vec<_> = (33..44)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: initial_sources.clone(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &segments,
+        )
+        .unwrap();
+
+        runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let first = runtime.step(3, TemporalStepMode::Learn).unwrap();
+        runtime.step(1, TemporalStepMode::Learn).unwrap();
+        let fill = runtime.step(3, TemporalStepMode::Learn).unwrap();
+        runtime.step(2, TemporalStepMode::Learn).unwrap();
+        let second = runtime.step(3, TemporalStepMode::Learn).unwrap();
+
+        assert_eq!(first.allocated_segments, ACTIVE_COLUMNS as u8);
+        assert_eq!(fill.allocated_segments, ACTIVE_COLUMNS as u8);
+        assert_eq!(second.allocated_segments, ACTIVE_COLUMNS as u8);
+        assert_eq!(runtime.next_reserve_cell, 88);
+        assert_eq!(
+            runtime.cohort_columns,
+            (33..44).chain(33..44).collect::<Vec<_>>()
+        );
+        for (column_offset, column) in (33usize..44).enumerate() {
+            let start = runtime.column_offsets[column];
+            let end = runtime.column_offsets[column + 1];
+            assert_eq!(
+                &runtime.column_cells[start..end],
+                &[
+                    column as u32,
+                    44 + 2 * column_offset as u32,
+                    45 + 2 * column_offset as u32,
+                    66 + 2 * column_offset as u32,
+                    67 + 2 * column_offset as u32,
+                ]
+            );
+            assert!(runtime.column_cells[start + 1..start + 3]
+                .iter()
+                .all(|owner| runtime.store.runtime_owner_load(*owner) == Some(1)));
+            assert!(runtime.column_cells[start + 3..end]
+                .contains(&second.winner_spikes[column_offset].cell_id));
+        }
+    }
+
+    #[test]
+    fn literal_python_oracle_reserve_trace_is_bit_exact_through_fill_and_rerecruit() {
+        // Generated with SparseTemporalCortex at Python oracle commit 9f55a87
+        // (blob 2424d503...), zeroing its DendriticCortex threshold offsets,
+        // importing the eleven literal base rows below, then executing
+        // R(0), L(3), R(1), L(3), R(2), L(3). Every expectation below is a
+        // copied Python result; Rust does not regenerate the fixture values.
+        let mut circuit_config = config(14, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.max_pyramidal_cells = 58;
+        circuit_config.novel_race_cap = 2;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.theta_match = 20;
+        circuit_config.theta_active = 20;
+        let codebook = vec![
+            TokenCode {
+                token_id: 0,
+                columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12],
+            },
+            TokenCode {
+                token_id: 1,
+                columns: [0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13],
+            },
+            TokenCode {
+                token_id: 2,
+                columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12],
+            },
+            TokenCode {
+                token_id: 3,
+                columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            },
+        ];
+        let segments: Vec<_> = (0..11)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &segments,
+        )
+        .unwrap();
+
+        let expected_trace = [
+            (
+                0,
+                TemporalStepMode::ReadOnly,
+                [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12],
+                [229, 229, 229, 229, 229, 229, 229, 229, 229, 222, 222],
+                0,
+                14,
+            ),
+            (
+                3,
+                TemporalStepMode::Learn,
+                [14, 17, 18, 20, 23, 24, 26, 28, 30, 33, 35],
+                [222; ACTIVE_COLUMNS],
+                11,
+                36,
+            ),
+            (
+                1,
+                TemporalStepMode::ReadOnly,
+                [15, 16, 19, 21, 22, 25, 27, 29, 11, 12, 13],
+                [222; ACTIVE_COLUMNS],
+                0,
+                36,
+            ),
+            (
+                3,
+                TemporalStepMode::Learn,
+                [15, 16, 19, 21, 22, 25, 27, 29, 31, 32, 34],
+                [222; ACTIVE_COLUMNS],
+                11,
+                36,
+            ),
+            (
+                2,
+                TemporalStepMode::ReadOnly,
+                [16, 2, 20, 22, 24, 26, 7, 8, 33, 11, 12],
+                [229, 229, 229, 229, 229, 229, 229, 229, 229, 222, 222],
+                0,
+                36,
+            ),
+            (
+                3,
+                TemporalStepMode::Learn,
+                [36, 38, 41, 43, 44, 46, 48, 51, 52, 54, 56],
+                [222; ACTIVE_COLUMNS],
+                11,
+                58,
+            ),
+        ];
+        for (token, mode, winner_cells, winner_ticks, allocated, cursor) in expected_trace {
+            let step = runtime.step(token, mode).unwrap();
+            assert_eq!(step.winner_spikes, events(winner_cells, winner_ticks));
+            assert_eq!(step.allocated_segments, allocated);
+            assert_eq!(runtime.next_reserve_cell, cursor);
+        }
+
+        assert_eq!(runtime.learning_step, 3);
+        assert_eq!(runtime.event_count, 6);
+        assert_eq!(
+            runtime.cohort_columns,
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        );
+        assert_eq!(
+            runtime.column_offsets,
+            [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 56, 57, 58]
+        );
+        assert_eq!(
+            runtime.column_cells,
+            [
+                0, 14, 15, 36, 37, 1, 16, 17, 38, 39, 2, 18, 19, 40, 41, 3, 20, 21, 42, 43, 4, 22,
+                23, 44, 45, 5, 24, 25, 46, 47, 6, 26, 27, 48, 49, 7, 28, 29, 50, 51, 8, 30, 31, 52,
+                53, 9, 32, 33, 54, 55, 10, 34, 35, 56, 57, 11, 12, 13,
+            ]
+        );
+
+        let expected_rows = [
+            (
+                [14, 17, 18, 20, 23, 24, 26, 28, 30, 33, 35],
+                [0, 1, 3, 4, 5, 6, 7, 8, 11, 12],
+            ),
+            (
+                [15, 16, 19, 21, 22, 25, 27, 29, 31, 32, 34],
+                [11, 12, 13, 15, 19, 21, 22, 25, 27, 29],
+            ),
+            (
+                [36, 38, 41, 43, 44, 46, 48, 51, 52, 54, 56],
+                [2, 7, 8, 11, 12, 16, 20, 22, 26, 33],
+            ),
+        ];
+        assert_eq!(runtime.store.runtime_segment_count(), 44);
+        for (wave, (owners, sources)) in expected_rows.into_iter().enumerate() {
+            for (offset, owner) in owners.into_iter().enumerate() {
+                let segment_id = 11 + (wave * ACTIVE_COLUMNS + offset) as u32;
+                assert_eq!(runtime.store.runtime_segment_owner(segment_id), Some(owner));
+                let row = runtime.store.runtime_segment_row(segment_id).unwrap();
+                assert_eq!(row.live_pair_count, PAIRS_PER_SEGMENT as u8);
+                assert_eq!(row.normalized_sources, sources);
+                assert_eq!(row.permanence_ticks, [255; PAIRS_PER_SEGMENT]);
+            }
+        }
+    }
+
+    #[test]
+    fn read_only_and_growth_off_never_publish_a_required_reserve_cohort() {
+        for (mode, plasticity) in [
+            (
+                TemporalStepMode::ReadOnly,
+                TemporalPlasticityPolicy::Plastic,
+            ),
+            (TemporalStepMode::Learn, TemporalPlasticityPolicy::GrowthOff),
+        ] {
+            let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+            circuit_config.max_pyramidal_cells = 44;
+            circuit_config.novel_race_cap = 2;
+            circuit_config.max_segments_per_cell = 1;
+            circuit_config.plasticity_policy = plasticity;
+            let segments: Vec<_> = (11..22)
+                .map(|owner| TemporalSegmentInit {
+                    owner,
+                    sources: vec![11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+                    permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+                })
+                .collect();
+            let mut runtime = runtime_with_offsets(
+                circuit_config,
+                vec![0.0; physical_count(circuit_config)],
+                &segments,
+            );
+            let before_offsets = runtime.column_offsets.clone();
+            let before_cells = runtime.column_cells.clone();
+
+            runtime.step(0, mode).unwrap();
+            let target = runtime.step(1, mode).unwrap();
+
+            assert_eq!(target.allocated_segments, 0);
+            assert_eq!(runtime.next_reserve_cell, 22);
+            assert!(runtime.cohort_columns.is_empty());
+            assert_eq!(runtime.column_offsets, before_offsets);
+            assert_eq!(runtime.column_cells, before_cells);
+            assert_eq!(runtime.store.runtime_segment_count(), 11);
+            assert_eq!(runtime.learning_step, 0);
+            assert_eq!(runtime.event_count, 2);
+        }
+    }
+
+    #[test]
+    fn insufficient_aggregate_reserve_room_latches_code12_without_logical_publish() {
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.novel_race_cap = 8;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.max_pyramidal_cells +=
+            (ACTIVE_COLUMNS as u32 - 1) * u32::from(circuit_config.novel_race_cap);
+        let segments: Vec<_> = (11..22)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: (11..21).collect(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut runtime = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &segments,
+        );
+        runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let before_offsets = runtime.column_offsets.clone();
+        let before_cells = runtime.column_cells.clone();
         let before_context = runtime.previous_context;
         let before_winner_context = runtime.previous_winner_context;
         let before_event = runtime.event_count;
         let before_learning = runtime.learning_step;
-        let before_rows: Vec<_> = (0..runtime.store.runtime_segment_count())
-            .map(|segment_id| runtime.store.runtime_segment_row(segment_id).unwrap())
-            .collect();
+        let before_segment_count = runtime.store.runtime_segment_count();
 
         assert_eq!(
             runtime.step(1, TemporalStepMode::Learn),
-            Err(TemporalCircuitStop::ReserveCellCapacity { column: 11 }),
+            Err(TemporalCircuitStop::ReserveCellCapacity { column: 11 })
         );
+        assert_eq!(runtime.column_offsets, before_offsets);
+        assert_eq!(runtime.column_cells, before_cells);
+        assert!(runtime.cohort_columns.is_empty());
+        assert_eq!(runtime.next_reserve_cell, 22);
         assert_eq!(runtime.previous_context, before_context);
         assert_eq!(runtime.previous_winner_context, before_winner_context);
         assert_eq!(runtime.event_count, before_event);
         assert_eq!(runtime.learning_step, before_learning);
-        assert_eq!(
-            (0..runtime.store.runtime_segment_count())
-                .map(|segment_id| runtime.store.runtime_segment_row(segment_id).unwrap())
-                .collect::<Vec<_>>(),
-            before_rows,
-        );
+        assert_eq!(runtime.store.runtime_segment_count(), before_segment_count);
         assert_eq!(
             runtime.scientific_stop,
             Some(TemporalPoisonCode::ReserveCellCapacity)
         );
+    }
+
+    #[test]
+    fn event_overflow_after_reserve_staging_does_not_publish_cohorts() {
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.novel_race_cap = 8;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.max_pyramidal_cells +=
+            ACTIVE_COLUMNS as u32 * u32::from(circuit_config.novel_race_cap);
+        let segments: Vec<_> = (11..22)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: (11..21).collect(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut runtime = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &segments,
+        );
+        runtime.step(0, TemporalStepMode::Learn).unwrap();
+        runtime.event_count = u64::MAX;
+        let before_offsets = runtime.column_offsets.clone();
+        let before_cells = runtime.column_cells.clone();
+        let before_context = runtime.previous_context;
+        let before_winner_context = runtime.previous_winner_context;
+        let before_learning = runtime.learning_step;
+        let before_segment_count = runtime.store.runtime_segment_count();
+
         assert_eq!(
             runtime.step(1, TemporalStepMode::Learn),
-            Err(TemporalCircuitStop::Poisoned)
+            Err(TemporalCircuitStop::TickOrCounterOverflow {
+                stage: TemporalOverflowStage::EventCounter,
+                location: 0,
+            })
+        );
+        assert_eq!(runtime.column_offsets, before_offsets);
+        assert_eq!(runtime.column_cells, before_cells);
+        assert!(runtime.cohort_columns.is_empty());
+        assert_eq!(runtime.next_reserve_cell, 22);
+        assert_eq!(runtime.previous_context, before_context);
+        assert_eq!(runtime.previous_winner_context, before_winner_context);
+        assert_eq!(runtime.event_count, u64::MAX);
+        assert_eq!(runtime.learning_step, before_learning);
+        assert_eq!(runtime.store.runtime_segment_count(), before_segment_count);
+    }
+
+    #[test]
+    fn column_physics_failure_after_reserve_staging_does_not_publish_cohorts() {
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.novel_race_cap = 8;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.max_pyramidal_cells +=
+            ACTIVE_COLUMNS as u32 * u32::from(circuit_config.novel_race_cap);
+        let segments: Vec<_> = (11..22)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: (11..21).collect(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut offsets = vec![0.0; physical_count(circuit_config)];
+        let first_target_basket = 2 * circuit_config.max_pyramidal_cells + 11;
+        offsets[first_target_basket as usize] = 1.0e9;
+        let mut runtime = runtime_with_offsets(circuit_config, offsets, &segments);
+        runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let before_offsets = runtime.column_offsets.clone();
+        let before_cells = runtime.column_cells.clone();
+        let before_context = runtime.previous_context;
+        let before_event = runtime.event_count;
+        let before_learning = runtime.learning_step;
+
+        let stop = runtime.step(1, TemporalStepMode::Learn);
+        assert!(
+            matches!(
+                stop,
+                Err(TemporalCircuitStop::Physics {
+                    stage: PhysicalStage::ColumnRace,
+                    location: 11,
+                    source: TemporalPhysicsStop::MultiplePyramidalSpikes { .. },
+                })
+            ),
+            "{stop:?}"
+        );
+        assert_eq!(runtime.column_offsets, before_offsets);
+        assert_eq!(runtime.column_cells, before_cells);
+        assert!(runtime.cohort_columns.is_empty());
+        assert_eq!(runtime.next_reserve_cell, 22);
+        assert_eq!(runtime.previous_context, before_context);
+        assert_eq!(runtime.event_count, before_event);
+        assert_eq!(runtime.learning_step, before_learning);
+        assert_eq!(runtime.store.runtime_segment_count(), ACTIVE_COLUMNS as u32);
+        assert_eq!(
+            runtime.scientific_stop,
+            Some(TemporalPoisonCode::ColumnRacePhysics)
+        );
+    }
+
+    #[test]
+    fn global_segment_failure_after_reserve_staging_does_not_publish_cohorts() {
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.novel_race_cap = 8;
+        circuit_config.max_segments_per_cell = 1;
+        circuit_config.max_pyramidal_cells +=
+            ACTIVE_COLUMNS as u32 * u32::from(circuit_config.novel_race_cap);
+        circuit_config.segment_capacity = ACTIVE_COLUMNS as u32;
+        let segments: Vec<_> = (11..22)
+            .map(|owner| TemporalSegmentInit {
+                owner,
+                sources: (11..21).collect(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut runtime = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &segments,
+        );
+        runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let before_offsets = runtime.column_offsets.clone();
+        let before_cells = runtime.column_cells.clone();
+        let before_context = runtime.previous_context;
+        let before_winner_context = runtime.previous_winner_context;
+        let before_event = runtime.event_count;
+        let before_learning = runtime.learning_step;
+
+        assert_eq!(
+            runtime.step(1, TemporalStepMode::Learn),
+            Err(TemporalCircuitStop::GlobalSegmentCapacity {
+                required: 22,
+                capacity: 11,
+            })
+        );
+        assert_eq!(runtime.column_offsets, before_offsets);
+        assert_eq!(runtime.column_cells, before_cells);
+        assert!(runtime.cohort_columns.is_empty());
+        assert_eq!(runtime.next_reserve_cell, 22);
+        assert_eq!(runtime.previous_context, before_context);
+        assert_eq!(runtime.previous_winner_context, before_winner_context);
+        assert_eq!(runtime.event_count, before_event);
+        assert_eq!(runtime.learning_step, before_learning);
+        assert_eq!(runtime.store.runtime_segment_count(), ACTIVE_COLUMNS as u32);
+        assert_eq!(
+            runtime.scientific_stop,
+            Some(TemporalPoisonCode::GlobalSegmentCapacity)
         );
     }
 
