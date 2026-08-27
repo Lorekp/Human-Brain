@@ -1,0 +1,2133 @@
+//! Unsafe C transport for the native temporal-circuit runtime.
+//!
+//! This is an internal, additive ABI beneath the future Python capability
+//! layer. In particular, the two raw digest arrays carried here are transport
+//! bytes only: they are not proof that a protocol is runnable, committed, or
+//! live. The public Python layer is solely responsible for performing that
+//! validation before it passes an authority to these functions.
+//!
+//! # Unsafe caller contract
+//!
+//! Every fixed object and counted region must be live for the duration of its
+//! call and use the declared layout. All handle, request, definition input,
+//! counted input, output, authority, and report regions must be pairwise
+//! disjoint. A handle is destroyed exactly once, never concurrently with any
+//! other operation. These exports validate nullness, alignment, integer
+//! geometry, tags, reserved bytes, and output capacity, but cannot prove
+//! foreign allocation provenance or lifetime. Mutex poisoning aborts the
+//! process: unwinding may have interrupted a mutation, and release builds use
+//! panic=abort, so continuing would make a scientific-state claim we cannot
+//! support.
+
+use std::{
+    alloc::{alloc, dealloc, Layout},
+    io::{self, Seek, SeekFrom, Write},
+    mem::{align_of, size_of},
+    ptr, slice,
+    sync::{Mutex, MutexGuard},
+};
+
+#[cfg(test)]
+use std::cell::Cell;
+
+use super::{
+    checkpoint::{
+        import_checkpoint_v1, CheckpointV1ImportError, PrepareCheckpointV1ExportError,
+        ValidatedCheckpointAuthority, ValidatedCheckpointV1RuntimeFactory,
+    },
+    PhysicalStage, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalCircuitStep,
+    TemporalCircuitStop, TemporalContextPolicy, TemporalOverflowStage, TemporalPlasticityPolicy,
+    TemporalPoisonCode, TemporalStepMode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS,
+};
+use crate::temporal_physics::SpikeEvent;
+
+pub const TEMPORAL_RUNTIME_OK: u32 = 0;
+pub const TEMPORAL_RUNTIME_INVALID_ARGUMENT: u32 = 1;
+pub const TEMPORAL_RUNTIME_INVALID_DEFINITION: u32 = 2;
+pub const TEMPORAL_RUNTIME_CHECKPOINT_REJECTED: u32 = 3;
+pub const TEMPORAL_RUNTIME_ALLOCATION_FAILED: u32 = 4;
+pub const TEMPORAL_RUNTIME_OUTPUT_CAPACITY: u32 = 5;
+pub const TEMPORAL_RUNTIME_UNKNOWN_TOKEN: u32 = 6;
+pub const TEMPORAL_RUNTIME_POISONED: u32 = 7;
+pub const TEMPORAL_RUNTIME_SCIENTIFIC_STOP: u32 = 8;
+pub const TEMPORAL_RUNTIME_CAPACITY_STOP: u32 = 9;
+pub const TEMPORAL_RUNTIME_INTERNAL_INVARIANT: u32 = 10;
+
+const STAGE_NONE: u16 = 0;
+const STAGE_PROXIMAL: u16 = 1;
+const STAGE_PROXIMAL_RELAY: u16 = 2;
+const STAGE_COLUMN_RACE: u16 = 3;
+const STAGE_WINNER_RELAY: u16 = 4;
+const STAGE_PROXIMAL_RELAY_TICK_OVERFLOW: u16 = 5;
+const STAGE_WINNER_RELAY_TICK_OVERFLOW: u16 = 6;
+const STAGE_EVENT_COUNTER_OVERFLOW: u16 = 7;
+const STAGE_LEARNING_COUNTER_OVERFLOW: u16 = 8;
+
+const MODE_READ_ONLY: u8 = 0;
+const MODE_LEARN: u8 = 1;
+const CONTEXT_BOUND_WINNERS: u8 = 1;
+const CONTEXT_GENERIC_AFFERENTS: u8 = 2;
+const PLASTICITY_GROWTH_OFF: u8 = 0;
+const PLASTICITY_PLASTIC: u8 = 1;
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalValidatedCheckpointAuthorityV1 {
+    pub protocol_identity_sha256: [u8; 32],
+    pub source_bundle_identity_sha256: [u8; 32],
+}
+
+impl TemporalValidatedCheckpointAuthorityV1 {
+    const fn into_validated(self) -> ValidatedCheckpointAuthority {
+        ValidatedCheckpointAuthority::from_raw_sha256(
+            self.protocol_identity_sha256,
+            self.source_bundle_identity_sha256,
+        )
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalCircuitConfigV1 {
+    pub column_count: u32,
+    pub max_pyramidal_cells: u32,
+    pub segment_capacity: u32,
+    pub construction_seed: u32,
+    pub connected_permanence_ticks: u16,
+    pub initial_permanence_ticks: u16,
+    pub permanence_increment_ticks: u16,
+    pub negative_decrement_ticks: u16,
+    pub base_cells_per_column: u8,
+    pub novel_race_cap: u8,
+    pub prediction_quorum: u8,
+    pub max_segments_per_cell: u8,
+    pub theta_match: u8,
+    pub theta_active: u8,
+    pub context_policy: u8,
+    pub plasticity_policy: u8,
+}
+
+impl TemporalCircuitConfigV1 {
+    fn into_runtime(self) -> Result<TemporalCircuitConfig, ()> {
+        let context_policy = match self.context_policy {
+            CONTEXT_BOUND_WINNERS => TemporalContextPolicy::BoundWinners,
+            CONTEXT_GENERIC_AFFERENTS => TemporalContextPolicy::GenericAfferents,
+            _ => return Err(()),
+        };
+        let plasticity_policy = match self.plasticity_policy {
+            PLASTICITY_GROWTH_OFF => TemporalPlasticityPolicy::GrowthOff,
+            PLASTICITY_PLASTIC => TemporalPlasticityPolicy::Plastic,
+            _ => return Err(()),
+        };
+        Ok(TemporalCircuitConfig {
+            column_count: self.column_count,
+            base_cells_per_column: self.base_cells_per_column,
+            max_pyramidal_cells: self.max_pyramidal_cells,
+            segment_capacity: self.segment_capacity,
+            novel_race_cap: self.novel_race_cap,
+            prediction_quorum: self.prediction_quorum,
+            construction_seed: self.construction_seed,
+            connected_permanence_ticks: self.connected_permanence_ticks,
+            initial_permanence_ticks: self.initial_permanence_ticks,
+            permanence_increment_ticks: self.permanence_increment_ticks,
+            negative_decrement_ticks: self.negative_decrement_ticks,
+            max_segments_per_cell: self.max_segments_per_cell,
+            theta_match: self.theta_match,
+            theta_active: self.theta_active,
+            context_policy,
+            plasticity_policy,
+        })
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalTokenCodeV1 {
+    pub token_id: u32,
+    pub columns: [u32; ACTIVE_COLUMNS],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalCircuitDefinitionV1 {
+    pub config: TemporalCircuitConfigV1,
+    pub token_codes: *const TemporalTokenCodeV1,
+    pub token_code_count: u64,
+    pub threshold_offsets_mv: *const f64,
+    pub threshold_offset_count: u64,
+    pub authority: TemporalValidatedCheckpointAuthorityV1,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalCircuitImportCheckpointV1Request {
+    pub definition: TemporalCircuitDefinitionV1,
+    pub checkpoint_bytes: *const u8,
+    pub checkpoint_len: u64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalSpikeV1 {
+    pub cell_id: u32,
+    pub tick: u16,
+    pub reserved_zero: u16,
+}
+
+impl From<SpikeEvent> for TemporalSpikeV1 {
+    fn from(spike: SpikeEvent) -> Self {
+        Self {
+            cell_id: spike.cell_id,
+            tick: spike.tick,
+            reserved_zero: 0,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalCircuitStepV1 {
+    pub token_id: u32,
+    pub punished_segments: u32,
+    pub event_count: u64,
+    pub predicted: u8,
+    pub predicted_columns: u8,
+    pub allocated_segments: u8,
+    pub reserved_zero: u8,
+    pub inhibition_onset_ticks: [u16; ACTIVE_COLUMNS],
+    pub column_simulated_ticks: [u16; ACTIVE_COLUMNS],
+    pub winner_spikes: [TemporalSpikeV1; ACTIVE_COLUMNS],
+    pub basket_spikes: [TemporalSpikeV1; ACTIVE_COLUMNS],
+    pub proximal_spikes: [TemporalSpikeV1; ACTIVE_COLUMNS],
+    pub proximal_relay_spikes: [TemporalSpikeV1; ACTIVE_COLUMNS],
+    pub winner_relay_spikes: [TemporalSpikeV1; ACTIVE_COLUMNS],
+    pub winner_context: [u32; CONTEXT_CELLS],
+    pub proximal_context: [u32; CONTEXT_CELLS],
+    pub context: [u32; CONTEXT_CELLS],
+}
+
+impl From<TemporalCircuitStep> for TemporalCircuitStepV1 {
+    fn from(step: TemporalCircuitStep) -> Self {
+        Self {
+            token_id: step.token_id,
+            punished_segments: step.punished_segments,
+            event_count: step.event_count,
+            predicted: u8::from(step.predicted),
+            predicted_columns: step.predicted_columns,
+            allocated_segments: step.allocated_segments,
+            reserved_zero: 0,
+            inhibition_onset_ticks: step.inhibition_onset_ticks,
+            column_simulated_ticks: step.column_simulated_ticks,
+            winner_spikes: step.winner_spikes.map(Into::into),
+            basket_spikes: step.basket_spikes.map(Into::into),
+            proximal_spikes: step.proximal_spikes.map(Into::into),
+            proximal_relay_spikes: step.proximal_relay_spikes.map(Into::into),
+            winner_relay_spikes: step.winner_relay_spikes.map(Into::into),
+            winner_context: step.winner_context,
+            proximal_context: step.proximal_context,
+            context: step.context,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalCircuitAdvanceBlockV1Request {
+    pub token_ids: *const u32,
+    pub output: *mut TemporalCircuitStepV1,
+    pub token_count: u64,
+    pub output_capacity: u64,
+    pub mode: u8,
+    pub reset_before: u8,
+    pub reserved_zero: [u8; 6],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalCircuitReportV1 {
+    pub status: u32,
+    pub message_len: u32,
+    pub completed_prefix: u64,
+    pub required: u64,
+    pub observed: u64,
+    pub location: u64,
+    pub poison_code: u16,
+    pub stage_code: u16,
+    pub reserved_zero: u32,
+    pub message_utf8: [u8; 464],
+}
+
+impl TemporalCircuitReportV1 {
+    const ZERO: Self = Self {
+        status: TEMPORAL_RUNTIME_OK,
+        message_len: 0,
+        completed_prefix: 0,
+        required: 0,
+        observed: 0,
+        location: 0,
+        poison_code: 0,
+        stage_code: STAGE_NONE,
+        reserved_zero: 0,
+        message_utf8: [0; 464],
+    };
+
+    fn finish(&mut self, status: u32, message: &'static str) -> u32 {
+        self.status = status;
+        let bytes = message.as_bytes();
+        let count = bytes.len().min(self.message_utf8.len());
+        self.message_utf8[..count].copy_from_slice(&bytes[..count]);
+        self.message_len = count as u32;
+        status
+    }
+}
+
+pub struct TemporalCircuitRuntimeHandle {
+    creation_authority: ValidatedCheckpointAuthority,
+    runtime: Mutex<TemporalCircuitRuntime>,
+}
+
+fn fixed_pointer_is_valid<T>(pointer: *const T) -> bool {
+    !pointer.is_null() && (pointer as usize).is_multiple_of(align_of::<T>())
+}
+
+fn counted_region<T>(pointer: *const T, count: u64) -> Option<usize> {
+    let count = usize::try_from(count).ok()?;
+    let byte_count = count.checked_mul(size_of::<T>())?;
+    if byte_count > isize::MAX as usize
+        || (!pointer.is_null() && !(pointer as usize).is_multiple_of(align_of::<T>()))
+        || (count != 0 && pointer.is_null())
+        || (count != 0 && (pointer as usize).checked_add(byte_count).is_none())
+    {
+        return None;
+    }
+    Some(count)
+}
+
+fn regions_overlap(left: *const u8, left_len: usize, right: *const u8, right_len: usize) -> bool {
+    if left_len == 0 || right_len == 0 {
+        return false;
+    }
+    let left_start = left as usize;
+    let right_start = right as usize;
+    let Some(left_end) = left_start.checked_add(left_len) else {
+        return true;
+    };
+    let Some(right_end) = right_start.checked_add(right_len) else {
+        return true;
+    };
+    left_start < right_end && right_start < left_end
+}
+
+unsafe fn begin_report(report_out: *mut TemporalCircuitReportV1) -> bool {
+    if !fixed_pointer_is_valid(report_out.cast_const()) {
+        return false;
+    }
+    report_out.write(TemporalCircuitReportV1::ZERO);
+    true
+}
+
+unsafe fn report<'a>(report_out: *mut TemporalCircuitReportV1) -> &'a mut TemporalCircuitReportV1 {
+    &mut *report_out
+}
+
+unsafe fn allocate_owned<T>(value: T) -> *mut T {
+    #[cfg(test)]
+    if FAIL_NEXT_OWNED_ALLOCATION.with(|fail| fail.replace(false)) {
+        drop(value);
+        return ptr::null_mut();
+    }
+
+    let raw = alloc(Layout::new::<T>()) as *mut T;
+    if raw.is_null() {
+        drop(value);
+        ptr::null_mut()
+    } else {
+        raw.write(value);
+        raw
+    }
+}
+
+#[cfg(test)]
+thread_local! {
+    static FAIL_NEXT_OWNED_ALLOCATION: Cell<bool> = const { Cell::new(false) };
+}
+
+#[cfg(test)]
+fn fail_next_owned_allocation() {
+    FAIL_NEXT_OWNED_ALLOCATION.with(|fail| fail.set(true));
+}
+
+unsafe fn destroy_owned<T>(raw: *mut T) {
+    raw.drop_in_place();
+    dealloc(raw.cast(), Layout::new::<T>());
+}
+
+fn lock_runtime(handle: &TemporalCircuitRuntimeHandle) -> MutexGuard<'_, TemporalCircuitRuntime> {
+    match handle.runtime.lock() {
+        Ok(runtime) => runtime,
+        Err(_) => std::process::abort(),
+    }
+}
+
+fn try_copy_token_codes(
+    source: *const TemporalTokenCodeV1,
+    count: usize,
+) -> Result<Vec<TokenCode>, ()> {
+    let mut copied = Vec::new();
+    copied.try_reserve_exact(count).map_err(|_| ())?;
+    for index in 0..count {
+        // SAFETY: the ABI preflight validated the complete counted input
+        // region and the caller contract keeps it live and disjoint.
+        let code = unsafe { source.add(index).read() };
+        copied.push(TokenCode {
+            token_id: code.token_id,
+            columns: code.columns,
+        });
+    }
+    Ok(copied)
+}
+
+fn try_copy_thresholds(source: *const f64, count: usize) -> Result<Vec<f64>, ()> {
+    let mut copied = Vec::new();
+    copied.try_reserve_exact(count).map_err(|_| ())?;
+    for index in 0..count {
+        // SAFETY: the ABI preflight validated the complete counted input
+        // region and the caller contract keeps it live and disjoint.
+        copied.push(unsafe { source.add(index).read() });
+    }
+    Ok(copied)
+}
+
+fn prepare_error(
+    report: &mut TemporalCircuitReportV1,
+    error: PrepareCheckpointV1ExportError,
+) -> u32 {
+    match error {
+        PrepareCheckpointV1ExportError::RetryableAllocation(_) => report.finish(
+            TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+            "checkpoint export scratch allocation failed",
+        ),
+        PrepareCheckpointV1ExportError::Identity(_)
+        | PrepareCheckpointV1ExportError::Codec(_)
+        | PrepareCheckpointV1ExportError::State
+        | PrepareCheckpointV1ExportError::StoreIndex(_) => report.finish(
+            TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+            "live runtime is not canonically exportable",
+        ),
+    }
+}
+
+fn poison_status(poison: TemporalPoisonCode) -> u32 {
+    match poison {
+        TemporalPoisonCode::Unpoisoned => TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+        TemporalPoisonCode::MultipleActiveOwners
+        | TemporalPoisonCode::MultipleMatchingOwners
+        | TemporalPoisonCode::CategorizedRaceCapacity
+        | TemporalPoisonCode::MalformedContextOrPolicy
+        | TemporalPoisonCode::ProximalPhysics
+        | TemporalPoisonCode::ProximalRelayPhysics
+        | TemporalPoisonCode::ColumnRacePhysics
+        | TemporalPoisonCode::WinnerRelayPhysics
+        | TemporalPoisonCode::TickOrCounterOverflow
+        | TemporalPoisonCode::StoreOrPlanInvariant
+        | TemporalPoisonCode::PhiloxAddressExhaustion => TEMPORAL_RUNTIME_SCIENTIFIC_STOP,
+        TemporalPoisonCode::ReserveCellCapacity
+        | TemporalPoisonCode::GlobalSegmentCapacity
+        | TemporalPoisonCode::OwnerSegmentCapacity
+        | TemporalPoisonCode::PreallocatedCapacityInvariant => TEMPORAL_RUNTIME_CAPACITY_STOP,
+    }
+}
+
+fn stop_report(
+    report: &mut TemporalCircuitReportV1,
+    runtime: &TemporalCircuitRuntime,
+    stop: TemporalCircuitStop,
+) -> u32 {
+    match stop {
+        TemporalCircuitStop::UnknownToken(token_id) => {
+            report.observed = u64::from(token_id);
+            report.finish(TEMPORAL_RUNTIME_UNKNOWN_TOKEN, "unknown token ID")
+        }
+        TemporalCircuitStop::Poisoned => {
+            report.poison_code = runtime.scientific_stop.map_or(0, |code| code as u16);
+            report.finish(
+                TEMPORAL_RUNTIME_POISONED,
+                "temporal runtime is already poisoned",
+            )
+        }
+        TemporalCircuitStop::MultipleActiveOwners { column, owners } => {
+            report.location = u64::from(column);
+            report.required = 1;
+            report.observed = u64::from(owners.count);
+            terminal_stop(report, stop, "multiple active owners")
+        }
+        TemporalCircuitStop::MultipleMatchingOwners { column, owners } => {
+            report.location = u64::from(column);
+            report.required = 1;
+            report.observed = u64::from(owners.count);
+            terminal_stop(report, stop, "multiple matching owners")
+        }
+        TemporalCircuitStop::CategorizedRaceCapacity {
+            column,
+            categorized_count,
+            race_cap,
+        } => {
+            report.location = u64::from(column);
+            report.required = u64::from(categorized_count);
+            report.observed = u64::from(race_cap);
+            terminal_stop(report, stop, "categorized race capacity exceeded")
+        }
+        TemporalCircuitStop::TickOrCounterOverflow { stage, location } => {
+            report.location = u64::from(location);
+            report.stage_code = match stage {
+                TemporalOverflowStage::ProximalRelayTick => STAGE_PROXIMAL_RELAY_TICK_OVERFLOW,
+                TemporalOverflowStage::WinnerRelayTick => STAGE_WINNER_RELAY_TICK_OVERFLOW,
+                TemporalOverflowStage::EventCounter => STAGE_EVENT_COUNTER_OVERFLOW,
+                TemporalOverflowStage::LearningCounter => STAGE_LEARNING_COUNTER_OVERFLOW,
+            };
+            terminal_stop(report, stop, "temporal tick or counter overflow")
+        }
+        TemporalCircuitStop::Physics {
+            stage, location, ..
+        } => {
+            report.location = u64::from(location);
+            report.stage_code = match stage {
+                PhysicalStage::Proximal => STAGE_PROXIMAL,
+                PhysicalStage::ProximalRelay => STAGE_PROXIMAL_RELAY,
+                PhysicalStage::ColumnRace => STAGE_COLUMN_RACE,
+                PhysicalStage::WinnerRelay => STAGE_WINNER_RELAY,
+            };
+            terminal_stop(report, stop, "temporal physical stage stopped")
+        }
+        TemporalCircuitStop::StoreRecognition(observed) => {
+            report.observed = u64::from(observed);
+            terminal_stop(report, stop, "temporal store recognition invariant failed")
+        }
+        TemporalCircuitStop::StoreOrPlanInvariant(message)
+        | TemporalCircuitStop::MalformedContextOrPolicy(message)
+        | TemporalCircuitStop::PreallocatedCapacityInvariant(message) => {
+            terminal_stop(report, stop, message)
+        }
+        TemporalCircuitStop::PhiloxAddressExhaustion { segment_id, .. } => {
+            report.location = u64::from(segment_id);
+            terminal_stop(report, stop, "Philox address domain exhausted")
+        }
+        TemporalCircuitStop::ReserveCellCapacity { column } => {
+            report.location = u64::from(column);
+            terminal_stop(report, stop, "reserve cell capacity exhausted")
+        }
+        TemporalCircuitStop::GlobalSegmentCapacity { required, capacity } => {
+            report.required = u64::from(required);
+            report.observed = u64::from(capacity);
+            terminal_stop(report, stop, "global segment capacity exhausted")
+        }
+        TemporalCircuitStop::OwnerSegmentCapacity { owner, cap } => {
+            report.location = u64::from(owner);
+            report.required = u64::from(cap).saturating_add(1);
+            report.observed = u64::from(cap);
+            terminal_stop(report, stop, "owner segment capacity exhausted")
+        }
+    }
+}
+
+fn terminal_stop(
+    report: &mut TemporalCircuitReportV1,
+    stop: TemporalCircuitStop,
+    message: &'static str,
+) -> u32 {
+    let Some(poison) = stop.poison_code() else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+            "terminal STOP did not define a poison code",
+        );
+    };
+    report.poison_code = poison as u16;
+    report.finish(poison_status(poison), message)
+}
+
+struct FixedCheckpointSink {
+    output: *mut u8,
+    capacity: usize,
+    position: usize,
+    logical_len: usize,
+}
+
+impl FixedCheckpointSink {
+    const fn new(output: *mut u8, capacity: usize) -> Self {
+        Self {
+            output,
+            capacity,
+            position: 0,
+            logical_len: 0,
+        }
+    }
+
+    const fn logical_len(&self) -> usize {
+        self.logical_len
+    }
+
+    fn seek_target(&self, position: SeekFrom) -> io::Result<usize> {
+        let target = match position {
+            SeekFrom::Start(offset) => i128::from(offset),
+            SeekFrom::End(offset) => self.logical_len as i128 + i128::from(offset),
+            SeekFrom::Current(offset) => self.position as i128 + i128::from(offset),
+        };
+        if target < 0 || target > self.logical_len as i128 {
+            return Err(io::Error::from(io::ErrorKind::InvalidInput));
+        }
+        usize::try_from(target).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))
+    }
+}
+
+impl Write for FixedCheckpointSink {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        let end = self
+            .position
+            .checked_add(bytes.len())
+            .filter(|end| *end <= self.capacity)
+            .ok_or_else(|| io::Error::from(io::ErrorKind::WriteZero))?;
+        if !bytes.is_empty() {
+            // SAFETY: export preflight validated the complete raw output
+            // region. This sink never reads or borrows caller output, and the
+            // caller contract makes its source and destination disjoint.
+            unsafe {
+                ptr::copy_nonoverlapping(
+                    bytes.as_ptr(),
+                    self.output.add(self.position),
+                    bytes.len(),
+                );
+            }
+        }
+        self.position = end;
+        self.logical_len = self.logical_len.max(end);
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl Seek for FixedCheckpointSink {
+    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+        let target = self.seek_target(position)?;
+        self.position = target;
+        u64::try_from(target).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))
+    }
+}
+
+/// Import one canonical checkpoint and publish a new opaque handle last.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. `*handle_out` must be
+/// initialized to null; it remains null on every failure.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+    request: *const TemporalCircuitImportCheckpointV1Request,
+    handle_out: *mut *mut TemporalCircuitRuntimeHandle,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(handle_out.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "handle output is null or misaligned",
+        );
+    }
+    if !handle_out.read().is_null() {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "handle output must be initialized to null",
+        );
+    }
+    if !fixed_pointer_is_valid(request) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "import request is null or misaligned",
+        );
+    }
+    let request = request.read();
+    let definition = request.definition;
+    let Some(token_code_count) =
+        counted_region(definition.token_codes, definition.token_code_count)
+    else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "token-code input geometry is invalid",
+        );
+    };
+    let Some(threshold_offset_count) = counted_region(
+        definition.threshold_offsets_mv,
+        definition.threshold_offset_count,
+    ) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "threshold input geometry is invalid",
+        );
+    };
+    let Some(checkpoint_len) = counted_region(request.checkpoint_bytes, request.checkpoint_len)
+    else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint input geometry is invalid",
+        );
+    };
+    let Ok(config) = definition.config.into_runtime() else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_DEFINITION,
+            "circuit definition contains an invalid policy tag",
+        );
+    };
+    let token_codes = match try_copy_token_codes(definition.token_codes, token_code_count) {
+        Ok(codes) => codes,
+        Err(()) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "token-code copy allocation failed",
+            );
+        }
+    };
+    let threshold_offsets_mv =
+        match try_copy_thresholds(definition.threshold_offsets_mv, threshold_offset_count) {
+            Ok(offsets) => offsets,
+            Err(()) => {
+                return report.finish(
+                    TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                    "threshold copy allocation failed",
+                );
+            }
+        };
+    let authority = definition.authority.into_validated();
+    let factory = match ValidatedCheckpointV1RuntimeFactory::new(
+        authority,
+        config,
+        token_codes,
+        threshold_offsets_mv,
+    ) {
+        Ok(factory) => factory,
+        Err(_) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_DEFINITION,
+                "circuit definition is not canonical",
+            );
+        }
+    };
+    let checkpoint = if checkpoint_len == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(request.checkpoint_bytes, checkpoint_len)
+    };
+    let runtime = match import_checkpoint_v1(checkpoint, factory) {
+        Ok(runtime) => runtime,
+        Err(CheckpointV1ImportError::RetryableAllocation(_)) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+                "checkpoint import allocation failed",
+            );
+        }
+        Err(
+            CheckpointV1ImportError::Pass1(_)
+            | CheckpointV1ImportError::State
+            | CheckpointV1ImportError::SemanticIndexMismatch
+            | CheckpointV1ImportError::CanonicalReexportMismatch { .. },
+        ) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_CHECKPOINT_REJECTED,
+                "checkpoint-v1 was rejected",
+            );
+        }
+        Err(
+            CheckpointV1ImportError::FactoryIdentityMismatch
+            | CheckpointV1ImportError::AssemblyInvariant,
+        ) => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+                "validated checkpoint assembly invariant failed",
+            );
+        }
+    };
+    let handle = allocate_owned(TemporalCircuitRuntimeHandle {
+        creation_authority: authority,
+        runtime: Mutex::new(runtime),
+    });
+    if handle.is_null() {
+        return report.finish(
+            TEMPORAL_RUNTIME_ALLOCATION_FAILED,
+            "runtime handle allocation failed",
+        );
+    }
+    handle_out.write(handle);
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+/// Advance a fully preflighted block, committing successful prefix tokens.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. Output slots may be
+/// uninitialized; this function constructs a complete record locally and
+/// publishes it with `ptr::write` only after its token commits.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_advance_block_v1(
+    handle: *mut TemporalCircuitRuntimeHandle,
+    request: *const TemporalCircuitAdvanceBlockV1Request,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(handle.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "runtime handle is null or misaligned",
+        );
+    }
+    if !fixed_pointer_is_valid(request) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "block request is null or misaligned",
+        );
+    }
+    let request = request.read();
+    if request.reserved_zero != [0; 6] {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "block request reserved bytes must be zero",
+        );
+    }
+    let mode = match request.mode {
+        MODE_READ_ONLY => TemporalStepMode::ReadOnly,
+        MODE_LEARN => TemporalStepMode::Learn,
+        _ => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "block request mode is invalid",
+            );
+        }
+    };
+    let reset_before = match request.reset_before {
+        0 => false,
+        1 => true,
+        _ => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "block reset flag is invalid",
+            );
+        }
+    };
+    let Some(token_count) = counted_region(request.token_ids, request.token_count) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "token input geometry is invalid",
+        );
+    };
+    let Some(output_capacity) = counted_region(request.output, request.output_capacity) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "step output geometry is invalid",
+        );
+    };
+    if reset_before && token_count == 0 {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "reset-before requires at least one token",
+        );
+    }
+    if output_capacity < token_count {
+        report.required = request.token_count;
+        report.observed = request.output_capacity;
+        return report.finish(
+            TEMPORAL_RUNTIME_OUTPUT_CAPACITY,
+            "step output capacity is too small",
+        );
+    }
+    let token_bytes = token_count * size_of::<u32>();
+    let output_bytes = output_capacity * size_of::<TemporalCircuitStepV1>();
+    if regions_overlap(
+        request.token_ids.cast(),
+        token_bytes,
+        request.output.cast(),
+        output_bytes,
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "token input and step output overlap",
+        );
+    }
+
+    let handle = &*handle;
+    let mut runtime = lock_runtime(handle);
+    if runtime.scientific_stop.is_some() {
+        return stop_report(report, &runtime, TemporalCircuitStop::Poisoned);
+    }
+    for index in 0..token_count {
+        let token_id = request.token_ids.add(index).read();
+        let result = if reset_before && index == 0 {
+            runtime.step_after_transient_reset(token_id, mode)
+        } else {
+            runtime.step(token_id, mode)
+        };
+        match result {
+            Ok(step) => {
+                let output = TemporalCircuitStepV1::from(step);
+                request.output.add(index).write(output);
+                report.completed_prefix = (index + 1) as u64;
+            }
+            Err(stop) => return stop_report(report, &runtime, stop),
+        }
+    }
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+/// Validate exportability and report the exact checkpoint length in
+/// `report.required`.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_checkpoint_size_v1(
+    handle: *const TemporalCircuitRuntimeHandle,
+    fresh_authority: *const TemporalValidatedCheckpointAuthorityV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(handle) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "runtime handle is null or misaligned",
+        );
+    }
+    if !fixed_pointer_is_valid(fresh_authority) {
+        return report.finish(TEMPORAL_RUNTIME_INVALID_ARGUMENT, "fresh authority is null");
+    }
+    let authority = fresh_authority.read().into_validated();
+    let handle = &*handle;
+    let runtime = lock_runtime(handle);
+    if authority != handle.creation_authority {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_DEFINITION,
+            "fresh authority does not match handle creation authority",
+        );
+    }
+    let prepared = match runtime.prepare_checkpoint_v1_export(authority) {
+        Ok(prepared) => prepared,
+        Err(error) => return prepare_error(report, error),
+    };
+    report.required = prepared.encoded_len();
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+/// Encode a canonical checkpoint into caller-owned, potentially uninitialized
+/// bytes. A short buffer is rejected before any output write.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. `output` is never read or
+/// borrowed as a Rust slice.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+    handle: *const TemporalCircuitRuntimeHandle,
+    fresh_authority: *const TemporalValidatedCheckpointAuthorityV1,
+    output: *mut u8,
+    output_capacity: u64,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(handle) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "runtime handle is null or misaligned",
+        );
+    }
+    if !fixed_pointer_is_valid(fresh_authority) {
+        return report.finish(TEMPORAL_RUNTIME_INVALID_ARGUMENT, "fresh authority is null");
+    }
+    let Some(output_capacity_usize) = counted_region(output.cast_const(), output_capacity) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "checkpoint output geometry is invalid",
+        );
+    };
+    let authority = fresh_authority.read().into_validated();
+    let handle = &*handle;
+    let runtime = lock_runtime(handle);
+    if authority != handle.creation_authority {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_DEFINITION,
+            "fresh authority does not match handle creation authority",
+        );
+    }
+    let prepared = match runtime.prepare_checkpoint_v1_export(authority) {
+        Ok(prepared) => prepared,
+        Err(error) => return prepare_error(report, error),
+    };
+    let required = prepared.encoded_len();
+    report.required = required;
+    report.observed = output_capacity;
+    if output_capacity < required {
+        return report.finish(
+            TEMPORAL_RUNTIME_OUTPUT_CAPACITY,
+            "checkpoint output capacity is too small",
+        );
+    }
+    let Ok(required_usize) = usize::try_from(required) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+            "checkpoint length exceeds the host address domain",
+        );
+    };
+    if required_usize > output_capacity_usize {
+        return report.finish(
+            TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+            "checkpoint length conversion changed capacity ordering",
+        );
+    }
+    let mut sink = FixedCheckpointSink::new(output, required_usize);
+    if prepared.encode_into(&mut sink).is_err() || sink.logical_len() != required_usize {
+        return report.finish(
+            TEMPORAL_RUNTIME_INTERNAL_INVARIANT,
+            "canonical checkpoint encoding failed",
+        );
+    }
+    report.observed = required;
+    report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+/// Destroy an opaque handle. Null is a no-op.
+///
+/// # Safety
+///
+/// A non-null handle must have been returned by the import function, must not
+/// have been destroyed before, and must not be used concurrently.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_destroy(
+    handle: *mut TemporalCircuitRuntimeHandle,
+) {
+    if !handle.is_null() {
+        destroy_owned(handle);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        io::Cursor,
+        mem::{align_of, offset_of, size_of, MaybeUninit},
+    };
+
+    use sha2::{Digest, Sha256};
+
+    use super::*;
+    use crate::temporal_runtime::{
+        checkpoint::tests::cpython_full_section_generic_checkpoint_v1, TemporalSegmentInit,
+    };
+
+    fn raw_bytes<T>(value: &T) -> &[u8] {
+        // SAFETY: callers use fully initialized repr(C) records whose layout
+        // assertions below prove contains no implicit padding.
+        unsafe { slice::from_raw_parts((value as *const T).cast(), size_of::<T>()) }
+    }
+
+    #[test]
+    fn repr_c_layouts_match_the_frozen_abi() {
+        assert_eq!(size_of::<TemporalValidatedCheckpointAuthorityV1>(), 64);
+        assert_eq!(align_of::<TemporalValidatedCheckpointAuthorityV1>(), 1);
+        assert_eq!(
+            offset_of!(
+                TemporalValidatedCheckpointAuthorityV1,
+                source_bundle_identity_sha256
+            ),
+            32
+        );
+
+        assert_eq!(size_of::<TemporalCircuitConfigV1>(), 32);
+        assert_eq!(align_of::<TemporalCircuitConfigV1>(), 4);
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, column_count), 0);
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, max_pyramidal_cells), 4);
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, segment_capacity), 8);
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, construction_seed), 12);
+        assert_eq!(
+            offset_of!(TemporalCircuitConfigV1, connected_permanence_ticks),
+            16
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitConfigV1, initial_permanence_ticks),
+            18
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitConfigV1, permanence_increment_ticks),
+            20
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitConfigV1, negative_decrement_ticks),
+            22
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitConfigV1, base_cells_per_column),
+            24
+        );
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, novel_race_cap), 25);
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, prediction_quorum), 26);
+        assert_eq!(
+            offset_of!(TemporalCircuitConfigV1, max_segments_per_cell),
+            27
+        );
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, theta_match), 28);
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, theta_active), 29);
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, context_policy), 30);
+        assert_eq!(offset_of!(TemporalCircuitConfigV1, plasticity_policy), 31);
+
+        assert_eq!(size_of::<TemporalTokenCodeV1>(), 48);
+        assert_eq!(align_of::<TemporalTokenCodeV1>(), 4);
+        assert_eq!(offset_of!(TemporalTokenCodeV1, token_id), 0);
+        assert_eq!(offset_of!(TemporalTokenCodeV1, columns), 4);
+
+        assert_eq!(size_of::<TemporalCircuitDefinitionV1>(), 128);
+        assert_eq!(align_of::<TemporalCircuitDefinitionV1>(), 8);
+        assert_eq!(offset_of!(TemporalCircuitDefinitionV1, config), 0);
+        assert_eq!(offset_of!(TemporalCircuitDefinitionV1, token_codes), 32);
+        assert_eq!(
+            offset_of!(TemporalCircuitDefinitionV1, token_code_count),
+            40
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitDefinitionV1, threshold_offsets_mv),
+            48
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitDefinitionV1, threshold_offset_count),
+            56
+        );
+        assert_eq!(offset_of!(TemporalCircuitDefinitionV1, authority), 64);
+
+        assert_eq!(size_of::<TemporalCircuitImportCheckpointV1Request>(), 144);
+        assert_eq!(align_of::<TemporalCircuitImportCheckpointV1Request>(), 8);
+        assert_eq!(
+            offset_of!(TemporalCircuitImportCheckpointV1Request, definition),
+            0
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitImportCheckpointV1Request, checkpoint_bytes),
+            128
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitImportCheckpointV1Request, checkpoint_len),
+            136
+        );
+
+        assert_eq!(size_of::<TemporalSpikeV1>(), 8);
+        assert_eq!(align_of::<TemporalSpikeV1>(), 4);
+        assert_eq!(offset_of!(TemporalSpikeV1, cell_id), 0);
+        assert_eq!(offset_of!(TemporalSpikeV1, tick), 4);
+        assert_eq!(offset_of!(TemporalSpikeV1, reserved_zero), 6);
+
+        assert_eq!(size_of::<TemporalCircuitStepV1>(), 768);
+        assert_eq!(align_of::<TemporalCircuitStepV1>(), 8);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, token_id), 0);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, punished_segments), 4);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, event_count), 8);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, predicted), 16);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, predicted_columns), 17);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, allocated_segments), 18);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, reserved_zero), 19);
+        assert_eq!(
+            offset_of!(TemporalCircuitStepV1, inhibition_onset_ticks),
+            20
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitStepV1, column_simulated_ticks),
+            42
+        );
+        assert_eq!(offset_of!(TemporalCircuitStepV1, winner_spikes), 64);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, basket_spikes), 152);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, proximal_spikes), 240);
+        assert_eq!(
+            offset_of!(TemporalCircuitStepV1, proximal_relay_spikes),
+            328
+        );
+        assert_eq!(offset_of!(TemporalCircuitStepV1, winner_relay_spikes), 416);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, winner_context), 504);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, proximal_context), 592);
+        assert_eq!(offset_of!(TemporalCircuitStepV1, context), 680);
+
+        assert_eq!(size_of::<TemporalCircuitAdvanceBlockV1Request>(), 40);
+        assert_eq!(align_of::<TemporalCircuitAdvanceBlockV1Request>(), 8);
+        assert_eq!(
+            offset_of!(TemporalCircuitAdvanceBlockV1Request, token_ids),
+            0
+        );
+        assert_eq!(offset_of!(TemporalCircuitAdvanceBlockV1Request, output), 8);
+        assert_eq!(
+            offset_of!(TemporalCircuitAdvanceBlockV1Request, token_count),
+            16
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitAdvanceBlockV1Request, output_capacity),
+            24
+        );
+        assert_eq!(offset_of!(TemporalCircuitAdvanceBlockV1Request, mode), 32);
+        assert_eq!(
+            offset_of!(TemporalCircuitAdvanceBlockV1Request, reset_before),
+            33
+        );
+        assert_eq!(
+            offset_of!(TemporalCircuitAdvanceBlockV1Request, reserved_zero),
+            34
+        );
+
+        assert_eq!(size_of::<TemporalCircuitReportV1>(), 512);
+        assert_eq!(align_of::<TemporalCircuitReportV1>(), 8);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, status), 0);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, message_len), 4);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, completed_prefix), 8);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, required), 16);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, observed), 24);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, location), 32);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, poison_code), 40);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, stage_code), 42);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, reserved_zero), 44);
+        assert_eq!(offset_of!(TemporalCircuitReportV1, message_utf8), 48);
+    }
+
+    #[test]
+    fn report_and_step_bytes_match_the_independent_python_oracle() {
+        let message = "oracle/R1: snowman=☃; café; little-endian; stop@column-race";
+        assert_eq!(message.len(), 62);
+        let mut report = TemporalCircuitReportV1::ZERO;
+        report.status = TEMPORAL_RUNTIME_SCIENTIFIC_STOP;
+        report.message_len = message.len() as u32;
+        report.completed_prefix = 0x0102_0304_0506_0708;
+        report.required = 0x1112_1314_1516_1718;
+        report.observed = 0x2122_2324_2526_2728;
+        report.location = 0x3132_3334_3536_3738;
+        report.poison_code = 7;
+        report.stage_code = STAGE_COLUMN_RACE;
+        report.message_utf8[..message.len()].copy_from_slice(message.as_bytes());
+        let report_bytes = raw_bytes(&report);
+        assert_eq!(
+            &report_bytes[..48],
+            &hex_bytes(
+                "080000003e00000008070605040302011817161514131211282726252423222138373635343332310700030000000000"
+            )[..]
+        );
+        assert_eq!(
+            hex_digest(report_bytes),
+            "5d7e11f6a153082ae9e39ef176f50e11e7a56067b023a6e6213efc4b0d97bda4"
+        );
+
+        let spikes: [[TemporalSpikeV1; ACTIVE_COLUMNS]; 5] = std::array::from_fn(|group| {
+            std::array::from_fn(|index| {
+                let n = group * ACTIVE_COLUMNS + index;
+                TemporalSpikeV1 {
+                    cell_id: 0x1020_3040 + (n as u32) * 0x0001_0101,
+                    tick: 201 + n as u16,
+                    reserved_zero: 0,
+                }
+            })
+        });
+        let contexts: [[u32; CONTEXT_CELLS]; 3] = std::array::from_fn(|group| {
+            std::array::from_fn(|index| {
+                let n = group * CONTEXT_CELLS + index;
+                0x5060_7080 + (n as u32) * 0x0001_0003
+            })
+        });
+        let step = TemporalCircuitStepV1 {
+            token_id: 0x0A1B_2C3D,
+            punished_segments: 0x1E2F_4051,
+            event_count: 0x6273_8495_A6B7_C8D9,
+            predicted: 1,
+            predicted_columns: 7,
+            allocated_segments: 5,
+            reserved_zero: 0,
+            inhibition_onset_ticks: std::array::from_fn(|index| 101 + 2 * index as u16),
+            column_simulated_ticks: std::array::from_fn(|index| 102 + 2 * index as u16),
+            winner_spikes: spikes[0],
+            basket_spikes: spikes[1],
+            proximal_spikes: spikes[2],
+            proximal_relay_spikes: spikes[3],
+            winner_relay_spikes: spikes[4],
+            winner_context: contexts[0],
+            proximal_context: contexts[1],
+            context: contexts[2],
+        };
+        let step_bytes = raw_bytes(&step);
+        assert_eq!(
+            &step_bytes[..20],
+            &hex_bytes("3d2c1b0a51402f1ed9c8b7a69584736201070500")[..]
+        );
+        assert_eq!(
+            &step_bytes[20..42],
+            &hex_bytes("6500670069006b006d006f0071007300750077007900")[..]
+        );
+        assert_eq!(
+            &step_bytes[42..64],
+            &hex_bytes("660068006a006c006e00700072007400760078007a00")[..]
+        );
+        assert_eq!(
+            hex_digest(step_bytes),
+            "16b918d572aa21cc6323d16545f5567e67f8dde07f6599af911b1180a4825bda"
+        );
+    }
+
+    fn hex_bytes(hex: &str) -> Vec<u8> {
+        hex.as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let high = (pair[0] as char).to_digit(16).unwrap() as u8;
+                let low = (pair[1] as char).to_digit(16).unwrap() as u8;
+                high << 4 | low
+            })
+            .collect()
+    }
+
+    fn hex_digest(bytes: &[u8]) -> String {
+        Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
+    fn odd_byte_offset(base: *const u8) -> usize {
+        if (base as usize + 1).is_multiple_of(2) {
+            2
+        } else {
+            1
+        }
+    }
+
+    struct Fixture {
+        authority: TemporalValidatedCheckpointAuthorityV1,
+        config: TemporalCircuitConfigV1,
+        token_codes: [TemporalTokenCodeV1; 1],
+        thresholds: Vec<f64>,
+        checkpoint: Vec<u8>,
+    }
+
+    fn fixture() -> Fixture {
+        fixture_with_poison(None)
+    }
+
+    fn fixture_with_poison(poison: Option<TemporalPoisonCode>) -> Fixture {
+        let authority = TemporalValidatedCheckpointAuthorityV1 {
+            protocol_identity_sha256: [0x5a; 32],
+            source_bundle_identity_sha256: [0xc3; 32],
+        };
+        let config = TemporalCircuitConfigV1 {
+            column_count: ACTIVE_COLUMNS as u32,
+            max_pyramidal_cells: ACTIVE_COLUMNS as u32,
+            segment_capacity: 16,
+            construction_seed: 0x1020_3040,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 8,
+            negative_decrement_ticks: 1,
+            base_cells_per_column: 1,
+            novel_race_cap: 1,
+            prediction_quorum: ACTIVE_COLUMNS as u8,
+            max_segments_per_cell: 1,
+            theta_match: 10,
+            theta_active: 10,
+            context_policy: CONTEXT_BOUND_WINNERS,
+            plasticity_policy: PLASTICITY_GROWTH_OFF,
+        };
+        let token_codes = [TemporalTokenCodeV1 {
+            token_id: 7,
+            columns: std::array::from_fn(|index| index as u32),
+        }];
+        let thresholds = vec![0.0; 55];
+        let mut runtime = TemporalCircuitRuntime::new(
+            config.into_runtime().unwrap(),
+            vec![TokenCode {
+                token_id: token_codes[0].token_id,
+                columns: token_codes[0].columns,
+            }],
+            (0..ACTIVE_COLUMNS)
+                .map(|column| vec![column as u32])
+                .collect(),
+            thresholds.clone(),
+            &[] as &[TemporalSegmentInit],
+        )
+        .unwrap();
+        assert_eq!(runtime.recognize(7).unwrap().event_count, 1);
+        runtime.scientific_stop = poison;
+        let prepared = runtime
+            .prepare_checkpoint_v1_export(authority.into_validated())
+            .unwrap();
+        let mut sink = Cursor::new(Vec::new());
+        prepared.encode_into(&mut sink).unwrap();
+        let checkpoint = sink.into_inner();
+        assert_eq!(checkpoint.len() as u64, prepared.encoded_len());
+        Fixture {
+            authority,
+            config,
+            token_codes,
+            thresholds,
+            checkpoint,
+        }
+    }
+
+    unsafe fn import_fixture(
+        fixture: &Fixture,
+    ) -> (*mut TemporalCircuitRuntimeHandle, TemporalCircuitReportV1) {
+        let mut unaligned_checkpoint = vec![0xa5; fixture.checkpoint.len() + 3];
+        let checkpoint_offset = odd_byte_offset(unaligned_checkpoint.as_ptr());
+        unaligned_checkpoint[checkpoint_offset..checkpoint_offset + fixture.checkpoint.len()]
+            .copy_from_slice(&fixture.checkpoint);
+        let checkpoint_bytes = unaligned_checkpoint.as_ptr().add(checkpoint_offset);
+        assert!(!(checkpoint_bytes as usize).is_multiple_of(2));
+        let request = TemporalCircuitImportCheckpointV1Request {
+            definition: TemporalCircuitDefinitionV1 {
+                config: fixture.config,
+                token_codes: fixture.token_codes.as_ptr(),
+                token_code_count: fixture.token_codes.len() as u64,
+                threshold_offsets_mv: fixture.thresholds.as_ptr(),
+                threshold_offset_count: fixture.thresholds.len() as u64,
+                authority: fixture.authority,
+            },
+            checkpoint_bytes,
+            checkpoint_len: fixture.checkpoint.len() as u64,
+        };
+        let mut handle = ptr::null_mut();
+        let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+        assert_eq!(
+            humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                &request,
+                &mut handle,
+                report.as_mut_ptr(),
+            ),
+            TEMPORAL_RUNTIME_OK
+        );
+        (handle, report.assume_init())
+    }
+
+    unsafe fn advance(
+        handle: *mut TemporalCircuitRuntimeHandle,
+        tokens: &[u32],
+        output: *mut TemporalCircuitStepV1,
+        output_capacity: u64,
+        reset_before: u8,
+    ) -> (u32, TemporalCircuitReportV1) {
+        let request = TemporalCircuitAdvanceBlockV1Request {
+            token_ids: if tokens.is_empty() {
+                ptr::null()
+            } else {
+                tokens.as_ptr()
+            },
+            output,
+            token_count: tokens.len() as u64,
+            output_capacity,
+            mode: MODE_READ_ONLY,
+            reset_before,
+            reserved_zero: [0; 6],
+        };
+        let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+        let status = humanbrain_temporal_circuit_runtime_advance_block_v1(
+            handle,
+            &request,
+            report.as_mut_ptr(),
+        );
+        (status, report.assume_init())
+    }
+
+    fn sentinel_step(token_id: u32) -> TemporalCircuitStepV1 {
+        let spike = TemporalSpikeV1 {
+            cell_id: 0xa1b2_c3d4,
+            tick: 0x5e6f,
+            reserved_zero: 0,
+        };
+        TemporalCircuitStepV1 {
+            token_id,
+            punished_segments: 0x1122_3344,
+            event_count: u64::MAX,
+            predicted: 0,
+            predicted_columns: 0,
+            allocated_segments: 0,
+            reserved_zero: 0,
+            inhibition_onset_ticks: [0x1234; ACTIVE_COLUMNS],
+            column_simulated_ticks: [0x5678; ACTIVE_COLUMNS],
+            winner_spikes: [spike; ACTIVE_COLUMNS],
+            basket_spikes: [spike; ACTIVE_COLUMNS],
+            proximal_spikes: [spike; ACTIVE_COLUMNS],
+            proximal_relay_spikes: [spike; ACTIVE_COLUMNS],
+            winner_relay_spikes: [spike; ACTIVE_COLUMNS],
+            winner_context: [0x1020_3040; CONTEXT_CELLS],
+            proximal_context: [0x5060_7080; CONTEXT_CELLS],
+            context: [0x90a0_b0c0; CONTEXT_CELLS],
+        }
+    }
+
+    #[test]
+    fn import_size_and_export_are_authority_bound_and_short_export_is_untouched() {
+        let fixture = fixture();
+        unsafe {
+            let (handle, imported) = import_fixture(&fixture);
+            assert!(!handle.is_null());
+            assert_eq!(imported.status, TEMPORAL_RUNTIME_OK);
+
+            let mut size_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_checkpoint_size_v1(
+                    handle,
+                    &fixture.authority,
+                    size_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            let size_report = size_report.assume_init();
+            assert_eq!(size_report.required, fixture.checkpoint.len() as u64);
+
+            let mut short = vec![0xa5; fixture.checkpoint.len() - 1];
+            let mut short_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                    handle,
+                    &fixture.authority,
+                    short.as_mut_ptr(),
+                    short.len() as u64,
+                    short_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OUTPUT_CAPACITY
+            );
+            assert!(short.iter().all(|byte| *byte == 0xa5));
+            let short_report = short_report.assume_init();
+            assert_eq!(short_report.required, fixture.checkpoint.len() as u64);
+            assert_eq!(short_report.observed, short.len() as u64);
+
+            let mut exported = vec![0u8; fixture.checkpoint.len()];
+            let mut export_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                    handle,
+                    &fixture.authority,
+                    exported.as_mut_ptr(),
+                    exported.len() as u64,
+                    export_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            assert_eq!(exported, fixture.checkpoint);
+            assert_eq!(export_report.assume_init().observed, exported.len() as u64);
+
+            let mut oversized = vec![0x6d; fixture.checkpoint.len() + 37];
+            let mut oversized_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                    handle,
+                    &fixture.authority,
+                    oversized.as_mut_ptr(),
+                    oversized.len() as u64,
+                    oversized_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            assert_eq!(
+                &oversized[..fixture.checkpoint.len()],
+                fixture.checkpoint.as_slice()
+            );
+            assert!(oversized[fixture.checkpoint.len()..]
+                .iter()
+                .all(|byte| *byte == 0x6d));
+
+            let wrong_authority = TemporalValidatedCheckpointAuthorityV1 {
+                protocol_identity_sha256: [0x5b; 32],
+                ..fixture.authority
+            };
+            let mut authority_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_checkpoint_size_v1(
+                    handle,
+                    &wrong_authority,
+                    authority_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_DEFINITION
+            );
+            assert_eq!(
+                authority_report.assume_init().status,
+                TEMPORAL_RUNTIME_INVALID_DEFINITION
+            );
+            let mut authority_output = vec![0x91; fixture.checkpoint.len()];
+            let mut authority_export_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                    handle,
+                    &wrong_authority,
+                    authority_output.as_mut_ptr(),
+                    authority_output.len() as u64,
+                    authority_export_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_DEFINITION
+            );
+            assert!(authority_output.iter().all(|byte| *byte == 0x91));
+
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+            humanbrain_temporal_circuit_runtime_destroy(ptr::null_mut());
+        }
+    }
+
+    #[test]
+    fn block_reset_is_first_token_transactional_and_prefix_failures_are_exact() {
+        let fixture = fixture();
+        unsafe {
+            let (handle, _) = import_fixture(&fixture);
+
+            let mut ordinary = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let (status, report) = advance(handle, &[7], ordinary.as_mut_ptr(), 1, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(report.completed_prefix, 1);
+            assert_eq!(ordinary.assume_init().event_count, 2);
+
+            let (status, report) = advance(handle, &[], ptr::null_mut(), 0, 1);
+            assert_eq!(status, TEMPORAL_RUNTIME_INVALID_ARGUMENT);
+            assert_eq!(report.completed_prefix, 0);
+
+            let mut unknown_output = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let (status, report) = advance(handle, &[99], unknown_output.as_mut_ptr(), 1, 1);
+            assert_eq!(status, TEMPORAL_RUNTIME_UNKNOWN_TOKEN);
+            assert_eq!(report.completed_prefix, 0);
+            assert_eq!(report.observed, 99);
+
+            let mut after_unknown = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let (status, _) = advance(handle, &[7], after_unknown.as_mut_ptr(), 1, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(after_unknown.assume_init().event_count, 3);
+
+            let mut reset = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let (status, _) = advance(handle, &[7], reset.as_mut_ptr(), 1, 1);
+            assert_eq!(status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(reset.assume_init().event_count, 1);
+
+            let (status, report) = advance(handle, &[7], ptr::null_mut(), 0, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_OUTPUT_CAPACITY);
+            assert_eq!(report.required, 1);
+            assert_eq!(report.observed, 0);
+
+            let sentinel = TemporalCircuitStepV1 {
+                token_id: 0xfeed_beef,
+                punished_segments: 0,
+                event_count: u64::MAX,
+                predicted: 0,
+                predicted_columns: 0,
+                allocated_segments: 0,
+                reserved_zero: 0,
+                inhibition_onset_ticks: [0; ACTIVE_COLUMNS],
+                column_simulated_ticks: [0; ACTIVE_COLUMNS],
+                winner_spikes: [TemporalSpikeV1 {
+                    cell_id: 0,
+                    tick: 0,
+                    reserved_zero: 0,
+                }; ACTIVE_COLUMNS],
+                basket_spikes: [TemporalSpikeV1 {
+                    cell_id: 0,
+                    tick: 0,
+                    reserved_zero: 0,
+                }; ACTIVE_COLUMNS],
+                proximal_spikes: [TemporalSpikeV1 {
+                    cell_id: 0,
+                    tick: 0,
+                    reserved_zero: 0,
+                }; ACTIVE_COLUMNS],
+                proximal_relay_spikes: [TemporalSpikeV1 {
+                    cell_id: 0,
+                    tick: 0,
+                    reserved_zero: 0,
+                }; ACTIVE_COLUMNS],
+                winner_relay_spikes: [TemporalSpikeV1 {
+                    cell_id: 0,
+                    tick: 0,
+                    reserved_zero: 0,
+                }; ACTIVE_COLUMNS],
+                winner_context: [0; CONTEXT_CELLS],
+                proximal_context: [0; CONTEXT_CELLS],
+                context: [0; CONTEXT_CELLS],
+            };
+            let mut prefix = [sentinel; 3];
+            let (status, report) = advance(handle, &[7, 99, 7], prefix.as_mut_ptr(), 3, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_UNKNOWN_TOKEN);
+            assert_eq!(report.completed_prefix, 1);
+            assert_eq!(prefix[0].token_id, 7);
+            assert_eq!(prefix[0].event_count, 2);
+            assert_eq!(prefix[1].token_id, 0xfeed_beef);
+            assert_eq!(prefix[2].token_id, 0xfeed_beef);
+
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[test]
+    fn reset_first_terminal_stop_retains_transient_state_and_only_latches_poison() {
+        let fixture = fixture();
+        unsafe {
+            let (handle, _) = import_fixture(&fixture);
+            let (before_context, before_winner_context, before_event) = {
+                let mut runtime = lock_runtime(&*handle);
+                let before = (
+                    runtime.previous_context,
+                    runtime.previous_winner_context,
+                    runtime.event_count,
+                );
+                let first_proximal = runtime.proximal_offset as usize;
+                runtime.threshold_offsets_mv[first_proximal] = f64::NAN;
+                before
+            };
+
+            let mut output = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let (status, report) = advance(handle, &[7], output.as_mut_ptr(), 1, 1);
+            assert_eq!(status, TEMPORAL_RUNTIME_SCIENTIFIC_STOP);
+            assert_eq!(report.completed_prefix, 0);
+            assert_eq!(
+                report.poison_code,
+                TemporalPoisonCode::ProximalPhysics as u16
+            );
+            assert_eq!(report.stage_code, STAGE_PROXIMAL);
+            {
+                let runtime = lock_runtime(&*handle);
+                assert_eq!(runtime.previous_context, before_context);
+                assert_eq!(runtime.previous_winner_context, before_winner_context);
+                assert_eq!(runtime.event_count, before_event);
+                assert_eq!(
+                    runtime.scientific_stop,
+                    Some(TemporalPoisonCode::ProximalPhysics)
+                );
+            }
+
+            let (status, report) = advance(handle, &[7], output.as_mut_ptr(), 1, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_POISONED);
+            assert_eq!(
+                report.poison_code,
+                TemporalPoisonCode::ProximalPhysics as u16
+            );
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[test]
+    fn imported_runtime_owns_definition_and_checkpoint_after_foreign_inputs_change_and_drop() {
+        let fixture = fixture();
+        unsafe {
+            let handle = {
+                let mut token_codes = fixture.token_codes;
+                let mut thresholds = fixture.thresholds.clone();
+                let mut checkpoint_backing = vec![0x44; fixture.checkpoint.len() + 3];
+                let checkpoint_offset = odd_byte_offset(checkpoint_backing.as_ptr());
+                checkpoint_backing[checkpoint_offset..checkpoint_offset + fixture.checkpoint.len()]
+                    .copy_from_slice(&fixture.checkpoint);
+                let checkpoint_bytes = checkpoint_backing.as_ptr().add(checkpoint_offset);
+                assert!(!(checkpoint_bytes as usize).is_multiple_of(2));
+                let request = TemporalCircuitImportCheckpointV1Request {
+                    definition: TemporalCircuitDefinitionV1 {
+                        config: fixture.config,
+                        token_codes: token_codes.as_ptr(),
+                        token_code_count: token_codes.len() as u64,
+                        threshold_offsets_mv: thresholds.as_ptr(),
+                        threshold_offset_count: thresholds.len() as u64,
+                        authority: fixture.authority,
+                    },
+                    checkpoint_bytes,
+                    checkpoint_len: fixture.checkpoint.len() as u64,
+                };
+                let mut handle = ptr::null_mut();
+                let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+                assert_eq!(
+                    humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                        &request,
+                        &mut handle,
+                        report.as_mut_ptr(),
+                    ),
+                    TEMPORAL_RUNTIME_OK
+                );
+                assert_eq!(report.assume_init().status, TEMPORAL_RUNTIME_OK);
+
+                token_codes[0].token_id = u32::MAX;
+                assert_eq!(token_codes[0].token_id, u32::MAX);
+                thresholds.fill(f64::NAN);
+                checkpoint_backing.fill(0);
+                handle
+            };
+
+            let mut exported = vec![0u8; fixture.checkpoint.len()];
+            let mut export_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                    handle,
+                    &fixture.authority,
+                    exported.as_mut_ptr(),
+                    exported.len() as u64,
+                    export_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            assert_eq!(exported, fixture.checkpoint);
+
+            let mut step = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let (status, report) = advance(handle, &[7], step.as_mut_ptr(), 1, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(report.completed_prefix, 1);
+            assert_eq!(step.assume_init().event_count, 2);
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[test]
+    fn imported_poisoned_checkpoint_remains_exportable_and_rejects_zero_work_advance() {
+        let fixture = fixture_with_poison(Some(TemporalPoisonCode::ProximalPhysics));
+        unsafe {
+            let (handle, _) = import_fixture(&fixture);
+            let mut size_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_checkpoint_size_v1(
+                    handle,
+                    &fixture.authority,
+                    size_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            assert_eq!(
+                size_report.assume_init().required,
+                fixture.checkpoint.len() as u64
+            );
+
+            let mut exported = vec![0u8; fixture.checkpoint.len()];
+            let mut export_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                    handle,
+                    &fixture.authority,
+                    exported.as_mut_ptr(),
+                    exported.len() as u64,
+                    export_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            assert_eq!(exported, fixture.checkpoint);
+
+            let (status, report) = advance(handle, &[], ptr::null_mut(), 0, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_POISONED);
+            assert_eq!(report.completed_prefix, 0);
+            assert_eq!(
+                report.poison_code,
+                TemporalPoisonCode::ProximalPhysics as u16
+            );
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[test]
+    fn invalid_block_geometry_tags_and_reserved_bytes_never_touch_output() {
+        let fixture = fixture();
+        unsafe {
+            let (handle, _) = import_fixture(&fixture);
+            let token = 7u32;
+            for (mode, reset_before, reserved_zero) in [
+                (2, 0, [0; 6]),
+                (MODE_READ_ONLY, 2, [0; 6]),
+                (MODE_READ_ONLY, 0, [1, 0, 0, 0, 0, 0]),
+            ] {
+                let mut output = MaybeUninit::new(sentinel_step(0xfeed_beef));
+                let before = raw_bytes(output.assume_init_ref()).to_vec();
+                let request = TemporalCircuitAdvanceBlockV1Request {
+                    token_ids: &token,
+                    output: output.as_mut_ptr(),
+                    token_count: 1,
+                    output_capacity: 1,
+                    mode,
+                    reset_before,
+                    reserved_zero,
+                };
+                let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+                assert_eq!(
+                    humanbrain_temporal_circuit_runtime_advance_block_v1(
+                        handle,
+                        &request,
+                        report.as_mut_ptr(),
+                    ),
+                    TEMPORAL_RUNTIME_INVALID_ARGUMENT
+                );
+                assert_eq!(raw_bytes(output.assume_init_ref()), before.as_slice());
+            }
+
+            let mut token_backing = [0u8; 8];
+            let token_offset = (0..4)
+                .find(|offset| !(token_backing.as_ptr().add(*offset) as usize).is_multiple_of(4))
+                .unwrap();
+            token_backing[token_offset..token_offset + 4].copy_from_slice(&7u32.to_ne_bytes());
+            let mut output = MaybeUninit::new(sentinel_step(0xfeed_beef));
+            let before = raw_bytes(output.assume_init_ref()).to_vec();
+            let request = TemporalCircuitAdvanceBlockV1Request {
+                token_ids: token_backing.as_ptr().add(token_offset).cast(),
+                output: output.as_mut_ptr(),
+                token_count: 1,
+                output_capacity: 1,
+                mode: MODE_READ_ONLY,
+                reset_before: 0,
+                reserved_zero: [0; 6],
+            };
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_advance_block_v1(
+                    handle,
+                    &request,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(raw_bytes(output.assume_init_ref()), before.as_slice());
+
+            let overflow_request = TemporalCircuitAdvanceBlockV1Request {
+                token_ids: &token,
+                output: output.as_mut_ptr(),
+                token_count: u64::MAX,
+                output_capacity: 1,
+                mode: MODE_READ_ONLY,
+                reset_before: 0,
+                reserved_zero: [0; 6],
+            };
+            let mut overflow_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_advance_block_v1(
+                    handle,
+                    &overflow_request,
+                    overflow_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(raw_bytes(output.assume_init_ref()), before.as_slice());
+
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[test]
+    fn import_policy_tag_and_nonnull_output_precedence_are_exact() {
+        let fixture = fixture();
+        let mut invalid_config = fixture.config;
+        invalid_config.context_policy = 0;
+        let request = TemporalCircuitImportCheckpointV1Request {
+            definition: TemporalCircuitDefinitionV1 {
+                config: invalid_config,
+                token_codes: fixture.token_codes.as_ptr(),
+                token_code_count: fixture.token_codes.len() as u64,
+                threshold_offsets_mv: fixture.thresholds.as_ptr(),
+                threshold_offset_count: fixture.thresholds.len() as u64,
+                authority: fixture.authority,
+            },
+            checkpoint_bytes: fixture.checkpoint.as_ptr(),
+            checkpoint_len: fixture.checkpoint.len() as u64,
+        };
+        unsafe {
+            let mut handle = ptr::null_mut();
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                    &request,
+                    &mut handle,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_DEFINITION
+            );
+            assert!(handle.is_null());
+
+            let mut nonnull = ptr::NonNull::<TemporalCircuitRuntimeHandle>::dangling().as_ptr();
+            let retained = nonnull;
+            let mut precedence_report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                    ptr::null(),
+                    &mut nonnull,
+                    precedence_report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT
+            );
+            assert_eq!(nonnull, retained);
+        }
+    }
+
+    #[test]
+    fn import_rejects_bad_checkpoint_without_publishing_a_handle() {
+        let fixture = fixture();
+        let bad_checkpoint = [0u8; 32];
+        let request = TemporalCircuitImportCheckpointV1Request {
+            definition: TemporalCircuitDefinitionV1 {
+                config: fixture.config,
+                token_codes: fixture.token_codes.as_ptr(),
+                token_code_count: fixture.token_codes.len() as u64,
+                threshold_offsets_mv: fixture.thresholds.as_ptr(),
+                threshold_offset_count: fixture.thresholds.len() as u64,
+                authority: fixture.authority,
+            },
+            checkpoint_bytes: bad_checkpoint.as_ptr(),
+            checkpoint_len: bad_checkpoint.len() as u64,
+        };
+        let mut handle = ptr::null_mut();
+        let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+        unsafe {
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                    &request,
+                    &mut handle,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_CHECKPOINT_REJECTED
+            );
+            assert!(handle.is_null());
+            assert_eq!(
+                report.assume_init().status,
+                TEMPORAL_RUNTIME_CHECKPOINT_REJECTED
+            );
+        }
+    }
+
+    #[test]
+    fn cpython_checkpoint_round_trips_from_provably_unaligned_foreign_storage() {
+        let literal = cpython_full_section_generic_checkpoint_v1();
+        assert_eq!(
+            hex_digest(&literal),
+            "d64cf550c30b6bcf7b499d39cbdc9c7bafeaef6a2e23b795ffe512e37117eb80"
+        );
+        let authority = TemporalValidatedCheckpointAuthorityV1 {
+            protocol_identity_sha256: [0xa5; 32],
+            source_bundle_identity_sha256: std::array::from_fn(|index| index as u8),
+        };
+        let config = TemporalCircuitConfigV1 {
+            column_count: 11,
+            max_pyramidal_cells: 26,
+            segment_capacity: 6,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            base_cells_per_column: 2,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            max_segments_per_cell: 1,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy: CONTEXT_GENERIC_AFFERENTS,
+            plasticity_policy: PLASTICITY_PLASTIC,
+        };
+
+        unsafe {
+            let handle = {
+                let mut token_codes = [TemporalTokenCodeV1 {
+                    token_id: 7,
+                    columns: std::array::from_fn(|index| index as u32),
+                }];
+                let mut thresholds = vec![0.0; 85];
+                let mut checkpoint_backing = vec![0x6d; literal.len() + 3];
+                let checkpoint_offset = odd_byte_offset(checkpoint_backing.as_ptr());
+                checkpoint_backing[checkpoint_offset..checkpoint_offset + literal.len()]
+                    .copy_from_slice(&literal);
+                let before = checkpoint_backing.clone();
+                let checkpoint_bytes = checkpoint_backing.as_ptr().add(checkpoint_offset);
+                assert!(!(checkpoint_bytes as usize).is_multiple_of(align_of::<u16>()));
+                assert!(!(checkpoint_bytes as usize).is_multiple_of(align_of::<u32>()));
+                assert!(!(checkpoint_bytes as usize).is_multiple_of(align_of::<u64>()));
+
+                let request = TemporalCircuitImportCheckpointV1Request {
+                    definition: TemporalCircuitDefinitionV1 {
+                        config,
+                        token_codes: token_codes.as_ptr(),
+                        token_code_count: token_codes.len() as u64,
+                        threshold_offsets_mv: thresholds.as_ptr(),
+                        threshold_offset_count: thresholds.len() as u64,
+                        authority,
+                    },
+                    checkpoint_bytes,
+                    checkpoint_len: literal.len() as u64,
+                };
+                let mut handle = ptr::null_mut();
+                let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+                assert_eq!(
+                    humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                        &request,
+                        &mut handle,
+                        report.as_mut_ptr(),
+                    ),
+                    TEMPORAL_RUNTIME_OK
+                );
+                assert_eq!(report.assume_init().status, TEMPORAL_RUNTIME_OK);
+                assert!(!handle.is_null());
+                assert_eq!(checkpoint_backing, before);
+
+                token_codes[0].token_id = u32::MAX;
+                thresholds.fill(f64::NAN);
+                checkpoint_backing.fill(0);
+                assert_eq!(token_codes[0].token_id, u32::MAX);
+                assert!(thresholds.iter().all(|value| value.is_nan()));
+                assert!(checkpoint_backing.iter().all(|byte| *byte == 0));
+                handle
+            };
+
+            let mut exported = vec![0u8; literal.len()];
+            let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_export_checkpoint_v1(
+                    handle,
+                    &authority,
+                    exported.as_mut_ptr(),
+                    exported.len() as u64,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_OK
+            );
+            let report = report.assume_init();
+            assert_eq!(report.required, 824);
+            assert_eq!(report.observed, 824);
+            assert_eq!(exported, literal);
+
+            let mut output = MaybeUninit::<TemporalCircuitStepV1>::uninit();
+            let (status, report) = advance(handle, &[7], output.as_mut_ptr(), 1, 0);
+            assert_eq!(status, TEMPORAL_RUNTIME_OK);
+            assert_eq!(report.completed_prefix, 1);
+            assert_eq!(output.assume_init().token_id, 7);
+            humanbrain_temporal_circuit_runtime_destroy(handle);
+        }
+    }
+
+    #[test]
+    fn handle_allocation_failure_reports_retryable_status_without_publication() {
+        let fixture = fixture();
+        let request = TemporalCircuitImportCheckpointV1Request {
+            definition: TemporalCircuitDefinitionV1 {
+                config: fixture.config,
+                token_codes: fixture.token_codes.as_ptr(),
+                token_code_count: fixture.token_codes.len() as u64,
+                threshold_offsets_mv: fixture.thresholds.as_ptr(),
+                threshold_offset_count: fixture.thresholds.len() as u64,
+                authority: fixture.authority,
+            },
+            checkpoint_bytes: fixture.checkpoint.as_ptr(),
+            checkpoint_len: fixture.checkpoint.len() as u64,
+        };
+        let mut handle = ptr::null_mut();
+        let mut report = MaybeUninit::<TemporalCircuitReportV1>::uninit();
+        fail_next_owned_allocation();
+        unsafe {
+            assert_eq!(
+                humanbrain_temporal_circuit_runtime_import_checkpoint_v1(
+                    &request,
+                    &mut handle,
+                    report.as_mut_ptr(),
+                ),
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED
+            );
+            assert!(handle.is_null());
+            assert_eq!(
+                report.assume_init().status,
+                TEMPORAL_RUNTIME_ALLOCATION_FAILED
+            );
+        }
+    }
+}

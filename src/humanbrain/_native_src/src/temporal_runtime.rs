@@ -23,6 +23,7 @@ use crate::temporal_physics::{
 };
 
 pub(crate) mod checkpoint;
+mod ffi;
 
 const ACTIVE_COLUMNS: usize = 11;
 const CONTEXT_CELLS: usize = 2 * ACTIVE_COLUMNS;
@@ -359,6 +360,25 @@ pub(crate) struct TemporalCircuitRuntime {
     basket_offset: u32,
     proximal_offset: u32,
     proximal_relay_offset: u32,
+}
+
+#[derive(Clone, Copy)]
+struct TemporalTransientState {
+    previous_context: [u32; CONTEXT_CELLS],
+    previous_context_len: u8,
+    previous_winner_context: [u32; CONTEXT_CELLS],
+    previous_winner_context_len: u8,
+    event_count: u64,
+}
+
+impl TemporalTransientState {
+    const EMPTY: Self = Self {
+        previous_context: [0; CONTEXT_CELLS],
+        previous_context_len: 0,
+        previous_winner_context: [0; CONTEXT_CELLS],
+        previous_winner_context_len: 0,
+        event_count: 0,
+    };
 }
 
 impl TemporalCircuitRuntime {
@@ -737,6 +757,40 @@ impl TemporalCircuitRuntime {
         token_id: u32,
         mode: TemporalStepMode,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        self.step_with_transient(token_id, mode, self.transient_state())
+    }
+
+    /// Execute one ordinary transaction while treating the transient state as
+    /// empty until the transaction's existing no-fail commit point.
+    ///
+    /// This is deliberately not implemented as `reset_transient()` followed by
+    /// rollback. A failing first token therefore cannot publish an empty
+    /// context or reset event counter; only the terminal poison latch may
+    /// change. The ABI child module uses this for reset-before block entry.
+    fn step_after_transient_reset(
+        &mut self,
+        token_id: u32,
+        mode: TemporalStepMode,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        self.step_with_transient(token_id, mode, TemporalTransientState::EMPTY)
+    }
+
+    fn transient_state(&self) -> TemporalTransientState {
+        TemporalTransientState {
+            previous_context: self.previous_context,
+            previous_context_len: self.previous_context_len,
+            previous_winner_context: self.previous_winner_context,
+            previous_winner_context_len: self.previous_winner_context_len,
+            event_count: self.event_count,
+        }
+    }
+
+    fn step_with_transient(
+        &mut self,
+        token_id: u32,
+        mode: TemporalStepMode,
+        transient: TemporalTransientState,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
         if self.scientific_stop.is_some() {
             return Err(TemporalCircuitStop::Poisoned);
         }
@@ -750,21 +804,23 @@ impl TemporalCircuitRuntime {
             Ok(index) => self.token_codebook[index].columns,
             Err(_) => return Err(TemporalCircuitStop::UnknownToken(token_id)),
         };
-        if let Err(stop) = self.normalized_prior_sources() {
+        if let Err(stop) = self.normalized_prior_sources(&transient) {
             return self.fail(stop);
         }
 
-        let recognition_source_count =
-            match (self.previous_context_len, self.previous_winner_context_len) {
-                (0, 0) => 0,
-                (CONTEXT_CELLS_U8, CONTEXT_CELLS_U8) => ACTIVE_COLUMNS,
-                _ => {
-                    return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
-                        "prior contexts must both be empty or exactly 22 cells",
-                    ));
-                }
-            };
-        let recognition_sources = &self.previous_context[..recognition_source_count];
+        let recognition_source_count = match (
+            transient.previous_context_len,
+            transient.previous_winner_context_len,
+        ) {
+            (0, 0) => 0,
+            (CONTEXT_CELLS_U8, CONTEXT_CELLS_U8) => ACTIVE_COLUMNS,
+            _ => {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "prior contexts must both be empty or exactly 22 cells",
+                ));
+            }
+        };
+        let recognition_sources = &transient.previous_context[..recognition_source_count];
         let summary = match self
             .store
             .recognize_runtime_context(recognition_sources, &mut self.recognition_scratch)
@@ -842,7 +898,7 @@ impl TemporalCircuitRuntime {
 
         let reserve_plan = if mode == TemporalStepMode::Learn
             && self.config.plasticity_policy == TemporalPlasticityPolicy::Plastic
-            && self.previous_context_len != 0
+            && transient.previous_context_len != 0
         {
             match self.preflight_reserve_plan(&columns, diagnostic_count) {
                 Ok(plan) => plan,
@@ -863,11 +919,15 @@ impl TemporalCircuitRuntime {
         let mut winner_best_matching = [NONE; ACTIVE_COLUMNS];
         let mut predicted_columns = 0u8;
         for (index, &column) in columns.iter().enumerate() {
-            let candidate_count =
-                match self.prepare_column_drives(column, diagnostic_count, reserve_plan) {
-                    Ok(candidate_count) => candidate_count,
-                    Err(stop) => return self.fail(stop),
-                };
+            let candidate_count = match self.prepare_column_drives(
+                column,
+                diagnostic_count,
+                reserve_plan,
+                &transient,
+            ) {
+                Ok(candidate_count) => candidate_count,
+                Err(stop) => return self.fail(stop),
+            };
             let basket_id = self.basket_offset + column;
             let candidates = &self.column_drive_scratch[..candidate_count];
             let race = match coupled_first_spike_race(
@@ -953,7 +1013,7 @@ impl TemporalCircuitRuntime {
             TemporalContextPolicy::BoundWinners => winner_context,
             TemporalContextPolicy::GenericAfferents => proximal_context,
         };
-        let Some(event_count) = self.event_count.checked_add(1) else {
+        let Some(event_count) = transient.event_count.checked_add(1) else {
             return self.fail(TemporalCircuitStop::TickOrCounterOverflow {
                 stage: TemporalOverflowStage::EventCounter,
                 location: 0,
@@ -969,6 +1029,7 @@ impl TemporalCircuitRuntime {
                 winner_best_active,
                 winner_best_matching,
                 reserve_plan,
+                &transient,
             ) {
                 Ok(prepared) => Some(prepared),
                 Err(stop) => return self.fail(stop),
@@ -1071,6 +1132,7 @@ impl TemporalCircuitRuntime {
         column: u32,
         diagnostic_count: usize,
         reserve: PreparedReservePlan,
+        transient: &TemporalTransientState,
     ) -> Result<usize, TemporalCircuitStop> {
         if diagnostic_count > self.recognition_scratch.len() {
             return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
@@ -1175,7 +1237,7 @@ impl TemporalCircuitRuntime {
             };
         }
 
-        if self.previous_context_len == 0 {
+        if transient.previous_context_len == 0 {
             for rank in 0..usize::from(self.config.base_cells_per_column) {
                 let Some(&cell_id) = cells.get(rank) else {
                     return Err(TemporalCircuitStop::StoreOrPlanInvariant(
@@ -1200,7 +1262,7 @@ impl TemporalCircuitRuntime {
                     load: self.prospective_owner_load(cell_id, reserve)?,
                     afferent_score: afferent_score(
                         self.config.construction_seed,
-                        &self.previous_context[..usize::from(self.previous_context_len)],
+                        &transient.previous_context[..usize::from(transient.previous_context_len)],
                         cell_id,
                     ),
                 };
@@ -1424,8 +1486,12 @@ impl TemporalCircuitRuntime {
 
     fn normalized_prior_sources(
         &self,
+        transient: &TemporalTransientState,
     ) -> Result<([u32; ACTIVE_COLUMNS], usize), TemporalCircuitStop> {
-        match (self.previous_context_len, self.previous_winner_context_len) {
+        match (
+            transient.previous_context_len,
+            transient.previous_winner_context_len,
+        ) {
             (0, 0) => return Ok(([0; ACTIVE_COLUMNS], 0)),
             (CONTEXT_CELLS_U8, CONTEXT_CELLS_U8) => {}
             _ => {
@@ -1436,7 +1502,7 @@ impl TemporalCircuitRuntime {
         }
         let mut normalized = [0u32; ACTIVE_COLUMNS];
         for (index, normalized_source) in normalized.iter_mut().enumerate() {
-            let source = self.previous_context[index];
+            let source = transient.previous_context[index];
             let expected_relay = match self.config.context_policy {
                 TemporalContextPolicy::BoundWinners => {
                     if source >= self.config.max_pyramidal_cells {
@@ -1465,20 +1531,20 @@ impl TemporalCircuitRuntime {
             .ok_or(TemporalCircuitStop::MalformedContextOrPolicy(
                 "context relay identity overflows u32",
             ))?;
-            if self.previous_context[ACTIVE_COLUMNS + index] != expected_relay {
+            if transient.previous_context[ACTIVE_COLUMNS + index] != expected_relay {
                 return Err(TemporalCircuitStop::MalformedContextOrPolicy(
                     "context does not contain injective source/relay pairs",
                 ));
             }
 
-            let winner = self.previous_winner_context[index];
+            let winner = transient.previous_winner_context[index];
             let winner_relay = self.relay_offset.checked_add(winner).ok_or(
                 TemporalCircuitStop::MalformedContextOrPolicy(
                     "winner relay identity overflows u32",
                 ),
             )?;
             if winner >= self.config.max_pyramidal_cells
-                || self.previous_winner_context[ACTIVE_COLUMNS + index] != winner_relay
+                || transient.previous_winner_context[ACTIVE_COLUMNS + index] != winner_relay
             {
                 return Err(TemporalCircuitStop::MalformedContextOrPolicy(
                     "winner context does not contain injective source/relay pairs",
@@ -1486,7 +1552,7 @@ impl TemporalCircuitRuntime {
             }
         }
         if self.config.context_policy == TemporalContextPolicy::BoundWinners
-            && self.previous_context != self.previous_winner_context
+            && transient.previous_context != transient.previous_winner_context
         {
             return Err(TemporalCircuitStop::MalformedContextOrPolicy(
                 "bound-winner contexts must be identical",
@@ -1509,13 +1575,15 @@ impl TemporalCircuitRuntime {
         winner_best_active: [u32; ACTIVE_COLUMNS],
         winner_best_matching: [u32; ACTIVE_COLUMNS],
         reserve: PreparedReservePlan,
+        transient: &TemporalTransientState,
     ) -> Result<PreparedLearnStep, TemporalCircuitStop> {
         if active_segment_count > self.active_segment_scratch.len() {
             return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
                 "active-segment materialization exceeds construction scratch",
             ));
         }
-        let (normalized_context_sources, context_source_count) = self.normalized_prior_sources()?;
+        let (normalized_context_sources, context_source_count) =
+            self.normalized_prior_sources(transient)?;
         let mut reinforced_rows = [EMPTY_SEGMENT_ROW; ACTIVE_COLUMNS];
         let mut append_owners = [NONE; ACTIVE_COLUMNS];
         let mut append_count = 0usize;

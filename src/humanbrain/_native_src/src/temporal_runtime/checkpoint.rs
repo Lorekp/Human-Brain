@@ -2541,6 +2541,10 @@ impl Seek for CheckpointV1CompareSink<'_> {
 }
 
 impl PreparedCheckpointV1Export<'_> {
+    pub(crate) const fn encoded_len(&self) -> u64 {
+        self.layout.total_bytes
+    }
+
     fn compare_canonical_bytes(
         &self,
         expected: &[u8],
@@ -4875,7 +4879,7 @@ fn validate_checkpoint_v1_identity_field(
 }
 
 #[cfg(test)]
-mod tests {
+pub(in crate::temporal_runtime) mod tests {
     use super::*;
     use std::io::Cursor;
 
@@ -5397,6 +5401,15 @@ mod tests {
     fn literal_checkpoint(header_hex: &str, body_hex: &str) -> Vec<u8> {
         let mut checkpoint = hex_bytes(header_hex);
         checkpoint.extend_from_slice(&hex_bytes(body_hex));
+        checkpoint
+    }
+
+    pub(in crate::temporal_runtime) fn cpython_full_section_generic_checkpoint_v1() -> Vec<u8> {
+        let checkpoint = literal_checkpoint(
+            FULL_SECTION_GENERIC_HEADER_HEX,
+            FULL_SECTION_GENERIC_BODY_HEX,
+        );
+        assert_eq!(checkpoint.len(), 824);
         checkpoint
     }
 
