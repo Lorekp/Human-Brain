@@ -626,6 +626,47 @@ mod tests {
         .expect("literal route-0 runtime must build")
     }
 
+    fn nonuniform_generic_route_zero_runtime() -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 37,
+            base_cells_per_column: 3,
+            max_pyramidal_cells: 131,
+            segment_capacity: 19,
+            novel_race_cap: 7,
+            prediction_quorum: 5,
+            construction_seed: 0xa1b2_c3d4,
+            connected_permanence_ticks: 173,
+            initial_permanence_ticks: 311,
+            permanence_increment_ticks: 43,
+            negative_decrement_ticks: 7,
+            max_segments_per_cell: 6,
+            theta_match: 9,
+            theta_active: 17,
+            context_policy: TemporalContextPolicy::GenericAfferents,
+            plasticity_policy: TemporalPlasticityPolicy::GrowthOff,
+        };
+        let codebook = vec![
+            TokenCode {
+                token_id: 0x1122_3344,
+                columns: [0, 2, 5, 9, 12, 16, 20, 24, 29, 33, 36],
+            },
+            TokenCode {
+                token_id: 0x5566_7788,
+                columns: [1, 3, 6, 10, 13, 17, 21, 25, 28, 32, 35],
+            },
+        ];
+        let members = (0..config.column_count)
+            .map(|column| vec![3 * column, 3 * column + 1, 3 * column + 2])
+            .collect();
+        let mut threshold_offsets_mv = vec![0.0; 373];
+        threshold_offsets_mv[0] = f64::from_bits(0x3ff4_0000_0000_0000);
+        threshold_offsets_mv[1] = f64::from_bits(0x8000_0000_0000_0000);
+        threshold_offsets_mv[372] = f64::from_bits(0xc004_0000_0000_0000);
+
+        TemporalCircuitRuntime::new(config, codebook, members, threshold_offsets_mv, &[])
+            .expect("nonuniform generic route-0 runtime must build")
+    }
+
     fn authority() -> ValidatedCheckpointAuthority {
         ValidatedCheckpointAuthority::from_raw_sha256(
             [0xa5; 32],
@@ -687,6 +728,29 @@ mod tests {
         assert_eq!(
             identity.authority().source_bundle_identity().raw_bytes(),
             &std::array::from_fn::<u8, 32, _>(|index| index as u8)
+        );
+    }
+
+    #[test]
+    fn nonuniform_generic_route_zero_fixture_discriminates_circuit_fields() {
+        let runtime = nonuniform_generic_route_zero_runtime();
+
+        let identity = runtime
+            .checkpoint_v1_identity(authority(), TemporalRecognitionRoute::ExactGeneric)
+            .expect("validated nonuniform route-0 runtime must identify");
+
+        // Independent CPython struct/hashlib framing of all 35 literal fields.
+        // Paired with the bound-winner vector above, this distinguishes fields
+        // that intentionally share values in either fixture alone.
+        assert_eq!(identity.circuit_preimage_bytes(), 4_480);
+        assert_eq!(identity.recognition_certificate(), None);
+        assert_eq!(
+            identity.circuit_identity().raw_bytes(),
+            &[
+                0x1d, 0x88, 0x6b, 0x58, 0xe0, 0x8c, 0x1f, 0x93, 0x50, 0xdc, 0x3a, 0x37, 0x71, 0xab,
+                0x33, 0x9d, 0x12, 0xa2, 0x2c, 0xb1, 0x9c, 0x9b, 0x36, 0xc0, 0x76, 0xd4, 0x08, 0xfc,
+                0x62, 0xbd, 0x9f, 0x85,
+            ]
         );
     }
 
