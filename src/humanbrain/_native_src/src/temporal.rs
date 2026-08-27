@@ -105,6 +105,34 @@ impl TemporalStoreMutationPreflight {
     }
 }
 
+/// One canonical logical posting used by the checkpoint semantic digest.
+///
+/// The store emits these records in lexicographic
+/// `(normalized_source, segment_id, slot)` order. Intrusive-list order is
+/// deliberately absent because rewrites make it history-dependent.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct TemporalSemanticPosting {
+    pub(crate) normalized_source: u32,
+    pub(crate) segment_id: u32,
+    pub(crate) slot: u32,
+}
+
+/// Non-poisoning failures while rebuilding a fresh store from checkpoint rows.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TemporalCheckpointRebuildError {
+    StoreConstruction(u32),
+    DeclaredSegmentCountExceedsCapacity { declared: u32, capacity: u32 },
+    DeclaredSegmentCountExceeded { declared: u32 },
+    SegmentCountMismatch { declared: u32, actual: u32 },
+    Store(TemporalStorePreflightError),
+}
+
+impl From<TemporalStorePreflightError> for TemporalCheckpointRebuildError {
+    fn from(error: TemporalStorePreflightError) -> Self {
+        Self::Store(error)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct SourceMeta {
     head: u32,
@@ -171,6 +199,79 @@ pub struct TemporalStore {
     generation: u32,
     posting_validation_generation: u32,
     poisoned: u32,
+}
+
+/// Owned, unpublished construction transaction for canonical checkpoint rows.
+///
+/// The builder starts from a fresh bounded store, accepts only rows that are
+/// already normalized and canonical, and yields the store only after the exact
+/// declared row count has been appended. Dropping it after any failure cannot
+/// affect an existing runtime.
+pub(crate) struct TemporalStoreCheckpointRebuild {
+    store: TemporalStore,
+    declared_segment_count: u32,
+}
+
+impl TemporalStoreCheckpointRebuild {
+    pub(crate) fn new(
+        config: TemporalStoreConfig,
+        declared_segment_count: u32,
+    ) -> Result<Self, TemporalCheckpointRebuildError> {
+        let segment_capacity = u32::try_from(config.segment_capacity)
+            .map_err(|_| TemporalCheckpointRebuildError::StoreConstruction(TEMPORAL_INVALID))?;
+        if declared_segment_count > segment_capacity {
+            return Err(
+                TemporalCheckpointRebuildError::DeclaredSegmentCountExceedsCapacity {
+                    declared: declared_segment_count,
+                    capacity: segment_capacity,
+                },
+            );
+        }
+        let store = TemporalStore::new_runtime_owned(config)
+            .map_err(TemporalCheckpointRebuildError::StoreConstruction)?;
+        Ok(Self {
+            store,
+            declared_segment_count,
+        })
+    }
+
+    /// Append one already-normalized fixed row without translating source IDs.
+    ///
+    /// Every fallible check precedes the no-fail append commit. A rejected row
+    /// leaves segment rows, owner loads, and postings unchanged and may be
+    /// retried with corrected input.
+    pub(crate) fn append_canonical_row(
+        &mut self,
+        owner: u32,
+        row: &TemporalSegmentRow,
+    ) -> Result<u32, TemporalCheckpointRebuildError> {
+        if self.store.runtime_segment_count() >= self.declared_segment_count {
+            return Err(
+                TemporalCheckpointRebuildError::DeclaredSegmentCountExceeded {
+                    declared: self.declared_segment_count,
+                },
+            );
+        }
+        self.store.preflight_runtime_canonical_append(owner, row)?;
+        self.store
+            .preflight_runtime_mutation_backing(std::slice::from_ref(&owner), u8::MAX)?;
+        Ok(self
+            .store
+            .commit_prevalidated_runtime_canonical_append(owner, row))
+    }
+
+    /// Publish the rebuilt store only at the exact checkpoint segment count.
+    pub(crate) fn finish(self) -> Result<TemporalStore, TemporalCheckpointRebuildError> {
+        let actual = self.store.runtime_segment_count();
+        if actual != self.declared_segment_count {
+            return Err(TemporalCheckpointRebuildError::SegmentCountMismatch {
+                declared: self.declared_segment_count,
+                actual,
+            });
+        }
+        self.store.preflight_runtime_backing_shape()?;
+        Ok(self.store)
+    }
 }
 
 impl TemporalStore {
@@ -544,39 +645,38 @@ impl TemporalStore {
         Ok(())
     }
 
-    /// Prove one touched source's complete declared posting chain exactly once
-    /// per aggregate mutation preflight. `source_stamps` is scratch after
-    /// recognition, so a fresh generation deduplicates high-fanout sources
-    /// without allocating another source-domain array.
-    fn preflight_source_posting_chain(
-        &mut self,
+    /// Validate one source's complete declared chain and optionally copy its
+    /// pair slots into caller-owned scratch in intrusive order.
+    ///
+    /// The caller may later sort the copied slots to remove history-dependent
+    /// list order. `ALL_ROWS_PREVALIDATED = true` is reserved for the two
+    /// immutable visitor passes after `semantic_posting_shape` has validated
+    /// every row; mutation preflight uses the standalone `false` specialization.
+    /// No callback or semantic output occurs in this helper.
+    fn validate_source_posting_chain_into<const ALL_ROWS_PREVALIDATED: bool>(
+        &self,
         source: u32,
         required_pair_slot: Option<u32>,
-    ) -> Result<(), TemporalStorePreflightError> {
+        mut pair_slots: Option<&mut [u32]>,
+    ) -> Result<usize, TemporalStorePreflightError> {
         let source_index = source as usize;
         let Some(meta) = self.source_meta.get(source_index).copied() else {
             return Err(TemporalStorePreflightError::BackingInvariant);
         };
-        let validation_generation = self.posting_validation_generation;
-        if validation_generation != 0
-            && self.source_stamps.get(source_index).copied() == Some(validation_generation)
-        {
-            if let Some(pair_slot) = required_pair_slot {
-                // A valid store is built from empty chains and mutated only by
-                // the splice primitives below. Once this source's complete
-                // chain is proved in the current transaction, reciprocal local
-                // membership is sufficient for another touched pair.
-                self.preflight_posting_pair_local(pair_slot, source)?;
-            }
-            return Ok(());
-        }
-
         let live_count = meta.live_count as usize;
         if live_count > self.owners.len()
             || (live_count == 0 && (meta.head != NONE || meta.tail != NONE))
             || (live_count != 0 && (meta.head == NONE || meta.tail == NONE))
         {
             return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        if let Some(out) = pair_slots.as_ref() {
+            if out.len() < live_count {
+                return Err(TemporalStorePreflightError::OutputCapacity {
+                    required: meta.live_count,
+                    provided: out.len() as u32,
+                });
+            }
         }
 
         let mut pair_slot = meta.head;
@@ -593,13 +693,15 @@ impl TemporalStore {
             {
                 return Err(TemporalStorePreflightError::BackingInvariant);
             }
-            let segment_id = (pair_index / PAIRS_PER_SEGMENT) as u32;
-            let row = self.runtime_segment_row(segment_id)?;
-            let row_slot = pair_index % PAIRS_PER_SEGMENT;
-            if row_slot >= usize::from(row.live_pair_count)
-                || row.normalized_sources[row_slot] != source
-            {
-                return Err(TemporalStorePreflightError::BackingInvariant);
+            if !ALL_ROWS_PREVALIDATED {
+                let segment_id = (pair_index / PAIRS_PER_SEGMENT) as u32;
+                let row = self.runtime_segment_row(segment_id)?;
+                let row_slot = pair_index % PAIRS_PER_SEGMENT;
+                if row_slot >= usize::from(row.live_pair_count)
+                    || row.normalized_sources[row_slot] != source
+                {
+                    return Err(TemporalStorePreflightError::BackingInvariant);
+                }
             }
             required_found |= required_pair_slot == Some(pair_slot);
 
@@ -618,6 +720,9 @@ impl TemporalStore {
                     return Err(TemporalStorePreflightError::BackingInvariant);
                 }
             }
+            if let Some(out) = pair_slots.as_deref_mut() {
+                out[visited] = pair_slot;
+            }
             previous = pair_slot;
             pair_slot = next;
             visited += 1;
@@ -625,6 +730,36 @@ impl TemporalStore {
         if visited != live_count || previous != meta.tail || !required_found {
             return Err(TemporalStorePreflightError::BackingInvariant);
         }
+        Ok(visited)
+    }
+
+    /// Prove one touched source's complete declared posting chain exactly once
+    /// per aggregate mutation preflight. `source_stamps` is scratch after
+    /// recognition, so a fresh generation deduplicates high-fanout sources
+    /// without allocating another source-domain array.
+    fn preflight_source_posting_chain(
+        &mut self,
+        source: u32,
+        required_pair_slot: Option<u32>,
+    ) -> Result<(), TemporalStorePreflightError> {
+        let source_index = source as usize;
+        if self.source_meta.get(source_index).is_none() {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        let validation_generation = self.posting_validation_generation;
+        if validation_generation != 0
+            && self.source_stamps.get(source_index).copied() == Some(validation_generation)
+        {
+            if let Some(pair_slot) = required_pair_slot {
+                // A valid store is built from empty chains and mutated only by
+                // the splice primitives below. Once this source's complete
+                // chain is proved in the current transaction, reciprocal local
+                // membership is sufficient for another touched pair.
+                self.preflight_posting_pair_local(pair_slot, source)?;
+            }
+            return Ok(());
+        }
+        self.validate_source_posting_chain_into::<false>(source, required_pair_slot, None)?;
         if validation_generation != 0 {
             self.source_stamps[source_index] = validation_generation;
         }
@@ -815,6 +950,133 @@ impl TemporalStore {
             return Err(TemporalStorePreflightError::BackingInvariant);
         }
         Ok(row)
+    }
+
+    /// Return the largest declared source fanout after validating canonical
+    /// rows, empty-slot links, and aggregate posting cardinality.
+    ///
+    /// A checkpoint codec can fallibly allocate this many `u32` pair slots
+    /// once, then reuse that scratch for every semantic-index traversal.
+    pub(crate) fn runtime_semantic_posting_scratch_required(
+        &self,
+    ) -> Result<u32, TemporalStorePreflightError> {
+        let (required, _) = self.semantic_posting_shape()?;
+        u32::try_from(required).map_err(|_| TemporalStorePreflightError::BackingInvariant)
+    }
+
+    /// Visit the complete logical posting relation in canonical source-major
+    /// order without allocating.
+    ///
+    /// The first pass validates every canonical row, every declared source
+    /// chain, and exact global coverage before the first callback. Pair slots
+    /// are unique within a valid chain; because every visited slot is also
+    /// proved to store the current source, chains for distinct sources are
+    /// disjoint. Equality between the total visits and all live canonical row
+    /// slots therefore proves exact one-to-one coverage. A second immutable
+    /// pass sorts each source's slots in caller-owned reusable scratch and
+    /// emits `(source, segment, slot)` lexicographically.
+    pub(crate) fn visit_runtime_semantic_postings<F>(
+        &self,
+        pair_slot_scratch: &mut [u32],
+        mut visitor: F,
+    ) -> Result<u32, TemporalStorePreflightError>
+    where
+        F: FnMut(TemporalSemanticPosting),
+    {
+        let (scratch_required, logical_live_pairs) = self.semantic_posting_shape()?;
+        if pair_slot_scratch.len() < scratch_required {
+            return Err(TemporalStorePreflightError::OutputCapacity {
+                required: scratch_required as u32,
+                provided: pair_slot_scratch.len() as u32,
+            });
+        }
+
+        let mut validated_pairs = 0usize;
+        for source_index in 0..self.config.source_count {
+            let source = source_index as u32;
+            let visited = self.validate_source_posting_chain_into::<true>(
+                source,
+                None,
+                Some(pair_slot_scratch),
+            )?;
+            pair_slot_scratch[..visited].sort_unstable();
+            if pair_slot_scratch[..visited]
+                .windows(2)
+                .any(|pair| pair[0] == pair[1])
+            {
+                return Err(TemporalStorePreflightError::BackingInvariant);
+            }
+            validated_pairs = validated_pairs
+                .checked_add(visited)
+                .ok_or(TemporalStorePreflightError::BackingInvariant)?;
+        }
+        if validated_pairs != logical_live_pairs {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+
+        let mut emitted_pairs = 0usize;
+        for source_index in 0..self.config.source_count {
+            let source = source_index as u32;
+            let visited = self.validate_source_posting_chain_into::<true>(
+                source,
+                None,
+                Some(pair_slot_scratch),
+            )?;
+            pair_slot_scratch[..visited].sort_unstable();
+            for pair_slot in pair_slot_scratch[..visited].iter().copied() {
+                visitor(TemporalSemanticPosting {
+                    normalized_source: source,
+                    segment_id: pair_slot / PAIRS_PER_SEGMENT as u32,
+                    slot: pair_slot % PAIRS_PER_SEGMENT as u32,
+                });
+                emitted_pairs += 1;
+            }
+        }
+        if emitted_pairs != logical_live_pairs {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        u32::try_from(emitted_pairs).map_err(|_| TemporalStorePreflightError::BackingInvariant)
+    }
+
+    fn semantic_posting_shape(&self) -> Result<(usize, usize), TemporalStorePreflightError> {
+        self.preflight_runtime_backing_shape()?;
+
+        let mut logical_live_pairs = 0usize;
+        for segment_index in 0..self.owners.len() {
+            let row = self.runtime_segment_row(segment_index as u32)?;
+            let live_pair_count = usize::from(row.live_pair_count);
+            logical_live_pairs = logical_live_pairs
+                .checked_add(live_pair_count)
+                .ok_or(TemporalStorePreflightError::BackingInvariant)?;
+            let first_pair = segment_index
+                .checked_mul(PAIRS_PER_SEGMENT)
+                .ok_or(TemporalStorePreflightError::BackingInvariant)?;
+            for pair_index in first_pair + live_pair_count..first_pair + PAIRS_PER_SEGMENT {
+                if self.next_pair[pair_index] != NONE || self.prev_pair[pair_index] != NONE {
+                    return Err(TemporalStorePreflightError::BackingInvariant);
+                }
+            }
+        }
+
+        let mut declared_postings = 0usize;
+        let mut scratch_required = 0usize;
+        for meta in &self.source_meta {
+            let live_count = meta.live_count as usize;
+            if live_count > self.owners.len()
+                || (live_count == 0 && (meta.head != NONE || meta.tail != NONE))
+                || (live_count != 0 && (meta.head == NONE || meta.tail == NONE))
+            {
+                return Err(TemporalStorePreflightError::BackingInvariant);
+            }
+            declared_postings = declared_postings
+                .checked_add(live_count)
+                .ok_or(TemporalStorePreflightError::BackingInvariant)?;
+            scratch_required = scratch_required.max(live_count);
+        }
+        if declared_postings != logical_live_pairs {
+            return Err(TemporalStorePreflightError::BackingInvariant);
+        }
+        Ok((scratch_required, logical_live_pairs))
     }
 
     fn copy_runtime_segment_row(&self, first_pair: usize, pair_end: usize) -> TemporalSegmentRow {
@@ -2440,5 +2702,313 @@ mod tests {
         );
         assert_eq!(canonical_logical_bytes(&cyclic), cyclic_logical);
         assert_eq!(cyclic.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn checkpoint_rebuild_accepts_normalized_rows_and_publishes_only_exact_count() {
+        let mut store_config = config(12, 3, 4);
+        store_config.source_gid_base = 10_000;
+        let row_zero = normalized_row(&[0, 3, 11], &[250, 375, 500]);
+        let empty = normalized_row(&[], &[]);
+        let mut rebuild = TemporalStoreCheckpointRebuild::new(store_config, 2).unwrap();
+
+        assert_eq!(rebuild.append_canonical_row(2, &row_zero), Ok(0));
+        assert_eq!(rebuild.append_canonical_row(1, &empty), Ok(1));
+        let mut store = rebuild.finish().unwrap();
+
+        assert_eq!(store.runtime_segment_count(), 2);
+        assert_eq!(store.runtime_segment_row(0), Ok(row_zero));
+        assert_eq!(store.runtime_segment_row(1), Ok(empty));
+        assert_eq!(store.runtime_owner_load(2), Some(1));
+        assert_eq!(store.runtime_owner_load(1), Some(1));
+        assert_eq!(posting_slots(&store, 0), vec![0]);
+        assert_eq!(posting_slots(&store, 3), vec![1]);
+        assert_eq!(posting_slots(&store, 11), vec![2]);
+
+        let mut diagnostics = [empty_diagnostic(); 3];
+        let summary = store
+            .recognize_runtime_context(&[10_000, 10_003, 10_011], &mut diagnostics)
+            .unwrap();
+        assert_eq!(summary.active_segments, 1);
+        assert_eq!(diagnostics[0].owner, 2);
+        assert_intrusive_index_integrity(&store);
+        assert_eq!(store.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn checkpoint_rebuild_empty_wrong_count_and_capacity_fail_closed() {
+        let empty = TemporalStoreCheckpointRebuild::new(config(10, 1, 1), 0)
+            .unwrap()
+            .finish()
+            .unwrap();
+        assert_eq!(empty.runtime_segment_count(), 0);
+
+        let mut incomplete = TemporalStoreCheckpointRebuild::new(config(10, 1, 2), 2).unwrap();
+        incomplete
+            .append_canonical_row(0, &normalized_row(&[], &[]))
+            .unwrap();
+        assert!(matches!(
+            incomplete.finish(),
+            Err(TemporalCheckpointRebuildError::SegmentCountMismatch {
+                declared: 2,
+                actual: 1,
+            })
+        ));
+
+        assert!(matches!(
+            TemporalStoreCheckpointRebuild::new(config(10, 1, 1), 2),
+            Err(
+                TemporalCheckpointRebuildError::DeclaredSegmentCountExceedsCapacity {
+                    declared: 2,
+                    capacity: 1,
+                }
+            )
+        ));
+
+        let mut exact = TemporalStoreCheckpointRebuild::new(config(10, 1, 1), 1).unwrap();
+        let empty_row = normalized_row(&[], &[]);
+        exact.append_canonical_row(0, &empty_row).unwrap();
+        assert_eq!(
+            exact.append_canonical_row(0, &empty_row),
+            Err(TemporalCheckpointRebuildError::DeclaredSegmentCountExceeded { declared: 1 })
+        );
+        assert_eq!(exact.store.runtime_segment_count(), 1);
+        assert_eq!(exact.store.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn checkpoint_rebuild_rejects_invalid_rows_atomically_and_retry_succeeds() {
+        let valid = normalized_row(&[0, 2], &[250, 500]);
+        let mut rebuild = TemporalStoreCheckpointRebuild::new(config(10, 2, 2), 2).unwrap();
+        rebuild.append_canonical_row(0, &valid).unwrap();
+        let logical_before = canonical_logical_bytes(&rebuild.store);
+        let index_before = (
+            rebuild.store.source_meta.clone(),
+            rebuild.store.next_pair.clone(),
+            rebuild.store.prev_pair.clone(),
+        );
+
+        let mut dirty_suffix = normalized_row(&[], &[]);
+        dirty_suffix.normalized_sources[0] = 0;
+        let duplicate = normalized_row(&[1, 1], &[250, 250]);
+        let out_of_domain = normalized_row(&[10], &[250]);
+        let zero_tick = normalized_row(&[1], &[0]);
+        let mut too_wide = normalized_row(&[], &[]);
+        too_wide.live_pair_count = 11;
+        for invalid in [dirty_suffix, duplicate, out_of_domain, zero_tick, too_wide] {
+            assert_eq!(
+                rebuild.append_canonical_row(1, &invalid),
+                Err(TemporalCheckpointRebuildError::Store(
+                    TemporalStorePreflightError::InvalidCanonicalRow,
+                ))
+            );
+            assert_eq!(canonical_logical_bytes(&rebuild.store), logical_before);
+            assert_eq!(
+                (
+                    rebuild.store.source_meta.clone(),
+                    rebuild.store.next_pair.clone(),
+                    rebuild.store.prev_pair.clone(),
+                ),
+                index_before
+            );
+            assert_eq!(rebuild.store.poisoned, TEMPORAL_OK);
+        }
+        assert_eq!(
+            rebuild.append_canonical_row(2, &valid),
+            Err(TemporalCheckpointRebuildError::Store(
+                TemporalStorePreflightError::InvalidOwner,
+            ))
+        );
+        assert_eq!(canonical_logical_bytes(&rebuild.store), logical_before);
+
+        let retry = normalized_row(&[1, 4], &[251, 499]);
+        assert_eq!(rebuild.append_canonical_row(1, &retry), Ok(1));
+        let store = rebuild.finish().unwrap();
+        assert_eq!(store.runtime_segment_row(1), Ok(retry));
+        assert_intrusive_index_integrity(&store);
+    }
+
+    #[test]
+    fn checkpoint_rebuild_owner_capacity_failure_is_atomic() {
+        let mut rebuild = TemporalStoreCheckpointRebuild::new(config(10, 2, 256), 256).unwrap();
+        let empty = normalized_row(&[], &[]);
+        for expected in 0..u8::MAX as u32 {
+            assert_eq!(rebuild.append_canonical_row(0, &empty), Ok(expected));
+        }
+        let before = canonical_logical_bytes(&rebuild.store);
+        assert_eq!(
+            rebuild.append_canonical_row(0, &empty),
+            Err(TemporalCheckpointRebuildError::Store(
+                TemporalStorePreflightError::OwnerCapacity { owner: 0 },
+            ))
+        );
+        assert_eq!(canonical_logical_bytes(&rebuild.store), before);
+        assert_eq!(rebuild.store.runtime_segment_count(), u8::MAX as u32);
+        assert_eq!(rebuild.store.poisoned, TEMPORAL_OK);
+
+        assert_eq!(rebuild.append_canonical_row(1, &empty), Ok(255));
+        assert_eq!(rebuild.finish().unwrap().runtime_owner_load(1), Some(1));
+    }
+
+    #[test]
+    fn semantic_posting_visitor_is_source_major_and_history_independent() {
+        let mut rebuild = TemporalStoreCheckpointRebuild::new(config(10, 3, 3), 3).unwrap();
+        rebuild
+            .append_canonical_row(0, &normalized_row(&[0, 2], &[250, 251]))
+            .unwrap();
+        rebuild
+            .append_canonical_row(1, &normalized_row(&[0, 1], &[300, 301]))
+            .unwrap();
+        rebuild
+            .append_canonical_row(2, &normalized_row(&[1, 2], &[400, 401]))
+            .unwrap();
+        let mut store = rebuild.finish().unwrap();
+
+        // Rewrite segment zero so source 0's intrusive history becomes
+        // segment 1 then segment 0. Semantic output must remain lexicographic.
+        let rewritten = normalized_row(&[0, 2], &[499, 500]);
+        store
+            .preflight_runtime_canonical_rewrite(0, &rewritten)
+            .unwrap();
+        store
+            .preflight_runtime_mutation_backing(&[], u8::MAX)
+            .unwrap();
+        store.commit_prevalidated_runtime_canonical_rewrite(0, &rewritten);
+        assert_eq!(posting_slots(&store, 0), vec![10, 0]);
+
+        assert_eq!(store.runtime_semantic_posting_scratch_required(), Ok(2));
+        let mut scratch = [NONE; 2];
+        let mut triples = Vec::new();
+        assert_eq!(
+            store.visit_runtime_semantic_postings(&mut scratch, |posting| {
+                triples.push((posting.normalized_source, posting.segment_id, posting.slot));
+            }),
+            Ok(6)
+        );
+        assert_eq!(
+            triples,
+            vec![
+                (0, 0, 0),
+                (0, 1, 0),
+                (1, 1, 1),
+                (1, 2, 0),
+                (2, 0, 1),
+                (2, 2, 1),
+            ]
+        );
+        assert_eq!(store.poisoned, TEMPORAL_OK);
+    }
+
+    #[test]
+    fn semantic_posting_visitor_handles_empty_and_capacity_retry_atomically() {
+        let empty = TemporalStoreCheckpointRebuild::new(config(10, 1, 1), 0)
+            .unwrap()
+            .finish()
+            .unwrap();
+        let mut empty_scratch = [];
+        let mut empty_visits = 0;
+        assert_eq!(
+            empty.visit_runtime_semantic_postings(&mut empty_scratch, |_| {
+                empty_visits += 1;
+            }),
+            Ok(0)
+        );
+        assert_eq!(empty_visits, 0);
+
+        let mut rebuild = TemporalStoreCheckpointRebuild::new(config(10, 2, 2), 2).unwrap();
+        let row = normalized_row(&[0], &[250]);
+        rebuild.append_canonical_row(0, &row).unwrap();
+        rebuild.append_canonical_row(1, &row).unwrap();
+        let store = rebuild.finish().unwrap();
+        let logical_before = canonical_logical_bytes(&store);
+        let mut too_small = [0xDEAD_BEEF; 1];
+        let mut visits = 0;
+        assert_eq!(
+            store.visit_runtime_semantic_postings(&mut too_small, |_| visits += 1),
+            Err(TemporalStorePreflightError::OutputCapacity {
+                required: 2,
+                provided: 1,
+            })
+        );
+        assert_eq!(visits, 0);
+        assert_eq!(too_small, [0xDEAD_BEEF; 1]);
+        assert_eq!(canonical_logical_bytes(&store), logical_before);
+        assert_eq!(store.poisoned, TEMPORAL_OK);
+
+        let mut enough = [NONE; 2];
+        let mut retry = Vec::new();
+        assert_eq!(
+            store.visit_runtime_semantic_postings(&mut enough, |posting| retry.push(posting)),
+            Ok(2)
+        );
+        assert_eq!(
+            retry,
+            vec![
+                TemporalSemanticPosting {
+                    normalized_source: 0,
+                    segment_id: 0,
+                    slot: 0,
+                },
+                TemporalSemanticPosting {
+                    normalized_source: 0,
+                    segment_id: 1,
+                    slot: 0,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn semantic_posting_visitor_rejects_stale_cyclic_and_disconnected_indexes_before_visit() {
+        fn assert_rejected_without_visit(store: &TemporalStore) {
+            let logical_before = canonical_logical_bytes(store);
+            let mut scratch = [NONE; 4];
+            let mut visits = 0;
+            assert_eq!(
+                store.visit_runtime_semantic_postings(&mut scratch, |_| visits += 1),
+                Err(TemporalStorePreflightError::BackingInvariant)
+            );
+            assert_eq!(visits, 0);
+            assert_eq!(canonical_logical_bytes(store), logical_before);
+            assert_eq!(store.poisoned, TEMPORAL_OK);
+        }
+
+        let mut stale = TemporalStore::new(config(10, 2, 2)).unwrap();
+        stale.allocate_runtime_segment(0, &[100], &[250]).unwrap();
+        stale.source_meta[0].tail = stale.sources.len() as u32;
+        assert_rejected_without_visit(&stale);
+
+        let cyclic = reciprocal_three_node_cycle();
+        assert_rejected_without_visit(&cyclic);
+
+        let mut disconnected = TemporalStore::new(config(10, 3, 3)).unwrap();
+        for owner in 0..3 {
+            disconnected
+                .allocate_runtime_segment(owner, &[100], &[250])
+                .unwrap();
+        }
+        disconnected.source_meta[0].tail = 10;
+        disconnected.source_meta[0].live_count = 2;
+        disconnected.next_pair[10] = NONE;
+        disconnected.prev_pair[20] = NONE;
+        assert_rejected_without_visit(&disconnected);
+
+        let mut duplicated = TemporalStore::new(config(10, 1, 1)).unwrap();
+        duplicated
+            .allocate_runtime_segment(0, &[100], &[250])
+            .unwrap();
+        duplicated.source_meta[1] = SourceMeta {
+            head: 0,
+            tail: 0,
+            live_count: 1,
+        };
+        assert_rejected_without_visit(&duplicated);
+
+        let mut stale_empty_slot = TemporalStore::new(config(10, 1, 1)).unwrap();
+        stale_empty_slot
+            .allocate_runtime_segment(0, &[100], &[250])
+            .unwrap();
+        stale_empty_slot.next_pair[1] = 0;
+        assert_rejected_without_visit(&stale_empty_slot);
     }
 }
