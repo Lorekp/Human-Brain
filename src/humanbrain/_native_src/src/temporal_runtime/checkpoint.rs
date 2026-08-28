@@ -19,6 +19,7 @@ use std::{
 use sha2::{Digest, Sha256};
 
 use super::{
+    identifier_copy::IdentifierCopyState,
     NovelCandidate, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy,
     TemporalPlasticityPolicy, TemporalPoisonCode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS,
     CONTEXT_CELLS_U8, EMPTY_DIAGNOSTIC, EMPTY_DRIVE, EMPTY_NOVEL_CANDIDATE, NONE,
@@ -4223,6 +4224,13 @@ fn assemble_validated_checkpoint_v1_inner<'a>(
         identity,
         derived,
     } = factory;
+    let identifier_copy = IdentifierCopyState::new(
+        config.construction_seed,
+        config.column_count,
+        derived.physical_cell_count,
+        &token_codebook,
+    )
+    .map_err(|_| CheckpointV1ImportError::AssemblyInvariant)?;
     let runtime = TemporalCircuitRuntime {
         config,
         token_codebook,
@@ -4246,6 +4254,8 @@ fn assemble_validated_checkpoint_v1_inner<'a>(
         event_count: scalars.event_count,
         learning_step: scalars.learning_step,
         scientific_stop: poison,
+        identifier_copy,
+        generation_index: 0,
         relay_offset: derived.relay_offset,
         basket_offset: derived.basket_offset,
         proximal_offset: derived.proximal_offset,
