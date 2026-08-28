@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "experiment": "r3-public-train-dev-role-place-four-template-probe",
+  "recorded_at_utc": "2026-08-28T04:26:48.1886520Z",
+  "outcome": "STOP_NATIVE_POISON_BEFORE_FOUR_TEMPLATE_RESULT",
+  "capability_pass": false,
+  "claim_boundary": "This is the honest terminal record from the sole public synthetic four-template development execution. It is not capability evidence. The run trained the fixed inc/+1, dec/-1, dbl/*2, and neg/-x episodes and entered teacher-free DEV. During generation for one of the first three DEV prompts, the native runtime latched a scientific stop. The fixture caught that original generation exception but deferred artifact publication and continued; the following DEV advance then failed closed as already poisoned. Consequently the exact original stop and preceding DEV identity were not recoverable after process exit. No rerun, tuning, native change, held-out access, C1 access, or target feedback followed.",
+  "authority": {
+    "base_commit": "96ea012c8a569802b266461108df4406532cd4fe",
+    "branch": "codex/role-place-four-template",
+    "partitions": [
+      "public-synthetic-train",
+      "public-synthetic-dev"
+    ],
+    "train_templates": [
+      "inc/adds one -> x + 1",
+      "dec/subtracts one -> x - 1",
+      "dbl/doubles -> x * 2",
+      "neg/negates -> -x"
+    ],
+    "planned_dev_routes_in_fixed_order": [
+      "bump/adds one",
+      "drop/subtracts one",
+      "twox/doubles",
+      "flip/negates"
+    ],
+    "planned_dev_attempts_each": 1,
+    "completed_circuit_executions": 1,
+    "rerun_count": 0,
+    "tuning_after_execution": false,
+    "dev_targets_used_as_runtime_input": false,
+    "teacher_tokens_after_dev_prompts": 0,
+    "protected_material_read": false,
+    "held_out_material_read": false,
+    "c1_material_read": false
+  },
+  "execution": {
+    "command": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe experiments/r3_pilot/public_train_dev_role_place_four_template_probe.py",
+    "exit_code": 1,
+    "terminal_exception_type": "NativeTemporalRuntimeError",
+    "terminal_exception_message": "poisoned: temporal runtime is already poisoned",
+    "terminal_exception_location": "public_train_dev_role_place_four_template_probe.py:299 circuit.advance_block",
+    "last_confirmed_phase": "At least one DEV prompt completed and its generation loop caught a NativeTemporalRuntimeError before the subsequent DEV prompt attempted advance_block.",
+    "original_generation_stop_published": false,
+    "preceding_dev_identity_recoverable": false,
+    "preceding_dev_identity_bounds": [
+      "bump",
+      "drop",
+      "twox"
+    ],
+    "completed_dev_outputs_recoverable": false,
+    "artifact_written_by_execution": false
+  },
+  "localization": {
+    "first_hard_blocker": "A teacher-free generate() sequence for one of the first three fixed DEV prompts latched a native scientific stop; the next reset-before DEV prompt correctly failed closed on the poison latch.",
+    "harness_observability_defect": "The fixture retained a caught generation stop only in local memory, continued to the next DEV prompt, and published JSON only after all four prompts. Process termination therefore erased the original stop record and any prior completed DEV records.",
+    "runtime_change_justified": false,
+    "reason_runtime_change_not_justified": "The precise native stop condition was not published, so this execution cannot distinguish route-capacity failure from another existing fail-stop condition without an unauthorized rerun.",
+    "next_valid_action": "A separately authorized future ladder run should publish each DEV result immediately and terminate on the first generation stop; this closed execution must not be replayed or reinterpreted as four-template evidence."
+  },
+  "fixture": {
+    "path": "experiments/r3_pilot/public_train_dev_role_place_four_template_probe.py",
+    "executed_fixture_sha256": "a8569f5b95a11eebfe6ccefb7a1e2959167df7f406baef76bbf912fb1c7b4494",
+    "committed_fixture_sha256": "afd787ec05173823dce22e150f4ee832a9a2d806f84d864815cafd4eb23a8afd",
+    "post_run_correction": "The committed fixture now terminates the DEV loop immediately after a failed scored generation sequence so a future separately authorized run can publish that exact partial stop instead of touching the poison latch again. This correction was not executed for this closed result.",
+    "native_runtime_modified": false,
+    "preflight": {
+      "py_compile": "PASS",
+      "help": "PASS",
+      "diff_check": "PASS"
+    }
+  }
+}
