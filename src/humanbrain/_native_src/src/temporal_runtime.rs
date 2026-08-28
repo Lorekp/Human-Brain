@@ -36,7 +36,7 @@ use role_place_copy::{
 };
 use typed_hole_state::{TypedHoleCue, TypedHoleRole, TypedValue};
 use typed_workspace::{
-    TypedOperationProjection, TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT,
+    TypedPlanProjection, TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT,
     TYPED_SURFACE_TOKEN_COUNT,
 };
 
@@ -968,13 +968,13 @@ impl TemporalCircuitRuntime {
     /// address cue races, then make the projection's exact 11-winner mix the
     /// recognition context for the next teacher arrival or fitted output
     /// election. The exact bank uses three semantic and three address winners.
-    /// The transfer bank retains one generic address winner and uses five semantic
-    /// winners, so every 10-of-11 learned contact sample retains at least nine
-    /// pairs across an address-depth transfer.
+    /// Transfer banks retain one structural-address winner and use five
+    /// semantic winners. Operation transfer tolerates one changed address pair;
+    /// scaffold transfer instead learns against a generically rebased address.
     fn prepare_typed_hole_context(
         &mut self,
         cue_kind: TypedHoleCue,
-        operation_projection: TypedOperationProjection,
+        projection: TypedPlanProjection,
         cue_token_id: u32,
         address_token_id: u32,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
@@ -995,7 +995,7 @@ impl TemporalCircuitRuntime {
         let address = self.step_typed_private_cue(address_token_id)?;
         let mixed = match self.typed_workspace.mixed_transient(
             cue_kind,
-            operation_projection,
+            projection,
             cue.winner_context,
             address.winner_context,
             self.relay_offset,
@@ -1061,20 +1061,23 @@ impl TemporalCircuitRuntime {
                 "typed teacher token is structurally inadmissible",
             ));
         }
-        let is_operation = matches!(
-            cue,
+        let transfer_projection = match cue {
             TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
-                | TypedHoleCue::LiteralSign
-                | TypedHoleCue::LiteralFirstDigit
-                | TypedHoleCue::LiteralFirstNonzeroDigit
-                | TypedHoleCue::LiteralDigitOrEnd
-                | TypedHoleCue::LiteralEnd
-        );
-        if is_operation {
-            if let Err(stop) = self.prepare_current_typed_context_with_operation_projection(
-                TemporalStepMode::Learn,
-                TypedOperationProjection::Transfer,
-            ) {
+            | TypedHoleCue::LiteralSign
+            | TypedHoleCue::LiteralFirstDigit
+            | TypedHoleCue::LiteralFirstNonzeroDigit
+            | TypedHoleCue::LiteralDigitOrEnd
+            | TypedHoleCue::LiteralEnd => Some(TypedPlanProjection::OperationTransfer),
+            TypedHoleCue::Expression(TypedValue::ListInt | TypedValue::IntToInt) => {
+                Some(TypedPlanProjection::ScaffoldTransfer)
+            }
+            TypedHoleCue::Eos => None,
+            TypedHoleCue::Terminated => unreachable!("terminated typed state rejects teaching"),
+        };
+        if let Some(projection) = transfer_projection {
+            if let Err(stop) = self
+                .prepare_current_typed_context_with_projection(TemporalStepMode::Learn, projection)
+            {
                 return Err(stop);
             }
             self.step(token_id, TemporalStepMode::Learn)?;
@@ -1184,18 +1187,18 @@ impl TemporalCircuitRuntime {
         &mut self,
         mode: TemporalStepMode,
     ) -> Result<(TypedHoleCue, TypedHoleRole, TemporalCircuitStep), TemporalCircuitStop> {
-        let operation_projection = match self.typed_workspace.current_address_is_root() {
-            Ok(true) => TypedOperationProjection::RootExact,
-            Ok(false) => TypedOperationProjection::NestedExact,
+        let projection = match self.typed_workspace.current_address_is_root() {
+            Ok(true) => TypedPlanProjection::RootExact,
+            Ok(false) => TypedPlanProjection::NestedExact,
             Err(stop) => return self.fail(stop),
         };
-        self.prepare_current_typed_context_with_operation_projection(mode, operation_projection)
+        self.prepare_current_typed_context_with_projection(mode, projection)
     }
 
-    fn prepare_current_typed_context_with_operation_projection(
+    fn prepare_current_typed_context_with_projection(
         &mut self,
         mode: TemporalStepMode,
-        operation_projection: TypedOperationProjection,
+        projection: TypedPlanProjection,
     ) -> Result<(TypedHoleCue, TypedHoleRole, TemporalCircuitStep), TemporalCircuitStop> {
         if self.typed_workspace.session_mode() != Some(mode) {
             return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
@@ -1206,29 +1209,25 @@ impl TemporalCircuitRuntime {
             Ok(value) => value,
             Err(stop) => return self.fail(stop),
         };
-        let cue_token_id = match self.typed_workspace.current_cue_token() {
-            Ok(Some(value)) => value,
-            Ok(None) => {
+        let (cue_token_id, address_token_id) =
+            match self.typed_workspace.current_context_tokens(projection) {
+                Ok(value) => value,
+                Err(stop) => return self.fail(stop),
+            };
+        let cue_token_id = match cue_token_id {
+            Some(value) => value,
+            None => {
                 return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
                     "terminated typed state requested another physical hole",
                 ));
             }
-            Err(stop) => return self.fail(stop),
         };
         let role = match self.typed_workspace.current_role() {
             Ok(value) => value,
             Err(stop) => return self.fail(stop),
         };
-        let address_token_id = match self.typed_workspace.current_address_token() {
-            Ok(value) => value,
-            Err(stop) => return self.fail(stop),
-        };
-        let step = self.prepare_typed_hole_context(
-            cue,
-            operation_projection,
-            cue_token_id,
-            address_token_id,
-        )?;
+        let step =
+            self.prepare_typed_hole_context(cue, projection, cue_token_id, address_token_id)?;
         Ok((cue, role, step))
     }
 
@@ -1376,7 +1375,7 @@ impl TemporalCircuitRuntime {
             Ok(value) => value,
             Err(stop) => return self.fail(stop),
         };
-        let is_nested_operation = !is_root
+        let fallback_projection = if !is_root
             && matches!(
                 cue,
                 TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
@@ -1385,8 +1384,17 @@ impl TemporalCircuitRuntime {
                     | TypedHoleCue::LiteralFirstNonzeroDigit
                     | TypedHoleCue::LiteralDigitOrEnd
                     | TypedHoleCue::LiteralEnd
-            );
-        if is_nested_operation {
+            ) {
+            Some(TypedPlanProjection::OperationTransfer)
+        } else if matches!(
+            cue,
+            TypedHoleCue::Expression(TypedValue::ListInt | TypedValue::IntToInt)
+        ) {
+            Some(TypedPlanProjection::ScaffoldTransfer)
+        } else {
+            None
+        };
+        if let Some(projection) = fallback_projection {
             let exact_is_active = match self
                 .typed_context_has_complete_exact_admitted_output(&admitted[..admitted_count])
             {
@@ -1394,9 +1402,9 @@ impl TemporalCircuitRuntime {
                 Err(stop) => return self.fail(stop),
             };
             if !exact_is_active {
-                self.prepare_current_typed_context_with_operation_projection(
+                self.prepare_current_typed_context_with_projection(
                     TemporalStepMode::ReadOnly,
-                    TypedOperationProjection::Transfer,
+                    projection,
                 )?;
             }
         }
@@ -6501,6 +6509,300 @@ mod tests {
         assert_eq!(generated[2].winner_input_columns, ACTIVE_COLUMNS as u8);
         assert_eq!(generated[2].candidate_tokens, 1);
         assert_eq!(runtime.typed_plan_winners(), Some(dev_plan));
+        assert_eq!(runtime.scientific_stop, None);
+    }
+
+    #[test]
+    fn typed_workspace_reroots_nested_map_scaffold_with_scalar_add_and_unseen_bound() {
+        const W_ADD: u32 = 1_800;
+        const W_CLAMP_SUM: u32 = 1_801;
+        const W_TARGET: u32 = 1_802;
+        const PLAN_COMMIT: u32 = 1_900;
+        const CUE_BASE: u32 = 2_000;
+        const SURFACE_BASE: u32 = 2_100;
+        const ADDRESS_BASE: u32 = 12_000;
+        // Scalar: 4 prompt + 1 workload + 5 plan + (5 dual stores + EOS) = 21.
+        // Clamp-sum: 8 prompt + 1 workload + 6 plan + (23 dual stores + EOS) = 62.
+        const MAX_LEARN_ARRIVALS: u32 = 83;
+
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            address_token_base: ADDRESS_BASE,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        let mut token_ids = vec![W_ADD, W_CLAMP_SUM, W_TARGET, PLAN_COMMIT];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        use typed_hole_state::SurfaceKind as S;
+        extend_typed_address_tokens(
+            &mut token_ids,
+            vocabulary,
+            TypedValue::Int,
+            TypedValue::Int,
+            &[
+                S::Add,
+                S::Variable0,
+                S::Integer,
+                S::Plus,
+                S::Digit(5),
+                S::End,
+                S::Eos,
+            ],
+        );
+        extend_typed_address_tokens(
+            &mut token_ids,
+            vocabulary,
+            TypedValue::ListInt,
+            TypedValue::Int,
+            &[
+                S::Sum,
+                S::Map,
+                S::Bind,
+                S::If,
+                S::LessThan,
+                S::Variable0,
+                S::Integer,
+                S::Minus,
+                S::Digit(2),
+                S::End,
+                S::Integer,
+                S::Minus,
+                S::Digit(2),
+                S::End,
+                S::If,
+                S::LessThan,
+                S::Integer,
+                S::Plus,
+                S::Digit(2),
+                S::End,
+                S::Variable0,
+                S::Integer,
+                S::Plus,
+                S::Digit(2),
+                S::End,
+                S::Variable0,
+                S::Variable0,
+                S::Eos,
+            ],
+        );
+        extend_typed_address_tokens(
+            &mut token_ids,
+            vocabulary,
+            TypedValue::ListInt,
+            TypedValue::ListInt,
+            &[
+                S::Map,
+                S::Bind,
+                S::Add,
+                S::Variable0,
+                S::Integer,
+                S::Minus,
+                S::Digit(7),
+                S::End,
+                S::Variable0,
+                S::Eos,
+            ],
+        );
+        for slot in 0..SLOT_COUNT as u8 {
+            token_ids.push(role_place_copy::slot_start_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::slot_end_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::copy_slot_token_id(slot).unwrap());
+        }
+        token_ids.push(COPY_END_TOKEN_ID);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.segment_capacity = MAX_LEARN_ARRIVALS * ACTIVE_COLUMNS as u32;
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        )
+        .expect("empty-store scaffold re-rooting fixture");
+
+        let surface = vocabulary.surface_token_ids;
+        let add = surface[0];
+        let map = surface[2];
+        let bind = surface[3];
+        let variable_zero = surface[4];
+        let integer = surface[5];
+        let plus = surface[6];
+        let minus = surface[7];
+        let digit_2 = surface[10];
+        let digit_5 = surface[13];
+        let digit_7 = surface[15];
+        let end = surface[18];
+        let eos = surface[19];
+        let less_than = surface[20];
+        let if_then_else = surface[21];
+        let sum = surface[22];
+        let copy_slot_two = role_place_copy::copy_slot_token_id(2).unwrap();
+        let copy_slot_three = role_place_copy::copy_slot_token_id(3).unwrap();
+
+        let capture_literal = |runtime: &mut TemporalCircuitRuntime,
+                               slot: u8,
+                               sign: u32,
+                               digit: u32,
+                               mode: TemporalStepMode| {
+            for token_id in [
+                role_place_copy::slot_start_token_id(slot).unwrap(),
+                sign,
+                digit,
+                role_place_copy::slot_end_token_id(slot).unwrap(),
+            ] {
+                runtime.step(token_id, mode).expect("literal slot capture");
+            }
+        };
+        let assert_no_target_segments = |runtime: &TemporalCircuitRuntime| {
+            for column in runtime.token_columns(W_TARGET).unwrap() {
+                let start = runtime.column_offsets[column as usize];
+                let end = runtime.column_offsets[column as usize + 1];
+                for &owner in &runtime.column_cells[start..end] {
+                    assert_eq!(runtime.store.runtime_owner_load(owner), Some(0));
+                }
+            }
+        };
+
+        capture_literal(&mut runtime, 2, plus, digit_5, TemporalStepMode::Learn);
+        runtime.step(W_ADD, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        for token_id in [add, variable_zero, integer, copy_slot_two, end, eos] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+
+        runtime.reset_transient();
+        capture_literal(&mut runtime, 2, minus, digit_2, TemporalStepMode::Learn);
+        capture_literal(&mut runtime, 3, plus, digit_2, TemporalStepMode::Learn);
+        runtime.step(W_CLAMP_SUM, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        for token_id in [
+            sum,
+            map,
+            bind,
+            if_then_else,
+            less_than,
+            variable_zero,
+            integer,
+            copy_slot_two,
+            end,
+            integer,
+            copy_slot_two,
+            end,
+            if_then_else,
+            less_than,
+            integer,
+            copy_slot_three,
+            end,
+            variable_zero,
+            integer,
+            copy_slot_three,
+            end,
+            variable_zero,
+            variable_zero,
+            eos,
+        ] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+        assert_no_target_segments(&runtime);
+        assert_eq!(runtime.learning_step, u64::from(MAX_LEARN_ARRIVALS));
+        let learned_segment_count = runtime.store.runtime_segment_count();
+
+        runtime.reset_transient();
+        capture_literal(&mut runtime, 2, minus, digit_7, TemporalStepMode::ReadOnly);
+        runtime.step(W_TARGET, TemporalStepMode::ReadOnly).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::ListInt,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+        let generated = runtime
+            .generate_typed()
+            .expect("atomic teacher-free scaffold re-rooting");
+        assert_eq!(
+            generated
+                .iter()
+                .map(|generation| generation.surface_token_id)
+                .collect::<Vec<_>>(),
+            vec![
+                map,
+                bind,
+                add,
+                variable_zero,
+                integer,
+                minus,
+                digit_7,
+                end,
+                variable_zero,
+                eos,
+            ]
+        );
+
+        // The scaffold source paths [0], [0,0], and [0,1] are learned under
+        // the generic rebased paths [], [0], and [1].  Five matching plan,
+        // five matching semantic, and one matching address winner therefore
+        // give the intended Map/Bind/Variable0 transfers all 22 contacts.  At
+        // root, the source Map-input Variable0 retains only the five plan
+        // pairs (10 contacts), below theta_match, because its Child1 semantic
+        // cue and rebased [1] address remain distinct from Head/root.
+        assert_eq!(generated[0].surface_token_id, map);
+        assert_eq!(generated[0].candidate_tokens, 1);
+        assert_eq!(generated[0].winner_input_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(generated[8].surface_token_id, variable_zero);
+        assert_eq!(generated[8].candidate_tokens, 1);
+        assert_eq!(generated[8].winner_input_columns, ACTIVE_COLUMNS as u8);
+
+        // Root scalar Add -> nested binder Add shares all five plan and five
+        // semantic winners.  Its one changed address pair leaves at least 9
+        // of every sampled 10 pairs, exactly 18 active physical contacts.
+        assert_eq!(generated[2].surface_token_id, add);
+        assert_eq!(generated[2].winner_input_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(generated[5].path, TemporalGenerationPath::EnterCopy);
+        assert_eq!(generated[5].control_token_id, copy_slot_two);
+        assert_eq!(generated[6].path, TemporalGenerationPath::Copy);
+        assert_eq!(generated[7].path, TemporalGenerationPath::ExitCopy);
+        assert_eq!(generated[7].control_token_id, COPY_END_TOKEN_ID);
+
+        // EOS stays on its singleton exact-only projection: five parameter,
+        // three EOS-semantic, and three root-address winners.  It cannot enter
+        // either non-EOS fallback race, as witnessed by the unique Map and
+        // final ListInt Variable0 candidates above.
+        assert_eq!(generated[9].surface_token_id, eos);
+        assert_eq!(generated[9].candidate_tokens, 1);
+        assert_no_target_segments(&runtime);
+        assert_eq!(runtime.store.runtime_segment_count(), learned_segment_count);
         assert_eq!(runtime.scientific_stop, None);
     }
 

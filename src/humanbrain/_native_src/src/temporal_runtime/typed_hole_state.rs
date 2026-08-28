@@ -97,6 +97,19 @@ impl TypedHoleAddress {
         Some(((self.packed_ordinals >> ((index as u32) * 2)) & 0b11) as u8)
     }
 
+    /// Return the same constructor-neutral path with one enclosing prefix
+    /// removed.  The typed state itself is never changed; scaffold transfer
+    /// uses this only to store a second, re-rootable context identity.
+    pub(crate) const fn without_leading_ordinal(self) -> Self {
+        if self.depth == 0 {
+            return self;
+        }
+        Self {
+            packed_ordinals: self.packed_ordinals >> 2,
+            depth: self.depth - 1,
+        }
+    }
+
     fn child(self, ordinal: u8) -> Option<Self> {
         debug_assert!(
             ordinal <= 2,

@@ -16,14 +16,18 @@ use super::{
 pub(super) const PLAN_WINNERS_IN_MIX: usize = 5;
 const SIGNATURE_SEMANTIC_WINNERS_IN_MIX: usize = 3;
 const SIGNATURE_ADDRESS_WINNERS_IN_MIX: usize = 3;
-const NESTED_SEMANTIC_WINNERS_IN_MIX: usize = 5;
-const NESTED_ADDRESS_WINNERS_IN_MIX: usize = 1;
+const TRANSFER_SEMANTIC_WINNERS_IN_MIX: usize = 5;
+const TRANSFER_ADDRESS_WINNERS_IN_MIX: usize = 1;
 const SCAFFOLD_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 3, 4];
+// Scaffold backoff preserves the parameter signature and only whether any
+// bound exists; the rebased semantic/address context carries subtree identity.
+const PARAMETER_BOUND_PRESENCE_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 5, 6];
 const ROOT_OPERATION_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 9, 10];
 const NESTED_EXACT_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 8, 9, 10];
 const TRANSFER_OPERATION_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [5, 6, 7, 9, 10];
 const PARAMETER_SCAFFOLD_DESTINATIONS: [usize; 3] = [0, 1, 2];
 const PARAMETER_SCAFFOLD_SOURCES: [usize; 3] = [3, 4, 5];
+const EOS_PARAMETER_SOURCES: [usize; 2] = [6, 7];
 const RESULT_SCAFFOLD_DESTINATIONS: [usize; 2] = [3, 4];
 const RESULT_SCAFFOLD_SOURCES: [usize; 2] = [6, 7];
 const ANY_BOUND_DESTINATIONS: [usize; 4] = [5, 6, 7, 8];
@@ -34,10 +38,17 @@ pub(crate) const TYPED_CUE_TOKEN_COUNT: usize = 26;
 pub(crate) const TYPED_SURFACE_TOKEN_COUNT: usize = 23;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum TypedOperationProjection {
+pub(super) enum TypedPlanProjection {
     RootExact,
     NestedExact,
-    Transfer,
+    OperationTransfer,
+    ScaffoldTransfer,
+}
+
+#[derive(Clone, Copy)]
+enum TypedPlanWinnerProjection {
+    Retained(&'static [usize; PLAN_WINNERS_IN_MIX]),
+    EosParameter,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -200,6 +211,7 @@ struct TypedSessionState {
 
 pub(super) struct TypedWorkspaceState {
     plan_winners: [u32; ACTIVE_COLUMNS],
+    eos_parameter_winners: [u32; 2],
     plan_ready: bool,
     session: Option<TypedSessionState>,
 }
@@ -207,6 +219,7 @@ pub(super) struct TypedWorkspaceState {
 impl TypedWorkspaceState {
     pub(super) const EMPTY: Self = Self {
         plan_winners: [0; ACTIVE_COLUMNS],
+        eos_parameter_winners: [0; 2],
         plan_ready: false,
         session: None,
     };
@@ -229,6 +242,13 @@ impl TypedWorkspaceState {
             .zip(PARAMETER_SCAFFOLD_SOURCES)
         {
             self.plan_winners[destination] = parameter_scaffold_context[source];
+        }
+        for (destination, source) in self
+            .eos_parameter_winners
+            .iter_mut()
+            .zip(EOS_PARAMETER_SOURCES)
+        {
+            *destination = parameter_scaffold_context[source];
         }
         for (destination, source) in RESULT_SCAFFOLD_DESTINATIONS
             .into_iter()
@@ -284,29 +304,36 @@ impl TypedWorkspaceState {
         self.session.as_ref().map(|session| session.mode)
     }
 
-    pub(super) fn current_cue_token(&self) -> Result<Option<u32>, TemporalCircuitStop> {
+    pub(super) fn current_context_tokens(
+        &self,
+        projection: TypedPlanProjection,
+    ) -> Result<(Option<u32>, u32), TemporalCircuitStop> {
         let session =
             self.session
                 .as_ref()
                 .ok_or(TemporalCircuitStop::MalformedContextOrPolicy(
                     "typed workspace session is not initialized",
                 ))?;
-        Ok(session
+        let mut role = session.holes.role();
+        let mut address = session.holes.address();
+        // A scaffold teacher stores its backoff trace one generic enclosing
+        // edge closer to root. Read-only fallback keeps the target's current
+        // path, so a learned [0]/[0,0]/[0,1] subtree is queried as
+        // []/[0]/[1] without changing TypedHoleState itself.
+        if projection == TypedPlanProjection::ScaffoldTransfer
+            && session.mode == TemporalStepMode::Learn
+        {
+            address = address.without_leading_ordinal();
+            if address.depth() == 0 {
+                role = TypedHoleRole::Head;
+            }
+        }
+        let cue_token_id = session.vocabulary.cue_token(session.holes.cue(), role);
+        let address_token_id = session
             .vocabulary
-            .cue_token(session.holes.cue(), session.holes.role()))
-    }
-
-    pub(super) fn current_address_token(&self) -> Result<u32, TemporalCircuitStop> {
-        let session =
-            self.session
-                .as_ref()
-                .ok_or(TemporalCircuitStop::MalformedContextOrPolicy(
-                    "typed workspace session is not initialized",
-                ))?;
-        session
-            .vocabulary
-            .address_token(session.holes.address())
-            .map_err(TemporalCircuitStop::MalformedContextOrPolicy)
+            .address_token(address)
+            .map_err(TemporalCircuitStop::MalformedContextOrPolicy)?;
+        Ok((cue_token_id, address_token_id))
     }
 
     pub(super) fn current_address_is_root(&self) -> Result<bool, TemporalCircuitStop> {
@@ -378,7 +405,7 @@ impl TypedWorkspaceState {
     pub(super) fn mixed_transient(
         &self,
         cue: TypedHoleCue,
-        operation_projection: TypedOperationProjection,
+        projection: TypedPlanProjection,
         cue_winner_context: [u32; CONTEXT_CELLS],
         address_winner_context: [u32; CONTEXT_CELLS],
         relay_offset: u32,
@@ -390,12 +417,12 @@ impl TypedWorkspaceState {
             ));
         }
         let mut winners = [0u32; ACTIVE_COLUMNS];
-        let plan_indices = plan_projection(cue, operation_projection)?;
+        let plan_projection = plan_projection(cue, projection)?;
         let (semantic_winner_count, address_winner_count) =
-            if uses_transfer_operation_projection(cue, operation_projection) {
+            if uses_transfer_projection(cue, projection) {
                 (
-                    NESTED_SEMANTIC_WINNERS_IN_MIX,
-                    NESTED_ADDRESS_WINNERS_IN_MIX,
+                    TRANSFER_SEMANTIC_WINNERS_IN_MIX,
+                    TRANSFER_ADDRESS_WINNERS_IN_MIX,
                 )
             } else {
                 (
@@ -403,8 +430,16 @@ impl TypedWorkspaceState {
                     SIGNATURE_ADDRESS_WINNERS_IN_MIX,
                 )
             };
-        for (mixed_index, &plan_index) in plan_indices.iter().enumerate() {
-            winners[mixed_index] = self.plan_winners[plan_index];
+        match plan_projection {
+            TypedPlanWinnerProjection::Retained(plan_indices) => {
+                for (mixed_index, &plan_index) in plan_indices.iter().enumerate() {
+                    winners[mixed_index] = self.plan_winners[plan_index];
+                }
+            }
+            TypedPlanWinnerProjection::EosParameter => {
+                winners[..3].copy_from_slice(&self.plan_winners[..3]);
+                winners[3..PLAN_WINNERS_IN_MIX].copy_from_slice(&self.eos_parameter_winners);
+            }
         }
         for mixed_index in 0..semantic_winner_count {
             winners[PLAN_WINNERS_IN_MIX + mixed_index] = cue_winner_context[mixed_index];
@@ -424,39 +459,73 @@ impl TypedWorkspaceState {
     }
 }
 
-fn uses_transfer_operation_projection(
-    cue: TypedHoleCue,
-    operation_projection: TypedOperationProjection,
-) -> bool {
-    operation_projection == TypedOperationProjection::Transfer
-        && matches!(
-            cue,
+fn uses_transfer_projection(cue: TypedHoleCue, projection: TypedPlanProjection) -> bool {
+    matches!(
+        (cue, projection),
+        (
             TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
                 | TypedHoleCue::LiteralSign
                 | TypedHoleCue::LiteralFirstDigit
                 | TypedHoleCue::LiteralFirstNonzeroDigit
                 | TypedHoleCue::LiteralDigitOrEnd
-                | TypedHoleCue::LiteralEnd
+                | TypedHoleCue::LiteralEnd,
+            TypedPlanProjection::OperationTransfer,
+        ) | (
+            TypedHoleCue::Expression(TypedValue::ListInt | TypedValue::IntToInt),
+            TypedPlanProjection::ScaffoldTransfer,
         )
+    )
 }
 
 fn plan_projection(
     cue: TypedHoleCue,
-    operation_projection: TypedOperationProjection,
-) -> Result<&'static [usize; PLAN_WINNERS_IN_MIX], TemporalCircuitStop> {
+    projection: TypedPlanProjection,
+) -> Result<TypedPlanWinnerProjection, TemporalCircuitStop> {
     match cue {
         TypedHoleCue::Expression(TypedValue::ListInt)
-        | TypedHoleCue::Expression(TypedValue::IntToInt)
-        | TypedHoleCue::Eos => Ok(&SCAFFOLD_HEAD_PLAN_INDICES),
+        | TypedHoleCue::Expression(TypedValue::IntToInt) => match projection {
+            TypedPlanProjection::RootExact | TypedPlanProjection::NestedExact => Ok(
+                TypedPlanWinnerProjection::Retained(&SCAFFOLD_HEAD_PLAN_INDICES),
+            ),
+            TypedPlanProjection::ScaffoldTransfer => Ok(TypedPlanWinnerProjection::Retained(
+                &PARAMETER_BOUND_PRESENCE_PLAN_INDICES,
+            )),
+            TypedPlanProjection::OperationTransfer => {
+                Err(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "operation transfer requested for a scaffold typed hole",
+                ))
+            }
+        },
         TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
         | TypedHoleCue::LiteralSign
         | TypedHoleCue::LiteralFirstDigit
         | TypedHoleCue::LiteralFirstNonzeroDigit
         | TypedHoleCue::LiteralDigitOrEnd
-        | TypedHoleCue::LiteralEnd => match operation_projection {
-            TypedOperationProjection::RootExact => Ok(&ROOT_OPERATION_PLAN_INDICES),
-            TypedOperationProjection::NestedExact => Ok(&NESTED_EXACT_PLAN_INDICES),
-            TypedOperationProjection::Transfer => Ok(&TRANSFER_OPERATION_PLAN_INDICES),
+        | TypedHoleCue::LiteralEnd => match projection {
+            TypedPlanProjection::RootExact => Ok(TypedPlanWinnerProjection::Retained(
+                &ROOT_OPERATION_PLAN_INDICES,
+            )),
+            TypedPlanProjection::NestedExact => Ok(TypedPlanWinnerProjection::Retained(
+                &NESTED_EXACT_PLAN_INDICES,
+            )),
+            TypedPlanProjection::OperationTransfer => Ok(TypedPlanWinnerProjection::Retained(
+                &TRANSFER_OPERATION_PLAN_INDICES,
+            )),
+            TypedPlanProjection::ScaffoldTransfer => {
+                Err(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "scaffold transfer requested for an operation typed hole",
+                ))
+            }
+        },
+        TypedHoleCue::Eos => match projection {
+            TypedPlanProjection::RootExact | TypedPlanProjection::NestedExact => {
+                Ok(TypedPlanWinnerProjection::EosParameter)
+            }
+            TypedPlanProjection::OperationTransfer | TypedPlanProjection::ScaffoldTransfer => {
+                Err(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "EOS does not admit a typed transfer projection",
+                ))
+            }
         },
         TypedHoleCue::Terminated => Err(TemporalCircuitStop::MalformedContextOrPolicy(
             "terminated typed state has no structural plan projection",
