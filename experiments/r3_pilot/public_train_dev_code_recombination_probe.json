@@ -1,0 +1,157 @@
+{
+  "authority": {
+    "c1_material_read": false,
+    "dev_attempts": 1,
+    "held_out_material_read": false,
+    "partitions": [
+      "public-synthetic-train",
+      "public-synthetic-dev"
+    ],
+    "protected_material_read": false,
+    "synthetic_runtime_authority": true
+  },
+  "capability_pass": false,
+  "claim_boundary": "Two literal public synthetic TRAIN prompt-to-function pairs and one frozen public synthetic DEV recombination are used. DEV is attempted exactly once. Only the DEV prompt reaches the runtime; the scoring target never does. Any DEV output must come from native physical election plus emitted-token READ_ONLY feedback, with no Python candidate enumeration, argmax, learned head, retry, or adaptation. This diagnoses prompt routing, identifier copy/binding, operator routing, and sequence termination; it is not coding competence, generalization beyond this micro-probe, SWE, protected data, C1, or benchmark evidence.",
+  "dev_once": {
+    "ascii_valid": true,
+    "code_analysis": {
+      "ast_parse_valid": false,
+      "compile_valid": false,
+      "constant": null,
+      "function_name": null,
+      "operator": null
+    },
+    "completed_elections": 0,
+    "emitted_code_hex": "",
+    "emitted_code_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "emitted_code_text": "",
+    "exact_expected_bytes": false,
+    "expected_code_sha256": "9c3625c793a3fa4fdfd0c394ffad54a00ea39d86efe9b1d3f9db1e895d543c26",
+    "maximum_election_budget": 38,
+    "prompt_token_count": 24,
+    "steps": [],
+    "stop": {
+      "completed_prefix": 0,
+      "emission_position": 0,
+      "location": 29488,
+      "message": "temporal physical stage stopped",
+      "observed": 0,
+      "phase": "elect_output",
+      "poison_code": 7,
+      "required": 0,
+      "stage_code": 3,
+      "status": "SCIENTIFIC_STOP"
+    },
+    "teacher_tokens_after_prompt": 0,
+    "terminated_by_eos": false
+  },
+  "experiment": "r3-public-train-dev-code-recombination-probe",
+  "frozen_examples": {
+    "dev": {
+      "example_id": "dev-bump-add-one",
+      "expected_code": "def bump(x):\n    return x + 1\n",
+      "prompt": "Function bump adds one.\n"
+    },
+    "dev_target_used_as_runtime_input": false,
+    "train": [
+      {
+        "code": "def inc(x):\n    return x + 1\n",
+        "example_id": "train-inc-add-one",
+        "prompt": "Function inc adds one.\n"
+      },
+      {
+        "code": "def dec(x):\n    return x - 1\n",
+        "example_id": "train-dec-subtract-one",
+        "prompt": "Function dec subtracts one.\n"
+      }
+    ]
+  },
+  "generated_at_utc": "2026-08-28T02:47:34.278627+00:00",
+  "localization": "The novel DEV prompt produced no physically electable output token; prompt-to-output routing fails before identifier copy or operator routing can be tested.",
+  "outcome": "STOP_NOVEL_DEV_PROMPT_OUTPUT_ROUTING",
+  "physical_definition": {
+    "cell_thresholds": "seeded fitted threshold offsets",
+    "circuit_identity_sha256": "b055fb33c31ec101c664f47e87d09ade9358468bde7d728634bdcfb2255a5eab",
+    "column_count": 1419,
+    "connected_permanence_ticks": 250,
+    "context_policy": "BOUND_WINNERS",
+    "initial_permanence_ticks": 255,
+    "max_pyramidal_cells": 12551,
+    "plasticity_policy": "PLASTIC",
+    "segment_capacity": 1199,
+    "theta_active": 18,
+    "theta_match": 16
+  },
+  "probe_completed": true,
+  "runtime": {
+    "elapsed_wall_ns": 5133722400,
+    "native_binary_sha256": "e386a6c339cff83f13e1d070149b9539beaf443a2a09da9e5427122199a3601d",
+    "native_source_digest": "bd70b5ae77860ed96e3f2683c178a9b5755423a0aaeeab3e1df631cdad6c60e5",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "tokenization": {
+    "eos_token_id": 256,
+    "learned_readout_parameters": 0,
+    "python_argmax": false,
+    "python_candidate_enumeration": false,
+    "scheme": "literal ASCII byte IDs 0..127 plus EOS=256",
+    "static_codebook": "disjoint 11-column code per ASCII byte/EOS"
+  },
+  "training": {
+    "expected_transitions_per_replay": 109,
+    "learning_steps": 222,
+    "live_segments": 1111,
+    "records": [
+      {
+        "episodes": [
+          {
+            "active_segments": 0,
+            "allocated_segments": 572,
+            "example_id": "train-inc-add-one",
+            "matching_segments": 0,
+            "predicted_steps": 0,
+            "punished_segments": 0,
+            "steps": 53
+          },
+          {
+            "active_segments": 99,
+            "allocated_segments": 539,
+            "example_id": "train-dec-subtract-one",
+            "matching_segments": 99,
+            "predicted_steps": 8,
+            "punished_segments": 11,
+            "steps": 58
+          }
+        ],
+        "replay": 0
+      },
+      {
+        "episodes": [
+          {
+            "active_segments": 583,
+            "allocated_segments": 0,
+            "example_id": "train-inc-add-one",
+            "matching_segments": 583,
+            "predicted_steps": 52,
+            "punished_segments": 11,
+            "steps": 53
+          },
+          {
+            "active_segments": 638,
+            "allocated_segments": 0,
+            "example_id": "train-dec-subtract-one",
+            "matching_segments": 638,
+            "predicted_steps": 57,
+            "punished_segments": 11,
+            "steps": 58
+          }
+        ],
+        "replay": 1
+      }
+    ],
+    "replays": 2,
+    "stable_second_replay": true
+  }
+}
