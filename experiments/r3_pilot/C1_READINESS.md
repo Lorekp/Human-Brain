@@ -83,6 +83,19 @@ topology. The exact ladder is in
 [r3_native_train_prefix_scaling.json](../../benchmarks/r3_native_train_prefix_scaling.json),
 so it narrows but does not close `C1-COST-DENSE-4096` or authorize C1.
 
+The lean full-TRAIN development/cost runner subsequently completed all 49
+TRAIN books (2,117,412 token steps) at `(16,18)`, seed 17, without a native
+scientific STOP or held-out materialization. It ended at 23,286,478 live
+segments with exact native/tracked accounting and physical winner/basket/GABA
+causality. This is not an R3-F0 structural pass: the frozen distinct-key model
+expects 23,286,406 segments, and the 72-segment excess decomposes into a
+seven-repeat net shortfall from full 11-column reuse, with five partial
+one-column predictions. The aggregate artifact cannot distinguish
+punishment-induced deactivation from winner-key divergence. Concurrent native
+work after about book 12 also contaminates its recorded 291.54 steps/s, so the
+timing is not cap evidence. Exact evidence is in
+[r3_native_train_full_two_tier_theta16_18_seed17.json](../../benchmarks/r3_native_train_full_two_tier_theta16_18_seed17.json).
+
 The nested Gate-3 source closure is stale after the native repairs. A dry-run
 refresh changes its bundle SHA-256 from `7830b2fe...` to `244538ac...`; the
 draft check still passes against its historical committed blobs and the
@@ -107,8 +120,9 @@ epoch-0 TRAIN
 ```
 
 The prior 8,927,839-step/arm projection omitted one full TRAIN sweep. No
-measured current end-to-end mode yet fits the 15-hour cap; the full-Genesis
-result above remains narrower than an end-to-end cap measurement.
+measured current end-to-end mode yet fits the 15-hour cap; the full-TRAIN run
+above was timing-contaminated and remains narrower than an end-to-end cap
+measurement.
 
 ## Required sequence before GO
 
@@ -116,9 +130,11 @@ result above remains narrower than an end-to-end cap measurement.
       drive, fitted-cell first-spike race, growth-off structural zero, and
       repeated/novel/punishment/bit-exact fixtures. Native mechanism slices are
       green; q=255 development's first synthetic passing candidate `(16,18)`
-      fails the canonical TRAIN-order precursor at Genesis token 19,841, and
-      both higher arms fail q=255. Threshold-only repair is exhausted; stabilize
-      replayed winner identities before confirmation or official R3-F0.
+      fails the original canonical TRAIN-order precursor at Genesis token
+      19,841. The repaired two-tier cost runner completes all 49 TRAIN books but
+      exceeds the exact R3-F0 segment count by 72, while both higher arms fail
+      q=255. Threshold-only repair is exhausted; stabilize replayed winner
+      identities before confirmation or official R3-F0.
 - [ ] **Sparse context assembly gate:** freeze and compare k-capped actual
       recurrent spikes; require repeated-context stability, unrelated-context
       separation, and a bounded coincidence false-positive rate. Supersede the
