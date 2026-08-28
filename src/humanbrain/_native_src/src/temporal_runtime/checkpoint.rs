@@ -19,11 +19,10 @@ use std::{
 use sha2::{Digest, Sha256};
 
 use super::{
-    identifier_copy::IdentifierCopyState,
-    NovelCandidate, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalContextPolicy,
-    TemporalPlasticityPolicy, TemporalPoisonCode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS,
-    CONTEXT_CELLS_U8, EMPTY_DIAGNOSTIC, EMPTY_DRIVE, EMPTY_NOVEL_CANDIDATE, NONE,
-    PAIRS_PER_SEGMENT,
+    role_place_copy::RolePlaceCopyState, NovelCandidate, TemporalCircuitConfig,
+    TemporalCircuitRuntime, TemporalContextPolicy, TemporalPlasticityPolicy, TemporalPoisonCode,
+    TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS, CONTEXT_CELLS_U8, EMPTY_DIAGNOSTIC, EMPTY_DRIVE,
+    EMPTY_NOVEL_CANDIDATE, NONE, PAIRS_PER_SEGMENT,
 };
 use crate::temporal::{
     temporal_source_meta_allocation_layout, TemporalCheckpointRebuildError,
@@ -4224,7 +4223,7 @@ fn assemble_validated_checkpoint_v1_inner<'a>(
         identity,
         derived,
     } = factory;
-    let identifier_copy = IdentifierCopyState::new(
+    let role_place_copy = RolePlaceCopyState::new(
         config.construction_seed,
         config.column_count,
         derived.physical_cell_count,
@@ -4254,7 +4253,7 @@ fn assemble_validated_checkpoint_v1_inner<'a>(
         event_count: scalars.event_count,
         learning_step: scalars.learning_step,
         scientific_stop: poison,
-        identifier_copy,
+        role_place_copy,
         generation_index: 0,
         relay_offset: derived.relay_offset,
         basket_offset: derived.basket_offset,
