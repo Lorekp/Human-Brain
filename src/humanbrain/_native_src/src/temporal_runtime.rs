@@ -27,8 +27,10 @@ pub(crate) mod checkpoint;
 mod checkpoint_publisher;
 mod ffi;
 mod role_place_copy;
+mod typed_workspace;
 
 use role_place_copy::{is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID};
+use typed_workspace::TypedWorkspaceState;
 
 #[cfg(not(any(unix, windows)))]
 compile_error!("checkpoint path publication requires an audited Unix or Windows backend");
@@ -436,6 +438,7 @@ pub(crate) struct TemporalCircuitRuntime {
     learning_step: u64,
     scientific_stop: Option<TemporalPoisonCode>,
     role_place_copy: RolePlaceCopyState,
+    typed_workspace: TypedWorkspaceState,
     generation_index: u64,
     relay_offset: u32,
     basket_offset: u32,
@@ -826,6 +829,7 @@ impl TemporalCircuitRuntime {
             learning_step: 0,
             scientific_stop: None,
             role_place_copy,
+            typed_workspace: TypedWorkspaceState::EMPTY,
             generation_index: 0,
             relay_offset,
             basket_offset,
@@ -860,6 +864,64 @@ impl TemporalCircuitRuntime {
             .expect("successful temporal step resolved one token code");
         self.role_place_copy.observe_arrival(token_id, columns);
         Ok(step)
+    }
+
+    /// Execute the generic plan-commit cue through the ordinary fitted-cell
+    /// path and retain its eleven physical winners for later typed holes.
+    pub(crate) fn commit_typed_plan(
+        &mut self,
+        plan_commit_token_id: u32,
+        mode: TemporalStepMode,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        if self.config.context_policy != TemporalContextPolicy::BoundWinners {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed workspace requires BoundWinners context",
+            ));
+        }
+        let step = self.step(plan_commit_token_id, mode)?;
+        self.typed_workspace.retain_plan(step.winner_context);
+        Ok(step)
+    }
+
+    /// Re-broadcast the retained plan into one structural cue race, then make
+    /// the exact 5-plan/6-cue winner mix the recognition context for the next
+    /// teacher arrival or fitted output election.
+    pub(crate) fn prepare_typed_hole_context(
+        &mut self,
+        cue_token_id: u32,
+        mode: TemporalStepMode,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        if self.config.context_policy != TemporalContextPolicy::BoundWinners {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed workspace requires BoundWinners context",
+            ));
+        }
+        let plan = match self
+            .typed_workspace
+            .plan_transient(self.relay_offset, self.event_count)
+        {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        let cue = self.step_with_transient(cue_token_id, mode, plan)?;
+        let mixed = match self.typed_workspace.mixed_transient(
+            cue.winner_context,
+            self.relay_offset,
+            cue.event_count,
+        ) {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        self.previous_context = mixed.previous_context;
+        self.previous_context_len = mixed.previous_context_len;
+        self.previous_winner_context = mixed.previous_winner_context;
+        self.previous_winner_context_len = mixed.previous_winner_context_len;
+        self.event_count = mixed.event_count;
+        Ok(cue)
+    }
+
+    pub(crate) fn typed_plan_winners(&self) -> Option<[u32; ACTIVE_COLUMNS]> {
+        self.typed_workspace.plan_winners()
     }
 
     /// Elect one token directly from the current physical winner context.
