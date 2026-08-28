@@ -38,12 +38,11 @@ from humanbrain.native import (
 _UINT8_MAX: Final = (1 << 8) - 1
 _UINT16_MAX: Final = (1 << 16) - 1
 _UINT32_MAX: Final = (1 << 32) - 1
-IDENTIFIER_START_TOKEN_ID: Final = _UINT32_MAX - 7
-IDENTIFIER_END_TOKEN_ID: Final = _UINT32_MAX - 6
-LITERAL_START_TOKEN_ID: Final = _UINT32_MAX - 5
-LITERAL_END_TOKEN_ID: Final = _UINT32_MAX - 4
-COPY_ID_TOKEN_ID: Final = _UINT32_MAX - 3
-COPY_LITERAL_TOKEN_ID: Final = _UINT32_MAX - 2
+SLOT_COUNT: Final = 3
+MAX_SLOT_TOKENS: Final = 22
+SLOT_START_TOKEN_BASE: Final = _UINT32_MAX - 10
+SLOT_END_TOKEN_BASE: Final = _UINT32_MAX - 7
+COPY_SLOT_TOKEN_BASE: Final = _UINT32_MAX - 4
 COPY_END_TOKEN_ID: Final = _UINT32_MAX - 1
 _ACTIVE_COLUMNS: Final = 11
 _CONTEXT_CELLS: Final = 22
@@ -57,6 +56,32 @@ _CHECKPOINT_LOGICAL_STATE_DOMAIN: Final = b"humanbrain-r3-checkpoint-logical-sta
 _MAX_IMMUTABLE_PAYLOAD_BYTES: Final = 1 << 20
 _GOVERNING_PROTOCOL_MODULE: Final = "experiments.r3_pilot.calibration_v3_protocol"
 _GATE3_AUTHORITY_MODULE: Final = "experiments.r3_pilot.calibration_v3_gate3_authority"
+
+
+def _slot_control_token(base: int, slot_ordinal: int) -> int:
+    if type(slot_ordinal) is not int:
+        raise TypeError("slot_ordinal must be an int")
+    if not 0 <= slot_ordinal < SLOT_COUNT:
+        raise ValueError(f"slot_ordinal must be in [0, {SLOT_COUNT})")
+    return base + slot_ordinal
+
+
+def slot_start_token_id(slot_ordinal: int) -> int:
+    """Return the physical capture-start control for one ordinal slot."""
+
+    return _slot_control_token(SLOT_START_TOKEN_BASE, slot_ordinal)
+
+
+def slot_end_token_id(slot_ordinal: int) -> int:
+    """Return the physical capture-end control for one ordinal slot."""
+
+    return _slot_control_token(SLOT_END_TOKEN_BASE, slot_ordinal)
+
+
+def copy_slot_token_id(slot_ordinal: int) -> int:
+    """Return the physical recall control for one ordinal slot."""
+
+    return _slot_control_token(COPY_SLOT_TOKEN_BASE, slot_ordinal)
 
 
 class _NativeAuthority(ctypes.Structure):
@@ -291,7 +316,7 @@ class _NativeGeneration(ctypes.Structure):
         ("feedback_predicted", ctypes.c_uint8),
         ("copy_place_ordinal", ctypes.c_uint8),
         ("physical_election_count", ctypes.c_uint8),
-        ("copy_slot", ctypes.c_uint8),
+        ("slot_ordinal", ctypes.c_uint8),
         ("reserved_zero", ctypes.c_uint8 * 3),
     ]
 
@@ -500,13 +525,6 @@ class TemporalGenerationPath(IntEnum):
     ENTER_COPY = 1
     COPY = 2
     EXIT_COPY = 3
-
-
-class TemporalCopySlot(IntEnum):
-    """Transient physical role/place surface-copy slot."""
-
-    IDENTIFIER = 0
-    LITERAL = 1
 
 
 class NativeTemporalRuntimeStatus(IntEnum):
@@ -1032,7 +1050,7 @@ class TemporalGeneration:
     feedback_predicted: bool
     copy_place_ordinal: int | None
     physical_election_count: int
-    copy_slot: TemporalCopySlot | None
+    slot_ordinal: int | None
 
 
 class NativeTemporalRuntimeError(RuntimeError):
@@ -2963,15 +2981,7 @@ class NativeTemporalCircuit:
             surface_token_id = int(native.surface_token_id)
             surface_output_cell_id = int(native.surface_output_cell_id)
             validate_output_cell(surface_token_id, surface_output_cell_id, "surface output")
-            if surface_token_id in {
-                IDENTIFIER_START_TOKEN_ID,
-                IDENTIFIER_END_TOKEN_ID,
-                LITERAL_START_TOKEN_ID,
-                LITERAL_END_TOKEN_ID,
-                COPY_ID_TOKEN_ID,
-                COPY_LITERAL_TOKEN_ID,
-                COPY_END_TOKEN_ID,
-            }:
+            if SLOT_START_TOKEN_BASE <= surface_token_id <= COPY_END_TOKEN_ID:
                 raise _invariant_error("internal role token escaped as surface output")
 
             surface_winner_tick = int(native.surface_winner_tick)
@@ -2992,29 +3002,25 @@ class NativeTemporalCircuit:
             control_end_raw = int(native.control_simulated_end_tick)
             copy_place_raw = int(native.copy_place_ordinal)
             election_count = int(native.physical_election_count)
-            copy_slot_raw = int(native.copy_slot)
+            slot_ordinal_raw = int(native.slot_ordinal)
 
             if path is TemporalGenerationPath.TEMPORAL:
-                if copy_slot_raw != _UINT8_MAX:
+                if slot_ordinal_raw != _UINT8_MAX:
                     raise _invariant_error("ordinary temporal generation carries a copy slot")
-                copy_slot = None
+                slot_ordinal = None
             else:
-                try:
-                    copy_slot = TemporalCopySlot(copy_slot_raw)
-                except ValueError as exc:
+                if not 0 <= slot_ordinal_raw < SLOT_COUNT:
                     raise _invariant_error(
                         "copy generation carries an unknown physical slot",
-                        observed=copy_slot_raw,
-                    ) from exc
+                        observed=slot_ordinal_raw,
+                    )
+                slot_ordinal = slot_ordinal_raw
 
             expected_control: int | None
             expected_elections: int
             if path is TemporalGenerationPath.ENTER_COPY:
-                expected_control = (
-                    COPY_ID_TOKEN_ID
-                    if copy_slot is TemporalCopySlot.IDENTIFIER
-                    else COPY_LITERAL_TOKEN_ID
-                )
+                assert slot_ordinal is not None
+                expected_control = copy_slot_token_id(slot_ordinal)
                 expected_elections = 2
                 if copy_place_raw != 0:
                     raise _invariant_error("ENTER_COPY did not emit slot place zero")
@@ -3027,7 +3033,7 @@ class NativeTemporalCircuit:
                 expected_control = None
                 expected_elections = 1
                 if path is TemporalGenerationPath.COPY:
-                    if not 1 <= copy_place_raw < 8:
+                    if not 1 <= copy_place_raw < MAX_SLOT_TOKENS:
                         raise _invariant_error(
                             "COPY slot place is outside the bounded tape",
                             observed=copy_place_raw,
@@ -3114,7 +3120,7 @@ class NativeTemporalCircuit:
                     None if copy_place_raw == _UINT8_MAX else copy_place_raw
                 ),
                 physical_election_count=election_count,
-                copy_slot=copy_slot,
+                slot_ordinal=slot_ordinal,
             )
 
     def publish_checkpoint(self, destination: Path) -> TemporalCheckpointPublication:
@@ -3277,18 +3283,19 @@ __all__ = [
     "TemporalCircuitStep",
     "TemporalGeneration",
     "TemporalGenerationPath",
-    "TemporalCopySlot",
     "TemporalContextPolicy",
     "TemporalPlasticityPolicy",
     "TemporalSpike",
     "TemporalStepMode",
-    "IDENTIFIER_START_TOKEN_ID",
-    "IDENTIFIER_END_TOKEN_ID",
-    "LITERAL_START_TOKEN_ID",
-    "LITERAL_END_TOKEN_ID",
-    "COPY_ID_TOKEN_ID",
-    "COPY_LITERAL_TOKEN_ID",
+    "SLOT_COUNT",
+    "MAX_SLOT_TOKENS",
+    "SLOT_START_TOKEN_BASE",
+    "SLOT_END_TOKEN_BASE",
+    "COPY_SLOT_TOKEN_BASE",
     "COPY_END_TOKEN_ID",
+    "slot_start_token_id",
+    "slot_end_token_id",
+    "copy_slot_token_id",
     "publish_immutable_bytes",
     "prepare_durable_directory",
     "reconcile_existing_immutable_bytes",

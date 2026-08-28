@@ -1,7 +1,7 @@
 """PUBLIC synthetic single-shot probe for operator routing plus identifier copy.
 
 TRAIN teaches reset-separated ``inc/+1`` and ``dec/-1`` templates.  Target
-identifiers are the internal COPY_ID role, never literal names.  Teacher-free
+entry points use ordinal slot-0 recall, never literal names.  Teacher-free
 DEV then presents unseen ``bump/+1`` and ``drop/-1`` prompts once each, with a
 transient reset between them, and uses only atomic native ``generate()``.
 """
@@ -32,9 +32,7 @@ from humanbrain.native import loaded_library_identity
 import humanbrain.native_temporal_runtime as runtime_adapter
 from humanbrain.native_temporal_runtime import (
     COPY_END_TOKEN_ID,
-    COPY_ID_TOKEN_ID,
-    IDENTIFIER_END_TOKEN_ID,
-    IDENTIFIER_START_TOKEN_ID,
+    SLOT_COUNT,
     NativeTemporalCircuit,
     NativeTemporalCircuitConfig,
     NativeTemporalCircuitDefinition,
@@ -43,6 +41,9 @@ from humanbrain.native_temporal_runtime import (
     TemporalGenerationPath,
     TemporalPlasticityPolicy,
     TemporalStepMode,
+    copy_slot_token_id,
+    slot_end_token_id,
+    slot_start_token_id,
 )
 from humanbrain.sdr_union import token_sdr_indices
 
@@ -95,9 +96,9 @@ def _parse_args() -> argparse.Namespace:
 def _normalized_prompt(name: bytes, route: bytes) -> tuple[int, ...]:
     return (
         *PROMPT_PREFIX,
-        IDENTIFIER_START_TOKEN_ID,
+        slot_start_token_id(0),
         *name,
-        IDENTIFIER_END_TOKEN_ID,
+        slot_end_token_id(0),
         ord(" "),
         *route,
         *PROMPT_TERMINATOR,
@@ -107,7 +108,7 @@ def _normalized_prompt(name: bytes, route: bytes) -> tuple[int, ...]:
 def _internal_target(operator: bytes) -> tuple[int, ...]:
     return (
         *TARGET_PREFIX,
-        COPY_ID_TOKEN_ID,
+        copy_slot_token_id(0),
         *TARGET_BEFORE_OPERATOR,
         operator[0],
         *TARGET_AFTER_OPERATOR,
@@ -142,9 +143,9 @@ def _definition() -> NativeTemporalCircuitDefinition:
             {
                 *(token for episode in train_episodes for token in episode),
                 *(token for prompt in dev_prompts for token in prompt),
-                IDENTIFIER_START_TOKEN_ID,
-                IDENTIFIER_END_TOKEN_ID,
-                COPY_ID_TOKEN_ID,
+                *(slot_start_token_id(slot) for slot in range(SLOT_COUNT)),
+                *(slot_end_token_id(slot) for slot in range(SLOT_COUNT)),
+                *(copy_slot_token_id(slot) for slot in range(SLOT_COUNT)),
                 COPY_END_TOKEN_ID,
             }
         )
@@ -295,7 +296,7 @@ def _score_dev(
     ]
     role_path_exact = (
         len(enter_records) == 1
-        and enter_records[0]["control_token_id"] == COPY_ID_TOKEN_ID
+        and enter_records[0]["control_token_id"] == copy_slot_token_id(0)
         and copy_ordinals == list(range(len(case["name"])))
         and len(exit_records) == 1
         and exit_records[0]["control_token_id"] == COPY_END_TOKEN_ID
@@ -444,7 +445,7 @@ def main() -> int:
         "capability_pass": passed,
         "claim_boundary": (
             "Two public synthetic TRAIN episodes teach inc/+1 and dec/-1 templates with "
-            "explicit identifier boundaries and internal COPY_ID target slots. Teacher-free "
+            "explicit slot-0 boundaries and internal ordinal slot-0 target recalls. Teacher-free "
             "public synthetic DEV presents unseen bump/+1 and drop/-1 prompts exactly once "
             "each, resetting transient state while retaining learned state. All surface tokens "
             "and EOS come from unchanged atomic native generate(). This tests only two-way "
@@ -469,9 +470,9 @@ def main() -> int:
         "tokenization": {
             "scheme": "ASCII byte IDs plus EOS=256 and four reserved uint32 native role IDs",
             "eos_token_id": EOS_TOKEN_ID,
-            "identifier_start_token_id": IDENTIFIER_START_TOKEN_ID,
-            "identifier_end_token_id": IDENTIFIER_END_TOKEN_ID,
-            "copy_id_token_id": COPY_ID_TOKEN_ID,
+            "slot_0_start_token_id": slot_start_token_id(0),
+            "slot_0_end_token_id": slot_end_token_id(0),
+            "copy_slot_0_token_id": copy_slot_token_id(0),
             "copy_end_token_id": COPY_END_TOKEN_ID,
             "static_codebook": "seeded overlapping 11-of-512 token_sdr_indices",
             "codebook_seed": CODEBOOK_SEED,
@@ -499,7 +500,7 @@ def main() -> int:
                     "name": case["name"].decode("ascii"),
                     "prompt_route": case["route"].decode("ascii"),
                     "operator": case["operator"].decode("ascii"),
-                    "internal_target_name": "COPY_ID",
+                    "internal_target_name": "COPY[0]",
                     "literal_identifier_in_target": False,
                     "steps": len(steps),
                     "allocated_segments": sum(step.allocated_segments for step in steps),

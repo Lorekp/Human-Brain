@@ -1,7 +1,7 @@
 """PUBLIC synthetic TRAIN/DEV probe for two physical role/place copy slots.
 
-TRAIN teaches one normalized ``inc``/``1`` add template whose output contains
-COPY_ID and COPY_LITERAL controls. DEV supplies only a normalized prompt with
+TRAIN teaches one normalized ``inc``/``1`` add template whose output recalls
+ordinal slots 0 and 2. DEV supplies only a normalized prompt with
 unseen ``boost`` and ``7`` values. Atomic native ``generate()`` must surface the
 entire function and EOS without a Python-selected token.
 """
@@ -32,21 +32,18 @@ from humanbrain.native import loaded_library_identity
 import humanbrain.native_temporal_runtime as runtime_adapter
 from humanbrain.native_temporal_runtime import (
     COPY_END_TOKEN_ID,
-    COPY_ID_TOKEN_ID,
-    COPY_LITERAL_TOKEN_ID,
-    IDENTIFIER_END_TOKEN_ID,
-    IDENTIFIER_START_TOKEN_ID,
-    LITERAL_END_TOKEN_ID,
-    LITERAL_START_TOKEN_ID,
+    SLOT_COUNT,
     NativeTemporalCircuit,
     NativeTemporalCircuitConfig,
     NativeTemporalCircuitDefinition,
     NativeTemporalRuntimeError,
     TemporalContextPolicy,
-    TemporalCopySlot,
     TemporalGenerationPath,
     TemporalPlasticityPolicy,
     TemporalStepMode,
+    copy_slot_token_id,
+    slot_end_token_id,
+    slot_start_token_id,
 )
 from humanbrain.sdr_union import token_sdr_indices
 
@@ -94,13 +91,13 @@ def _parse_args() -> argparse.Namespace:
 def _normalized_prompt(identifier: bytes, literal: bytes) -> tuple[int, ...]:
     return (
         *PROMPT_PREFIX,
-        IDENTIFIER_START_TOKEN_ID,
+        slot_start_token_id(0),
         *identifier,
-        IDENTIFIER_END_TOKEN_ID,
+        slot_end_token_id(0),
         *PROMPT_MIDDLE,
-        LITERAL_START_TOKEN_ID,
+        slot_start_token_id(2),
         *literal,
-        LITERAL_END_TOKEN_ID,
+        slot_end_token_id(2),
         *PROMPT_SUFFIX,
     )
 
@@ -109,9 +106,9 @@ def _train_episode() -> tuple[int, ...]:
     return (
         *_normalized_prompt(TRAIN_IDENTIFIER, TRAIN_LITERAL),
         *TARGET_PREFIX,
-        COPY_ID_TOKEN_ID,
+        copy_slot_token_id(0),
         *TARGET_MIDDLE,
-        COPY_LITERAL_TOKEN_ID,
+        copy_slot_token_id(2),
         *TARGET_SUFFIX,
         EOS_TOKEN_ID,
     )
@@ -121,12 +118,9 @@ def _definition() -> NativeTemporalCircuitDefinition:
     train = _train_episode()
     dev = _normalized_prompt(DEV_IDENTIFIER, DEV_LITERAL)
     role_tokens = {
-        IDENTIFIER_START_TOKEN_ID,
-        IDENTIFIER_END_TOKEN_ID,
-        LITERAL_START_TOKEN_ID,
-        LITERAL_END_TOKEN_ID,
-        COPY_ID_TOKEN_ID,
-        COPY_LITERAL_TOKEN_ID,
+        *(slot_start_token_id(slot) for slot in range(SLOT_COUNT)),
+        *(slot_end_token_id(slot) for slot in range(SLOT_COUNT)),
+        *(copy_slot_token_id(slot) for slot in range(SLOT_COUNT)),
         COPY_END_TOKEN_ID,
     }
     used_token_ids = tuple(sorted({*train, *dev, *role_tokens}))
@@ -179,7 +173,7 @@ def _generation_record(position: int, generation: object) -> dict[str, object]:
         "position": position,
         "generation_index": int(generation.generation_index),
         "path": generation.path.name,
-        "copy_slot": None if generation.copy_slot is None else generation.copy_slot.name,
+        "slot_ordinal": generation.slot_ordinal,
         "copy_place_ordinal": generation.copy_place_ordinal,
         "surface_token_id": token_id,
         "surface_byte_hex": None if token_id == EOS_TOKEN_ID else f"{token_id:02x}",
@@ -226,7 +220,7 @@ def _analyze_copy_transactions(
         if path == TemporalGenerationPath.ENTER_COPY.name:
             exact &= active is None and previous_event_count is not None
             active = {
-                "slot": record["copy_slot"],
+                "slot": record["slot_ordinal"],
                 "control_token_id": record["control_token_id"],
                 "enter_event_count": event_count,
                 "control_advanced_temporal_once": (
@@ -241,13 +235,13 @@ def _analyze_copy_transactions(
         elif path == TemporalGenerationPath.COPY.name:
             exact &= active is not None
             if active is not None:
-                exact &= record["copy_slot"] == active["slot"]
+                exact &= record["slot_ordinal"] == active["slot"]
                 active["copied_places"].append(record["copy_place_ordinal"])
                 active["copied_event_counts"].append(event_count)
         elif path == TemporalGenerationPath.EXIT_COPY.name:
             exact &= active is not None
             if active is not None:
-                exact &= record["copy_slot"] == active["slot"]
+                exact &= record["slot_ordinal"] == active["slot"]
                 active["exit_event_count"] = event_count
                 active["exit_surface_token_id"] = record["surface_token_id"]
                 entry_count = int(active["enter_event_count"])
@@ -260,12 +254,12 @@ def _analyze_copy_transactions(
         previous_event_count = event_count
     exact &= active is None
     exact &= [record["slot"] for record in transactions] == [
-        TemporalCopySlot.IDENTIFIER.name,
-        TemporalCopySlot.LITERAL.name,
+        0,
+        2,
     ]
     exact &= [record["control_token_id"] for record in transactions] == [
-        COPY_ID_TOKEN_ID,
-        COPY_LITERAL_TOKEN_ID,
+        copy_slot_token_id(0),
+        copy_slot_token_id(2),
     ]
     exact &= all(
         bool(record["control_advanced_temporal_once"])
@@ -365,7 +359,7 @@ def main() -> int:
         "capability_pass": passed,
         "claim_boundary": (
             "One public synthetic TRAIN inc/1 add sequence teaches a literal temporal "
-            "template with internal COPY_ID and COPY_LITERAL controls. One public synthetic "
+            "template with internal ordinal slot-0 and slot-2 recall controls. One public synthetic "
             "DEV prompt captures unseen ASCII identifier boost and unseen ASCII literal 7 "
             "inside deterministic physical role markers and supplies no target. Atomic native "
             "generate() and fitted cell races select every surface token and EOS over a seeded "
@@ -389,12 +383,12 @@ def main() -> int:
         },
         "tokenization": {
             "scheme": "ASCII byte IDs, EOS=256, seven reserved native role/control IDs",
-            "identifier_start_token_id": IDENTIFIER_START_TOKEN_ID,
-            "identifier_end_token_id": IDENTIFIER_END_TOKEN_ID,
-            "literal_start_token_id": LITERAL_START_TOKEN_ID,
-            "literal_end_token_id": LITERAL_END_TOKEN_ID,
-            "copy_id_token_id": COPY_ID_TOKEN_ID,
-            "copy_literal_token_id": COPY_LITERAL_TOKEN_ID,
+            "slot_0_start_token_id": slot_start_token_id(0),
+            "slot_0_end_token_id": slot_end_token_id(0),
+            "slot_2_start_token_id": slot_start_token_id(2),
+            "slot_2_end_token_id": slot_end_token_id(2),
+            "copy_slot_0_token_id": copy_slot_token_id(0),
+            "copy_slot_2_token_id": copy_slot_token_id(2),
             "copy_end_token_id": COPY_END_TOKEN_ID,
             "static_codebook": "seeded overlapping 11-of-512 token_sdr_indices",
             "codebook_seed": CODEBOOK_SEED,
@@ -417,7 +411,7 @@ def main() -> int:
             "literal": TRAIN_LITERAL.decode("ascii"),
             "steps": len(train_steps),
             "internal_target_shape": (
-                "def <COPY_ID>(x): return x + <COPY_LITERAL>; EOS"
+                "def <COPY[0]>(x): return x + <COPY[2]>; EOS"
             ),
             "literal_identifier_or_value_in_target": False,
             "allocated_segments": sum(step.allocated_segments for step in train_steps),

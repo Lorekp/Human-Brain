@@ -1,75 +1,98 @@
-//! Transient physical role/place binding for bounded surface-copy slots.
+//! Transient physical role/place binding for a bounded ordinal slot bank.
 //!
 //! A slot stores neither token IDs nor decoded strings. Each occupied place
 //! owns eleven distributed content columns behind a ten-contact binding row.
 //! Five contacts come from a slot-role assembly and five from a shared place
-//! assembly, so equal positions overlap physically while slot identity remains
-//! physical. Recall reconstructs the content assembly and lets the fitted
-//! output-cell race choose every surfaced token.
+//! assembly, so equal positions overlap physically while ordinal slot identity
+//! remains physical. Recall reconstructs the content assembly and lets the
+//! fitted output-cell race choose every surfaced token.
 
 use crate::random123::sample_without_replacement;
 
 use super::{TokenCode, ACTIVE_COLUMNS, NONE, PAIRS_PER_SEGMENT};
 
-pub(crate) const IDENTIFIER_START_TOKEN_ID: u32 = u32::MAX - 7;
-pub(crate) const IDENTIFIER_END_TOKEN_ID: u32 = u32::MAX - 6;
-pub(crate) const LITERAL_START_TOKEN_ID: u32 = u32::MAX - 5;
-pub(crate) const LITERAL_END_TOKEN_ID: u32 = u32::MAX - 4;
-pub(crate) const COPY_ID_TOKEN_ID: u32 = u32::MAX - 3;
-pub(crate) const COPY_LITERAL_TOKEN_ID: u32 = u32::MAX - 2;
+pub(crate) const SLOT_COUNT: usize = 3;
+pub(crate) const MAX_SLOT_TOKENS: usize = 22;
+pub(crate) const SLOT_START_TOKEN_BASE: u32 = u32::MAX - 10;
+pub(crate) const SLOT_END_TOKEN_BASE: u32 = u32::MAX - 7;
+pub(crate) const COPY_SLOT_TOKEN_BASE: u32 = u32::MAX - 4;
 pub(crate) const COPY_END_TOKEN_ID: u32 = u32::MAX - 1;
 
-pub(crate) const MAX_SLOT_TOKENS: usize = 8;
-const SLOT_COUNT: usize = 2;
 const BINDING_ROWS: usize = MAX_SLOT_TOKENS + 1;
 const ROLE_CONTACTS: usize = PAIRS_PER_SEGMENT / 2;
 const PLACE_CONTACTS: usize = PAIRS_PER_SEGMENT - ROLE_CONTACTS;
 const PLACE_CELL_COUNT: usize = 128;
 const ROLE_CELL_COUNT: usize = 64;
-const PLACE_DOMAIN: u64 = 0x5233_504C_4143_4532;
-const ROLE_DOMAIN: u64 = 0x5233_524F_4C45_5332;
+const PLACE_DOMAIN: u64 = 0x5233_504C_4143_4533;
+const ROLE_DOMAIN: u64 = 0x5233_524F_4C45_5333;
 
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum CopySlot {
-    Identifier = 0,
-    Literal = 1,
+pub(crate) const fn slot_start_token_id(slot_ordinal: u8) -> Option<u32> {
+    if (slot_ordinal as usize) < SLOT_COUNT {
+        Some(SLOT_START_TOKEN_BASE + slot_ordinal as u32)
+    } else {
+        None
+    }
 }
 
-impl CopySlot {
+pub(crate) const fn slot_end_token_id(slot_ordinal: u8) -> Option<u32> {
+    if (slot_ordinal as usize) < SLOT_COUNT {
+        Some(SLOT_END_TOKEN_BASE + slot_ordinal as u32)
+    } else {
+        None
+    }
+}
+
+pub(crate) const fn copy_slot_token_id(slot_ordinal: u8) -> Option<u32> {
+    if (slot_ordinal as usize) < SLOT_COUNT {
+        Some(COPY_SLOT_TOKEN_BASE + slot_ordinal as u32)
+    } else {
+        None
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct SlotOrdinal(u8);
+
+impl SlotOrdinal {
+    pub(crate) const fn new(value: u8) -> Option<Self> {
+        if (value as usize) < SLOT_COUNT {
+            Some(Self(value))
+        } else {
+            None
+        }
+    }
+
     const fn index(self) -> usize {
-        self as usize
+        self.0 as usize
+    }
+
+    pub(crate) const fn value(self) -> u8 {
+        self.0
     }
 
     pub(crate) const fn copy_token_id(self) -> u32 {
-        match self {
-            Self::Identifier => COPY_ID_TOKEN_ID,
-            Self::Literal => COPY_LITERAL_TOKEN_ID,
-        }
+        COPY_SLOT_TOKEN_BASE + self.0 as u32
     }
 
     fn from_start_token(token_id: u32) -> Option<Self> {
-        match token_id {
-            IDENTIFIER_START_TOKEN_ID => Some(Self::Identifier),
-            LITERAL_START_TOKEN_ID => Some(Self::Literal),
-            _ => None,
-        }
+        token_id
+            .checked_sub(SLOT_START_TOKEN_BASE)
+            .and_then(|value| u8::try_from(value).ok())
+            .and_then(Self::new)
     }
 
     fn from_end_token(token_id: u32) -> Option<Self> {
-        match token_id {
-            IDENTIFIER_END_TOKEN_ID => Some(Self::Identifier),
-            LITERAL_END_TOKEN_ID => Some(Self::Literal),
-            _ => None,
-        }
+        token_id
+            .checked_sub(SLOT_END_TOKEN_BASE)
+            .and_then(|value| u8::try_from(value).ok())
+            .and_then(Self::new)
     }
 
     pub(crate) fn from_copy_token(token_id: u32) -> Option<Self> {
-        match token_id {
-            COPY_ID_TOKEN_ID => Some(Self::Identifier),
-            COPY_LITERAL_TOKEN_ID => Some(Self::Literal),
-            _ => None,
-        }
+        token_id
+            .checked_sub(COPY_SLOT_TOKEN_BASE)
+            .and_then(|value| u8::try_from(value).ok())
+            .and_then(Self::new)
     }
 }
 
@@ -105,8 +128,8 @@ pub(crate) struct RolePlaceCopyState {
     copy_column_offset: u32,
     place_offset: u32,
     role_offset: u32,
-    capture_slot: Option<CopySlot>,
-    recall_slot: Option<CopySlot>,
+    capture_slot: Option<SlotOrdinal>,
+    recall_slot: Option<SlotOrdinal>,
     role_cells: [u32; ACTIVE_COLUMNS],
     place_cells: [u32; ACTIVE_COLUMNS],
     slots: [SlotTape; SLOT_COUNT],
@@ -121,44 +144,36 @@ impl RolePlaceCopyState {
         base_physical_cell_count: u32,
         token_codebook: &[TokenCode],
     ) -> Result<Self, &'static str> {
-        let role_ids = [
-            IDENTIFIER_START_TOKEN_ID,
-            IDENTIFIER_END_TOKEN_ID,
-            LITERAL_START_TOKEN_ID,
-            LITERAL_END_TOKEN_ID,
-            COPY_ID_TOKEN_ID,
-            COPY_LITERAL_TOKEN_ID,
-            COPY_END_TOKEN_ID,
-        ];
-        let role_count = role_ids
+        let role_count = token_codebook
             .iter()
-            .filter(|&&token_id| token_code(token_codebook, token_id).is_some())
+            .filter(|code| (SLOT_START_TOKEN_BASE..=COPY_END_TOKEN_ID).contains(&code.token_id))
             .count();
-        if role_count != 0 && role_count != role_ids.len() {
-            return Err("role/place copy control tokens must be all present or all absent");
+        let required_role_count = SLOT_COUNT * 3 + 1;
+        if role_count != 0 && role_count != required_role_count {
+            return Err("ordinal slot-bank control tokens must be all present or all absent");
         }
-        let enabled = role_count == role_ids.len();
+        let enabled = role_count == required_role_count;
         let token_count = u32::try_from(token_codebook.len())
-            .map_err(|_| "role/place copy token population exceeds uint32")?;
+            .map_err(|_| "ordinal slot-bank token population exceeds uint32")?;
         let output_basket = base_physical_cell_count
             .checked_add(token_count)
-            .ok_or("role/place copy physical offsets overflow uint32")?;
+            .ok_or("ordinal slot-bank physical offsets overflow uint32")?;
         let copy_column_offset = output_basket
             .checked_add(1)
-            .ok_or("role/place copy physical offsets overflow uint32")?;
+            .ok_or("ordinal slot-bank physical offsets overflow uint32")?;
         let place_offset = copy_column_offset
             .checked_add(column_count)
-            .ok_or("role/place copy physical offsets overflow uint32")?;
+            .ok_or("ordinal slot-bank physical offsets overflow uint32")?;
         let role_offset = place_offset
             .checked_add(PLACE_CELL_COUNT as u32)
-            .ok_or("role/place copy physical offsets overflow uint32")?;
+            .ok_or("ordinal slot-bank physical offsets overflow uint32")?;
         role_offset
             .checked_add(ROLE_CELL_COUNT as u32)
-            .ok_or("role/place copy physical offsets overflow uint32")?;
+            .ok_or("ordinal slot-bank physical offsets overflow uint32")?;
 
         let copy_end_columns = if enabled {
             token_code(token_codebook, COPY_END_TOKEN_ID)
-                .expect("all role codes were counted")
+                .expect("all slot-bank role codes were counted")
                 .columns
         } else {
             [NONE; ACTIVE_COLUMNS]
@@ -189,14 +204,14 @@ impl RolePlaceCopyState {
     }
 
     pub(crate) fn normalizes_temporal_context(&self, token_id: u32) -> bool {
-        CopySlot::from_end_token(token_id).is_some_and(|slot| self.capture_slot == Some(slot))
+        SlotOrdinal::from_end_token(token_id).is_some_and(|slot| self.capture_slot == Some(slot))
     }
 
     pub(crate) fn is_end_boundary(&self, token_id: u32) -> bool {
-        self.enabled && CopySlot::from_end_token(token_id).is_some()
+        self.enabled && SlotOrdinal::from_end_token(token_id).is_some()
     }
 
-    pub(crate) fn is_ready(&self, slot: CopySlot) -> bool {
+    pub(crate) fn is_ready(&self, slot: SlotOrdinal) -> bool {
         self.enabled && self.slots[slot.index()].ready
     }
 
@@ -209,30 +224,30 @@ impl RolePlaceCopyState {
             return Ok(());
         }
         if self.recall_slot.is_some() {
-            return Err("arriving token cannot interrupt an active copy recall");
+            return Err("arriving token cannot interrupt an active slot recall");
         }
-        if CopySlot::from_start_token(token_id).is_some() {
+        if SlotOrdinal::from_start_token(token_id).is_some() {
             return if self.capture_slot.is_some() {
                 Err("slot start arrived while another capture was active")
             } else {
                 Ok(())
             };
         }
-        if let Some(slot) = CopySlot::from_end_token(token_id) {
+        if let Some(slot) = SlotOrdinal::from_end_token(token_id) {
             return if self.capture_slot != Some(slot) {
                 Err("slot end arrived without its matching active capture")
             } else if self.slots[slot.index()].len == 0 {
-                Err("copy slot capture cannot be empty")
+                Err("slot capture cannot be empty")
             } else {
                 Ok(())
             };
         }
         if let Some(slot) = self.capture_slot {
             if is_internal_role_token(token_id) {
-                return Err("copy control token arrived inside slot capture");
+                return Err("slot-bank control token arrived inside slot capture");
             }
             if usize::from(self.slots[slot.index()].len) >= MAX_SLOT_TOKENS {
-                return Err("captured value exceeds the bounded copy tape");
+                return Err("captured value exceeds the bounded slot tape");
             }
         }
         Ok(())
@@ -242,14 +257,14 @@ impl RolePlaceCopyState {
         if !self.enabled {
             return;
         }
-        if let Some(slot) = CopySlot::from_start_token(token_id) {
+        if let Some(slot) = SlotOrdinal::from_start_token(token_id) {
             self.slots[slot.index()] = EMPTY_TAPE;
             self.capture_slot = Some(slot);
             self.activate_role(slot);
             self.activate_place(0);
             return;
         }
-        if let Some(slot) = CopySlot::from_end_token(token_id) {
+        if let Some(slot) = SlotOrdinal::from_end_token(token_id) {
             debug_assert_eq!(self.capture_slot, Some(slot));
             let end_position = usize::from(self.slots[slot.index()].len);
             self.slots[slot.index()].bindings[end_position] =
@@ -268,7 +283,7 @@ impl RolePlaceCopyState {
         }
     }
 
-    pub(crate) fn begin_recall(&mut self, slot: CopySlot) {
+    pub(crate) fn begin_recall(&mut self, slot: SlotOrdinal) {
         debug_assert!(self.is_ready(slot));
         debug_assert!(self.capture_slot.is_none() && self.recall_slot.is_none());
         self.recall_slot = Some(slot);
@@ -279,7 +294,7 @@ impl RolePlaceCopyState {
 
     pub(crate) fn binding_columns_at(
         &self,
-        slot: CopySlot,
+        slot: SlotOrdinal,
         position: u8,
     ) -> Result<[u32; ACTIVE_COLUMNS], &'static str> {
         let preview = self.recall_slot.is_none() && self.is_ready(slot) && position == 0;
@@ -323,7 +338,7 @@ impl RolePlaceCopyState {
         self.place_cells = [NONE; ACTIVE_COLUMNS];
     }
 
-    pub(crate) fn recall_slot(&self) -> Option<CopySlot> {
+    pub(crate) fn recall_slot(&self) -> Option<SlotOrdinal> {
         self.recall_slot
     }
 
@@ -342,7 +357,7 @@ impl RolePlaceCopyState {
             .ok_or("copy-column physical identity overflowed uint32")
     }
 
-    fn binding_row(&self, slot: CopySlot, owner_columns: [u32; ACTIVE_COLUMNS]) -> BindingRow {
+    fn binding_row(&self, slot: SlotOrdinal, owner_columns: [u32; ACTIVE_COLUMNS]) -> BindingRow {
         let mut sources = self.binding_contacts(slot, self.slots[slot.index()].len);
         sources.sort_unstable();
         BindingRow {
@@ -352,11 +367,11 @@ impl RolePlaceCopyState {
         }
     }
 
-    fn binding_contacts(&self, slot: CopySlot, position: u8) -> [u32; PAIRS_PER_SEGMENT] {
+    fn binding_contacts(&self, slot: SlotOrdinal, position: u8) -> [u32; PAIRS_PER_SEGMENT] {
         let role_cells = sparse_code(
             self.construction_seed,
             ROLE_DOMAIN,
-            slot as u64,
+            u64::from(slot.value()),
             self.role_offset,
             ROLE_CELL_COUNT,
         );
@@ -383,11 +398,11 @@ impl RolePlaceCopyState {
         );
     }
 
-    fn activate_role(&mut self, slot: CopySlot) {
+    fn activate_role(&mut self, slot: SlotOrdinal) {
         self.role_cells = sparse_code(
             self.construction_seed,
             ROLE_DOMAIN,
-            slot as u64,
+            u64::from(slot.value()),
             self.role_offset,
             ROLE_CELL_COUNT,
         );
@@ -395,7 +410,7 @@ impl RolePlaceCopyState {
 }
 
 pub(crate) fn is_internal_role_token(token_id: u32) -> bool {
-    token_id >= IDENTIFIER_START_TOKEN_ID
+    (SLOT_START_TOKEN_BASE..=COPY_END_TOKEN_ID).contains(&token_id)
 }
 
 fn token_code(codebook: &[TokenCode], token_id: u32) -> Option<&TokenCode> {

@@ -28,7 +28,7 @@ mod checkpoint_publisher;
 mod ffi;
 mod role_place_copy;
 
-use role_place_copy::{is_internal_role_token, CopySlot, RolePlaceCopyState, COPY_END_TOKEN_ID};
+use role_place_copy::{is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID};
 
 #[cfg(not(any(unix, windows)))]
 compile_error!("checkpoint path publication requires an audited Unix or Windows backend");
@@ -283,7 +283,7 @@ pub(crate) struct TemporalGeneration {
     pub(crate) feedback_predicted: bool,
     pub(crate) copy_place_ordinal: u8,
     pub(crate) physical_election_count: u8,
-    pub(crate) copy_slot: u8,
+    pub(crate) slot_ordinal: u8,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1024,7 +1024,7 @@ impl TemporalCircuitRuntime {
 
     fn elect_copy_output_at(
         &mut self,
-        slot: CopySlot,
+        slot: SlotOrdinal,
         position: u8,
     ) -> Result<PhysicalOutputElection, TemporalCircuitStop> {
         let columns = match self.role_place_copy.binding_columns_at(slot, position) {
@@ -1078,7 +1078,7 @@ impl TemporalCircuitRuntime {
         next_generation_index: u64,
     ) -> Result<TemporalGeneration, TemporalCircuitStop> {
         let elected = self.elect_temporal_output()?;
-        if let Some(slot) = CopySlot::from_copy_token(elected.token_id) {
+        if let Some(slot) = SlotOrdinal::from_copy_token(elected.token_id) {
             if !self.role_place_copy.is_ready(slot) {
                 return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
                     "COPY control won without a captured value in its slot",
@@ -2298,7 +2298,7 @@ fn generation_record(
     control: Option<PhysicalOutputElection>,
     path: TemporalGenerationPath,
     feedback: Option<&TemporalCircuitStep>,
-    copy_slot: Option<CopySlot>,
+    slot: Option<SlotOrdinal>,
     copy_place_ordinal: u8,
     generation_index: u64,
     temporal_event_count: u64,
@@ -2325,7 +2325,7 @@ fn generation_record(
         feedback_predicted: feedback.is_some_and(|step| step.predicted),
         copy_place_ordinal,
         physical_election_count: if control.is_some() { 2 } else { 1 },
-        copy_slot: copy_slot.map_or(u8::MAX, |slot| slot as u8),
+        slot_ordinal: slot.map_or(u8::MAX, SlotOrdinal::value),
     }
 }
 
@@ -2998,29 +2998,41 @@ mod tests {
     }
 
     #[test]
-    fn normalized_multi_slot_copy_emits_unseen_name_and_literal_then_resumes() {
+    fn ordinal_slot_bank_repeats_slot_one_and_emits_max_length_unseen_entry_point() {
         const EOS: u32 = 256;
         let mut train = b"Function "
             .iter()
             .map(|&byte| u32::from(byte))
             .collect::<Vec<_>>();
-        train.push(role_place_copy::IDENTIFIER_START_TOKEN_ID);
+        train.push(role_place_copy::slot_start_token_id(0).unwrap());
         train.extend(b"inc".iter().map(|&byte| u32::from(byte)));
-        train.push(role_place_copy::IDENTIFIER_END_TOKEN_ID);
-        train.extend(b" adds ".iter().map(|&byte| u32::from(byte)));
-        train.push(role_place_copy::LITERAL_START_TOKEN_ID);
-        train.push(u32::from(b'1'));
-        train.push(role_place_copy::LITERAL_END_TOKEN_ID);
+        train.push(role_place_copy::slot_end_token_id(0).unwrap());
+        train.push(u32::from(b'('));
+        train.push(role_place_copy::slot_start_token_id(1).unwrap());
+        train.push(u32::from(b'n'));
+        train.push(role_place_copy::slot_end_token_id(1).unwrap());
+        train.extend(b") offset ".iter().map(|&byte| u32::from(byte)));
+        train.push(role_place_copy::slot_start_token_id(2).unwrap());
+        train.push(u32::from(b'5'));
+        train.push(role_place_copy::slot_end_token_id(2).unwrap());
         train.extend(b".\n".iter().map(|&byte| u32::from(byte)));
         train.extend(b"def ".iter().map(|&byte| u32::from(byte)));
-        train.push(role_place_copy::COPY_ID_TOKEN_ID);
-        train.extend(b"(x):\n    return x + ".iter().map(|&byte| u32::from(byte)));
-        train.push(role_place_copy::COPY_LITERAL_TOKEN_ID);
+        train.push(role_place_copy::copy_slot_token_id(0).unwrap());
+        train.push(u32::from(b'('));
+        train.push(role_place_copy::copy_slot_token_id(1).unwrap());
+        train.extend(b"):\n    return ".iter().map(|&byte| u32::from(byte)));
+        train.push(role_place_copy::copy_slot_token_id(1).unwrap());
+        train.extend(b" + ".iter().map(|&byte| u32::from(byte)));
+        train.push(role_place_copy::copy_slot_token_id(2).unwrap());
         train.push(u32::from(b'\n'));
         train.push(EOS);
 
         let mut token_ids = train.clone();
-        token_ids.extend(b"boost7".iter().map(|&byte| u32::from(byte)));
+        token_ids.extend(
+            b"solve_c5fdae9089d40e297"
+                .iter()
+                .map(|&byte| u32::from(byte)),
+        );
         token_ids.push(COPY_END_TOKEN_ID);
         token_ids.sort_unstable();
         token_ids.dedup();
@@ -3059,13 +3071,21 @@ mod tests {
             .iter()
             .map(|&byte| u32::from(byte))
             .collect::<Vec<_>>();
-        dev.push(role_place_copy::IDENTIFIER_START_TOKEN_ID);
-        dev.extend(b"boost".iter().map(|&byte| u32::from(byte)));
-        dev.push(role_place_copy::IDENTIFIER_END_TOKEN_ID);
-        dev.extend(b" adds ".iter().map(|&byte| u32::from(byte)));
-        dev.push(role_place_copy::LITERAL_START_TOKEN_ID);
+        dev.push(role_place_copy::slot_start_token_id(0).unwrap());
+        dev.extend(
+            b"solve_c5fdae9089d40e29"
+                .iter()
+                .map(|&byte| u32::from(byte)),
+        );
+        dev.push(role_place_copy::slot_end_token_id(0).unwrap());
+        dev.push(u32::from(b'('));
+        dev.push(role_place_copy::slot_start_token_id(1).unwrap());
+        dev.push(u32::from(b'n'));
+        dev.push(role_place_copy::slot_end_token_id(1).unwrap());
+        dev.extend(b") offset ".iter().map(|&byte| u32::from(byte)));
+        dev.push(role_place_copy::slot_start_token_id(2).unwrap());
         dev.push(u32::from(b'7'));
-        dev.push(role_place_copy::LITERAL_END_TOKEN_ID);
+        dev.push(role_place_copy::slot_end_token_id(2).unwrap());
         dev.extend(b".\n".iter().map(|&byte| u32::from(byte)));
         for token_id in dev {
             runtime
@@ -3079,18 +3099,18 @@ mod tests {
         for _ in 0..64 {
             let generation = runtime.generate().expect("teacher-free generation");
             if generation.path == TemporalGenerationPath::EnterCopy {
-                let slot = generation.copy_slot;
-                assert!(slot == CopySlot::Identifier as u8 || slot == CopySlot::Literal as u8);
+                let slot = generation.slot_ordinal;
+                assert!(usize::from(slot) < role_place_copy::SLOT_COUNT);
                 active_copy = Some((slot, generation.temporal_event_count));
                 entered_slots.push(slot);
                 assert_eq!(generation.copy_place_ordinal, 0);
             } else if generation.path == TemporalGenerationPath::Copy {
                 let (slot, event_count) = active_copy.expect("COPY follows ENTER_COPY");
-                assert_eq!(generation.copy_slot, slot);
+                assert_eq!(generation.slot_ordinal, slot);
                 assert_eq!(generation.temporal_event_count, event_count);
             } else if generation.path == TemporalGenerationPath::ExitCopy {
                 let (slot, event_count) = active_copy.take().expect("EXIT_COPY follows copy");
-                assert_eq!(generation.copy_slot, slot);
+                assert_eq!(generation.slot_ordinal, slot);
                 assert_eq!(generation.temporal_event_count, event_count + 1);
             }
             surfaced.push(generation.surface_token_id);
@@ -3098,16 +3118,13 @@ mod tests {
                 break;
             }
         }
-        let mut expected = b"def boost(x):\n    return x + 7\n"
+        let mut expected = b"def solve_c5fdae9089d40e29(n):\n    return n + 7\n"
             .iter()
             .map(|&byte| u32::from(byte))
             .collect::<Vec<_>>();
         expected.push(EOS);
         assert_eq!(surfaced, expected);
-        assert_eq!(
-            entered_slots,
-            vec![CopySlot::Identifier as u8, CopySlot::Literal as u8]
-        );
+        assert_eq!(entered_slots, vec![0, 1, 1, 2]);
         assert!(active_copy.is_none());
     }
 
