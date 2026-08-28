@@ -132,6 +132,7 @@ const PLASTICITY_PLASTIC: u8 = 1;
 const TYPED_VALUE_INT: u8 = 0;
 const TYPED_VALUE_LIST_INT: u8 = 1;
 const TYPED_VALUE_INT_TO_INT: u8 = 2;
+const TYPED_VALUE_BOOL: u8 = 3;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -613,6 +614,7 @@ impl From<TemporalGeneration> for TemporalGenerationV1 {
 #[derive(Clone, Copy)]
 pub struct TemporalTypedWorkspaceVocabularyV1 {
     pub plan_commit_token_id: u32,
+    pub address_token_base: u32,
     pub cue_token_ids: [u32; TYPED_CUE_TOKEN_COUNT],
     pub surface_token_ids: [u32; TYPED_SURFACE_TOKEN_COUNT],
 }
@@ -621,6 +623,7 @@ impl From<TemporalTypedWorkspaceVocabularyV1> for TypedWorkspaceVocabulary {
     fn from(vocabulary: TemporalTypedWorkspaceVocabularyV1) -> Self {
         Self {
             plan_commit_token_id: vocabulary.plan_commit_token_id,
+            address_token_base: vocabulary.address_token_base,
             cue_token_ids: vocabulary.cue_token_ids,
             surface_token_ids: vocabulary.surface_token_ids,
         }
@@ -1673,6 +1676,7 @@ fn typed_value(code: u8) -> Option<TypedValue> {
         TYPED_VALUE_INT => Some(TypedValue::Int),
         TYPED_VALUE_LIST_INT => Some(TypedValue::ListInt),
         TYPED_VALUE_INT_TO_INT => Some(TypedValue::IntToInt),
+        TYPED_VALUE_BOOL => Some(TypedValue::Bool),
         _ => None,
     }
 }
@@ -3074,33 +3078,37 @@ mod tests {
         assert_eq!(offset_of!(TemporalGenerationV1, slot_ordinal), 60);
         assert_eq!(offset_of!(TemporalGenerationV1, reserved_zero), 61);
 
-        assert_eq!(size_of::<TemporalTypedWorkspaceVocabularyV1>(), 152);
+        assert_eq!(size_of::<TemporalTypedWorkspaceVocabularyV1>(), 196);
         assert_eq!(align_of::<TemporalTypedWorkspaceVocabularyV1>(), 4);
         assert_eq!(
             offset_of!(TemporalTypedWorkspaceVocabularyV1, plan_commit_token_id),
             0
         );
         assert_eq!(
-            offset_of!(TemporalTypedWorkspaceVocabularyV1, cue_token_ids),
+            offset_of!(TemporalTypedWorkspaceVocabularyV1, address_token_base),
             4
         );
         assert_eq!(
+            offset_of!(TemporalTypedWorkspaceVocabularyV1, cue_token_ids),
+            8
+        );
+        assert_eq!(
             offset_of!(TemporalTypedWorkspaceVocabularyV1, surface_token_ids),
-            72
+            108
         );
 
-        assert_eq!(size_of::<TemporalTypedSessionV1Request>(), 160);
+        assert_eq!(size_of::<TemporalTypedSessionV1Request>(), 204);
         assert_eq!(align_of::<TemporalTypedSessionV1Request>(), 4);
         assert_eq!(offset_of!(TemporalTypedSessionV1Request, vocabulary), 0);
         assert_eq!(
             offset_of!(TemporalTypedSessionV1Request, parameter_type),
-            152
+            196
         );
-        assert_eq!(offset_of!(TemporalTypedSessionV1Request, result_type), 153);
-        assert_eq!(offset_of!(TemporalTypedSessionV1Request, mode), 154);
+        assert_eq!(offset_of!(TemporalTypedSessionV1Request, result_type), 197);
+        assert_eq!(offset_of!(TemporalTypedSessionV1Request, mode), 198);
         assert_eq!(
             offset_of!(TemporalTypedSessionV1Request, reserved_zero),
-            155
+            199
         );
 
         assert_eq!(size_of::<TemporalCircuitAdvanceBlockV2Request>(), 40);
