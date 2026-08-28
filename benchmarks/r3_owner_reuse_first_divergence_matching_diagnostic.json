@@ -1,0 +1,102 @@
+{
+  "artifact_id": "r3-owner-reuse-first-divergence-matching-diagnostic-v1",
+  "claim_boundary": "diagnostic-only preservation of one fresh bounded TRAIN-only Genesis replay at theta-match 16/theta-active 18 and construction seed 17; the captured row is not a functional mechanism divergence because active=0, predicted=0, and allocated=11 show that it did not bias the race; this is not a calibration-v3 outcome, retry, arm selection, protocol reinterpretation, held-out, C1, confirmation, or checkpoint claim",
+  "definition": {
+    "arm": [
+      16,
+      18
+    ],
+    "bounded_circuit_identity_sha256": "ed218145b2719dd9a5189e2b0acd2a67b84e3a2738252111548d998936281ce5",
+    "bounded_segment_capacity": 218251,
+    "construction_seed": 17,
+    "production_circuit_identity_sha256": "efcd70c8f0a1deeb04ffa32b7d905f42c01000caa33ed18d61ac366594ed9502",
+    "production_segment_capacity": 23286406,
+    "protocol_sha256": "5b916fe88cdba401c2a80e89b25bfc64447d189d216029d65bb40678c499dfa6",
+    "protocol_source_runnable": true
+  },
+  "environment": {
+    "native_binary_sha256": "f4452d11478dff41dbe647a7a249df037f443990e7858021d3fd8dfada7f8b94",
+    "native_source_digest": "7b0c85bb826b9dfdfeaca3c26f356ff67030174979dca20ea2b73e3a5898a54c",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "first_matching_diagnostic": {
+    "book_name": "Genesis",
+    "book_ordinal": 0,
+    "call_index": 7933,
+    "expected": 0,
+    "kind": "FOREIGN_OR_MISSING_SOURCE_MATCH_DIAGNOSTIC",
+    "native_counters": {
+      "active_segments": 0,
+      "allocated_segments": 11,
+      "candidate_segments": 2233,
+      "event_count": 7934,
+      "matching_segments": 11,
+      "postings_visited": 3751,
+      "predicted": false,
+      "predicted_columns": 0,
+      "punished_segments": 0
+    },
+    "observed": 11,
+    "source_fanout": 0,
+    "source_winner_cells": [
+      2291,
+      2351,
+      2744,
+      7455,
+      11184,
+      21178,
+      22029,
+      22079,
+      25908,
+      26836,
+      26887
+    ],
+    "token_id": 32,
+    "token_index": 7933
+  },
+  "fixed_boundary": {
+    "automatic_expansion": false,
+    "book": "Genesis",
+    "first_call_index": 0,
+    "last_call_index": 19841,
+    "maximum_calls": 19842
+  },
+  "generated_at_utc": "2026-08-28T13:12:54.370580+00:00",
+  "measurement": {
+    "accepted_calls": 7933,
+    "allocated_segments": 87263,
+    "calls_issued": 7934,
+    "calls_per_second": 3229.860290426888,
+    "distinct_keys": 7932,
+    "key_owner_stream_sha256": "220704ceb378ea203a577cb3b20801350bcbcae5429c4355790b3472cddae4f7",
+    "maximum_active_segments": 0,
+    "maximum_candidate_segments": 6677,
+    "maximum_matching_segments": 11,
+    "maximum_postings_visited": 10868,
+    "punished_segments": 0,
+    "repeats": 0,
+    "resets": 1,
+    "transitions": 7932,
+    "wall_ns": 2456453000,
+    "winner_stream_sha256": "e0ce8b568b7c85442c178b9836c3847efd6445e58a04706496cb2f405cc06608"
+  },
+  "schema_version": 1,
+  "semantic_gate": {
+    "candidate_segments": "diagnostic only; one-contact candidates are legitimate",
+    "matching_segments": "diagnostic only in this preserved run; the row did not alter active prediction or allocation",
+    "repeat_owner_reuse": "requires zero allocation and the stored winner tuple; prediction, active, candidate, and punishment counters are diagnostic"
+  },
+  "status": "DIAGNOSTIC_ONLY_NONFUNCTIONAL_MATCHING_ROW",
+  "train_input": {
+    "genesis_ordinal": 0,
+    "genesis_token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd",
+    "held_out_books_materialized": 0,
+    "input_load_ns": 14856784100,
+    "prefix_sha256_le_i32": "15089fe5549cc470b70d3c6bbd6a7289d61303e0f67dfc5c37b92859248e50f9",
+    "prefix_token_count": 19842,
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+  }
+}
