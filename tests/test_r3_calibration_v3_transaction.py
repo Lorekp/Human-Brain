@@ -415,6 +415,62 @@ def _r3_result() -> dict[str, object]:
     }
 
 
+def _terminal_state(environment: _Environment) -> tuple[object, object]:
+    train_input = environment.frozen["screens"]["r3_f0_train"]["input"]
+    terminal_step = replace(_last_step(), event_count=37_538)
+    progress = environment.transaction.FrozenResumeProgress(
+        last_step=terminal_step,
+        winner_chain=persistence.ResumableHashChain(
+            kind=persistence.HashChainKind.WINNER,
+            count=train_input["transition_events"],
+            digest=b"\x77" * 32,
+        ),
+        step_chain=persistence.ResumableHashChain(
+            kind=persistence.HashChainKind.STEP,
+            count=train_input["token_count"],
+            digest=b"\x88" * 32,
+        ),
+    )
+    identity = replace(
+        environment.identity,
+        event_count=terminal_step.event_count,
+        learning_step=train_input["token_count"],
+        prior_context_length=len(terminal_step.context),
+        winner_context_length=len(terminal_step.winner_context),
+    )
+    identity = replace(
+        identity,
+        logical_state_sha256=_logical_state_sha256(identity),
+    )
+    environment.harness.set_active_identity(identity)
+    return progress, identity
+
+
+def _completed_resume_branches(
+    environment: _Environment,
+    progress: object,
+    identity: object,
+) -> tuple[object, ...]:
+    origins = tuple(
+        row["after_transition_event"]
+        for row in environment.frozen["screens"]["r3_f0_train"]["determinism"]["resume_milestones"]
+    )
+    checkpoint_identity = tuple(sorted(_identity_payload(identity).items()))
+    return tuple(
+        environment.transaction.CompletedResumeBranch(
+            after_transition_event=origin,
+            progress=progress,
+            checkpoint_identity=checkpoint_identity,
+            timing=persistence.CumulativeActiveWallTiming.complete_resumed_session(
+                10 + index,
+                20 + index,
+            ),
+            manifest_reconciliation=object(),
+        )
+        for index, origin in enumerate(origins)
+    )
+
+
 def _error_payload(error: object) -> dict[str, object]:
     return {
         "stage": error.stage.name,
@@ -2315,6 +2371,7 @@ def test_resumed_branch_finishes_at_exact_train_boundary_without_result_publicat
 
     receipt = coordinator.finish_resumed_branch(resumed)
 
+    assert receipt.after_transition_event == 529_340
     assert receipt.progress == terminal_progress
     assert dict(receipt.checkpoint_identity) == _identity_payload(terminal_identity)
     assert receipt.timing.state is persistence.TimingState.WITHIN_CAP
@@ -2948,3 +3005,148 @@ def test_terminal_result_closes_and_stops_clock_before_one_shot_durable_publish(
     with pytest.raises(environment.transaction.CalibrationV3TransactionStop):
         environment.coordinator.commit_r3_result(session, _r3_result())
     assert environment.harness.result_attempts == 1
+
+
+def test_terminal_identity_is_authoritative_only_at_the_full_train_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    environment = _environment(tmp_path, monkeypatch)
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
+    _seed_progress(session, _progress(environment.transaction))
+
+    with pytest.raises(
+        environment.transaction.CalibrationV3TransactionStop,
+        match="exact full-TRAIN boundary",
+    ):
+        session.terminal_identity()
+
+    assert environment.harness.circuits[0].closed is True
+    assert environment.harness.result_attempts == 0
+
+
+def test_confirmation_commit_canonicalizes_three_bit_exact_resume_rows(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    environment = _environment(tmp_path, monkeypatch)
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
+    progress, identity = _terminal_state(environment)
+    _seed_progress(session, progress)
+    terminal_identity = session.terminal_identity()
+    branches = _completed_resume_branches(environment, progress, identity)
+
+    receipt = environment.coordinator.commit_r3_result(
+        session,
+        _r3_result(),
+        resumed_branches=tuple(reversed(branches)),
+    )
+
+    assert terminal_identity == tuple(sorted(_identity_payload(identity).items()))
+    store = persistence.CalibrationV3ArtifactStore.open(
+        repository_root=tmp_path,
+        validated_protocol=environment.frozen,
+        expected_source_bundle_identity_sha256=SOURCE_BUNDLE_SHA256,
+    )
+    rows = store.read(RESULT_PATH).payload["result"]["resumes"]
+    assert [row["after_transition_event"] for row in rows] == [
+        529_340,
+        1_058_681,
+        1_588_022,
+    ]
+    for row, branch in zip(rows, branches, strict=True):
+        assert row == {
+            "after_transition_event": branch.after_transition_event,
+            "checkpoint_identity": dict(branch.checkpoint_identity),
+            "comparison": "BIT_EXACT",
+            "step_chain": {
+                "count": progress.step_chain.count,
+                "sha256": progress.step_chain.hexdigest,
+            },
+            "timing": {
+                "contract_id": branch.timing.contract_id,
+                "cap_ns": branch.timing.cap_ns,
+                "prior_cumulative_ns": branch.timing.prior_cumulative_ns,
+                "session_active_ns": branch.timing.session_active_ns,
+                "cumulative_active_ns": branch.timing.cumulative_active_ns,
+                "state": "WITHIN_CAP",
+            },
+            "winner_chain": {
+                "count": progress.winner_chain.count,
+                "sha256": progress.winner_chain.hexdigest,
+            },
+        }
+    assert receipt.timing.state is persistence.TimingState.WITHIN_CAP
+
+
+@pytest.mark.parametrize(
+    ("mismatch", "message"),
+    (
+        ("missing", "exactly the three frozen origins"),
+        ("origin", "origins differ"),
+        ("step", "step chain differs"),
+        ("winner", "winner chain differs"),
+        ("identity", "checkpoint identity differs"),
+        ("timing", "timing is not within cap"),
+    ),
+)
+def test_confirmation_commit_rejects_incomplete_or_non_bit_exact_resume_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mismatch: str,
+    message: str,
+) -> None:
+    environment = _environment(tmp_path, monkeypatch)
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
+    progress, identity = _terminal_state(environment)
+    _seed_progress(session, progress)
+    branches = list(_completed_resume_branches(environment, progress, identity))
+    if mismatch == "missing":
+        branches.pop()
+    elif mismatch == "origin":
+        branches[0] = replace(branches[0], after_transition_event=17)
+    elif mismatch == "step":
+        bad_progress = replace(
+            progress,
+            step_chain=persistence.ResumableHashChain(
+                kind=persistence.HashChainKind.STEP,
+                count=progress.step_chain.count,
+                digest=b"\x99" * 32,
+            ),
+        )
+        branches[0] = replace(branches[0], progress=bad_progress)
+    elif mismatch == "winner":
+        bad_progress = replace(
+            progress,
+            winner_chain=persistence.ResumableHashChain(
+                kind=persistence.HashChainKind.WINNER,
+                count=progress.winner_chain.count,
+                digest=b"\xaa" * 32,
+            ),
+        )
+        branches[0] = replace(branches[0], progress=bad_progress)
+    elif mismatch == "identity":
+        bad_identity = tuple(
+            (label, "0" * 64 if label == "body_sha256" else value)
+            for label, value in branches[0].checkpoint_identity
+        )
+        branches[0] = replace(branches[0], checkpoint_identity=bad_identity)
+    else:
+        object.__setattr__(
+            branches[0].timing,
+            "cumulative_active_ns",
+            persistence.ACTIVE_WALL_CAP_NS + 1,
+        )
+
+    with pytest.raises(
+        environment.transaction.CalibrationV3TransactionStop,
+        match=message,
+    ):
+        environment.coordinator.commit_r3_result(
+            session,
+            _r3_result(),
+            resumed_branches=tuple(branches),
+        )
+
+    assert environment.harness.result_attempts == 0
+    assert environment.harness.circuits[0].closed is True

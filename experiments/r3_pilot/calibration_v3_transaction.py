@@ -466,6 +466,11 @@ class CalibrationV3Session:
 
         return self._owner._check_active_session_cap(self)
 
+    def terminal_identity(self) -> tuple[tuple[str, object], ...]:
+        """Snapshot the authoritative native identity at the full TRAIN boundary."""
+
+        return self._owner._active_terminal_identity(self)
+
     def close(self) -> None:
         self._owner._close_active_session(self)
 
@@ -494,12 +499,15 @@ class CommittedR3Result:
 class CompletedResumeBranch:
     """Closed terminal evidence from one deterministic resumed suffix."""
 
+    after_transition_event: int
     progress: FrozenResumeProgress
     checkpoint_identity: tuple[tuple[str, object], ...]
     timing: persistence.CumulativeActiveWallTiming
     manifest_reconciliation: object
 
     def __post_init__(self) -> None:
+        if type(self.after_transition_event) is not int or self.after_transition_event < 0:
+            raise TypeError("after_transition_event must be an exact non-negative int")
         if type(self.progress) is not FrozenResumeProgress:
             raise TypeError("progress must be an exact FrozenResumeProgress")
         if type(self.checkpoint_identity) is not tuple or not self.checkpoint_identity:
@@ -1415,6 +1423,7 @@ class CalibrationV3Transaction:
         "_protocol_sha256",
         "_result_path",
         "_resume_events",
+        "_resume_origin_event",
         "_run_coordinates",
         "_sealed_checkpoint_publication",
         "_sealed_commit",
@@ -1535,6 +1544,7 @@ class CalibrationV3Transaction:
         self._expected_circuit_identity = None
         self._run_coordinates = None
         self._next_resume_index = None
+        self._resume_origin_event = None
         self._progress = None
         self._result_path = None
         self._start_ns = None
@@ -1952,6 +1962,40 @@ class CalibrationV3Transaction:
             self._require_active_session(session)
             return self._manifest_reconciliation
 
+    def _active_terminal_identity(
+        self,
+        session: CalibrationV3Session,
+    ) -> tuple[tuple[str, object], ...]:
+        with self._operation_lock:
+            self._require_active_session(session)
+            try:
+                progress = self._progress
+                if type(progress) is not FrozenResumeProgress:
+                    raise CalibrationV3TransactionStop(
+                        "terminal identity has no transaction-owned progress"
+                    )
+                self._validate_full_train_boundary(progress, label="terminal identity")
+                native = self._native
+                expected_identity = self._expected_circuit_identity
+                if native is None or type(expected_identity) is not str:
+                    raise CalibrationV3TransactionStop("terminal identity authority is incomplete")
+                identity = self._circuit.checkpoint_identity()
+                identity_payload = self._validate_identity_authority(
+                    identity,
+                    expected_identity,
+                    native,
+                )
+                self._validate_terminal_progress(progress, identity)
+                return tuple(sorted(identity_payload.items()))
+            except BaseException as exc:
+                stopped = self._terminalize(
+                    exc,
+                    timing_state=TransactionTimingState.TIMING_INDETERMINATE,
+                )
+                if isinstance(exc, Exception):
+                    raise stopped from exc
+                raise
+
     def _advance_active(
         self,
         session: CalibrationV3Session,
@@ -2108,6 +2152,7 @@ class CalibrationV3Transaction:
             self._run_coordinates = run
             self._result_path = destination.relative_path
             self._next_resume_index = 0
+            self._resume_origin_event = None
             self._progress = None
             self._manifest_reconciliation = None
             self._start_ns = start_ns
@@ -2196,6 +2241,112 @@ class CalibrationV3Transaction:
                 "terminal identity and transaction progress lack parity"
             )
 
+    def _validate_full_train_boundary(
+        self,
+        progress: FrozenResumeProgress,
+        *,
+        label: str,
+    ) -> None:
+        expected_steps = _exact_nonnegative_int(
+            self._train_input.get("token_count"),
+            label=f"{label} TRAIN token_count",
+        )
+        expected_winners = _exact_nonnegative_int(
+            self._train_input.get("transition_events"),
+            label=f"{label} TRAIN transition_events",
+        )
+        if (
+            progress.step_chain.count != expected_steps
+            or progress.winner_chain.count != expected_winners
+        ):
+            raise CalibrationV3TransactionStop(
+                f"{label} has not reached the exact full-TRAIN boundary"
+            )
+
+    def _compare_resumed_branches(
+        self,
+        resumed_branches: tuple[CompletedResumeBranch, ...],
+        *,
+        fresh_progress: FrozenResumeProgress,
+        fresh_checkpoint_identity: tuple[tuple[str, object], ...],
+        run: _RunCoordinates,
+    ) -> list[dict[str, object]]:
+        if type(resumed_branches) is not tuple or any(
+            type(branch) is not CompletedResumeBranch for branch in resumed_branches
+        ):
+            raise CalibrationV3TransactionStop(
+                "resumed_branches must be an exact tuple of completed branch receipts"
+            )
+        if run.screen_id != "r3_f0_train" or run.phase != "deterministic_confirmation":
+            raise CalibrationV3TransactionStop(
+                "resume comparison requires deterministic-confirmation authority"
+            )
+        if len(self._resume_events) != 3 or len(resumed_branches) != 3:
+            raise CalibrationV3TransactionStop(
+                "resume comparison requires exactly the three frozen origins"
+            )
+        self._validate_full_train_boundary(fresh_progress, label="fresh terminal progress")
+        branches_by_origin: dict[int, CompletedResumeBranch] = {}
+        for branch in resumed_branches:
+            origin = branch.after_transition_event
+            if origin not in self._resume_events or origin in branches_by_origin:
+                raise CalibrationV3TransactionStop(
+                    "resume comparison origins differ from the three frozen milestones"
+                )
+            branches_by_origin[origin] = branch
+        if tuple(sorted(branches_by_origin)) != self._resume_events:
+            raise CalibrationV3TransactionStop(
+                "resume comparison origins differ from the three frozen milestones"
+            )
+
+        rows: list[dict[str, object]] = []
+        for origin in self._resume_events:
+            branch = branches_by_origin[origin]
+            timing = branch.timing
+            if (
+                type(timing) is not persistence.CumulativeActiveWallTiming
+                or timing.cumulative_active_ns is None
+                or timing.cumulative_active_ns > timing.cap_ns
+                or timing.state is not persistence.TimingState.WITHIN_CAP
+            ):
+                raise CalibrationV3TransactionStop(
+                    "resume comparison cumulative timing is not within cap"
+                )
+            if branch.progress.step_chain != fresh_progress.step_chain:
+                raise CalibrationV3TransactionStop("resumed terminal step chain differs from fresh")
+            if branch.progress.winner_chain != fresh_progress.winner_chain:
+                raise CalibrationV3TransactionStop(
+                    "resumed terminal winner chain differs from fresh"
+                )
+            if branch.checkpoint_identity != fresh_checkpoint_identity:
+                raise CalibrationV3TransactionStop(
+                    "resumed terminal checkpoint identity differs from fresh"
+                )
+            rows.append(
+                {
+                    "after_transition_event": origin,
+                    "checkpoint_identity": dict(branch.checkpoint_identity),
+                    "comparison": "BIT_EXACT",
+                    "step_chain": {
+                        "count": branch.progress.step_chain.count,
+                        "sha256": branch.progress.step_chain.hexdigest,
+                    },
+                    "timing": {
+                        "contract_id": timing.contract_id,
+                        "cap_ns": timing.cap_ns,
+                        "prior_cumulative_ns": timing.prior_cumulative_ns,
+                        "session_active_ns": timing.session_active_ns,
+                        "cumulative_active_ns": timing.cumulative_active_ns,
+                        "state": timing.state.value,
+                    },
+                    "winner_chain": {
+                        "count": branch.progress.winner_chain.count,
+                        "sha256": branch.progress.winner_chain.hexdigest,
+                    },
+                }
+            )
+        return rows
+
     def _result_payload(
         self,
         *,
@@ -2231,6 +2382,8 @@ class CalibrationV3Transaction:
         self,
         session: CalibrationV3Session,
         result: dict[str, object],
+        *,
+        resumed_branches: tuple[CompletedResumeBranch, ...] | None = None,
     ) -> CommittedR3Result:
         """Close active time, then durably publish one exact terminal R3 result."""
 
@@ -2259,8 +2412,24 @@ class CalibrationV3Transaction:
                 ):
                     raise CalibrationV3TransactionStop("terminal result authority is incomplete")
                 identity = self._circuit.checkpoint_identity()
-                self._validate_identity_authority(identity, expected_identity, native)
+                identity_payload = self._validate_identity_authority(
+                    identity,
+                    expected_identity,
+                    native,
+                )
                 self._validate_terminal_progress(progress, identity)
+                resume_rows: list[dict[str, object]] | None = None
+                if resumed_branches is not None:
+                    if type(result.get("resumes")) is not list or result["resumes"]:
+                        raise CalibrationV3TransactionStop(
+                            "terminal R3 result cannot preauthor resume comparisons"
+                        )
+                    resume_rows = self._compare_resumed_branches(
+                        resumed_branches,
+                        fresh_progress=progress,
+                        fresh_checkpoint_identity=tuple(sorted(identity_payload.items())),
+                        run=run,
+                    )
 
                 circuit = self._circuit
                 self._circuit = None
@@ -2287,6 +2456,15 @@ class CalibrationV3Transaction:
                     _json_snapshot(result),
                     label="terminal R3 result",
                 )
+                if resume_rows is not None:
+                    if (
+                        type(finalized_result.get("resumes")) is not list
+                        or finalized_result["resumes"]
+                    ):
+                        raise CalibrationV3TransactionStop(
+                            "terminal R3 result cannot preauthor resume comparisons"
+                        )
+                    finalized_result["resumes"] = resume_rows
                 structural_metrics = _exact_object(
                     finalized_result.get("structural_metrics"),
                     label="terminal R3 structural_metrics",
@@ -2390,20 +2568,11 @@ class CalibrationV3Transaction:
                     raise CalibrationV3TransactionStop(
                         "resumed terminal evidence has no transaction-owned progress"
                     )
-                expected_steps = _exact_nonnegative_int(
-                    self._train_input.get("token_count"),
-                    label="resumed terminal TRAIN token_count",
-                )
-                expected_winners = _exact_nonnegative_int(
-                    self._train_input.get("transition_events"),
-                    label="resumed terminal TRAIN transition_events",
-                )
-                if (
-                    progress.step_chain.count != expected_steps
-                    or progress.winner_chain.count != expected_winners
-                ):
+                self._validate_full_train_boundary(progress, label="resumed branch")
+                origin = self._resume_origin_event
+                if type(origin) is not int or origin not in self._resume_events:
                     raise CalibrationV3TransactionStop(
-                        "resumed branch has not reached the exact terminal TRAIN boundary"
+                        "resumed terminal evidence lost its frozen origin"
                     )
                 native = self._native
                 expected_identity = self._expected_circuit_identity
@@ -2429,9 +2598,7 @@ class CalibrationV3Transaction:
                 )
                 timing = self._current_timing()
                 if cleanup_failures:
-                    raise CalibrationV3TransactionStop(
-                        "resumed terminal circuit close failed"
-                    )
+                    raise CalibrationV3TransactionStop("resumed terminal circuit close failed")
                 if timing.state is persistence.TimingState.OVER_CAP:
                     stopped = CalibrationV3TransactionStop(
                         "cumulative active-wall cap was crossed before resumed completion"
@@ -2443,6 +2610,7 @@ class CalibrationV3Transaction:
                     ) from stopped
 
                 receipt = CompletedResumeBranch(
+                    after_transition_event=origin,
                     progress=progress,
                     checkpoint_identity=tuple(sorted(identity_payload.items())),
                     timing=timing,
@@ -2452,6 +2620,7 @@ class CalibrationV3Transaction:
                 self._expected_circuit_identity = None
                 self._native = None
                 self._progress = None
+                self._resume_origin_event = None
                 self._state = _CoordinatorState.CLOSED
                 return receipt
             except BaseException as exc:
@@ -2926,6 +3095,7 @@ class CalibrationV3Transaction:
             self._run_coordinates = run
             self._result_path = None
             self._next_resume_index = next_index
+            self._resume_origin_event = current_event
             self._progress = None
             self._manifest_reconciliation = None
             self._start_ns = start_ns
