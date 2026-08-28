@@ -24,6 +24,7 @@ else:
 
 EXIT_OK = 0
 EXIT_STOP = 2
+_TRAIN_CHUNK_TOKENS = 16_384
 
 
 class FixtureRunnerStop(RuntimeError):
@@ -156,6 +157,28 @@ def _definition_module() -> ModuleType:
     if __package__:
         return importlib.import_module(f"{__package__}.calibration_v3_definitions")
     return importlib.import_module("calibration_v3_definitions")
+
+
+def _transaction_module() -> ModuleType:
+    if __package__:
+        return importlib.import_module(f"{__package__}.calibration_v3_transaction")
+    return importlib.import_module("calibration_v3_transaction")
+
+
+def _train_input_module() -> ModuleType:
+    if __package__:
+        return importlib.import_module(f"{__package__}.r3_f0_train_input")
+    return importlib.import_module("r3_f0_train_input")
+
+
+def _train_scoring_module() -> ModuleType:
+    if __package__:
+        return importlib.import_module(f"{__package__}.calibration_v3_train_scoring")
+    return importlib.import_module("calibration_v3_train_scoring")
+
+
+def _native_temporal_module() -> ModuleType:
+    return importlib.import_module("humanbrain.native_temporal_runtime")
 
 
 def _run_electrical_v3_prerequisite() -> None:
@@ -464,7 +487,9 @@ def _run_full_cohort_q255_regime(
                 after_novel.segment_count != before_novel.segment_count
                 or after_novel.semantic_index_sha256 != before_novel.semantic_index_sha256
             ):
-                raise FixtureRunnerStop(f"q255 {regime} STOP: read-only probes mutated learned state")
+                raise FixtureRunnerStop(
+                    f"q255 {regime} STOP: read-only probes mutated learned state"
+                )
     except FixtureRunnerStop:
         raise
     except Exception as exc:
@@ -765,20 +790,276 @@ def _run_development_q255_screens(
     }
 
 
+def _close_active_r3_session(session: object, transaction: ModuleType) -> None:
+    """End an uncommitted scientific branch through its transaction capability."""
+
+    try:
+        session.close()
+    except transaction.CalibrationV3TransactionStop:
+        # Production close intentionally terminalizes and raises its immutable receipt.
+        return
+    except Exception as exc:
+        raise FixtureRunnerStop(f"R3-F0 active-session close failed: {exc}") from exc
+
+
+def _r3_result_path(
+    authority: authority_contract.FrozenPlanAuthority,
+    arm_slug: str,
+) -> str:
+    try:
+        path = authority.protocol["artifact_contract"]["r3_f0_train"]["development"][
+            arm_slug
+        ]
+    except (KeyError, TypeError) as exc:
+        raise FixtureRunnerStop("R3-F0 development result path authority is incomplete") from exc
+    if type(path) is not str or not path:
+        raise FixtureRunnerStop("R3-F0 development result path is not exact")
+    return path
+
+
+def _run_source_bound_r3_f0_development(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    arm: tuple[int, int],
+) -> dict[str, object]:
+    """Run and transactionally commit one seed-17 TRAIN structural screen."""
+
+    transaction = _transaction_module()
+    arm_slug = f"theta-m-{arm[0]}_theta-a-{arm[1]}"
+    result_path = _r3_result_path(authority, arm_slug)
+    definition_box: list[object] = []
+
+    def definition_factory() -> object:
+        definition = _definition_module().build_r3_f0_definition(
+            authority.protocol,
+            arm,
+            17,
+        )
+        definition_box.append(definition)
+        return definition
+
+    try:
+        coordinator = transaction.CalibrationV3Transaction.from_authority(authority)
+        session = coordinator.start_fresh(result_path, definition_factory)
+    except transaction.CalibrationV3TransactionStop as exc:
+        raise FixtureRunnerStop(f"R3-F0 {arm_slug} transaction start STOP: {exc}") from exc
+
+    train_input: ModuleType | None = None
+    try:
+        if len(definition_box) != 1:
+            raise FixtureRunnerStop("R3-F0 definition factory did not run exactly once")
+        definition = definition_box[0]
+        scoring = _train_scoring_module()
+        scorer = scoring.R3F0TrainScorer(
+            config=definition.config,
+            token_columns=definition.token_codes,
+        )
+
+        # TRAIN authentication and every decoder/execution dependency remain inside
+        # the active interval established above.
+        train_input = _train_input_module()
+        verified = train_input.load_verified_train_input()
+        np = importlib.import_module("numpy")
+        native = _native_temporal_module()
+        session.check_cap()
+
+        book_count = 0
+        observed_token_count = 0
+        for book in verified.iter_books():
+            tokens = np.frombuffer(book.token_bytes_le_i32, dtype="<i4")
+            if (
+                tokens.ndim != 1
+                or int(tokens.size) != book.token_count
+                or int(tokens.nbytes) != len(book.token_bytes_le_i32)
+                or not tokens.size
+            ):
+                raise FixtureRunnerStop(
+                    f"R3-F0 {arm_slug} TRAIN book {book.ordinal} <i4 decode drifted"
+                )
+            book_count += 1
+            observed_token_count += int(tokens.size)
+            for start in range(0, int(tokens.size), _TRAIN_CHUNK_TOKENS):
+                stop = min(start + _TRAIN_CHUNK_TOKENS, int(tokens.size))
+                reset_before = start == 0
+                frames = session.advance_block(
+                    tokens[start:stop],
+                    mode=native.TemporalStepMode.LEARN,
+                    reset_before=reset_before,
+                )
+                if type(frames) is not tuple or len(frames) != stop - start:
+                    raise FixtureRunnerStop(
+                        f"R3-F0 {arm_slug} transaction frame count drifted"
+                    )
+                for frame_index, frame in enumerate(frames):
+                    scientific_stop = scorer.observe(
+                        reset_before and frame_index == 0,
+                        frame,
+                    )
+                    if scientific_stop is not None:
+                        raise FixtureRunnerStop(
+                            f"R3-F0 {arm_slug} scorer STOP before terminal identity",
+                            result=scientific_stop,
+                        )
+                session.check_cap()
+
+        terminal_identity = session.terminal_identity()
+        structural = scorer.finalize(terminal_identity)
+        if structural.get("status") != "PASS_R3_F0_TRAIN_STRUCTURE":
+            raise FixtureRunnerStop(
+                f"R3-F0 {arm_slug} scorer STOP at terminal identity",
+                result=structural,
+            )
+        progress = session.progress
+        if progress is None:
+            raise FixtureRunnerStop("R3-F0 terminal transaction progress is absent")
+        checkpoint_identity = dict(terminal_identity)
+        structural_metrics = dict(structural)
+        structural_metrics.pop("status")
+        result = {
+            "arm_slug": arm_slug,
+            "comparisons": {},
+            "kind": "r3_f0_train",
+            "reference": {
+                "checkpoint_identity": checkpoint_identity,
+                "step_chain": {
+                    "count": progress.step_chain.count,
+                    "sha256": progress.step_chain.hexdigest,
+                },
+                "winner_chain": {
+                    "count": progress.winner_chain.count,
+                    "sha256": progress.winner_chain.hexdigest,
+                },
+            },
+            "resumes": [],
+            "structural_metrics": structural_metrics,
+            "train_input": {
+                "book_count": book_count,
+                "held_out_access": "forbidden",
+                "token_count": observed_token_count,
+                "tokenizer_sha256": verified.tokenizer_sha256,
+                "train_input_authority_sha256": (
+                    verified.train_input_authority_sha256
+                ),
+                "train_stream_sha256": verified.train_stream_sha256,
+            },
+            "verdict": "PASS_R3_F0_TRAIN_STRUCTURE",
+        }
+        receipt = coordinator.commit_r3_result(session, result)
+    except FixtureRunnerStop:
+        _close_active_r3_session(session, transaction)
+        raise
+    except transaction.CalibrationV3TransactionStop as exc:
+        raise FixtureRunnerStop(f"R3-F0 {arm_slug} transaction STOP: {exc}") from exc
+    except Exception as exc:
+        _close_active_r3_session(session, transaction)
+        train_error = () if train_input is None else getattr(train_input, "TrainInputError", ())
+        if isinstance(exc, train_error):
+            raise FixtureRunnerStop(f"R3-F0 {arm_slug} TRAIN authority STOP: {exc}") from exc
+        raise FixtureRunnerStop(f"R3-F0 {arm_slug} execution STOP: {exc}") from exc
+
+    return {
+        "arm_slug": arm_slug,
+        "artifact_path": receipt.artifact_path,
+        "construction_seed": 17,
+        "payload_sha256": receipt.payload_sha256,
+        "status": "PASS",
+        "verdict": "PASS_R3_F0_TRAIN_STRUCTURE",
+    }
+
+
+def _run_development_r3_f0_screens(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    q255: dict[str, object],
+) -> dict[str, object]:
+    """Run seed-17 TRAIN only for exact q255 development-pass arms."""
+
+    candidate_arms = tuple(
+        tuple(row) for row in authority.protocol["threshold_selection"]["candidate_arms"]
+    )
+    q255_rows = q255.get("arms")
+    if type(q255_rows) is not list or len(q255_rows) != len(candidate_arms):
+        raise FixtureRunnerStop("q255 eligibility rows do not match frozen arm order")
+    arm_results: list[dict[str, object]] = []
+    eligible_order: list[list[int]] = []
+    for arm, q255_row in zip(candidate_arms, q255_rows, strict=True):
+        arm_slug = f"theta-m-{arm[0]}_theta-a-{arm[1]}"
+        if (
+            type(q255_row) is not dict
+            or q255_row.get("arm_slug") != arm_slug
+            or q255_row.get("theta_match") != arm[0]
+            or q255_row.get("theta_active") != arm[1]
+        ):
+            raise FixtureRunnerStop("q255 eligibility row differs from frozen arm order")
+        if q255_row.get("status") != "PASS_ALL_DEVELOPMENT_SEEDS":
+            arm_results.append(
+                {
+                    "arm_slug": arm_slug,
+                    "status": "NOT_RUN_Q255_DEVELOPMENT_STOP",
+                    "theta_active": arm[1],
+                    "theta_match": arm[0],
+                }
+            )
+            continue
+        eligible_order.append([arm[0], arm[1]])
+        try:
+            result = _run_source_bound_r3_f0_development(authority, arm=arm)
+        except FixtureRunnerStop as exc:
+            stopped: dict[str, object] = {
+                "arm_slug": arm_slug,
+                "reason": str(exc),
+                "status": "STOP",
+                "theta_active": arm[1],
+                "theta_match": arm[0],
+            }
+            if exc.result is not None:
+                stopped["scientific_stop"] = exc.result
+            arm_results.append(stopped)
+            continue
+        arm_results.append(
+            {
+                **result,
+                "theta_active": arm[1],
+                "theta_match": arm[0],
+            }
+        )
+
+    eligible_results = [
+        row for row in arm_results if row["status"] != "NOT_RUN_Q255_DEVELOPMENT_STOP"
+    ]
+    return {
+        "arms": arm_results,
+        "candidate_order": [list(arm) for arm in candidate_arms],
+        "construction_seed": 17,
+        "eligible_arm_order": eligible_order,
+        "phase": "development",
+        "screen_id": "r3_f0_train",
+        "status": (
+            "STOP_NO_Q255_ELIGIBLE_CANDIDATES"
+            if not eligible_results
+            else "PASS_ALL_Q255_ELIGIBLE_CANDIDATES"
+            if all(row["status"] == "PASS" for row in eligible_results)
+            else "COMPLETE_WITH_REJECTED_Q255_ELIGIBLE_CANDIDATES"
+        ),
+    }
+
+
 def _execute_frozen_plan(authority: authority_contract.FrozenPlanAuthority) -> int:
-    """Execute the development fixture prefix, then stop before R3-F0."""
+    """Execute every DEVELOPMENT screen, then stop before confirmation."""
 
     _run_electrical_v3_prerequisite()
     q4 = _run_development_q4_screens(authority)
     q255 = _run_development_q255_screens(authority, q4=q4)
+    r3_f0 = _run_development_r3_f0_screens(authority, q255=q255)
     raise FixtureRunnerStop(
-        "development q255 screens completed; R3-F0 and confirmation remain disabled",
+        "development screens completed; confirmation remains disabled",
         result={
             "compressed_reserve_q4": q4,
             "electrical_v3": {"status": "PASS_RESERVE_VALID_ELECTRICAL_V3"},
             "full_cohort_q255": q255,
-            "next_screen": "r3_f0_train",
-            "status": "STOP_BEFORE_R3_F0_AND_CONFIRMATION",
+            "next_screen": "independent_confirmation",
+            "r3_f0_train": r3_f0,
+            "status": "STOP_BEFORE_CONFIRMATION",
         },
     )
 

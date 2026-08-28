@@ -868,7 +868,7 @@ def test_failed_authority_has_no_execution_fallback(
     assert reached == ["authority"]
 
 
-def test_synthetic_future_authority_completes_q255_grid_then_stops_before_r3_f0(
+def test_synthetic_future_authority_completes_development_then_stops_before_confirmation(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -930,6 +930,17 @@ def test_synthetic_future_authority_completes_q255_grid_then_stops_before_r3_f0(
 
     monkeypatch.setattr(runner, "_run_source_bound_q255_production_slice", production)
     monkeypatch.setattr(runner, "_run_source_bound_q255_disjoint_slice", disjoint)
+    monkeypatch.setattr(
+        runner,
+        "_run_development_r3_f0_screens",
+        lambda _authority, *, q255: (
+            calls.append("r3")
+            or {
+                "eligible_arm_order": q255["eligible_arm_order"],
+                "status": "SYNTHETIC_R3_COMPLETE",
+            }
+        ),
+    )
 
     assert runner.main(["--run-frozen-plan"]) == runner.EXIT_STOP
     assert calls == [
@@ -941,10 +952,12 @@ def test_synthetic_future_authority_completes_q255_grid_then_stops_before_r3_f0(
         "production:16:18:3",
         "production:16:18:7",
         "disjoint:16:18:7",
+        "r3",
     ]
     captured = capsys.readouterr()
     result = json.loads(captured.out)
-    assert result["status"] == "STOP_BEFORE_R3_F0_AND_CONFIRMATION"
+    assert result["status"] == "STOP_BEFORE_CONFIRMATION"
+    assert result["r3_f0_train"]["status"] == "SYNTHETIC_R3_COMPLETE"
     assert result["compressed_reserve_q4"]["candidate_order"] == [
         [10, 13],
         [16, 18],
@@ -973,7 +986,7 @@ def test_synthetic_future_authority_completes_q255_grid_then_stops_before_r3_f0(
         "status": "STOP_PRODUCTION_OVERLAP",
         "target_disjoint": {"status": "NOT_RUN_FAIL_FAST"},
     }
-    assert "R3-F0 and confirmation remain disabled" in captured.err
+    assert "confirmation remains disabled" in captured.err
 
 
 def test_real_native_q4_vertical_slice_reaches_the_frozen_reserve_sentinel(
