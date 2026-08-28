@@ -1184,7 +1184,7 @@ def test_gate3_slice_protocol_keeps_material_timing_frozen() -> None:
         ),
     }
     assert hashlib.sha256(protocol_bytes).hexdigest() == (
-        "21cf21af14dab153d046a864022bbd93abbaa25ce634eac15eccd6f4ceeb6808"
+        "b740b1159f5b44bd4f98927668567d2b42ad2a16a282aad113145a07183149fd"
     )
     assert protocol["timing"]["status"] == "frozen-pending-explicit-approval"
     assert protocol["timing"]["executed"] is False

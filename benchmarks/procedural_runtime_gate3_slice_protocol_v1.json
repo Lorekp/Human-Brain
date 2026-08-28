@@ -173,8 +173,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/Cargo.toml",
-        "size": 537,
-        "sha256": "41e470d7cce2613158d8d0d594ee8b82cf08d61adf2ea143f5561a4307566794"
+        "size": 590,
+        "sha256": "a2f27ee30a030cb3aa15cb4fb16dc842f31579e873ebce00ca32db113819a0fa"
       },
       {
         "path": "src/humanbrain/_native_src/src/lib.rs",
@@ -233,8 +233,8 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal.rs",
-        "size": 147952,
-        "sha256": "099739b79e9e4b3a9eb203d4d2d3ccd28b60fb8695c5c2b2c37d3418bea13695"
+        "size": 148632,
+        "sha256": "a575cd5176b564d907a103cdc86d7a0742920bd46994c91ebfbdaea4f1e8872d"
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal_physics.rs",
@@ -243,33 +243,48 @@
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal_runtime.rs",
-        "size": 187472,
-        "sha256": "1bdfbfabe56e27834c2254da72f97d5be4de3ce6a9e4b16c24b7f1294219a031"
+        "size": 284827,
+        "sha256": "29f55eb195b7d87b58c44f81779964707aecf0fb0668e2794b7677aafd2046ee"
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal_runtime/checkpoint.rs",
-        "size": 411980,
-        "sha256": "ae7ccd2617bcef95a3a5211c1f3963fa55ec9da279ac852728300cf3609dadb6"
+        "size": 419211,
+        "sha256": "78f9c72e80c2fd27b05e349f8bbb24d4e0d42437d2e033bbbe1235e24da13e8d"
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal_runtime/checkpoint_publisher.rs",
-        "size": 15617,
-        "sha256": "e840384bce2a8d9e5bf232e52e3c9c95af5750ed7c70685292ea4e689176d9d1"
+        "size": 28208,
+        "sha256": "d6546707881e5f92934969aba10e1f92b02094665912f613deabdcb3703f30dd"
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal_runtime/checkpoint_publisher/unix.rs",
-        "size": 18133,
-        "sha256": "cf57f7c1e97f6cbe1467d56489a09387e715a08f690e5f0f8aff86ab380812ed"
+        "size": 31932,
+        "sha256": "c9f6ead693647d857d693e25e06e93bc494055b253236871285aa7d8102a16b3"
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal_runtime/checkpoint_publisher/windows.rs",
-        "size": 34588,
-        "sha256": "7ffa8eceaa314eb37b5b1d0b5b767836ffabb01ee80d03cde869777a587a3798"
+        "size": 56658,
+        "sha256": "7cde3681c7dd72b493fb1adc3da5c11ad16fabf88515ccc3236e49867c43d635"
       },
       {
         "path": "src/humanbrain/_native_src/src/temporal_runtime/ffi.rs",
-        "size": 144132,
-        "sha256": "1883534ed4f44d0f41bdfad39abece53a5e685c91d976cb25c7d7e39bf453da4"
+        "size": 207512,
+        "sha256": "b3dc1a82c1fc9298920e5cb4f6b565583cf6ee9c03f030ec408f8ae13fae8c18"
+      },
+      {
+        "path": "src/humanbrain/_native_src/src/temporal_runtime/role_place_copy.rs",
+        "size": 15201,
+        "sha256": "3d454eaf4a98ed6fe8073fe6008a85d55bb948fd814515cc619d908214f189c4"
+      },
+      {
+        "path": "src/humanbrain/_native_src/src/temporal_runtime/typed_hole_state.rs",
+        "size": 23176,
+        "sha256": "0e161f80bc50a65751356ee08d5c04061a9ced2cf2440e6ce616c3588e28b1b4"
+      },
+      {
+        "path": "src/humanbrain/_native_src/src/temporal_runtime/typed_workspace.rs",
+        "size": 21995,
+        "sha256": "aac2e6e2621b65a0e4bc3a71308ad58493208ffa055ec4006d3cef701d865966"
       },
       {
         "path": "src/humanbrain/_native_src/vendor/block-buffer/.cargo-checksum.json",
@@ -5607,11 +5622,11 @@
         "sha256": "9acd610ba306d81afa172fbcd5b617baabe7b74441dafa22e143fcee64497c7d"
       }
     ],
-    "bundle_sha256": "7830b2fe35404dae04af68bbfbdd30d734981bfc39bd038db8c61848ba8b360a",
+    "bundle_sha256": "9e5844b51bb3843f8cd08be5247fe0e5ac58d8dcbae6452f527e35a7fa6acabf",
     "limits": {
       "maximum_file_bytes": 1048576,
       "maximum_aggregate_bytes": 33554432,
-      "actual_aggregate_bytes": 27768659
+      "actual_aggregate_bytes": 28046190
     }
   },
   "timing": {
