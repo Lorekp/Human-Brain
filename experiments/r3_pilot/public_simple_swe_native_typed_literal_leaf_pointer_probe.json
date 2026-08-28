@@ -1,0 +1,606 @@
+{
+  "authority": {
+    "artifact_overwrite_permitted": false,
+    "atomic_no_argument_generation_call_count": 1,
+    "caller_supplied_target_tokens": false,
+    "dev_or_held_out_opened": false,
+    "eval_partition_generated": false,
+    "harness_retries": 0,
+    "model_retries": 0,
+    "source_partition_generated": "train",
+    "target_expected_solution_used_as_runtime_input": false,
+    "target_family_absent_from_teaching": true,
+    "target_private_cases_used_as_runtime_input": false,
+    "teacher_free_target_attempts_completed": 1,
+    "teacher_free_target_key": [
+      "t0_scalar_clamp",
+      3
+    ],
+    "teacher_tokens_after_target_prompt": 0,
+    "train_keys": [
+      [
+        "t2_clamp_then_sum",
+        6
+      ]
+    ]
+  },
+  "capability_pass": false,
+  "claim_boundary": "One retained native circuit learns visible TRAIN clamp-sum/006, then attempts visible TRAIN scalar-clamp/003 once without a teacher. This fresh target family tests relocation of the learned clamp subtree from inside Sum/Map/Bind to scalar root, including Integer-to-sign and bound-slot COPY edges. It is not DEV, eval, held-out, M0, C1, or broad coding evidence.",
+  "experiment": "r3-public-simple-swe-native-typed-literal-leaf-pointer",
+  "first_failure": {
+    "detail": {
+      "completed_surface_prefix": 0,
+      "location": 22605,
+      "message": "temporal physical stage stopped",
+      "observed": 0,
+      "poison_code": 7,
+      "required": 0,
+      "stage_code": 3,
+      "status": "SCIENTIFIC_STOP"
+    },
+    "gate": "GENERATION_STOP",
+    "kind": "model",
+    "localization": {
+      "expected_surface": "if",
+      "gate": "GENERATION_STOP",
+      "generation_position": 0,
+      "root_election_is_upstream_of_constructor_pointer": true,
+      "root_expected_surface": "if",
+      "scope": "root"
+    }
+  },
+  "generated_at_utc": "2026-08-28T15:42:24.375749+00:00",
+  "literal_leaf_pointer_contract": {
+    "mechanism_required_before_run": true,
+    "parent_and_relative_hole_conditioned": true,
+    "target_required_edges": [
+      "Integer->- at scalar-root lower-bound roles",
+      "Integer->+ at scalar-root upper-bound roles",
+      "lower/upper bound COPY choice after subtree relocation"
+    ]
+  },
+  "outcome": "STOP_NATIVE_TYPED_LITERAL_LEAF_POINTER",
+  "physical_definition": {
+    "capacity_accounting": {
+      "base_learning_arrivals": 337,
+      "base_pyramidal_cells": 6144,
+      "base_temporal_segment_rows_upper_bound": 3696,
+      "constructor_pointer": {
+        "capacity_assumes_every_call_recruits": true,
+        "cue_rows_per_novel_call": 11,
+        "cue_rows_upper_bound": 121,
+        "exact_replay_rows": 0,
+        "exact_role_opening_call_count": 11,
+        "frozen_occurrence_labels_are_unique": true,
+        "identity": "opaque surface winners + semantic cue/role + parent-relative address + parent pointer when active",
+        "physical_pointer_identity_uniqueness_claimed": false,
+        "recurrence_rows_per_novel_call": 11,
+        "recurrence_rows_upper_bound": 121,
+        "role_bearing_constructors": [
+          "add",
+          "absolute",
+          "less-than",
+          "if",
+          "map",
+          "sum",
+          "bind",
+          "integer"
+        ],
+        "root_election_is_upstream": true,
+        "rows_per_cue_call_upper_bound": 22,
+        "total_rows_upper_bound": 242
+      },
+      "constructor_pointer_cue_arrivals": 11,
+      "episodes": {
+        "t2_clamp_then_sum/006": {
+          "base_learning_arrivals": 337,
+          "constructor_pointer_cue_arrivals": 11,
+          "constructor_pointer_occurrences": [
+            {
+              "absolute_address": [],
+              "absolute_address_offset": 0,
+              "maximum_persistent_rows": 22,
+              "occurrence": 0,
+              "parent_occurrence": null,
+              "parent_pointer_source": null,
+              "relative_address": [],
+              "relative_address_offset": 0,
+              "semantic_cue": "expression-int-head",
+              "surface": "sum",
+              "surface_feedback_source": "t2_clamp_then_sum/006@0",
+              "teacher_position": 0
+            },
+            {
+              "absolute_address": [
+                0
+              ],
+              "absolute_address_offset": 1,
+              "maximum_persistent_rows": 22,
+              "occurrence": 1,
+              "parent_occurrence": 0,
+              "parent_pointer_source": "t2_clamp_then_sum/006#0",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-list-int-child-0",
+              "surface": "map",
+              "surface_feedback_source": "t2_clamp_then_sum/006@1",
+              "teacher_position": 1
+            },
+            {
+              "absolute_address": [
+                0,
+                0
+              ],
+              "absolute_address_offset": 4,
+              "maximum_persistent_rows": 22,
+              "occurrence": 2,
+              "parent_occurrence": 1,
+              "parent_pointer_source": "t2_clamp_then_sum/006#1",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-int-to-int-child-0",
+              "surface": "bind",
+              "surface_feedback_source": "t2_clamp_then_sum/006@2",
+              "teacher_position": 2
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0
+              ],
+              "absolute_address_offset": 13,
+              "maximum_persistent_rows": 22,
+              "occurrence": 3,
+              "parent_occurrence": null,
+              "parent_pointer_source": null,
+              "relative_address": [],
+              "relative_address_offset": 0,
+              "semantic_cue": "expression-int-head",
+              "surface": "if",
+              "surface_feedback_source": "t2_clamp_then_sum/006@3",
+              "teacher_position": 3
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "absolute_address_offset": 40,
+              "maximum_persistent_rows": 22,
+              "occurrence": 4,
+              "parent_occurrence": 3,
+              "parent_pointer_source": "t2_clamp_then_sum/006#3",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-bool-child-0",
+              "surface": "less-than",
+              "surface_feedback_source": "t2_clamp_then_sum/006@4",
+              "teacher_position": 4
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                0,
+                1
+              ],
+              "absolute_address_offset": 122,
+              "maximum_persistent_rows": 22,
+              "occurrence": 5,
+              "parent_occurrence": 4,
+              "parent_pointer_source": "t2_clamp_then_sum/006#4",
+              "relative_address": [
+                1
+              ],
+              "relative_address_offset": 2,
+              "semantic_cue": "expression-int-child-1",
+              "surface": "integer",
+              "surface_feedback_source": "t2_clamp_then_sum/006@6",
+              "teacher_position": 6
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "absolute_address_offset": 41,
+              "maximum_persistent_rows": 22,
+              "occurrence": 6,
+              "parent_occurrence": 3,
+              "parent_pointer_source": "t2_clamp_then_sum/006#3",
+              "relative_address": [
+                1
+              ],
+              "relative_address_offset": 2,
+              "semantic_cue": "expression-int-child-1",
+              "surface": "integer",
+              "surface_feedback_source": "t2_clamp_then_sum/006@9",
+              "teacher_position": 9
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                2
+              ],
+              "absolute_address_offset": 42,
+              "maximum_persistent_rows": 22,
+              "occurrence": 7,
+              "parent_occurrence": 3,
+              "parent_pointer_source": "t2_clamp_then_sum/006#3",
+              "relative_address": [
+                2
+              ],
+              "relative_address_offset": 3,
+              "semantic_cue": "expression-int-child-2",
+              "surface": "if",
+              "surface_feedback_source": "t2_clamp_then_sum/006@12",
+              "teacher_position": 12
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                2,
+                0
+              ],
+              "absolute_address_offset": 127,
+              "maximum_persistent_rows": 22,
+              "occurrence": 8,
+              "parent_occurrence": 7,
+              "parent_pointer_source": "t2_clamp_then_sum/006#7",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-bool-child-0",
+              "surface": "less-than",
+              "surface_feedback_source": "t2_clamp_then_sum/006@13",
+              "teacher_position": 13
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                2,
+                0,
+                0
+              ],
+              "absolute_address_offset": 382,
+              "maximum_persistent_rows": 22,
+              "occurrence": 9,
+              "parent_occurrence": 8,
+              "parent_pointer_source": "t2_clamp_then_sum/006#8",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-int-child-0",
+              "surface": "integer",
+              "surface_feedback_source": "t2_clamp_then_sum/006@14",
+              "teacher_position": 14
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                2,
+                1
+              ],
+              "absolute_address_offset": 128,
+              "maximum_persistent_rows": 22,
+              "occurrence": 10,
+              "parent_occurrence": 7,
+              "parent_pointer_source": "t2_clamp_then_sum/006#7",
+              "relative_address": [
+                1
+              ],
+              "relative_address_offset": 2,
+              "semantic_cue": "expression-int-child-1",
+              "surface": "integer",
+              "surface_feedback_source": "t2_clamp_then_sum/006@18",
+              "teacher_position": 18
+            }
+          ],
+          "constructor_pointer_row_capacity_upper_bound": 242,
+          "eligible_teacher_api_calls": 23,
+          "physical_learn_steps_per_eligible_teacher_call": 2,
+          "physical_teacher_arrivals": 47,
+          "plan_component_arrivals": 6,
+          "prompt_arrivals": 284,
+          "singleton_eos_arrivals": 1,
+          "teacher_api_calls": 24,
+          "total_learning_arrivals": 348
+        }
+      },
+      "max_pyramidal_cells": 10082,
+      "noninitial_learning_arrivals": 347,
+      "ordinary_segment_rows_upper_bound_including_pointer_cues": 3817,
+      "reserve_pyramidal_cells": 3938,
+      "resets": 1,
+      "segment_capacity": 3938,
+      "segments_per_noninitial_arrival": 11,
+      "total_learning_arrivals": 348
+    },
+    "circuit_identity_sha256": "436fd43585462432cd201ff4288c1b1dba440f1f920e6409eabbafec6b0d8358",
+    "segment_capacity": 3938
+  },
+  "protocol": {
+    "protocol_id": "human-cell-simple-swe-v1",
+    "protocol_sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2"
+  },
+  "runtime": {
+    "elapsed_wall_ns": 42104997300,
+    "helper_source_sha256": "3cf58f9eb6dcb6e0ce089ea58fe1ca6ba778546b546f12babf1539bdebc6decb",
+    "native_binary_sha256": "8d83a6690f72b75e40c7b0b1f73e85c4c26aed10b9fb78a7b64d40282c5158d9",
+    "native_mechanism_source_sha256": {
+      "src/humanbrain/_native_src/src/temporal_runtime.rs": "cb149996120261158f0cb2252e970b78d146be4c95782a5599c60ad88ce43be3",
+      "src/humanbrain/_native_src/src/temporal_runtime/checkpoint.rs": "bdb1ab444a826e706b9c8284816a6e54847b0bb6c156723135324fffb377faba",
+      "src/humanbrain/_native_src/src/temporal_runtime/typed_hole_state.rs": "e61a9e8101b5447ef245eda161e99a4e3631f1582b86f37213a36983d9774827",
+      "src/humanbrain/_native_src/src/temporal_runtime/typed_workspace.rs": "66fea07398382565d3850e5b02ddb564f064dd61eaffa1d9b912766b1879727c"
+    },
+    "native_source_digest": "29ce5bd8c950ca06746eeaaed2fdb9d9b6e8a68ebec0b039764415c1f13b1f7f",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "a485e01910b5bb674d6a4512d8297a5fa7bf3f8cfb0d36568864963b22fd92a9",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "target_spend_marker": {
+    "exclusive_create": true,
+    "exists_after_attempt": true,
+    "flushed_and_fsynced_before_generate": true,
+    "path": "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.spent.json",
+    "retained_on_model_failure": true,
+    "sha256": "f532023f1d05c2e92a6f30dfdc304d4991a065e4b0fb6d3cee0cf9f88bd68145",
+    "state": "TARGET_ATTEMPT_SPENT"
+  },
+  "train": {
+    "learning_steps_after_train": 348,
+    "live_segments_after_train": 3861,
+    "tasks": [
+      {
+        "learning_steps_after_task": 348,
+        "live_segments_after_task": 3861,
+        "task": {
+          "delta": null,
+          "entry_point": "solve_eb0c75562d9b056e",
+          "family": "t2_clamp_then_sum",
+          "hidden_test_sha256": "387ba427c83783d53d5506fb235dc48eb9cd688ef2fb01fb494623453cd076d4",
+          "lower": "-8",
+          "ordinal": 6,
+          "parameter": "values",
+          "partition": "train",
+          "prompt_token_count": 284,
+          "public_prompt_lossless_after_tokenization": true,
+          "public_prompt_sha256": "df65c83afc1168f6c01d1ec357de18f1ef6b5a1ea79c50441273b42c86352232",
+          "task_id": "simple-swe-v1/train/tier-2/t2_clamp_then_sum/006",
+          "task_sha256": "a8fe9ddcb86b802e43ac75a119b47b24f5f3068b10184241e40af59fa0f80615",
+          "threshold": null,
+          "upper": "8"
+        },
+        "teacher": [
+          "sum",
+          "map",
+          "bind",
+          "if",
+          "less-than",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "if",
+          "less-than",
+          "integer",
+          "COPY_SLOT_3",
+          "end",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_3",
+          "end",
+          "variable-0",
+          "variable-0",
+          "<EOS>"
+        ]
+      }
+    ]
+  },
+  "typed_programs": {
+    "donor_compiler_checks": [
+      {
+        "compiled_source": "def solve_eb0c75562d9b056e(values):\n    return sum([-8 if item_0 < -8 else 8 if 8 < item_0 else item_0 for item_0 in values])\n",
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-2/t2_clamp_then_sum/006",
+        "tokens": [
+          "sum",
+          "map",
+          "bind",
+          "if",
+          "less-than",
+          "variable-0",
+          "integer",
+          "-",
+          "8",
+          "end",
+          "integer",
+          "-",
+          "8",
+          "end",
+          "if",
+          "less-than",
+          "integer",
+          "+",
+          "8",
+          "end",
+          "variable-0",
+          "integer",
+          "+",
+          "8",
+          "end",
+          "variable-0",
+          "variable-0"
+        ]
+      }
+    ],
+    "target_expected_source": "def solve_ab40788bba21c775(n):\n    return -11 if n < -11 else 11 if 11 < n else n\n",
+    "target_expected_tokens": [
+      "if",
+      "less-than",
+      "variable-0",
+      "integer",
+      "-",
+      "1",
+      "1",
+      "end",
+      "integer",
+      "-",
+      "1",
+      "1",
+      "end",
+      "if",
+      "less-than",
+      "integer",
+      "+",
+      "1",
+      "1",
+      "end",
+      "variable-0",
+      "integer",
+      "+",
+      "1",
+      "1",
+      "end",
+      "variable-0"
+    ]
+  },
+  "visible_train_target_teacher_free": {
+    "atomic_no_argument_generation": true,
+    "attempt_number": 1,
+    "copy_slot_schedule": [
+      2,
+      2,
+      3,
+      3
+    ],
+    "copy_trace_exact": false,
+    "copy_transactions": [],
+    "expected_stream_used_only_after_native_close": true,
+    "first_failure": {
+      "detail": {
+        "completed_surface_prefix": 0,
+        "location": 22605,
+        "message": "temporal physical stage stopped",
+        "observed": 0,
+        "poison_code": 7,
+        "required": 0,
+        "stage_code": 3,
+        "status": "SCIENTIFIC_STOP"
+      },
+      "gate": "GENERATION_STOP",
+      "kind": "model",
+      "localization": {
+        "expected_surface": "if",
+        "gate": "GENERATION_STOP",
+        "generation_position": 0,
+        "root_election_is_upstream_of_constructor_pointer": true,
+        "root_expected_surface": "if",
+        "scope": "root"
+      }
+    },
+    "first_failure_localization": {
+      "expected_surface": "if",
+      "gate": "GENERATION_STOP",
+      "generation_position": 0,
+      "root_election_is_upstream_of_constructor_pointer": true,
+      "root_expected_surface": "if",
+      "scope": "root"
+    },
+    "fitted_cell_races_exact": false,
+    "generation_call_count": 1,
+    "generations": [],
+    "private_cases_entered_native_runtime": false,
+    "program": {
+      "compiled_source": null,
+      "compiler_received_prompt": false,
+      "compiler_received_tests": false,
+      "exact_compiled_source": false,
+      "exact_tokens": false,
+      "expected_compiled_source": "def solve_ab40788bba21c775(n):\n    return -11 if n < -11 else 11 if 11 < n else n\n",
+      "expected_tokens": [
+        "if",
+        "less-than",
+        "variable-0",
+        "integer",
+        "-",
+        "1",
+        "1",
+        "end",
+        "integer",
+        "-",
+        "1",
+        "1",
+        "end",
+        "if",
+        "less-than",
+        "integer",
+        "+",
+        "1",
+        "1",
+        "end",
+        "variable-0",
+        "integer",
+        "+",
+        "1",
+        "1",
+        "end",
+        "variable-0"
+      ],
+      "tokens": []
+    },
+    "prompt_steps": 275,
+    "sandbox": {
+      "attempted": false,
+      "detail": "not run because an earlier gate stopped",
+      "passed": false
+    },
+    "target_expected_solution_entered_native_runtime": false,
+    "task": {
+      "delta": null,
+      "entry_point": "solve_ab40788bba21c775",
+      "family": "t0_scalar_clamp",
+      "hidden_test_sha256": "e65b577016c3e6dad1c9355e719a72bded2c5b85024e34bdd80c05eec0cbd758",
+      "lower": "-11",
+      "ordinal": 3,
+      "parameter": "n",
+      "partition": "train",
+      "prompt_token_count": 275,
+      "public_prompt_lossless_after_tokenization": true,
+      "public_prompt_sha256": "da78ecb832d861b2c2eb45f45241a44af0326b99a2e38b2808859f404e2e86dd",
+      "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/003",
+      "task_sha256": "2507554dfcf51d21f4fdad81f437736d62e3b98953f0a7d37ec9aa673d5ff8a1",
+      "threshold": null,
+      "upper": "11"
+    },
+    "teacher_tokens_after_prompt": 0,
+    "terminated_by_ordinary_eos": false,
+    "workspace_steps_before_generation": 1
+  }
+}

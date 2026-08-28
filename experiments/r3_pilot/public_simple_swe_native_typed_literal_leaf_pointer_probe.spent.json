@@ -1,0 +1,13 @@
+{
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.json",
+  "created_at_utc": "2026-08-28T15:42:24.369629+00:00",
+  "experiment": "r3-public-simple-swe-native-typed-literal-leaf-pointer",
+  "probe_source_sha256": "a485e01910b5bb674d6a4512d8297a5fa7bf3f8cfb0d36568864963b22fd92a9",
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_key": [
+    "t0_scalar_clamp",
+    3
+  ],
+  "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/003"
+}

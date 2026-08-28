@@ -151,7 +151,7 @@ def test_pointer_occurrences_and_literal_leaf_capacity_are_frozen() -> None:
     ] == [6, 9, 14, 18]
 
 
-def test_native_hashes_are_frozen_without_touching_target() -> None:
+def test_native_hashes_and_spent_result_are_frozen() -> None:
     assert set(probe.EXPECTED_NATIVE_MECHANISM_SHA256) == {
         path.relative_to(probe.REPO_ROOT).as_posix()
         for path in probe.NATIVE_MECHANISM_PATHS
@@ -162,13 +162,23 @@ def test_native_hashes_are_frozen_without_touching_target() -> None:
             probe._sha256_file(path)
             == probe.EXPECTED_NATIVE_MECHANISM_SHA256[relative]
         )
-    assert not probe.OUTPUT_PATH.exists()
-    assert not probe.SPEND_MARKER_PATH.exists()
+    assert probe._sha256_file(probe.OUTPUT_PATH) == (
+        "f7acfaa56730ea47a2de98c230d81f9836118a3cbb38f11e8881959264825f99"
+    )
+    assert probe._sha256_file(probe.SPEND_MARKER_PATH) == (
+        "f532023f1d05c2e92a6f30dfdc304d4991a065e4b0fb6d3cee0cf9f88bd68145"
+    )
+    payload = json.loads(probe.OUTPUT_PATH.read_text(encoding="utf-8"))
+    assert payload["outcome"] == "STOP_NATIVE_TYPED_LITERAL_LEAF_POINTER"
+    assert payload["first_failure"]["detail"]["completed_surface_prefix"] == 0
+    assert payload["authority"]["teacher_free_target_attempts_completed"] == 1
 
 
 def test_spend_marker_is_durable_exclusive_and_cleanup_is_local(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    canonical_artifact = probe.OUTPUT_PATH
+    canonical_marker = probe.SPEND_MARKER_PATH
     test_dir = (
         probe.REPO_ROOT
         / ".pytest_tmp"
@@ -202,5 +212,5 @@ def test_spend_marker_is_durable_exclusive_and_cleanup_is_local(
         artifact.unlink(missing_ok=True)
         test_dir.rmdir()
     assert not test_dir.exists()
-    assert not probe.OUTPUT_PATH.exists()
-    assert not probe.SPEND_MARKER_PATH.exists()
+    assert canonical_artifact.exists()
+    assert canonical_marker.exists()
