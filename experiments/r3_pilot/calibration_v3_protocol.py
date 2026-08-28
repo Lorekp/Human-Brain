@@ -584,36 +584,97 @@ def _source_binding() -> dict[str, Any]:
         "canonical_byte_rule": CANONICAL_SOURCE_BYTE_RULE,
         "baseline_commits": {
             "explicit_threshold_oracle": ("c67c6c4b960a26ca8227f78d80da306076d1a931"),
-            "procedural_gate3_refreeze": ("1a262b6d11c0c14bd82c4923e8499befb169576c"),
+            "procedural_gate3_refreeze": ("600101424df9e934da4773a5cf1046a0c2419e87"),
         },
-        "blockers": [
-            "Official calibration-v3 screen execution, checkpoint/resume orchestration, "
-            "and immutable result publication remain disabled behind `_execute_frozen_plan`."
-        ],
+        "blockers": [],
         "files": {
             "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json": {
-                "commit": "1a262b6d11c0c14bd82c4923e8499befb169576c",
-                "sha256": ("0adecfa53b94ca4f47294e307849b9ae7dd4b6d0b573a4352be5574d6c32d534"),
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "b740b1159f5b44bd4f98927668567d2b42ad2a16a282aad113145a07183149fd",
+            },
+            "experiments/r3_pilot/calibrate_minicolumn_electrical.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "deccc519ab66ac3a53de3c20c60a5a078ca9b9c75038226454aa5af434a17de2",
+            },
+            "experiments/r3_pilot/calibration_v3_authority.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "d1d790d5cecdb3b0d3b06d7112e6b98434f1c828cc84cb071dae35f9c785cff1",
+            },
+            "experiments/r3_pilot/calibration_v3_definitions.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "c8fec2ce273726fb9d0de13818153469efb71b4cee762581b1c8155ffac6e950",
+            },
+            "experiments/r3_pilot/calibration_v3_gate3_authority.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "b4b423e5cc5dbf4f03c51832812815838f204dd15635abbba64d04f712eb6881",
+            },
+            "experiments/r3_pilot/calibration_v3_overlap_scoring.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "0854f67ab0363d332edfd615ae8b66357d94dd4c22933a1a24290d1a64879d5c",
+            },
+            "experiments/r3_pilot/calibration_v3_persistence.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "c893bb3c79febfcf82d96af6474c3ce772fcfc8e6b17705d626542de5196b5a3",
+            },
+            "experiments/r3_pilot/calibration_v3_train_scoring.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "7daddd820c13cc39ec259d52da6a710582903c94b9106f44b644ee70a6d6b234",
+            },
+            "experiments/r3_pilot/calibration_v3_transaction.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "5542a09fb62a78ffc71d53527d94410c2a2c6054e8336015de3cd595930e5763",
+            },
+            "experiments/r3_pilot/r3_f0_train_input.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "4837fcfd8aa2baa9f58de95e0ab5bf31674513f20d641d39f6e1ead9b7c1560e",
+            },
+            "experiments/r3_pilot/r3_f0_train_input_v1.json": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
             },
             "experiments/r3_pilot/relay_pool_capacity.json": {
-                "commit": "5882bb9d59250c644e8c462428a3908def0f1ee5",
-                "sha256": ("45c010fdba9a5a2cb301d70d6e98dd004723aff8d4293aa8f44c7425a74b801b"),
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "45c010fdba9a5a2cb301d70d6e98dd004723aff8d4293aa8f44c7425a74b801b",
+            },
+            "experiments/r3_pilot/run_calibration_v3_fixtures.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "281b478d5139337ac4553b4a69dfb487cd2695c43152e8a063c6b6e2c2fee188",
+            },
+            "src/humanbrain/__init__.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "9019d88aa76d762c8fe7a63339f53f7e73849fa2a6658a8a762354eeb2cc67d7",
+            },
+            "src/humanbrain/concept_tokens.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "9070deaf7d9a8a54add24e3a213d8b6aa7bbb24b3d35ad66a7b68b3d1148f43e",
             },
             "src/humanbrain/cortex.py": {
-                "commit": "6a153c7a2bea5636035e144494ec929f60f50682",
-                "sha256": ("16545b390c516b6f5817366946f0f516cec5b049bb9e1f6021184d9e156e0a8c"),
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "7a7704a14324203d2cce427a11fbd58ffbbc345185ba34633449f59cf294624d",
+            },
+            "src/humanbrain/native_temporal_runtime.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "b7acf7dd103f3b2ef9ef1e8f423daf8ca13e21cabdc16aff6e9b6f8cca82b22a",
+            },
+            "src/humanbrain/race_bias.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "8d9dff4b65a28447840429d688d551d6b2bb8f963b97dcd95e0420c8c33a0100",
             },
             "src/humanbrain/sdr_union.py": {
-                "commit": "40a29341dadc3bac903bf62b2c68763f5f5c493f",
-                "sha256": ("1de7f6edd914584c4c72d7e42426254590049cfb69cbbfa730afa3179afa63f9"),
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "1de7f6edd914584c4c72d7e42426254590049cfb69cbbfa730afa3179afa63f9",
             },
             "src/humanbrain/sparse_temporal_cortex.py": {
-                "commit": "c67c6c4b960a26ca8227f78d80da306076d1a931",
-                "sha256": ("22e5ab6bb9e3b1bc7010e8c3ffd11d9c2dd9ea01a33ba15046a32db2228357a8"),
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "15e44e8250f69ae77774c781a6dee3da5dc8607ddbfd31bfc5fa805e8ffddac0",
+            },
+            "src/humanbrain/tokenizer.py": {
+                "commit": "f8682943a1cfdf6c8655d10c888689c8235c464e",
+                "sha256": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce",
             },
         },
         "governing_gate3_path": ("benchmarks/procedural_runtime_gate3_slice_protocol_v1.json"),
-        "runnable": False,
+        "runnable": True,
     }
 
 
@@ -696,7 +757,7 @@ def build_protocol() -> dict[str, Any]:
                 "token_count": 768,
             },
         },
-        "execution_status": "NOT_RUNNABLE_PRE_OUTCOME",
+        "execution_status": "RUNNABLE_PRE_OUTCOME",
         "timing_contract": {
             "cap_ns": 54_000_000_000_000,
             "boundaries": {
@@ -746,7 +807,7 @@ def build_protocol() -> dict[str, Any]:
                 "bounded resume-manifest construction, publication, reopen, and confirmation",
                 "bounded result-envelope construction, publication, reopen, and confirmation",
             ],
-            "implementation_status": "DISABLED_BEHIND_EXECUTE_FROZEN_PLAN",
+            "implementation_status": "IMPLEMENTED_SOURCE_BOUND_PRE_OUTCOME",
             "integer_rule": "timing fields are exact non-negative integer nanoseconds",
             "session_rule": (
                 "one closed active interval with no internal pause; scheduler delay, sleep, "
@@ -1419,8 +1480,8 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 2
     if args.check_draft:
-        print("protocol draft check: PASS (NOT RUNNABLE)")
-    else:  # pragma: no cover - unreachable until the fail-closed flag is refrozen.
+        print("protocol draft check: PASS (RUNNABLE PRE-OUTCOME)")
+    else:
         print("protocol runnable check: PASS")
     return 0
 

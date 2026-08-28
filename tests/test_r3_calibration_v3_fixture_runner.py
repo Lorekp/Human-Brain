@@ -773,14 +773,18 @@ def test_authority_rejects_oversized_gate3_before_live_source_computation(
         )
 
 
-def test_current_non_runnable_protocol_stops_before_any_execution_or_file_seam(
+def test_synthetic_non_runnable_protocol_stops_before_any_execution_or_file_seam(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     reached: list[str] = []
+    frozen = json.loads(json.dumps(governing_protocol.build_protocol()))
+    frozen["source_binding"]["runnable"] = False
+    frozen["source_binding"]["blockers"] = ["synthetic pre-outcome blocker"]
 
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(governing_protocol, "build_protocol", lambda: frozen)
     monkeypatch.setattr(runner, "_governing_protocol", lambda: governing_protocol)
     monkeypatch.setattr(
         runner,

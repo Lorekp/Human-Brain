@@ -15,8 +15,8 @@ def test_native_definition_contract_freezes_every_identity_input() -> None:
     frozen = protocol.build_protocol()
 
     assert frozen["schema_version"] == 7
-    assert frozen["execution_status"] == "NOT_RUNNABLE_PRE_OUTCOME"
-    assert frozen["source_binding"]["runnable"] is False
+    assert frozen["execution_status"] == "RUNNABLE_PRE_OUTCOME"
+    assert frozen["source_binding"]["runnable"] is True
     assert frozen["native_definition_contract"] == {
         "config": {
             "base_cells_per_column": 8,

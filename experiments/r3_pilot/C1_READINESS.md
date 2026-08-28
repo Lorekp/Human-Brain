@@ -96,12 +96,11 @@ work after about book 12 also contaminates its recorded 291.54 steps/s, so the
 timing is not cap evidence. Exact evidence is in
 [r3_native_train_full_two_tier_theta16_18_seed17.json](../../benchmarks/r3_native_train_full_two_tier_theta16_18_seed17.json).
 
-The nested Gate-3 source closure is stale after the native repairs. A dry-run
-refresh changes its bundle SHA-256 from `7830b2fe...` to `244538ac...`; the
-draft check still passes against its historical committed blobs and the
-runnable check still fails closed. Refreeze is deliberately deferred until the
-official q=255/R3-F0 execution closure is complete, so this status update does
-not create a source-current execution authority.
+The nested Gate-3 source closure was refrozen at `6001014`; its content remains
+unchanged while the exact 21-path outer calibration execution closure is bound
+to `f868294`. Both draft and runnable source checks now pass on the clean bound
+tree. This opens only the frozen calibration-v3 runner; it is not C1 launch
+evidence and does not clear the remaining scientific or cost gates below.
 
 The sparse recognition prototype is control-only evidence. It benchmarks
 `|W|=54`; frozen g=50 produces roughly 64k winners on the initial slice and
@@ -150,8 +149,9 @@ measurement.
       projection below 13.5 h. The physical full-Genesis prefix is green at a
       narrow 8.65 h projection, but later growth, required costs, and final
       topology remain unmeasured.
-- [ ] Refresh the nested Gate-3 and outer R3 source bindings once the official
-      q=255/R3-F0 execution closure is final; keep `runnable=false` until then.
+- [x] Refresh the nested Gate-3 and exact 21-path outer R3 source bindings after
+      the official q=255/R3-F0 execution closure; calibration v3 is runnable
+      pre-outcome at `f868294`.
 - [ ] **CN-2:** formally refreeze substrate, winner source, A3, permanence rule,
       boundaries, evaluation, runtime changes, schedule, and cap behavior.
 - [ ] Corrected dry run and short smoke pass.

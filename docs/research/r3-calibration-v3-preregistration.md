@@ -1,13 +1,14 @@
 # R3 electrical, temporal-code, and capacity calibration v3
 
-**Date:** 2026-08-26
-**Status:** **NOT RUNNABLE — PRE-OUTCOME PREREGISTRATION**
+**Date:** 2026-08-28
+**Status:** **RUNNABLE PRE-OUTCOME — NOT EXECUTED**
 **Machine-readable authority:**
 [`experiments/r3_pilot/calibration_v3_protocol.py`](../../experiments/r3_pilot/calibration_v3_protocol.py)
 
 This document freezes the repair protocol discovered after the reserve audit of
-the v2 temporal-code calibration. It authorizes no outcome-bearing replay and
-does not select a threshold. The committed v1/v2 electrical and temporal JSON
+the v2 temporal-code calibration. Its exact source-current runner is now
+authorized, but no outcome-bearing replay has occurred and no threshold has
+been selected. The committed v1/v2 electrical and temporal JSON
 artifacts remain historical evidence bound to `df26cc2`; they do not justify a
 C1-scale threshold after the cohort allocator and exact-pair changes.
 
@@ -15,18 +16,20 @@ Schema 7 is deliberately fail-closed and incorporates
 [`CHANGE NOTE 1`](r3-calibration-v3-change-note-1.md). It pins the explicit-threshold Python
 oracle, the schema-7 TRAIN-only capacity artifact, and the governing nested
 Gate-3 manifest at
-`benchmarks/procedural_runtime_gate3_slice_protocol_v1.json`, but reports
-`runnable=false`. Native source closure is governed transitively by that nested
-manifest; schema 7 does not duplicate its native-file digests. Its native
+`benchmarks/procedural_runtime_gate3_slice_protocol_v1.json`. The nested Gate-3
+content remains the refreeze at commit `600101424df9e934da4773a5cf1046a0c2419e87`;
+the outer 21-path execution closure is bound uniformly to commit
+`f8682943a1cfdf6c8655d10c888689c8235c464e`. Native source closure remains
+governed transitively by the nested manifest; schema 7 does not duplicate its
+native-file digests. Its native
 identity contract now also makes the established permanence, policy, codebook,
 threshold-offset generator, and four seed-17 definition digests literal; this
 selects no arm and opens no outcome data.
 Pre-outcome, schema 7 also pins the complete q=4 native identity table and seed
 scope for all four arms across development seeds `3, 7, 17, 29`.
-Its exact blocker is: "Official
-calibration-v3 screen execution, checkpoint/resume
-orchestration, and immutable result publication remain disabled behind
-`_execute_frozen_plan`." `--check-runnable` must therefore continue to fail.
+The durable executor, checkpoint/resume transaction, selected-arm confirmation,
+and immutable final-verdict path are implemented and source-bound. The blocker
+list is empty and `source_binding.runnable=true`.
 
 Every source digest uses one cross-checkout rule: SHA-256 of raw bytes after
 CRLF-to-LF normalization; a lone CR is invalid. `--check-draft` resolves every
@@ -392,7 +395,8 @@ seed-order, and nullability contract frozen in Section 1.1 and in the machine
 ### 5.2 Adopted active-wall contract
 
 Schema 7 retains timing contract `r3-cumulative-active-wall-v2` with the exact
-cap `54,000,000,000,000 ns` while leaving execution disabled. CPython 3.11
+cap `54,000,000,000,000 ns`, implemented by the source-bound transaction and
+runner. CPython 3.11
 `time.perf_counter_ns` measures one closed active interval without internal
 pauses; scheduler delay, sleep, locks, garbage collection, I/O, asynchronous
 waits, and incidental error handling remain charged.
@@ -447,22 +451,18 @@ covering 3,656,777 bytes and stream SHA-256
 recorded explicitly as not live verified. Capacity is conditional on R3-F0.
 Arithmetic fit does not prove code injectivity, runtime, or capability.
 
-## 7. Claim boundary and unlock
+## 7. Claim boundary and runnable transition
 
-No held-out data is accessed. No threshold is selected. No result JSON is
-created. No capability or transfer claim is made. Electrical v3, q=4, and
-q=255 are fixture evidence; R3-F0 is TRAIN-only structural evidence.
+This refreeze accessed no held-out data, selected no threshold, created no
+result JSON, and makes no capability or transfer claim. Electrical v3, q=4,
+and q=255 remain fixture evidence; R3-F0 remains TRAIN-only structural
+evidence.
 
-To make this protocol runnable, a later pre-outcome commit must:
-
-1. keep the governing nested Gate-3 source closure green after final changes;
-2. implement the frozen durable-directory preparation, exact-byte resume
-   reconciliation, checkpoint/resume, timing, and immutable result contracts
-   behind `_execute_frozen_plan` without changing this protocol;
-3. prove clean fresh/resumed arithmetic, STOP, and indeterminate-session
-   behavior before enabling official screens;
-4. flip `source_binding.runnable` only after all source-byte validation passes;
-5. rerun fixture tests before any calibration outcome is opened.
-
-Until then, `python experiments/r3_pilot/calibration_v3_protocol.py
---check-runnable` must exit nonzero.
+The pre-outcome runnable transition is complete: the governing nested Gate-3
+closure is preserved at `6001014`, the exact 21-path outer executor closure is
+bound to `f868294`, and the durable directory, checkpoint/resume, cumulative
+timing, selected-arm confirmation, and immutable result contracts are present.
+This authorizes only the frozen command and does not itself execute a screen or
+spend the cohort. On a clean source-current checkout,
+`python experiments/r3_pilot/calibration_v3_protocol.py --check-runnable` must
+pass; any bound live-source drift must still fail closed before execution.

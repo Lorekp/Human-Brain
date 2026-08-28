@@ -1126,14 +1126,24 @@ def test_fresh_authority_rejects_oversized_gate3_before_live_source_computation(
         runtime_adapter._fresh_authority()
 
 
-def test_current_no_go_fails_before_native_load(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_synthetic_no_go_fails_before_native_load(monkeypatch: pytest.MonkeyPatch) -> None:
     reached_loader = False
+
+    def reject_non_runnable(_value: object, *, require_runnable: bool) -> None:
+        assert require_runnable is True
+        raise ProtocolError("protocol is not runnable: synthetic pre-outcome blocker")
+
+    no_go = SimpleNamespace(
+        build_protocol=lambda: {"source_binding": {"runnable": False}},
+        validate_protocol=reject_non_runnable,
+    )
 
     def forbidden_loader() -> object:
         nonlocal reached_loader
         reached_loader = True
         raise AssertionError("native loader must not run for a non-runnable protocol")
 
+    monkeypatch.setattr(runtime_adapter, "_governing_protocol", lambda: no_go)
     monkeypatch.setattr(runtime_adapter, "_load_library", forbidden_loader)
 
     with pytest.raises(ProtocolError, match="protocol is not runnable"):
