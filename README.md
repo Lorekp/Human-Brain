@@ -35,6 +35,7 @@ The repositories do not import or modify one another.
 | Typed program decoding | TRAIN replay 3/3 labels; frozen teacher-free DEV 0/2 | Memorization, not prompt-conditioned composition |
 | Native role/place scalar generation | One retained circuit learned add/subtract routes, then teacher-free DEV generated and executed exact unseen `boost(x) = x + 37` and `drop(x) = x - 14` functions with copied identifiers/literals and ordinary EOS | Public synthetic two-route micro-capability through atomic fitted-cell races; not family-disjoint composition or SWE evidence |
 | Native typed-workspace composition | One retained circuit learned visible scalar-offset/000 and list-map-absolute/000, then teacher-free visible DEV list-map-add/002 generated the exact typed program, physically copied unseen `-1`, reached ordinary EOS, compiled exactly, and passed 4 regression + 32 property cases | One visible development micro-capability using result-type and literal-presence plan components; not family-disjoint transfer, M0, eval evidence, or broad SWE competence |
+| Family-disjoint typed scaffold re-root | The frozen one-shot public TRAIN-family probe learned scalar-offset/000 and clamp-then-sum/000, then stopped before emitting any token for unseen-family list-map-add/003 (native column-race scientific STOP; 0 generations) | Honest negative: generic structural re-rooting did not compose the nested Map/Bind scaffold with the scalar Add subtree; no retry or target tuning |
 | Public Simple-SWE baseline | 0/90 train and 0/27 dev | Prompt-only cell baseline failed, largely through invalid syntax |
 | Million-scale CUDA text training | Post speed-waves the 1M-cell CUDA pipeline reaches 96.1 grow / 101.6 inference tok/s (from 31.4 / 32.6; ×3.06 / ×3.12), putting a full-KJV epoch near 5 h at 1M cells (≈15 h before optimization) | Measured engineering throughput ([report](benchmarks/scale_opt_gpu_report.md), [corpus plan](docs/research/cell-lm-corpus-bible.md)); the ≈5 h epoch is projected from tok/s, not a completed run |
 | CPU event-proportional runtime | L3 stepping + Seams A/B + L5 bulk marshal: event-proportional beats full-touch at every measured uniform activity ≥1% (17.9× / 3.1× / 1.5× / 1.4× at 1/2/5/20%) and sparse text-like tokens sustain 363 tok/s | Throughput only ([findings](experiments/procedural_adapter_spike/FINDINGS.md), [post-Seam-B rerun](experiments/l4_activity_matrix/FINDINGS.md)); the ≥100 tok/s gate remains sparse-regime-only (best ≥1% uniform: 15.4 tok/s) |
@@ -170,6 +171,8 @@ two-route slot-recombination pass, but no family-disjoint Simple-SWE result.
 - [Native role/place scalar probe](experiments/r3_pilot/public_train_dev_role_place_scalar_routing_probe.json)
   records the sole public run that copied unseen names and multi-digit literals,
   selected add versus subtract, compiled, executed, and reached EOS.
+- [Family-disjoint scaffold re-root probe](experiments/r3_pilot/public_simple_swe_native_typed_scaffold_reroot_probe.json)
+  records the spent one-shot STOP before its unseen-family target emitted a token.
 - [Layer-0 scalar plumbing](docs/cell-program-layer0.md) is implemented but
   has not been executed or scored against its public composition definitions.
 - [Typed composition A012](docs/typed-composition-a012-v1.md) specifies the
