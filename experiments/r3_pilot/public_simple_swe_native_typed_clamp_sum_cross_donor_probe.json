@@ -1,0 +1,999 @@
+{
+  "authority": {
+    "artifact_overwrite_permitted": false,
+    "atomic_no_argument_generation_call_count": 1,
+    "caller_supplied_address_tokens": false,
+    "caller_supplied_candidate_tokens": false,
+    "caller_supplied_target_tokens": false,
+    "dev_or_held_out_opened": false,
+    "eval_partition_generated": false,
+    "harness_retries": 0,
+    "model_retries": 0,
+    "python_argmax": false,
+    "python_candidate_enumeration": false,
+    "source_partition_generated": "train",
+    "target_expected_solution_used_as_runtime_input": false,
+    "target_family_absent_from_teaching": true,
+    "target_private_cases_used_as_runtime_input": false,
+    "target_runtime_fields": [
+      "lossless_prompt_tokens",
+      "public_parameter_type",
+      "public_result_type"
+    ],
+    "teacher_free_target_attempts_completed": 1,
+    "teacher_free_target_key": [
+      "t2_clamp_then_sum",
+      3
+    ],
+    "teacher_tokens_after_target_prompt": 0,
+    "train_keys": [
+      [
+        "t0_scalar_clamp",
+        1
+      ],
+      [
+        "t2_map_then_count",
+        2
+      ]
+    ]
+  },
+  "capability_pass": false,
+  "claim_boundary": "One retained native temporal circuit learns visible TRAIN t0_scalar_clamp/001 and t2_map_then_count/002, then attempts visible TRAIN t2_clamp_then_sum/003 exactly once without a teacher. A pass shows root Sum/Map/Bind and descendant scalar-clamp structure recombine with unseen -3/+3 bounds. All tasks were present in the historical prompt-only public baseline, but this target is fresh for the native typed lane. This is not DEV, eval, held-out, M0, C1, or broad coding evidence.",
+  "constructor_pointer": {
+    "actual_cue_rows": 110,
+    "actual_exact_replay_pointer_call_count": 0,
+    "actual_recruited_pointer_count": 10,
+    "actual_recurrence_rows": 110,
+    "actual_total_rows": 220,
+    "allocation_measurement": "post-call checkpoint segment delta minus returned exact-surface rows; hidden transfer allocation is 0..11 rows and novel pointer recruitment adds exactly 11 cue + 11 recurrence rows",
+    "capacity_assumes_every_call_recruits": true,
+    "cue_rows_per_novel_call": 11,
+    "cue_rows_upper_bound": 110,
+    "exact_replay_rows": 0,
+    "exact_role_opening_call_count": 10,
+    "frozen_occurrence_labels_are_unique": true,
+    "identity": "opaque surface winners + semantic cue/role + parent-relative address + parent pointer when active",
+    "observed_pointer_cue_learning_arrivals_after_train": 10,
+    "physical_pointer_identity_uniqueness_claimed": false,
+    "post_donor_checkpoint_segment_count": 5097,
+    "python_owner_lookup": false,
+    "recurrence_rows_per_novel_call": 11,
+    "recurrence_rows_upper_bound": 110,
+    "role_bearing_constructors": [
+      "add",
+      "absolute",
+      "less-than",
+      "if",
+      "map",
+      "sum",
+      "bind"
+    ],
+    "root_election_is_upstream": true,
+    "rows_per_cue_call_upper_bound": 22,
+    "total_rows_upper_bound": 220,
+    "training_learning_step_asserted": 669
+  },
+  "experiment": "r3-public-simple-swe-native-typed-clamp-sum-cross-donor",
+  "first_failure": {
+    "detail": {
+      "completed_surface_prefix": 17,
+      "location": 29625,
+      "message": "temporal physical stage stopped",
+      "observed": 0,
+      "poison_code": 7,
+      "required": 0,
+      "stage_code": 3,
+      "status": "SCIENTIFIC_STOP"
+    },
+    "gate": "GENERATION_STOP",
+    "kind": "model",
+    "localization": {
+      "expected_surface": "+",
+      "gate": "GENERATION_STOP",
+      "generation_position": 17,
+      "root_election_is_upstream_of_constructor_pointer": true,
+      "root_expected_surface": "sum",
+      "scope": "descendant"
+    }
+  },
+  "generated_at_utc": "2026-08-28T15:20:05.441807+00:00",
+  "localization_contract": {
+    "native_completed_prefix_positive": "descendant",
+    "native_completed_prefix_zero": "root",
+    "root_election_is_upstream_of_constructor_pointer": true,
+    "root_surface": "sum",
+    "successful_stream_mismatch_uses_first_surface_position": true
+  },
+  "outcome": "STOP_NATIVE_TYPED_CLAMP_SUM_CROSS_DONOR",
+  "physical_definition": {
+    "active_columns_per_token": 11,
+    "address_offsets": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      10,
+      11,
+      12,
+      13,
+      31,
+      32,
+      40,
+      41,
+      42,
+      121,
+      122,
+      127,
+      128,
+      129,
+      367,
+      368,
+      382,
+      383
+    ],
+    "address_token_base": 2075,
+    "capacity_accounting": {
+      "base_learning_arrivals": 659,
+      "base_pyramidal_cells": 6144,
+      "base_temporal_segment_rows_upper_bound": 7227,
+      "constructor_pointer": {
+        "capacity_assumes_every_call_recruits": true,
+        "cue_rows_per_novel_call": 11,
+        "cue_rows_upper_bound": 110,
+        "exact_replay_rows": 0,
+        "exact_role_opening_call_count": 10,
+        "frozen_occurrence_labels_are_unique": true,
+        "identity": "opaque surface winners + semantic cue/role + parent-relative address + parent pointer when active",
+        "physical_pointer_identity_uniqueness_claimed": false,
+        "recurrence_rows_per_novel_call": 11,
+        "recurrence_rows_upper_bound": 110,
+        "role_bearing_constructors": [
+          "add",
+          "absolute",
+          "less-than",
+          "if",
+          "map",
+          "sum",
+          "bind"
+        ],
+        "root_election_is_upstream": true,
+        "rows_per_cue_call_upper_bound": 22,
+        "total_rows_upper_bound": 220
+      },
+      "constructor_pointer_cue_arrivals": 10,
+      "episodes": {
+        "t0_scalar_clamp/001": {
+          "base_learning_arrivals": 318,
+          "constructor_pointer_cue_arrivals": 4,
+          "constructor_pointer_occurrences": [
+            {
+              "absolute_address": [],
+              "absolute_address_offset": 0,
+              "maximum_persistent_rows": 22,
+              "occurrence": 0,
+              "parent_occurrence": null,
+              "parent_pointer_source": null,
+              "relative_address": [],
+              "relative_address_offset": 0,
+              "semantic_cue": "expression-int-head",
+              "surface": "if",
+              "surface_feedback_source": "t0_scalar_clamp/001@0",
+              "teacher_position": 0
+            },
+            {
+              "absolute_address": [
+                0
+              ],
+              "absolute_address_offset": 1,
+              "maximum_persistent_rows": 22,
+              "occurrence": 1,
+              "parent_occurrence": 0,
+              "parent_pointer_source": "t0_scalar_clamp/001#0",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-bool-child-0",
+              "surface": "less-than",
+              "surface_feedback_source": "t0_scalar_clamp/001@1",
+              "teacher_position": 1
+            },
+            {
+              "absolute_address": [
+                2
+              ],
+              "absolute_address_offset": 3,
+              "maximum_persistent_rows": 22,
+              "occurrence": 2,
+              "parent_occurrence": 0,
+              "parent_pointer_source": "t0_scalar_clamp/001#0",
+              "relative_address": [
+                2
+              ],
+              "relative_address_offset": 3,
+              "semantic_cue": "expression-int-child-2",
+              "surface": "if",
+              "surface_feedback_source": "t0_scalar_clamp/001@9",
+              "teacher_position": 9
+            },
+            {
+              "absolute_address": [
+                2,
+                0
+              ],
+              "absolute_address_offset": 10,
+              "maximum_persistent_rows": 22,
+              "occurrence": 3,
+              "parent_occurrence": 2,
+              "parent_pointer_source": "t0_scalar_clamp/001#2",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-bool-child-0",
+              "surface": "less-than",
+              "surface_feedback_source": "t0_scalar_clamp/001@10",
+              "teacher_position": 10
+            }
+          ],
+          "constructor_pointer_row_capacity_upper_bound": 88,
+          "eligible_teacher_api_calls": 19,
+          "physical_learn_steps_per_eligible_teacher_call": 2,
+          "physical_teacher_arrivals": 39,
+          "plan_component_arrivals": 6,
+          "prompt_arrivals": 273,
+          "singleton_eos_arrivals": 1,
+          "teacher_api_calls": 20,
+          "total_learning_arrivals": 322
+        },
+        "t2_map_then_count/002": {
+          "base_learning_arrivals": 341,
+          "constructor_pointer_cue_arrivals": 6,
+          "constructor_pointer_occurrences": [
+            {
+              "absolute_address": [],
+              "absolute_address_offset": 0,
+              "maximum_persistent_rows": 22,
+              "occurrence": 0,
+              "parent_occurrence": null,
+              "parent_pointer_source": null,
+              "relative_address": [],
+              "relative_address_offset": 0,
+              "semantic_cue": "expression-int-head",
+              "surface": "sum",
+              "surface_feedback_source": "t2_map_then_count/002@0",
+              "teacher_position": 0
+            },
+            {
+              "absolute_address": [
+                0
+              ],
+              "absolute_address_offset": 1,
+              "maximum_persistent_rows": 22,
+              "occurrence": 1,
+              "parent_occurrence": 0,
+              "parent_pointer_source": "t2_map_then_count/002#0",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-list-int-child-0",
+              "surface": "map",
+              "surface_feedback_source": "t2_map_then_count/002@1",
+              "teacher_position": 1
+            },
+            {
+              "absolute_address": [
+                0,
+                0
+              ],
+              "absolute_address_offset": 4,
+              "maximum_persistent_rows": 22,
+              "occurrence": 2,
+              "parent_occurrence": 1,
+              "parent_pointer_source": "t2_map_then_count/002#1",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-int-to-int-child-0",
+              "surface": "bind",
+              "surface_feedback_source": "t2_map_then_count/002@2",
+              "teacher_position": 2
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0
+              ],
+              "absolute_address_offset": 13,
+              "maximum_persistent_rows": 22,
+              "occurrence": 3,
+              "parent_occurrence": null,
+              "parent_pointer_source": null,
+              "relative_address": [],
+              "relative_address_offset": 0,
+              "semantic_cue": "expression-int-head",
+              "surface": "if",
+              "surface_feedback_source": "t2_map_then_count/002@3",
+              "teacher_position": 3
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "absolute_address_offset": 40,
+              "maximum_persistent_rows": 22,
+              "occurrence": 4,
+              "parent_occurrence": 3,
+              "parent_pointer_source": "t2_map_then_count/002#3",
+              "relative_address": [
+                0
+              ],
+              "relative_address_offset": 1,
+              "semantic_cue": "expression-bool-child-0",
+              "surface": "less-than",
+              "surface_feedback_source": "t2_map_then_count/002@4",
+              "teacher_position": 4
+            },
+            {
+              "absolute_address": [
+                0,
+                0,
+                0,
+                0,
+                1
+              ],
+              "absolute_address_offset": 122,
+              "maximum_persistent_rows": 22,
+              "occurrence": 5,
+              "parent_occurrence": 4,
+              "parent_pointer_source": "t2_map_then_count/002#4",
+              "relative_address": [
+                1
+              ],
+              "relative_address_offset": 2,
+              "semantic_cue": "expression-int-child-1",
+              "surface": "add",
+              "surface_feedback_source": "t2_map_then_count/002@8",
+              "teacher_position": 8
+            }
+          ],
+          "constructor_pointer_row_capacity_upper_bound": 132,
+          "eligible_teacher_api_calls": 22,
+          "physical_learn_steps_per_eligible_teacher_call": 2,
+          "physical_teacher_arrivals": 45,
+          "plan_component_arrivals": 6,
+          "prompt_arrivals": 290,
+          "singleton_eos_arrivals": 1,
+          "teacher_api_calls": 23,
+          "total_learning_arrivals": 347
+        }
+      },
+      "max_pyramidal_cells": 13591,
+      "noninitial_learning_arrivals": 667,
+      "ordinary_segment_rows_upper_bound_including_pointer_cues": 7337,
+      "reserve_pyramidal_cells": 7447,
+      "resets": 2,
+      "segment_capacity": 7447,
+      "segments_per_noninitial_arrival": 11,
+      "total_learning_arrivals": 669
+    },
+    "circuit_identity_sha256": "98e6a3566876e881c6b5ebd1535d99149515594228e5d65a40c9ce697cde3345",
+    "column_count": 768,
+    "physical_cell_count": 29486,
+    "plan_commit_token_id": 2048,
+    "segment_capacity": 7447,
+    "typed_cue_token_ids": {
+      "eos": 2070,
+      "expression-bool-child-0": 2054,
+      "expression-bool-child-1": 2055,
+      "expression-bool-child-2": 2056,
+      "expression-bool-head": 2053,
+      "expression-int-child-0": 2050,
+      "expression-int-child-1": 2051,
+      "expression-int-child-2": 2052,
+      "expression-int-head": 2049,
+      "expression-int-to-int-child-0": 2062,
+      "expression-int-to-int-child-1": 2063,
+      "expression-int-to-int-child-2": 2064,
+      "expression-int-to-int-head": 2061,
+      "expression-list-int-child-0": 2058,
+      "expression-list-int-child-1": 2059,
+      "expression-list-int-child-2": 2060,
+      "expression-list-int-head": 2057,
+      "literal-digit-or-end": 2068,
+      "literal-end": 2069,
+      "literal-first-digit": 2066,
+      "literal-first-nonzero-digit": 2067,
+      "literal-sign": 2065,
+      "operation-component-any-bound": 2074,
+      "operation-component-lower-bound-slot-2": 2072,
+      "operation-component-neutral": 2071,
+      "operation-component-upper-bound-slot-3": 2073
+    },
+    "typed_private_token_ids": [
+      2048,
+      2049,
+      2050,
+      2051,
+      2052,
+      2053,
+      2054,
+      2055,
+      2056,
+      2057,
+      2058,
+      2059,
+      2060,
+      2061,
+      2062,
+      2063,
+      2064,
+      2065,
+      2066,
+      2067,
+      2068,
+      2069,
+      2070,
+      2071,
+      2072,
+      2073,
+      2074,
+      2075,
+      2076,
+      2077,
+      2078,
+      2079,
+      2080,
+      2085,
+      2086,
+      2087,
+      2088,
+      2106,
+      2107,
+      2115,
+      2116,
+      2117,
+      2196,
+      2197,
+      2202,
+      2203,
+      2204,
+      2442,
+      2443,
+      2457,
+      2458
+    ],
+    "typed_surface_token_ids": [
+      1024,
+      1042,
+      1030,
+      1031,
+      1025,
+      1026,
+      1027,
+      1028,
+      1032,
+      1033,
+      1034,
+      1035,
+      1036,
+      1037,
+      1038,
+      1039,
+      1040,
+      1041,
+      1029,
+      256,
+      1043,
+      1044,
+      1045
+    ],
+    "used_token_count": 139,
+    "workspace_reserved_column_count": 561
+  },
+  "protocol": {
+    "language": "python-3.11",
+    "protocol_id": "human-cell-simple-swe-v1",
+    "protocol_sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2"
+  },
+  "public_simple_swe_runtime": {
+    "explicit_repo_venv": "C:\\Users\\laure\\AppData\\Roaming\\uv\\python\\cpython-3.11.15-windows-x86_64-none\\python.exe",
+    "property_cases": 32,
+    "python_runtime": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "regression_cases": 4,
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "runtime": {
+    "elapsed_wall_ns": 40219987100,
+    "helper_source_sha256": "206309e97caa37ec5bdcf15936bf02b1e78684074f0f601f3997cb5e99941b61",
+    "native_binary_sha256": "9e7c7e70d7c023be2a6ae9c5288eadf3bc225bd8a3c8524d1156c805a5736bea",
+    "native_mechanism_source_sha256": {
+      "src/humanbrain/_native_src/src/temporal_runtime.rs": "752dc9d752ef06cde8f3de30247c7842e54ac22b5892331566af4a92f1b04972",
+      "src/humanbrain/_native_src/src/temporal_runtime/checkpoint.rs": "bdb1ab444a826e706b9c8284816a6e54847b0bb6c156723135324fffb377faba",
+      "src/humanbrain/_native_src/src/temporal_runtime/typed_hole_state.rs": "e61a9e8101b5447ef245eda161e99a4e3631f1582b86f37213a36983d9774827",
+      "src/humanbrain/_native_src/src/temporal_runtime/typed_workspace.rs": "4d3ebde3d598e9b1f102c23169ae5d595666e9aef8737cd54822c566d363db1c"
+    },
+    "native_source_digest": "d2911a6533ae084b6d065445444154d7b7a31440eb49111bd05d7b6cccc19bc1",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "3cf58f9eb6dcb6e0ce089ea58fe1ca6ba778546b546f12babf1539bdebc6decb",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "slot_bank": {
+    "copy_control_token_ids": [
+      4294967292,
+      4294967293
+    ],
+    "copy_end_token_id": 4294967294,
+    "donor_copy_slot_schedules": {
+      "t0_scalar_clamp/001": [
+        2,
+        2,
+        3,
+        3
+      ],
+      "t2_map_then_count/002": [
+        3,
+        2
+      ]
+    },
+    "entry_slot_ordinal": 0,
+    "literal_or_lower_bound_or_delta_slot_ordinal": 2,
+    "parameter_slot_ordinal": 1,
+    "slot_count": 4,
+    "target_expected_copy_slot_schedule": [
+      2,
+      2,
+      3,
+      3
+    ],
+    "upper_bound_or_threshold_slot_ordinal": 3
+  },
+  "target_spend_marker": {
+    "artifact_may_coexist_after_attempt": true,
+    "exclusive_create": true,
+    "exists_after_attempt": true,
+    "flushed_and_fsynced_before_generate": true,
+    "path": "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.spent.json",
+    "retained_on_model_failure": true,
+    "sha256": "153639264062c4a242c68d65e4a0c3b8a3104b11585ad2fb23815b5cb78d3dbf",
+    "state": "TARGET_ATTEMPT_SPENT"
+  },
+  "train": {
+    "learned_state_retained_between_tasks": true,
+    "learning_steps_after_train": 669,
+    "live_segments_after_train": 5097,
+    "reset_before_each": true,
+    "tasks": [
+      {
+        "constructor_pointer_allocations": [
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 11,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 44,
+            "surface": "if",
+            "teacher_position": 0
+          },
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 11,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 44,
+            "surface": "less-than",
+            "teacher_position": 1
+          },
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 11,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 44,
+            "surface": "if",
+            "teacher_position": 9
+          },
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 0,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 33,
+            "surface": "less-than",
+            "teacher_position": 10
+          }
+        ],
+        "copy_slot_schedule": [
+          2,
+          2,
+          3,
+          3
+        ],
+        "learning_steps_after_task": 322,
+        "live_segments_after_task": 3519,
+        "prompt_steps": 273,
+        "reset_before": true,
+        "task": {
+          "delta": null,
+          "entry_point": "solve_170d49a7273d556b",
+          "family": "t0_scalar_clamp",
+          "hidden_test_sha256": "f59fde4993af7d14d68dd29d1db112ee76ce30893ece6a80fac7326d52520b07",
+          "lower": "-8",
+          "ordinal": 1,
+          "parameter": "n",
+          "partition": "train",
+          "prompt_token_count": 273,
+          "public_prompt_lossless_after_tokenization": true,
+          "public_prompt_sha256": "9a56cd6184e4f047134ee3e9db0e912c4bc4caceaad42951681788de1443865d",
+          "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/001",
+          "task_sha256": "a16137e73b71c16ffce2f5f4c1455e8e0601da3db7f0909577d5664ae63906cc",
+          "threshold": null,
+          "upper": "8"
+        },
+        "teacher": [
+          "if",
+          "less-than",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "if",
+          "less-than",
+          "integer",
+          "COPY_SLOT_3",
+          "end",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_3",
+          "end",
+          "variable-0",
+          "<EOS>"
+        ],
+        "workspace_api_calls": 21
+      },
+      {
+        "constructor_pointer_allocations": [
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 11,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 44,
+            "surface": "sum",
+            "teacher_position": 0
+          },
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 11,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 44,
+            "surface": "map",
+            "teacher_position": 1
+          },
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 11,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 44,
+            "surface": "bind",
+            "teacher_position": 2
+          },
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 11,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 44,
+            "surface": "if",
+            "teacher_position": 3
+          },
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 0,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 33,
+            "surface": "less-than",
+            "teacher_position": 4
+          },
+          {
+            "actual_pointer_rows": 22,
+            "inferred_transfer_rows": 11,
+            "learning_step_delta": 3,
+            "recruited": true,
+            "returned_exact_rows": 11,
+            "segment_row_delta": 44,
+            "surface": "add",
+            "teacher_position": 8
+          }
+        ],
+        "copy_slot_schedule": [
+          3,
+          2
+        ],
+        "learning_steps_after_task": 669,
+        "live_segments_after_task": 5097,
+        "prompt_steps": 290,
+        "reset_before": true,
+        "task": {
+          "delta": "-2",
+          "entry_point": "solve_da11bb06f61153ef",
+          "family": "t2_map_then_count",
+          "hidden_test_sha256": "7f4f22d6525e5fdf084713e51924dfd80446cfb217c3cd2b9fa00dc8d174d6e2",
+          "lower": null,
+          "ordinal": 2,
+          "parameter": "values",
+          "partition": "train",
+          "prompt_token_count": 290,
+          "public_prompt_lossless_after_tokenization": true,
+          "public_prompt_sha256": "67b8362c12490beeb45f99f9d839ed3695552c191b5143a6a3d9f9013dce5f16",
+          "task_id": "simple-swe-v1/train/tier-2/t2_map_then_count/002",
+          "task_sha256": "01cd6a2a8a9ec79d0c08bd0185e4490d6de062adfa793b4f89e652051bbe1cf0",
+          "threshold": "0",
+          "upper": null
+        },
+        "teacher": [
+          "sum",
+          "map",
+          "bind",
+          "if",
+          "less-than",
+          "integer",
+          "COPY_SLOT_3",
+          "end",
+          "add",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "integer",
+          "+",
+          "1",
+          "end",
+          "integer",
+          "+",
+          "0",
+          "end",
+          "variable-0",
+          "<EOS>"
+        ],
+        "workspace_api_calls": 24
+      }
+    ]
+  },
+  "typed_programs": {
+    "donor_compiler_checks": [
+      {
+        "compiled_source": "def solve_170d49a7273d556b(n):\n    return -8 if n < -8 else 8 if 8 < n else n\n",
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/001",
+        "tokens": [
+          "if",
+          "less-than",
+          "variable-0",
+          "integer",
+          "-",
+          "8",
+          "end",
+          "integer",
+          "-",
+          "8",
+          "end",
+          "if",
+          "less-than",
+          "integer",
+          "+",
+          "8",
+          "end",
+          "variable-0",
+          "integer",
+          "+",
+          "8",
+          "end",
+          "variable-0"
+        ]
+      },
+      {
+        "compiled_source": "def solve_da11bb06f61153ef(values):\n    return sum([1 if 0 < item_0 + -2 else 0 for item_0 in values])\n",
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-2/t2_map_then_count/002",
+        "tokens": [
+          "sum",
+          "map",
+          "bind",
+          "if",
+          "less-than",
+          "integer",
+          "+",
+          "0",
+          "end",
+          "add",
+          "variable-0",
+          "integer",
+          "-",
+          "2",
+          "end",
+          "integer",
+          "+",
+          "1",
+          "end",
+          "integer",
+          "+",
+          "0",
+          "end",
+          "variable-0"
+        ]
+      }
+    ],
+    "target_expected_source": "def solve_11200de88aa84919(values):\n    return sum([-3 if item_0 < -3 else 3 if 3 < item_0 else item_0 for item_0 in values])\n",
+    "target_expected_tokens": [
+      "sum",
+      "map",
+      "bind",
+      "if",
+      "less-than",
+      "variable-0",
+      "integer",
+      "-",
+      "3",
+      "end",
+      "integer",
+      "-",
+      "3",
+      "end",
+      "if",
+      "less-than",
+      "integer",
+      "+",
+      "3",
+      "end",
+      "variable-0",
+      "integer",
+      "+",
+      "3",
+      "end",
+      "variable-0",
+      "variable-0"
+    ],
+    "target_stream_differs_from_every_donor_stream": true
+  },
+  "visible_train_target_teacher_free": {
+    "atomic_no_argument_generation": true,
+    "attempt_number": 1,
+    "copy_slot_schedule": [
+      2,
+      2,
+      3,
+      3
+    ],
+    "copy_trace_exact": false,
+    "copy_transactions": [],
+    "expected_stream_used_only_after_native_close": true,
+    "first_failure": {
+      "detail": {
+        "completed_surface_prefix": 17,
+        "location": 29625,
+        "message": "temporal physical stage stopped",
+        "observed": 0,
+        "poison_code": 7,
+        "required": 0,
+        "stage_code": 3,
+        "status": "SCIENTIFIC_STOP"
+      },
+      "gate": "GENERATION_STOP",
+      "kind": "model",
+      "localization": {
+        "expected_surface": "+",
+        "gate": "GENERATION_STOP",
+        "generation_position": 17,
+        "root_election_is_upstream_of_constructor_pointer": true,
+        "root_expected_surface": "sum",
+        "scope": "descendant"
+      }
+    },
+    "first_failure_localization": {
+      "expected_surface": "+",
+      "gate": "GENERATION_STOP",
+      "generation_position": 17,
+      "root_election_is_upstream_of_constructor_pointer": true,
+      "root_expected_surface": "sum",
+      "scope": "descendant"
+    },
+    "fitted_cell_races_exact": false,
+    "generation_call_count": 1,
+    "generations": [],
+    "private_cases_entered_native_runtime": false,
+    "program": {
+      "compiled_source": null,
+      "compiler_received_prompt": false,
+      "compiler_received_tests": false,
+      "exact_compiled_source": false,
+      "exact_tokens": false,
+      "expected_compiled_source": "def solve_11200de88aa84919(values):\n    return sum([-3 if item_0 < -3 else 3 if 3 < item_0 else item_0 for item_0 in values])\n",
+      "expected_tokens": [
+        "sum",
+        "map",
+        "bind",
+        "if",
+        "less-than",
+        "variable-0",
+        "integer",
+        "-",
+        "3",
+        "end",
+        "integer",
+        "-",
+        "3",
+        "end",
+        "if",
+        "less-than",
+        "integer",
+        "+",
+        "3",
+        "end",
+        "variable-0",
+        "integer",
+        "+",
+        "3",
+        "end",
+        "variable-0",
+        "variable-0"
+      ],
+      "tokens": []
+    },
+    "prompt_steps": 284,
+    "sandbox": {
+      "attempted": false,
+      "detail": "not run because an earlier gate stopped",
+      "passed": false
+    },
+    "target_expected_solution_entered_native_runtime": false,
+    "task": {
+      "delta": null,
+      "entry_point": "solve_11200de88aa84919",
+      "family": "t2_clamp_then_sum",
+      "hidden_test_sha256": "252b293e8dc41ba08135feedf0524015e316b45587820c8c3a1be01e17c13cb2",
+      "lower": "-3",
+      "ordinal": 3,
+      "parameter": "values",
+      "partition": "train",
+      "prompt_token_count": 284,
+      "public_prompt_lossless_after_tokenization": true,
+      "public_prompt_sha256": "49a2bd955d232771590573bcfaeff3922c5d2ce41019abaa4f8e5719db8fdcf0",
+      "task_id": "simple-swe-v1/train/tier-2/t2_clamp_then_sum/003",
+      "task_sha256": "45c180458098a57635740f724c11a034dee634e85fa04fdbbf65b92f20537175",
+      "threshold": null,
+      "upper": "3"
+    },
+    "teacher_tokens_after_prompt": 0,
+    "terminated_by_ordinary_eos": false,
+    "workspace_steps_before_generation": 1
+  }
+}
