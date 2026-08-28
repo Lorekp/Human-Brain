@@ -868,7 +868,7 @@ def test_failed_authority_has_no_execution_fallback(
     assert reached == ["authority"]
 
 
-def test_synthetic_future_authority_completes_development_then_stops_before_confirmation(
+def test_synthetic_future_authority_completes_the_selected_confirmation_path(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -959,8 +959,6 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
         seed: int,
     ) -> dict[str, int]:
         calls.append(f"production:{arm[0]}:{arm[1]}:{seed}")
-        if (arm, seed) == ((16, 18), 3):
-            raise runner.FixtureRunnerStop("synthetic production rejection")
         return {"seed_marker": seed}
 
     def disjoint(
@@ -980,6 +978,16 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
         lambda _authority, *, q255: (
             calls.append("r3")
             or {
+                "arms": [
+                    {
+                        "arm_slug": "theta-m-10_theta-a-13",
+                        "status": "NOT_RUN_Q255_DEVELOPMENT_STOP",
+                    },
+                    {
+                        "arm_slug": "theta-m-16_theta-a-18",
+                        "status": "PASS",
+                    },
+                ],
                 "eligible_arm_order": q255["eligible_arm_order"],
                 "status": "SYNTHETIC_R3_COMPLETE",
             }
@@ -998,8 +1006,36 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
             },
         },
     )
+    monkeypatch.setattr(
+        runner,
+        "_run_independent_confirmation",
+        lambda _authority, *, selected_arm, **_kwargs: (
+            calls.append(f"independent:{selected_arm[0]}:{selected_arm[1]}")
+            or {"status": "PASS_INDEPENDENT_CONFIRMATION"}
+        ),
+    )
+    monkeypatch.setattr(
+        runner,
+        "_run_deterministic_confirmation",
+        lambda _authority, *, selected_arm: (
+            calls.append(f"deterministic:{selected_arm[0]}:{selected_arm[1]}")
+            or {"status": "PASS_DETERMINISTIC_CONFIRMATION"}
+        ),
+    )
+    monkeypatch.setattr(
+        runner,
+        "_publish_final_verdict",
+        lambda _authority, *, selected_arm, first_failed_gate, verdict, **_kwargs: (
+            calls.append(f"final:{verdict}:{selected_arm[0]}:{selected_arm[1]}")
+            or {
+                "first_failed_gate": first_failed_gate,
+                "selected_arm_slug": "theta-m-16_theta-a-18",
+                "verdict": verdict,
+            }
+        ),
+    )
 
-    assert runner.main(["--run-frozen-plan"]) == runner.EXIT_STOP
+    assert runner.main(["--run-frozen-plan"]) == runner.EXIT_OK
     assert calls == [
         "prepare",
         "electrical",
@@ -1008,14 +1044,18 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
         "q4:16:18:3",
         "q4:16:18:7",
         "production:16:18:3",
+        "disjoint:16:18:3",
         "production:16:18:7",
         "disjoint:16:18:7",
         "r3",
         "selection",
+        "independent:16:18",
+        "deterministic:16:18",
+        "final:PASS:16:18",
     ]
     captured = capsys.readouterr()
     result = json.loads(captured.out)
-    assert result["status"] == "STOP_BEFORE_CONFIRMATION"
+    assert result["status"] == "PASS_CALIBRATION_V3"
     assert result["r3_f0_train"]["status"] == "SYNTHETIC_R3_COMPLETE"
     assert result["development_selection"]["selected_arm_slug"] == (
         "theta-m-16_theta-a-18"
@@ -1041,14 +1081,11 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
     }
     assert result["full_cohort_q255"]["arms"][1]["seeds"][0] == {
         "construction_seed": 3,
-        "production_overlap": {
-            "reason": "synthetic production rejection",
-            "status": "STOP",
-        },
-        "status": "STOP_PRODUCTION_OVERLAP",
-        "target_disjoint": {"status": "NOT_RUN_FAIL_FAST"},
+        "production_overlap": {"seed_marker": 3, "status": "PASS"},
+        "status": "PASS_BOTH_REGIMES",
+        "target_disjoint": {"seed_marker": 3, "status": "PASS"},
     }
-    assert "confirmation remains disabled" in captured.err
+    assert captured.err == ""
 
 
 def test_real_native_q4_vertical_slice_reaches_the_frozen_reserve_sentinel(

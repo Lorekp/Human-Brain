@@ -358,3 +358,45 @@ def test_r3_grid_uses_exact_q255_pass_status_in_frozen_arm_order(
     assert result["eligible_arm_order"] == [[10, 13], [18, 20]]
     assert result["arms"][1]["status"] == "NOT_RUN_Q255_DEVELOPMENT_STOP"
     assert result["status"] == "PASS_ALL_Q255_ELIGIBLE_CANDIDATES"
+
+
+def test_r3_grid_propagates_first_preterminal_stop_without_running_later_arms(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arms = ((10, 13), (16, 18))
+    protocol = {
+        "source_binding": {"runnable": True},
+        "threshold_selection": {"candidate_arms": [list(arm) for arm in arms]},
+    }
+    authority = authority_contract.FrozenPlanAuthority(
+        repository_root=Path.cwd(),
+        protocol=protocol,
+        protocol_sha256=hashlib.sha256(
+            protocol_authority.canonical_json_bytes(protocol)
+        ).hexdigest(),
+        source_bundle_identity_sha256="a" * 64,
+    )
+    q255_rows = [
+        {
+            "arm_slug": f"theta-m-{arm[0]}_theta-a-{arm[1]}",
+            "status": "PASS_ALL_DEVELOPMENT_SEEDS",
+            "theta_active": arm[1],
+            "theta_match": arm[0],
+        }
+        for arm in arms
+    ]
+    calls: list[tuple[int, int]] = []
+
+    def stop(_authority: object, *, arm: tuple[int, int]) -> dict[str, object]:
+        calls.append(arm)
+        raise runner.FixtureRunnerStop("synthetic preterminal STOP")
+
+    monkeypatch.setattr(runner, "_run_source_bound_r3_f0_development", stop)
+
+    with pytest.raises(runner.FixtureRunnerStop, match="synthetic preterminal STOP"):
+        runner._run_development_r3_f0_screens(
+            authority,
+            q255={"arms": q255_rows},
+        )
+
+    assert calls == [(10, 13)]

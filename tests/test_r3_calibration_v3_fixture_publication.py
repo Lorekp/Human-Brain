@@ -190,18 +190,23 @@ def test_development_coordinates_publish_once_with_exact_absence_and_selection(
         return {"arms": rows, "status": "SYNTHETIC_R3_COMPLETE"}
 
     monkeypatch.setattr(runner, "_run_development_r3_f0_screens", r3)
+    monkeypatch.setattr(
+        runner,
+        "_run_independent_confirmation",
+        lambda _authority, **_kwargs: {
+            "status": "PASS_INDEPENDENT_CONFIRMATION"
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "_run_deterministic_confirmation",
+        lambda _authority, **_kwargs: {
+            "status": "PASS_DETERMINISTIC_CONFIRMATION"
+        },
+    )
 
-    with pytest.raises(runner.FixtureRunnerStop) as stopped:
-        runner._execute_frozen_plan(authority)
-
-    result = stopped.value.result
-    assert result is not None
-    assert result["status"] == "STOP_BEFORE_CONFIRMATION"
+    assert runner._execute_frozen_plan(authority) == runner.EXIT_OK
     selected_slug = f"theta-m-{arms[-1][0]}_theta-a-{arms[-1][1]}"
-    assert result["development_selection"]["selected_arm_slug"] == selected_slug
-    assert result["development_selection"]["verdicts"] == {
-        f"theta-m-{arm[0]}_theta-a-{arm[1]}": arm == arms[-1] for arm in arms
-    }
     assert max(index for index, event in enumerate(events) if event.startswith("prepare:")) < (
         events.index("electrical")
     )
@@ -240,7 +245,8 @@ def test_development_coordinates_publish_once_with_exact_absence_and_selection(
         for path in regime[disjoint_stopped_slug]
     )
     assert (tmp_path / contract["selection"]["development"]).is_file()
-    assert len([event for event in events if event.startswith("publish:")]) == 44
+    assert (tmp_path / contract["selection"]["final"]).is_file()
+    assert len([event for event in events if event.startswith("publish:")]) == 45
 
     store = persistence.CalibrationV3ArtifactStore.open(
         repository_root=tmp_path,
@@ -259,6 +265,12 @@ def test_development_coordinates_publish_once_with_exact_absence_and_selection(
     assert disjoint_stop.payload["result"]["status"] == "STOP"
     selection = store.read(contract["selection"]["development"])
     assert selection.payload["result"]["selected_arm_slug"] == selected_slug
+    final = store.read(contract["selection"]["final"])
+    assert final.payload["result"] == {
+        "first_failed_gate": None,
+        "selected_arm_slug": selected_slug,
+        "verdict": "PASS_R3_CALIBRATION_V3",
+    }
 
 
 def test_no_q255_plus_r3_pass_leaves_development_selection_absent(
@@ -317,3 +329,52 @@ def test_no_q255_plus_r3_pass_leaves_development_selection_absent(
     selection_path = protocol["artifact_contract"]["selection"]["development"]
     assert not (tmp_path / selection_path).exists()
     assert not any(event.startswith("publish:") for event in events)
+
+
+@pytest.mark.parametrize(
+    ("subdirectory", "selected", "gate"),
+    (
+        ("pre-selection", None, "development_selection"),
+        ("post-selection", (18, 20), "independent_confirmation"),
+    ),
+)
+def test_final_reject_codec_preserves_pre_and_post_selection_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    subdirectory: str,
+    selected: tuple[int, int] | None,
+    gate: str,
+) -> None:
+    repository_root = tmp_path / subdirectory
+    repository_root.mkdir()
+    authority = _authority(repository_root)
+    events: list[str] = []
+    _install_native_publication(monkeypatch, events)
+    store, native_module = runner._open_development_artifact_store(authority)
+
+    receipt = runner._publish_final_verdict(
+        authority,
+        store=store,
+        native=native_module,
+        selected_arm=selected,
+        first_failed_gate=gate,
+        verdict="REJECT",
+    )
+
+    final = store.read(authority.protocol["artifact_contract"]["selection"]["final"])
+    selected_slug = (
+        None
+        if selected is None
+        else f"theta-m-{selected[0]}_theta-a-{selected[1]}"
+    )
+    assert receipt["verdict"] == "REJECT_R3_CALIBRATION_V3"
+    assert final.payload["result"] == {
+        "first_failed_gate": gate,
+        "selected_arm_slug": selected_slug,
+        "verdict": "REJECT_R3_CALIBRATION_V3",
+    }
+    assert final.payload["thresholds"] == (
+        None
+        if selected is None
+        else {"theta_active": selected[1], "theta_match": selected[0]}
+    )

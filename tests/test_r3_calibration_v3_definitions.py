@@ -151,3 +151,45 @@ def test_q4_factory_is_bounded_and_matches_its_frozen_native_identity() -> None:
             protocol.THRESHOLD_ARMS[0],
             protocol.DEVELOPMENT_SEEDS[0],
         )
+
+
+def test_confirmation_factories_accept_only_the_frozen_confirmation_seeds() -> None:
+    frozen = protocol.build_protocol()
+    arm = protocol.THRESHOLD_ARMS[0]
+
+    for seed in protocol.CONFIRMATION_SEEDS:
+        q4 = definitions.build_compressed_reserve_q4_confirmation_definition(
+            frozen,
+            arm,
+            seed,
+        )
+        production = (
+            definitions.build_full_cohort_q255_confirmation_production_definition(
+                frozen,
+                arm,
+                seed,
+            )
+        )
+        disjoint = (
+            definitions.build_full_cohort_q255_confirmation_disjoint_definition(
+                frozen,
+                arm,
+                seed,
+            )
+        )
+
+        assert q4.config.construction_seed == seed
+        assert q4.config.segment_capacity == 1_419
+        assert production.config.construction_seed == seed
+        assert production.config.segment_capacity == 22_451
+        assert disjoint.config.construction_seed == seed
+        assert disjoint.config.segment_capacity == 22_451
+        assert production.circuit_identity_sha256() != disjoint.circuit_identity_sha256()
+
+    for factory in (
+        definitions.build_compressed_reserve_q4_confirmation_definition,
+        definitions.build_full_cohort_q255_confirmation_production_definition,
+        definitions.build_full_cohort_q255_confirmation_disjoint_definition,
+    ):
+        with pytest.raises(protocol.ProtocolError, match="frozen seed scope"):
+            factory(frozen, arm, protocol.DEVELOPMENT_SEEDS[0])
