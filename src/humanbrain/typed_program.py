@@ -96,6 +96,14 @@ class Program:
 
 
 @dataclass(frozen=True, slots=True)
+class ProgramEditSite:
+    """One stable expression path and its complete prefix-token subtree."""
+
+    path: tuple[int, ...]
+    tokens: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class CompiledPython:
     """Structurally emitted, unannotated Python source."""
 
@@ -774,6 +782,8 @@ class _TypedHoleState:
 @dataclass(frozen=True, slots=True)
 class _Expression:
     spec: _PrimitiveSpec
+    token_start: int
+    token_stop: int
     children: tuple[_Expression, ...] = ()
     variable_index: int | None = None
     integer_value: int | None = None
@@ -791,7 +801,15 @@ def _parse_expression(
         raise ProgramFormatError(f"unknown program token {tokens[index]!r}") from error
 
     if spec.role == "variable":
-        return _Expression(spec, variable_index=int(spec.value)), index + 1
+        return (
+            _Expression(
+                spec,
+                token_start=index,
+                token_stop=index + 1,
+                variable_index=int(spec.value),
+            ),
+            index + 1,
+        )
     if spec.role == "literal":
         cursor = index + 1
         if cursor >= len(tokens) or _SPEC_BY_TOKEN.get(tokens[cursor]) is None:
@@ -815,10 +833,26 @@ def _parse_expression(
             raise ProgramFormatError("integer literal is incomplete")
         magnitude = int("".join(str(digit) for digit in digits))
         integer_value = -magnitude if sign_spec.value == "-" else magnitude
-        return _Expression(spec, integer_value=integer_value), cursor + 1
+        return (
+            _Expression(
+                spec,
+                token_start=index,
+                token_stop=cursor + 1,
+                integer_value=integer_value,
+            ),
+            cursor + 1,
+        )
     if spec.role == "binder":
         body, cursor = _parse_expression(tokens, index + 1)
-        return _Expression(spec, children=(body,)), cursor
+        return (
+            _Expression(
+                spec,
+                token_start=index,
+                token_stop=cursor,
+                children=(body,),
+            ),
+            cursor,
+        )
     if spec.role != "operation":
         raise ProgramFormatError("structural token cannot fill an expression hole")
     cursor = index + 1
@@ -826,7 +860,15 @@ def _parse_expression(
     for _ in spec.arguments:
         child, cursor = _parse_expression(tokens, cursor)
         children.append(child)
-    return _Expression(spec, children=tuple(children)), cursor
+    return (
+        _Expression(
+            spec,
+            token_start=index,
+            token_stop=cursor,
+            children=tuple(children),
+        ),
+        cursor,
+    )
 
 
 def _expression_metrics(expression: _Expression) -> tuple[int, int]:
@@ -860,6 +902,65 @@ def _validate_program(tokens: tuple[str, ...], signature: TypedSignature) -> _Ex
     if depth > _MAX_AST_DEPTH:
         raise ProgramFormatError("program exceeds the Layer-1 AST depth bound")
     return expression
+
+
+def program_edit_sites(program: Program) -> tuple[ProgramEditSite, ...]:
+    """Return every expression subtree in stable preorder path order."""
+
+    if not isinstance(program, Program):
+        raise TypeError("program must be a Program")
+    root = _validate_program(program.tokens, program.signature)
+    sites: list[ProgramEditSite] = []
+
+    def visit(expression: _Expression, path: tuple[int, ...]) -> None:
+        sites.append(
+            ProgramEditSite(
+                path=path,
+                tokens=program.tokens[expression.token_start : expression.token_stop],
+            )
+        )
+        for child_index, child in enumerate(expression.children):
+            visit(child, (*path, child_index))
+
+    visit(root, ())
+    return tuple(sites)
+
+
+def replace_subtree(
+    program: Program,
+    path: tuple[int, ...],
+    replacement_tokens: tuple[str, ...],
+) -> Program:
+    """Replace one expression subtree and validate the complete typed result."""
+
+    if not isinstance(program, Program):
+        raise TypeError("program must be a Program")
+    if not isinstance(path, tuple) or not all(
+        type(part) is int and part >= 0 for part in path
+    ):
+        raise TypeError("edit path must be a tuple of non-negative integers")
+    if not isinstance(replacement_tokens, tuple) or not replacement_tokens:
+        raise ValueError("replacement tokens must be a non-empty tuple")
+    if not all(isinstance(token, str) and token for token in replacement_tokens):
+        raise TypeError("replacement tokens must be non-empty strings")
+    _, replacement_stop = _parse_expression(replacement_tokens, 0)
+    if replacement_stop != len(replacement_tokens):
+        raise ProgramFormatError("replacement must contain exactly one expression")
+
+    root = _validate_program(program.tokens, program.signature)
+    selected = root
+    for part in path:
+        if part >= len(selected.children):
+            raise ValueError(f"program has no edit site at path {path!r}")
+        selected = selected.children[part]
+    tokens = (
+        *program.tokens[: selected.token_start],
+        *replacement_tokens,
+        *program.tokens[selected.token_stop :],
+    )
+    edited = Program(tokens, program.signature)
+    compile(edited)
+    return edited
 
 
 def _program_token_ids(tokens: Sequence[str]) -> tuple[int, ...]:
@@ -1543,6 +1644,7 @@ __all__ = [
     "Layer1Protocol",
     "PersistentStateChangedError",
     "Program",
+    "ProgramEditSite",
     "ProgramFormatError",
     "ProgramParameter",
     "ProgramRaceAudit",
@@ -1551,4 +1653,6 @@ __all__ = [
     "compile",
     "complete",
     "grow",
+    "program_edit_sites",
+    "replace_subtree",
 ]

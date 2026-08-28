@@ -284,6 +284,23 @@ seed/budget will not be searched. The successor must put raw execution
 observations into a persistent learned cell/synapse policy so proposals are
 conditioned rather than brute-forced.
 
+The first target-free sensorimotor successor stopped even earlier, at its
+exploration seam. Raw before/after executions entered fitted thermometer and
+opponent relation populations, and a sparse local readout was prepared to bind
+each effect to the physical motor winner through an efference copy. Attempt 0
+aborted before learning because the inherited 0.01 pA output heterogeneity put
+all 20 inverse cells in one 0.05 ms spike bin. With no record, learned state, or
+artifact produced, one target-independent repair reused the already-frozen
+4 pA motor dispersion. The sole adjudicative run then completed one learning
+episode (`OFFSET_ROOT[-8]`) and stopped at episode 2 when the persistent motor
+population produced four simultaneous spikes. Coverage, checkpoint freeze, and
+both ±3 gates remained unopened. This is `STOP_NON_UNIQUE_MOTOR_RACE`; the seed,
+dispersion, reset policy, curriculum, and action bank will not be tuned. It
+closes this homogeneous persistent-population babbling scheduler, while leaving
+inverse effect recall itself untested. The next increment must obtain actions
+from a structurally unique competition or from environment-triggered policy
+updates, not another parameter repair of this scheduler.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

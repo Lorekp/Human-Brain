@@ -1,0 +1,55 @@
+{
+  "schema": "public-typed-sensorimotor-edit-controller-stop-v1",
+  "seed": 17,
+  "motor_episodes_planned": 100,
+  "attempt_0": {
+    "classification": "mechanical_fixture_abort_unspent",
+    "failure": "The first untrained inverse-learning race produced 20 simultaneous spikes because 0.01 pA output heterogeneity quantized into one fitted 0.05 ms spike bin.",
+    "learning_updates": 0,
+    "curriculum_records": 0,
+    "artifact_created": false,
+    "gate_arms_opened": false
+  },
+  "target_independent_repair": {
+    "change": "output race heterogeneity standard deviation 0.01 pA -> 4.0 pA",
+    "rationale": "Reuse the frozen motor-babble dispersion so fitted-cell dynamics, rather than host array order, resolve the first race.",
+    "unchanged": [
+      "seed",
+      "RNG draw count",
+      "readout anatomy",
+      "action bank",
+      "argument grids",
+      "transition encoder",
+      "learning rule and constants",
+      "coverage gate",
+      "plus/minus A/B gate"
+    ],
+    "preflight": {
+      "first_winner": "OFFSET_ROOT[+3]",
+      "first_spike_step_zero_based": 229,
+      "runner_up_first_spike_step_zero_based": 230,
+      "simultaneous_spike_candidates": 1
+    }
+  },
+  "adjudicative_attempt": {
+    "completed_learning_episodes_before_stop": 1,
+    "first_motor_winner": "OFFSET_ROOT[-8]",
+    "failure_stage": "motor_episode_2_race",
+    "failure": "motor-babble fitted-cell race produced 4 simultaneous spikes",
+    "coverage_computed": false,
+    "frozen_checkpoint_created": false,
+    "gate_arms_opened": false,
+    "runner_artifact_created": false
+  },
+  "diagnostic_replay": {
+    "scope": "motor population only; no transition encoding, learning, checkpoint freeze, or A/B arm",
+    "completed_winners": [
+      "OFFSET_ROOT[-8]"
+    ],
+    "stop_episode": 2,
+    "simultaneous_spike_candidates": 4
+  },
+  "verdict": "STOP_NON_UNIQUE_MOTOR_RACE",
+  "retry_policy": "No further race repair, seed search, dispersion tuning, population reset, curriculum change, action-bank change, or gate execution.",
+  "claim_boundary": "Terminal evidence against this persistent homogeneous fitted-population motor-babble scheduler under the frozen settings. The inverse-effect learner and plus/minus recall gate were not reached, so they are neither validated nor falsified. This is public precanonical architecture evidence, not composition, Simple-SWE, M0, held-out, C1, or broad coding evidence."
+}

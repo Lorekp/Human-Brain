@@ -15,6 +15,7 @@ from humanbrain.typed_program import (
     FrozenCheckpoint,
     Layer1Protocol,
     Program,
+    ProgramEditSite,
     ProgramFormatError,
     ProgramParameter,
     ProgramType,
@@ -22,6 +23,8 @@ from humanbrain.typed_program import (
     compile,
     complete,
     grow,
+    program_edit_sites,
+    replace_subtree,
 )
 
 
@@ -651,6 +654,75 @@ def test_subtract_is_a_general_binary_int_primitive_with_literal_operand_order()
 
     assert compile(input_first).source == "def difference(value):\n    return value - 7\n"
     assert compile(literal_first).source == "def difference(value):\n    return 7 - value\n"
+
+
+def test_program_edit_seam_exposes_paths_and_replaces_one_typed_subtree() -> None:
+    signature = TypedSignature(
+        entry_point="offset",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    program = Program(
+        ("add", "variable-0", "integer", "+", "3", "end"),
+        signature,
+    )
+
+    assert program_edit_sites(program) == (
+        ProgramEditSite((), program.tokens),
+        ProgramEditSite((0,), ("variable-0",)),
+        ProgramEditSite((1,), ("integer", "+", "3", "end")),
+    )
+
+    edited = replace_subtree(
+        program,
+        (0,),
+        ("absolute", "variable-0"),
+    )
+    assert compile(edited).source == "def offset(value):\n    return abs(value) + 3\n"
+
+
+def test_program_edit_seam_rejects_unknown_paths_and_ill_typed_replacements() -> None:
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    program = Program(("variable-0",), signature)
+
+    with pytest.raises(ValueError, match="no edit site"):
+        replace_subtree(program, (0,), ("variable-0",))
+    with pytest.raises(ProgramFormatError):
+        replace_subtree(program, (), ("less-than", "variable-0", "variable-0"))
+
+    binary = Program(("add", "variable-0", "variable-0"), signature)
+    with pytest.raises(ProgramFormatError, match="exactly one expression"):
+        replace_subtree(binary, (0,), ("variable-0", "absolute"))
+
+    list_integer = ProgramType.List(ProgramType.Int())
+    map_signature = TypedSignature(
+        entry_point="mapped",
+        parameters=(ProgramParameter("values", list_integer),),
+        result=list_integer,
+    )
+    mapped = Program(("map", "bind", "variable-0", "variable-0"), map_signature)
+    function_valued_if = (
+        "if",
+        "less-than",
+        "integer",
+        "+",
+        "0",
+        "end",
+        "integer",
+        "+",
+        "1",
+        "end",
+        "bind",
+        "variable-0",
+        "bind",
+        "variable-0",
+    )
+    with pytest.raises(ProgramFormatError, match="map requires one explicit binder"):
+        replace_subtree(mapped, (0,), function_valued_if)
 
 
 def test_variable_one_selects_the_outer_parameter_and_is_masked_without_it() -> None:
