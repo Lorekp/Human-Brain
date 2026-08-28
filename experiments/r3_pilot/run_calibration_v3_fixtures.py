@@ -165,6 +165,12 @@ def _transaction_module() -> ModuleType:
     return importlib.import_module("calibration_v3_transaction")
 
 
+def _persistence_module() -> ModuleType:
+    if __package__:
+        return importlib.import_module(f"{__package__}.calibration_v3_persistence")
+    return importlib.import_module("calibration_v3_persistence")
+
+
 def _train_input_module() -> ModuleType:
     if __package__:
         return importlib.import_module(f"{__package__}.r3_f0_train_input")
@@ -181,7 +187,150 @@ def _native_temporal_module() -> ModuleType:
     return importlib.import_module("humanbrain.native_temporal_runtime")
 
 
-def _run_electrical_v3_prerequisite() -> None:
+def _open_development_artifact_store(
+    authority: authority_contract.FrozenPlanAuthority,
+) -> tuple[object, ModuleType]:
+    """Open and durably prepare the full frozen namespace before execution."""
+
+    persistence = _persistence_module()
+    native = _native_temporal_module()
+    transaction = _transaction_module()
+    try:
+        store = persistence.CalibrationV3ArtifactStore.open(
+            repository_root=authority.repository_root,
+            validated_protocol=authority.protocol,
+            expected_source_bundle_identity_sha256=(
+                authority.source_bundle_identity_sha256
+            ),
+        )
+        for repository_root, relative_directory in store.durable_directory_requests():
+            preparation = native.prepare_durable_directory(
+                repository_root,
+                Path(relative_directory),
+            )
+            transaction._require_durable_directory_preparation(preparation, native)
+    except Exception as exc:
+        raise FixtureRunnerStop(f"development artifact namespace STOP: {exc}") from exc
+    return store, native
+
+
+def _development_result_payload(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    artifact_path: str,
+    construction_seeds: Sequence[int],
+    result: dict[str, object],
+    screen_id: str,
+    thresholds: tuple[int, int] | None,
+) -> dict[str, object]:
+    protocol = authority.protocol
+    return {
+        "artifact_path": artifact_path,
+        "claim_boundary": protocol["claim_boundary"],
+        "construction_seeds": list(construction_seeds),
+        "phase": "development",
+        "protocol_sha256": authority.protocol_sha256,
+        "result": result,
+        "screen_id": screen_id,
+        "source_binding": protocol["source_binding"],
+        "source_bundle_identity_sha256": (
+            authority.source_bundle_identity_sha256
+        ),
+        "thresholds": (
+            {}
+            if thresholds is None
+            else {
+                "theta_active": thresholds[1],
+                "theta_match": thresholds[0],
+            }
+        ),
+    }
+
+
+def _publish_development_result(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    store: object,
+    native: ModuleType,
+    artifact_path: str,
+    construction_seeds: Sequence[int],
+    result: dict[str, object],
+    screen_id: str,
+    thresholds: tuple[int, int] | None,
+) -> dict[str, str]:
+    """Exclusively publish and reopen one exact DEVELOPMENT result envelope."""
+
+    payload = _development_result_payload(
+        authority,
+        artifact_path=artifact_path,
+        construction_seeds=construction_seeds,
+        result=result,
+        screen_id=screen_id,
+        thresholds=thresholds,
+    )
+    try:
+        encoded = store.encode_result(payload)
+        destination = store.prepare_absent_result(artifact_path)
+        publication = native.publish_immutable_bytes(destination, encoded)
+        _transaction_module()._validate_manifest_publication(
+            publication,
+            encoded,
+            native,
+        )
+        confirmed = store.confirm_exact(artifact_path, encoded)
+        reopened = store.read(artifact_path)
+    except Exception as exc:
+        raise FixtureRunnerStop(
+            f"development artifact publication STOP at {artifact_path}: {exc}"
+        ) from exc
+    if confirmed.payload_sha256 != reopened.payload_sha256:
+        raise FixtureRunnerStop(
+            f"development artifact payload SHA drift after reopen at {artifact_path}"
+        )
+    return {
+        "artifact_path": artifact_path,
+        "payload_sha256": reopened.payload_sha256,
+    }
+
+
+def _publish_development_electrical_results(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    store: object,
+    native: ModuleType,
+    replay: dict[str, object],
+) -> list[dict[str, str]]:
+    """Publish only DEVELOPMENT seed rows from the all-seed electrical replay."""
+
+    protocol = authority.protocol
+    seeds = tuple(protocol["threshold_selection"]["development_seeds"])
+    paths = protocol["artifact_contract"]["electrical_v3"]["development"]
+    rows = replay.get("seeds")
+    if type(paths) is not list or len(paths) != len(seeds) or type(rows) is not dict:
+        raise FixtureRunnerStop("electrical-v3 development artifact grid is incomplete")
+    receipts: list[dict[str, str]] = []
+    for seed, artifact_path in zip(seeds, paths, strict=True):
+        row = rows.get(str(seed))
+        if type(row) is not dict or row.get("seed") != seed:
+            raise FixtureRunnerStop(
+                f"electrical-v3 development seed {seed} result is not exact"
+            )
+        receipts.append(
+            _publish_development_result(
+                authority,
+                store=store,
+                native=native,
+                artifact_path=artifact_path,
+                construction_seeds=(seed,),
+                result=row,
+                screen_id="electrical_v3",
+                thresholds=None,
+            )
+        )
+    return receipts
+
+
+def _run_electrical_v3_prerequisite() -> dict[str, object]:
     """Run the existing GLIF3 coupled-race sweep before any q=4 work."""
 
     electrical = _electrical_v3_module()
@@ -189,8 +338,12 @@ def _run_electrical_v3_prerequisite() -> None:
         result = electrical.run_replay()
     except electrical.CalibrationError as exc:
         raise FixtureRunnerStop(f"electrical-v3 STOP: {exc}") from exc
-    if type(result) is not dict or result.get("verdict") != ("PASS_RESERVE_VALID_ELECTRICAL_V3"):
-        raise FixtureRunnerStop("electrical-v3 STOP: reserve-valid verdict did not pass")
+    if type(result) is not dict or result.get("verdict") not in {
+        "PASS_RESERVE_VALID_ELECTRICAL_V3",
+        "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+    }:
+        raise FixtureRunnerStop("electrical-v3 STOP: reserve-valid verdict is not exact")
+    return result
 
 
 def _run_source_bound_q4_development_slice(
@@ -598,6 +751,9 @@ def _run_source_bound_q255_vertical_slices(
 
 def _run_development_q4_screens(
     authority: authority_contract.FrozenPlanAuthority,
+    *,
+    store: object,
+    native: ModuleType,
 ) -> dict[str, object]:
     """Run every frozen q=4 development coordinate before q=255."""
 
@@ -607,8 +763,20 @@ def _run_development_q4_screens(
     arm_results: list[dict[str, object]] = []
 
     for arm in candidate_arms:
+        arm_slug = f"theta-m-{arm[0]}_theta-a-{arm[1]}"
+        artifact_paths = authority.protocol["artifact_contract"][
+            "compressed_reserve_q4"
+        ]["development"][arm_slug]
+        if type(artifact_paths) is not list or len(artifact_paths) != len(
+            development_seeds
+        ):
+            raise FixtureRunnerStop(f"q4 artifact path grid is incomplete for {arm_slug}")
         seed_results: list[dict[str, object]] = []
-        for seed in development_seeds:
+        for seed, artifact_path in zip(
+            development_seeds,
+            artifact_paths,
+            strict=True,
+        ):
             try:
                 result = _run_source_bound_q4_development_slice(
                     authority,
@@ -616,26 +784,44 @@ def _run_development_q4_screens(
                     seed=seed,
                 )
             except FixtureRunnerStop as exc:
-                seed_results.append(
-                    {
-                        "construction_seed": seed,
-                        "reason": str(exc),
-                        "status": "STOP",
-                    }
-                )
-                continue
-            seed_results.append(
-                {
+                fixture_result: dict[str, object] = {
                     "construction_seed": seed,
-                    "status": "PASS",
-                    **result,
+                    "reason": str(exc),
+                    "status": "STOP",
                 }
+                _publish_development_result(
+                    authority,
+                    store=store,
+                    native=native,
+                    artifact_path=artifact_path,
+                    construction_seeds=(seed,),
+                    result=fixture_result,
+                    screen_id="compressed_reserve_q4",
+                    thresholds=arm,
+                )
+                seed_results.append(fixture_result)
+                continue
+            fixture_result = {
+                "construction_seed": seed,
+                "status": "PASS",
+                **result,
+            }
+            _publish_development_result(
+                authority,
+                store=store,
+                native=native,
+                artifact_path=artifact_path,
+                construction_seeds=(seed,),
+                result=fixture_result,
+                screen_id="compressed_reserve_q4",
+                thresholds=arm,
             )
+            seed_results.append(fixture_result)
 
         arm_passed = all(result["status"] == "PASS" for result in seed_results)
         arm_results.append(
             {
-                "arm_slug": f"theta-m-{arm[0]}_theta-a-{arm[1]}",
+                "arm_slug": arm_slug,
                 "seeds": seed_results,
                 "status": (
                     "PASS_ALL_DEVELOPMENT_SEEDS"
@@ -668,6 +854,8 @@ def _run_development_q255_screens(
     authority: authority_contract.FrozenPlanAuthority,
     *,
     q4: dict[str, object],
+    store: object,
+    native: ModuleType,
 ) -> dict[str, object]:
     """Run q=255 only for arms passing their entire q=4 seed set."""
 
@@ -695,8 +883,28 @@ def _run_development_q255_screens(
             )
             continue
 
+        production_paths = authority.protocol["artifact_contract"][
+            "full_cohort_q255"
+        ]["development"]["production-overlap-ordered-pairs"][arm_slug]
+        disjoint_paths = authority.protocol["artifact_contract"][
+            "full_cohort_q255"
+        ]["development"]["target-disjoint-isolation-control"][arm_slug]
+        if (
+            type(production_paths) is not list
+            or type(disjoint_paths) is not list
+            or len(production_paths) != len(development_seeds)
+            or len(disjoint_paths) != len(development_seeds)
+        ):
+            raise FixtureRunnerStop(
+                f"q255 artifact path grid is incomplete for {arm_slug}"
+            )
         seed_results: list[dict[str, object]] = []
-        for seed in development_seeds:
+        for seed, production_path, disjoint_path in zip(
+            development_seeds,
+            production_paths,
+            disjoint_paths,
+            strict=True,
+        ):
             try:
                 production = _run_source_bound_q255_production_slice(
                     authority,
@@ -704,19 +912,41 @@ def _run_development_q255_screens(
                     seed=seed,
                 )
             except FixtureRunnerStop as exc:
+                production_result: dict[str, object] = {
+                    "reason": str(exc),
+                    "status": "STOP",
+                }
+                _publish_development_result(
+                    authority,
+                    store=store,
+                    native=native,
+                    artifact_path=production_path,
+                    construction_seeds=(seed,),
+                    result=production_result,
+                    screen_id="full_cohort_q255",
+                    thresholds=arm,
+                )
                 seed_results.append(
                     {
                         "construction_seed": seed,
-                        "production_overlap": {
-                            "reason": str(exc),
-                            "status": "STOP",
-                        },
+                        "production_overlap": production_result,
                         "status": "STOP_PRODUCTION_OVERLAP",
                         "target_disjoint": {"status": "NOT_RUN_FAIL_FAST"},
                     }
                 )
                 continue
 
+            production_result = {"status": "PASS", **production}
+            _publish_development_result(
+                authority,
+                store=store,
+                native=native,
+                artifact_path=production_path,
+                construction_seeds=(seed,),
+                result=production_result,
+                screen_id="full_cohort_q255",
+                thresholds=arm,
+            )
             try:
                 disjoint = _run_source_bound_q255_disjoint_slice(
                     authority,
@@ -724,25 +954,47 @@ def _run_development_q255_screens(
                     seed=seed,
                 )
             except FixtureRunnerStop as exc:
+                disjoint_result: dict[str, object] = {
+                    "reason": str(exc),
+                    "status": "STOP",
+                }
+                _publish_development_result(
+                    authority,
+                    store=store,
+                    native=native,
+                    artifact_path=disjoint_path,
+                    construction_seeds=(seed,),
+                    result=disjoint_result,
+                    screen_id="full_cohort_q255",
+                    thresholds=arm,
+                )
                 seed_results.append(
                     {
                         "construction_seed": seed,
-                        "production_overlap": {"status": "PASS", **production},
+                        "production_overlap": production_result,
                         "status": "STOP_TARGET_DISJOINT",
-                        "target_disjoint": {
-                            "reason": str(exc),
-                            "status": "STOP",
-                        },
+                        "target_disjoint": disjoint_result,
                     }
                 )
                 continue
 
+            disjoint_result = {"status": "PASS", **disjoint}
+            _publish_development_result(
+                authority,
+                store=store,
+                native=native,
+                artifact_path=disjoint_path,
+                construction_seeds=(seed,),
+                result=disjoint_result,
+                screen_id="full_cohort_q255",
+                thresholds=arm,
+            )
             seed_results.append(
                 {
                     "construction_seed": seed,
-                    "production_overlap": {"status": "PASS", **production},
+                    "production_overlap": production_result,
                     "status": "PASS_BOTH_REGIMES",
-                    "target_disjoint": {"status": "PASS", **disjoint},
+                    "target_disjoint": disjoint_result,
                 }
             )
 
@@ -1045,21 +1297,157 @@ def _run_development_r3_f0_screens(
     }
 
 
+def _publish_development_selection(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    store: object,
+    native: ModuleType,
+    q255: dict[str, object],
+    r3_f0: dict[str, object],
+) -> dict[str, object]:
+    """Publish the first exact q255+R3 development pass, if one exists."""
+
+    protocol = authority.protocol
+    candidate_arms = tuple(
+        tuple(row) for row in protocol["threshold_selection"]["candidate_arms"]
+    )
+    q255_rows = q255.get("arms")
+    r3_rows = r3_f0.get("arms")
+    if (
+        type(q255_rows) is not list
+        or type(r3_rows) is not list
+        or len(q255_rows) != len(candidate_arms)
+        or len(r3_rows) != len(candidate_arms)
+    ):
+        raise FixtureRunnerStop("development selection rows do not cover frozen candidates")
+
+    verdicts: dict[str, bool] = {}
+    for arm, q255_row, r3_row in zip(
+        candidate_arms,
+        q255_rows,
+        r3_rows,
+        strict=True,
+    ):
+        arm_slug = f"theta-m-{arm[0]}_theta-a-{arm[1]}"
+        for label, row in (("q255", q255_row), ("R3-F0", r3_row)):
+            if (
+                type(row) is not dict
+                or row.get("arm_slug") != arm_slug
+                or row.get("theta_match") != arm[0]
+                or row.get("theta_active") != arm[1]
+            ):
+                raise FixtureRunnerStop(
+                    f"development selection {label} row differs from frozen arm order"
+                )
+        verdicts[arm_slug] = bool(
+            q255_row.get("status") == "PASS_ALL_DEVELOPMENT_SEEDS"
+            and r3_row.get("status") == "PASS"
+            and r3_row.get("verdict") == "PASS_R3_F0_TRAIN_STRUCTURE"
+        )
+
+    selected = next(
+        (
+            (arm_slug, arm)
+            for arm_slug, arm in zip(verdicts, candidate_arms, strict=True)
+            if verdicts[arm_slug]
+        ),
+        None,
+    )
+    artifact_path = protocol["artifact_contract"]["selection"]["development"]
+    if selected is None:
+        return {
+            "artifact_path": artifact_path,
+            "selected_arm_slug": None,
+            "status": "STOP_NO_PASSING_DEVELOPMENT_CANDIDATE",
+            "verdicts": verdicts,
+        }
+
+    selected_arm_slug, selected_arm = selected
+    receipt = _publish_development_result(
+        authority,
+        store=store,
+        native=native,
+        artifact_path=artifact_path,
+        construction_seeds=tuple(protocol["threshold_selection"]["development_seeds"]),
+        result={
+            "selected_arm_slug": selected_arm_slug,
+            "verdicts": verdicts,
+        },
+        screen_id="threshold_selection",
+        thresholds=selected_arm,
+    )
+    return {
+        **receipt,
+        "selected_arm_slug": selected_arm_slug,
+        "status": "PASS",
+        "verdicts": verdicts,
+    }
+
+
 def _execute_frozen_plan(authority: authority_contract.FrozenPlanAuthority) -> int:
     """Execute every DEVELOPMENT screen, then stop before confirmation."""
 
-    _run_electrical_v3_prerequisite()
-    q4 = _run_development_q4_screens(authority)
-    q255 = _run_development_q255_screens(authority, q4=q4)
+    store, native = _open_development_artifact_store(authority)
+    electrical = _run_electrical_v3_prerequisite()
+    electrical_artifacts = _publish_development_electrical_results(
+        authority,
+        store=store,
+        native=native,
+        replay=electrical,
+    )
+    electrical_summary = {
+        "development_artifacts": electrical_artifacts,
+        "status": electrical["verdict"],
+    }
+    if electrical["verdict"] != "PASS_RESERVE_VALID_ELECTRICAL_V3":
+        raise FixtureRunnerStop(
+            "electrical-v3 development STOP after durable fixture publication",
+            result={
+                "electrical_v3": electrical_summary,
+                "next_screen": "final_rejection",
+                "status": "STOP_ELECTRICAL_V3_DEVELOPMENT",
+            },
+        )
+    q4 = _run_development_q4_screens(
+        authority,
+        store=store,
+        native=native,
+    )
+    q255 = _run_development_q255_screens(
+        authority,
+        q4=q4,
+        store=store,
+        native=native,
+    )
     r3_f0 = _run_development_r3_f0_screens(authority, q255=q255)
+    selection = _publish_development_selection(
+        authority,
+        store=store,
+        native=native,
+        q255=q255,
+        r3_f0=r3_f0,
+    )
+    common_result = {
+        "compressed_reserve_q4": q4,
+        "development_selection": selection,
+        "electrical_v3": electrical_summary,
+        "full_cohort_q255": q255,
+        "r3_f0_train": r3_f0,
+    }
+    if selection["status"] != "PASS":
+        raise FixtureRunnerStop(
+            "development selection STOP: no candidate passed q255 plus R3-F0",
+            result={
+                **common_result,
+                "next_screen": "final_rejection",
+                "status": "STOP_DEVELOPMENT_SELECTION",
+            },
+        )
     raise FixtureRunnerStop(
         "development screens completed; confirmation remains disabled",
         result={
-            "compressed_reserve_q4": q4,
-            "electrical_v3": {"status": "PASS_RESERVE_VALID_ELECTRICAL_V3"},
-            "full_cohort_q255": q255,
+            **common_result,
             "next_screen": "independent_confirmation",
-            "r3_f0_train": r3_f0,
             "status": "STOP_BEFORE_CONFIRMATION",
         },
     )

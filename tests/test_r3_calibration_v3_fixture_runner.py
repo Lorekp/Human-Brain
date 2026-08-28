@@ -872,11 +872,34 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    arms = ((10, 13), (16, 18))
+    seeds = (3, 7)
+    arm_slugs = tuple(f"theta-m-{arm[0]}_theta-a-{arm[1]}" for arm in arms)
     protocol = {
+        "artifact_contract": {
+            "compressed_reserve_q4": {
+                "development": {
+                    slug: [f"q4/{slug}/{seed}.json" for seed in seeds]
+                    for slug in arm_slugs
+                },
+            },
+            "full_cohort_q255": {
+                "development": {
+                    regime: {
+                        slug: [f"q255/{regime}/{slug}/{seed}.json" for seed in seeds]
+                        for slug in arm_slugs
+                    }
+                    for regime in (
+                        "production-overlap-ordered-pairs",
+                        "target-disjoint-isolation-control",
+                    )
+                },
+            },
+        },
         "source_binding": {"runnable": True},
         "threshold_selection": {
-            "candidate_arms": [[10, 13], [16, 18]],
-            "development_seeds": [3, 7],
+            "candidate_arms": [list(arm) for arm in arms],
+            "development_seeds": list(seeds),
         },
     }
     authority = authority_contract.FrozenPlanAuthority(
@@ -889,10 +912,31 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
     )
     monkeypatch.setattr(runner, "_authorize_frozen_plan", lambda: authority)
     calls: list[str] = []
+    store = object()
+    native = object()
+    monkeypatch.setattr(
+        runner,
+        "_open_development_artifact_store",
+        lambda _authority: calls.append("prepare") or (store, native),
+    )
     monkeypatch.setattr(
         runner,
         "_run_electrical_v3_prerequisite",
-        lambda: calls.append("electrical"),
+        lambda: calls.append("electrical")
+        or {"verdict": "PASS_RESERVE_VALID_ELECTRICAL_V3"},
+    )
+    monkeypatch.setattr(
+        runner,
+        "_publish_development_electrical_results",
+        lambda _authority, *, store, native, replay: [],
+    )
+    monkeypatch.setattr(
+        runner,
+        "_publish_development_result",
+        lambda *args, **kwargs: {
+            "artifact_path": kwargs["artifact_path"],
+            "payload_sha256": "a" * 64,
+        },
     )
 
     def q4(
@@ -941,9 +985,23 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
             }
         ),
     )
+    monkeypatch.setattr(
+        runner,
+        "_publish_development_selection",
+        lambda _authority, **_kwargs: calls.append("selection")
+        or {
+            "selected_arm_slug": "theta-m-16_theta-a-18",
+            "status": "PASS",
+            "verdicts": {
+                "theta-m-10_theta-a-13": False,
+                "theta-m-16_theta-a-18": True,
+            },
+        },
+    )
 
     assert runner.main(["--run-frozen-plan"]) == runner.EXIT_STOP
     assert calls == [
+        "prepare",
         "electrical",
         "q4:10:13:3",
         "q4:10:13:7",
@@ -953,11 +1011,15 @@ def test_synthetic_future_authority_completes_development_then_stops_before_conf
         "production:16:18:7",
         "disjoint:16:18:7",
         "r3",
+        "selection",
     ]
     captured = capsys.readouterr()
     result = json.loads(captured.out)
     assert result["status"] == "STOP_BEFORE_CONFIRMATION"
     assert result["r3_f0_train"]["status"] == "SYNTHETIC_R3_COMPLETE"
+    assert result["development_selection"]["selected_arm_slug"] == (
+        "theta-m-16_theta-a-18"
+    )
     assert result["compressed_reserve_q4"]["candidate_order"] == [
         [10, 13],
         [16, 18],
