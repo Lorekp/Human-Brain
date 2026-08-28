@@ -293,6 +293,7 @@ class _PrimitiveSpec:
 
 
 _INT = _type_term(ProgramType.Int())
+_BOOL = _type_term(ProgramType.Bool())
 _A = _TypeVariable("a")
 _B = _TypeVariable("b")
 _LITERAL_DIGITS = 4
@@ -306,6 +307,8 @@ _PRIMITIVE_SPECS = (
     _PrimitiveSpec("add", "operation", _INT, (_INT, _INT), "add"),
     _PrimitiveSpec("subtract", "operation", _INT, (_INT, _INT), "subtract"),
     _PrimitiveSpec("absolute", "operation", _INT, (_INT,), "absolute"),
+    _PrimitiveSpec("less-than", "operation", _BOOL, (_INT, _INT), "less-than"),
+    _PrimitiveSpec("if", "operation", _A, (_BOOL, _A, _A), "if"),
     _PrimitiveSpec(
         "map",
         "operation",
@@ -1447,6 +1450,20 @@ def _lower_expression(
             func=ast.Name(id="abs", ctx=ast.Load()),
             args=[_lower_expression(expression.children[0], environment, context)],
             keywords=[],
+        )
+    if lowering == "less-than":
+        return ast.Compare(
+            left=_lower_expression(expression.children[0], environment, context),
+            ops=[ast.Lt()],
+            comparators=[
+                _lower_expression(expression.children[1], environment, context)
+            ],
+        )
+    if lowering == "if":
+        return ast.IfExp(
+            test=_lower_expression(expression.children[0], environment, context),
+            body=_lower_expression(expression.children[1], environment, context),
+            orelse=_lower_expression(expression.children[2], environment, context),
         )
     if lowering == "map":
         binder, collection = expression.children
