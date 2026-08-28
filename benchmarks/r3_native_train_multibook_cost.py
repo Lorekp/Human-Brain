@@ -1,8 +1,8 @@
 """Fail-fast native physical cost slice over the first two TRAIN books.
 
 This is pre-outcome engineering evidence.  It authenticates only TRAIN data,
-uses the production codebook and fitted seed-17 cells at arm (16, 18), resets
-transient context atomically at each book boundary, and never enters C1.
+uses the production codebook, defaults to fitted seed-17 cells at arm (16, 18),
+resets transient context atomically at each book boundary, and never enters C1.
 """
 
 from __future__ import annotations
@@ -107,8 +107,29 @@ def _optional_distribution(
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
-    return parser.parse_args()
+    parser.add_argument("--theta-match", type=int, default=ARM[0])
+    parser.add_argument("--theta-active", type=int, default=ARM[1])
+    parser.add_argument("--construction-seed", type=int, default=CONSTRUCTION_SEED)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help=f"artifact path (default arm only: {OUTPUT_PATH})",
+    )
+    args = parser.parse_args()
+    if not 1 <= args.theta_match <= args.theta_active <= 20:
+        parser.error("thresholds must satisfy 1 <= theta-match <= theta-active <= 20")
+    if not 0 <= args.construction_seed <= 0xFFFF_FFFF:
+        parser.error("construction-seed must fit uint32")
+    non_default = (
+        (args.theta_match, args.theta_active) != ARM
+        or args.construction_seed != CONSTRUCTION_SEED
+    )
+    if non_default and args.output is None:
+        parser.error("non-default threshold or seed arms require an explicit --output")
+    args.output = args.output or OUTPUT_PATH
+    if non_default and args.output.resolve() == OUTPUT_PATH.resolve():
+        parser.error("non-default arms cannot overwrite the committed default artifact")
+    return args
 
 
 def _load_books() -> tuple[object, tuple[tuple[object, np.ndarray], ...], int]:
@@ -131,6 +152,8 @@ def _load_books() -> tuple[object, tuple[tuple[object, np.ndarray], ...], int]:
 
 def _bounded_definition(
     transition_count: int,
+    arm: tuple[int, int],
+    construction_seed: int,
 ) -> tuple[
     dict[str, Any],
     NativeTemporalCircuitDefinition,
@@ -142,7 +165,7 @@ def _bounded_definition(
     protocol_authority.validate_protocol(protocol, require_runnable=False)
     if protocol["source_binding"]["runnable"] is not False:
         raise RuntimeError("pre-outcome benchmark requires the C1 runnable hold")
-    production = build_r3_f0_definition(protocol, ARM, CONSTRUCTION_SEED)
+    production = build_r3_f0_definition(protocol, arm, construction_seed)
     bounded = NativeTemporalCircuitDefinition(
         replace(
             production.config,
@@ -459,11 +482,14 @@ def _run_books(
 
 def main() -> int:
     args = _parse_args()
+    arm = (args.theta_match, args.theta_active)
     verified, selected, input_load_ns = _load_books()
     transition_count = sum(book.token_count - 1 for book, _tokens in selected)
     total_tokens = sum(book.token_count for book, _tokens in selected)
     protocol, production, bounded, definition_build_ns = _bounded_definition(
-        transition_count
+        transition_count,
+        arm,
+        args.construction_seed,
     )
     production_token_ids = {token for token, _columns in production.token_codes}
     if any(
@@ -508,7 +534,8 @@ def main() -> int:
         "outcome": "PASS" if scientific_stop is None else "SCIENTIFIC_STOP",
         "claim_boundary": (
             "one physical LEARN replay of the first two canonical TRAIN books only; "
-            "arm (16,18), seed 17, production codebook, exact atomic transient reset "
+            f"arm ({arm[0]},{arm[1]}), seed {args.construction_seed}, production "
+            "codebook, exact atomic transient reset "
             "at both book boundaries, synthetic pre-outcome authority, and a "
             "transition-bounded segment store; no held-out/C1/capability/cohort, "
             "later-book, checkpoint-I/O, or multi-arm evidence"
@@ -545,8 +572,8 @@ def main() -> int:
             "input_load_ns": input_load_ns,
         },
         "definition": {
-            "arm": list(ARM),
-            "construction_seed": CONSTRUCTION_SEED,
+            "arm": list(arm),
+            "construction_seed": args.construction_seed,
             "protocol_sha256": protocol_authority.protocol_sha256(),
             "protocol_runnable": protocol["source_binding"]["runnable"],
             "production_definition_identity_sha256": production_identity,
