@@ -1,0 +1,16 @@
+{
+  "actual_generation_calls_planned": 4,
+  "atomic_no_argument_generation_calls_planned": 7,
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_role_chunk_multistep_clamp_action_probe.json",
+  "canonical_target_sandbox_calls_planned": 1,
+  "checkpoint_sha256": "178e4fcdee3c0310865011878f5b6142feb86a03d7e78f31f795b3803ae7bf6d",
+  "control_generation_calls_planned": 3,
+  "created_at_utc": "2026-08-28T17:59:11.952461+00:00",
+  "experiment": "r3-public-simple-swe-role-chunk-multistep-clamp-action",
+  "harness_retries": 0,
+  "model_retries": 0,
+  "probe_source_sha256": "64f3d0e9507f55482bc297df3905d042c6e4208107eb8b863a2a18397e0d3249",
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/006"
+}

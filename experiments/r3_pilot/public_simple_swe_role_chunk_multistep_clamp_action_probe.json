@@ -1,0 +1,1242 @@
+{
+  "actual_identity_start": {
+    "dispatches": [
+      {
+        "action": "TEST",
+        "dispatched": true,
+        "observed_token_id": 1540,
+        "source_changed": false,
+        "source_sha256_after": "cd5e6e728573894396a9999b390bac1c8d842dd6918bf8a319d9189c2edbe10f"
+      },
+      {
+        "action": "FIX_LOWER",
+        "dispatched": true,
+        "observed_token_id": 1544,
+        "source_changed": true,
+        "source_sha256_after": "46d8c362ad5e81c11a6a1ca0e4d10be9631b0e6809f5636aac2390eb75ab9796"
+      },
+      {
+        "action": "FIX_FULL",
+        "dispatched": true,
+        "observed_token_id": 1545,
+        "source_changed": true,
+        "source_sha256_after": "858dce74c381c408d2873cfa793caeeaaed6f9fa8a7cd537b628d7699f8fc37c"
+      },
+      {
+        "action": "DONE",
+        "dispatched": true,
+        "observed_token_id": 1541,
+        "source_changed": false,
+        "source_sha256_after": "858dce74c381c408d2873cfa793caeeaaed6f9fa8a7cd537b628d7699f8fc37c"
+      }
+    ],
+    "feedback_steps": [
+      {
+        "active_segments": 22,
+        "advanced": true,
+        "allocated_segments": 0,
+        "candidate_segments": 22,
+        "matching_segments": 22,
+        "native_stop": null,
+        "observation_token_id": 1604,
+        "postings_visited": 220,
+        "punished_segments": 0,
+        "steps": 1
+      },
+      {
+        "active_segments": 11,
+        "advanced": true,
+        "allocated_segments": 0,
+        "candidate_segments": 11,
+        "matching_segments": 11,
+        "native_stop": null,
+        "observation_token_id": 1605,
+        "postings_visited": 110,
+        "punished_segments": 0,
+        "steps": 1
+      },
+      {
+        "active_segments": 11,
+        "advanced": true,
+        "allocated_segments": 0,
+        "candidate_segments": 11,
+        "matching_segments": 11,
+        "native_stop": null,
+        "observation_token_id": 1601,
+        "postings_visited": 110,
+        "punished_segments": 0,
+        "steps": 1
+      }
+    ],
+    "final_source": "def solve_63e0ae410a4258fa(n):\n    return min(max(n, (0 - (2 + (2 + 1)))), (2 + (2 + 1)))\n",
+    "observation_token_ids": [
+      1604,
+      1605,
+      1601
+    ],
+    "raw_generations": [
+      {
+        "generation": {
+          "activated_columns": 11,
+          "candidate_tokens": 3,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "surface_token_id": 1540,
+          "temporal_event_count": 89,
+          "winner_input_columns": 11
+        },
+        "native_stop": null
+      },
+      {
+        "generation": {
+          "activated_columns": 11,
+          "candidate_tokens": 1,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "surface_token_id": 1544,
+          "temporal_event_count": 91,
+          "winner_input_columns": 11
+        },
+        "native_stop": null
+      },
+      {
+        "generation": {
+          "activated_columns": 11,
+          "candidate_tokens": 1,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "surface_token_id": 1545,
+          "temporal_event_count": 93,
+          "winner_input_columns": 11
+        },
+        "native_stop": null
+      },
+      {
+        "generation": {
+          "activated_columns": 11,
+          "candidate_tokens": 1,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "surface_token_id": 1541,
+          "temporal_event_count": 95,
+          "winner_input_columns": 11
+        },
+        "native_stop": null
+      }
+    ],
+    "source_trace": [
+      "def solve_63e0ae410a4258fa(n):\n    return n\n",
+      "def solve_63e0ae410a4258fa(n):\n    return n\n",
+      "def solve_63e0ae410a4258fa(n):\n    return max(n, (0 - (2 + (2 + 1))))\n",
+      "def solve_63e0ae410a4258fa(n):\n    return min(max(n, (0 - (2 + (2 + 1)))), (2 + (2 + 1)))\n",
+      "def solve_63e0ae410a4258fa(n):\n    return min(max(n, (0 - (2 + (2 + 1)))), (2 + (2 + 1)))\n"
+    ],
+    "visible_checkers": [
+      {
+        "classification": "LOW",
+        "error": null,
+        "executed_cases": [
+          {
+            "expected": -5,
+            "index": 0,
+            "input": -6,
+            "observed": -6,
+            "passed": false
+          }
+        ],
+        "frozen_cases": [
+          [
+            -6,
+            -5
+          ],
+          [
+            6,
+            5
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "passed": false
+      },
+      {
+        "classification": "HIGH",
+        "error": null,
+        "executed_cases": [
+          {
+            "expected": -5,
+            "index": 0,
+            "input": -6,
+            "observed": -5,
+            "passed": true
+          },
+          {
+            "expected": 5,
+            "index": 1,
+            "input": 6,
+            "observed": 6,
+            "passed": false
+          }
+        ],
+        "frozen_cases": [
+          [
+            -6,
+            -5
+          ],
+          [
+            6,
+            5
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "passed": false
+      },
+      {
+        "classification": "PASS",
+        "error": null,
+        "executed_cases": [
+          {
+            "expected": -5,
+            "index": 0,
+            "input": -6,
+            "observed": -5,
+            "passed": true
+          },
+          {
+            "expected": 5,
+            "index": 1,
+            "input": 6,
+            "observed": 5,
+            "passed": true
+          },
+          {
+            "expected": 0,
+            "index": 2,
+            "input": 0,
+            "observed": 0,
+            "passed": true
+          }
+        ],
+        "frozen_cases": [
+          [
+            -6,
+            -5
+          ],
+          [
+            6,
+            5
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "passed": true
+      }
+    ]
+  },
+  "anchors": {
+    "donor_007_previously_used_as_native_typed_target": true,
+    "freshness_claimed": false,
+    "prior_native_clamp_artifact_sha256": "8400a11df244d2a573e32b491480b14e1dc7f6c061b6cb4ab00f7f11af09d839",
+    "signed_residual_artifact_sha256": "cce99ffdc9f6d310cf8c4cd3e1e10f83825853990f0d1bc149bd67fe77c3a7b1",
+    "signed_residual_outcome": "PASS_FIXED_SIGNED_RESIDUAL_ACTION_ROUTING",
+    "signed_residual_source_sha256": "c1115e11d6fd336d259f071bf7640bd96764657415493ebd1fbe6028a61c7a4e",
+    "target_historical_prompt_disclosure_count": 2
+  },
+  "authority": {
+    "actual_atomic_no_argument_generation_calls": 4,
+    "canonical_target_sandbox_calls": 1,
+    "checkpoint_clones": 2,
+    "control_atomic_no_argument_generation_calls": 3,
+    "donor_007_previously_used_as_native_typed_target": true,
+    "expected_action_labels_scored_only_after_all_seven_calls": true,
+    "freshness_claimed": false,
+    "harness_retries": 0,
+    "hidden_cases_or_verdicts_entered_cell_runtime": false,
+    "identical_prompt_presentations": 2,
+    "model_retries": 0,
+    "partition": "train",
+    "prior_public_artifact_inventory": [
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.json",
+        "sha256": "8b291380e4a5fd951657fa21fc9ddd99b923ad3fe6ee9cecbe13410647df24ac"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_clamp-009.spent.json",
+        "sha256": "8f96e1777d2602de558c917521fa89919530210712dbc529bf4142d2738c6dae"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_offset-009.spent.json",
+        "sha256": "c273f4b733a1e0b2e30b3b007ce4db8c7a310aac83bf8120a632e883e53e53f8"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t1_list_map_add-005.spent.json",
+        "sha256": "f232b202d3dcc36502873521ed8a8d9ef45a87c3191cd041883b62353a4183f5"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_clamp_probe.json",
+        "sha256": "8400a11df244d2a573e32b491480b14e1dc7f6c061b6cb4ab00f7f11af09d839"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.json",
+        "sha256": "09fc9184208691d69e39bfe6fa97c821504e3e1cfb08b4272235cd50ef037bb4"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.spent.json",
+        "sha256": "153639264062c4a242c68d65e4a0c3b8a3104b11585ad2fb23815b5cb78d3dbf"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_probe.json",
+        "sha256": "1debf297e0b0a211766d335bfcce83cd4eb400cb0ec1912e6bdcb6a4d7280eaa"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.json",
+        "sha256": "f7acfaa56730ea47a2de98c230d81f9836118a3cbb38f11e8881959264825f99"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.spent.json",
+        "sha256": "f532023f1d05c2e92a6f30dfdc304d4991a065e4b0fb6d3cee0cf9f88bd68145"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_map_count_probe.json",
+        "sha256": "cb551f94cc2006dbd966a15b753cb66b2c1534ff40f29e9eddc7ecf210c7a7d1"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.json",
+        "sha256": "feb547bf49b7e4ca200bc1bdc93477fc01d2088cdf33dffcd47def8f8f461283"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.spent.json",
+        "sha256": "7b8b58cbdebe887801b6f5c3b351b1cfc76aa88ee9991b59ea491e40c690fa77"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_scaffold_reroot_probe.json",
+        "sha256": "2897c66d30fe278bc7e9d00acd6f3edf3d7a86133600e0a91593a96c272f0375"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_shift_sum_probe.json",
+        "sha256": "2e8223992b9b97d0a8ce4576d7ea25cfafece82cb3e70a18725415f26eeece44"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_sketch_probe.json",
+        "sha256": "1d47841ee378f1cb90f3ac09ea170b2a24449f5fe5a7d0cc6c40faae1099b6c4"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_subtree_probe.json",
+        "sha256": "3bd77d7140eebb17935552df900b65c2de896b5b44153098a0b1dd6e8dd15a42"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_workspace_probe.json",
+        "sha256": "d5180cb2a046a56b8c1c8993a208a590baa58501823e975ebe2ce535e9e876a6"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.json",
+        "sha256": "086683d594e1dfdc2e2d8d393a2334b0bb9a93208dbc2431ff4f38c2f4c0e34a"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.t0_scalar_nonnegative-007.spent.json",
+        "sha256": "1c0b6d0971f05449f7f402e50031a87cbcafe98bbe72f7a8605287632ebd6667"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.json",
+        "sha256": "6f2cf848dd7d7eadc156dd078e554c20e815e0871f8e74d9a016c6a37c0f8302"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.t0_scalar_nonnegative-009.spent.json",
+        "sha256": "aece6b23104e5f8fec937ac161f310e5d9caa28a6bbf81240874f86a24b878b0"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.json",
+        "sha256": "9ee0df214df3525a2e2898129b03295d9ad20706e26a7c52039db40c7a62884b"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t0_scalar_nonnegative-008.spent.json",
+        "sha256": "b86635664d13cf18dde0c3ad95cbdfab036d1ab1f80e633c3217159257b39f0c"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t0_scalar_offset-008.spent.json",
+        "sha256": "a54b59d344a8b32cd2c0cd5bc33f5e1bb348d5dea34531de2f7b18c878001cf1"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t1_list_map_abs-008.spent.json",
+        "sha256": "0a3bcc5cb33e997b475d907f9021ae0e66384003ab0719163bc9251f41355a36"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t1_list_map_add-008.spent.json",
+        "sha256": "4ae372b7fbb2ae0e1cae9e70838e3818aef62389ca814fd5e61ac0b6fabb7e5c"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_signed_residual_action_probe.json",
+        "sha256": "cce99ffdc9f6d310cf8c4cd3e1e10f83825853990f0d1bc149bd67fe77c3a7b1"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_signed_residual_action_probe.t0_scalar_offset-007.spent.json",
+        "sha256": "6f327109951daf23d273bf39b5747b3b147345b7d59d1e4967a0c96b51118b9c"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_slot_bank_scalar_offset_probe.json",
+        "sha256": "f8d80afba7b1a066f298e79fd2911040c1b18672815c69a6aeedce79806f39ff"
+      }
+    ],
+    "target_historical_prompt_baseline_reuse": true,
+    "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/006",
+    "total_atomic_no_argument_generation_calls": 7
+  },
+  "claim_boundary": "Visible TRAIN only: one repeated normalized scalar-clamp template routes fixed LOW/HIGH/PASS observations through fixed lower/full Layer-0 actuators over multiple steps. This is fixed multi-step actuator routing, not semantic error interpretation, self-correction, program synthesis, transfer, DEV/eval, held-out, M0, or C1 capability.",
+  "experiment": "r3-public-simple-swe-role-chunk-multistep-clamp-action",
+  "gates": {
+    "actual_low_then_still_high_then_pass": true,
+    "canonical_target_train_sandbox_all_36": true,
+    "control_high_then_pass": true,
+    "done_actions_do_not_mutate": true,
+    "exact_coarse_observation_routes": true,
+    "exact_identity_lower_full_mutations": true,
+    "exact_observed_route_dispatch": true,
+    "first_clone_generations_bit_exact": true,
+    "physical_exact_four_and_three_routes": true
+  },
+  "generated_at_utc": "2026-08-28T17:59:12.066755+00:00",
+  "lower_start_causal_control": {
+    "dispatches": [
+      {
+        "action": "TEST",
+        "dispatched": true,
+        "observed_token_id": 1540,
+        "source_changed": false,
+        "source_sha256_after": "46d8c362ad5e81c11a6a1ca0e4d10be9631b0e6809f5636aac2390eb75ab9796"
+      },
+      {
+        "action": "FIX_FULL",
+        "dispatched": true,
+        "observed_token_id": 1545,
+        "source_changed": true,
+        "source_sha256_after": "858dce74c381c408d2873cfa793caeeaaed6f9fa8a7cd537b628d7699f8fc37c"
+      },
+      {
+        "action": "DONE",
+        "dispatched": true,
+        "observed_token_id": 1541,
+        "source_changed": false,
+        "source_sha256_after": "858dce74c381c408d2873cfa793caeeaaed6f9fa8a7cd537b628d7699f8fc37c"
+      }
+    ],
+    "feedback_steps": [
+      {
+        "active_segments": 22,
+        "advanced": true,
+        "allocated_segments": 0,
+        "candidate_segments": 22,
+        "matching_segments": 22,
+        "native_stop": null,
+        "observation_token_id": 1605,
+        "postings_visited": 220,
+        "punished_segments": 0,
+        "steps": 1
+      },
+      {
+        "active_segments": 11,
+        "advanced": true,
+        "allocated_segments": 0,
+        "candidate_segments": 11,
+        "matching_segments": 11,
+        "native_stop": null,
+        "observation_token_id": 1601,
+        "postings_visited": 110,
+        "punished_segments": 0,
+        "steps": 1
+      }
+    ],
+    "final_source": "def solve_63e0ae410a4258fa(n):\n    return min(max(n, (0 - (2 + (2 + 1)))), (2 + (2 + 1)))\n",
+    "observation_token_ids": [
+      1605,
+      1601
+    ],
+    "raw_generations": [
+      {
+        "generation": {
+          "activated_columns": 11,
+          "candidate_tokens": 3,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "surface_token_id": 1540,
+          "temporal_event_count": 89,
+          "winner_input_columns": 11
+        },
+        "native_stop": null
+      },
+      {
+        "generation": {
+          "activated_columns": 11,
+          "candidate_tokens": 1,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "surface_token_id": 1545,
+          "temporal_event_count": 91,
+          "winner_input_columns": 11
+        },
+        "native_stop": null
+      },
+      {
+        "generation": {
+          "activated_columns": 11,
+          "candidate_tokens": 1,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "surface_token_id": 1541,
+          "temporal_event_count": 93,
+          "winner_input_columns": 11
+        },
+        "native_stop": null
+      }
+    ],
+    "source_trace": [
+      "def solve_63e0ae410a4258fa(n):\n    return max(n, (0 - (2 + (2 + 1))))\n",
+      "def solve_63e0ae410a4258fa(n):\n    return max(n, (0 - (2 + (2 + 1))))\n",
+      "def solve_63e0ae410a4258fa(n):\n    return min(max(n, (0 - (2 + (2 + 1)))), (2 + (2 + 1)))\n",
+      "def solve_63e0ae410a4258fa(n):\n    return min(max(n, (0 - (2 + (2 + 1)))), (2 + (2 + 1)))\n"
+    ],
+    "visible_checkers": [
+      {
+        "classification": "HIGH",
+        "error": null,
+        "executed_cases": [
+          {
+            "expected": -5,
+            "index": 0,
+            "input": -6,
+            "observed": -5,
+            "passed": true
+          },
+          {
+            "expected": 5,
+            "index": 1,
+            "input": 6,
+            "observed": 6,
+            "passed": false
+          }
+        ],
+        "frozen_cases": [
+          [
+            -6,
+            -5
+          ],
+          [
+            6,
+            5
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "passed": false
+      },
+      {
+        "classification": "PASS",
+        "error": null,
+        "executed_cases": [
+          {
+            "expected": -5,
+            "index": 0,
+            "input": -6,
+            "observed": -5,
+            "passed": true
+          },
+          {
+            "expected": 5,
+            "index": 1,
+            "input": 6,
+            "observed": 5,
+            "passed": true
+          },
+          {
+            "expected": 0,
+            "index": 2,
+            "input": 0,
+            "observed": 0,
+            "passed": true
+          }
+        ],
+        "frozen_cases": [
+          [
+            -6,
+            -5
+          ],
+          [
+            6,
+            5
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "passed": true
+      }
+    ]
+  },
+  "outcome": "PASS_FIXED_MULTISTEP_CLAMP_ACTION_ROUTING",
+  "physical_definition": {
+    "active_columns": 11,
+    "circuit_identity_sha256": "07e0a70e7027b9a103ca96181027285dc95adf1b0c76022efc0390a79dbde5c6",
+    "column_count": 4096,
+    "constants_status": "inherited fixture constants; not calibration-v3 selection",
+    "context_policy": "BOUND_WINNERS",
+    "equal_width_action_and_observation_codes": true,
+    "max_pyramidal_cells": 34814,
+    "noninitial_arrivals": 186,
+    "segment_capacity": 2046,
+    "theta_active": 18,
+    "theta_match": 16,
+    "training_sequence_count": 2
+  },
+  "prompt": {
+    "active_segments": 957,
+    "allocated_segments": 0,
+    "candidate_segments": 2002,
+    "matching_segments": 957,
+    "postings_visited": 11253,
+    "punished_segments": 0,
+    "steps": 88
+  },
+  "representation": {
+    "all_three_streams_bit_exact": true,
+    "concept_stream_events": 88,
+    "concept_stream_sha256": "487b0f798ef2fcda52ffd0f03fd516c89f44fa3338074ec7d86c800e59b05962",
+    "fit_donor_count": 8,
+    "structural_sha256": "d5ff4e912248df14be67fb9d4ae4935f382fc69f387ab6ac1c312fc3dd87775b"
+  },
+  "runtime": {
+    "elapsed_wall_ns": 12416869900,
+    "native_binary_sha256": "3c34407ab9fdfee8cb3eb35118b61857b9960bc6139bbd6c7ee71fccea1fdc62",
+    "native_source_digest": "07774ab94abfce5f48a609df4b8e42c2a5c41bf74226e510de30bfe5cbfa8ded",
+    "pinned_source_sha256": {
+      "benchmarks/simple_swe_protocol_v1.json": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2",
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_probe.py": "6a60ad9a6fbddb3244cb7c6090d3ac874f5a6626d67dda89355664ffc23790a4",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.py": "67017f8902620cd24c7e3a0f1cea320f3e2ff39bb53875873b03c7fe2e9e5a8b",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.py": "8c2c86c1cdc6026639cdbce0ba88ac5145101c2c2dced8c3a56155f72326f3d1",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.py": "5b4c80b9fe3a8d780b5a286fb33ad69885316e8b09a2a2723f7b2a46db1c1001",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_signed_residual_action_probe.py": "c1115e11d6fd336d259f071bf7640bd96764657415493ebd1fbe6028a61c7a4e",
+      "src/humanbrain/_native_src/src/temporal_runtime.rs": "012d4f79505e3e0e381ebf9397db0c74d695120e7dfe8d511a338f8b896b9dc4",
+      "src/humanbrain/_native_src/src/temporal_runtime/checkpoint.rs": "bdb1ab444a826e706b9c8284816a6e54847b0bb6c156723135324fffb377faba",
+      "src/humanbrain/concept_tokens.py": "9070deaf7d9a8a54add24e3a213d8b6aa7bbb24b3d35ad66a7b68b3d1148f43e",
+      "src/humanbrain/cortex.py": "7a7704a14324203d2cce427a11fbd58ffbbc345185ba34633449f59cf294624d",
+      "src/humanbrain/native.py": "8963db700914828a0d5212419431ff50d50089c750be259c23fea69087748a6f",
+      "src/humanbrain/native_temporal_runtime.py": "77b41b014d35648adbe989fe3c31059856f60410758dddb3d9794e54a0ed227a",
+      "src/humanbrain/program.py": "ca5c46aa04688954099d029cc94829f4b8ca1e0fddc651d4aff2bdbe5fb05ddd",
+      "src/humanbrain/role_chunk_episode.py": "8dc8a9102569f6bdc3135479bd38f8074993efc2a93234202fcf4e96d65940f5",
+      "src/humanbrain/sdr_union.py": "1de7f6edd914584c4c72d7e42426254590049cfb69cbbfa730afa3179afa63f9",
+      "src/humanbrain/simple_swe/_worker.py": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870",
+      "src/humanbrain/simple_swe/protocol.py": "22993997004a156b7d94b8d79198deae3e2f71f04d1aebc9740b342c0aa94849",
+      "src/humanbrain/simple_swe/sandbox.py": "2da8083bb48638bb0119b7e6a552a2134b915e07f2eecd1d69fd2dbf7d365b35",
+      "src/humanbrain/simple_swe/tasks.py": "d247bb1a81dca47846a787292a8a3f29c01938771070517b6fa35c9d8f7eed23",
+      "src/humanbrain/tokenizer.py": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce"
+    },
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "64f3d0e9507f55482bc297df3905d042c6e4208107eb8b863a2a18397e0d3249",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "sandbox": {
+    "all_private_cases_held_post_generation": true,
+    "attempted": true,
+    "detail": "",
+    "outcome": "passed",
+    "passed": true,
+    "property_case_count": 32,
+    "python_runtime": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "regression_case_count": 4,
+    "sandboxed": true,
+    "wall_seconds": 0.10084469999856083,
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "schema_version": 1,
+  "scored_after_all_seven_calls": {
+    "actual_1": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1540,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 3,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1540,
+        "temporal_event_count": 89,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "actual_2": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1544,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 1,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1544,
+        "temporal_event_count": 91,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "actual_3": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1545,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 1,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1545,
+        "temporal_event_count": 93,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "actual_4": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1541,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 1,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1541,
+        "temporal_event_count": 95,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "control_1": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1540,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 3,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1540,
+        "temporal_event_count": 89,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "control_2": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1545,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 1,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1545,
+        "temporal_event_count": 91,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "control_3": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1541,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 1,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1541,
+        "temporal_event_count": 93,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    }
+  },
+  "spend_marker": {
+    "exclusive_create": true,
+    "flushed_and_fsynced_before_all_seven_generate_calls": true,
+    "path": "experiments/r3_pilot/public_simple_swe_role_chunk_multistep_clamp_action_probe.t0_scalar_clamp-006.spent.json",
+    "sha256": "8defcb8217e972357dd72a377ff3ad6d5d0c3e160424332c0c37932f0a097d2f"
+  },
+  "tasks": {
+    "2": {
+      "hidden_test_sha256": "416aeb4ac865d03c160baec0db1ed366552c1f67a64d0569cf2decbff1a27fa8",
+      "prompt_sha256": "c33674a7f9d4453d544272a7559c491f381d66e63df368a3827cd34b716d4324",
+      "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/002",
+      "task_sha256": "eda0e95f4496763b7d95044d03867c9f8aff3ef1dcf0c4e894f81e882dbb3a11"
+    },
+    "6": {
+      "hidden_test_sha256": "421dcf63d757dbaa5ca3c1ce35e160a52ab5fe69c97ef877283f5786a0d5fd99",
+      "prompt_sha256": "42e0663491a773d96b06c82eac324222ab6f3446c6f9bc07368dfa1f1b2467aa",
+      "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/006",
+      "task_sha256": "4a9736fd2a13a240afb08bd69ebe28904f76fdc6f7a73a10246fa92e5a3319ba"
+    },
+    "7": {
+      "hidden_test_sha256": "4ece18626b16fa0e4bc1f051ab1e926925c0ac6de70d9c8a298dc0c6d882493a",
+      "prompt_sha256": "003e96a2bc2caf5ec84ef7ad4c49a1c93bb046ea7e8157aacc7e25aaaffd879a",
+      "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/007",
+      "task_sha256": "4d3a2c4da9c5f0adf9b4542dbbec11b2bb28940a4bd08ff6af2c1ed3502fa9e3"
+    }
+  },
+  "training": {
+    "checkpoint_identity": {
+      "body_bytes": 69168,
+      "body_sha256": "d1d50a48ed55577299945f4e63e075841b66b4e5ca67f0d56583f0d33475907b",
+      "checkpoint_bytes": 69424,
+      "circuit_identity_sha256": "07e0a70e7027b9a103ca96181027285dc95adf1b0c76022efc0390a79dbde5c6",
+      "cohort_count": 0,
+      "event_count": 93,
+      "format_version": 1,
+      "header_bytes": 256,
+      "learning_step": 188,
+      "logical_state_sha256": "d2393fee014eaab3c137f90b4c7cb8a5141f0af4db38237f65d5013036e6c7a5",
+      "next_reserve_cell": 32768,
+      "poison_code": 0,
+      "prior_context_length": 22,
+      "protocol_identity_sha256": "9191919191919191919191919191919191919191919191919191919191919191",
+      "segment_count": 1078,
+      "semantic_index_sha256": "04e48fa6690681ff399c9ff3191645f9710878b2adc70ea1bc0c79ae3611a7be",
+      "source_bundle_identity_sha256": "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+      "winner_context_length": 22
+    },
+    "checkpoint_sha256": "178e4fcdee3c0310865011878f5b6142feb86a03d7e78f31f795b3803ae7bf6d",
+    "episodes": [
+      {
+        "active_segments": 0,
+        "all_observations_derived_before_learn": true,
+        "allocated_segments": 1034,
+        "candidate_segments": 528,
+        "derived_observation_token_ids": [
+          1604,
+          1605,
+          1601
+        ],
+        "initial_source_kind": "identity",
+        "matching_segments": 0,
+        "postings_visited": 847,
+        "punished_segments": 0,
+        "sequence_token_ids": [
+          275,
+          32,
+          271,
+          32,
+          305,
+          32,
+          267,
+          32,
+          274,
+          32,
+          1058,
+          59,
+          32,
+          308,
+          32,
+          1083,
+          1065,
+          1085,
+          1024,
+          258,
+          58,
+          270,
+          93,
+          93,
+          40,
+          1029,
+          299,
+          93,
+          93,
+          41,
+          58,
+          10,
+          288,
+          1045,
+          275,
+          1027,
+          1041,
+          299,
+          93,
+          93,
+          32,
+          108,
+          105,
+          109,
+          311,
+          101,
+          100,
+          32,
+          314,
+          32,
+          306,
+          32,
+          309,
+          99,
+          108,
+          117,
+          115,
+          105,
+          118,
+          101,
+          32,
+          114,
+          97,
+          110,
+          103,
+          101,
+          1027,
+          256,
+          58,
+          48,
+          93,
+          93,
+          32,
+          116,
+          104,
+          114,
+          111,
+          117,
+          103,
+          104,
+          1027,
+          256,
+          58,
+          49,
+          93,
+          93,
+          46,
+          1045,
+          1540,
+          1604,
+          1544,
+          1605,
+          1545,
+          1601,
+          1541
+        ],
+        "steps": 95,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/002",
+        "teacher_action_token_ids": [
+          1540,
+          1544,
+          1545,
+          1541
+        ],
+        "visible_checkers": [
+          {
+            "classification": "LOW",
+            "error": null,
+            "executed_cases": [
+              {
+                "expected": -5,
+                "index": 0,
+                "input": -6,
+                "observed": -6,
+                "passed": false
+              }
+            ],
+            "frozen_cases": [
+              [
+                -6,
+                -5
+              ],
+              [
+                6,
+                5
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            "passed": false
+          },
+          {
+            "classification": "HIGH",
+            "error": null,
+            "executed_cases": [
+              {
+                "expected": -5,
+                "index": 0,
+                "input": -6,
+                "observed": -5,
+                "passed": true
+              },
+              {
+                "expected": 5,
+                "index": 1,
+                "input": 6,
+                "observed": 6,
+                "passed": false
+              }
+            ],
+            "frozen_cases": [
+              [
+                -6,
+                -5
+              ],
+              [
+                6,
+                5
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            "passed": false
+          },
+          {
+            "classification": "PASS",
+            "error": null,
+            "executed_cases": [
+              {
+                "expected": -5,
+                "index": 0,
+                "input": -6,
+                "observed": -5,
+                "passed": true
+              },
+              {
+                "expected": 5,
+                "index": 1,
+                "input": 6,
+                "observed": 5,
+                "passed": true
+              },
+              {
+                "expected": 0,
+                "index": 2,
+                "input": 0,
+                "observed": 0,
+                "passed": true
+              }
+            ],
+            "frozen_cases": [
+              [
+                -6,
+                -5
+              ],
+              [
+                6,
+                5
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            "passed": true
+          }
+        ]
+      },
+      {
+        "active_segments": 979,
+        "all_observations_derived_before_learn": true,
+        "allocated_segments": 44,
+        "candidate_segments": 2024,
+        "derived_observation_token_ids": [
+          1605,
+          1601
+        ],
+        "initial_source_kind": "lower_only",
+        "matching_segments": 979,
+        "postings_visited": 11473,
+        "punished_segments": 11,
+        "sequence_token_ids": [
+          275,
+          32,
+          271,
+          32,
+          305,
+          32,
+          267,
+          32,
+          274,
+          32,
+          1058,
+          59,
+          32,
+          308,
+          32,
+          1083,
+          1065,
+          1085,
+          1024,
+          258,
+          58,
+          270,
+          93,
+          93,
+          40,
+          1029,
+          299,
+          93,
+          93,
+          41,
+          58,
+          10,
+          288,
+          1045,
+          275,
+          1027,
+          1041,
+          299,
+          93,
+          93,
+          32,
+          108,
+          105,
+          109,
+          311,
+          101,
+          100,
+          32,
+          314,
+          32,
+          306,
+          32,
+          309,
+          99,
+          108,
+          117,
+          115,
+          105,
+          118,
+          101,
+          32,
+          114,
+          97,
+          110,
+          103,
+          101,
+          1027,
+          256,
+          58,
+          48,
+          93,
+          93,
+          32,
+          116,
+          104,
+          114,
+          111,
+          117,
+          103,
+          104,
+          1027,
+          256,
+          58,
+          49,
+          93,
+          93,
+          46,
+          1045,
+          1540,
+          1605,
+          1545,
+          1601,
+          1541
+        ],
+        "steps": 93,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/007",
+        "teacher_action_token_ids": [
+          1540,
+          1545,
+          1541
+        ],
+        "visible_checkers": [
+          {
+            "classification": "HIGH",
+            "error": null,
+            "executed_cases": [
+              {
+                "expected": -5,
+                "index": 0,
+                "input": -6,
+                "observed": -5,
+                "passed": true
+              },
+              {
+                "expected": 5,
+                "index": 1,
+                "input": 6,
+                "observed": 6,
+                "passed": false
+              }
+            ],
+            "frozen_cases": [
+              [
+                -6,
+                -5
+              ],
+              [
+                6,
+                5
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            "passed": false
+          },
+          {
+            "classification": "PASS",
+            "error": null,
+            "executed_cases": [
+              {
+                "expected": -5,
+                "index": 0,
+                "input": -6,
+                "observed": -5,
+                "passed": true
+              },
+              {
+                "expected": 5,
+                "index": 1,
+                "input": 6,
+                "observed": 5,
+                "passed": true
+              },
+              {
+                "expected": 0,
+                "index": 2,
+                "input": 0,
+                "observed": 0,
+                "passed": true
+              }
+            ],
+            "frozen_cases": [
+              [
+                -6,
+                -5
+              ],
+              [
+                6,
+                5
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            "passed": true
+          }
+        ]
+      }
+    ]
+  }
+}
