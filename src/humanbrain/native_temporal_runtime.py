@@ -261,14 +261,14 @@ class _NativeStepV2(ctypes.Structure):
     ]
 
 
-class _NativeOutputElection(ctypes.Structure):
+class _NativeOutputElectionV2(ctypes.Structure):
     _fields_ = [
         ("token_id", ctypes.c_uint32),
         ("output_cell_id", ctypes.c_uint32),
         ("activated_columns", ctypes.c_uint32),
         ("candidate_tokens", ctypes.c_uint32),
         ("winner_input_columns", ctypes.c_uint8),
-        ("reserved_zero_u8", ctypes.c_uint8),
+        ("route", ctypes.c_uint8),
         ("winner_tick", ctypes.c_uint16),
         ("basket_tick", ctypes.c_uint16),
         ("inhibition_onset_tick", ctypes.c_uint16),
@@ -408,7 +408,7 @@ def _assert_frozen_abi() -> None:
         ),
     )
     _require_frozen_layout(
-        _NativeOutputElection,
+        _NativeOutputElectionV2,
         32,
         4,
         (0, 4, 8, 12, 16, 17, 18, 20, 22, 24, 26),
@@ -472,6 +472,13 @@ class TemporalStepMode(IntEnum):
 
     READ_ONLY = 0
     LEARN = 1
+
+
+class TemporalOutputRoute(IntEnum):
+    """Physical owner-drive route used for one native token election."""
+
+    ACTIVE = 1
+    WEAK_MATCHING = 2
 
 
 class NativeTemporalRuntimeStatus(IntEnum):
@@ -981,6 +988,7 @@ class TemporalOutputElection:
     activated_columns: int
     candidate_tokens: int
     winner_input_columns: int
+    route: TemporalOutputRoute
     winner_tick: int
     basket_tick: int
     inhibition_onset_tick: int
@@ -1099,7 +1107,7 @@ def _bind_temporal_symbols(library: object) -> None:
         create = library.humanbrain_temporal_circuit_runtime_create_v1
         import_checkpoint = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
         advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
-        elect_output = library.humanbrain_temporal_circuit_runtime_elect_output_v1
+        elect_output = library.humanbrain_temporal_circuit_runtime_elect_output_v2
         checkpoint_size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
         checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
         export_checkpoint = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
@@ -1137,7 +1145,7 @@ def _bind_temporal_symbols(library: object) -> None:
     ]
     elect_output.argtypes = [
         ctypes.c_void_p,
-        ctypes.POINTER(_NativeOutputElection),
+        ctypes.POINTER(_NativeOutputElectionV2),
         report_output,
     ]
     checkpoint_size.argtypes = [
@@ -2841,11 +2849,11 @@ class NativeTemporalCircuit:
         basket-cell race over the learned physical owner activity.
         """
 
-        native = _NativeOutputElection()
+        native = _NativeOutputElectionV2()
         report = _NativeReport()
         with self._operation_lock:
             handle = self._require_open()
-            returned = self._library.humanbrain_temporal_circuit_runtime_elect_output_v1(
+            returned = self._library.humanbrain_temporal_circuit_runtime_elect_output_v2(
                 handle,
                 ctypes.byref(native),
                 ctypes.byref(report),
@@ -2859,8 +2867,16 @@ class NativeTemporalCircuit:
                 raise _invariant_error(
                     "successful output election carries unexpected scalar diagnostics"
                 )
-            if native.reserved_zero_u8 or any(native.reserved_zero):
+            if any(native.reserved_zero):
                 raise _invariant_error("output election reserved fields are nonzero")
+
+            try:
+                route = TemporalOutputRoute(native.route)
+            except ValueError as exc:
+                raise _invariant_error(
+                    "output election route is unknown",
+                    observed=int(native.route),
+                ) from exc
 
             activated_columns = int(native.activated_columns)
             candidate_tokens = int(native.candidate_tokens)
@@ -2915,6 +2931,7 @@ class NativeTemporalCircuit:
                 activated_columns=activated_columns,
                 candidate_tokens=candidate_tokens,
                 winner_input_columns=winner_input_columns,
+                route=route,
                 winner_tick=winner_tick,
                 basket_tick=basket_tick,
                 inhibition_onset_tick=inhibition_onset_tick,
@@ -3080,6 +3097,7 @@ __all__ = [
     "TemporalPublicationOutcome",
     "TemporalCircuitStep",
     "TemporalOutputElection",
+    "TemporalOutputRoute",
     "TemporalContextPolicy",
     "TemporalPlasticityPolicy",
     "TemporalSpike",

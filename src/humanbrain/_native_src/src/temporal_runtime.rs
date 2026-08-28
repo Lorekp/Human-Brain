@@ -56,6 +56,13 @@ pub(crate) enum TemporalStepMode {
     Learn,
 }
 
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TemporalOutputRoute {
+    Active = 1,
+    WeakMatching = 2,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct TemporalCircuitConfig {
     pub(crate) column_count: u32,
@@ -242,6 +249,7 @@ pub(crate) struct TemporalOutputElection {
     pub(crate) activated_columns: u32,
     pub(crate) candidate_tokens: u32,
     pub(crate) winner_input_columns: u8,
+    pub(crate) route: TemporalOutputRoute,
     pub(crate) winner_tick: u16,
     pub(crate) basket_tick: u16,
     pub(crate) inhibition_onset_tick: u16,
@@ -786,12 +794,15 @@ impl TemporalCircuitRuntime {
     /// Elect one token directly from the current physical winner context.
     ///
     /// Active distal segments first drive their learned owner cells through
-    /// the same fitted owner/basket races used by ordinary token arrival. One
+    /// the same fitted owner/basket races used by ordinary token arrival. If
+    /// and only if the complete context has no active segment, potential-only
+    /// matching owners may instead run an isolated output-only race. One
     /// winning owner signal per activated column then supplies one eleventh of
-    /// the calibrated active current to every token cell containing that
+    /// that route's calibrated current to every token cell containing the
     /// column. A second fitted token-cell/basket race emits the result. The
     /// codebook is static wiring; neither a decoded score argmax nor an
-    /// arriving candidate token participates in the decision.
+    /// arriving candidate token participates in the decision. Neither route
+    /// publishes a new temporal context or mutates learned state.
     pub(crate) fn elect_output(&mut self) -> Result<TemporalOutputElection, TemporalCircuitStop> {
         if self.scientific_stop.is_some() {
             return Err(TemporalCircuitStop::Poisoned);
@@ -821,25 +832,42 @@ impl TemporalCircuitRuntime {
             Err(status) => return self.fail(TemporalCircuitStop::StoreRecognition(status)),
         };
         let diagnostic_count = summary.owner_result_count;
-        let mut output_active_columns = vec![0u8; self.config.column_count as usize];
+        let route = if summary.active_segments == 0 {
+            TemporalOutputRoute::WeakMatching
+        } else {
+            TemporalOutputRoute::Active
+        };
+        let mut output_route_columns = vec![0u8; self.config.column_count as usize];
         let reserve = PreparedReservePlan {
             next_reserve_cell: self.next_reserve_cell,
             ..EMPTY_RESERVE_PLAN
         };
         let mut activated_columns = 0u32;
         for column in 0..self.config.column_count {
-            let has_active_owner = match self.column_has_active_owner(column, diagnostic_count) {
-                Ok(value) => value,
-                Err(stop) => return self.fail(stop),
+            let candidate_count = match route {
+                TemporalOutputRoute::Active => {
+                    let has_active_owner =
+                        match self.column_has_active_owner(column, diagnostic_count) {
+                            Ok(value) => value,
+                            Err(stop) => return self.fail(stop),
+                        };
+                    if !has_active_owner {
+                        continue;
+                    }
+                    match self.prepare_column_drives(column, diagnostic_count, reserve, &transient)
+                    {
+                        Ok(count) => count,
+                        Err(stop) => return self.fail(stop),
+                    }
+                }
+                TemporalOutputRoute::WeakMatching => {
+                    match self.prepare_output_matching_drives(column, diagnostic_count) {
+                        Ok(0) => continue,
+                        Ok(count) => count,
+                        Err(stop) => return self.fail(stop),
+                    }
+                }
             };
-            if !has_active_owner {
-                continue;
-            }
-            let candidate_count =
-                match self.prepare_column_drives(column, diagnostic_count, reserve, &transient) {
-                    Ok(count) => count,
-                    Err(stop) => return self.fail(stop),
-                };
             let basket_id = self.basket_offset + column;
             let candidates = &self.column_drive_scratch[..candidate_count];
             let race = match coupled_first_spike_race(
@@ -861,16 +889,26 @@ impl TemporalCircuitRuntime {
                     });
                 }
             };
-            if self
+            let winner_owns_route = self
                 .diagnostic_for_owner(race.winner.cell_id, diagnostic_count)
-                .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
-            {
-                output_active_columns[column as usize] = 1;
+                .is_some_and(|diagnostic| match route {
+                    TemporalOutputRoute::Active => diagnostic.best_active_segment != NONE,
+                    TemporalOutputRoute::WeakMatching => {
+                        diagnostic.best_active_segment == NONE
+                            && diagnostic.best_matching_segment != NONE
+                    }
+                });
+            if winner_owns_route {
+                output_route_columns[column as usize] = 1;
                 activated_columns += 1;
             }
         }
 
-        let synaptic_share_pa = TEMPORAL_PHYSICS_IDENTITY.active_pa / ACTIVE_COLUMNS as f64;
+        let route_current_pa = match route {
+            TemporalOutputRoute::Active => TEMPORAL_PHYSICS_IDENTITY.active_pa,
+            TemporalOutputRoute::WeakMatching => TEMPORAL_PHYSICS_IDENTITY.matching_pa,
+        };
+        let synaptic_share_pa = route_current_pa / ACTIVE_COLUMNS as f64;
         let output_offset = self
             .proximal_relay_offset
             .checked_add(self.config.column_count)
@@ -889,7 +927,7 @@ impl TemporalCircuitRuntime {
             let input_columns = code
                 .columns
                 .iter()
-                .filter(|&&column| output_active_columns[column as usize] != 0)
+                .filter(|&&column| output_route_columns[column as usize] != 0)
                 .count();
             if input_columns == 0 {
                 continue;
@@ -937,7 +975,7 @@ impl TemporalCircuitRuntime {
         let winner_input_columns = winner
             .columns
             .iter()
-            .filter(|&&column| output_active_columns[column as usize] != 0)
+            .filter(|&&column| output_route_columns[column as usize] != 0)
             .count() as u8;
         Ok(TemporalOutputElection {
             token_id: winner.token_id,
@@ -945,6 +983,7 @@ impl TemporalCircuitRuntime {
             activated_columns,
             candidate_tokens: candidate_tokens as u32,
             winner_input_columns,
+            route,
             winner_tick: race.winner.tick,
             basket_tick: race.basket_tick,
             inhibition_onset_tick: race.inhibition_onset_tick,
@@ -1346,6 +1385,88 @@ impl TemporalCircuitRuntime {
                 self.diagnostic_for_owner(owner, diagnostic_count)
                     .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
             }))
+    }
+
+    /// Prepare only potential-matching learned owners for the output fallback.
+    ///
+    /// This deliberately does not call `prepare_column_drives`: novel cells
+    /// and reserve planning belong to W_t formation, while this route is a
+    /// read-only election over already learned owners. Candidates are packed
+    /// densely into the existing scratch and retain the established matching
+    /// contact ordering and fitted-current ladder.
+    fn prepare_output_matching_drives(
+        &mut self,
+        column: u32,
+        diagnostic_count: usize,
+    ) -> Result<usize, TemporalCircuitStop> {
+        if diagnostic_count > self.recognition_scratch.len() {
+            return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "recognition output exceeds its construction-time scratch",
+            ));
+        }
+        let column_index = column as usize;
+        let Some((&cell_start, &cell_end)) = self
+            .column_offsets
+            .get(column_index)
+            .zip(self.column_offsets.get(column_index + 1))
+        else {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "output election references a missing column",
+            ));
+        };
+        if cell_start > cell_end || cell_end > self.column_cells.len() {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "column CSR bounds are malformed",
+            ));
+        }
+
+        let mut matching_candidates = [EMPTY_CATEGORIZED_RANK_CANDIDATE; 8];
+        let mut matching_count = 0usize;
+        for &owner in &self.column_cells[cell_start..cell_end] {
+            let Some(diagnostic) = self.diagnostic_for_owner(owner, diagnostic_count) else {
+                continue;
+            };
+            if diagnostic.best_active_segment != NONE || diagnostic.best_matching_segment == NONE {
+                continue;
+            }
+            if matching_count < matching_candidates.len() {
+                matching_candidates[matching_count] = CategorizedRankCandidate {
+                    owner,
+                    column_offset: matching_count,
+                    primary_contacts: diagnostic.matching_potential_contacts,
+                    secondary_contacts: diagnostic.matching_connected_contacts,
+                    segment_id: diagnostic.best_matching_segment,
+                };
+            }
+            matching_count += 1;
+        }
+        if matching_count > usize::from(self.config.novel_race_cap) {
+            return Err(TemporalCircuitStop::CategorizedRaceCapacity {
+                column,
+                categorized_count: u8::try_from(matching_count).unwrap_or(u8::MAX),
+                race_cap: self.config.novel_race_cap,
+            });
+        }
+        matching_candidates[..matching_count].sort_unstable_by(|left, right| {
+            right
+                .primary_contacts
+                .cmp(&left.primary_contacts)
+                .then_with(|| right.secondary_contacts.cmp(&left.secondary_contacts))
+                .then_with(|| left.segment_id.cmp(&right.segment_id))
+                .then_with(|| left.owner.cmp(&right.owner))
+        });
+        for (rank, candidate) in matching_candidates[..matching_count].iter().enumerate() {
+            self.column_drive_scratch[rank] = CandidateDrive {
+                cell_id: candidate.owner,
+                current_pa: CandidateClass::Matching {
+                    load: self.owner_load(candidate.owner)?,
+                }
+                .current_pa()
+                    - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa * rank as f64,
+                threshold_offset_mv: self.threshold_offset(candidate.owner),
+            };
+        }
+        Ok(matching_count)
     }
 
     fn prepare_column_drives(
@@ -2638,9 +2759,73 @@ mod tests {
         assert_eq!(election.activated_columns, ACTIVE_COLUMNS as u32);
         assert_eq!(election.candidate_tokens, 1);
         assert_eq!(election.winner_input_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(election.route, TemporalOutputRoute::Active);
         assert!(election.winner_tick < election.basket_tick);
         assert_eq!(election.inhibition_onset_tick, election.basket_tick + 1);
         assert!(election.basket_tick <= election.simulated_ticks);
+    }
+
+    #[test]
+    fn matching_only_output_election_emits_without_publishing_context_or_learning() {
+        let mut runtime = python_oracle_runtime(205);
+        runtime.recognize(0).expect("public cue boundary");
+
+        let previous_context = runtime.previous_context;
+        let previous_context_len = runtime.previous_context_len;
+        let previous_winner_context = runtime.previous_winner_context;
+        let previous_winner_context_len = runtime.previous_winner_context_len;
+        let event_count = runtime.event_count;
+        let learning_step = runtime.learning_step;
+        let next_reserve_cell = runtime.next_reserve_cell;
+        let cohort_columns = runtime.cohort_columns.clone();
+        let column_offsets = runtime.column_offsets.clone();
+        let column_cells = runtime.column_cells.clone();
+        let segment_count = runtime.store.runtime_segment_count();
+        let segment_state = (0..segment_count)
+            .map(|segment_id| {
+                (
+                    runtime.store.runtime_segment_owner(segment_id).unwrap(),
+                    runtime.store.runtime_segment_row(segment_id).unwrap(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let election = runtime
+            .elect_output()
+            .expect("matching-only target owners must emit one weak token");
+
+        assert_eq!(election.token_id, 1);
+        assert_eq!(election.output_cell_id, 111);
+        assert_eq!(election.activated_columns, ACTIVE_COLUMNS as u32);
+        assert_eq!(election.candidate_tokens, 1);
+        assert_eq!(election.winner_input_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(election.route, TemporalOutputRoute::WeakMatching);
+        assert_eq!(runtime.previous_context, previous_context);
+        assert_eq!(runtime.previous_context_len, previous_context_len);
+        assert_eq!(runtime.previous_winner_context, previous_winner_context);
+        assert_eq!(
+            runtime.previous_winner_context_len,
+            previous_winner_context_len
+        );
+        assert_eq!(runtime.event_count, event_count);
+        assert_eq!(runtime.learning_step, learning_step);
+        assert_eq!(runtime.next_reserve_cell, next_reserve_cell);
+        assert_eq!(runtime.cohort_columns, cohort_columns);
+        assert_eq!(runtime.column_offsets, column_offsets);
+        assert_eq!(runtime.column_cells, column_cells);
+        assert_eq!(runtime.store.runtime_segment_count(), segment_count);
+        assert_eq!(
+            (0..segment_count)
+                .map(|segment_id| {
+                    (
+                        runtime.store.runtime_segment_owner(segment_id).unwrap(),
+                        runtime.store.runtime_segment_row(segment_id).unwrap(),
+                    )
+                })
+                .collect::<Vec<_>>(),
+            segment_state
+        );
+        assert_eq!(runtime.scientific_stop, None);
     }
 
     #[test]

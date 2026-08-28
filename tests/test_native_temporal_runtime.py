@@ -43,6 +43,7 @@ from humanbrain.native_temporal_runtime import (
     TemporalCheckpointPublicationOutcome,
     TemporalContextPolicy,
     TemporalOutputElection,
+    TemporalOutputRoute,
     TemporalPlasticityPolicy,
     TemporalStepMode,
 )
@@ -196,7 +197,7 @@ class _FakeTemporalLibrary:
         self.humanbrain_temporal_circuit_runtime_create_v1 = _FakeFunction(self._create)
         self.humanbrain_temporal_circuit_runtime_import_checkpoint_v1 = _FakeFunction(self._import)
         self.humanbrain_temporal_circuit_runtime_advance_block_v2 = _FakeFunction(self._advance)
-        self.humanbrain_temporal_circuit_runtime_elect_output_v1 = _FakeFunction(
+        self.humanbrain_temporal_circuit_runtime_elect_output_v2 = _FakeFunction(
             self._elect_output
         )
         self.humanbrain_temporal_circuit_runtime_checkpoint_size_v1 = _FakeFunction(self._size)
@@ -301,12 +302,13 @@ class _FakeTemporalLibrary:
     def _elect_output(self, handle: object, output: object, report_out: object) -> int:
         del handle, report_out
         self.election_calls += 1
-        native = _pointed(output, runtime_adapter._NativeOutputElection)
+        native = _pointed(output, runtime_adapter._NativeOutputElectionV2)
         native.token_id = 7
         native.output_cell_id = 55
         native.activated_columns = 11
         native.candidate_tokens = 1
         native.winner_input_columns = 11
+        native.route = TemporalOutputRoute.ACTIVE
         native.winner_tick = 180
         native.basket_tick = 181
         native.inhibition_onset_tick = 182
@@ -769,7 +771,7 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
                 712,
             ),
         ),
-        runtime_adapter._NativeOutputElection: (
+        runtime_adapter._NativeOutputElectionV2: (
             32,
             4,
             (0, 4, 8, 12, 16, 17, 18, 20, 22, 24, 26),
@@ -1142,6 +1144,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
             activated_columns=11,
             candidate_tokens=1,
             winner_input_columns=11,
+            route=TemporalOutputRoute.ACTIVE,
             winner_tick=180,
             basket_tick=181,
             inhibition_onset_tick=182,
@@ -1239,6 +1242,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "TemporalCircuitStep",
         "TemporalContextPolicy",
         "TemporalOutputElection",
+        "TemporalOutputRoute",
         "TemporalPlasticityPolicy",
         "TemporalSpike",
         "TemporalStepMode",
@@ -1308,7 +1312,8 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     create = library.humanbrain_temporal_circuit_runtime_create_v1
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
     advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
-    elect_output = library.humanbrain_temporal_circuit_runtime_elect_output_v1
+    elect_output = library.humanbrain_temporal_circuit_runtime_elect_output_v2
+    assert not hasattr(library, "humanbrain_temporal_circuit_runtime_elect_output_v1")
     size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
     checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
     export = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1

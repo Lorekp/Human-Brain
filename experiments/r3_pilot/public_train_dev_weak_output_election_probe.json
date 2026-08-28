@@ -1,0 +1,135 @@
+{
+  "authority": {
+    "c1_material_read": false,
+    "dev_attempts": 1,
+    "dev_scoring_token_used_as_runtime_input": false,
+    "held_out_material_read": false,
+    "partitions": [
+      "public-synthetic-train",
+      "public-synthetic-dev"
+    ],
+    "synthetic_runtime_authority": true
+  },
+  "capability_pass": false,
+  "claim_boundary": "Two literal public synthetic TRAIN prompt-to-function episodes establish physical temporal segments. One unseen public synthetic DEV prompt is presented once, then exactly one native physical output election is scored. PASS means only that the potential-only WEAK_MATCHING route emitted the shared first code byte 'd' and that READ_ONLY feedback of that byte remained unpredicted. The DEV scoring byte never enters inference; no candidate enumeration, Python argmax, learned head, retry, adaptation, held-out material, C1 material, coding claim, or SWE claim is involved.",
+  "dev_once": {
+    "activated_columns": null,
+    "candidate_tokens_physical": null,
+    "completed_elections": 0,
+    "election_attempts": 1,
+    "emitted_byte_hex": null,
+    "emitted_token_id": null,
+    "expected_scoring_byte_hex": "64",
+    "expected_scoring_token_id": 100,
+    "feedback_mode": null,
+    "feedback_predicted": null,
+    "feedback_predicted_columns": null,
+    "prompt_token_count": 24,
+    "route": null,
+    "state_unchanged_by_election": null,
+    "stop": {
+      "completed_prefix": 0,
+      "location": 29488,
+      "message": "temporal physical stage stopped",
+      "observed": 0,
+      "phase": "elect_output",
+      "poison_code": 7,
+      "required": 0,
+      "stage_code": 3,
+      "status": "SCIENTIFIC_STOP"
+    },
+    "teacher_tokens_after_prompt": 0,
+    "winner_input_columns": null
+  },
+  "experiment": "r3-public-train-dev-weak-output-election-probe",
+  "frozen_examples": {
+    "dev": {
+      "example_id": "dev-bump-add-one",
+      "prompt": "Function bump adds one.\n",
+      "scoring_first_output_byte": "d"
+    },
+    "train": [
+      {
+        "code": "def inc(x):\n    return x + 1\n",
+        "example_id": "train-inc-add-one",
+        "prompt": "Function inc adds one.\n"
+      },
+      {
+        "code": "def dec(x):\n    return x - 1\n",
+        "example_id": "train-dec-subtract-one",
+        "prompt": "Function dec subtracts one.\n"
+      }
+    ]
+  },
+  "generated_at_utc": "2026-08-28T03:29:38.356247+00:00",
+  "outcome": "STOP_WEAK_MATCHING_OUTPUT_ELECTION",
+  "physical_definition": {
+    "circuit_identity_sha256": "b055fb33c31ec101c664f47e87d09ade9358468bde7d728634bdcfb2255a5eab",
+    "column_count": 1419,
+    "context_policy": "BOUND_WINNERS",
+    "max_pyramidal_cells": 12551,
+    "plasticity_policy": "PLASTIC",
+    "segment_capacity": 1199,
+    "theta_active": 18,
+    "theta_match": 16
+  },
+  "runtime": {
+    "elapsed_wall_ns": 7007833100,
+    "native_binary_sha256": "042ee71ace3e3e2fbdee6a745934287cc333ce66c60ac94cb1d25ed458e95c85",
+    "native_source_digest": "2e3ac0ee0739bc62e101e1dbe127c8bf9118e981cc7dbff315535eb8d1b6f0bc",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "training": {
+    "expected_transitions_per_replay": 109,
+    "learning_steps": 222,
+    "live_segments": 1111,
+    "records": [
+      {
+        "episodes": [
+          {
+            "active_segments": 0,
+            "allocated_segments": 572,
+            "example_id": "train-inc-add-one",
+            "matching_segments": 0,
+            "predicted_steps": 0,
+            "steps": 53
+          },
+          {
+            "active_segments": 99,
+            "allocated_segments": 539,
+            "example_id": "train-dec-subtract-one",
+            "matching_segments": 99,
+            "predicted_steps": 8,
+            "steps": 58
+          }
+        ],
+        "replay": 0
+      },
+      {
+        "episodes": [
+          {
+            "active_segments": 583,
+            "allocated_segments": 0,
+            "example_id": "train-inc-add-one",
+            "matching_segments": 583,
+            "predicted_steps": 52,
+            "steps": 53
+          },
+          {
+            "active_segments": 638,
+            "allocated_segments": 0,
+            "example_id": "train-dec-subtract-one",
+            "matching_segments": 638,
+            "predicted_steps": 57,
+            "steps": 58
+          }
+        ],
+        "replay": 1
+      }
+    ],
+    "replays": 2,
+    "stable_second_replay": true
+  }
+}
