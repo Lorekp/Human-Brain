@@ -2,7 +2,7 @@
 
 After two physical TRAIN replays, cue token 0 is presented exactly once.  Each
 subsequent token is elected by the native output-cell race and that emitted
-token alone is fed back through READ_ONLY to form the next physical context.
+token is committed through the generator's atomic READ_ONLY feedback.
 An untrained static distractor shares one column with token 1, making the first
 election a two-candidate physical race without Python candidate enumeration.
 """
@@ -133,29 +133,28 @@ def main() -> int:
             )[0]
             free_run = []
             for position, expected_token in enumerate(EXPECTED_EMISSIONS, start=1):
-                election = circuit.elect_output()
-                feedback_step = circuit.advance_block(
-                    [election.token_id],
-                    mode=TemporalStepMode.READ_ONLY,
-                )[0]
+                generation = circuit.generate()
                 free_run.append(
                     {
                         "position": position,
                         "expected_token_id": expected_token,
-                        "emitted_token_id": election.token_id,
-                        "correct": election.token_id == expected_token,
-                        "output_cell_id": election.output_cell_id,
-                        "activated_columns": election.activated_columns,
-                        "candidate_tokens_physical": election.candidate_tokens,
-                        "winner_input_columns": election.winner_input_columns,
-                        "winner_tick": election.winner_tick,
-                        "basket_tick": election.basket_tick,
-                        "inhibition_onset_tick": election.inhibition_onset_tick,
-                        "simulated_ticks": election.simulated_ticks,
-                        "feedback_mode": "READ_ONLY",
-                        "feedback_arriving_token_id": feedback_step.token_id,
-                        "feedback_predicted": feedback_step.predicted,
-                        "feedback_predicted_columns": feedback_step.predicted_columns,
+                        "emitted_token_id": generation.surface_token_id,
+                        "correct": generation.surface_token_id == expected_token,
+                        "output_cell_id": generation.surface_output_cell_id,
+                        "generation_index": generation.generation_index,
+                        "generation_path": generation.path.name,
+                        "temporal_event_count": generation.temporal_event_count,
+                        "activated_columns": generation.activated_columns,
+                        "candidate_tokens_physical": generation.candidate_tokens,
+                        "winner_input_columns": generation.winner_input_columns,
+                        "winner_tick": generation.surface_winner_tick,
+                        "basket_tick": generation.surface_basket_tick,
+                        "inhibition_onset_tick": generation.surface_inhibition_onset_tick,
+                        "simulated_ticks": generation.total_simulated_ticks,
+                        "feedback_mode": "ATOMIC_GENERATE_READ_ONLY",
+                        "feedback_arriving_token_id": generation.surface_token_id,
+                        "feedback_predicted": generation.feedback_predicted,
+                        "feedback_predicted_columns": generation.feedback_predicted_columns,
                     }
                 )
             identity = circuit.checkpoint_identity()
@@ -182,8 +181,8 @@ def main() -> int:
         ),
         "claim_boundary": (
             "One memorized four-token public synthetic TRAIN chain. Cue token 0 arrives once; "
-            "tokens 1, 2, and 3 are then emitted by native physical output races and each emitted "
-            "token alone is fed back READ_ONLY. The first election includes an untrained static "
+            "tokens 1, 2, and 3 are then emitted and fed back by atomic native generate calls. "
+            "The first generation includes an untrained static "
             "one-column-overlap distractor, so it is a two-candidate physical race. There is no "
             "teacher token after the cue, Python candidate enumeration, argmax, or learned head. "
             "This is not open-vocabulary generation, semantic reasoning, generalization, coding "

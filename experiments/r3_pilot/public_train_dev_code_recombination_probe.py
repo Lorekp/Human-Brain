@@ -3,7 +3,7 @@
 TRAIN contains ``inc/+1`` and ``dec/-1`` prompt-to-function episodes. DEV asks
 for the unseen identifier ``bump`` recombined with the seen ``+1`` body. The
 DEV target is scoring-only: inference presents the DEV prompt once, then every
-output token must come from native physical election and emitted-token feedback.
+output token and its feedback must come from atomic native generation.
 """
 
 from __future__ import annotations
@@ -231,50 +231,42 @@ def main() -> int:
             maximum_elections = len(expected_code) + 8
             for position in range(maximum_elections):
                 try:
-                    election = circuit.elect_output()
+                    generation = circuit.generate()
                 except NativeTemporalRuntimeError as error:
                     stop = _stop_record(
                         error,
-                        phase="elect_output",
+                        phase="generate",
                         emission_position=position,
                     )
                     break
-                is_eos = election.token_id == EOS_TOKEN
+                is_eos = generation.surface_token_id == EOS_TOKEN
                 if not is_eos:
-                    if not 0 <= election.token_id < ASCII_TOKEN_LIMIT:
+                    if not 0 <= generation.surface_token_id < ASCII_TOKEN_LIMIT:
                         stop = {
                             "phase": "decode",
                             "emission_position": position,
                             "status": "NON_ASCII_TOKEN",
-                            "observed": election.token_id,
+                            "observed": generation.surface_token_id,
                         }
                         break
-                    emitted_bytes.append(election.token_id)
-                try:
-                    feedback = circuit.advance_block(
-                        [election.token_id],
-                        mode=TemporalStepMode.READ_ONLY,
-                    )[0]
-                except NativeTemporalRuntimeError as error:
-                    stop = _stop_record(
-                        error,
-                        phase="emitted_token_feedback",
-                        emission_position=position,
-                    )
-                    break
+                    emitted_bytes.append(generation.surface_token_id)
                 free_run.append(
                     {
                         "position": position,
-                        "emitted_token_id": election.token_id,
+                        "emitted_token_id": generation.surface_token_id,
                         "emitted_byte_hex": (
-                            None if is_eos else f"{election.token_id:02x}"
+                            None if is_eos else f"{generation.surface_token_id:02x}"
                         ),
                         "eos": is_eos,
-                        "activated_columns": election.activated_columns,
-                        "candidate_tokens_physical": election.candidate_tokens,
-                        "winner_input_columns": election.winner_input_columns,
-                        "feedback_predicted": feedback.predicted,
-                        "feedback_predicted_columns": feedback.predicted_columns,
+                        "generation_index": generation.generation_index,
+                        "generation_path": generation.path.name,
+                        "temporal_event_count": generation.temporal_event_count,
+                        "activated_columns": generation.activated_columns,
+                        "candidate_tokens_physical": generation.candidate_tokens,
+                        "winner_input_columns": generation.winner_input_columns,
+                        "feedback_mode": "ATOMIC_GENERATE_READ_ONLY",
+                        "feedback_predicted": generation.feedback_predicted,
+                        "feedback_predicted_columns": generation.feedback_predicted_columns,
                     }
                 )
                 if is_eos:
@@ -311,7 +303,7 @@ def main() -> int:
     elif exact_recombination and bool(code_analysis["compile_valid"]):
         outcome = "PASS_NOVEL_NAME_PLUS_OPERATOR_RECOMBINATION"
         localization = "The physical circuit recombined the unseen identifier with the seen +1 body."
-    elif stop is not None and not free_run and stop.get("phase") == "elect_output":
+    elif stop is not None and not free_run and stop.get("phase") == "generate":
         outcome = "STOP_NOVEL_DEV_PROMPT_OUTPUT_ROUTING"
         localization = (
             "The novel DEV prompt produced no physically electable output token; prompt-to-output "
@@ -360,7 +352,7 @@ def main() -> int:
             "Two literal public synthetic TRAIN prompt-to-function pairs and one frozen public "
             "synthetic DEV recombination are used. DEV is attempted exactly once. Only the DEV "
             "prompt reaches the runtime; the scoring target never does. Any DEV output must come "
-            "from native physical election plus emitted-token READ_ONLY feedback, with no Python "
+            "from atomic native physical generation and feedback, with no Python "
             "candidate enumeration, argmax, learned head, retry, or adaptation. This diagnoses "
             "prompt routing, identifier copy/binding, operator routing, and sequence termination; "
             "it is not coding competence, generalization beyond this micro-probe, SWE, protected "
@@ -411,8 +403,8 @@ def main() -> int:
         "dev_once": {
             "prompt_token_count": len(prompt_steps),
             "teacher_tokens_after_prompt": 0,
-            "maximum_election_budget": maximum_elections,
-            "completed_elections": len(free_run),
+            "maximum_generation_budget": maximum_elections,
+            "completed_generations": len(free_run),
             "terminated_by_eos": terminated_by_eos,
             "stop": stop,
             "emitted_code_text": emitted_text,
@@ -441,7 +433,7 @@ def main() -> int:
             {
                 "outcome": outcome,
                 "capability_pass": payload["capability_pass"],
-                "completed_elections": len(free_run),
+                "completed_generations": len(free_run),
                 "stop": stop,
                 "emitted_code_text": emitted_text,
                 "output": str(args.output),
