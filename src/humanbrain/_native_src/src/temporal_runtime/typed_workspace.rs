@@ -58,6 +58,16 @@ const BOUND_FINGERPRINT_SOURCES: [usize; SLOT_FINGERPRINT_WINNERS] = [0, 1, 2];
 const ROLE_POINTER_STACK_CAPACITY: usize = MAX_HOLE_ADDRESS_DEPTH as usize + 1;
 const TRANSFER_SEMANTIC_WINNERS_IN_MIX: usize = 5;
 const TRANSFER_ADDRESS_WINNERS_IN_MIX: usize = 1;
+// A nested fresh Head may be relocated to a true root, but it must not share
+// the ordinary operation-transfer bank: root operations are themselves stored
+// there and would win with a stronger address match.  Three globally private
+// neutral-operation base owners form a directional tag.  Together with the
+// five bound-sensitive transfer-plan winners and three semantic winners, this
+// leaves every ordinary transfer row at no more than eight matching logical
+// sources (16 contacts), below theta_active=18.
+const HEAD_TO_ROOT_TAG_WINNERS_IN_MIX: usize = 3;
+const HEAD_TO_ROOT_PLAN_WINNERS_IN_MIX: usize = PLAN_WINNERS_IN_MIX;
+const HEAD_TO_ROOT_SEMANTIC_WINNERS_IN_MIX: usize = 3;
 const SCAFFOLD_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 3, 4];
 // Scaffold backoff preserves the parameter signature and only whether any
 // bound exists; the rebased semantic/address context carries subtree identity.
@@ -85,6 +95,7 @@ pub(super) enum TypedPlanProjection {
     NestedExact,
     OperationTransfer,
     ScaffoldTransfer,
+    HeadToRootTransfer,
 }
 
 #[derive(Clone, Copy)]
@@ -277,6 +288,7 @@ pub(super) struct TypedWorkspaceState {
     eos_parameter_winners: [u32; 2],
     lower_slot_pointer_winners: [u32; SLOT_FINGERPRINT_WINNERS],
     upper_slot_pointer_winners: [u32; SLOT_FINGERPRINT_WINNERS],
+    head_to_root_tag_winners: [u32; HEAD_TO_ROOT_TAG_WINNERS_IN_MIX],
     plan_ready: bool,
     role_pointer_bindings: [Option<RolePointerBinding>; ROLE_POINTER_STACK_CAPACITY],
     session: Option<TypedSessionState>,
@@ -288,6 +300,7 @@ impl TypedWorkspaceState {
         eos_parameter_winners: [0; 2],
         lower_slot_pointer_winners: [0; SLOT_FINGERPRINT_WINNERS],
         upper_slot_pointer_winners: [0; SLOT_FINGERPRINT_WINNERS],
+        head_to_root_tag_winners: [0; HEAD_TO_ROOT_TAG_WINNERS_IN_MIX],
         plan_ready: false,
         role_pointer_bindings: [None; ROLE_POINTER_STACK_CAPACITY],
         session: None,
@@ -333,6 +346,8 @@ impl TypedWorkspaceState {
         for (destination, source) in ANY_BOUND_DESTINATIONS.into_iter().zip(ANY_BOUND_SOURCES) {
             self.plan_winners[destination] = any_bound_operation_context[source];
         }
+        self.head_to_root_tag_winners
+            .copy_from_slice(&neutral_operation_fingerprint[..HEAD_TO_ROOT_TAG_WINNERS_IN_MIX]);
         let lower_fingerprint_sources = if lower_bound_fingerprint.is_some() {
             BOUND_FINGERPRINT_SOURCES
         } else {
@@ -681,7 +696,7 @@ impl TypedWorkspaceState {
     pub(super) fn role_pointer_cue_transient(
         &self,
         surface_token_id: u32,
-        surface_winner_context: [u32; CONTEXT_CELLS],
+        surface_fingerprint: [u32; ACTIVE_COLUMNS],
         cue_winner_context: [u32; CONTEXT_CELLS],
         address_winner_context: [u32; CONTEXT_CELLS],
         relay_offset: u32,
@@ -720,7 +735,7 @@ impl TypedWorkspaceState {
             winners[..surface_start]
                 .copy_from_slice(&parent.owners[..PARENT_POINTER_WINNERS_IN_POINTER_CUE]);
             winners[surface_start..semantic_start]
-                .copy_from_slice(&surface_winner_context[..SURFACE_WINNERS_WITH_PARENT_POINTER]);
+                .copy_from_slice(&surface_fingerprint[..SURFACE_WINNERS_WITH_PARENT_POINTER]);
             winners[semantic_start..address_start]
                 .copy_from_slice(&cue_winner_context[..SEMANTIC_WINNERS_WITH_PARENT_POINTER]);
             winners[address_start..]
@@ -730,14 +745,14 @@ impl TypedWorkspaceState {
             let upper_start = lower_start + SLOT_FINGERPRINT_WINNERS;
             let semantic_start = upper_start + SLOT_FINGERPRINT_WINNERS;
             winners[..lower_start]
-                .copy_from_slice(&surface_winner_context[..SURFACE_WINNERS_WITHOUT_PARENT_POINTER]);
+                .copy_from_slice(&surface_fingerprint[..SURFACE_WINNERS_WITHOUT_PARENT_POINTER]);
             winners[lower_start..upper_start].copy_from_slice(&self.lower_slot_pointer_winners);
             winners[upper_start..semantic_start].copy_from_slice(&self.upper_slot_pointer_winners);
             winners[semantic_start..]
                 .copy_from_slice(&cue_winner_context[..SEMANTIC_WINNERS_WITHOUT_PARENT_POINTER]);
         } else {
             winners[..PLAN_WINNERS_IN_MIX]
-                .copy_from_slice(&surface_winner_context[..PLAN_WINNERS_IN_MIX]);
+                .copy_from_slice(&surface_fingerprint[..PLAN_WINNERS_IN_MIX]);
             winners[PLAN_WINNERS_IN_MIX..PLAN_WINNERS_IN_MIX + SIGNATURE_SEMANTIC_WINNERS_IN_MIX]
                 .copy_from_slice(&cue_winner_context[..SIGNATURE_SEMANTIC_WINNERS_IN_MIX]);
             winners[PLAN_WINNERS_IN_MIX + SIGNATURE_SEMANTIC_WINNERS_IN_MIX..]
@@ -793,7 +808,14 @@ impl TypedWorkspaceState {
             .then(|| self.role_local_pointer_for_current_hole())
             .flatten()
             .map(|(pointer, _)| pointer);
-        if let Some(pointer) = nested_pointer {
+        if projection == TypedPlanProjection::HeadToRootTransfer {
+            let plan_start = HEAD_TO_ROOT_TAG_WINNERS_IN_MIX;
+            let semantic_start = plan_start + HEAD_TO_ROOT_PLAN_WINNERS_IN_MIX;
+            winners[..plan_start].copy_from_slice(&self.head_to_root_tag_winners);
+            winners[plan_start..semantic_start].copy_from_slice(&projected_plan);
+            winners[semantic_start..]
+                .copy_from_slice(&cue_winner_context[..HEAD_TO_ROOT_SEMANTIC_WINNERS_IN_MIX]);
+        } else if let Some(pointer) = nested_pointer {
             winners[..POINTER_WINNERS_IN_NESTED_EXACT]
                 .copy_from_slice(&pointer.owners[..POINTER_WINNERS_IN_NESTED_EXACT]);
             winners[POINTER_WINNERS_IN_NESTED_EXACT..NESTED_POINTER_PLAN_WINNERS_IN_MIX]
@@ -873,7 +895,7 @@ fn plan_projection(
             TypedPlanProjection::ScaffoldTransfer => Ok(TypedPlanWinnerProjection::Retained(
                 &PARAMETER_BOUND_PRESENCE_PLAN_INDICES,
             )),
-            TypedPlanProjection::OperationTransfer => {
+            TypedPlanProjection::OperationTransfer | TypedPlanProjection::HeadToRootTransfer => {
                 Err(TemporalCircuitStop::MalformedContextOrPolicy(
                     "operation transfer requested for a scaffold typed hole",
                 ))
@@ -894,6 +916,9 @@ fn plan_projection(
             TypedPlanProjection::OperationTransfer => Ok(TypedPlanWinnerProjection::Retained(
                 &TRANSFER_OPERATION_PLAN_INDICES,
             )),
+            TypedPlanProjection::HeadToRootTransfer => Ok(TypedPlanWinnerProjection::Retained(
+                &TRANSFER_OPERATION_PLAN_INDICES,
+            )),
             TypedPlanProjection::ScaffoldTransfer => {
                 Err(TemporalCircuitStop::MalformedContextOrPolicy(
                     "scaffold transfer requested for an operation typed hole",
@@ -904,7 +929,9 @@ fn plan_projection(
             TypedPlanProjection::RootExact | TypedPlanProjection::NestedExact => {
                 Ok(TypedPlanWinnerProjection::EosParameter)
             }
-            TypedPlanProjection::OperationTransfer | TypedPlanProjection::ScaffoldTransfer => {
+            TypedPlanProjection::OperationTransfer
+            | TypedPlanProjection::ScaffoldTransfer
+            | TypedPlanProjection::HeadToRootTransfer => {
                 Err(TemporalCircuitStop::MalformedContextOrPolicy(
                     "EOS does not admit a typed transfer projection",
                 ))

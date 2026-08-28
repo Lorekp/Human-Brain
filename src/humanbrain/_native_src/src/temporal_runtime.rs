@@ -911,8 +911,7 @@ impl TemporalCircuitRuntime {
         self.step(vocabulary.plan_commit_token_id, mode)?;
 
         let neutral_operation_token = vocabulary.neutral_operation_component_token();
-        let neutral_operation_fingerprint =
-            self.typed_private_code_base_owners(neutral_operation_token);
+        let neutral_operation_fingerprint = self.token_code_base_owners(neutral_operation_token);
         self.step_typed_private_cue(neutral_operation_token)?;
         let neutral_operation = self.step(vocabulary.plan_commit_token_id, mode)?;
         let any_bound_ready = (FIRST_BOUND_SLOT..SLOT_COUNT as u8).any(|slot_value| {
@@ -943,7 +942,7 @@ impl TemporalCircuitRuntime {
                     return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
                 }
             };
-            let component_fingerprint = self.typed_private_code_base_owners(component_token);
+            let component_fingerprint = self.token_code_base_owners(component_token);
             self.step_typed_private_cue(component_token)?;
             let component = self.step(vocabulary.plan_commit_token_id, mode)?;
             let bound_index = usize::from(slot_value - FIRST_BOUND_SLOT);
@@ -1045,9 +1044,10 @@ impl TemporalCircuitRuntime {
             .map_err(TemporalCircuitStop::MalformedContextOrPolicy)?;
         let cue = self.step_typed_private_cue(cue_token_id)?;
         let address = self.step_typed_private_cue(address_token_id)?;
+        let surface_fingerprint = self.token_code_base_owners(surface_feedback.token_id);
         let pointer_cue = self.typed_workspace.role_pointer_cue_transient(
             surface_feedback.token_id,
-            surface_feedback.winner_context,
+            surface_fingerprint,
             cue.winner_context,
             address.winner_context,
             self.relay_offset,
@@ -1168,10 +1168,29 @@ impl TemporalCircuitRuntime {
             TypedHoleCue::Eos => None,
             TypedHoleCue::Terminated => unreachable!("terminated typed state rejects teaching"),
         };
+        let head_to_root_transfer = if matches!(
+            cue,
+            TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
+        ) {
+            let role = self.typed_workspace.current_role()?;
+            let is_root = self.typed_workspace.current_address_is_root()?;
+            role == TypedHoleRole::Head && !is_root
+        } else {
+            false
+        };
         if let Some(projection) = transfer_projection {
             if let Err(stop) = self
                 .prepare_current_typed_context_with_projection(TemporalStepMode::Learn, projection)
             {
+                return Err(stop);
+            }
+            self.step(token_id, TemporalStepMode::Learn)?;
+        }
+        if head_to_root_transfer {
+            if let Err(stop) = self.prepare_current_typed_context_with_projection(
+                TemporalStepMode::Learn,
+                TypedPlanProjection::HeadToRootTransfer,
+            ) {
                 return Err(stop);
             }
             self.step(token_id, TemporalStepMode::Learn)?;
@@ -1503,7 +1522,17 @@ impl TemporalCircuitRuntime {
             Ok(value) => value,
             Err(stop) => return self.fail(stop),
         };
-        let fallback_projection = if !is_root
+        let fallback_projection = if is_root
+            && matches!(
+                cue,
+                TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
+            ) {
+            // Root operations already inhabit OperationTransfer, so querying
+            // that bank here would prefer a learned root surface over the
+            // nested fresh-Head surface being relocated. The directional bank
+            // is trained only at non-root Heads and has a three-winner tag.
+            Some(TypedPlanProjection::HeadToRootTransfer)
+        } else if !is_root
             && matches!(
                 cue,
                 TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
@@ -1512,7 +1541,8 @@ impl TemporalCircuitRuntime {
                     | TypedHoleCue::LiteralFirstNonzeroDigit
                     | TypedHoleCue::LiteralDigitOrEnd
                     | TypedHoleCue::LiteralEnd
-            ) {
+            )
+        {
             Some(TypedPlanProjection::OperationTransfer)
         } else if matches!(
             cue,
@@ -2480,7 +2510,7 @@ impl TemporalCircuitRuntime {
             .map(|index| self.token_codebook[index].columns)
     }
 
-    fn typed_private_code_base_owners(&self, token_id: u32) -> [u32; ACTIVE_COLUMNS] {
+    fn token_code_base_owners(&self, token_id: u32) -> [u32; ACTIVE_COLUMNS] {
         let base_width = u32::from(self.config.base_cells_per_column);
         self.token_columns(token_id)
             .expect("typed private component token presence was validated")
@@ -7103,6 +7133,264 @@ mod tests {
     }
 
     #[test]
+    fn head_to_root_transfer_isolates_root_sum_and_recalls_nested_if_pointer() {
+        const W_SUM: u32 = 2_600;
+        const W_NESTED_IF: u32 = 2_601;
+        const W_TARGET: u32 = 2_602;
+        const PLAN_COMMIT: u32 = 2_700;
+        const CUE_BASE: u32 = 2_800;
+        const SURFACE_BASE: u32 = 2_900;
+        const ADDRESS_BASE: u32 = 20_000;
+
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            address_token_base: ADDRESS_BASE,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        use typed_hole_state::SurfaceKind as S;
+        let root_sum_surfaces = [S::Sum, S::Variable0, S::Eos];
+        let nested_if_surfaces = [
+            S::Map,
+            S::Bind,
+            S::If,
+            S::LessThan,
+            S::Variable0,
+            S::Integer,
+            S::Minus,
+            S::Digit(2),
+            S::End,
+            S::Integer,
+            S::Minus,
+            S::Digit(2),
+            S::End,
+            S::Variable0,
+            S::Variable0,
+            S::Eos,
+        ];
+        let mut token_ids = vec![W_SUM, W_NESTED_IF, W_TARGET, PLAN_COMMIT];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        extend_typed_address_tokens(
+            &mut token_ids,
+            vocabulary,
+            TypedValue::ListInt,
+            TypedValue::Int,
+            &root_sum_surfaces,
+        );
+        extend_typed_address_tokens(
+            &mut token_ids,
+            vocabulary,
+            TypedValue::ListInt,
+            TypedValue::ListInt,
+            &nested_if_surfaces,
+        );
+        // Include the bounded role-local rebases in addition to the absolute
+        // paths enumerated by the two surface streams.
+        token_ids.extend((0..=128).map(|offset| ADDRESS_BASE + offset));
+        for slot in 0..SLOT_COUNT as u8 {
+            token_ids.push(role_place_copy::slot_start_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::slot_end_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::copy_slot_token_id(slot).unwrap());
+        }
+        token_ids.push(COPY_END_TOKEN_ID);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.max_pyramidal_cells += 8 * ACTIVE_COLUMNS as u32 * 4;
+        circuit_config.segment_capacity = 4_096;
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        )
+        .expect("empty-store Head-to-root transfer fixture");
+
+        let surface = vocabulary.surface_token_ids;
+        let map = surface[2];
+        let bind = surface[3];
+        let variable_zero = surface[4];
+        let integer = surface[5];
+        let plus = surface[6];
+        let minus = surface[7];
+        let digit_two = surface[10];
+        let end = surface[18];
+        let eos = surface[19];
+        let less_than = surface[20];
+        let if_then_else = surface[21];
+        let sum = surface[22];
+        let copy_slot_two = role_place_copy::copy_slot_token_id(2).unwrap();
+
+        let capture_bounds = |runtime: &mut TemporalCircuitRuntime, mode: TemporalStepMode| {
+            for token_id in [
+                role_place_copy::slot_start_token_id(2).unwrap(),
+                minus,
+                digit_two,
+                role_place_copy::slot_end_token_id(2).unwrap(),
+                role_place_copy::slot_start_token_id(3).unwrap(),
+                plus,
+                digit_two,
+                role_place_copy::slot_end_token_id(3).unwrap(),
+            ] {
+                runtime.step(token_id, mode).expect("bound capture");
+            }
+        };
+
+        capture_bounds(&mut runtime, TemporalStepMode::Learn);
+        runtime.step(W_SUM, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        runtime
+            .prepare_current_typed_context_with_projection(
+                TemporalStepMode::Learn,
+                TypedPlanProjection::OperationTransfer,
+            )
+            .unwrap();
+        let root_sum_transfer_sources: [u32; ACTIVE_COLUMNS] = runtime.previous_context
+            [..ACTIVE_COLUMNS]
+            .try_into()
+            .unwrap();
+        for token_id in [sum, variable_zero, eos] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+
+        runtime.reset_transient();
+        capture_bounds(&mut runtime, TemporalStepMode::Learn);
+        runtime.step(W_NESTED_IF, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::ListInt,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        for token_id in [map, bind] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+        let before_head_steps = runtime.learning_step;
+        let before_head_segments = runtime.store.runtime_segment_count();
+        runtime.teach_typed_token(if_then_else).unwrap();
+        let learned_if_pointer = runtime
+            .typed_workspace
+            .active_role_pointer()
+            .expect("nested fresh-Head If recruits one pointer");
+        assert_eq!(runtime.learning_step - before_head_steps, 4);
+        assert_eq!(
+            runtime.store.runtime_segment_count() - before_head_segments,
+            5 * ACTIVE_COLUMNS as u32,
+            "Head-to-root adds one surface bank without another recurrent bank"
+        );
+        for token_id in [
+            less_than,
+            variable_zero,
+            integer,
+            copy_slot_two,
+            end,
+            integer,
+            copy_slot_two,
+            end,
+            variable_zero,
+            variable_zero,
+            eos,
+        ] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+        let learned_segment_count = runtime.store.runtime_segment_count();
+
+        runtime.reset_transient();
+        capture_bounds(&mut runtime, TemporalStepMode::ReadOnly);
+        runtime.step(W_TARGET, TemporalStepMode::ReadOnly).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+        runtime
+            .prepare_current_typed_context_with_projection(
+                TemporalStepMode::ReadOnly,
+                TypedPlanProjection::HeadToRootTransfer,
+            )
+            .unwrap();
+        let target_head_to_root_sources: [u32; ACTIVE_COLUMNS] = runtime.previous_context
+            [..ACTIVE_COLUMNS]
+            .try_into()
+            .unwrap();
+        let old_bank_overlap = root_sum_transfer_sources
+            .iter()
+            .filter(|source| target_head_to_root_sources.contains(source))
+            .count();
+        assert_eq!(old_bank_overlap, 8);
+
+        let recognition_sources = target_head_to_root_sources;
+        let diagnostic_count = runtime
+            .store
+            .recognize_runtime_context(&recognition_sources, &mut runtime.recognition_scratch)
+            .unwrap()
+            .owner_result_count;
+        for column in runtime.token_columns(sum).unwrap() {
+            assert!(
+                !runtime
+                    .column_has_active_owner(column, diagnostic_count)
+                    .unwrap(),
+                "old root Sum transfer must remain below the active threshold"
+            );
+        }
+        for column in runtime.token_columns(if_then_else).unwrap() {
+            assert!(
+                runtime
+                    .column_has_exact_active_owner(column, diagnostic_count)
+                    .unwrap(),
+                "dedicated nested-Head If transfer must be exact"
+            );
+        }
+
+        let generated = runtime
+            .generate_typed_one()
+            .expect("root fitted race")
+            .expect("unterminated target emits one surface");
+        assert_eq!(generated.surface_token_id, if_then_else);
+        assert_eq!(generated.candidate_tokens, 1);
+        assert_eq!(generated.winner_input_columns, ACTIVE_COLUMNS as u8);
+        let recalled_if_pointer = runtime
+            .typed_workspace
+            .active_role_pointer()
+            .expect("root If feedback activates one pointer");
+        assert_eq!(recalled_if_pointer.owners, learned_if_pointer.owners);
+        assert_eq!(
+            recalled_if_pointer.anchor,
+            typed_hole_state::TypedHoleAddress::root(),
+            "the recalled assembly is rebound to the target root"
+        );
+        assert_eq!(runtime.store.runtime_segment_count(), learned_segment_count);
+        assert_eq!(runtime.scientific_stop, None);
+    }
+
+    #[test]
     fn nested_integer_pointer_owns_literal_phases_then_restores_enclosing_pointer() {
         const WORKLOAD: u32 = 1_300;
         const PLAN_COMMIT: u32 = 1_400;
@@ -7369,7 +7657,7 @@ mod tests {
             workspace
                 .role_pointer_cue_transient(
                     vocabulary.surface_token_ids[0],
-                    context(40),
+                    fingerprint(40),
                     context(70),
                     context(10),
                     256,
@@ -7497,7 +7785,7 @@ mod tests {
             )
             .unwrap();
         let root_pointer_cue = |runtime: &mut TemporalCircuitRuntime| {
-            let surface = runtime.step(add, TemporalStepMode::ReadOnly).unwrap();
+            runtime.step(add, TemporalStepMode::ReadOnly).unwrap();
             let (_, cue_token_id, address_token_id, _) = runtime
                 .typed_workspace
                 .current_role_pointer_tokens()
@@ -7508,7 +7796,7 @@ mod tests {
                 .typed_workspace
                 .role_pointer_cue_transient(
                     add,
-                    surface.winner_context,
+                    runtime.token_code_base_owners(add),
                     cue.winner_context,
                     address.winner_context,
                     runtime.relay_offset,
@@ -7860,7 +8148,11 @@ mod tests {
         // Each first pointer adds one ordinary cue learning arrival plus eleven
         // recurrent rows outside the ordinary learning transaction.
         const FIRST_ROLE_POINTER_COUNT: u32 = 13;
-        const MAX_LEARN_ARRIVALS: u32 = BASE_MAX_LEARN_ARRIVALS + FIRST_ROLE_POINTER_COUNT;
+        // The fresh Bind body contributes one direction-isolated Head-to-root
+        // surface association (one learning arrival / eleven segment rows).
+        const HEAD_TO_ROOT_TRANSFER_ARRIVALS: u32 = 1;
+        const MAX_LEARN_ARRIVALS: u32 =
+            BASE_MAX_LEARN_ARRIVALS + FIRST_ROLE_POINTER_COUNT + HEAD_TO_ROOT_TRANSFER_ARRIVALS;
         const RECURRENT_ROLE_POINTER_ROWS: u32 = FIRST_ROLE_POINTER_COUNT * ACTIVE_COLUMNS as u32;
         // Scalar's two pointers and the two new clamp-plan components consume
         // cohort one. Eleven clamp pointers then require three more four-cell
