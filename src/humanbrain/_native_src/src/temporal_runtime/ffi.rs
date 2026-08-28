@@ -542,7 +542,7 @@ pub struct TemporalGenerationV1 {
     pub feedback_predicted: u8,
     pub copy_place_ordinal: u8,
     pub physical_election_count: u8,
-    pub copy_slot: u8,
+    pub slot_ordinal: u8,
     pub reserved_zero: [u8; 3],
 }
 
@@ -569,7 +569,7 @@ impl TemporalGenerationV1 {
         feedback_predicted: 0,
         copy_place_ordinal: 0,
         physical_election_count: 0,
-        copy_slot: 0,
+        slot_ordinal: 0,
         reserved_zero: [0; 3],
     };
 }
@@ -598,7 +598,7 @@ impl From<TemporalGeneration> for TemporalGenerationV1 {
             feedback_predicted: u8::from(generation.feedback_predicted),
             copy_place_ordinal: generation.copy_place_ordinal,
             physical_election_count: generation.physical_election_count,
-            copy_slot: generation.copy_slot,
+            slot_ordinal: generation.slot_ordinal,
             reserved_zero: [0; 3],
         }
     }
@@ -2819,7 +2819,7 @@ mod tests {
         assert_eq!(offset_of!(TemporalGenerationV1, surface_winner_tick), 40);
         assert_eq!(offset_of!(TemporalGenerationV1, path), 54);
         assert_eq!(offset_of!(TemporalGenerationV1, copy_place_ordinal), 58);
-        assert_eq!(offset_of!(TemporalGenerationV1, copy_slot), 60);
+        assert_eq!(offset_of!(TemporalGenerationV1, slot_ordinal), 60);
         assert_eq!(offset_of!(TemporalGenerationV1, reserved_zero), 61);
 
         assert_eq!(size_of::<TemporalCircuitAdvanceBlockV2Request>(), 40);
