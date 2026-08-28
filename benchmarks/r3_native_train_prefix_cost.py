@@ -1,4 +1,4 @@
-"""TRAIN-only native cost smoke over the canonical 4,096-token prefix.
+"""TRAIN-only native cost smoke over a canonical first-book prefix.
 
 This is pre-outcome engineering evidence.  It uses the production R3-F0
 codebook, fitted seed-17 thresholds, and physical native learning path, but a
@@ -7,6 +7,7 @@ bounded segment capacity and a synthetic authority bypass keep it outside C1.
 
 from __future__ import annotations
 
+import argparse
 import contextlib
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -42,9 +43,8 @@ from humanbrain.native_temporal_runtime import (
 )
 
 
-PREFIX_TOKENS = 4_096
+DEFAULT_PREFIX_TOKENS = 4_096
 ACTIVE_COLUMNS = 11
-SEGMENT_CAPACITY = (PREFIX_TOKENS - 1) * ACTIVE_COLUMNS
 ARM = (10, 13)
 CONSTRUCTION_SEED = 17
 TOTAL_C1_STEPS = 33_135_753
@@ -107,20 +107,40 @@ def _completed_distribution(
     }
 
 
-def _load_prefix() -> tuple[object, object, np.ndarray, int]:
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--prefix-tokens",
+        type=int,
+        default=DEFAULT_PREFIX_TOKENS,
+        help=f"canonical first-book token count (default: {DEFAULT_PREFIX_TOKENS})",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=OUTPUT_PATH,
+        help=f"artifact path (default: {OUTPUT_PATH})",
+    )
+    args = parser.parse_args()
+    if args.prefix_tokens < 2:
+        parser.error("--prefix-tokens must be at least 2")
+    return args
+
+
+def _load_prefix(prefix_tokens: int) -> tuple[object, object, np.ndarray, int]:
     started_ns = time.perf_counter_ns()
     verified = load_verified_train_input()
     input_load_ns = time.perf_counter_ns() - started_ns
     books = tuple(verified.iter_books())
-    if len(books) != 49 or books[0].token_count < PREFIX_TOKENS:
-        raise RuntimeError("canonical TRAIN books cannot supply the fixed prefix")
-    prefix = np.frombuffer(books[0].token_bytes_le_i32, dtype="<i4")[:PREFIX_TOKENS]
-    if prefix.size != PREFIX_TOKENS:
+    if len(books) != 49 or books[0].token_count < prefix_tokens:
+        raise RuntimeError("canonical TRAIN first book cannot supply the requested prefix")
+    prefix = np.frombuffer(books[0].token_bytes_le_i32, dtype="<i4")[:prefix_tokens]
+    if prefix.size != prefix_tokens:
         raise RuntimeError("canonical TRAIN prefix length drifted")
     return verified, books[0], prefix, input_load_ns
 
 
-def _bounded_definition() -> tuple[
+def _bounded_definition(prefix_tokens: int) -> tuple[
     dict[str, object],
     NativeTemporalCircuitDefinition,
     NativeTemporalCircuitDefinition,
@@ -131,7 +151,10 @@ def _bounded_definition() -> tuple[
     protocol_authority.validate_protocol(protocol, require_runnable=False)
     production = build_r3_f0_definition(protocol, ARM, CONSTRUCTION_SEED)
     bounded = NativeTemporalCircuitDefinition(
-        replace(production.config, segment_capacity=SEGMENT_CAPACITY),
+        replace(
+            production.config,
+            segment_capacity=(prefix_tokens - 1) * ACTIVE_COLUMNS,
+        ),
         production.token_codes,
         production.threshold_offsets_mv,
     )
@@ -264,8 +287,11 @@ def _run_prefix(
 
 
 def main() -> int:
-    verified, first_book, prefix, input_load_ns = _load_prefix()
-    protocol, production, bounded, definition_build_ns = _bounded_definition()
+    args = _parse_args()
+    prefix_tokens = args.prefix_tokens
+    output_path = args.output
+    verified, first_book, prefix, input_load_ns = _load_prefix(prefix_tokens)
+    protocol, production, bounded, definition_build_ns = _bounded_definition(prefix_tokens)
     production_token_ids = {token for token, _columns in production.token_codes}
     if any(int(token) not in production_token_ids for token in prefix):
         raise RuntimeError("TRAIN prefix contains a token outside the production codebook")
@@ -295,7 +321,7 @@ def main() -> int:
             "generated_at_utc": datetime.now(UTC).isoformat(),
             "outcome": "SCIENTIFIC_STOP",
             "claim_boundary": (
-                "first 4,096 canonical TRAIN tokens only; synthetic pre-outcome authority, "
+                f"first {prefix_tokens:,} canonical TRAIN tokens only; synthetic pre-outcome authority, "
                 "bounded capacity, no held-out/C1/capability/cohort evidence"
             ),
             "train_input": {
@@ -304,7 +330,7 @@ def main() -> int:
                 "train_stream_sha256": verified.train_stream_sha256,
                 "tokenizer_sha256": verified.tokenizer_sha256,
                 "prefix_book": first_book.short_name,
-                "prefix_token_count": PREFIX_TOKENS,
+                "prefix_token_count": prefix_tokens,
                 "prefix_token_sha256_le_i32": hashlib.sha256(prefix_bytes).hexdigest(),
                 "held_out_books_materialized": 0,
                 "input_load_ns": input_load_ns,
@@ -346,11 +372,11 @@ def main() -> int:
                 "native_binary_sha256": native_identity.binary_sha256,
             },
         }
-        OUTPUT_PATH.write_text(
+        output_path.write_text(
             json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
             encoding="utf-8",
         )
-        print(f"wrote partial {OUTPUT_PATH}", flush=True)
+        print(f"wrote partial {output_path}", flush=True)
         return 2
 
     assert final_identity is not None
@@ -362,8 +388,8 @@ def main() -> int:
         raise RuntimeError("physical winner/basket/GABA causality failed")
 
     latency = _distribution(series["latency_ns"])
-    call_rate = PREFIX_TOKENS * 1_000_000_000.0 / int(latency["sum"])
-    loop_rate = PREFIX_TOKENS * 1_000_000_000.0 / int(physical["replay_wall_ns"])
+    call_rate = prefix_tokens * 1_000_000_000.0 / int(latency["sum"])
+    loop_rate = prefix_tokens * 1_000_000_000.0 / int(physical["replay_wall_ns"])
     required_rate = TOTAL_C1_STEPS / CAP_SECONDS
     headroom_rate = TOTAL_C1_STEPS / HEADROOM_SECONDS
     cap_projection = {
@@ -388,7 +414,7 @@ def main() -> int:
         "benchmark": "r3-native-train-prefix-cost",
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "claim_boundary": (
-            "first 4,096 canonical TRAIN tokens only; synthetic pre-outcome authority, "
+            f"first {prefix_tokens:,} canonical TRAIN tokens only; synthetic pre-outcome authority, "
             "bounded capacity, no held-out/C1/capability/cohort evidence"
         ),
         "train_input": {
@@ -398,7 +424,7 @@ def main() -> int:
             "tokenizer_sha256": verified.tokenizer_sha256,
             "full_train_token_count": verified.token_count,
             "prefix_book": first_book.short_name,
-            "prefix_token_count": PREFIX_TOKENS,
+            "prefix_token_count": prefix_tokens,
             "prefix_token_sha256_le_i32": hashlib.sha256(prefix_bytes).hexdigest(),
             "prefix_unique_token_ids": int(np.unique(prefix).size),
             "train_books_materialized": 49,
@@ -430,7 +456,7 @@ def main() -> int:
             "timer": "time.perf_counter_ns",
             "gc_during_replay": "disabled",
             "book_resets": 1,
-            "transition_steps": PREFIX_TOKENS - 1,
+            "transition_steps": prefix_tokens - 1,
             "latency_ns": latency,
             "recognition": {
                 "candidate_segments": _distribution(series["candidate_segments"]),
@@ -459,11 +485,11 @@ def main() -> int:
             "native_binary_sha256": native_identity.binary_sha256,
         },
     }
-    OUTPUT_PATH.write_text(
+    output_path.write_text(
         json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
-    print(f"wrote {OUTPUT_PATH}", flush=True)
+    print(f"wrote {output_path}", flush=True)
     return 0
 
 

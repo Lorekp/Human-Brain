@@ -1,0 +1,569 @@
+{
+  "benchmark": "r3-native-train-prefix-scaling",
+  "claim_boundary": "one completed run each over canonical first-book TRAIN prefixes [4096, 8192, 16384, 32768, 65536, 122253]; synthetic pre-outcome authority, prefix-bounded segment capacity, no held-out/C1/capability/cohort evidence; full-run growth, checkpoints, I/O, and arm topology remain excluded",
+  "definition": {
+    "arm": [
+      10,
+      13
+    ],
+    "bounded_capacity_rule": "(prefix_tokens - one book seed) * 11",
+    "column_count": 4096,
+    "construction_seed": 17,
+    "max_pyramidal_cells": 131072,
+    "physical_cell_count": 274432,
+    "production_definition_identity_sha256": "be6d5470a8cab36cd8a8d52b456c2d7601012a71d4b689999233b6c37e84874a",
+    "production_segment_capacity": 23286406,
+    "protocol_runnable": false,
+    "protocol_sha256": "1cc1c48c57dac9d3a4eb1bbf13534b4a76e9a815fcdf3707051cb28f92575fb4",
+    "threshold_offsets_sha256_le_f64": "3eb899945775d84026ac967920065c7f6a2d01f3c1e08cd4cf53d0e614ce994e",
+    "token_code_count": 768
+  },
+  "environment": {
+    "native_binary_sha256": "33685ddec7e2fc117d9f04e283cf0cab8bc3899235d37020ef60d67e64fff01e",
+    "native_binary_size": 546816,
+    "native_source_digest": "fbafc77f0dc412015d65958724f3d56f74e918f8d88f6df8db77642b3b1d41af",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "generated_at_utc": "2026-08-28T01:17:12.422328+00:00",
+  "measurement": {
+    "gc_during_replay": "disabled",
+    "mode": "LEARN",
+    "one_run_per_prefix": true,
+    "points": [
+      {
+        "bounded_definition_identity_sha256": "50919981ac878f506949de3b9ec3d6e78ed41a52a748ab26e4ddca327c4f55fd",
+        "bounded_segment_capacity": 45045,
+        "cap_projection": {
+          "abi_call_steps_per_second": 3371.647131115998,
+          "instrumented_loop_multiple_of_required": 5.364348246380871,
+          "instrumented_loop_projected_hours": 2.7962390417363285,
+          "instrumented_loop_steps_per_second": 3291.698490704809
+        },
+        "latency_ns": {
+          "count": 4096,
+          "max": 819500,
+          "mean": 296590.9423828125,
+          "median": 277900.0,
+          "min": 185400,
+          "p95": 463600,
+          "p99": 551900,
+          "sum": 1214836500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "allocated_segments_total": 43153,
+          "basket_spikes": 45056,
+          "live_segments_final": 43153,
+          "predicted_steps": 70,
+          "punished_segments_total": 1186,
+          "winner_spikes": 45056
+        },
+        "per_step_replay_wall_ns": 303794.53125,
+        "prefix_token_count": 4096,
+        "prefix_token_sha256_le_i32": "a39faff31eb8be4c13f4b8cd5e4b070009eeca575bde44ad552b8bf8dcbef26f",
+        "prefix_unique_token_ids": 265,
+        "recognition": {
+          "active_segments": {
+            "count": 4096,
+            "max": 22,
+            "mean": 0.480224609375,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 11,
+            "sum": 1967
+          },
+          "candidate_segments": {
+            "count": 4096,
+            "max": 3187,
+            "mean": 586.175537109375,
+            "median": 340.5,
+            "min": 0,
+            "p95": 2046,
+            "p99": 2761,
+            "sum": 2400975
+          },
+          "matching_segments": {
+            "count": 4096,
+            "max": 66,
+            "mean": 3.899658203125,
+            "median": 0.0,
+            "min": 0,
+            "p95": 22,
+            "p99": 33,
+            "sum": 15973
+          },
+          "postings_visited": {
+            "count": 4096,
+            "max": 5135,
+            "mean": 953.693359375,
+            "median": 528.0,
+            "min": 0,
+            "p95": 3388,
+            "p99": 4508,
+            "sum": 3906328
+          }
+        },
+        "replay_wall_ns": 1244342400,
+        "source_artifact_sha256": "f057d7cd6375544bc98384790cff3146f9fbe93ce0adc74269d2114be0f1e463",
+        "source_generated_at_utc": "2026-08-28T00:52:49.261672+00:00",
+        "transition_steps": 4095
+      },
+      {
+        "bounded_definition_identity_sha256": "365920a7ac44e6905a8b0eb4ec2bfaf5a482fe4c7d052074a79d40fb22e3031d",
+        "bounded_segment_capacity": 90101,
+        "cap_projection": {
+          "abi_call_steps_per_second": 3715.941324778443,
+          "instrumented_loop_multiple_of_required": 5.896465382926869,
+          "instrumented_loop_projected_hours": 2.5438968985440473,
+          "instrumented_loop_steps_per_second": 3618.2188981799104
+        },
+        "latency_ns": {
+          "count": 8192,
+          "max": 1801100,
+          "mean": 269110.8154296875,
+          "median": 251000.0,
+          "min": 132600,
+          "p95": 506900,
+          "p99": 701200,
+          "sum": 2204555800
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "allocated_segments_total": 85096,
+          "basket_spikes": 90112,
+          "live_segments_final": 85096,
+          "predicted_steps": 125,
+          "punished_segments_total": 3993,
+          "winner_spikes": 90112
+        },
+        "per_step_replay_wall_ns": 276379.0771484375,
+        "prefix_token_count": 8192,
+        "prefix_token_sha256_le_i32": "bd989dd9e32fe05090b808f29cec21753d24f0e50096c7dadfd7be0627273a9c",
+        "prefix_unique_token_ids": 344,
+        "recognition": {
+          "active_segments": {
+            "count": 8192,
+            "max": 33,
+            "mean": 0.65869140625,
+            "median": 0.0,
+            "min": 0,
+            "p95": 11,
+            "p99": 11,
+            "sum": 5396
+          },
+          "candidate_segments": {
+            "count": 8192,
+            "max": 6264,
+            "mean": 1185.2586669921875,
+            "median": 693.0,
+            "min": 0,
+            "p95": 4163,
+            "p99": 5495,
+            "sum": 9709639
+          },
+          "matching_segments": {
+            "count": 8192,
+            "max": 88,
+            "mean": 7.24267578125,
+            "median": 0.0,
+            "min": 0,
+            "p95": 33,
+            "p99": 55,
+            "sum": 59332
+          },
+          "postings_visited": {
+            "count": 8192,
+            "max": 10131,
+            "mean": 1919.9849853515625,
+            "median": 1077.0,
+            "min": 0,
+            "p95": 6907,
+            "p99": 9016,
+            "sum": 15728517
+          }
+        },
+        "replay_wall_ns": 2264097400,
+        "source_artifact_sha256": "b24b73aa4f929218083a916a5ab01d0e2fbe640bcaeffe9902f990e51a304922",
+        "source_generated_at_utc": "2026-08-28T01:02:36.127134+00:00",
+        "transition_steps": 8191
+      },
+      {
+        "bounded_definition_identity_sha256": "8461b5a3651f3274b319439aa537bd2fa977d10d17dc215ecee18bd35bfa6d38",
+        "bounded_segment_capacity": 180213,
+        "cap_projection": {
+          "abi_call_steps_per_second": 2813.4256935105495,
+          "instrumented_loop_multiple_of_required": 4.491669865667232,
+          "instrumented_loop_projected_hours": 3.3395152468027094,
+          "instrumented_loop_steps_per_second": 2756.2011708572704
+        },
+        "latency_ns": {
+          "count": 16384,
+          "max": 2367600,
+          "mean": 355438.5681152344,
+          "median": 289700.0,
+          "min": 132300,
+          "p95": 800800,
+          "p99": 1157500,
+          "sum": 5823505500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "allocated_segments_total": 159652,
+          "basket_spikes": 180224,
+          "live_segments_final": 159652,
+          "predicted_steps": 554,
+          "punished_segments_total": 16226,
+          "winner_spikes": 180224
+        },
+        "per_step_replay_wall_ns": 362818.2189941406,
+        "prefix_token_count": 16384,
+        "prefix_token_sha256_le_i32": "501a6da09a400a0233517131cf995d79cf0531c09bb772cc4f66c400b0e56d18",
+        "prefix_unique_token_ids": 391,
+        "recognition": {
+          "active_segments": {
+            "count": 16384,
+            "max": 33,
+            "mean": 1.37689208984375,
+            "median": 0.0,
+            "min": 0,
+            "p95": 11,
+            "p99": 22,
+            "sum": 22559
+          },
+          "candidate_segments": {
+            "count": 16384,
+            "max": 11511,
+            "mean": 2321.0947265625,
+            "median": 1406.5,
+            "min": 0,
+            "p95": 7939,
+            "p99": 10021,
+            "sum": 38028816
+          },
+          "matching_segments": {
+            "count": 16384,
+            "max": 154,
+            "mean": 14.09814453125,
+            "median": 11.0,
+            "min": 0,
+            "p95": 55,
+            "p99": 88,
+            "sum": 230984
+          },
+          "postings_visited": {
+            "count": 16384,
+            "max": 18461,
+            "mean": 3770.0635375976562,
+            "median": 2219.5,
+            "min": 0,
+            "p95": 13205,
+            "p99": 16528,
+            "sum": 61768721
+          }
+        },
+        "replay_wall_ns": 5944413700,
+        "source_artifact_sha256": "101713e21941171c009e3b464365ad2c088e7c587977b043033010e77d591e20",
+        "source_generated_at_utc": "2026-08-28T01:03:49.417289+00:00",
+        "transition_steps": 16383
+      },
+      {
+        "bounded_definition_identity_sha256": "4f590af709e8696acd0f8f930f903a39b8317530f75a6335e3f3b0dec277f9ba",
+        "bounded_segment_capacity": 360437,
+        "cap_projection": {
+          "abi_call_steps_per_second": 1923.7104278754564,
+          "instrumented_loop_multiple_of_required": 3.088904512761894,
+          "instrumented_loop_projected_hours": 4.8560905453784935,
+          "instrumented_loop_steps_per_second": 1895.4292032493238
+        },
+        "latency_ns": {
+          "count": 32768,
+          "max": 4344300,
+          "mean": 519828.7567138672,
+          "median": 376000.0,
+          "min": 132300,
+          "p95": 1353100,
+          "p99": 1978000,
+          "sum": 17033748700
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "allocated_segments_total": 303711,
+          "basket_spikes": 360448,
+          "live_segments_final": 303711,
+          "predicted_steps": 1274,
+          "punished_segments_total": 46355,
+          "winner_spikes": 360448
+        },
+        "per_step_replay_wall_ns": 527584.9914550781,
+        "prefix_token_count": 32768,
+        "prefix_token_sha256_le_i32": "6bba85df4f8cb81d54f2271d464fdb528edb6bb863aaedecdc483f3e399d385f",
+        "prefix_unique_token_ids": 434,
+        "recognition": {
+          "active_segments": {
+            "count": 32768,
+            "max": 44,
+            "mean": 1.86474609375,
+            "median": 0.0,
+            "min": 0,
+            "p95": 11,
+            "p99": 22,
+            "sum": 61104
+          },
+          "candidate_segments": {
+            "count": 32768,
+            "max": 18357,
+            "mean": 4026.8096618652344,
+            "median": 2603.0,
+            "min": 0,
+            "p95": 12844,
+            "p99": 16236,
+            "sum": 131950499
+          },
+          "matching_segments": {
+            "count": 32768,
+            "max": 209,
+            "mean": 22.716949462890625,
+            "median": 11.0,
+            "min": 0,
+            "p95": 85,
+            "p99": 121,
+            "sum": 744389
+          },
+          "postings_visited": {
+            "count": 32768,
+            "max": 30302,
+            "mean": 6505.385803222656,
+            "median": 4083.0,
+            "min": 0,
+            "p95": 20895,
+            "p99": 26770,
+            "sum": 213168482
+          }
+        },
+        "replay_wall_ns": 17287905000,
+        "source_artifact_sha256": "8cbb721a43efaf7451f604637aa6ab57b502e12076dd6718e57727ef5383ba39",
+        "source_generated_at_utc": "2026-08-28T01:05:34.045154+00:00",
+        "transition_steps": 32767
+      },
+      {
+        "bounded_definition_identity_sha256": "b866802fa77e6cd68ba3c1f34ec2a818e40af21ee3417d9f659ee62c255bc567",
+        "bounded_segment_capacity": 720885,
+        "cap_projection": {
+          "abi_call_steps_per_second": 1147.9831546995042,
+          "instrumented_loop_multiple_of_required": 1.8491836709190699,
+          "instrumented_loop_projected_hours": 8.11168746290345,
+          "instrumented_loop_steps_per_second": 1134.7054328001404
+        },
+        "latency_ns": {
+          "count": 65536,
+          "max": 7686900,
+          "mean": 871092.9214477539,
+          "median": 652300.0,
+          "min": 141500,
+          "p95": 2144000,
+          "p99": 2964800,
+          "sum": 57087945700
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "allocated_segments_total": 572615,
+          "basket_spikes": 720896,
+          "live_segments_final": 572615,
+          "predicted_steps": 2843,
+          "punished_segments_total": 123417,
+          "winner_spikes": 720896
+        },
+        "per_step_replay_wall_ns": 881285.9893798828,
+        "prefix_token_count": 65536,
+        "prefix_token_sha256_le_i32": "9efbbb756c962c92b1d199a864e13d9e47f6c1129ebbe0fa9cb5218dbc9a90ff",
+        "prefix_unique_token_ids": 467,
+        "recognition": {
+          "active_segments": {
+            "count": 65536,
+            "max": 44,
+            "mean": 2.3981170654296875,
+            "median": 0.0,
+            "min": 0,
+            "p95": 11,
+            "p99": 22,
+            "sum": 157163
+          },
+          "candidate_segments": {
+            "count": 65536,
+            "max": 24148,
+            "mean": 5899.262237548828,
+            "median": 4430.0,
+            "min": 0,
+            "p95": 15463,
+            "p99": 20370,
+            "sum": 386614050
+          },
+          "matching_segments": {
+            "count": 65536,
+            "max": 296,
+            "mean": 31.631851196289062,
+            "median": 22.0,
+            "min": 0,
+            "p95": 108,
+            "p99": 152,
+            "sum": 2073025
+          },
+          "postings_visited": {
+            "count": 65536,
+            "max": 38500,
+            "mean": 9436.679550170898,
+            "median": 6982.0,
+            "min": 0,
+            "p95": 25239,
+            "p99": 33151,
+            "sum": 618442231
+          }
+        },
+        "replay_wall_ns": 57755958600,
+        "source_artifact_sha256": "12a93e858f72726c0967b7409c2eb96e8a99956e1221cef2e9d5b3ee4f3d7dfa",
+        "source_generated_at_utc": "2026-08-28T01:12:19.612900+00:00",
+        "transition_steps": 65535
+      },
+      {
+        "bounded_definition_identity_sha256": "9332914c45178823da61bc4368ad7a4fc10cffedae9d58793d1786b8481a68e4",
+        "bounded_segment_capacity": 1344772,
+        "cap_projection": {
+          "abi_call_steps_per_second": 1073.6880817268889,
+          "instrumented_loop_multiple_of_required": 1.7334951211617675,
+          "instrumented_loop_projected_hours": 8.653038486746464,
+          "instrumented_loop_steps_per_second": 1063.7160400281741
+        },
+        "latency_ns": {
+          "count": 122253,
+          "max": 6324300,
+          "mean": 931369.1909400997,
+          "median": 745800,
+          "min": 131800,
+          "p95": 2251000,
+          "p99": 3105400,
+          "sum": 113862677700
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "allocated_segments_total": 1047305,
+          "basket_spikes": 1344783,
+          "live_segments_final": 1047305,
+          "predicted_steps": 5648,
+          "punished_segments_total": 245102,
+          "winner_spikes": 1344783
+        },
+        "per_step_replay_wall_ns": 940100.5177787049,
+        "prefix_token_count": 122253,
+        "prefix_token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd",
+        "prefix_unique_token_ids": 489,
+        "recognition": {
+          "active_segments": {
+            "count": 122253,
+            "max": 44,
+            "mean": 2.557573229286807,
+            "median": 0,
+            "min": 0,
+            "p95": 11,
+            "p99": 22,
+            "sum": 312671
+          },
+          "candidate_segments": {
+            "count": 122253,
+            "max": 27161,
+            "mean": 6928.784250693235,
+            "median": 5693,
+            "min": 0,
+            "p95": 17202,
+            "p99": 22094,
+            "sum": 847064661
+          },
+          "matching_segments": {
+            "count": 122253,
+            "max": 323,
+            "mean": 33.747957105347105,
+            "median": 22,
+            "min": 0,
+            "p95": 109,
+            "p99": 162,
+            "sum": 4125789
+          },
+          "postings_visited": {
+            "count": 122253,
+            "max": 43654,
+            "mean": 10882.072431760365,
+            "median": 8870,
+            "min": 0,
+            "p95": 27900,
+            "p99": 35713,
+            "sum": 1330366001
+          }
+        },
+        "replay_wall_ns": 114930108600,
+        "source_artifact_sha256": "17bb6a6882ade0320b227b83d3ead4a2e28adae74e455c7cd5b76fcd9ac22cc2",
+        "source_generated_at_utc": "2026-08-28T01:16:40.142761+00:00",
+        "transition_steps": 122252
+      }
+    ],
+    "timer": "time.perf_counter_ns"
+  },
+  "scaling": {
+    "first_to_last_ratios": {
+      "live_segments": 24.26957569578013,
+      "mean_candidate_segments": 11.820323114917686,
+      "mean_postings_visited": 11.41045213829726,
+      "per_step_replay_wall_ns": 3.0945274554829725,
+      "prefix_tokens": 29.846923828125,
+      "projected_hours": 3.0945274554829716
+    },
+    "fit_form": "metric = coefficient * prefix_token_count ** prefix_exponent",
+    "log_log_fits": {
+      "live_segments": {
+        "coefficient": 18.65635342686004,
+        "prefix_exponent": 0.9328795156091143,
+        "r_squared_log_space": 0.999885527713484
+      },
+      "mean_candidate_segments": {
+        "coefficient": 1.4632102733648238,
+        "prefix_exponent": 0.7428358211006207,
+        "r_squared_log_space": 0.9657263329427033
+      },
+      "mean_postings_visited": {
+        "coefficient": 2.580244933023352,
+        "prefix_exponent": 0.7337294989574399,
+        "r_squared_log_space": 0.9624604150279383
+      },
+      "per_step_replay_wall_ns": {
+        "coefficient": 9009.646269981853,
+        "prefix_exponent": 0.39741460258660516,
+        "r_squared_log_space": 0.9080888244802826
+      }
+    },
+    "max_prefix_observation": {
+      "instrumented_loop_multiple_of_required": 1.7334951211617675,
+      "instrumented_loop_projected_hours": 8.653038486746464,
+      "instrumented_loop_steps_per_second": 1063.7160400281741,
+      "live_segments_final": 1047305,
+      "mean_candidate_segments": 6928.784250693235,
+      "mean_postings_visited": 10882.072431760365,
+      "prefix_token_count": 122253
+    }
+  },
+  "schema_version": 1,
+  "train_input": {
+    "candidate_id": "cell-lm-v1-freeze-candidate-bible-kjv-pg10-v3",
+    "held_out_books_materialized": 0,
+    "prefix_book": "Genesis",
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+  }
+}
