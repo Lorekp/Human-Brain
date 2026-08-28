@@ -73,6 +73,10 @@ _STEP_FIELDS = frozenset(
         "token_id",
         "punished_segments",
         "event_count",
+        "candidate_segments",
+        "matching_segments",
+        "active_segments",
+        "postings_visited",
         "predicted",
         "predicted_columns",
         "allocated_segments",
@@ -464,6 +468,26 @@ class CalibrationV3Session:
 
     def close(self) -> None:
         self._owner._close_active_session(self)
+
+
+@dataclass(frozen=True, slots=True)
+class CommittedR3Result:
+    """Immutable receipt for one durably published terminal R3 result."""
+
+    artifact_path: str
+    payload_sha256: str
+    timing: persistence.CumulativeActiveWallTiming
+    publication: object
+
+    def __post_init__(self) -> None:
+        if type(self.artifact_path) is not str or not self.artifact_path:
+            raise TypeError("artifact_path must be exact non-empty text")
+        if not _is_lower_sha256(self.payload_sha256):
+            raise ValueError("payload_sha256 must be lowercase SHA-256")
+        if type(self.timing) is not persistence.CumulativeActiveWallTiming:
+            raise TypeError("timing must be an exact CumulativeActiveWallTiming")
+        if self.timing.state is not persistence.TimingState.WITHIN_CAP:
+            raise ValueError("committed R3 result timing must be within cap")
 
 
 class CommittedResumeCheckpoint:
@@ -1073,6 +1097,10 @@ def _serialize_step(step: persistence.TemporalStepFrame) -> dict[str, object]:
         "token_id": step.token_id,
         "punished_segments": step.punished_segments,
         "event_count": step.event_count,
+        "candidate_segments": step.candidate_segments,
+        "matching_segments": step.matching_segments,
+        "active_segments": step.active_segments,
+        "postings_visited": step.postings_visited,
         "predicted": step.predicted,
         "predicted_columns": step.predicted_columns,
         "allocated_segments": step.allocated_segments,
@@ -1115,6 +1143,10 @@ def _freeze_native_step(step: object, native: Any) -> persistence.TemporalStepFr
             token_id=step.token_id,
             punished_segments=step.punished_segments,
             event_count=step.event_count,
+            candidate_segments=step.candidate_segments,
+            matching_segments=step.matching_segments,
+            active_segments=step.active_segments,
+            postings_visited=step.postings_visited,
             predicted=step.predicted,
             predicted_columns=step.predicted_columns,
             allocated_segments=step.allocated_segments,
@@ -1270,6 +1302,18 @@ def _parse_step(value: object) -> persistence.TemporalStepFrame:
             payload["punished_segments"], label="previous punished_segments"
         ),
         "event_count": _exact_nonnegative_int(payload["event_count"], label="previous event_count"),
+        "candidate_segments": _exact_nonnegative_int(
+            payload["candidate_segments"], label="previous candidate_segments"
+        ),
+        "matching_segments": _exact_nonnegative_int(
+            payload["matching_segments"], label="previous matching_segments"
+        ),
+        "active_segments": _exact_nonnegative_int(
+            payload["active_segments"], label="previous active_segments"
+        ),
+        "postings_visited": _exact_nonnegative_int(
+            payload["postings_visited"], label="previous postings_visited"
+        ),
         "predicted": payload["predicted"],
         "predicted_columns": _exact_nonnegative_int(
             payload["predicted_columns"], label="previous predicted_columns"
@@ -1349,6 +1393,7 @@ class CalibrationV3Transaction:
         "_prior_cumulative_ns",
         "_progress",
         "_protocol_sha256",
+        "_result_path",
         "_resume_events",
         "_run_coordinates",
         "_sealed_checkpoint_publication",
@@ -1471,6 +1516,7 @@ class CalibrationV3Transaction:
         self._run_coordinates = None
         self._next_resume_index = None
         self._progress = None
+        self._result_path = None
         self._start_ns = None
         self._last_clock_ns = None
         self._manifest_reconciliation = None
@@ -1929,9 +1975,18 @@ class CalibrationV3Transaction:
                 else:  # pragma: no cover - coordinator assigns exact records only.
                     raise CalibrationV3TransactionStop("active progress has the wrong nominal type")
                 for index, frame in enumerate(frozen_steps):
-                    if frame.event_count != step_chain.count + 1:
+                    if reset_before and index == 0:
+                        expected_event_count = 1
+                    elif index > 0:
+                        expected_event_count = frozen_steps[index - 1].event_count + 1
+                    elif progress is None:
+                        expected_event_count = 1
+                    else:
+                        expected_event_count = progress.last_step.event_count + 1
+                    if frame.event_count != expected_event_count:
                         raise CalibrationV3TransactionStop(
-                            "native step event count is not the next stream position"
+                            "native step event count is not the next stream position "
+                            "within its reset epoch"
                         )
                     step_chain = step_chain.append_step(frame)
                     if not (reset_before and index == 0):
@@ -2009,12 +2064,14 @@ class CalibrationV3Transaction:
     def start_fresh(
         self,
         result_path: str,
-        definition: object,
+        definition_factory: Callable[[], object],
     ) -> CalibrationV3Session:
-        """Start the coordinator's sole fresh branch interval."""
+        """Start one fresh branch and construct its definition inside active time."""
 
         with self._operation_lock:
             self._require_ready()
+            if not callable(definition_factory):
+                raise CalibrationV3TransactionStop("fresh definition factory must be callable")
             try:
                 destination = self._store.require_r3_result_destination(result_path)
             except persistence.PersistenceStop as exc:
@@ -2022,14 +2079,14 @@ class CalibrationV3Transaction:
                     f"fresh result destination is invalid: {exc}"
                 ) from exc
             native = _native_runtime()
-            expected_identity = self._definition_authority(definition, destination, native)
             run = _RunCoordinates.from_destination(destination)
             self._prepare_durable_namespace(native)
             start_ns = self._clock_value()
             self._native = native
-            self._definition = definition
-            self._expected_circuit_identity = expected_identity
+            self._definition = None
+            self._expected_circuit_identity = None
             self._run_coordinates = run
+            self._result_path = destination.relative_path
             self._next_resume_index = 0
             self._progress = None
             self._manifest_reconciliation = None
@@ -2038,6 +2095,14 @@ class CalibrationV3Transaction:
             self._prior_cumulative_ns = 0
             self._state = _CoordinatorState.STARTING
             try:
+                definition = definition_factory()
+                expected_identity = self._definition_authority(
+                    definition,
+                    destination,
+                    native,
+                )
+                self._definition = definition
+                self._expected_circuit_identity = expected_identity
                 self._circuit = native.NativeTemporalCircuit.fresh(definition)
                 identity = self._circuit.checkpoint_identity()
                 self._validate_identity_authority(identity, expected_identity, native)
@@ -2079,12 +2144,13 @@ class CalibrationV3Transaction:
             raise CalibrationV3TransactionStop("winner prefix count differs from the cursor")
         if progress.step_chain.count != cursor["event_count"]:
             raise CalibrationV3TransactionStop("step prefix count differs from the cursor")
-        if progress.last_step.event_count != cursor["event_count"]:
+        expected_local_event_count = cursor["last_token_index_zero_based"] + 1
+        if progress.last_step.event_count != expected_local_event_count:
             raise CalibrationV3TransactionStop("previous step differs from the cursor")
         if identity is not None and (
-            identity.event_count != cursor["event_count"]
+            identity.event_count != expected_local_event_count
             or identity.learning_step != cursor["learning_step"]
-            or identity.event_count != progress.step_chain.count
+            or identity.learning_step != progress.step_chain.count
             or identity.prior_context_length != len(progress.last_step.context)
             or identity.winner_context_length != len(progress.last_step.winner_context)
         ):
@@ -2092,6 +2158,184 @@ class CalibrationV3Transaction:
                 "checkpoint identity and resumable progress lack parity"
             )
         return cursor
+
+    @staticmethod
+    def _validate_terminal_progress(
+        progress: FrozenResumeProgress,
+        identity: object,
+    ) -> None:
+        if type(progress) is not FrozenResumeProgress:
+            raise CalibrationV3TransactionStop("terminal result has no transaction-owned progress")
+        if (
+            identity.learning_step != progress.step_chain.count
+            or identity.event_count != progress.last_step.event_count
+            or identity.prior_context_length != len(progress.last_step.context)
+            or identity.winner_context_length != len(progress.last_step.winner_context)
+        ):
+            raise CalibrationV3TransactionStop(
+                "terminal identity and transaction progress lack parity"
+            )
+
+    def _result_payload(
+        self,
+        *,
+        destination: persistence.DestinationSpec,
+        result: dict[str, object],
+    ) -> dict[str, object]:
+        if (
+            destination.arm_slug is None
+            or destination.phase is None
+            or destination.screen_id is None
+            or destination.thresholds is None
+            or destination.construction_seeds is None
+        ):
+            raise CalibrationV3TransactionStop("R3 result destination is incomplete")
+        theta_match, theta_active = destination.thresholds
+        return {
+            "artifact_path": destination.relative_path,
+            "claim_boundary": _json_snapshot(self._claim_boundary),
+            "construction_seeds": list(destination.construction_seeds),
+            "phase": destination.phase,
+            "protocol_sha256": self._protocol_sha256,
+            "result": _json_snapshot(result),
+            "screen_id": destination.screen_id,
+            "source_binding": _json_snapshot(self._source_binding),
+            "source_bundle_identity_sha256": self._source_bundle_sha256,
+            "thresholds": {
+                "theta_active": theta_active,
+                "theta_match": theta_match,
+            },
+        }
+
+    def commit_r3_result(
+        self,
+        session: CalibrationV3Session,
+        result: dict[str, object],
+    ) -> CommittedR3Result:
+        """Close active time, then durably publish one exact terminal R3 result."""
+
+        with self._operation_lock:
+            self._require_active_session(session)
+            if type(result) is not dict:
+                raise TypeError("result must be an exact dictionary")
+            publication: object | None = None
+            timing: persistence.CumulativeActiveWallTiming | None = None
+            cleanup_failures: tuple[CalibrationV3CleanupFailure, ...] = ()
+            try:
+                progress = self._progress
+                if type(progress) is not FrozenResumeProgress:
+                    raise CalibrationV3TransactionStop(
+                        "terminal result has no transaction-owned progress"
+                    )
+                native = self._native
+                expected_identity = self._expected_circuit_identity
+                result_path = self._result_path
+                run = self._run_coordinates
+                if (
+                    native is None
+                    or type(expected_identity) is not str
+                    or type(result_path) is not str
+                    or type(run) is not _RunCoordinates
+                ):
+                    raise CalibrationV3TransactionStop("terminal result authority is incomplete")
+                identity = self._circuit.checkpoint_identity()
+                self._validate_identity_authority(identity, expected_identity, native)
+                self._validate_terminal_progress(progress, identity)
+
+                circuit = self._circuit
+                self._circuit = None
+                self._active_token = None
+                self._state = _CoordinatorState.COMMITTING
+                cleanup_failures = self._close_handle_once(
+                    circuit,
+                    stage="terminal_circuit_close",
+                )
+                timing = self._current_timing()
+                if cleanup_failures:
+                    raise CalibrationV3TransactionStop("terminal circuit close failed")
+                if timing.state is persistence.TimingState.OVER_CAP:
+                    stopped = CalibrationV3TransactionStop(
+                        "cumulative active-wall cap was crossed before result publication"
+                    )
+                    raise self._terminalize(
+                        stopped,
+                        timing_state=TransactionTimingState.OVER_CAP,
+                        timing=timing,
+                    ) from stopped
+
+                finalized_result = _exact_object(
+                    _json_snapshot(result),
+                    label="terminal R3 result",
+                )
+                structural_metrics = _exact_object(
+                    finalized_result.get("structural_metrics"),
+                    label="terminal R3 structural_metrics",
+                )
+                if "active_wall_timing" in structural_metrics:
+                    raise CalibrationV3TransactionStop(
+                        "terminal R3 structural_metrics cannot preauthor active_wall_timing"
+                    )
+                if timing.session_active_ns is None or timing.cumulative_active_ns is None:
+                    raise CalibrationV3TransactionStop("terminal R3 timing is indeterminate")
+                structural_metrics["active_wall_timing"] = {
+                    "contract_id": timing.contract_id,
+                    "cap_ns": timing.cap_ns,
+                    "prior_cumulative_ns": timing.prior_cumulative_ns,
+                    "session_active_ns": timing.session_active_ns,
+                    "cumulative_active_ns": timing.cumulative_active_ns,
+                    "state": timing.state.value,
+                }
+
+                self._state = _CoordinatorState.RECORDING
+                destination = self._store.require_r3_result_destination(result_path)
+                if _RunCoordinates.from_destination(destination) != run:
+                    raise CalibrationV3TransactionStop(
+                        "terminal result destination differs from active run coordinates"
+                    )
+                result_bytes = self._store.encode_result(
+                    self._result_payload(destination=destination, result=finalized_result)
+                )
+                result_destination = self._store.prepare_absent_result(result_path)
+                publication = native.publish_immutable_bytes(
+                    result_destination,
+                    result_bytes,
+                )
+                _validate_manifest_publication(publication, result_bytes, native)
+                confirmed = self._store.confirm_exact(result_path, result_bytes)
+                receipt = CommittedR3Result(
+                    artifact_path=result_path,
+                    payload_sha256=confirmed.payload_sha256,
+                    timing=timing,
+                    publication=publication,
+                )
+                self._definition = None
+                self._expected_circuit_identity = None
+                self._native = None
+                self._progress = None
+                self._state = _CoordinatorState.CLOSED
+                return receipt
+            except BaseException as exc:
+                if self._state in {
+                    _CoordinatorState.TERMINAL_STOP,
+                    _CoordinatorState.TERMINAL_OVER_CAP,
+                } and isinstance(exc, CalibrationV3TransactionStop):
+                    raise
+                stopped = self._terminalize(
+                    exc,
+                    timing_state=(
+                        TransactionTimingState.WITHIN_CAP
+                        if timing is not None
+                        and timing.state is persistence.TimingState.WITHIN_CAP
+                        and not cleanup_failures
+                        else TransactionTimingState.TIMING_INDETERMINATE
+                    ),
+                    timing=timing,
+                    manifest_publication=publication,
+                    cleanup_failures=cleanup_failures,
+                )
+                if isinstance(exc, Exception):
+                    raise stopped from exc
+                raise
 
     def _next_resume_destination(self) -> persistence.DestinationSpec:
         run = self._run_coordinates
@@ -2540,6 +2784,7 @@ class CalibrationV3Transaction:
             self._definition = definition
             self._expected_circuit_identity = expected_identity
             self._run_coordinates = run
+            self._result_path = None
             self._next_resume_index = next_index
             self._progress = None
             self._manifest_reconciliation = None
@@ -2634,6 +2879,7 @@ __all__ = [
     "CalibrationV3Session",
     "CalibrationV3Transaction",
     "CalibrationV3TransactionStop",
+    "CommittedR3Result",
     "CommittedResumeCheckpoint",
     "FrozenResumeProgress",
     "TransactionTimingState",

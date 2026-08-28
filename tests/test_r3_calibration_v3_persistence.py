@@ -1228,6 +1228,26 @@ def test_narrow_resume_write_seam_derives_pair_and_rejects_any_existing_final(
     assert stopped.value.state is persistence.ArtifactPairState.CHECKPOINT_ONLY
 
 
+def test_narrow_result_write_seam_requires_prepared_parent_and_absent_final(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(
+        repository_root=tmp_path,
+        validated_protocol=_validated_protocol(),
+    )
+
+    with pytest.raises(persistence.ArtifactPathStop, match="parent namespace"):
+        store.prepare_absent_result(RESULT_PATH)
+
+    _prepare_store_namespace(store)
+    result_path = store.prepare_absent_result(RESULT_PATH)
+    assert result_path == _artifact_path(tmp_path, RESULT_PATH)
+    result_path.write_bytes(b"existing immutable result")
+
+    with pytest.raises(persistence.ArtifactPathStop, match="already exists"):
+        store.prepare_absent_result(RESULT_PATH)
+
+
 def test_committed_resume_open_reads_manifest_before_requiring_checkpoint(
     tmp_path: Path,
 ) -> None:
@@ -1389,7 +1409,7 @@ def test_confirm_resume_pair_rejects_manifest_path_replacement_during_read(
 
 def test_cumulative_active_wall_arithmetic_enforces_exact_cap_and_integer_types() -> None:
     fresh = persistence.CumulativeActiveWallTiming.complete_fresh_session(40)
-    assert fresh.contract_id == "r3-cumulative-active-wall-v1"
+    assert fresh.contract_id == "r3-cumulative-active-wall-v2"
     assert fresh.cap_ns == 54_000_000_000_000
     assert fresh.prior_cumulative_ns == 0
     assert fresh.session_active_ns == 40
@@ -1468,6 +1488,10 @@ def _step_frame() -> persistence.TemporalStepFrame:
         token_id=0x01020304,
         punished_segments=0x05060708,
         event_count=0x0102030405060708,
+        candidate_segments=4,
+        matching_segments=3,
+        active_segments=2,
+        postings_visited=5,
         predicted=True,
         predicted_columns=9,
         allocated_segments=10,
@@ -1523,16 +1547,17 @@ def test_chain_frames_and_restored_counts_reject_booleans_as_integers() -> None:
         )
 
 
-def test_step_row_matches_the_independent_657_byte_vector() -> None:
+def test_step_row_matches_the_independent_689_byte_vector() -> None:
     row = _step_frame().canonical_row()
 
-    assert len(row) == 657
-    assert row[:63].hex() == (
-        "0403020108070605080706050403020101090a0000010002000300040005000600"
+    assert len(row) == 689
+    assert row[:95].hex() == (
+        "0403020108070605080706050403020104000000000000000300000000000000"
+        "0200000000000000050000000000000001090a0000010002000300040005000600"
         "0700080009000a006400650066006700680069006a006b006c006d006e00"
     )
     assert hashlib.sha256(row).hexdigest() == (
-        "b7c6c66f6e4f28ddc0391b6add7f67a06cfe419d34647e5ea817761d980b7a4b"
+        "64830e077fd6e3c617ca0729d331ebece9a3b514c534bfd84ab0d732cda0945c"
     )
 
 
@@ -1570,7 +1595,7 @@ def test_resumable_hash_chains_match_fixed_vectors_and_split_execution() -> None
     )
     step_once = step_start.append_step(_step_frame())
     assert step_once.hexdigest == (
-        "b2ff5cd38486fa5de27d08da30ead6d544fef912c259e2d001dd510252f67ce5"
+        "8ed19305d148bbbbc7d90eb8736598d4d590b8f290e59c399419e810299484db"
     )
     uninterrupted_steps = step_once.append_step(_step_frame())
     restored_steps = persistence.ResumableHashChain.restore(

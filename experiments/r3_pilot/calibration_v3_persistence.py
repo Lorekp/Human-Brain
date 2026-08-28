@@ -21,7 +21,7 @@ from typing import Any, ClassVar
 MAX_ENVELOPE_BYTES = 1 << 20
 RESUME_ARTIFACT_ID = "r3-f0-resume-manifest-v1"
 RESULT_ARTIFACT_ID = "r3-calibration-v3-result-envelope-v1"
-TIMING_CONTRACT_ID = "r3-cumulative-active-wall-v1"
+TIMING_CONTRACT_ID = "r3-cumulative-active-wall-v2"
 ACTIVE_WALL_CAP_NS = 54_000_000_000_000
 
 _OUTER_KEYS = frozenset({"artifact_id", "payload", "payload_sha256", "schema_version"})
@@ -436,6 +436,10 @@ class TemporalStepFrame:
     token_id: int
     punished_segments: int
     event_count: int
+    candidate_segments: int
+    matching_segments: int
+    active_segments: int
+    postings_visited: int
     predicted: bool
     predicted_columns: int
     allocated_segments: int
@@ -454,6 +458,16 @@ class TemporalStepFrame:
         _exact_uint("token_id", self.token_id, bits=32)
         _exact_uint("punished_segments", self.punished_segments, bits=32)
         _exact_uint("event_count", self.event_count, bits=64)
+        candidate_segments = _exact_uint("candidate_segments", self.candidate_segments, bits=64)
+        matching_segments = _exact_uint("matching_segments", self.matching_segments, bits=64)
+        active_segments = _exact_uint("active_segments", self.active_segments, bits=64)
+        postings_visited = _exact_uint("postings_visited", self.postings_visited, bits=64)
+        if matching_segments > candidate_segments:
+            raise ValueError("matching_segments exceeds candidate_segments")
+        if active_segments > matching_segments:
+            raise ValueError("active_segments exceeds matching_segments")
+        if candidate_segments > postings_visited:
+            raise ValueError("candidate_segments exceeds postings_visited")
         if type(self.predicted) is not bool:
             raise TypeError("predicted must be an exact bool")
         if _exact_uint("predicted_columns", self.predicted_columns, bits=8) > 11:
@@ -509,6 +523,10 @@ class TemporalStepFrame:
         row.extend(_u32le(self.token_id))
         row.extend(_u32le(self.punished_segments))
         row.extend(_u64le(self.event_count))
+        row.extend(_u64le(self.candidate_segments))
+        row.extend(_u64le(self.matching_segments))
+        row.extend(_u64le(self.active_segments))
+        row.extend(_u64le(self.postings_visited))
         row.append(int(self.predicted))
         row.append(self.predicted_columns)
         row.append(self.allocated_segments)
@@ -528,8 +546,8 @@ class TemporalStepFrame:
         for context in (self.winner_context, self.proximal_context, self.context):
             for cell_id in context:
                 row.extend(_u32le(cell_id))
-        if len(row) != 657:  # pragma: no cover - protected by fixed widths above.
-            raise AssertionError("step chain row lost its frozen 657-byte layout")
+        if len(row) != 689:  # pragma: no cover - protected by fixed widths above.
+            raise AssertionError("step chain row lost its frozen 689-byte layout")
         return bytes(row)
 
 
@@ -1450,6 +1468,23 @@ class CalibrationV3ArtifactStore:
         ):
             raise ArtifactPathStop("destination is not one exact frozen R3 result")
         return destination
+
+    def prepare_absent_result(self, relative_path: str) -> Path:
+        """Require one prebuilt R3-result parent and prove its exact final absent."""
+
+        if not self._source_binding_runnable:
+            raise ArtifactAuthorityStop(
+                "R3 result preparation requires runnable protocol source binding"
+            )
+        destination = self.require_r3_result_destination(relative_path)
+        if not self._require_parent_chain(destination.relative_path):
+            raise ArtifactPathStop("R3 result parent namespace was not prepared before active time")
+        if self._plain_file_presence(destination.relative_path):
+            raise ArtifactPathStop("R3 result final already exists")
+        result_path = self._absolute_member(destination.relative_path)
+        if self._plain_file_presence(destination.relative_path):
+            raise ArtifactPathStop("R3 result final already exists")
+        return result_path
 
     def _resume_pair_destinations(
         self,

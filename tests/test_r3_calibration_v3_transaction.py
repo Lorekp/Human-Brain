@@ -32,9 +32,7 @@ SECOND_MANIFEST_PATH = (
 )
 CHECKPOINT_PATH = MANIFEST_PATH.removesuffix(".resume.json") + ".r3ntcp1"
 SOURCE_BUNDLE_SHA256 = "3" * 64
-ARM_CIRCUIT_IDENTITY_SHA256 = (
-    "be6d5470a8cab36cd8a8d52b456c2d7601012a71d4b689999233b6c37e84874a"
-)
+ARM_CIRCUIT_IDENTITY_SHA256 = "be6d5470a8cab36cd8a8d52b456c2d7601012a71d4b689999233b6c37e84874a"
 REFERENCE_TRAJECTORY_ID = (
     "r3-f0/deterministic-confirmation/theta-m-10_theta-a-13/construction-seed-0000000017/fresh"
 )
@@ -63,6 +61,10 @@ STEP_FIELDS = (
     "token_id",
     "punished_segments",
     "event_count",
+    "candidate_segments",
+    "matching_segments",
+    "active_segments",
+    "postings_visited",
     "predicted",
     "predicted_columns",
     "allocated_segments",
@@ -164,7 +166,7 @@ def _identity(
     segment_count = 56
     cohort_count = 20
     next_reserve_cell = 81_632
-    event_count = 529_346
+    event_count = 42_124
     learning_step = 529_346
     prior_context_length = 22
     winner_context_length = 22
@@ -265,7 +267,11 @@ def _last_step() -> persistence.TemporalStepFrame:
     return persistence.TemporalStepFrame(
         token_id=37,
         punished_segments=2,
-        event_count=529_346,
+        event_count=42_124,
+        candidate_segments=17,
+        matching_segments=15,
+        active_segments=13,
+        postings_visited=21,
         predicted=True,
         predicted_columns=9,
         allocated_segments=2,
@@ -296,6 +302,10 @@ def _native_step(native: ModuleType, frame: persistence.TemporalStepFrame) -> ob
         token_id=frame.token_id,
         punished_segments=frame.punished_segments,
         event_count=frame.event_count,
+        candidate_segments=frame.candidate_segments,
+        matching_segments=frame.matching_segments,
+        active_segments=frame.active_segments,
+        postings_visited=frame.postings_visited,
         predicted=frame.predicted,
         predicted_columns=frame.predicted_columns,
         allocated_segments=frame.allocated_segments,
@@ -329,7 +339,10 @@ def _progress(transaction: ModuleType) -> object:
 
 
 def _progress_for_cursor(transaction: ModuleType, cursor: dict[str, Any]) -> object:
-    step = replace(_last_step(), event_count=cursor["event_count"])
+    step = replace(
+        _last_step(),
+        event_count=cursor["last_token_index_zero_based"] + 1,
+    )
     return transaction.FrozenResumeProgress(
         last_step=step,
         winner_chain=persistence.ResumableHashChain(
@@ -369,6 +382,10 @@ def _step_payload(step: persistence.TemporalStepFrame) -> dict[str, object]:
         "token_id": step.token_id,
         "punished_segments": step.punished_segments,
         "event_count": step.event_count,
+        "candidate_segments": step.candidate_segments,
+        "matching_segments": step.matching_segments,
+        "active_segments": step.active_segments,
+        "postings_visited": step.postings_visited,
         "predicted": step.predicted,
         "predicted_columns": step.predicted_columns,
         "allocated_segments": step.allocated_segments,
@@ -382,6 +399,19 @@ def _step_payload(step: persistence.TemporalStepFrame) -> dict[str, object]:
         "winner_context": list(step.winner_context),
         "proximal_context": list(step.proximal_context),
         "context": list(step.context),
+    }
+
+
+def _r3_result() -> dict[str, object]:
+    return {
+        "arm_slug": ARM_SLUG,
+        "comparisons": {},
+        "kind": "r3_f0_train",
+        "reference": {},
+        "resumes": [],
+        "structural_metrics": {"step_count": 529_346},
+        "train_input": {"held_out_access": "forbidden"},
+        "verdict": "PASS_R3_F0_TRAIN_STRUCTURE",
     }
 
 
@@ -428,6 +458,7 @@ class _NativeHarness:
         self.circuits: list[Any] = []
         self.checkpoint_attempts = 0
         self.manifest_attempts = 0
+        self.result_attempts = 0
         self.close_error_kinds: set[str] = set()
         self.close_errors: dict[str, BaseException] = {}
         self.close_attempts: list[tuple[str, int]] = []
@@ -535,8 +566,12 @@ class _NativeHarness:
                         raise harness.close_errors[self.kind]
 
         def publish_immutable_bytes(destination: Path, payload: bytes) -> object:
-            harness.events.append("manifest_publish")
-            harness.manifest_attempts += 1
+            if destination.name.endswith(".resume.json"):
+                harness.events.append("manifest_publish")
+                harness.manifest_attempts += 1
+            else:
+                harness.events.append("result_publish")
+                harness.result_attempts += 1
             assert type(payload) is bytes
             assert destination.parent.is_dir()
             if destination.exists():
@@ -913,7 +948,7 @@ def test_public_constructor_rejects_clock_injection_and_owns_perf_counter(
     coordinator = environment.transaction.CalibrationV3Transaction.from_authority(
         environment.authority
     )
-    session = coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = coordinator.start_fresh(RESULT_PATH, _Definition)
     assert len(calls) >= 2
     with pytest.raises(environment.transaction.CalibrationV3TransactionStop):
         session.close()
@@ -1031,7 +1066,7 @@ def test_runnable_authority_requires_matching_native_circuit_identity(
         transaction.CalibrationV3TransactionStop,
         match=r"circuit.*identity|identity.*circuit",
     ):
-        session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+        session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
         _commit_with_progress(
             environment.coordinator,
             session,
@@ -1042,6 +1077,29 @@ def test_runnable_authority_requires_matching_native_circuit_identity(
     assert all(circuit.closed for circuit in environment.harness.circuits)
 
 
+def test_fresh_definition_factory_runs_after_active_clock_and_before_native_construction(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    environment = _environment(tmp_path, monkeypatch)
+
+    def definition_factory() -> _Definition:
+        environment.harness.events.append("definition_factory")
+        return _Definition()
+
+    session = environment.coordinator.start_fresh(RESULT_PATH, definition_factory)
+
+    _assert_durable_namespace_precedes_clock(environment.harness.events)
+    assert environment.harness.events.index("clock") < environment.harness.events.index(
+        "definition_factory"
+    )
+    assert environment.harness.events.index(
+        "definition_factory"
+    ) < environment.harness.events.index("fresh")
+    with pytest.raises(environment.transaction.CalibrationV3TransactionStop):
+        session.close()
+
+
 def test_fresh_session_owns_clocked_circuit_and_commits_exact_manifest(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1049,7 +1107,7 @@ def test_fresh_session_owns_clocked_circuit_and_commits_exact_manifest(
     environment = _environment(tmp_path, monkeypatch)
     progress = _progress(environment.transaction)
 
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     _assert_durable_namespace_precedes_clock(environment.harness.events)
     assert environment.harness.events[55] == "fresh"
     session.check_cap()
@@ -1113,9 +1171,10 @@ def test_session_builds_exact_progress_chains_from_native_steps(
     environment = _environment(tmp_path, monkeypatch)
     frames = tuple(
         _step_at(token_id, event_count)
-        for event_count, token_id in enumerate(
+        for token_id, event_count in zip(
             (11, 12, 13, 14, 15),
-            start=1,
+            (1, 2, 3, 4, 1),
+            strict=True,
         )
     )
     environment.harness.advance_results = [
@@ -1124,7 +1183,7 @@ def test_session_builds_exact_progress_chains_from_native_steps(
         (_native_step(environment.native, frames[4]),),
     ]
 
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     assert (
         session.advance_block(
             (11, 12),
@@ -1179,7 +1238,7 @@ def test_commit_rejects_caller_progress_without_consuming_the_session(
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
     progress = _progress(environment.transaction)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(TypeError, match="progress"):
         environment.coordinator.commit_resume_checkpoint(
@@ -1200,7 +1259,7 @@ def test_progress_continuity_failure_preserves_last_complete_prefix(
     invalid_event_count: int,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     seeded = environment.transaction.FrozenResumeProgress(
         last_step=_step_at(7, 7),
         winner_chain=persistence.ResumableHashChain(
@@ -1267,7 +1326,7 @@ def test_multistep_validation_is_atomic_before_progress_publication(
     if failure == "schema":
         second = replace(second, winner_context=(1,))
     environment.harness.advance_results = [(first, second)]
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(environment.transaction.CalibrationV3TransactionStop):
         session.advance_block(
@@ -1287,7 +1346,7 @@ def test_post_confirmation_capability_failure_retains_clean_timing_receipt(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     def fail_capability_construction(*args: object, **kwargs: object) -> None:
         del args, kwargs
@@ -1324,7 +1383,7 @@ def test_forged_exact_commit_object_cannot_supply_authoritative_timing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -1373,7 +1432,7 @@ def test_only_durable_checkpoint_outcomes_commit_without_retry(
             monkeypatch,
             publication_mode=mode,
         )
-        session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+        session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
         if commits:
             commit = _commit_with_progress(
                 environment.coordinator,
@@ -1415,7 +1474,7 @@ def test_reachable_checkpoint_temp_identity_orphan_is_accepted_and_resumable(
             ),
         ),
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -1499,7 +1558,7 @@ def test_checkpoint_publication_reports_must_match_the_exact_native_abi(
     elif defect == "nonce-width":
         report = replace(report, owned_temp_nonce=1 << 64)
     environment.harness.checkpoint_publication = report
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(environment.transaction.CalibrationV3TransactionStop) as stopped:
         _commit_with_progress(
@@ -1546,7 +1605,7 @@ def test_only_durable_manifest_outcomes_commit_without_retry(
             return report
 
         monkeypatch.setattr(environment.native, "publish_immutable_bytes", publish_manifest)
-        session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+        session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
         if commits:
             commit = _commit_with_progress(
                 environment.coordinator,
@@ -1593,7 +1652,7 @@ def test_reachable_manifest_temp_identity_orphan_is_accepted(
         return report
 
     monkeypatch.setattr(environment.native, "publish_immutable_bytes", publish_manifest)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -1697,7 +1756,7 @@ def test_manifest_publication_reports_must_match_the_exact_native_abi(
         return report
 
     monkeypatch.setattr(environment.native, "publish_immutable_bytes", publish_manifest)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(environment.transaction.CalibrationV3TransactionStop) as stopped:
         _commit_with_progress(
@@ -1722,7 +1781,7 @@ def test_checkpoint_publication_bytes_must_equal_the_exact_checkpoint_identity(
         checkpoint_bytes=8_192,
         encoded_bytes=8_192,
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -1754,7 +1813,7 @@ def test_checkpoint_import_must_match_every_one_of_the_18_identity_fields(
                 identity, field
             ),
         )
-        session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+        session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
         with pytest.raises(
             environment.transaction.CalibrationV3TransactionStop,
@@ -1785,7 +1844,7 @@ def test_checkpoint_replacement_during_native_import_breaks_the_final_pin(
         monkeypatch,
         during_import=replace_checkpoint,
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -1812,7 +1871,7 @@ def test_open_resume_rejects_checkpoint_replacement_during_native_import(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -1842,7 +1901,7 @@ def test_open_resume_rejects_manifest_replacement_during_native_import(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -1884,7 +1943,7 @@ def test_cap_crossing_commits_manifest_last_then_raises_terminal_over_cap(
         clock=clock,
         after_checkpoint=cross_cap,
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     session.check_cap()
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -1914,7 +1973,7 @@ def test_resume_clocks_before_manifest_and_rejects_tamper_before_native_import(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -1947,7 +2006,7 @@ def test_session_and_commit_capabilities_are_transaction_bound_and_single_use(
         environment.authority,
         clock=environment.clock,
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     progress = _progress(environment.transaction)
 
     with pytest.raises(
@@ -1991,7 +2050,7 @@ def test_failed_continuation_clock_leaves_the_sealed_commit_retryable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -2025,7 +2084,7 @@ def test_continuation_clock_cannot_regress_before_starting_the_next_interval(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     environment.clock.now_ns = 111
     commit = _commit_with_progress(
         environment.coordinator,
@@ -2054,7 +2113,7 @@ def test_prepublication_cap_crossing_writes_nothing_and_closes_session(
     events: list[str] = []
     clock = _Clock(events, now_ns=100)
     environment = _environment(tmp_path, monkeypatch, clock=clock)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     clock.now_ns = 100 + persistence.ACTIVE_WALL_CAP_NS + 1
 
     with pytest.raises(
@@ -2078,7 +2137,7 @@ def test_invalid_typed_progress_stops_before_checkpoint_publication(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     valid = _progress(environment.transaction)
     invalid = environment.transaction.FrozenResumeProgress(
         last_step=valid.last_step,
@@ -2124,7 +2183,7 @@ def test_manifest_nonpublication_never_retries_or_adopts_checkpoint_only_pair(
         )
 
     monkeypatch.setattr(environment.native, "publish_immutable_bytes", reject_manifest)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
         match=r"manifest|durable|published",
@@ -2164,7 +2223,7 @@ def test_checkpoint_deletion_during_manifest_publication_never_commits_a_pair(
         "publish_immutable_bytes",
         publish_then_delete_checkpoint,
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -2191,7 +2250,7 @@ def test_successful_resume_restores_exact_progress_and_active_abort_is_indetermi
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
     progress = _progress(environment.transaction)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(environment.coordinator, session, progress)
     commit.close()
     environment.harness.events.clear()
@@ -2217,7 +2276,7 @@ def test_frozen_resume_milestones_advance_in_order_after_each_recovery_mode(
     root = tmp_path / recovery_mode
     root.mkdir()
     environment = _environment(root, monkeypatch)
-    first_session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    first_session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     environment.clock.now_ns = 111
     first_commit = _commit_with_progress(
         environment.coordinator,
@@ -2246,7 +2305,7 @@ def test_frozen_resume_milestones_advance_in_order_after_each_recovery_mode(
     second_progress = _progress_for_cursor(environment.transaction, second_cursor)
     second_identity = replace(
         environment.identity,
-        event_count=second_cursor["event_count"],
+        event_count=second_cursor["last_token_index_zero_based"] + 1,
         learning_step=second_cursor["learning_step"],
         prior_context_length=len(second_progress.last_step.context),
         winner_context_length=len(second_progress.last_step.winner_context),
@@ -2274,7 +2333,7 @@ def test_resume_rejects_non_durable_recorded_publication_before_import(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -2329,7 +2388,7 @@ def test_resume_rejects_checkpoint_identity_outside_the_native_abi_before_import
     value: object,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     commit = _commit_with_progress(
         environment.coordinator,
         session,
@@ -2361,7 +2420,7 @@ def test_backward_or_failing_clock_invalidates_and_closes_active_session(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     environment.clock.now_ns = 99
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -2373,7 +2432,7 @@ def test_backward_or_failing_clock_invalidates_and_closes_active_session(
     second_root = tmp_path / "clock-failure"
     second_root.mkdir()
     second = _environment(second_root, monkeypatch)
-    second_session = second.coordinator.start_fresh(RESULT_PATH, _Definition())
+    second_session = second.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     def fail_clock() -> None:
         raise RuntimeError("synthetic clock failure")
@@ -2405,7 +2464,7 @@ def test_clock_must_not_regress_after_an_over_cap_observation(
         ],
     )
     environment = _environment(tmp_path, monkeypatch, clock=clock)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -2445,7 +2504,7 @@ def test_over_cap_observation_survives_later_checkpoint_import_failure(
             event_count=identity.event_count + 1,
         ),
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -2490,7 +2549,7 @@ def test_native_runtime_failure_is_not_started_and_leaves_coordinator_retryable(
         environment.transaction.CalibrationV3TransactionStop,
         match="native temporal runtime is unavailable",
     ) as stopped:
-        environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+        environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     assert stopped.value.timing_state is (
         environment.transaction.TransactionTimingState.NOT_STARTED
@@ -2503,7 +2562,7 @@ def test_native_runtime_failure_is_not_started_and_leaves_coordinator_retryable(
         "import_module",
         original_import_module,
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     with pytest.raises(environment.transaction.CalibrationV3TransactionStop):
         session.close()
 
@@ -2528,7 +2587,7 @@ def test_post_clock_failure_is_irreversible_and_restart_has_no_side_effects(
         environment.transaction.CalibrationV3TransactionStop,
         match="synthetic construction failure",
     ) as stopped:
-        environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+        environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     assert stopped.value.timing_state is (
         environment.transaction.TransactionTimingState.TIMING_INDETERMINATE
     )
@@ -2538,7 +2597,7 @@ def test_post_clock_failure_is_irreversible_and_restart_has_no_side_effects(
         environment.transaction.CalibrationV3TransactionStop,
         match="no longer ready",
     ) as repeated:
-        environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+        environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     assert repeated.value.timing_state is (
         environment.transaction.TransactionTimingState.TIMING_INDETERMINATE
     )
@@ -2550,7 +2609,7 @@ def test_terminal_stop_receipt_cannot_be_mutated_through_the_caught_exception(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -2598,7 +2657,7 @@ def test_caller_thrown_transaction_stop_cannot_forge_terminal_receipt(
         def __iter__(self) -> object:
             raise forged
 
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
         match="caller-forged receipt",
@@ -2643,7 +2702,7 @@ def test_hostile_exception_string_is_never_called_during_terminalization(
         def __iter__(self) -> object:
             raise primary
 
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
         match="safe exception argument",
@@ -2670,7 +2729,7 @@ def test_keyboard_interrupt_after_clock_cleans_up_then_preserves_the_interrupt(
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
     environment.harness.advance_error = KeyboardInterrupt("synthetic interrupt")
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(KeyboardInterrupt, match="synthetic interrupt"):
         session.advance_block((), mode="training")
@@ -2694,7 +2753,7 @@ def test_keyboard_interrupt_from_cleanup_never_masks_the_primary_failure(
     environment = _environment(tmp_path, monkeypatch)
     environment.harness.advance_error = RuntimeError("synthetic advance failure")
     environment.harness.close_errors["fresh"] = KeyboardInterrupt("synthetic close interrupt")
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -2723,7 +2782,7 @@ def test_keyboard_interrupt_during_checkpoint_publication_terminalizes_the_branc
         monkeypatch,
         after_checkpoint=interrupt_after_checkpoint,
     )
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(KeyboardInterrupt, match="synthetic checkpoint interrupt"):
         _commit_with_progress(
@@ -2754,7 +2813,7 @@ def test_verifier_and_original_close_failures_are_both_preserved_in_order(
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
     environment.harness.close_error_kinds = {"fresh", "import"}
-    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition())
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
 
     with pytest.raises(
         environment.transaction.CalibrationV3TransactionStop,
@@ -2782,9 +2841,54 @@ def test_verifier_and_original_close_failures_are_both_preserved_in_order(
     )
 
 
-def test_terminal_result_publication_is_deliberately_absent(
+def test_terminal_result_closes_and_stops_clock_before_one_shot_durable_publish(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     environment = _environment(tmp_path, monkeypatch)
-    assert not hasattr(environment.coordinator, "publish_r3_result")
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
+    _seed_progress(session, _progress(environment.transaction))
+
+    receipt = environment.coordinator.commit_r3_result(session, _r3_result())
+
+    events = environment.harness.events
+    close_index = events.index("close:fresh:0")
+    final_clock_index = next(
+        index for index in range(close_index + 1, len(events)) if events[index] == "clock"
+    )
+    result_publish_index = events.index("result_publish")
+    assert close_index < final_clock_index < result_publish_index
+    assert environment.harness.result_attempts == 1
+    assert environment.harness.manifest_attempts == 0
+    assert receipt.artifact_path == RESULT_PATH
+    assert receipt.timing.state is persistence.TimingState.WITHIN_CAP
+    assert receipt.publication.outcome is (
+        environment.native.TemporalPublicationOutcome.DURABLE_PUBLISHED
+    )
+
+    store = persistence.CalibrationV3ArtifactStore.open(
+        repository_root=tmp_path,
+        validated_protocol=environment.frozen,
+        expected_source_bundle_identity_sha256=SOURCE_BUNDLE_SHA256,
+    )
+    envelope = store.read(RESULT_PATH)
+    expected_timing = {
+        "contract_id": receipt.timing.contract_id,
+        "cap_ns": receipt.timing.cap_ns,
+        "prior_cumulative_ns": receipt.timing.prior_cumulative_ns,
+        "session_active_ns": receipt.timing.session_active_ns,
+        "cumulative_active_ns": receipt.timing.cumulative_active_ns,
+        "state": receipt.timing.state.value,
+    }
+    expected_result = _r3_result()
+    expected_result["structural_metrics"]["active_wall_timing"] = expected_timing
+    assert envelope.payload["result"] == expected_result
+    assert envelope.payload["result"]["structural_metrics"]["active_wall_timing"] == (
+        expected_timing
+    )
+    assert envelope.payload_sha256 == receipt.payload_sha256
+    assert environment.harness.circuits[0].closed is True
+
+    with pytest.raises(environment.transaction.CalibrationV3TransactionStop):
+        environment.coordinator.commit_r3_result(session, _r3_result())
+    assert environment.harness.result_attempts == 1
