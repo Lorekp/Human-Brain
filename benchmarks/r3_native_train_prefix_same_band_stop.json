@@ -1,0 +1,156 @@
+{
+  "benchmark": "r3-native-train-prefix-cost",
+  "claim_boundary": "first 4,096 canonical TRAIN tokens only; synthetic pre-outcome authority, bounded capacity, no held-out/C1/capability/cohort evidence",
+  "completed_measurement": {
+    "all_basket_to_gaba_ticks": true,
+    "all_winner_to_basket_ticks": true,
+    "basket_spikes": 18051,
+    "distributions": {
+      "active_segments": {
+        "count": 1641,
+        "max": 22,
+        "mean": 0.24801950030469225,
+        "median": 0,
+        "min": 0,
+        "p95": 0,
+        "p99": 11,
+        "sum": 407
+      },
+      "allocated_segments": {
+        "count": 1641,
+        "max": 11,
+        "mean": 10.735527117611213,
+        "median": 11,
+        "min": 0,
+        "p95": 11,
+        "p99": 11,
+        "sum": 17617
+      },
+      "candidate_segments": {
+        "count": 1641,
+        "max": 1199,
+        "mean": 221.7958561852529,
+        "median": 121,
+        "min": 0,
+        "p95": 769,
+        "p99": 1034,
+        "sum": 363967
+      },
+      "latency_ns": {
+        "count": 1641,
+        "max": 893000,
+        "mean": 220866.42291285802,
+        "median": 228400,
+        "min": 126700,
+        "p95": 318900,
+        "p99": 422400,
+        "sum": 362441800
+      },
+      "live_segments": {
+        "count": 1641,
+        "max": 17617,
+        "mean": 8876.331505179769,
+        "median": 8931,
+        "min": 0,
+        "p95": 16740,
+        "p99": 17442,
+        "sum": 14566060
+      },
+      "matching_segments": {
+        "count": 1641,
+        "max": 33,
+        "mean": 1.6020719073735528,
+        "median": 0,
+        "min": 0,
+        "p95": 11,
+        "p99": 22,
+        "sum": 2629
+      },
+      "postings_visited": {
+        "count": 1641,
+        "max": 1969,
+        "mean": 361.9439366240097,
+        "median": 198,
+        "min": 0,
+        "p95": 1298,
+        "p99": 1691,
+        "sum": 593950
+      },
+      "predicted_columns": {
+        "count": 1641,
+        "max": 11,
+        "mean": 0.08043875685557587,
+        "median": 0,
+        "min": 0,
+        "p95": 0,
+        "p99": 0,
+        "sum": 132
+      },
+      "punished_segments": {
+        "count": 1641,
+        "max": 22,
+        "mean": 0.1675807434491164,
+        "median": 0,
+        "min": 0,
+        "p95": 0,
+        "p99": 11,
+        "sum": 275
+      }
+    },
+    "gc_during_replay": "disabled",
+    "mode": "LEARN",
+    "predicted_steps": 12,
+    "timer": "time.perf_counter_ns",
+    "winner_spikes": 18051
+  },
+  "definition": {
+    "arm": [
+      10,
+      13
+    ],
+    "bounded_definition_identity_sha256": "50919981ac878f506949de3b9ec3d6e78ed41a52a748ab26e4ddca327c4f55fd",
+    "bounded_segment_capacity": 45045,
+    "construction_seed": 17,
+    "definition_build_ns": 78979400,
+    "native_construction_ns": 2189716100,
+    "production_definition_identity_sha256": "be6d5470a8cab36cd8a8d52b456c2d7601012a71d4b689999233b6c37e84874a",
+    "protocol_runnable": false,
+    "protocol_sha256": "1cc1c48c57dac9d3a4eb1bbf13534b4a76e9a815fcdf3707051cb28f92575fb4"
+  },
+  "environment": {
+    "native_binary_sha256": "797cf5a13eecf78c3258e01a21f2fe3ef1255de1cb5359f1598240b60b8490ac",
+    "native_binary_size": 546304,
+    "native_source_digest": "19d83072e71e24a55596668e820ed498c2e1c7b2cb697ac3202c18f10f411ab0",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "generated_at_utc": "2026-08-28T00:24:41.816028+00:00",
+  "outcome": "SCIENTIFIC_STOP",
+  "schema_version": 1,
+  "stop": {
+    "completed_step_count": 1641,
+    "elapsed_replay_wall_ns": 375662500,
+    "error_message": "scientific_stop: temporal physical stage stopped",
+    "error_type": "NativeTemporalRuntimeError",
+    "failed_call_latency_ns": 103400,
+    "live_segment_count": 17617,
+    "native_status": "SCIENTIFIC_STOP",
+    "native_status_code": 8,
+    "poison_code": 7,
+    "stage_code": 3,
+    "token_id": 114,
+    "zero_based_step_index": 1641
+  },
+  "train_input": {
+    "candidate_id": "cell-lm-v1-freeze-candidate-bible-kjv-pg10-v3",
+    "held_out_books_materialized": 0,
+    "input_load_ns": 11867146300,
+    "prefix_book": "Genesis",
+    "prefix_token_count": 4096,
+    "prefix_token_sha256_le_i32": "a39faff31eb8be4c13f4b8cd5e4b070009eeca575bde44ad552b8bf8dcbef26f",
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+  }
+}
