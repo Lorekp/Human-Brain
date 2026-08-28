@@ -1,0 +1,181 @@
+{
+  "arms": [
+    {
+      "seeds": [
+        {
+          "production_overlap": {
+            "circuit_identity_sha256": "c1d5c8041fd2ec640ea43da66bc9c2a0d7fe1a67d5aa2066fa12e04946425b88",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 6,
+            "next_reserve_cell": 32856,
+            "novel_probes": 0,
+            "segment_count": 22451,
+            "status": "PASS",
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "seed": 3,
+          "status": "PASS_BOTH_REGIMES",
+          "target_disjoint": {
+            "circuit_identity_sha256": "fce0fec20bcfbcff63c7d907e6092956a17f23216ad1bd340af77b29c5d40df1",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 32856,
+            "novel_probes": 128,
+            "segment_count": 22451,
+            "status": "PASS",
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          }
+        },
+        {
+          "production_overlap": {
+            "circuit_identity_sha256": "42955545ed6f9d14b4c87c4f88259b4acb21bb3bad42c0cd1ee8aeac52b0be61",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 5,
+            "next_reserve_cell": 32856,
+            "novel_probes": 0,
+            "segment_count": 22451,
+            "status": "PASS",
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "seed": 7,
+          "status": "PASS_BOTH_REGIMES",
+          "target_disjoint": {
+            "circuit_identity_sha256": "064038ba1287eeb5aef59baa54dfdcddc9ba1299226b61b68ff2c183c6df56b8",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 32856,
+            "novel_probes": 128,
+            "segment_count": 22451,
+            "status": "PASS",
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          }
+        },
+        {
+          "production_overlap": {
+            "circuit_identity_sha256": "c18695c47a63b18834982cc2fbcf328a9a69d7aa4a79b6dd0199b8accb7183b7",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 5,
+            "next_reserve_cell": 32856,
+            "novel_probes": 0,
+            "segment_count": 22451,
+            "status": "PASS",
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "seed": 17,
+          "status": "PASS_BOTH_REGIMES",
+          "target_disjoint": {
+            "circuit_identity_sha256": "88dcf16a871674e68a954d0d991b4a7b67837d6e77a7d9fd7f88e173970908dd",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 32856,
+            "novel_probes": 128,
+            "segment_count": 22451,
+            "status": "PASS",
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          }
+        },
+        {
+          "production_overlap": {
+            "circuit_identity_sha256": "5ac8fd3c7d1c49eed744c581a5c8240ab1cdac20958b07c7916c098e772ea5bc",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 5,
+            "next_reserve_cell": 32856,
+            "novel_probes": 0,
+            "segment_count": 22451,
+            "status": "PASS",
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "seed": 29,
+          "status": "PASS_BOTH_REGIMES",
+          "target_disjoint": {
+            "circuit_identity_sha256": "bae3f443c6c6d81282dbc956921dc3e46442af3a8eec6e25325f73bdf2b0cdc1",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 32856,
+            "novel_probes": 128,
+            "segment_count": 22451,
+            "status": "PASS",
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          }
+        }
+      ],
+      "status": "PASS_ALL_DEVELOPMENT_SEEDS",
+      "theta_active": 18,
+      "theta_match": 16
+    },
+    {
+      "status": "NOT_RUN_FIRST_POSTREPAIR_PASS_FOUND",
+      "theta_active": 20,
+      "theta_match": 18
+    },
+    {
+      "status": "NOT_RUN_FIRST_POSTREPAIR_PASS_FOUND",
+      "theta_active": 20,
+      "theta_match": 20
+    }
+  ],
+  "artifact_id": "r3-q255-two-tier-postrepair-smoke",
+  "authority": {
+    "kind": "synthetic_test_authority",
+    "protocol_runnable": false,
+    "protocol_sha256": "1cc1c48c57dac9d3a4eb1bbf13534b4a76e9a815fcdf3707051cb28f92575fb4",
+    "source_bundle_identity_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "candidate_order": [
+    [
+      16,
+      18
+    ],
+    [
+      18,
+      20
+    ],
+    [
+      20,
+      20
+    ]
+  ],
+  "candidate_order_rationale": "(16,18) is replayed first because it is the exact arm of the separate Genesis matching-but-not-active allocation STOP; stricter arms retain their frozen order.",
+  "claim_boundary": {
+    "c1_launched": false,
+    "capability_evidence": false,
+    "held_out_data_accessed": false,
+    "official_source_binding": false,
+    "official_threshold_selection": false,
+    "pre_repair_artifact_overwritten": false,
+    "r3_f0_executed": false,
+    "scope": "post-repair q255 physical development falsifier only"
+  },
+  "development_seeds": [
+    3,
+    7,
+    17,
+    29
+  ],
+  "diagnostic_verdict": {
+    "first_postrepair_q255_pass": [
+      16,
+      18
+    ],
+    "official_threshold_selection": false
+  },
+  "generated_at_utc": "2026-08-28T02:31:10.741674+00:00",
+  "pre_repair_artifact": "experiments/r3_pilot/q255_physical_development_smoke.json",
+  "runtime": {
+    "native_binary_sha256": "e386a6c339cff83f13e1d070149b9539beaf443a2a09da9e5427122199a3601d",
+    "native_binary_size": 555008,
+    "native_source_digest": "bd70b5ae77860ed96e3f2683c178a9b5755423a0aaeeab3e1df631cdad6c60e5",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "status": "PASS_FIRST_POSTREPAIR_DEVELOPMENT_ARM"
+}
