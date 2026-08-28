@@ -5,6 +5,7 @@
 //! BoundWinners source/relay context used at a structural hole.
 
 use super::{
+    role_place_copy::{SlotOrdinal, FIRST_BOUND_SLOT},
     typed_hole_state::{
         SurfaceKind, TypedHoleAddress, TypedHoleCue, TypedHoleRole, TypedHoleState, TypedValue,
     },
@@ -16,7 +17,13 @@ pub(super) const PLAN_WINNERS_IN_MIX: usize = 5;
 pub(super) const SEMANTIC_CUE_WINNERS_IN_MIX: usize = 3;
 pub(super) const ADDRESS_CUE_WINNERS_IN_MIX: usize = 3;
 const SCAFFOLD_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 3, 4];
-const OPERATION_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [5, 6, 7, 8, 9];
+const OPERATION_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 5, 8];
+const PARAMETER_SCAFFOLD_DESTINATIONS: [usize; 3] = [0, 1, 2];
+const PARAMETER_SCAFFOLD_SOURCES: [usize; 3] = [3, 4, 5];
+const RESULT_SCAFFOLD_DESTINATIONS: [usize; 2] = [3, 4];
+const RESULT_SCAFFOLD_SOURCES: [usize; 2] = [6, 7];
+const LOWER_BOUND_WINNER_INDICES: [usize; 3] = [5, 6, 7];
+const UPPER_BOUND_WINNER_INDICES: [usize; 3] = [8, 9, 10];
 pub(crate) const TYPED_CUE_TOKEN_COUNT: usize = 25;
 pub(crate) const TYPED_SURFACE_TOKEN_COUNT: usize = 22;
 
@@ -68,14 +75,22 @@ impl TypedWorkspaceVocabulary {
         Some(self.cue_token_ids[index])
     }
 
-    pub(crate) fn operation_component_token(
+    pub(crate) const fn neutral_operation_component_token(self) -> u32 {
+        self.cue_token_ids[22]
+    }
+
+    pub(crate) fn bound_operation_component_token(
         self,
-        ready_bound_slots: u8,
+        slot: SlotOrdinal,
     ) -> Result<u32, &'static str> {
-        let index = 22usize
-            .checked_add(usize::from(ready_bound_slots))
+        let role_offset = slot
+            .value()
+            .checked_sub(FIRST_BOUND_SLOT)
+            .ok_or("typed operation component requires a bound slot role")?;
+        let index = 23usize
+            .checked_add(usize::from(role_offset))
             .filter(|index| *index < TYPED_CUE_TOKEN_COUNT)
-            .ok_or("typed operation plan supports zero, one, or two bound slots")?;
+            .ok_or("typed operation component exceeds the bound slot role bank")?;
         Ok(self.cue_token_ids[index])
     }
 
@@ -184,13 +199,32 @@ impl TypedWorkspaceState {
 
     pub(super) fn retain_plan_components(
         &mut self,
-        scaffold_context: [u32; CONTEXT_CELLS],
-        operation_context: [u32; CONTEXT_CELLS],
+        parameter_scaffold_context: [u32; CONTEXT_CELLS],
+        result_scaffold_context: [u32; CONTEXT_CELLS],
+        neutral_operation_context: [u32; CONTEXT_CELLS],
+        lower_bound_context: Option<[u32; CONTEXT_CELLS]>,
+        upper_bound_context: Option<[u32; CONTEXT_CELLS]>,
     ) {
-        self.plan_winners[..PLAN_WINNERS_IN_MIX]
-            .copy_from_slice(&scaffold_context[..PLAN_WINNERS_IN_MIX]);
-        self.plan_winners[PLAN_WINNERS_IN_MIX..]
-            .copy_from_slice(&operation_context[PLAN_WINNERS_IN_MIX..ACTIVE_COLUMNS]);
+        for (destination, source) in PARAMETER_SCAFFOLD_DESTINATIONS
+            .into_iter()
+            .zip(PARAMETER_SCAFFOLD_SOURCES)
+        {
+            self.plan_winners[destination] = parameter_scaffold_context[source];
+        }
+        for (destination, source) in RESULT_SCAFFOLD_DESTINATIONS
+            .into_iter()
+            .zip(RESULT_SCAFFOLD_SOURCES)
+        {
+            self.plan_winners[destination] = result_scaffold_context[source];
+        }
+        let lower_bound_context = lower_bound_context.unwrap_or(neutral_operation_context);
+        let upper_bound_context = upper_bound_context.unwrap_or(neutral_operation_context);
+        for index in LOWER_BOUND_WINNER_INDICES {
+            self.plan_winners[index] = lower_bound_context[index];
+        }
+        for index in UPPER_BOUND_WINNER_INDICES {
+            self.plan_winners[index] = upper_bound_context[index];
+        }
         self.plan_ready = true;
     }
 

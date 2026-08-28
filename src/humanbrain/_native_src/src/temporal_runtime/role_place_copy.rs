@@ -220,16 +220,6 @@ impl RolePlaceCopyState {
         self.enabled && self.slots[slot.index()].ready
     }
 
-    pub(crate) fn ready_bound_slot_count(&self) -> u8 {
-        if !self.enabled {
-            return 0;
-        }
-        self.slots[usize::from(FIRST_BOUND_SLOT)..]
-            .iter()
-            .filter(|slot| slot.ready)
-            .count() as u8
-    }
-
     pub(crate) fn is_recalling(&self) -> bool {
         self.enabled && self.recall_slot.is_some()
     }

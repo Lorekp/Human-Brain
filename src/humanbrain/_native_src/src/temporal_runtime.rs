@@ -31,7 +31,8 @@ mod typed_hole_state;
 mod typed_workspace;
 
 use role_place_copy::{
-    is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID, SLOT_COUNT,
+    is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID, FIRST_BOUND_SLOT,
+    SLOT_COUNT,
 };
 use typed_hole_state::{TypedHoleCue, TypedHoleRole, TypedValue};
 use typed_workspace::{
@@ -873,13 +874,16 @@ impl TemporalCircuitRuntime {
         Ok(step)
     }
 
-    /// Acquire two transferable plan components through ordinary fitted races:
-    /// result-type scaffold and zero/one/two-ready-bound-slot operation. The retained
-    /// eleven-cell workspace splices five scaffold winners with six operation
-    /// winners; neither cue contains a task, family, primitive, or target.
+    /// Acquire a parameter/result signature scaffold plus neutral/lower-bound/
+    /// upper-bound operation components through ordinary fitted races. Scaffold
+    /// holes receive a generic three-parameter/two-result blend. Every operation
+    /// hole receives the same three-parameter/one-lower/one-upper blend; structural
+    /// addresses and semantic cues, not a hard-coded address map, select the
+    /// learned continuation. No cue contains a task, family, primitive, or target.
     pub(crate) fn commit_typed_plan(
         &mut self,
         vocabulary: TypedWorkspaceVocabulary,
+        parameter: TypedValue,
         result: TypedValue,
         mode: TemporalStepMode,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
@@ -888,25 +892,48 @@ impl TemporalCircuitRuntime {
                 "typed workspace requires BoundWinners context",
             ));
         }
-        let scaffold_token = vocabulary
+        let parameter_scaffold_token = vocabulary
+            .cue_token(TypedHoleCue::Expression(parameter), TypedHoleRole::Child0)
+            .expect("expression cue is never terminal");
+        let parameter_scaffold = self.step_typed_private_cue(parameter_scaffold_token)?;
+        self.step(vocabulary.plan_commit_token_id, mode)?;
+
+        let result_scaffold_token = vocabulary
             .cue_token(TypedHoleCue::Expression(result), TypedHoleRole::Head)
             .expect("expression cue is never terminal");
-        self.step_typed_private_cue(scaffold_token)?;
-        let scaffold = self.step(vocabulary.plan_commit_token_id, mode)?;
+        let result_scaffold = self.step_typed_private_cue(result_scaffold_token)?;
+        self.step(vocabulary.plan_commit_token_id, mode)?;
 
-        let operation_token = match vocabulary
-            .operation_component_token(self.role_place_copy.ready_bound_slot_count())
-        {
-            Ok(token_id) => token_id,
-            Err(message) => {
-                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
+        self.step_typed_private_cue(vocabulary.neutral_operation_component_token())?;
+        let neutral_operation = self.step(vocabulary.plan_commit_token_id, mode)?;
+        let mut bound_contexts = [None; SLOT_COUNT - FIRST_BOUND_SLOT as usize];
+        let mut last_component = neutral_operation.clone();
+        for slot_value in FIRST_BOUND_SLOT..SLOT_COUNT as u8 {
+            let slot = SlotOrdinal::new(slot_value)
+                .expect("bounded slot role iteration always yields one ordinal");
+            if !self.role_place_copy.is_ready(slot) {
+                continue;
             }
-        };
-        self.step_typed_private_cue(operation_token)?;
-        let operation = self.step(vocabulary.plan_commit_token_id, mode)?;
-        self.typed_workspace
-            .retain_plan_components(scaffold.winner_context, operation.winner_context);
-        Ok(operation)
+            let component_token = match vocabulary.bound_operation_component_token(slot) {
+                Ok(token_id) => token_id,
+                Err(message) => {
+                    return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
+                }
+            };
+            self.step_typed_private_cue(component_token)?;
+            let component = self.step(vocabulary.plan_commit_token_id, mode)?;
+            bound_contexts[usize::from(slot_value - FIRST_BOUND_SLOT)] =
+                Some(component.winner_context);
+            last_component = component;
+        }
+        self.typed_workspace.retain_plan_components(
+            parameter_scaffold.winner_context,
+            result_scaffold.winner_context,
+            neutral_operation.winner_context,
+            bound_contexts[0],
+            bound_contexts[1],
+        );
+        Ok(last_component)
     }
 
     fn step_typed_private_cue(
@@ -980,7 +1007,7 @@ impl TemporalCircuitRuntime {
         if let Err(message) = self.validate_typed_vocabulary_codes(vocabulary) {
             return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
         }
-        let plan = self.commit_typed_plan(vocabulary, result, mode)?;
+        let plan = self.commit_typed_plan(vocabulary, parameter, result, mode)?;
         if let Err(stop) = self
             .typed_workspace
             .begin_session(vocabulary, parameter, result, mode)
@@ -6271,8 +6298,12 @@ mod tests {
 
     #[test]
     fn typed_workspace_generates_nested_clamp_from_structural_address_races() {
-        const W_TRAIN: u32 = 1_400;
-        const W_DEV: u32 = 1_401;
+        const W_LOWER_PLAN: u32 = 1_400;
+        const W_LIST_SIGNATURE: u32 = 1_401;
+        const W_UPPER_PLAN: u32 = 1_402;
+        const W_COMBINED_PLAN: u32 = 1_403;
+        const W_TRAIN: u32 = 1_404;
+        const W_DEV: u32 = 1_405;
         const PLAN_COMMIT: u32 = 1_500;
         const CUE_BASE: u32 = 1_600;
         const SURFACE_BASE: u32 = 1_700;
@@ -6284,7 +6315,15 @@ mod tests {
             cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
             surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
         };
-        let mut token_ids = vec![W_TRAIN, W_DEV, PLAN_COMMIT];
+        let mut token_ids = vec![
+            W_LOWER_PLAN,
+            W_LIST_SIGNATURE,
+            W_UPPER_PLAN,
+            W_COMBINED_PLAN,
+            W_TRAIN,
+            W_DEV,
+            PLAN_COMMIT,
+        ];
         token_ids.extend(vocabulary.cue_token_ids);
         token_ids.extend(vocabulary.surface_token_ids);
         use typed_hole_state::SurfaceKind as S;
@@ -6391,8 +6430,78 @@ mod tests {
         };
 
         capture_literal(&mut runtime, 2, minus, digit_2, TemporalStepMode::Learn);
+        runtime.step(W_LOWER_PLAN, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        let lower_plan = runtime.typed_plan_winners().unwrap();
+
+        runtime.reset_transient();
+        capture_literal(&mut runtime, 2, minus, digit_2, TemporalStepMode::Learn);
+        runtime
+            .step(W_LIST_SIGNATURE, TemporalStepMode::Learn)
+            .unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        let list_signature_plan = runtime.typed_plan_winners().unwrap();
+        assert_ne!(&list_signature_plan[..3], &lower_plan[..3]);
+        assert_eq!(&list_signature_plan[3..], &lower_plan[3..]);
+
+        runtime.reset_transient();
         capture_literal(&mut runtime, 3, plus, digit_2, TemporalStepMode::Learn);
-        assert_eq!(runtime.role_place_copy.ready_bound_slot_count(), 2);
+        runtime.step(W_UPPER_PLAN, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        let upper_plan = runtime.typed_plan_winners().unwrap();
+
+        runtime.reset_transient();
+        capture_literal(&mut runtime, 2, minus, digit_2, TemporalStepMode::ReadOnly);
+        capture_literal(&mut runtime, 3, plus, digit_2, TemporalStepMode::ReadOnly);
+        runtime
+            .step(W_COMBINED_PLAN, TemporalStepMode::ReadOnly)
+            .unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+        let combined_plan = runtime.typed_plan_winners().unwrap();
+        assert_eq!(&combined_plan[..5], &lower_plan[..5]);
+        assert_eq!(&combined_plan[..5], &upper_plan[..5]);
+        assert_eq!(&combined_plan[5..8], &lower_plan[5..8]);
+        assert_ne!(&combined_plan[5..8], &upper_plan[5..8]);
+        assert_eq!(&combined_plan[8..], &upper_plan[8..]);
+        assert_ne!(&combined_plan[8..], &lower_plan[8..]);
+
+        runtime.reset_transient();
+        capture_literal(&mut runtime, 2, minus, digit_2, TemporalStepMode::Learn);
+        capture_literal(&mut runtime, 3, plus, digit_2, TemporalStepMode::Learn);
+        assert!(runtime
+            .role_place_copy
+            .is_ready(SlotOrdinal::new(2).unwrap()));
+        assert!(runtime
+            .role_place_copy
+            .is_ready(SlotOrdinal::new(3).unwrap()));
         runtime.step(W_TRAIN, TemporalStepMode::Learn).unwrap();
         runtime
             .begin_typed_session(
@@ -6432,7 +6541,12 @@ mod tests {
         runtime.reset_transient();
         capture_literal(&mut runtime, 2, minus, digit_7, TemporalStepMode::ReadOnly);
         capture_literal(&mut runtime, 3, plus, digit_7, TemporalStepMode::ReadOnly);
-        assert_eq!(runtime.role_place_copy.ready_bound_slot_count(), 2);
+        assert!(runtime
+            .role_place_copy
+            .is_ready(SlotOrdinal::new(2).unwrap()));
+        assert!(runtime
+            .role_place_copy
+            .is_ready(SlotOrdinal::new(3).unwrap()));
         runtime.step(W_DEV, TemporalStepMode::ReadOnly).unwrap();
         runtime
             .begin_typed_session(
