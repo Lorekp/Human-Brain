@@ -1,0 +1,17 @@
+{
+  "builder_checkpoint_sha256": "1f712208a92bc17b89c122f0f7946a864e261e6a1d19dace6fd5d536db6287dc",
+  "builder_target_no_argument_generation_calls_maximum": 192,
+  "builder_target_runs_planned": 3,
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_parameterized_action_probe.json",
+  "canonical_target_sandbox_calls_planned": 1,
+  "created_at_utc": "2026-08-28T18:29:36.942160+00:00",
+  "experiment": "r3-public-simple-swe-role-chunk-feedback-parameterized-action",
+  "harness_retries": 0,
+  "model_retries": 0,
+  "probe_source_sha256": "09c92d3a717fb548a7992af5ce21da309425741f3dbc2857b52ea56caee579ea",
+  "router_checkpoint_sha256": "76bb4f9a0a3f3ea415a72313ec83ad0c3d3cf429ba51023b286a344272652307",
+  "router_target_no_argument_generation_calls_planned": 4,
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/002"
+}

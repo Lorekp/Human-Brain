@@ -196,13 +196,16 @@ the visible residual to a sign observation, let fitted-cell races elect a
 BUILD action, forward that action into a separate fitted-cell role/place
 builder, generate source directly, and run the result in the canonical
 sandbox. R3-PAC0 emitted exact `n - 9`; operation and payload interventions
-emitted exact `n + 9` and `n - 8`, and the actual program passed all 36 TRAIN
-cases. This does **not** open M0 or any protected split. The current bottleneck
-is now narrower and actionable: magnitude still comes from the public sidecar
-and the scalar source skeleton is fixed. The next bridge should copy magnitude
-bytes from structured execution feedback, then broaden source shapes before
-spending any family-disjoint or hidden capability cohort. The closed typed-
-projection tuning loop remains closed.
+emitted exact `n + 9` and `n - 8`. R3-PAC1 then removed the builder's direct
+sidecar-magnitude shortcut: it retained the entrypoint across identity
+execution, copied magnitude `2` from the completed residual observation, and
+emitted exact `n - 2`; sign and genuine donor-payload controls emitted exact
+`n + 2` and `n - 7`. Both actual programs passed all 36 TRAIN cases. This does
+**not** open M0 or any protected split. The current bottleneck is now source
+shape: feedback formatting remains host-factorized and the emitted program is
+still a fixed scalar skeleton. The next bridge is a small list-map shape
+router/builder before any family-disjoint or hidden capability cohort is
+spent. The closed typed-projection tuning loop remains closed.
 
 ### Phase R5 — Scale to billions (continuous)
 
