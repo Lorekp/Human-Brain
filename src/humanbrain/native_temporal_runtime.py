@@ -38,9 +38,12 @@ from humanbrain.native import (
 _UINT8_MAX: Final = (1 << 8) - 1
 _UINT16_MAX: Final = (1 << 16) - 1
 _UINT32_MAX: Final = (1 << 32) - 1
-IDENTIFIER_START_TOKEN_ID: Final = _UINT32_MAX - 4
-IDENTIFIER_END_TOKEN_ID: Final = _UINT32_MAX - 3
-COPY_ID_TOKEN_ID: Final = _UINT32_MAX - 2
+IDENTIFIER_START_TOKEN_ID: Final = _UINT32_MAX - 7
+IDENTIFIER_END_TOKEN_ID: Final = _UINT32_MAX - 6
+LITERAL_START_TOKEN_ID: Final = _UINT32_MAX - 5
+LITERAL_END_TOKEN_ID: Final = _UINT32_MAX - 4
+COPY_ID_TOKEN_ID: Final = _UINT32_MAX - 3
+COPY_LITERAL_TOKEN_ID: Final = _UINT32_MAX - 2
 COPY_END_TOKEN_ID: Final = _UINT32_MAX - 1
 _ACTIVE_COLUMNS: Final = 11
 _CONTEXT_CELLS: Final = 22
@@ -288,7 +291,8 @@ class _NativeGeneration(ctypes.Structure):
         ("feedback_predicted", ctypes.c_uint8),
         ("copy_place_ordinal", ctypes.c_uint8),
         ("physical_election_count", ctypes.c_uint8),
-        ("reserved_zero", ctypes.c_uint8 * 4),
+        ("copy_slot", ctypes.c_uint8),
+        ("reserved_zero", ctypes.c_uint8 * 3),
     ]
 
 
@@ -426,7 +430,7 @@ def _assert_frozen_abi() -> None:
         _NativeGeneration,
         64,
         8,
-        (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60),
+        (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60, 61),
     )
     _require_frozen_layout(_NativeAdvanceRequestV2, 40, 8, (0, 8, 16, 24, 32, 33, 34))
     _require_frozen_layout(
@@ -496,6 +500,13 @@ class TemporalGenerationPath(IntEnum):
     ENTER_COPY = 1
     COPY = 2
     EXIT_COPY = 3
+
+
+class TemporalCopySlot(IntEnum):
+    """Transient physical role/place surface-copy slot."""
+
+    IDENTIFIER = 0
+    LITERAL = 1
 
 
 class NativeTemporalRuntimeStatus(IntEnum):
@@ -1021,6 +1032,7 @@ class TemporalGeneration:
     feedback_predicted: bool
     copy_place_ordinal: int | None
     physical_election_count: int
+    copy_slot: TemporalCopySlot | None
 
 
 class NativeTemporalRuntimeError(RuntimeError):
@@ -2954,7 +2966,10 @@ class NativeTemporalCircuit:
             if surface_token_id in {
                 IDENTIFIER_START_TOKEN_ID,
                 IDENTIFIER_END_TOKEN_ID,
+                LITERAL_START_TOKEN_ID,
+                LITERAL_END_TOKEN_ID,
                 COPY_ID_TOKEN_ID,
+                COPY_LITERAL_TOKEN_ID,
                 COPY_END_TOKEN_ID,
             }:
                 raise _invariant_error("internal role token escaped as surface output")
@@ -2977,26 +2992,44 @@ class NativeTemporalCircuit:
             control_end_raw = int(native.control_simulated_end_tick)
             copy_place_raw = int(native.copy_place_ordinal)
             election_count = int(native.physical_election_count)
+            copy_slot_raw = int(native.copy_slot)
+
+            if path is TemporalGenerationPath.TEMPORAL:
+                if copy_slot_raw != _UINT8_MAX:
+                    raise _invariant_error("ordinary temporal generation carries a copy slot")
+                copy_slot = None
+            else:
+                try:
+                    copy_slot = TemporalCopySlot(copy_slot_raw)
+                except ValueError as exc:
+                    raise _invariant_error(
+                        "copy generation carries an unknown physical slot",
+                        observed=copy_slot_raw,
+                    ) from exc
 
             expected_control: int | None
             expected_elections: int
             if path is TemporalGenerationPath.ENTER_COPY:
-                expected_control = COPY_ID_TOKEN_ID
+                expected_control = (
+                    COPY_ID_TOKEN_ID
+                    if copy_slot is TemporalCopySlot.IDENTIFIER
+                    else COPY_LITERAL_TOKEN_ID
+                )
                 expected_elections = 2
                 if copy_place_raw != 0:
-                    raise _invariant_error("ENTER_COPY did not emit identifier place zero")
+                    raise _invariant_error("ENTER_COPY did not emit slot place zero")
             elif path is TemporalGenerationPath.EXIT_COPY:
                 expected_control = COPY_END_TOKEN_ID
                 expected_elections = 2
                 if copy_place_raw != _UINT8_MAX:
-                    raise _invariant_error("EXIT_COPY carries a surface identifier place")
+                    raise _invariant_error("EXIT_COPY carries a surface slot place")
             else:
                 expected_control = None
                 expected_elections = 1
                 if path is TemporalGenerationPath.COPY:
                     if not 1 <= copy_place_raw < 8:
                         raise _invariant_error(
-                            "COPY identifier place is outside the bounded tape",
+                            "COPY slot place is outside the bounded tape",
                             observed=copy_place_raw,
                         )
                 elif copy_place_raw != _UINT8_MAX:
@@ -3081,6 +3114,7 @@ class NativeTemporalCircuit:
                     None if copy_place_raw == _UINT8_MAX else copy_place_raw
                 ),
                 physical_election_count=election_count,
+                copy_slot=copy_slot,
             )
 
     def publish_checkpoint(self, destination: Path) -> TemporalCheckpointPublication:
@@ -3243,13 +3277,17 @@ __all__ = [
     "TemporalCircuitStep",
     "TemporalGeneration",
     "TemporalGenerationPath",
+    "TemporalCopySlot",
     "TemporalContextPolicy",
     "TemporalPlasticityPolicy",
     "TemporalSpike",
     "TemporalStepMode",
     "IDENTIFIER_START_TOKEN_ID",
     "IDENTIFIER_END_TOKEN_ID",
+    "LITERAL_START_TOKEN_ID",
+    "LITERAL_END_TOKEN_ID",
     "COPY_ID_TOKEN_ID",
+    "COPY_LITERAL_TOKEN_ID",
     "COPY_END_TOKEN_ID",
     "publish_immutable_bytes",
     "prepare_durable_directory",
