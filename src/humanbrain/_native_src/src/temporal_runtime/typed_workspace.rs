@@ -15,12 +15,8 @@ use super::{
 pub(super) const PLAN_WINNERS_IN_MIX: usize = 5;
 pub(super) const CUE_WINNERS_IN_MIX: usize = ACTIVE_COLUMNS - PLAN_WINNERS_IN_MIX;
 const SCAFFOLD_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 3, 4];
-const SCAFFOLD_CHILD0_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 3, 5];
-const SCAFFOLD_CHILD1_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 4, 5];
 const OPERATION_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [5, 6, 7, 8, 9];
-const OPERATION_CHILD0_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [5, 6, 7, 8, 10];
-const OPERATION_CHILD1_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [5, 6, 7, 9, 10];
-pub(crate) const TYPED_CUE_TOKEN_COUNT: usize = 15;
+pub(crate) const TYPED_CUE_TOKEN_COUNT: usize = 17;
 pub(crate) const TYPED_SURFACE_TOKEN_COUNT: usize = 20;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -65,6 +61,10 @@ impl TypedWorkspaceVocabulary {
             TypedHoleCue::Terminated => return None,
         };
         Some(self.cue_token_ids[index])
+    }
+
+    pub(crate) fn operation_component_token(self, slot_ready: bool) -> u32 {
+        self.cue_token_ids[if slot_ready { 16 } else { 15 }]
     }
 
     pub(crate) fn surface_for_token(self, token_id: u32) -> Option<SurfaceKind> {
@@ -130,9 +130,15 @@ impl TypedWorkspaceState {
         *self = Self::EMPTY;
     }
 
-    pub(super) fn retain_plan(&mut self, winner_context: [u32; CONTEXT_CELLS]) {
-        self.plan_winners
-            .copy_from_slice(&winner_context[..ACTIVE_COLUMNS]);
+    pub(super) fn retain_plan_components(
+        &mut self,
+        scaffold_context: [u32; CONTEXT_CELLS],
+        operation_context: [u32; CONTEXT_CELLS],
+    ) {
+        self.plan_winners[..PLAN_WINNERS_IN_MIX]
+            .copy_from_slice(&scaffold_context[..PLAN_WINNERS_IN_MIX]);
+        self.plan_winners[PLAN_WINNERS_IN_MIX..]
+            .copy_from_slice(&operation_context[PLAN_WINNERS_IN_MIX..ACTIVE_COLUMNS]);
         self.plan_ready = true;
     }
 
@@ -272,26 +278,18 @@ impl TypedWorkspaceState {
 
 fn plan_projection(
     cue: TypedHoleCue,
-    role: TypedHoleRole,
+    _role: TypedHoleRole,
 ) -> Result<&'static [usize; PLAN_WINNERS_IN_MIX], TemporalCircuitStop> {
     match cue {
         TypedHoleCue::Expression(TypedValue::ListInt)
         | TypedHoleCue::Expression(TypedValue::IntToInt)
-        | TypedHoleCue::Eos => Ok(match role {
-            TypedHoleRole::Head => &SCAFFOLD_HEAD_PLAN_INDICES,
-            TypedHoleRole::Child0 => &SCAFFOLD_CHILD0_PLAN_INDICES,
-            TypedHoleRole::Child1 => &SCAFFOLD_CHILD1_PLAN_INDICES,
-        }),
+        | TypedHoleCue::Eos => Ok(&SCAFFOLD_HEAD_PLAN_INDICES),
         TypedHoleCue::Expression(TypedValue::Int)
         | TypedHoleCue::LiteralSign
         | TypedHoleCue::LiteralFirstDigit
         | TypedHoleCue::LiteralFirstNonzeroDigit
         | TypedHoleCue::LiteralDigitOrEnd
-        | TypedHoleCue::LiteralEnd => Ok(match role {
-            TypedHoleRole::Head => &OPERATION_HEAD_PLAN_INDICES,
-            TypedHoleRole::Child0 => &OPERATION_CHILD0_PLAN_INDICES,
-            TypedHoleRole::Child1 => &OPERATION_CHILD1_PLAN_INDICES,
-        }),
+        | TypedHoleCue::LiteralEnd => Ok(&OPERATION_HEAD_PLAN_INDICES),
         TypedHoleCue::Terminated => Err(TemporalCircuitStop::MalformedContextOrPolicy(
             "terminated typed state has no structural plan projection",
         )),
@@ -338,7 +336,7 @@ mod tests {
             .copy_from_slice(&std::array::from_fn::<_, ACTIVE_COLUMNS, _>(|index| {
                 100 + index as u32
             }));
-        workspace.retain_plan(plan_context);
+        workspace.retain_plan_components(plan_context, plan_context);
         workspace
             .begin_session(
                 vocabulary,
@@ -378,15 +376,6 @@ mod tests {
                 1,
             )
             .unwrap();
-        let corrected_first_operand = workspace
-            .mixed_transient(
-                first_operand_cue,
-                first_operand_role,
-                cue_context,
-                1_000,
-                1,
-            )
-            .unwrap();
 
         workspace
             .advance_token(vocabulary.surface_token_ids[4])
@@ -397,15 +386,6 @@ mod tests {
             .mixed_transient(
                 second_operand_cue,
                 TypedHoleRole::Head,
-                cue_context,
-                1_000,
-                1,
-            )
-            .unwrap();
-        let corrected_second_operand = workspace
-            .mixed_transient(
-                second_operand_cue,
-                second_operand_role,
                 cue_context,
                 1_000,
                 1,
@@ -427,12 +407,12 @@ mod tests {
             rejected_root.previous_context
         );
         assert_ne!(
-            corrected_first_operand.previous_context,
-            rejected_root.previous_context
+            vocabulary.cue_token(root_cue, root_role),
+            vocabulary.cue_token(first_operand_cue, first_operand_role)
         );
         assert_ne!(
-            corrected_second_operand.previous_context,
-            corrected_first_operand.previous_context
+            vocabulary.cue_token(first_operand_cue, first_operand_role),
+            vocabulary.cue_token(second_operand_cue, second_operand_role)
         );
     }
 }
