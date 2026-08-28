@@ -35,6 +35,7 @@ The repositories do not import or modify one another.
 | Typed program decoding | TRAIN replay 3/3 labels; frozen teacher-free DEV 0/2 | Memorization, not prompt-conditioned composition |
 | Native role/place scalar generation | One retained circuit learned add/subtract routes, then teacher-free DEV generated and executed exact unseen `boost(x) = x + 37` and `drop(x) = x - 14` functions with copied identifiers/literals and ordinary EOS | Public synthetic two-route micro-capability through atomic fitted-cell races; not family-disjoint composition or SWE evidence |
 | Native typed-workspace composition | One retained circuit learned visible scalar-offset/000 and list-map-absolute/000, then teacher-free visible DEV list-map-add/002 generated the exact typed program, physically copied unseen `-1`, reached ordinary EOS, compiled exactly, and passed 4 regression + 32 property cases | One visible development micro-capability using result-type and literal-presence plan components; not family-disjoint transfer, M0, eval evidence, or broad SWE competence |
+| Native typed map-count follow-on | One retained circuit learned visible TRAIN `t2_map_then_count/000`, then teacher-free `/001` emitted the exact `Sum(Map(Bind(If(LessThan, Add))))` program, physically copied the unseen `+4`, reached ordinary EOS, compiled exactly, and passed 4 regression + 32 property cases | Same-family public TRAIN follow-on evidence; not family-disjoint transfer, DEV/eval evidence, M0, or broad SWE competence |
 | Family-disjoint typed scaffold re-root | The frozen one-shot public TRAIN-family probe learned scalar-offset/000 and clamp-then-sum/000, then stopped before emitting any token for unseen-family list-map-add/003 (native column-race scientific STOP; 0 generations) | Honest negative: generic structural re-rooting did not compose the nested Map/Bind scaffold with the scalar Add subtree; no retry or target tuning |
 | Public Simple-SWE baseline | 0/90 train and 0/27 dev | Prompt-only cell baseline failed, largely through invalid syntax |
 | Million-scale CUDA text training | Post speed-waves the 1M-cell CUDA pipeline reaches 96.1 grow / 101.6 inference tok/s (from 31.4 / 32.6; ×3.06 / ×3.12), putting a full-KJV epoch near 5 h at 1M cells (≈15 h before optimization) | Measured engineering throughput ([report](benchmarks/scale_opt_gpu_report.md), [corpus plan](docs/research/cell-lm-corpus-bible.md)); the ≈5 h epoch is projected from tok/s, not a completed run |
@@ -171,6 +172,10 @@ two-route slot-recombination pass, but no family-disjoint Simple-SWE result.
 - [Native role/place scalar probe](experiments/r3_pilot/public_train_dev_role_place_scalar_routing_probe.json)
   records the sole public run that copied unseen names and multi-digit literals,
   selected add versus subtract, compiled, executed, and reached EOS.
+- [Native map-then-count follow-on](experiments/r3_pilot/public_simple_swe_native_typed_map_count_probe.json)
+  records a one-shot same-family public TRAIN pass through Map, Bind, Add,
+  predicate, reduction, physical literal copy, ordinary EOS, and the 36-case
+  sandbox.
 - [Family-disjoint scaffold re-root probe](experiments/r3_pilot/public_simple_swe_native_typed_scaffold_reroot_probe.json)
   records the spent one-shot STOP before its unseen-family target emitted a token.
 - [Layer-0 scalar plumbing](docs/cell-program-layer0.md) is implemented but
