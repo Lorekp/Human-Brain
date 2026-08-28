@@ -45,7 +45,7 @@ from humanbrain.native_temporal_runtime import (
 
 DEFAULT_PREFIX_TOKENS = 4_096
 ACTIVE_COLUMNS = 11
-ARM = (10, 13)
+ARM = (16, 18)
 CONSTRUCTION_SEED = 17
 TOTAL_C1_STEPS = 33_135_753
 CAP_SECONDS = 15 * 60 * 60
@@ -169,6 +169,24 @@ def _counters(step: TemporalCircuitStep) -> tuple[int, int, int, int]:
             + ", ".join(missing)
         )
     return tuple(int(getattr(step, name)) for name in COUNTER_FIELDS)  # type: ignore[return-value]
+
+
+def _identity_payload(identity: object) -> dict[str, object]:
+    return {
+        "body_sha256": identity.body_sha256,
+        "checkpoint_bytes": identity.checkpoint_bytes,
+        "circuit_identity_sha256": identity.circuit_identity_sha256,
+        "cohort_count": identity.cohort_count,
+        "event_count": identity.event_count,
+        "learning_step": identity.learning_step,
+        "logical_state_sha256": identity.logical_state_sha256,
+        "next_reserve_cell": identity.next_reserve_cell,
+        "poison_code": identity.poison_code,
+        "protocol_identity_sha256": identity.protocol_identity_sha256,
+        "segment_count": identity.segment_count,
+        "semantic_index_sha256": identity.semantic_index_sha256,
+        "source_bundle_identity_sha256": identity.source_bundle_identity_sha256,
+    }
 
 
 def _run_prefix(
@@ -474,6 +492,7 @@ def main() -> int:
             "all_basket_to_gaba_ticks": physical["all_basket_to_gaba_ticks"],
             "replay_wall_ns": physical["replay_wall_ns"],
         },
+        "final_identity": _identity_payload(final_identity),
         "cap_projection": cap_projection,
         "step_series": series,
         "environment": {

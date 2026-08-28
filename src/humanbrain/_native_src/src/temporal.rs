@@ -1615,8 +1615,6 @@ impl TemporalStore {
                 return Err(TEMPORAL_INVALID);
             }
         }
-        self.touched_segments.sort_unstable();
-
         let mut matching_segments = 0usize;
         let mut active_segments = 0usize;
         let mut max_potential_contacts = 0u8;
