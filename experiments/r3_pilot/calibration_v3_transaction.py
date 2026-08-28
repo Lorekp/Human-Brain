@@ -490,6 +490,26 @@ class CommittedR3Result:
             raise ValueError("committed R3 result timing must be within cap")
 
 
+@dataclass(frozen=True, slots=True)
+class CompletedResumeBranch:
+    """Closed terminal evidence from one deterministic resumed suffix."""
+
+    progress: FrozenResumeProgress
+    checkpoint_identity: tuple[tuple[str, object], ...]
+    timing: persistence.CumulativeActiveWallTiming
+    manifest_reconciliation: object
+
+    def __post_init__(self) -> None:
+        if type(self.progress) is not FrozenResumeProgress:
+            raise TypeError("progress must be an exact FrozenResumeProgress")
+        if type(self.checkpoint_identity) is not tuple or not self.checkpoint_identity:
+            raise TypeError("checkpoint_identity must be a non-empty exact tuple")
+        if type(self.timing) is not persistence.CumulativeActiveWallTiming:
+            raise TypeError("timing must be an exact CumulativeActiveWallTiming")
+        if self.timing.state is not persistence.TimingState.WITHIN_CAP:
+            raise ValueError("completed resume timing must be within cap")
+
+
 class CommittedResumeCheckpoint:
     """Opaque single-use capability after a manifest-last checkpoint commit.
 
@@ -2337,6 +2357,126 @@ class CalibrationV3Transaction:
                     raise stopped from exc
                 raise
 
+    def finish_resumed_branch(
+        self,
+        session: CalibrationV3Session,
+    ) -> CompletedResumeBranch:
+        """Close one complete resumed suffix and return comparison evidence.
+
+        Resumed suffixes are controls embedded in the selected arm's fresh
+        confirmation result; they do not own independent result destinations.
+        """
+
+        with self._operation_lock:
+            self._require_active_session(session)
+            timing: persistence.CumulativeActiveWallTiming | None = None
+            cleanup_failures: tuple[CalibrationV3CleanupFailure, ...] = ()
+            try:
+                if self._result_path is not None:
+                    raise CalibrationV3TransactionStop(
+                        "only a resumed branch may finish without publishing a result"
+                    )
+                run = self._run_coordinates
+                if (
+                    type(run) is not _RunCoordinates
+                    or run.screen_id != "r3_f0_train"
+                    or run.phase != "deterministic_confirmation"
+                ):
+                    raise CalibrationV3TransactionStop(
+                        "resumed terminal evidence lacks deterministic-confirmation authority"
+                    )
+                progress = self._progress
+                if type(progress) is not FrozenResumeProgress:
+                    raise CalibrationV3TransactionStop(
+                        "resumed terminal evidence has no transaction-owned progress"
+                    )
+                expected_steps = _exact_nonnegative_int(
+                    self._train_input.get("token_count"),
+                    label="resumed terminal TRAIN token_count",
+                )
+                expected_winners = _exact_nonnegative_int(
+                    self._train_input.get("transition_events"),
+                    label="resumed terminal TRAIN transition_events",
+                )
+                if (
+                    progress.step_chain.count != expected_steps
+                    or progress.winner_chain.count != expected_winners
+                ):
+                    raise CalibrationV3TransactionStop(
+                        "resumed branch has not reached the exact terminal TRAIN boundary"
+                    )
+                native = self._native
+                expected_identity = self._expected_circuit_identity
+                if native is None or type(expected_identity) is not str:
+                    raise CalibrationV3TransactionStop(
+                        "resumed terminal identity authority is incomplete"
+                    )
+                identity = self._circuit.checkpoint_identity()
+                identity_payload = self._validate_identity_authority(
+                    identity,
+                    expected_identity,
+                    native,
+                )
+                self._validate_terminal_progress(progress, identity)
+
+                circuit = self._circuit
+                self._circuit = None
+                self._active_token = None
+                self._state = _CoordinatorState.COMMITTING
+                cleanup_failures = self._close_handle_once(
+                    circuit,
+                    stage="resumed_terminal_circuit_close",
+                )
+                timing = self._current_timing()
+                if cleanup_failures:
+                    raise CalibrationV3TransactionStop(
+                        "resumed terminal circuit close failed"
+                    )
+                if timing.state is persistence.TimingState.OVER_CAP:
+                    stopped = CalibrationV3TransactionStop(
+                        "cumulative active-wall cap was crossed before resumed completion"
+                    )
+                    raise self._terminalize(
+                        stopped,
+                        timing_state=TransactionTimingState.OVER_CAP,
+                        timing=timing,
+                    ) from stopped
+
+                receipt = CompletedResumeBranch(
+                    progress=progress,
+                    checkpoint_identity=tuple(sorted(identity_payload.items())),
+                    timing=timing,
+                    manifest_reconciliation=self._manifest_reconciliation,
+                )
+                self._definition = None
+                self._expected_circuit_identity = None
+                self._native = None
+                self._progress = None
+                self._state = _CoordinatorState.CLOSED
+                return receipt
+            except BaseException as exc:
+                if self._state in {
+                    _CoordinatorState.TERMINAL_STOP,
+                    _CoordinatorState.TERMINAL_OVER_CAP,
+                } and isinstance(exc, CalibrationV3TransactionStop):
+                    raise
+                stopped = self._terminalize(
+                    exc,
+                    timing_state=(
+                        TransactionTimingState.WITHIN_CAP
+                        if timing is not None
+                        and timing.state is persistence.TimingState.WITHIN_CAP
+                        and not cleanup_failures
+                        else TransactionTimingState.TIMING_INDETERMINATE
+                    ),
+                    timing=timing,
+                    manifest_reconciliation=self._manifest_reconciliation,
+                    cleanup_failures=cleanup_failures,
+                )
+                if isinstance(exc, Exception):
+                    raise stopped from exc
+                raise
+
     def _next_resume_destination(self) -> persistence.DestinationSpec:
         run = self._run_coordinates
         next_index = self._next_resume_index
@@ -2881,6 +3021,7 @@ __all__ = [
     "CalibrationV3TransactionStop",
     "CommittedR3Result",
     "CommittedResumeCheckpoint",
+    "CompletedResumeBranch",
     "FrozenResumeProgress",
     "TransactionTimingState",
 ]

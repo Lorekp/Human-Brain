@@ -2267,6 +2267,62 @@ def test_successful_resume_restores_exact_progress_and_active_abort_is_indetermi
     )
 
 
+def test_resumed_branch_finishes_at_exact_train_boundary_without_result_publication(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    environment = _environment(tmp_path, monkeypatch)
+    session = environment.coordinator.start_fresh(RESULT_PATH, _Definition)
+    commit = _commit_with_progress(
+        environment.coordinator,
+        session,
+        _progress(environment.transaction),
+    )
+    commit.close()
+
+    coordinator = _new_coordinator(environment)
+    resumed = coordinator.open_resume(MANIFEST_PATH, _Definition())
+    train_input = environment.frozen["screens"]["r3_f0_train"]["input"]
+    terminal_step = replace(_last_step(), event_count=7)
+    terminal_progress = environment.transaction.FrozenResumeProgress(
+        last_step=terminal_step,
+        winner_chain=persistence.ResumableHashChain(
+            kind=persistence.HashChainKind.WINNER,
+            count=train_input["transition_events"],
+            digest=b"\x77" * 32,
+        ),
+        step_chain=persistence.ResumableHashChain(
+            kind=persistence.HashChainKind.STEP,
+            count=train_input["token_count"],
+            digest=b"\x88" * 32,
+        ),
+    )
+    _seed_progress(resumed, terminal_progress)
+    terminal_identity = replace(
+        environment.identity,
+        event_count=terminal_step.event_count,
+        learning_step=train_input["token_count"],
+        prior_context_length=len(terminal_step.context),
+        winner_context_length=len(terminal_step.winner_context),
+    )
+    terminal_identity = replace(
+        terminal_identity,
+        logical_state_sha256=_logical_state_sha256(terminal_identity),
+    )
+    environment.harness.set_active_identity(terminal_identity)
+    environment.clock.now_ns += 19
+    reconciliation = resumed.manifest_reconciliation
+
+    receipt = coordinator.finish_resumed_branch(resumed)
+
+    assert receipt.progress == terminal_progress
+    assert dict(receipt.checkpoint_identity) == _identity_payload(terminal_identity)
+    assert receipt.timing.state is persistence.TimingState.WITHIN_CAP
+    assert receipt.manifest_reconciliation is reconciliation
+    assert environment.harness.circuits[-1].closed is True
+    assert not _absolute(tmp_path, RESULT_PATH).exists()
+
+
 @pytest.mark.parametrize("recovery_mode", ["continue", "reopen"])
 def test_frozen_resume_milestones_advance_in_order_after_each_recovery_mode(
     tmp_path: Path,
