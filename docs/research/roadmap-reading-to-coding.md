@@ -241,10 +241,20 @@ local updates and 56 recruitments, but both the target prompt and a fixed prompt
 swap elected root `variable-1`; the target program scored 1/8 cases. All races
 were legal and competitive and inference left the checkpoint byte-identical,
 so the failure is prompt-to-root discrimination rather than cell dynamics,
-typed masking, or compilation. The target is spent. The smallest next
-increment keeps the same cells/readout and adds channel-tagged adjacent-token
-assemblies alongside unigrams, because the current OR-union erases token order
-and multiplicity. That increment must face a different fresh task.
+typed masking, or compilation. Exact localization showed the four teachers
+themselves replayed only 1/4: shared signature/role cells caused competitive
+last-label overwrite, and two reversed prompts were exactly aliased.
+
+Ordered adjacent-token cells removed the exact alias but not the overwrite.
+Conjoining those lexical cells with canonical signature + current typed-hole
+role, while removing raw structural cells from plastic recruitment, then raised
+both public teacher sets to exact 4/4 replay without changing cell count,
+learning constants, or race dynamics. Its different fresh target still stopped
+at root `variable-1` (1/8) rather than composing unseen `absolute → add`; the
+fixed add-prompt control replayed its taught five-production tree exactly. This
+is now a genuine unseen-context transfer failure. The next work is a visible,
+freely rerunnable compositional development matrix plus root-current
+localization, not another chain of frozen one-shot micro-probes.
 
 ### Phase R5 — Scale to billions (continuous)
 

@@ -1,0 +1,821 @@
+{
+  "checkpoint": {
+    "immutable": true,
+    "local_updates": 24,
+    "sha256": "4839ec094fe07e3e44ff1526515208ea5e4815ac4a8a721000f735c785330567",
+    "sha256_after_completions": "4839ec094fe07e3e44ff1526515208ea5e4815ac4a8a721000f735c785330567",
+    "structural_recruitments": 96
+  },
+  "controls": {
+    "prompt_swap": {
+      "completion": {
+        "completed": true,
+        "exact_source": false,
+        "exact_tokens": false,
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 11,
+              "args": [
+                3,
+                5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": -1,
+              "args": [
+                -3,
+                5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": 1,
+              "args": [
+                3,
+                -5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": -11,
+              "args": [
+                -3,
+                -5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                0,
+                0
+              ],
+              "expected": 0,
+              "pass": true
+            },
+            {
+              "actual": 9,
+              "args": [
+                9,
+                -9
+              ],
+              "expected": 0,
+              "pass": false
+            },
+            {
+              "actual": -13,
+              "args": [
+                -8,
+                3
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 11,
+              "args": [
+                2,
+                7
+              ],
+              "expected": 9,
+              "pass": false
+            }
+          ],
+          "passed": 1,
+          "total": 8
+        },
+        "physical": true,
+        "races": [
+          {
+            "accepted_is_legal": true,
+            "accepted_token": "add",
+            "active_assembly_cells": 114,
+            "allowed_tokens": [
+              "add",
+              "subtract",
+              "absolute",
+              "if",
+              "sum",
+              "variable-0",
+              "variable-1",
+              "integer"
+            ],
+            "candidate_count": 8,
+            "contextual_pair_cells": 54,
+            "contextual_unigram_cells": 63,
+            "physical": true,
+            "position": 0,
+            "spike_time_ms": 7.6000000000000005,
+            "winner_cell": 0
+          },
+          {
+            "accepted_is_legal": true,
+            "accepted_token": "add",
+            "active_assembly_cells": 115,
+            "allowed_tokens": [
+              "add",
+              "subtract",
+              "absolute",
+              "if",
+              "sum",
+              "variable-0",
+              "variable-1",
+              "integer"
+            ],
+            "candidate_count": 8,
+            "contextual_pair_cells": 56,
+            "contextual_unigram_cells": 61,
+            "physical": true,
+            "position": 1,
+            "spike_time_ms": 7.300000000000001,
+            "winner_cell": 0
+          },
+          {
+            "accepted_is_legal": true,
+            "accepted_token": "variable-1",
+            "active_assembly_cells": 116,
+            "allowed_tokens": [
+              "add",
+              "subtract",
+              "absolute",
+              "if",
+              "sum",
+              "variable-0",
+              "variable-1",
+              "integer"
+            ],
+            "candidate_count": 8,
+            "contextual_pair_cells": 53,
+            "contextual_unigram_cells": 63,
+            "physical": true,
+            "position": 2,
+            "spike_time_ms": 7.300000000000001,
+            "winner_cell": 9
+          },
+          {
+            "accepted_is_legal": true,
+            "accepted_token": "variable-0",
+            "active_assembly_cells": 117,
+            "allowed_tokens": [
+              "add",
+              "subtract",
+              "absolute",
+              "if",
+              "sum",
+              "variable-0",
+              "variable-1",
+              "integer"
+            ],
+            "candidate_count": 8,
+            "contextual_pair_cells": 56,
+            "contextual_unigram_cells": 63,
+            "physical": true,
+            "position": 3,
+            "spike_time_ms": 6.6000000000000005,
+            "winner_cell": 8
+          },
+          {
+            "accepted_is_legal": true,
+            "accepted_token": "variable-1",
+            "active_assembly_cells": 110,
+            "allowed_tokens": [
+              "add",
+              "subtract",
+              "absolute",
+              "if",
+              "sum",
+              "variable-0",
+              "variable-1",
+              "integer"
+            ],
+            "candidate_count": 8,
+            "contextual_pair_cells": 53,
+            "contextual_unigram_cells": 62,
+            "physical": true,
+            "position": 4,
+            "spike_time_ms": 7.6000000000000005,
+            "winner_cell": 9
+          }
+        ],
+        "readout_after_sha256": "dc980700af9e8a3749dd4beab5620e2128a4e89c439240810b263c2ec570afde",
+        "readout_before_sha256": "dc980700af9e8a3749dd4beab5620e2128a4e89c439240810b263c2ec570afde",
+        "readout_immutable": true,
+        "source": "def solve(alpha, beta):\n    return alpha + beta + alpha\n",
+        "tokens": [
+          "add",
+          "add",
+          "variable-1",
+          "variable-0",
+          "variable-1"
+        ]
+      },
+      "prompt": "For integers alpha and beta, return the quantity alpha plus beta, then add alpha again.",
+      "rejected": true
+    },
+    "whole_teacher_execution": [
+      {
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 3,
+              "args": [
+                3,
+                5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                -3,
+                5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                3,
+                -5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                -3,
+                -5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                0,
+                0
+              ],
+              "expected": 0,
+              "pass": true
+            },
+            {
+              "actual": 9,
+              "args": [
+                9,
+                -9
+              ],
+              "expected": 0,
+              "pass": false
+            },
+            {
+              "actual": 8,
+              "args": [
+                -8,
+                3
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 2,
+              "args": [
+                2,
+                7
+              ],
+              "expected": 9,
+              "pass": false
+            }
+          ],
+          "passed": 1,
+          "total": 8
+        },
+        "source": "def solve(alpha, beta):\n    return abs(alpha)\n",
+        "teacher": 1,
+        "tokens": [
+          "absolute",
+          "variable-1"
+        ]
+      },
+      {
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 5,
+              "args": [
+                3,
+                5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                -3,
+                5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                3,
+                -5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                -3,
+                -5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                0,
+                0
+              ],
+              "expected": 0,
+              "pass": true
+            },
+            {
+              "actual": 9,
+              "args": [
+                9,
+                -9
+              ],
+              "expected": 0,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                -8,
+                3
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 7,
+              "args": [
+                2,
+                7
+              ],
+              "expected": 9,
+              "pass": false
+            }
+          ],
+          "passed": 1,
+          "total": 8
+        },
+        "source": "def solve(alpha, beta):\n    return abs(beta)\n",
+        "teacher": 2,
+        "tokens": [
+          "absolute",
+          "variable-0"
+        ]
+      },
+      {
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 3,
+              "args": [
+                3,
+                5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                -3,
+                5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                3,
+                -5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                -3,
+                -5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                0,
+                0
+              ],
+              "expected": 0,
+              "pass": true
+            },
+            {
+              "actual": 9,
+              "args": [
+                9,
+                -9
+              ],
+              "expected": 0,
+              "pass": false
+            },
+            {
+              "actual": 8,
+              "args": [
+                -8,
+                3
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 2,
+              "args": [
+                2,
+                7
+              ],
+              "expected": 9,
+              "pass": false
+            }
+          ],
+          "passed": 1,
+          "total": 8
+        },
+        "source": "def solve(alpha, beta):\n    return abs(abs(alpha))\n",
+        "teacher": 3,
+        "tokens": [
+          "absolute",
+          "absolute",
+          "variable-1"
+        ]
+      },
+      {
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 11,
+              "args": [
+                3,
+                5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": -1,
+              "args": [
+                -3,
+                5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": 1,
+              "args": [
+                3,
+                -5
+              ],
+              "expected": 2,
+              "pass": false
+            },
+            {
+              "actual": -11,
+              "args": [
+                -3,
+                -5
+              ],
+              "expected": 8,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                0,
+                0
+              ],
+              "expected": 0,
+              "pass": true
+            },
+            {
+              "actual": 9,
+              "args": [
+                9,
+                -9
+              ],
+              "expected": 0,
+              "pass": false
+            },
+            {
+              "actual": -13,
+              "args": [
+                -8,
+                3
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 11,
+              "args": [
+                2,
+                7
+              ],
+              "expected": 9,
+              "pass": false
+            }
+          ],
+          "passed": 1,
+          "total": 8
+        },
+        "source": "def solve(alpha, beta):\n    return alpha + beta + alpha\n",
+        "teacher": 4,
+        "tokens": [
+          "add",
+          "add",
+          "variable-1",
+          "variable-0",
+          "variable-1"
+        ]
+      }
+    ],
+    "whole_teacher_execution_rejected": true
+  },
+  "format": "humanbrain.direct-production-cell-role-gated-probe.v1",
+  "target": {
+    "cases": [
+      {
+        "args": [
+          3,
+          5
+        ],
+        "expected": 8
+      },
+      {
+        "args": [
+          -3,
+          5
+        ],
+        "expected": 2
+      },
+      {
+        "args": [
+          3,
+          -5
+        ],
+        "expected": 2
+      },
+      {
+        "args": [
+          -3,
+          -5
+        ],
+        "expected": 8
+      },
+      {
+        "args": [
+          0,
+          0
+        ],
+        "expected": 0
+      },
+      {
+        "args": [
+          9,
+          -9
+        ],
+        "expected": 0
+      },
+      {
+        "args": [
+          -8,
+          3
+        ],
+        "expected": 5
+      },
+      {
+        "args": [
+          2,
+          7
+        ],
+        "expected": 9
+      }
+    ],
+    "completion": {
+      "completed": true,
+      "exact_source": false,
+      "exact_tokens": false,
+      "execution": {
+        "all_pass": false,
+        "cases": [
+          {
+            "actual": 3,
+            "args": [
+              3,
+              5
+            ],
+            "expected": 8,
+            "pass": false
+          },
+          {
+            "actual": -3,
+            "args": [
+              -3,
+              5
+            ],
+            "expected": 2,
+            "pass": false
+          },
+          {
+            "actual": 3,
+            "args": [
+              3,
+              -5
+            ],
+            "expected": 2,
+            "pass": false
+          },
+          {
+            "actual": -3,
+            "args": [
+              -3,
+              -5
+            ],
+            "expected": 8,
+            "pass": false
+          },
+          {
+            "actual": 0,
+            "args": [
+              0,
+              0
+            ],
+            "expected": 0,
+            "pass": true
+          },
+          {
+            "actual": 9,
+            "args": [
+              9,
+              -9
+            ],
+            "expected": 0,
+            "pass": false
+          },
+          {
+            "actual": -8,
+            "args": [
+              -8,
+              3
+            ],
+            "expected": 5,
+            "pass": false
+          },
+          {
+            "actual": 2,
+            "args": [
+              2,
+              7
+            ],
+            "expected": 9,
+            "pass": false
+          }
+        ],
+        "passed": 1,
+        "total": 8
+      },
+      "physical": true,
+      "races": [
+        {
+          "accepted_is_legal": true,
+          "accepted_token": "variable-1",
+          "active_assembly_cells": 114,
+          "allowed_tokens": [
+            "add",
+            "subtract",
+            "absolute",
+            "if",
+            "sum",
+            "variable-0",
+            "variable-1",
+            "integer"
+          ],
+          "candidate_count": 8,
+          "contextual_pair_cells": 55,
+          "contextual_unigram_cells": 62,
+          "physical": true,
+          "position": 0,
+          "spike_time_ms": 8.25,
+          "winner_cell": 9
+        }
+      ],
+      "readout_after_sha256": "dc980700af9e8a3749dd4beab5620e2128a4e89c439240810b263c2ec570afde",
+      "readout_before_sha256": "dc980700af9e8a3749dd4beab5620e2128a4e89c439240810b263c2ec570afde",
+      "readout_immutable": true,
+      "source": "def solve(alpha, beta):\n    return alpha\n",
+      "tokens": [
+        "variable-1"
+      ]
+    },
+    "expected_source": "def solve(alpha, beta):\n    return abs(alpha + beta)\n",
+    "expected_tokens": [
+      "absolute",
+      "add",
+      "variable-1",
+      "variable-0"
+    ],
+    "prompt": "For integers alpha and beta, return the magnitude of the quantity alpha plus beta.",
+    "signature": {
+      "entry_point": "solve",
+      "parameters": [
+        {
+          "name": "alpha",
+          "type": {
+            "arguments": [],
+            "constructor": "Int"
+          }
+        },
+        {
+          "name": "beta",
+          "type": {
+            "arguments": [],
+            "constructor": "Int"
+          }
+        }
+      ],
+      "result": {
+        "arguments": [],
+        "constructor": "Int"
+      }
+    }
+  },
+  "teachers": [
+    {
+      "prompt": "For integers alpha and beta, return the magnitude of alpha; ignore beta.",
+      "tokens": [
+        "absolute",
+        "variable-1"
+      ]
+    },
+    {
+      "prompt": "For integers alpha and beta, return the magnitude of beta; ignore alpha.",
+      "tokens": [
+        "absolute",
+        "variable-0"
+      ]
+    },
+    {
+      "prompt": "For integers alpha and beta, apply magnitude twice to alpha; ignore beta.",
+      "tokens": [
+        "absolute",
+        "absolute",
+        "variable-1"
+      ]
+    },
+    {
+      "prompt": "For integers alpha and beta, return the quantity alpha plus beta, then add alpha again.",
+      "tokens": [
+        "add",
+        "add",
+        "variable-1",
+        "variable-0",
+        "variable-1"
+      ]
+    }
+  ],
+  "verdict": "STOP_ROLE_GATED_COMPOSITION"
+}
