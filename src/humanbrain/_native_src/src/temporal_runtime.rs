@@ -288,7 +288,6 @@ struct PreparedLearnStep {
     active_segment_count: usize,
     winner_cells: [u32; ACTIVE_COLUMNS],
     winner_best_active: [u32; ACTIVE_COLUMNS],
-    winner_best_matching: [u32; ACTIVE_COLUMNS],
     normalized_context_sources: [u32; ACTIVE_COLUMNS],
     reinforced_rows: [TemporalSegmentRow; ACTIVE_COLUMNS],
     append_owners: [u32; ACTIVE_COLUMNS],
@@ -1109,7 +1108,6 @@ impl TemporalCircuitRuntime {
         let mut inhibition_onset_ticks = [0u16; ACTIVE_COLUMNS];
         let mut column_simulated_ticks = [0u16; ACTIVE_COLUMNS];
         let mut winner_best_active = [NONE; ACTIVE_COLUMNS];
-        let mut winner_best_matching = [NONE; ACTIVE_COLUMNS];
         let mut predicted_columns = 0u8;
         for (index, &column) in columns.iter().enumerate() {
             let candidate_count = match self.prepare_column_drives(
@@ -1153,7 +1151,6 @@ impl TemporalCircuitRuntime {
                 self.diagnostic_for_owner(race.winner.cell_id, diagnostic_count)
             {
                 winner_best_active[index] = diagnostic.best_active_segment;
-                winner_best_matching[index] = diagnostic.best_matching_segment;
                 if diagnostic.best_active_segment != NONE {
                     predicted_columns += 1;
                 }
@@ -1220,7 +1217,6 @@ impl TemporalCircuitRuntime {
                 active_segment_count,
                 winner_spikes.map(|spike| spike.cell_id),
                 winner_best_active,
-                winner_best_matching,
                 reserve_plan,
                 &transient,
             ) {
@@ -1394,8 +1390,6 @@ impl TemporalCircuitRuntime {
 
         let mut active_candidates = [EMPTY_CATEGORIZED_RANK_CANDIDATE; 8];
         let mut active_count = 0usize;
-        let mut matching_candidates = [EMPTY_CATEGORIZED_RANK_CANDIDATE; 8];
-        let mut matching_count = 0usize;
         for (offset, &cell) in cells.iter().enumerate() {
             self.column_drive_scratch[offset] = CandidateDrive {
                 cell_id: cell,
@@ -1416,20 +1410,9 @@ impl TemporalCircuitRuntime {
                     };
                 }
                 active_count += 1;
-            } else if diagnostic.best_matching_segment != NONE {
-                if matching_count < matching_candidates.len() {
-                    matching_candidates[matching_count] = CategorizedRankCandidate {
-                        owner: cell,
-                        column_offset: offset,
-                        primary_contacts: diagnostic.matching_potential_contacts,
-                        secondary_contacts: diagnostic.matching_connected_contacts,
-                        segment_id: diagnostic.best_matching_segment,
-                    };
-                }
-                matching_count += 1;
             }
         }
-        let categorized_count = active_count + matching_count;
+        let categorized_count = active_count;
         if categorized_count > usize::from(self.config.novel_race_cap) {
             return Err(TemporalCircuitStop::CategorizedRaceCapacity {
                 column,
@@ -1439,19 +1422,11 @@ impl TemporalCircuitRuntime {
         }
         let novel_limit = usize::from(self.config.novel_race_cap) - categorized_count;
 
-        // Every categorized owner is a physical race candidate.  A cell may
-        // own both an active and a matching segment; active drive wins that
-        // within-cell classification.  The measured 47 pA ladder then ranks
-        // owners inside each class while preserving the original rank-0 drive.
+        // Only recall-competent active owners may bias the physical race.
+        // Potential-only matches remain recognition diagnostics; allowing
+        // them to own W_t would substitute a near context for the current
+        // identity and suppress the novel-cell allocation path.
         active_candidates[..active_count].sort_unstable_by(|left, right| {
-            right
-                .primary_contacts
-                .cmp(&left.primary_contacts)
-                .then_with(|| right.secondary_contacts.cmp(&left.secondary_contacts))
-                .then_with(|| left.segment_id.cmp(&right.segment_id))
-                .then_with(|| left.owner.cmp(&right.owner))
-        });
-        matching_candidates[..matching_count].sort_unstable_by(|left, right| {
             right
                 .primary_contacts
                 .cmp(&left.primary_contacts)
@@ -1466,15 +1441,6 @@ impl TemporalCircuitRuntime {
             .current_pa()
                 - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa * rank as f64;
         }
-        for (rank, candidate) in matching_candidates[..matching_count].iter().enumerate() {
-            self.column_drive_scratch[candidate.column_offset].current_pa =
-                CandidateClass::Matching {
-                    load: self.prospective_owner_load(candidate.owner, reserve)?,
-                }
-                .current_pa()
-                    - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa * rank as f64;
-        }
-
         if transient.previous_context_len == 0 {
             for rank in 0..usize::from(self.config.base_cells_per_column) {
                 let Some(&cell_id) = cells.get(rank) else {
@@ -1585,14 +1551,11 @@ impl TemporalCircuitRuntime {
                 ));
             }
             let cells = &self.column_cells[cell_start..cell_end];
-            let has_recognized_owner = cells.iter().copied().any(|cell| {
+            let has_recall_competent_owner = cells.iter().copied().any(|cell| {
                 self.diagnostic_for_owner(cell, diagnostic_count)
-                    .is_some_and(|diagnostic| {
-                        diagnostic.best_active_segment != NONE
-                            || diagnostic.best_matching_segment != NONE
-                    })
+                    .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
             });
-            if has_recognized_owner {
+            if has_recall_competent_owner {
                 continue;
             }
             let mut exhausted = true;
@@ -1798,7 +1761,6 @@ impl TemporalCircuitRuntime {
         active_segment_count: usize,
         winner_cells: [u32; ACTIVE_COLUMNS],
         winner_best_active: [u32; ACTIVE_COLUMNS],
-        winner_best_matching: [u32; ACTIVE_COLUMNS],
         reserve: PreparedReservePlan,
         transient: &TemporalTransientState,
     ) -> Result<PreparedLearnStep, TemporalCircuitStop> {
@@ -1815,7 +1777,7 @@ impl TemporalCircuitRuntime {
         let mut punished_count = 0u32;
         if context_source_count != 0 {
             for index in 0..ACTIVE_COLUMNS {
-                if winner_best_active[index] == NONE && winner_best_matching[index] == NONE {
+                if winner_best_active[index] == NONE {
                     append_owners[append_count] = winner_cells[index];
                     append_count += 1;
                 }
@@ -1932,37 +1894,6 @@ impl TemporalCircuitRuntime {
                     )
                 })?;
         }
-        for index in 0..ACTIVE_COLUMNS {
-            if winner_best_active[index] != NONE || winner_best_matching[index] == NONE {
-                continue;
-            }
-            let segment_id = winner_best_matching[index];
-            if self.active_segment_scratch[..active_segment_count].contains(&segment_id) {
-                return Err(TemporalCircuitStop::StoreOrPlanInvariant(
-                    "matching fallback duplicates the active-segment mutation pass",
-                ));
-            }
-            let row = build_reinforced_row(
-                &self.store,
-                self.config,
-                segment_id,
-                &normalized_context_sources,
-                context_source_count,
-                self.learning_step,
-            )?;
-            reinforced_rows[index] = row;
-            self.store
-                .preflight_runtime_canonical_rewrite(segment_id, &row)
-                .map_err(|error| {
-                    map_store_preflight_error(
-                        error,
-                        &self.store,
-                        0,
-                        self.config.max_segments_per_cell,
-                    )
-                })?;
-        }
-
         let next_learning_step = self.learning_step.checked_add(1).ok_or(
             TemporalCircuitStop::TickOrCounterOverflow {
                 stage: TemporalOverflowStage::LearningCounter,
@@ -1974,7 +1905,6 @@ impl TemporalCircuitRuntime {
             active_segment_count,
             winner_cells,
             winner_best_active,
-            winner_best_matching,
             normalized_context_sources,
             reinforced_rows,
             append_owners,
@@ -2038,18 +1968,6 @@ impl TemporalCircuitRuntime {
             );
             self.store
                 .commit_prevalidated_runtime_canonical_rewrite(segment_id, &row);
-        }
-        for index in 0..ACTIVE_COLUMNS {
-            if prepared.winner_best_active[index] != NONE
-                || prepared.winner_best_matching[index] == NONE
-            {
-                continue;
-            }
-            let segment_id = prepared.winner_best_matching[index];
-            self.store.commit_prevalidated_runtime_canonical_rewrite(
-                segment_id,
-                &prepared.reinforced_rows[index],
-            );
         }
         for owner in prepared.append_owners[..usize::from(prepared.append_count)]
             .iter()
@@ -3699,7 +3617,7 @@ mod tests {
     }
 
     #[test]
-    fn plastic_learn_matches_active_punish_exemption_matching_and_literal_regrowth_order() {
+    fn partial_potential_match_cannot_own_winner_or_suppress_novel_allocation() {
         let circuit_config = config(22, 2, TemporalContextPolicy::BoundWinners);
         let active_sources: Vec<u32> = (0..20).step_by(2).collect();
         let matching_sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 43];
@@ -3740,11 +3658,14 @@ mod tests {
         let target = runtime.step(1, TemporalStepMode::Learn).unwrap();
 
         assert_eq!(target.winner_spikes[0].cell_id, 22);
-        assert_eq!(target.winner_spikes[1].cell_id, 24);
-        assert_eq!(target.allocated_segments, 9);
+        assert_eq!(target.winner_spikes[1].cell_id, 25);
+        assert_eq!(target.matching_segments, 5);
+        assert_eq!(target.active_segments, 4);
+        assert_eq!(target.predicted_columns, 1);
+        assert_eq!(target.allocated_segments, 10);
         assert_eq!(target.punished_segments, 2);
         assert_eq!(runtime.learning_step, 2);
-        assert_eq!(runtime.store.runtime_segment_count(), 14);
+        assert_eq!(runtime.store.runtime_segment_count(), 15);
         assert_eq!(
             runtime
                 .store
@@ -3771,12 +3692,17 @@ mod tests {
             [248; PAIRS_PER_SEGMENT],
             "an active segment whose owner did not win is punished",
         );
-        let regrown = runtime.store.runtime_segment_row(3).unwrap();
+        let untouched_match = runtime.store.runtime_segment_row(3).unwrap();
         assert_eq!(
-            regrown.normalized_sources,
-            [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+            untouched_match.normalized_sources,
+            [0, 2, 4, 6, 8, 10, 12, 14, 16, 43],
+            "a potential-only segment remains evidence, not the new identity",
         );
-        assert_eq!(regrown.permanence_ticks, [255; PAIRS_PER_SEGMENT]);
+        assert_eq!(
+            untouched_match.permanence_ticks,
+            [205, 205, 205, 205, 205, 205, 205, 205, 205, 50],
+            "a potential-only segment is not rewritten toward the current context",
+        );
         assert_eq!(
             runtime
                 .store
