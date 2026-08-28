@@ -26,6 +26,11 @@ pub(crate) mod checkpoint;
 #[cfg(any(unix, windows))]
 mod checkpoint_publisher;
 mod ffi;
+mod identifier_copy;
+
+use identifier_copy::{
+    IdentifierCopyState, COPY_END_TOKEN_ID, COPY_ID_TOKEN_ID, IDENTIFIER_END_TOKEN_ID,
+};
 
 #[cfg(not(any(unix, windows)))]
 compile_error!("checkpoint path publication requires an audited Unix or Windows backend");
@@ -236,7 +241,7 @@ pub(crate) struct TemporalCircuitStep {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct TemporalOutputElection {
+struct PhysicalOutputElection {
     pub(crate) token_id: u32,
     pub(crate) output_cell_id: u32,
     pub(crate) activated_columns: u32,
@@ -246,6 +251,40 @@ pub(crate) struct TemporalOutputElection {
     pub(crate) basket_tick: u16,
     pub(crate) inhibition_onset_tick: u16,
     pub(crate) simulated_ticks: u16,
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TemporalGenerationPath {
+    Temporal = 0,
+    EnterCopy = 1,
+    Copy = 2,
+    ExitCopy = 3,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct TemporalGeneration {
+    pub(crate) surface_token_id: u32,
+    pub(crate) surface_output_cell_id: u32,
+    pub(crate) generation_index: u64,
+    pub(crate) temporal_event_count: u64,
+    pub(crate) activated_columns: u32,
+    pub(crate) candidate_tokens: u32,
+    pub(crate) control_token_id: u32,
+    pub(crate) control_output_cell_id: u32,
+    pub(crate) surface_winner_tick: u16,
+    pub(crate) surface_basket_tick: u16,
+    pub(crate) surface_inhibition_onset_tick: u16,
+    pub(crate) total_simulated_ticks: u16,
+    pub(crate) control_winner_tick: u16,
+    pub(crate) control_basket_tick: u16,
+    pub(crate) control_simulated_end_tick: u16,
+    pub(crate) path: TemporalGenerationPath,
+    pub(crate) winner_input_columns: u8,
+    pub(crate) feedback_predicted_columns: u8,
+    pub(crate) feedback_predicted: bool,
+    pub(crate) copy_place_ordinal: u8,
+    pub(crate) physical_election_count: u8,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -380,6 +419,8 @@ pub(crate) struct TemporalCircuitRuntime {
     event_count: u64,
     learning_step: u64,
     scientific_stop: Option<TemporalPoisonCode>,
+    identifier_copy: IdentifierCopyState,
+    generation_index: u64,
     relay_offset: u32,
     basket_offset: u32,
     proximal_offset: u32,
@@ -737,6 +778,13 @@ impl TemporalCircuitRuntime {
             TemporalPlasticityPolicy::GrowthOff => Vec::new(),
             TemporalPlasticityPolicy::Plastic => vec![NONE; segment_capacity],
         };
+        let identifier_copy = IdentifierCopyState::new(
+            config.construction_seed,
+            config.column_count,
+            physical_cell_count,
+            &token_codebook,
+        )
+        .map_err(TemporalRuntimeBuildError::Invalid)?;
 
         Ok(Self {
             config,
@@ -761,6 +809,8 @@ impl TemporalCircuitRuntime {
             event_count: 0,
             learning_step: 0,
             scientific_stop: None,
+            identifier_copy,
+            generation_index: 0,
             relay_offset,
             basket_offset,
             proximal_offset,
@@ -780,7 +830,22 @@ impl TemporalCircuitRuntime {
         token_id: u32,
         mode: TemporalStepMode,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
-        self.step_with_transient(token_id, mode, self.transient_state())
+        if let Err(message) = self.identifier_copy.preflight_arrival(token_id) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
+        }
+        let transient = if token_id == IDENTIFIER_END_TOKEN_ID
+            && self.identifier_copy.is_capturing()
+        {
+            TemporalTransientState::EMPTY
+        } else {
+            self.transient_state()
+        };
+        let step = self.step_with_transient(token_id, mode, transient)?;
+        let columns = self
+            .token_columns(token_id)
+            .expect("successful temporal step resolved one token code");
+        self.identifier_copy.observe_arrival(token_id, columns);
+        Ok(step)
     }
 
     /// Elect one token directly from the current physical winner context.
@@ -792,7 +857,7 @@ impl TemporalCircuitRuntime {
     /// column. A second fitted token-cell/basket race emits the result. The
     /// codebook is static wiring; neither a decoded score argmax nor an
     /// arriving candidate token participates in the decision.
-    pub(crate) fn elect_output(&mut self) -> Result<TemporalOutputElection, TemporalCircuitStop> {
+    fn elect_temporal_output(&mut self) -> Result<PhysicalOutputElection, TemporalCircuitStop> {
         if self.scientific_stop.is_some() {
             return Err(TemporalCircuitStop::Poisoned);
         }
@@ -870,6 +935,14 @@ impl TemporalCircuitRuntime {
             }
         }
 
+        self.race_output_tokens(&output_active_columns, activated_columns)
+    }
+
+    fn race_output_tokens(
+        &mut self,
+        output_active_columns: &[u8],
+        activated_columns: u32,
+    ) -> Result<PhysicalOutputElection, TemporalCircuitStop> {
         let synaptic_share_pa = TEMPORAL_PHYSICS_IDENTITY.active_pa / ACTIVE_COLUMNS as f64;
         let output_offset = self
             .proximal_relay_offset
@@ -939,7 +1012,7 @@ impl TemporalCircuitRuntime {
             .iter()
             .filter(|&&column| output_active_columns[column as usize] != 0)
             .count() as u8;
-        Ok(TemporalOutputElection {
+        Ok(PhysicalOutputElection {
             token_id: winner.token_id,
             output_cell_id: race.winner.cell_id,
             activated_columns,
@@ -950,6 +1023,180 @@ impl TemporalCircuitRuntime {
             inhibition_onset_tick: race.inhibition_onset_tick,
             simulated_ticks: race.simulated_ticks,
         })
+    }
+
+    fn elect_copy_output_at(
+        &mut self,
+        position: u8,
+    ) -> Result<PhysicalOutputElection, TemporalCircuitStop> {
+        let columns = match self.identifier_copy.binding_columns_at(position) {
+            Ok(columns) => columns,
+            Err(message) => {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
+            }
+        };
+        let mut active_columns = vec![0u8; self.config.column_count as usize];
+        for column in columns {
+            let copy_cell = match self.identifier_copy.copy_column_cell(column) {
+                Ok(cell) => cell,
+                Err(message) => {
+                    return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
+                }
+            };
+            if let Err(source) = singleton_latency_ticks(TEMPORAL_PHYSICS_IDENTITY.active_pa, 0.0) {
+                return self.fail(TemporalCircuitStop::Physics {
+                    stage: PhysicalStage::ColumnRace,
+                    location: copy_cell,
+                    source,
+                });
+            }
+            active_columns[column as usize] = 1;
+        }
+        self.race_output_tokens(&active_columns, ACTIVE_COLUMNS as u32)
+    }
+
+    /// Elect and commit exactly one surface token through the currently active
+    /// native route.  Internal COPY_ID/COPY_END control winners never escape
+    /// this interface.
+    pub(crate) fn generate(&mut self) -> Result<TemporalGeneration, TemporalCircuitStop> {
+        if self.scientific_stop.is_some() {
+            return Err(TemporalCircuitStop::Poisoned);
+        }
+        let Some(next_generation_index) = self.generation_index.checked_add(1) else {
+            return self.fail(TemporalCircuitStop::TickOrCounterOverflow {
+                stage: TemporalOverflowStage::EventCounter,
+                location: 0,
+            });
+        };
+        if self.identifier_copy.is_recalling() {
+            self.generate_from_copy(next_generation_index)
+        } else {
+            self.generate_from_temporal(next_generation_index)
+        }
+    }
+
+    fn generate_from_temporal(
+        &mut self,
+        next_generation_index: u64,
+    ) -> Result<TemporalGeneration, TemporalCircuitStop> {
+        let elected = self.elect_temporal_output()?;
+        if elected.token_id == COPY_ID_TOKEN_ID {
+            if !self.identifier_copy.is_ready() {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "COPY_ID won without one captured identifier",
+                ));
+            }
+            let copied = self.elect_copy_output_at(0)?;
+            if copied.token_id == COPY_END_TOKEN_ID {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "captured identifier produced COPY_END before one surface byte",
+                ));
+            }
+            if is_internal_role_token(copied.token_id) {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "identifier binding emitted an internal role token",
+                ));
+            }
+            let copied = match offset_election(copied, elected.simulated_ticks) {
+                Ok(value) => value,
+                Err(stop) => return self.fail(stop),
+            };
+            let feedback = self.step_with_transient(
+                COPY_ID_TOKEN_ID,
+                TemporalStepMode::ReadOnly,
+                self.transient_state(),
+            )?;
+            self.identifier_copy.begin_recall();
+            self.identifier_copy.advance_recall();
+            self.generation_index = next_generation_index;
+            return Ok(generation_record(
+                copied,
+                Some(elected),
+                TemporalGenerationPath::EnterCopy,
+                Some(&feedback),
+                0,
+                next_generation_index,
+                self.event_count,
+            ));
+        }
+        if is_internal_role_token(elected.token_id) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "temporal generation elected an invalid role token",
+            ));
+        }
+        let feedback = self.step_with_transient(
+            elected.token_id,
+            TemporalStepMode::ReadOnly,
+            self.transient_state(),
+        )?;
+        self.generation_index = next_generation_index;
+        Ok(generation_record(
+            elected,
+            None,
+            TemporalGenerationPath::Temporal,
+            Some(&feedback),
+            u8::MAX,
+            next_generation_index,
+            self.event_count,
+        ))
+    }
+
+    fn generate_from_copy(
+        &mut self,
+        next_generation_index: u64,
+    ) -> Result<TemporalGeneration, TemporalCircuitStop> {
+        let place = self.identifier_copy.recall_position();
+        let copied = self.elect_copy_output_at(place)?;
+        let at_end = self.identifier_copy.recall_is_at_end();
+        if copied.token_id == COPY_END_TOKEN_ID {
+            if !at_end {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "COPY_END won before the identifier place chain was exhausted",
+                ));
+            }
+            let resumed = self.elect_temporal_output()?;
+            if is_internal_role_token(resumed.token_id) {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "adjacent internal generation controls are not valid in copy-v1",
+                ));
+            }
+            let resumed = match offset_election(resumed, copied.simulated_ticks) {
+                Ok(value) => value,
+                Err(stop) => return self.fail(stop),
+            };
+            let feedback = self.step_with_transient(
+                resumed.token_id,
+                TemporalStepMode::ReadOnly,
+                self.transient_state(),
+            )?;
+            self.identifier_copy.finish_recall();
+            self.generation_index = next_generation_index;
+            return Ok(generation_record(
+                resumed,
+                Some(copied),
+                TemporalGenerationPath::ExitCopy,
+                Some(&feedback),
+                u8::MAX,
+                next_generation_index,
+                self.event_count,
+            ));
+        }
+        if at_end || is_internal_role_token(copied.token_id) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "identifier copy binding failed to terminate at its exact length",
+            ));
+        }
+        self.identifier_copy.advance_recall();
+        self.generation_index = next_generation_index;
+        Ok(generation_record(
+            copied,
+            None,
+            TemporalGenerationPath::Copy,
+            None,
+            place,
+            next_generation_index,
+            self.event_count,
+        ))
     }
 
     /// Execute one ordinary transaction while treating the transient state as
@@ -964,7 +1211,19 @@ impl TemporalCircuitRuntime {
         token_id: u32,
         mode: TemporalStepMode,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
-        self.step_with_transient(token_id, mode, TemporalTransientState::EMPTY)
+        if self.identifier_copy.enabled() && token_id == IDENTIFIER_END_TOKEN_ID {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "identifier end cannot begin a reset episode",
+            ));
+        }
+        let step = self.step_with_transient(token_id, mode, TemporalTransientState::EMPTY)?;
+        let columns = self
+            .token_columns(token_id)
+            .expect("successful temporal step resolved one token code");
+        self.identifier_copy.reset();
+        self.generation_index = 0;
+        self.identifier_copy.observe_arrival(token_id, columns);
+        Ok(step)
     }
 
     fn transient_state(&self) -> TemporalTransientState {
@@ -1270,6 +1529,8 @@ impl TemporalCircuitRuntime {
         self.previous_winner_context = [0; CONTEXT_CELLS];
         self.previous_winner_context_len = 0;
         self.event_count = 0;
+        self.identifier_copy.reset();
+        self.generation_index = 0;
     }
 
     fn fail<T>(&mut self, stop: TemporalCircuitStop) -> Result<T, TemporalCircuitStop> {
@@ -1284,6 +1545,13 @@ impl TemporalCircuitRuntime {
 
     fn threshold_offset(&self, cell_id: u32) -> f64 {
         self.threshold_offsets_mv[cell_id as usize]
+    }
+
+    fn token_columns(&self, token_id: u32) -> Option<[u32; ACTIVE_COLUMNS]> {
+        self.token_codebook
+            .binary_search_by_key(&token_id, |code| code.token_id)
+            .ok()
+            .map(|index| self.token_codebook[index].columns)
     }
 
     fn owner_load(&self, owner: u32) -> Result<u8, TemporalCircuitStop> {
@@ -1980,6 +2248,82 @@ impl TemporalCircuitRuntime {
     }
 }
 
+fn is_internal_role_token(token_id: u32) -> bool {
+    token_id >= identifier_copy::IDENTIFIER_START_TOKEN_ID
+}
+
+fn offset_election(
+    mut election: PhysicalOutputElection,
+    control_simulated_end: u16,
+) -> Result<PhysicalOutputElection, TemporalCircuitStop> {
+    let shift = control_simulated_end.checked_add(1).ok_or(
+        TemporalCircuitStop::TickOrCounterOverflow {
+            stage: TemporalOverflowStage::EventCounter,
+            location: election.output_cell_id,
+        },
+    )?;
+    election.winner_tick = election.winner_tick.checked_add(shift).ok_or(
+        TemporalCircuitStop::TickOrCounterOverflow {
+            stage: TemporalOverflowStage::EventCounter,
+            location: election.output_cell_id,
+        },
+    )?;
+    election.basket_tick = election.basket_tick.checked_add(shift).ok_or(
+        TemporalCircuitStop::TickOrCounterOverflow {
+            stage: TemporalOverflowStage::EventCounter,
+            location: election.output_cell_id,
+        },
+    )?;
+    election.inhibition_onset_tick = election
+        .inhibition_onset_tick
+        .checked_add(shift)
+        .ok_or(TemporalCircuitStop::TickOrCounterOverflow {
+            stage: TemporalOverflowStage::EventCounter,
+            location: election.output_cell_id,
+        })?;
+    election.simulated_ticks = election.simulated_ticks.checked_add(shift).ok_or(
+        TemporalCircuitStop::TickOrCounterOverflow {
+            stage: TemporalOverflowStage::EventCounter,
+            location: election.output_cell_id,
+        },
+    )?;
+    Ok(election)
+}
+
+fn generation_record(
+    surface: PhysicalOutputElection,
+    control: Option<PhysicalOutputElection>,
+    path: TemporalGenerationPath,
+    feedback: Option<&TemporalCircuitStep>,
+    copy_place_ordinal: u8,
+    generation_index: u64,
+    temporal_event_count: u64,
+) -> TemporalGeneration {
+    TemporalGeneration {
+        surface_token_id: surface.token_id,
+        surface_output_cell_id: surface.output_cell_id,
+        generation_index,
+        temporal_event_count,
+        activated_columns: surface.activated_columns,
+        candidate_tokens: surface.candidate_tokens,
+        control_token_id: control.map_or(NONE, |election| election.token_id),
+        control_output_cell_id: control.map_or(NONE, |election| election.output_cell_id),
+        surface_winner_tick: surface.winner_tick,
+        surface_basket_tick: surface.basket_tick,
+        surface_inhibition_onset_tick: surface.inhibition_onset_tick,
+        total_simulated_ticks: surface.simulated_ticks,
+        control_winner_tick: control.map_or(0, |election| election.winner_tick),
+        control_basket_tick: control.map_or(0, |election| election.basket_tick),
+        control_simulated_end_tick: control.map_or(0, |election| election.simulated_ticks),
+        path,
+        winner_input_columns: surface.winner_input_columns,
+        feedback_predicted_columns: feedback.map_or(0, |step| step.predicted_columns),
+        feedback_predicted: feedback.is_some_and(|step| step.predicted),
+        copy_place_ordinal,
+        physical_election_count: if control.is_some() { 2 } else { 1 },
+    }
+}
+
 fn build_reinforced_row(
     store: &TemporalStore,
     config: TemporalCircuitConfig,
@@ -2630,17 +2974,105 @@ mod tests {
         runtime.recognize(0).expect("public cue boundary");
 
         let election = runtime
-            .elect_output()
-            .expect("active target owners must emit one token");
+            .generate()
+            .expect("active target owners must generate one token");
 
-        assert_eq!(election.token_id, 1);
-        assert_eq!(election.output_cell_id, 111);
+        assert_eq!(election.surface_token_id, 1);
+        assert_eq!(election.surface_output_cell_id, 111);
         assert_eq!(election.activated_columns, ACTIVE_COLUMNS as u32);
         assert_eq!(election.candidate_tokens, 1);
         assert_eq!(election.winner_input_columns, ACTIVE_COLUMNS as u8);
-        assert!(election.winner_tick < election.basket_tick);
-        assert_eq!(election.inhibition_onset_tick, election.basket_tick + 1);
-        assert!(election.basket_tick <= election.simulated_ticks);
+        assert!(election.surface_winner_tick < election.surface_basket_tick);
+        assert_eq!(
+            election.surface_inhibition_onset_tick,
+            election.surface_basket_tick + 1
+        );
+        assert!(election.surface_basket_tick <= election.total_simulated_ticks);
+        assert_eq!(election.path, TemporalGenerationPath::Temporal);
+        assert_eq!(election.temporal_event_count, 2);
+    }
+
+    #[test]
+    fn normalized_identifier_boundary_copies_unseen_name_and_resumes_template() {
+        const EOS: u32 = 256;
+        let mut train = b"Function ".iter().map(|&byte| u32::from(byte)).collect::<Vec<_>>();
+        train.push(identifier_copy::IDENTIFIER_START_TOKEN_ID);
+        train.extend(b"inc".iter().map(|&byte| u32::from(byte)));
+        train.push(IDENTIFIER_END_TOKEN_ID);
+        train.extend(b" adds one.\n".iter().map(|&byte| u32::from(byte)));
+        train.extend(b"def ".iter().map(|&byte| u32::from(byte)));
+        train.push(COPY_ID_TOKEN_ID);
+        train.extend(b"(x):\n    return x + 1\n".iter().map(|&byte| u32::from(byte)));
+        train.push(EOS);
+
+        let mut token_ids = train.clone();
+        token_ids.extend(b"bump".iter().map(|&byte| u32::from(byte)));
+        token_ids.push(COPY_END_TOKEN_ID);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut copy_config = config(column_count, 8, TemporalContextPolicy::BoundWinners);
+        copy_config.segment_capacity = 2048;
+        copy_config.theta_match = 16;
+        copy_config.theta_active = 18;
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let physical_count = 2 * copy_config.max_pyramidal_cells + 3 * column_count;
+        let mut runtime = TemporalCircuitRuntime::new(
+            copy_config,
+            codebook,
+            base_members(copy_config),
+            vec![0.0; physical_count as usize],
+            &[],
+        )
+        .expect("copy runtime");
+
+        for token_id in train {
+            runtime
+                .step(token_id, TemporalStepMode::Learn)
+                .expect("TRAIN transition");
+        }
+        runtime.reset_transient();
+        let mut dev = b"Function ".iter().map(|&byte| u32::from(byte)).collect::<Vec<_>>();
+        dev.push(identifier_copy::IDENTIFIER_START_TOKEN_ID);
+        dev.extend(b"bump".iter().map(|&byte| u32::from(byte)));
+        dev.push(IDENTIFIER_END_TOKEN_ID);
+        dev.extend(b" adds one.\n".iter().map(|&byte| u32::from(byte)));
+        for token_id in dev {
+            runtime
+                .step(token_id, TemporalStepMode::ReadOnly)
+                .expect("DEV prompt transition");
+        }
+
+        let mut surfaced = Vec::new();
+        let mut copy_event_count = None;
+        for _ in 0..64 {
+            let generation = runtime.generate().expect("teacher-free generation");
+            if generation.path == TemporalGenerationPath::EnterCopy {
+                copy_event_count = Some(generation.temporal_event_count);
+                assert_eq!(generation.copy_place_ordinal, 0);
+            } else if generation.path == TemporalGenerationPath::Copy {
+                assert_eq!(Some(generation.temporal_event_count), copy_event_count);
+            }
+            surfaced.push(generation.surface_token_id);
+            if generation.surface_token_id == EOS {
+                break;
+            }
+        }
+        let mut expected = b"def bump(x):\n    return x + 1\n"
+            .iter()
+            .map(|&byte| u32::from(byte))
+            .collect::<Vec<_>>();
+        expected.push(EOS);
+        assert_eq!(surfaced, expected);
     }
 
     #[test]

@@ -38,6 +38,10 @@ from humanbrain.native import (
 _UINT8_MAX: Final = (1 << 8) - 1
 _UINT16_MAX: Final = (1 << 16) - 1
 _UINT32_MAX: Final = (1 << 32) - 1
+IDENTIFIER_START_TOKEN_ID: Final = _UINT32_MAX - 4
+IDENTIFIER_END_TOKEN_ID: Final = _UINT32_MAX - 3
+COPY_ID_TOKEN_ID: Final = _UINT32_MAX - 2
+COPY_END_TOKEN_ID: Final = _UINT32_MAX - 1
 _ACTIVE_COLUMNS: Final = 11
 _CONTEXT_CELLS: Final = 22
 _PAIRS_PER_SEGMENT: Final = 10
@@ -261,19 +265,30 @@ class _NativeStepV2(ctypes.Structure):
     ]
 
 
-class _NativeOutputElection(ctypes.Structure):
+class _NativeGeneration(ctypes.Structure):
     _fields_ = [
-        ("token_id", ctypes.c_uint32),
-        ("output_cell_id", ctypes.c_uint32),
+        ("surface_token_id", ctypes.c_uint32),
+        ("surface_output_cell_id", ctypes.c_uint32),
+        ("generation_index", ctypes.c_uint64),
+        ("temporal_event_count", ctypes.c_uint64),
         ("activated_columns", ctypes.c_uint32),
         ("candidate_tokens", ctypes.c_uint32),
+        ("control_token_id", ctypes.c_uint32),
+        ("control_output_cell_id", ctypes.c_uint32),
+        ("surface_winner_tick", ctypes.c_uint16),
+        ("surface_basket_tick", ctypes.c_uint16),
+        ("surface_inhibition_onset_tick", ctypes.c_uint16),
+        ("total_simulated_ticks", ctypes.c_uint16),
+        ("control_winner_tick", ctypes.c_uint16),
+        ("control_basket_tick", ctypes.c_uint16),
+        ("control_simulated_end_tick", ctypes.c_uint16),
+        ("path", ctypes.c_uint8),
         ("winner_input_columns", ctypes.c_uint8),
-        ("reserved_zero_u8", ctypes.c_uint8),
-        ("winner_tick", ctypes.c_uint16),
-        ("basket_tick", ctypes.c_uint16),
-        ("inhibition_onset_tick", ctypes.c_uint16),
-        ("simulated_ticks", ctypes.c_uint16),
-        ("reserved_zero", ctypes.c_uint8 * 6),
+        ("feedback_predicted_columns", ctypes.c_uint8),
+        ("feedback_predicted", ctypes.c_uint8),
+        ("copy_place_ordinal", ctypes.c_uint8),
+        ("physical_election_count", ctypes.c_uint8),
+        ("reserved_zero", ctypes.c_uint8 * 4),
     ]
 
 
@@ -408,10 +423,10 @@ def _assert_frozen_abi() -> None:
         ),
     )
     _require_frozen_layout(
-        _NativeOutputElection,
-        32,
-        4,
-        (0, 4, 8, 12, 16, 17, 18, 20, 22, 24, 26),
+        _NativeGeneration,
+        64,
+        8,
+        (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60),
     )
     _require_frozen_layout(_NativeAdvanceRequestV2, 40, 8, (0, 8, 16, 24, 32, 33, 34))
     _require_frozen_layout(
@@ -472,6 +487,15 @@ class TemporalStepMode(IntEnum):
 
     READ_ONLY = 0
     LEARN = 1
+
+
+class TemporalGenerationPath(IntEnum):
+    """Native physical route that committed one surface generation."""
+
+    TEMPORAL = 0
+    ENTER_COPY = 1
+    COPY = 2
+    EXIT_COPY = 3
 
 
 class NativeTemporalRuntimeStatus(IntEnum):
@@ -973,18 +997,30 @@ class TemporalCircuitStep:
 
 
 @dataclass(frozen=True, slots=True)
-class TemporalOutputElection:
-    """Token emitted by the native physical output-cell race."""
+class TemporalGeneration:
+    """One native physical election-and-state-advance transaction."""
 
-    token_id: int
-    output_cell_id: int
+    surface_token_id: int
+    surface_output_cell_id: int
+    generation_index: int
+    temporal_event_count: int
     activated_columns: int
     candidate_tokens: int
+    control_token_id: int | None
+    control_output_cell_id: int | None
     winner_input_columns: int
-    winner_tick: int
-    basket_tick: int
-    inhibition_onset_tick: int
-    simulated_ticks: int
+    surface_winner_tick: int
+    surface_basket_tick: int
+    surface_inhibition_onset_tick: int
+    total_simulated_ticks: int
+    control_winner_tick: int | None
+    control_basket_tick: int | None
+    control_simulated_end_tick: int | None
+    path: TemporalGenerationPath
+    feedback_predicted_columns: int
+    feedback_predicted: bool
+    copy_place_ordinal: int | None
+    physical_election_count: int
 
 
 class NativeTemporalRuntimeError(RuntimeError):
@@ -1099,7 +1135,7 @@ def _bind_temporal_symbols(library: object) -> None:
         create = library.humanbrain_temporal_circuit_runtime_create_v1
         import_checkpoint = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
         advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
-        elect_output = library.humanbrain_temporal_circuit_runtime_elect_output_v1
+        generate = library.humanbrain_temporal_circuit_runtime_generate_v1
         checkpoint_size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
         checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
         export_checkpoint = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
@@ -1135,9 +1171,9 @@ def _bind_temporal_symbols(library: object) -> None:
         ctypes.POINTER(_NativeAdvanceRequestV2),
         report_output,
     ]
-    elect_output.argtypes = [
+    generate.argtypes = [
         ctypes.c_void_p,
-        ctypes.POINTER(_NativeOutputElection),
+        ctypes.POINTER(_NativeGeneration),
         report_output,
     ]
     checkpoint_size.argtypes = [
@@ -1186,7 +1222,7 @@ def _bind_temporal_symbols(library: object) -> None:
         create,
         import_checkpoint,
         advance,
-        elect_output,
+        generate,
         checkpoint_size,
         checkpoint_identity,
         export_checkpoint,
@@ -2833,19 +2869,19 @@ class NativeTemporalCircuit:
                 )
             return completed_steps
 
-    def elect_output(self) -> TemporalOutputElection:
-        """Emit one token from the current physical winner context.
+    def generate(self) -> TemporalGeneration:
+        """Elect and commit one physical surface-token transaction.
 
-        This call accepts no arriving token, candidate set, current, score, or
-        winner.  The returned token is selected by the native output-cell and
-        basket-cell race over the learned physical owner activity.
+        The native runtime owns temporal feedback, identifier-copy place
+        advance, and COPY_END exit.  Internal control winners are diagnostic
+        only and never escape as the surface token.
         """
 
-        native = _NativeOutputElection()
+        native = _NativeGeneration()
         report = _NativeReport()
         with self._operation_lock:
             handle = self._require_open()
-            returned = self._library.humanbrain_temporal_circuit_runtime_elect_output_v1(
+            returned = self._library.humanbrain_temporal_circuit_runtime_generate_v1(
                 handle,
                 ctypes.byref(native),
                 ctypes.byref(report),
@@ -2853,72 +2889,198 @@ class NativeTemporalCircuit:
             decoded = _decode_report(returned, report, maximum_completed_prefix=0)
             if decoded.status is not NativeTemporalRuntimeStatus.OK:
                 if any(bytes(native)):
-                    raise _invariant_error("failed output election returned nonzero output")
+                    raise _invariant_error("failed generation returned nonzero output")
                 _raise_report(decoded)
             if decoded.required or decoded.observed or decoded.location:
                 raise _invariant_error(
-                    "successful output election carries unexpected scalar diagnostics"
+                    "successful generation carries unexpected scalar diagnostics"
                 )
-            if native.reserved_zero_u8 or any(native.reserved_zero):
-                raise _invariant_error("output election reserved fields are nonzero")
+            if any(native.reserved_zero):
+                raise _invariant_error("generation reserved fields are nonzero")
+
+            try:
+                path = TemporalGenerationPath(int(native.path))
+            except ValueError as exc:
+                raise _invariant_error(
+                    "generation path is unknown", observed=int(native.path)
+                ) from exc
+            generation_index = int(native.generation_index)
+            if generation_index < 1:
+                raise _invariant_error("generation index is not positive")
 
             activated_columns = int(native.activated_columns)
             candidate_tokens = int(native.candidate_tokens)
             winner_input_columns = int(native.winner_input_columns)
             if not 1 <= activated_columns <= _ACTIVE_COLUMNS:
                 raise _invariant_error(
-                    "output election activated-column count is outside the physical code width",
+                    "generation activated-column count is outside the physical code width",
                     required=_ACTIVE_COLUMNS,
                     observed=activated_columns,
                 )
             if not 1 <= candidate_tokens <= len(self._definition.token_codes):
                 raise _invariant_error(
-                    "output election candidate-token count is outside the codebook",
+                    "generation candidate-token count is outside the codebook",
                     required=len(self._definition.token_codes),
                     observed=candidate_tokens,
                 )
             if not 1 <= winner_input_columns <= activated_columns:
                 raise _invariant_error(
-                    "output election winner input count is inconsistent",
+                    "generation winner input count is inconsistent",
                     required=activated_columns,
                     observed=winner_input_columns,
                 )
 
             output_population_offset = _physical_cell_count(self._definition.config)
-            output_index = int(native.output_cell_id) - output_population_offset
-            if not 0 <= output_index < len(self._definition.token_codes):
-                raise _invariant_error(
-                    "output election cell is outside the static token population",
-                    required=output_population_offset,
-                    observed=int(native.output_cell_id),
-                )
-            wired_token_id = self._definition.token_codes[output_index][0]
-            if int(native.token_id) != wired_token_id:
-                raise _invariant_error(
-                    "output election token disagrees with its static output-cell wiring",
-                    required=wired_token_id,
-                    observed=int(native.token_id),
-                )
-            winner_tick = int(native.winner_tick)
-            basket_tick = int(native.basket_tick)
-            inhibition_onset_tick = int(native.inhibition_onset_tick)
-            simulated_ticks = int(native.simulated_ticks)
+
+            def validate_output_cell(token_id: int, output_cell_id: int, label: str) -> None:
+                output_index = output_cell_id - output_population_offset
+                if not 0 <= output_index < len(self._definition.token_codes):
+                    raise _invariant_error(
+                        f"{label} cell is outside the static token population",
+                        required=output_population_offset,
+                        observed=output_cell_id,
+                    )
+                wired_token_id = self._definition.token_codes[output_index][0]
+                if token_id != wired_token_id:
+                    raise _invariant_error(
+                        f"{label} token disagrees with its static output-cell wiring",
+                        required=wired_token_id,
+                        observed=token_id,
+                    )
+
+            surface_token_id = int(native.surface_token_id)
+            surface_output_cell_id = int(native.surface_output_cell_id)
+            validate_output_cell(surface_token_id, surface_output_cell_id, "surface output")
+            if surface_token_id in {
+                IDENTIFIER_START_TOKEN_ID,
+                IDENTIFIER_END_TOKEN_ID,
+                COPY_ID_TOKEN_ID,
+                COPY_END_TOKEN_ID,
+            }:
+                raise _invariant_error("internal role token escaped as surface output")
+
+            surface_winner_tick = int(native.surface_winner_tick)
+            surface_basket_tick = int(native.surface_basket_tick)
+            surface_inhibition_onset_tick = int(native.surface_inhibition_onset_tick)
+            total_simulated_ticks = int(native.total_simulated_ticks)
             if not (
-                winner_tick < basket_tick
-                and inhibition_onset_tick == basket_tick + 1
-                and basket_tick <= simulated_ticks
+                surface_winner_tick < surface_basket_tick
+                and surface_inhibition_onset_tick == surface_basket_tick + 1
+                and surface_basket_tick <= total_simulated_ticks
             ):
-                raise _invariant_error("output election spike chronology is not causal")
-            return TemporalOutputElection(
-                token_id=int(native.token_id),
-                output_cell_id=int(native.output_cell_id),
+                raise _invariant_error("surface generation spike chronology is not causal")
+
+            control_token_raw = int(native.control_token_id)
+            control_output_cell_raw = int(native.control_output_cell_id)
+            control_winner_raw = int(native.control_winner_tick)
+            control_basket_raw = int(native.control_basket_tick)
+            control_end_raw = int(native.control_simulated_end_tick)
+            copy_place_raw = int(native.copy_place_ordinal)
+            election_count = int(native.physical_election_count)
+
+            expected_control: int | None
+            expected_elections: int
+            if path is TemporalGenerationPath.ENTER_COPY:
+                expected_control = COPY_ID_TOKEN_ID
+                expected_elections = 2
+                if copy_place_raw != 0:
+                    raise _invariant_error("ENTER_COPY did not emit identifier place zero")
+            elif path is TemporalGenerationPath.EXIT_COPY:
+                expected_control = COPY_END_TOKEN_ID
+                expected_elections = 2
+                if copy_place_raw != _UINT8_MAX:
+                    raise _invariant_error("EXIT_COPY carries a surface identifier place")
+            else:
+                expected_control = None
+                expected_elections = 1
+                if path is TemporalGenerationPath.COPY:
+                    if not 1 <= copy_place_raw < 8:
+                        raise _invariant_error(
+                            "COPY identifier place is outside the bounded tape",
+                            observed=copy_place_raw,
+                        )
+                elif copy_place_raw != _UINT8_MAX:
+                    raise _invariant_error("ordinary temporal generation carries a copy place")
+            if election_count != expected_elections:
+                raise _invariant_error(
+                    "generation physical-election count disagrees with its path",
+                    required=expected_elections,
+                    observed=election_count,
+                )
+
+            if expected_control is None:
+                if (
+                    control_token_raw != _UINT32_MAX
+                    or control_output_cell_raw != _UINT32_MAX
+                    or control_winner_raw
+                    or control_basket_raw
+                    or control_end_raw
+                ):
+                    raise _invariant_error("control-free generation carries control diagnostics")
+                control_token_id = None
+                control_output_cell_id = None
+                control_winner_tick = None
+                control_basket_tick = None
+                control_simulated_end_tick = None
+            else:
+                if control_token_raw != expected_control:
+                    raise _invariant_error(
+                        "generation control token disagrees with its path",
+                        required=expected_control,
+                        observed=control_token_raw,
+                    )
+                validate_output_cell(
+                    control_token_raw, control_output_cell_raw, "control output"
+                )
+                if not (
+                    control_winner_raw < control_basket_raw
+                    and control_basket_raw <= control_end_raw
+                    and control_end_raw < surface_winner_tick
+                ):
+                    raise _invariant_error("control-to-surface spike chronology is not causal")
+                control_token_id = control_token_raw
+                control_output_cell_id = control_output_cell_raw
+                control_winner_tick = control_winner_raw
+                control_basket_tick = control_basket_raw
+                control_simulated_end_tick = control_end_raw
+
+            feedback_predicted_raw = int(native.feedback_predicted)
+            feedback_predicted_columns = int(native.feedback_predicted_columns)
+            if feedback_predicted_raw not in (0, 1):
+                raise _invariant_error("generation feedback-predicted flag is not binary")
+            if not 0 <= feedback_predicted_columns <= _ACTIVE_COLUMNS:
+                raise _invariant_error(
+                    "generation feedback prediction width is outside the physical code width"
+                )
+            if path is TemporalGenerationPath.COPY and (
+                feedback_predicted_raw or feedback_predicted_columns
+            ):
+                raise _invariant_error("copied surface byte mutated the temporal stream")
+
+            return TemporalGeneration(
+                surface_token_id=surface_token_id,
+                surface_output_cell_id=surface_output_cell_id,
+                generation_index=generation_index,
+                temporal_event_count=int(native.temporal_event_count),
                 activated_columns=activated_columns,
                 candidate_tokens=candidate_tokens,
+                control_token_id=control_token_id,
+                control_output_cell_id=control_output_cell_id,
                 winner_input_columns=winner_input_columns,
-                winner_tick=winner_tick,
-                basket_tick=basket_tick,
-                inhibition_onset_tick=inhibition_onset_tick,
-                simulated_ticks=simulated_ticks,
+                surface_winner_tick=surface_winner_tick,
+                surface_basket_tick=surface_basket_tick,
+                surface_inhibition_onset_tick=surface_inhibition_onset_tick,
+                total_simulated_ticks=total_simulated_ticks,
+                control_winner_tick=control_winner_tick,
+                control_basket_tick=control_basket_tick,
+                control_simulated_end_tick=control_simulated_end_tick,
+                path=path,
+                feedback_predicted_columns=feedback_predicted_columns,
+                feedback_predicted=bool(feedback_predicted_raw),
+                copy_place_ordinal=(
+                    None if copy_place_raw == _UINT8_MAX else copy_place_raw
+                ),
+                physical_election_count=election_count,
             )
 
     def publish_checkpoint(self, destination: Path) -> TemporalCheckpointPublication:
@@ -3079,11 +3241,16 @@ __all__ = [
     "TemporalPublicationErrorStage",
     "TemporalPublicationOutcome",
     "TemporalCircuitStep",
-    "TemporalOutputElection",
+    "TemporalGeneration",
+    "TemporalGenerationPath",
     "TemporalContextPolicy",
     "TemporalPlasticityPolicy",
     "TemporalSpike",
     "TemporalStepMode",
+    "IDENTIFIER_START_TOKEN_ID",
+    "IDENTIFIER_END_TOKEN_ID",
+    "COPY_ID_TOKEN_ID",
+    "COPY_END_TOKEN_ID",
     "publish_immutable_bytes",
     "prepare_durable_directory",
     "reconcile_existing_immutable_bytes",

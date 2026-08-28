@@ -53,7 +53,7 @@ use super::{
         OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
     },
     PhysicalStage, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalCircuitStep,
-    TemporalCircuitStop, TemporalContextPolicy, TemporalOutputElection, TemporalOverflowStage,
+    TemporalCircuitStop, TemporalContextPolicy, TemporalGeneration, TemporalOverflowStage,
     TemporalPlasticityPolicy, TemporalPoisonCode, TemporalStepMode, TokenCode, ACTIVE_COLUMNS,
     CONTEXT_CELLS,
 };
@@ -517,56 +517,86 @@ impl From<TemporalCircuitStep> for TemporalCircuitStepV2 {
     }
 }
 
-/// One token emitted by the runtime's physical output-cell race.
-///
-/// This record deliberately carries no candidate input or decoded score.  It
-/// is only the transport form of the already completed native cell election.
+/// One fully committed surface generation transaction.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct TemporalOutputElectionV1 {
-    pub token_id: u32,
-    pub output_cell_id: u32,
+pub struct TemporalGenerationV1 {
+    pub surface_token_id: u32,
+    pub surface_output_cell_id: u32,
+    pub generation_index: u64,
+    pub temporal_event_count: u64,
     pub activated_columns: u32,
     pub candidate_tokens: u32,
+    pub control_token_id: u32,
+    pub control_output_cell_id: u32,
+    pub surface_winner_tick: u16,
+    pub surface_basket_tick: u16,
+    pub surface_inhibition_onset_tick: u16,
+    pub total_simulated_ticks: u16,
+    pub control_winner_tick: u16,
+    pub control_basket_tick: u16,
+    pub control_simulated_end_tick: u16,
+    pub path: u8,
     pub winner_input_columns: u8,
-    pub reserved_zero_u8: u8,
-    pub winner_tick: u16,
-    pub basket_tick: u16,
-    pub inhibition_onset_tick: u16,
-    pub simulated_ticks: u16,
-    pub reserved_zero: [u8; 6],
+    pub feedback_predicted_columns: u8,
+    pub feedback_predicted: u8,
+    pub copy_place_ordinal: u8,
+    pub physical_election_count: u8,
+    pub reserved_zero: [u8; 4],
 }
 
-impl TemporalOutputElectionV1 {
+impl TemporalGenerationV1 {
     const ZERO: Self = Self {
-        token_id: 0,
-        output_cell_id: 0,
+        surface_token_id: 0,
+        surface_output_cell_id: 0,
+        generation_index: 0,
+        temporal_event_count: 0,
         activated_columns: 0,
         candidate_tokens: 0,
+        control_token_id: 0,
+        control_output_cell_id: 0,
+        surface_winner_tick: 0,
+        surface_basket_tick: 0,
+        surface_inhibition_onset_tick: 0,
+        total_simulated_ticks: 0,
+        control_winner_tick: 0,
+        control_basket_tick: 0,
+        control_simulated_end_tick: 0,
+        path: 0,
         winner_input_columns: 0,
-        reserved_zero_u8: 0,
-        winner_tick: 0,
-        basket_tick: 0,
-        inhibition_onset_tick: 0,
-        simulated_ticks: 0,
-        reserved_zero: [0; 6],
+        feedback_predicted_columns: 0,
+        feedback_predicted: 0,
+        copy_place_ordinal: 0,
+        physical_election_count: 0,
+        reserved_zero: [0; 4],
     };
 }
 
-impl From<TemporalOutputElection> for TemporalOutputElectionV1 {
-    fn from(election: TemporalOutputElection) -> Self {
+impl From<TemporalGeneration> for TemporalGenerationV1 {
+    fn from(generation: TemporalGeneration) -> Self {
         Self {
-            token_id: election.token_id,
-            output_cell_id: election.output_cell_id,
-            activated_columns: election.activated_columns,
-            candidate_tokens: election.candidate_tokens,
-            winner_input_columns: election.winner_input_columns,
-            reserved_zero_u8: 0,
-            winner_tick: election.winner_tick,
-            basket_tick: election.basket_tick,
-            inhibition_onset_tick: election.inhibition_onset_tick,
-            simulated_ticks: election.simulated_ticks,
-            reserved_zero: [0; 6],
+            surface_token_id: generation.surface_token_id,
+            surface_output_cell_id: generation.surface_output_cell_id,
+            generation_index: generation.generation_index,
+            temporal_event_count: generation.temporal_event_count,
+            activated_columns: generation.activated_columns,
+            candidate_tokens: generation.candidate_tokens,
+            control_token_id: generation.control_token_id,
+            control_output_cell_id: generation.control_output_cell_id,
+            surface_winner_tick: generation.surface_winner_tick,
+            surface_basket_tick: generation.surface_basket_tick,
+            surface_inhibition_onset_tick: generation.surface_inhibition_onset_tick,
+            total_simulated_ticks: generation.total_simulated_ticks,
+            control_winner_tick: generation.control_winner_tick,
+            control_basket_tick: generation.control_basket_tick,
+            control_simulated_end_tick: generation.control_simulated_end_tick,
+            path: generation.path as u8,
+            winner_input_columns: generation.winner_input_columns,
+            feedback_predicted_columns: generation.feedback_predicted_columns,
+            feedback_predicted: u8::from(generation.feedback_predicted),
+            copy_place_ordinal: generation.copy_place_ordinal,
+            physical_election_count: generation.physical_election_count,
+            reserved_zero: [0; 4],
         }
     }
 }
@@ -1547,20 +1577,16 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_advance_block_v2(
     report.finish(TEMPORAL_RUNTIME_OK, "")
 }
 
-/// Elect one output token from the runtime's current physical winner context.
-///
-/// No candidate token, score vector, current, or winner is accepted from the
-/// caller.  On success this publishes the result of the native output-cell
-/// race; on failure the output remains all zeroes.
+/// Generate and commit one surface token through the native physical route.
 ///
 /// # Safety
 ///
 /// The module-level unsafe caller contract applies. `output` and `report_out`
 /// must be disjoint writable records.
 #[no_mangle]
-pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_elect_output_v1(
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_generate_v1(
     handle: *mut TemporalCircuitRuntimeHandle,
-    output: *mut TemporalOutputElectionV1,
+    output: *mut TemporalGenerationV1,
     report_out: *mut TemporalCircuitReportV1,
 ) -> u32 {
     if !begin_report(report_out) {
@@ -1570,21 +1596,21 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_elect_output_v1(
     if !fixed_pointer_is_valid(output.cast_const()) {
         return report.finish(
             TEMPORAL_RUNTIME_INVALID_ARGUMENT,
-            "output election result is null or misaligned",
+            "generation result is null or misaligned",
         );
     }
     if regions_overlap(
         output.cast(),
-        size_of::<TemporalOutputElectionV1>(),
+        size_of::<TemporalGenerationV1>(),
         report_out.cast(),
         size_of::<TemporalCircuitReportV1>(),
     ) {
         return report.finish(
             TEMPORAL_RUNTIME_INVALID_ARGUMENT,
-            "output election result and report overlap",
+            "generation result and report overlap",
         );
     }
-    output.write(TemporalOutputElectionV1::ZERO);
+    output.write(TemporalGenerationV1::ZERO);
     if !fixed_pointer_is_valid(handle.cast_const()) {
         return report.finish(
             TEMPORAL_RUNTIME_INVALID_ARGUMENT,
@@ -1597,9 +1623,9 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_elect_output_v1(
     if runtime.scientific_stop.is_some() {
         return stop_report(report, &runtime, TemporalCircuitStop::Poisoned);
     }
-    match runtime.elect_output() {
-        Ok(election) => {
-            output.write(election.into());
+    match runtime.generate() {
+        Ok(generation) => {
+            output.write(generation.into());
             report.finish(TEMPORAL_RUNTIME_OK, "")
         }
         Err(stop) => stop_report(report, &runtime, stop),
@@ -2777,25 +2803,20 @@ mod tests {
         assert_eq!(offset_of!(TemporalCircuitStepV2, proximal_context), 624);
         assert_eq!(offset_of!(TemporalCircuitStepV2, context), 712);
 
-        assert_eq!(size_of::<TemporalOutputElectionV1>(), 32);
-        assert_eq!(align_of::<TemporalOutputElectionV1>(), 4);
-        assert_eq!(offset_of!(TemporalOutputElectionV1, token_id), 0);
-        assert_eq!(offset_of!(TemporalOutputElectionV1, output_cell_id), 4);
-        assert_eq!(offset_of!(TemporalOutputElectionV1, activated_columns), 8);
-        assert_eq!(offset_of!(TemporalOutputElectionV1, candidate_tokens), 12);
-        assert_eq!(
-            offset_of!(TemporalOutputElectionV1, winner_input_columns),
-            16
-        );
-        assert_eq!(offset_of!(TemporalOutputElectionV1, reserved_zero_u8), 17);
-        assert_eq!(offset_of!(TemporalOutputElectionV1, winner_tick), 18);
-        assert_eq!(offset_of!(TemporalOutputElectionV1, basket_tick), 20);
-        assert_eq!(
-            offset_of!(TemporalOutputElectionV1, inhibition_onset_tick),
-            22
-        );
-        assert_eq!(offset_of!(TemporalOutputElectionV1, simulated_ticks), 24);
-        assert_eq!(offset_of!(TemporalOutputElectionV1, reserved_zero), 26);
+        assert_eq!(size_of::<TemporalGenerationV1>(), 64);
+        assert_eq!(align_of::<TemporalGenerationV1>(), 8);
+        assert_eq!(offset_of!(TemporalGenerationV1, surface_token_id), 0);
+        assert_eq!(offset_of!(TemporalGenerationV1, surface_output_cell_id), 4);
+        assert_eq!(offset_of!(TemporalGenerationV1, generation_index), 8);
+        assert_eq!(offset_of!(TemporalGenerationV1, temporal_event_count), 16);
+        assert_eq!(offset_of!(TemporalGenerationV1, activated_columns), 24);
+        assert_eq!(offset_of!(TemporalGenerationV1, candidate_tokens), 28);
+        assert_eq!(offset_of!(TemporalGenerationV1, control_token_id), 32);
+        assert_eq!(offset_of!(TemporalGenerationV1, control_output_cell_id), 36);
+        assert_eq!(offset_of!(TemporalGenerationV1, surface_winner_tick), 40);
+        assert_eq!(offset_of!(TemporalGenerationV1, path), 54);
+        assert_eq!(offset_of!(TemporalGenerationV1, copy_place_ordinal), 58);
+        assert_eq!(offset_of!(TemporalGenerationV1, reserved_zero), 60);
 
         assert_eq!(size_of::<TemporalCircuitAdvanceBlockV2Request>(), 40);
         assert_eq!(align_of::<TemporalCircuitAdvanceBlockV2Request>(), 8);
