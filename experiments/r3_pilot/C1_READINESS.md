@@ -59,9 +59,19 @@ use much earlier than the synthetic screen could expose. A production-codebook,
 seed-17 LEARN replay stops inside Genesis at zero-based token 19,841 with 11
 matching segments, zero active segments, and zero replacement allocation. The
 19,842-step trustworthy prefix ran at 2,530.74 steps/s. This is a localized
-context-collision STOP, not a two-book scaling result; the next candidate in the
-frozen ladder is `(18,20)`. Exact source identities and the STOP record are in
+context-collision STOP, not a two-book scaling result. Both higher threshold
+arms then fail q=255 production-overlap at every development seed: `(18,20)`
+retains only 18 physical contacts and `(20,20)` does not match after one of 11
+source winner/relay pairs changes on replay. Threshold-only repair is exhausted;
+the next repair must stabilize context-conditioned winners under network growth.
+Exact source identities and the TRAIN STOP record are in
 [r3_native_train_multibook_cost.json](../../benchmarks/r3_native_train_multibook_cost.json).
+
+A separate public synthetic TRAIN smoke now exposes the native physical output
+race through Python. After learning `0 -> 1`, cue `0` arrives alone and the
+fitted owner/output/basket races emit token `1` from 11 physical inputs with no
+candidate token, score, or Python argmax. This closes the output transport seam,
+not generation, generalization, coding, or C1 capability.
 
 The physical TRAIN-prefix cost ladder now completes the entire 122,253-token
 Genesis prefix with 1,047,305 live segments. At that endpoint the instrumented
@@ -106,8 +116,9 @@ result above remains narrower than an end-to-end cap measurement.
       drive, fitted-cell first-spike race, growth-off structural zero, and
       repeated/novel/punishment/bit-exact fixtures. Native mechanism slices are
       green; q=255 development's first synthetic passing candidate `(16,18)`
-      fails the canonical TRAIN-order precursor at Genesis token 19,841. The
-      ladder must continue at `(18,20)` before confirmation or official R3-F0.
+      fails the canonical TRAIN-order precursor at Genesis token 19,841, and
+      both higher arms fail q=255. Threshold-only repair is exhausted; stabilize
+      replayed winner identities before confirmation or official R3-F0.
 - [ ] **Sparse context assembly gate:** freeze and compare k-capped actual
       recurrent spikes; require repeated-context stability, unrelated-context
       separation, and a bounded coincidence false-positive rate. Supersede the

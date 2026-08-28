@@ -165,16 +165,240 @@
     {
       "theta_match": 18,
       "theta_active": 20,
-      "status": "NOT_RUN_FIRST_PASS_FOUND"
+      "status": "STOP_ALL_Q255_DEVELOPMENT_SEEDS",
+      "seeds": [
+        {
+          "seed": 3,
+          "production_overlap": {
+            "status": "STOP",
+            "circuit_identity_sha256": "42353257ee3f899596c6b767b633519d212372ee9d0cf8fefdc3decaa7792e69",
+            "semantic_index_sha256": "5146111748f93bb865d5da2e3dbdec88c491340e827fcb610c708f3b9d766d3d",
+            "trained_exposures": 2041,
+            "stop_recurrence": 82,
+            "source_tokens": [82, 83],
+            "maximum_winner_overlap": 6,
+            "matching": 11,
+            "active": 0,
+            "predicted_columns": 0,
+            "allocated": 0,
+            "punished": 0,
+            "expected_target_winners_preserved": true,
+            "cohort_count": 11,
+            "next_reserve_cell": 32856,
+            "poison_code": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": "NOT_RUN_FAIL_FAST"
+        },
+        {
+          "seed": 7,
+          "production_overlap": {
+            "status": "STOP",
+            "circuit_identity_sha256": "280cfa018ac0de3314c3a37f5e366d2822f6cad5c1986fda88e694e27310e61e",
+            "semantic_index_sha256": "0ec37cf71ae927ea168113b041967f0068d9419d78f36d6089aa88c201ed6d5a",
+            "trained_exposures": 2041,
+            "stop_recurrence": 123,
+            "source_tokens": [123, 124],
+            "maximum_winner_overlap": 5,
+            "matching": 11,
+            "active": 0,
+            "predicted_columns": 0,
+            "allocated": 0,
+            "punished": 0,
+            "expected_target_winners_preserved": true,
+            "cohort_count": 11,
+            "next_reserve_cell": 32856,
+            "poison_code": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": "NOT_RUN_FAIL_FAST"
+        },
+        {
+          "seed": 17,
+          "production_overlap": {
+            "status": "STOP",
+            "circuit_identity_sha256": "88a611caf1520edf07dd8d4abba247355c52e468da25fcd436b1b1a04f352e0f",
+            "semantic_index_sha256": "6541df67c69935c37e26c9c529decffd40b2ae75136a03e32f185e7f69c11eb3",
+            "trained_exposures": 2041,
+            "stop_recurrence": 82,
+            "source_tokens": [82, 83],
+            "maximum_winner_overlap": 5,
+            "matching": 11,
+            "active": 0,
+            "predicted_columns": 0,
+            "allocated": 0,
+            "punished": 0,
+            "expected_target_winners_preserved": true,
+            "cohort_count": 11,
+            "next_reserve_cell": 32856,
+            "poison_code": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": "NOT_RUN_FAIL_FAST"
+        },
+        {
+          "seed": 29,
+          "production_overlap": {
+            "status": "STOP",
+            "circuit_identity_sha256": "bf9fe7ec780548fb8e02755e9b4f21b3c146103f8ba4d066d89a4b43fbb13ead",
+            "semantic_index_sha256": "bc5d96770bd377111b35472e6805d9589dc0c45108d8437252466966b9cef8ce",
+            "trained_exposures": 2041,
+            "stop_recurrence": 123,
+            "source_tokens": [123, 124],
+            "maximum_winner_overlap": 5,
+            "matching": 11,
+            "active": 0,
+            "predicted_columns": 0,
+            "allocated": 0,
+            "punished": 0,
+            "expected_target_winners_preserved": true,
+            "cohort_count": 11,
+            "next_reserve_cell": 32856,
+            "poison_code": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": "NOT_RUN_FAIL_FAST"
+        }
+      ]
     },
     {
       "theta_match": 20,
       "theta_active": 20,
-      "status": "NOT_RUN_FIRST_PASS_FOUND"
+      "status": "STOP_ALL_Q255_DEVELOPMENT_SEEDS",
+      "seeds": [
+        {
+          "seed": 3,
+          "production_overlap": {
+            "status": "STOP",
+            "circuit_identity_sha256": "8a3e25b004052a14f2c95dcadf7e2b6272944c7bdeca20115dd1b0f6ebbed36d",
+            "semantic_index_sha256": "5146111748f93bb865d5da2e3dbdec88c491340e827fcb610c708f3b9d766d3d",
+            "trained_exposures": 2041,
+            "stop_recurrence": 82,
+            "source_tokens": [82, 83],
+            "maximum_winner_overlap": 6,
+            "learned_replay_source_winner_overlap": 10,
+            "learned_replay_source_context_overlap": 20,
+            "matching": 0,
+            "active": 0,
+            "predicted_columns": 0,
+            "allocated": 0,
+            "punished": 0,
+            "expected_target_winners_preserved": false,
+            "cohort_count": 11,
+            "next_reserve_cell": 32856,
+            "poison_code": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": "NOT_RUN_FAIL_FAST"
+        },
+        {
+          "seed": 7,
+          "production_overlap": {
+            "status": "STOP",
+            "circuit_identity_sha256": "c2c87675cd90aad75a4dae3d69678922be323fee7e4924038be0346e56310f9f",
+            "semantic_index_sha256": "0ec37cf71ae927ea168113b041967f0068d9419d78f36d6089aa88c201ed6d5a",
+            "trained_exposures": 2041,
+            "stop_recurrence": 123,
+            "source_tokens": [123, 124],
+            "maximum_winner_overlap": 5,
+            "learned_replay_source_winner_overlap": 10,
+            "learned_replay_source_context_overlap": 20,
+            "matching": 0,
+            "active": 0,
+            "predicted_columns": 0,
+            "allocated": 0,
+            "punished": 0,
+            "expected_target_winners_preserved": false,
+            "cohort_count": 11,
+            "next_reserve_cell": 32856,
+            "poison_code": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": "NOT_RUN_FAIL_FAST"
+        },
+        {
+          "seed": 17,
+          "production_overlap": {
+            "status": "STOP",
+            "circuit_identity_sha256": "47c101dfd14c2eb6e38a36f31f1598753bcf204251c253fd93b916049a201a76",
+            "semantic_index_sha256": "6541df67c69935c37e26c9c529decffd40b2ae75136a03e32f185e7f69c11eb3",
+            "trained_exposures": 2041,
+            "stop_recurrence": 82,
+            "source_tokens": [82, 83],
+            "maximum_winner_overlap": 5,
+            "learned_replay_source_winner_overlap": 10,
+            "learned_replay_source_context_overlap": 20,
+            "matching": 0,
+            "active": 0,
+            "predicted_columns": 0,
+            "allocated": 0,
+            "punished": 0,
+            "expected_target_winners_preserved": false,
+            "cohort_count": 11,
+            "next_reserve_cell": 32856,
+            "poison_code": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": "NOT_RUN_FAIL_FAST"
+        },
+        {
+          "seed": 29,
+          "production_overlap": {
+            "status": "STOP",
+            "circuit_identity_sha256": "208a0050f85cc87cdcd1cd25c06b554b4067f9b232cb8fe46481403742df6bd9",
+            "semantic_index_sha256": "bc5d96770bd377111b35472e6805d9589dc0c45108d8437252466966b9cef8ce",
+            "trained_exposures": 2041,
+            "stop_recurrence": 123,
+            "source_tokens": [123, 124],
+            "maximum_winner_overlap": 5,
+            "learned_replay_source_winner_overlap": 10,
+            "learned_replay_source_context_overlap": 20,
+            "matching": 0,
+            "active": 0,
+            "predicted_columns": 0,
+            "allocated": 0,
+            "punished": 0,
+            "expected_target_winners_preserved": false,
+            "cohort_count": 11,
+            "next_reserve_cell": 32856,
+            "poison_code": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": "NOT_RUN_FAIL_FAST"
+        }
+      ]
     }
   ],
   "diagnostic_verdict": {
     "first_q255_physical_development_pass": [16, 18],
+    "corpus_viable_threshold_arm": null,
+    "threshold_only_repair": "EXHAUSTED",
+    "threshold_only_repair_basis": {
+      "train_order_precursor_artifact": "benchmarks/r3_native_train_multibook_cost.json",
+      "q255_lower_arm": "(10,13) stopped before completing production-overlap",
+      "q255_first_pass": "(16,18) passed q255 but the separate TRAIN-order precursor stopped in Genesis at zero-based token 19841 with matching=11, active=0, allocated=0",
+      "q255_higher_arms": "(18,20) and (20,20) stopped in production-overlap for every development seed"
+    },
+    "mechanism_localization": {
+      "classification": "FALSE_POTENTIAL_CONTEXT_SUBSTITUTION_NOT_CONNECTED_SYNAPSE_EROSION",
+      "evidence": "At the same per-seed recurrence loci, the identical learned semantic indexes produce matching=11 at theta_match=18 but matching=0 at theta_match=20. Replay replaces one of 11 source winner/relay pairs, leaving 20/22 context cells and exactly 18 potential physical contacts per affected segment. Matching counts potential contacts before the connected-permanence gate, so permanence repair cannot restore the missing pair."
+    },
     "official_threshold_selection": false
   }
 }
