@@ -215,6 +215,10 @@ impl RolePlaceCopyState {
         self.enabled && self.slots[slot.index()].ready
     }
 
+    pub(crate) fn has_ready_slot(&self) -> bool {
+        self.enabled && self.slots.iter().any(|slot| slot.ready)
+    }
+
     pub(crate) fn is_recalling(&self) -> bool {
         self.enabled && self.recall_slot.is_some()
     }
