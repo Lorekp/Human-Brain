@@ -48,6 +48,7 @@ class _Session:
         mode: object,
         reset_before: bool,
     ) -> tuple[object, ...]:
+        assert all(type(value) is int for value in token_ids)
         values = tuple(int(value) for value in token_ids)
         self.advance_calls.append((len(values), reset_before, mode))
         return tuple(SimpleNamespace(token_id=value) for value in values)

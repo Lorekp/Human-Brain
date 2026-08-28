@@ -881,8 +881,9 @@ def _run_source_bound_r3_f0_development(
             for start in range(0, int(tokens.size), _TRAIN_CHUNK_TOKENS):
                 stop = min(start + _TRAIN_CHUNK_TOKENS, int(tokens.size))
                 reset_before = start == 0
+                token_chunk = tuple(int(value) for value in tokens[start:stop])
                 frames = session.advance_block(
-                    tokens[start:stop],
+                    token_chunk,
                     mode=native.TemporalStepMode.LEARN,
                     reset_before=reset_before,
                 )
