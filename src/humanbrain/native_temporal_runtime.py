@@ -46,8 +46,8 @@ COPY_SLOT_TOKEN_BASE: Final = _UINT32_MAX - 5
 COPY_END_TOKEN_ID: Final = _UINT32_MAX - 1
 _ACTIVE_COLUMNS: Final = 11
 _CONTEXT_CELLS: Final = 22
-_TYPED_CUE_TOKEN_COUNT: Final = 25
-_TYPED_SURFACE_TOKEN_COUNT: Final = 22
+_TYPED_CUE_TOKEN_COUNT: Final = 26
+_TYPED_SURFACE_TOKEN_COUNT: Final = 23
 _TYPED_ADDRESS_MAX_OFFSET: Final = 9_840
 _MAX_TYPED_GENERATIONS: Final = 128
 _PAIRS_PER_SEGMENT: Final = 10
@@ -480,8 +480,8 @@ def _assert_frozen_abi() -> None:
         8,
         (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60, 61),
     )
-    _require_frozen_layout(_NativeTypedWorkspaceVocabulary, 196, 4, (0, 4, 8, 108))
-    _require_frozen_layout(_NativeTypedSessionRequest, 204, 4, (0, 196, 197, 198, 199))
+    _require_frozen_layout(_NativeTypedWorkspaceVocabulary, 204, 4, (0, 4, 8, 112))
+    _require_frozen_layout(_NativeTypedSessionRequest, 212, 4, (0, 204, 205, 206, 207))
     _require_frozen_layout(_NativeAdvanceRequestV2, 40, 8, (0, 8, 16, 24, 32, 33, 34))
     _require_frozen_layout(
         _NativeReport,

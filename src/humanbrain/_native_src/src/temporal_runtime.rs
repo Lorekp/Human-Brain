@@ -36,7 +36,8 @@ use role_place_copy::{
 };
 use typed_hole_state::{TypedHoleCue, TypedHoleRole, TypedValue};
 use typed_workspace::{
-    TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT, TYPED_SURFACE_TOKEN_COUNT,
+    TypedOperationProjection, TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT,
+    TYPED_SURFACE_TOKEN_COUNT,
 };
 
 #[cfg(not(any(unix, windows)))]
@@ -874,12 +875,14 @@ impl TemporalCircuitRuntime {
         Ok(step)
     }
 
-    /// Acquire a parameter/result signature scaffold plus neutral/lower-bound/
-    /// upper-bound operation components through ordinary fitted races. Scaffold
-    /// holes receive a generic three-parameter/two-result blend. Every operation
-    /// hole receives the same three-parameter/one-lower/one-upper blend; structural
-    /// addresses and semantic cues, not a hard-coded address map, select the
-    /// learned continuation. No cue contains a task, family, primitive, or target.
+    /// Acquire parameter/result signature, shared any-bound, and independent
+    /// lower/upper components through ordinary fitted races. Scaffold holes use
+    /// three parameter and two result winners. Root operations use three parameter
+    /// plus one lower and one upper winner. Nested exact contexts use two parameter,
+    /// the fourth any-bound, lower, and upper winners; their transfer bank uses the
+    /// other three any-bound winners plus lower and upper. Root depth is generic
+    /// structure, not an address-to-operation map; no cue contains a task, family,
+    /// primitive, or target.
     pub(crate) fn commit_typed_plan(
         &mut self,
         vocabulary: TypedWorkspaceVocabulary,
@@ -906,8 +909,21 @@ impl TemporalCircuitRuntime {
 
         self.step_typed_private_cue(vocabulary.neutral_operation_component_token())?;
         let neutral_operation = self.step(vocabulary.plan_commit_token_id, mode)?;
-        let mut bound_contexts = [None; SLOT_COUNT - FIRST_BOUND_SLOT as usize];
+        let any_bound_ready = (FIRST_BOUND_SLOT..SLOT_COUNT as u8).any(|slot_value| {
+            let slot = SlotOrdinal::new(slot_value)
+                .expect("bounded slot role iteration always yields one ordinal");
+            self.role_place_copy.is_ready(slot)
+        });
         let mut last_component = neutral_operation.clone();
+        let any_bound_context = if any_bound_ready {
+            self.step_typed_private_cue(vocabulary.any_bound_operation_component_token())?;
+            let component = self.step(vocabulary.plan_commit_token_id, mode)?;
+            last_component = component.clone();
+            Some(component.winner_context)
+        } else {
+            None
+        };
+        let mut bound_contexts = [None; SLOT_COUNT - FIRST_BOUND_SLOT as usize];
         for slot_value in FIRST_BOUND_SLOT..SLOT_COUNT as u8 {
             let slot = SlotOrdinal::new(slot_value)
                 .expect("bounded slot role iteration always yields one ordinal");
@@ -930,6 +946,7 @@ impl TemporalCircuitRuntime {
             parameter_scaffold.winner_context,
             result_scaffold.winner_context,
             neutral_operation.winner_context,
+            any_bound_context,
             bound_contexts[0],
             bound_contexts[1],
         );
@@ -948,12 +965,16 @@ impl TemporalCircuitRuntime {
     }
 
     /// Re-broadcast the retained plan into ordinary semantic and structural-
-    /// address cue races, then make the exact 5-plan/3-semantic/3-address
-    /// winner mix the recognition context for the next teacher arrival or
-    /// fitted output election.
+    /// address cue races, then make the projection's exact 11-winner mix the
+    /// recognition context for the next teacher arrival or fitted output
+    /// election. The exact bank uses three semantic and three address winners.
+    /// The transfer bank retains one generic address winner and uses five semantic
+    /// winners, so every 10-of-11 learned contact sample retains at least nine
+    /// pairs across an address-depth transfer.
     fn prepare_typed_hole_context(
         &mut self,
         cue_kind: TypedHoleCue,
+        operation_projection: TypedOperationProjection,
         cue_token_id: u32,
         address_token_id: u32,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
@@ -974,6 +995,7 @@ impl TemporalCircuitRuntime {
         let address = self.step_typed_private_cue(address_token_id)?;
         let mixed = match self.typed_workspace.mixed_transient(
             cue_kind,
+            operation_projection,
             cue.winner_context,
             address.winner_context,
             self.relay_offset,
@@ -1026,8 +1048,8 @@ impl TemporalCircuitRuntime {
                 "typed teacher arrival requires one learning session",
             ));
         }
-        let cue = match self.prepare_current_typed_context(TemporalStepMode::Learn) {
-            Ok((cue, _, _)) => cue,
+        let cue = match self.typed_workspace.current_cue() {
+            Ok(value) => value,
             Err(stop) => return Err(stop),
         };
         let (admitted, admitted_count) = match self.typed_admitted_tokens(cue) {
@@ -1038,6 +1060,27 @@ impl TemporalCircuitRuntime {
             return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
                 "typed teacher token is structurally inadmissible",
             ));
+        }
+        let is_operation = matches!(
+            cue,
+            TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
+                | TypedHoleCue::LiteralSign
+                | TypedHoleCue::LiteralFirstDigit
+                | TypedHoleCue::LiteralFirstNonzeroDigit
+                | TypedHoleCue::LiteralDigitOrEnd
+                | TypedHoleCue::LiteralEnd
+        );
+        if is_operation {
+            if let Err(stop) = self.prepare_current_typed_context_with_operation_projection(
+                TemporalStepMode::Learn,
+                TypedOperationProjection::Transfer,
+            ) {
+                return Err(stop);
+            }
+            self.step(token_id, TemporalStepMode::Learn)?;
+        }
+        if let Err(stop) = self.prepare_current_typed_context(TemporalStepMode::Learn) {
+            return Err(stop);
         }
         let step = self.step(token_id, TemporalStepMode::Learn)?;
         if let Some(slot) = SlotOrdinal::from_copy_token(token_id) {
@@ -1141,6 +1184,19 @@ impl TemporalCircuitRuntime {
         &mut self,
         mode: TemporalStepMode,
     ) -> Result<(TypedHoleCue, TypedHoleRole, TemporalCircuitStep), TemporalCircuitStop> {
+        let operation_projection = match self.typed_workspace.current_address_is_root() {
+            Ok(true) => TypedOperationProjection::RootExact,
+            Ok(false) => TypedOperationProjection::NestedExact,
+            Err(stop) => return self.fail(stop),
+        };
+        self.prepare_current_typed_context_with_operation_projection(mode, operation_projection)
+    }
+
+    fn prepare_current_typed_context_with_operation_projection(
+        &mut self,
+        mode: TemporalStepMode,
+        operation_projection: TypedOperationProjection,
+    ) -> Result<(TypedHoleCue, TypedHoleRole, TemporalCircuitStep), TemporalCircuitStop> {
         if self.typed_workspace.session_mode() != Some(mode) {
             return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
                 "typed workspace mode changed within one session",
@@ -1167,7 +1223,12 @@ impl TemporalCircuitRuntime {
             Ok(value) => value,
             Err(stop) => return self.fail(stop),
         };
-        let step = self.prepare_typed_hole_context(cue, cue_token_id, address_token_id)?;
+        let step = self.prepare_typed_hole_context(
+            cue,
+            operation_projection,
+            cue_token_id,
+            address_token_id,
+        )?;
         Ok((cue, role, step))
     }
 
@@ -1221,11 +1282,7 @@ impl TemporalCircuitRuntime {
     }
 
     fn generate_typed_from_temporal(&mut self) -> Result<TemporalGeneration, TemporalCircuitStop> {
-        let (cue, _, _) = self.prepare_current_typed_context(TemporalStepMode::ReadOnly)?;
-        let (admitted, admitted_count) = match self.typed_admitted_tokens(cue) {
-            Ok(value) => value,
-            Err(stop) => return self.fail(stop),
-        };
+        let (_, admitted, admitted_count) = self.prepare_typed_output_context()?;
         let elected = self.elect_temporal_output_admitted(Some(&admitted[..admitted_count]))?;
         let next_generation_index = match self.generation_index.checked_add(1) {
             Some(value) => value,
@@ -1300,6 +1357,81 @@ impl TemporalCircuitRuntime {
         ))
     }
 
+    fn prepare_typed_output_context(
+        &mut self,
+    ) -> Result<
+        (
+            TypedHoleCue,
+            [u32; TYPED_SURFACE_TOKEN_COUNT + SLOT_COUNT],
+            usize,
+        ),
+        TemporalCircuitStop,
+    > {
+        let is_root = match self.typed_workspace.current_address_is_root() {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        let (cue, _, _) = self.prepare_current_typed_context(TemporalStepMode::ReadOnly)?;
+        let (admitted, admitted_count) = match self.typed_admitted_tokens(cue) {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        let is_nested_operation = !is_root
+            && matches!(
+                cue,
+                TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
+                    | TypedHoleCue::LiteralSign
+                    | TypedHoleCue::LiteralFirstDigit
+                    | TypedHoleCue::LiteralFirstNonzeroDigit
+                    | TypedHoleCue::LiteralDigitOrEnd
+                    | TypedHoleCue::LiteralEnd
+            );
+        if is_nested_operation {
+            let exact_is_active = match self
+                .typed_context_has_complete_exact_admitted_output(&admitted[..admitted_count])
+            {
+                Ok(value) => value,
+                Err(stop) => return self.fail(stop),
+            };
+            if !exact_is_active {
+                self.prepare_current_typed_context_with_operation_projection(
+                    TemporalStepMode::ReadOnly,
+                    TypedOperationProjection::Transfer,
+                )?;
+            }
+        }
+        Ok((cue, admitted, admitted_count))
+    }
+
+    fn typed_context_has_complete_exact_admitted_output(
+        &mut self,
+        admitted_token_ids: &[u32],
+    ) -> Result<bool, TemporalCircuitStop> {
+        let transient = self.transient_state();
+        self.normalized_prior_sources(&transient)?;
+        let recognition_sources = &transient.previous_context[..ACTIVE_COLUMNS];
+        let summary = self
+            .store
+            .recognize_runtime_context(recognition_sources, &mut self.recognition_scratch)
+            .map_err(TemporalCircuitStop::StoreRecognition)?;
+        for &token_id in admitted_token_ids {
+            let Some(columns) = self.token_columns(token_id) else {
+                continue;
+            };
+            let mut complete = true;
+            for column in columns {
+                if !self.column_has_exact_active_owner(column, summary.owner_result_count)? {
+                    complete = false;
+                    break;
+                }
+            }
+            if complete {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     fn generate_typed_from_copy(&mut self) -> Result<TemporalGeneration, TemporalCircuitStop> {
         let Some(slot) = self.role_place_copy.recall_slot() else {
             return self.fail(TemporalCircuitStop::StoreOrPlanInvariant(
@@ -1323,11 +1455,7 @@ impl TemporalCircuitRuntime {
                     "typed COPY_END preceded the captured slot boundary",
                 ));
             }
-            let (cue, _, _) = self.prepare_current_typed_context(TemporalStepMode::ReadOnly)?;
-            let (admitted, admitted_count) = match self.typed_admitted_tokens(cue) {
-                Ok(value) => value,
-                Err(stop) => return self.fail(stop),
-            };
+            let (_, admitted, admitted_count) = self.prepare_typed_output_context()?;
             let resumed = self.elect_temporal_output_admitted(Some(&admitted[..admitted_count]))?;
             if is_internal_role_token(resumed.token_id) {
                 return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
@@ -2198,6 +2326,40 @@ impl TemporalCircuitRuntime {
             .any(|&owner| {
                 self.diagnostic_for_owner(owner, diagnostic_count)
                     .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
+            }))
+    }
+
+    fn column_has_exact_active_owner(
+        &self,
+        column: u32,
+        diagnostic_count: usize,
+    ) -> Result<bool, TemporalCircuitStop> {
+        let column_index = column as usize;
+        let Some((&cell_start, &cell_end)) = self
+            .column_offsets
+            .get(column_index)
+            .zip(self.column_offsets.get(column_index + 1))
+        else {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "output election references a missing column",
+            ));
+        };
+        if cell_start > cell_end || cell_end > self.column_cells.len() {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "column CSR bounds are malformed",
+            ));
+        }
+        Ok(self.column_cells[cell_start..cell_end]
+            .iter()
+            .any(|&owner| {
+                self.diagnostic_for_owner(owner, diagnostic_count)
+                    .is_some_and(|diagnostic| {
+                        diagnostic.best_active_segment != NONE
+                            && diagnostic.active_potential_contacts
+                                == EXACT_SOURCE_PHYSICAL_CONTACTS
+                            && diagnostic.active_connected_contacts
+                                == EXACT_SOURCE_PHYSICAL_CONTACTS
+                    })
             }))
     }
 
@@ -6102,6 +6264,8 @@ mod tests {
         const W_ADD: u32 = 1_000;
         const W_ABS: u32 = 1_001;
         const W_DEV: u32 = 1_002;
+        const W_SUM: u32 = 1_003;
+        const W_SUM_REPLAY: u32 = 1_004;
         const PLAN_COMMIT: u32 = 1_100;
         const CUE_BASE: u32 = 1_200;
         const SURFACE_BASE: u32 = 1_300;
@@ -6113,7 +6277,7 @@ mod tests {
             cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
             surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
         };
-        let mut token_ids = vec![W_ADD, W_ABS, W_DEV, PLAN_COMMIT];
+        let mut token_ids = vec![W_ADD, W_ABS, W_DEV, W_SUM, W_SUM_REPLAY, PLAN_COMMIT];
         token_ids.extend(vocabulary.cue_token_ids);
         token_ids.extend(vocabulary.surface_token_ids);
         use typed_hole_state::SurfaceKind as S;
@@ -6145,6 +6309,13 @@ mod tests {
                 S::Variable0,
                 S::Eos,
             ],
+        );
+        extend_typed_address_tokens(
+            &mut token_ids,
+            vocabulary,
+            TypedValue::ListInt,
+            TypedValue::Int,
+            &[S::Sum, S::Variable0, S::Eos],
         );
         extend_typed_address_tokens(
             &mut token_ids,
@@ -6208,6 +6379,7 @@ mod tests {
         let digit_5 = surface[13];
         let end = surface[18];
         let eos = surface[19];
+        let sum = surface[22];
         let copy_slot_two = role_place_copy::copy_slot_token_id(2).unwrap();
         let slot_two_start = role_place_copy::slot_start_token_id(2).unwrap();
         let slot_two_end = role_place_copy::slot_end_token_id(2).unwrap();
@@ -6247,6 +6419,42 @@ mod tests {
         for token_id in [map, bind, absolute, variable_zero, variable_zero, eos] {
             runtime.teach_typed_token(token_id).unwrap();
         }
+
+        runtime.reset_transient();
+        runtime.step(W_SUM, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        for token_id in [sum, variable_zero, eos] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+
+        runtime.reset_transient();
+        runtime
+            .step(W_SUM_REPLAY, TemporalStepMode::ReadOnly)
+            .unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::Int,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+        let generated_sum = runtime.generate_typed().expect("teacher-free sum replay");
+        assert_eq!(
+            generated_sum
+                .iter()
+                .map(|generation| generation.surface_token_id)
+                .collect::<Vec<_>>(),
+            vec![sum, variable_zero, eos]
+        );
+        assert_eq!(generated_sum[0].path, TemporalGenerationPath::Temporal);
 
         runtime.reset_transient();
         capture_literal(&mut runtime, digit_3, TemporalStepMode::ReadOnly);
@@ -6488,10 +6696,12 @@ mod tests {
         let combined_plan = runtime.typed_plan_winners().unwrap();
         assert_eq!(&combined_plan[..5], &lower_plan[..5]);
         assert_eq!(&combined_plan[..5], &upper_plan[..5]);
-        assert_eq!(&combined_plan[5..8], &lower_plan[5..8]);
-        assert_ne!(&combined_plan[5..8], &upper_plan[5..8]);
-        assert_eq!(&combined_plan[8..], &upper_plan[8..]);
-        assert_ne!(&combined_plan[8..], &lower_plan[8..]);
+        assert_eq!(&combined_plan[5..9], &lower_plan[5..9]);
+        assert_eq!(&combined_plan[5..9], &upper_plan[5..9]);
+        assert_eq!(combined_plan[9], lower_plan[9]);
+        assert_ne!(combined_plan[9], upper_plan[9]);
+        assert_eq!(combined_plan[10], upper_plan[10]);
+        assert_ne!(combined_plan[10], lower_plan[10]);
 
         runtime.reset_transient();
         capture_literal(&mut runtime, 2, minus, digit_2, TemporalStepMode::Learn);

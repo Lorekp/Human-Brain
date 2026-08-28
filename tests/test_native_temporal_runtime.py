@@ -796,8 +796,8 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
             8,
             (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60, 61),
         ),
-        runtime_adapter._NativeTypedWorkspaceVocabulary: (196, 4, (0, 4, 8, 108)),
-        runtime_adapter._NativeTypedSessionRequest: (204, 4, (0, 196, 197, 198, 199)),
+        runtime_adapter._NativeTypedWorkspaceVocabulary: (204, 4, (0, 4, 8, 112)),
+        runtime_adapter._NativeTypedSessionRequest: (212, 4, (0, 204, 205, 206, 207)),
         runtime_adapter._NativeAdvanceRequestV2: (40, 8, (0, 8, 16, 24, 32, 33, 34)),
         runtime_adapter._NativeReport: (512, 8, (0, 4, 8, 16, 24, 32, 40, 42, 44, 48)),
     }
@@ -940,14 +940,15 @@ def test_expanded_typed_workspace_transport_marshals_exact_contract() -> None:
     vocabulary = TypedWorkspaceVocabulary(
         plan_commit_token_id=9_000,
         address_token_base=100_000,
-        cue_token_ids=tuple(range(10_000, 10_025)),
-        surface_token_ids=tuple(range(20_000, 20_022)),
+        cue_token_ids=tuple(range(10_000, 10_026)),
+        surface_token_ids=tuple(range(20_000, 20_023)),
     )
     native = vocabulary._native()
     assert native.plan_commit_token_id == 9_000
     assert native.address_token_base == 100_000
-    assert tuple(native.cue_token_ids) == tuple(range(10_000, 10_025))
-    assert tuple(native.surface_token_ids) == tuple(range(20_000, 20_022))
+    assert tuple(native.cue_token_ids) == tuple(range(10_000, 10_026))
+    assert tuple(native.surface_token_ids) == tuple(range(20_000, 20_023))
+    assert native.surface_token_ids[22] == 20_022
 
     maximum_address_base = runtime_adapter.SLOT_START_TOKEN_BASE - 9_840 - 1
     dataclasses.replace(vocabulary, address_token_base=maximum_address_base)

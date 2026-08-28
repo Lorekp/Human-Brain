@@ -3078,7 +3078,7 @@ mod tests {
         assert_eq!(offset_of!(TemporalGenerationV1, slot_ordinal), 60);
         assert_eq!(offset_of!(TemporalGenerationV1, reserved_zero), 61);
 
-        assert_eq!(size_of::<TemporalTypedWorkspaceVocabularyV1>(), 196);
+        assert_eq!(size_of::<TemporalTypedWorkspaceVocabularyV1>(), 204);
         assert_eq!(align_of::<TemporalTypedWorkspaceVocabularyV1>(), 4);
         assert_eq!(
             offset_of!(TemporalTypedWorkspaceVocabularyV1, plan_commit_token_id),
@@ -3094,21 +3094,21 @@ mod tests {
         );
         assert_eq!(
             offset_of!(TemporalTypedWorkspaceVocabularyV1, surface_token_ids),
-            108
+            112
         );
 
-        assert_eq!(size_of::<TemporalTypedSessionV1Request>(), 204);
+        assert_eq!(size_of::<TemporalTypedSessionV1Request>(), 212);
         assert_eq!(align_of::<TemporalTypedSessionV1Request>(), 4);
         assert_eq!(offset_of!(TemporalTypedSessionV1Request, vocabulary), 0);
         assert_eq!(
             offset_of!(TemporalTypedSessionV1Request, parameter_type),
-            196
+            204
         );
-        assert_eq!(offset_of!(TemporalTypedSessionV1Request, result_type), 197);
-        assert_eq!(offset_of!(TemporalTypedSessionV1Request, mode), 198);
+        assert_eq!(offset_of!(TemporalTypedSessionV1Request, result_type), 205);
+        assert_eq!(offset_of!(TemporalTypedSessionV1Request, mode), 206);
         assert_eq!(
             offset_of!(TemporalTypedSessionV1Request, reserved_zero),
-            199
+            207
         );
 
         assert_eq!(size_of::<TemporalCircuitAdvanceBlockV2Request>(), 40);

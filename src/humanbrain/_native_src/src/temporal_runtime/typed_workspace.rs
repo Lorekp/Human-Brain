@@ -14,18 +14,31 @@ use super::{
 };
 
 pub(super) const PLAN_WINNERS_IN_MIX: usize = 5;
-pub(super) const SEMANTIC_CUE_WINNERS_IN_MIX: usize = 3;
-pub(super) const ADDRESS_CUE_WINNERS_IN_MIX: usize = 3;
+const SIGNATURE_SEMANTIC_WINNERS_IN_MIX: usize = 3;
+const SIGNATURE_ADDRESS_WINNERS_IN_MIX: usize = 3;
+const NESTED_SEMANTIC_WINNERS_IN_MIX: usize = 5;
+const NESTED_ADDRESS_WINNERS_IN_MIX: usize = 1;
 const SCAFFOLD_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 3, 4];
-const OPERATION_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 5, 8];
+const ROOT_OPERATION_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 9, 10];
+const NESTED_EXACT_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 8, 9, 10];
+const TRANSFER_OPERATION_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [5, 6, 7, 9, 10];
 const PARAMETER_SCAFFOLD_DESTINATIONS: [usize; 3] = [0, 1, 2];
 const PARAMETER_SCAFFOLD_SOURCES: [usize; 3] = [3, 4, 5];
 const RESULT_SCAFFOLD_DESTINATIONS: [usize; 2] = [3, 4];
 const RESULT_SCAFFOLD_SOURCES: [usize; 2] = [6, 7];
-const LOWER_BOUND_WINNER_INDICES: [usize; 3] = [5, 6, 7];
-const UPPER_BOUND_WINNER_INDICES: [usize; 3] = [8, 9, 10];
-pub(crate) const TYPED_CUE_TOKEN_COUNT: usize = 25;
-pub(crate) const TYPED_SURFACE_TOKEN_COUNT: usize = 22;
+const ANY_BOUND_DESTINATIONS: [usize; 4] = [5, 6, 7, 8];
+const ANY_BOUND_SOURCES: [usize; 4] = [5, 6, 7, 8];
+const LOWER_BOUND_WINNER_INDEX: usize = 9;
+const UPPER_BOUND_WINNER_INDEX: usize = 10;
+pub(crate) const TYPED_CUE_TOKEN_COUNT: usize = 26;
+pub(crate) const TYPED_SURFACE_TOKEN_COUNT: usize = 23;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum TypedOperationProjection {
+    RootExact,
+    NestedExact,
+    Transfer,
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct TypedWorkspaceVocabulary {
@@ -77,6 +90,10 @@ impl TypedWorkspaceVocabulary {
 
     pub(crate) const fn neutral_operation_component_token(self) -> u32 {
         self.cue_token_ids[22]
+    }
+
+    pub(crate) const fn any_bound_operation_component_token(self) -> u32 {
+        self.cue_token_ids[25]
     }
 
     pub(crate) fn bound_operation_component_token(
@@ -151,6 +168,7 @@ impl TypedWorkspaceVocabulary {
             19 => SurfaceKind::Eos,
             20 => SurfaceKind::LessThan,
             21 => SurfaceKind::If,
+            22 => SurfaceKind::Sum,
             _ => unreachable!("fixed typed surface vocabulary is exhaustive"),
         })
     }
@@ -202,6 +220,7 @@ impl TypedWorkspaceState {
         parameter_scaffold_context: [u32; CONTEXT_CELLS],
         result_scaffold_context: [u32; CONTEXT_CELLS],
         neutral_operation_context: [u32; CONTEXT_CELLS],
+        any_bound_operation_context: Option<[u32; CONTEXT_CELLS]>,
         lower_bound_context: Option<[u32; CONTEXT_CELLS]>,
         upper_bound_context: Option<[u32; CONTEXT_CELLS]>,
     ) {
@@ -217,14 +236,15 @@ impl TypedWorkspaceState {
         {
             self.plan_winners[destination] = result_scaffold_context[source];
         }
+        let any_bound_operation_context =
+            any_bound_operation_context.unwrap_or(neutral_operation_context);
+        for (destination, source) in ANY_BOUND_DESTINATIONS.into_iter().zip(ANY_BOUND_SOURCES) {
+            self.plan_winners[destination] = any_bound_operation_context[source];
+        }
         let lower_bound_context = lower_bound_context.unwrap_or(neutral_operation_context);
+        self.plan_winners[LOWER_BOUND_WINNER_INDEX] = lower_bound_context[LOWER_BOUND_WINNER_INDEX];
         let upper_bound_context = upper_bound_context.unwrap_or(neutral_operation_context);
-        for index in LOWER_BOUND_WINNER_INDICES {
-            self.plan_winners[index] = lower_bound_context[index];
-        }
-        for index in UPPER_BOUND_WINNER_INDICES {
-            self.plan_winners[index] = upper_bound_context[index];
-        }
+        self.plan_winners[UPPER_BOUND_WINNER_INDEX] = upper_bound_context[UPPER_BOUND_WINNER_INDEX];
         self.plan_ready = true;
     }
 
@@ -289,6 +309,15 @@ impl TypedWorkspaceState {
             .map_err(TemporalCircuitStop::MalformedContextOrPolicy)
     }
 
+    pub(super) fn current_address_is_root(&self) -> Result<bool, TemporalCircuitStop> {
+        self.session
+            .as_ref()
+            .map(|session| session.holes.address().depth() == 0)
+            .ok_or(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed workspace session is not initialized",
+            ))
+    }
+
     pub(super) fn current_cue(&self) -> Result<TypedHoleCue, TemporalCircuitStop> {
         self.session
             .as_ref()
@@ -349,6 +378,7 @@ impl TypedWorkspaceState {
     pub(super) fn mixed_transient(
         &self,
         cue: TypedHoleCue,
+        operation_projection: TypedOperationProjection,
         cue_winner_context: [u32; CONTEXT_CELLS],
         address_winner_context: [u32; CONTEXT_CELLS],
         relay_offset: u32,
@@ -360,15 +390,27 @@ impl TypedWorkspaceState {
             ));
         }
         let mut winners = [0u32; ACTIVE_COLUMNS];
-        let plan_indices = plan_projection(cue)?;
+        let plan_indices = plan_projection(cue, operation_projection)?;
+        let (semantic_winner_count, address_winner_count) =
+            if uses_transfer_operation_projection(cue, operation_projection) {
+                (
+                    NESTED_SEMANTIC_WINNERS_IN_MIX,
+                    NESTED_ADDRESS_WINNERS_IN_MIX,
+                )
+            } else {
+                (
+                    SIGNATURE_SEMANTIC_WINNERS_IN_MIX,
+                    SIGNATURE_ADDRESS_WINNERS_IN_MIX,
+                )
+            };
         for (mixed_index, &plan_index) in plan_indices.iter().enumerate() {
             winners[mixed_index] = self.plan_winners[plan_index];
         }
-        for mixed_index in 0..SEMANTIC_CUE_WINNERS_IN_MIX {
+        for mixed_index in 0..semantic_winner_count {
             winners[PLAN_WINNERS_IN_MIX + mixed_index] = cue_winner_context[mixed_index];
         }
-        for mixed_index in 0..ADDRESS_CUE_WINNERS_IN_MIX {
-            winners[PLAN_WINNERS_IN_MIX + SEMANTIC_CUE_WINNERS_IN_MIX + mixed_index] =
+        for mixed_index in 0..address_winner_count {
+            winners[PLAN_WINNERS_IN_MIX + semantic_winner_count + mixed_index] =
                 address_winner_context[mixed_index];
         }
         let mut sorted = winners;
@@ -382,8 +424,25 @@ impl TypedWorkspaceState {
     }
 }
 
+fn uses_transfer_operation_projection(
+    cue: TypedHoleCue,
+    operation_projection: TypedOperationProjection,
+) -> bool {
+    operation_projection == TypedOperationProjection::Transfer
+        && matches!(
+            cue,
+            TypedHoleCue::Expression(TypedValue::Int | TypedValue::Bool)
+                | TypedHoleCue::LiteralSign
+                | TypedHoleCue::LiteralFirstDigit
+                | TypedHoleCue::LiteralFirstNonzeroDigit
+                | TypedHoleCue::LiteralDigitOrEnd
+                | TypedHoleCue::LiteralEnd
+        )
+}
+
 fn plan_projection(
     cue: TypedHoleCue,
+    operation_projection: TypedOperationProjection,
 ) -> Result<&'static [usize; PLAN_WINNERS_IN_MIX], TemporalCircuitStop> {
     match cue {
         TypedHoleCue::Expression(TypedValue::ListInt)
@@ -394,7 +453,11 @@ fn plan_projection(
         | TypedHoleCue::LiteralFirstDigit
         | TypedHoleCue::LiteralFirstNonzeroDigit
         | TypedHoleCue::LiteralDigitOrEnd
-        | TypedHoleCue::LiteralEnd => Ok(&OPERATION_HEAD_PLAN_INDICES),
+        | TypedHoleCue::LiteralEnd => match operation_projection {
+            TypedOperationProjection::RootExact => Ok(&ROOT_OPERATION_PLAN_INDICES),
+            TypedOperationProjection::NestedExact => Ok(&NESTED_EXACT_PLAN_INDICES),
+            TypedOperationProjection::Transfer => Ok(&TRANSFER_OPERATION_PLAN_INDICES),
+        },
         TypedHoleCue::Terminated => Err(TemporalCircuitStop::MalformedContextOrPolicy(
             "terminated typed state has no structural plan projection",
         )),
