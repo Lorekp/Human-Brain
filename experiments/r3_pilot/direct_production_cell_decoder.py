@@ -43,6 +43,9 @@ _MAXIMUM_WEIGHT_PA = 1_600.0
 _RANDOM_SEED = 17
 _CHANNEL_STRIDE = 1_000_000
 _CHANNEL_MARKER_BASE = 2_000_000_000
+_PAIR_TOKEN_BASE = 16_000_000
+_PAIR_TOKEN_BITS = 11
+_PAIR_CHANNEL_STRIDE = 1 << (2 * _PAIR_TOKEN_BITS)
 _PROMPT_CHANNEL = 1
 _SIGNATURE_CHANNEL = 2
 _ROLE_CHANNEL = 3
@@ -394,6 +397,14 @@ def _channel_token(channel: int, token_id: int) -> int:
     return channel * _CHANNEL_STRIDE + int(token_id)
 
 
+def _channel_pair_token(channel: int, first: int, second: int) -> int:
+    limit = 1 << _PAIR_TOKEN_BITS
+    if not 0 <= first < limit or not 0 <= second < limit:
+        raise ValueError("concept token exceeds the ordered-pair namespace")
+    pair = (int(first) << _PAIR_TOKEN_BITS) | int(second)
+    return _PAIR_TOKEN_BASE + channel * _PAIR_CHANNEL_STRIDE + pair
+
+
 def _project_text(
     tokenizer: ConceptTokenizer,
     projector: SDRProjector,
@@ -402,8 +413,11 @@ def _project_text(
 ) -> np.ndarray:
     active = np.zeros(_ASSEMBLY_CELLS, dtype=np.bool_)
     active[projector.indices(_CHANNEL_MARKER_BASE + channel)] = True
-    for token_id in tokenizer.encode(text):
+    token_ids = tokenizer.encode(text)
+    for token_id in token_ids:
         active[projector.indices(_channel_token(channel, token_id))] = True
+    for first, second in zip(token_ids, token_ids[1:]):
+        active[projector.indices(_channel_pair_token(channel, first, second))] = True
     return active
 
 
