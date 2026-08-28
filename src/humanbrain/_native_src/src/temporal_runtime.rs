@@ -33,8 +33,7 @@ mod typed_workspace;
 use role_place_copy::{is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID};
 use typed_hole_state::{TypedHoleCue, TypedHoleRole, TypedValue};
 use typed_workspace::{
-    TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT,
-    TYPED_SURFACE_TOKEN_COUNT,
+    TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT, TYPED_SURFACE_TOKEN_COUNT,
 };
 
 #[cfg(not(any(unix, windows)))]
@@ -48,7 +47,7 @@ const EXACT_SOURCE_PHYSICAL_CONTACTS: u8 = 2 * PAIRS_PER_SEGMENT as u8;
 const NONE: u32 = u32::MAX;
 const INITIAL_CONTACT_DOMAIN: u64 = 0x5233_4630_494E_4954;
 const REGROWTH_CONTACT_DOMAIN: u64 = 0x5233_4630_5247_5257;
-const MAX_TYPED_GENERATIONS: usize = 128;
+pub(crate) const MAX_TYPED_GENERATIONS: usize = 128;
 const TYPED_LITERAL_SLOT: u8 = 2;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -889,17 +888,14 @@ impl TemporalCircuitRuntime {
             ));
         }
         let scaffold_token = vocabulary
-            .cue_token(
-                TypedHoleCue::Expression(result),
-                TypedHoleRole::Head,
-            )
+            .cue_token(TypedHoleCue::Expression(result), TypedHoleRole::Head)
             .expect("expression cue is never terminal");
         self.step_typed_private_cue(scaffold_token)?;
         let scaffold = self.step(vocabulary.plan_commit_token_id, mode)?;
 
         let literal_slot = SlotOrdinal::new(TYPED_LITERAL_SLOT).expect("slot two is in range");
-        let operation_token = vocabulary
-            .operation_component_token(self.role_place_copy.is_ready(literal_slot));
+        let operation_token =
+            vocabulary.operation_component_token(self.role_place_copy.is_ready(literal_slot));
         self.step_typed_private_cue(operation_token)?;
         let operation = self.step(vocabulary.plan_commit_token_id, mode)?;
         self.typed_workspace
@@ -915,11 +911,7 @@ impl TemporalCircuitRuntime {
             event_count: self.event_count,
             ..TemporalTransientState::EMPTY
         };
-        self.step_with_transient(
-            cue_token_id,
-            TemporalStepMode::ReadOnly,
-            cue_boundary,
-        )
+        self.step_with_transient(cue_token_id, TemporalStepMode::ReadOnly, cue_boundary)
     }
 
     /// Re-broadcast the retained plan into one structural cue race, then make
@@ -1044,14 +1036,34 @@ impl TemporalCircuitRuntime {
                     "typed generation exceeded its fixed surface budget",
                 ));
             }
-            let generation = if self.role_place_copy.is_recalling() {
-                self.generate_typed_from_copy()?
-            } else {
-                self.generate_typed_from_temporal()?
-            };
-            generated.push(generation);
+            generated.push(
+                self.generate_typed_one()?
+                    .expect("unterminated typed state emits one surface"),
+            );
         }
         Ok(generated)
+    }
+
+    pub(crate) fn generate_typed_one(
+        &mut self,
+    ) -> Result<Option<TemporalGeneration>, TemporalCircuitStop> {
+        if self.typed_workspace.session_mode() != Some(TemporalStepMode::ReadOnly) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed generation requires one read-only session",
+            ));
+        }
+        if self.typed_workspace.current_cue()? == TypedHoleCue::Terminated {
+            return Ok(None);
+        }
+        if self.role_place_copy.is_recalling() {
+            self.generate_typed_from_copy().map(Some)
+        } else {
+            self.generate_typed_from_temporal().map(Some)
+        }
+    }
+
+    pub(crate) fn typed_generation_complete(&self) -> Result<bool, TemporalCircuitStop> {
+        Ok(self.typed_workspace.current_cue()? == TypedHoleCue::Terminated)
     }
 
     fn validate_typed_vocabulary_codes(
@@ -1135,10 +1147,7 @@ impl TemporalCircuitRuntime {
         Ok((admitted, count))
     }
 
-    fn drain_typed_teacher_copy(
-        &mut self,
-        slot: SlotOrdinal,
-    ) -> Result<(), TemporalCircuitStop> {
+    fn drain_typed_teacher_copy(&mut self, slot: SlotOrdinal) -> Result<(), TemporalCircuitStop> {
         if !self.role_place_copy.is_ready(slot) {
             return Err(TemporalCircuitStop::MalformedContextOrPolicy(
                 "typed COPY teacher control has no captured slot value",
@@ -1166,16 +1175,13 @@ impl TemporalCircuitRuntime {
         }
     }
 
-    fn generate_typed_from_temporal(
-        &mut self,
-    ) -> Result<TemporalGeneration, TemporalCircuitStop> {
+    fn generate_typed_from_temporal(&mut self) -> Result<TemporalGeneration, TemporalCircuitStop> {
         let (cue, _, _) = self.prepare_current_typed_context(TemporalStepMode::ReadOnly)?;
         let (admitted, admitted_count) = match self.typed_admitted_tokens(cue) {
             Ok(value) => value,
             Err(stop) => return self.fail(stop),
         };
-        let elected = self
-            .elect_temporal_output_admitted(Some(&admitted[..admitted_count]))?;
+        let elected = self.elect_temporal_output_admitted(Some(&admitted[..admitted_count]))?;
         let next_generation_index = match self.generation_index.checked_add(1) {
             Some(value) => value,
             None => {
@@ -1249,9 +1255,7 @@ impl TemporalCircuitRuntime {
         ))
     }
 
-    fn generate_typed_from_copy(
-        &mut self,
-    ) -> Result<TemporalGeneration, TemporalCircuitStop> {
+    fn generate_typed_from_copy(&mut self) -> Result<TemporalGeneration, TemporalCircuitStop> {
         let Some(slot) = self.role_place_copy.recall_slot() else {
             return self.fail(TemporalCircuitStop::StoreOrPlanInvariant(
                 "typed copy generation lost its active slot",
@@ -1279,8 +1283,7 @@ impl TemporalCircuitRuntime {
                 Ok(value) => value,
                 Err(stop) => return self.fail(stop),
             };
-            let resumed = self
-                .elect_temporal_output_admitted(Some(&admitted[..admitted_count]))?;
+            let resumed = self.elect_temporal_output_admitted(Some(&admitted[..admitted_count]))?;
             if is_internal_role_token(resumed.token_id) {
                 return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
                     "typed COPY exit elected an internal role token",
@@ -1461,9 +1464,7 @@ impl TemporalCircuitRuntime {
         let mut output_drive_scratch = vec![EMPTY_DRIVE; self.token_codebook.len()];
         let mut candidate_tokens = 0usize;
         for (token_index, code) in self.token_codebook.iter().enumerate() {
-            if admitted_token_ids
-                .is_some_and(|admitted| !admitted.contains(&code.token_id))
-            {
+            if admitted_token_ids.is_some_and(|admitted| !admitted.contains(&code.token_id)) {
                 continue;
             }
             let input_columns = code
@@ -6101,15 +6102,12 @@ mod tests {
         let slot_two_start = role_place_copy::slot_start_token_id(TYPED_LITERAL_SLOT).unwrap();
         let slot_two_end = role_place_copy::slot_end_token_id(TYPED_LITERAL_SLOT).unwrap();
 
-        let capture_literal = |
-            runtime: &mut TemporalCircuitRuntime,
-            digit: u32,
-            mode: TemporalStepMode,
-        | {
-            for token_id in [slot_two_start, plus, digit, slot_two_end] {
-                runtime.step(token_id, mode).expect("literal slot capture");
-            }
-        };
+        let capture_literal =
+            |runtime: &mut TemporalCircuitRuntime, digit: u32, mode: TemporalStepMode| {
+                for token_id in [slot_two_start, plus, digit, slot_two_end] {
+                    runtime.step(token_id, mode).expect("literal slot capture");
+                }
+            };
         capture_literal(&mut runtime, digit_5, TemporalStepMode::Learn);
         runtime.step(W_ADD, TemporalStepMode::Learn).unwrap();
         runtime

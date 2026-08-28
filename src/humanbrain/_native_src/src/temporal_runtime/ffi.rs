@@ -52,10 +52,12 @@ use super::{
         OUTCOME_COLLISION, OUTCOME_DURABLE_PUBLISHED, OUTCOME_NONE, OUTCOME_NOT_PUBLISHED,
         OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
     },
+    typed_hole_state::TypedValue,
+    typed_workspace::{TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT, TYPED_SURFACE_TOKEN_COUNT},
     PhysicalStage, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalCircuitStep,
     TemporalCircuitStop, TemporalContextPolicy, TemporalGeneration, TemporalOverflowStage,
     TemporalPlasticityPolicy, TemporalPoisonCode, TemporalStepMode, TokenCode, ACTIVE_COLUMNS,
-    CONTEXT_CELLS,
+    CONTEXT_CELLS, MAX_TYPED_GENERATIONS,
 };
 use crate::temporal_physics::SpikeEvent;
 
@@ -127,6 +129,9 @@ const CONTEXT_BOUND_WINNERS: u8 = 1;
 const CONTEXT_GENERIC_AFFERENTS: u8 = 2;
 const PLASTICITY_GROWTH_OFF: u8 = 0;
 const PLASTICITY_PLASTIC: u8 = 1;
+const TYPED_VALUE_INT: u8 = 0;
+const TYPED_VALUE_LIST_INT: u8 = 1;
+const TYPED_VALUE_INT_TO_INT: u8 = 2;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -602,6 +607,34 @@ impl From<TemporalGeneration> for TemporalGenerationV1 {
             reserved_zero: [0; 3],
         }
     }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalTypedWorkspaceVocabularyV1 {
+    pub plan_commit_token_id: u32,
+    pub cue_token_ids: [u32; TYPED_CUE_TOKEN_COUNT],
+    pub surface_token_ids: [u32; TYPED_SURFACE_TOKEN_COUNT],
+}
+
+impl From<TemporalTypedWorkspaceVocabularyV1> for TypedWorkspaceVocabulary {
+    fn from(vocabulary: TemporalTypedWorkspaceVocabularyV1) -> Self {
+        Self {
+            plan_commit_token_id: vocabulary.plan_commit_token_id,
+            cue_token_ids: vocabulary.cue_token_ids,
+            surface_token_ids: vocabulary.surface_token_ids,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalTypedSessionV1Request {
+    pub vocabulary: TemporalTypedWorkspaceVocabularyV1,
+    pub parameter_type: u8,
+    pub result_type: u8,
+    pub mode: u8,
+    pub reserved_zero: [u8; 5],
 }
 
 #[repr(C)]
@@ -1633,6 +1666,225 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_generate_v1(
         }
         Err(stop) => stop_report(report, &runtime, stop),
     }
+}
+
+fn typed_value(code: u8) -> Option<TypedValue> {
+    match code {
+        TYPED_VALUE_INT => Some(TypedValue::Int),
+        TYPED_VALUE_LIST_INT => Some(TypedValue::ListInt),
+        TYPED_VALUE_INT_TO_INT => Some(TypedValue::IntToInt),
+        _ => None,
+    }
+}
+
+/// Acquire the native typed workspace and initialize its structural session.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_begin_typed_v1(
+    handle: *mut TemporalCircuitRuntimeHandle,
+    request: *const TemporalTypedSessionV1Request,
+    output: *mut TemporalCircuitStepV2,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(handle.cast_const())
+        || !fixed_pointer_is_valid(request)
+        || !fixed_pointer_is_valid(output.cast_const())
+    {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed session pointer is null or misaligned",
+        );
+    }
+    if !raw_regions_are_disjoint(&[
+        RawRegion {
+            pointer: request.cast(),
+            byte_count: size_of::<TemporalTypedSessionV1Request>(),
+        },
+        RawRegion {
+            pointer: output.cast(),
+            byte_count: size_of::<TemporalCircuitStepV2>(),
+        },
+        RawRegion {
+            pointer: report_out.cast(),
+            byte_count: size_of::<TemporalCircuitReportV1>(),
+        },
+    ]) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed session input, output, and report overlap",
+        );
+    }
+    let request = request.read();
+    if request.reserved_zero != [0; 5] {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed session reserved bytes must be zero",
+        );
+    }
+    let mode = match request.mode {
+        MODE_READ_ONLY => TemporalStepMode::ReadOnly,
+        MODE_LEARN => TemporalStepMode::Learn,
+        _ => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "typed session mode is invalid",
+            );
+        }
+    };
+    let Some(parameter) = typed_value(request.parameter_type) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed parameter type is invalid",
+        );
+    };
+    let Some(result) = typed_value(request.result_type) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed result type is invalid",
+        );
+    };
+    let handle = &*handle;
+    let mut runtime = lock_runtime(handle);
+    if runtime.scientific_stop.is_some() {
+        return stop_report(report, &runtime, TemporalCircuitStop::Poisoned);
+    }
+    match runtime.begin_typed_session(request.vocabulary.into(), parameter, result, mode) {
+        Ok(step) => {
+            output.write(step.into());
+            report.completed_prefix = 1;
+            report.finish(TEMPORAL_RUNTIME_OK, "")
+        }
+        Err(stop) => stop_report(report, &runtime, stop),
+    }
+}
+
+/// Commit one teacher control/surface token through the current typed hole.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_teach_typed_v1(
+    handle: *mut TemporalCircuitRuntimeHandle,
+    token_id: u32,
+    output: *mut TemporalCircuitStepV2,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(handle.cast_const()) || !fixed_pointer_is_valid(output.cast_const())
+    {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed teacher pointer is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        output.cast(),
+        size_of::<TemporalCircuitStepV2>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed teacher output and report overlap",
+        );
+    }
+    let handle = &*handle;
+    let mut runtime = lock_runtime(handle);
+    if runtime.scientific_stop.is_some() {
+        return stop_report(report, &runtime, TemporalCircuitStop::Poisoned);
+    }
+    match runtime.teach_typed_token(token_id) {
+        Ok(step) => {
+            output.write(step.into());
+            report.completed_prefix = 1;
+            report.finish(TEMPORAL_RUNTIME_OK, "")
+        }
+        Err(stop) => stop_report(report, &runtime, stop),
+    }
+}
+
+/// Atomically own typed generation through EOS and publish its committed
+/// surface prefix into a caller-owned fixed buffer.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_generate_typed_v1(
+    handle: *mut TemporalCircuitRuntimeHandle,
+    output: *mut TemporalGenerationV1,
+    output_capacity: u64,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    let Some(output_capacity_usize) = counted_region(output, output_capacity) else {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed generation output geometry is invalid",
+        );
+    };
+    if output_capacity_usize < MAX_TYPED_GENERATIONS {
+        report.required = MAX_TYPED_GENERATIONS as u64;
+        report.observed = output_capacity;
+        return report.finish(
+            TEMPORAL_RUNTIME_OUTPUT_CAPACITY,
+            "typed generation output capacity is too small",
+        );
+    }
+    let output_bytes = match output_capacity_usize.checked_mul(size_of::<TemporalGenerationV1>()) {
+        Some(value) => value,
+        None => {
+            return report.finish(
+                TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+                "typed generation output geometry overflows",
+            );
+        }
+    };
+    if !fixed_pointer_is_valid(handle.cast_const())
+        || regions_overlap(
+            output.cast(),
+            output_bytes,
+            report_out.cast(),
+            size_of::<TemporalCircuitReportV1>(),
+        )
+    {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "typed generation handle/output/report is invalid",
+        );
+    }
+    for index in 0..MAX_TYPED_GENERATIONS {
+        output.add(index).write(TemporalGenerationV1::ZERO);
+    }
+    let handle = &*handle;
+    let mut runtime = lock_runtime(handle);
+    if runtime.scientific_stop.is_some() {
+        return stop_report(report, &runtime, TemporalCircuitStop::Poisoned);
+    }
+    for index in 0..MAX_TYPED_GENERATIONS {
+        if runtime.typed_generation_complete().unwrap_or(false) {
+            return report.finish(TEMPORAL_RUNTIME_OK, "");
+        }
+        match runtime.generate_typed_one() {
+            Ok(Some(generation)) => {
+                output.add(index).write(generation.into());
+                report.completed_prefix = (index + 1) as u64;
+            }
+            Ok(None) => return report.finish(TEMPORAL_RUNTIME_OK, ""),
+            Err(stop) => return stop_report(report, &runtime, stop),
+        }
+    }
+    report.required = (MAX_TYPED_GENERATIONS + 1) as u64;
+    report.observed = MAX_TYPED_GENERATIONS as u64;
+    stop_report(
+        report,
+        &runtime,
+        TemporalCircuitStop::MalformedContextOrPolicy(
+            "typed generation exceeded its fixed surface budget",
+        ),
+    )
 }
 
 /// Validate exportability and report the exact checkpoint length in
@@ -2821,6 +3073,35 @@ mod tests {
         assert_eq!(offset_of!(TemporalGenerationV1, copy_place_ordinal), 58);
         assert_eq!(offset_of!(TemporalGenerationV1, slot_ordinal), 60);
         assert_eq!(offset_of!(TemporalGenerationV1, reserved_zero), 61);
+
+        assert_eq!(size_of::<TemporalTypedWorkspaceVocabularyV1>(), 152);
+        assert_eq!(align_of::<TemporalTypedWorkspaceVocabularyV1>(), 4);
+        assert_eq!(
+            offset_of!(TemporalTypedWorkspaceVocabularyV1, plan_commit_token_id),
+            0
+        );
+        assert_eq!(
+            offset_of!(TemporalTypedWorkspaceVocabularyV1, cue_token_ids),
+            4
+        );
+        assert_eq!(
+            offset_of!(TemporalTypedWorkspaceVocabularyV1, surface_token_ids),
+            72
+        );
+
+        assert_eq!(size_of::<TemporalTypedSessionV1Request>(), 160);
+        assert_eq!(align_of::<TemporalTypedSessionV1Request>(), 4);
+        assert_eq!(offset_of!(TemporalTypedSessionV1Request, vocabulary), 0);
+        assert_eq!(
+            offset_of!(TemporalTypedSessionV1Request, parameter_type),
+            152
+        );
+        assert_eq!(offset_of!(TemporalTypedSessionV1Request, result_type), 153);
+        assert_eq!(offset_of!(TemporalTypedSessionV1Request, mode), 154);
+        assert_eq!(
+            offset_of!(TemporalTypedSessionV1Request, reserved_zero),
+            155
+        );
 
         assert_eq!(size_of::<TemporalCircuitAdvanceBlockV2Request>(), 40);
         assert_eq!(align_of::<TemporalCircuitAdvanceBlockV2Request>(), 8);
