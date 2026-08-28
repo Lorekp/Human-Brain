@@ -30,7 +30,9 @@ mod role_place_copy;
 mod typed_hole_state;
 mod typed_workspace;
 
-use role_place_copy::{is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID};
+use role_place_copy::{
+    is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID, SLOT_COUNT,
+};
 use typed_hole_state::{TypedHoleCue, TypedHoleRole, TypedValue};
 use typed_workspace::{
     TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT, TYPED_SURFACE_TOKEN_COUNT,
@@ -48,7 +50,6 @@ const NONE: u32 = u32::MAX;
 const INITIAL_CONTACT_DOMAIN: u64 = 0x5233_4630_494E_4954;
 const REGROWTH_CONTACT_DOMAIN: u64 = 0x5233_4630_5247_5257;
 pub(crate) const MAX_TYPED_GENERATIONS: usize = 128;
-const TYPED_LITERAL_SLOT: u8 = 2;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TemporalContextPolicy {
@@ -893,9 +894,8 @@ impl TemporalCircuitRuntime {
         self.step_typed_private_cue(scaffold_token)?;
         let scaffold = self.step(vocabulary.plan_commit_token_id, mode)?;
 
-        let literal_slot = SlotOrdinal::new(TYPED_LITERAL_SLOT).expect("slot two is in range");
         let operation_token =
-            vocabulary.operation_component_token(self.role_place_copy.is_ready(literal_slot));
+            vocabulary.operation_component_token(self.role_place_copy.has_ready_slot());
         self.step_typed_private_cue(operation_token)?;
         let operation = self.step(vocabulary.plan_commit_token_id, mode)?;
         self.typed_workspace
@@ -1004,11 +1004,6 @@ impl TemporalCircuitRuntime {
         }
         let step = self.step(token_id, TemporalStepMode::Learn)?;
         if let Some(slot) = SlotOrdinal::from_copy_token(token_id) {
-            if slot.value() != TYPED_LITERAL_SLOT {
-                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
-                    "typed literals may recall only ordinal slot two",
-                ));
-            }
             if let Err(stop) = self.drain_typed_teacher_copy(slot) {
                 return self.fail(stop);
             }
@@ -1132,16 +1127,19 @@ impl TemporalCircuitRuntime {
     fn typed_admitted_tokens(
         &self,
         cue: TypedHoleCue,
-    ) -> Result<([u32; TYPED_SURFACE_TOKEN_COUNT + 1], usize), TemporalCircuitStop> {
+    ) -> Result<([u32; TYPED_SURFACE_TOKEN_COUNT + SLOT_COUNT], usize), TemporalCircuitStop> {
         let (surface, surface_count) = self.typed_workspace.admitted_tokens()?;
-        let mut admitted = [NONE; TYPED_SURFACE_TOKEN_COUNT + 1];
+        let mut admitted = [NONE; TYPED_SURFACE_TOKEN_COUNT + SLOT_COUNT];
         admitted[..surface_count].copy_from_slice(&surface[..surface_count]);
         let mut count = surface_count;
         if cue == TypedHoleCue::LiteralSign {
-            let slot = SlotOrdinal::new(TYPED_LITERAL_SLOT).expect("slot two is in range");
-            if self.role_place_copy.is_ready(slot) {
-                admitted[count] = slot.copy_token_id();
-                count += 1;
+            for ordinal in 0..SLOT_COUNT {
+                let slot = SlotOrdinal::new(ordinal as u8)
+                    .expect("bounded slot iteration always yields one ordinal");
+                if self.role_place_copy.is_ready(slot) {
+                    admitted[count] = slot.copy_token_id();
+                    count += 1;
+                }
             }
         }
         Ok((admitted, count))
@@ -1192,9 +1190,9 @@ impl TemporalCircuitRuntime {
             }
         };
         if let Some(slot) = SlotOrdinal::from_copy_token(elected.token_id) {
-            if slot.value() != TYPED_LITERAL_SLOT || !self.role_place_copy.is_ready(slot) {
+            if !self.role_place_copy.is_ready(slot) {
                 return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
-                    "typed COPY control won without ordinal slot two",
+                    "typed COPY control won without a captured slot value",
                 ));
             }
             let copied = self.elect_copy_output_at(slot, 0)?;
@@ -6098,9 +6096,9 @@ mod tests {
         let digit_5 = surface[13];
         let end = surface[18];
         let eos = surface[19];
-        let copy_slot_two = role_place_copy::copy_slot_token_id(TYPED_LITERAL_SLOT).unwrap();
-        let slot_two_start = role_place_copy::slot_start_token_id(TYPED_LITERAL_SLOT).unwrap();
-        let slot_two_end = role_place_copy::slot_end_token_id(TYPED_LITERAL_SLOT).unwrap();
+        let copy_slot_two = role_place_copy::copy_slot_token_id(2).unwrap();
+        let slot_two_start = role_place_copy::slot_start_token_id(2).unwrap();
+        let slot_two_end = role_place_copy::slot_end_token_id(2).unwrap();
 
         let capture_literal =
             |runtime: &mut TemporalCircuitRuntime, digit: u32, mode: TemporalStepMode| {
@@ -6183,6 +6181,145 @@ mod tests {
         assert_eq!(generated[2].winner_input_columns, ACTIVE_COLUMNS as u8);
         assert_eq!(generated[2].candidate_tokens, 1);
         assert_eq!(runtime.typed_plan_winners(), Some(dev_plan));
+        assert_eq!(runtime.scientific_stop, None);
+    }
+
+    #[test]
+    fn typed_workspace_selects_two_ready_literal_slots_by_child_role() {
+        const W_TRAIN: u32 = 1_400;
+        const W_DEV: u32 = 1_401;
+        const PLAN_COMMIT: u32 = 1_500;
+        const CUE_BASE: u32 = 1_600;
+        const SURFACE_BASE: u32 = 1_700;
+
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        let mut token_ids = vec![W_TRAIN, W_DEV, PLAN_COMMIT];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        for slot in 0..SLOT_COUNT as u8 {
+            token_ids.push(role_place_copy::slot_start_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::slot_end_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::copy_slot_token_id(slot).unwrap());
+        }
+        token_ids.push(COPY_END_TOKEN_ID);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.segment_capacity = 2_048;
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        )
+        .expect("two-slot typed fixture");
+
+        let surface = vocabulary.surface_token_ids;
+        let add = surface[0];
+        let integer = surface[5];
+        let plus = surface[6];
+        let minus = surface[7];
+        let digit_2 = surface[10];
+        let digit_3 = surface[11];
+        let digit_4 = surface[12];
+        let digit_5 = surface[13];
+        let end = surface[18];
+        let eos = surface[19];
+        let copy_slot_zero = role_place_copy::copy_slot_token_id(0).unwrap();
+        let copy_slot_one = role_place_copy::copy_slot_token_id(1).unwrap();
+
+        let capture_literal = |runtime: &mut TemporalCircuitRuntime,
+                               slot: u8,
+                               sign: u32,
+                               digit: u32,
+                               mode: TemporalStepMode| {
+            for token_id in [
+                role_place_copy::slot_start_token_id(slot).unwrap(),
+                sign,
+                digit,
+                role_place_copy::slot_end_token_id(slot).unwrap(),
+            ] {
+                runtime.step(token_id, mode).expect("literal slot capture");
+            }
+        };
+
+        capture_literal(&mut runtime, 0, plus, digit_5, TemporalStepMode::Learn);
+        capture_literal(&mut runtime, 1, minus, digit_3, TemporalStepMode::Learn);
+        runtime.step(W_TRAIN, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        for token_id in [
+            add,
+            integer,
+            copy_slot_zero,
+            end,
+            integer,
+            copy_slot_one,
+            end,
+            eos,
+        ] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+
+        runtime.reset_transient();
+        capture_literal(&mut runtime, 0, plus, digit_2, TemporalStepMode::ReadOnly);
+        capture_literal(&mut runtime, 1, minus, digit_4, TemporalStepMode::ReadOnly);
+        runtime.step(W_DEV, TemporalStepMode::ReadOnly).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+
+        let generated = runtime.generate_typed().expect("teacher-free two-slot add");
+        assert_eq!(
+            generated
+                .iter()
+                .map(|generation| generation.surface_token_id)
+                .collect::<Vec<_>>(),
+            vec![add, integer, plus, digit_2, end, integer, minus, digit_4, end, eos,]
+        );
+        for (index, slot, control) in [(2usize, 0u8, copy_slot_zero), (6usize, 1u8, copy_slot_one)]
+        {
+            assert_eq!(generated[index].path, TemporalGenerationPath::EnterCopy);
+            assert_eq!(generated[index].slot_ordinal, slot);
+            assert_eq!(generated[index].copy_place_ordinal, 0);
+            assert_eq!(generated[index].control_token_id, control);
+            assert_eq!(generated[index + 1].path, TemporalGenerationPath::Copy);
+            assert_eq!(generated[index + 1].slot_ordinal, slot);
+            assert_eq!(generated[index + 1].copy_place_ordinal, 1);
+            assert_eq!(generated[index + 2].path, TemporalGenerationPath::ExitCopy);
+            assert_eq!(generated[index + 2].surface_token_id, end);
+            assert_eq!(generated[index + 2].slot_ordinal, slot);
+            assert_eq!(generated[index + 2].control_token_id, COPY_END_TOKEN_ID);
+        }
         assert_eq!(runtime.scientific_stop, None);
     }
 }

@@ -5,9 +5,7 @@
 //! BoundWinners source/relay context used at a structural hole.
 
 use super::{
-    typed_hole_state::{
-        SurfaceKind, TypedHoleCue, TypedHoleRole, TypedHoleState, TypedValue,
-    },
+    typed_hole_state::{SurfaceKind, TypedHoleCue, TypedHoleRole, TypedHoleState, TypedValue},
     TemporalCircuitStop, TemporalStepMode, TemporalTransientState, ACTIVE_COLUMNS, CONTEXT_CELLS,
     NONE,
 };
@@ -16,6 +14,12 @@ pub(super) const PLAN_WINNERS_IN_MIX: usize = 5;
 pub(super) const CUE_WINNERS_IN_MIX: usize = ACTIVE_COLUMNS - PLAN_WINNERS_IN_MIX;
 const SCAFFOLD_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [0, 1, 2, 3, 4];
 const OPERATION_HEAD_PLAN_INDICES: [usize; PLAN_WINNERS_IN_MIX] = [5, 6, 7, 8, 9];
+// Local support for the three current literal roles, not a general depth/path
+// address. The projected cue sets keep each pair below the physical active
+// threshold while preserving the same transferable operation-plan component.
+const LITERAL_HEAD_CUE_INDICES: [usize; CUE_WINNERS_IN_MIX] = [0, 2, 4, 6, 8, 10];
+const LITERAL_CHILD0_CUE_INDICES: [usize; CUE_WINNERS_IN_MIX] = [0, 1, 2, 3, 4, 5];
+const LITERAL_CHILD1_CUE_INDICES: [usize; CUE_WINNERS_IN_MIX] = [5, 6, 7, 8, 9, 10];
 pub(crate) const TYPED_CUE_TOKEN_COUNT: usize = 17;
 pub(crate) const TYPED_SURFACE_TOKEN_COUNT: usize = 20;
 
@@ -179,11 +183,12 @@ impl TypedWorkspaceState {
     }
 
     pub(super) fn current_cue_token(&self) -> Result<Option<u32>, TemporalCircuitStop> {
-        let session = self.session.as_ref().ok_or(
-            TemporalCircuitStop::MalformedContextOrPolicy(
-                "typed workspace session is not initialized",
-            ),
-        )?;
+        let session =
+            self.session
+                .as_ref()
+                .ok_or(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed workspace session is not initialized",
+                ))?;
         Ok(session
             .vocabulary
             .cue_token(session.holes.cue(), session.holes.role()))
@@ -210,20 +215,22 @@ impl TypedWorkspaceState {
     pub(super) fn admitted_tokens(
         &self,
     ) -> Result<([u32; TYPED_SURFACE_TOKEN_COUNT], usize), TemporalCircuitStop> {
-        let session = self.session.as_ref().ok_or(
-            TemporalCircuitStop::MalformedContextOrPolicy(
-                "typed workspace session is not initialized",
-            ),
-        )?;
+        let session =
+            self.session
+                .as_ref()
+                .ok_or(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed workspace session is not initialized",
+                ))?;
         Ok(session.vocabulary.admitted_tokens(&session.holes))
     }
 
     pub(super) fn advance_token(&mut self, token_id: u32) -> Result<(), TemporalCircuitStop> {
-        let session = self.session.as_mut().ok_or(
-            TemporalCircuitStop::MalformedContextOrPolicy(
-                "typed workspace session is not initialized",
-            ),
-        )?;
+        let session =
+            self.session
+                .as_mut()
+                .ok_or(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed workspace session is not initialized",
+                ))?;
         let surface = session.vocabulary.surface_for_token(token_id).ok_or(
             TemporalCircuitStop::MalformedContextOrPolicy(
                 "typed generation elected a token outside its structural vocabulary",
@@ -262,9 +269,9 @@ impl TypedWorkspaceState {
         for (mixed_index, &plan_index) in plan_indices.iter().enumerate() {
             winners[mixed_index] = self.plan_winners[plan_index];
         }
-        winners[PLAN_WINNERS_IN_MIX..].copy_from_slice(
-            &cue_winner_context[..CUE_WINNERS_IN_MIX],
-        );
+        for (mixed_index, &cue_index) in cue_projection(cue, role).iter().enumerate() {
+            winners[PLAN_WINNERS_IN_MIX + mixed_index] = cue_winner_context[cue_index];
+        }
         let mut sorted = winners;
         sorted.sort_unstable();
         if sorted.windows(2).any(|pair| pair[0] == pair[1]) {
@@ -293,6 +300,17 @@ fn plan_projection(
         TypedHoleCue::Terminated => Err(TemporalCircuitStop::MalformedContextOrPolicy(
             "terminated typed state has no structural plan projection",
         )),
+    }
+}
+
+fn cue_projection(cue: TypedHoleCue, role: TypedHoleRole) -> &'static [usize; CUE_WINNERS_IN_MIX] {
+    if cue != TypedHoleCue::LiteralSign {
+        return &LITERAL_CHILD0_CUE_INDICES;
+    }
+    match role {
+        TypedHoleRole::Head => &LITERAL_HEAD_CUE_INDICES,
+        TypedHoleRole::Child0 => &LITERAL_CHILD0_CUE_INDICES,
+        TypedHoleRole::Child1 => &LITERAL_CHILD1_CUE_INDICES,
     }
 }
 
@@ -332,10 +350,9 @@ mod tests {
         };
         let mut workspace = TypedWorkspaceState::EMPTY;
         let mut plan_context = [0u32; CONTEXT_CELLS];
-        plan_context[..ACTIVE_COLUMNS]
-            .copy_from_slice(&std::array::from_fn::<_, ACTIVE_COLUMNS, _>(|index| {
-                100 + index as u32
-            }));
+        plan_context[..ACTIVE_COLUMNS].copy_from_slice(
+            &std::array::from_fn::<_, ACTIVE_COLUMNS, _>(|index| 100 + index as u32),
+        );
         workspace.retain_plan_components(plan_context, plan_context);
         workspace
             .begin_session(
@@ -347,10 +364,9 @@ mod tests {
             .unwrap();
 
         let mut cue_context = [0u32; CONTEXT_CELLS];
-        cue_context[..ACTIVE_COLUMNS]
-            .copy_from_slice(&std::array::from_fn::<_, ACTIVE_COLUMNS, _>(|index| {
-                200 + index as u32
-            }));
+        cue_context[..ACTIVE_COLUMNS].copy_from_slice(
+            &std::array::from_fn::<_, ACTIVE_COLUMNS, _>(|index| 200 + index as u32),
+        );
 
         let root_cue = workspace.current_cue().unwrap();
         let root_role = workspace.current_role().unwrap();
