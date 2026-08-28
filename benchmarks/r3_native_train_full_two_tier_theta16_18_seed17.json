@@ -1,0 +1,5044 @@
+{
+  "benchmark": "r3-native-train-multibook-cost",
+  "claim_boundary": "one physical LEARN replay of the first 49 canonical TRAIN books only; arm (16,18), seed 17, production codebook, exact atomic transient reset at both book boundaries, synthetic pre-outcome authority, and a transition-bounded segment store; no held-out/C1/capability/cohort, later-book, checkpoint-I/O, or multi-arm evidence",
+  "definition": {
+    "arm": [
+      16,
+      18
+    ],
+    "bounded_capacity_rule": "sum((book_token_count - one transient seed) * 11)",
+    "bounded_definition_identity_sha256": "955dec02ba31cff53cfaecf1b0d23a6c93757baa06b48bf090eaf5d82bffce94",
+    "bounded_segment_capacity": 23290993,
+    "column_count": 4096,
+    "construction_seed": 17,
+    "definition_build_ns": 92509500,
+    "max_pyramidal_cells": 131072,
+    "max_segments_per_transition": 11,
+    "native_construction_ns": 1466195600,
+    "physical_cell_count": 274432,
+    "production_definition_identity_sha256": "efcd70c8f0a1deeb04ffa32b7d905f42c01000caa33ed18d61ac366594ed9502",
+    "production_segment_capacity": 23286406,
+    "protocol_runnable": false,
+    "protocol_sha256": "1cc1c48c57dac9d3a4eb1bbf13534b4a76e9a815fcdf3707051cb28f92575fb4",
+    "threshold_offsets_sha256_le_f64": "3eb899945775d84026ac967920065c7f6a2d01f3c1e08cd4cf53d0e614ce994e",
+    "token_code_count": 768,
+    "worst_case_transition_count": 2117363
+  },
+  "environment": {
+    "native_binary_sha256": "e386a6c339cff83f13e1d070149b9539beaf443a2a09da9e5427122199a3601d",
+    "native_binary_size": 555008,
+    "native_source_digest": "bd70b5ae77860ed96e3f2683c178a9b5755423a0aaeeab3e1df631cdad6c60e5",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "final_checkpoint_identity": {
+    "event_count": 37538,
+    "learning_step": 2117412,
+    "logical_state_sha256": "d4a3ae81c034c68c8f2f606dcbb2a6d0e1c2dc2337979383ed2e64033ac3305a",
+    "segment_count": 23286478
+  },
+  "generated_at_utc": "2026-08-28T04:50:01.713335+00:00",
+  "measurement": {
+    "book_resets_requested": 49,
+    "book_summaries": [
+      {
+        "completed": true,
+        "completed_token_steps": 122253,
+        "corpus_index": 0,
+        "latency_ns": {
+          "count": 122253,
+          "max": 5083300,
+          "mean": 858593.611608713,
+          "median": 751900,
+          "min": 125800,
+          "p95": 1782100,
+          "p99": 2161100,
+          "sum": 104965644800
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1344783,
+          "predicted_steps": 1,
+          "winner_spikes": 1344783
+        },
+        "native_checkpoint_segment_count": 1344761,
+        "ordinal": 0,
+        "rate": {
+          "abi_call_steps_per_second": 1164.6953651638978,
+          "instrumented_loop_steps_per_second": 1151.867039352511,
+          "replay_wall_ns": 106134645600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 122253,
+            "max": 11,
+            "mean": 0.0006298413944852069,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 77
+          },
+          "candidate_segments": {
+            "count": 122253,
+            "max": 18722,
+            "mean": 6436.461951853942,
+            "median": 5577,
+            "min": 0,
+            "p95": 14432,
+            "p99": 15422,
+            "sum": 786876783
+          },
+          "matching_segments": {
+            "count": 122253,
+            "max": 11,
+            "mean": 0.011697054469010985,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 1430
+          },
+          "postings_visited": {
+            "count": 122253,
+            "max": 27775,
+            "mean": 10024.411490924558,
+            "median": 8602,
+            "min": 0,
+            "p95": 23133,
+            "p99": 25058,
+            "sum": 1225514378
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1344761,
+          "live_delta": 1344761,
+          "live_end": 1344761,
+          "live_start": 0,
+          "punished_total": 66
+        },
+        "short_name": "Genesis",
+        "token_count": 122253,
+        "token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd",
+        "transition_steps": 122252
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 100485,
+        "corpus_index": 1,
+        "latency_ns": {
+          "count": 100485,
+          "max": 8360300,
+          "mean": 1186319.4496691048,
+          "median": 1121700,
+          "min": 147900,
+          "p95": 2211000,
+          "p99": 2714400,
+          "sum": 119207309900
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1105335,
+          "predicted_steps": 3,
+          "winner_spikes": 1105335
+        },
+        "native_checkpoint_segment_count": 2450052,
+        "ordinal": 1,
+        "rate": {
+          "abi_call_steps_per_second": 842.9432732295891,
+          "instrumented_loop_steps_per_second": 836.358824724925,
+          "replay_wall_ns": 120145799900
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 100485,
+            "max": 11,
+            "mean": 0.0007662835249042146,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 77
+          },
+          "candidate_segments": {
+            "count": 100485,
+            "max": 17072,
+            "mean": 8034.546031746032,
+            "median": 7810,
+            "min": 0,
+            "p95": 14201,
+            "p99": 15092,
+            "sum": 807351358
+          },
+          "matching_segments": {
+            "count": 100485,
+            "max": 11,
+            "mean": 0.013683634373289545,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 1375
+          },
+          "postings_visited": {
+            "count": 100485,
+            "max": 28017,
+            "mean": 12014.478927203065,
+            "median": 11704,
+            "min": 0,
+            "p95": 22385,
+            "p99": 24013,
+            "sum": 1207274915
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1105291,
+          "live_delta": 1105291,
+          "live_end": 2450052,
+          "live_start": 1344761,
+          "punished_total": 44
+        },
+        "short_name": "Exodus",
+        "token_count": 100485,
+        "token_sha256_le_i32": "db487fa7767f7e716924aeca15f92ae5df5c7429c50c6ee225925cb6902e59f4",
+        "transition_steps": 100484
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 74481,
+        "corpus_index": 2,
+        "latency_ns": {
+          "count": 74481,
+          "max": 11266800,
+          "mean": 1385732.1612223252,
+          "median": 1313200,
+          "min": 183200,
+          "p95": 2510600,
+          "p99": 3032000,
+          "sum": 103210717100
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 819291,
+          "predicted_steps": 1,
+          "winner_spikes": 819291
+        },
+        "native_checkpoint_segment_count": 3269321,
+        "ordinal": 2,
+        "rate": {
+          "abi_call_steps_per_second": 721.6401754852259,
+          "instrumented_loop_steps_per_second": 716.606794466128,
+          "replay_wall_ns": 103935659800
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 74481,
+            "max": 11,
+            "mean": 0.0005907546891153448,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 44
+          },
+          "candidate_segments": {
+            "count": 74481,
+            "max": 17435,
+            "mean": 8397.017574952,
+            "median": 8184,
+            "min": 0,
+            "p95": 14069,
+            "p99": 14839,
+            "sum": 625418266
+          },
+          "matching_segments": {
+            "count": 74481,
+            "max": 11,
+            "mean": 0.010338207059518534,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 770
+          },
+          "postings_visited": {
+            "count": 74481,
+            "max": 25256,
+            "mean": 12275.483828090386,
+            "median": 12034,
+            "min": 0,
+            "p95": 21703,
+            "p99": 23254,
+            "sum": 914290311
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 819269,
+          "live_delta": 819269,
+          "live_end": 3269321,
+          "live_start": 2450052,
+          "punished_total": 33
+        },
+        "short_name": "Leviticus",
+        "token_count": 74481,
+        "token_sha256_le_i32": "8bd95fc3e15ea0eafd08f9fc8930f079f9bd3a03fe3f56d5b72fe5db645cade6",
+        "transition_steps": 74480
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 105256,
+        "corpus_index": 3,
+        "latency_ns": {
+          "count": 105256,
+          "max": 15886900,
+          "mean": 1600535.2055939804,
+          "median": 1478300.0,
+          "min": 210300,
+          "p95": 3038600,
+          "p99": 3683400,
+          "sum": 168465933600
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1157816,
+          "predicted_steps": 3,
+          "winner_spikes": 1157816
+        },
+        "native_checkpoint_segment_count": 4427093,
+        "ordinal": 3,
+        "rate": {
+          "abi_call_steps_per_second": 624.7910052243345,
+          "instrumented_loop_steps_per_second": 621.0066833867811,
+          "replay_wall_ns": 169492539800
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 105256,
+            "max": 22,
+            "mean": 0.0008360568518659269,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 105256,
+            "max": 18018,
+            "mean": 8820.508056547846,
+            "median": 8932.0,
+            "min": 0,
+            "p95": 13629,
+            "p99": 14531,
+            "sum": 928411396
+          },
+          "matching_segments": {
+            "count": 105256,
+            "max": 22,
+            "mean": 0.010346203541840845,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 1089
+          },
+          "postings_visited": {
+            "count": 105256,
+            "max": 28160,
+            "mean": 12696.957342099262,
+            "median": 12826.0,
+            "min": 0,
+            "p95": 20856,
+            "p99": 22451,
+            "sum": 1336430942
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1157772,
+          "live_delta": 1157772,
+          "live_end": 4427093,
+          "live_start": 3269321,
+          "punished_total": 55
+        },
+        "short_name": "Numbers",
+        "token_count": 105256,
+        "token_sha256_le_i32": "0f75043589c2928ef222ea69681d595fd0830970f5fdfdb2e7dfbcae6d8e9f20",
+        "transition_steps": 105255
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 84747,
+        "corpus_index": 4,
+        "latency_ns": {
+          "count": 84747,
+          "max": 17799900,
+          "mean": 1813020.6131190485,
+          "median": 1648700,
+          "min": 216300,
+          "p95": 3511700,
+          "p99": 4192700,
+          "sum": 153648057900
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 932217,
+          "predicted_steps": 1,
+          "winner_spikes": 932217
+        },
+        "native_checkpoint_segment_count": 5359287,
+        "ordinal": 4,
+        "rate": {
+          "abi_call_steps_per_second": 551.5657090515037,
+          "instrumented_loop_steps_per_second": 548.5713861378257,
+          "replay_wall_ns": 154486730700
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 84747,
+            "max": 22,
+            "mean": 0.0007787886296860066,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 66
+          },
+          "candidate_segments": {
+            "count": 84747,
+            "max": 18414,
+            "mean": 9154.949425938381,
+            "median": 9482,
+            "min": 0,
+            "p95": 13442,
+            "p99": 14487,
+            "sum": 775854499
+          },
+          "matching_segments": {
+            "count": 84747,
+            "max": 22,
+            "mean": 0.010124252185918085,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 858
+          },
+          "postings_visited": {
+            "count": 84747,
+            "max": 28160,
+            "mean": 12997.480618782965,
+            "median": 13376,
+            "min": 0,
+            "p95": 20152,
+            "p99": 21824,
+            "sum": 1101497490
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 932194,
+          "live_delta": 932194,
+          "live_end": 5359287,
+          "live_start": 4427093,
+          "punished_total": 54
+        },
+        "short_name": "Deuteronomy",
+        "token_count": 84747,
+        "token_sha256_le_i32": "cdcd36b245ff00e011d1d547e447b96008d8050b070ec0cda276ca82cbefa18a",
+        "transition_steps": 84746
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 59358,
+        "corpus_index": 5,
+        "latency_ns": {
+          "count": 59358,
+          "max": 12094300,
+          "mean": 1988308.4133562453,
+          "median": 1790200.0,
+          "min": 261300,
+          "p95": 3922000,
+          "p99": 4618700,
+          "sum": 118022010800
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 652938,
+          "predicted_steps": 5,
+          "winner_spikes": 652938
+        },
+        "native_checkpoint_segment_count": 6012159,
+        "ordinal": 5,
+        "rate": {
+          "abi_call_steps_per_second": 502.9400837830836,
+          "instrumented_loop_steps_per_second": 500.35348771028555,
+          "replay_wall_ns": 118632130000
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 59358,
+            "max": 33,
+            "mean": 0.0016678459516830083,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 99
+          },
+          "candidate_segments": {
+            "count": 59358,
+            "max": 19921,
+            "mean": 9365.035445938205,
+            "median": 9856.0,
+            "min": 0,
+            "p95": 13255,
+            "p99": 14080,
+            "sum": 555889774
+          },
+          "matching_segments": {
+            "count": 59358,
+            "max": 33,
+            "mean": 0.00852454597526871,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 506
+          },
+          "postings_visited": {
+            "count": 59358,
+            "max": 28182,
+            "mean": 13149.480019542438,
+            "median": 13706.0,
+            "min": 0,
+            "p95": 19734,
+            "p99": 21681,
+            "sum": 780526835
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 652872,
+          "live_delta": 652872,
+          "live_end": 6012159,
+          "live_start": 5359287,
+          "punished_total": 44
+        },
+        "short_name": "Joshua",
+        "token_count": 59358,
+        "token_sha256_le_i32": "3765116f0bca38edb24e6f351ab4c005b73cab35acb32b1c6a01ea0c80141f2a",
+        "transition_steps": 59357
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 59406,
+        "corpus_index": 6,
+        "latency_ns": {
+          "count": 59406,
+          "max": 9448700,
+          "mean": 2114061.318722015,
+          "median": 1874000.0,
+          "min": 279900,
+          "p95": 4247700,
+          "p99": 4930800,
+          "sum": 125587926700
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 653466,
+          "predicted_steps": 18,
+          "winner_spikes": 653466
+        },
+        "native_checkpoint_segment_count": 6665415,
+        "ordinal": 6,
+        "rate": {
+          "abi_call_steps_per_second": 473.02317635919695,
+          "instrumented_loop_steps_per_second": 470.72050101409025,
+          "replay_wall_ns": 126202279000
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 59406,
+            "max": 33,
+            "mean": 0.0048143285190048145,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 286
+          },
+          "candidate_segments": {
+            "count": 59406,
+            "max": 20251,
+            "mean": 9664.149614517051,
+            "median": 10010.0,
+            "min": 0,
+            "p95": 13211,
+            "p99": 14245,
+            "sum": 574108472
+          },
+          "matching_segments": {
+            "count": 59406,
+            "max": 33,
+            "mean": 0.011665488334511665,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 693
+          },
+          "postings_visited": {
+            "count": 59406,
+            "max": 28292,
+            "mean": 13559.919166414167,
+            "median": 14069.0,
+            "min": 0,
+            "p95": 19536,
+            "p99": 21560,
+            "sum": 805540558
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 653256,
+          "live_delta": 653256,
+          "live_end": 6665415,
+          "live_start": 6012159,
+          "punished_total": 87
+        },
+        "short_name": "Judges",
+        "token_count": 59406,
+        "token_sha256_le_i32": "9fd2b2432a7141504f88dea968ca1a821daf86c4145770db5645cb5011ad0e3a",
+        "transition_steps": 59405
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 8003,
+        "corpus_index": 7,
+        "latency_ns": {
+          "count": 8003,
+          "max": 6613100,
+          "mean": 2085959.6401349495,
+          "median": 1840700,
+          "min": 356400,
+          "p95": 4276000,
+          "p99": 4957200,
+          "sum": 16693935000
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 88033,
+          "predicted_steps": 6,
+          "winner_spikes": 88033
+        },
+        "native_checkpoint_segment_count": 6753371,
+        "ordinal": 7,
+        "rate": {
+          "abi_call_steps_per_second": 479.3956607594315,
+          "instrumented_loop_steps_per_second": 477.1707029208601,
+          "replay_wall_ns": 16771775700
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 8003,
+            "max": 33,
+            "mean": 0.015119330251155817,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 121
+          },
+          "candidate_segments": {
+            "count": 8003,
+            "max": 19932,
+            "mean": 9269.171685617894,
+            "median": 9394,
+            "min": 0,
+            "p95": 13222,
+            "p99": 14300,
+            "sum": 74181181
+          },
+          "matching_segments": {
+            "count": 8003,
+            "max": 33,
+            "mean": 0.017868299387729603,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 143
+          },
+          "postings_visited": {
+            "count": 8003,
+            "max": 28292,
+            "mean": 12855.915781581907,
+            "median": 13123,
+            "min": 0,
+            "p95": 19250,
+            "p99": 22077,
+            "sum": 102885894
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 87956,
+          "live_delta": 87956,
+          "live_end": 6753371,
+          "live_start": 6665415,
+          "punished_total": 55
+        },
+        "short_name": "Ruth",
+        "token_count": 8003,
+        "token_sha256_le_i32": "0b7aafb007c5203505dadbb8d7d57f365b386a995d119c37fc84e4e25f779d6b",
+        "transition_steps": 8002
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 78963,
+        "corpus_index": 8,
+        "latency_ns": {
+          "count": 78963,
+          "max": 17965300,
+          "mean": 2296097.896483163,
+          "median": 2009100,
+          "min": 291400,
+          "p95": 4682200,
+          "p99": 5449200,
+          "sum": 181306778200
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 868593,
+          "predicted_steps": 5,
+          "winner_spikes": 868593
+        },
+        "native_checkpoint_segment_count": 7621898,
+        "ordinal": 8,
+        "rate": {
+          "abi_call_steps_per_second": 435.52149998989944,
+          "instrumented_loop_steps_per_second": 433.5442058133783,
+          "replay_wall_ns": 182133676200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 78963,
+            "max": 22,
+            "mean": 0.001114446006357408,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 78963,
+            "max": 19932,
+            "mean": 9790.054987779087,
+            "median": 10131,
+            "min": 0,
+            "p95": 13398,
+            "p99": 14300,
+            "sum": 773052112
+          },
+          "matching_segments": {
+            "count": 78963,
+            "max": 33,
+            "mean": 0.008915568050859263,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 704
+          },
+          "postings_visited": {
+            "count": 78963,
+            "max": 28292,
+            "mean": 13649.69174170181,
+            "median": 13981,
+            "min": 0,
+            "p95": 19580,
+            "p99": 21439,
+            "sum": 1077820609
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 868527,
+          "live_delta": 868527,
+          "live_end": 7621898,
+          "live_start": 6753371,
+          "punished_total": 33
+        },
+        "short_name": "1 Samuel",
+        "token_count": 78963,
+        "token_sha256_le_i32": "700f8649eb4eb5e63ec690b76eb1910fa664d73e526d45697e7659a750b8a4a5",
+        "transition_steps": 78962
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 65898,
+        "corpus_index": 9,
+        "latency_ns": {
+          "count": 65898,
+          "max": 22189000,
+          "mean": 2479016.988375975,
+          "median": 2173750.0,
+          "min": 309500,
+          "p95": 5058100,
+          "p99": 5838400,
+          "sum": 163362261500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 724878,
+          "predicted_steps": 19,
+          "winner_spikes": 724878
+        },
+        "native_checkpoint_segment_count": 8346556,
+        "ordinal": 9,
+        "rate": {
+          "abi_call_steps_per_second": 403.3856987221005,
+          "instrumented_loop_steps_per_second": 401.62682548223364,
+          "replay_wall_ns": 164077685600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 65898,
+            "max": 22,
+            "mean": 0.0043400406689125615,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 286
+          },
+          "candidate_segments": {
+            "count": 65898,
+            "max": 21142,
+            "mean": 10026.78093417099,
+            "median": 10307.0,
+            "min": 0,
+            "p95": 13563,
+            "p99": 15081,
+            "sum": 660744810
+          },
+          "matching_segments": {
+            "count": 65898,
+            "max": 33,
+            "mean": 0.01034932774894534,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 682
+          },
+          "postings_visited": {
+            "count": 65898,
+            "max": 28457,
+            "mean": 13978.94966463322,
+            "median": 14289.0,
+            "min": 0,
+            "p95": 19932,
+            "p99": 21769,
+            "sum": 921184825
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 724658,
+          "live_delta": 724658,
+          "live_end": 8346556,
+          "live_start": 7621898,
+          "punished_total": 77
+        },
+        "short_name": "2 Samuel",
+        "token_count": 65898,
+        "token_sha256_le_i32": "116433cefad253cc9309c32c7c889c140b8ca9a06dbd76e496192e3dfb76eada",
+        "transition_steps": 65897
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 76083,
+        "corpus_index": 10,
+        "latency_ns": {
+          "count": 76083,
+          "max": 29307200,
+          "mean": 2567379.9600436366,
+          "median": 2242200,
+          "min": 299900,
+          "p95": 5294700,
+          "p99": 6108500,
+          "sum": 195333969500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 836913,
+          "predicted_steps": 5,
+          "winner_spikes": 836913
+        },
+        "native_checkpoint_segment_count": 9183403,
+        "ordinal": 10,
+        "rate": {
+          "abi_call_steps_per_second": 389.5021444285962,
+          "instrumented_loop_steps_per_second": 387.8770581658531,
+          "replay_wall_ns": 196152359100
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 76083,
+            "max": 22,
+            "mean": 0.0011566315734132461,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 76083,
+            "max": 19943,
+            "mean": 9967.16631836284,
+            "median": 10285,
+            "min": 0,
+            "p95": 13640,
+            "p99": 14784,
+            "sum": 758331915
+          },
+          "matching_segments": {
+            "count": 76083,
+            "max": 33,
+            "mean": 0.009253052587305969,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 704
+          },
+          "postings_visited": {
+            "count": 76083,
+            "max": 28402,
+            "mean": 13805.124048736248,
+            "median": 14201,
+            "min": 0,
+            "p95": 19822,
+            "p99": 21659,
+            "sum": 1050335253
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 836847,
+          "live_delta": 836847,
+          "live_end": 9183403,
+          "live_start": 8346556,
+          "punished_total": 33
+        },
+        "short_name": "1 Kings",
+        "token_count": 76083,
+        "token_sha256_le_i32": "37952f092a581366d4a40d1d5eb57079b4ea1480a0d8d8bd868e9e40ba39486b",
+        "transition_steps": 76082
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 71460,
+        "corpus_index": 11,
+        "latency_ns": {
+          "count": 71460,
+          "max": 42786400,
+          "mean": 2687830.716484747,
+          "median": 2311900.0,
+          "min": 281300,
+          "p95": 5807000,
+          "p99": 6640800,
+          "sum": 192072383000
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 786060,
+          "predicted_steps": 4,
+          "winner_spikes": 786060
+        },
+        "native_checkpoint_segment_count": 9969408,
+        "ordinal": 11,
+        "rate": {
+          "abi_call_steps_per_second": 372.0472401282177,
+          "instrumented_loop_steps_per_second": 370.57253773929057,
+          "replay_wall_ns": 192836739700
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 71460,
+            "max": 22,
+            "mean": 0.0016932549678141619,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 121
+          },
+          "candidate_segments": {
+            "count": 71460,
+            "max": 20339,
+            "mean": 9969.731933949062,
+            "median": 10230.0,
+            "min": 0,
+            "p95": 13662,
+            "p99": 14850,
+            "sum": 712437044
+          },
+          "matching_segments": {
+            "count": 71460,
+            "max": 33,
+            "mean": 0.008158410299468235,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 583
+          },
+          "postings_visited": {
+            "count": 71460,
+            "max": 28248,
+            "mean": 13781.044444444444,
+            "median": 14091.0,
+            "min": 0,
+            "p95": 19833,
+            "p99": 21648,
+            "sum": 984793436
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 786005,
+          "live_delta": 786005,
+          "live_end": 9969408,
+          "live_start": 9183403,
+          "punished_total": 77
+        },
+        "short_name": "2 Kings",
+        "token_count": 71460,
+        "token_sha256_le_i32": "4a82291a1c45b896e2be9ae604886931f5b5189bfb0924a7cd398f187ee45a63",
+        "transition_steps": 71459
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 69640,
+        "corpus_index": 12,
+        "latency_ns": {
+          "count": 69640,
+          "max": 15124000,
+          "mean": 2762882.4612291786,
+          "median": 2348000.0,
+          "min": 287700,
+          "p95": 6050200,
+          "p99": 6989900,
+          "sum": 192407134600
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 766040,
+          "predicted_steps": 2,
+          "winner_spikes": 766040
+        },
+        "native_checkpoint_segment_count": 10735414,
+        "ordinal": 12,
+        "rate": {
+          "abi_call_steps_per_second": 361.9408404203739,
+          "instrumented_loop_steps_per_second": 360.5389143514751,
+          "replay_wall_ns": 193155294000
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 69640,
+            "max": 33,
+            "mean": 0.001263641585295807,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 69640,
+            "max": 18282,
+            "mean": 9988.14863584147,
+            "median": 10230.0,
+            "min": 0,
+            "p95": 13574,
+            "p99": 14916,
+            "sum": 695574671
+          },
+          "matching_segments": {
+            "count": 69640,
+            "max": 44,
+            "mean": 0.007739804709936818,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 539
+          },
+          "postings_visited": {
+            "count": 69640,
+            "max": 28160,
+            "mean": 13805.413555427915,
+            "median": 14190.0,
+            "min": 0,
+            "p95": 19503,
+            "p99": 21527,
+            "sum": 961409000
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 766006,
+          "live_delta": 766006,
+          "live_end": 10735414,
+          "live_start": 9969408,
+          "punished_total": 65
+        },
+        "short_name": "1 Chronicles",
+        "token_count": 69640,
+        "token_sha256_le_i32": "4f3fdc9ca014e2d4481afdef9a2d87569b67748a79b5ab36b27ef9eae800d000",
+        "transition_steps": 69639
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 82985,
+        "corpus_index": 13,
+        "latency_ns": {
+          "count": 82985,
+          "max": 25709700,
+          "mean": 3035200.378381635,
+          "median": 2594800,
+          "min": 318400,
+          "p95": 6571500,
+          "p99": 7602200,
+          "sum": 251876103400
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 912835,
+          "predicted_steps": 1,
+          "winner_spikes": 912835
+        },
+        "native_checkpoint_segment_count": 11648226,
+        "ordinal": 13,
+        "rate": {
+          "abi_call_steps_per_second": 329.46753931718956,
+          "instrumented_loop_steps_per_second": 328.24156754809627,
+          "replay_wall_ns": 252816852600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 82985,
+            "max": 33,
+            "mean": 0.0009278785322648671,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 77
+          },
+          "candidate_segments": {
+            "count": 82985,
+            "max": 18920,
+            "mean": 10074.312538410557,
+            "median": 10307,
+            "min": 0,
+            "p95": 13662,
+            "p99": 15070,
+            "sum": 836016826
+          },
+          "matching_segments": {
+            "count": 82985,
+            "max": 44,
+            "mean": 0.00795324456227029,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 660
+          },
+          "postings_visited": {
+            "count": 82985,
+            "max": 28160,
+            "mean": 13876.82636621076,
+            "median": 14135,
+            "min": 0,
+            "p95": 19701,
+            "p99": 21604,
+            "sum": 1151568436
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 912812,
+          "live_delta": 912812,
+          "live_end": 11648226,
+          "live_start": 10735414,
+          "punished_total": 65
+        },
+        "short_name": "2 Chronicles",
+        "token_count": 82985,
+        "token_sha256_le_i32": "3d872864d867311487876363552955df37eb155d1b995ceeb85e2b826a15729b",
+        "transition_steps": 82984
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 24639,
+        "corpus_index": 14,
+        "latency_ns": {
+          "count": 24639,
+          "max": 9183000,
+          "mean": 2947415.0696050976,
+          "median": 2511200,
+          "min": 403700,
+          "p95": 6652600,
+          "p99": 7569000,
+          "sum": 72621359900
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 271029,
+          "predicted_steps": 5,
+          "winner_spikes": 271029
+        },
+        "native_checkpoint_segment_count": 11919189,
+        "ordinal": 14,
+        "rate": {
+          "abi_call_steps_per_second": 339.280344432107,
+          "instrumented_loop_steps_per_second": 338.09307290229344,
+          "replay_wall_ns": 72876382200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 24639,
+            "max": 43,
+            "mean": 0.0053167742197329435,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 131
+          },
+          "candidate_segments": {
+            "count": 24639,
+            "max": 19954,
+            "mean": 10185.867689435448,
+            "median": 10318,
+            "min": 0,
+            "p95": 13530,
+            "p99": 14718,
+            "sum": 250969594
+          },
+          "matching_segments": {
+            "count": 24639,
+            "max": 54,
+            "mean": 0.013352814643451439,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 329
+          },
+          "postings_visited": {
+            "count": 24639,
+            "max": 28512,
+            "mean": 14021.446568448395,
+            "median": 14267,
+            "min": 0,
+            "p95": 18964,
+            "p99": 21648,
+            "sum": 345474422
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 270963,
+          "live_delta": 270963,
+          "live_end": 11919189,
+          "live_start": 11648226,
+          "punished_total": 76
+        },
+        "short_name": "Ezra",
+        "token_count": 24639,
+        "token_sha256_le_i32": "4f7dd89277aa5a76b93a408556269239f56970c5e2332775a8ec4a6563ca4077",
+        "transition_steps": 24638
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 35466,
+        "corpus_index": 15,
+        "latency_ns": {
+          "count": 35466,
+          "max": 15435700,
+          "mean": 3337086.6886595613,
+          "median": 2828850.0,
+          "min": 322900,
+          "p95": 7295400,
+          "p99": 8423200,
+          "sum": 118353116500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 390126,
+          "predicted_steps": 1,
+          "winner_spikes": 390126
+        },
+        "native_checkpoint_segment_count": 12309292,
+        "ordinal": 15,
+        "rate": {
+          "abi_call_steps_per_second": 299.6625779600827,
+          "instrumented_loop_steps_per_second": 298.545502825945,
+          "replay_wall_ns": 118795961300
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 35466,
+            "max": 33,
+            "mean": 0.0015507810297186037,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 55
+          },
+          "candidate_segments": {
+            "count": 35466,
+            "max": 19920,
+            "mean": 10065.638865392206,
+            "median": 10351.0,
+            "min": 0,
+            "p95": 13651,
+            "p99": 14905,
+            "sum": 356987948
+          },
+          "matching_segments": {
+            "count": 35466,
+            "max": 54,
+            "mean": 0.007725709129870862,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 274
+          },
+          "postings_visited": {
+            "count": 35466,
+            "max": 28160,
+            "mean": 13895.213133705522,
+            "median": 14322.0,
+            "min": 0,
+            "p95": 19294,
+            "p99": 20834,
+            "sum": 492807629
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 390103,
+          "live_delta": 390103,
+          "live_end": 12309292,
+          "live_start": 11919189,
+          "punished_total": 43
+        },
+        "short_name": "Nehemiah",
+        "token_count": 35466,
+        "token_sha256_le_i32": "ca6774f7407f89dba9aba8648032964883b8f1acdfaacea95310c6e859f1b72c",
+        "transition_steps": 35465
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 18345,
+        "corpus_index": 16,
+        "latency_ns": {
+          "count": 18345,
+          "max": 18274800,
+          "mean": 3685410.482420278,
+          "median": 3210000,
+          "min": 383300,
+          "p95": 7728000,
+          "p99": 9144100,
+          "sum": 67608855300
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 201795,
+          "predicted_steps": 22,
+          "winner_spikes": 201795
+        },
+        "native_checkpoint_segment_count": 12510834,
+        "ordinal": 16,
+        "rate": {
+          "abi_call_steps_per_second": 271.3401952835607,
+          "instrumented_loop_steps_per_second": 270.30153097195836,
+          "replay_wall_ns": 67868650000
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 18345,
+            "max": 43,
+            "mean": 0.01853366039792859,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 340
+          },
+          "candidate_segments": {
+            "count": 18345,
+            "max": 22121,
+            "mean": 10463.326028890706,
+            "median": 10791,
+            "min": 0,
+            "p95": 13970,
+            "p99": 15312,
+            "sum": 191949716
+          },
+          "matching_segments": {
+            "count": 18345,
+            "max": 64,
+            "mean": 0.023875715453802127,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 438
+          },
+          "postings_visited": {
+            "count": 18345,
+            "max": 28622,
+            "mean": 14486.345979831016,
+            "median": 14883,
+            "min": 0,
+            "p95": 20339,
+            "p99": 22869,
+            "sum": 265752017
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 201542,
+          "live_delta": 201542,
+          "live_end": 12510834,
+          "live_start": 12309292,
+          "punished_total": 98
+        },
+        "short_name": "Esther",
+        "token_count": 18345,
+        "token_sha256_le_i32": "7772febd1ae2bfb2a9a52cb981c08b27b0fd69b747c33a268910eccf472e9bda",
+        "transition_steps": 18344
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 64204,
+        "corpus_index": 17,
+        "latency_ns": {
+          "count": 64204,
+          "max": 27516000,
+          "mean": 3658466.567503582,
+          "median": 3134750.0,
+          "min": 329900,
+          "p95": 7859300,
+          "p99": 8933300,
+          "sum": 234888187500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 706244,
+          "predicted_steps": 2,
+          "winner_spikes": 706244
+        },
+        "native_checkpoint_segment_count": 13217045,
+        "ordinal": 17,
+        "rate": {
+          "abi_call_steps_per_second": 273.3385645457373,
+          "instrumented_loop_steps_per_second": 272.3572363076394,
+          "replay_wall_ns": 235734511300
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 64204,
+            "max": 33,
+            "mean": 0.0010279733349947045,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 66
+          },
+          "candidate_segments": {
+            "count": 64204,
+            "max": 20392,
+            "mean": 10025.26920441094,
+            "median": 10208.0,
+            "min": 0,
+            "p95": 13673,
+            "p99": 14762,
+            "sum": 643662384
+          },
+          "matching_segments": {
+            "count": 64204,
+            "max": 64,
+            "mean": 0.009391938196997072,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 603
+          },
+          "postings_visited": {
+            "count": 64204,
+            "max": 28160,
+            "mean": 13866.629727119805,
+            "median": 14091.0,
+            "min": 0,
+            "p95": 19657,
+            "p99": 21670,
+            "sum": 890293095
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 706211,
+          "live_delta": 706211,
+          "live_end": 13217045,
+          "live_start": 12510834,
+          "punished_total": 44
+        },
+        "short_name": "Job",
+        "token_count": 64204,
+        "token_sha256_le_i32": "e1e27067948109ed913a430777f620b283710b84f1ff4db1914fc4bce60bd98a",
+        "transition_steps": 64203
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 149162,
+        "corpus_index": 18,
+        "latency_ns": {
+          "count": 149162,
+          "max": 52269000,
+          "mean": 3642077.8086912218,
+          "median": 3046000.0,
+          "min": 404500,
+          "p95": 8189500,
+          "p99": 9348100,
+          "sum": 543259610100
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1640782,
+          "predicted_steps": 2,
+          "winner_spikes": 1640782
+        },
+        "native_checkpoint_segment_count": 14857794,
+        "ordinal": 18,
+        "rate": {
+          "abi_call_steps_per_second": 274.5685437070191,
+          "instrumented_loop_steps_per_second": 273.66017458535765,
+          "replay_wall_ns": 545062869400
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 149162,
+            "max": 33,
+            "mean": 0.0005899625910084338,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 149162,
+            "max": 21052,
+            "mean": 10101.380103511618,
+            "median": 10307.0,
+            "min": 0,
+            "p95": 13728,
+            "p99": 15081,
+            "sum": 1506742059
+          },
+          "matching_segments": {
+            "count": 149162,
+            "max": 64,
+            "mean": 0.006107453641007763,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 911
+          },
+          "postings_visited": {
+            "count": 149162,
+            "max": 28800,
+            "mean": 13939.50152853944,
+            "median": 14168.0,
+            "min": 0,
+            "p95": 19734,
+            "p99": 21461,
+            "sum": 2079243927
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1640749,
+          "live_delta": 1640749,
+          "live_end": 14857794,
+          "live_start": 13217045,
+          "punished_total": 66
+        },
+        "short_name": "Psalms",
+        "token_count": 149162,
+        "token_sha256_le_i32": "f621ff02038a10ca72e7c08c1ae090917907d62c2ce89ebdb0e61101252a44fd",
+        "transition_steps": 149161
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 56449,
+        "corpus_index": 19,
+        "latency_ns": {
+          "count": 56449,
+          "max": 33701400,
+          "mean": 4047123.389254017,
+          "median": 3410600,
+          "min": 375100,
+          "p95": 9127000,
+          "p99": 10378300,
+          "sum": 228456068200
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 620939,
+          "predicted_steps": 3,
+          "winner_spikes": 620939
+        },
+        "native_checkpoint_segment_count": 15478689,
+        "ordinal": 19,
+        "rate": {
+          "abi_call_steps_per_second": 247.0890812608321,
+          "instrumented_loop_steps_per_second": 246.30383761458904,
+          "replay_wall_ns": 229184411200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 56449,
+            "max": 33,
+            "mean": 0.0015589292990132687,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 56449,
+            "max": 21052,
+            "mean": 9866.169250119578,
+            "median": 9999,
+            "min": 0,
+            "p95": 13684,
+            "p99": 15224,
+            "sum": 556935388
+          },
+          "matching_segments": {
+            "count": 56449,
+            "max": 64,
+            "mean": 0.009123279420361742,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 515
+          },
+          "postings_visited": {
+            "count": 56449,
+            "max": 28800,
+            "mean": 13621.619284664033,
+            "median": 13761,
+            "min": 0,
+            "p95": 19767,
+            "p99": 21406,
+            "sum": 768926787
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 620895,
+          "live_delta": 620895,
+          "live_end": 15478689,
+          "live_start": 14857794,
+          "punished_total": 55
+        },
+        "short_name": "Proverbs",
+        "token_count": 56449,
+        "token_sha256_le_i32": "c4c2d6e3bf24dbfe68c5ba2ed1dc14bf76a142f1fdb48a56ef862b13609a4ec6",
+        "transition_steps": 56448
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 18695,
+        "corpus_index": 20,
+        "latency_ns": {
+          "count": 18695,
+          "max": 18579500,
+          "mean": 4400937.218507622,
+          "median": 3843800,
+          "min": 318000,
+          "p95": 9646200,
+          "p99": 10963100,
+          "sum": 82275521300
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 205645,
+          "predicted_steps": 7,
+          "winner_spikes": 205645
+        },
+        "native_checkpoint_segment_count": 15684246,
+        "ordinal": 20,
+        "rate": {
+          "abi_call_steps_per_second": 227.22432753519362,
+          "instrumented_loop_steps_per_second": 226.49369996415547,
+          "replay_wall_ns": 82540927200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 18695,
+            "max": 33,
+            "mean": 0.00706071142016582,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 132
+          },
+          "candidate_segments": {
+            "count": 18695,
+            "max": 21087,
+            "mean": 10404.595988232148,
+            "median": 10648,
+            "min": 0,
+            "p95": 13882,
+            "p99": 15158,
+            "sum": 194513922
+          },
+          "matching_segments": {
+            "count": 18695,
+            "max": 64,
+            "mean": 0.01695640545600428,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 317
+          },
+          "postings_visited": {
+            "count": 18695,
+            "max": 28800,
+            "mean": 14515.266488365873,
+            "median": 14729,
+            "min": 0,
+            "p95": 20108,
+            "p99": 21373,
+            "sum": 271362907
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 205557,
+          "live_delta": 205557,
+          "live_end": 15684246,
+          "live_start": 15478689,
+          "punished_total": 55
+        },
+        "short_name": "Ecclesiastes",
+        "token_count": 18695,
+        "token_sha256_le_i32": "ca79117f88ee570fd3303546967d5ac0f288e3078863a3ab5239e9ac29ebd2ab",
+        "transition_steps": 18694
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 9608,
+        "corpus_index": 21,
+        "latency_ns": {
+          "count": 9608,
+          "max": 15137600,
+          "mean": 4146134.6378018316,
+          "median": 3505500.0,
+          "min": 365000,
+          "p95": 9254100,
+          "p99": 10369800,
+          "sum": 39836061600
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 105688,
+          "predicted_steps": 2,
+          "winner_spikes": 105688
+        },
+        "native_checkpoint_segment_count": 15789901,
+        "ordinal": 21,
+        "rate": {
+          "abi_call_steps_per_second": 241.18850142555257,
+          "instrumented_loop_steps_per_second": 240.4696795315042,
+          "replay_wall_ns": 39955141200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 9608,
+            "max": 33,
+            "mean": 0.006869275603663613,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 66
+          },
+          "candidate_segments": {
+            "count": 9608,
+            "max": 21052,
+            "mean": 10169.88332639467,
+            "median": 10417.0,
+            "min": 0,
+            "p95": 13904,
+            "p99": 14938,
+            "sum": 97712239
+          },
+          "matching_segments": {
+            "count": 9608,
+            "max": 64,
+            "mean": 0.013530391340549543,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 130
+          },
+          "postings_visited": {
+            "count": 9608,
+            "max": 28800,
+            "mean": 14092.277893422148,
+            "median": 14415.5,
+            "min": 0,
+            "p95": 20262,
+            "p99": 21681,
+            "sum": 135398606
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 105655,
+          "live_delta": 105655,
+          "live_end": 15789901,
+          "live_start": 15684246,
+          "punished_total": 44
+        },
+        "short_name": "Song of Solomon",
+        "token_count": 9608,
+        "token_sha256_le_i32": "6767eb69a29fb52018a93f68446923005f9adaf8e53ad53c0eed0541e6fa047e",
+        "transition_steps": 9607
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 119386,
+        "corpus_index": 22,
+        "latency_ns": {
+          "count": 119386,
+          "max": 27466700,
+          "mean": 4183940.1537868762,
+          "median": 3531250.0,
+          "min": 294400,
+          "p95": 9593300,
+          "p99": 10823000,
+          "sum": 499503879200
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1313246,
+          "predicted_steps": 3,
+          "winner_spikes": 1313246
+        },
+        "native_checkpoint_segment_count": 17103103,
+        "ordinal": 22,
+        "rate": {
+          "abi_call_steps_per_second": 239.0091548261994,
+          "instrumented_loop_steps_per_second": 238.28139923414608,
+          "replay_wall_ns": 501029456700
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 119386,
+            "max": 33,
+            "mean": 0.0007371048531653627,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 119386,
+            "max": 21065,
+            "mean": 10186.609476823078,
+            "median": 10439.0,
+            "min": 0,
+            "p95": 13882,
+            "p99": 15224,
+            "sum": 1216138559
+          },
+          "matching_segments": {
+            "count": 119386,
+            "max": 64,
+            "mean": 0.008459953428375187,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 1010
+          },
+          "postings_visited": {
+            "count": 119386,
+            "max": 28800,
+            "mean": 14046.908707888697,
+            "median": 14344.0,
+            "min": 0,
+            "p95": 19734,
+            "p99": 21494,
+            "sum": 1677004243
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1313202,
+          "live_delta": 1313202,
+          "live_end": 17103103,
+          "live_start": 15789901,
+          "punished_total": 55
+        },
+        "short_name": "Isaiah",
+        "token_count": 119386,
+        "token_sha256_le_i32": "1850fd43c8e655097b357ede1d006eb08259931ac5cbc5321d32b34baf83f6c8",
+        "transition_steps": 119385
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 134844,
+        "corpus_index": 23,
+        "latency_ns": {
+          "count": 134844,
+          "max": 28809000,
+          "mean": 4271333.710064964,
+          "median": 3569050.0,
+          "min": 341000,
+          "p95": 10190900,
+          "p99": 11571900,
+          "sum": 575963722800
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1483284,
+          "predicted_steps": 8,
+          "winner_spikes": 1483284
+        },
+        "native_checkpoint_segment_count": 18586288,
+        "ordinal": 23,
+        "rate": {
+          "abi_call_steps_per_second": 234.11891176837847,
+          "instrumented_loop_steps_per_second": 233.42954628115038,
+          "replay_wall_ns": 577664662200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 134844,
+            "max": 33,
+            "mean": 0.0015499391889887573,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 209
+          },
+          "candidate_segments": {
+            "count": 134844,
+            "max": 22044,
+            "mean": 10117.85119842188,
+            "median": 10373.0,
+            "min": 0,
+            "p95": 13882,
+            "p99": 15334,
+            "sum": 1364331527
+          },
+          "matching_segments": {
+            "count": 134844,
+            "max": 64,
+            "mean": 0.007408561003826644,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 999
+          },
+          "postings_visited": {
+            "count": 134844,
+            "max": 28800,
+            "mean": 13885.467147221974,
+            "median": 14267.0,
+            "min": 0,
+            "p95": 19602,
+            "p99": 21208,
+            "sum": 1872371932
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1483185,
+          "live_delta": 1483185,
+          "live_end": 18586288,
+          "live_start": 17103103,
+          "punished_total": 121
+        },
+        "short_name": "Jeremiah",
+        "token_count": 134844,
+        "token_sha256_le_i32": "3b1cbc972ba0f3664c65e31c95d430c28e9c688eecb64cfbb8ca7ade24fbc94d",
+        "transition_steps": 134843
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 12346,
+        "corpus_index": 24,
+        "latency_ns": {
+          "count": 12346,
+          "max": 17675400,
+          "mean": 4772155.459258059,
+          "median": 4005250.0,
+          "min": 387300,
+          "p95": 11059900,
+          "p99": 12373200,
+          "sum": 58917031300
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 135806,
+          "predicted_steps": 2,
+          "winner_spikes": 135806
+        },
+        "native_checkpoint_segment_count": 18722061,
+        "ordinal": 24,
+        "rate": {
+          "abi_call_steps_per_second": 209.54891527265394,
+          "instrumented_loop_steps_per_second": 208.9352024413217,
+          "replay_wall_ns": 59090090400
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 12346,
+            "max": 33,
+            "mean": 0.005345861007613802,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 66
+          },
+          "candidate_segments": {
+            "count": 12346,
+            "max": 21052,
+            "mean": 9467.891219828285,
+            "median": 9306.0,
+            "min": 0,
+            "p95": 13486,
+            "p99": 14938,
+            "sum": 116890585
+          },
+          "matching_segments": {
+            "count": 12346,
+            "max": 64,
+            "mean": 0.011420703061720395,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 141
+          },
+          "postings_visited": {
+            "count": 12346,
+            "max": 28800,
+            "mean": 12946.565365300503,
+            "median": 12672.0,
+            "min": 0,
+            "p95": 19602,
+            "p99": 21109,
+            "sum": 159838296
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 135773,
+          "live_delta": 135773,
+          "live_end": 18722061,
+          "live_start": 18586288,
+          "punished_total": 44
+        },
+        "short_name": "Lamentations",
+        "token_count": 12346,
+        "token_sha256_le_i32": "18bb458eeaf46372c5237a42b2393700d07e3b484ca7e04bc39512dfaa4074bc",
+        "transition_steps": 12345
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 122502,
+        "corpus_index": 25,
+        "latency_ns": {
+          "count": 122502,
+          "max": 31789700,
+          "mean": 4531962.984277808,
+          "median": 3810700.0,
+          "min": 358700,
+          "p95": 10753700,
+          "p99": 12304200,
+          "sum": 555174529500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1347522,
+          "predicted_steps": 19,
+          "winner_spikes": 1347522
+        },
+        "native_checkpoint_segment_count": 20069363,
+        "ordinal": 25,
+        "rate": {
+          "abi_call_steps_per_second": 220.65493550348475,
+          "instrumented_loop_steps_per_second": 220.04202139439752,
+          "replay_wall_ns": 556720935500
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 122502,
+            "max": 33,
+            "mean": 0.0026040391177286903,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 319
+          },
+          "candidate_segments": {
+            "count": 122502,
+            "max": 22198,
+            "mean": 10171.946074349806,
+            "median": 10384.0,
+            "min": 0,
+            "p95": 13750,
+            "p99": 15477,
+            "sum": 1246083738
+          },
+          "matching_segments": {
+            "count": 122502,
+            "max": 64,
+            "mean": 0.008693735612479797,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 1065
+          },
+          "postings_visited": {
+            "count": 122502,
+            "max": 28800,
+            "mean": 13956.440694845798,
+            "median": 14212.0,
+            "min": 0,
+            "p95": 19481,
+            "p99": 20911,
+            "sum": 1709691898
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1347302,
+          "live_delta": 1347302,
+          "live_end": 20069363,
+          "live_start": 18722061,
+          "punished_total": 110
+        },
+        "short_name": "Ezekiel",
+        "token_count": 122502,
+        "token_sha256_le_i32": "1c07a0e2aa5f74cd0d0ca5adda3f4249c452fe36a641be7dc56fa2da4b7c9c53",
+        "transition_steps": 122501
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 37753,
+        "corpus_index": 26,
+        "latency_ns": {
+          "count": 37753,
+          "max": 22676900,
+          "mean": 4783315.969591821,
+          "median": 4045100,
+          "min": 420500,
+          "p95": 11560600,
+          "p99": 12897300,
+          "sum": 180584527800
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 415283,
+          "predicted_steps": 2,
+          "winner_spikes": 415283
+        },
+        "native_checkpoint_segment_count": 20484613,
+        "ordinal": 26,
+        "rate": {
+          "abi_call_steps_per_second": 209.05999234780512,
+          "instrumented_loop_steps_per_second": 208.49376850491265,
+          "replay_wall_ns": 181074956200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 37753,
+            "max": 33,
+            "mean": 0.00233094058750298,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 37753,
+            "max": 21052,
+            "mean": 10088.646756549148,
+            "median": 10329,
+            "min": 0,
+            "p95": 13717,
+            "p99": 15158,
+            "sum": 380876681
+          },
+          "matching_segments": {
+            "count": 37753,
+            "max": 64,
+            "mean": 0.00810531613381718,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 306
+          },
+          "postings_visited": {
+            "count": 37753,
+            "max": 28800,
+            "mean": 13774.3126374063,
+            "median": 14113,
+            "min": 0,
+            "p95": 19294,
+            "p99": 20658,
+            "sum": 520021625
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 415250,
+          "live_delta": 415250,
+          "live_end": 20484613,
+          "live_start": 20069363,
+          "punished_total": 66
+        },
+        "short_name": "Daniel",
+        "token_count": 37753,
+        "token_sha256_le_i32": "af555f6bbf4eda62fa347dc87b1aa10ec330da9c241d8da13d9939fbc183165f",
+        "transition_steps": 37752
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 34286,
+        "corpus_index": 44,
+        "latency_ns": {
+          "count": 34286,
+          "max": 17002300,
+          "mean": 4809034.1392988395,
+          "median": 4111400.0,
+          "min": 386400,
+          "p95": 11306100,
+          "p99": 12868400,
+          "sum": 164882544500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 377146,
+          "predicted_steps": 2,
+          "winner_spikes": 377146
+        },
+        "native_checkpoint_segment_count": 20861726,
+        "ordinal": 27,
+        "rate": {
+          "abi_call_steps_per_second": 207.9419631955037,
+          "instrumented_loop_steps_per_second": 207.41592889179904,
+          "replay_wall_ns": 165300708500
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 34286,
+            "max": 33,
+            "mean": 0.0028874759377005193,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 99
+          },
+          "candidate_segments": {
+            "count": 34286,
+            "max": 21052,
+            "mean": 9957.046520445663,
+            "median": 10065.0,
+            "min": 0,
+            "p95": 13607,
+            "p99": 15422,
+            "sum": 341387297
+          },
+          "matching_segments": {
+            "count": 34286,
+            "max": 66,
+            "mean": 0.008924925625619787,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 306
+          },
+          "postings_visited": {
+            "count": 34286,
+            "max": 28800,
+            "mean": 13697.53397888351,
+            "median": 13871.0,
+            "min": 0,
+            "p95": 19547,
+            "p99": 21010,
+            "sum": 469633650
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 377113,
+          "live_delta": 377113,
+          "live_end": 20861726,
+          "live_start": 20484613,
+          "punished_total": 77
+        },
+        "short_name": "Romans",
+        "token_count": 34286,
+        "token_sha256_le_i32": "51655f41b4ec384d293eefa57da1e1d3a662be9ca8e0f0813b02120d7f32a6e2",
+        "transition_steps": 34285
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 33511,
+        "corpus_index": 45,
+        "latency_ns": {
+          "count": 33511,
+          "max": 26606300,
+          "mean": 5101622.383694906,
+          "median": 4275200,
+          "min": 405000,
+          "p95": 12073400,
+          "p99": 13760500,
+          "sum": 170960467700
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 368621,
+          "predicted_steps": 6,
+          "winner_spikes": 368621
+        },
+        "native_checkpoint_segment_count": 21230270,
+        "ordinal": 28,
+        "rate": {
+          "abi_call_steps_per_second": 196.01607582639994,
+          "instrumented_loop_steps_per_second": 195.49455470513897,
+          "replay_wall_ns": 171416539200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 33511,
+            "max": 33,
+            "mean": 0.003939005102802065,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 132
+          },
+          "candidate_segments": {
+            "count": 33511,
+            "max": 21052,
+            "mean": 10131.93414102832,
+            "median": 10439,
+            "min": 0,
+            "p95": 13618,
+            "p99": 15180,
+            "sum": 339531245
+          },
+          "matching_segments": {
+            "count": 33511,
+            "max": 77,
+            "mean": 0.013398585539076722,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 449
+          },
+          "postings_visited": {
+            "count": 33511,
+            "max": 28800,
+            "mean": 13977.237981558294,
+            "median": 14355,
+            "min": 0,
+            "p95": 19624,
+            "p99": 20988,
+            "sum": 468391222
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 368544,
+          "live_delta": 368544,
+          "live_end": 21230270,
+          "live_start": 20861726,
+          "punished_total": 66
+        },
+        "short_name": "1 Corinthians",
+        "token_count": 33511,
+        "token_sha256_le_i32": "8a83eb6e8fb9a2e52eca072e8b619fd972777ac8ffa0ad1982a9510d830ad133",
+        "transition_steps": 33510
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 21727,
+        "corpus_index": 46,
+        "latency_ns": {
+          "count": 21727,
+          "max": 21978000,
+          "mean": 5005311.810190086,
+          "median": 4215900,
+          "min": 505600,
+          "p95": 11851600,
+          "p99": 13419800,
+          "sum": 108750409700
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 238997,
+          "predicted_steps": 6,
+          "winner_spikes": 238997
+        },
+        "native_checkpoint_segment_count": 21469190,
+        "ordinal": 29,
+        "rate": {
+          "abi_call_steps_per_second": 199.78775307547187,
+          "instrumented_loop_steps_per_second": 199.28489019816217,
+          "replay_wall_ns": 109024823600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 21727,
+            "max": 33,
+            "mean": 0.006075390067657753,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 132
+          },
+          "candidate_segments": {
+            "count": 21727,
+            "max": 21052,
+            "mean": 10232.266534726377,
+            "median": 10527,
+            "min": 0,
+            "p95": 13541,
+            "p99": 15026,
+            "sum": 222316455
+          },
+          "matching_segments": {
+            "count": 21727,
+            "max": 77,
+            "mean": 0.015602706310121048,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 339
+          },
+          "postings_visited": {
+            "count": 21727,
+            "max": 28800,
+            "mean": 14153.882910664151,
+            "median": 14674,
+            "min": 0,
+            "p95": 18799,
+            "p99": 20031,
+            "sum": 307521414
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 238920,
+          "live_delta": 238920,
+          "live_end": 21469190,
+          "live_start": 21230270,
+          "punished_total": 66
+        },
+        "short_name": "2 Corinthians",
+        "token_count": 21727,
+        "token_sha256_le_i32": "f26e8b22a14cb70c7a12b6d97c9103db951ccc62aaafec61925112ec9b81bb4c",
+        "transition_steps": 21726
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 11320,
+        "corpus_index": 47,
+        "latency_ns": {
+          "count": 11320,
+          "max": 17963900,
+          "mean": 5163287.005300353,
+          "median": 4342850.0,
+          "min": 575700,
+          "p95": 12089500,
+          "p99": 13583800,
+          "sum": 58448408900
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 124520,
+          "predicted_steps": 14,
+          "winner_spikes": 124520
+        },
+        "native_checkpoint_segment_count": 21593545,
+        "ordinal": 30,
+        "rate": {
+          "abi_call_steps_per_second": 193.6750753877237,
+          "instrumented_loop_steps_per_second": 193.17904716708082,
+          "replay_wall_ns": 58598487600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 11320,
+            "max": 33,
+            "mean": 0.019434628975265017,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 220
+          },
+          "candidate_segments": {
+            "count": 11320,
+            "max": 21052,
+            "mean": 10291.381183745583,
+            "median": 10307.0,
+            "min": 0,
+            "p95": 13761,
+            "p99": 15345,
+            "sum": 116498435
+          },
+          "matching_segments": {
+            "count": 11320,
+            "max": 77,
+            "mean": 0.038692579505300355,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 438
+          },
+          "postings_visited": {
+            "count": 11320,
+            "max": 28800,
+            "mean": 14197.684628975265,
+            "median": 14069.0,
+            "min": 0,
+            "p95": 19932,
+            "p99": 21230,
+            "sum": 160717790
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 124355,
+          "live_delta": 124355,
+          "live_end": 21593545,
+          "live_start": 21469190,
+          "punished_total": 66
+        },
+        "short_name": "Galatians",
+        "token_count": 11320,
+        "token_sha256_le_i32": "fc1fe746494c5fc6c504faf24d333e166c89c93e3a46e2270a60fa08532603b8",
+        "transition_steps": 11319
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 10771,
+        "corpus_index": 48,
+        "latency_ns": {
+          "count": 10771,
+          "max": 19044800,
+          "mean": 4962379.519079008,
+          "median": 4239200,
+          "min": 366400,
+          "p95": 11778500,
+          "p99": 13422900,
+          "sum": 53449789800
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 118481,
+          "predicted_steps": 34,
+          "winner_spikes": 118481
+        },
+        "native_checkpoint_segment_count": 21711641,
+        "ordinal": 31,
+        "rate": {
+          "abi_call_steps_per_second": 201.51622747822293,
+          "instrumented_loop_steps_per_second": 201.0091274043923,
+          "replay_wall_ns": 53584631400
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 10771,
+            "max": 33,
+            "mean": 0.04085043171478971,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 440
+          },
+          "candidate_segments": {
+            "count": 10771,
+            "max": 21052,
+            "mean": 10394.76900937703,
+            "median": 10769,
+            "min": 0,
+            "p95": 13970,
+            "p99": 15664,
+            "sum": 111962057
+          },
+          "matching_segments": {
+            "count": 10771,
+            "max": 77,
+            "mean": 0.05496239903444434,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 592
+          },
+          "postings_visited": {
+            "count": 10771,
+            "max": 28800,
+            "mean": 14284.615913099991,
+            "median": 14597,
+            "min": 0,
+            "p95": 20097,
+            "p99": 21626,
+            "sum": 153859598
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 118096,
+          "live_delta": 118096,
+          "live_end": 21711641,
+          "live_start": 21593545,
+          "punished_total": 66
+        },
+        "short_name": "Ephesians",
+        "token_count": 10771,
+        "token_sha256_le_i32": "e6d9126a92ff4d0be0daa4837c16f79b4a9544e7fafbc32ca73a00ffd4e18c84",
+        "transition_steps": 10770
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 7833,
+        "corpus_index": 49,
+        "latency_ns": {
+          "count": 7833,
+          "max": 16706100,
+          "mean": 4941766.90923018,
+          "median": 4173700,
+          "min": 434500,
+          "p95": 11820800,
+          "p99": 13460100,
+          "sum": 38708860200
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 86163,
+          "predicted_steps": 6,
+          "winner_spikes": 86163
+        },
+        "native_checkpoint_segment_count": 21797727,
+        "ordinal": 32,
+        "rate": {
+          "abi_call_steps_per_second": 202.35677205499323,
+          "instrumented_loop_steps_per_second": 201.8621019961242,
+          "replay_wall_ns": 38803717600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 7833,
+            "max": 22,
+            "mean": 0.012638835695135964,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 99
+          },
+          "candidate_segments": {
+            "count": 7833,
+            "max": 21052,
+            "mean": 9919.505681092813,
+            "median": 9966,
+            "min": 0,
+            "p95": 14025,
+            "p99": 15114,
+            "sum": 77699488
+          },
+          "matching_segments": {
+            "count": 7833,
+            "max": 77,
+            "mean": 0.03344823183965275,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 262
+          },
+          "postings_visited": {
+            "count": 7833,
+            "max": 28800,
+            "mean": 13457.64292097536,
+            "median": 13761,
+            "min": 0,
+            "p95": 19173,
+            "p99": 20515,
+            "sum": 105413717
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 86086,
+          "live_delta": 86086,
+          "live_end": 21797727,
+          "live_start": 21711641,
+          "punished_total": 33
+        },
+        "short_name": "Philippians",
+        "token_count": 7833,
+        "token_sha256_le_i32": "be371f6cafb6b0ea17ff70fd2f8b3bad0180cac8304faf8ff4619da33ed90472",
+        "transition_steps": 7832
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 7085,
+        "corpus_index": 50,
+        "latency_ns": {
+          "count": 7085,
+          "max": 16422300,
+          "mean": 5107496.824276641,
+          "median": 4361800,
+          "min": 535400,
+          "p95": 12173500,
+          "p99": 13687400,
+          "sum": 36186615000
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 77935,
+          "predicted_steps": 34,
+          "winner_spikes": 77935
+        },
+        "native_checkpoint_segment_count": 21875277,
+        "ordinal": 33,
+        "rate": {
+          "abi_call_steps_per_second": 195.7906258985539,
+          "instrumented_loop_steps_per_second": 195.27992409677447,
+          "replay_wall_ns": 36281251300
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 7085,
+            "max": 22,
+            "mean": 0.062103034580098804,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 440
+          },
+          "candidate_segments": {
+            "count": 7085,
+            "max": 21052,
+            "mean": 10079.274100211715,
+            "median": 10219,
+            "min": 0,
+            "p95": 13464,
+            "p99": 15312,
+            "sum": 71411657
+          },
+          "matching_segments": {
+            "count": 7085,
+            "max": 77,
+            "mean": 0.08200423429781228,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 581
+          },
+          "postings_visited": {
+            "count": 7085,
+            "max": 28800,
+            "mean": 13879.10007057163,
+            "median": 14300,
+            "min": 0,
+            "p95": 18480,
+            "p99": 21065,
+            "sum": 98333424
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 77550,
+          "live_delta": 77550,
+          "live_end": 21875277,
+          "live_start": 21797727,
+          "punished_total": 66
+        },
+        "short_name": "Colossians",
+        "token_count": 7085,
+        "token_sha256_le_i32": "dfa320a447f85560a2fc86e2ead5c160ba4990c22a97a5a97b326bca874780d9",
+        "transition_steps": 7084
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 6493,
+        "corpus_index": 51,
+        "latency_ns": {
+          "count": 6493,
+          "max": 15915400,
+          "mean": 5117702.14076698,
+          "median": 4389400,
+          "min": 615000,
+          "p95": 11978900,
+          "p99": 13614600,
+          "sum": 33229240000
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 71423,
+          "predicted_steps": 6,
+          "winner_spikes": 71423
+        },
+        "native_checkpoint_segment_count": 21946623,
+        "ordinal": 34,
+        "rate": {
+          "abi_call_steps_per_second": 195.40019573122947,
+          "instrumented_loop_steps_per_second": 194.92448990613116,
+          "replay_wall_ns": 33310334700
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 6493,
+            "max": 22,
+            "mean": 0.016941321423071,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 110
+          },
+          "candidate_segments": {
+            "count": 6493,
+            "max": 21052,
+            "mean": 10414.549976898197,
+            "median": 10912,
+            "min": 0,
+            "p95": 13684,
+            "p99": 15257,
+            "sum": 67621673
+          },
+          "matching_segments": {
+            "count": 6493,
+            "max": 77,
+            "mean": 0.04035114738949638,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 262
+          },
+          "postings_visited": {
+            "count": 6493,
+            "max": 28800,
+            "mean": 14379.766825812414,
+            "median": 15136,
+            "min": 0,
+            "p95": 19580,
+            "p99": 20394,
+            "sum": 93367826
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 71346,
+          "live_delta": 71346,
+          "live_end": 21946623,
+          "live_start": 21875277,
+          "punished_total": 44
+        },
+        "short_name": "1 Thessalonians",
+        "token_count": 6493,
+        "token_sha256_le_i32": "0aabf7c6924d32e041b9c1c83125b5a98f0ebb1cb0aad81d2ec76680c736c526",
+        "transition_steps": 6492
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 3505,
+        "corpus_index": 52,
+        "latency_ns": {
+          "count": 3505,
+          "max": 20746000,
+          "mean": 4988125.335235378,
+          "median": 4160200,
+          "min": 529600,
+          "p95": 11996000,
+          "p99": 13677200,
+          "sum": 17483379300
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 38555,
+          "predicted_steps": 44,
+          "winner_spikes": 38555
+        },
+        "native_checkpoint_segment_count": 21984683,
+        "ordinal": 35,
+        "rate": {
+          "abi_call_steps_per_second": 200.4761173373388,
+          "instrumented_loop_steps_per_second": 199.96741985883463,
+          "replay_wall_ns": 17527855300
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 3505,
+            "max": 33,
+            "mean": 0.15378031383737517,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 11,
+            "sum": 539
+          },
+          "candidate_segments": {
+            "count": 3505,
+            "max": 21052,
+            "mean": 10032.059058487874,
+            "median": 10153,
+            "min": 0,
+            "p95": 13937,
+            "p99": 15334,
+            "sum": 35162367
+          },
+          "matching_segments": {
+            "count": 3505,
+            "max": 77,
+            "mean": 0.1971469329529244,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 11,
+            "sum": 691
+          },
+          "postings_visited": {
+            "count": 3505,
+            "max": 28800,
+            "mean": 13667.59942938659,
+            "median": 13530,
+            "min": 0,
+            "p95": 19470,
+            "p99": 20526,
+            "sum": 47904936
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 38060,
+          "live_delta": 38060,
+          "live_end": 21984683,
+          "live_start": 21946623,
+          "punished_total": 55
+        },
+        "short_name": "2 Thessalonians",
+        "token_count": 3505,
+        "token_sha256_le_i32": "001b3e8fa7ade4038a28636d35ea3f912cf5830375f67b0f9780987937f1a524",
+        "transition_steps": 3504
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 8828,
+        "corpus_index": 53,
+        "latency_ns": {
+          "count": 8828,
+          "max": 54231500,
+          "mean": 5229317.195287721,
+          "median": 4391250.0,
+          "min": 439000,
+          "p95": 12409100,
+          "p99": 14673000,
+          "sum": 46164412200
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 97108,
+          "predicted_steps": 30,
+          "winner_spikes": 97108
+        },
+        "native_checkpoint_segment_count": 22081450,
+        "ordinal": 36,
+        "rate": {
+          "abi_call_steps_per_second": 191.22955496008677,
+          "instrumented_loop_steps_per_second": 190.7289451145874,
+          "replay_wall_ns": 46285580800
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 8828,
+            "max": 22,
+            "mean": 0.04361123697326688,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 385
+          },
+          "candidate_segments": {
+            "count": 8828,
+            "max": 21052,
+            "mean": 9884.586316266425,
+            "median": 9812.0,
+            "min": 0,
+            "p95": 14245,
+            "p99": 15763,
+            "sum": 87261128
+          },
+          "matching_segments": {
+            "count": 8828,
+            "max": 77,
+            "mean": 0.06955142727684639,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 614
+          },
+          "postings_visited": {
+            "count": 8828,
+            "max": 28800,
+            "mean": 13647.239691889443,
+            "median": 13651.0,
+            "min": 0,
+            "p95": 20966,
+            "p99": 22594,
+            "sum": 120477832
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 96767,
+          "live_delta": 96767,
+          "live_end": 22081450,
+          "live_start": 21984683,
+          "punished_total": 55
+        },
+        "short_name": "1 Timothy",
+        "token_count": 8828,
+        "token_sha256_le_i32": "1320b3654528b283f34cd60000d018b7c5af0a82db8e3d6c56cf6f34a0e68b7f",
+        "transition_steps": 8827
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 6241,
+        "corpus_index": 54,
+        "latency_ns": {
+          "count": 6241,
+          "max": 18491600,
+          "mean": 5109517.144688351,
+          "median": 4363700,
+          "min": 438900,
+          "p95": 12198500,
+          "p99": 13717700,
+          "sum": 31888496500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 68651,
+          "predicted_steps": 34,
+          "winner_spikes": 68651
+        },
+        "native_checkpoint_segment_count": 22149716,
+        "ordinal": 37,
+        "rate": {
+          "abi_call_steps_per_second": 195.71320962090513,
+          "instrumented_loop_steps_per_second": 195.21748015541274,
+          "replay_wall_ns": 31969473200
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 6241,
+            "max": 33,
+            "mean": 0.07402659830155424,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 462
+          },
+          "candidate_segments": {
+            "count": 6241,
+            "max": 21052,
+            "mean": 10245.813170966192,
+            "median": 10604,
+            "min": 0,
+            "p95": 14102,
+            "p99": 16181,
+            "sum": 63944120
+          },
+          "matching_segments": {
+            "count": 6241,
+            "max": 77,
+            "mean": 0.10366928376862682,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 647
+          },
+          "postings_visited": {
+            "count": 6241,
+            "max": 28800,
+            "mean": 14254.1038295145,
+            "median": 14586,
+            "min": 0,
+            "p95": 20482,
+            "p99": 21582,
+            "sum": 88959862
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 68266,
+          "live_delta": 68266,
+          "live_end": 22149716,
+          "live_start": 22081450,
+          "punished_total": 88
+        },
+        "short_name": "2 Timothy",
+        "token_count": 6241,
+        "token_sha256_le_i32": "c73fb5bd14e4bb870db98242474a8fdc4e06affb4aa80d3cd1e75d904fa812a8",
+        "transition_steps": 6240
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 3619,
+        "corpus_index": 55,
+        "latency_ns": {
+          "count": 3619,
+          "max": 17258000,
+          "mean": 5140722.741088699,
+          "median": 4383300,
+          "min": 581000,
+          "p95": 12160400,
+          "p99": 13905200,
+          "sum": 18604275600
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 39809,
+          "predicted_steps": 6,
+          "winner_spikes": 39809
+        },
+        "native_checkpoint_segment_count": 22189448,
+        "ordinal": 38,
+        "rate": {
+          "abi_call_steps_per_second": 194.5251767824811,
+          "instrumented_loop_steps_per_second": 194.0418035318643,
+          "replay_wall_ns": 18650620300
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 3619,
+            "max": 22,
+            "mean": 0.030395136778115502,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 110
+          },
+          "candidate_segments": {
+            "count": 3619,
+            "max": 21052,
+            "mean": 10253.212213318597,
+            "median": 10703,
+            "min": 0,
+            "p95": 14047,
+            "p99": 15928,
+            "sum": 37106375
+          },
+          "matching_segments": {
+            "count": 3619,
+            "max": 77,
+            "mean": 0.06935617573915447,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 251
+          },
+          "postings_visited": {
+            "count": 3619,
+            "max": 28800,
+            "mean": 14109.410886985355,
+            "median": 14531,
+            "min": 0,
+            "p95": 20119,
+            "p99": 21703,
+            "sum": 51061958
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 39732,
+          "live_delta": 39732,
+          "live_end": 22189448,
+          "live_start": 22149716,
+          "punished_total": 44
+        },
+        "short_name": "Titus",
+        "token_count": 3619,
+        "token_sha256_le_i32": "257afb1d1e566d33b0b75a9371a02a560bad810fa2436d8a7d27119c4ae2acaf",
+        "transition_steps": 3618
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 1641,
+        "corpus_index": 56,
+        "latency_ns": {
+          "count": 1641,
+          "max": 16087700,
+          "mean": 5109691.042047532,
+          "median": 4241000,
+          "min": 601000,
+          "p95": 12231100,
+          "p99": 13736900,
+          "sum": 8385003000
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 18051,
+          "predicted_steps": 8,
+          "winner_spikes": 18051
+        },
+        "native_checkpoint_segment_count": 22207400,
+        "ordinal": 39,
+        "rate": {
+          "abi_call_steps_per_second": 195.70654894220073,
+          "instrumented_loop_steps_per_second": 195.25340286464464,
+          "replay_wall_ns": 8404463000
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 1641,
+            "max": 33,
+            "mean": 0.08714198659354053,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 143
+          },
+          "candidate_segments": {
+            "count": 1641,
+            "max": 21052,
+            "mean": 10244.786106032907,
+            "median": 10219,
+            "min": 0,
+            "p95": 14201,
+            "p99": 16148,
+            "sum": 16811694
+          },
+          "matching_segments": {
+            "count": 1641,
+            "max": 77,
+            "mean": 0.17306520414381474,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 284
+          },
+          "postings_visited": {
+            "count": 1641,
+            "max": 28800,
+            "mean": 13981.597806215723,
+            "median": 13893,
+            "min": 0,
+            "p95": 19734,
+            "p99": 22165,
+            "sum": 22943802
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 17952,
+          "live_delta": 17952,
+          "live_end": 22207400,
+          "live_start": 22189448,
+          "punished_total": 55
+        },
+        "short_name": "Philemon",
+        "token_count": 1641,
+        "token_sha256_le_i32": "f3877f3c6488ab6b9f17b0fc0e7644f30c021baf077dbd3c3f61f2d99e5d721c",
+        "transition_steps": 1640
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 24996,
+        "corpus_index": 57,
+        "latency_ns": {
+          "count": 24996,
+          "max": 27526600,
+          "mean": 5538553.764602336,
+          "median": 4636000.0,
+          "min": 415000,
+          "p95": 12996900,
+          "p99": 14719700,
+          "sum": 138441689900
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 274956,
+          "predicted_steps": 1,
+          "winner_spikes": 274956
+        },
+        "native_checkpoint_segment_count": 22482334,
+        "ordinal": 40,
+        "rate": {
+          "abi_call_steps_per_second": 180.55254900496558,
+          "instrumented_loop_steps_per_second": 180.08347915350987,
+          "replay_wall_ns": 138802293900
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 24996,
+            "max": 22,
+            "mean": 0.0013202112337974076,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 33
+          },
+          "candidate_segments": {
+            "count": 24996,
+            "max": 21052,
+            "mean": 10110.960433669386,
+            "median": 10263.0,
+            "min": 0,
+            "p95": 13827,
+            "p99": 15345,
+            "sum": 252733567
+          },
+          "matching_segments": {
+            "count": 24996,
+            "max": 64,
+            "mean": 0.007401184189470315,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 185
+          },
+          "postings_visited": {
+            "count": 24996,
+            "max": 28800,
+            "mean": 13871.554128660586,
+            "median": 14091.0,
+            "min": 0,
+            "p95": 19470,
+            "p99": 21450,
+            "sum": 346733367
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 274934,
+          "live_delta": 274934,
+          "live_end": 22482334,
+          "live_start": 22207400,
+          "punished_total": 22
+        },
+        "short_name": "Hebrews",
+        "token_count": 24996,
+        "token_sha256_le_i32": "dbaa3198217a0349b282e700a0209b4c4bf100eef1f9d946dcf5999c26a5d9e3",
+        "transition_steps": 24995
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 8080,
+        "corpus_index": 58,
+        "latency_ns": {
+          "count": 8080,
+          "max": 20464300,
+          "mean": 5358453.514851485,
+          "median": 4512500.0,
+          "min": 465200,
+          "p95": 12576400,
+          "p99": 14225600,
+          "sum": 43296304400
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 88880,
+          "predicted_steps": 2,
+          "winner_spikes": 88880
+        },
+        "native_checkpoint_segment_count": 22571181,
+        "ordinal": 41,
+        "rate": {
+          "abi_call_steps_per_second": 186.62100869745365,
+          "instrumented_loop_steps_per_second": 186.16717693599912,
+          "replay_wall_ns": 43401850600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 8080,
+            "max": 33,
+            "mean": 0.008168316831683169,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 66
+          },
+          "candidate_segments": {
+            "count": 8080,
+            "max": 21063,
+            "mean": 9652.51745049505,
+            "median": 9779.0,
+            "min": 0,
+            "p95": 14080,
+            "p99": 15532,
+            "sum": 77992341
+          },
+          "matching_segments": {
+            "count": 8080,
+            "max": 77,
+            "mean": 0.03378712871287129,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 273
+          },
+          "postings_visited": {
+            "count": 8080,
+            "max": 28910,
+            "mean": 13268.754331683169,
+            "median": 13574.0,
+            "min": 0,
+            "p95": 18678,
+            "p99": 21857,
+            "sum": 107211535
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 88847,
+          "live_delta": 88847,
+          "live_end": 22571181,
+          "live_start": 22482334,
+          "punished_total": 44
+        },
+        "short_name": "James",
+        "token_count": 8080,
+        "token_sha256_le_i32": "eed8a834dddb6b3d161bd39ff2795366c64a274456abda8a65d55bcaabc08828",
+        "transition_steps": 8079
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 9223,
+        "corpus_index": 59,
+        "latency_ns": {
+          "count": 9223,
+          "max": 22734900,
+          "mean": 5365675.962268243,
+          "median": 4581100,
+          "min": 519400,
+          "p95": 12642700,
+          "p99": 14346500,
+          "sum": 49487629400
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 101453,
+          "predicted_steps": 3,
+          "winner_spikes": 101453
+        },
+        "native_checkpoint_segment_count": 22672590,
+        "ordinal": 42,
+        "rate": {
+          "abi_call_steps_per_second": 186.36980820907942,
+          "instrumented_loop_steps_per_second": 185.91617842806417,
+          "replay_wall_ns": 49608377700
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 9223,
+            "max": 33,
+            "mean": 0.00954136398135097,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 9223,
+            "max": 21063,
+            "mean": 10241.361162311612,
+            "median": 10472,
+            "min": 0,
+            "p95": 13684,
+            "p99": 15169,
+            "sum": 94456074
+          },
+          "matching_segments": {
+            "count": 9223,
+            "max": 88,
+            "mean": 0.0355632657486718,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 328
+          },
+          "postings_visited": {
+            "count": 9223,
+            "max": 28910,
+            "mean": 14194.819798330262,
+            "median": 14630,
+            "min": 0,
+            "p95": 18898,
+            "p99": 20416,
+            "sum": 130918823
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 101409,
+          "live_delta": 101409,
+          "live_end": 22672590,
+          "live_start": 22571181,
+          "punished_total": 55
+        },
+        "short_name": "1 Peter",
+        "token_count": 9223,
+        "token_sha256_le_i32": "14df48c3151b7d5820f6b62810bc9643f72e3ce2170f39e027dc1f2ac8845639",
+        "transition_steps": 9222
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 5734,
+        "corpus_index": 60,
+        "latency_ns": {
+          "count": 5734,
+          "max": 15374500,
+          "mean": 5310972.46250436,
+          "median": 4539100.0,
+          "min": 563800,
+          "p95": 12698200,
+          "p99": 14077700,
+          "sum": 30453116100
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 63074,
+          "predicted_steps": 2,
+          "winner_spikes": 63074
+        },
+        "native_checkpoint_segment_count": 22735631,
+        "ordinal": 43,
+        "rate": {
+          "abi_call_steps_per_second": 188.28943419685055,
+          "instrumented_loop_steps_per_second": 187.8246296828113,
+          "replay_wall_ns": 30528477600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 5734,
+            "max": 33,
+            "mean": 0.013428671084757586,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 77
+          },
+          "candidate_segments": {
+            "count": 5734,
+            "max": 21063,
+            "mean": 10680.053889082665,
+            "median": 10901.0,
+            "min": 0,
+            "p95": 13783,
+            "p99": 15279,
+            "sum": 61239429
+          },
+          "matching_segments": {
+            "count": 5734,
+            "max": 88,
+            "mean": 0.04185559818625741,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 240
+          },
+          "postings_visited": {
+            "count": 5734,
+            "max": 28910,
+            "mean": 14751.491454482037,
+            "median": 15378.0,
+            "min": 0,
+            "p95": 19283,
+            "p99": 20889,
+            "sum": 84585052
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 63041,
+          "live_delta": 63041,
+          "live_end": 22735631,
+          "live_start": 22672590,
+          "punished_total": 55
+        },
+        "short_name": "2 Peter",
+        "token_count": 5734,
+        "token_sha256_le_i32": "0abef47ba4665f853a4552d632098dac6b237af5e846c7d9e42decbce9d76802",
+        "transition_steps": 5733
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 8094,
+        "corpus_index": 61,
+        "latency_ns": {
+          "count": 8094,
+          "max": 41284000,
+          "mean": 5463483.012107735,
+          "median": 4583650.0,
+          "min": 541500,
+          "p95": 12977400,
+          "p99": 14647000,
+          "sum": 44221431500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 89034,
+          "predicted_steps": 1,
+          "winner_spikes": 89034
+        },
+        "native_checkpoint_segment_count": 22824643,
+        "ordinal": 44,
+        "rate": {
+          "abi_call_steps_per_second": 183.0334235109508,
+          "instrumented_loop_steps_per_second": 182.59100438639584,
+          "replay_wall_ns": 44328580300
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 8094,
+            "max": 22,
+            "mean": 0.00407709414381023,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 33
+          },
+          "candidate_segments": {
+            "count": 8094,
+            "max": 21063,
+            "mean": 10718.311959476156,
+            "median": 11176.0,
+            "min": 0,
+            "p95": 14179,
+            "p99": 15224,
+            "sum": 86754017
+          },
+          "matching_segments": {
+            "count": 8094,
+            "max": 75,
+            "mean": 0.017420311341734617,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 141
+          },
+          "postings_visited": {
+            "count": 8094,
+            "max": 28910,
+            "mean": 14921.371139115394,
+            "median": 15686.0,
+            "min": 0,
+            "p95": 19822,
+            "p99": 21043,
+            "sum": 120773578
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 89012,
+          "live_delta": 89012,
+          "live_end": 22824643,
+          "live_start": 22735631,
+          "punished_total": 22
+        },
+        "short_name": "1 John",
+        "token_count": 8094,
+        "token_sha256_le_i32": "5799489cee9da3ad88a0b5c50170a8f06161c2f739de1b81ea832a525b0a0419",
+        "transition_steps": 8093
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 1008,
+        "corpus_index": 62,
+        "latency_ns": {
+          "count": 1008,
+          "max": 15671000,
+          "mean": 5255475.396825396,
+          "median": 4233250.0,
+          "min": 588300,
+          "p95": 12730800,
+          "p99": 14232000,
+          "sum": 5297519200
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 11088,
+          "predicted_steps": 3,
+          "winner_spikes": 11088
+        },
+        "native_checkpoint_segment_count": 22835687,
+        "ordinal": 45,
+        "rate": {
+          "abi_call_steps_per_second": 190.2777435898675,
+          "instrumented_loop_steps_per_second": 189.8233337960277,
+          "replay_wall_ns": 5310200700
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 1008,
+            "max": 33,
+            "mean": 0.0873015873015873,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 88
+          },
+          "candidate_segments": {
+            "count": 1008,
+            "max": 22077,
+            "mean": 10439.292658730159,
+            "median": 11038.5,
+            "min": 0,
+            "p95": 14267,
+            "p99": 15290,
+            "sum": 10522807
+          },
+          "matching_segments": {
+            "count": 1008,
+            "max": 86,
+            "mean": 0.17261904761904762,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 174
+          },
+          "postings_visited": {
+            "count": 1008,
+            "max": 29020,
+            "mean": 14330.852182539682,
+            "median": 15433.0,
+            "min": 0,
+            "p95": 20163,
+            "p99": 21505,
+            "sum": 14445499
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 11044,
+          "live_delta": 11044,
+          "live_end": 22835687,
+          "live_start": 22824643,
+          "punished_total": 55
+        },
+        "short_name": "2 John",
+        "token_count": 1008,
+        "token_sha256_le_i32": "594d163c9bb0049ef64a40535dd60d3cff85b1e1b30dd671fff4ccb5f8a55736",
+        "transition_steps": 1007
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 1108,
+        "corpus_index": 63,
+        "latency_ns": {
+          "count": 1108,
+          "max": 16197700,
+          "mean": 5936799.458483755,
+          "median": 4981950.0,
+          "min": 653500,
+          "p95": 13752100,
+          "p99": 14793500,
+          "sum": 6577973800
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 12188,
+          "predicted_steps": 10,
+          "winner_spikes": 12188
+        },
+        "native_checkpoint_segment_count": 22847754,
+        "ordinal": 46,
+        "rate": {
+          "abi_call_steps_per_second": 168.440926292531,
+          "instrumented_loop_steps_per_second": 167.99774810238736,
+          "replay_wall_ns": 6595326500
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 1108,
+            "max": 33,
+            "mean": 0.14891696750902528,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 165
+          },
+          "candidate_segments": {
+            "count": 1108,
+            "max": 22077,
+            "mean": 10547.677797833934,
+            "median": 11297.0,
+            "min": 0,
+            "p95": 13750,
+            "p99": 15323,
+            "sum": 11686827
+          },
+          "matching_segments": {
+            "count": 1108,
+            "max": 86,
+            "mean": 0.22653429602888087,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 251
+          },
+          "postings_visited": {
+            "count": 1108,
+            "max": 29020,
+            "mean": 14545.416967509025,
+            "median": 16093.0,
+            "min": 0,
+            "p95": 20185,
+            "p99": 21131,
+            "sum": 16116322
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 12067,
+          "live_delta": 12067,
+          "live_end": 22847754,
+          "live_start": 22835687,
+          "punished_total": 55
+        },
+        "short_name": "3 John",
+        "token_count": 1108,
+        "token_sha256_le_i32": "6097258f13921efb777908e3b2324629c8aa9f8ed0894d65e4fe7c2412ee7bf6",
+        "transition_steps": 1107
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 2354,
+        "corpus_index": 64,
+        "latency_ns": {
+          "count": 2354,
+          "max": 25422500,
+          "mean": 5687312.871707732,
+          "median": 4874000.0,
+          "min": 442100,
+          "p95": 13080000,
+          "p99": 14499000,
+          "sum": 13387934500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 25894,
+          "predicted_steps": 3,
+          "winner_spikes": 25894
+        },
+        "native_checkpoint_segment_count": 22873604,
+        "ordinal": 47,
+        "rate": {
+          "abi_call_steps_per_second": 175.829960924891,
+          "instrumented_loop_steps_per_second": 175.3527275237768,
+          "replay_wall_ns": 13424370600
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 2354,
+            "max": 44,
+            "mean": 0.04205607476635514,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 99
+          },
+          "candidate_segments": {
+            "count": 2354,
+            "max": 21074,
+            "mean": 10599.700084961767,
+            "median": 11225.5,
+            "min": 0,
+            "p95": 14322,
+            "p99": 15279,
+            "sum": 24951694
+          },
+          "matching_segments": {
+            "count": 2354,
+            "max": 99,
+            "mean": 0.09260832625318606,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 218
+          },
+          "postings_visited": {
+            "count": 2354,
+            "max": 29020,
+            "mean": 14572.860662701783,
+            "median": 15114.0,
+            "min": 0,
+            "p95": 21351,
+            "p99": 22550,
+            "sum": 34304514
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 25850,
+          "live_delta": 25850,
+          "live_end": 22873604,
+          "live_start": 22847754,
+          "punished_total": 66
+        },
+        "short_name": "Jude",
+        "token_count": 2354,
+        "token_sha256_le_i32": "d60e2e3c7ae00f4950f8ecfe1be0663617470158d5153fb39cb2079175fb3204",
+        "transition_steps": 2353
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 37538,
+        "corpus_index": 65,
+        "latency_ns": {
+          "count": 37538,
+          "max": 25996400,
+          "mean": 5552476.863445043,
+          "median": 4709700.0,
+          "min": 415300,
+          "p95": 12702500,
+          "p99": 14683200,
+          "sum": 208428876500
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 412918,
+          "predicted_steps": 3,
+          "winner_spikes": 412918
+        },
+        "native_checkpoint_segment_count": 23286478,
+        "ordinal": 48,
+        "rate": {
+          "abi_call_steps_per_second": 180.09980493273926,
+          "instrumented_loop_steps_per_second": 179.64316064081117,
+          "replay_wall_ns": 208958692700
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 37538,
+            "max": 22,
+            "mean": 0.0017582183387500666,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 66
+          },
+          "candidate_segments": {
+            "count": 37538,
+            "max": 22077,
+            "mean": 9971.506100484841,
+            "median": 10043.0,
+            "min": 0,
+            "p95": 13805,
+            "p99": 15378,
+            "sum": 374310396
+          },
+          "matching_segments": {
+            "count": 37538,
+            "max": 86,
+            "mean": 0.013719430976610368,
+            "median": 0.0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 515
+          },
+          "postings_visited": {
+            "count": 37538,
+            "max": 29020,
+            "mean": 13601.328040918535,
+            "median": 13827.0,
+            "min": 0,
+            "p95": 19195,
+            "p99": 20713,
+            "sum": 510566652
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 412874,
+          "live_delta": 412874,
+          "live_end": 23286478,
+          "live_start": 22873604,
+          "punished_total": 33
+        },
+        "short_name": "Revelation",
+        "token_count": 37538,
+        "token_sha256_le_i32": "f5e08db69af4e4edbae0008eea612127de45318c435281dc98a1a298c2ffe115",
+        "transition_steps": 37537
+      }
+    ],
+    "completed_books": 49,
+    "completed_token_steps": 2117412,
+    "gc_during_replay": "disabled",
+    "latency_ns": {
+      "count": 2117412,
+      "max": 54231500,
+      "mean": 3150231.0436986284,
+      "median": 2258500.0,
+      "min": 125800,
+      "p95": 8545200,
+      "p99": 11888000,
+      "sum": 6670337014700
+    },
+    "mechanism": {
+      "all_basket_to_gaba_ticks": true,
+      "all_winner_to_basket_ticks": true,
+      "basket_spikes": 23291532,
+      "predicted_steps": 410,
+      "winner_spikes": 23291532
+    },
+    "mode": "LEARN",
+    "rate": {
+      "abi_call_steps_per_second": 317.43703434079504,
+      "instrumented_loop_steps_per_second": 291.54042322885203,
+      "replay_wall_ns": 7262841895300
+    },
+    "recognition": {
+      "active_segments": {
+        "count": 2117412,
+        "max": 44,
+        "mean": 0.0034797195822069585,
+        "median": 0.0,
+        "min": 0,
+        "p95": 0,
+        "p99": 0,
+        "sum": 7368
+      },
+      "candidate_segments": {
+        "count": 2117412,
+        "max": 22198,
+        "mean": 9573.670400470008,
+        "median": 10021.0,
+        "min": 0,
+        "p95": 13761,
+        "p99": 15059,
+        "sum": 20271404590
+      },
+      "matching_segments": {
+        "count": 2117412,
+        "max": 99,
+        "mean": 0.012191769953131464,
+        "median": 0.0,
+        "min": 0,
+        "p95": 0,
+        "p99": 0,
+        "sum": 25815
+      },
+      "postings_visited": {
+        "count": 2117412,
+        "max": 29020,
+        "mean": 13395.363131502041,
+        "median": 13893.0,
+        "min": 0,
+        "p95": 20196,
+        "p99": 22440,
+        "sum": 28363502639
+      }
+    },
+    "segments": {
+      "allocated_total": 23286478,
+      "live_delta": 23286478,
+      "live_end": 23286478,
+      "live_start": 0,
+      "punished_total": 2853
+    },
+    "single_token_abi_calls": true,
+    "timer": "time.perf_counter_ns"
+  },
+  "outcome": "PASS",
+  "schema_version": 1,
+  "scientific_stop": null,
+  "train_input": {
+    "books": [
+      {
+        "corpus_index": 0,
+        "ordinal": 0,
+        "short_name": "Genesis",
+        "token_count": 122253,
+        "token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd"
+      },
+      {
+        "corpus_index": 1,
+        "ordinal": 1,
+        "short_name": "Exodus",
+        "token_count": 100485,
+        "token_sha256_le_i32": "db487fa7767f7e716924aeca15f92ae5df5c7429c50c6ee225925cb6902e59f4"
+      },
+      {
+        "corpus_index": 2,
+        "ordinal": 2,
+        "short_name": "Leviticus",
+        "token_count": 74481,
+        "token_sha256_le_i32": "8bd95fc3e15ea0eafd08f9fc8930f079f9bd3a03fe3f56d5b72fe5db645cade6"
+      },
+      {
+        "corpus_index": 3,
+        "ordinal": 3,
+        "short_name": "Numbers",
+        "token_count": 105256,
+        "token_sha256_le_i32": "0f75043589c2928ef222ea69681d595fd0830970f5fdfdb2e7dfbcae6d8e9f20"
+      },
+      {
+        "corpus_index": 4,
+        "ordinal": 4,
+        "short_name": "Deuteronomy",
+        "token_count": 84747,
+        "token_sha256_le_i32": "cdcd36b245ff00e011d1d547e447b96008d8050b070ec0cda276ca82cbefa18a"
+      },
+      {
+        "corpus_index": 5,
+        "ordinal": 5,
+        "short_name": "Joshua",
+        "token_count": 59358,
+        "token_sha256_le_i32": "3765116f0bca38edb24e6f351ab4c005b73cab35acb32b1c6a01ea0c80141f2a"
+      },
+      {
+        "corpus_index": 6,
+        "ordinal": 6,
+        "short_name": "Judges",
+        "token_count": 59406,
+        "token_sha256_le_i32": "9fd2b2432a7141504f88dea968ca1a821daf86c4145770db5645cb5011ad0e3a"
+      },
+      {
+        "corpus_index": 7,
+        "ordinal": 7,
+        "short_name": "Ruth",
+        "token_count": 8003,
+        "token_sha256_le_i32": "0b7aafb007c5203505dadbb8d7d57f365b386a995d119c37fc84e4e25f779d6b"
+      },
+      {
+        "corpus_index": 8,
+        "ordinal": 8,
+        "short_name": "1 Samuel",
+        "token_count": 78963,
+        "token_sha256_le_i32": "700f8649eb4eb5e63ec690b76eb1910fa664d73e526d45697e7659a750b8a4a5"
+      },
+      {
+        "corpus_index": 9,
+        "ordinal": 9,
+        "short_name": "2 Samuel",
+        "token_count": 65898,
+        "token_sha256_le_i32": "116433cefad253cc9309c32c7c889c140b8ca9a06dbd76e496192e3dfb76eada"
+      },
+      {
+        "corpus_index": 10,
+        "ordinal": 10,
+        "short_name": "1 Kings",
+        "token_count": 76083,
+        "token_sha256_le_i32": "37952f092a581366d4a40d1d5eb57079b4ea1480a0d8d8bd868e9e40ba39486b"
+      },
+      {
+        "corpus_index": 11,
+        "ordinal": 11,
+        "short_name": "2 Kings",
+        "token_count": 71460,
+        "token_sha256_le_i32": "4a82291a1c45b896e2be9ae604886931f5b5189bfb0924a7cd398f187ee45a63"
+      },
+      {
+        "corpus_index": 12,
+        "ordinal": 12,
+        "short_name": "1 Chronicles",
+        "token_count": 69640,
+        "token_sha256_le_i32": "4f3fdc9ca014e2d4481afdef9a2d87569b67748a79b5ab36b27ef9eae800d000"
+      },
+      {
+        "corpus_index": 13,
+        "ordinal": 13,
+        "short_name": "2 Chronicles",
+        "token_count": 82985,
+        "token_sha256_le_i32": "3d872864d867311487876363552955df37eb155d1b995ceeb85e2b826a15729b"
+      },
+      {
+        "corpus_index": 14,
+        "ordinal": 14,
+        "short_name": "Ezra",
+        "token_count": 24639,
+        "token_sha256_le_i32": "4f7dd89277aa5a76b93a408556269239f56970c5e2332775a8ec4a6563ca4077"
+      },
+      {
+        "corpus_index": 15,
+        "ordinal": 15,
+        "short_name": "Nehemiah",
+        "token_count": 35466,
+        "token_sha256_le_i32": "ca6774f7407f89dba9aba8648032964883b8f1acdfaacea95310c6e859f1b72c"
+      },
+      {
+        "corpus_index": 16,
+        "ordinal": 16,
+        "short_name": "Esther",
+        "token_count": 18345,
+        "token_sha256_le_i32": "7772febd1ae2bfb2a9a52cb981c08b27b0fd69b747c33a268910eccf472e9bda"
+      },
+      {
+        "corpus_index": 17,
+        "ordinal": 17,
+        "short_name": "Job",
+        "token_count": 64204,
+        "token_sha256_le_i32": "e1e27067948109ed913a430777f620b283710b84f1ff4db1914fc4bce60bd98a"
+      },
+      {
+        "corpus_index": 18,
+        "ordinal": 18,
+        "short_name": "Psalms",
+        "token_count": 149162,
+        "token_sha256_le_i32": "f621ff02038a10ca72e7c08c1ae090917907d62c2ce89ebdb0e61101252a44fd"
+      },
+      {
+        "corpus_index": 19,
+        "ordinal": 19,
+        "short_name": "Proverbs",
+        "token_count": 56449,
+        "token_sha256_le_i32": "c4c2d6e3bf24dbfe68c5ba2ed1dc14bf76a142f1fdb48a56ef862b13609a4ec6"
+      },
+      {
+        "corpus_index": 20,
+        "ordinal": 20,
+        "short_name": "Ecclesiastes",
+        "token_count": 18695,
+        "token_sha256_le_i32": "ca79117f88ee570fd3303546967d5ac0f288e3078863a3ab5239e9ac29ebd2ab"
+      },
+      {
+        "corpus_index": 21,
+        "ordinal": 21,
+        "short_name": "Song of Solomon",
+        "token_count": 9608,
+        "token_sha256_le_i32": "6767eb69a29fb52018a93f68446923005f9adaf8e53ad53c0eed0541e6fa047e"
+      },
+      {
+        "corpus_index": 22,
+        "ordinal": 22,
+        "short_name": "Isaiah",
+        "token_count": 119386,
+        "token_sha256_le_i32": "1850fd43c8e655097b357ede1d006eb08259931ac5cbc5321d32b34baf83f6c8"
+      },
+      {
+        "corpus_index": 23,
+        "ordinal": 23,
+        "short_name": "Jeremiah",
+        "token_count": 134844,
+        "token_sha256_le_i32": "3b1cbc972ba0f3664c65e31c95d430c28e9c688eecb64cfbb8ca7ade24fbc94d"
+      },
+      {
+        "corpus_index": 24,
+        "ordinal": 24,
+        "short_name": "Lamentations",
+        "token_count": 12346,
+        "token_sha256_le_i32": "18bb458eeaf46372c5237a42b2393700d07e3b484ca7e04bc39512dfaa4074bc"
+      },
+      {
+        "corpus_index": 25,
+        "ordinal": 25,
+        "short_name": "Ezekiel",
+        "token_count": 122502,
+        "token_sha256_le_i32": "1c07a0e2aa5f74cd0d0ca5adda3f4249c452fe36a641be7dc56fa2da4b7c9c53"
+      },
+      {
+        "corpus_index": 26,
+        "ordinal": 26,
+        "short_name": "Daniel",
+        "token_count": 37753,
+        "token_sha256_le_i32": "af555f6bbf4eda62fa347dc87b1aa10ec330da9c241d8da13d9939fbc183165f"
+      },
+      {
+        "corpus_index": 44,
+        "ordinal": 27,
+        "short_name": "Romans",
+        "token_count": 34286,
+        "token_sha256_le_i32": "51655f41b4ec384d293eefa57da1e1d3a662be9ca8e0f0813b02120d7f32a6e2"
+      },
+      {
+        "corpus_index": 45,
+        "ordinal": 28,
+        "short_name": "1 Corinthians",
+        "token_count": 33511,
+        "token_sha256_le_i32": "8a83eb6e8fb9a2e52eca072e8b619fd972777ac8ffa0ad1982a9510d830ad133"
+      },
+      {
+        "corpus_index": 46,
+        "ordinal": 29,
+        "short_name": "2 Corinthians",
+        "token_count": 21727,
+        "token_sha256_le_i32": "f26e8b22a14cb70c7a12b6d97c9103db951ccc62aaafec61925112ec9b81bb4c"
+      },
+      {
+        "corpus_index": 47,
+        "ordinal": 30,
+        "short_name": "Galatians",
+        "token_count": 11320,
+        "token_sha256_le_i32": "fc1fe746494c5fc6c504faf24d333e166c89c93e3a46e2270a60fa08532603b8"
+      },
+      {
+        "corpus_index": 48,
+        "ordinal": 31,
+        "short_name": "Ephesians",
+        "token_count": 10771,
+        "token_sha256_le_i32": "e6d9126a92ff4d0be0daa4837c16f79b4a9544e7fafbc32ca73a00ffd4e18c84"
+      },
+      {
+        "corpus_index": 49,
+        "ordinal": 32,
+        "short_name": "Philippians",
+        "token_count": 7833,
+        "token_sha256_le_i32": "be371f6cafb6b0ea17ff70fd2f8b3bad0180cac8304faf8ff4619da33ed90472"
+      },
+      {
+        "corpus_index": 50,
+        "ordinal": 33,
+        "short_name": "Colossians",
+        "token_count": 7085,
+        "token_sha256_le_i32": "dfa320a447f85560a2fc86e2ead5c160ba4990c22a97a5a97b326bca874780d9"
+      },
+      {
+        "corpus_index": 51,
+        "ordinal": 34,
+        "short_name": "1 Thessalonians",
+        "token_count": 6493,
+        "token_sha256_le_i32": "0aabf7c6924d32e041b9c1c83125b5a98f0ebb1cb0aad81d2ec76680c736c526"
+      },
+      {
+        "corpus_index": 52,
+        "ordinal": 35,
+        "short_name": "2 Thessalonians",
+        "token_count": 3505,
+        "token_sha256_le_i32": "001b3e8fa7ade4038a28636d35ea3f912cf5830375f67b0f9780987937f1a524"
+      },
+      {
+        "corpus_index": 53,
+        "ordinal": 36,
+        "short_name": "1 Timothy",
+        "token_count": 8828,
+        "token_sha256_le_i32": "1320b3654528b283f34cd60000d018b7c5af0a82db8e3d6c56cf6f34a0e68b7f"
+      },
+      {
+        "corpus_index": 54,
+        "ordinal": 37,
+        "short_name": "2 Timothy",
+        "token_count": 6241,
+        "token_sha256_le_i32": "c73fb5bd14e4bb870db98242474a8fdc4e06affb4aa80d3cd1e75d904fa812a8"
+      },
+      {
+        "corpus_index": 55,
+        "ordinal": 38,
+        "short_name": "Titus",
+        "token_count": 3619,
+        "token_sha256_le_i32": "257afb1d1e566d33b0b75a9371a02a560bad810fa2436d8a7d27119c4ae2acaf"
+      },
+      {
+        "corpus_index": 56,
+        "ordinal": 39,
+        "short_name": "Philemon",
+        "token_count": 1641,
+        "token_sha256_le_i32": "f3877f3c6488ab6b9f17b0fc0e7644f30c021baf077dbd3c3f61f2d99e5d721c"
+      },
+      {
+        "corpus_index": 57,
+        "ordinal": 40,
+        "short_name": "Hebrews",
+        "token_count": 24996,
+        "token_sha256_le_i32": "dbaa3198217a0349b282e700a0209b4c4bf100eef1f9d946dcf5999c26a5d9e3"
+      },
+      {
+        "corpus_index": 58,
+        "ordinal": 41,
+        "short_name": "James",
+        "token_count": 8080,
+        "token_sha256_le_i32": "eed8a834dddb6b3d161bd39ff2795366c64a274456abda8a65d55bcaabc08828"
+      },
+      {
+        "corpus_index": 59,
+        "ordinal": 42,
+        "short_name": "1 Peter",
+        "token_count": 9223,
+        "token_sha256_le_i32": "14df48c3151b7d5820f6b62810bc9643f72e3ce2170f39e027dc1f2ac8845639"
+      },
+      {
+        "corpus_index": 60,
+        "ordinal": 43,
+        "short_name": "2 Peter",
+        "token_count": 5734,
+        "token_sha256_le_i32": "0abef47ba4665f853a4552d632098dac6b237af5e846c7d9e42decbce9d76802"
+      },
+      {
+        "corpus_index": 61,
+        "ordinal": 44,
+        "short_name": "1 John",
+        "token_count": 8094,
+        "token_sha256_le_i32": "5799489cee9da3ad88a0b5c50170a8f06161c2f739de1b81ea832a525b0a0419"
+      },
+      {
+        "corpus_index": 62,
+        "ordinal": 45,
+        "short_name": "2 John",
+        "token_count": 1008,
+        "token_sha256_le_i32": "594d163c9bb0049ef64a40535dd60d3cff85b1e1b30dd671fff4ccb5f8a55736"
+      },
+      {
+        "corpus_index": 63,
+        "ordinal": 46,
+        "short_name": "3 John",
+        "token_count": 1108,
+        "token_sha256_le_i32": "6097258f13921efb777908e3b2324629c8aa9f8ed0894d65e4fe7c2412ee7bf6"
+      },
+      {
+        "corpus_index": 64,
+        "ordinal": 47,
+        "short_name": "Jude",
+        "token_count": 2354,
+        "token_sha256_le_i32": "d60e2e3c7ae00f4950f8ecfe1be0663617470158d5153fb39cb2079175fb3204"
+      },
+      {
+        "corpus_index": 65,
+        "ordinal": 48,
+        "short_name": "Revelation",
+        "token_count": 37538,
+        "token_sha256_le_i32": "f5e08db69af4e4edbae0008eea612127de45318c435281dc98a1a298c2ffe115"
+      }
+    ],
+    "candidate_id": "cell-lm-v1-freeze-candidate-bible-kjv-pg10-v3",
+    "full_train_token_count": 2117412,
+    "held_out_books_materialized": 0,
+    "input_load_ns": 14247200900,
+    "replayed_book_count": 49,
+    "replayed_token_count": 2117412,
+    "replayed_token_sha256_le_i32": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5",
+    "replayed_transition_count": 2117363,
+    "replayed_unique_token_ids": 522,
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5",
+    "verified_train_books_materialized": 49
+  }
+}
