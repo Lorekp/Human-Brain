@@ -1,0 +1,90 @@
+{
+  "checkpoint": {
+    "path": "experiments/r3_pilot/fresh_coding_checkpoint.npz",
+    "sha256": "6d972946012f34884a7bf012223eda52aa8ac252f12d2356a12b7bc389077fe9"
+  },
+  "corpus": {
+    "example_count": 8,
+    "format": "humanbrain.fresh-coding-generic-corpus.v1",
+    "path": "experiments/r3_pilot/fresh_coding_generic_corpus.json",
+    "serialized_training_sha256": "10139a0e374b711f4c7b3217c488b762120c76285366945a189f303d3e27d31c",
+    "sha256": "b35a2edeabfb9e78755c4eb7bf3c77babacdddeaf2c0b4164af0c934e54ea56c",
+    "training_text_count": 16
+  },
+  "format": "humanbrain.fresh-coding-checkpoint.v1",
+  "freeze_source_commit": "34ba9625b943d6ae4714a801fd4811915a706969",
+  "model": {
+    "class": "humanbrain.language.CellLanguageModel",
+    "config": {
+      "cell_parameters": {
+        "basket_inhibition_pa": 240.0,
+        "branch_current_pa": 95.0,
+        "cell": {
+          "after_spike_amplitudes_pa": [
+            -135.48819176942797,
+            755.8435771154525
+          ],
+          "after_spike_taus_ms": [
+            33.33333333333334,
+            3.3333333333333335
+          ],
+          "capacitance_pf": 164.528173438895,
+          "dt_ms": 0.05,
+          "input_resistance_mohm": 118.0633282200178,
+          "model_id": 503612028,
+          "rest_mv": -69.04794057210287,
+          "specimen_id": 488392806,
+          "spike_cut_steps": 77,
+          "threshold_relative_mv": 25.631077893053025
+        },
+        "dendritic_probability_gain": 16.0,
+        "race_ms": 30.0,
+        "tau_gabaa_ms": 8.0,
+        "tau_nmda_ms": 35.0
+      },
+      "max_order": 64,
+      "max_phrases": 512,
+      "min_phrase_frequency": 2,
+      "random_seed": 7
+    },
+    "external_neural_models": [],
+    "grown_branches": 89728,
+    "learned_inference": "simulated_cells_and_synapses_only",
+    "training_digest": "10139a0e374b711f4c7b3217c488b762120c76285366945a189f303d3e27d31c",
+    "vocabulary_size": 357
+  },
+  "protocol": {
+    "candidate_open": "<|candidate|>",
+    "entrypoint": "solve",
+    "feedback_open": "<|feedback|>",
+    "parameters": [
+      "arg0",
+      "arg1",
+      "arg2"
+    ],
+    "revision_open": "<|revision|>",
+    "source_end": "# <END>",
+    "source_open": "<|source|>",
+    "task_open": "<|task|>"
+  },
+  "runtime": {
+    "byteorder": "little",
+    "numpy_version": "2.4.6",
+    "platform_machine": "AMD64",
+    "platform_system": "Windows",
+    "python_implementation": "CPython",
+    "python_version": "3.11.15",
+    "zlib_compile_version": "1.3.2",
+    "zlib_runtime_version": "1.3.2"
+  },
+  "scope": {
+    "claim": "scaffolded_body_synthesis_only",
+    "corpus_policy": "explicit_allowlist_only",
+    "forbidden_challenge_path": "experiments/r3_pilot/fresh_coding_challenge.py",
+    "target_tasks_present_at_freeze": false
+  },
+  "source": {
+    "path": "experiments/r3_pilot/fresh_coding_checkpoint.py",
+    "sha256": "40492212e78f32baf976291f32ead91c48d8e83568faee0e39d7675bddbe815f"
+  }
+}
