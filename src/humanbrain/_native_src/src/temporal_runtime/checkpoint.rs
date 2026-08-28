@@ -21,8 +21,8 @@ use sha2::{Digest, Sha256};
 use super::{
     role_place_copy::RolePlaceCopyState, NovelCandidate, TemporalCircuitConfig,
     TemporalCircuitRuntime, TemporalContextPolicy, TemporalPlasticityPolicy, TemporalPoisonCode,
-    TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS, CONTEXT_CELLS_U8, EMPTY_DIAGNOSTIC, EMPTY_DRIVE,
-    EMPTY_NOVEL_CANDIDATE, NONE, PAIRS_PER_SEGMENT,
+    TokenCode, TypedWorkspaceState, ACTIVE_COLUMNS, CONTEXT_CELLS, CONTEXT_CELLS_U8,
+    EMPTY_DIAGNOSTIC, EMPTY_DRIVE, EMPTY_NOVEL_CANDIDATE, NONE, PAIRS_PER_SEGMENT,
 };
 use crate::temporal::{
     temporal_source_meta_allocation_layout, TemporalCheckpointRebuildError,
@@ -4254,6 +4254,7 @@ fn assemble_validated_checkpoint_v1_inner<'a>(
         learning_step: scalars.learning_step,
         scientific_stop: poison,
         role_place_copy,
+        typed_workspace: TypedWorkspaceState::EMPTY,
         generation_index: 0,
         relay_offset: derived.relay_offset,
         basket_offset: derived.basket_offset,

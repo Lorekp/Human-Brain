@@ -28,8 +28,14 @@ mod checkpoint_publisher;
 mod ffi;
 mod role_place_copy;
 mod typed_hole_state;
+mod typed_workspace;
 
 use role_place_copy::{is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID};
+use typed_hole_state::{TypedHoleCue, TypedHoleRole, TypedValue};
+use typed_workspace::{
+    TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT,
+    TYPED_SURFACE_TOKEN_COUNT,
+};
 
 #[cfg(not(any(unix, windows)))]
 compile_error!("checkpoint path publication requires an audited Unix or Windows backend");
@@ -42,6 +48,8 @@ const EXACT_SOURCE_PHYSICAL_CONTACTS: u8 = 2 * PAIRS_PER_SEGMENT as u8;
 const NONE: u32 = u32::MAX;
 const INITIAL_CONTACT_DOMAIN: u64 = 0x5233_4630_494E_4954;
 const REGROWTH_CONTACT_DOMAIN: u64 = 0x5233_4630_5247_5257;
+const MAX_TYPED_GENERATIONS: usize = 128;
+const TYPED_LITERAL_SLOT: u8 = 2;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TemporalContextPolicy {
@@ -437,6 +445,7 @@ pub(crate) struct TemporalCircuitRuntime {
     learning_step: u64,
     scientific_stop: Option<TemporalPoisonCode>,
     role_place_copy: RolePlaceCopyState,
+    typed_workspace: TypedWorkspaceState,
     generation_index: u64,
     relay_offset: u32,
     basket_offset: u32,
@@ -827,6 +836,7 @@ impl TemporalCircuitRuntime {
             learning_step: 0,
             scientific_stop: None,
             role_place_copy,
+            typed_workspace: TypedWorkspaceState::EMPTY,
             generation_index: 0,
             relay_offset,
             basket_offset,
@@ -863,6 +873,442 @@ impl TemporalCircuitRuntime {
         Ok(step)
     }
 
+    /// Execute the generic plan-commit cue through the ordinary fitted-cell
+    /// path and retain its eleven physical winners for later typed holes.
+    pub(crate) fn commit_typed_plan(
+        &mut self,
+        plan_commit_token_id: u32,
+        mode: TemporalStepMode,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        if self.config.context_policy != TemporalContextPolicy::BoundWinners {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed workspace requires BoundWinners context",
+            ));
+        }
+        let step = self.step(plan_commit_token_id, mode)?;
+        self.typed_workspace.retain_plan(step.winner_context);
+        Ok(step)
+    }
+
+    /// Re-broadcast the retained plan into one structural cue race, then make
+    /// the exact 5-plan/6-cue winner mix the recognition context for the next
+    /// teacher arrival or fitted output election.
+    pub(crate) fn prepare_typed_hole_context(
+        &mut self,
+        cue_kind: TypedHoleCue,
+        cue_role: TypedHoleRole,
+        cue_token_id: u32,
+        _mode: TemporalStepMode,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        if self.config.context_policy != TemporalContextPolicy::BoundWinners {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed workspace requires BoundWinners context",
+            ));
+        }
+        if !self.typed_workspace.is_ready() {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed plan assembly is not committed",
+            ));
+        }
+        let cue_boundary = TemporalTransientState {
+            event_count: self.event_count,
+            ..TemporalTransientState::EMPTY
+        };
+        let cue = self.step_with_transient(
+            cue_token_id,
+            TemporalStepMode::ReadOnly,
+            cue_boundary,
+        )?;
+        let mixed = match self.typed_workspace.mixed_transient(
+            cue_kind,
+            cue_role,
+            cue.winner_context,
+            self.relay_offset,
+            cue.event_count,
+        ) {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        self.previous_context = mixed.previous_context;
+        self.previous_context_len = mixed.previous_context_len;
+        self.previous_winner_context = mixed.previous_winner_context;
+        self.previous_winner_context_len = mixed.previous_winner_context_len;
+        self.event_count = mixed.event_count;
+        Ok(cue)
+    }
+
+    pub(crate) fn typed_plan_winners(&self) -> Option<[u32; ACTIVE_COLUMNS]> {
+        self.typed_workspace.plan_winners()
+    }
+
+    pub(crate) fn begin_typed_session(
+        &mut self,
+        vocabulary: TypedWorkspaceVocabulary,
+        parameter: TypedValue,
+        result: TypedValue,
+        mode: TemporalStepMode,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        if let Err(message) = vocabulary.validate() {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
+        }
+        if let Err(message) = self.validate_typed_vocabulary_codes(vocabulary) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
+        }
+        let plan = self.commit_typed_plan(vocabulary.plan_commit_token_id, mode)?;
+        if let Err(stop) = self
+            .typed_workspace
+            .begin_session(vocabulary, parameter, result, mode)
+        {
+            return self.fail(stop);
+        }
+        Ok(plan)
+    }
+
+    pub(crate) fn teach_typed_token(
+        &mut self,
+        token_id: u32,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        if self.typed_workspace.session_mode() != Some(TemporalStepMode::Learn) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed teacher arrival requires one learning session",
+            ));
+        }
+        let cue = match self.prepare_current_typed_context(TemporalStepMode::Learn) {
+            Ok((cue, _, _)) => cue,
+            Err(stop) => return Err(stop),
+        };
+        let (admitted, admitted_count) = match self.typed_admitted_tokens(cue) {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        if !admitted[..admitted_count].contains(&token_id) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed teacher token is structurally inadmissible",
+            ));
+        }
+        let step = self.step(token_id, TemporalStepMode::Learn)?;
+        if let Some(slot) = SlotOrdinal::from_copy_token(token_id) {
+            if slot.value() != TYPED_LITERAL_SLOT {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed literals may recall only ordinal slot two",
+                ));
+            }
+            if let Err(stop) = self.drain_typed_teacher_copy(slot) {
+                return self.fail(stop);
+            }
+        } else if let Err(stop) = self.typed_workspace.advance_token(token_id) {
+            return self.fail(stop);
+        }
+        Ok(step)
+    }
+
+    /// Generate one complete typed surface stream through EOS. The caller
+    /// supplies neither candidates nor a target; the native structural state
+    /// creates the admissibility mask for each fitted output-cell race.
+    pub(crate) fn generate_typed(
+        &mut self,
+    ) -> Result<Vec<TemporalGeneration>, TemporalCircuitStop> {
+        if self.typed_workspace.session_mode() != Some(TemporalStepMode::ReadOnly) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed generation requires one read-only session",
+            ));
+        }
+        let mut generated = Vec::with_capacity(MAX_TYPED_GENERATIONS);
+        while self.typed_workspace.current_cue()? != TypedHoleCue::Terminated {
+            if generated.len() == MAX_TYPED_GENERATIONS {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed generation exceeded its fixed surface budget",
+                ));
+            }
+            let generation = if self.role_place_copy.is_recalling() {
+                self.generate_typed_from_copy()?
+            } else {
+                self.generate_typed_from_temporal()?
+            };
+            generated.push(generation);
+        }
+        Ok(generated)
+    }
+
+    fn validate_typed_vocabulary_codes(
+        &self,
+        vocabulary: TypedWorkspaceVocabulary,
+    ) -> Result<(), &'static str> {
+        let mut private_ids = [NONE; 1 + TYPED_CUE_TOKEN_COUNT];
+        private_ids[0] = vocabulary.plan_commit_token_id;
+        private_ids[1..].copy_from_slice(&vocabulary.cue_token_ids);
+        for &token_id in private_ids
+            .iter()
+            .chain(vocabulary.surface_token_ids.iter())
+        {
+            if self.token_columns(token_id).is_none() {
+                return Err("typed vocabulary references an unknown token code");
+            }
+        }
+        for &private_id in &private_ids {
+            let private_columns = self
+                .token_columns(private_id)
+                .expect("typed private token was validated above");
+            for code in &self.token_codebook {
+                if code.token_id != private_id
+                    && code
+                        .columns
+                        .iter()
+                        .any(|column| private_columns.contains(column))
+                {
+                    return Err("typed plan/cue token columns must be private and disjoint");
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn prepare_current_typed_context(
+        &mut self,
+        mode: TemporalStepMode,
+    ) -> Result<(TypedHoleCue, TypedHoleRole, TemporalCircuitStep), TemporalCircuitStop> {
+        if self.typed_workspace.session_mode() != Some(mode) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed workspace mode changed within one session",
+            ));
+        }
+        let cue = match self.typed_workspace.current_cue() {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        let cue_token_id = match self.typed_workspace.current_cue_token() {
+            Ok(Some(value)) => value,
+            Ok(None) => {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "terminated typed state requested another physical hole",
+                ));
+            }
+            Err(stop) => return self.fail(stop),
+        };
+        let role = match self.typed_workspace.current_role() {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        let step = self.prepare_typed_hole_context(cue, role, cue_token_id, mode)?;
+        Ok((cue, role, step))
+    }
+
+    fn typed_admitted_tokens(
+        &self,
+        cue: TypedHoleCue,
+    ) -> Result<([u32; TYPED_SURFACE_TOKEN_COUNT + 1], usize), TemporalCircuitStop> {
+        let (surface, surface_count) = self.typed_workspace.admitted_tokens()?;
+        let mut admitted = [NONE; TYPED_SURFACE_TOKEN_COUNT + 1];
+        admitted[..surface_count].copy_from_slice(&surface[..surface_count]);
+        let mut count = surface_count;
+        if cue == TypedHoleCue::LiteralSign {
+            let slot = SlotOrdinal::new(TYPED_LITERAL_SLOT).expect("slot two is in range");
+            if self.role_place_copy.is_ready(slot) {
+                admitted[count] = slot.copy_token_id();
+                count += 1;
+            }
+        }
+        Ok((admitted, count))
+    }
+
+    fn drain_typed_teacher_copy(
+        &mut self,
+        slot: SlotOrdinal,
+    ) -> Result<(), TemporalCircuitStop> {
+        if !self.role_place_copy.is_ready(slot) {
+            return Err(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed COPY teacher control has no captured slot value",
+            ));
+        }
+        self.role_place_copy.begin_recall(slot);
+        loop {
+            let copied = self.elect_copy_output_at(slot, self.role_place_copy.recall_position())?;
+            if copied.token_id == COPY_END_TOKEN_ID {
+                if !self.role_place_copy.recall_is_at_end() {
+                    return Err(TemporalCircuitStop::MalformedContextOrPolicy(
+                        "typed teacher COPY_END preceded the captured slot boundary",
+                    ));
+                }
+                self.role_place_copy.finish_recall();
+                return Ok(());
+            }
+            if self.role_place_copy.recall_is_at_end() || is_internal_role_token(copied.token_id) {
+                return Err(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed teacher copy emitted an invalid surface token",
+                ));
+            }
+            self.typed_workspace.advance_token(copied.token_id)?;
+            self.role_place_copy.advance_recall();
+        }
+    }
+
+    fn generate_typed_from_temporal(
+        &mut self,
+    ) -> Result<TemporalGeneration, TemporalCircuitStop> {
+        let (cue, _, _) = self.prepare_current_typed_context(TemporalStepMode::ReadOnly)?;
+        let (admitted, admitted_count) = match self.typed_admitted_tokens(cue) {
+            Ok(value) => value,
+            Err(stop) => return self.fail(stop),
+        };
+        let elected = self
+            .elect_temporal_output_admitted(Some(&admitted[..admitted_count]))?;
+        let next_generation_index = match self.generation_index.checked_add(1) {
+            Some(value) => value,
+            None => {
+                return self.fail(TemporalCircuitStop::TickOrCounterOverflow {
+                    stage: TemporalOverflowStage::EventCounter,
+                    location: 0,
+                });
+            }
+        };
+        if let Some(slot) = SlotOrdinal::from_copy_token(elected.token_id) {
+            if slot.value() != TYPED_LITERAL_SLOT || !self.role_place_copy.is_ready(slot) {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed COPY control won without ordinal slot two",
+                ));
+            }
+            let copied = self.elect_copy_output_at(slot, 0)?;
+            if copied.token_id == COPY_END_TOKEN_ID || is_internal_role_token(copied.token_id) {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed slot produced no first literal surface token",
+                ));
+            }
+            let copied = match offset_election(copied, elected.simulated_ticks) {
+                Ok(value) => value,
+                Err(stop) => return self.fail(stop),
+            };
+            let feedback = self.step_with_transient(
+                slot.copy_token_id(),
+                TemporalStepMode::ReadOnly,
+                self.transient_state(),
+            )?;
+            self.role_place_copy.begin_recall(slot);
+            if let Err(stop) = self.typed_workspace.advance_token(copied.token_id) {
+                return self.fail(stop);
+            }
+            self.role_place_copy.advance_recall();
+            self.generation_index = next_generation_index;
+            return Ok(generation_record(
+                copied,
+                Some(elected),
+                TemporalGenerationPath::EnterCopy,
+                Some(&feedback),
+                Some(slot),
+                0,
+                next_generation_index,
+                self.event_count,
+            ));
+        }
+        if is_internal_role_token(elected.token_id) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed temporal race elected an invalid role token",
+            ));
+        }
+        let feedback = self.step_with_transient(
+            elected.token_id,
+            TemporalStepMode::ReadOnly,
+            self.transient_state(),
+        )?;
+        if let Err(stop) = self.typed_workspace.advance_token(elected.token_id) {
+            return self.fail(stop);
+        }
+        self.generation_index = next_generation_index;
+        Ok(generation_record(
+            elected,
+            None,
+            TemporalGenerationPath::Temporal,
+            Some(&feedback),
+            None,
+            u8::MAX,
+            next_generation_index,
+            self.event_count,
+        ))
+    }
+
+    fn generate_typed_from_copy(
+        &mut self,
+    ) -> Result<TemporalGeneration, TemporalCircuitStop> {
+        let Some(slot) = self.role_place_copy.recall_slot() else {
+            return self.fail(TemporalCircuitStop::StoreOrPlanInvariant(
+                "typed copy generation lost its active slot",
+            ));
+        };
+        let place = self.role_place_copy.recall_position();
+        let copied = self.elect_copy_output_at(slot, place)?;
+        let next_generation_index = match self.generation_index.checked_add(1) {
+            Some(value) => value,
+            None => {
+                return self.fail(TemporalCircuitStop::TickOrCounterOverflow {
+                    stage: TemporalOverflowStage::EventCounter,
+                    location: 0,
+                });
+            }
+        };
+        if copied.token_id == COPY_END_TOKEN_ID {
+            if !self.role_place_copy.recall_is_at_end() {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed COPY_END preceded the captured slot boundary",
+                ));
+            }
+            let (cue, _, _) = self.prepare_current_typed_context(TemporalStepMode::ReadOnly)?;
+            let (admitted, admitted_count) = match self.typed_admitted_tokens(cue) {
+                Ok(value) => value,
+                Err(stop) => return self.fail(stop),
+            };
+            let resumed = self
+                .elect_temporal_output_admitted(Some(&admitted[..admitted_count]))?;
+            if is_internal_role_token(resumed.token_id) {
+                return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                    "typed COPY exit elected an internal role token",
+                ));
+            }
+            let resumed = match offset_election(resumed, copied.simulated_ticks) {
+                Ok(value) => value,
+                Err(stop) => return self.fail(stop),
+            };
+            let feedback = self.step_with_transient(
+                resumed.token_id,
+                TemporalStepMode::ReadOnly,
+                self.transient_state(),
+            )?;
+            self.role_place_copy.finish_recall();
+            if let Err(stop) = self.typed_workspace.advance_token(resumed.token_id) {
+                return self.fail(stop);
+            }
+            self.generation_index = next_generation_index;
+            return Ok(generation_record(
+                resumed,
+                Some(copied),
+                TemporalGenerationPath::ExitCopy,
+                Some(&feedback),
+                Some(slot),
+                u8::MAX,
+                next_generation_index,
+                self.event_count,
+            ));
+        }
+        if self.role_place_copy.recall_is_at_end() || is_internal_role_token(copied.token_id) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed copy emitted an invalid surface token",
+            ));
+        }
+        if let Err(stop) = self.typed_workspace.advance_token(copied.token_id) {
+            return self.fail(stop);
+        }
+        self.role_place_copy.advance_recall();
+        self.generation_index = next_generation_index;
+        Ok(generation_record(
+            copied,
+            None,
+            TemporalGenerationPath::Copy,
+            None,
+            Some(slot),
+            place,
+            next_generation_index,
+            self.event_count,
+        ))
+    }
+
     /// Elect one token directly from the current physical winner context.
     ///
     /// Active distal segments first drive their learned owner cells through
@@ -873,6 +1319,13 @@ impl TemporalCircuitRuntime {
     /// codebook is static wiring; neither a decoded score argmax nor an
     /// arriving candidate token participates in the decision.
     fn elect_temporal_output(&mut self) -> Result<PhysicalOutputElection, TemporalCircuitStop> {
+        self.elect_temporal_output_admitted(None)
+    }
+
+    fn elect_temporal_output_admitted(
+        &mut self,
+        admitted_token_ids: Option<&[u32]>,
+    ) -> Result<PhysicalOutputElection, TemporalCircuitStop> {
         if self.scientific_stop.is_some() {
             return Err(TemporalCircuitStop::Poisoned);
         }
@@ -955,13 +1408,18 @@ impl TemporalCircuitRuntime {
             }
         }
 
-        self.race_output_tokens(&output_active_columns, activated_columns)
+        self.race_output_tokens(
+            &output_active_columns,
+            activated_columns,
+            admitted_token_ids,
+        )
     }
 
     fn race_output_tokens(
         &mut self,
         output_active_columns: &[u8],
         activated_columns: u32,
+        admitted_token_ids: Option<&[u32]>,
     ) -> Result<PhysicalOutputElection, TemporalCircuitStop> {
         let synaptic_share_pa = TEMPORAL_PHYSICS_IDENTITY.active_pa / ACTIVE_COLUMNS as f64;
         let output_offset = self
@@ -979,6 +1437,11 @@ impl TemporalCircuitRuntime {
         let mut output_drive_scratch = vec![EMPTY_DRIVE; self.token_codebook.len()];
         let mut candidate_tokens = 0usize;
         for (token_index, code) in self.token_codebook.iter().enumerate() {
+            if admitted_token_ids
+                .is_some_and(|admitted| !admitted.contains(&code.token_id))
+            {
+                continue;
+            }
             let input_columns = code
                 .columns
                 .iter()
@@ -1073,7 +1536,7 @@ impl TemporalCircuitRuntime {
             }
             active_columns[column as usize] = 1;
         }
-        self.race_output_tokens(&active_columns, ACTIVE_COLUMNS as u32)
+        self.race_output_tokens(&active_columns, ACTIVE_COLUMNS as u32, None)
     }
 
     /// Elect and commit exactly one surface token through the currently active
@@ -1251,6 +1714,7 @@ impl TemporalCircuitRuntime {
             .token_columns(token_id)
             .expect("successful temporal step resolved one token code");
         self.role_place_copy.reset();
+        self.typed_workspace.clear();
         self.generation_index = 0;
         self.role_place_copy.observe_arrival(token_id, columns);
         Ok(step)
@@ -1580,6 +2044,7 @@ impl TemporalCircuitRuntime {
         self.previous_winner_context_len = 0;
         self.event_count = 0;
         self.role_place_copy.reset();
+        self.typed_workspace.clear();
         self.generation_index = 0;
     }
 
@@ -5545,5 +6010,212 @@ mod tests {
         assert_eq!(empty.permanence_ticks, [0; PAIRS_PER_SEGMENT]);
         assert_eq!(runtime.store.runtime_owner_load(0), Some(1));
         assert_eq!(runtime.store.runtime_segment_count(), 12);
+    }
+
+    #[test]
+    fn typed_workspace_recombines_map_scaffold_with_add_subtree_and_slot_copy() {
+        const W_ADD: u32 = 1_000;
+        const W_ABS: u32 = 1_001;
+        const W_DEV: u32 = 1_002;
+        const PLAN_COMMIT: u32 = 1_100;
+        const CUE_BASE: u32 = 1_200;
+        const SURFACE_BASE: u32 = 1_300;
+
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        let mut token_ids = vec![W_ADD, W_ABS, W_DEV, PLAN_COMMIT];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        for slot in 0..role_place_copy::SLOT_COUNT as u8 {
+            token_ids.push(role_place_copy::slot_start_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::slot_end_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::copy_slot_token_id(slot).unwrap());
+        }
+        token_ids.push(COPY_END_TOKEN_ID);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let columns_for = |token_id| {
+            codebook
+                .iter()
+                .find(|code| code.token_id == token_id)
+                .unwrap()
+                .columns
+        };
+        let prompt_sources = |token_id| {
+            columns_for(token_id)
+                .into_iter()
+                .take(PAIRS_PER_SEGMENT)
+                .map(|column| column * 4)
+                .collect::<Vec<_>>()
+        };
+        let plan_columns = columns_for(PLAN_COMMIT);
+        let add_offsets = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
+        let abs_offsets = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1];
+        let dev_offsets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let mut segments = Vec::new();
+        for (prompt, offsets) in [
+            (W_ADD, add_offsets),
+            (W_ABS, abs_offsets),
+            (W_DEV, dev_offsets),
+        ] {
+            let sources = prompt_sources(prompt);
+            for (column, offset) in plan_columns.into_iter().zip(offsets) {
+                segments.push(TemporalSegmentInit {
+                    owner: column * 4 + offset,
+                    sources: sources.clone(),
+                    permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+                });
+            }
+        }
+
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.segment_capacity = 2_048;
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        let mut offsets = vec![0.0; physical_count(circuit_config)];
+        for column in 0..column_count {
+            offsets[(column * 4) as usize] = -7.0;
+        }
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook.clone(),
+            base_members(circuit_config),
+            offsets,
+            &segments,
+        )
+        .expect("typed composition fixture");
+
+        let surface = vocabulary.surface_token_ids;
+        let add = surface[0];
+        let absolute = surface[1];
+        let map = surface[2];
+        let bind = surface[3];
+        let variable_zero = surface[4];
+        let integer = surface[5];
+        let plus = surface[6];
+        let digit_3 = surface[11];
+        let digit_5 = surface[13];
+        let end = surface[18];
+        let eos = surface[19];
+        let copy_slot_two = role_place_copy::copy_slot_token_id(TYPED_LITERAL_SLOT).unwrap();
+        let slot_two_start = role_place_copy::slot_start_token_id(TYPED_LITERAL_SLOT).unwrap();
+        let slot_two_end = role_place_copy::slot_end_token_id(TYPED_LITERAL_SLOT).unwrap();
+
+        let capture_literal = |
+            runtime: &mut TemporalCircuitRuntime,
+            digit: u32,
+            mode: TemporalStepMode,
+        | {
+            for token_id in [slot_two_start, plus, digit, slot_two_end] {
+                runtime.step(token_id, mode).expect("literal slot capture");
+            }
+        };
+        let expected_prompt_winners = |token_id| {
+            let columns = columns_for(token_id);
+            std::array::from_fn::<_, ACTIVE_COLUMNS, _>(|index| columns[index] * 4)
+        };
+
+        capture_literal(&mut runtime, digit_5, TemporalStepMode::Learn);
+        let add_prompt = runtime.step(W_ADD, TemporalStepMode::Learn).unwrap();
+        assert_eq!(
+            &add_prompt.winner_context[..ACTIVE_COLUMNS],
+            &expected_prompt_winners(W_ADD)
+        );
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        let add_plan = runtime.typed_plan_winners().unwrap();
+        for token_id in [add, variable_zero, integer, copy_slot_two, end, eos] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+
+        runtime.reset_transient();
+        let abs_prompt = runtime.step(W_ABS, TemporalStepMode::Learn).unwrap();
+        assert_eq!(
+            &abs_prompt.winner_context[..ACTIVE_COLUMNS],
+            &expected_prompt_winners(W_ABS)
+        );
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::ListInt,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        let abs_plan = runtime.typed_plan_winners().unwrap();
+        for token_id in [map, bind, absolute, variable_zero, variable_zero, eos] {
+            runtime.teach_typed_token(token_id).unwrap();
+        }
+
+        runtime.reset_transient();
+        capture_literal(&mut runtime, digit_3, TemporalStepMode::ReadOnly);
+        let dev_prompt = runtime.step(W_DEV, TemporalStepMode::ReadOnly).unwrap();
+        assert_eq!(
+            &dev_prompt.winner_context[..ACTIVE_COLUMNS],
+            &expected_prompt_winners(W_DEV)
+        );
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::ListInt,
+                TypedValue::ListInt,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+        let dev_plan = runtime.typed_plan_winners().unwrap();
+
+        assert_eq!(&dev_plan[..6], &abs_plan[..6]);
+        assert_eq!(&dev_plan[5..], &add_plan[5..]);
+        assert_ne!(&add_plan[..5], &abs_plan[..5]);
+        assert_ne!(&abs_plan[8..], &add_plan[8..]);
+
+        let generated = runtime.generate_typed().expect("teacher-free map-add");
+        assert_eq!(
+            generated
+                .iter()
+                .map(|generation| generation.surface_token_id)
+                .collect::<Vec<_>>(),
+            vec![
+                map,
+                bind,
+                add,
+                variable_zero,
+                integer,
+                plus,
+                digit_3,
+                end,
+                variable_zero,
+                eos,
+            ]
+        );
+        assert_eq!(generated[5].path, TemporalGenerationPath::EnterCopy);
+        assert_eq!(generated[5].control_token_id, copy_slot_two);
+        assert_eq!(generated[6].path, TemporalGenerationPath::Copy);
+        assert_eq!(generated[7].path, TemporalGenerationPath::ExitCopy);
+        assert_eq!(generated[7].control_token_id, COPY_END_TOKEN_ID);
+        assert_eq!(generated[2].winner_input_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(generated[2].candidate_tokens, 1);
+        assert_eq!(runtime.typed_plan_winners(), Some(dev_plan));
+        assert_eq!(runtime.scientific_stop, None);
     }
 }
