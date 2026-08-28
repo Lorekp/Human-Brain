@@ -5785,6 +5785,83 @@ pub(in crate::temporal_runtime) mod tests {
         runtime
     }
 
+    fn exact_source_reservation_runtime() -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 6 * ACTIVE_COLUMNS as u32,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 12 * ACTIVE_COLUMNS as u32,
+            segment_capacity: 64,
+            novel_race_cap: 2,
+            prediction_quorum: ACTIVE_COLUMNS as u8,
+            construction_seed: 17,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 4,
+            theta_match: 16,
+            theta_active: 18,
+            context_policy: TemporalContextPolicy::BoundWinners,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let codebook = (0..6u32)
+            .map(|token_id| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|index| {
+                    token_id * ACTIVE_COLUMNS as u32 + index as u32
+                }),
+            })
+            .collect();
+        let members = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        let physical_count = (2 * config.max_pyramidal_cells + 3 * config.column_count) as usize;
+        TemporalCircuitRuntime::new(config, codebook, members, vec![0.0; physical_count], &[])
+            .expect("exact-source reservation fixture must build")
+    }
+
+    fn recover_exact_source_owner(
+        runtime: &mut TemporalCircuitRuntime,
+        expected_source_winners: [u32; CONTEXT_CELLS],
+        expected_target_winners: [u32; CONTEXT_CELLS],
+    ) {
+        runtime.reset_transient();
+        let source = runtime.step(0, TemporalStepMode::Learn).unwrap();
+        assert_eq!(source.winner_context, expected_source_winners);
+        let recovered = runtime.step(1, TemporalStepMode::Learn).unwrap();
+        assert_eq!(recovered.predicted_columns, 0);
+        assert_eq!(recovered.allocated_segments, 0);
+        assert_eq!(recovered.winner_context, expected_target_winners);
+        for segment_id in 0..ACTIVE_COLUMNS as u32 {
+            assert_eq!(
+                runtime
+                    .store
+                    .runtime_segment_row(segment_id)
+                    .unwrap()
+                    .permanence_ticks,
+                [299; PAIRS_PER_SEGMENT],
+            );
+        }
+
+        runtime.reset_transient();
+        runtime.step(0, TemporalStepMode::ReadOnly).unwrap();
+        let active = runtime.step(1, TemporalStepMode::ReadOnly).unwrap();
+        assert_eq!(active.predicted_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(active.allocated_segments, 0);
+        assert_eq!(active.winner_context, expected_target_winners);
+
+        runtime.reset_transient();
+        let novel_source = runtime.step(5, TemporalStepMode::Learn).unwrap();
+        let pair_overlap = novel_source.winner_context[..ACTIVE_COLUMNS]
+            .iter()
+            .filter(|winner| expected_source_winners[..ACTIVE_COLUMNS].contains(winner))
+            .count();
+        assert!(pair_overlap <= 7);
+        let novel = runtime.step(1, TemporalStepMode::Learn).unwrap();
+        assert_eq!(novel.predicted_columns, 0);
+        assert_eq!(novel.allocated_segments, ACTIVE_COLUMNS as u8);
+    }
+
     fn capacity_only_policy_runtime(
         context_policy: TemporalContextPolicy,
         plasticity_policy: TemporalPlasticityPolicy,
@@ -10172,6 +10249,55 @@ pub(in crate::temporal_runtime) mod tests {
             encoded_checkpoint(&imported),
             encoded_checkpoint(&uninterrupted)
         );
+    }
+
+    #[test]
+    fn exact_source_owner_survives_disconnection_and_checkpoint_resume_without_reallocation() {
+        let mut uninterrupted = exact_source_reservation_runtime();
+        let source = uninterrupted.step(0, TemporalStepMode::Learn).unwrap();
+        let learned = uninterrupted.step(1, TemporalStepMode::Learn).unwrap();
+        let source_winners = source.winner_context;
+        let target_winners = learned.winner_context;
+        assert_eq!(learned.allocated_segments, ACTIVE_COLUMNS as u8);
+
+        uninterrupted.reset_transient();
+        uninterrupted.step(0, TemporalStepMode::ReadOnly).unwrap();
+        let healthy = uninterrupted.step(1, TemporalStepMode::ReadOnly).unwrap();
+        assert_eq!(healthy.predicted_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(healthy.winner_context, target_winners);
+
+        for wrong_target in [2, 3] {
+            uninterrupted.reset_transient();
+            uninterrupted.step(0, TemporalStepMode::Learn).unwrap();
+            let punishment = uninterrupted
+                .step(wrong_target, TemporalStepMode::Learn)
+                .unwrap();
+            assert_eq!(
+                punishment.punished_segments,
+                ACTIVE_COLUMNS as u32 * (wrong_target - 1),
+            );
+        }
+        let checkpoint = encoded_checkpoint(&uninterrupted);
+        let mut restored = import_checkpoint_v1(&checkpoint, factory_for_runtime(&uninterrupted))
+            .expect("the twice-punished exact-source state must restore");
+
+        for runtime in [&mut uninterrupted, &mut restored] {
+            runtime.reset_transient();
+            runtime.step(0, TemporalStepMode::Learn).unwrap();
+            let punishment = runtime.step(4, TemporalStepMode::Learn).unwrap();
+            assert_eq!(punishment.punished_segments, 3 * ACTIVE_COLUMNS as u32);
+            for segment_id in 0..ACTIVE_COLUMNS as u32 {
+                assert_eq!(
+                    runtime
+                        .store
+                        .runtime_segment_row(segment_id)
+                        .unwrap()
+                        .permanence_ticks,
+                    [249; PAIRS_PER_SEGMENT],
+                );
+            }
+            recover_exact_source_owner(runtime, source_winners, target_winners);
+        }
     }
 
     #[test]
