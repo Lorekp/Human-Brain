@@ -1,15 +1,18 @@
 //! Minimal structural state for native typed-program holes.
 //!
 //! This module knows only the small typed surface language. It has no prompt,
-//! task-family, token-ID, candidate-list, or temporal-runtime dependency. The
-//! cue exposed to a future physical workspace is therefore transferable: an
-//! `Int` hole at the root and an `Int` hole inside `map` have the same identity.
+//! task-family, token-ID, candidate-list, or temporal-runtime dependency. A
+//! hole exposes both its transferable type/role cue and its constructor-neutral
+//! root-to-hole child path, so locally identical holes can remain distinct in a
+//! nested program without introducing task labels.
 
 const MAX_LITERAL_DIGITS: u8 = 4;
+const MAX_HOLE_ADDRESS_DEPTH: u8 = 8;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TypedValue {
     Int,
+    Bool,
     ListInt,
     IntToInt,
 }
@@ -18,6 +21,8 @@ pub(crate) enum TypedValue {
 pub(crate) enum SurfaceKind {
     Add,
     Absolute,
+    LessThan,
+    If,
     Map,
     Bind,
     Variable0,
@@ -54,6 +59,57 @@ pub(crate) enum TypedHoleRole {
     Head,
     Child0,
     Child1,
+    Child2,
+}
+
+/// Compact constructor-neutral root-to-hole child path.
+///
+/// Each child ordinal occupies two bits; `depth` disambiguates leading and
+/// trailing zero ordinals. The fixed capacity keeps the representation small
+/// and makes unsupported depth fail closed rather than silently aliasing.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub(crate) struct TypedHoleAddress {
+    packed_ordinals: u16,
+    depth: u8,
+}
+
+impl TypedHoleAddress {
+    pub(crate) const fn root() -> Self {
+        Self {
+            packed_ordinals: 0,
+            depth: 0,
+        }
+    }
+
+    pub(crate) const fn depth(self) -> u8 {
+        self.depth
+    }
+
+    pub(crate) const fn packed_ordinals(self) -> u16 {
+        self.packed_ordinals
+    }
+
+    pub(crate) const fn child_ordinal(self, index: u8) -> Option<u8> {
+        if index >= self.depth {
+            return None;
+        }
+        Some(((self.packed_ordinals >> ((index as u32) * 2)) & 0b11) as u8)
+    }
+
+    fn child(self, ordinal: u8) -> Option<Self> {
+        debug_assert!(
+            ordinal <= 2,
+            "typed constructors have at most three children"
+        );
+        if self.depth == MAX_HOLE_ADDRESS_DEPTH {
+            return None;
+        }
+        Some(Self {
+            packed_ordinals: self.packed_ordinals
+                | (u16::from(ordinal) << (u32::from(self.depth) * 2)),
+            depth: self.depth + 1,
+        })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -66,6 +122,10 @@ pub(crate) enum TypedHoleError {
         cue: TypedHoleCue,
         surface: SurfaceKind,
     },
+    StructuralAddressOverflow {
+        address: TypedHoleAddress,
+        child_ordinal: u8,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,6 +133,7 @@ struct Hole {
     expected: TypedValue,
     variable_zero: TypedValue,
     role: TypedHoleRole,
+    address: TypedHoleAddress,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -89,6 +150,7 @@ pub(crate) struct TypedHoleState {
     holes: Vec<Hole>,
     literal: Option<LiteralState>,
     literal_role: TypedHoleRole,
+    literal_address: TypedHoleAddress,
     terminated: bool,
 }
 
@@ -102,9 +164,11 @@ impl TypedHoleState {
                 expected: result,
                 variable_zero: parameter,
                 role: TypedHoleRole::Head,
+                address: TypedHoleAddress::root(),
             }],
             literal: None,
             literal_role: TypedHoleRole::Head,
+            literal_address: TypedHoleAddress::root(),
             terminated: false,
         })
     }
@@ -136,11 +200,22 @@ impl TypedHoleState {
             .map_or(TypedHoleRole::Head, |hole| hole.role)
     }
 
+    pub(crate) fn address(&self) -> TypedHoleAddress {
+        if self.literal.is_some() {
+            return self.literal_address;
+        }
+        self.holes
+            .last()
+            .map_or(TypedHoleAddress::root(), |hole| hole.address)
+    }
+
     pub(crate) fn admits(&self, surface: SurfaceKind) -> bool {
         match (self.cue(), surface) {
             (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Add)
             | (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Absolute)
             | (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Integer)
+            | (TypedHoleCue::Expression(TypedValue::Bool), SurfaceKind::LessThan)
+            | (TypedHoleCue::Expression(_), SurfaceKind::If)
             | (TypedHoleCue::Expression(TypedValue::ListInt), SurfaceKind::Map)
             | (TypedHoleCue::Expression(TypedValue::IntToInt), SurfaceKind::Bind)
             | (TypedHoleCue::LiteralSign, SurfaceKind::Plus | SurfaceKind::Minus)
@@ -168,52 +243,47 @@ impl TypedHoleState {
 
         match (cue, surface) {
             (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Add) => {
-                let hole = self.pop_hole();
-                self.holes.push(Hole {
-                    expected: TypedValue::Int,
-                    variable_zero: hole.variable_zero,
-                    role: TypedHoleRole::Child1,
-                });
-                self.holes.push(Hole {
-                    expected: TypedValue::Int,
-                    variable_zero: hole.variable_zero,
-                    role: TypedHoleRole::Child0,
-                });
+                self.replace_current_hole([
+                    (TypedValue::Int, TypedHoleRole::Child0),
+                    (TypedValue::Int, TypedHoleRole::Child1),
+                ])?;
             }
             (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Absolute) => {
-                let hole = self.pop_hole();
-                self.holes.push(Hole {
-                    expected: TypedValue::Int,
-                    variable_zero: hole.variable_zero,
-                    role: TypedHoleRole::Child0,
-                });
+                self.replace_current_hole([(TypedValue::Int, TypedHoleRole::Child0)])?;
+            }
+            (TypedHoleCue::Expression(TypedValue::Bool), SurfaceKind::LessThan) => {
+                self.replace_current_hole([
+                    (TypedValue::Int, TypedHoleRole::Child0),
+                    (TypedValue::Int, TypedHoleRole::Child1),
+                ])?;
+            }
+            (TypedHoleCue::Expression(result), SurfaceKind::If) => {
+                self.replace_current_hole([
+                    (TypedValue::Bool, TypedHoleRole::Child0),
+                    (result, TypedHoleRole::Child1),
+                    (result, TypedHoleRole::Child2),
+                ])?;
             }
             (TypedHoleCue::Expression(TypedValue::ListInt), SurfaceKind::Map) => {
-                let hole = self.pop_hole();
-                self.holes.push(Hole {
-                    expected: TypedValue::ListInt,
-                    variable_zero: hole.variable_zero,
-                    role: TypedHoleRole::Child1,
-                });
-                self.holes.push(Hole {
-                    expected: TypedValue::IntToInt,
-                    variable_zero: hole.variable_zero,
-                    role: TypedHoleRole::Child0,
-                });
+                self.replace_current_hole([
+                    (TypedValue::IntToInt, TypedHoleRole::Child0),
+                    (TypedValue::ListInt, TypedHoleRole::Child1),
+                ])?;
             }
             (TypedHoleCue::Expression(TypedValue::IntToInt), SurfaceKind::Bind) => {
-                self.pop_hole();
-                self.holes.push(Hole {
-                    expected: TypedValue::Int,
-                    variable_zero: TypedValue::Int,
-                    role: TypedHoleRole::Head,
-                });
+                self.replace_current_hole([(TypedValue::Int, TypedHoleRole::Head)])?;
+                self.holes
+                    .last_mut()
+                    .expect("bind creates one body hole")
+                    .variable_zero = TypedValue::Int;
             }
             (TypedHoleCue::Expression(_), SurfaceKind::Variable0) => {
                 self.pop_hole();
             }
             (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Integer) => {
-                self.literal_role = self.pop_hole().role;
+                let hole = self.pop_hole();
+                self.literal_role = hole.role;
+                self.literal_address = hole.address;
                 self.literal = Some(LiteralState::Sign);
             }
             (TypedHoleCue::LiteralSign, SurfaceKind::Plus) => {
@@ -257,16 +327,56 @@ impl TypedHoleState {
             .pop()
             .expect("an expression cue always owns one hole")
     }
+
+    fn replace_current_hole<const N: usize>(
+        &mut self,
+        children: [(TypedValue, TypedHoleRole); N],
+    ) -> Result<(), TypedHoleError> {
+        let parent = *self
+            .holes
+            .last()
+            .expect("an expression cue always owns one hole");
+        let mut replacements = [parent; N];
+        for (index, (expected, role)) in children.into_iter().enumerate() {
+            let child_ordinal = u8::try_from(index).expect("typed constructors have few children");
+            let address = parent.address.child(child_ordinal).ok_or(
+                TypedHoleError::StructuralAddressOverflow {
+                    address: parent.address,
+                    child_ordinal,
+                },
+            )?;
+            replacements[index] = Hole {
+                expected,
+                variable_zero: parent.variable_zero,
+                role,
+                address,
+            };
+        }
+        self.pop_hole();
+        self.holes.extend(replacements.into_iter().rev());
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{SurfaceKind as S, TypedHoleCue, TypedHoleError, TypedHoleState, TypedValue};
+    use super::{
+        SurfaceKind as S, TypedHoleAddress, TypedHoleCue, TypedHoleError, TypedHoleRole,
+        TypedHoleState, TypedValue, MAX_HOLE_ADDRESS_DEPTH,
+    };
 
     fn advance_stream(state: &mut TypedHoleState, stream: &[S]) {
         for &surface in stream {
             state.advance(surface).unwrap();
         }
+    }
+
+    fn address(ordinals: &[u8]) -> TypedHoleAddress {
+        ordinals
+            .iter()
+            .fold(TypedHoleAddress::root(), |path, &ordinal| {
+                path.child(ordinal).unwrap()
+            })
     }
 
     #[test]
@@ -356,5 +466,183 @@ mod tests {
         assert!(state.advance(S::Digit(0)).is_err());
         assert_eq!(state, before_zero);
         assert!(state.advance(S::Eos).is_err());
+
+        let mut deep = TypedHoleState::unary(TypedValue::Int, TypedValue::Int).unwrap();
+        for _ in 0..MAX_HOLE_ADDRESS_DEPTH {
+            deep.advance(S::Absolute).unwrap();
+        }
+        let before_overflow = deep.clone();
+        assert_eq!(
+            deep.advance(S::Absolute),
+            Err(TypedHoleError::StructuralAddressOverflow {
+                address: before_overflow.address(),
+                child_ordinal: 0,
+            })
+        );
+        assert_eq!(deep, before_overflow);
+    }
+
+    #[test]
+    fn nested_clamp_trace_preserves_types_roles_and_structural_addresses() {
+        let mut state = TypedHoleState::unary(TypedValue::Int, TypedValue::Int).unwrap();
+        let stream = [
+            (
+                S::If,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Head,
+                &[][..],
+            ),
+            (
+                S::LessThan,
+                TypedHoleCue::Expression(TypedValue::Bool),
+                TypedHoleRole::Child0,
+                &[0][..],
+            ),
+            (
+                S::Variable0,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Child0,
+                &[0, 0][..],
+            ),
+            (
+                S::Integer,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Child1,
+                &[0, 1][..],
+            ),
+            (
+                S::Minus,
+                TypedHoleCue::LiteralSign,
+                TypedHoleRole::Child1,
+                &[0, 1][..],
+            ),
+            (
+                S::Digit(5),
+                TypedHoleCue::LiteralFirstNonzeroDigit,
+                TypedHoleRole::Child1,
+                &[0, 1][..],
+            ),
+            (
+                S::End,
+                TypedHoleCue::LiteralDigitOrEnd,
+                TypedHoleRole::Child1,
+                &[0, 1][..],
+            ),
+            (
+                S::Integer,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Child1,
+                &[1][..],
+            ),
+            (
+                S::Minus,
+                TypedHoleCue::LiteralSign,
+                TypedHoleRole::Child1,
+                &[1][..],
+            ),
+            (
+                S::Digit(5),
+                TypedHoleCue::LiteralFirstNonzeroDigit,
+                TypedHoleRole::Child1,
+                &[1][..],
+            ),
+            (
+                S::End,
+                TypedHoleCue::LiteralDigitOrEnd,
+                TypedHoleRole::Child1,
+                &[1][..],
+            ),
+            (
+                S::If,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Child2,
+                &[2][..],
+            ),
+            (
+                S::LessThan,
+                TypedHoleCue::Expression(TypedValue::Bool),
+                TypedHoleRole::Child0,
+                &[2, 0][..],
+            ),
+            (
+                S::Integer,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Child0,
+                &[2, 0, 0][..],
+            ),
+            (
+                S::Plus,
+                TypedHoleCue::LiteralSign,
+                TypedHoleRole::Child0,
+                &[2, 0, 0][..],
+            ),
+            (
+                S::Digit(5),
+                TypedHoleCue::LiteralFirstDigit,
+                TypedHoleRole::Child0,
+                &[2, 0, 0][..],
+            ),
+            (
+                S::End,
+                TypedHoleCue::LiteralDigitOrEnd,
+                TypedHoleRole::Child0,
+                &[2, 0, 0][..],
+            ),
+            (
+                S::Variable0,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Child1,
+                &[2, 0, 1][..],
+            ),
+            (
+                S::Integer,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Child1,
+                &[2, 1][..],
+            ),
+            (
+                S::Plus,
+                TypedHoleCue::LiteralSign,
+                TypedHoleRole::Child1,
+                &[2, 1][..],
+            ),
+            (
+                S::Digit(5),
+                TypedHoleCue::LiteralFirstDigit,
+                TypedHoleRole::Child1,
+                &[2, 1][..],
+            ),
+            (
+                S::End,
+                TypedHoleCue::LiteralDigitOrEnd,
+                TypedHoleRole::Child1,
+                &[2, 1][..],
+            ),
+            (
+                S::Variable0,
+                TypedHoleCue::Expression(TypedValue::Int),
+                TypedHoleRole::Child2,
+                &[2, 2][..],
+            ),
+            (S::Eos, TypedHoleCue::Eos, TypedHoleRole::Head, &[][..]),
+        ];
+
+        for (surface, cue, role, ordinals) in stream {
+            assert_eq!(state.cue(), cue);
+            assert_eq!(state.role(), role);
+            assert_eq!(state.address(), address(ordinals));
+            assert_eq!(state.address().depth(), ordinals.len() as u8);
+            for (index, &ordinal) in ordinals.iter().enumerate() {
+                assert_eq!(state.address().child_ordinal(index as u8), Some(ordinal));
+            }
+            assert!(state.admits(surface));
+            state.advance(surface).unwrap();
+        }
+
+        assert_eq!(state.cue(), TypedHoleCue::Terminated);
+        assert_ne!(address(&[0, 0]), address(&[2, 0, 0]));
+        assert_ne!(address(&[0, 1]), address(&[2, 0, 1]));
+        assert_ne!(address(&[1]), address(&[2, 1]));
+        assert_eq!(address(&[2, 1]).packed_ordinals(), 6);
     }
 }
