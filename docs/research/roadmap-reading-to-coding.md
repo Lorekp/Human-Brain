@@ -190,6 +190,20 @@ tests, all-or-nothing per family, exactly like every gate in this repo.
 Milestone ladder below Gemma already defined (M0 beat random completion
 → M1 beat n-gram → M2 beat template heuristic → M3 beat tiny neural LM).
 
+**Public-TRAIN bridge status (2026-08-28).** The smallest closed coding loop
+now works end to end on a scalar template: execute an identity source, reduce
+the visible residual to a sign observation, let fitted-cell races elect a
+BUILD action, forward that action into a separate fitted-cell role/place
+builder, generate source directly, and run the result in the canonical
+sandbox. R3-PAC0 emitted exact `n - 9`; operation and payload interventions
+emitted exact `n + 9` and `n - 8`, and the actual program passed all 36 TRAIN
+cases. This does **not** open M0 or any protected split. The current bottleneck
+is now narrower and actionable: magnitude still comes from the public sidecar
+and the scalar source skeleton is fixed. The next bridge should copy magnitude
+bytes from structured execution feedback, then broaden source shapes before
+spending any family-disjoint or hidden capability cohort. The closed typed-
+projection tuning loop remains closed.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
