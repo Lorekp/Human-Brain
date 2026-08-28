@@ -1,0 +1,819 @@
+{
+  "authority": {
+    "atomic_no_argument_generation_call_count": 3,
+    "attempted_target_keys": [
+      [
+        "t1_list_map_add",
+        5
+      ],
+      [
+        "t0_scalar_offset",
+        9
+      ],
+      [
+        "t0_scalar_clamp",
+        9
+      ]
+    ],
+    "checkpoint_trained_once": true,
+    "dev_or_held_out_opened": false,
+    "harness_retries": 0,
+    "independent_restore_per_attempt": true,
+    "model_retries": 0,
+    "ordered_teacher_free_target_keys": [
+      [
+        "t1_list_map_add",
+        5
+      ],
+      [
+        "t0_scalar_offset",
+        9
+      ],
+      [
+        "t0_scalar_clamp",
+        9
+      ],
+      [
+        "t2_clamp_then_sum",
+        7
+      ]
+    ],
+    "source_partition_generated": "train",
+    "stop_rule": {
+      "absolute_attempt_cap": 4,
+      "license_requires_ordinary_eos_full_passes": 1,
+      "license_requires_structural_exact_targets": 3,
+      "stop_after_pre_completion_structural_failures": 2
+    },
+    "target_expected_solutions_used_as_runtime_input": false,
+    "target_private_cases_used_as_runtime_input": false,
+    "train_keys": [
+      [
+        "t1_list_map_add",
+        6
+      ],
+      [
+        "t2_clamp_then_sum",
+        8
+      ]
+    ]
+  },
+  "claim_boundary": "Capped reuse check on visible TRAIN only. Targets are native-typed-fresh, not globally untouched: the historical prompt-only baseline covered all 90 TRAIN tasks. This is not DEV, eval, held-out, M0, or C1 evidence.",
+  "closed_loop_edit_licensed": false,
+  "experiment": "r3-public-simple-swe-native-typed-breadth",
+  "generated_at_utc": "2026-08-28T16:37:38.645112+00:00",
+  "outcome": "STOP_TWO_STRUCTURAL_FAILURES",
+  "physical_definition": {
+    "all_target_prompts_in_codebook": true,
+    "capacity_accounting": {
+      "base_learning_arrivals": 642,
+      "base_pyramidal_cells": 6144,
+      "base_temporal_segment_rows_upper_bound": 7040,
+      "constructor_pointer": {
+        "capacity_assumes_every_call_recruits": true,
+        "cue_rows_upper_bound": 165,
+        "exact_role_opening_call_count": 15,
+        "recurrence_rows_upper_bound": 165,
+        "total_rows_upper_bound": 330
+      },
+      "constructor_pointer_cue_arrivals": 15,
+      "episodes": {
+        "t1_list_map_add/006": {
+          "base_learning_arrivals": 304,
+          "constructor_pointer_cue_arrivals": 4,
+          "eligible_teacher_api_calls": 8,
+          "head_to_root_transfer_arrivals": 1,
+          "physical_teacher_arrivals": 18,
+          "plan_component_arrivals": 5,
+          "prompt_arrivals": 281,
+          "teacher_api_calls": 9,
+          "total_learning_arrivals": 308
+        },
+        "t2_clamp_then_sum/008": {
+          "base_learning_arrivals": 338,
+          "constructor_pointer_cue_arrivals": 11,
+          "eligible_teacher_api_calls": 23,
+          "head_to_root_transfer_arrivals": 1,
+          "physical_teacher_arrivals": 48,
+          "plan_component_arrivals": 6,
+          "prompt_arrivals": 284,
+          "teacher_api_calls": 24,
+          "total_learning_arrivals": 349
+        }
+      },
+      "max_pyramidal_cells": 13514,
+      "noninitial_learning_arrivals": 655,
+      "ordinary_segment_rows_upper_bound_including_pointer_cues": 7205,
+      "reserve_pyramidal_cells": 7370,
+      "resets": 2,
+      "segment_capacity": 7370,
+      "total_learning_arrivals": 657
+    },
+    "circuit_identity_sha256": "158d356baca2fd83a91496b2308474b482b0204657d54d50b8636d67287478e2",
+    "segment_capacity": 7370,
+    "target_prompt_codebook_union_size": 64
+  },
+  "protocol": {
+    "protocol_id": "human-cell-simple-swe-v1",
+    "protocol_sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2"
+  },
+  "runtime": {
+    "elapsed_wall_ns": 49159703500,
+    "native_binary_sha256": "3c34407ab9fdfee8cb3eb35118b61857b9960bc6139bbd6c7ee71fccea1fdc62",
+    "native_source_digest": "07774ab94abfce5f48a609df4b8e42c2a5c41bf74226e510de30bfe5cbfa8ded",
+    "pinned_source_sha256": {
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.py": "3cf58f9eb6dcb6e0ce089ea58fe1ca6ba778546b546f12babf1539bdebc6decb",
+      "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.py": "59fe2acde729ac8f097d297b27ec118d0ddf7f7a5d4668f9cf169fd823f4c452",
+      "experiments/r3_pilot/public_simple_swe_native_typed_shift_sum_probe.py": "206309e97caa37ec5bdcf15936bf02b1e78684074f0f601f3997cb5e99941b61",
+      "experiments/r3_pilot/public_simple_swe_native_typed_sketch_probe.py": "95fb51bded52d246b5f91f0bacaa2b112d22b9a91d945fd89d12edc29f2a7457",
+      "src/humanbrain/_native_src/src/temporal_runtime.rs": "012d4f79505e3e0e381ebf9397db0c74d695120e7dfe8d511a338f8b896b9dc4",
+      "src/humanbrain/_native_src/src/temporal_runtime/checkpoint.rs": "bdb1ab444a826e706b9c8284816a6e54847b0bb6c156723135324fffb377faba",
+      "src/humanbrain/_native_src/src/temporal_runtime/typed_hole_state.rs": "e61a9e8101b5447ef245eda161e99a4e3631f1582b86f37213a36983d9774827",
+      "src/humanbrain/_native_src/src/temporal_runtime/typed_workspace.rs": "ebcdfb848b33b29e45709042216a44efbec535bbebe16513ee933722bf7e3874",
+      "src/humanbrain/native_temporal_runtime.py": "77b41b014d35648adbe989fe3c31059856f60410758dddb3d9794e54a0ed227a"
+    },
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "5981535a6e4f46acb69c6217cdc42d64320c3ff6f3fe45d69cbc067973b31e0e",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "train": {
+    "donor_compiler_checks": [
+      {
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/006"
+      },
+      {
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-2/t2_clamp_then_sum/008"
+      }
+    ],
+    "learning_steps_after_train": 657,
+    "live_segments_after_train": 5038,
+    "tasks": [
+      {
+        "learning_steps_after_task": 308,
+        "live_segments_after_task": 3388,
+        "pointer_observations": [
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "map",
+            "teacher_position": 0
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "bind",
+            "teacher_position": 1
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 4,
+            "segment_row_delta": 55,
+            "surface": "add",
+            "teacher_position": 2
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "integer",
+            "teacher_position": 4
+          }
+        ],
+        "prompt_steps": 281,
+        "task": {
+          "entry_point": "solve_3234660fc6ed5836",
+          "family": "t1_list_map_add",
+          "hidden_test_sha256": "beef3d4baad1151774b7e65eac59fecd549309c3b727114674738f0854aaa9d2",
+          "literal": "5",
+          "lower": null,
+          "ordinal": 6,
+          "parameter": "values",
+          "partition": "train",
+          "prompt_token_count": 281,
+          "public_prompt_lossless_after_tokenization": true,
+          "public_prompt_sha256": "7349ab488cd6638aae3e0cebdf0b75d7e93e82b5a7e177a4603727ab28af9a9c",
+          "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/006",
+          "task_sha256": "d84cb2c97461ae225283e486a3a213542fbd0f905cbce107fc1bc56fbafa1007",
+          "upper": null
+        },
+        "teacher": [
+          "map",
+          "bind",
+          "add",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "variable-0",
+          "<EOS>"
+        ],
+        "workspace_steps": 10
+      },
+      {
+        "learning_steps_after_task": 657,
+        "live_segments_after_task": 5038,
+        "pointer_observations": [
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "sum",
+            "teacher_position": 0
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 33,
+            "surface": "map",
+            "teacher_position": 1
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "bind",
+            "teacher_position": 2
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 4,
+            "segment_row_delta": 55,
+            "surface": "if",
+            "teacher_position": 3
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "less-than",
+            "teacher_position": 4
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "integer",
+            "teacher_position": 6
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "integer",
+            "teacher_position": 9
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "if",
+            "teacher_position": 12
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "less-than",
+            "teacher_position": 13
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "integer",
+            "teacher_position": 14
+          },
+          {
+            "actual_pointer_rows": 22,
+            "learning_step_delta": 3,
+            "segment_row_delta": 44,
+            "surface": "integer",
+            "teacher_position": 18
+          }
+        ],
+        "prompt_steps": 284,
+        "task": {
+          "entry_point": "solve_406c4e0bb2d37975",
+          "family": "t2_clamp_then_sum",
+          "hidden_test_sha256": "d2a40bad64f365ff203e170384035f832aa304d0133d3c6250e877757cbd1a28",
+          "literal": null,
+          "lower": "-5",
+          "ordinal": 8,
+          "parameter": "values",
+          "partition": "train",
+          "prompt_token_count": 284,
+          "public_prompt_lossless_after_tokenization": true,
+          "public_prompt_sha256": "7d53d6d482a411b3f1f6971026e6c2a3146708d2df0b8c8486c0ae08ed717210",
+          "task_id": "simple-swe-v1/train/tier-2/t2_clamp_then_sum/008",
+          "task_sha256": "f8334301d3354c523ee2daa84680831ee7e17da039c10867f1a0a0a1c2a7170d",
+          "upper": "5"
+        },
+        "teacher": [
+          "sum",
+          "map",
+          "bind",
+          "if",
+          "less-than",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "if",
+          "less-than",
+          "integer",
+          "COPY_SLOT_3",
+          "end",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_3",
+          "end",
+          "variable-0",
+          "variable-0",
+          "<EOS>"
+        ],
+        "workspace_steps": 25
+      }
+    ],
+    "trained_checkpoint_bytes": 322952,
+    "trained_checkpoint_sha256": "da04511b962e4351d48e35c24357819173b32020868e85b82ee6b45bf867b7fe"
+  },
+  "visible_train_targets_teacher_free": [
+    {
+      "atomic_no_argument_generation": true,
+      "attempt_number": 1,
+      "classification": {
+        "end_to_end_pass": true,
+        "fitted_cell_races_exact": true,
+        "ordinary_eos": true,
+        "ordinary_eos_full_pass": true,
+        "physical_copy_control_exact": true,
+        "pre_completion_structural_failure": false,
+        "structural_exact": true,
+        "surface_ids_exact_through_complete_ast": true
+      },
+      "copy_slot_schedule": [
+        2
+      ],
+      "copy_trace_exact": true,
+      "copy_transactions": [
+        {
+          "control_token_id": 4294967292,
+          "copied_places": [
+            0,
+            1
+          ],
+          "copied_primitives": [
+            "+",
+            "1"
+          ],
+          "exit_surface_primitive": "end",
+          "physical_election_counts": [
+            2,
+            1
+          ],
+          "slot_ordinal": 2
+        }
+      ],
+      "expected_stream_used_only_after_native_close": true,
+      "first_failure": null,
+      "fitted_cell_races_exact": true,
+      "generation_call_count": 1,
+      "generations": [
+        {
+          "candidate_tokens_physical": 1,
+          "control_token_id": null,
+          "copy_place_ordinal": null,
+          "generation_index": 1,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "position": 0,
+          "slot_ordinal": null,
+          "surface_primitive": "map",
+          "surface_token_id": 1030,
+          "temporal_event_count": 55,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 2,
+          "control_token_id": null,
+          "copy_place_ordinal": null,
+          "generation_index": 2,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "position": 1,
+          "slot_ordinal": null,
+          "surface_primitive": "bind",
+          "surface_token_id": 1031,
+          "temporal_event_count": 62,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 2,
+          "control_token_id": null,
+          "copy_place_ordinal": null,
+          "generation_index": 3,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "position": 2,
+          "slot_ordinal": null,
+          "surface_primitive": "add",
+          "surface_token_id": 1024,
+          "temporal_event_count": 69,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 4,
+          "control_token_id": null,
+          "copy_place_ordinal": null,
+          "generation_index": 4,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "position": 3,
+          "slot_ordinal": null,
+          "surface_primitive": "variable-0",
+          "surface_token_id": 1025,
+          "temporal_event_count": 72,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 3,
+          "control_token_id": null,
+          "copy_place_ordinal": null,
+          "generation_index": 5,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "position": 4,
+          "slot_ordinal": null,
+          "surface_primitive": "integer",
+          "surface_token_id": 1026,
+          "temporal_event_count": 79,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 35,
+          "control_token_id": 4294967292,
+          "copy_place_ordinal": 0,
+          "generation_index": 6,
+          "path": "ENTER_COPY",
+          "physical_election_count": 2,
+          "position": 5,
+          "slot_ordinal": 2,
+          "surface_primitive": "+",
+          "surface_token_id": 1027,
+          "temporal_event_count": 82,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 42,
+          "control_token_id": null,
+          "copy_place_ordinal": 1,
+          "generation_index": 7,
+          "path": "COPY",
+          "physical_election_count": 1,
+          "position": 6,
+          "slot_ordinal": 2,
+          "surface_primitive": "1",
+          "surface_token_id": 1033,
+          "temporal_event_count": 82,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 6,
+          "control_token_id": 4294967294,
+          "copy_place_ordinal": null,
+          "generation_index": 8,
+          "path": "EXIT_COPY",
+          "physical_election_count": 2,
+          "position": 7,
+          "slot_ordinal": 2,
+          "surface_primitive": "end",
+          "surface_token_id": 1029,
+          "temporal_event_count": 85,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 2,
+          "control_token_id": null,
+          "copy_place_ordinal": null,
+          "generation_index": 9,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "position": 8,
+          "slot_ordinal": null,
+          "surface_primitive": "variable-0",
+          "surface_token_id": 1025,
+          "temporal_event_count": 88,
+          "winner_input_columns": 11
+        },
+        {
+          "candidate_tokens_physical": 1,
+          "control_token_id": null,
+          "copy_place_ordinal": null,
+          "generation_index": 10,
+          "path": "TEMPORAL",
+          "physical_election_count": 1,
+          "position": 9,
+          "slot_ordinal": null,
+          "surface_primitive": "<EOS>",
+          "surface_token_id": 256,
+          "temporal_event_count": 91,
+          "winner_input_columns": 11
+        }
+      ],
+      "private_cases_entered_native_runtime": false,
+      "program": {
+        "compiled_source": "def solve_187d335b1d4ad45a(values):\n    return [item_0 + 1 for item_0 in values]\n",
+        "compiler_received_prompt": false,
+        "compiler_received_tests": false,
+        "exact_compiled_source": true,
+        "exact_tokens": true,
+        "expected_compiled_source": "def solve_187d335b1d4ad45a(values):\n    return [item_0 + 1 for item_0 in values]\n",
+        "expected_tokens": [
+          "map",
+          "bind",
+          "add",
+          "variable-0",
+          "integer",
+          "+",
+          "1",
+          "end",
+          "variable-0"
+        ],
+        "program_sha256": "9b831e9d7b36153bb29fe4c7e41f1e57e7c14e8c5f3b8fbb3cfe4ca733cb8b7c",
+        "tokens": [
+          "map",
+          "bind",
+          "add",
+          "variable-0",
+          "integer",
+          "+",
+          "1",
+          "end",
+          "variable-0"
+        ]
+      },
+      "prompt_steps": 281,
+      "sandbox": {
+        "attempted": true,
+        "detail": "",
+        "outcome": "passed",
+        "passed": true,
+        "property_case_count": 32,
+        "python_runtime": {
+          "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+          "implementation": "cpython",
+          "python_version": "3.11.15"
+        },
+        "regression_case_count": 4,
+        "sandboxed": true,
+        "wall_seconds": 0.08910929999910877,
+        "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+      },
+      "target_expected_solution_entered_native_runtime": false,
+      "target_spend_marker": {
+        "exclusive_create": true,
+        "exists_after_attempt": true,
+        "flushed_and_fsynced_before_generate": true,
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t1_list_map_add-005.spent.json",
+        "retained_on_model_failure": true,
+        "sha256": "f232b202d3dcc36502873521ed8a8d9ef45a87c3191cd041883b62353a4183f5",
+        "state": "TARGET_ATTEMPT_SPENT"
+      },
+      "task": {
+        "entry_point": "solve_187d335b1d4ad45a",
+        "family": "t1_list_map_add",
+        "hidden_test_sha256": "6beb7bafe5ce7eaa89bd4547ba5add88d71b21be0d9e6d1670d39d02a96ac45e",
+        "literal": "1",
+        "lower": null,
+        "ordinal": 5,
+        "parameter": "values",
+        "partition": "train",
+        "prompt_token_count": 281,
+        "public_prompt_lossless_after_tokenization": true,
+        "public_prompt_sha256": "8f580169ee90871ddb161e74b0fee53de9999111f31214c484d0817b3901f29f",
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/005",
+        "task_sha256": "6e7e11480f0edb7036062f0ef1e7aa60cf47968847a6dd0ab20ed90b748a647d",
+        "upper": null
+      },
+      "teacher_tokens_after_prompt": 0,
+      "terminated_by_ordinary_eos": true,
+      "workspace_steps_before_generation": 1
+    },
+    {
+      "atomic_no_argument_generation": true,
+      "attempt_number": 1,
+      "classification": {
+        "end_to_end_pass": false,
+        "fitted_cell_races_exact": false,
+        "ordinary_eos": false,
+        "ordinary_eos_full_pass": false,
+        "physical_copy_control_exact": false,
+        "pre_completion_structural_failure": true,
+        "structural_exact": false,
+        "surface_ids_exact_through_complete_ast": false
+      },
+      "copy_slot_schedule": [
+        2
+      ],
+      "copy_trace_exact": false,
+      "copy_transactions": [],
+      "expected_stream_used_only_after_native_close": true,
+      "first_failure": {
+        "detail": {
+          "completed_surface_prefix": 0,
+          "expected_surface": "add",
+          "location": 29470,
+          "message": "temporal physical stage stopped",
+          "observed": 0,
+          "poison_code": 7,
+          "required": 0,
+          "retained_completed_generations": 0,
+          "stage_code": 3,
+          "status": "SCIENTIFIC_STOP"
+        },
+        "gate": "GENERATION_STOP",
+        "kind": "model"
+      },
+      "fitted_cell_races_exact": false,
+      "generation_call_count": 1,
+      "generations": [],
+      "private_cases_entered_native_runtime": false,
+      "program": {
+        "compiled_source": null,
+        "compiler_received_prompt": false,
+        "compiler_received_tests": false,
+        "exact_compiled_source": false,
+        "exact_tokens": false,
+        "expected_compiled_source": "def solve_ac2b11ade24b1a08(n):\n    return n + 9\n",
+        "expected_tokens": [
+          "add",
+          "variable-0",
+          "integer",
+          "+",
+          "9",
+          "end"
+        ],
+        "tokens": []
+      },
+      "prompt_steps": 251,
+      "sandbox": {
+        "attempted": false,
+        "detail": "not run because an earlier gate stopped",
+        "passed": false
+      },
+      "target_expected_solution_entered_native_runtime": false,
+      "target_spend_marker": {
+        "exclusive_create": true,
+        "exists_after_attempt": true,
+        "flushed_and_fsynced_before_generate": true,
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_offset-009.spent.json",
+        "retained_on_model_failure": true,
+        "sha256": "c273f4b733a1e0b2e30b3b007ce4db8c7a310aac83bf8120a632e883e53e53f8",
+        "state": "TARGET_ATTEMPT_SPENT"
+      },
+      "task": {
+        "entry_point": "solve_ac2b11ade24b1a08",
+        "family": "t0_scalar_offset",
+        "hidden_test_sha256": "fffe29d3b8ee44c11abb845c796752ede5a29024328981a5efb4e45f0667dbef",
+        "literal": "9",
+        "lower": null,
+        "ordinal": 9,
+        "parameter": "n",
+        "partition": "train",
+        "prompt_token_count": 251,
+        "public_prompt_lossless_after_tokenization": true,
+        "public_prompt_sha256": "41ed6338aaa7e8a72cf521ebd851a5b69374acc283e66c1ffb5e31c446e7cc97",
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/009",
+        "task_sha256": "7035bee949ec9b32fb2dfa9f50c2fb23582f6ae29c0fb81e287fa05ef0ce6bae",
+        "upper": null
+      },
+      "teacher_tokens_after_prompt": 0,
+      "terminated_by_ordinary_eos": false,
+      "workspace_steps_before_generation": 1
+    },
+    {
+      "atomic_no_argument_generation": true,
+      "attempt_number": 1,
+      "classification": {
+        "end_to_end_pass": false,
+        "fitted_cell_races_exact": false,
+        "ordinary_eos": false,
+        "ordinary_eos_full_pass": false,
+        "physical_copy_control_exact": false,
+        "pre_completion_structural_failure": true,
+        "structural_exact": false,
+        "surface_ids_exact_through_complete_ast": false
+      },
+      "copy_slot_schedule": [
+        2,
+        2,
+        3,
+        3
+      ],
+      "copy_trace_exact": false,
+      "copy_transactions": [],
+      "expected_stream_used_only_after_native_close": true,
+      "first_failure": {
+        "detail": {
+          "completed_surface_prefix": 0,
+          "expected_surface": "if",
+          "location": 29470,
+          "message": "temporal physical stage stopped",
+          "observed": 0,
+          "poison_code": 7,
+          "required": 0,
+          "retained_completed_generations": 0,
+          "stage_code": 3,
+          "status": "SCIENTIFIC_STOP"
+        },
+        "gate": "GENERATION_STOP",
+        "kind": "model"
+      },
+      "fitted_cell_races_exact": false,
+      "generation_call_count": 1,
+      "generations": [],
+      "private_cases_entered_native_runtime": false,
+      "program": {
+        "compiled_source": null,
+        "compiler_received_prompt": false,
+        "compiler_received_tests": false,
+        "exact_compiled_source": false,
+        "exact_tokens": false,
+        "expected_compiled_source": "def solve_0fec62f3497dd728(n):\n    return -12 if n < -12 else 12 if 12 < n else n\n",
+        "expected_tokens": [
+          "if",
+          "less-than",
+          "variable-0",
+          "integer",
+          "-",
+          "1",
+          "2",
+          "end",
+          "integer",
+          "-",
+          "1",
+          "2",
+          "end",
+          "if",
+          "less-than",
+          "integer",
+          "+",
+          "1",
+          "2",
+          "end",
+          "variable-0",
+          "integer",
+          "+",
+          "1",
+          "2",
+          "end",
+          "variable-0"
+        ],
+        "tokens": []
+      },
+      "prompt_steps": 275,
+      "sandbox": {
+        "attempted": false,
+        "detail": "not run because an earlier gate stopped",
+        "passed": false
+      },
+      "target_expected_solution_entered_native_runtime": false,
+      "target_spend_marker": {
+        "exclusive_create": true,
+        "exists_after_attempt": true,
+        "flushed_and_fsynced_before_generate": true,
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_clamp-009.spent.json",
+        "retained_on_model_failure": true,
+        "sha256": "8f96e1777d2602de558c917521fa89919530210712dbc529bf4142d2738c6dae",
+        "state": "TARGET_ATTEMPT_SPENT"
+      },
+      "task": {
+        "entry_point": "solve_0fec62f3497dd728",
+        "family": "t0_scalar_clamp",
+        "hidden_test_sha256": "e390574ac50fb176fe93bfada0ae4b19604739c068133a7d3dd4c7782e18eff7",
+        "literal": null,
+        "lower": "-12",
+        "ordinal": 9,
+        "parameter": "n",
+        "partition": "train",
+        "prompt_token_count": 275,
+        "public_prompt_lossless_after_tokenization": true,
+        "public_prompt_sha256": "47f609b89602e55336191ac5aadc59d704177ffdd8d610c9aa537aa79b1933d6",
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/009",
+        "task_sha256": "60cd26abbb3c4f2042ebcdfc4104e2a4e7b7bff1ab7a48f019320cdaf643afb9",
+        "upper": "12"
+      },
+      "teacher_tokens_after_prompt": 0,
+      "terminated_by_ordinary_eos": false,
+      "workspace_steps_before_generation": 1
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "attempt_index": 1,
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.json",
+  "created_at_utc": "2026-08-28T16:37:33.731907+00:00",
+  "experiment": "r3-public-simple-swe-native-typed-breadth",
+  "probe_source_sha256": "5981535a6e4f46acb69c6217cdc42d64320c3ff6f3fe45d69cbc067973b31e0e",
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_key": [
+    "t1_list_map_add",
+    5
+  ],
+  "target_task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/005",
+  "trained_checkpoint_sha256": "da04511b962e4351d48e35c24357819173b32020868e85b82ee6b45bf867b7fe"
+}
