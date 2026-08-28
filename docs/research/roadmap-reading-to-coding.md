@@ -211,6 +211,20 @@ fresh four-family self-posed coding cohort, with raw diagnostics, at most two
 revision cycles, and cell-off/random controls. The closed typed-projection
 tuning loop remains closed.
 
+That cohort is now spent. All 12 cell completions were valid, sentinel-closed
+Python, and raw feedback changed the selected program on three of four tasks,
+so syntax validity and the closed-loop plumbing are no longer the immediate
+bottleneck. Every completion nevertheless collapsed onto two whole programs
+from the frozen corpus (seven fallback lookups and five inner slices). Final
+hidden scores were 5/36, 0/36, 2/36, and 0/36, with 0/4 full task passes and a
+terminal `STOP_FRESH_CODING_CHALLENGE`. This is a useful architectural
+localization, not a reason to tune the spent cohort: the next increment must
+replace whole-sequence continuation with a generic grammar/type stack whose
+individual productions, operators, and arguments are selected by fitted-cell
+races. Host code may enforce syntax and compile the selected tree, but it may
+not supply task-specific skeletons. The next validation remains self-posed and
+precanonical; M0 stays sealed.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

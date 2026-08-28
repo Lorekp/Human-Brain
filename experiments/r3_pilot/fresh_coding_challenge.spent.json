@@ -1,0 +1,8 @@
+{
+  "challenge_source_commit": "446fa0f4a01c9879f59a0858d93b26dc7f48352d",
+  "challenge_source_sha256": "3715ae2a28b30d34770eb56251f05e00264cfc2b9e9f8b30e5fc7134734e8ebd",
+  "checkpoint_sha256": "6d972946012f34884a7bf012223eda52aa8ac252f12d2356a12b7bc389077fe9",
+  "format": "humanbrain.fresh-coding-spent.v1",
+  "state": "started",
+  "worker_sha256": "3a731267aa59799693e9eeb398c86ba9d8e261a2df86856da201430a65b7c223"
+}

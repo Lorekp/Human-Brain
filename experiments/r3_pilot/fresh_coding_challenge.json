@@ -1,0 +1,1020 @@
+{
+  "completion_seal": {
+    "completion_count": 12,
+    "path": "experiments/r3_pilot/fresh_coding_challenge.seal.json",
+    "sha256": "2d868638878b0001ef514939c8c163b8b74d92049f28927612eb8d2e937ae525"
+  },
+  "fail_fast": {
+    "cell_productive_visible_signal": {
+      "fresh_01_affine_list": true,
+      "fresh_02_nearest_prefix": false
+    },
+    "evaluated_task_ids": [
+      "fresh_01_affine_list",
+      "fresh_02_nearest_prefix"
+    ],
+    "rule": "stop_after_task_2_if_both_cell_tasks_have_no_parseable_progress_signal",
+    "triggered": false
+  },
+  "format": "humanbrain.fresh-coding-challenge.v1",
+  "hidden_scores": {
+    "fresh_01_affine_list": {
+      "arms": {
+        "b_random": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        },
+        "cell": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 5,
+          "property_case_count": 32,
+          "property_passed_cases": 5,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        },
+        "cell_off": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        }
+      },
+      "case_commitment_sha256": "56d9bc8d52ba4fe87c667c02a310d6152ed4dac92b2047407324a8d2acdf3aba",
+      "property_case_count": 32,
+      "regression_case_count": 4
+    },
+    "fresh_02_nearest_prefix": {
+      "arms": {
+        "b_random": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        },
+        "cell": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        },
+        "cell_off": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        }
+      },
+      "case_commitment_sha256": "ceaa784336474a026aa88b5842ae76ece999a86715408c12b4061fca4f3d7146",
+      "property_case_count": 32,
+      "regression_case_count": 4
+    },
+    "fresh_03_running_clamped_maxima": {
+      "arms": {
+        "b_random": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        },
+        "cell": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 2,
+          "property_case_count": 32,
+          "property_passed_cases": 1,
+          "regression_case_count": 4,
+          "regression_passed_cases": 1
+        },
+        "cell_off": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 3,
+          "property_case_count": 32,
+          "property_passed_cases": 2,
+          "regression_case_count": 4,
+          "regression_passed_cases": 1
+        }
+      },
+      "case_commitment_sha256": "ed993f2c7272157cb4c6343fca1ae1d67d2d9441a60896b37a87f0a56974ffa4",
+      "property_case_count": 32,
+      "regression_case_count": 4
+    },
+    "fresh_04_cyclic_rotation_prefix": {
+      "arms": {
+        "b_random": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        },
+        "cell": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        },
+        "cell_off": {
+          "case_count": 36,
+          "passed": false,
+          "passed_cases": 0,
+          "property_case_count": 32,
+          "property_passed_cases": 0,
+          "regression_case_count": 4,
+          "regression_passed_cases": 0
+        }
+      },
+      "case_commitment_sha256": "9871b977de79222f3ed2058e5995c9443b14e3085533a272ee5785c9abd25612",
+      "property_case_count": 32,
+      "regression_case_count": 4
+    }
+  },
+  "hidden_scoring_opened": true,
+  "preflight": {
+    "challenge_creation_commit": "446fa0f4a01c9879f59a0858d93b26dc7f48352d",
+    "challenge_source_commit": "446fa0f4a01c9879f59a0858d93b26dc7f48352d",
+    "challenge_source_sha256": "3715ae2a28b30d34770eb56251f05e00264cfc2b9e9f8b30e5fc7134734e8ebd",
+    "checkpoint_artifact_commit": "d6cca59874ee112b43867407898bac890147ce2c",
+    "checkpoint_sha256": "6d972946012f34884a7bf012223eda52aa8ac252f12d2356a12b7bc389077fe9",
+    "checkpoint_source_commit": "34ba9625b943d6ae4714a801fd4811915a706969",
+    "corpus_sha256": "b35a2edeabfb9e78755c4eb7bf3c77babacdddeaf2c0b4164af0c934e54ea56c",
+    "head_commit": "446fa0f4a01c9879f59a0858d93b26dc7f48352d",
+    "worker_creation_commit": "ef519a0794b4104c26ff5ad725f2cea5bd4521e2",
+    "worker_sha256": "3a731267aa59799693e9eeb398c86ba9d8e261a2df86856da201430a65b7c223",
+    "worker_source_commit": "ef519a0794b4104c26ff5ad725f2cea5bd4521e2"
+  },
+  "promotion": {
+    "cell_passed_task_ids": [],
+    "cell_passes_not_matched_by_cell_off": [],
+    "gates": {
+      "at_least_one_not_matched_by_cell_off": false,
+      "at_least_two_of_four": false,
+      "includes_task_3_or_4": false
+    },
+    "new_shape_passed_task_ids": [],
+    "passed": false
+  },
+  "protocol": {
+    "arms": [
+      "cell",
+      "cell_off",
+      "b_random"
+    ],
+    "attempts": [
+      0,
+      1,
+      2
+    ],
+    "candidate_selection": "last_attempted_candidate_not_best_of",
+    "completion_sealed_before_hidden": true,
+    "entry_point": "solve",
+    "feedback": "raw_visible_worker_json_only",
+    "hidden_property_cases_per_task": 32,
+    "hidden_regression_cases_per_task": 4,
+    "max_new_tokens": 192,
+    "parameters": [
+      "arg0",
+      "arg1",
+      "arg2"
+    ],
+    "source_inventory_count": 16,
+    "source_inventory_sha256": "0a604debd4af3aeca3a443be156142238ff53ef48a73e2240f018a003542f11e"
+  },
+  "scope": {
+    "canonical_simple_swe_opened": false,
+    "claim": "fresh_micro_coding_capability_only",
+    "m0_opened": false,
+    "tasks": "self_posed_noncanonical_post_freeze"
+  },
+  "spend_marker": {
+    "path": "experiments/r3_pilot/fresh_coding_challenge.spent.json",
+    "sha256": "1b6ca3e73aa5416e15392413657de30c52104cf801d934c9c7f29aa4651b0930",
+    "state": "started_before_first_generation"
+  },
+  "tasks": [
+    {
+      "arms": {
+        "b_random": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": "fallback_lookup:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":3,\"args\":[[],2,3],\"expected\":[],\"passed\":false},{\"actual\":4,\"args\":[[1,-2,0],3,4],\"expected\":[7,-2,4],\"passed\":false},{\"actual\":1,\"args\":[[-3,5],-2,1],\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": "inner_slice:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[],\"args\":[[],2,3],\"expected\":[],\"passed\":true},{\"actual\":[-2],\"args\":[[1,-2,0],3,4],\"expected\":[7,-2,4],\"passed\":false},{\"actual\":[],\"args\":[[-3,5],-2,1],\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+              "source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": "sorted_overlap:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[],2,3],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":[],\"passed\":false},{\"args\":[[1,-2,0],3,4],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":[7,-2,4],\"passed\":false},{\"args\":[[-3,5],-2,1],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) | set(arg1))\n",
+              "source_sha256": "6347ca5a3e237ef0640053850c80a330f797de00a048f47dcb66c333c67d0fdf",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) | set(arg1))\n",
+          "final_source_sha256": "6347ca5a3e237ef0640053850c80a330f797de00a048f47dcb66c333c67d0fdf",
+          "has_parseable_source": true,
+          "productive_visible_signal": true,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": true,
+          "visible_passed": false
+        },
+        "cell": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":3,\"args\":[[],2,3],\"expected\":[],\"passed\":false},{\"actual\":4,\"args\":[[1,-2,0],3,4],\"expected\":[7,-2,4],\"passed\":false},{\"actual\":1,\"args\":[[-3,5],-2,1],\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[],\"args\":[[],2,3],\"expected\":[],\"passed\":true},{\"actual\":[-2],\"args\":[[1,-2,0],3,4],\"expected\":[7,-2,4],\"passed\":false},{\"actual\":[],\"args\":[[-3,5],-2,1],\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+              "source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[],\"args\":[[],2,3],\"expected\":[],\"passed\":true},{\"actual\":[-2],\"args\":[[1,-2,0],3,4],\"expected\":[7,-2,4],\"passed\":false},{\"actual\":[],\"args\":[[-3,5],-2,1],\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+              "source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+          "final_source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+          "has_parseable_source": true,
+          "productive_visible_signal": true,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": true,
+          "visible_passed": false
+        },
+        "cell_off": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": "even_filter:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[],\"args\":[[],2,3],\"expected\":[],\"passed\":true},{\"actual\":[1],\"args\":[[1,-2,0],3,4],\"expected\":[7,-2,4],\"passed\":false},{\"actual\":[-3,5],\"args\":[[-3,5],-2,1],\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2]\n",
+              "source_sha256": "b2d5cdaafe7a53b5104624013790df33a901cb56948b28088698a67b6404af0b",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": "even_filter:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[],\"args\":[[],2,3],\"expected\":[],\"passed\":true},{\"actual\":[-2,0],\"args\":[[1,-2,0],3,4],\"expected\":[7,-2,4],\"passed\":false},{\"actual\":[],\"args\":[[-3,5],-2,1],\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2 == 0]\n",
+              "source_sha256": "0beeba56db70c891c2ac4971d3c2ee765084e62f4826c336bfcb0aeaf4201ab1",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": "absolute_gap:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[],2,3],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[],\"passed\":false},{\"args\":[[1,-2,0],3,4],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[7,-2,4],\"passed\":false},{\"args\":[[-3,5],-2,1],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[7,-9],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0 - arg1\n",
+              "source_sha256": "97ab2cf08ab81911de857eda6d03f21a99e08f694513b1f691faa8ed9e383724",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return arg0 - arg1\n",
+          "final_source_sha256": "97ab2cf08ab81911de857eda6d03f21a99e08f694513b1f691faa8ed9e383724",
+          "has_parseable_source": true,
+          "productive_visible_signal": false,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": false,
+          "visible_passed": false
+        }
+      },
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Given integer list arg0 and integers arg1 and arg2, return a new list whose item for each input x is x multiplied by arg1 and then increased by arg2. Preserve order.",
+      "task_id": "fresh_01_affine_list",
+      "visible_cases": [
+        {
+          "args": [
+            [],
+            2,
+            3
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            [
+              1,
+              -2,
+              0
+            ],
+            3,
+            4
+          ],
+          "expected": [
+            7,
+            -2,
+            4
+          ]
+        },
+        {
+          "args": [
+            [
+              -3,
+              5
+            ],
+            -2,
+            1
+          ],
+          "expected": [
+            7,
+            -9
+          ]
+        }
+      ]
+    },
+    {
+      "arms": {
+        "b_random": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": "even_filter:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[8,4],\"args\":[[8,3,5,4],4,3],\"expected\":3,\"passed\":false},{\"actual\":[10,2],\"args\":[[-5,10,2],0,2],\"expected\":-5,\"passed\":false},{\"actual\":[],\"args\":[[7,1,9],8,1],\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2 == 0]\n",
+              "source_sha256": "0beeba56db70c891c2ac4971d3c2ee765084e62f4826c336bfcb0aeaf4201ab1",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": "sorted_overlap:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[8,3,5,4],4,3],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":3,\"passed\":false},{\"args\":[[-5,10,2],0,2],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":-5,\"passed\":false},{\"args\":[[7,1,9],8,1],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) & set(arg1))\n",
+              "source_sha256": "033c8206ebac448f9c6418e2ea6e4a0051044e3cfc9f705e08939a2aed59605a",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": "fallback_lookup:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[8,3,5,4],4,3],\"exception\":\"IndexError: list index out of range\",\"expected\":3,\"passed\":false},{\"actual\":-5,\"args\":[[-5,10,2],0,2],\"expected\":-5,\"passed\":true},{\"args\":[[7,1,9],8,1],\"exception\":\"IndexError: list index out of range\",\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1]\n",
+              "source_sha256": "134452e0d4c89b55ea79787a67300f5634b37ffb679530609aac6beb09755cac",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1]\n",
+          "final_source_sha256": "134452e0d4c89b55ea79787a67300f5634b37ffb679530609aac6beb09755cac",
+          "has_parseable_source": true,
+          "productive_visible_signal": true,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": true,
+          "visible_passed": false
+        },
+        "cell": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[8,3,5,4],4,3],\"exception\":\"IndexError: list index out of range\",\"expected\":3,\"passed\":false},{\"actual\":2,\"args\":[[-5,10,2],0,2],\"expected\":-5,\"passed\":false},{\"actual\":1,\"args\":[[7,1,9],8,1],\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[8,3,5,4],4,3],\"exception\":\"IndexError: list index out of range\",\"expected\":3,\"passed\":false},{\"actual\":2,\"args\":[[-5,10,2],0,2],\"expected\":-5,\"passed\":false},{\"actual\":1,\"args\":[[7,1,9],8,1],\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[8,3,5,4],4,3],\"exception\":\"IndexError: list index out of range\",\"expected\":3,\"passed\":false},{\"actual\":2,\"args\":[[-5,10,2],0,2],\"expected\":-5,\"passed\":false},{\"actual\":1,\"args\":[[7,1,9],8,1],\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+          "final_source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+          "has_parseable_source": true,
+          "productive_visible_signal": false,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": false,
+          "visible_passed": false
+        },
+        "cell_off": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": "absolute_gap:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[8,3,5,4],4,3],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":3,\"passed\":false},{\"args\":[[-5,10,2],0,2],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":-5,\"passed\":false},{\"args\":[[7,1,9],8,1],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0 - arg1\n",
+              "source_sha256": "97ab2cf08ab81911de857eda6d03f21a99e08f694513b1f691faa8ed9e383724",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": "absolute_gap:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[8,3,5,4],4,3],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":3,\"passed\":false},{\"args\":[[-5,10,2],0,2],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":-5,\"passed\":false},{\"args\":[[7,1,9],8,1],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return abs(arg0 - arg1)\n",
+              "source_sha256": "217b6898b76abd5af94b8a39866db1dbabdc446a93020ad21ca69b953327e6e5",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": "even_filter:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[3,5],\"args\":[[8,3,5,4],4,3],\"expected\":3,\"passed\":false},{\"actual\":[-5],\"args\":[[-5,10,2],0,2],\"expected\":-5,\"passed\":false},{\"actual\":[7,1,9],\"args\":[[7,1,9],8,1],\"expected\":7,\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2]\n",
+              "source_sha256": "b2d5cdaafe7a53b5104624013790df33a901cb56948b28088698a67b6404af0b",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 3,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2]\n",
+          "final_source_sha256": "b2d5cdaafe7a53b5104624013790df33a901cb56948b28088698a67b6404af0b",
+          "has_parseable_source": true,
+          "productive_visible_signal": false,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": false,
+          "visible_passed": false
+        }
+      },
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "arg0 is a nonempty integer list. Inspect only its first arg2 items, where 1 <= arg2 <= len(arg0), and return the item closest to integer arg1. If distances tie, return the leftmost tied item.",
+      "task_id": "fresh_02_nearest_prefix",
+      "visible_cases": [
+        {
+          "args": [
+            [
+              8,
+              3,
+              5,
+              4
+            ],
+            4,
+            3
+          ],
+          "expected": 3
+        },
+        {
+          "args": [
+            [
+              -5,
+              10,
+              2
+            ],
+            0,
+            2
+          ],
+          "expected": -5
+        },
+        {
+          "args": [
+            [
+              7,
+              1,
+              9
+            ],
+            8,
+            1
+          ],
+          "expected": 7
+        }
+      ]
+    },
+    {
+      "arms": {
+        "b_random": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": "inner_slice:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[7,3,12],\"args\":[[1,7,3,12],0,9],\"expected\":[1,7,7,9],\"passed\":false},{\"actual\":[],\"args\":[[],2,5],\"expected\":[],\"passed\":true},{\"actual\":[-1,0],\"args\":[[-5,-1,0],-3,2],\"expected\":[-3,-1,0],\"passed\":false},{\"actual\":[-4],\"args\":[[10,-4],5,5],\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[1:]\n",
+              "source_sha256": "0a106a256cf737df1957b54ac96b2a81da5b4093f2976d9c407036239df4a406",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": "normalize_text:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[1,7,3,12],0,9],\"exception\":\"AttributeError: 'list' object has no attribute 'lower'\",\"expected\":[1,7,7,9],\"passed\":false},{\"args\":[[],2,5],\"exception\":\"AttributeError: 'list' object has no attribute 'lower'\",\"expected\":[],\"passed\":false},{\"args\":[[-5,-1,0],-3,2],\"exception\":\"AttributeError: 'list' object has no attribute 'lower'\",\"expected\":[-3,-1,0],\"passed\":false},{\"args\":[[10,-4],5,5],\"exception\":\"AttributeError: 'list' object has no attribute 'lower'\",\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0.lower()\n",
+              "source_sha256": "5ea7035ffc0d8f955c8c96fb31d587bc09ac456697e7e273512f67bb26fe857e",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": "product_nonzero:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":252,\"args\":[[1,7,3,12],0,9],\"expected\":[1,7,7,9],\"passed\":false},{\"actual\":1,\"args\":[[],2,5],\"expected\":[],\"passed\":false},{\"actual\":5,\"args\":[[-5,-1,0],-3,2],\"expected\":[-3,-1,0],\"passed\":false},{\"actual\":-40,\"args\":[[10,-4],5,5],\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    result = 1\n    for item in arg0:\n        if item != 0:\n            result *= item\n    return result\n",
+              "source_sha256": "a6b38f55dbc54a3a34a6e0d10e03385b26d34f4dc0758b43a85ff7b74a3d0900",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    result = 1\n    for item in arg0:\n        if item != 0:\n            result *= item\n    return result\n",
+          "final_source_sha256": "a6b38f55dbc54a3a34a6e0d10e03385b26d34f4dc0758b43a85ff7b74a3d0900",
+          "has_parseable_source": true,
+          "productive_visible_signal": false,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": false,
+          "visible_passed": false
+        },
+        "cell": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":9,\"args\":[[1,7,3,12],0,9],\"expected\":[1,7,7,9],\"passed\":false},{\"actual\":5,\"args\":[[],2,5],\"expected\":[],\"passed\":false},{\"actual\":2,\"args\":[[-5,-1,0],-3,2],\"expected\":[-3,-1,0],\"passed\":false},{\"actual\":5,\"args\":[[10,-4],5,5],\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[7,3],\"args\":[[1,7,3,12],0,9],\"expected\":[1,7,7,9],\"passed\":false},{\"actual\":[],\"args\":[[],2,5],\"expected\":[],\"passed\":true},{\"actual\":[-1],\"args\":[[-5,-1,0],-3,2],\"expected\":[-3,-1,0],\"passed\":false},{\"actual\":[],\"args\":[[10,-4],5,5],\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+              "source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[7,3],\"args\":[[1,7,3,12],0,9],\"expected\":[1,7,7,9],\"passed\":false},{\"actual\":[],\"args\":[[],2,5],\"expected\":[],\"passed\":true},{\"actual\":[-1],\"args\":[[-5,-1,0],-3,2],\"expected\":[-3,-1,0],\"passed\":false},{\"actual\":[],\"args\":[[10,-4],5,5],\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+              "source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+          "final_source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+          "has_parseable_source": true,
+          "productive_visible_signal": true,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": true,
+          "visible_passed": false
+        },
+        "cell_off": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": "absolute_gap:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[1,7,3,12],0,9],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[1,7,7,9],\"passed\":false},{\"args\":[[],2,5],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[],\"passed\":false},{\"args\":[[-5,-1,0],-3,2],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[-3,-1,0],\"passed\":false},{\"args\":[[10,-4],5,5],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0 - arg1\n",
+              "source_sha256": "97ab2cf08ab81911de857eda6d03f21a99e08f694513b1f691faa8ed9e383724",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": "absolute_gap:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[1,7,3,12],0,9],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[1,7,7,9],\"passed\":false},{\"args\":[[],2,5],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[],\"passed\":false},{\"args\":[[-5,-1,0],-3,2],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[-3,-1,0],\"passed\":false},{\"args\":[[10,-4],5,5],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return abs(arg0 - arg1)\n",
+              "source_sha256": "217b6898b76abd5af94b8a39866db1dbabdc446a93020ad21ca69b953327e6e5",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": "even_filter:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[1,7,3],\"args\":[[1,7,3,12],0,9],\"expected\":[1,7,7,9],\"passed\":false},{\"actual\":[],\"args\":[[],2,5],\"expected\":[],\"passed\":true},{\"actual\":[-5,-1],\"args\":[[-5,-1,0],-3,2],\"expected\":[-3,-1,0],\"passed\":false},{\"actual\":[],\"args\":[[10,-4],5,5],\"expected\":[5,5],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2]\n",
+              "source_sha256": "b2d5cdaafe7a53b5104624013790df33a901cb56948b28088698a67b6404af0b",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 1
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2]\n",
+          "final_source_sha256": "b2d5cdaafe7a53b5104624013790df33a901cb56948b28088698a67b6404af0b",
+          "has_parseable_source": true,
+          "productive_visible_signal": true,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": true,
+          "visible_passed": false
+        }
+      },
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Starting with current = arg1, process integer list arg0 from left to right. For each item, replace current by max(current, item), then by min(arg2, current), and append current. Return the appended list. arg1 is never greater than arg2.",
+      "task_id": "fresh_03_running_clamped_maxima",
+      "visible_cases": [
+        {
+          "args": [
+            [
+              1,
+              7,
+              3,
+              12
+            ],
+            0,
+            9
+          ],
+          "expected": [
+            1,
+            7,
+            7,
+            9
+          ]
+        },
+        {
+          "args": [
+            [],
+            2,
+            5
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            [
+              -5,
+              -1,
+              0
+            ],
+            -3,
+            2
+          ],
+          "expected": [
+            -3,
+            -1,
+            0
+          ]
+        },
+        {
+          "args": [
+            [
+              10,
+              -4
+            ],
+            5,
+            5
+          ],
+          "expected": [
+            5,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "arms": {
+        "b_random": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": "normalize_text:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[1,2,3],1,5],\"exception\":\"AttributeError: 'list' object has no attribute 'strip'\",\"expected\":[2,3,1,2,3],\"passed\":false},{\"args\":[[1,2,3,4],-1,3],\"exception\":\"AttributeError: 'list' object has no attribute 'strip'\",\"expected\":[4,1,2],\"passed\":false},{\"args\":[[],7,4],\"exception\":\"AttributeError: 'list' object has no attribute 'strip'\",\"expected\":[],\"passed\":false},{\"args\":[[9,8],3,0],\"exception\":\"AttributeError: 'list' object has no attribute 'strip'\",\"expected\":[],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0.strip().lower()\n",
+              "source_sha256": "1e2fea5e9644b019241a6f12ef8ead9447a5b9977fcd25b7b2ca83608a7006e6",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": "fallback_lookup:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":2,\"args\":[[1,2,3],1,5],\"expected\":[2,3,1,2,3],\"passed\":false},{\"actual\":3,\"args\":[[1,2,3,4],-1,3],\"expected\":[4,1,2],\"passed\":false},{\"actual\":4,\"args\":[[],7,4],\"expected\":[],\"passed\":false},{\"actual\":0,\"args\":[[9,8],3,0],\"expected\":[],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": "sorted_overlap:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[1,2,3],1,5],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":[2,3,1,2,3],\"passed\":false},{\"args\":[[1,2,3,4],-1,3],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":[4,1,2],\"passed\":false},{\"args\":[[],7,4],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":[],\"passed\":false},{\"args\":[[9,8],3,0],\"exception\":\"TypeError: 'int' object is not iterable\",\"expected\":[],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) | set(arg1))\n",
+              "source_sha256": "6347ca5a3e237ef0640053850c80a330f797de00a048f47dcb66c333c67d0fdf",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) | set(arg1))\n",
+          "final_source_sha256": "6347ca5a3e237ef0640053850c80a330f797de00a048f47dcb66c333c67d0fdf",
+          "has_parseable_source": true,
+          "productive_visible_signal": false,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": false,
+          "visible_passed": false
+        },
+        "cell": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":2,\"args\":[[1,2,3],1,5],\"expected\":[2,3,1,2,3],\"passed\":false},{\"actual\":3,\"args\":[[1,2,3,4],-1,3],\"expected\":[4,1,2],\"passed\":false},{\"actual\":4,\"args\":[[],7,4],\"expected\":[],\"passed\":false},{\"actual\":0,\"args\":[[9,8],3,0],\"expected\":[],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":[2],\"args\":[[1,2,3],1,5],\"expected\":[2,3,1,2,3],\"passed\":false},{\"actual\":[2,3],\"args\":[[1,2,3,4],-1,3],\"expected\":[4,1,2],\"passed\":false},{\"actual\":[],\"args\":[[],7,4],\"expected\":[],\"passed\":true},{\"actual\":[],\"args\":[[9,8],3,0],\"expected\":[],\"passed\":true}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+              "source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 2
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": null,
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":2,\"args\":[[1,2,3],1,5],\"expected\":[2,3,1,2,3],\"passed\":false},{\"actual\":3,\"args\":[[1,2,3,4],-1,3],\"expected\":[4,1,2],\"passed\":false},{\"actual\":4,\"args\":[[],7,4],\"expected\":[],\"passed\":false},{\"actual\":0,\"args\":[[9,8],3,0],\"expected\":[],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+              "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+              "terminal_source_end_emitted": true,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+          "final_source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+          "has_parseable_source": true,
+          "productive_visible_signal": true,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": true,
+          "visible_passed": false
+        },
+        "cell_off": {
+          "attempts": [
+            {
+              "attempt": 0,
+              "inventory_source_id": "absolute_gap:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[1,2,3],1,5],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[2,3,1,2,3],\"passed\":false},{\"args\":[[1,2,3,4],-1,3],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[4,1,2],\"passed\":false},{\"args\":[[],7,4],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[],\"passed\":false},{\"args\":[[9,8],3,0],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0 - arg1\n",
+              "source_sha256": "97ab2cf08ab81911de857eda6d03f21a99e08f694513b1f691faa8ed9e383724",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 1,
+              "inventory_source_id": "absolute_gap:revision",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"args\":[[1,2,3],1,5],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[2,3,1,2,3],\"passed\":false},{\"args\":[[1,2,3,4],-1,3],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[4,1,2],\"passed\":false},{\"args\":[[],7,4],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[],\"passed\":false},{\"args\":[[9,8],3,0],\"exception\":\"TypeError: unsupported operand type(s) for -: 'list' and 'int'\",\"expected\":[],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return abs(arg0 - arg1)\n",
+              "source_sha256": "217b6898b76abd5af94b8a39866db1dbabdc446a93020ad21ca69b953327e6e5",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            },
+            {
+              "attempt": 2,
+              "inventory_source_id": "fallback_lookup:initial",
+              "parseable_solve": true,
+              "raw_feedback": "{\"cases\":[{\"actual\":2,\"args\":[[1,2,3],1,5],\"expected\":[2,3,1,2,3],\"passed\":false},{\"actual\":4,\"args\":[[1,2,3,4],-1,3],\"expected\":[4,1,2],\"passed\":false},{\"args\":[[],7,4],\"exception\":\"IndexError: list index out of range\",\"expected\":[],\"passed\":false},{\"args\":[[9,8],3,0],\"exception\":\"IndexError: list index out of range\",\"expected\":[],\"passed\":false}],\"passed\":false}",
+              "source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1]\n",
+              "source_sha256": "134452e0d4c89b55ea79787a67300f5634b37ffb679530609aac6beb09755cac",
+              "terminal_source_end_emitted": null,
+              "visible_case_count": 4,
+              "visible_passed": false,
+              "visible_passed_cases": 0
+            }
+          ],
+          "final_attempt": 2,
+          "final_source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1]\n",
+          "final_source_sha256": "134452e0d4c89b55ea79787a67300f5634b37ffb679530609aac6beb09755cac",
+          "has_parseable_source": true,
+          "productive_visible_signal": false,
+          "selection_rule": "last_attempted_candidate_not_best_of",
+          "visible_improvement": false,
+          "visible_passed": false
+        }
+      },
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Rotate list arg0 left by integer arg1 positions (arg1 may be negative), repeat the rotated list cyclically, and return its first arg2 values. Return [] when arg0 is empty or arg2 <= 0.",
+      "task_id": "fresh_04_cyclic_rotation_prefix",
+      "visible_cases": [
+        {
+          "args": [
+            [
+              1,
+              2,
+              3
+            ],
+            1,
+            5
+          ],
+          "expected": [
+            2,
+            3,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "args": [
+            [
+              1,
+              2,
+              3,
+              4
+            ],
+            -1,
+            3
+          ],
+          "expected": [
+            4,
+            1,
+            2
+          ]
+        },
+        {
+          "args": [
+            [],
+            7,
+            4
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            [
+              9,
+              8
+            ],
+            3,
+            0
+          ],
+          "expected": []
+        }
+      ]
+    }
+  ],
+  "verdict": "STOP_FRESH_CODING_CHALLENGE"
+}

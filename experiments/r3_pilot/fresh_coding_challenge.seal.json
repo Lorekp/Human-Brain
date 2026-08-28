@@ -1,0 +1,81 @@
+{
+  "challenge_source_commit": "446fa0f4a01c9879f59a0858d93b26dc7f48352d",
+  "challenge_source_sha256": "3715ae2a28b30d34770eb56251f05e00264cfc2b9e9f8b30e5fc7134734e8ebd",
+  "checkpoint_sha256": "6d972946012f34884a7bf012223eda52aa8ac252f12d2356a12b7bc389077fe9",
+  "final_completions": [
+    {
+      "arm": "cell",
+      "final_attempt": 2,
+      "source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+      "task_id": "fresh_01_affine_list"
+    },
+    {
+      "arm": "cell_off",
+      "final_attempt": 2,
+      "source_sha256": "97ab2cf08ab81911de857eda6d03f21a99e08f694513b1f691faa8ed9e383724",
+      "task_id": "fresh_01_affine_list"
+    },
+    {
+      "arm": "b_random",
+      "final_attempt": 2,
+      "source_sha256": "6347ca5a3e237ef0640053850c80a330f797de00a048f47dcb66c333c67d0fdf",
+      "task_id": "fresh_01_affine_list"
+    },
+    {
+      "arm": "cell",
+      "final_attempt": 2,
+      "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+      "task_id": "fresh_02_nearest_prefix"
+    },
+    {
+      "arm": "cell_off",
+      "final_attempt": 2,
+      "source_sha256": "b2d5cdaafe7a53b5104624013790df33a901cb56948b28088698a67b6404af0b",
+      "task_id": "fresh_02_nearest_prefix"
+    },
+    {
+      "arm": "b_random",
+      "final_attempt": 2,
+      "source_sha256": "134452e0d4c89b55ea79787a67300f5634b37ffb679530609aac6beb09755cac",
+      "task_id": "fresh_02_nearest_prefix"
+    },
+    {
+      "arm": "cell",
+      "final_attempt": 2,
+      "source_sha256": "2016a3ac9c98453082241907aeaf43749117104ff0411737a568584836254cab",
+      "task_id": "fresh_03_running_clamped_maxima"
+    },
+    {
+      "arm": "cell_off",
+      "final_attempt": 2,
+      "source_sha256": "b2d5cdaafe7a53b5104624013790df33a901cb56948b28088698a67b6404af0b",
+      "task_id": "fresh_03_running_clamped_maxima"
+    },
+    {
+      "arm": "b_random",
+      "final_attempt": 2,
+      "source_sha256": "a6b38f55dbc54a3a34a6e0d10e03385b26d34f4dc0758b43a85ff7b74a3d0900",
+      "task_id": "fresh_03_running_clamped_maxima"
+    },
+    {
+      "arm": "cell",
+      "final_attempt": 2,
+      "source_sha256": "f3000b48f537e9d3e7a1d9fa64b440350fb042232dbe27d521234e2664efd46e",
+      "task_id": "fresh_04_cyclic_rotation_prefix"
+    },
+    {
+      "arm": "cell_off",
+      "final_attempt": 2,
+      "source_sha256": "134452e0d4c89b55ea79787a67300f5634b37ffb679530609aac6beb09755cac",
+      "task_id": "fresh_04_cyclic_rotation_prefix"
+    },
+    {
+      "arm": "b_random",
+      "final_attempt": 2,
+      "source_sha256": "6347ca5a3e237ef0640053850c80a330f797de00a048f47dcb66c333c67d0fdf",
+      "task_id": "fresh_04_cyclic_rotation_prefix"
+    }
+  ],
+  "format": "humanbrain.fresh-coding-completion-seal.v1",
+  "worker_sha256": "3a731267aa59799693e9eeb398c86ba9d8e261a2df86856da201430a65b7c223"
+}
