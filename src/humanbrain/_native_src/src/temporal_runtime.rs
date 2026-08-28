@@ -27,6 +27,7 @@ pub(crate) mod checkpoint;
 mod checkpoint_publisher;
 mod ffi;
 mod role_place_copy;
+mod typed_hole_state;
 
 use role_place_copy::{is_internal_role_token, RolePlaceCopyState, SlotOrdinal, COPY_END_TOKEN_ID};
 
