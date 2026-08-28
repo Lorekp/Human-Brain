@@ -1,0 +1,25 @@
+{
+  "arms": [
+    "concept_true",
+    "concept_conflict",
+    "base_true",
+    "base_conflict"
+  ],
+  "atomic_generation_calls_planned": 4,
+  "attempt_index": 4,
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.json",
+  "checkpoint_sha256_by_arm": {
+    "base_conflict": "6427e84cebe3848a26dfb9765e6b3f110ff8c89eb77ef77b3613c94271911db9",
+    "base_true": "f461da2d2bc40fd7493810eb39af7e382d9118543bb036023651178fc762b1fe",
+    "concept_conflict": "595240c07b438f38c7d07d9b6a11488363e814bd1aae77fa96ad5f02118ea7a1",
+    "concept_true": "fad5974f59d0b6ee527ace9cd7a817fb31d92f78ce68b0dce0515b90ca982549"
+  },
+  "created_at_utc": "2026-08-28T17:02:39.856869+00:00",
+  "experiment": "r3-public-simple-swe-role-chunk-route",
+  "family": "t1_list_map_add",
+  "ordinal": 8,
+  "probe_source_sha256": "5b4c80b9fe3a8d780b5a286fb33ad69885316e8b09a2a2723f7b2a46db1c1001",
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/008"
+}
