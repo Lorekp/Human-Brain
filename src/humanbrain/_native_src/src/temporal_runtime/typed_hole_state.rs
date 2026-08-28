@@ -46,6 +46,16 @@ pub(crate) enum TypedHoleCue {
     Terminated,
 }
 
+/// Transferable structural position of the current expression/literal hole.
+/// A binder body starts a new `Head`; constructor arguments use their generic
+/// zero-based child ordinal. No primitive or task identity is represented.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum TypedHoleRole {
+    Head,
+    Child0,
+    Child1,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TypedHoleError {
     UnsupportedUnarySignature {
@@ -62,6 +72,7 @@ pub(crate) enum TypedHoleError {
 struct Hole {
     expected: TypedValue,
     variable_zero: TypedValue,
+    role: TypedHoleRole,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -77,6 +88,7 @@ enum LiteralState {
 pub(crate) struct TypedHoleState {
     holes: Vec<Hole>,
     literal: Option<LiteralState>,
+    literal_role: TypedHoleRole,
     terminated: bool,
 }
 
@@ -89,8 +101,10 @@ impl TypedHoleState {
             holes: vec![Hole {
                 expected: result,
                 variable_zero: parameter,
+                role: TypedHoleRole::Head,
             }],
             literal: None,
+            literal_role: TypedHoleRole::Head,
             terminated: false,
         })
     }
@@ -111,6 +125,15 @@ impl TypedHoleState {
         self.holes.last().map_or(TypedHoleCue::Eos, |hole| {
             TypedHoleCue::Expression(hole.expected)
         })
+    }
+
+    pub(crate) fn role(&self) -> TypedHoleRole {
+        if self.literal.is_some() {
+            return self.literal_role;
+        }
+        self.holes
+            .last()
+            .map_or(TypedHoleRole::Head, |hole| hole.role)
     }
 
     pub(crate) fn admits(&self, surface: SurfaceKind) -> bool {
@@ -149,10 +172,12 @@ impl TypedHoleState {
                 self.holes.push(Hole {
                     expected: TypedValue::Int,
                     variable_zero: hole.variable_zero,
+                    role: TypedHoleRole::Child1,
                 });
                 self.holes.push(Hole {
                     expected: TypedValue::Int,
                     variable_zero: hole.variable_zero,
+                    role: TypedHoleRole::Child0,
                 });
             }
             (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Absolute) => {
@@ -160,6 +185,7 @@ impl TypedHoleState {
                 self.holes.push(Hole {
                     expected: TypedValue::Int,
                     variable_zero: hole.variable_zero,
+                    role: TypedHoleRole::Child0,
                 });
             }
             (TypedHoleCue::Expression(TypedValue::ListInt), SurfaceKind::Map) => {
@@ -167,10 +193,12 @@ impl TypedHoleState {
                 self.holes.push(Hole {
                     expected: TypedValue::ListInt,
                     variable_zero: hole.variable_zero,
+                    role: TypedHoleRole::Child1,
                 });
                 self.holes.push(Hole {
                     expected: TypedValue::IntToInt,
                     variable_zero: hole.variable_zero,
+                    role: TypedHoleRole::Child0,
                 });
             }
             (TypedHoleCue::Expression(TypedValue::IntToInt), SurfaceKind::Bind) => {
@@ -178,13 +206,14 @@ impl TypedHoleState {
                 self.holes.push(Hole {
                     expected: TypedValue::Int,
                     variable_zero: TypedValue::Int,
+                    role: TypedHoleRole::Head,
                 });
             }
             (TypedHoleCue::Expression(_), SurfaceKind::Variable0) => {
                 self.pop_hole();
             }
             (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Integer) => {
-                self.pop_hole();
+                self.literal_role = self.pop_hole().role;
                 self.literal = Some(LiteralState::Sign);
             }
             (TypedHoleCue::LiteralSign, SurfaceKind::Plus) => {
