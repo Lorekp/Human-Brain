@@ -1,0 +1,14 @@
+{
+  "atomic_no_argument_generation_calls_planned": 4,
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_role_chunk_signed_residual_action_probe.json",
+  "canonical_target_sandbox_calls_planned": 1,
+  "checkpoint_sha256": "dd8a15937248134b55c44a5455f6baf70779a24aac78cccb9f62be085e8880b0",
+  "created_at_utc": "2026-08-28T17:48:07.349559+00:00",
+  "experiment": "r3-public-simple-swe-role-chunk-signed-residual-action",
+  "harness_retries": 0,
+  "model_retries": 0,
+  "probe_source_sha256": "c1115e11d6fd336d259f071bf7640bd96764657415493ebd1fbe6028a61c7a4e",
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/007"
+}
