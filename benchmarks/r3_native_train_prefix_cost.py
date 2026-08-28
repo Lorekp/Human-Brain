@@ -35,6 +35,8 @@ import humanbrain.native_temporal_runtime as runtime_adapter
 from humanbrain.native_temporal_runtime import (
     NativeTemporalCircuit,
     NativeTemporalCircuitDefinition,
+    NativeTemporalRuntimeError,
+    NativeTemporalRuntimeStatus,
     TemporalCircuitStep,
     TemporalStepMode,
 )
@@ -88,6 +90,23 @@ def _distribution(values: Sequence[int]) -> dict[str, float | int]:
     }
 
 
+def _completed_distribution(
+    values: Sequence[int],
+) -> dict[str, float | int | None]:
+    if values:
+        return _distribution(values)
+    return {
+        "count": 0,
+        "sum": 0,
+        "min": None,
+        "median": None,
+        "mean": None,
+        "p95": None,
+        "p99": None,
+        "max": None,
+    }
+
+
 def _load_prefix() -> tuple[object, object, np.ndarray, int]:
     started_ns = time.perf_counter_ns()
     verified = load_verified_train_input()
@@ -132,7 +151,11 @@ def _counters(step: TemporalCircuitStep) -> tuple[int, int, int, int]:
 def _run_prefix(
     circuit: NativeTemporalCircuit,
     prefix: np.ndarray,
-) -> tuple[dict[str, list[int]], dict[str, int | bool]]:
+) -> tuple[
+    dict[str, list[int]],
+    dict[str, int | bool],
+    dict[str, int | str] | None,
+]:
     series = {
         "latency_ns": [],
         "candidate_segments": [],
@@ -150,6 +173,7 @@ def _run_prefix(
     basket_spikes = 0
     causal_winner_to_basket = True
     causal_basket_to_gaba = True
+    scientific_stop = None
 
     gc_enabled = gc.isenabled()
     gc.disable()
@@ -157,11 +181,33 @@ def _run_prefix(
     try:
         for index, raw_token in enumerate(prefix):
             started_ns = time.perf_counter_ns()
-            emitted = circuit.advance_block(
-                [int(raw_token)],
-                mode=TemporalStepMode.LEARN,
-                reset_before=index == 0,
-            )
+            try:
+                emitted = circuit.advance_block(
+                    [int(raw_token)],
+                    mode=TemporalStepMode.LEARN,
+                    reset_before=index == 0,
+                )
+            except NativeTemporalRuntimeError as exc:
+                if exc.status is not NativeTemporalRuntimeStatus.SCIENTIFIC_STOP:
+                    raise
+                if exc.completed_prefix != 0 or exc.completed_steps:
+                    raise RuntimeError(
+                        "single-token scientific STOP reported committed work"
+                    ) from exc
+                scientific_stop = {
+                    "zero_based_step_index": index,
+                    "token_id": int(raw_token),
+                    "error_type": type(exc).__name__,
+                    "error_message": str(exc),
+                    "native_status": exc.status.name,
+                    "native_status_code": int(exc.status),
+                    "poison_code": exc.poison_code,
+                    "stage_code": exc.stage_code,
+                    "completed_step_count": len(series["latency_ns"]),
+                    "live_segment_count": live_segments,
+                    "failed_call_latency_ns": time.perf_counter_ns() - started_ns,
+                }
+                break
             latency_ns = time.perf_counter_ns() - started_ns
             if len(emitted) != 1:
                 raise RuntimeError("native prefix step did not emit one result")
@@ -201,14 +247,20 @@ def _run_prefix(
         if gc_enabled:
             gc.enable()
 
-    return series, {
-        "replay_wall_ns": replay_wall_ns,
-        "predicted_steps": predicted_steps,
-        "winner_spikes": winner_spikes,
-        "basket_spikes": basket_spikes,
-        "all_winner_to_basket_ticks": causal_winner_to_basket,
-        "all_basket_to_gaba_ticks": causal_basket_to_gaba,
-    }
+    if scientific_stop is not None:
+        scientific_stop["elapsed_replay_wall_ns"] = replay_wall_ns
+    return (
+        series,
+        {
+            "replay_wall_ns": replay_wall_ns,
+            "predicted_steps": predicted_steps,
+            "winner_spikes": winner_spikes,
+            "basket_spikes": basket_spikes,
+            "all_winner_to_basket_ticks": causal_winner_to_basket,
+            "all_basket_to_gaba_ticks": causal_basket_to_gaba,
+        },
+        scientific_stop,
+    )
 
 
 def main() -> int:
@@ -230,10 +282,78 @@ def main() -> int:
         construction_started_ns = time.perf_counter_ns()
         with NativeTemporalCircuit.fresh(bounded) as circuit:
             native_construction_ns = time.perf_counter_ns() - construction_started_ns
-            series, physical = _run_prefix(circuit, prefix)
-            final_identity = circuit.checkpoint_identity()
+            series, physical, scientific_stop = _run_prefix(circuit, prefix)
+            final_identity = (
+                None if scientific_stop is not None else circuit.checkpoint_identity()
+            )
         native_identity = loaded_library_identity()
 
+    if scientific_stop is not None:
+        payload = {
+            "schema_version": 1,
+            "benchmark": "r3-native-train-prefix-cost",
+            "generated_at_utc": datetime.now(UTC).isoformat(),
+            "outcome": "SCIENTIFIC_STOP",
+            "claim_boundary": (
+                "first 4,096 canonical TRAIN tokens only; synthetic pre-outcome authority, "
+                "bounded capacity, no held-out/C1/capability/cohort evidence"
+            ),
+            "train_input": {
+                "candidate_id": verified.candidate_id,
+                "train_input_authority_sha256": verified.train_input_authority_sha256,
+                "train_stream_sha256": verified.train_stream_sha256,
+                "tokenizer_sha256": verified.tokenizer_sha256,
+                "prefix_book": first_book.short_name,
+                "prefix_token_count": PREFIX_TOKENS,
+                "prefix_token_sha256_le_i32": hashlib.sha256(prefix_bytes).hexdigest(),
+                "held_out_books_materialized": 0,
+                "input_load_ns": input_load_ns,
+            },
+            "definition": {
+                "arm": list(ARM),
+                "construction_seed": CONSTRUCTION_SEED,
+                "protocol_sha256": protocol_authority.protocol_sha256(),
+                "protocol_runnable": protocol["source_binding"]["runnable"],
+                "production_definition_identity_sha256": production_identity,
+                "bounded_definition_identity_sha256": bounded_identity,
+                "bounded_segment_capacity": bounded.config.segment_capacity,
+                "definition_build_ns": definition_build_ns,
+                "native_construction_ns": native_construction_ns,
+            },
+            "stop": scientific_stop,
+            "completed_measurement": {
+                "mode": "LEARN",
+                "timer": "time.perf_counter_ns",
+                "gc_during_replay": "disabled",
+                "distributions": {
+                    name: _completed_distribution(values)
+                    for name, values in series.items()
+                },
+                "predicted_steps": physical["predicted_steps"],
+                "winner_spikes": physical["winner_spikes"],
+                "basket_spikes": physical["basket_spikes"],
+                "all_winner_to_basket_ticks": physical[
+                    "all_winner_to_basket_ticks"
+                ],
+                "all_basket_to_gaba_ticks": physical["all_basket_to_gaba_ticks"],
+            },
+            "environment": {
+                "python": sys.version,
+                "platform": platform.platform(),
+                "processor": platform.processor(),
+                "native_source_digest": native_identity.source_digest,
+                "native_binary_size": native_identity.binary_size,
+                "native_binary_sha256": native_identity.binary_sha256,
+            },
+        }
+        OUTPUT_PATH.write_text(
+            json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
+            encoding="utf-8",
+        )
+        print(f"wrote partial {OUTPUT_PATH}", flush=True)
+        return 2
+
+    assert final_identity is not None
     if final_identity.segment_count != series["live_segments"][-1]:
         raise RuntimeError("tracked and native live-segment counts differ")
     if not physical["all_winner_to_basket_ticks"] or not physical[
