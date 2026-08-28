@@ -550,6 +550,78 @@ def test_absolute_is_a_generic_unary_int_primitive_inside_map() -> None:
     )
 
 
+def test_nested_typed_if_lowers_an_exact_two_sided_scalar_clamp() -> None:
+    signature = TypedSignature(
+        entry_point="clamp",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    program = Program(
+        (
+            "if",
+            "less-than",
+            "variable-0",
+            "integer",
+            "-",
+            "5",
+            "end",
+            "integer",
+            "-",
+            "5",
+            "end",
+            "if",
+            "less-than",
+            "integer",
+            "+",
+            "5",
+            "end",
+            "variable-0",
+            "integer",
+            "+",
+            "5",
+            "end",
+            "variable-0",
+        ),
+        signature,
+    )
+
+    assert compile(program).source == (
+        "def clamp(value):\n"
+        "    return -5 if value < -5 else 5 if 5 < value else value\n"
+    )
+
+
+def test_typed_if_rejects_non_bool_condition_and_mismatched_branches() -> None:
+    signature = TypedSignature(
+        entry_point="invalid_branch",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    malformed = (
+        ("if", "variable-0", "variable-0", "variable-0"),
+        (
+            "if",
+            "less-than",
+            "variable-0",
+            "integer",
+            "+",
+            "0",
+            "end",
+            "variable-0",
+            "less-than",
+            "variable-0",
+            "integer",
+            "+",
+            "0",
+            "end",
+        ),
+    )
+
+    for tokens in malformed:
+        with pytest.raises(ProgramFormatError):
+            compile(Program(tokens=tokens, signature=signature))
+
+
 def test_subtract_is_a_general_binary_int_primitive_with_literal_operand_order() -> None:
     signature = TypedSignature(
         entry_point="difference",
