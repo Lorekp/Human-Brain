@@ -225,6 +225,16 @@ races. Host code may enforce syntax and compile the selected tree, but it may
 not supply task-specific skeletons. The next validation remains self-posed and
 precanonical; M0 stays sealed.
 
+A cheap prompt-last recurrent variant then reset and replayed the full natural
+task plus generic typed-hole state before every production race. It still
+missed production zero on both fresh compositions (fitted 0/2; untrained 0/2),
+localizing the failure before recursion or compilation and ending that variant
+without a parameter sweep. The active replacement is structurally different:
+a persistent sparse prompt assembly plus generic hole-role cells drives a
+local three-factor production-cell readout at every typed decision. Prompt and
+role state are refreshed without replaying generated source through the same
+recurrent bottleneck.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
