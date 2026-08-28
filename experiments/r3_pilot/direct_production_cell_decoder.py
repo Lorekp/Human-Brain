@@ -41,14 +41,7 @@ _OUTPUT_RACE_STEPS = 600
 _LEARNING_RATE_PA = 32.0
 _MAXIMUM_WEIGHT_PA = 1_600.0
 _RANDOM_SEED = 17
-_CHANNEL_STRIDE = 1_000_000
-_CHANNEL_MARKER_BASE = 2_000_000_000
-_PAIR_TOKEN_BASE = 16_000_000
-_PAIR_TOKEN_BITS = 11
-_PAIR_CHANNEL_STRIDE = 1 << (2 * _PAIR_TOKEN_BITS)
-_PROMPT_CHANNEL = 1
-_SIGNATURE_CHANNEL = 2
-_ROLE_CHANNEL = 3
+_CONTEXT_FEATURE_DOMAIN = b"humanbrain-direct-context-feature-v1\0"
 
 _PRODUCTION_SPECS = tuple(
     spec
@@ -81,9 +74,8 @@ class ProductionRace:
     winner_cell: int
     allowed_tokens: tuple[str, ...]
     spike_time_ms: float
-    prompt_cells: int
-    signature_cells: int
-    role_cells: int
+    contextual_unigram_cells: int
+    contextual_pair_cells: int
     active_assembly_cells: int
 
 
@@ -143,11 +135,7 @@ class DirectProductionCellDecoder:
             raise ValueError("epochs must be positive")
         episode_contexts = _episode_contexts(materialized)
         tokenizer = ConceptTokenizer.fit(
-            (
-                text
-                for prompt, signature, role in episode_contexts
-                for text in (prompt, signature, role)
-            ),
+            (prompt for prompt, _, _ in episode_contexts),
             config=ConceptConfig(
                 min_frequency=2,
                 min_mutual_information_bits=0.0,
@@ -293,9 +281,8 @@ class DirectProductionCellDecoder:
                     winner_cell=winner,
                     allowed_tokens=tuple(spec.token for spec in allowed),
                     spike_time_ms=(step + 1) * AdaptiveGlifPopulation(1).parameters.dt_ms,
-                    prompt_cells=counts[0],
-                    signature_cells=counts[1],
-                    role_cells=counts[2],
+                    contextual_unigram_cells=counts[0],
+                    contextual_pair_cells=counts[1],
                     active_assembly_cells=int(np.count_nonzero(eligibility)),
                 )
             )
@@ -393,32 +380,49 @@ def _advance_cursor(cursors: list[_HoleCursor], spec: tp._PrimitiveSpec) -> None
         raise AssertionError(f"unsupported grammar role {spec.role!r}")
 
 
-def _channel_token(channel: int, token_id: int) -> int:
-    return channel * _CHANNEL_STRIDE + int(token_id)
+def _contextual_feature_token(
+    signature: str,
+    role: str,
+    kind: bytes,
+    lexical_token_ids: tuple[int, ...],
+) -> int:
+    digest = sha256(_CONTEXT_FEATURE_DOMAIN)
+    for part in (signature.encode("utf-8"), role.encode("utf-8"), kind):
+        digest.update(len(part).to_bytes(4, "big"))
+        digest.update(part)
+    digest.update(len(lexical_token_ids).to_bytes(1, "big"))
+    for token_id in lexical_token_ids:
+        digest.update(int(token_id).to_bytes(4, "big"))
+    return int.from_bytes(digest.digest()[:4], "big")
 
 
-def _channel_pair_token(channel: int, first: int, second: int) -> int:
-    limit = 1 << _PAIR_TOKEN_BITS
-    if not 0 <= first < limit or not 0 <= second < limit:
-        raise ValueError("concept token exceeds the ordered-pair namespace")
-    pair = (int(first) << _PAIR_TOKEN_BITS) | int(second)
-    return _PAIR_TOKEN_BASE + channel * _PAIR_CHANNEL_STRIDE + pair
-
-
-def _project_text(
+def _project_contextual_prompt(
     tokenizer: ConceptTokenizer,
     projector: SDRProjector,
-    text: str,
-    channel: int,
-) -> np.ndarray:
-    active = np.zeros(_ASSEMBLY_CELLS, dtype=np.bool_)
-    active[projector.indices(_CHANNEL_MARKER_BASE + channel)] = True
-    token_ids = tokenizer.encode(text)
+    prompt: str,
+    signature: str,
+    role: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    unigram_cells = np.zeros(_ASSEMBLY_CELLS, dtype=np.bool_)
+    pair_cells = np.zeros(_ASSEMBLY_CELLS, dtype=np.bool_)
+    token_ids = tokenizer.encode(prompt)
     for token_id in token_ids:
-        active[projector.indices(_channel_token(channel, token_id))] = True
+        feature = _contextual_feature_token(
+            signature,
+            role,
+            b"prompt-unigram",
+            (token_id,),
+        )
+        unigram_cells[projector.indices(feature)] = True
     for first, second in zip(token_ids, token_ids[1:]):
-        active[projector.indices(_channel_pair_token(channel, first, second))] = True
-    return active
+        feature = _contextual_feature_token(
+            signature,
+            role,
+            b"prompt-adjacent-pair",
+            (first, second),
+        )
+        pair_cells[projector.indices(feature)] = True
+    return unigram_cells | pair_cells, unigram_cells, pair_cells
 
 
 def _drive_assembly(
@@ -427,13 +431,14 @@ def _drive_assembly(
     prompt: str,
     signature: str,
     role: str,
-) -> tuple[np.ndarray, tuple[int, int, int]]:
-    prompt_cells = _project_text(tokenizer, projector, prompt, _PROMPT_CHANNEL)
-    signature_cells = _project_text(
-        tokenizer, projector, signature, _SIGNATURE_CHANNEL
+) -> tuple[np.ndarray, tuple[int, int]]:
+    active, unigram_cells, pair_cells = _project_contextual_prompt(
+        tokenizer,
+        projector,
+        prompt,
+        signature,
+        role,
     )
-    role_cells = _project_text(tokenizer, projector, role, _ROLE_CHANNEL)
-    active = prompt_cells | signature_cells | role_cells
     population = AdaptiveGlifPopulation(_ASSEMBLY_CELLS)
     current = active.astype(np.float64) * _INPUT_CURRENT_PA
     spikes = np.zeros(_ASSEMBLY_CELLS, dtype=np.float64)
@@ -442,9 +447,8 @@ def _drive_assembly(
     if np.any(active & (spikes == 0.0)):
         raise RuntimeError("an active prompt-assembly cell did not spike")
     return spikes, (
-        int(np.count_nonzero(prompt_cells)),
-        int(np.count_nonzero(signature_cells)),
-        int(np.count_nonzero(role_cells)),
+        int(np.count_nonzero(unigram_cells)),
+        int(np.count_nonzero(pair_cells)),
     )
 
 
