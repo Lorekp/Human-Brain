@@ -1581,6 +1581,7 @@ impl TemporalCircuitRuntime {
                 diagnostic_count,
                 reserve,
                 EMPTY_EXACT_SOURCE_RESERVATION,
+                false,
                 &transient,
             ) {
                 Ok(count) => count,
@@ -2083,12 +2084,27 @@ impl TemporalCircuitRuntime {
         let mut column_simulated_ticks = [0u16; ACTIVE_COLUMNS];
         let mut winner_learning_segments = [NONE; ACTIVE_COLUMNS];
         let mut predicted_columns = 0u8;
+        // LEARN owns a persistent transition identity distinct from the
+        // externally useful active-path prediction.  READ_ONLY continues to
+        // expose the physical active-owner race unchanged.
+        let persistent_identity_election = mode == TemporalStepMode::Learn
+            && self.config.plasticity_policy == TemporalPlasticityPolicy::Plastic
+            && transient.previous_context_len != 0;
         for (index, &column) in columns.iter().enumerate() {
+            let surface_predicted = if persistent_identity_election {
+                match self.column_has_active_owner(column, diagnostic_count) {
+                    Ok(predicted) => predicted,
+                    Err(stop) => return self.fail(stop),
+                }
+            } else {
+                false
+            };
             let candidate_count = match self.prepare_column_drives(
                 column,
                 diagnostic_count,
                 reserve_plan,
                 exact_source_reservations[index],
+                persistent_identity_election,
                 &transient,
             ) {
                 Ok(candidate_count) => candidate_count,
@@ -2122,7 +2138,9 @@ impl TemporalCircuitRuntime {
             };
             inhibition_onset_ticks[index] = race.inhibition_onset_tick;
             column_simulated_ticks[index] = race.simulated_ticks;
-            if let Some(diagnostic) =
+            if persistent_identity_election {
+                predicted_columns += u8::from(surface_predicted);
+            } else if let Some(diagnostic) =
                 self.diagnostic_for_owner(race.winner.cell_id, diagnostic_count)
             {
                 if diagnostic.best_active_segment != NONE {
@@ -2402,13 +2420,6 @@ impl TemporalCircuitRuntime {
             }
             let cells = &self.column_cells[cell_start..cell_end];
             column_ranges[index] = (cell_start, cell_end);
-            let active = cells.iter().copied().any(|cell| {
-                self.diagnostic_for_owner(cell, diagnostic_count)
-                    .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
-            });
-            if active {
-                continue;
-            }
             for &owner in cells {
                 let Some(diagnostic) = self.diagnostic_for_owner(owner, diagnostic_count) else {
                     continue;
@@ -2437,7 +2448,7 @@ impl TemporalCircuitRuntime {
             return Ok(reservations);
         }
 
-        let mut exact_counts = [0u8; ACTIVE_COLUMNS];
+        let mut selected_rows_seen = [false; ACTIVE_COLUMNS];
         for (owner, segment_id) in self.store.runtime_exact_source_matches() {
             for index in 0..ACTIVE_COLUMNS {
                 if !reservations[index].exists() {
@@ -2447,20 +2458,21 @@ impl TemporalCircuitRuntime {
                 if !self.column_cells[cell_start..cell_end].contains(&owner) {
                     continue;
                 }
-                exact_counts[index] += 1;
-                if exact_counts[index] > 1 {
+                if reservations[index].owner != owner {
                     return Err(TemporalCircuitStop::StoreOrPlanInvariant(
                         "bursting column has multiple exact-source reservation candidates",
                     ));
                 }
-                reservations[index] = ExactSourceReservation { owner, segment_id };
+                if reservations[index].segment_id == segment_id {
+                    selected_rows_seen[index] = true;
+                }
                 break;
             }
         }
         if reservations
             .iter()
-            .zip(exact_counts)
-            .any(|(reservation, count)| reservation.exists() && count != 1)
+            .zip(selected_rows_seen)
+            .any(|(reservation, seen)| reservation.exists() && !seen)
         {
             return Err(TemporalCircuitStop::StoreOrPlanInvariant(
                 "exact-source diagnostic and row state disagree",
@@ -2475,6 +2487,7 @@ impl TemporalCircuitRuntime {
         diagnostic_count: usize,
         reserve: PreparedReservePlan,
         exact_source_reservation: ExactSourceReservation,
+        persistent_identity_election: bool,
         transient: &TemporalTransientState,
     ) -> Result<usize, TemporalCircuitStop> {
         if diagnostic_count > self.recognition_scratch.len() {
@@ -2521,7 +2534,7 @@ impl TemporalCircuitRuntime {
             let Some(diagnostic) = self.diagnostic_for_owner(cell, diagnostic_count) else {
                 continue;
             };
-            if diagnostic.best_active_segment != NONE {
+            if diagnostic.best_active_segment != NONE && !persistent_identity_election {
                 if active_count < active_candidates.len() {
                     active_candidates[active_count] = CategorizedRankCandidate {
                         owner: cell,
@@ -2547,12 +2560,15 @@ impl TemporalCircuitRuntime {
                 race_cap: self.config.novel_race_cap,
             });
         }
-        let novel_limit = usize::from(self.config.novel_race_cap) - categorized_count;
+        let novel_limit = if persistent_identity_election && exact_source_reservation.exists() {
+            0
+        } else {
+            usize::from(self.config.novel_race_cap) - categorized_count
+        };
 
-        // Only recall-competent active owners may bias the physical race.
-        // Potential-only matches remain recognition diagnostics; allowing
-        // them to own W_t would substitute a near context for the current
-        // identity and suppress the novel-cell allocation path.
+        // Active owners drive the unchanged READ_ONLY surface race. During
+        // persistent LEARN identity election they remain prediction telemetry;
+        // only an exact-source reservation may displace novel candidates.
         active_candidates[..active_count].sort_unstable_by(|left, right| {
             right
                 .primary_contacts
@@ -2693,11 +2709,7 @@ impl TemporalCircuitRuntime {
                 ));
             }
             let cells = &self.column_cells[cell_start..cell_end];
-            let has_recall_competent_owner = cells.iter().copied().any(|cell| {
-                self.diagnostic_for_owner(cell, diagnostic_count)
-                    .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
-            });
-            if has_recall_competent_owner || exact_source_reservations[index].exists() {
+            if exact_source_reservations[index].exists() {
                 continue;
             }
             let mut exhausted = true;
@@ -6142,46 +6154,82 @@ mod tests {
     }
 
     #[test]
-    fn plastic_multi_owner_race_reinforces_the_winner_and_punishes_the_loser() {
-        let circuit_config = config(22, 2, TemporalContextPolicy::BoundWinners);
-        let sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
-        let segments = [
-            TemporalSegmentInit {
-                owner: 23,
-                sources: sources.clone(),
+    fn learn_identity_uses_exact_twenty_or_novel_while_active_stays_surface_telemetry() {
+        let mut circuit_config = config(22, 2, TemporalContextPolicy::BoundWinners);
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        circuit_config.max_segments_per_cell = 1;
+        let exact_sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
+        let approximate_sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 43];
+        let mut exact_and_foreign = Vec::with_capacity(2 * ACTIVE_COLUMNS);
+        for index in 0..ACTIVE_COLUMNS as u32 {
+            exact_and_foreign.push(TemporalSegmentInit {
+                owner: 22 + 2 * index,
+                sources: exact_sources.clone(),
+                permanence_ticks: vec![249; PAIRS_PER_SEGMENT],
+            });
+            exact_and_foreign.push(TemporalSegmentInit {
+                owner: 23 + 2 * index,
+                sources: approximate_sources.clone(),
                 permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
-            },
-            TemporalSegmentInit {
-                owner: 22,
-                sources,
-                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
-            },
-        ];
-        let mut offsets = vec![0.0; physical_count(circuit_config)];
-        offsets[22] = -0.024_791_163_874_911_56;
-        offsets[23] = 0.033_505_381_138_863_34;
-        let mut runtime = runtime_with_offsets(circuit_config, offsets, &segments);
-        runtime.step(0, TemporalStepMode::Learn).unwrap();
-        let learned = runtime.step(1, TemporalStepMode::Learn).unwrap();
-        assert_eq!(learned.winner_spikes[0].cell_id, 23);
-        assert_eq!(learned.punished_segments, 1);
+            });
+        }
+
+        let mut read_only = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &exact_and_foreign,
+        );
+        read_only.recognize(0).unwrap();
+        let surface = read_only.recognize(1).unwrap();
+        assert_eq!(surface.predicted_columns, ACTIVE_COLUMNS as u8);
         assert_eq!(
-            runtime
-                .store
-                .runtime_segment_row(0)
-                .unwrap()
-                .permanence_ticks,
-            [305; PAIRS_PER_SEGMENT],
+            surface.winner_spikes.map(|spike| spike.cell_id),
+            std::array::from_fn(|index| 23 + 2 * index as u32),
+            "READ_ONLY keeps the foreign active physical race unchanged",
+        );
+
+        let mut exact_identity = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &exact_and_foreign,
+        );
+        exact_identity.step(0, TemporalStepMode::Learn).unwrap();
+        let reused = exact_identity.step(1, TemporalStepMode::Learn).unwrap();
+        assert_eq!(reused.predicted_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(reused.allocated_segments, 0);
+        assert_eq!(
+            reused.winner_spikes.map(|spike| spike.cell_id),
+            std::array::from_fn(|index| 22 + 2 * index as u32),
+            "one exact 20-contact owner per column defines persistent identity",
+        );
+
+        let approximate_only: Vec<_> = (0..ACTIVE_COLUMNS as u32)
+            .map(|index| TemporalSegmentInit {
+                owner: 22 + 2 * index,
+                sources: approximate_sources.clone(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            })
+            .collect();
+        let mut novel_identity = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &approximate_only,
+        );
+        novel_identity.step(0, TemporalStepMode::Learn).unwrap();
+        let allocated = novel_identity.step(1, TemporalStepMode::Learn).unwrap();
+        assert_eq!(allocated.predicted_columns, ACTIVE_COLUMNS as u8);
+        assert_eq!(allocated.allocated_segments, ACTIVE_COLUMNS as u8);
+        assert_eq!(
+            allocated.winner_spikes.map(|spike| spike.cell_id),
+            std::array::from_fn(|index| 23 + 2 * index as u32),
+            "an approximate active owner cannot suppress a fresh identity",
         );
         assert_eq!(
-            runtime
-                .store
-                .runtime_segment_row(1)
-                .unwrap()
-                .permanence_ticks,
-            [253; PAIRS_PER_SEGMENT],
+            novel_identity.store.runtime_segment_count(),
+            2 * ACTIVE_COLUMNS as u32
         );
-        assert_eq!(runtime.scientific_stop, None);
+        assert_eq!(novel_identity.scientific_stop, None);
     }
 
     #[test]

@@ -20,6 +20,9 @@ CONTEXT_A_TOKEN = 200
 CONTEXT_B_TOKEN = 201
 NOVEL_CONTEXT_TOKEN = 202
 SHARED_ARRIVING_TOKEN = 203
+OVERLAP_CONTEXT_A_TOKEN = 300
+OVERLAP_CONTEXT_B_TOKEN = 301
+OVERLAP_TARGET_TOKEN = 302
 ACTIVE_COLUMNS = 11
 COLUMN_COUNT = 22
 BASE_CELLS_PER_COLUMN = 2
@@ -130,6 +133,40 @@ def _context_conditioned_definition() -> NativeTemporalCircuitDefinition:
         CONTEXT_B_TOKEN: tuple(range(ACTIVE_COLUMNS, 2 * ACTIVE_COLUMNS)),
         NOVEL_CONTEXT_TOKEN: tuple(range(2 * ACTIVE_COLUMNS, 3 * ACTIVE_COLUMNS)),
         SHARED_ARRIVING_TOKEN: tuple(range(3 * ACTIVE_COLUMNS, 4 * ACTIVE_COLUMNS)),
+    }
+    physical_cell_count = 2 * max_pyramidal_cells + 3 * column_count
+    return NativeTemporalCircuitDefinition(
+        config,
+        token_codes,
+        (0.0,) * physical_cell_count,
+    )
+
+
+def _identity_surface_split_definition() -> NativeTemporalCircuitDefinition:
+    column_count = 23
+    max_pyramidal_cells = column_count * BASE_CELLS_PER_COLUMN
+    config = NativeTemporalCircuitConfig(
+        column_count=column_count,
+        max_pyramidal_cells=max_pyramidal_cells,
+        segment_capacity=2 * ACTIVE_COLUMNS,
+        construction_seed=17,
+        connected_permanence_ticks=250,
+        initial_permanence_ticks=255,
+        permanence_increment_ticks=50,
+        negative_decrement_ticks=2,
+        base_cells_per_column=BASE_CELLS_PER_COLUMN,
+        novel_race_cap=BASE_CELLS_PER_COLUMN,
+        prediction_quorum=ACTIVE_COLUMNS,
+        max_segments_per_cell=1,
+        theta_match=16,
+        theta_active=18,
+        context_policy=TemporalContextPolicy.BOUND_WINNERS,
+        plasticity_policy=TemporalPlasticityPolicy.PLASTIC,
+    )
+    token_codes = {
+        OVERLAP_CONTEXT_A_TOKEN: tuple(range(ACTIVE_COLUMNS)),
+        OVERLAP_CONTEXT_B_TOKEN: (*range(ACTIVE_COLUMNS - 1), ACTIVE_COLUMNS),
+        OVERLAP_TARGET_TOKEN: tuple(range(ACTIVE_COLUMNS + 1, column_count)),
     }
     physical_cell_count = 2 * max_pyramidal_cells + 3 * column_count
     return NativeTemporalCircuitDefinition(
@@ -396,3 +433,59 @@ def test_same_arriving_token_reuses_distinct_context_conditioned_winners(
     assert after_novel.next_reserve_cell == definition.config.max_pyramidal_cells
     assert all(cell_id >= base_pyramidal_cells for cell_id in novel_context_winners)
     assert after_novel.poison_code == 0
+
+
+def test_learn_identity_ignores_foreign_active_surface_but_reuses_exact_owner(
+    native_fixture_authority: None,
+) -> None:
+    definition = _identity_surface_split_definition()
+
+    with NativeTemporalCircuit.fresh(definition) as circuit:
+        learned_a = _learn_transition(
+            circuit,
+            OVERLAP_TARGET_TOKEN,
+            source_token=OVERLAP_CONTEXT_A_TOKEN,
+        )
+        learned_b = _learn_transition(
+            circuit,
+            OVERLAP_TARGET_TOKEN,
+            source_token=OVERLAP_CONTEXT_B_TOKEN,
+        )
+        repeated_b = _learn_transition(
+            circuit,
+            OVERLAP_TARGET_TOKEN,
+            source_token=OVERLAP_CONTEXT_B_TOKEN,
+        )
+
+    owners_a = tuple(spike.cell_id for spike in learned_a.winner_spikes)
+    owners_b = tuple(spike.cell_id for spike in learned_b.winner_spikes)
+    assert learned_a.allocated_segments == ACTIVE_COLUMNS
+    assert learned_b.predicted_columns == ACTIVE_COLUMNS
+    assert learned_b.allocated_segments == ACTIVE_COLUMNS
+    assert (
+        learned_b.candidate_segments,
+        learned_b.matching_segments,
+        learned_b.active_segments,
+    ) == (ACTIVE_COLUMNS, ACTIVE_COLUMNS, ACTIVE_COLUMNS)
+    assert set(owners_a).isdisjoint(owners_b)
+    assert repeated_b.predicted_columns == ACTIVE_COLUMNS
+    assert repeated_b.allocated_segments == 0
+    assert tuple(spike.cell_id for spike in repeated_b.winner_spikes) == owners_b
+
+    with NativeTemporalCircuit.fresh(definition) as read_only_circuit:
+        surface_owner = _learn_transition(
+            read_only_circuit,
+            OVERLAP_TARGET_TOKEN,
+            source_token=OVERLAP_CONTEXT_A_TOKEN,
+        )
+        surface_prediction = _read_transition(
+            read_only_circuit,
+            OVERLAP_TARGET_TOKEN,
+            source_token=OVERLAP_CONTEXT_B_TOKEN,
+        )
+
+    assert surface_prediction.predicted_columns == ACTIVE_COLUMNS
+    assert surface_prediction.allocated_segments == 0
+    assert tuple(spike.cell_id for spike in surface_prediction.winner_spikes) == tuple(
+        spike.cell_id for spike in surface_owner.winner_spikes
+    )
