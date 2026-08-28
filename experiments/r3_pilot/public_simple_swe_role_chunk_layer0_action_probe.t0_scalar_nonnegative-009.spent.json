@@ -1,0 +1,17 @@
+{
+  "atomic_no_argument_generation_calls_planned": 1,
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.json",
+  "checkpoint_sha256": "fad5974f59d0b6ee527ace9cd7a817fb31d92f78ce68b0dce0515b90ca982549",
+  "created_at_utc": "2026-08-28T17:21:20.348395+00:00",
+  "experiment": "r3-public-simple-swe-role-chunk-layer0-action",
+  "family": "t0_scalar_nonnegative",
+  "harness_retries": 0,
+  "model_retries": 0,
+  "ordinal": 9,
+  "parent_artifact_sha256": "9ee0df214df3525a2e2898129b03295d9ad20706e26a7c52039db40c7a62884b",
+  "probe_source_sha256": "8c2c86c1cdc6026639cdbce0ba88ac5145101c2c2dced8c3a56155f72326f3d1",
+  "representation": "concept_true",
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/009"
+}

@@ -1,0 +1,320 @@
+{
+  "actuator": {
+    "dispatch_count": 1,
+    "dispatch_input_was_only_observed_surface_route_token": true,
+    "dispatched_action": [
+      "MAX",
+      "ZERO",
+      "ARG0",
+      "END"
+    ],
+    "mapping": {
+      "1536": [
+        "MAX",
+        "ZERO",
+        "ARG0",
+        "END"
+      ]
+    },
+    "observed_surface_route_token_id": 1536
+  },
+  "authority": {
+    "atomic_no_argument_generation_calls": 1,
+    "expected_route_used_as_runtime_input": false,
+    "harness_retries": 0,
+    "model_retries": 0,
+    "partition": "train",
+    "preexisting_durable_marker_inventory": [
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_clamp-009.spent.json",
+        "sha256": "8f96e1777d2602de558c917521fa89919530210712dbc529bf4142d2738c6dae"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_offset-009.spent.json",
+        "sha256": "c273f4b733a1e0b2e30b3b007ce4db8c7a310aac83bf8120a632e883e53e53f8"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t1_list_map_add-005.spent.json",
+        "sha256": "f232b202d3dcc36502873521ed8a8d9ef45a87c3191cd041883b62353a4183f5"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.spent.json",
+        "sha256": "153639264062c4a242c68d65e4a0c3b8a3104b11585ad2fb23815b5cb78d3dbf"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.spent.json",
+        "sha256": "f532023f1d05c2e92a6f30dfdc304d4991a065e4b0fb6d3cee0cf9f88bd68145"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.spent.json",
+        "sha256": "7b8b58cbdebe887801b6f5c3b351b1cfc76aa88ee9991b59ea491e40c690fa77"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t0_scalar_nonnegative-008.spent.json",
+        "sha256": "b86635664d13cf18dde0c3ad95cbdfab036d1ab1f80e633c3217159257b39f0c"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t0_scalar_offset-008.spent.json",
+        "sha256": "a54b59d344a8b32cd2c0cd5bc33f5e1bb348d5dea34531de2f7b18c878001cf1"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t1_list_map_abs-008.spent.json",
+        "sha256": "0a3bcc5cb33e997b475d907f9021ae0e66384003ab0719163bc9251f41355a36"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t1_list_map_add-008.spent.json",
+        "sha256": "4ae372b7fbb2ae0e1cae9e70838e3818aef62389ca814fd5e61ac0b6fabb7e5c"
+      }
+    ],
+    "private_cases_entered_cell_runtime": false,
+    "private_cases_used_only_after_generation_for_sandbox_grading": true,
+    "read_only_prompt_presentations": 1,
+    "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/009"
+  },
+  "claim_boundary": "One visible-TRAIN /009 normalized-template replay and one fixed scalar Layer-0 actuator. The prompt was historically disclosed to a prompt-only baseline, but no durable native/role-route marker had spent it. This is not paraphrase transfer, structural generalization, DEV/eval, held-out, M0, C1, or broad SWE capability.",
+  "compile": {
+    "action_tokens": [
+      "MAX",
+      "ZERO",
+      "ARG0",
+      "END"
+    ],
+    "attempted": true,
+    "compiler": "humanbrain.program.Layer0ProgramCompiler",
+    "compiler_received_private_cases": false,
+    "compiler_received_prompt": false,
+    "complete_function_exact": true,
+    "entry_point_from_sidecar": "solve_58866c1699d816b6",
+    "error": null,
+    "max_nodes": 3,
+    "parameter_from_sidecar": "n",
+    "source": "def solve_58866c1699d816b6(n):\n    return max(0, n)\n",
+    "source_sha256": "78f4171541a319f8cb29db6652b561efc8de5585d3b729535c6c3883b6903071"
+  },
+  "experiment": "r3-public-simple-swe-role-chunk-layer0-action",
+  "gates": {
+    "canonical_train_sandbox_all_cases": true,
+    "complete_layer0_compile": true,
+    "exact_physical_route": true,
+    "exactly_one_action": true
+  },
+  "generated_at_utc": "2026-08-28T17:21:20.440839+00:00",
+  "generation": {
+    "correct": true,
+    "expected_route_token_id_used_only_after_all_generation_calls": 1536,
+    "generation": {
+      "activated_columns": 11,
+      "candidate_tokens": 4,
+      "path": "TEMPORAL",
+      "physical_election_count": 1,
+      "surface_token_id": 1536,
+      "temporal_event_count": 58,
+      "winner_input_columns": 11
+    },
+    "native_stop": null,
+    "physical_route_election_valid": true
+  },
+  "outcome": "PASS_ROLE_ROUTE_LAYER0_ACTION",
+  "parent_license": {
+    "artifact_path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.json",
+    "artifact_sha256": "9ee0df214df3525a2e2898129b03295d9ad20706e26a7c52039db40c7a62884b",
+    "outcome": "LICENSE_CONCEPT_REPETITION_CONDITIONED_ROUTE",
+    "rebuilt_concept_true_checkpoint_sha256": "fad5974f59d0b6ee527ace9cd7a817fb31d92f78ce68b0dce0515b90ca982549",
+    "selected_representation": "concept"
+  },
+  "physical_definition": {
+    "active_columns": 11,
+    "base_noninitial_arrivals": 1022,
+    "circuit_identity_sha256": "171bc6775fd3c36ab03de3897e0dd877a7b645ab5c5a72b883b2c36645549533",
+    "column_count": 4096,
+    "concept_noninitial_arrivals": 486,
+    "max_pyramidal_cells": 44010,
+    "segment_capacity": 11242,
+    "theta_active": 18,
+    "theta_match": 16
+  },
+  "prompt": {
+    "active_segments": 638,
+    "allocated_segments": 0,
+    "candidate_segments": 4169,
+    "matching_segments": 638,
+    "postings_visited": 12518,
+    "punished_segments": 0,
+    "steps": 57
+  },
+  "runtime": {
+    "elapsed_wall_ns": 8305551100,
+    "native_binary_sha256": "3c34407ab9fdfee8cb3eb35118b61857b9960bc6139bbd6c7ee71fccea1fdc62",
+    "native_source_digest": "07774ab94abfce5f48a609df4b8e42c2a5c41bf74226e510de30bfe5cbfa8ded",
+    "pinned_source_sha256": {
+      "benchmarks/simple_swe_protocol_v1.json": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.py": "5b4c80b9fe3a8d780b5a286fb33ad69885316e8b09a2a2723f7b2a46db1c1001",
+      "src/humanbrain/_native_src/src/temporal_runtime.rs": "012d4f79505e3e0e381ebf9397db0c74d695120e7dfe8d511a338f8b896b9dc4",
+      "src/humanbrain/_native_src/src/temporal_runtime/checkpoint.rs": "bdb1ab444a826e706b9c8284816a6e54847b0bb6c156723135324fffb377faba",
+      "src/humanbrain/concept_tokens.py": "9070deaf7d9a8a54add24e3a213d8b6aa7bbb24b3d35ad66a7b68b3d1148f43e",
+      "src/humanbrain/cortex.py": "7a7704a14324203d2cce427a11fbd58ffbbc345185ba34633449f59cf294624d",
+      "src/humanbrain/native.py": "8963db700914828a0d5212419431ff50d50089c750be259c23fea69087748a6f",
+      "src/humanbrain/native_temporal_runtime.py": "77b41b014d35648adbe989fe3c31059856f60410758dddb3d9794e54a0ed227a",
+      "src/humanbrain/program.py": "ca5c46aa04688954099d029cc94829f4b8ca1e0fddc651d4aff2bdbe5fb05ddd",
+      "src/humanbrain/role_chunk_episode.py": "8dc8a9102569f6bdc3135479bd38f8074993efc2a93234202fcf4e96d65940f5",
+      "src/humanbrain/sdr_union.py": "1de7f6edd914584c4c72d7e42426254590049cfb69cbbfa730afa3179afa63f9",
+      "src/humanbrain/simple_swe/_worker.py": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870",
+      "src/humanbrain/simple_swe/protocol.py": "22993997004a156b7d94b8d79198deae3e2f71f04d1aebc9740b342c0aa94849",
+      "src/humanbrain/simple_swe/sandbox.py": "2da8083bb48638bb0119b7e6a552a2134b915e07f2eecd1d69fd2dbf7d365b35",
+      "src/humanbrain/simple_swe/tasks.py": "d247bb1a81dca47846a787292a8a3f29c01938771070517b6fa35c9d8f7eed23",
+      "src/humanbrain/tokenizer.py": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce"
+    },
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "8c2c86c1cdc6026639cdbce0ba88ac5145101c2c2dced8c3a56155f72326f3d1",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "sandbox": {
+    "all_private_cases_held_post_generation": true,
+    "attempted": true,
+    "detail": "",
+    "outcome": "passed",
+    "passed": true,
+    "property_case_count": 32,
+    "python_runtime": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "regression_case_count": 4,
+    "sandboxed": true,
+    "wall_seconds": 0.08357529999921098,
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "schema_version": 1,
+  "spend_marker": {
+    "exclusive_create": true,
+    "flushed_and_fsynced_before_single_generate_call": true,
+    "path": "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.t0_scalar_nonnegative-009.spent.json",
+    "sha256": "aece6b23104e5f8fec937ac161f310e5d9caa28a6bbf81240874f86a24b878b0"
+  },
+  "target": {
+    "concept_prompt_events": 57,
+    "concept_stream_sha256": "c4fc0c6d9eb257e2655453fb9c644ce7d82465bfe54a512c028fcb5dba3c42c7",
+    "hidden_test_sha256": "23c38860c359c1a6cd4431de5dac799d00713c089da2840052cf0849997ebea2",
+    "sidecar_payload_kinds": [
+      "entry_point",
+      "parameter"
+    ],
+    "structural_sha256": "736854ba550d057d152c9701e65fe4a6d4528d4d0581db6454333e487bd3f899",
+    "task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/009",
+    "task_sha256": "987630286c577aa77caa6857d9ecf526f6ad42ca4eae3e5a48ca93f1f76ec44c"
+  },
+  "train": {
+    "checkpoint_identity": {
+      "body_bytes": 100144,
+      "body_sha256": "a6477f22158640a4495dcd2f5dbbb38b955ef1a124e47c8c6bc4d6821878c072",
+      "checkpoint_bytes": 100400,
+      "circuit_identity_sha256": "171bc6775fd3c36ab03de3897e0dd877a7b645ab5c5a72b883b2c36645549533",
+      "cohort_count": 0,
+      "event_count": 67,
+      "format_version": 1,
+      "header_bytes": 256,
+      "learning_step": 494,
+      "logical_state_sha256": "6b0363b579d7c47921efd1c1238c7cfaed0adfc04956a7b65819e254eb7eb441",
+      "next_reserve_cell": 32768,
+      "poison_code": 0,
+      "prior_context_length": 22,
+      "protocol_identity_sha256": "9191919191919191919191919191919191919191919191919191919191919191",
+      "segment_count": 1562,
+      "semantic_index_sha256": "eff0b35da0222c8db0e3a1370fb15936966a5562c65dafe3d98b7005063b6f25",
+      "source_bundle_identity_sha256": "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+      "winner_context_length": 22
+    },
+    "checkpoint_sha256": "fad5974f59d0b6ee527ace9cd7a817fb31d92f78ce68b0dce0515b90ca982549",
+    "episodes": [
+      {
+        "active_segments": 0,
+        "allocated_segments": 627,
+        "candidate_segments": 385,
+        "matching_segments": 0,
+        "postings_visited": 693,
+        "punished_segments": 0,
+        "route_token_id": 1536,
+        "steps": 58,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/005"
+      },
+      {
+        "active_segments": 451,
+        "allocated_segments": 176,
+        "candidate_segments": 1177,
+        "matching_segments": 451,
+        "postings_visited": 5786,
+        "punished_segments": 11,
+        "route_token_id": 1537,
+        "steps": 57,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/005"
+      },
+      {
+        "active_segments": 231,
+        "allocated_segments": 484,
+        "candidate_segments": 2926,
+        "matching_segments": 231,
+        "postings_visited": 6985,
+        "punished_segments": 11,
+        "route_token_id": 1538,
+        "steps": 65,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_abs/005"
+      },
+      {
+        "active_segments": 473,
+        "allocated_segments": 275,
+        "candidate_segments": 4334,
+        "matching_segments": 473,
+        "postings_visited": 11121,
+        "punished_segments": 22,
+        "route_token_id": 1539,
+        "steps": 67,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/005"
+      },
+      {
+        "active_segments": 649,
+        "allocated_segments": 0,
+        "candidate_segments": 4180,
+        "matching_segments": 649,
+        "postings_visited": 12628,
+        "punished_segments": 22,
+        "route_token_id": 1536,
+        "steps": 58,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/006"
+      },
+      {
+        "active_segments": 638,
+        "allocated_segments": 0,
+        "candidate_segments": 3652,
+        "matching_segments": 638,
+        "postings_visited": 11671,
+        "punished_segments": 22,
+        "route_token_id": 1537,
+        "steps": 57,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/006"
+      },
+      {
+        "active_segments": 726,
+        "allocated_segments": 0,
+        "candidate_segments": 5203,
+        "matching_segments": 726,
+        "postings_visited": 14740,
+        "punished_segments": 22,
+        "route_token_id": 1538,
+        "steps": 65,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_abs/006"
+      },
+      {
+        "active_segments": 748,
+        "allocated_segments": 0,
+        "candidate_segments": 5324,
+        "matching_segments": 748,
+        "postings_visited": 15026,
+        "punished_segments": 22,
+        "route_token_id": 1539,
+        "steps": 67,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/006"
+      }
+    ]
+  }
+}
