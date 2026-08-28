@@ -1,0 +1,83 @@
+{
+  "examples": [
+    {
+      "feedback_json": "{\"cases\":[{\"actual\":-4,\"args\":[2,6,null],\"expected\":4,\"passed\":false}],\"passed\":false}",
+      "id": "absolute_gap",
+      "initial_source": "def solve(arg0, arg1, arg2):\n    return arg0 - arg1\n",
+      "revision_source": "def solve(arg0, arg1, arg2):\n    return abs(arg0 - arg1)\n",
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Return the non-negative distance between integer arg0 and arg1; arg2 is unused."
+    },
+    {
+      "feedback_json": "{\"cases\":[{\"actual\":[3],\"args\":[[3,2,4],null,null],\"expected\":[2,4],\"passed\":false}],\"passed\":false}",
+      "id": "even_filter",
+      "initial_source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2]\n",
+      "revision_source": "def solve(arg0, arg1, arg2):\n    return [item for item in arg0 if item % 2 == 0]\n",
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Return a new list containing the even integers from arg0 in their original order; arg1 and arg2 are unused."
+    },
+    {
+      "feedback_json": "{\"cases\":[{\"actual\":\"  mixed  \",\"args\":[\"  MiXeD  \",null,null],\"expected\":\"mixed\",\"passed\":false}],\"passed\":false}",
+      "id": "normalize_text",
+      "initial_source": "def solve(arg0, arg1, arg2):\n    return arg0.lower()\n",
+      "revision_source": "def solve(arg0, arg1, arg2):\n    return arg0.strip().lower()\n",
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Return arg0 with surrounding whitespace removed and all letters converted to lowercase; arg1 and arg2 are unused."
+    },
+    {
+      "feedback_json": "{\"cases\":[{\"args\":[{\"a\":1},\"missing\",9],\"exception\":\"KeyError: 'missing'\",\"expected\":9,\"passed\":false}],\"passed\":false}",
+      "id": "fallback_lookup",
+      "initial_source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1]\n",
+      "revision_source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n",
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Given mapping arg0 and key arg1, return the mapped value or arg2 when the key is absent."
+    },
+    {
+      "feedback_json": "{\"cases\":[{\"actual\":[1,2,3,4],\"args\":[[3,1,2],[2,4,3],null],\"expected\":[2,3],\"passed\":false}],\"passed\":false}",
+      "id": "sorted_overlap",
+      "initial_source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) | set(arg1))\n",
+      "revision_source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) & set(arg1))\n",
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Return the sorted distinct values that occur in both arg0 and arg1; arg2 is unused."
+    },
+    {
+      "feedback_json": "{\"cases\":[{\"actual\":0,\"args\":[[2,0,3],null,null],\"expected\":6,\"passed\":false}],\"passed\":false}",
+      "id": "product_nonzero",
+      "initial_source": "def solve(arg0, arg1, arg2):\n    result = 1\n    for item in arg0:\n        result *= item\n    return result\n",
+      "revision_source": "def solve(arg0, arg1, arg2):\n    result = 1\n    for item in arg0:\n        if item != 0:\n            result *= item\n    return result\n",
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Multiply the nonzero integers in arg0, returning 1 when none are present; arg1 and arg2 are unused."
+    },
+    {
+      "feedback_json": "{\"cases\":[{\"actual\":[2,3,4],\"args\":[[1,2,3,4],null,null],\"expected\":[2,3],\"passed\":false}],\"passed\":false}",
+      "id": "inner_slice",
+      "initial_source": "def solve(arg0, arg1, arg2):\n    return arg0[1:]\n",
+      "revision_source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n",
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Return arg0 without its first and last elements; short inputs produce an empty sequence, and arg1 and arg2 are unused."
+    },
+    {
+      "feedback_json": "{\"cases\":[{\"actual\":20,\"args\":[4,3,2],\"expected\":14,\"passed\":false}],\"passed\":false}",
+      "id": "affine_scalar",
+      "initial_source": "def solve(arg0, arg1, arg2):\n    return arg0 * (arg1 + arg2)\n",
+      "revision_source": "def solve(arg0, arg1, arg2):\n    return arg0 * arg1 + arg2\n",
+      "signature": "solve(arg0, arg1, arg2)",
+      "task": "Multiply arg0 by arg1, then add arg2 to that product."
+    }
+  ],
+  "format": "humanbrain.fresh-coding-generic-corpus.v1",
+  "protocol": {
+    "candidate_open": "<|candidate|>",
+    "entrypoint": "solve",
+    "feedback_open": "<|feedback|>",
+    "parameters": [
+      "arg0",
+      "arg1",
+      "arg2"
+    ],
+    "revision_open": "<|revision|>",
+    "source_end": "# <END>",
+    "source_open": "<|source|>",
+    "task_open": "<|task|>"
+  }
+}
