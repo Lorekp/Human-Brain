@@ -38,16 +38,17 @@ from humanbrain.native import (
 _UINT8_MAX: Final = (1 << 8) - 1
 _UINT16_MAX: Final = (1 << 16) - 1
 _UINT32_MAX: Final = (1 << 32) - 1
-SLOT_COUNT: Final = 3
+SLOT_COUNT: Final = 4
 MAX_SLOT_TOKENS: Final = 22
-SLOT_START_TOKEN_BASE: Final = _UINT32_MAX - 10
-SLOT_END_TOKEN_BASE: Final = _UINT32_MAX - 7
-COPY_SLOT_TOKEN_BASE: Final = _UINT32_MAX - 4
+SLOT_START_TOKEN_BASE: Final = _UINT32_MAX - 13
+SLOT_END_TOKEN_BASE: Final = _UINT32_MAX - 9
+COPY_SLOT_TOKEN_BASE: Final = _UINT32_MAX - 5
 COPY_END_TOKEN_ID: Final = _UINT32_MAX - 1
 _ACTIVE_COLUMNS: Final = 11
 _CONTEXT_CELLS: Final = 22
-_TYPED_CUE_TOKEN_COUNT: Final = 17
-_TYPED_SURFACE_TOKEN_COUNT: Final = 20
+_TYPED_CUE_TOKEN_COUNT: Final = 25
+_TYPED_SURFACE_TOKEN_COUNT: Final = 22
+_TYPED_ADDRESS_MAX_OFFSET: Final = 9_840
 _MAX_TYPED_GENERATIONS: Final = 128
 _PAIRS_PER_SEGMENT: Final = 10
 _MAX_PERMANENCE_TICKS: Final = 500
@@ -327,6 +328,7 @@ class _NativeGeneration(ctypes.Structure):
 class _NativeTypedWorkspaceVocabulary(ctypes.Structure):
     _fields_ = [
         ("plan_commit_token_id", ctypes.c_uint32),
+        ("address_token_base", ctypes.c_uint32),
         ("cue_token_ids", ctypes.c_uint32 * _TYPED_CUE_TOKEN_COUNT),
         ("surface_token_ids", ctypes.c_uint32 * _TYPED_SURFACE_TOKEN_COUNT),
     ]
@@ -478,8 +480,8 @@ def _assert_frozen_abi() -> None:
         8,
         (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60, 61),
     )
-    _require_frozen_layout(_NativeTypedWorkspaceVocabulary, 152, 4, (0, 4, 72))
-    _require_frozen_layout(_NativeTypedSessionRequest, 160, 4, (0, 152, 153, 154, 155))
+    _require_frozen_layout(_NativeTypedWorkspaceVocabulary, 196, 4, (0, 4, 8, 108))
+    _require_frozen_layout(_NativeTypedSessionRequest, 204, 4, (0, 196, 197, 198, 199))
     _require_frozen_layout(_NativeAdvanceRequestV2, 40, 8, (0, 8, 16, 24, 32, 33, 34))
     _require_frozen_layout(
         _NativeReport,
@@ -547,6 +549,7 @@ class TypedValue(IntEnum):
     INT = 0
     LIST_INT = 1
     INT_TO_INT = 2
+    BOOL = 3
 
 
 class TemporalGenerationPath(IntEnum):
@@ -861,12 +864,19 @@ class TypedWorkspaceVocabulary:
     """Fixed token identity map installed once for a native typed session."""
 
     plan_commit_token_id: int
+    address_token_base: int
     cue_token_ids: tuple[int, ...]
     surface_token_ids: tuple[int, ...]
 
     def __post_init__(self) -> None:
         plan = _exact_int(
             "plan_commit_token_id", self.plan_commit_token_id, 0, _UINT32_MAX - 1
+        )
+        _exact_int(
+            "address_token_base",
+            self.address_token_base,
+            0,
+            SLOT_START_TOKEN_BASE - _TYPED_ADDRESS_MAX_OFFSET - 1,
         )
         if type(self.cue_token_ids) is not tuple or len(self.cue_token_ids) != (
             _TYPED_CUE_TOKEN_COUNT
@@ -895,6 +905,7 @@ class TypedWorkspaceVocabulary:
     def _native(self) -> _NativeTypedWorkspaceVocabulary:
         return _NativeTypedWorkspaceVocabulary(
             self.plan_commit_token_id,
+            self.address_token_base,
             (ctypes.c_uint32 * _TYPED_CUE_TOKEN_COUNT)(*self.cue_token_ids),
             (ctypes.c_uint32 * _TYPED_SURFACE_TOKEN_COUNT)(*self.surface_token_ids),
         )

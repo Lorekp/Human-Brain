@@ -46,6 +46,8 @@ from humanbrain.native_temporal_runtime import (
     TemporalGenerationPath,
     TemporalPlasticityPolicy,
     TemporalStepMode,
+    TypedValue,
+    TypedWorkspaceVocabulary,
 )
 
 GATE3_PROTOCOL_PATH = "benchmarks/procedural_runtime_gate3_slice_protocol_v1.json"
@@ -200,6 +202,15 @@ class _FakeTemporalLibrary:
         self.humanbrain_temporal_circuit_runtime_generate_v1 = _FakeFunction(
             self._generate
         )
+        self.humanbrain_temporal_circuit_runtime_begin_typed_v1 = _FakeFunction(
+            lambda *_args: 0
+        )
+        self.humanbrain_temporal_circuit_runtime_teach_typed_v1 = _FakeFunction(
+            lambda *_args: 0
+        )
+        self.humanbrain_temporal_circuit_runtime_generate_typed_v1 = _FakeFunction(
+            lambda *_args: 0
+        )
         self.humanbrain_temporal_circuit_runtime_checkpoint_size_v1 = _FakeFunction(self._size)
         self.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1 = _FakeFunction(
             self._identity
@@ -321,6 +332,7 @@ class _FakeTemporalLibrary:
         native.feedback_predicted = 1
         native.copy_place_ordinal = (1 << 8) - 1
         native.physical_election_count = 1
+        native.slot_ordinal = (1 << 8) - 1
         return 0
 
     def _size(self, handle: object, authority: object, report_out: object) -> int:
@@ -782,8 +794,10 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
         runtime_adapter._NativeGeneration: (
             64,
             8,
-            (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60),
+            (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60, 61),
         ),
+        runtime_adapter._NativeTypedWorkspaceVocabulary: (196, 4, (0, 4, 8, 108)),
+        runtime_adapter._NativeTypedSessionRequest: (204, 4, (0, 196, 197, 198, 199)),
         runtime_adapter._NativeAdvanceRequestV2: (40, 8, (0, 8, 16, 24, 32, 33, 34)),
         runtime_adapter._NativeReport: (512, 8, (0, 4, 8, 16, 24, 32, 40, 42, 44, 48)),
     }
@@ -898,6 +912,47 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
         "07000200ccbbaa990800040000ffeeddd4c3b2a10807060504030201"
         "181716151413121128272625242322210000000000000000"
     )
+
+
+def test_expanded_typed_workspace_transport_marshals_exact_contract() -> None:
+    uint32_max = (1 << 32) - 1
+    assert runtime_adapter.SLOT_COUNT == 4
+    assert runtime_adapter.SLOT_START_TOKEN_BASE == uint32_max - 13
+    assert runtime_adapter.SLOT_END_TOKEN_BASE == uint32_max - 9
+    assert runtime_adapter.COPY_SLOT_TOKEN_BASE == uint32_max - 5
+    assert runtime_adapter.COPY_END_TOKEN_ID == uint32_max - 1
+    assert [runtime_adapter.slot_start_token_id(slot) for slot in range(4)] == list(
+        range(uint32_max - 13, uint32_max - 9)
+    )
+    assert [runtime_adapter.slot_end_token_id(slot) for slot in range(4)] == list(
+        range(uint32_max - 9, uint32_max - 5)
+    )
+    assert [runtime_adapter.copy_slot_token_id(slot) for slot in range(4)] == list(
+        range(uint32_max - 5, uint32_max - 1)
+    )
+    assert {member.name: member.value for member in TypedValue} == {
+        "INT": 0,
+        "LIST_INT": 1,
+        "INT_TO_INT": 2,
+        "BOOL": 3,
+    }
+
+    vocabulary = TypedWorkspaceVocabulary(
+        plan_commit_token_id=9_000,
+        address_token_base=100_000,
+        cue_token_ids=tuple(range(10_000, 10_025)),
+        surface_token_ids=tuple(range(20_000, 20_022)),
+    )
+    native = vocabulary._native()
+    assert native.plan_commit_token_id == 9_000
+    assert native.address_token_base == 100_000
+    assert tuple(native.cue_token_ids) == tuple(range(10_000, 10_025))
+    assert tuple(native.surface_token_ids) == tuple(range(20_000, 20_022))
+
+    maximum_address_base = runtime_adapter.SLOT_START_TOKEN_BASE - 9_840 - 1
+    dataclasses.replace(vocabulary, address_token_base=maximum_address_base)
+    with pytest.raises(ValueError, match="address_token_base"):
+        dataclasses.replace(vocabulary, address_token_base=maximum_address_base + 1)
 
 
 def test_frozen_abi_rejects_little_endian_arm64(
@@ -1168,6 +1223,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
             feedback_predicted=True,
             copy_place_ordinal=None,
             physical_election_count=1,
+            slot_ordinal=None,
         )
         assert library.generation_calls == 1
         checkpoint = circuit.checkpoint()
@@ -1266,6 +1322,8 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "TemporalPlasticityPolicy",
         "TemporalSpike",
         "TemporalStepMode",
+        "TypedValue",
+        "TypedWorkspaceVocabulary",
         "SLOT_COUNT",
         "MAX_SLOT_TOKENS",
         "SLOT_START_TOKEN_BASE",
@@ -1286,6 +1344,9 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         NativeTemporalCircuit.from_checkpoint_path,
         NativeTemporalCircuit.advance_block,
         NativeTemporalCircuit.generate,
+        NativeTemporalCircuit.begin_typed_session,
+        NativeTemporalCircuit.teach_typed_token,
+        NativeTemporalCircuit.generate_typed,
         NativeTemporalCircuit.publish_checkpoint,
         NativeTemporalCircuit.checkpoint,
         NativeTemporalCircuit.checkpoint_identity,
@@ -1308,6 +1369,9 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         NativeTemporalCircuit.from_checkpoint,
         NativeTemporalCircuit.advance_block,
         NativeTemporalCircuit.generate,
+        NativeTemporalCircuit.begin_typed_session,
+        NativeTemporalCircuit.teach_typed_token,
+        NativeTemporalCircuit.generate_typed,
         NativeTemporalCircuit.checkpoint,
         NativeTemporalCircuit.checkpoint_identity,
     ):
@@ -1322,6 +1386,18 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     }
     assert set(inspect.signature(NativeTemporalCircuit.checkpoint_identity).parameters) == {"self"}
     assert set(inspect.signature(NativeTemporalCircuit.generate).parameters) == {"self"}
+    assert set(inspect.signature(NativeTemporalCircuit.begin_typed_session).parameters) == {
+        "self",
+        "vocabulary",
+        "parameter_type",
+        "result_type",
+        "mode",
+    }
+    assert set(inspect.signature(NativeTemporalCircuit.teach_typed_token).parameters) == {
+        "self",
+        "token_id",
+    }
+    assert set(inspect.signature(NativeTemporalCircuit.generate_typed).parameters) == {"self"}
     assert set(
         inspect.signature(NativeTemporalCircuitDefinition.circuit_identity_sha256).parameters
     ) == {"self"}
@@ -1342,6 +1418,9 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
     advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
     generate = library.humanbrain_temporal_circuit_runtime_generate_v1
+    begin_typed = library.humanbrain_temporal_circuit_runtime_begin_typed_v1
+    teach_typed = library.humanbrain_temporal_circuit_runtime_teach_typed_v1
+    generate_typed = library.humanbrain_temporal_circuit_runtime_generate_typed_v1
     size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
     checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
     export = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
@@ -1356,6 +1435,9 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         imported,
         advance,
         generate,
+        begin_typed,
+        teach_typed,
+        generate_typed,
         size,
         checkpoint_identity,
         export,
@@ -1371,6 +1453,9 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         3,
         3,
         3,
+        4,
+        4,
+        4,
         3,
         4,
         5,
@@ -1388,6 +1473,9 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
             imported,
             advance,
             generate,
+            begin_typed,
+            teach_typed,
+            generate_typed,
             size,
             checkpoint_identity,
             export,
