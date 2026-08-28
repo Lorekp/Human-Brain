@@ -70,9 +70,24 @@ _PointerOccurrence = shared._PointerOccurrence
 _BASE_INFER_POINTER_ROWS = shared._infer_pointer_rows_from_teacher_delta
 
 COLUMN_COUNT = 768
-ADDRESS_OFFSETS = single.ADDRESS_OFFSETS
-ADDRESS_TOKEN_IDS = single.ADDRESS_TOKEN_IDS
-TYPED_PRIVATE_TOKEN_IDS = single.TYPED_PRIVATE_TOKEN_IDS
+# The inherited cross-donor bank omitted the list-map-add Integer hole at path
+# (0, 0, 1), offset 14. Replace unused map-count offset 367 with it while
+# retaining offset 368 as inert reserve padding; this preserves the audited
+# 51-private-code / 768-column geometry and its disjoint surface codebook.
+ADDRESS_OFFSETS = tuple(
+    sorted({*single.ADDRESS_OFFSETS, 14} - {367})
+)
+if ADDRESS_OFFSETS != (
+    0, 1, 2, 3, 4, 5, 10, 11, 12, 13, 14, 31, 32, 40, 41, 42,
+    121, 122, 127, 128, 129, 368, 382, 383,
+):
+    raise RuntimeError("breadth-probe structural address set changed")
+ADDRESS_TOKEN_IDS = tuple(ADDRESS_TOKEN_BASE + offset for offset in ADDRESS_OFFSETS)
+TYPED_PRIVATE_TOKEN_IDS = (
+    PLAN_COMMIT_TOKEN_ID,
+    *TYPED_CUE_TOKEN_IDS.values(),
+    *ADDRESS_TOKEN_IDS,
+)
 _RESERVED_COLUMN_COUNT = len(TYPED_PRIVATE_TOKEN_IDS) * base.ACTIVE_COLUMNS
 if _RESERVED_COLUMN_COUNT != 561 or COLUMN_COUNT - _RESERVED_COLUMN_COUNT != 207:
     raise RuntimeError("breadth-probe private-code reserve changed")

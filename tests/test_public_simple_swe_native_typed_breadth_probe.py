@@ -15,8 +15,10 @@ for import_root in (SRC_ROOT, PROBE_DIR):
 
 import public_simple_swe_native_typed_breadth_probe as probe
 from humanbrain.native_temporal_runtime import (
+    NativeTemporalCircuit,
     NativeTemporalRuntimeError,
     NativeTemporalRuntimeStatus,
+    TemporalStepMode,
 )
 
 
@@ -72,6 +74,42 @@ def test_frozen_programs_accounting_and_all_target_prompt_codebook_union() -> No
     assert accounting["constructor_pointer_cue_arrivals"] == 15
     assert accounting["total_learning_arrivals"] == 657
     assert definition.config.segment_capacity == 7_370
+
+
+def test_frozen_definition_can_train_first_donor_without_unknown_private_cues() -> None:
+    _protocol, donors, targets = _selected()
+    target_inputs = tuple(probe._target_runtime_input(task.public) for task in targets)
+    definition, _accounting, _target_union = probe._definition(donors, target_inputs)
+    key = probe.TRAIN_KEYS[0]
+    task = donors[0]
+
+    with probe.base._public_development_authority():
+        with probe._configured_shared():
+            with NativeTemporalCircuit.fresh(definition) as circuit:
+                circuit.advance_block(
+                    probe._tokenized_public_prompt(task.public),
+                    mode=TemporalStepMode.LEARN,
+                    reset_before=True,
+                )
+                circuit.begin_typed_session(
+                    probe.shared._workspace_vocabulary(),
+                    parameter_type=probe.shared._typed_value(
+                        task.public.signature.parameters[0].type
+                    ),
+                    result_type=probe.shared._typed_value(task.public.signature.result),
+                    mode=TemporalStepMode.LEARN,
+                )
+                teacher_steps = []
+                for position, token_id in enumerate(probe._internal_teacher_tokens(key)):
+                    try:
+                        teacher_steps.append(circuit.teach_typed_token(token_id))
+                    except NativeTemporalRuntimeError as error:
+                        pytest.fail(
+                            f"teacher_position={position} token_id={token_id}: {error}",
+                            pytrace=False,
+                        )
+
+    assert len(teacher_steps) == probe.EXPECTED_TEACHER_CALL_COUNTS[key]
 
 
 def test_stop_rule_needs_three_structural_exacts_and_one_full_eos_pass() -> None:
