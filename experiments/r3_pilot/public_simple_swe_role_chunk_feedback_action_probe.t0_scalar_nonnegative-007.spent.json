@@ -1,0 +1,16 @@
+{
+  "actual_and_pass_control_checkpoint_clones": 2,
+  "atomic_no_argument_generation_calls_planned": 4,
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.json",
+  "checkpoint_sha256": "b5fbca628c7e2ea4c04fa548e7addf89101e7311e2671953c16981fa6a3afbe7",
+  "created_at_utc": "2026-08-28T17:37:00.737576+00:00",
+  "experiment": "r3-public-simple-swe-role-chunk-feedback-action",
+  "family": "t0_scalar_nonnegative",
+  "harness_retries": 0,
+  "model_retries": 0,
+  "ordinal": 7,
+  "probe_source_sha256": "67017f8902620cd24c7e3a0f1cea320f3e2ff39bb53875873b03c7fe2e9e5a8b",
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/007"
+}

@@ -1,0 +1,524 @@
+{
+  "actual": {
+    "feedback_step": {
+      "active_segments": 22,
+      "advanced": true,
+      "allocated_segments": 0,
+      "candidate_segments": 22,
+      "matching_segments": 22,
+      "native_stop": null,
+      "observation_token_id": 1600,
+      "postings_visited": 220,
+      "punished_segments": 0,
+      "steps": 1
+    },
+    "final_source": "def solve_08e666e03e631ad3(n):\n    return max(0, n)\n",
+    "final_source_sha256": "3b70a8e1455dfc46678785c2c0e6ca0d3a6f99b2511a49bf67e8d094868e6d3c",
+    "first_dispatch": {
+      "action": "TEST",
+      "dispatched": true,
+      "observed_token_id": 1540,
+      "source_changed": false,
+      "source_sha256_after": "d92d44453162baf811ad5fb1fcaaac32a27c0bfd4b16d827faab46b8286db592"
+    },
+    "first_raw_generation": {
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 2,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1540,
+        "temporal_event_count": 58,
+        "winner_input_columns": 11
+      },
+      "native_stop": null
+    },
+    "initial_source_kind": "provided_identity",
+    "observation_token_id": 1600,
+    "public_diagnostic": {
+      "error": null,
+      "expected": 0,
+      "input": -7,
+      "observed": -7,
+      "passed": false
+    },
+    "second_dispatch": {
+      "action": "FIX",
+      "dispatched": true,
+      "observed_token_id": 1536,
+      "source_changed": true,
+      "source_sha256_after": "3b70a8e1455dfc46678785c2c0e6ca0d3a6f99b2511a49bf67e8d094868e6d3c"
+    },
+    "second_raw_generation": {
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 2,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1536,
+        "temporal_event_count": 60,
+        "winner_input_columns": 11
+      },
+      "native_stop": null
+    }
+  },
+  "anchors": {
+    "freshness_claimed": false,
+    "historical_baseline_sha256": "524c9df0971b1684e22398866fef0108f48fd40ab3fe8caeb221196c1e753f8b",
+    "historical_prompt_disclosure_count": 2,
+    "previous_action_artifact_sha256": "6f2cf848dd7d7eadc156dd078e554c20e815e0871f8e74d9a016c6a37c0f8302",
+    "previous_action_outcome": "PASS_ROLE_ROUTE_LAYER0_ACTION",
+    "previous_action_source_sha256": "8c2c86c1cdc6026639cdbce0ba88ac5145101c2c2dced8c3a56155f72326f3d1"
+  },
+  "authority": {
+    "atomic_no_argument_generation_calls": 4,
+    "canonical_target_sandbox_calls": 1,
+    "checkpoint_clones": 2,
+    "expected_action_labels_used_as_runtime_input": false,
+    "freshness_claimed": false,
+    "harness_retries": 0,
+    "hidden_cases_or_verdicts_entered_cell_runtime": false,
+    "hidden_cases_used_once_only_after_all_generation_calls": true,
+    "historical_prompt_baseline_reuse": true,
+    "identical_prompt_presentations": 2,
+    "model_retries": 0,
+    "partition": "train",
+    "preexisting_durable_marker_inventory": [
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_clamp-009.spent.json",
+        "sha256": "8f96e1777d2602de558c917521fa89919530210712dbc529bf4142d2738c6dae"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_offset-009.spent.json",
+        "sha256": "c273f4b733a1e0b2e30b3b007ce4db8c7a310aac83bf8120a632e883e53e53f8"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t1_list_map_add-005.spent.json",
+        "sha256": "f232b202d3dcc36502873521ed8a8d9ef45a87c3191cd041883b62353a4183f5"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.spent.json",
+        "sha256": "153639264062c4a242c68d65e4a0c3b8a3104b11585ad2fb23815b5cb78d3dbf"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.spent.json",
+        "sha256": "f532023f1d05c2e92a6f30dfdc304d4991a065e4b0fb6d3cee0cf9f88bd68145"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.spent.json",
+        "sha256": "7b8b58cbdebe887801b6f5c3b351b1cfc76aa88ee9991b59ea491e40c690fa77"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.t0_scalar_nonnegative-009.spent.json",
+        "sha256": "aece6b23104e5f8fec937ac161f310e5d9caa28a6bbf81240874f86a24b878b0"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t0_scalar_nonnegative-008.spent.json",
+        "sha256": "b86635664d13cf18dde0c3ad95cbdfab036d1ab1f80e633c3217159257b39f0c"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t0_scalar_offset-008.spent.json",
+        "sha256": "a54b59d344a8b32cd2c0cd5bc33f5e1bb348d5dea34531de2f7b18c878001cf1"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t1_list_map_abs-008.spent.json",
+        "sha256": "0a3bcc5cb33e997b475d907f9021ae0e66384003ab0719163bc9251f41355a36"
+      },
+      {
+        "path": "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t1_list_map_add-008.spent.json",
+        "sha256": "4ae372b7fbb2ae0e1cae9e70838e3818aef62389ca814fd5e61ac0b6fabb7e5c"
+      }
+    ],
+    "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/007"
+  },
+  "claim_boundary": "One visible-TRAIN normalized-template replay routes one frozen public diagnostic bit to a fixed Layer-0 actuator. This is repetition-conditioned binary feedback routing, not semantic interpretation, self-correction, transfer, code generation, DEV/eval, held-out, M0, or C1 capability.",
+  "experiment": "r3-public-simple-swe-role-chunk-feedback-action",
+  "gates": {
+    "actual_changed_once_control_unchanged": true,
+    "canonical_target_train_sandbox_all_36": true,
+    "exact_observed_route_dispatch": true,
+    "first_clone_generations_bit_exact": true,
+    "physical_fix_done_second": true,
+    "physical_test_test_first": true,
+    "public_fail_pass_feedback": true
+  },
+  "generated_at_utc": "2026-08-28T17:37:00.827851+00:00",
+  "outcome": "PASS_REPETITION_CONDITIONED_BINARY_FEEDBACK_ACTION",
+  "pass_control": {
+    "feedback_step": {
+      "active_segments": 22,
+      "advanced": true,
+      "allocated_segments": 0,
+      "candidate_segments": 22,
+      "matching_segments": 22,
+      "native_stop": null,
+      "observation_token_id": 1601,
+      "postings_visited": 220,
+      "punished_segments": 0,
+      "steps": 1
+    },
+    "final_source": "def solve_08e666e03e631ad3(n):\n    return max(0, n)\n",
+    "final_source_sha256": "3b70a8e1455dfc46678785c2c0e6ca0d3a6f99b2511a49bf67e8d094868e6d3c",
+    "first_dispatch": {
+      "action": "TEST",
+      "dispatched": true,
+      "observed_token_id": 1540,
+      "source_changed": false,
+      "source_sha256_after": "3b70a8e1455dfc46678785c2c0e6ca0d3a6f99b2511a49bf67e8d094868e6d3c"
+    },
+    "first_raw_generation": {
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 2,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1540,
+        "temporal_event_count": 58,
+        "winner_input_columns": 11
+      },
+      "native_stop": null
+    },
+    "initial_source_kind": "provided_correct_max",
+    "observation_token_id": 1601,
+    "public_diagnostic": {
+      "error": null,
+      "expected": 0,
+      "input": -7,
+      "observed": 0,
+      "passed": true
+    },
+    "second_dispatch": {
+      "action": "DONE",
+      "dispatched": true,
+      "observed_token_id": 1541,
+      "source_changed": false,
+      "source_sha256_after": "3b70a8e1455dfc46678785c2c0e6ca0d3a6f99b2511a49bf67e8d094868e6d3c"
+    },
+    "second_raw_generation": {
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 1,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1541,
+        "temporal_event_count": 60,
+        "winner_input_columns": 11
+      },
+      "native_stop": null
+    }
+  },
+  "physical_definition": {
+    "active_columns": 11,
+    "circuit_identity_sha256": "58645fbe36b52ba5383079c9a320cc04c09587e0f9d88e25f42693a40504989b",
+    "column_count": 4096,
+    "constants_status": "inherited fixture constants; not calibration-v3 selection",
+    "context_policy": "BOUND_WINNERS",
+    "equal_width_action_and_observation_codes": true,
+    "max_pyramidal_cells": 34066,
+    "noninitial_arrivals": 118,
+    "segment_capacity": 1298,
+    "theta_active": 18,
+    "theta_match": 16,
+    "training_sequence_count": 2
+  },
+  "prompt": {
+    "active_segments": 616,
+    "allocated_segments": 0,
+    "candidate_segments": 1430,
+    "matching_segments": 616,
+    "postings_visited": 7513,
+    "punished_segments": 0,
+    "steps": 57
+  },
+  "runtime": {
+    "elapsed_wall_ns": 9901910800,
+    "native_binary_sha256": "3c34407ab9fdfee8cb3eb35118b61857b9960bc6139bbd6c7ee71fccea1fdc62",
+    "native_source_digest": "07774ab94abfce5f48a609df4b8e42c2a5c41bf74226e510de30bfe5cbfa8ded",
+    "pinned_source_sha256": {
+      "benchmarks/simple_swe_protocol_v1.json": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.py": "8c2c86c1cdc6026639cdbce0ba88ac5145101c2c2dced8c3a56155f72326f3d1",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.py": "5b4c80b9fe3a8d780b5a286fb33ad69885316e8b09a2a2723f7b2a46db1c1001",
+      "src/humanbrain/_native_src/src/temporal_runtime.rs": "012d4f79505e3e0e381ebf9397db0c74d695120e7dfe8d511a338f8b896b9dc4",
+      "src/humanbrain/_native_src/src/temporal_runtime/checkpoint.rs": "bdb1ab444a826e706b9c8284816a6e54847b0bb6c156723135324fffb377faba",
+      "src/humanbrain/concept_tokens.py": "9070deaf7d9a8a54add24e3a213d8b6aa7bbb24b3d35ad66a7b68b3d1148f43e",
+      "src/humanbrain/cortex.py": "7a7704a14324203d2cce427a11fbd58ffbbc345185ba34633449f59cf294624d",
+      "src/humanbrain/native.py": "8963db700914828a0d5212419431ff50d50089c750be259c23fea69087748a6f",
+      "src/humanbrain/native_temporal_runtime.py": "77b41b014d35648adbe989fe3c31059856f60410758dddb3d9794e54a0ed227a",
+      "src/humanbrain/program.py": "ca5c46aa04688954099d029cc94829f4b8ca1e0fddc651d4aff2bdbe5fb05ddd",
+      "src/humanbrain/role_chunk_episode.py": "8dc8a9102569f6bdc3135479bd38f8074993efc2a93234202fcf4e96d65940f5",
+      "src/humanbrain/sdr_union.py": "1de7f6edd914584c4c72d7e42426254590049cfb69cbbfa730afa3179afa63f9",
+      "src/humanbrain/simple_swe/_worker.py": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870",
+      "src/humanbrain/simple_swe/protocol.py": "22993997004a156b7d94b8d79198deae3e2f71f04d1aebc9740b342c0aa94849",
+      "src/humanbrain/simple_swe/sandbox.py": "2da8083bb48638bb0119b7e6a552a2134b915e07f2eecd1d69fd2dbf7d365b35",
+      "src/humanbrain/simple_swe/tasks.py": "d247bb1a81dca47846a787292a8a3f29c01938771070517b6fa35c9d8f7eed23",
+      "src/humanbrain/tokenizer.py": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce"
+    },
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "67017f8902620cd24c7e3a0f1cea320f3e2ff39bb53875873b03c7fe2e9e5a8b",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "sandbox": {
+    "all_private_cases_held_post_generation": true,
+    "attempted": true,
+    "detail": "",
+    "outcome": "passed",
+    "passed": true,
+    "property_case_count": 32,
+    "python_runtime": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "regression_case_count": 4,
+    "sandboxed": true,
+    "wall_seconds": 0.08252849999917089,
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "schema_version": 1,
+  "scored_after_all_four_calls": {
+    "actual_first": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1540,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 2,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1540,
+        "temporal_event_count": 58,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "actual_second": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1536,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 2,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1536,
+        "temporal_event_count": 60,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "control_first": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1540,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 2,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1540,
+        "temporal_event_count": 58,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    },
+    "control_second": {
+      "correct": true,
+      "expected_route_token_id_used_only_after_all_generation_calls": 1541,
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 1,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1541,
+        "temporal_event_count": 60,
+        "winner_input_columns": 11
+      },
+      "native_stop": null,
+      "physical_route_election_valid": true
+    }
+  },
+  "spend_marker": {
+    "exclusive_create": true,
+    "flushed_and_fsynced_before_all_four_generate_calls": true,
+    "path": "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.t0_scalar_nonnegative-007.spent.json",
+    "sha256": "1c0b6d0971f05449f7f402e50031a87cbcafe98bbe72f7a8605287632ebd6667"
+  },
+  "target": {
+    "concept_prompt_events": 57,
+    "concept_stream_sha256": "c4fc0c6d9eb257e2655453fb9c644ce7d82465bfe54a512c028fcb5dba3c42c7",
+    "hidden_test_sha256": "a080bcdf2a33fb51357a204e73311c0b505d3200b570552a95df76093f855f3d",
+    "prompt_sha256": "be6031ff7d52cd42bb249698061260f342277868f4d5ede0cc8d8da9947b69b3",
+    "structural_sha256": "736854ba550d057d152c9701e65fe4a6d4528d4d0581db6454333e487bd3f899",
+    "task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/007",
+    "task_sha256": "395b07bb304adbe334b8c4be16179715028c62b544e3225b144c7f355373d060"
+  },
+  "training": {
+    "checkpoint_identity": {
+      "body_bytes": 43120,
+      "body_sha256": "3cb62aa1becfb5db80e55a17f4d654d9dd118ab86d08feb47b5746f6fa19e50e",
+      "checkpoint_bytes": 43376,
+      "circuit_identity_sha256": "58645fbe36b52ba5383079c9a320cc04c09587e0f9d88e25f42693a40504989b",
+      "cohort_count": 0,
+      "event_count": 60,
+      "format_version": 1,
+      "header_bytes": 256,
+      "learning_step": 120,
+      "logical_state_sha256": "15b354fa074909f380ee097caa92e9cbcfc42bae1e3b6b45e01a6f582c1ac840",
+      "next_reserve_cell": 32768,
+      "poison_code": 0,
+      "prior_context_length": 22,
+      "protocol_identity_sha256": "9191919191919191919191919191919191919191919191919191919191919191",
+      "segment_count": 671,
+      "semantic_index_sha256": "212af2fa52ecf68ce64b9688abe6f1a38a10e26ed959630e8fe1be7e599816ec",
+      "source_bundle_identity_sha256": "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+      "winner_context_length": 22
+    },
+    "checkpoint_sha256": "b5fbca628c7e2ea4c04fa548e7addf89101e7311e2671953c16981fa6a3afbe7",
+    "episodes": [
+      {
+        "active_segments": 0,
+        "allocated_segments": 649,
+        "candidate_segments": 407,
+        "matching_segments": 0,
+        "postings_visited": 682,
+        "punished_segments": 0,
+        "sequence_token_ids": [
+          275,
+          32,
+          271,
+          32,
+          305,
+          32,
+          267,
+          32,
+          274,
+          32,
+          1058,
+          59,
+          32,
+          308,
+          32,
+          1083,
+          1065,
+          1085,
+          1024,
+          258,
+          58,
+          270,
+          93,
+          93,
+          40,
+          1029,
+          299,
+          93,
+          93,
+          41,
+          58,
+          10,
+          288,
+          1045,
+          275,
+          1027,
+          1041,
+          299,
+          93,
+          93,
+          32,
+          296,
+          32,
+          311,
+          32,
+          310,
+          32,
+          259,
+          44,
+          32,
+          263,
+          32,
+          278,
+          32,
+          298,
+          46,
+          1045,
+          1540,
+          1600,
+          1536
+        ],
+        "steps": 60,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/005"
+      },
+      {
+        "active_segments": 638,
+        "allocated_segments": 22,
+        "candidate_segments": 1452,
+        "matching_segments": 638,
+        "postings_visited": 7733,
+        "punished_segments": 11,
+        "sequence_token_ids": [
+          275,
+          32,
+          271,
+          32,
+          305,
+          32,
+          267,
+          32,
+          274,
+          32,
+          1058,
+          59,
+          32,
+          308,
+          32,
+          1083,
+          1065,
+          1085,
+          1024,
+          258,
+          58,
+          270,
+          93,
+          93,
+          40,
+          1029,
+          299,
+          93,
+          93,
+          41,
+          58,
+          10,
+          288,
+          1045,
+          275,
+          1027,
+          1041,
+          299,
+          93,
+          93,
+          32,
+          296,
+          32,
+          311,
+          32,
+          310,
+          32,
+          259,
+          44,
+          32,
+          263,
+          32,
+          278,
+          32,
+          298,
+          46,
+          1045,
+          1540,
+          1601,
+          1541
+        ],
+        "steps": 60,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/006"
+      }
+    ]
+  }
+}
