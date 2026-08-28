@@ -3,7 +3,7 @@
 TRAIN replays literal UTF-8 byte IDs for a public prompt followed by a short
 function and EOS.  Inference presents the prompt once, then supplies no teacher
 token: every code byte and EOS is selected by the native physical output race
-and fed back READ_ONLY to form the next context.
+and committed through atomic READ_ONLY feedback to form the next context.
 """
 
 from __future__ import annotations
@@ -145,33 +145,32 @@ def main() -> int:
             terminated_by_eos = False
             maximum_elections = len(CODE_BYTES) + 8
             for position in range(maximum_elections):
-                election = circuit.elect_output()
-                feedback = circuit.advance_block(
-                    [election.token_id],
-                    mode=TemporalStepMode.READ_ONLY,
-                )[0]
-                is_eos = election.token_id == EOS_TOKEN
+                generation = circuit.generate()
+                is_eos = generation.surface_token_id == EOS_TOKEN
                 if not is_eos:
-                    if not 0 <= election.token_id <= 255:
-                        raise RuntimeError("physical election emitted a non-byte token before EOS")
-                    emitted_bytes.append(election.token_id)
+                    if not 0 <= generation.surface_token_id <= 255:
+                        raise RuntimeError("physical generation emitted a non-byte token before EOS")
+                    emitted_bytes.append(generation.surface_token_id)
                 free_run.append(
                     {
                         "position": position,
-                        "emitted_token_id": election.token_id,
+                        "emitted_token_id": generation.surface_token_id,
                         "emitted_byte_hex": (
-                            None if is_eos else f"{election.token_id:02x}"
+                            None if is_eos else f"{generation.surface_token_id:02x}"
                         ),
                         "eos": is_eos,
-                        "output_cell_id": election.output_cell_id,
-                        "activated_columns": election.activated_columns,
-                        "candidate_tokens_physical": election.candidate_tokens,
-                        "winner_input_columns": election.winner_input_columns,
-                        "winner_tick": election.winner_tick,
-                        "basket_tick": election.basket_tick,
-                        "feedback_mode": "READ_ONLY",
-                        "feedback_predicted": feedback.predicted,
-                        "feedback_predicted_columns": feedback.predicted_columns,
+                        "output_cell_id": generation.surface_output_cell_id,
+                        "generation_index": generation.generation_index,
+                        "generation_path": generation.path.name,
+                        "temporal_event_count": generation.temporal_event_count,
+                        "activated_columns": generation.activated_columns,
+                        "candidate_tokens_physical": generation.candidate_tokens,
+                        "winner_input_columns": generation.winner_input_columns,
+                        "winner_tick": generation.surface_winner_tick,
+                        "basket_tick": generation.surface_basket_tick,
+                        "feedback_mode": "ATOMIC_GENERATE_READ_ONLY",
+                        "feedback_predicted": generation.feedback_predicted,
+                        "feedback_predicted_columns": generation.feedback_predicted_columns,
                     }
                 )
                 if is_eos:
@@ -222,8 +221,8 @@ def main() -> int:
         ),
         "claim_boundary": (
             "One literal public synthetic TRAIN prompt-to-function sequence is memorized. At "
-            "inference the prompt arrives once, then every function byte and EOS is emitted by "
-            "the native physical output race and fed back READ_ONLY. Static disjoint byte codes "
+            "inference the prompt arrives once, then every function byte and EOS is emitted and "
+            "fed back by atomic native generate calls. Static disjoint byte codes "
             "make this a one-physical-candidate-per-step emission path. There is no teacher token "
             "after the prompt, Python candidate enumeration, argmax, or learned head. Exact output "
             "is parsed and compiled but not executed. This is rote code emission, not task solving, "

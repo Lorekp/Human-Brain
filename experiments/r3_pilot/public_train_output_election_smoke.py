@@ -3,7 +3,7 @@
 Both literal tokens are public synthetic TRAIN material.  The circuit learns
 the transition twice, is then shown cue token 0 alone, and must emit token 1
 through the native output-cell race.  No candidate token or score reaches the
-election call.
+atomic generation call.
 """
 
 from __future__ import annotations
@@ -126,7 +126,7 @@ def main() -> int:
                 mode=TemporalStepMode.READ_ONLY,
                 reset_before=True,
             )[0]
-            election = circuit.elect_output()
+            generation = circuit.generate()
             identity = circuit.checkpoint_identity()
         native_identity = loaded_library_identity()
 
@@ -134,10 +134,10 @@ def main() -> int:
         training[0]["allocated_segments"] == ACTIVE_COLUMNS
         and training[1]["matching_segments"] == ACTIVE_COLUMNS
         and identity.segment_count == ACTIVE_COLUMNS
-        and election.token_id == TARGET_TOKEN
-        and election.activated_columns == ACTIVE_COLUMNS
-        and election.candidate_tokens == 1
-        and election.winner_input_columns == ACTIVE_COLUMNS
+        and generation.surface_token_id == TARGET_TOKEN
+        and generation.activated_columns == ACTIVE_COLUMNS
+        and generation.candidate_tokens == 1
+        and generation.winner_input_columns == ACTIVE_COLUMNS
     )
     payload = {
         "schema_version": 1,
@@ -187,16 +187,22 @@ def main() -> int:
             "mode": "READ_ONLY",
             "reset_before": True,
         },
-        "election": {
-            "emitted_token_id": election.token_id,
-            "output_cell_id": election.output_cell_id,
-            "activated_columns": election.activated_columns,
-            "candidate_tokens_physical": election.candidate_tokens,
-            "winner_input_columns": election.winner_input_columns,
-            "winner_tick": election.winner_tick,
-            "basket_tick": election.basket_tick,
-            "inhibition_onset_tick": election.inhibition_onset_tick,
-            "simulated_ticks": election.simulated_ticks,
+        "generation": {
+            "emitted_token_id": generation.surface_token_id,
+            "output_cell_id": generation.surface_output_cell_id,
+            "generation_index": generation.generation_index,
+            "path": generation.path.name,
+            "temporal_event_count": generation.temporal_event_count,
+            "activated_columns": generation.activated_columns,
+            "candidate_tokens_physical": generation.candidate_tokens,
+            "winner_input_columns": generation.winner_input_columns,
+            "winner_tick": generation.surface_winner_tick,
+            "basket_tick": generation.surface_basket_tick,
+            "inhibition_onset_tick": generation.surface_inhibition_onset_tick,
+            "simulated_ticks": generation.total_simulated_ticks,
+            "feedback_mode": "ATOMIC_GENERATE_READ_ONLY",
+            "feedback_predicted": generation.feedback_predicted,
+            "feedback_predicted_columns": generation.feedback_predicted_columns,
             "arriving_candidate_token_supplied": False,
             "python_candidate_enumeration": False,
             "python_argmax": False,
@@ -218,9 +224,9 @@ def main() -> int:
         json.dumps(
             {
                 "outcome": payload["outcome"],
-                "emitted_token_id": election.token_id,
-                "activated_columns": election.activated_columns,
-                "candidate_tokens_physical": election.candidate_tokens,
+                "emitted_token_id": generation.surface_token_id,
+                "activated_columns": generation.activated_columns,
+                "candidate_tokens_physical": generation.candidate_tokens,
                 "live_segments": identity.segment_count,
                 "output": str(args.output),
             },

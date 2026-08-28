@@ -42,7 +42,8 @@ from humanbrain.native_temporal_runtime import (
     TemporalCheckpointPublicationError,
     TemporalCheckpointPublicationOutcome,
     TemporalContextPolicy,
-    TemporalOutputElection,
+    TemporalGeneration,
+    TemporalGenerationPath,
     TemporalPlasticityPolicy,
     TemporalStepMode,
 )
@@ -170,7 +171,7 @@ class _FakeTemporalLibrary:
         self.definition_identity_calls = 0
         self.create_calls = 0
         self.import_calls = 0
-        self.election_calls = 0
+        self.generation_calls = 0
         self.size_calls = 0
         self.export_calls = 0
         self.identity_calls = 0
@@ -196,8 +197,8 @@ class _FakeTemporalLibrary:
         self.humanbrain_temporal_circuit_runtime_create_v1 = _FakeFunction(self._create)
         self.humanbrain_temporal_circuit_runtime_import_checkpoint_v1 = _FakeFunction(self._import)
         self.humanbrain_temporal_circuit_runtime_advance_block_v2 = _FakeFunction(self._advance)
-        self.humanbrain_temporal_circuit_runtime_elect_output_v1 = _FakeFunction(
-            self._elect_output
+        self.humanbrain_temporal_circuit_runtime_generate_v1 = _FakeFunction(
+            self._generate
         )
         self.humanbrain_temporal_circuit_runtime_checkpoint_size_v1 = _FakeFunction(self._size)
         self.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1 = _FakeFunction(
@@ -298,19 +299,28 @@ class _FakeTemporalLibrary:
         report.completed_prefix = native.token_count
         return 0
 
-    def _elect_output(self, handle: object, output: object, report_out: object) -> int:
+    def _generate(self, handle: object, output: object, report_out: object) -> int:
         del handle, report_out
-        self.election_calls += 1
-        native = _pointed(output, runtime_adapter._NativeOutputElection)
-        native.token_id = 7
-        native.output_cell_id = 55
+        self.generation_calls += 1
+        native = _pointed(output, runtime_adapter._NativeGeneration)
+        native.surface_token_id = 7
+        native.surface_output_cell_id = 55
+        native.generation_index = self.generation_calls
+        native.temporal_event_count = 102
         native.activated_columns = 11
         native.candidate_tokens = 1
+        native.control_token_id = (1 << 32) - 1
+        native.control_output_cell_id = (1 << 32) - 1
+        native.surface_winner_tick = 180
+        native.surface_basket_tick = 181
+        native.surface_inhibition_onset_tick = 182
+        native.total_simulated_ticks = 181
+        native.path = TemporalGenerationPath.TEMPORAL
         native.winner_input_columns = 11
-        native.winner_tick = 180
-        native.basket_tick = 181
-        native.inhibition_onset_tick = 182
-        native.simulated_ticks = 181
+        native.feedback_predicted_columns = 11
+        native.feedback_predicted = 1
+        native.copy_place_ordinal = (1 << 8) - 1
+        native.physical_election_count = 1
         return 0
 
     def _size(self, handle: object, authority: object, report_out: object) -> int:
@@ -769,10 +779,10 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
                 712,
             ),
         ),
-        runtime_adapter._NativeOutputElection: (
-            32,
-            4,
-            (0, 4, 8, 12, 16, 17, 18, 20, 22, 24, 26),
+        runtime_adapter._NativeGeneration: (
+            64,
+            8,
+            (0, 4, 8, 16, 24, 28, 32, 36, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 57, 58, 59, 60),
         ),
         runtime_adapter._NativeAdvanceRequestV2: (40, 8, (0, 8, 16, 24, 32, 33, 34)),
         runtime_adapter._NativeReport: (512, 8, (0, 4, 8, 16, 24, 32, 40, 42, 44, 48)),
@@ -1135,18 +1145,31 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         assert steps[0].inhibition_onset_ticks == tuple(range(10, 21))
         assert steps[0].column_simulated_ticks == tuple(range(30, 41))
         assert steps[0].winner_context == tuple(range(2000, 2022))
-        election = circuit.elect_output()
-        assert election == TemporalOutputElection(
-            token_id=7,
-            output_cell_id=55,
+        generation = circuit.generate()
+        assert generation == TemporalGeneration(
+            surface_token_id=7,
+            surface_output_cell_id=55,
+            generation_index=1,
+            temporal_event_count=102,
             activated_columns=11,
             candidate_tokens=1,
+            control_token_id=None,
+            control_output_cell_id=None,
             winner_input_columns=11,
-            winner_tick=180,
-            basket_tick=181,
-            inhibition_onset_tick=182,
-            simulated_ticks=181,
+            surface_winner_tick=180,
+            surface_basket_tick=181,
+            surface_inhibition_onset_tick=182,
+            total_simulated_ticks=181,
+            control_winner_tick=None,
+            control_basket_tick=None,
+            control_simulated_end_tick=None,
+            path=TemporalGenerationPath.TEMPORAL,
+            feedback_predicted_columns=11,
+            feedback_predicted=True,
+            copy_place_ordinal=None,
+            physical_election_count=1,
         )
+        assert library.generation_calls == 1
         checkpoint = circuit.checkpoint()
         assert checkpoint == library.checkpoint_bytes
 
@@ -1238,10 +1261,15 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "TemporalPublicationOutcome",
         "TemporalCircuitStep",
         "TemporalContextPolicy",
-        "TemporalOutputElection",
+        "TemporalGeneration",
+        "TemporalGenerationPath",
         "TemporalPlasticityPolicy",
         "TemporalSpike",
         "TemporalStepMode",
+        "IDENTIFIER_START_TOKEN_ID",
+        "IDENTIFIER_END_TOKEN_ID",
+        "COPY_ID_TOKEN_ID",
+        "COPY_END_TOKEN_ID",
         "publish_immutable_bytes",
         "prepare_durable_directory",
         "reconcile_existing_immutable_bytes",
@@ -1252,7 +1280,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         NativeTemporalCircuit.from_checkpoint,
         NativeTemporalCircuit.from_checkpoint_path,
         NativeTemporalCircuit.advance_block,
-        NativeTemporalCircuit.elect_output,
+        NativeTemporalCircuit.generate,
         NativeTemporalCircuit.publish_checkpoint,
         NativeTemporalCircuit.checkpoint,
         NativeTemporalCircuit.checkpoint_identity,
@@ -1274,7 +1302,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         NativeTemporalCircuit.fresh,
         NativeTemporalCircuit.from_checkpoint,
         NativeTemporalCircuit.advance_block,
-        NativeTemporalCircuit.elect_output,
+        NativeTemporalCircuit.generate,
         NativeTemporalCircuit.checkpoint,
         NativeTemporalCircuit.checkpoint_identity,
     ):
@@ -1288,7 +1316,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "destination",
     }
     assert set(inspect.signature(NativeTemporalCircuit.checkpoint_identity).parameters) == {"self"}
-    assert set(inspect.signature(NativeTemporalCircuit.elect_output).parameters) == {"self"}
+    assert set(inspect.signature(NativeTemporalCircuit.generate).parameters) == {"self"}
     assert set(
         inspect.signature(NativeTemporalCircuitDefinition.circuit_identity_sha256).parameters
     ) == {"self"}
@@ -1308,7 +1336,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     create = library.humanbrain_temporal_circuit_runtime_create_v1
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
     advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
-    elect_output = library.humanbrain_temporal_circuit_runtime_elect_output_v1
+    generate = library.humanbrain_temporal_circuit_runtime_generate_v1
     size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
     checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
     export = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
@@ -1322,7 +1350,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         create,
         imported,
         advance,
-        elect_output,
+        generate,
         size,
         checkpoint_identity,
         export,
@@ -1354,7 +1382,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
             create,
             imported,
             advance,
-            elect_output,
+            generate,
             size,
             checkpoint_identity,
             export,
