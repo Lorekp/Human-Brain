@@ -36,6 +36,7 @@ The repositories do not import or modify one another.
 | Native role/place scalar generation | One retained circuit learned add/subtract routes, then teacher-free DEV generated and executed exact unseen `boost(x) = x + 37` and `drop(x) = x - 14` functions with copied identifiers/literals and ordinary EOS | Public synthetic two-route micro-capability through atomic fitted-cell races; not family-disjoint composition or SWE evidence |
 | Native typed-workspace composition | One retained circuit learned visible scalar-offset/000 and list-map-absolute/000, then teacher-free visible DEV list-map-add/002 generated the exact typed program, physically copied unseen `-1`, reached ordinary EOS, compiled exactly, and passed 4 regression + 32 property cases | One visible development micro-capability using result-type and literal-presence plan components; not family-disjoint transfer, M0, eval evidence, or broad SWE competence |
 | Native typed map-count follow-on | One retained circuit learned visible TRAIN `t2_map_then_count/000`, then teacher-free `/001` emitted the exact `Sum(Map(Bind(If(LessThan, Add))))` program, physically copied the unseen `+4`, reached ordinary EOS, compiled exactly, and passed 4 regression + 32 property cases | Same-family public TRAIN follow-on evidence; not family-disjoint transfer, DEV/eval evidence, M0, or broad SWE competence |
+| Native self-posed shift-sum | One retained circuit learned public TRAIN `t1_list_map_add/004` plus `t2_clamp_then_sum/002` (640 learning steps; 4,559 segments), then its sole teacher-free `shift_then_sum/000` attempt emitted zero tokens and hit native `SCIENTIFIC_STOP` (stage 3, poison 7, location 23,892) | Honest one-shot negative: no copy, compile, or sandbox stage was reached; no retry and no held-out, M0, or C1 access ([artifact](experiments/r3_pilot/public_simple_swe_native_typed_shift_sum_probe.json)) |
 | Family-disjoint typed scaffold re-root | The frozen one-shot public TRAIN-family probe learned scalar-offset/000 and clamp-then-sum/000, then stopped before emitting any token for unseen-family list-map-add/003 (native column-race scientific STOP; 0 generations) | Honest negative: generic structural re-rooting did not compose the nested Map/Bind scaffold with the scalar Add subtree; no retry or target tuning |
 | Public Simple-SWE baseline | 0/90 train and 0/27 dev | Prompt-only cell baseline failed, largely through invalid syntax |
 | Million-scale CUDA text training | Post speed-waves the 1M-cell CUDA pipeline reaches 96.1 grow / 101.6 inference tok/s (from 31.4 / 32.6; ×3.06 / ×3.12), putting a full-KJV epoch near 5 h at 1M cells (≈15 h before optimization) | Measured engineering throughput ([report](benchmarks/scale_opt_gpu_report.md), [corpus plan](docs/research/cell-lm-corpus-bible.md)); the ≈5 h epoch is projected from tok/s, not a completed run |
@@ -45,7 +46,7 @@ The repositories do not import or modify one another.
 | T-ROUTE trained mapping | E1/E2/E3 falsified with mechanism localization: winners collapse to a query-independent ~170-bit static pool, and a random-span control reproduces the gated arm exactly (placement carries zero signal) | Program-grade termination of Bible-QA for fixed local connectivity ([conclusion](docs/research/t-route-program-conclusion.md)); three remaining paths need user direction |
 | Predictive race bias (P-B) | Proportional bias reached 14.55% held-out span accuracy versus 3.60% shuffled (McNemar p≈8.7×10⁻¹⁵), 3.21× unigram, and 3.58× majority prior | Frozen mechanism gate passed; the smaller 14.55% versus 13.15% incumbent-off margin and TRAIN-self/VAL ratio 0.375 keep this promising rather than a generalization proof |
 | Path-2 full TRAIN development | Native `(16,18)` replay completed all 49 TRAIN books and 2,117,412 token steps without a scientific STOP, ending at 23,286,478 live segments | Gross completion/cost evidence only: the count is 72 above the frozen distinct-key ideal, timing was contaminated by concurrent work, and no held-out/C1 material was read |
-| Path-2 R3 C1 readiness | Native plateau/race mechanics now exist, but exact repeat identity/count, scientific controls, clean cap measurement, source refreeze, and CN-2 remain open | **Hard NO-GO; cohort unspent.** Repair remains governed by the [prelaunch audit](docs/research/r3-c1-prelaunch-audit.md); launch authority is delegated, but calibration-v3 is not yet runnable |
+| Path-2 calibration v3 | Electrical and q=4 passed; only `(16,18)` passed both q=255 regimes, then its seed-17 TRAIN R3-F0 scorer stopped before terminal identity | **Terminal `REJECT_R3_CALIBRATION_V3` at `r3_f0_development`; no arm selected and no retry.** Confirmation, held-out, C1, capability, and transfer surfaces remained unopened ([verdict](docs/research/r3-calibration-v3-verdict.md)) |
 
 Exact protocols, hashes, hardware, and limitations live in
 [benchmark status](docs/benchmark-status.md). Results are kept even when they
@@ -176,6 +177,11 @@ two-route slot-recombination pass, but no family-disjoint Simple-SWE result.
   records a one-shot same-family public TRAIN pass through Map, Bind, Add,
   predicate, reduction, physical literal copy, ordinary EOS, and the 36-case
   sandbox.
+- [Native self-posed shift-then-sum probe](experiments/r3_pilot/public_simple_swe_native_typed_shift_sum_probe.json)
+  records the one-shot negative frozen at `a9f6e58`: after two public TRAIN
+  donors, the untouched self-posed target stopped in the native physical stage
+  before emitting a token, so copy, compilation, and sandbox execution stayed
+  closed.
 - [Family-disjoint scaffold re-root probe](experiments/r3_pilot/public_simple_swe_native_typed_scaffold_reroot_probe.json)
   records the spent one-shot STOP before its unseen-family target emitted a token.
 - [Layer-0 scalar plumbing](docs/cell-program-layer0.md) is implemented but
@@ -214,11 +220,13 @@ two-route slot-recombination pass, but no family-disjoint Simple-SWE result.
   falsified in all three tested third-factor forms
   ([program conclusion](docs/research/t-route-program-conclusion.md)).
 - Path 2 is the current mainline. Segment recognition and winner election now
-  execute in native fitted-cell plateau/race dynamics, but C1 remains held:
-  full-TRAIN development exposed a repeat-identity/count miss, and the repaired
-  controls, cap measurement, CN-2 refreeze, and source-bound calibration-v3
-  execution are still open
-  ([readiness](experiments/r3_pilot/C1_READINESS.md)).
+  execute in native fitted-cell plateau/race dynamics, but C1 remains held.
+  The source-bound calibration-v3 run terminated honestly at development
+  R3-F0 with no selected arm; confirmation and held-out surfaces stayed closed.
+  Failure localization now precedes any new repair, while the remaining
+  controls, cap measurement, and CN-2 are still open
+  ([verdict](docs/research/r3-calibration-v3-verdict.md),
+  [readiness](experiments/r3_pilot/C1_READINESS.md)).
 - [Indicator assessment instrument](docs/indicator-assessment/RUBRIC.md)
   tracks architectural similarity to consciousness-science indicator sets
   (RPT/GWT/HOT/AST/PP/AE families) across model versions using strictly

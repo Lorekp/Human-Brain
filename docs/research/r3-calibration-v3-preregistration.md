@@ -1,16 +1,18 @@
 # R3 electrical, temporal-code, and capacity calibration v3
 
 **Date:** 2026-08-28
-**Status:** **RUNNABLE PRE-OUTCOME — NOT EXECUTED**
+**Status:** **EXECUTED ONCE — TERMINAL `REJECT_R3_CALIBRATION_V3`**
 **Machine-readable authority:**
 [`experiments/r3_pilot/calibration_v3_protocol.py`](../../experiments/r3_pilot/calibration_v3_protocol.py)
 
-This document freezes the repair protocol discovered after the reserve audit of
-the v2 temporal-code calibration. Its exact source-current runner is now
-authorized, but no outcome-bearing replay has occurred and no threshold has
-been selected. The committed v1/v2 electrical and temporal JSON
-artifacts remain historical evidence bound to `df26cc2`; they do not justify a
-C1-scale threshold after the cohort allocator and exact-pair changes.
+This document froze the repair protocol discovered after the reserve audit of
+the v2 temporal-code calibration. Its exact source-current runner was executed
+once and terminated at development R3-F0 with no selected threshold. The
+recorded outcome is
+[`r3-calibration-v3-verdict.md`](r3-calibration-v3-verdict.md). The committed
+v1/v2 electrical and temporal JSON artifacts remain historical evidence bound
+to `df26cc2`; they do not justify a C1-scale threshold after the cohort
+allocator and exact-pair changes.
 
 Schema 7 is deliberately fail-closed and incorporates
 [`CHANGE NOTE 1`](r3-calibration-v3-change-note-1.md). It pins the explicit-threshold Python
@@ -23,8 +25,8 @@ the outer 21-path execution closure is bound uniformly to commit
 governed transitively by the nested manifest; schema 7 does not duplicate its
 native-file digests. Its native
 identity contract now also makes the established permanence, policy, codebook,
-threshold-offset generator, and four seed-17 definition digests literal; this
-selects no arm and opens no outcome data.
+threshold-offset generator, and four seed-17 definition digests literal; at
+freeze time this selected no arm and opened no outcome data.
 Pre-outcome, schema 7 also pins the complete q=4 native identity table and seed
 scope for all four arms across development seeds `3, 7, 17, 29`.
 The durable executor, checkpoint/resume transaction, selected-arm confirmation,
@@ -458,11 +460,39 @@ result JSON, and makes no capability or transfer claim. Electrical v3, q=4,
 and q=255 remain fixture evidence; R3-F0 remains TRAIN-only structural
 evidence.
 
-The pre-outcome runnable transition is complete: the governing nested Gate-3
+The pre-outcome runnable transition was completed: the governing nested Gate-3
 closure is preserved at `6001014`, the exact 21-path outer executor closure is
 bound to `f868294`, and the durable directory, checkpoint/resume, cumulative
 timing, selected-arm confirmation, and immutable result contracts are present.
-This authorizes only the frozen command and does not itself execute a screen or
-spend the cohort. On a clean source-current checkout,
+That transition authorized only the frozen command and did not itself execute a
+screen or spend the cohort. On a clean source-current checkout,
 `python experiments/r3_pilot/calibration_v3_protocol.py --check-runnable` must
 pass; any bound live-source drift must still fail closed before execution.
+
+## 8. Recorded one-shot outcome
+
+The canonical package invocation executed the protocol once under protocol
+SHA-256 `5b916fe88cdba401c2a80e89b25bfc64447d189d216029d65bb40678c499dfa6`
+and source-bundle identity
+`9e5844b51bb3843f8cd08be5247fe0e5ac58d8dcbae6452f527e35a7fa6acabf`.
+The immutable publication contains 41 JSON envelopes totaling 224,834 bytes.
+
+Electrical v3 passed; every q=4 arm passed at development seeds `3, 7, 17,
+29`; only `(16,18)` passed both q=255 production and target-disjoint regimes
+at all four seeds. Seed-17 TRAIN R3-F0 then reached a scorer STOP before a
+terminal identity result. The final envelope records
+`REJECT_R3_CALIBRATION_V3`, `first_failed_gate=r3_f0_development`, and
+`selected_arm_slug=null`.
+
+The initial direct-file launcher tooling STOP occurred before artifact creation
+and did not spend the run. The canonical package invocation then executed the
+frozen plan once:
+
+```powershell
+python -m experiments.r3_pilot.run_calibration_v3_fixtures --run-frozen-plan
+```
+
+There was no scientific retry. Independent and deterministic confirmation,
+held-out data, C1, capability, and transfer surfaces remained unopened. The
+next repair is intentionally provisional pending the separate
+failure-localization report.

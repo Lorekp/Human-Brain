@@ -1,9 +1,11 @@
 # C1 readiness — R3 segment-growth cohort
 
-**Status: HARD NO-GO — current runner is diagnostic-only; C1 cohort unspent.**
+**Status: HARD NO-GO — calibration v3 rejected; C1 cohort unspent.**
 
 The independent prelaunch audit found that the merged runner cannot produce a
-protocol-valid C1 verdict. Do not launch `run_c1_cohort.py` as a cohort.
+protocol-valid C1 verdict, and the repaired calibration-v3 path has now
+terminated at development R3-F0 without selecting an arm. Do not launch
+`run_c1_cohort.py` as a cohort.
 Authoritative analysis and repair gates:
 [r3-c1-prelaunch-audit.md](../../docs/research/r3-c1-prelaunch-audit.md).
 
@@ -98,9 +100,19 @@ timing is not cap evidence. Exact evidence is in
 
 The nested Gate-3 source closure was refrozen at `6001014`; its content remains
 unchanged while the exact 21-path outer calibration execution closure is bound
-to `f868294`. Both draft and runnable source checks now pass on the clean bound
-tree. This opens only the frozen calibration-v3 runner; it is not C1 launch
-evidence and does not clear the remaining scientific or cost gates below.
+to `f868294`. Both draft and runnable source checks passed on the clean bound
+tree. The frozen calibration then executed once under protocol SHA-256
+`5b916fe88cdba401c2a80e89b25bfc64447d189d216029d65bb40678c499dfa6`
+and source bundle
+`9e5844b51bb3843f8cd08be5247fe0e5ac58d8dcbae6452f527e35a7fa6acabf`.
+Electrical v3 and all q=4 development fixtures passed. Only `(16,18)` passed
+both q=255 regimes at all four development seeds; its seed-17 TRAIN R3-F0
+scorer then stopped before terminal identity. The immutable final verdict is
+`REJECT_R3_CALIBRATION_V3`, with
+`first_failed_gate=r3_f0_development` and no selected arm. No confirmation,
+held-out, C1, capability, or transfer surface was opened, and the run will not
+be retried. See
+[r3-calibration-v3-verdict.md](../../docs/research/r3-calibration-v3-verdict.md).
 
 The sparse recognition prototype is control-only evidence. It benchmarks
 `|W|=54`; frozen g=50 produces roughly 64k winners on the initial slice and
@@ -132,8 +144,9 @@ measurement.
       fails the original canonical TRAIN-order precursor at Genesis token
       19,841. The repaired two-tier cost runner completes all 49 TRAIN books but
       exceeds the exact R3-F0 segment count by 72, while both higher arms fail
-      q=255. Threshold-only repair is exhausted; stabilize replayed winner
-      identities before confirmation or official R3-F0.
+      q=255. The official calibration-v3 development path has now rejected at
+      seed-17 R3-F0 before terminal identity, so confirmation is closed. The
+      next repair remains provisional pending dedicated failure localization.
 - [ ] **Sparse context assembly gate:** freeze and compare k-capped actual
       recurrent spikes; require repeated-context stability, unrelated-context
       separation, and a bounded coincidence false-positive rate. Supersede the
@@ -150,8 +163,8 @@ measurement.
       narrow 8.65 h projection, but later growth, required costs, and final
       topology remain unmeasured.
 - [x] Refresh the nested Gate-3 and exact 21-path outer R3 source bindings after
-      the official q=255/R3-F0 execution closure; calibration v3 is runnable
-      pre-outcome at `f868294`.
+      the official q=255/R3-F0 execution closure; calibration v3 was executed
+      once from the bound `f868294` tree and terminally rejected.
 - [ ] **CN-2:** formally refreeze substrate, winner source, A3, permanence rule,
       boundaries, evaluation, runtime changes, schedule, and cap behavior.
 - [ ] Corrected dry run and short smoke pass.
@@ -160,9 +173,10 @@ measurement.
 
 ## Permitted commands
 
-Focused unit tests and short pre-outcome fixtures are permitted. The old dry
-run may be used only to reproduce and localize the documented failures; its
-`ok` field is not readiness evidence.
+Focused unit tests and targeted localization diagnostics are permitted. The
+official calibration-v3 run is spent and must not be rerun or tuned against.
+The old dry run may be used only to reproduce and localize the documented
+failures; its `ok` field is not readiness evidence.
 
 The following long command remains prohibited:
 
