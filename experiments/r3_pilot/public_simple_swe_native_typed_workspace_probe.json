@@ -1,0 +1,542 @@
+{
+  "authority": {
+    "atomic_generation_received_python_feedback": false,
+    "compile_and_sandbox_skipped_after_first_divergence": true,
+    "development_attempts_completed": 1,
+    "development_key": [
+      "t1_list_map_add",
+      2
+    ],
+    "development_target_used_as_runtime_input": false,
+    "eval_partition_generated": false,
+    "harness_retries": 0,
+    "learned_readout_parameters": 0,
+    "model_retries": 0,
+    "prompt_bracket_scope": "signature-entry/signature-parameter/literal-when-present",
+    "prompt_family_ids_injected": false,
+    "prompt_solution_labels_injected": false,
+    "python_argmax": false,
+    "python_candidate_enumeration": false,
+    "scoring_reports_first_model_divergence": true,
+    "source_partition_generated": "train",
+    "synthetic_runtime_authority": true,
+    "teacher_tokens_after_development_prompt": 0,
+    "train_keys": [
+      [
+        "t0_scalar_offset",
+        0
+      ],
+      [
+        "t1_list_map_abs",
+        0
+      ]
+    ],
+    "typed_compiler_received_prompt": false,
+    "typed_compiler_received_tests": false
+  },
+  "capability_pass": true,
+  "claim_boundary": "One retained native temporal circuit sees one visible scalar-offset task and one visible list-map-absolute task, then attempts visible list-map-add ordinal 002 exactly once. A pass is direct visible-development evidence that native result-type and slot-state cues acquired independent retained scaffold and operation components, then structurally projected their splice at typed holes so the circuit recombined an outer map/binder subtree with an inner add/literal subtree and physically copied the unseen -1 surface literal. It is not M0, family-disjoint generalization, eval evidence, broad coding competence, or C1.",
+  "experiment": "r3-public-simple-swe-native-typed-workspace-composition",
+  "first_failure": null,
+  "generated_at_utc": "2026-08-28T09:04:27.498555+00:00",
+  "outcome": "PASS_NATIVE_TYPED_WORKSPACE_COMPOSITION",
+  "physical_definition": {
+    "active_columns_per_token": 11,
+    "circuit_identity_sha256": "70abcf72bc9c35a9b491f2c4005627d8bfcbf4baa20a270f59a184e1184b41c2",
+    "column_count": 512,
+    "physical_cell_count": 22026,
+    "plan_commit_token_id": 2048,
+    "plan_component_count": 2,
+    "prompt_surface_column_count": 314,
+    "segment_capacity": 6149,
+    "theta_active": 18,
+    "theta_match": 16,
+    "typed_cue_token_ids": {
+      "eos": 2063,
+      "expression-int-child-0": 2050,
+      "expression-int-child-1": 2051,
+      "expression-int-head": 2049,
+      "expression-int-to-int-child-0": 2056,
+      "expression-int-to-int-child-1": 2057,
+      "expression-int-to-int-head": 2055,
+      "expression-list-int-child-0": 2053,
+      "expression-list-int-child-1": 2054,
+      "expression-list-int-head": 2052,
+      "literal-digit-or-end": 2061,
+      "literal-end": 2062,
+      "literal-first-digit": 2059,
+      "literal-first-nonzero-digit": 2060,
+      "literal-sign": 2058,
+      "operation-component-slot-absent": 2064,
+      "operation-component-slot-ready": 2065
+    },
+    "typed_private_token_ids": [
+      2048,
+      2049,
+      2050,
+      2051,
+      2052,
+      2053,
+      2054,
+      2055,
+      2056,
+      2057,
+      2058,
+      2059,
+      2060,
+      2061,
+      2062,
+      2063,
+      2064,
+      2065
+    ],
+    "typed_surface_token_ids": [
+      1024,
+      1042,
+      1030,
+      1031,
+      1025,
+      1026,
+      1027,
+      1028,
+      1032,
+      1033,
+      1034,
+      1035,
+      1036,
+      1037,
+      1038,
+      1039,
+      1040,
+      1041,
+      1029,
+      256
+    ],
+    "used_token_count": 97,
+    "workspace_codes_disjoint_from_prompt_and_surface": true,
+    "workspace_reserved_column_count": 198
+  },
+  "protocol": {
+    "language": "python-3.11",
+    "protocol_id": "human-cell-simple-swe-v1",
+    "protocol_sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2"
+  },
+  "public_simple_swe_runtime": {
+    "explicit_repo_venv": "C:\\Users\\laure\\AppData\\Roaming\\uv\\python\\cpython-3.11.15-windows-x86_64-none\\python.exe",
+    "property_cases": 32,
+    "python_runtime": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "regression_cases": 4,
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "runtime": {
+    "elapsed_wall_ns": 4467834900,
+    "native_binary_sha256": "e4420913e978b3bef893346b39676cf9cd1a8ce1274c6a5c3954d4271d3a08b9",
+    "native_source_digest": "eebfcb7eb02a337ee8dd24d57bf3228ce1fb77a78359ac7a0652a64330d918a1",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "dbb3f2469f50cf70e0db3e0e288bf625b1f2be4eb87cbef53f15d863da68facb",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "slot_bank": {
+    "copied_slot_ordinal": 2,
+    "copy_control_token_id": 4294967293,
+    "copy_end_token_id": 4294967294,
+    "max_surface_tokens_per_slot": 22,
+    "slot_count": 3
+  },
+  "train": {
+    "learned_state_retained_between_tasks": true,
+    "learning_steps_after_train": 561,
+    "live_segments_after_train": 3904,
+    "reset_before_each": true,
+    "tasks": [
+      {
+        "allocated_segments": 2794,
+        "entry_point": "solve_d4c2e76cb6f6e7b8",
+        "family": "t0_scalar_offset",
+        "hidden_test_sha256": "4f11a30a2c3035855d7661e089d0c534ffd836ae9b93673dd6f97d5168425190",
+        "internal_target": [
+          "add",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "<EOS>"
+        ],
+        "literal": "5",
+        "ordinal": 0,
+        "parameter": "n",
+        "partition": "train",
+        "prompt_steps": 251,
+        "property_case_count": 32,
+        "public_prompt_lossless_after_tokenization": true,
+        "public_prompt_sha256": "cc721bf6d74e3b2fe9dc695e5deafbd73c520f8ac9a2bd0445fb3551bcdf15e0",
+        "regression_case_count": 4,
+        "steps": 258,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/000",
+        "task_sha256": "76a3a308651bb98a67801dbcbf7d2750a6de6f30748d6f500a30121dc950ea21",
+        "workspace_step_event_counts": [
+          9,
+          11,
+          13,
+          15,
+          17,
+          19,
+          21
+        ],
+        "workspace_step_token_ids": [
+          2048,
+          1024,
+          1025,
+          1026,
+          4294967293,
+          1029,
+          256
+        ],
+        "workspace_steps": 7
+      },
+      {
+        "allocated_segments": 1088,
+        "entry_point": "solve_738987e19fc67a16",
+        "family": "t1_list_map_abs",
+        "hidden_test_sha256": "6f7d1c569e5ed289b264d185f3dd1153898ceceea8872e4460794a2081652687",
+        "internal_target": [
+          "map",
+          "bind",
+          "absolute",
+          "variable-0",
+          "variable-0",
+          "<EOS>"
+        ],
+        "literal": "",
+        "ordinal": 0,
+        "parameter": "values",
+        "partition": "train",
+        "prompt_steps": 294,
+        "property_case_count": 32,
+        "public_prompt_lossless_after_tokenization": true,
+        "public_prompt_sha256": "955d7dc62cf217cdd3b65fa15584e36b7d1c3523ab1891d5af30a7d93996e01d",
+        "regression_case_count": 4,
+        "steps": 301,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_abs/000",
+        "task_sha256": "8f31b752aa2801a4a2f61ddd9d9e5a9de52d39b4e55fe960ae87d797d9073824",
+        "workspace_step_event_counts": [
+          92,
+          94,
+          96,
+          98,
+          100,
+          102,
+          104
+        ],
+        "workspace_step_token_ids": [
+          2048,
+          1030,
+          1031,
+          1042,
+          1025,
+          1025,
+          256
+        ],
+        "workspace_steps": 7
+      }
+    ]
+  },
+  "typed_subtrees": {
+    "absolute_primitive_type": "Int -> Int",
+    "compiler_checks": [
+      {
+        "compiled_source": "def solve_d4c2e76cb6f6e7b8(n):\n    return n + 5\n",
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/000",
+        "tokens": [
+          "add",
+          "variable-0",
+          "integer",
+          "+",
+          "5",
+          "end"
+        ]
+      },
+      {
+        "compiled_source": "def solve_738987e19fc67a16(values):\n    return [abs(item_0) for item_0 in values]\n",
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_abs/000",
+        "tokens": [
+          "map",
+          "bind",
+          "absolute",
+          "variable-0",
+          "variable-0"
+        ]
+      }
+    ],
+    "development_stream_equals_a_train_stream": false,
+    "map_absolute_train": "map bind absolute variable-0 variable-0",
+    "map_add_development_expected": "map bind add variable-0 integer COPY[2] end variable-0",
+    "scalar_train": "add variable-0 integer COPY[2] end"
+  },
+  "visible_development_teacher_free": {
+    "atomic_no_argument_generation": true,
+    "attempt_number": 1,
+    "completed_generations": 10,
+    "composed_plan_query_exposed_by_transport": false,
+    "expected_stream_used_only_for_host_scoring": true,
+    "first_failure": null,
+    "fitted_cell_races_exact": true,
+    "generation_call_count": 1,
+    "generations": [
+      {
+        "candidate_tokens_physical": 1,
+        "control_token_id": null,
+        "copy_place_ordinal": null,
+        "generation_index": 1,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "position": 0,
+        "slot_ordinal": null,
+        "surface_primitive": "map",
+        "surface_token_id": 1030,
+        "temporal_event_count": 44,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 1,
+        "control_token_id": null,
+        "copy_place_ordinal": null,
+        "generation_index": 2,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "position": 1,
+        "slot_ordinal": null,
+        "surface_primitive": "bind",
+        "surface_token_id": 1031,
+        "temporal_event_count": 46,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 3,
+        "control_token_id": null,
+        "copy_place_ordinal": null,
+        "generation_index": 3,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "position": 2,
+        "slot_ordinal": null,
+        "surface_primitive": "add",
+        "surface_token_id": 1024,
+        "temporal_event_count": 48,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 1,
+        "control_token_id": null,
+        "copy_place_ordinal": null,
+        "generation_index": 4,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "position": 3,
+        "slot_ordinal": null,
+        "surface_primitive": "variable-0",
+        "surface_token_id": 1025,
+        "temporal_event_count": 50,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 2,
+        "control_token_id": null,
+        "copy_place_ordinal": null,
+        "generation_index": 5,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "position": 4,
+        "slot_ordinal": null,
+        "surface_primitive": "integer",
+        "surface_token_id": 1026,
+        "temporal_event_count": 52,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 21,
+        "control_token_id": 4294967293,
+        "copy_place_ordinal": 0,
+        "generation_index": 6,
+        "path": "ENTER_COPY",
+        "physical_election_count": 2,
+        "position": 5,
+        "slot_ordinal": 2,
+        "surface_primitive": "-",
+        "surface_token_id": 1028,
+        "temporal_event_count": 54,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 24,
+        "control_token_id": null,
+        "copy_place_ordinal": 1,
+        "generation_index": 7,
+        "path": "COPY",
+        "physical_election_count": 1,
+        "position": 6,
+        "slot_ordinal": 2,
+        "surface_primitive": "1",
+        "surface_token_id": 1033,
+        "temporal_event_count": 54,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 4,
+        "control_token_id": 4294967294,
+        "copy_place_ordinal": null,
+        "generation_index": 8,
+        "path": "EXIT_COPY",
+        "physical_election_count": 2,
+        "position": 7,
+        "slot_ordinal": 2,
+        "surface_primitive": "end",
+        "surface_token_id": 1029,
+        "temporal_event_count": 56,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 1,
+        "control_token_id": null,
+        "copy_place_ordinal": null,
+        "generation_index": 9,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "position": 8,
+        "slot_ordinal": null,
+        "surface_primitive": "variable-0",
+        "surface_token_id": 1025,
+        "temporal_event_count": 58,
+        "winner_input_columns": 11
+      },
+      {
+        "candidate_tokens_physical": 1,
+        "control_token_id": null,
+        "copy_place_ordinal": null,
+        "generation_index": 10,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "position": 9,
+        "slot_ordinal": null,
+        "surface_primitive": "<EOS>",
+        "surface_token_id": 256,
+        "temporal_event_count": 60,
+        "winner_input_columns": 11
+      }
+    ],
+    "program": {
+      "attempted": true,
+      "compiled_source": "def solve_c01dcc26b43f0be3(values):\n    return [item_0 + -1 for item_0 in values]\n",
+      "compiler_received_prompt": false,
+      "compiler_received_tests": false,
+      "exact_compiled_source": true,
+      "exact_tokens": true,
+      "expected_compiled_source": "def solve_c01dcc26b43f0be3(values):\n    return [item_0 + -1 for item_0 in values]\n",
+      "expected_tokens": [
+        "map",
+        "bind",
+        "add",
+        "variable-0",
+        "integer",
+        "-",
+        "1",
+        "end",
+        "variable-0"
+      ],
+      "program_sha256": "5561835ba9d99b7b21ad449caf520dc2ee316019f36dea5eb1078b2da3c67100",
+      "tokens": [
+        "map",
+        "bind",
+        "add",
+        "variable-0",
+        "integer",
+        "-",
+        "1",
+        "end",
+        "variable-0"
+      ]
+    },
+    "prompt_steps": 281,
+    "sandbox": {
+      "attempted": true,
+      "detail": "",
+      "outcome": "passed",
+      "passed": true,
+      "property_case_count": 32,
+      "python_runtime": {
+        "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+        "implementation": "cpython",
+        "python_version": "3.11.15"
+      },
+      "regression_case_count": 4,
+      "sandboxed": true,
+      "wall_seconds": 0.08059120003599674,
+      "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+    },
+    "slot_2_copy_trace_exact": true,
+    "slot_2_copy_transaction": {
+      "control_token_id": 4294967293,
+      "copied_candidate_counts": [
+        21,
+        24
+      ],
+      "copied_event_counts": [
+        54,
+        54
+      ],
+      "copied_physical_election_counts": [
+        2,
+        1
+      ],
+      "copied_places": [
+        0,
+        1
+      ],
+      "copied_primitives": [
+        "-",
+        "1"
+      ],
+      "enter_advanced_temporal_after_typed_cue": true,
+      "enter_event_count": 54,
+      "enter_event_count_delta": 2,
+      "exit_event_count": 56,
+      "exit_event_count_delta": 2,
+      "exit_resumed_temporal_after_typed_cue": true,
+      "exit_surface_primitive": "end",
+      "slot_ordinal": 2,
+      "temporal_event_count_held_across_copied_tokens": true
+    },
+    "target_entered_runtime": false,
+    "task": {
+      "entry_point": "solve_c01dcc26b43f0be3",
+      "family": "t1_list_map_add",
+      "hidden_test_sha256": "b91381937100f9bf932c36e314525b76e9600fa30e7a8e6236de73b2e9db010d",
+      "literal": "-1",
+      "ordinal": 2,
+      "parameter": "values",
+      "partition": "train",
+      "property_case_count": 32,
+      "public_prompt_lossless_after_tokenization": true,
+      "public_prompt_sha256": "d9e4be4e4e80a8cabac7b1a5a626238b06d1703ec8bcfa1ffe037c2a31a5368b",
+      "regression_case_count": 4,
+      "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/002",
+      "task_sha256": "18a2f8e715e755bd3dd9209a4a777c8283388c4e63a92f7c51f278a4ae5e96a9"
+    },
+    "teacher_tokens_after_prompt": 0,
+    "terminated_by_ordinary_eos": true,
+    "workspace_step_event_counts": [
+      42
+    ],
+    "workspace_step_token_ids": [
+      2048
+    ],
+    "workspace_steps_before_generation": 1
+  }
+}
