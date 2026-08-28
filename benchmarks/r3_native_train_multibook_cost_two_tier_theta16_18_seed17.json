@@ -1,0 +1,344 @@
+{
+  "benchmark": "r3-native-train-multibook-cost",
+  "claim_boundary": "one physical LEARN replay of the first two canonical TRAIN books only; arm (16,18), seed 17, production codebook, exact atomic transient reset at both book boundaries, synthetic pre-outcome authority, and a transition-bounded segment store; no held-out/C1/capability/cohort, later-book, checkpoint-I/O, or multi-arm evidence",
+  "definition": {
+    "arm": [
+      16,
+      18
+    ],
+    "bounded_capacity_rule": "sum((book_token_count - one transient seed) * 11)",
+    "bounded_definition_identity_sha256": "9b87b329888a293ae0710560cec285b314758c9c663a608eec0813381716177f",
+    "bounded_segment_capacity": 2450096,
+    "column_count": 4096,
+    "construction_seed": 17,
+    "definition_build_ns": 93843500,
+    "max_pyramidal_cells": 131072,
+    "max_segments_per_transition": 11,
+    "native_construction_ns": 1071954000,
+    "physical_cell_count": 274432,
+    "production_definition_identity_sha256": "efcd70c8f0a1deeb04ffa32b7d905f42c01000caa33ed18d61ac366594ed9502",
+    "production_segment_capacity": 23286406,
+    "protocol_runnable": false,
+    "protocol_sha256": "1cc1c48c57dac9d3a4eb1bbf13534b4a76e9a815fcdf3707051cb28f92575fb4",
+    "threshold_offsets_sha256_le_f64": "3eb899945775d84026ac967920065c7f6a2d01f3c1e08cd4cf53d0e614ce994e",
+    "token_code_count": 768,
+    "worst_case_transition_count": 222736
+  },
+  "environment": {
+    "native_binary_sha256": "e386a6c339cff83f13e1d070149b9539beaf443a2a09da9e5427122199a3601d",
+    "native_binary_size": 555008,
+    "native_source_digest": "bd70b5ae77860ed96e3f2683c178a9b5755423a0aaeeab3e1df631cdad6c60e5",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "final_checkpoint_identity": {
+    "event_count": 100485,
+    "learning_step": 222738,
+    "logical_state_sha256": "b727d424306c176a8033b0fc652e78fb4be099b81512c83c3b0dab1fc1fd7168",
+    "segment_count": 2450052
+  },
+  "generated_at_utc": "2026-08-28T02:37:17.577702+00:00",
+  "measurement": {
+    "book_resets_requested": 2,
+    "book_summaries": [
+      {
+        "completed": true,
+        "completed_token_steps": 122253,
+        "corpus_index": 0,
+        "latency_ns": {
+          "count": 122253,
+          "max": 6074500,
+          "mean": 835483.9578578849,
+          "median": 719700,
+          "min": 125100,
+          "p95": 1821800,
+          "p99": 2280000,
+          "sum": 102140420300
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1344783,
+          "predicted_steps": 1,
+          "winner_spikes": 1344783
+        },
+        "native_checkpoint_segment_count": 1344761,
+        "ordinal": 0,
+        "rate": {
+          "abi_call_steps_per_second": 1196.9110724327027,
+          "instrumented_loop_steps_per_second": 1184.5297283994437,
+          "replay_wall_ns": 103208047100
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 122253,
+            "max": 11,
+            "mean": 0.0006298413944852069,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 77
+          },
+          "candidate_segments": {
+            "count": 122253,
+            "max": 18722,
+            "mean": 6436.461951853942,
+            "median": 5577,
+            "min": 0,
+            "p95": 14432,
+            "p99": 15422,
+            "sum": 786876783
+          },
+          "matching_segments": {
+            "count": 122253,
+            "max": 11,
+            "mean": 0.011697054469010985,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 1430
+          },
+          "postings_visited": {
+            "count": 122253,
+            "max": 27775,
+            "mean": 10024.411490924558,
+            "median": 8602,
+            "min": 0,
+            "p95": 23133,
+            "p99": 25058,
+            "sum": 1225514378
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1344761,
+          "live_delta": 1344761,
+          "live_end": 1344761,
+          "live_start": 0,
+          "punished_total": 66
+        },
+        "short_name": "Genesis",
+        "token_count": 122253,
+        "token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd",
+        "transition_steps": 122252
+      },
+      {
+        "completed": true,
+        "completed_token_steps": 100485,
+        "corpus_index": 1,
+        "latency_ns": {
+          "count": 100485,
+          "max": 8763400,
+          "mean": 1161808.2967607107,
+          "median": 1099000,
+          "min": 152400,
+          "p95": 2161400,
+          "p99": 2631500,
+          "sum": 116744306700
+        },
+        "mechanism": {
+          "all_basket_to_gaba_ticks": true,
+          "all_winner_to_basket_ticks": true,
+          "basket_spikes": 1105335,
+          "predicted_steps": 3,
+          "winner_spikes": 1105335
+        },
+        "native_checkpoint_segment_count": 2450052,
+        "ordinal": 1,
+        "rate": {
+          "abi_call_steps_per_second": 860.7271980998453,
+          "instrumented_loop_steps_per_second": 854.0279667476314,
+          "replay_wall_ns": 117660081300
+        },
+        "recognition": {
+          "active_segments": {
+            "count": 100485,
+            "max": 11,
+            "mean": 0.0007662835249042146,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 77
+          },
+          "candidate_segments": {
+            "count": 100485,
+            "max": 17072,
+            "mean": 8034.546031746032,
+            "median": 7810,
+            "min": 0,
+            "p95": 14201,
+            "p99": 15092,
+            "sum": 807351358
+          },
+          "matching_segments": {
+            "count": 100485,
+            "max": 11,
+            "mean": 0.013683634373289545,
+            "median": 0,
+            "min": 0,
+            "p95": 0,
+            "p99": 0,
+            "sum": 1375
+          },
+          "postings_visited": {
+            "count": 100485,
+            "max": 28017,
+            "mean": 12014.478927203065,
+            "median": 11704,
+            "min": 0,
+            "p95": 22385,
+            "p99": 24013,
+            "sum": 1207274915
+          }
+        },
+        "reset_evidence": {
+          "active_segments": 0,
+          "allocated_segments": 0,
+          "candidate_segments": 0,
+          "empty_transient_state_observed": true,
+          "event_count_after_step": 1,
+          "matching_segments": 0,
+          "postings_visited": 0,
+          "punished_segments": 0,
+          "reset_before_requested": true
+        },
+        "segments": {
+          "allocated_total": 1105291,
+          "live_delta": 1105291,
+          "live_end": 2450052,
+          "live_start": 1344761,
+          "punished_total": 44
+        },
+        "short_name": "Exodus",
+        "token_count": 100485,
+        "token_sha256_le_i32": "db487fa7767f7e716924aeca15f92ae5df5c7429c50c6ee225925cb6902e59f4",
+        "transition_steps": 100484
+      }
+    ],
+    "completed_books": 2,
+    "completed_token_steps": 222738,
+    "gc_during_replay": "disabled",
+    "latency_ns": {
+      "count": 222738,
+      "max": 8763400,
+      "mean": 982700.4238163223,
+      "median": 900700.0,
+      "min": 125100,
+      "p95": 1995500,
+      "p99": 2498100,
+      "sum": 218884727000
+    },
+    "mechanism": {
+      "all_basket_to_gaba_ticks": true,
+      "all_winner_to_basket_ticks": true,
+      "basket_spikes": 2450118,
+      "predicted_steps": 4,
+      "winner_spikes": 2450118
+    },
+    "mode": "LEARN",
+    "rate": {
+      "abi_call_steps_per_second": 1017.6041199987426,
+      "instrumented_loop_steps_per_second": 987.0335638818472,
+      "replay_wall_ns": 225664058600
+    },
+    "recognition": {
+      "active_segments": {
+        "count": 222738,
+        "max": 11,
+        "mean": 0.0006913952715746752,
+        "median": 0.0,
+        "min": 0,
+        "p95": 0,
+        "p99": 0,
+        "sum": 154
+      },
+      "candidate_segments": {
+        "count": 222738,
+        "max": 18722,
+        "mean": 7157.414275965484,
+        "median": 6611.0,
+        "min": 0,
+        "p95": 14311,
+        "p99": 15301,
+        "sum": 1594228141
+      },
+      "matching_segments": {
+        "count": 222738,
+        "max": 11,
+        "mean": 0.012593271017967297,
+        "median": 0.0,
+        "min": 0,
+        "p95": 0,
+        "p99": 0,
+        "sum": 2805
+      },
+      "postings_visited": {
+        "count": 222738,
+        "max": 28017,
+        "mean": 10922.201389075955,
+        "median": 9999.0,
+        "min": 0,
+        "p95": 22759,
+        "p99": 24673,
+        "sum": 2432789293
+      }
+    },
+    "segments": {
+      "allocated_total": 2450052,
+      "live_delta": 2450052,
+      "live_end": 2450052,
+      "live_start": 0,
+      "punished_total": 110
+    },
+    "single_token_abi_calls": true,
+    "timer": "time.perf_counter_ns"
+  },
+  "outcome": "PASS",
+  "schema_version": 1,
+  "scientific_stop": null,
+  "train_input": {
+    "books": [
+      {
+        "corpus_index": 0,
+        "ordinal": 0,
+        "short_name": "Genesis",
+        "token_count": 122253,
+        "token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd"
+      },
+      {
+        "corpus_index": 1,
+        "ordinal": 1,
+        "short_name": "Exodus",
+        "token_count": 100485,
+        "token_sha256_le_i32": "db487fa7767f7e716924aeca15f92ae5df5c7429c50c6ee225925cb6902e59f4"
+      }
+    ],
+    "candidate_id": "cell-lm-v1-freeze-candidate-bible-kjv-pg10-v3",
+    "full_train_token_count": 2117412,
+    "held_out_books_materialized": 0,
+    "input_load_ns": 12294404200,
+    "replayed_book_count": 2,
+    "replayed_token_count": 222738,
+    "replayed_token_sha256_le_i32": "fb52947fcc63308f180132f8a88a6b2a79d87ca2dc570e8eceb5ecf0c67149cc",
+    "replayed_transition_count": 222736,
+    "replayed_unique_token_ids": 501,
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5",
+    "verified_train_books_materialized": 49
+  }
+}
