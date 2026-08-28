@@ -1024,10 +1024,10 @@ impl TemporalCircuitRuntime {
         Ok(address)
     }
 
-    /// Recruit or recall one native recurrent role pointer after a surface has
-    /// already won.  This is intentionally downstream of output election: it
-    /// can bind descendants to an elected operation, but it cannot manufacture
-    /// the first/root surface token.
+    /// Recruit or recall one native recurrent role pointer after a constructor
+    /// or Integer surface has already won. This is intentionally downstream of
+    /// output election: it can bind descendants or literal phases to an elected
+    /// surface, but it cannot manufacture the first/root surface token.
     fn bind_current_role_pointer(
         &mut self,
         surface_feedback: &TemporalCircuitStep,
@@ -1035,7 +1035,7 @@ impl TemporalCircuitRuntime {
     ) -> Result<(), TemporalCircuitStop> {
         if !self
             .typed_workspace
-            .token_opens_role_substructure(surface_feedback.token_id)
+            .token_opens_role_pointer_scope(surface_feedback.token_id)
         {
             return Ok(());
         }
@@ -1266,7 +1266,7 @@ impl TemporalCircuitRuntime {
                 .expect("typed surface token presence was validated above");
             for &column in &columns[..ROLE_POINTER_SURFACE_SAMPLE_COUNT] {
                 if role_surface_columns[..sampled_count].contains(&column) {
-                    return Err("typed role-opening surface samples must be pairwise disjoint");
+                    return Err("typed role-pointer surface samples must be pairwise disjoint");
                 }
                 role_surface_columns[sampled_count] = column;
                 sampled_count += 1;
@@ -6812,7 +6812,7 @@ mod tests {
     }
 
     #[test]
-    fn typed_session_rejects_role_opening_surface_sample_collision_before_commit() {
+    fn typed_session_rejects_integer_pointer_surface_sample_collision_before_commit() {
         const WORKLOAD: u32 = 800;
         const PLAN_COMMIT: u32 = 900;
         const CUE_BASE: u32 = 1_000;
@@ -6847,8 +6847,8 @@ mod tests {
             .columns[0];
         codebook
             .iter_mut()
-            .find(|code| code.token_id == vocabulary.surface_token_ids[1])
-            .expect("Absolute code")
+            .find(|code| code.token_id == vocabulary.surface_token_ids[5])
+            .expect("Integer code")
             .columns[0] = add_first_column;
         let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
         let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
@@ -6872,7 +6872,7 @@ mod tests {
                 TemporalStepMode::Learn,
             ),
             Err(TemporalCircuitStop::MalformedContextOrPolicy(
-                "typed role-opening surface samples must be pairwise disjoint"
+                "typed role-pointer surface samples must be pairwise disjoint"
             ))
         ));
         assert_eq!(runtime.typed_workspace.session_mode(), None);
@@ -7098,6 +7098,170 @@ mod tests {
             .prepare_current_typed_context(TemporalStepMode::ReadOnly)
             .expect("descendant context uses the active role pointer");
         assert_eq!(&runtime.previous_context[..3], &learned_pointer.owners[..3]);
+        assert_eq!(runtime.store.runtime_segment_count(), learned_segment_count);
+        assert_eq!(runtime.scientific_stop, None);
+    }
+
+    #[test]
+    fn nested_integer_pointer_owns_literal_phases_then_restores_enclosing_pointer() {
+        const WORKLOAD: u32 = 1_300;
+        const PLAN_COMMIT: u32 = 1_400;
+        const CUE_BASE: u32 = 1_500;
+        const SURFACE_BASE: u32 = 1_600;
+        const ADDRESS_BASE: u32 = 10_000;
+
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            address_token_base: ADDRESS_BASE,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        let mut token_ids = vec![
+            WORKLOAD,
+            PLAN_COMMIT,
+            ADDRESS_BASE,
+            ADDRESS_BASE + 1,
+            ADDRESS_BASE + 2,
+        ];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.max_pyramidal_cells += ACTIVE_COLUMNS as u32 * 4;
+        circuit_config.segment_capacity = 512;
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        )
+        .expect("empty-store nested literal-pointer fixture");
+        let add = vocabulary.surface_token_ids[0];
+        let variable_zero = vocabulary.surface_token_ids[4];
+        let integer = vocabulary.surface_token_ids[5];
+        let plus = vocabulary.surface_token_ids[6];
+        let digit_one = vocabulary.surface_token_ids[9];
+        let end = vocabulary.surface_token_ids[18];
+        let eos = vocabulary.surface_token_ids[19];
+
+        runtime.step(WORKLOAD, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        runtime.teach_typed_token(add).unwrap();
+        let add_pointer = runtime
+            .typed_workspace
+            .active_role_pointer()
+            .expect("Add surface recruits its enclosing pointer");
+        runtime.teach_typed_token(integer).unwrap();
+        let integer_pointer = runtime
+            .typed_workspace
+            .active_role_pointer()
+            .expect("Integer surface recruits one literal-leaf pointer");
+        assert_ne!(integer_pointer, add_pointer);
+        assert_eq!(integer_pointer.anchor.depth(), 1);
+        assert_eq!(integer_pointer.anchor.child_ordinal(0), Some(0));
+        runtime.teach_typed_token(plus).unwrap();
+        assert_eq!(
+            runtime.typed_workspace.active_role_pointer(),
+            Some(integer_pointer)
+        );
+        runtime.teach_typed_token(digit_one).unwrap();
+        assert_eq!(
+            runtime.typed_workspace.active_role_pointer(),
+            Some(integer_pointer)
+        );
+        runtime.teach_typed_token(end).unwrap();
+        assert_eq!(
+            runtime.typed_workspace.active_role_pointer(),
+            Some(add_pointer),
+            "leaving the literal address restores its enclosing constructor pointer"
+        );
+        runtime.teach_typed_token(variable_zero).unwrap();
+        runtime.teach_typed_token(eos).unwrap();
+        let learned_segment_count = runtime.store.runtime_segment_count();
+
+        runtime.reset_transient();
+        runtime.step(WORKLOAD, TemporalStepMode::ReadOnly).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+        assert_eq!(
+            runtime
+                .generate_typed_one()
+                .unwrap()
+                .unwrap()
+                .surface_token_id,
+            add
+        );
+        assert_eq!(
+            runtime.typed_workspace.active_role_pointer(),
+            Some(add_pointer)
+        );
+        assert_eq!(
+            runtime
+                .generate_typed_one()
+                .unwrap()
+                .unwrap()
+                .surface_token_id,
+            integer
+        );
+        assert_eq!(
+            runtime.typed_workspace.active_role_pointer(),
+            Some(integer_pointer),
+            "teacher-free Integer feedback recurrence-settles the exact literal pointer"
+        );
+        for token_id in [plus, digit_one] {
+            assert_eq!(
+                runtime
+                    .generate_typed_one()
+                    .unwrap()
+                    .unwrap()
+                    .surface_token_id,
+                token_id
+            );
+            assert_eq!(
+                runtime.typed_workspace.active_role_pointer(),
+                Some(integer_pointer)
+            );
+        }
+        assert_eq!(
+            runtime
+                .generate_typed_one()
+                .unwrap()
+                .unwrap()
+                .surface_token_id,
+            end
+        );
+        assert_eq!(
+            runtime.typed_workspace.active_role_pointer(),
+            Some(add_pointer)
+        );
         assert_eq!(runtime.store.runtime_segment_count(), learned_segment_count);
         assert_eq!(runtime.scientific_stop, None);
     }
@@ -7427,7 +7591,8 @@ mod tests {
         const CUE_BASE: u32 = 1_200;
         const SURFACE_BASE: u32 = 1_300;
         const ADDRESS_BASE: u32 = 10_000;
-        // Five distinct role pointers consume two four-cell plan-commit
+        // Six distinct role pointers (five constructors plus one Integer)
+        // consume two four-cell plan-commit
         // cohorts once ordinary plan-component rows occupy the base cohort.
         const ROLE_POINTER_RESERVE_COHORTS: u32 = 2;
 
@@ -7690,19 +7855,17 @@ mod tests {
         // Scalar: 4 prompt + 1 workload + 5 plan + (5 dual stores + EOS) = 21.
         // Clamp-sum: 8 prompt + 1 workload + 6 plan + (23 dual stores + EOS) = 62.
         const BASE_MAX_LEARN_ARRIVALS: u32 = 83;
-        // Scalar opens Add. Clamp-sum opens Sum, Map, Bind, two If, and two
-        // LessThan expression-role substructures. Integer is a lexical leaf
-        // carried under its enclosing pointer. Each first constructor adds one
-        // ordinary pointer-cue learning arrival plus eleven recurrent rows
-        // outside the ordinary learning transaction.
-        const FIRST_CONSTRUCTOR_POINTER_COUNT: u32 = 8;
-        const MAX_LEARN_ARRIVALS: u32 = BASE_MAX_LEARN_ARRIVALS + FIRST_CONSTRUCTOR_POINTER_COUNT;
-        const RECURRENT_ROLE_POINTER_ROWS: u32 =
-            FIRST_CONSTRUCTOR_POINTER_COUNT * ACTIVE_COLUMNS as u32;
-        // Scalar pointer allocation creates cohort one. The two new clamp-plan
-        // components consume two of its remaining zero-load owners before
-        // seven clamp pointers, so eight pointers require three cohorts total.
-        const ROLE_POINTER_RESERVE_COHORTS: u32 = 3;
+        // Scalar opens Add plus one Integer literal scope. Clamp-sum opens Sum,
+        // Map, Bind, two If, two LessThan, and four Integer literal scopes.
+        // Each first pointer adds one ordinary cue learning arrival plus eleven
+        // recurrent rows outside the ordinary learning transaction.
+        const FIRST_ROLE_POINTER_COUNT: u32 = 13;
+        const MAX_LEARN_ARRIVALS: u32 = BASE_MAX_LEARN_ARRIVALS + FIRST_ROLE_POINTER_COUNT;
+        const RECURRENT_ROLE_POINTER_ROWS: u32 = FIRST_ROLE_POINTER_COUNT * ACTIVE_COLUMNS as u32;
+        // Scalar's two pointers and the two new clamp-plan components consume
+        // cohort one. Eleven clamp pointers then require three more four-cell
+        // cohorts, for four reserve cohorts total.
+        const ROLE_POINTER_RESERVE_COHORTS: u32 = 4;
 
         let vocabulary = TypedWorkspaceVocabulary {
             plan_commit_token_id: PLAN_COMMIT,
@@ -7809,6 +7972,9 @@ mod tests {
         let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
         circuit_config.max_pyramidal_cells +=
             ROLE_POINTER_RESERVE_COHORTS * ACTIVE_COLUMNS as u32 * 4;
+        // The added Integer-pointer cohort shifts fitted relay identities;
+        // seed 18 preserves this synthetic composition layout.
+        circuit_config.construction_seed = 18;
         circuit_config.segment_capacity =
             MAX_LEARN_ARRIVALS * ACTIVE_COLUMNS as u32 + RECURRENT_ROLE_POINTER_ROWS;
         circuit_config.theta_match = 16;
@@ -8004,9 +8170,10 @@ mod tests {
         const CUE_BASE: u32 = 1_600;
         const SURFACE_BASE: u32 = 1_700;
         const ADDRESS_BASE: u32 = 10_000;
-        // Four distinct role pointers fit one fresh four-cell plan-commit
-        // cohort after the ordinary plan components occupy the base cohort.
-        const ROLE_POINTER_RESERVE_COHORTS: u32 = 1;
+        // Four constructors plus four Integer literal scopes require two fresh
+        // four-cell plan-commit cohorts after ordinary plan components occupy
+        // the base cohort.
+        const ROLE_POINTER_RESERVE_COHORTS: u32 = 2;
         let vocabulary = TypedWorkspaceVocabulary {
             plan_commit_token_id: PLAN_COMMIT,
             address_token_base: ADDRESS_BASE,
@@ -8079,9 +8246,9 @@ mod tests {
         let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
         circuit_config.max_pyramidal_cells +=
             ROLE_POINTER_RESERVE_COHORTS * ACTIVE_COLUMNS as u32 * 4;
-        // Reserve headroom changes fitted relay identities; seed 21 preserves
+        // Reserve headroom changes fitted relay identities; seed 22 preserves
         // independent lower/upper plan components in this physical layout.
-        circuit_config.construction_seed = 21;
+        circuit_config.construction_seed = 22;
         circuit_config.segment_capacity = 4_096;
         circuit_config.theta_match = 16;
         circuit_config.theta_active = 18;

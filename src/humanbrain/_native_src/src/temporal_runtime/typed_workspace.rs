@@ -76,7 +76,7 @@ const LOWER_BOUND_WINNER_INDEX: usize = 9;
 const UPPER_BOUND_WINNER_INDEX: usize = 10;
 pub(crate) const TYPED_CUE_TOKEN_COUNT: usize = 26;
 pub(crate) const TYPED_SURFACE_TOKEN_COUNT: usize = 23;
-pub(super) const ROLE_POINTER_SURFACE_ORDINALS: [usize; 7] = [0, 1, 2, 3, 20, 21, 22];
+pub(super) const ROLE_POINTER_SURFACE_ORDINALS: [usize; 8] = [0, 1, 2, 3, 5, 20, 21, 22];
 pub(super) const ROLE_POINTER_SURFACE_SAMPLE_COUNT: usize = 3;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -557,12 +557,12 @@ impl TypedWorkspaceState {
         Ok(())
     }
 
-    /// Role pointers bind constructors which open a descendant assembly.  A
-    /// variable, integer literal, sign, digit, end marker, or EOS is a lexical
-    /// leaf/phase observation. Rebinding those surfaces would spend recurrent
-    /// identities without opening another expression-role subtree; the
-    /// enclosing constructor pointer remains available on the bounded stack.
-    pub(super) fn token_opens_role_substructure(&self, token_id: u32) -> bool {
+    /// Role pointers bind constructors which open a descendant assembly and
+    /// Integer leaves which open a literal phase at the same structural
+    /// address. A variable, sign, digit, end marker, or EOS does not open a new
+    /// pointer scope; the enclosing constructor or Integer pointer remains on
+    /// the bounded stack.
+    pub(super) fn token_opens_role_pointer_scope(&self, token_id: u32) -> bool {
         self.session.as_ref().is_some_and(|session| {
             session
                 .vocabulary
@@ -700,13 +700,15 @@ impl TypedWorkspaceState {
                 "typed role pointer received an unknown surface token",
             ))?;
         let bound_sensitive = match surface {
-            SurfaceKind::Add | SurfaceKind::LessThan | SurfaceKind::If => true,
+            SurfaceKind::Add | SurfaceKind::Integer | SurfaceKind::LessThan | SurfaceKind::If => {
+                true
+            }
             SurfaceKind::Absolute | SurfaceKind::Map | SurfaceKind::Bind | SurfaceKind::Sum => {
                 false
             }
             _ => {
                 return Err(TemporalCircuitStop::MalformedContextOrPolicy(
-                    "typed role pointer surface does not open a role substructure",
+                    "typed surface does not open a role-pointer scope",
                 ));
             }
         };
