@@ -43,7 +43,7 @@ The repositories do not import or modify one another.
 | T-ROUTE trained mapping | E1/E2/E3 falsified with mechanism localization: winners collapse to a query-independent ~170-bit static pool, and a random-span control reproduces the gated arm exactly (placement carries zero signal) | Program-grade termination of Bible-QA for fixed local connectivity ([conclusion](docs/research/t-route-program-conclusion.md)); three remaining paths need user direction |
 | Predictive race bias (P-B) | Proportional bias reached 14.55% held-out span accuracy versus 3.60% shuffled (McNemar p≈8.7×10⁻¹⁵), 3.21× unigram, and 3.58× majority prior | Frozen mechanism gate passed; the smaller 14.55% versus 13.15% incumbent-off margin and TRAIN-self/VAL ratio 0.375 keep this promising rather than a generalization proof |
 | Path-2 full TRAIN development | Native `(16,18)` replay completed all 49 TRAIN books and 2,117,412 token steps without a scientific STOP, ending at 23,286,478 live segments | Gross completion/cost evidence only: the count is 72 above the frozen distinct-key ideal, timing was contaminated by concurrent work, and no held-out/C1 material was read |
-| Path-2 R3 C1 readiness | Native plateau/race mechanics now exist, but exact repeat identity/count, scientific controls, clean cap measurement, source refreeze, and CN-2 remain open | **Hard NO-GO; cohort unspent.** Repair remains governed by the [prelaunch audit](docs/research/r3-c1-prelaunch-audit.md), and launch still requires explicit user GO |
+| Path-2 R3 C1 readiness | Native plateau/race mechanics now exist, but exact repeat identity/count, scientific controls, clean cap measurement, source refreeze, and CN-2 remain open | **Hard NO-GO; cohort unspent.** Repair remains governed by the [prelaunch audit](docs/research/r3-c1-prelaunch-audit.md); launch authority is delegated, but calibration-v3 is not yet runnable |
 
 Exact protocols, hashes, hardware, and limitations live in
 [benchmark status](docs/benchmark-status.md). Results are kept even when they
@@ -208,7 +208,8 @@ two-route slot-recombination pass, but no family-disjoint Simple-SWE result.
 - Path 2 is the current mainline. Segment recognition and winner election now
   execute in native fitted-cell plateau/race dynamics, but C1 remains held:
   full-TRAIN development exposed a repeat-identity/count miss, and the repaired
-  controls, cap measurement, CN-2 refreeze, and explicit user GO are still open
+  controls, cap measurement, CN-2 refreeze, and source-bound calibration-v3
+  execution are still open
   ([readiness](experiments/r3_pilot/C1_READINESS.md)).
 - [Indicator assessment instrument](docs/indicator-assessment/RUBRIC.md)
   tracks architectural similarity to consciousness-science indicator sets

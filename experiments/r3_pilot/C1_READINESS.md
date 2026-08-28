@@ -124,7 +124,7 @@ measured current end-to-end mode yet fits the 15-hour cap; the full-TRAIN run
 above was timing-contaminated and remains narrower than an end-to-end cap
 measurement.
 
-## Required sequence before GO
+## Remaining sequence before launch
 
 - [ ] **R3-F0 neuronal fixture:** physical pool cells, segment-triggered plateau
       drive, fitted-cell first-spike race, growth-off structural zero, and
@@ -155,7 +155,8 @@ measurement.
 - [ ] **CN-2:** formally refreeze substrate, winner source, A3, permanence rule,
       boundaries, evaluation, runtime changes, schedule, and cap behavior.
 - [ ] Corrected dry run and short smoke pass.
-- [ ] Explicit user GO.
+- [x] **Launch authority:** delegated by the user to the orchestrator on
+      2026-08-28; no additional explicit-user-GO prerequisite remains.
 
 ## Permitted commands
 

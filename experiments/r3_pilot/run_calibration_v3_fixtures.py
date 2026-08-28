@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import json
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -27,6 +28,15 @@ EXIT_STOP = 2
 
 class FixtureRunnerStop(RuntimeError):
     """A fail-closed pre-outcome or protocol STOP."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        result: dict[str, object] | None = None,
+    ) -> None:
+        self.result = result
+        super().__init__(message)
 
 
 class _FailClosedArgumentParser(argparse.ArgumentParser):
@@ -160,19 +170,29 @@ def _run_electrical_v3_prerequisite() -> None:
         raise FixtureRunnerStop("electrical-v3 STOP: reserve-valid verdict did not pass")
 
 
-def _run_source_bound_q4_vertical_slice(
+def _run_source_bound_q4_development_slice(
     authority: authority_contract.FrozenPlanAuthority,
+    *,
+    arm: tuple[int, int],
+    seed: int,
 ) -> dict[str, int | str]:
-    """Run one real native q=4 arm after checking its frozen circuit digest."""
+    """Run one q=4 development coordinate against its frozen native identity."""
 
     protocol = authority.protocol
     screen = protocol["screens"]["compressed_reserve_q4"]
-    source_binding = screen["native_vertical_slice"]
-    arm = (source_binding["theta_match"], source_binding["theta_active"])
-    seed = source_binding["construction_seed"]
+    arm_slug = f"theta-m-{arm[0]}_theta-a-{arm[1]}"
+    seed_slug = f"construction-seed-{seed:010d}"
+    try:
+        frozen_identity = screen["native_circuit_identity_sha256_by_arm_and_seed"][
+            arm_slug
+        ][seed_slug]
+    except (KeyError, TypeError) as exc:
+        raise FixtureRunnerStop(
+            f"q4 STOP: no frozen circuit identity for {arm_slug}/{seed_slug}"
+        ) from exc
     expected_digest = _exact_sha256(
         "q4 native circuit identity",
-        source_binding["circuit_identity_sha256"],
+        frozen_identity,
     )
     definitions = _definition_module()
     native = importlib.import_module("humanbrain.native_temporal_runtime")
@@ -241,6 +261,27 @@ def _run_source_bound_q4_vertical_slice(
         "next_reserve_cell": final_identity.next_reserve_cell,
         "segment_count": final_identity.segment_count,
     }
+
+
+def _run_source_bound_q4_vertical_slice(
+    authority: authority_contract.FrozenPlanAuthority,
+) -> dict[str, int | str]:
+    """Retain the original one-point q=4 transport sentinel."""
+
+    source_binding = authority.protocol["screens"]["compressed_reserve_q4"][
+        "native_vertical_slice"
+    ]
+    result = _run_source_bound_q4_development_slice(
+        authority,
+        arm=(source_binding["theta_match"], source_binding["theta_active"]),
+        seed=source_binding["construction_seed"],
+    )
+    if result["circuit_identity_sha256"] != _exact_sha256(
+        "q4 vertical-slice circuit identity",
+        source_binding["circuit_identity_sha256"],
+    ):
+        raise FixtureRunnerStop("q4 STOP: one-point vertical-slice authority drifted")
+    return result
 
 
 def _q255_step_cells(step: object, field: str) -> tuple[int, ...]:
@@ -530,14 +571,215 @@ def _run_source_bound_q255_vertical_slices(
     return {"production_overlap": production, "target_disjoint": disjoint}
 
 
+def _run_development_q4_screens(
+    authority: authority_contract.FrozenPlanAuthority,
+) -> dict[str, object]:
+    """Run every frozen q=4 development coordinate before q=255."""
+
+    selection = authority.protocol["threshold_selection"]
+    candidate_arms = tuple(tuple(row) for row in selection["candidate_arms"])
+    development_seeds = tuple(selection["development_seeds"])
+    arm_results: list[dict[str, object]] = []
+
+    for arm in candidate_arms:
+        seed_results: list[dict[str, object]] = []
+        for seed in development_seeds:
+            try:
+                result = _run_source_bound_q4_development_slice(
+                    authority,
+                    arm=arm,
+                    seed=seed,
+                )
+            except FixtureRunnerStop as exc:
+                seed_results.append(
+                    {
+                        "construction_seed": seed,
+                        "reason": str(exc),
+                        "status": "STOP",
+                    }
+                )
+                continue
+            seed_results.append(
+                {
+                    "construction_seed": seed,
+                    "status": "PASS",
+                    **result,
+                }
+            )
+
+        arm_passed = all(result["status"] == "PASS" for result in seed_results)
+        arm_results.append(
+            {
+                "arm_slug": f"theta-m-{arm[0]}_theta-a-{arm[1]}",
+                "seeds": seed_results,
+                "status": (
+                    "PASS_ALL_DEVELOPMENT_SEEDS"
+                    if arm_passed
+                    else "STOP_DEVELOPMENT_SEED_SET"
+                ),
+                "theta_active": arm[1],
+                "theta_match": arm[0],
+            }
+        )
+
+    return {
+        "arms": arm_results,
+        "candidate_order": [list(arm) for arm in candidate_arms],
+        "construction_seed_order": list(development_seeds),
+        "phase": "development",
+        "screen_id": "compressed_reserve_q4",
+        "status": (
+            "PASS_ALL_CANDIDATES"
+            if all(
+                arm["status"] == "PASS_ALL_DEVELOPMENT_SEEDS"
+                for arm in arm_results
+            )
+            else "COMPLETE_WITH_REJECTED_CANDIDATES"
+        ),
+    }
+
+
+def _run_development_q255_screens(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    q4: dict[str, object],
+) -> dict[str, object]:
+    """Run q=255 only for arms passing their entire q=4 seed set."""
+
+    selection = authority.protocol["threshold_selection"]
+    candidate_arms = tuple(tuple(row) for row in selection["candidate_arms"])
+    development_seeds = tuple(selection["development_seeds"])
+    q4_passing_arm_slugs = {
+        row["arm_slug"]
+        for row in q4["arms"]
+        if row["status"] == "PASS_ALL_DEVELOPMENT_SEEDS"
+    }
+    arm_results: list[dict[str, object]] = []
+
+    for arm in candidate_arms:
+        arm_slug = f"theta-m-{arm[0]}_theta-a-{arm[1]}"
+        if arm_slug not in q4_passing_arm_slugs:
+            arm_results.append(
+                {
+                    "arm_slug": arm_slug,
+                    "seeds": [],
+                    "status": "NOT_RUN_Q4_DEVELOPMENT_STOP",
+                    "theta_active": arm[1],
+                    "theta_match": arm[0],
+                }
+            )
+            continue
+
+        seed_results: list[dict[str, object]] = []
+        for seed in development_seeds:
+            try:
+                production = _run_source_bound_q255_production_slice(
+                    authority,
+                    arm=arm,
+                    seed=seed,
+                )
+            except FixtureRunnerStop as exc:
+                seed_results.append(
+                    {
+                        "construction_seed": seed,
+                        "production_overlap": {
+                            "reason": str(exc),
+                            "status": "STOP",
+                        },
+                        "status": "STOP_PRODUCTION_OVERLAP",
+                        "target_disjoint": {"status": "NOT_RUN_FAIL_FAST"},
+                    }
+                )
+                continue
+
+            try:
+                disjoint = _run_source_bound_q255_disjoint_slice(
+                    authority,
+                    arm=arm,
+                    seed=seed,
+                )
+            except FixtureRunnerStop as exc:
+                seed_results.append(
+                    {
+                        "construction_seed": seed,
+                        "production_overlap": {"status": "PASS", **production},
+                        "status": "STOP_TARGET_DISJOINT",
+                        "target_disjoint": {
+                            "reason": str(exc),
+                            "status": "STOP",
+                        },
+                    }
+                )
+                continue
+
+            seed_results.append(
+                {
+                    "construction_seed": seed,
+                    "production_overlap": {"status": "PASS", **production},
+                    "status": "PASS_BOTH_REGIMES",
+                    "target_disjoint": {"status": "PASS", **disjoint},
+                }
+            )
+
+        arm_passed = all(
+            result["status"] == "PASS_BOTH_REGIMES" for result in seed_results
+        )
+        arm_results.append(
+            {
+                "arm_slug": arm_slug,
+                "seeds": seed_results,
+                "status": (
+                    "PASS_ALL_DEVELOPMENT_SEEDS"
+                    if arm_passed
+                    else "STOP_DEVELOPMENT_SEED_SET"
+                ),
+                "theta_active": arm[1],
+                "theta_match": arm[0],
+            }
+        )
+
+    eligible_arms = [
+        arm
+        for arm in arm_results
+        if arm["status"] != "NOT_RUN_Q4_DEVELOPMENT_STOP"
+    ]
+    return {
+        "arms": arm_results,
+        "candidate_order": [list(arm) for arm in candidate_arms],
+        "construction_seed_order": list(development_seeds),
+        "eligible_arm_order": [
+            [arm["theta_match"], arm["theta_active"]] for arm in eligible_arms
+        ],
+        "phase": "development",
+        "screen_id": "full_cohort_q255",
+        "status": (
+            "STOP_NO_Q4_ELIGIBLE_CANDIDATES"
+            if not eligible_arms
+            else "PASS_ALL_Q4_ELIGIBLE_CANDIDATES"
+            if all(
+                arm["status"] == "PASS_ALL_DEVELOPMENT_SEEDS"
+                for arm in eligible_arms
+            )
+            else "COMPLETE_WITH_REJECTED_Q4_ELIGIBLE_CANDIDATES"
+        ),
+    }
+
+
 def _execute_frozen_plan(authority: authority_contract.FrozenPlanAuthority) -> int:
-    """Execute the first real vertical slice, then stop before later screens."""
+    """Execute the development fixture prefix, then stop before R3-F0."""
 
     _run_electrical_v3_prerequisite()
-    _run_source_bound_q4_vertical_slice(authority)
+    q4 = _run_development_q4_screens(authority)
+    q255 = _run_development_q255_screens(authority, q4=q4)
     raise FixtureRunnerStop(
-        "electrical-to-q4 vertical slice passed; remaining calibration-v3 execution "
-        "remains disabled pre-outcome"
+        "development q255 screens completed; R3-F0 and confirmation remain disabled",
+        result={
+            "compressed_reserve_q4": q4,
+            "electrical_v3": {"status": "PASS_RESERVE_VALID_ELECTRICAL_V3"},
+            "full_cohort_q255": q255,
+            "next_screen": "r3_f0_train",
+            "status": "STOP_BEFORE_R3_F0_AND_CONFIRMATION",
+        },
     )
 
 
@@ -560,6 +802,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         authority = _authorize_frozen_plan()
         return _execute_frozen_plan(authority)
     except FixtureRunnerStop as exc:
+        if exc.result is not None:
+            print(json.dumps(exc.result, sort_keys=True, separators=(",", ":")))
         print(f"calibration-v3 fixture runner: STOP: {exc}", file=sys.stderr)
         return EXIT_STOP
 

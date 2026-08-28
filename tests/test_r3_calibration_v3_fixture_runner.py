@@ -868,11 +868,17 @@ def test_failed_authority_has_no_execution_fallback(
     assert reached == ["authority"]
 
 
-def test_even_a_synthetic_future_authority_reaches_only_the_disabled_seam(
+def test_synthetic_future_authority_completes_q255_grid_then_stops_before_r3_f0(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    protocol = {"source_binding": {"runnable": True}}
+    protocol = {
+        "source_binding": {"runnable": True},
+        "threshold_selection": {
+            "candidate_arms": [[10, 13], [16, 18]],
+            "development_seeds": [3, 7],
+        },
+    }
     authority = authority_contract.FrozenPlanAuthority(
         repository_root=ROOT,
         protocol=protocol,
@@ -888,14 +894,86 @@ def test_even_a_synthetic_future_authority_reaches_only_the_disabled_seam(
         "_run_electrical_v3_prerequisite",
         lambda: calls.append("electrical"),
     )
-    monkeypatch.setattr(
-        runner,
-        "_run_source_bound_q4_vertical_slice",
-        lambda value: calls.append("q4") or {"authority": value.protocol_sha256},
-    )
+
+    def q4(
+        _authority: authority_contract.FrozenPlanAuthority,
+        *,
+        arm: tuple[int, int],
+        seed: int,
+    ) -> dict[str, int]:
+        calls.append(f"q4:{arm[0]}:{arm[1]}:{seed}")
+        if (arm, seed) == ((10, 13), 3):
+            raise runner.FixtureRunnerStop("synthetic q4 rejection")
+        return {"seed_marker": seed}
+
+    monkeypatch.setattr(runner, "_run_source_bound_q4_development_slice", q4)
+
+    def production(
+        _authority: authority_contract.FrozenPlanAuthority,
+        *,
+        arm: tuple[int, int],
+        seed: int,
+    ) -> dict[str, int]:
+        calls.append(f"production:{arm[0]}:{arm[1]}:{seed}")
+        if (arm, seed) == ((16, 18), 3):
+            raise runner.FixtureRunnerStop("synthetic production rejection")
+        return {"seed_marker": seed}
+
+    def disjoint(
+        _authority: authority_contract.FrozenPlanAuthority,
+        *,
+        arm: tuple[int, int],
+        seed: int,
+    ) -> dict[str, int]:
+        calls.append(f"disjoint:{arm[0]}:{arm[1]}:{seed}")
+        return {"seed_marker": seed}
+
+    monkeypatch.setattr(runner, "_run_source_bound_q255_production_slice", production)
+    monkeypatch.setattr(runner, "_run_source_bound_q255_disjoint_slice", disjoint)
+
     assert runner.main(["--run-frozen-plan"]) == runner.EXIT_STOP
-    assert calls == ["electrical", "q4"]
-    assert "remaining calibration-v3 execution" in capsys.readouterr().err
+    assert calls == [
+        "electrical",
+        "q4:10:13:3",
+        "q4:10:13:7",
+        "q4:16:18:3",
+        "q4:16:18:7",
+        "production:16:18:3",
+        "production:16:18:7",
+        "disjoint:16:18:7",
+    ]
+    captured = capsys.readouterr()
+    result = json.loads(captured.out)
+    assert result["status"] == "STOP_BEFORE_R3_F0_AND_CONFIRMATION"
+    assert result["compressed_reserve_q4"]["candidate_order"] == [
+        [10, 13],
+        [16, 18],
+    ]
+    assert result["compressed_reserve_q4"]["arms"][0]["seeds"][0] == {
+        "construction_seed": 3,
+        "reason": "synthetic q4 rejection",
+        "status": "STOP",
+    }
+    assert result["full_cohort_q255"]["candidate_order"] == [[10, 13], [16, 18]]
+    assert result["full_cohort_q255"]["construction_seed_order"] == [3, 7]
+    assert result["full_cohort_q255"]["eligible_arm_order"] == [[16, 18]]
+    assert result["full_cohort_q255"]["arms"][0] == {
+        "arm_slug": "theta-m-10_theta-a-13",
+        "seeds": [],
+        "status": "NOT_RUN_Q4_DEVELOPMENT_STOP",
+        "theta_active": 13,
+        "theta_match": 10,
+    }
+    assert result["full_cohort_q255"]["arms"][1]["seeds"][0] == {
+        "construction_seed": 3,
+        "production_overlap": {
+            "reason": "synthetic production rejection",
+            "status": "STOP",
+        },
+        "status": "STOP_PRODUCTION_OVERLAP",
+        "target_disjoint": {"status": "NOT_RUN_FAIL_FAST"},
+    }
+    assert "R3-F0 and confirmation remain disabled" in captured.err
 
 
 def test_real_native_q4_vertical_slice_reaches_the_frozen_reserve_sentinel(

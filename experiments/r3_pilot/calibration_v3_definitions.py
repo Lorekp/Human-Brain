@@ -94,7 +94,12 @@ def build_compressed_reserve_q4_definition(
 ) -> NativeTemporalCircuitDefinition:
     """Build the bounded native q=4 definition from frozen screen authority."""
 
-    base = build_r3_f0_definition(protocol, arm, seed)
+    seed_scope = tuple(
+        protocol["threshold_selection"]["seed_scope"][
+            "electrical_q4_q255_development"
+        ]
+    )
+    base = _build_definition(protocol, arm, seed, seed_scope=seed_scope)
     screen = protocol["screens"]["compressed_reserve_q4"]
     config = replace(
         base.config,

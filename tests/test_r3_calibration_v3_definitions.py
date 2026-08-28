@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from experiments.r3_pilot import calibration_v3_definitions as definitions
 from experiments.r3_pilot import calibration_v3_protocol as protocol
 from humanbrain.cortex import DendriticCortex, seeded_threshold_offsets_mv
@@ -13,7 +14,7 @@ from humanbrain.native_temporal_runtime import (
 def test_native_definition_contract_freezes_every_identity_input() -> None:
     frozen = protocol.build_protocol()
 
-    assert frozen["schema_version"] == 6
+    assert frozen["schema_version"] == 7
     assert frozen["execution_status"] == "NOT_RUNNABLE_PRE_OUTCOME"
     assert frozen["source_binding"]["runnable"] is False
     assert frozen["native_definition_contract"] == {
@@ -112,22 +113,41 @@ def test_frozen_arm_identity_table_matches_the_native_definition_query() -> None
 
 def test_q4_factory_is_bounded_and_matches_its_frozen_native_identity() -> None:
     frozen = protocol.build_protocol()
-    source_binding = frozen["screens"]["compressed_reserve_q4"][
-        "native_vertical_slice"
+    screen = frozen["screens"]["compressed_reserve_q4"]
+    identity_table = screen[
+        "native_circuit_identity_sha256_by_arm_and_seed"
     ]
-    definition = definitions.build_compressed_reserve_q4_definition(
-        frozen,
-        (source_binding["theta_match"], source_binding["theta_active"]),
-        source_binding["construction_seed"],
-    )
 
-    assert definition.config.segment_capacity == 1_419
-    assert definition.config.max_segments_per_cell == 4
-    assert tuple(token for token, _columns in definition.token_codes) == (
-        *protocol.COMPRESSED_RESERVE_CONTEXT_IDS,
-        protocol.DISJOINT_TARGET_TOKEN,
-    )
-    assert (
-        definition.circuit_identity_sha256()
-        == source_binding["circuit_identity_sha256"]
-    )
+    for theta_match, theta_active in protocol.THRESHOLD_ARMS:
+        arm = (theta_match, theta_active)
+        arm_slug = f"theta-m-{theta_match}_theta-a-{theta_active}"
+        for seed in protocol.DEVELOPMENT_SEEDS:
+            definition = definitions.build_compressed_reserve_q4_definition(
+                frozen,
+                arm,
+                seed,
+            )
+            seed_slug = f"construction-seed-{seed:010d}"
+            assert definition.config.segment_capacity == 1_419
+            assert definition.config.max_segments_per_cell == 4
+            assert tuple(token for token, _columns in definition.token_codes) == (
+                *protocol.COMPRESSED_RESERVE_CONTEXT_IDS,
+                protocol.DISJOINT_TARGET_TOKEN,
+            )
+            assert (
+                definition.circuit_identity_sha256()
+                == identity_table[arm_slug][seed_slug]
+            )
+
+    with pytest.raises(protocol.ProtocolError, match="frozen seed scope"):
+        definitions.build_compressed_reserve_q4_definition(
+            frozen,
+            protocol.THRESHOLD_ARMS[0],
+            protocol.CONFIRMATION_SEEDS[0],
+        )
+    with pytest.raises(protocol.ProtocolError, match="frozen seed scope"):
+        definitions.build_r3_f0_definition(
+            frozen,
+            protocol.THRESHOLD_ARMS[0],
+            protocol.DEVELOPMENT_SEEDS[0],
+        )

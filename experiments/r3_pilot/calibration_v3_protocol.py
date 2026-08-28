@@ -631,7 +631,7 @@ def build_protocol() -> dict[str, Any]:
 
     return {
         "artifact_id": "r3-calibration-v3-preregistration",
-        "schema_version": 6,
+        "schema_version": 7,
         "change_notes": [
             "docs/research/r3-calibration-v3-change-note-1.md",
         ],
@@ -859,6 +859,64 @@ def build_protocol() -> dict[str, Any]:
                     ),
                     "theta_active": 13,
                     "theta_match": 10,
+                },
+                "native_circuit_identity_sha256_by_arm_and_seed": {
+                    "theta-m-10_theta-a-13": {
+                        "construction-seed-0000000003": (
+                            "790e907a559baab23753d10dd8d1c8612c080eea7ea3298b0349cf888a537e1a"
+                        ),
+                        "construction-seed-0000000007": (
+                            "0d944f001af3024f5eeaec14a52111ff9d7b7f9c74ed7f9208431dac3a1c87f2"
+                        ),
+                        "construction-seed-0000000017": (
+                            "1e15d708c81a07c3949097babf94c2c5d7922c3545dac487f8e53e84a3b92220"
+                        ),
+                        "construction-seed-0000000029": (
+                            "8076a1fefd6433adbd9e0ad6bb77d68ecbccc253ed648f938b41e6919796a256"
+                        ),
+                    },
+                    "theta-m-16_theta-a-18": {
+                        "construction-seed-0000000003": (
+                            "7d80d34955b24987e18b094966c6ad6e097b763dd9a7de47b9ed1e7f20fcba08"
+                        ),
+                        "construction-seed-0000000007": (
+                            "c1278adab762e9824d553d392adc3106c8da91842b433911e0c1d1002834b955"
+                        ),
+                        "construction-seed-0000000017": (
+                            "cb0ee4ceb117b5b409f871940be45948234c79514d3654592f4ba97357507708"
+                        ),
+                        "construction-seed-0000000029": (
+                            "d46b35d47d9c6fd4396fd9b0bd26c0d798fc2840f18ef9daf22b9ec95416fb0e"
+                        ),
+                    },
+                    "theta-m-18_theta-a-20": {
+                        "construction-seed-0000000003": (
+                            "5dab073944f5f0c7dcac3c15f19f1ef3bf80ff286588941edd18fe4e70297560"
+                        ),
+                        "construction-seed-0000000007": (
+                            "ccbdc1936dd338eefe8a391be95bffa87e0cb69acde49861f386271d62cc596b"
+                        ),
+                        "construction-seed-0000000017": (
+                            "976e6be49cc4e8e8edf7710992e6ec49ab80bf7427a1ae04a1f74c71281c7f78"
+                        ),
+                        "construction-seed-0000000029": (
+                            "28761bffb843fdc20ef996c0cc3573921da0def4850727ac1d3c3175d94d253c"
+                        ),
+                    },
+                    "theta-m-20_theta-a-20": {
+                        "construction-seed-0000000003": (
+                            "d96a7d9c73526757ef74e264b989f2c9e72cc7638d913f84bc1ebb6ddf4010a1"
+                        ),
+                        "construction-seed-0000000007": (
+                            "b1c8c15022d6b0055db883a451b00215e35ba6bf6c655560a2f68b8a5644d67a"
+                        ),
+                        "construction-seed-0000000017": (
+                            "ad9ea9d8a660a22457d67e10054d458b2a86650c44008e6e2a2cfea7b5e3d2ec"
+                        ),
+                        "construction-seed-0000000029": (
+                            "d3c8d459260cd0a6e1d6a54c297b4e490d4c89c178bf750dc0973c82432eeec7"
+                        ),
+                    },
                 },
                 "context_id_rule": (
                     "literal first 129 target-disjoint IDs in ascending search order"

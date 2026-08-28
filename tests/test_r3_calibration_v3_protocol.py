@@ -44,7 +44,7 @@ def test_protocol_separates_fixture_selection_from_the_train_scale_gate() -> Non
     frozen = protocol.build_protocol()
 
     assert frozen["artifact_id"] == "r3-calibration-v3-preregistration"
-    assert frozen["schema_version"] == 6
+    assert frozen["schema_version"] == 7
     assert frozen["change_notes"] == ["docs/research/r3-calibration-v3-change-note-1.md"]
     assert frozen["circuit_contract"] == {
         "active_columns": 11,
@@ -143,6 +143,19 @@ def test_q4_schedule_forces_three_complete_reserve_cohorts_and_a_sentinel() -> N
         "theta_active": 13,
         "theta_match": 10,
     }
+    identity_table = screen["native_circuit_identity_sha256_by_arm_and_seed"]
+    assert list(identity_table) == [
+        f"theta-m-{theta_match}_theta-a-{theta_active}"
+        for theta_match, theta_active in protocol.THRESHOLD_ARMS
+    ]
+    assert all(
+        list(seed_rows)
+        == [f"construction-seed-{seed:010d}" for seed in protocol.DEVELOPMENT_SEEDS]
+        for seed_rows in identity_table.values()
+    )
+    assert identity_table["theta-m-10_theta-a-13"][
+        "construction-seed-0000000017"
+    ] == screen["native_vertical_slice"]["circuit_identity_sha256"]
     assert screen["max_segments_per_cell"] == 4
     assert screen["target_exposures"] == 129
     assert screen["target_token"] == 2041
