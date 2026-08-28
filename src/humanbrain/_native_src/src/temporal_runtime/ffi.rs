@@ -53,8 +53,9 @@ use super::{
         OUTCOME_PUBLISHED_BUT_NOT_CONFIRMED_DURABLE,
     },
     PhysicalStage, TemporalCircuitConfig, TemporalCircuitRuntime, TemporalCircuitStep,
-    TemporalCircuitStop, TemporalContextPolicy, TemporalOverflowStage, TemporalPlasticityPolicy,
-    TemporalPoisonCode, TemporalStepMode, TokenCode, ACTIVE_COLUMNS, CONTEXT_CELLS,
+    TemporalCircuitStop, TemporalContextPolicy, TemporalOutputElection, TemporalOverflowStage,
+    TemporalPlasticityPolicy, TemporalPoisonCode, TemporalStepMode, TokenCode, ACTIVE_COLUMNS,
+    CONTEXT_CELLS,
 };
 use crate::temporal_physics::SpikeEvent;
 
@@ -512,6 +513,60 @@ impl From<TemporalCircuitStep> for TemporalCircuitStepV2 {
             winner_context: step.winner_context,
             proximal_context: step.proximal_context,
             context: step.context,
+        }
+    }
+}
+
+/// One token emitted by the runtime's physical output-cell race.
+///
+/// This record deliberately carries no candidate input or decoded score.  It
+/// is only the transport form of the already completed native cell election.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TemporalOutputElectionV1 {
+    pub token_id: u32,
+    pub output_cell_id: u32,
+    pub activated_columns: u32,
+    pub candidate_tokens: u32,
+    pub winner_input_columns: u8,
+    pub reserved_zero_u8: u8,
+    pub winner_tick: u16,
+    pub basket_tick: u16,
+    pub inhibition_onset_tick: u16,
+    pub simulated_ticks: u16,
+    pub reserved_zero: [u8; 6],
+}
+
+impl TemporalOutputElectionV1 {
+    const ZERO: Self = Self {
+        token_id: 0,
+        output_cell_id: 0,
+        activated_columns: 0,
+        candidate_tokens: 0,
+        winner_input_columns: 0,
+        reserved_zero_u8: 0,
+        winner_tick: 0,
+        basket_tick: 0,
+        inhibition_onset_tick: 0,
+        simulated_ticks: 0,
+        reserved_zero: [0; 6],
+    };
+}
+
+impl From<TemporalOutputElection> for TemporalOutputElectionV1 {
+    fn from(election: TemporalOutputElection) -> Self {
+        Self {
+            token_id: election.token_id,
+            output_cell_id: election.output_cell_id,
+            activated_columns: election.activated_columns,
+            candidate_tokens: election.candidate_tokens,
+            winner_input_columns: election.winner_input_columns,
+            reserved_zero_u8: 0,
+            winner_tick: election.winner_tick,
+            basket_tick: election.basket_tick,
+            inhibition_onset_tick: election.inhibition_onset_tick,
+            simulated_ticks: election.simulated_ticks,
+            reserved_zero: [0; 6],
         }
     }
 }
@@ -1490,6 +1545,65 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_advance_block_v2(
         }
     }
     report.finish(TEMPORAL_RUNTIME_OK, "")
+}
+
+/// Elect one output token from the runtime's current physical winner context.
+///
+/// No candidate token, score vector, current, or winner is accepted from the
+/// caller.  On success this publishes the result of the native output-cell
+/// race; on failure the output remains all zeroes.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. `output` and `report_out`
+/// must be disjoint writable records.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_elect_output_v1(
+    handle: *mut TemporalCircuitRuntimeHandle,
+    output: *mut TemporalOutputElectionV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(output.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "output election result is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        output.cast(),
+        size_of::<TemporalOutputElectionV1>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "output election result and report overlap",
+        );
+    }
+    output.write(TemporalOutputElectionV1::ZERO);
+    if !fixed_pointer_is_valid(handle.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "runtime handle is null or misaligned",
+        );
+    }
+
+    let handle = &*handle;
+    let mut runtime = lock_runtime(handle);
+    if runtime.scientific_stop.is_some() {
+        return stop_report(report, &runtime, TemporalCircuitStop::Poisoned);
+    }
+    match runtime.elect_output() {
+        Ok(election) => {
+            output.write(election.into());
+            report.finish(TEMPORAL_RUNTIME_OK, "")
+        }
+        Err(stop) => stop_report(report, &runtime, stop),
+    }
 }
 
 /// Validate exportability and report the exact checkpoint length in
@@ -2662,6 +2776,26 @@ mod tests {
         assert_eq!(offset_of!(TemporalCircuitStepV2, winner_context), 536);
         assert_eq!(offset_of!(TemporalCircuitStepV2, proximal_context), 624);
         assert_eq!(offset_of!(TemporalCircuitStepV2, context), 712);
+
+        assert_eq!(size_of::<TemporalOutputElectionV1>(), 32);
+        assert_eq!(align_of::<TemporalOutputElectionV1>(), 4);
+        assert_eq!(offset_of!(TemporalOutputElectionV1, token_id), 0);
+        assert_eq!(offset_of!(TemporalOutputElectionV1, output_cell_id), 4);
+        assert_eq!(offset_of!(TemporalOutputElectionV1, activated_columns), 8);
+        assert_eq!(offset_of!(TemporalOutputElectionV1, candidate_tokens), 12);
+        assert_eq!(
+            offset_of!(TemporalOutputElectionV1, winner_input_columns),
+            16
+        );
+        assert_eq!(offset_of!(TemporalOutputElectionV1, reserved_zero_u8), 17);
+        assert_eq!(offset_of!(TemporalOutputElectionV1, winner_tick), 18);
+        assert_eq!(offset_of!(TemporalOutputElectionV1, basket_tick), 20);
+        assert_eq!(
+            offset_of!(TemporalOutputElectionV1, inhibition_onset_tick),
+            22
+        );
+        assert_eq!(offset_of!(TemporalOutputElectionV1, simulated_ticks), 24);
+        assert_eq!(offset_of!(TemporalOutputElectionV1, reserved_zero), 26);
 
         assert_eq!(size_of::<TemporalCircuitAdvanceBlockV2Request>(), 40);
         assert_eq!(align_of::<TemporalCircuitAdvanceBlockV2Request>(), 8);

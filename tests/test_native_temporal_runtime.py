@@ -42,6 +42,7 @@ from humanbrain.native_temporal_runtime import (
     TemporalCheckpointPublicationError,
     TemporalCheckpointPublicationOutcome,
     TemporalContextPolicy,
+    TemporalOutputElection,
     TemporalPlasticityPolicy,
     TemporalStepMode,
 )
@@ -169,6 +170,7 @@ class _FakeTemporalLibrary:
         self.definition_identity_calls = 0
         self.create_calls = 0
         self.import_calls = 0
+        self.election_calls = 0
         self.size_calls = 0
         self.export_calls = 0
         self.identity_calls = 0
@@ -194,6 +196,9 @@ class _FakeTemporalLibrary:
         self.humanbrain_temporal_circuit_runtime_create_v1 = _FakeFunction(self._create)
         self.humanbrain_temporal_circuit_runtime_import_checkpoint_v1 = _FakeFunction(self._import)
         self.humanbrain_temporal_circuit_runtime_advance_block_v2 = _FakeFunction(self._advance)
+        self.humanbrain_temporal_circuit_runtime_elect_output_v1 = _FakeFunction(
+            self._elect_output
+        )
         self.humanbrain_temporal_circuit_runtime_checkpoint_size_v1 = _FakeFunction(self._size)
         self.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1 = _FakeFunction(
             self._identity
@@ -291,6 +296,21 @@ class _FakeTemporalLibrary:
                 step.proximal_context[context_index] = 3000 + context_index
                 step.context[context_index] = 4000 + context_index
         report.completed_prefix = native.token_count
+        return 0
+
+    def _elect_output(self, handle: object, output: object, report_out: object) -> int:
+        del handle, report_out
+        self.election_calls += 1
+        native = _pointed(output, runtime_adapter._NativeOutputElection)
+        native.token_id = 7
+        native.output_cell_id = 55
+        native.activated_columns = 11
+        native.candidate_tokens = 1
+        native.winner_input_columns = 11
+        native.winner_tick = 180
+        native.basket_tick = 181
+        native.inhibition_onset_tick = 182
+        native.simulated_ticks = 181
         return 0
 
     def _size(self, handle: object, authority: object, report_out: object) -> int:
@@ -749,6 +769,11 @@ def test_ctypes_transport_matches_frozen_x64_layout_and_independent_oracles() ->
                 712,
             ),
         ),
+        runtime_adapter._NativeOutputElection: (
+            32,
+            4,
+            (0, 4, 8, 12, 16, 17, 18, 20, 22, 24, 26),
+        ),
         runtime_adapter._NativeAdvanceRequestV2: (40, 8, (0, 8, 16, 24, 32, 33, 34)),
         runtime_adapter._NativeReport: (512, 8, (0, 4, 8, 16, 24, 32, 40, 42, 44, 48)),
     }
@@ -1110,6 +1135,18 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         assert steps[0].inhibition_onset_ticks == tuple(range(10, 21))
         assert steps[0].column_simulated_ticks == tuple(range(30, 41))
         assert steps[0].winner_context == tuple(range(2000, 2022))
+        election = circuit.elect_output()
+        assert election == TemporalOutputElection(
+            token_id=7,
+            output_cell_id=55,
+            activated_columns=11,
+            candidate_tokens=1,
+            winner_input_columns=11,
+            winner_tick=180,
+            basket_tick=181,
+            inhibition_onset_tick=182,
+            simulated_ticks=181,
+        )
         checkpoint = circuit.checkpoint()
         assert checkpoint == library.checkpoint_bytes
 
@@ -1201,6 +1238,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "TemporalPublicationOutcome",
         "TemporalCircuitStep",
         "TemporalContextPolicy",
+        "TemporalOutputElection",
         "TemporalPlasticityPolicy",
         "TemporalSpike",
         "TemporalStepMode",
@@ -1214,6 +1252,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         NativeTemporalCircuit.from_checkpoint,
         NativeTemporalCircuit.from_checkpoint_path,
         NativeTemporalCircuit.advance_block,
+        NativeTemporalCircuit.elect_output,
         NativeTemporalCircuit.publish_checkpoint,
         NativeTemporalCircuit.checkpoint,
         NativeTemporalCircuit.checkpoint_identity,
@@ -1235,6 +1274,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         NativeTemporalCircuit.fresh,
         NativeTemporalCircuit.from_checkpoint,
         NativeTemporalCircuit.advance_block,
+        NativeTemporalCircuit.elect_output,
         NativeTemporalCircuit.checkpoint,
         NativeTemporalCircuit.checkpoint_identity,
     ):
@@ -1248,6 +1288,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         "destination",
     }
     assert set(inspect.signature(NativeTemporalCircuit.checkpoint_identity).parameters) == {"self"}
+    assert set(inspect.signature(NativeTemporalCircuit.elect_output).parameters) == {"self"}
     assert set(
         inspect.signature(NativeTemporalCircuitDefinition.circuit_identity_sha256).parameters
     ) == {"self"}
@@ -1267,6 +1308,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
     create = library.humanbrain_temporal_circuit_runtime_create_v1
     imported = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
     advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
+    elect_output = library.humanbrain_temporal_circuit_runtime_elect_output_v1
     size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
     checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
     export = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
@@ -1280,6 +1322,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         create,
         imported,
         advance,
+        elect_output,
         size,
         checkpoint_identity,
         export,
@@ -1290,6 +1333,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
         destroy,
     )
     assert [len(function.argtypes or ()) for function in functions] == [
+        3,
         3,
         3,
         3,
@@ -1310,6 +1354,7 @@ def test_public_capability_owns_handle_and_round_trips_checkpoint(
             create,
             imported,
             advance,
+            elect_output,
             size,
             checkpoint_identity,
             export,

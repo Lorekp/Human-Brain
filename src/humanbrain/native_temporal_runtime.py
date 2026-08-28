@@ -261,6 +261,22 @@ class _NativeStepV2(ctypes.Structure):
     ]
 
 
+class _NativeOutputElection(ctypes.Structure):
+    _fields_ = [
+        ("token_id", ctypes.c_uint32),
+        ("output_cell_id", ctypes.c_uint32),
+        ("activated_columns", ctypes.c_uint32),
+        ("candidate_tokens", ctypes.c_uint32),
+        ("winner_input_columns", ctypes.c_uint8),
+        ("reserved_zero_u8", ctypes.c_uint8),
+        ("winner_tick", ctypes.c_uint16),
+        ("basket_tick", ctypes.c_uint16),
+        ("inhibition_onset_tick", ctypes.c_uint16),
+        ("simulated_ticks", ctypes.c_uint16),
+        ("reserved_zero", ctypes.c_uint8 * 6),
+    ]
+
+
 class _NativeAdvanceRequestV2(ctypes.Structure):
     _fields_ = [
         ("token_ids", ctypes.POINTER(ctypes.c_uint32)),
@@ -390,6 +406,12 @@ def _assert_frozen_abi() -> None:
             624,
             712,
         ),
+    )
+    _require_frozen_layout(
+        _NativeOutputElection,
+        32,
+        4,
+        (0, 4, 8, 12, 16, 17, 18, 20, 22, 24, 26),
     )
     _require_frozen_layout(_NativeAdvanceRequestV2, 40, 8, (0, 8, 16, 24, 32, 33, 34))
     _require_frozen_layout(
@@ -950,6 +972,21 @@ class TemporalCircuitStep:
     context: tuple[int, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class TemporalOutputElection:
+    """Token emitted by the native physical output-cell race."""
+
+    token_id: int
+    output_cell_id: int
+    activated_columns: int
+    candidate_tokens: int
+    winner_input_columns: int
+    winner_tick: int
+    basket_tick: int
+    inhibition_onset_tick: int
+    simulated_ticks: int
+
+
 class NativeTemporalRuntimeError(RuntimeError):
     """One native failure, including any prefix already committed by a block."""
 
@@ -1062,6 +1099,7 @@ def _bind_temporal_symbols(library: object) -> None:
         create = library.humanbrain_temporal_circuit_runtime_create_v1
         import_checkpoint = library.humanbrain_temporal_circuit_runtime_import_checkpoint_v1
         advance = library.humanbrain_temporal_circuit_runtime_advance_block_v2
+        elect_output = library.humanbrain_temporal_circuit_runtime_elect_output_v1
         checkpoint_size = library.humanbrain_temporal_circuit_runtime_checkpoint_size_v1
         checkpoint_identity = library.humanbrain_temporal_circuit_runtime_checkpoint_identity_v1
         export_checkpoint = library.humanbrain_temporal_circuit_runtime_export_checkpoint_v1
@@ -1095,6 +1133,11 @@ def _bind_temporal_symbols(library: object) -> None:
     advance.argtypes = [
         ctypes.c_void_p,
         ctypes.POINTER(_NativeAdvanceRequestV2),
+        report_output,
+    ]
+    elect_output.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(_NativeOutputElection),
         report_output,
     ]
     checkpoint_size.argtypes = [
@@ -1143,6 +1186,7 @@ def _bind_temporal_symbols(library: object) -> None:
         create,
         import_checkpoint,
         advance,
+        elect_output,
         checkpoint_size,
         checkpoint_identity,
         export_checkpoint,
@@ -2789,6 +2833,94 @@ class NativeTemporalCircuit:
                 )
             return completed_steps
 
+    def elect_output(self) -> TemporalOutputElection:
+        """Emit one token from the current physical winner context.
+
+        This call accepts no arriving token, candidate set, current, score, or
+        winner.  The returned token is selected by the native output-cell and
+        basket-cell race over the learned physical owner activity.
+        """
+
+        native = _NativeOutputElection()
+        report = _NativeReport()
+        with self._operation_lock:
+            handle = self._require_open()
+            returned = self._library.humanbrain_temporal_circuit_runtime_elect_output_v1(
+                handle,
+                ctypes.byref(native),
+                ctypes.byref(report),
+            )
+            decoded = _decode_report(returned, report, maximum_completed_prefix=0)
+            if decoded.status is not NativeTemporalRuntimeStatus.OK:
+                if any(bytes(native)):
+                    raise _invariant_error("failed output election returned nonzero output")
+                _raise_report(decoded)
+            if decoded.required or decoded.observed or decoded.location:
+                raise _invariant_error(
+                    "successful output election carries unexpected scalar diagnostics"
+                )
+            if native.reserved_zero_u8 or any(native.reserved_zero):
+                raise _invariant_error("output election reserved fields are nonzero")
+
+            activated_columns = int(native.activated_columns)
+            candidate_tokens = int(native.candidate_tokens)
+            winner_input_columns = int(native.winner_input_columns)
+            if not 1 <= activated_columns <= _ACTIVE_COLUMNS:
+                raise _invariant_error(
+                    "output election activated-column count is outside the physical code width",
+                    required=_ACTIVE_COLUMNS,
+                    observed=activated_columns,
+                )
+            if not 1 <= candidate_tokens <= len(self._definition.token_codes):
+                raise _invariant_error(
+                    "output election candidate-token count is outside the codebook",
+                    required=len(self._definition.token_codes),
+                    observed=candidate_tokens,
+                )
+            if not 1 <= winner_input_columns <= activated_columns:
+                raise _invariant_error(
+                    "output election winner input count is inconsistent",
+                    required=activated_columns,
+                    observed=winner_input_columns,
+                )
+
+            output_population_offset = _physical_cell_count(self._definition.config)
+            output_index = int(native.output_cell_id) - output_population_offset
+            if not 0 <= output_index < len(self._definition.token_codes):
+                raise _invariant_error(
+                    "output election cell is outside the static token population",
+                    required=output_population_offset,
+                    observed=int(native.output_cell_id),
+                )
+            wired_token_id = self._definition.token_codes[output_index][0]
+            if int(native.token_id) != wired_token_id:
+                raise _invariant_error(
+                    "output election token disagrees with its static output-cell wiring",
+                    required=wired_token_id,
+                    observed=int(native.token_id),
+                )
+            winner_tick = int(native.winner_tick)
+            basket_tick = int(native.basket_tick)
+            inhibition_onset_tick = int(native.inhibition_onset_tick)
+            simulated_ticks = int(native.simulated_ticks)
+            if not (
+                winner_tick < basket_tick
+                and inhibition_onset_tick == basket_tick + 1
+                and basket_tick <= simulated_ticks
+            ):
+                raise _invariant_error("output election spike chronology is not causal")
+            return TemporalOutputElection(
+                token_id=int(native.token_id),
+                output_cell_id=int(native.output_cell_id),
+                activated_columns=activated_columns,
+                candidate_tokens=candidate_tokens,
+                winner_input_columns=winner_input_columns,
+                winner_tick=winner_tick,
+                basket_tick=basket_tick,
+                inhibition_onset_tick=inhibition_onset_tick,
+                simulated_ticks=simulated_ticks,
+            )
+
     def publish_checkpoint(self, destination: Path) -> TemporalCheckpointPublication:
         """Attempt one exclusive lexical-path publication with no wrapper retry."""
 
@@ -2947,6 +3079,7 @@ __all__ = [
     "TemporalPublicationErrorStage",
     "TemporalPublicationOutcome",
     "TemporalCircuitStep",
+    "TemporalOutputElection",
     "TemporalContextPolicy",
     "TemporalPlasticityPolicy",
     "TemporalSpike",
