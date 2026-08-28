@@ -1,0 +1,260 @@
+{
+  "authority": {
+    "development_attempts_completed": 1,
+    "development_key": [
+      "t1_list_map_add",
+      7
+    ],
+    "development_target_used_as_runtime_input": false,
+    "eval_partition_generated": false,
+    "harness_retries": 0,
+    "learned_readout_parameters": 0,
+    "model_retries": 0,
+    "prompt_bracket_scope": "signature-entry/signature-parameter/literal-when-present",
+    "prompt_family_ids_injected": false,
+    "prompt_solution_labels_injected": false,
+    "python_argmax": false,
+    "python_candidate_enumeration": false,
+    "source_partition_generated": "train",
+    "stopped_at_first_model_divergence": true,
+    "synthetic_runtime_authority": true,
+    "teacher_tokens_after_development_prompt": 0,
+    "train_keys": [
+      [
+        "t0_scalar_offset",
+        0
+      ],
+      [
+        "t1_list_map_abs",
+        0
+      ]
+    ],
+    "typed_compiler_received_prompt": false,
+    "typed_compiler_received_tests": false
+  },
+  "capability_pass": false,
+  "claim_boundary": "One retained native temporal circuit sees one visible scalar-offset task and one visible list-map-absolute task, then attempts visible list-map-add ordinal 007 exactly once. A pass is direct visible-development evidence that the circuit recombined an outer map/binder subtree with an inner add/literal subtree and physically copied the unseen +3 surface literal. It is not M0, family-disjoint generalization, eval evidence, broad coding competence, or C1.",
+  "experiment": "r3-public-simple-swe-native-typed-subtree-composition",
+  "first_failure": {
+    "detail": {
+      "generation_position": 0,
+      "location": 22018,
+      "message": "temporal physical stage stopped",
+      "observed": 0,
+      "poison_code": 7,
+      "required": 0,
+      "stage_code": 3,
+      "status": "SCIENTIFIC_STOP"
+    },
+    "gate": "GENERATION_STOP",
+    "kind": "model"
+  },
+  "generated_at_utc": "2026-08-28T06:45:42.671903+00:00",
+  "outcome": "STOP_NATIVE_TYPED_SUBTREE_COMPOSITION",
+  "physical_definition": {
+    "active_columns_per_token": 11,
+    "circuit_identity_sha256": "818ce81034b627af547de02d8c3e95bfc384ff78f7b27dd31359ae8204667710",
+    "column_count": 512,
+    "physical_cell_count": 21938,
+    "segment_capacity": 6105,
+    "theta_active": 18,
+    "theta_match": 16,
+    "used_token_count": 80
+  },
+  "protocol": {
+    "language": "python-3.11",
+    "protocol_id": "human-cell-simple-swe-v1",
+    "protocol_sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2"
+  },
+  "public_simple_swe_runtime": {
+    "explicit_repo_venv": "C:\\Users\\laure\\AppData\\Roaming\\uv\\python\\cpython-3.11.15-windows-x86_64-none\\python.exe",
+    "property_cases": 32,
+    "python_runtime": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "regression_cases": 4,
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "runtime": {
+    "elapsed_wall_ns": 16431985000,
+    "native_binary_sha256": "5fb8c1f10ef93b00fee2078979621976d771ba482fb818c479a9adc3a7d29ed3",
+    "native_source_digest": "6738cd27a14c8600ca20ce8aedf8d2f3849327dcec46a5d24fa579f026500e58",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "bb2823a7ba8c90094047e91042cf26664d82f4d112bcf2df32460ca6be93188c",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "slot_bank": {
+    "copied_slot_ordinal": 2,
+    "copy_control_token_id": 4294967293,
+    "copy_end_token_id": 4294967294,
+    "max_surface_tokens_per_slot": 22,
+    "slot_count": 3
+  },
+  "train": {
+    "learned_state_retained_between_tasks": true,
+    "learning_steps_after_train": 557,
+    "live_segments_after_train": 3861,
+    "reset_before_each": true,
+    "tasks": [
+      {
+        "allocated_segments": 2783,
+        "entry_point": "solve_d4c2e76cb6f6e7b8",
+        "family": "t0_scalar_offset",
+        "hidden_test_sha256": "4f11a30a2c3035855d7661e089d0c534ffd836ae9b93673dd6f97d5168425190",
+        "internal_target": [
+          "add",
+          "variable-0",
+          "integer",
+          "COPY_SLOT_2",
+          "end",
+          "<EOS>"
+        ],
+        "literal": "5",
+        "ordinal": 0,
+        "parameter": "n",
+        "partition": "train",
+        "property_case_count": 32,
+        "public_prompt_lossless_after_tokenization": true,
+        "public_prompt_sha256": "cc721bf6d74e3b2fe9dc695e5deafbd73c520f8ac9a2bd0445fb3551bcdf15e0",
+        "regression_case_count": 4,
+        "steps": 257,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/000",
+        "task_sha256": "76a3a308651bb98a67801dbcbf7d2750a6de6f30748d6f500a30121dc950ea21"
+      },
+      {
+        "allocated_segments": 1078,
+        "entry_point": "solve_738987e19fc67a16",
+        "family": "t1_list_map_abs",
+        "hidden_test_sha256": "6f7d1c569e5ed289b264d185f3dd1153898ceceea8872e4460794a2081652687",
+        "internal_target": [
+          "map",
+          "bind",
+          "absolute",
+          "variable-0",
+          "variable-0",
+          "<EOS>"
+        ],
+        "literal": "",
+        "ordinal": 0,
+        "parameter": "values",
+        "partition": "train",
+        "property_case_count": 32,
+        "public_prompt_lossless_after_tokenization": true,
+        "public_prompt_sha256": "955d7dc62cf217cdd3b65fa15584e36b7d1c3523ab1891d5af30a7d93996e01d",
+        "regression_case_count": 4,
+        "steps": 300,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_abs/000",
+        "task_sha256": "8f31b752aa2801a4a2f61ddd9d9e5a9de52d39b4e55fe960ae87d797d9073824"
+      }
+    ]
+  },
+  "typed_subtrees": {
+    "absolute_primitive_type": "Int -> Int",
+    "compiler_checks": [
+      {
+        "compiled_source": "def solve_d4c2e76cb6f6e7b8(n):\n    return n + 5\n",
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/000",
+        "tokens": [
+          "add",
+          "variable-0",
+          "integer",
+          "+",
+          "5",
+          "end"
+        ]
+      },
+      {
+        "compiled_source": "def solve_738987e19fc67a16(values):\n    return [abs(item_0) for item_0 in values]\n",
+        "exact": true,
+        "task_id": "simple-swe-v1/train/tier-1/t1_list_map_abs/000",
+        "tokens": [
+          "map",
+          "bind",
+          "absolute",
+          "variable-0",
+          "variable-0"
+        ]
+      }
+    ],
+    "development_stream_equals_a_train_stream": false,
+    "map_absolute_train": "map bind absolute variable-0 variable-0",
+    "map_add_development_expected": "map bind add variable-0 integer COPY[2] end variable-0",
+    "scalar_train": "add variable-0 integer COPY[2] end"
+  },
+  "visible_development_teacher_free": {
+    "attempt_number": 1,
+    "completed_generations": 0,
+    "expected_stream_used_only_for_host_scoring": true,
+    "first_failure": {
+      "detail": {
+        "generation_position": 0,
+        "location": 22018,
+        "message": "temporal physical stage stopped",
+        "observed": 0,
+        "poison_code": 7,
+        "required": 0,
+        "stage_code": 3,
+        "status": "SCIENTIFIC_STOP"
+      },
+      "gate": "GENERATION_STOP",
+      "kind": "model"
+    },
+    "fitted_cell_races_exact": true,
+    "generations": [],
+    "program": {
+      "attempted": false,
+      "compiled_source": null,
+      "compiler_received_prompt": false,
+      "compiler_received_tests": false,
+      "exact_compiled_source": false,
+      "exact_tokens": false,
+      "expected_compiled_source": "def solve_f1450339c6dbe783(values):\n    return [item_0 + 3 for item_0 in values]\n",
+      "expected_tokens": [
+        "map",
+        "bind",
+        "add",
+        "variable-0",
+        "integer",
+        "+",
+        "3",
+        "end",
+        "variable-0"
+      ],
+      "program_sha256": null,
+      "tokens": []
+    },
+    "prompt_steps": 281,
+    "sandbox": {
+      "attempted": false,
+      "detail": "not run because an earlier gate stopped",
+      "outcome": null,
+      "passed": false,
+      "sandboxed": false,
+      "wall_seconds": 0.0
+    },
+    "slot_2_copy_trace_exact": false,
+    "slot_2_copy_transaction": null,
+    "target_entered_runtime": false,
+    "task": {
+      "entry_point": "solve_f1450339c6dbe783",
+      "family": "t1_list_map_add",
+      "hidden_test_sha256": "bf7d81b64f5c678c68bb556227058c86d9c3facac813ea6fe14a104550b53f7b",
+      "literal": "3",
+      "ordinal": 7,
+      "parameter": "values",
+      "partition": "train",
+      "property_case_count": 32,
+      "public_prompt_lossless_after_tokenization": true,
+      "public_prompt_sha256": "e7f668971602770b95ebc27854dfe744cd3580adb60adf1ec3cbdb0331f27074",
+      "regression_case_count": 4,
+      "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/007",
+      "task_sha256": "b4463745a7934e52239a21db0b9ebcac343dccd87032515f44fa1195f9872e85"
+    },
+    "teacher_tokens_after_prompt": 0,
+    "terminated_by_ordinary_eos": false
+  }
+}

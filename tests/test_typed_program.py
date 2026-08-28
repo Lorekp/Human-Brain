@@ -534,6 +534,22 @@ def test_generic_map_composes_a_typed_binder_and_list_argument() -> None:
     )
 
 
+def test_absolute_is_a_generic_unary_int_primitive_inside_map() -> None:
+    signature = TypedSignature(
+        entry_point="absolute_all",
+        parameters=(ProgramParameter("items", ProgramType.List(ProgramType.Int())),),
+        result=ProgramType.List(ProgramType.Int()),
+    )
+    program = Program(
+        ("map", "bind", "absolute", "variable-0", "variable-0"),
+        signature,
+    )
+
+    assert compile(program).source == (
+        "def absolute_all(items):\n    return [abs(item_0) for item_0 in items]\n"
+    )
+
+
 def test_subtract_is_a_general_binary_int_primitive_with_literal_operand_order() -> None:
     signature = TypedSignature(
         entry_point="difference",

@@ -305,6 +305,7 @@ _PRIMITIVE_SPECS = (
     _PrimitiveSpec("input-delimiter", "input-delimiter"),
     _PrimitiveSpec("add", "operation", _INT, (_INT, _INT), "add"),
     _PrimitiveSpec("subtract", "operation", _INT, (_INT, _INT), "subtract"),
+    _PrimitiveSpec("absolute", "operation", _INT, (_INT,), "absolute"),
     _PrimitiveSpec(
         "map",
         "operation",
@@ -1440,6 +1441,12 @@ def _lower_expression(
             left=_lower_expression(expression.children[0], environment, context),
             op=ast.Sub(),
             right=_lower_expression(expression.children[1], environment, context),
+        )
+    if lowering == "absolute":
+        return ast.Call(
+            func=ast.Name(id="abs", ctx=ast.Load()),
+            args=[_lower_expression(expression.children[0], environment, context)],
+            keywords=[],
         )
     if lowering == "map":
         binder, collection = expression.children
