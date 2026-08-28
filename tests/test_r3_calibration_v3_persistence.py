@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -22,6 +23,32 @@ RESULT_PATH = (
 DEVELOPMENT_RESULT_PATH = (
     f"{ARTIFACT_ROOT}/r3-f0/development/theta-m-18_theta-a-20/construction-seed-0000000017.json"
 )
+ELECTRICAL_DEVELOPMENT_PATH = f"{ARTIFACT_ROOT}/electrical-v3/development/seed-0000000003.json"
+ELECTRICAL_CONFIRMATION_PATH = (
+    f"{ARTIFACT_ROOT}/electrical-v3/independent-confirmation/seed-0000000043.json"
+)
+Q4_DEVELOPMENT_PATH = f"{ARTIFACT_ROOT}/q4/development/theta-m-18_theta-a-20/seed-0000000003.json"
+Q4_CONFIRMATION_PATH = (
+    f"{ARTIFACT_ROOT}/q4/independent-confirmation/theta-m-18_theta-a-20/seed-0000000043.json"
+)
+Q255_PRODUCTION_DEVELOPMENT_PATH = (
+    f"{ARTIFACT_ROOT}/q255/development/production-overlap-ordered-pairs/"
+    "theta-m-18_theta-a-20/seed-0000000003.json"
+)
+Q255_DISJOINT_DEVELOPMENT_PATH = (
+    f"{ARTIFACT_ROOT}/q255/development/target-disjoint-isolation-control/"
+    "theta-m-18_theta-a-20/seed-0000000003.json"
+)
+Q255_PRODUCTION_CONFIRMATION_PATH = (
+    f"{ARTIFACT_ROOT}/q255/independent-confirmation/production-overlap-ordered-pairs/"
+    "theta-m-18_theta-a-20/seed-0000000043.json"
+)
+Q255_DISJOINT_CONFIRMATION_PATH = (
+    f"{ARTIFACT_ROOT}/q255/independent-confirmation/target-disjoint-isolation-control/"
+    "theta-m-18_theta-a-20/seed-0000000043.json"
+)
+DEVELOPMENT_SELECTION_PATH = f"{ARTIFACT_ROOT}/selection/development-selection.json"
+FINAL_VERDICT_PATH = f"{ARTIFACT_ROOT}/selection/final-verdict.json"
 EXPECTED_SOURCE_BUNDLE_SHA256 = "3" * 64
 
 
@@ -63,12 +90,42 @@ def _resume_cursor() -> dict[str, object]:
 
 
 def _validated_protocol() -> dict[str, object]:
-    return {
+    frozen: dict[str, object] = {
         "artifact_contract": {
             "root": ARTIFACT_ROOT,
             "path_inventory": {
-                "direct_parent_directories": 3,
-                "full_parent_directory_closure": 7,
+                "direct_parent_directories": 0,
+                "full_parent_directory_closure": 0,
+            },
+            "electrical_v3": {
+                "development": [ELECTRICAL_DEVELOPMENT_PATH],
+                "independent_confirmation": [ELECTRICAL_CONFIRMATION_PATH],
+            },
+            "compressed_reserve_q4": {
+                "development": {
+                    "theta-m-18_theta-a-20": [Q4_DEVELOPMENT_PATH],
+                },
+                "independent_confirmation": {
+                    "theta-m-18_theta-a-20": [Q4_CONFIRMATION_PATH],
+                },
+            },
+            "full_cohort_q255": {
+                "development": {
+                    "production-overlap-ordered-pairs": {
+                        "theta-m-18_theta-a-20": [Q255_PRODUCTION_DEVELOPMENT_PATH],
+                    },
+                    "target-disjoint-isolation-control": {
+                        "theta-m-18_theta-a-20": [Q255_DISJOINT_DEVELOPMENT_PATH],
+                    },
+                },
+                "independent_confirmation": {
+                    "production-overlap-ordered-pairs": {
+                        "theta-m-18_theta-a-20": [Q255_PRODUCTION_CONFIRMATION_PATH],
+                    },
+                    "target-disjoint-isolation-control": {
+                        "theta-m-18_theta-a-20": [Q255_DISJOINT_CONFIRMATION_PATH],
+                    },
+                },
             },
             "r3_f0_train": {
                 "development": {
@@ -81,6 +138,10 @@ def _validated_protocol() -> dict[str, object]:
                     CHECKPOINT_PATH,
                     RESUME_PATH,
                 ],
+            },
+            "selection": {
+                "development": DEVELOPMENT_SELECTION_PATH,
+                "final": FINAL_VERDICT_PATH,
             },
         },
         "screens": {
@@ -95,8 +156,14 @@ def _validated_protocol() -> dict[str, object]:
         "claim_boundary": _claim_boundary(),
         "result_contract": {"artifact_creation_requires_runnable_source_binding": True},
         "source_binding": _source_binding(),
-        "threshold_selection": {"candidate_arms": [[18, 20]]},
+        "threshold_selection": {
+            "candidate_arms": [[18, 20]],
+            "development_seeds": [3],
+            "independent_confirmation_seeds": [43],
+        },
     }
+    _refresh_parent_inventory(frozen)
+    return frozen
 
 
 def _protocol_sha256() -> str:
@@ -190,6 +257,105 @@ def _result_payload() -> dict[str, object]:
             "verdict": "PASS_R3_F0_TRAIN_STRUCTURE",
         },
         "screen_id": "r3_f0_train",
+        "source_binding": _source_binding(),
+        "source_bundle_identity_sha256": EXPECTED_SOURCE_BUNDLE_SHA256,
+        "thresholds": {"theta_active": 20, "theta_match": 18},
+    }
+
+
+def _coordinate_result_payload(
+    *,
+    artifact_path: str,
+    construction_seed: int,
+    phase: str,
+    result: dict[str, object],
+    screen_id: str,
+    thresholds: dict[str, int] | None,
+) -> dict[str, object]:
+    return {
+        "artifact_path": artifact_path,
+        "claim_boundary": _claim_boundary(),
+        "construction_seeds": [construction_seed],
+        "phase": phase,
+        "protocol_sha256": _protocol_sha256(),
+        "result": result,
+        "screen_id": screen_id,
+        "source_binding": _source_binding(),
+        "source_bundle_identity_sha256": EXPECTED_SOURCE_BUNDLE_SHA256,
+        "thresholds": {} if thresholds is None else thresholds,
+    }
+
+
+def _electrical_result_payload() -> dict[str, object]:
+    return _coordinate_result_payload(
+        artifact_path=ELECTRICAL_DEVELOPMENT_PATH,
+        construction_seed=3,
+        phase="development",
+        result={
+            "boundaries": {},
+            "fixture": {},
+            "monotonicity": {},
+            "proximal_channel": {},
+            "seed": 3,
+            "verdict": "PASS_RESERVE_VALID_ELECTRICAL_V3",
+            "winner_relay": {},
+        },
+        screen_id="electrical_v3",
+        thresholds=None,
+    )
+
+
+def _q4_result_payload() -> dict[str, object]:
+    return _coordinate_result_payload(
+        artifact_path=Q4_DEVELOPMENT_PATH,
+        construction_seed=3,
+        phase="development",
+        result={
+            "circuit_identity_sha256": "4" * 64,
+            "cohort_count": 176,
+            "construction_seed": 3,
+            "next_reserve_cell": 34_184,
+            "segment_count": 1_419,
+            "status": "PASS",
+        },
+        screen_id="compressed_reserve_q4",
+        thresholds={"theta_active": 20, "theta_match": 18},
+    )
+
+
+def _q255_result_payload() -> dict[str, object]:
+    return _coordinate_result_payload(
+        artifact_path=Q255_PRODUCTION_DEVELOPMENT_PATH,
+        construction_seed=3,
+        phase="development",
+        result={
+            "circuit_identity_sha256": "5" * 64,
+            "learned_recurrences": 2_041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 49_240,
+            "novel_probes": 0,
+            "segment_count": 22_451,
+            "status": "PASS",
+            "unique_source_contexts": 2_041,
+            "unique_target_winner_tuples": 2_041,
+        },
+        screen_id="full_cohort_q255",
+        thresholds={"theta_active": 20, "theta_match": 18},
+    )
+
+
+def _development_selection_payload() -> dict[str, object]:
+    return {
+        "artifact_path": DEVELOPMENT_SELECTION_PATH,
+        "claim_boundary": _claim_boundary(),
+        "construction_seeds": [3],
+        "phase": "development",
+        "protocol_sha256": _protocol_sha256(),
+        "result": {
+            "selected_arm_slug": "theta-m-18_theta-a-20",
+            "verdicts": {"theta-m-18_theta-a-20": True},
+        },
+        "screen_id": "threshold_selection",
         "source_binding": _source_binding(),
         "source_bundle_identity_sha256": EXPECTED_SOURCE_BUNDLE_SHA256,
         "thresholds": {"theta_active": 20, "theta_match": 18},
@@ -340,30 +506,114 @@ def test_nonrunnable_protocol_blocks_official_artifact_encoding(tmp_path: Path) 
         store.encode_result(payload)
 
 
-def test_unfrozen_result_family_has_no_official_json_codec(tmp_path: Path) -> None:
-    electrical_path = f"{ARTIFACT_ROOT}/electrical-v3/development/seed-0000000003.json"
-    frozen = _validated_protocol()
-    contract = dict(frozen["artifact_contract"])
-    contract["electrical_v3"] = {"development": [electrical_path]}
-    frozen["artifact_contract"] = contract
-    _refresh_parent_inventory(frozen)
-    store = _open_store(repository_root=tmp_path, validated_protocol=frozen)
-    payload = _result_payload()
-    payload.update(
-        {
-            "artifact_path": electrical_path,
-            "construction_seeds": [3],
-            "phase": "development",
-            "protocol_sha256": hashlib.sha256(_canonical_test_bytes(frozen)).hexdigest(),
-            "result": {},
-            "screen_id": "electrical_v3",
-        }
-    )
+@pytest.mark.parametrize(
+    ("path", "payload_factory"),
+    [
+        (ELECTRICAL_DEVELOPMENT_PATH, _electrical_result_payload),
+        (Q4_DEVELOPMENT_PATH, _q4_result_payload),
+        (Q255_PRODUCTION_DEVELOPMENT_PATH, _q255_result_payload),
+        (DEVELOPMENT_SELECTION_PATH, _development_selection_payload),
+    ],
+    ids=("electrical", "q4", "q255", "development-selection"),
+)
+def test_fixture_and_development_selection_results_use_exact_destination_codecs(
+    tmp_path: Path,
+    path: str,
+    payload_factory: Callable[[], dict[str, object]],
+) -> None:
+    store = _open_store(repository_root=tmp_path, validated_protocol=_validated_protocol())
+    payload = payload_factory()
 
+    raw = store.encode_result(payload)
+    decoded = store.decode(path, raw)
+
+    assert decoded.artifact_id == persistence.RESULT_ARTIFACT_ID
+    assert decoded.payload == payload
+
+
+def test_fixture_destination_selects_schema_and_final_verdict_remains_unfrozen(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(repository_root=tmp_path, validated_protocol=_validated_protocol())
+    crossed = _q4_result_payload()
+    crossed["artifact_path"] = Q255_PRODUCTION_DEVELOPMENT_PATH
+    crossed["screen_id"] = "full_cohort_q255"
+
+    with pytest.raises(persistence.EnvelopeStop):
+        store.encode_result(crossed)
     with pytest.raises(persistence.ArtifactAuthorityStop):
-        store.encode_result(payload)
-    with pytest.raises(persistence.ArtifactAuthorityStop):
-        store.decode(electrical_path, b"{}")
+        store.decode(FINAL_VERDICT_PATH, b"{}")
+
+
+def test_q4_and_q255_stop_rows_match_runner_shapes_but_unrun_rows_have_no_codec(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(repository_root=tmp_path, validated_protocol=_validated_protocol())
+    q4_stop = _q4_result_payload()
+    q4_stop["result"] = {
+        "construction_seed": 3,
+        "reason": "q4 STOP: reserve transition drifted",
+        "status": "STOP",
+    }
+    q255_stop = _q255_result_payload()
+    q255_stop["result"] = {
+        "reason": "q255 production-overlap STOP: collision bound reached",
+        "status": "STOP",
+    }
+
+    store.encode_result(q4_stop)
+    store.encode_result(q255_stop)
+
+    q255_stop["result"] = {"status": "NOT_RUN_FAIL_FAST"}
+    with pytest.raises(persistence.EnvelopeStop):
+        store.encode_result(q255_stop)
+
+
+def test_development_selection_requires_every_verdict_and_the_first_passing_arm(
+    tmp_path: Path,
+) -> None:
+    frozen = protocol.build_protocol()
+    source_binding = dict(frozen["source_binding"])
+    source_binding.update({"blockers": [], "runnable": True})
+    frozen["source_binding"] = source_binding
+    store = _open_store(repository_root=tmp_path, validated_protocol=frozen)
+    candidate_arms = frozen["threshold_selection"]["candidate_arms"]
+    slugs = [f"theta-m-{arm[0]}_theta-a-{arm[1]}" for arm in candidate_arms]
+    verdicts = {slug: index == 1 for index, slug in enumerate(slugs)}
+    payload = {
+        "artifact_path": frozen["artifact_contract"]["selection"]["development"],
+        "claim_boundary": frozen["claim_boundary"],
+        "construction_seeds": frozen["threshold_selection"]["development_seeds"],
+        "phase": "development",
+        "protocol_sha256": hashlib.sha256(_canonical_test_bytes(frozen)).hexdigest(),
+        "result": {
+            "selected_arm_slug": slugs[1],
+            "verdicts": verdicts,
+        },
+        "screen_id": "threshold_selection",
+        "source_binding": source_binding,
+        "source_bundle_identity_sha256": EXPECTED_SOURCE_BUNDLE_SHA256,
+        "thresholds": {
+            "theta_active": candidate_arms[1][1],
+            "theta_match": candidate_arms[1][0],
+        },
+    }
+
+    store.encode_result(payload)
+
+    wrong_selection = json.loads(json.dumps(payload))
+    wrong_selection["result"]["selected_arm_slug"] = slugs[2]
+    wrong_selection["thresholds"] = {
+        "theta_active": candidate_arms[2][1],
+        "theta_match": candidate_arms[2][0],
+    }
+    with pytest.raises(persistence.EnvelopeStop):
+        store.encode_result(wrong_selection)
+
+    incomplete = json.loads(json.dumps(payload))
+    del incomplete["result"]["verdicts"][slugs[-1]]
+    with pytest.raises(persistence.EnvelopeStop):
+        store.encode_result(incomplete)
 
 
 def test_resume_envelope_round_trips_as_ascii_only_canonical_json(tmp_path: Path) -> None:
@@ -1237,15 +1487,24 @@ def test_narrow_result_write_seam_requires_prepared_parent_and_absent_final(
     )
 
     with pytest.raises(persistence.ArtifactPathStop, match="parent namespace"):
-        store.prepare_absent_result(RESULT_PATH)
+        store.prepare_absent_result(ELECTRICAL_DEVELOPMENT_PATH)
 
     _prepare_store_namespace(store)
-    result_path = store.prepare_absent_result(RESULT_PATH)
-    assert result_path == _artifact_path(tmp_path, RESULT_PATH)
-    result_path.write_bytes(b"existing immutable result")
+    for relative_path in (
+        ELECTRICAL_DEVELOPMENT_PATH,
+        Q4_DEVELOPMENT_PATH,
+        Q255_PRODUCTION_DEVELOPMENT_PATH,
+        DEVELOPMENT_RESULT_PATH,
+        DEVELOPMENT_SELECTION_PATH,
+    ):
+        result_path = store.prepare_absent_result(relative_path)
+        assert result_path == _artifact_path(tmp_path, relative_path)
+        result_path.write_bytes(b"existing immutable result")
+        with pytest.raises(persistence.ArtifactPathStop, match="already exists"):
+            store.prepare_absent_result(relative_path)
 
-    with pytest.raises(persistence.ArtifactPathStop, match="already exists"):
-        store.prepare_absent_result(RESULT_PATH)
+    with pytest.raises(persistence.ArtifactPathStop, match="official calibration-v3 result"):
+        store.prepare_absent_result(FINAL_VERDICT_PATH)
 
 
 def test_committed_resume_open_reads_manifest_before_requiring_checkpoint(

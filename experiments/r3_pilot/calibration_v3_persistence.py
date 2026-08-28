@@ -94,6 +94,47 @@ _R3_F0_RESULT_KEYS = frozenset(
         "verdict",
     }
 )
+_ELECTRICAL_RESULT_KEYS = frozenset(
+    {
+        "boundaries",
+        "fixture",
+        "monotonicity",
+        "proximal_channel",
+        "seed",
+        "verdict",
+        "winner_relay",
+    }
+)
+_Q4_PASS_RESULT_KEYS = frozenset(
+    {
+        "circuit_identity_sha256",
+        "cohort_count",
+        "construction_seed",
+        "next_reserve_cell",
+        "segment_count",
+        "status",
+    }
+)
+_Q4_STOP_RESULT_KEYS = frozenset({"construction_seed", "reason", "status"})
+_Q255_PASS_RESULT_KEYS = frozenset(
+    {
+        "circuit_identity_sha256",
+        "learned_recurrences",
+        "maximum_winner_overlap",
+        "next_reserve_cell",
+        "novel_probes",
+        "segment_count",
+        "status",
+        "unique_source_contexts",
+        "unique_target_winner_tuples",
+    }
+)
+_Q255_STOP_RESULT_KEYS = frozenset({"reason", "status"})
+_DEVELOPMENT_SELECTION_RESULT_KEYS = frozenset({"selected_arm_slug", "verdicts"})
+_Q255_REGIMES = (
+    "production-overlap-ordered-pairs",
+    "target-disjoint-isolation-control",
+)
 
 
 class PersistenceStop(RuntimeError):
@@ -174,6 +215,10 @@ class TimingState(StrEnum):
 
 class ArtifactDestinationKind(StrEnum):
     BINARY_CHECKPOINT = "BINARY_CHECKPOINT"
+    DEVELOPMENT_SELECTION = "DEVELOPMENT_SELECTION"
+    ELECTRICAL_RESULT = "ELECTRICAL_RESULT"
+    Q4_RESULT = "Q4_RESULT"
+    Q255_RESULT = "Q255_RESULT"
     RESUME_MANIFEST = "RESUME_MANIFEST"
     R3_RESULT = "R3_RESULT"
     UNFROZEN_RESULT = "UNFROZEN_RESULT"
@@ -191,6 +236,8 @@ class DestinationSpec:
     thresholds: tuple[int, int] | None = None
     construction_seed: int | None = None
     construction_seeds: tuple[int, ...] | None = None
+    regime: str | None = None
+    candidate_thresholds: tuple[tuple[str, tuple[int, int]], ...] | None = None
     resume_cursor: tuple[tuple[str, object], ...] | None = None
 
 
@@ -747,6 +794,26 @@ def _threshold_arm_map(validated_protocol: Mapping[str, object]) -> dict[str, tu
     return arms
 
 
+def _fixture_phase_seeds(
+    validated_protocol: Mapping[str, object],
+    phase: str,
+) -> tuple[int, ...]:
+    selection = _protocol_object(
+        validated_protocol.get("threshold_selection"),
+        label="threshold_selection",
+    )
+    return _protocol_int_list(
+        selection.get(f"{phase}_seeds"),
+        label=f"threshold_selection.{phase}_seeds",
+    )
+
+
+def _protocol_path_list(value: object, *, label: str) -> tuple[str, ...]:
+    if type(value) is not list or not value:
+        raise ArtifactAuthorityStop(f"validated protocol {label} must be a non-empty list")
+    return tuple(_validate_relative_path(path, label=label) for path in value)
+
+
 def _r3_screen_contract(validated_protocol: Mapping[str, object]) -> dict[str, Any]:
     screens = _protocol_object(validated_protocol.get("screens"), label="screens")
     return _protocol_object(screens.get("r3_f0_train"), label="screens.r3_f0_train")
@@ -874,6 +941,142 @@ def _derive_destination_specs(
         if spec.relative_path in destinations:
             raise ArtifactPathStop("artifact destination has multiple protocol descriptors")
         destinations[spec.relative_path] = spec
+
+    fixture_seeds = {
+        phase: _fixture_phase_seeds(validated_protocol, phase)
+        for phase in ("development", "independent_confirmation")
+    }
+    electrical_contract = _protocol_object(
+        contract.get("electrical_v3"),
+        label="electrical_v3 artifact contract",
+    )
+    q4_contract = _protocol_object(
+        contract.get("compressed_reserve_q4"),
+        label="compressed_reserve_q4 artifact contract",
+    )
+    q255_contract = _protocol_object(
+        contract.get("full_cohort_q255"),
+        label="full_cohort_q255 artifact contract",
+    )
+    for phase, seeds in fixture_seeds.items():
+        phase_path = phase.replace("_", "-")
+        electrical_paths = _protocol_path_list(
+            electrical_contract.get(phase),
+            label=f"electrical_v3.{phase}",
+        )
+        if len(electrical_paths) != len(seeds):
+            raise ArtifactAuthorityStop("electrical result paths do not cover the phase seeds")
+        for seed, path in zip(seeds, electrical_paths, strict=True):
+            expected = f"{artifact_root}/electrical-v3/{phase_path}/seed-{seed:010d}.json"
+            if path != expected:
+                raise ArtifactPathStop("electrical result path differs from its frozen coordinate")
+            add(
+                DestinationSpec(
+                    relative_path=path,
+                    kind=ArtifactDestinationKind.ELECTRICAL_RESULT,
+                    screen_id="electrical_v3",
+                    phase=phase,
+                    construction_seeds=(seed,),
+                )
+            )
+
+        q4_phase = _protocol_object(
+            q4_contract.get(phase),
+            label=f"compressed_reserve_q4.{phase}",
+        )
+        if frozenset(q4_phase) != frozenset(arms):
+            raise ArtifactAuthorityStop("q4 result grid does not cover the candidate arms")
+        for arm_slug, thresholds in arms.items():
+            paths = _protocol_path_list(
+                q4_phase[arm_slug],
+                label=f"compressed_reserve_q4.{phase}.{arm_slug}",
+            )
+            if len(paths) != len(seeds):
+                raise ArtifactAuthorityStop("q4 result paths do not cover the phase seeds")
+            for seed, path in zip(seeds, paths, strict=True):
+                expected = f"{artifact_root}/q4/{phase_path}/{arm_slug}/seed-{seed:010d}.json"
+                if path != expected:
+                    raise ArtifactPathStop("q4 result path differs from its frozen coordinate")
+                add(
+                    DestinationSpec(
+                        relative_path=path,
+                        kind=ArtifactDestinationKind.Q4_RESULT,
+                        screen_id="compressed_reserve_q4",
+                        phase=phase,
+                        arm_slug=arm_slug,
+                        thresholds=thresholds,
+                        construction_seeds=(seed,),
+                    )
+                )
+
+        q255_phase = _protocol_object(
+            q255_contract.get(phase),
+            label=f"full_cohort_q255.{phase}",
+        )
+        if frozenset(q255_phase) != frozenset(_Q255_REGIMES):
+            raise ArtifactAuthorityStop("q255 result grid does not cover both frozen regimes")
+        for regime in _Q255_REGIMES:
+            regime_grid = _protocol_object(
+                q255_phase[regime],
+                label=f"full_cohort_q255.{phase}.{regime}",
+            )
+            if frozenset(regime_grid) != frozenset(arms):
+                raise ArtifactAuthorityStop("q255 result grid does not cover the candidate arms")
+            for arm_slug, thresholds in arms.items():
+                paths = _protocol_path_list(
+                    regime_grid[arm_slug],
+                    label=f"full_cohort_q255.{phase}.{regime}.{arm_slug}",
+                )
+                if len(paths) != len(seeds):
+                    raise ArtifactAuthorityStop("q255 result paths do not cover the phase seeds")
+                for seed, path in zip(seeds, paths, strict=True):
+                    expected = (
+                        f"{artifact_root}/q255/{phase_path}/{regime}/{arm_slug}/"
+                        f"seed-{seed:010d}.json"
+                    )
+                    if path != expected:
+                        raise ArtifactPathStop(
+                            "q255 result path differs from its frozen coordinate"
+                        )
+                    add(
+                        DestinationSpec(
+                            relative_path=path,
+                            kind=ArtifactDestinationKind.Q255_RESULT,
+                            screen_id="full_cohort_q255",
+                            phase=phase,
+                            arm_slug=arm_slug,
+                            thresholds=thresholds,
+                            construction_seeds=(seed,),
+                            regime=regime,
+                        )
+                    )
+
+    selection_contract = _protocol_object(
+        contract.get("selection"),
+        label="selection artifact contract",
+    )
+    development_selection_path = _validate_relative_path(
+        selection_contract.get("development"),
+        label="development selection path",
+    )
+    if development_selection_path != (f"{artifact_root}/selection/development-selection.json"):
+        raise ArtifactPathStop("development selection path is not canonical")
+    final_selection_path = _validate_relative_path(
+        selection_contract.get("final"),
+        label="final selection path",
+    )
+    if final_selection_path != f"{artifact_root}/selection/final-verdict.json":
+        raise ArtifactPathStop("final selection path is not canonical")
+    add(
+        DestinationSpec(
+            relative_path=development_selection_path,
+            kind=ArtifactDestinationKind.DEVELOPMENT_SELECTION,
+            screen_id="threshold_selection",
+            phase="development",
+            construction_seeds=fixture_seeds["development"],
+            candidate_thresholds=tuple(arms.items()),
+        )
+    )
 
     for phase in ("development", "deterministic_confirmation"):
         phase_contract = r3_contract.get(phase)
@@ -1064,14 +1267,17 @@ def _validate_common_payload(payload: dict[str, Any]) -> None:
     _require_nonempty_string(payload["phase"], label="phase")
     _validate_claim_boundary(payload["claim_boundary"])
     _require_object(payload["source_binding"], label="source_binding")
-    _validate_thresholds(payload["thresholds"])
 
 
-def _bind_common_destination(payload: dict[str, Any], destination: DestinationSpec) -> None:
+def _bind_screen_phase(payload: dict[str, Any], destination: DestinationSpec) -> None:
     if destination.screen_id is None or payload["screen_id"] != destination.screen_id:
         raise EnvelopeStop("screen_id does not match the frozen artifact destination")
     if destination.phase is None or payload["phase"] != destination.phase:
         raise EnvelopeStop("phase does not match the frozen artifact destination")
+
+
+def _bind_thresholds(payload: dict[str, Any], destination: DestinationSpec) -> None:
+    _validate_thresholds(payload["thresholds"])
     if destination.thresholds is None:
         raise EnvelopeStop("artifact destination has no frozen threshold semantics")
     theta_match, theta_active = destination.thresholds
@@ -1080,6 +1286,11 @@ def _bind_common_destination(payload: dict[str, Any], destination: DestinationSp
         "theta_match": theta_match,
     }:
         raise EnvelopeStop("thresholds do not match the frozen artifact destination")
+
+
+def _bind_common_destination(payload: dict[str, Any], destination: DestinationSpec) -> None:
+    _bind_screen_phase(payload, destination)
+    _bind_thresholds(payload, destination)
 
 
 def _validate_resume_payload(
@@ -1139,15 +1350,10 @@ def _validate_resume_payload(
         raise EnvelopeStop("timing violates the cumulative active-wall contract") from exc
 
 
-def _validate_result_payload(
+def _bind_result_construction_seeds(
     payload: dict[str, Any],
-    *,
     destination: DestinationSpec,
 ) -> None:
-    _validate_common_payload(payload)
-    if destination.kind is not ArtifactDestinationKind.R3_RESULT:
-        raise EnvelopeStop("result payload requires a frozen R3 result destination")
-    _bind_common_destination(payload, destination)
     seeds = payload["construction_seeds"]
     if type(seeds) is not list or not seeds:
         raise EnvelopeStop("construction_seeds must be a non-empty JSON array")
@@ -1155,6 +1361,145 @@ def _validate_result_payload(
         _require_nonnegative_int(seed, label=f"construction_seeds[{index}]")
     if destination.construction_seeds is None or tuple(seeds) != destination.construction_seeds:
         raise EnvelopeStop("construction_seeds do not match the frozen result destination")
+
+
+def _validate_electrical_result(
+    payload: dict[str, Any],
+    destination: DestinationSpec,
+) -> None:
+    _require_exact_object(payload["thresholds"], frozenset(), label="electrical thresholds")
+    result = _require_exact_object(
+        payload["result"],
+        _ELECTRICAL_RESULT_KEYS,
+        label="electrical_v3 result",
+    )
+    if destination.construction_seeds is None or len(destination.construction_seeds) != 1:
+        raise EnvelopeStop("electrical destination has no exact construction seed")
+    if (
+        _require_nonnegative_int(result["seed"], label="electrical_v3 seed")
+        != destination.construction_seeds[0]
+    ):
+        raise EnvelopeStop("electrical_v3 seed does not match its frozen destination")
+    verdict = _require_nonempty_string(result["verdict"], label="electrical_v3 verdict")
+    if verdict not in {
+        "PASS_RESERVE_VALID_ELECTRICAL_V3",
+        "REJECT_RESERVE_VALID_ELECTRICAL_V3",
+    }:
+        raise EnvelopeStop("electrical_v3 verdict is not a frozen fixture verdict")
+    for field_name in (
+        "boundaries",
+        "fixture",
+        "monotonicity",
+        "proximal_channel",
+        "winner_relay",
+    ):
+        _require_object(result[field_name], label=f"electrical_v3 {field_name}")
+
+
+def _validate_q4_result(payload: dict[str, Any], destination: DestinationSpec) -> None:
+    _bind_thresholds(payload, destination)
+    result = _require_object(payload["result"], label="compressed_reserve_q4 result")
+    status = _require_nonempty_string(
+        result.get("status"),
+        label="compressed_reserve_q4 status",
+    )
+    expected_keys = _Q4_PASS_RESULT_KEYS if status == "PASS" else _Q4_STOP_RESULT_KEYS
+    if status not in {"PASS", "STOP"}:
+        raise EnvelopeStop("compressed_reserve_q4 status is not PASS or STOP")
+    _require_exact_keys(result, expected_keys, label="compressed_reserve_q4 result")
+    if destination.construction_seeds is None or len(destination.construction_seeds) != 1:
+        raise EnvelopeStop("q4 destination has no exact construction seed")
+    if (
+        _require_nonnegative_int(
+            result["construction_seed"],
+            label="compressed_reserve_q4 construction_seed",
+        )
+        != destination.construction_seeds[0]
+    ):
+        raise EnvelopeStop("q4 construction_seed does not match its frozen destination")
+    if status == "STOP":
+        _require_nonempty_string(result["reason"], label="compressed_reserve_q4 reason")
+        return
+    _require_lower_sha256(
+        result["circuit_identity_sha256"],
+        label="compressed_reserve_q4 circuit_identity_sha256",
+    )
+    for field_name in ("cohort_count", "next_reserve_cell", "segment_count"):
+        _require_nonnegative_int(result[field_name], label=f"compressed_reserve_q4 {field_name}")
+
+
+def _validate_q255_result(payload: dict[str, Any], destination: DestinationSpec) -> None:
+    _bind_thresholds(payload, destination)
+    if destination.regime not in _Q255_REGIMES:
+        raise EnvelopeStop("q255 destination has no frozen regime")
+    result = _require_object(payload["result"], label="full_cohort_q255 result")
+    status = _require_nonempty_string(result.get("status"), label="full_cohort_q255 status")
+    expected_keys = _Q255_PASS_RESULT_KEYS if status == "PASS" else _Q255_STOP_RESULT_KEYS
+    if status not in {"PASS", "STOP"}:
+        raise EnvelopeStop("full_cohort_q255 status is not PASS or STOP")
+    _require_exact_keys(result, expected_keys, label="full_cohort_q255 result")
+    if status == "STOP":
+        _require_nonempty_string(result["reason"], label="full_cohort_q255 reason")
+        return
+    _require_lower_sha256(
+        result["circuit_identity_sha256"],
+        label="full_cohort_q255 circuit_identity_sha256",
+    )
+    for field_name in (
+        "learned_recurrences",
+        "maximum_winner_overlap",
+        "next_reserve_cell",
+        "novel_probes",
+        "segment_count",
+        "unique_source_contexts",
+        "unique_target_winner_tuples",
+    ):
+        _require_nonnegative_int(result[field_name], label=f"full_cohort_q255 {field_name}")
+
+
+def _validate_development_selection(
+    payload: dict[str, Any],
+    destination: DestinationSpec,
+) -> None:
+    result = _require_exact_object(
+        payload["result"],
+        _DEVELOPMENT_SELECTION_RESULT_KEYS,
+        label="development selection result",
+    )
+    candidates = dict(destination.candidate_thresholds or ())
+    if not candidates:
+        raise EnvelopeStop("development selection destination has no candidate arms")
+    verdicts = _require_object(result["verdicts"], label="development selection verdicts")
+    _require_exact_keys(
+        verdicts,
+        frozenset(candidates),
+        label="development selection verdicts",
+    )
+    if any(type(verdicts[arm_slug]) is not bool for arm_slug in candidates):
+        raise EnvelopeStop("development selection verdicts must be exact booleans")
+    selected = _require_nonempty_string(
+        result["selected_arm_slug"],
+        label="development selected_arm_slug",
+    )
+    first_passing = next(
+        (arm_slug for arm_slug in candidates if verdicts[arm_slug]),
+        None,
+    )
+    if first_passing is None:
+        raise EnvelopeStop("development selection cannot publish without a passing arm")
+    if selected != first_passing:
+        raise EnvelopeStop("development selection is not the first passing candidate arm")
+    _validate_thresholds(payload["thresholds"])
+    theta_match, theta_active = candidates[selected]
+    if payload["thresholds"] != {
+        "theta_active": theta_active,
+        "theta_match": theta_match,
+    }:
+        raise EnvelopeStop("development selection thresholds differ from the selected arm")
+
+
+def _validate_r3_result(payload: dict[str, Any], destination: DestinationSpec) -> None:
+    _bind_thresholds(payload, destination)
     _require_object(payload["result"], label="result")
     result = _require_exact_object(
         payload["result"], _R3_F0_RESULT_KEYS, label="r3_f0_train result"
@@ -1174,6 +1519,34 @@ def _validate_result_payload(
         _require_object(result[field_name], label=f"r3_f0_train {field_name}")
     if type(result["resumes"]) is not list:
         raise EnvelopeStop("r3_f0_train resumes must be a JSON array")
+
+
+def _validate_result_payload(
+    payload: dict[str, Any],
+    *,
+    destination: DestinationSpec,
+) -> None:
+    _validate_common_payload(payload)
+    if destination.kind not in {
+        ArtifactDestinationKind.DEVELOPMENT_SELECTION,
+        ArtifactDestinationKind.ELECTRICAL_RESULT,
+        ArtifactDestinationKind.Q4_RESULT,
+        ArtifactDestinationKind.Q255_RESULT,
+        ArtifactDestinationKind.R3_RESULT,
+    }:
+        raise EnvelopeStop("result payload requires a frozen result destination")
+    _bind_screen_phase(payload, destination)
+    _bind_result_construction_seeds(payload, destination)
+    if destination.kind is ArtifactDestinationKind.ELECTRICAL_RESULT:
+        _validate_electrical_result(payload, destination)
+    elif destination.kind is ArtifactDestinationKind.Q4_RESULT:
+        _validate_q4_result(payload, destination)
+    elif destination.kind is ArtifactDestinationKind.Q255_RESULT:
+        _validate_q255_result(payload, destination)
+    elif destination.kind is ArtifactDestinationKind.DEVELOPMENT_SELECTION:
+        _validate_development_selection(payload, destination)
+    else:
+        _validate_r3_result(payload, destination)
 
 
 def _validate_payload(
@@ -1469,21 +1842,35 @@ class CalibrationV3ArtifactStore:
             raise ArtifactPathStop("destination is not one exact frozen R3 result")
         return destination
 
+    def require_result_destination(self, relative_path: str) -> DestinationSpec:
+        """Return one exact official JSON-result descriptor without creating files."""
+
+        destination = self._destination(relative_path)
+        if destination.kind not in {
+            ArtifactDestinationKind.DEVELOPMENT_SELECTION,
+            ArtifactDestinationKind.ELECTRICAL_RESULT,
+            ArtifactDestinationKind.Q4_RESULT,
+            ArtifactDestinationKind.Q255_RESULT,
+            ArtifactDestinationKind.R3_RESULT,
+        }:
+            raise ArtifactPathStop("destination is not an official calibration-v3 result")
+        return destination
+
     def prepare_absent_result(self, relative_path: str) -> Path:
-        """Require one prebuilt R3-result parent and prove its exact final absent."""
+        """Require one prebuilt result parent and prove its exact final absent."""
 
         if not self._source_binding_runnable:
             raise ArtifactAuthorityStop(
-                "R3 result preparation requires runnable protocol source binding"
+                "result preparation requires runnable protocol source binding"
             )
-        destination = self.require_r3_result_destination(relative_path)
+        destination = self.require_result_destination(relative_path)
         if not self._require_parent_chain(destination.relative_path):
-            raise ArtifactPathStop("R3 result parent namespace was not prepared before active time")
+            raise ArtifactPathStop("result parent namespace was not prepared before publication")
         if self._plain_file_presence(destination.relative_path):
-            raise ArtifactPathStop("R3 result final already exists")
+            raise ArtifactPathStop("result final already exists")
         result_path = self._absolute_member(destination.relative_path)
         if self._plain_file_presence(destination.relative_path):
-            raise ArtifactPathStop("R3 result final already exists")
+            raise ArtifactPathStop("result final already exists")
         return result_path
 
     def _resume_pair_destinations(
