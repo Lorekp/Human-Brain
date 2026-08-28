@@ -1709,6 +1709,20 @@ impl TemporalStore {
     ) -> Result<TemporalPrepareSummary, u32> {
         self.prepare(context_sources, out.as_mut_ptr(), out.len())
     }
+
+    /// Iterate rows containing all ten logical sources from the immediately
+    /// preceding recognition pass. This is derived scratch, not learned state.
+    pub(crate) fn runtime_exact_source_matches(&self) -> impl Iterator<Item = (u32, u32)> + '_ {
+        let exact_contacts = PAIRS_PER_SEGMENT as u8 * PHYSICAL_CONTACTS_PER_PAIR;
+        self.touched_segments
+            .iter()
+            .copied()
+            .filter_map(move |segment_id| {
+                let segment_index = segment_id as usize;
+                (self.potential_contacts[segment_index] == exact_contacts)
+                    .then_some((self.owners[segment_index], segment_id))
+            })
+    }
 }
 
 #[no_mangle]

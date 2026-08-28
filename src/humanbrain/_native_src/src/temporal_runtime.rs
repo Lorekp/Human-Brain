@@ -37,6 +37,7 @@ const ACTIVE_COLUMNS: usize = 11;
 const CONTEXT_CELLS: usize = 2 * ACTIVE_COLUMNS;
 const CONTEXT_CELLS_U8: u8 = CONTEXT_CELLS as u8;
 const PAIRS_PER_SEGMENT: usize = 10;
+const EXACT_SOURCE_PHYSICAL_CONTACTS: u8 = 2 * PAIRS_PER_SEGMENT as u8;
 const NONE: u32 = u32::MAX;
 const INITIAL_CONTACT_DOMAIN: u64 = 0x5233_4630_494E_4954;
 const REGROWTH_CONTACT_DOMAIN: u64 = 0x5233_4630_5247_5257;
@@ -310,6 +311,18 @@ struct PreparedReservePlan {
     next_reserve_cell: u32,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ExactSourceReservation {
+    owner: u32,
+    segment_id: u32,
+}
+
+impl ExactSourceReservation {
+    fn exists(self) -> bool {
+        self.segment_id != NONE
+    }
+}
+
 impl PreparedReservePlan {
     fn cohort_count(self) -> usize {
         usize::from(self.cohort_count)
@@ -325,7 +338,7 @@ struct PreparedLearnStep {
     reserve: PreparedReservePlan,
     active_segment_count: usize,
     winner_cells: [u32; ACTIVE_COLUMNS],
-    winner_best_active: [u32; ACTIVE_COLUMNS],
+    winner_learning_segments: [u32; ACTIVE_COLUMNS],
     normalized_context_sources: [u32; ACTIVE_COLUMNS],
     reinforced_rows: [TemporalSegmentRow; ACTIVE_COLUMNS],
     append_owners: [u32; ACTIVE_COLUMNS],
@@ -364,6 +377,10 @@ const EMPTY_CATEGORIZED_RANK_CANDIDATE: CategorizedRankCandidate = CategorizedRa
     column_offset: usize::MAX,
     primary_contacts: 0,
     secondary_contacts: 0,
+    segment_id: NONE,
+};
+const EMPTY_EXACT_SOURCE_RESERVATION: ExactSourceReservation = ExactSourceReservation {
+    owner: NONE,
     segment_id: NONE,
 };
 const EMPTY_RESERVE_PLAN: PreparedReservePlan = PreparedReservePlan {
@@ -897,11 +914,16 @@ impl TemporalCircuitRuntime {
             if !has_active_owner {
                 continue;
             }
-            let candidate_count =
-                match self.prepare_column_drives(column, diagnostic_count, reserve, &transient) {
-                    Ok(count) => count,
-                    Err(stop) => return self.fail(stop),
-                };
+            let candidate_count = match self.prepare_column_drives(
+                column,
+                diagnostic_count,
+                reserve,
+                EMPTY_EXACT_SOURCE_RESERVATION,
+                &transient,
+            ) {
+                Ok(count) => count,
+                Err(stop) => return self.fail(stop),
+            };
             let basket_id = self.basket_offset + column;
             let candidates = &self.column_drive_scratch[..candidate_count];
             let race = match coupled_first_spike_race(
@@ -1354,11 +1376,26 @@ impl TemporalCircuitRuntime {
             };
         }
 
+        let exact_source_reservations = if mode == TemporalStepMode::Learn
+            && self.config.plasticity_policy == TemporalPlasticityPolicy::Plastic
+            && transient.previous_context_len != 0
+        {
+            match self.exact_source_reservations(&columns, diagnostic_count) {
+                Ok(reservations) => reservations,
+                Err(stop) => return self.fail(stop),
+            }
+        } else {
+            [EMPTY_EXACT_SOURCE_RESERVATION; ACTIVE_COLUMNS]
+        };
         let reserve_plan = if mode == TemporalStepMode::Learn
             && self.config.plasticity_policy == TemporalPlasticityPolicy::Plastic
             && transient.previous_context_len != 0
         {
-            match self.preflight_reserve_plan(&columns, diagnostic_count) {
+            match self.preflight_reserve_plan(
+                &columns,
+                diagnostic_count,
+                &exact_source_reservations,
+            ) {
                 Ok(plan) => plan,
                 Err(stop) => return self.fail(stop),
             }
@@ -1373,13 +1410,14 @@ impl TemporalCircuitRuntime {
         let mut basket_spikes = [EMPTY_SPIKE; ACTIVE_COLUMNS];
         let mut inhibition_onset_ticks = [0u16; ACTIVE_COLUMNS];
         let mut column_simulated_ticks = [0u16; ACTIVE_COLUMNS];
-        let mut winner_best_active = [NONE; ACTIVE_COLUMNS];
+        let mut winner_learning_segments = [NONE; ACTIVE_COLUMNS];
         let mut predicted_columns = 0u8;
         for (index, &column) in columns.iter().enumerate() {
             let candidate_count = match self.prepare_column_drives(
                 column,
                 diagnostic_count,
                 reserve_plan,
+                exact_source_reservations[index],
                 &transient,
             ) {
                 Ok(candidate_count) => candidate_count,
@@ -1416,10 +1454,14 @@ impl TemporalCircuitRuntime {
             if let Some(diagnostic) =
                 self.diagnostic_for_owner(race.winner.cell_id, diagnostic_count)
             {
-                winner_best_active[index] = diagnostic.best_active_segment;
                 if diagnostic.best_active_segment != NONE {
+                    winner_learning_segments[index] = diagnostic.best_active_segment;
                     predicted_columns += 1;
                 }
+            }
+            let reservation = exact_source_reservations[index];
+            if reservation.exists() && reservation.owner == race.winner.cell_id {
+                winner_learning_segments[index] = reservation.segment_id;
             }
         }
 
@@ -1482,7 +1524,7 @@ impl TemporalCircuitRuntime {
             match self.preflight_learning(
                 active_segment_count,
                 winner_spikes.map(|spike| spike.cell_id),
-                winner_best_active,
+                winner_learning_segments,
                 reserve_plan,
                 &transient,
             ) {
@@ -1623,11 +1665,110 @@ impl TemporalCircuitRuntime {
             }))
     }
 
+    fn exact_source_reservations(
+        &self,
+        columns: &[u32; ACTIVE_COLUMNS],
+        diagnostic_count: usize,
+    ) -> Result<[ExactSourceReservation; ACTIVE_COLUMNS], TemporalCircuitStop> {
+        if diagnostic_count > self.recognition_scratch.len() {
+            return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                "recognition output exceeds its construction-time scratch",
+            ));
+        }
+        let mut reservations = [EMPTY_EXACT_SOURCE_RESERVATION; ACTIVE_COLUMNS];
+        let mut column_ranges = [(0usize, 0usize); ACTIVE_COLUMNS];
+        let mut has_exact_reservation = false;
+        for (index, &column) in columns.iter().enumerate() {
+            let column_index = column as usize;
+            let Some((&cell_start, &cell_end)) = self
+                .column_offsets
+                .get(column_index)
+                .zip(self.column_offsets.get(column_index + 1))
+            else {
+                return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                    "token code references a missing column",
+                ));
+            };
+            if cell_start > cell_end || cell_end > self.column_cells.len() {
+                return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                    "column CSR bounds are malformed",
+                ));
+            }
+            let cells = &self.column_cells[cell_start..cell_end];
+            column_ranges[index] = (cell_start, cell_end);
+            let active = cells.iter().copied().any(|cell| {
+                self.diagnostic_for_owner(cell, diagnostic_count)
+                    .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
+            });
+            if active {
+                continue;
+            }
+            for &owner in cells {
+                let Some(diagnostic) = self.diagnostic_for_owner(owner, diagnostic_count) else {
+                    continue;
+                };
+                if diagnostic.matching_potential_contacts != EXACT_SOURCE_PHYSICAL_CONTACTS {
+                    continue;
+                }
+                if reservations[index].exists() {
+                    return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                        "bursting column has multiple exact-source reservation candidates",
+                    ));
+                }
+                if diagnostic.best_matching_segment == NONE {
+                    return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                        "exact-source diagnostic has no matching segment",
+                    ));
+                }
+                reservations[index] = ExactSourceReservation {
+                    owner,
+                    segment_id: diagnostic.best_matching_segment,
+                };
+                has_exact_reservation = true;
+            }
+        }
+        if !has_exact_reservation {
+            return Ok(reservations);
+        }
+
+        let mut exact_counts = [0u8; ACTIVE_COLUMNS];
+        for (owner, segment_id) in self.store.runtime_exact_source_matches() {
+            for index in 0..ACTIVE_COLUMNS {
+                if !reservations[index].exists() {
+                    continue;
+                }
+                let (cell_start, cell_end) = column_ranges[index];
+                if !self.column_cells[cell_start..cell_end].contains(&owner) {
+                    continue;
+                }
+                exact_counts[index] += 1;
+                if exact_counts[index] > 1 {
+                    return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                        "bursting column has multiple exact-source reservation candidates",
+                    ));
+                }
+                reservations[index] = ExactSourceReservation { owner, segment_id };
+                break;
+            }
+        }
+        if reservations
+            .iter()
+            .zip(exact_counts)
+            .any(|(reservation, count)| reservation.exists() && count != 1)
+        {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "exact-source diagnostic and row state disagree",
+            ));
+        }
+        Ok(reservations)
+    }
+
     fn prepare_column_drives(
         &mut self,
         column: u32,
         diagnostic_count: usize,
         reserve: PreparedReservePlan,
+        exact_source_reservation: ExactSourceReservation,
         transient: &TemporalTransientState,
     ) -> Result<usize, TemporalCircuitStop> {
         if diagnostic_count > self.recognition_scratch.len() {
@@ -1687,7 +1828,12 @@ impl TemporalCircuitRuntime {
                 active_count += 1;
             }
         }
-        let categorized_count = active_count;
+        if exact_source_reservation.exists() && active_count != 0 {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "exact-source reservation reached a non-bursting column",
+            ));
+        }
+        let categorized_count = active_count + usize::from(exact_source_reservation.exists());
         if categorized_count > usize::from(self.config.novel_race_cap) {
             return Err(TemporalCircuitStop::CategorizedRaceCapacity {
                 column,
@@ -1715,6 +1861,20 @@ impl TemporalCircuitRuntime {
             }
             .current_pa()
                 - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa * rank as f64;
+        }
+        if exact_source_reservation.exists() {
+            let Some(column_offset) = cells
+                .iter()
+                .position(|cell| *cell == exact_source_reservation.owner)
+            else {
+                return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                    "exact-source reservation owner is outside its column",
+                ));
+            };
+            self.column_drive_scratch[column_offset].current_pa = CandidateClass::Matching {
+                load: self.prospective_owner_load(exact_source_reservation.owner, reserve)?,
+            }
+            .current_pa();
         }
         if transient.previous_context_len == 0 {
             for rank in 0..usize::from(self.config.base_cells_per_column) {
@@ -1774,6 +1934,7 @@ impl TemporalCircuitRuntime {
         &mut self,
         columns: &[u32; ACTIVE_COLUMNS],
         diagnostic_count: usize,
+        exact_source_reservations: &[ExactSourceReservation; ACTIVE_COLUMNS],
     ) -> Result<PreparedReservePlan, TemporalCircuitStop> {
         if diagnostic_count > self.recognition_scratch.len() {
             return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
@@ -1809,7 +1970,7 @@ impl TemporalCircuitRuntime {
             next_reserve_cell: self.next_reserve_cell,
             ..EMPTY_RESERVE_PLAN
         };
-        for &column in columns {
+        for (index, &column) in columns.iter().enumerate() {
             let column_index = column as usize;
             let Some((&cell_start, &cell_end)) = self
                 .column_offsets
@@ -1830,7 +1991,7 @@ impl TemporalCircuitRuntime {
                 self.diagnostic_for_owner(cell, diagnostic_count)
                     .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
             });
-            if has_recall_competent_owner {
+            if has_recall_competent_owner || exact_source_reservations[index].exists() {
                 continue;
             }
             let mut exhausted = true;
@@ -2035,7 +2196,7 @@ impl TemporalCircuitRuntime {
         &mut self,
         active_segment_count: usize,
         winner_cells: [u32; ACTIVE_COLUMNS],
-        winner_best_active: [u32; ACTIVE_COLUMNS],
+        winner_learning_segments: [u32; ACTIVE_COLUMNS],
         reserve: PreparedReservePlan,
         transient: &TemporalTransientState,
     ) -> Result<PreparedLearnStep, TemporalCircuitStop> {
@@ -2052,7 +2213,7 @@ impl TemporalCircuitRuntime {
         let mut punished_count = 0u32;
         if context_source_count != 0 {
             for index in 0..ACTIVE_COLUMNS {
-                if winner_best_active[index] == NONE {
+                if winner_learning_segments[index] == NONE {
                     append_owners[append_count] = winner_cells[index];
                     append_count += 1;
                 }
@@ -2121,43 +2282,62 @@ impl TemporalCircuitRuntime {
             }
         }
 
+        for index in 0..ACTIVE_COLUMNS {
+            let segment_id = winner_learning_segments[index];
+            if segment_id == NONE {
+                continue;
+            }
+            if winner_learning_segments[..index].contains(&segment_id) {
+                return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                    "one learned segment was reserved by multiple winner columns",
+                ));
+            }
+            let row = build_reinforced_row(
+                &self.store,
+                self.config,
+                segment_id,
+                &normalized_context_sources,
+                context_source_count,
+                self.learning_step,
+            )?;
+            self.store
+                .preflight_runtime_canonical_rewrite(segment_id, &row)
+                .map_err(|error| {
+                    map_store_preflight_error(
+                        error,
+                        &self.store,
+                        0,
+                        self.config.max_segments_per_cell,
+                    )
+                })?;
+            reinforced_rows[index] = row;
+        }
+
         for &segment_id in &self.active_segment_scratch[..active_segment_count] {
-            let row = if let Some(index) = winner_best_active
-                .iter()
-                .position(|candidate| *candidate == segment_id)
-            {
-                let row = build_reinforced_row(
-                    &self.store,
-                    self.config,
-                    segment_id,
-                    &normalized_context_sources,
-                    context_source_count,
-                    self.learning_step,
-                )?;
-                reinforced_rows[index] = row;
-                row
-            } else {
-                let owner = self.store.runtime_segment_owner(segment_id).ok_or(
-                    TemporalCircuitStop::StoreOrPlanInvariant(
-                        "active segment has no authoritative owner",
-                    ),
-                )?;
-                if winner_cells.contains(&owner) {
-                    continue;
-                }
-                punished_count = punished_count.checked_add(1).ok_or(
-                    TemporalCircuitStop::StoreOrPlanInvariant(
+            if winner_learning_segments.contains(&segment_id) {
+                continue;
+            }
+            let owner = self.store.runtime_segment_owner(segment_id).ok_or(
+                TemporalCircuitStop::StoreOrPlanInvariant(
+                    "active segment has no authoritative owner",
+                ),
+            )?;
+            if winner_cells.contains(&owner) {
+                continue;
+            }
+            punished_count =
+                punished_count
+                    .checked_add(1)
+                    .ok_or(TemporalCircuitStop::StoreOrPlanInvariant(
                         "punishment count overflowed its canonical domain",
-                    ),
-                )?;
-                build_punished_row(
-                    &self.store,
-                    self.config,
-                    segment_id,
-                    &normalized_context_sources,
-                    context_source_count,
-                )?
-            };
+                    ))?;
+            let row = build_punished_row(
+                &self.store,
+                self.config,
+                segment_id,
+                &normalized_context_sources,
+                context_source_count,
+            )?;
             self.store
                 .preflight_runtime_canonical_rewrite(segment_id, &row)
                 .map_err(|error| {
@@ -2179,7 +2359,7 @@ impl TemporalCircuitRuntime {
             reserve,
             active_segment_count,
             winner_cells,
-            winner_best_active,
+            winner_learning_segments,
             normalized_context_sources,
             reinforced_rows,
             append_owners,
@@ -2211,20 +2391,19 @@ impl TemporalCircuitRuntime {
                 &prepared.reserve.cohort_columns[..prepared.reserve.cohort_count()],
             );
         }
+        for index in 0..ACTIVE_COLUMNS {
+            let segment_id = prepared.winner_learning_segments[index];
+            if segment_id == NONE {
+                continue;
+            }
+            self.store.commit_prevalidated_runtime_canonical_rewrite(
+                segment_id,
+                &prepared.reinforced_rows[index],
+            );
+        }
         for active_index in 0..prepared.active_segment_count {
             let segment_id = self.active_segment_scratch[active_index];
-            let mut reinforced = false;
-            for index in 0..ACTIVE_COLUMNS {
-                if prepared.winner_best_active[index] == segment_id {
-                    self.store.commit_prevalidated_runtime_canonical_rewrite(
-                        segment_id,
-                        &prepared.reinforced_rows[index],
-                    );
-                    reinforced = true;
-                    break;
-                }
-            }
-            if reinforced {
+            if prepared.winner_learning_segments.contains(&segment_id) {
                 continue;
             }
             let owner = self
@@ -4197,6 +4376,36 @@ mod tests {
             [248; PAIRS_PER_SEGMENT],
             "a non-best active segment on a losing owner is still punished",
         );
+    }
+
+    #[test]
+    fn multiple_exact_source_reservations_in_one_bursting_column_scientifically_stop() {
+        let circuit_config = config(22, 2, TemporalContextPolicy::BoundWinners);
+        let exact_sources: Vec<u32> = (0..20).step_by(2).collect();
+        let segments = [22, 23].map(|owner| TemporalSegmentInit {
+            owner,
+            sources: exact_sources.clone(),
+            permanence_ticks: vec![249; PAIRS_PER_SEGMENT],
+        });
+        let mut runtime = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &segments,
+        );
+        runtime.step(0, TemporalStepMode::Learn).unwrap();
+
+        assert_eq!(
+            runtime.step(1, TemporalStepMode::Learn),
+            Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "bursting column has multiple exact-source reservation candidates",
+            )),
+        );
+        assert_eq!(
+            runtime.scientific_stop,
+            Some(TemporalPoisonCode::StoreOrPlanInvariant),
+        );
+        assert_eq!(runtime.store.runtime_segment_count(), 2);
+        assert_eq!(runtime.learning_step, 1);
     }
 
     #[test]
