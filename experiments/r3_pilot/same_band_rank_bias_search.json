@@ -1,0 +1,378 @@
+{
+  "artifact_id": "r3-same-band-rank-bias-search-v1",
+  "claim_boundary": {
+    "c1_executed": false,
+    "core_runtime_modified": false,
+    "held_out_accessed": false,
+    "protocol_modified": false,
+    "synthetic_electrical_only": true,
+    "train_executed": false
+  },
+  "construction": {
+    "candidate_assignment": "rank0 gets the global maximum pyramidal threshold offset; rivals get ascending global minima; basket gets its global maximum",
+    "construction_seeds": [
+      3,
+      7,
+      17,
+      29,
+      43,
+      59,
+      83,
+      101
+    ],
+    "integer_resolution_pa": 1,
+    "same_band_bases_pa": {
+      "active": 690,
+      "matching": 640
+    },
+    "widths": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
+  },
+  "emitted_winner_precedence": {
+    "composition_count_per_seed": 161,
+    "interpretation": "if active owners exist, active rank0 must be the sole fitted-cell winner; otherwise matching rank0, otherwise novel rank0",
+    "results": {
+      "39": {
+        "failures": 0,
+        "first_failure": null,
+        "inhibited_spike_counts": [
+          1
+        ],
+        "maximum_natural_latency_ticks": 40,
+        "minimum_natural_latency_ticks": 5,
+        "passed": true,
+        "trials": 1288
+      },
+      "47": {
+        "failures": 0,
+        "first_failure": null,
+        "inhibited_spike_counts": [
+          1
+        ],
+        "maximum_natural_latency_ticks": 40,
+        "minimum_natural_latency_ticks": 9,
+        "passed": true,
+        "trials": 1288
+      }
+    }
+  },
+  "recommendation": {
+    "existing_constant_pa": 47,
+    "margin_above_measured_minimum_pa": 8,
+    "measured_minimum_integer_pa": 39,
+    "recommended_law": "I = I_class(load) - 47 pA * same_class_owner_rank",
+    "scope": "emitted-winner precedence, not pairwise ordering of every raw current"
+  },
+  "same_band_search": {
+    "evaluated": {
+      "1": {
+        "failures": 112,
+        "first_failure": {
+          "control_spike_ticks": [
+            172,
+            173
+          ],
+          "inhibited_spike_ticks": [
+            172,
+            173
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 1,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "maximum_natural_latency_ticks": 2,
+        "minimum_natural_latency_ticks": 1,
+        "passed": false,
+        "trials": 112
+      },
+      "2": {
+        "failures": 112,
+        "first_failure": {
+          "control_spike_ticks": [
+            172,
+            173
+          ],
+          "inhibited_spike_ticks": [
+            172,
+            173
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 1,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "maximum_natural_latency_ticks": 2,
+        "minimum_natural_latency_ticks": 1,
+        "passed": false,
+        "trials": 112
+      },
+      "3": {
+        "failures": 112,
+        "first_failure": {
+          "control_spike_ticks": [
+            172,
+            173
+          ],
+          "inhibited_spike_ticks": [
+            172,
+            173
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 1,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "maximum_natural_latency_ticks": 1,
+        "minimum_natural_latency_ticks": 1,
+        "passed": false,
+        "trials": 112
+      },
+      "38": {
+        "failures": 56,
+        "first_failure": {
+          "control_spike_ticks": [
+            173,
+            187
+          ],
+          "inhibited_spike_ticks": [
+            173,
+            594
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 14,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          1,
+          2
+        ],
+        "maximum_natural_latency_ticks": 18,
+        "minimum_natural_latency_ticks": 14,
+        "passed": false,
+        "trials": 112
+      },
+      "39": {
+        "failures": 0,
+        "first_failure": null,
+        "inhibited_spike_counts": [
+          1
+        ],
+        "maximum_natural_latency_ticks": 19,
+        "minimum_natural_latency_ticks": 14,
+        "passed": true,
+        "trials": 112
+      },
+      "4": {
+        "failures": 112,
+        "first_failure": {
+          "control_spike_ticks": [
+            173,
+            173
+          ],
+          "inhibited_spike_ticks": [
+            173,
+            173
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 0,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "maximum_natural_latency_ticks": 1,
+        "minimum_natural_latency_ticks": 0,
+        "passed": false,
+        "trials": 112
+      },
+      "47": {
+        "failures": 0,
+        "first_failure": null,
+        "inhibited_spike_counts": [
+          1
+        ],
+        "maximum_natural_latency_ticks": 24,
+        "minimum_natural_latency_ticks": 18,
+        "passed": true,
+        "trials": 112
+      }
+    },
+    "minimum_common_integer_decrement_pa": 39,
+    "rejected_integer_range_pa": [
+      1,
+      38
+    ]
+  },
+  "schema_version": 1,
+  "source_sha256": {
+    "calibrator": "deccc519ab66ac3a53de3c20c60a5a078ca9b9c75038226454aa5af434a17de2",
+    "native_temporal_physics": "8f1fb694e628b09b36fb66b1f0f99b349dd376235e46864da162865fd578d7bc",
+    "search_script": "850e95aa017db50b6b611e99d2518405db049a1d14d38e84299e710769008e41"
+  },
+  "strict_pairwise_current_ordering": {
+    "integer_decrement_maximum_pa": 4,
+    "result_at_allowed_integers": {
+      "1": {
+        "failures": 112,
+        "first_failure": {
+          "control_spike_ticks": [
+            172,
+            173
+          ],
+          "inhibited_spike_ticks": [
+            172,
+            173
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 1,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "maximum_natural_latency_ticks": 2,
+        "minimum_natural_latency_ticks": 1,
+        "passed": false,
+        "trials": 112
+      },
+      "2": {
+        "failures": 112,
+        "first_failure": {
+          "control_spike_ticks": [
+            172,
+            173
+          ],
+          "inhibited_spike_ticks": [
+            172,
+            173
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 1,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "maximum_natural_latency_ticks": 2,
+        "minimum_natural_latency_ticks": 1,
+        "passed": false,
+        "trials": 112
+      },
+      "3": {
+        "failures": 112,
+        "first_failure": {
+          "control_spike_ticks": [
+            172,
+            173
+          ],
+          "inhibited_spike_ticks": [
+            172,
+            173
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 1,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "maximum_natural_latency_ticks": 1,
+        "minimum_natural_latency_ticks": 1,
+        "passed": false,
+        "trials": 112
+      },
+      "4": {
+        "failures": 112,
+        "first_failure": {
+          "control_spike_ticks": [
+            173,
+            173
+          ],
+          "inhibited_spike_ticks": [
+            173,
+            173
+          ],
+          "label": "active-width-2",
+          "natural_latency_ticks": 0,
+          "seed": 3
+        },
+        "inhibited_spike_counts": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "maximum_natural_latency_ticks": 1,
+        "minimum_natural_latency_ticks": 0,
+        "passed": false,
+        "trials": 112
+      }
+    },
+    "status": "INCOMPATIBLE_WITH_ONE_STAGE_LINEAR_RANK_LADDER",
+    "upper_bound_exclusive_pa": 4.296875
+  },
+  "verdict": "PASS_EMITTED_WINNER_PRECEDENCE_WITH_39_PA_MINIMUM"
+}
