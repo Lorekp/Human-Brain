@@ -319,6 +319,7 @@ _PRIMITIVE_SPECS = (
     _PrimitiveSpec("sum", "operation", _INT, (_list_type(_INT),), "sum"),
     _PrimitiveSpec("bind", "binder", lowering="binder"),
     _PrimitiveSpec("variable-0", "variable", lowering="variable", value=0),
+    _PrimitiveSpec("variable-1", "variable", lowering="variable", value=1),
     _PrimitiveSpec("integer", "literal", _INT, lowering="integer"),
     _PrimitiveSpec("+", "sign", value="+"),
     _PrimitiveSpec("-", "sign", value="-"),

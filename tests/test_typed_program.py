@@ -653,6 +653,36 @@ def test_subtract_is_a_general_binary_int_primitive_with_literal_operand_order()
     assert compile(literal_first).source == "def difference(value):\n    return 7 - value\n"
 
 
+def test_variable_one_selects_the_outer_parameter_and_is_masked_without_it() -> None:
+    integer = ProgramType.Int()
+    two_inputs = TypedSignature(
+        entry_point="difference",
+        parameters=(
+            ProgramParameter("first", integer),
+            ProgramParameter("second", integer),
+        ),
+        result=integer,
+    )
+
+    program = Program(
+        ("subtract", "variable-1", "variable-0"),
+        two_inputs,
+    )
+    assert compile(program).source == (
+        "def difference(first, second):\n    return first - second\n"
+    )
+
+    one_input = TypedSignature(
+        entry_point="invalid",
+        parameters=(ProgramParameter("only", integer),),
+        result=integer,
+    )
+    state = typed_program._TypedHoleState(one_input)
+    assert "variable-1" not in {spec.token for spec in state.allowed()}
+    with pytest.raises(ProgramFormatError, match="invalid at this typed hole"):
+        compile(Program(("variable-1",), one_input))
+
+
 def test_checkpoint_corruption_is_rejected_before_array_or_circuit_restore(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
