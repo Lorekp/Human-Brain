@@ -121,6 +121,9 @@ pub(crate) enum TemporalOverflowStage {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TemporalPoisonCode {
     Unpoisoned = 0,
+    // Historical checkpoint terminal classes.  Physical multi-owner
+    // arbitration replaced both live execution paths, so the runtime never
+    // emits these values; they remain decodable evidence in checkpoint-v1.
     MultipleActiveOwners = 1,
     MultipleMatchingOwners = 2,
     CategorizedRaceCapacity = 3,
@@ -139,25 +142,10 @@ pub(crate) enum TemporalPoisonCode {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct OwnerConflict {
-    pub(crate) first: u32,
-    pub(crate) second: u32,
-    pub(crate) count: u32,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TemporalCircuitStop {
     UnknownToken(u32),
     Poisoned,
     MalformedContextOrPolicy(&'static str),
-    MultipleActiveOwners {
-        column: u32,
-        owners: OwnerConflict,
-    },
-    MultipleMatchingOwners {
-        column: u32,
-        owners: OwnerConflict,
-    },
     CategorizedRaceCapacity {
         column: u32,
         categorized_count: u8,
@@ -197,8 +185,6 @@ impl TemporalCircuitStop {
         match self {
             Self::UnknownToken(_) | Self::Poisoned => None,
             Self::MalformedContextOrPolicy(_) => Some(TemporalPoisonCode::MalformedContextOrPolicy),
-            Self::MultipleActiveOwners { .. } => Some(TemporalPoisonCode::MultipleActiveOwners),
-            Self::MultipleMatchingOwners { .. } => Some(TemporalPoisonCode::MultipleMatchingOwners),
             Self::CategorizedRaceCapacity { .. } => {
                 Some(TemporalPoisonCode::CategorizedRaceCapacity)
             }
@@ -258,6 +244,15 @@ struct NovelCandidate {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct CategorizedRankCandidate {
+    owner: u32,
+    column_offset: usize,
+    primary_contacts: u8,
+    secondary_contacts: u8,
+    segment_id: u32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct PreparedReservePlan {
     cohort_columns: [u32; ACTIVE_COLUMNS],
     cohort_count: u8,
@@ -313,6 +308,13 @@ const EMPTY_NOVEL_CANDIDATE: NovelCandidate = NovelCandidate {
     column_offset: 0,
     load: 0,
     afferent_score: 0,
+};
+const EMPTY_CATEGORIZED_RANK_CANDIDATE: CategorizedRankCandidate = CategorizedRankCandidate {
+    owner: NONE,
+    column_offset: usize::MAX,
+    primary_contacts: 0,
+    secondary_contacts: 0,
+    segment_id: NONE,
 };
 const EMPTY_RESERVE_PLAN: PreparedReservePlan = PreparedReservePlan {
     cohort_columns: [NONE; ACTIVE_COLUMNS],
@@ -1181,60 +1183,44 @@ impl TemporalCircuitRuntime {
             ));
         }
 
-        let mut active_first = NONE;
-        let mut active_second = NONE;
-        let mut active_count = 0u32;
-        let mut active_offset = None;
-        let mut matching_first = NONE;
-        let mut matching_second = NONE;
-        let mut matching_count = 0u32;
-        let mut matching_offset = None;
+        let mut active_candidates = [EMPTY_CATEGORIZED_RANK_CANDIDATE; 8];
+        let mut active_count = 0usize;
+        let mut matching_candidates = [EMPTY_CATEGORIZED_RANK_CANDIDATE; 8];
+        let mut matching_count = 0usize;
         for (offset, &cell) in cells.iter().enumerate() {
+            self.column_drive_scratch[offset] = CandidateDrive {
+                cell_id: cell,
+                current_pa: 0.0,
+                threshold_offset_mv: self.threshold_offset(cell),
+            };
             let Some(diagnostic) = self.diagnostic_for_owner(cell, diagnostic_count) else {
                 continue;
             };
             if diagnostic.best_active_segment != NONE {
+                if active_count < active_candidates.len() {
+                    active_candidates[active_count] = CategorizedRankCandidate {
+                        owner: cell,
+                        column_offset: offset,
+                        primary_contacts: diagnostic.active_connected_contacts,
+                        secondary_contacts: diagnostic.active_potential_contacts,
+                        segment_id: diagnostic.best_active_segment,
+                    };
+                }
                 active_count += 1;
-                if active_first == NONE {
-                    active_first = cell;
-                    active_offset = Some(offset);
-                } else if active_second == NONE {
-                    active_second = cell;
+            } else if diagnostic.best_matching_segment != NONE {
+                if matching_count < matching_candidates.len() {
+                    matching_candidates[matching_count] = CategorizedRankCandidate {
+                        owner: cell,
+                        column_offset: offset,
+                        primary_contacts: diagnostic.matching_potential_contacts,
+                        secondary_contacts: diagnostic.matching_connected_contacts,
+                        segment_id: diagnostic.best_matching_segment,
+                    };
                 }
-            }
-            if diagnostic.best_matching_segment != NONE {
                 matching_count += 1;
-                if matching_first == NONE {
-                    matching_first = cell;
-                    matching_offset = Some(offset);
-                } else if matching_second == NONE {
-                    matching_second = cell;
-                }
             }
         }
-        if active_count > 1 {
-            return Err(TemporalCircuitStop::MultipleActiveOwners {
-                column,
-                owners: OwnerConflict {
-                    first: active_first,
-                    second: active_second,
-                    count: active_count,
-                },
-            });
-        }
-        if matching_count > 1 {
-            return Err(TemporalCircuitStop::MultipleMatchingOwners {
-                column,
-                owners: OwnerConflict {
-                    first: matching_first,
-                    second: matching_second,
-                    count: matching_count,
-                },
-            });
-        }
-
-        let categorized_count = usize::from(active_count != 0)
-            + usize::from(matching_count != 0 && matching_first != active_first);
+        let categorized_count = active_count + matching_count;
         if categorized_count > usize::from(self.config.novel_race_cap) {
             return Err(TemporalCircuitStop::CategorizedRaceCapacity {
                 column,
@@ -1243,12 +1229,41 @@ impl TemporalCircuitRuntime {
             });
         }
         let novel_limit = usize::from(self.config.novel_race_cap) - categorized_count;
-        for (offset, &cell_id) in cells.iter().enumerate() {
-            self.column_drive_scratch[offset] = CandidateDrive {
-                cell_id,
-                current_pa: 0.0,
-                threshold_offset_mv: self.threshold_offset(cell_id),
-            };
+
+        // Every categorized owner is a physical race candidate.  A cell may
+        // own both an active and a matching segment; active drive wins that
+        // within-cell classification.  The measured 47 pA ladder then ranks
+        // owners inside each class while preserving the original rank-0 drive.
+        active_candidates[..active_count].sort_unstable_by(|left, right| {
+            right
+                .primary_contacts
+                .cmp(&left.primary_contacts)
+                .then_with(|| right.secondary_contacts.cmp(&left.secondary_contacts))
+                .then_with(|| left.segment_id.cmp(&right.segment_id))
+                .then_with(|| left.owner.cmp(&right.owner))
+        });
+        matching_candidates[..matching_count].sort_unstable_by(|left, right| {
+            right
+                .primary_contacts
+                .cmp(&left.primary_contacts)
+                .then_with(|| right.secondary_contacts.cmp(&left.secondary_contacts))
+                .then_with(|| left.segment_id.cmp(&right.segment_id))
+                .then_with(|| left.owner.cmp(&right.owner))
+        });
+        for (rank, candidate) in active_candidates[..active_count].iter().enumerate() {
+            self.column_drive_scratch[candidate.column_offset].current_pa = CandidateClass::Active {
+                load: self.prospective_owner_load(candidate.owner, reserve)?,
+            }
+            .current_pa()
+                - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa * rank as f64;
+        }
+        for (rank, candidate) in matching_candidates[..matching_count].iter().enumerate() {
+            self.column_drive_scratch[candidate.column_offset].current_pa =
+                CandidateClass::Matching {
+                    load: self.prospective_owner_load(candidate.owner, reserve)?,
+                }
+                .current_pa()
+                    - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa * rank as f64;
         }
 
         if transient.previous_context_len == 0 {
@@ -1267,7 +1282,7 @@ impl TemporalCircuitRuntime {
         } else {
             let mut novel_candidate_count = 0usize;
             for (column_offset, &cell_id) in cells.iter().enumerate() {
-                if cell_id == active_first || cell_id == matching_first {
+                if self.column_drive_scratch[column_offset].current_pa > 0.0 {
                     continue;
                 }
                 self.novel_candidate_scratch[novel_candidate_count] = NovelCandidate {
@@ -1296,19 +1311,6 @@ impl TemporalCircuitRuntime {
                     }
                     .current_pa();
             }
-        }
-
-        if let Some(offset) = matching_offset {
-            self.column_drive_scratch[offset].current_pa = CandidateClass::Matching {
-                load: self.prospective_owner_load(matching_first, reserve)?,
-            }
-            .current_pa();
-        }
-        if let Some(offset) = active_offset {
-            self.column_drive_scratch[offset].current_pa = CandidateClass::Active {
-                load: self.prospective_owner_load(active_first, reserve)?,
-            }
-            .current_pa();
         }
 
         // Keep every materialized cohort cell in the physical race, including
@@ -2511,7 +2513,7 @@ mod tests {
     }
 
     #[test]
-    fn read_only_success_and_stop_make_zero_post_construction_allocations() {
+    fn read_only_success_and_multi_owner_race_make_zero_post_construction_allocations() {
         let mut runtime = python_oracle_runtime(255);
         let (trace, success_allocations) = count_allocations(|| {
             (
@@ -2528,28 +2530,24 @@ mod tests {
         let sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
         let segments = [
             TemporalSegmentInit {
-                owner: 22,
+                owner: 23,
                 sources: sources.clone(),
                 permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
             },
             TemporalSegmentInit {
-                owner: 23,
+                owner: 22,
                 sources,
                 permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
             },
         ];
-        let mut stopped =
-            runtime_with_offsets(config, vec![0.0; physical_count(config)], &segments);
-        stopped.recognize(0).unwrap();
-        let (first_stop, first_stop_allocations) = count_allocations(|| stopped.recognize(1));
-        assert_eq!(first_stop_allocations, 0);
-        assert!(matches!(
-            first_stop,
-            Err(TemporalCircuitStop::MultipleActiveOwners { .. })
-        ));
-        let (poisoned, poisoned_allocations) = count_allocations(|| stopped.recognize(1));
-        assert_eq!(poisoned_allocations, 0);
-        assert_eq!(poisoned, Err(TemporalCircuitStop::Poisoned));
+        let mut offsets = vec![0.0; physical_count(config)];
+        offsets[22] = -0.024_791_163_874_911_56;
+        offsets[23] = 0.033_505_381_138_863_34;
+        let mut multi_owner = runtime_with_offsets(config, offsets, &segments);
+        multi_owner.recognize(0).unwrap();
+        let (raced, race_allocations) = count_allocations(|| multi_owner.recognize(1));
+        assert_eq!(race_allocations, 0);
+        assert_eq!(raced.unwrap().winner_spikes[0].cell_id, 23);
     }
 
     #[test]
@@ -2650,110 +2648,97 @@ mod tests {
     }
 
     #[test]
-    fn multiple_active_and_matching_owners_stop_before_transient_commit() {
-        for (ticks, expect_active) in [(255, true), (205, false)] {
+    fn multiple_active_and_matching_owners_enter_the_deterministic_physical_race() {
+        for (ticks, expected_predicted_columns, class) in [
+            (205, 0, CandidateClass::Matching { load: 1 }),
+            (255, 1, CandidateClass::Active { load: 1 }),
+        ] {
             let config = config(22, 2, TemporalContextPolicy::BoundWinners);
             let sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
             let segments = [
                 TemporalSegmentInit {
-                    owner: 22,
+                    owner: 43,
                     sources: sources.clone(),
                     permanence_ticks: vec![ticks; PAIRS_PER_SEGMENT],
                 },
                 TemporalSegmentInit {
-                    owner: 23,
+                    owner: 42,
                     sources,
                     permanence_ticks: vec![ticks; PAIRS_PER_SEGMENT],
                 },
             ];
-            let mut runtime =
-                runtime_with_offsets(config, vec![0.0; physical_count(config)], &segments);
-            runtime.recognize(0).expect("context step");
-            let before_context = runtime.previous_context;
-            let before_winner_context = runtime.previous_winner_context;
-            let before_event = runtime.event_count;
-            let stop = runtime.recognize(1).unwrap_err();
-            if expect_active {
-                assert_eq!(
-                    stop,
-                    TemporalCircuitStop::MultipleActiveOwners {
-                        column: 11,
-                        owners: OwnerConflict {
-                            first: 22,
-                            second: 23,
-                            count: 2,
-                        },
-                    }
-                );
-            } else {
-                assert_eq!(
-                    stop,
-                    TemporalCircuitStop::MultipleMatchingOwners {
-                        column: 11,
-                        owners: OwnerConflict {
-                            first: 22,
-                            second: 23,
-                            count: 2,
-                        },
-                    }
-                );
-            }
-            assert_eq!(runtime.previous_context, before_context);
-            assert_eq!(runtime.previous_winner_context, before_winner_context);
-            assert_eq!(runtime.event_count, before_event);
-            assert_eq!(runtime.recognize(1), Err(TemporalCircuitStop::Poisoned));
+            let mut offsets = vec![0.0; physical_count(config)];
+            offsets[42] = -0.024_791_163_874_911_56;
+            offsets[43] = 0.033_505_381_138_863_34;
+            let mut first = runtime_with_offsets(config, offsets.clone(), &segments);
+            let mut replay = runtime_with_offsets(config, offsets, &segments);
+            first.recognize(0).expect("first context step");
+            replay.recognize(0).expect("replay context step");
+
+            let raced = first.recognize(1).expect("multi-owner race");
+            let repeated = replay.recognize(1).expect("deterministic replay");
+            assert_eq!(raced, repeated);
+            assert_eq!(raced.winner_spikes[10].cell_id, 43);
+            assert_eq!(raced.predicted_columns, expected_predicted_columns);
+            assert_eq!(
+                raced.winner_spikes[10].tick,
+                singleton_latency_ticks(class.current_pa(), 0.033_505_381_138_863_34).unwrap()
+            );
+            assert_eq!(first.column_drive_scratch[0].cell_id, 42);
+            assert_eq!(first.column_drive_scratch[1].cell_id, 43);
+            assert_eq!(
+                first.column_drive_scratch[0].current_pa.to_bits(),
+                (class.current_pa() - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa).to_bits(),
+            );
+            assert_eq!(
+                first.column_drive_scratch[1].current_pa.to_bits(),
+                class.current_pa().to_bits(),
+            );
         }
     }
 
     #[test]
-    fn literal_python_multiple_active_owner_stop_is_atomic_and_reset_keeps_poison() {
-        let config = config(22, 4, TemporalContextPolicy::BoundWinners);
-        let sources = vec![0, 8, 12, 16, 20, 24, 28, 32, 36, 40];
+    fn categorized_owner_count_above_total_race_width_remains_a_scientific_stop() {
+        let mut config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        config.novel_race_cap = 1;
+        config.max_pyramidal_cells += 1;
+        config.max_segments_per_cell = 1;
+        let sources = (0..PAIRS_PER_SEGMENT as u32).collect::<Vec<_>>();
         let segments = [
             TemporalSegmentInit {
-                owner: 44,
+                owner: 11,
                 sources: sources.clone(),
                 permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
             },
             TemporalSegmentInit {
-                owner: 45,
+                owner: 22,
                 sources,
                 permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
             },
         ];
-        let mut runtime =
-            runtime_with_offsets(config, vec![0.0; physical_count(config)], &segments);
-        let boundary = runtime.recognize(0).expect("boundary step");
-        let expected_context: [u32; CONTEXT_CELLS] = std::array::from_fn(|index| {
-            if index < ACTIVE_COLUMNS {
-                (4 * index) as u32
-            } else {
-                (44 + 4 * index) as u32
-            }
-        });
-        assert_eq!(boundary.context, expected_context);
-        assert_eq!(runtime.event_count, 1);
-
+        let mut members = base_members(config);
+        members[11].push(22);
+        let mut runtime = TemporalCircuitRuntime::new(
+            config,
+            two_token_codebook(),
+            members,
+            vec![0.0; physical_count(config)],
+            &segments,
+        )
+        .expect("valid committed reserve fixture");
+        runtime.recognize(0).expect("boundary step");
         assert_eq!(
             runtime.recognize(1),
-            Err(TemporalCircuitStop::MultipleActiveOwners {
+            Err(TemporalCircuitStop::CategorizedRaceCapacity {
                 column: 11,
-                owners: OwnerConflict {
-                    first: 44,
-                    second: 45,
-                    count: 2,
-                },
+                categorized_count: 2,
+                race_cap: 1,
             })
         );
-        assert_eq!(runtime.previous_context, expected_context);
-        assert_eq!(runtime.previous_winner_context, expected_context);
-        assert_eq!(runtime.event_count, 1);
-
-        runtime.reset_transient();
-        assert_eq!(runtime.previous_context_len, 0);
-        assert_eq!(runtime.previous_winner_context_len, 0);
-        assert_eq!(runtime.event_count, 0);
-        assert_eq!(runtime.recognize(0), Err(TemporalCircuitStop::Poisoned));
+        assert_eq!(
+            runtime.scientific_stop,
+            Some(TemporalPoisonCode::CategorizedRaceCapacity)
+        );
     }
 
     #[test]
@@ -3198,31 +3183,7 @@ mod tests {
         assert_eq!(TemporalPoisonCode::OwnerSegmentCapacity as u16, 14);
         assert_eq!(TemporalPoisonCode::PreallocatedCapacityInvariant as u16, 15);
 
-        assert_eq!(
-            TemporalCircuitStop::MultipleActiveOwners {
-                column: 11,
-                owners: OwnerConflict {
-                    first: 22,
-                    second: 23,
-                    count: 2,
-                },
-            }
-            .poison_code(),
-            Some(TemporalPoisonCode::MultipleActiveOwners),
-        );
-        let conflict = OwnerConflict {
-            first: 22,
-            second: 23,
-            count: 2,
-        };
         let mapped = [
-            (
-                TemporalCircuitStop::MultipleMatchingOwners {
-                    column: 11,
-                    owners: conflict,
-                },
-                TemporalPoisonCode::MultipleMatchingOwners,
-            ),
             (
                 TemporalCircuitStop::MalformedContextOrPolicy("literal fixture"),
                 TemporalPoisonCode::MalformedContextOrPolicy,
@@ -4612,56 +4573,46 @@ mod tests {
     }
 
     #[test]
-    fn plastic_scientific_stop_changes_only_the_terminal_latch() {
+    fn plastic_multi_owner_race_reinforces_the_winner_and_punishes_the_loser() {
         let circuit_config = config(22, 2, TemporalContextPolicy::BoundWinners);
         let sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
         let segments = [
             TemporalSegmentInit {
-                owner: 22,
+                owner: 23,
                 sources: sources.clone(),
                 permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
             },
             TemporalSegmentInit {
-                owner: 23,
+                owner: 22,
                 sources,
                 permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
             },
         ];
-        let mut runtime = runtime_with_offsets(
-            circuit_config,
-            vec![0.0; physical_count(circuit_config)],
-            &segments,
-        );
+        let mut offsets = vec![0.0; physical_count(circuit_config)];
+        offsets[22] = -0.024_791_163_874_911_56;
+        offsets[23] = 0.033_505_381_138_863_34;
+        let mut runtime = runtime_with_offsets(circuit_config, offsets, &segments);
         runtime.step(0, TemporalStepMode::Learn).unwrap();
-        let before_context = runtime.previous_context;
-        let before_winner_context = runtime.previous_winner_context;
-        let before_event = runtime.event_count;
-        let before_learning = runtime.learning_step;
-        let before_rows = [
-            runtime.store.runtime_segment_row(0).unwrap(),
-            runtime.store.runtime_segment_row(1).unwrap(),
-        ];
-
-        assert!(matches!(
-            runtime.step(1, TemporalStepMode::Learn),
-            Err(TemporalCircuitStop::MultipleActiveOwners { column: 11, .. })
-        ));
-        assert_eq!(runtime.previous_context, before_context);
-        assert_eq!(runtime.previous_winner_context, before_winner_context);
-        assert_eq!(runtime.event_count, before_event);
-        assert_eq!(runtime.learning_step, before_learning);
+        let learned = runtime.step(1, TemporalStepMode::Learn).unwrap();
+        assert_eq!(learned.winner_spikes[0].cell_id, 23);
+        assert_eq!(learned.punished_segments, 1);
         assert_eq!(
-            runtime.store.runtime_segment_row(0).unwrap(),
-            before_rows[0]
+            runtime
+                .store
+                .runtime_segment_row(0)
+                .unwrap()
+                .permanence_ticks,
+            [305; PAIRS_PER_SEGMENT],
         );
         assert_eq!(
-            runtime.store.runtime_segment_row(1).unwrap(),
-            before_rows[1]
+            runtime
+                .store
+                .runtime_segment_row(1)
+                .unwrap()
+                .permanence_ticks,
+            [253; PAIRS_PER_SEGMENT],
         );
-        assert_eq!(
-            runtime.scientific_stop,
-            Some(TemporalPoisonCode::MultipleActiveOwners),
-        );
+        assert_eq!(runtime.scientific_stop, None);
     }
 
     #[test]

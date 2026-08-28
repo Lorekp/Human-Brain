@@ -1764,23 +1764,25 @@ def test_another_active_segment_on_the_correct_winner_is_not_punished() -> None:
     assert circuit.learned_snapshot().segments[-1][2] == duplicate[2]
 
 
-def test_multiple_active_owners_in_one_column_stop_before_state_changes() -> None:
+def test_multiple_categorized_owners_share_the_physical_race() -> None:
     codebook = _disjoint_codebook(2)
     config = _config(2)
     circuit = SparseTemporalCortex(codebook, config=config)
     _learn_pair(circuit, 0, 1)
     snapshot = circuit.snapshot()
-    owner, contacts, permanences = snapshot.learned.segments[0]
-    column = owner // config.base_cells_per_column
-    other_owner = column * config.base_cells_per_column
-    if other_owner == owner:
-        other_owner += 1
+    original_owner, contacts, permanences = snapshot.learned.segments[0]
+    column = original_owner // config.base_cells_per_column
+    lower_owner = column * config.base_cells_per_column
+    higher_owner = lower_owner + 1
     ambiguous = replace(
         snapshot,
         learned=replace(
             snapshot.learned,
-            segments=snapshot.learned.segments
-            + ((other_owner, contacts, permanences),),
+            segments=(
+                (higher_owner, contacts, permanences),
+                (lower_owner, contacts, permanences),
+            )
+            + snapshot.learned.segments[1:],
         ),
     )
     circuit = SparseTemporalCortex.from_snapshot(
@@ -1790,12 +1792,50 @@ def test_multiple_active_owners_in_one_column_stop_before_state_changes() -> Non
     )
     circuit.reset_transient()
     circuit.recognize(0)
-    before = circuit.snapshot()
+    cells = circuit.snapshot().learned.column_cells[column]
+    lower_offset = cells.index(lower_owner)
+    higher_offset = cells.index(higher_owner)
+    connected = {0: config.theta_active, 1: config.theta_active}
+    potential = {0: config.contacts_per_segment, 1: config.contacts_per_segment}
 
-    with pytest.raises(RuntimeError, match="multiple active segment owners"):
-        circuit.recognize(1)
+    active_currents = circuit._column_currents(
+        cells,
+        {higher_owner: 0, lower_owner: 1},
+        {higher_owner: 0, lower_owner: 1},
+        connected,
+        potential,
+    )
+    expected_active = config.active_current_pa + config.homeostatic_current_pa / 2.0
+    assert active_currents[higher_offset] == pytest.approx(expected_active)
+    assert active_currents[lower_offset] == pytest.approx(
+        expected_active - config.novel_rank_spacing_pa
+    )
 
-    assert circuit.snapshot() == before
+    mixed_currents = circuit._column_currents(
+        cells,
+        {higher_owner: 0},
+        {higher_owner: 0, lower_owner: 1},
+        connected,
+        potential,
+    )
+    expected_matching = (
+        config.matching_current_pa + config.homeostatic_current_pa / 2.0
+    )
+    assert mixed_currents[higher_offset] == pytest.approx(expected_active)
+    assert mixed_currents[lower_offset] == pytest.approx(expected_matching)
+
+    raced = circuit.recognize(1)
+    target_offset = codebook[1].index(column)
+    assert raced.winner_cells[target_offset] == higher_owner
+
+    replay = SparseTemporalCortex.from_snapshot(
+        codebook,
+        config=config,
+        snapshot=ambiguous,
+    )
+    replay.reset_transient()
+    replay.recognize(0)
+    assert replay.recognize(1) == raced
 
 
 def test_underpowered_gaba_stops_without_advancing_transient_state() -> None:

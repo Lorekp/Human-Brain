@@ -863,6 +863,8 @@ class SparseTemporalCortex:
                 cells,
                 best_predicted,
                 best_matching,
+                connected,
+                potential,
             )
             basket_id = self._basket_offset + column
             race = self._physics.race_currents_with_inhibition(
@@ -1045,6 +1047,8 @@ class SparseTemporalCortex:
         cells: tuple[int, ...],
         best_predicted: Mapping[int, int],
         best_matching: Mapping[int, int],
+        connected: Mapping[int, int],
+        potential: Mapping[int, int],
     ) -> np.ndarray:
         cfg = self.config
         currents = np.zeros(len(cells), dtype=np.float64)
@@ -1053,17 +1057,28 @@ class SparseTemporalCortex:
             dtype=np.int64,
         )
         offsets = {cell: offset for offset, cell in enumerate(cells)}
-        predicted_cells = tuple(cell for cell in cells if cell in best_predicted)
-        matching_cells = tuple(cell for cell in cells if cell in best_matching)
-        if len(predicted_cells) > 1:
-            raise RuntimeError(
-                "STOP: multiple active segment owners in one minicolumn"
-            )
-        if len(matching_cells) > 1:
-            raise RuntimeError(
-                "STOP: multiple matching segment owners in one minicolumn"
-            )
-
+        predicted_cells = sorted(
+            (cell for cell in cells if cell in best_predicted),
+            key=lambda cell: (
+                -int(connected.get(best_predicted[cell], 0)),
+                -int(potential.get(best_predicted[cell], 0)),
+                int(best_predicted[cell]),
+                int(cell),
+            ),
+        )
+        matching_cells = sorted(
+            (
+                cell
+                for cell in cells
+                if cell not in best_predicted and cell in best_matching
+            ),
+            key=lambda cell: (
+                -int(potential.get(best_matching[cell], 0)),
+                -int(connected.get(best_matching[cell], 0)),
+                int(best_matching[cell]),
+                int(cell),
+            ),
+        )
         categorized = set(predicted_cells).union(matching_cells)
         if len(categorized) > cfg.novel_race_cap:
             raise RuntimeError(
@@ -1096,10 +1111,14 @@ class SparseTemporalCortex:
                 cfg.novel_current_pa - rank * cfg.novel_rank_spacing_pa
             )
 
-        for cell in matching_cells:
-            currents[offsets[cell]] = cfg.matching_current_pa
-        for cell in predicted_cells:
-            currents[offsets[cell]] = cfg.active_current_pa
+        for rank, cell in enumerate(matching_cells):
+            currents[offsets[cell]] = (
+                cfg.matching_current_pa - rank * cfg.novel_rank_spacing_pa
+            )
+        for rank, cell in enumerate(predicted_cells):
+            currents[offsets[cell]] = (
+                cfg.active_current_pa - rank * cfg.novel_rank_spacing_pa
+            )
 
         driven = currents > 0.0
         currents[driven] += cfg.homeostatic_current_pa / (

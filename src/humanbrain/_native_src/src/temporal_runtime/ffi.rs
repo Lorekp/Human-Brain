@@ -995,18 +995,6 @@ fn stop_report(
                 "temporal runtime is already poisoned",
             )
         }
-        TemporalCircuitStop::MultipleActiveOwners { column, owners } => {
-            report.location = u64::from(column);
-            report.required = 1;
-            report.observed = u64::from(owners.count);
-            terminal_stop(report, stop, "multiple active owners")
-        }
-        TemporalCircuitStop::MultipleMatchingOwners { column, owners } => {
-            report.location = u64::from(column);
-            report.required = 1;
-            report.observed = u64::from(owners.count);
-            terminal_stop(report, stop, "multiple matching owners")
-        }
         TemporalCircuitStop::CategorizedRaceCapacity {
             column,
             categorized_count,
