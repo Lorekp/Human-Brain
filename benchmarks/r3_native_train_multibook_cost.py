@@ -1,4 +1,4 @@
-"""Fail-fast native physical cost slice over the first two TRAIN books.
+"""Fail-fast native physical cost slice over a canonical TRAIN-book prefix.
 
 This is pre-outcome engineering evidence.  It authenticates only TRAIN data,
 uses the production codebook, defaults to fitted seed-17 cells at arm (16, 18),
@@ -110,6 +110,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--theta-match", type=int, default=ARM[0])
     parser.add_argument("--theta-active", type=int, default=ARM[1])
     parser.add_argument("--construction-seed", type=int, default=CONSTRUCTION_SEED)
+    parser.add_argument("--book-count", type=int, default=BOOK_COUNT)
     parser.add_argument(
         "--output",
         type=Path,
@@ -120,19 +121,24 @@ def _parse_args() -> argparse.Namespace:
         parser.error("thresholds must satisfy 1 <= theta-match <= theta-active <= 20")
     if not 0 <= args.construction_seed <= 0xFFFF_FFFF:
         parser.error("construction-seed must fit uint32")
+    if not 1 <= args.book_count <= 49:
+        parser.error("book-count must be in the canonical TRAIN range 1..49")
     non_default = (
         (args.theta_match, args.theta_active) != ARM
         or args.construction_seed != CONSTRUCTION_SEED
+        or args.book_count != BOOK_COUNT
     )
     if non_default and args.output is None:
-        parser.error("non-default threshold or seed arms require an explicit --output")
+        parser.error("non-default thresholds, seed, or book count require an explicit --output")
     args.output = args.output or OUTPUT_PATH
     if non_default and args.output.resolve() == OUTPUT_PATH.resolve():
         parser.error("non-default arms cannot overwrite the committed default artifact")
     return args
 
 
-def _load_books() -> tuple[object, tuple[tuple[object, np.ndarray], ...], int]:
+def _load_books(
+    book_count: int,
+) -> tuple[object, tuple[tuple[object, np.ndarray], ...], int]:
     started_ns = time.perf_counter_ns()
     verified = load_verified_train_input()
     input_load_ns = time.perf_counter_ns() - started_ns
@@ -140,9 +146,9 @@ def _load_books() -> tuple[object, tuple[tuple[object, np.ndarray], ...], int]:
     if len(encoded) != 49:
         raise RuntimeError("canonical verified TRAIN book count drifted")
     selected: list[tuple[object, np.ndarray]] = []
-    for ordinal, book in enumerate(encoded[:BOOK_COUNT]):
+    for ordinal, book in enumerate(encoded[:book_count]):
         if book.ordinal != ordinal or book.token_count < 2:
-            raise RuntimeError("canonical first-two-book authority drifted")
+            raise RuntimeError("canonical TRAIN-prefix authority drifted")
         tokens = np.frombuffer(book.token_bytes_le_i32, dtype="<i4")
         if tokens.size != book.token_count:
             raise RuntimeError(f"{book.short_name} token materialization drifted")
@@ -483,7 +489,7 @@ def _run_books(
 def main() -> int:
     args = _parse_args()
     arm = (args.theta_match, args.theta_active)
-    verified, selected, input_load_ns = _load_books()
+    verified, selected, input_load_ns = _load_books(args.book_count)
     transition_count = sum(book.token_count - 1 for book, _tokens in selected)
     total_tokens = sum(book.token_count for book, _tokens in selected)
     protocol, production, bounded, definition_build_ns = _bounded_definition(
@@ -533,7 +539,8 @@ def main() -> int:
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "outcome": "PASS" if scientific_stop is None else "SCIENTIFIC_STOP",
         "claim_boundary": (
-            "one physical LEARN replay of the first two canonical TRAIN books only; "
+            f"one physical LEARN replay of the first {args.book_count} canonical "
+            "TRAIN books only; "
             f"arm ({arm[0]},{arm[1]}), seed {args.construction_seed}, production "
             "codebook, exact atomic transient reset "
             "at both book boundaries, synthetic pre-outcome authority, and a "
@@ -547,7 +554,7 @@ def main() -> int:
             "tokenizer_sha256": verified.tokenizer_sha256,
             "full_train_token_count": verified.token_count,
             "verified_train_books_materialized": 49,
-            "replayed_book_count": BOOK_COUNT,
+            "replayed_book_count": args.book_count,
             "replayed_token_count": total_tokens,
             "replayed_transition_count": transition_count,
             "replayed_token_sha256_le_i32": hashlib.sha256(
