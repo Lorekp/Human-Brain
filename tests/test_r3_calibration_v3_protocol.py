@@ -995,6 +995,53 @@ def test_execution_order_and_future_result_contract_are_predeclared() -> None:
         "final_verdict_path": (
             "experiments/r3_pilot/calibration_v3_artifacts/selection/final-verdict.json"
         ),
+        "final_verdict": {
+            "construction_seeds": [3, 7, 17, 29, 43, 59, 83, 101],
+            "phase": "final",
+            "result_keys": [
+                "selected_arm_slug",
+                "verdict",
+                "first_failed_gate",
+            ],
+            "screen_id": "threshold_selection",
+            "verdicts": {
+                "PASS_R3_CALIBRATION_V3": {
+                    "first_failed_gate": None,
+                    "selected_arm_slug": "candidate_arm_required",
+                    "thresholds": "selected_arm_required",
+                },
+                "REJECT_R3_CALIBRATION_V3": {
+                    "post_selection": {
+                        "first_failed_gates": [
+                            "independent_confirmation",
+                            "deterministic_confirmation",
+                        ],
+                        "selected_arm_slug": "candidate_arm_required",
+                        "thresholds": "selected_arm_required",
+                    },
+                    "pre_selection": {
+                        "first_failed_gates": [
+                            "electrical_v3",
+                            "compressed_reserve_q4",
+                            "full_cohort_q255",
+                            "r3_f0_development",
+                            "development_selection",
+                        ],
+                        "selected_arm_slug": None,
+                        "thresholds": None,
+                    },
+                },
+            },
+        },
+        "preterminal_r3_stop": {
+            "final_first_failed_gate_by_phase": {
+                "deterministic_confirmation": "deterministic_confirmation",
+                "development": "r3_f0_development",
+            },
+            "stop_sources": ["native", "transaction", "scorer"],
+            "terminal_pass_r3_result": "required",
+            "terminal_r3_result_publication": "forbidden",
+        },
         "protocol_digest": "sha256(canonical_json(build_protocol()))",
         "envelopes": {
             "outer_keys": ["artifact_id", "payload", "payload_sha256", "schema_version"],
@@ -1064,7 +1111,7 @@ def test_execution_order_and_future_result_contract_are_predeclared() -> None:
         ],
         "selection_publication_order": [
             "development-selection.json after all development gates",
-            "final-verdict.json after all confirmation gates",
+            "final-verdict.json once after confirmed PASS or the first fail-fast gate",
         ],
         "writes_must_be_exclusive": True,
     }

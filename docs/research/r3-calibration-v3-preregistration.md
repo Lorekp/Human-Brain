@@ -121,9 +121,32 @@ STOP without retry, and no
 persistent receipt sidecar is allowed. A durably published checkpoint without
 its matching manifest is an orphan requiring manual STOP, not an input eligible
 for automatic recovery.
-The development-selection file is written once after all development gates;
-the final-verdict file is written once after all confirmation gates. Paths
-reserved for unselected arms remain absent.
+The development-selection file is written once after all development gates.
+The final-verdict file is written once after confirmed PASS or the first
+fail-fast gate. Paths reserved for unselected arms remain absent.
+
+The final verdict is a `threshold_selection` result in phase `final`. Its
+`construction_seeds` are the unique influencing seeds in frozen development-
+then-confirmation order: `3, 7, 17, 29, 43, 59, 83, 101`. Its inner result has
+exactly `selected_arm_slug`, `verdict`, and `first_failed_gate`. The verdict is
+exactly `PASS_R3_CALIBRATION_V3` or `REJECT_R3_CALIBRATION_V3`. A PASS names one
+candidate arm, binds the outer thresholds to that arm, and has a null
+`first_failed_gate`. A REJECT names the first failed gate. Before selection,
+that gate is exactly one of `electrical_v3`, `compressed_reserve_q4`,
+`full_cohort_q255`, `r3_f0_development`, or `development_selection`, and both
+the selected arm and outer thresholds are null. After selection, the gate is
+exactly `independent_confirmation` or `deterministic_confirmation`, and the
+selected candidate arm and matching thresholds are required. Fail-fast paths
+do not create later fixture artifacts and do not represent them as `NOT_RUN`;
+their reserved paths remain absent.
+
+An R3-F0 native, transaction, or scorer STOP before terminal-result publication
+must not fabricate a terminal R3 result or terminal identity. A development
+STOP is recorded only by a final verdict whose `first_failed_gate` is
+`r3_f0_development`; a deterministic-confirmation STOP uses
+`deterministic_confirmation`. This is the sole exception to the rule that every
+executed development arm reports an artifact. A terminal R3 PASS still requires
+its terminal R3 result artifact.
 
 The filesystem threat model includes process crash, power loss, benign
 concurrent directory preparation, and symlink or Windows reparse-point traversal
@@ -362,6 +385,9 @@ payload keys are `artifact_path`, `claim_boundary`, `construction_seeds`,
 `source_bundle_identity_sha256`, and `thresholds`. An R3-F0 `result` has exactly
 `arm_slug`, `comparisons`, `kind`, `reference`, `resumes`,
 `structural_metrics`, `train_input`, and `verdict`.
+The final-verdict result follows the exact selected-arm, verdict, failed-gate,
+seed-order, and nullability contract frozen in Section 1.1 and in the machine
+`result_contract`.
 
 ### 5.2 Adopted active-wall contract
 

@@ -131,6 +131,20 @@ _Q255_PASS_RESULT_KEYS = frozenset(
 )
 _Q255_STOP_RESULT_KEYS = frozenset({"reason", "status"})
 _DEVELOPMENT_SELECTION_RESULT_KEYS = frozenset({"selected_arm_slug", "verdicts"})
+_FINAL_VERDICT_RESULT_KEYS = frozenset({"selected_arm_slug", "verdict", "first_failed_gate"})
+_FINAL_PASS_VERDICT = "PASS_R3_CALIBRATION_V3"
+_FINAL_REJECT_VERDICT = "REJECT_R3_CALIBRATION_V3"
+_FINAL_PRE_SELECTION_FAILURE_GATES = (
+    "electrical_v3",
+    "compressed_reserve_q4",
+    "full_cohort_q255",
+    "r3_f0_development",
+    "development_selection",
+)
+_FINAL_POST_SELECTION_FAILURE_GATES = (
+    "independent_confirmation",
+    "deterministic_confirmation",
+)
 _Q255_REGIMES = (
     "production-overlap-ordered-pairs",
     "target-disjoint-isolation-control",
@@ -217,6 +231,7 @@ class ArtifactDestinationKind(StrEnum):
     BINARY_CHECKPOINT = "BINARY_CHECKPOINT"
     DEVELOPMENT_SELECTION = "DEVELOPMENT_SELECTION"
     ELECTRICAL_RESULT = "ELECTRICAL_RESULT"
+    FINAL_VERDICT = "FINAL_VERDICT"
     Q4_RESULT = "Q4_RESULT"
     Q255_RESULT = "Q255_RESULT"
     RESUME_MANIFEST = "RESUME_MANIFEST"
@@ -808,6 +823,53 @@ def _fixture_phase_seeds(
     )
 
 
+def _final_verdict_contract(
+    validated_protocol: Mapping[str, object],
+    *,
+    construction_seeds: tuple[int, ...],
+) -> dict[str, Any]:
+    result_contract = _protocol_object(
+        validated_protocol.get("result_contract"),
+        label="result_contract",
+    )
+    observed = _protocol_object(
+        result_contract.get("final_verdict"),
+        label="result_contract.final_verdict",
+    )
+    expected = {
+        "construction_seeds": list(construction_seeds),
+        "phase": "final",
+        "result_keys": [
+            "selected_arm_slug",
+            "verdict",
+            "first_failed_gate",
+        ],
+        "screen_id": "threshold_selection",
+        "verdicts": {
+            _FINAL_PASS_VERDICT: {
+                "first_failed_gate": None,
+                "selected_arm_slug": "candidate_arm_required",
+                "thresholds": "selected_arm_required",
+            },
+            _FINAL_REJECT_VERDICT: {
+                "post_selection": {
+                    "first_failed_gates": list(_FINAL_POST_SELECTION_FAILURE_GATES),
+                    "selected_arm_slug": "candidate_arm_required",
+                    "thresholds": "selected_arm_required",
+                },
+                "pre_selection": {
+                    "first_failed_gates": list(_FINAL_PRE_SELECTION_FAILURE_GATES),
+                    "selected_arm_slug": None,
+                    "thresholds": None,
+                },
+            },
+        },
+    }
+    if observed != expected:
+        raise ArtifactAuthorityStop("final-verdict contract differs from the frozen policy")
+    return observed
+
+
 def _protocol_path_list(value: object, *, label: str) -> tuple[str, ...]:
     if type(value) is not list or not value:
         raise ArtifactAuthorityStop(f"validated protocol {label} must be a non-empty list")
@@ -946,6 +1008,13 @@ def _derive_destination_specs(
         phase: _fixture_phase_seeds(validated_protocol, phase)
         for phase in ("development", "independent_confirmation")
     }
+    final_construction_seeds = tuple(
+        dict.fromkeys(fixture_seeds["development"] + fixture_seeds["independent_confirmation"])
+    )
+    final_contract = _final_verdict_contract(
+        validated_protocol,
+        construction_seeds=final_construction_seeds,
+    )
     electrical_contract = _protocol_object(
         contract.get("electrical_v3"),
         label="electrical_v3 artifact contract",
@@ -1074,6 +1143,16 @@ def _derive_destination_specs(
             screen_id="threshold_selection",
             phase="development",
             construction_seeds=fixture_seeds["development"],
+            candidate_thresholds=tuple(arms.items()),
+        )
+    )
+    add(
+        DestinationSpec(
+            relative_path=final_selection_path,
+            kind=ArtifactDestinationKind.FINAL_VERDICT,
+            screen_id=final_contract["screen_id"],
+            phase=final_contract["phase"],
+            construction_seeds=final_construction_seeds,
             candidate_thresholds=tuple(arms.items()),
         )
     )
@@ -1498,6 +1577,61 @@ def _validate_development_selection(
         raise EnvelopeStop("development selection thresholds differ from the selected arm")
 
 
+def _bind_final_selected_arm(
+    payload: dict[str, Any],
+    result: dict[str, Any],
+    candidates: dict[str, tuple[int, int]],
+) -> None:
+    selected = _require_nonempty_string(
+        result["selected_arm_slug"],
+        label="final selected_arm_slug",
+    )
+    if selected not in candidates:
+        raise EnvelopeStop("final selected_arm_slug is not a candidate arm")
+    _validate_thresholds(payload["thresholds"])
+    theta_match, theta_active = candidates[selected]
+    if payload["thresholds"] != {
+        "theta_active": theta_active,
+        "theta_match": theta_match,
+    }:
+        raise EnvelopeStop("final thresholds differ from the selected arm")
+
+
+def _validate_final_verdict(
+    payload: dict[str, Any],
+    destination: DestinationSpec,
+) -> None:
+    result = _require_exact_object(
+        payload["result"],
+        _FINAL_VERDICT_RESULT_KEYS,
+        label="final verdict result",
+    )
+    candidates = dict(destination.candidate_thresholds or ())
+    if not candidates:
+        raise EnvelopeStop("final-verdict destination has no candidate arms")
+    verdict = _require_nonempty_string(result["verdict"], label="final verdict")
+    if verdict not in {_FINAL_PASS_VERDICT, _FINAL_REJECT_VERDICT}:
+        raise EnvelopeStop("final verdict is not a frozen calibration-v3 verdict")
+
+    first_failed_gate = result["first_failed_gate"]
+    if verdict == _FINAL_PASS_VERDICT:
+        if first_failed_gate is not None:
+            raise EnvelopeStop("final PASS requires a null first_failed_gate")
+        _bind_final_selected_arm(payload, result, candidates)
+        return
+
+    if type(first_failed_gate) is not str or first_failed_gate not in {
+        *_FINAL_PRE_SELECTION_FAILURE_GATES,
+        *_FINAL_POST_SELECTION_FAILURE_GATES,
+    }:
+        raise EnvelopeStop("final REJECT has no frozen first_failed_gate")
+    if first_failed_gate in _FINAL_PRE_SELECTION_FAILURE_GATES:
+        if result["selected_arm_slug"] is not None or payload["thresholds"] is not None:
+            raise EnvelopeStop("pre-selection final REJECT requires null arm and thresholds")
+        return
+    _bind_final_selected_arm(payload, result, candidates)
+
+
 def _validate_r3_result(payload: dict[str, Any], destination: DestinationSpec) -> None:
     _bind_thresholds(payload, destination)
     _require_object(payload["result"], label="result")
@@ -1530,6 +1664,7 @@ def _validate_result_payload(
     if destination.kind not in {
         ArtifactDestinationKind.DEVELOPMENT_SELECTION,
         ArtifactDestinationKind.ELECTRICAL_RESULT,
+        ArtifactDestinationKind.FINAL_VERDICT,
         ArtifactDestinationKind.Q4_RESULT,
         ArtifactDestinationKind.Q255_RESULT,
         ArtifactDestinationKind.R3_RESULT,
@@ -1545,6 +1680,8 @@ def _validate_result_payload(
         _validate_q255_result(payload, destination)
     elif destination.kind is ArtifactDestinationKind.DEVELOPMENT_SELECTION:
         _validate_development_selection(payload, destination)
+    elif destination.kind is ArtifactDestinationKind.FINAL_VERDICT:
+        _validate_final_verdict(payload, destination)
     else:
         _validate_r3_result(payload, destination)
 
@@ -1849,6 +1986,7 @@ class CalibrationV3ArtifactStore:
         if destination.kind not in {
             ArtifactDestinationKind.DEVELOPMENT_SELECTION,
             ArtifactDestinationKind.ELECTRICAL_RESULT,
+            ArtifactDestinationKind.FINAL_VERDICT,
             ArtifactDestinationKind.Q4_RESULT,
             ArtifactDestinationKind.Q255_RESULT,
             ArtifactDestinationKind.R3_RESULT,

@@ -24,6 +24,18 @@ ARTIFACT_ROOT = "experiments/r3_pilot/calibration_v3_artifacts"
 THRESHOLD_ARMS = ((10, 13), (16, 18), (18, 20), (20, 20))
 DEVELOPMENT_SEEDS = (3, 7, 17, 29)
 CONFIRMATION_SEEDS = (43, 59, 83, 101)
+FINAL_VERDICT_SEEDS = tuple(dict.fromkeys(DEVELOPMENT_SEEDS + CONFIRMATION_SEEDS))
+FINAL_PRE_SELECTION_FAILURE_GATES = (
+    "electrical_v3",
+    "compressed_reserve_q4",
+    "full_cohort_q255",
+    "r3_f0_development",
+    "development_selection",
+)
+FINAL_POST_SELECTION_FAILURE_GATES = (
+    "independent_confirmation",
+    "deterministic_confirmation",
+)
 RESUME_TRANSITION_EVENTS = (529_340, 1_058_681, 1_588_022)
 PRODUCTION_TOKEN_IDS = tuple(range(256)) + tuple(range(1024, 1536))
 PRODUCTION_TARGET_TOKEN = 32
@@ -1167,6 +1179,44 @@ def build_protocol() -> dict[str, Any]:
             "development_selection_path": artifact_contract()["selection"]["development"],
             "development_artifacts_must_report_every_executed_arm": True,
             "final_verdict_path": artifact_contract()["selection"]["final"],
+            "final_verdict": {
+                "construction_seeds": list(FINAL_VERDICT_SEEDS),
+                "phase": "final",
+                "result_keys": [
+                    "selected_arm_slug",
+                    "verdict",
+                    "first_failed_gate",
+                ],
+                "screen_id": "threshold_selection",
+                "verdicts": {
+                    "PASS_R3_CALIBRATION_V3": {
+                        "first_failed_gate": None,
+                        "selected_arm_slug": "candidate_arm_required",
+                        "thresholds": "selected_arm_required",
+                    },
+                    "REJECT_R3_CALIBRATION_V3": {
+                        "post_selection": {
+                            "first_failed_gates": list(FINAL_POST_SELECTION_FAILURE_GATES),
+                            "selected_arm_slug": "candidate_arm_required",
+                            "thresholds": "selected_arm_required",
+                        },
+                        "pre_selection": {
+                            "first_failed_gates": list(FINAL_PRE_SELECTION_FAILURE_GATES),
+                            "selected_arm_slug": None,
+                            "thresholds": None,
+                        },
+                    },
+                },
+            },
+            "preterminal_r3_stop": {
+                "final_first_failed_gate_by_phase": {
+                    "deterministic_confirmation": "deterministic_confirmation",
+                    "development": "r3_f0_development",
+                },
+                "stop_sources": ["native", "transaction", "scorer"],
+                "terminal_pass_r3_result": "required",
+                "terminal_r3_result_publication": "forbidden",
+            },
             "protocol_digest": "sha256(canonical_json(build_protocol()))",
             "envelopes": {
                 "outer_keys": ["artifact_id", "payload", "payload_sha256", "schema_version"],
@@ -1236,7 +1286,7 @@ def build_protocol() -> dict[str, Any]:
             ],
             "selection_publication_order": [
                 "development-selection.json after all development gates",
-                "final-verdict.json after all confirmation gates",
+                "final-verdict.json once after confirmed PASS or the first fail-fast gate",
             ],
             "writes_must_be_exclusive": True,
         },

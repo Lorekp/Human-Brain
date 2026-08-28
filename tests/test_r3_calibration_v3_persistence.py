@@ -74,6 +74,47 @@ def _source_binding(*, runnable: bool = True) -> dict[str, object]:
     return {"blockers": [] if runnable else ["runner disabled"], "runnable": runnable}
 
 
+def _final_verdict_contract() -> dict[str, object]:
+    return {
+        "construction_seeds": [3, 43],
+        "phase": "final",
+        "result_keys": [
+            "selected_arm_slug",
+            "verdict",
+            "first_failed_gate",
+        ],
+        "screen_id": "threshold_selection",
+        "verdicts": {
+            "PASS_R3_CALIBRATION_V3": {
+                "first_failed_gate": None,
+                "selected_arm_slug": "candidate_arm_required",
+                "thresholds": "selected_arm_required",
+            },
+            "REJECT_R3_CALIBRATION_V3": {
+                "post_selection": {
+                    "first_failed_gates": [
+                        "independent_confirmation",
+                        "deterministic_confirmation",
+                    ],
+                    "selected_arm_slug": "candidate_arm_required",
+                    "thresholds": "selected_arm_required",
+                },
+                "pre_selection": {
+                    "first_failed_gates": [
+                        "electrical_v3",
+                        "compressed_reserve_q4",
+                        "full_cohort_q255",
+                        "r3_f0_development",
+                        "development_selection",
+                    ],
+                    "selected_arm_slug": None,
+                    "thresholds": None,
+                },
+            },
+        },
+    }
+
+
 def _resume_cursor() -> dict[str, object]:
     return {
         "after_transition_event": 529340,
@@ -154,7 +195,10 @@ def _validated_protocol() -> dict[str, object]:
             }
         },
         "claim_boundary": _claim_boundary(),
-        "result_contract": {"artifact_creation_requires_runnable_source_binding": True},
+        "result_contract": {
+            "artifact_creation_requires_runnable_source_binding": True,
+            "final_verdict": _final_verdict_contract(),
+        },
         "source_binding": _source_binding(),
         "threshold_selection": {
             "candidate_arms": [[18, 20]],
@@ -362,6 +406,35 @@ def _development_selection_payload() -> dict[str, object]:
     }
 
 
+def _final_verdict_payload(
+    *,
+    first_failed_gate: str | None = None,
+    selected_arm_slug: str | None = "theta-m-18_theta-a-20",
+    thresholds: dict[str, int] | None = None,
+    verdict: str = "PASS_R3_CALIBRATION_V3",
+) -> dict[str, object]:
+    return {
+        "artifact_path": FINAL_VERDICT_PATH,
+        "claim_boundary": _claim_boundary(),
+        "construction_seeds": [3, 43],
+        "phase": "final",
+        "protocol_sha256": _protocol_sha256(),
+        "result": {
+            "first_failed_gate": first_failed_gate,
+            "selected_arm_slug": selected_arm_slug,
+            "verdict": verdict,
+        },
+        "screen_id": "threshold_selection",
+        "source_binding": _source_binding(),
+        "source_bundle_identity_sha256": EXPECTED_SOURCE_BUNDLE_SHA256,
+        "thresholds": (
+            {"theta_active": 20, "theta_match": 18}
+            if thresholds is None and selected_arm_slug is not None
+            else thresholds
+        ),
+    }
+
+
 def _raw_resume(payload: dict[str, object] | None = None) -> bytes:
     exact_payload = _resume_payload() if payload is None else payload
     return _canonical_test_bytes(
@@ -513,10 +586,11 @@ def test_nonrunnable_protocol_blocks_official_artifact_encoding(tmp_path: Path) 
         (Q4_DEVELOPMENT_PATH, _q4_result_payload),
         (Q255_PRODUCTION_DEVELOPMENT_PATH, _q255_result_payload),
         (DEVELOPMENT_SELECTION_PATH, _development_selection_payload),
+        (FINAL_VERDICT_PATH, _final_verdict_payload),
     ],
-    ids=("electrical", "q4", "q255", "development-selection"),
+    ids=("electrical", "q4", "q255", "development-selection", "final-verdict"),
 )
-def test_fixture_and_development_selection_results_use_exact_destination_codecs(
+def test_fixture_and_selection_results_use_exact_destination_codecs(
     tmp_path: Path,
     path: str,
     payload_factory: Callable[[], dict[str, object]],
@@ -531,7 +605,7 @@ def test_fixture_and_development_selection_results_use_exact_destination_codecs(
     assert decoded.payload == payload
 
 
-def test_fixture_destination_selects_schema_and_final_verdict_remains_unfrozen(
+def test_fixture_destination_selects_schema_and_final_verdict_kind_is_exact(
     tmp_path: Path,
 ) -> None:
     store = _open_store(repository_root=tmp_path, validated_protocol=_validated_protocol())
@@ -541,8 +615,93 @@ def test_fixture_destination_selects_schema_and_final_verdict_remains_unfrozen(
 
     with pytest.raises(persistence.EnvelopeStop):
         store.encode_result(crossed)
-    with pytest.raises(persistence.ArtifactAuthorityStop):
-        store.decode(FINAL_VERDICT_PATH, b"{}")
+    assert store.require_result_destination(FINAL_VERDICT_PATH).kind is (
+        persistence.ArtifactDestinationKind.FINAL_VERDICT
+    )
+
+
+def test_final_verdict_accepts_pass_and_both_fail_fast_reject_shapes(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(repository_root=tmp_path, validated_protocol=_validated_protocol())
+    payloads = [
+        _final_verdict_payload(),
+        _final_verdict_payload(
+            first_failed_gate="development_selection",
+            selected_arm_slug=None,
+            thresholds=None,
+            verdict="REJECT_R3_CALIBRATION_V3",
+        ),
+        _final_verdict_payload(
+            first_failed_gate="independent_confirmation",
+            verdict="REJECT_R3_CALIBRATION_V3",
+        ),
+    ]
+
+    for payload in payloads:
+        raw = store.encode_result(payload)
+        assert store.decode(FINAL_VERDICT_PATH, raw).payload == payload
+
+
+def test_final_verdict_rejects_schema_value_and_selection_binding_drift(
+    tmp_path: Path,
+) -> None:
+    store = _open_store(repository_root=tmp_path, validated_protocol=_validated_protocol())
+    variants: list[dict[str, object]] = []
+
+    extra_key = _final_verdict_payload()
+    assert type(extra_key["result"]) is dict
+    extra_key["result"]["extra"] = False
+    variants.append(extra_key)
+
+    unknown_verdict = _final_verdict_payload(verdict="PASS")
+    variants.append(unknown_verdict)
+
+    unknown_gate = _final_verdict_payload(
+        first_failed_gate="q4",
+        verdict="REJECT_R3_CALIBRATION_V3",
+    )
+    variants.append(unknown_gate)
+
+    pass_with_failure = _final_verdict_payload(first_failed_gate="electrical_v3")
+    variants.append(pass_with_failure)
+
+    pre_selection_with_arm = _final_verdict_payload(
+        first_failed_gate="electrical_v3",
+        verdict="REJECT_R3_CALIBRATION_V3",
+    )
+    variants.append(pre_selection_with_arm)
+
+    post_selection_without_arm = _final_verdict_payload(
+        first_failed_gate="deterministic_confirmation",
+        selected_arm_slug=None,
+        thresholds=None,
+        verdict="REJECT_R3_CALIBRATION_V3",
+    )
+    variants.append(post_selection_without_arm)
+
+    wrong_thresholds = _final_verdict_payload(thresholds={"theta_active": 18, "theta_match": 16})
+    variants.append(wrong_thresholds)
+
+    wrong_seed_order = _final_verdict_payload()
+    wrong_seed_order["construction_seeds"] = [43, 3]
+    variants.append(wrong_seed_order)
+
+    for payload in variants:
+        with pytest.raises(persistence.EnvelopeStop):
+            store.encode_result(payload)
+
+
+def test_store_rejects_final_verdict_contract_drift(tmp_path: Path) -> None:
+    frozen = _validated_protocol()
+    result_contract = frozen["result_contract"]
+    assert type(result_contract) is dict
+    final_contract = result_contract["final_verdict"]
+    assert type(final_contract) is dict
+    final_contract["phase"] = "independent_confirmation"
+
+    with pytest.raises(persistence.ArtifactAuthorityStop, match="final-verdict contract"):
+        _open_store(repository_root=tmp_path, validated_protocol=frozen)
 
 
 def test_q4_and_q255_stop_rows_match_runner_shapes_but_unrun_rows_have_no_codec(
@@ -1496,15 +1655,13 @@ def test_narrow_result_write_seam_requires_prepared_parent_and_absent_final(
         Q255_PRODUCTION_DEVELOPMENT_PATH,
         DEVELOPMENT_RESULT_PATH,
         DEVELOPMENT_SELECTION_PATH,
+        FINAL_VERDICT_PATH,
     ):
         result_path = store.prepare_absent_result(relative_path)
         assert result_path == _artifact_path(tmp_path, relative_path)
         result_path.write_bytes(b"existing immutable result")
         with pytest.raises(persistence.ArtifactPathStop, match="already exists"):
             store.prepare_absent_result(relative_path)
-
-    with pytest.raises(persistence.ArtifactPathStop, match="official calibration-v3 result"):
-        store.prepare_absent_result(FINAL_VERDICT_PATH)
 
 
 def test_committed_resume_open_reads_manifest_before_requiring_checkpoint(
