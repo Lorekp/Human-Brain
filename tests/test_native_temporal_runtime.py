@@ -2801,6 +2801,56 @@ def test_advance_error_retains_only_the_committed_prefix(
     assert error.observed == 99
 
 
+def test_typed_generation_error_retains_only_the_committed_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    library, _identity = _install_fake_runtime(monkeypatch)
+
+    def fail_after_first_generation(
+        handle: object,
+        output: object,
+        output_capacity: int,
+        report_out: object,
+    ) -> int:
+        assert output_capacity == runtime_adapter._MAX_TYPED_GENERATIONS
+        library._generate(handle, output, report_out)
+        report = library._report(report_out)
+        report.status = NativeTemporalRuntimeStatus.SCIENTIFIC_STOP
+        report.completed_prefix = 1
+        message = b"typed generation stopped"
+        report.message_len = len(message)
+        report.message_utf8[: len(message)] = message
+        return int(NativeTemporalRuntimeStatus.SCIENTIFIC_STOP)
+
+    library.humanbrain_temporal_circuit_runtime_generate_typed_v1.callback = (
+        fail_after_first_generation
+    )
+    convert_generation = runtime_adapter._convert_generation
+    converted_records = 0
+
+    def count_conversion(
+        native: runtime_adapter._NativeGeneration,
+        definition: NativeTemporalCircuitDefinition,
+    ) -> TemporalGeneration:
+        nonlocal converted_records
+        converted_records += 1
+        return convert_generation(native, definition)
+
+    monkeypatch.setattr(runtime_adapter, "_convert_generation", count_conversion)
+    with NativeTemporalCircuit.fresh(_tiny_definition()) as circuit:
+        with pytest.raises(NativeTemporalRuntimeError) as stopped:
+            circuit.generate_typed()
+
+    error = stopped.value
+    assert error.status is NativeTemporalRuntimeStatus.SCIENTIFIC_STOP
+    assert error.completed_prefix == 1
+    assert error.completed_steps == ()
+    assert len(error.completed_generations) == 1
+    assert error.completed_generations[0].surface_token_id == 7
+    assert error.completed_generations[0].generation_index == 1
+    assert converted_records == 1
+
+
 @pytest.mark.parametrize("defect", ("status-mismatch", "message-tail", "message-utf8", "step-flag"))
 def test_fake_native_transport_defects_fail_as_internal_invariants(
     monkeypatch: pytest.MonkeyPatch,

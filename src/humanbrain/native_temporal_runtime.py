@@ -1154,6 +1154,7 @@ class NativeTemporalRuntimeError(RuntimeError):
         poison_code: int = 0,
         stage_code: int = 0,
         completed_steps: tuple[TemporalCircuitStep, ...] = (),
+        completed_generations: tuple[TemporalGeneration, ...] = (),
     ) -> None:
         if type(status) is not NativeTemporalRuntimeStatus:
             raise TypeError("status must be a NativeTemporalRuntimeStatus")
@@ -1161,6 +1162,8 @@ class NativeTemporalRuntimeError(RuntimeError):
             raise TypeError("message must be text")
         if not 0 <= len(completed_steps) <= completed_prefix:
             raise ValueError("retained steps cannot exceed the native committed prefix")
+        if not 0 <= len(completed_generations) <= completed_prefix:
+            raise ValueError("retained generations cannot exceed the native committed prefix")
         self.status = status
         self.message = message
         self.completed_prefix = completed_prefix
@@ -1170,10 +1173,16 @@ class NativeTemporalRuntimeError(RuntimeError):
         self.poison_code = poison_code
         self.stage_code = stage_code
         self.completed_steps = completed_steps
+        self.completed_generations = completed_generations
         detail = f"{status.name.lower()}: {message}"
         if completed_prefix:
             detail += f" (committed prefix: {completed_prefix})"
-        if len(completed_steps) != completed_prefix:
+        if completed_generations:
+            if len(completed_generations) != completed_prefix:
+                detail += (
+                    f" (safely decoded generations: {len(completed_generations)})"
+                )
+        elif len(completed_steps) != completed_prefix:
             detail += f" (safely decoded steps: {len(completed_steps)})"
         super().__init__(detail)
 
@@ -1414,6 +1423,7 @@ def _invariant_error(
     *,
     completed_prefix: int | None = None,
     completed_steps: tuple[TemporalCircuitStep, ...] = (),
+    completed_generations: tuple[TemporalGeneration, ...] = (),
     required: int = 0,
     observed: int = 0,
     location: int = 0,
@@ -1421,11 +1431,16 @@ def _invariant_error(
     return NativeTemporalRuntimeError(
         NativeTemporalRuntimeStatus.INTERNAL_INVARIANT,
         f"native ABI invariant failed: {message}",
-        completed_prefix=(len(completed_steps) if completed_prefix is None else completed_prefix),
+        completed_prefix=(
+            max(len(completed_steps), len(completed_generations))
+            if completed_prefix is None
+            else completed_prefix
+        ),
         required=required,
         observed=observed,
         location=location,
         completed_steps=completed_steps,
+        completed_generations=completed_generations,
     )
 
 
@@ -1509,6 +1524,7 @@ def _decode_report(
 def _raise_report(
     decoded: _DecodedReport,
     completed_steps: tuple[TemporalCircuitStep, ...] = (),
+    completed_generations: tuple[TemporalGeneration, ...] = (),
 ) -> None:
     raise NativeTemporalRuntimeError(
         decoded.status,
@@ -1520,6 +1536,7 @@ def _raise_report(
         poison_code=decoded.poison_code,
         stage_code=decoded.stage_code,
         completed_steps=completed_steps,
+        completed_generations=completed_generations,
     )
 
 
@@ -3317,11 +3334,47 @@ class NativeTemporalCircuit:
                 _MAX_TYPED_GENERATIONS,
                 ctypes.byref(report),
             )
-            decoded = _decode_report(
-                returned,
-                report,
-                maximum_completed_prefix=_MAX_TYPED_GENERATIONS,
-            )
+            try:
+                decoded = _decode_report(
+                    returned,
+                    report,
+                    maximum_completed_prefix=_MAX_TYPED_GENERATIONS,
+                )
+            except NativeTemporalRuntimeError as exc:
+                recovered: list[TemporalGeneration] = []
+                for index in range(exc.completed_prefix):
+                    try:
+                        recovered.append(
+                            _convert_generation(native[index], self._definition)
+                        )
+                    except NativeTemporalRuntimeError:
+                        break
+                raise NativeTemporalRuntimeError(
+                    exc.status,
+                    exc.message,
+                    completed_prefix=exc.completed_prefix,
+                    required=exc.required,
+                    observed=exc.observed,
+                    location=exc.location,
+                    poison_code=exc.poison_code,
+                    stage_code=exc.stage_code,
+                    completed_generations=tuple(recovered),
+                ) from exc
+            converted: list[TemporalGeneration] = []
+            for index in range(decoded.completed_prefix):
+                try:
+                    converted.append(
+                        _convert_generation(native[index], self._definition)
+                    )
+                except NativeTemporalRuntimeError as exc:
+                    detail = exc.message.removeprefix("native ABI invariant failed: ")
+                    raise _invariant_error(
+                        detail,
+                        completed_prefix=decoded.completed_prefix,
+                        completed_generations=tuple(converted),
+                        location=index,
+                    ) from exc
+            completed_generations = tuple(converted)
             if any(
                 any(bytes(native[index]))
                 for index in range(decoded.completed_prefix, _MAX_TYPED_GENERATIONS)
@@ -3329,18 +3382,20 @@ class NativeTemporalCircuit:
                 raise _invariant_error(
                     "typed generation wrote beyond its reported surface prefix",
                     completed_prefix=decoded.completed_prefix,
+                    completed_generations=completed_generations,
                 )
             if decoded.status is not NativeTemporalRuntimeStatus.OK:
-                _raise_report(decoded)
+                _raise_report(
+                    decoded,
+                    completed_generations=completed_generations,
+                )
             if decoded.required or decoded.observed or decoded.location:
                 raise _invariant_error(
                     "successful typed generation carries unexpected scalar diagnostics",
                     completed_prefix=decoded.completed_prefix,
+                    completed_generations=completed_generations,
                 )
-            return tuple(
-                _convert_generation(native[index], self._definition)
-                for index in range(decoded.completed_prefix)
-            )
+            return completed_generations
 
     def generate(self) -> TemporalGeneration:
         """Elect and commit one physical surface-token transaction.
