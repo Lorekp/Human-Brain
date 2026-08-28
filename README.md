@@ -33,6 +33,7 @@ The repositories do not import or modify one another.
 | Developmental growth | Primary 384/1,536-cell predictive gate failed; 6,144-cell diagnostic showed structural and rank improvements | Honest negative result; staged learning remained worse than full-size-from-start |
 | SWE-bench integration | Instance-specific SQLFluff 1625 checkpoint resolved 1/1 | Proves the interface only; the checkpoint was grown from that instance's public solution trajectory |
 | Typed program decoding | TRAIN replay 3/3 labels; frozen teacher-free DEV 0/2 | Memorization, not prompt-conditioned composition |
+| Native role/place scalar generation | One retained circuit learned add/subtract routes, then teacher-free DEV generated and executed exact unseen `boost(x) = x + 37` and `drop(x) = x - 14` functions with copied identifiers/literals and ordinary EOS | Public synthetic two-route micro-capability through atomic fitted-cell races; not family-disjoint composition or SWE evidence |
 | Public Simple-SWE baseline | 0/90 train and 0/27 dev | Prompt-only cell baseline failed, largely through invalid syntax |
 | Million-scale CUDA text training | Post speed-waves the 1M-cell CUDA pipeline reaches 96.1 grow / 101.6 inference tok/s (from 31.4 / 32.6; ×3.06 / ×3.12), putting a full-KJV epoch near 5 h at 1M cells (≈15 h before optimization) | Measured engineering throughput ([report](benchmarks/scale_opt_gpu_report.md), [corpus plan](docs/research/cell-lm-corpus-bible.md)); the ≈5 h epoch is projected from tok/s, not a completed run |
 | CPU event-proportional runtime | L3 stepping + Seams A/B + L5 bulk marshal: event-proportional beats full-touch at every measured uniform activity ≥1% (17.9× / 3.1× / 1.5× / 1.4× at 1/2/5/20%) and sparse text-like tokens sustain 363 tok/s | Throughput only ([findings](experiments/procedural_adapter_spike/FINDINGS.md), [post-Seam-B rerun](experiments/l4_activity_matrix/FINDINGS.md)); the ≥100 tok/s gate remains sparse-regime-only (best ≥1% uniform: 15.4 tok/s) |
@@ -40,7 +41,8 @@ The repositories do not import or modify one another.
 | SDR union memory | G-U1 separation passes hugely (concept arms 0.40–0.61 mean cosine vs byte arms 0.16–0.19) while G-U2 decode fails in every arm — NEGATIVE_WITH_LOCALIZATION_V2, Direction B elevated | Honest negative ([protocol](docs/research/ustate-preregistration.md), [findings](experiments/ustate_probes/FINDINGS.md)); union state separates but does not decode |
 | T-ROUTE trained mapping | E1/E2/E3 falsified with mechanism localization: winners collapse to a query-independent ~170-bit static pool, and a random-span control reproduces the gated arm exactly (placement carries zero signal) | Program-grade termination of Bible-QA for fixed local connectivity ([conclusion](docs/research/t-route-program-conclusion.md)); three remaining paths need user direction |
 | Predictive race bias (P-B) | Proportional bias reached 14.55% held-out span accuracy versus 3.60% shuffled (McNemar p≈8.7×10⁻¹⁵), 3.21× unigram, and 3.58× majority prior | Frozen mechanism gate passed; the smaller 14.55% versus 13.15% incumbent-off margin and TRAIN-self/VAL ratio 0.375 keep this promising rather than a generalization proof |
-| Path-2 R3 C1 readiness | Independent prelaunch audit found the merged GLIF5+Python-tracker runner is not the preregistered GLIF3 plateau/race experiment, learns during held-out scoring, and understates the schedule | **Hard NO-GO; cohort unspent.** Repair is fixture-first under the [governing audit](docs/research/r3-c1-prelaunch-audit.md) |
+| Path-2 full TRAIN development | Native `(16,18)` replay completed all 49 TRAIN books and 2,117,412 token steps without a scientific STOP, ending at 23,286,478 live segments | Gross completion/cost evidence only: the count is 72 above the frozen distinct-key ideal, timing was contaminated by concurrent work, and no held-out/C1 material was read |
+| Path-2 R3 C1 readiness | Native plateau/race mechanics now exist, but exact repeat identity/count, scientific controls, clean cap measurement, source refreeze, and CN-2 remain open | **Hard NO-GO; cohort unspent.** Repair remains governed by the [prelaunch audit](docs/research/r3-c1-prelaunch-audit.md), and launch still requires explicit user GO |
 
 Exact protocols, hashes, hardware, and limitations live in
 [benchmark status](docs/benchmark-status.md). Results are kept even when they
@@ -152,8 +154,9 @@ and [the Gate-3 procedural slice](docs/procedural-runtime-gate3-slice.md).
 ### Programs and software tasks
 
 The same cell circuit implements the mini-swe-agent `HumanCellModel` interface
-and a typed direct cell-to-program seam. Current results show that the runtime
-interfaces work but held-out composition does not.
+and a typed direct cell-to-program seam. The historical typed lane still fails
+held-out composition. The newer native temporal lane now has a public synthetic
+two-route slot-recombination pass, but no family-disjoint Simple-SWE result.
 
 - [Simple SWE curriculum](docs/simple-swe-curriculum.md) defines the sealed,
   family-disjoint evaluation and unopened capability boundary.
@@ -163,6 +166,9 @@ interfaces work but held-out composition does not.
   exact replay of the public labels.
 - [Typed DEV result](docs/typed-program-public-dev-v1-results.md) records the
   0/2 teacher-free failure.
+- [Native role/place scalar probe](experiments/r3_pilot/public_train_dev_role_place_scalar_routing_probe.json)
+  records the sole public run that copied unseen names and multi-digit literals,
+  selected add versus subtract, compiled, executed, and reached EOS.
 - [Layer-0 scalar plumbing](docs/cell-program-layer0.md) is implemented but
   has not been executed or scored against its public composition definitions.
 - [Typed composition A012](docs/typed-composition-a012-v1.md) specifies the
@@ -198,10 +204,11 @@ interfaces work but held-out composition does not.
   negative with localization, and the T-ROUTE trained-mapping family is
   falsified in all three tested third-factor forms
   ([program conclusion](docs/research/t-route-program-conclusion.md)).
-- Path 2 is the current mainline, but its first C1 implementation is held
-  before launch: segment recognition and winner election must be moved into
-  physically simulated fitted-cell plateau/race dynamics before any score is
-  valid ([prelaunch audit](docs/research/r3-c1-prelaunch-audit.md)).
+- Path 2 is the current mainline. Segment recognition and winner election now
+  execute in native fitted-cell plateau/race dynamics, but C1 remains held:
+  full-TRAIN development exposed a repeat-identity/count miss, and the repaired
+  controls, cap measurement, CN-2 refreeze, and explicit user GO are still open
+  ([readiness](experiments/r3_pilot/C1_READINESS.md)).
 - [Indicator assessment instrument](docs/indicator-assessment/RUBRIC.md)
   tracks architectural similarity to consciousness-science indicator sets
   (RPT/GWT/HOT/AST/PP/AE families) across model versions using strictly

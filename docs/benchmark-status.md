@@ -296,6 +296,44 @@ records, and their bound commits remain the reproducibility anchors. DEV v1 is
 retired permanently and is not a tuning set. The unexecuted v4 A0/A1/A2 stage
 is frozen in `docs/typed-composition-a012-v1.md`.
 
+## Native role/place scalar development
+
+The newer native temporal lane now owns generation atomically: internal COPY
+controls, physical role/place recall, fitted output-cell races, feedback, and
+EOS all execute behind the no-argument `NativeTemporalCircuit.generate()`
+surface. An identifier-only prototype was replaced rather than retained; one
+slot-generic transient store now binds identifier and literal roles.
+
+The sole public synthetic combined run trained add/1 and subtract/2 templates
+on one circuit. Teacher-free DEV then generated exact compiling functions for
+unseen `boost`/37 and `drop`/14, executed both over the fixed public inputs
+`{-5, 0, 9}`, and produced the expected six results before ordinary EOS. The
+multi-digit literal bytes held temporal state across place recall. No target,
+oracle result, Python token selection, learned head, protected material, or C1
+material entered generation. This is a two-route slot-recombination
+micro-capability, not family-disjoint composition or SWE evidence. See
+`experiments/r3_pilot/public_train_dev_role_place_scalar_routing_probe.json`.
+
+## R3 full-TRAIN development replay
+
+The native `(theta_match=16, theta_active=18)`, seed-17 cost runner completed
+all 49 canonical TRAIN books: 2,117,412 token steps, 49 transient resets,
+23,286,478 allocated/live segments, 2,853 punishments, 410 full predictions,
+and no native scientific STOP. Held-out books materialized: zero. The final
+logical-state SHA-256 is
+`d4a3ae81c034c68c8f2f606dcbb2a6d0e1c2dc2337979383ed2e64033ac3305a`.
+
+The runner's `PASS` means complete gross replay, native/tracked count parity,
+and physical winner/basket/GABA causality under its transition-bounded store.
+It is not an R3-F0 structural pass. The frozen distinct-key fixture expects
+23,286,406 segments; the 72-segment excess is a seven-repeat net shortfall from
+full 11-column reuse, including five partial one-column predictions. The
+aggregate record cannot attribute those replacements between punishment-driven
+deactivation and winner-key divergence. Recorded throughput is also excluded
+from cap evidence because concurrent native work contaminated timing after
+about book 12. See
+`benchmarks/r3_native_train_full_two_tier_theta16_18_seed17.json`.
+
 ## Reproducibility artifacts
 
 Hashes below identify the canonical LF-normalized file bytes stored in Git,
@@ -349,6 +387,8 @@ not a platform-specific checkout's newline representation.
 | `artifacts/large_scale_capability_validation_v1.json` | `633a3cf3d0ae46f7d7e8c8e5ba0a6cd617566aac66844069499c20a102f0c71d` |
 | `benchmarks/large_scale_capability_protocol_v1.json` | `004caa095e796f8671a5989148b881058c0cdc16334101f31de42784fdd84535` |
 | `benchmarks/simple_swe_protocol_v1.json` | `f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2` |
+| `experiments/r3_pilot/public_train_dev_role_place_scalar_routing_probe.json` | `3afac696077d7524444b9128c52e1c0655468955697626a0451eaaf539f23ec4` |
+| `benchmarks/r3_native_train_full_two_tier_theta16_18_seed17.json` | `a972902e716e521590db61df0efc6292bd469017bd79ce93286aa51e8132d467` |
 | `artifacts/swe-dev-gemma/sqlfluff__sqlfluff-1625/sqlfluff__sqlfluff-1625.traj.json` | `d8d1007bc618f5c28794c21327834018a7187f6822b40c775afe8375d7c9b0a3` |
 | Gemma 4 12B QAT Q4_0 GGUF | `93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b` |
 
