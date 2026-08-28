@@ -182,7 +182,7 @@ def test_head_to_root_row_delta_is_removed_before_pointer_split() -> None:
     ) == (5, 0)
 
 
-def test_native_pins_are_complete_and_probe_remains_unspent() -> None:
+def test_native_pins_and_spent_result_are_frozen() -> None:
     assert set(probe.EXPECTED_NATIVE_MECHANISM_SHA256) == {
         path.relative_to(probe.REPO_ROOT).as_posix()
         for path in probe.NATIVE_MECHANISM_PATHS
@@ -193,8 +193,20 @@ def test_native_pins_are_complete_and_probe_remains_unspent() -> None:
             probe._sha256_file(path)
             == probe.EXPECTED_NATIVE_MECHANISM_SHA256[relative]
         )
-    assert not probe.OUTPUT_PATH.exists()
-    assert not probe.SPEND_MARKER_PATH.exists()
+    assert probe._sha256_file(probe.OUTPUT_PATH) == (
+        "feb547bf49b7e4ca200bc1bdc93477fc01d2088cdf33dffcd47def8f8f461283"
+    )
+    assert probe._sha256_file(probe.SPEND_MARKER_PATH) == (
+        "7b8b58cbdebe887801b6f5c3b351b1cfc76aa88ee9991b59ea491e40c690fa77"
+    )
+    payload = json.loads(probe.OUTPUT_PATH.read_text(encoding="utf-8"))
+    assert payload["outcome"] == "STOP_NATIVE_TYPED_ROOT_OPERATION_TRANSFER"
+    assert payload["first_failure"]["detail"]["completed_surface_prefix"] == 23
+    target = payload["visible_train_target_teacher_free"]
+    assert target["generations"] == []
+    assert target["program"]["exact_tokens"] is False
+    assert target["sandbox"]["attempted"] is False
+    assert payload["authority"]["teacher_free_target_attempts_completed"] == 1
 
 
 def test_marker_immediately_precedes_one_no_argument_generation_call() -> None:
@@ -246,5 +258,5 @@ def test_spend_marker_is_durable_exclusive_and_cleanup_is_local(
         artifact.unlink(missing_ok=True)
         test_dir.rmdir()
     assert not test_dir.exists()
-    assert not canonical_artifact.exists()
-    assert not canonical_marker.exists()
+    assert canonical_artifact.exists()
+    assert canonical_marker.exists()

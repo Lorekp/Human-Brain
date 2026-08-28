@@ -1,0 +1,13 @@
+{
+  "canonical_artifact_path": "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.json",
+  "created_at_utc": "2026-08-28T16:01:57.764432+00:00",
+  "experiment": "r3-public-simple-swe-native-typed-root-operation-transfer",
+  "probe_source_sha256": "59fe2acde729ac8f097d297b27ec118d0ddf7f7a5d4668f9cf169fd823f4c452",
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_key": [
+    "t0_scalar_clamp",
+    4
+  ],
+  "target_task_id": "simple-swe-v1/train/tier-0/t0_scalar_clamp/004"
+}
