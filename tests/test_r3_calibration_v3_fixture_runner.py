@@ -893,7 +893,6 @@ def test_even_a_synthetic_future_authority_reaches_only_the_disabled_seam(
         "_run_source_bound_q4_vertical_slice",
         lambda value: calls.append("q4") or {"authority": value.protocol_sha256},
     )
-
     assert runner.main(["--run-frozen-plan"]) == runner.EXIT_STOP
     assert calls == ["electrical", "q4"]
     assert "remaining calibration-v3 execution" in capsys.readouterr().err

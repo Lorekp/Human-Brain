@@ -243,6 +243,293 @@ def _run_source_bound_q4_vertical_slice(
     }
 
 
+def _q255_step_cells(step: object, field: str) -> tuple[int, ...]:
+    return tuple(spike.cell_id for spike in getattr(step, field))
+
+
+def _q255_overlap_gate(
+    *,
+    regime: str,
+    source_winners: Sequence[tuple[int, ...]],
+    source_contexts: Sequence[tuple[int, ...]],
+    theta_match: int,
+) -> int:
+    """Validate the frozen winner/relay collision bound."""
+
+    if len(set(source_contexts)) != len(source_contexts):
+        raise FixtureRunnerStop(f"q255 {regime} STOP: source contexts are not unique")
+    winner_sets = tuple(frozenset(winners) for winners in source_winners)
+    context_sets = tuple(frozenset(context) for context in source_contexts)
+    maximum_winner_overlap = 0
+    for right_index, right_winners in enumerate(winner_sets):
+        right_context = context_sets[right_index]
+        for left_index in range(right_index):
+            winner_overlap = len(right_winners.intersection(winner_sets[left_index]))
+            physical_overlap = len(right_context.intersection(context_sets[left_index]))
+            if physical_overlap != 2 * winner_overlap:
+                raise FixtureRunnerStop(
+                    f"q255 {regime} STOP: winner/relay overlap is not exactly doubled"
+                )
+            maximum_winner_overlap = max(maximum_winner_overlap, winner_overlap)
+    if maximum_winner_overlap >= (theta_match + 1) // 2:
+        raise FixtureRunnerStop(
+            f"q255 {regime} STOP: winner overlap reaches the frozen rejection bound"
+        )
+    return maximum_winner_overlap
+
+
+def _run_full_cohort_q255_regime(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    regime: str,
+    definition: object,
+    sources: Sequence[tuple[int, ...]],
+    novel_sources: Sequence[tuple[int, ...]],
+    target_token: int,
+) -> dict[str, int | str]:
+    """Execute one bounded physical q=255 regime without publishing artifacts."""
+
+    protocol = authority.protocol
+    screen = protocol["screens"]["full_cohort_q255"]
+    expected_exposures = screen["target_exposures"]
+    if len(sources) != expected_exposures or len(set(sources)) != expected_exposures:
+        raise FixtureRunnerStop(f"q255 {regime} STOP: source schedule is not exact and unique")
+
+    native = importlib.import_module("humanbrain.native_temporal_runtime")
+    observed_digest = definition.circuit_identity_sha256()
+    source_winners: list[tuple[int, ...]] = []
+    source_contexts: list[tuple[int, ...]] = []
+    target_winners: list[tuple[int, ...]] = []
+    base_full_identity = None
+    final_identity = None
+    try:
+        with native.NativeTemporalCircuit.fresh(definition) as circuit:
+            for exposure, source in enumerate(sources, 1):
+                source_steps = circuit.advance_block(
+                    source,
+                    mode=native.TemporalStepMode.READ_ONLY,
+                    reset_before=True,
+                )
+                if len(source_steps) != len(source):
+                    raise FixtureRunnerStop(
+                        f"q255 {regime} STOP at exposure {exposure}: source length drifted"
+                    )
+                source_step = source_steps[-1]
+                target_steps = circuit.advance_block(
+                    [target_token],
+                    mode=native.TemporalStepMode.LEARN,
+                    reset_before=False,
+                )
+                if len(target_steps) != 1:
+                    raise FixtureRunnerStop(
+                        f"q255 {regime} STOP at exposure {exposure}: target length drifted"
+                    )
+                target = target_steps[0]
+                if (
+                    target.matching_segments != 0
+                    or target.active_segments != 0
+                    or target.predicted_columns != 0
+                    or target.allocated_segments != 11
+                    or target.punished_segments != 0
+                ):
+                    raise FixtureRunnerStop(
+                        f"q255 {regime} STOP at exposure {exposure}: novel allocation gate "
+                        f"failed (matching={target.matching_segments}, "
+                        f"active={target.active_segments}, "
+                        f"predicted_columns={target.predicted_columns}, "
+                        f"allocated={target.allocated_segments}, "
+                        f"punished={target.punished_segments})"
+                    )
+
+                winners = _q255_step_cells(source_step, "winner_spikes")
+                relays = _q255_step_cells(source_step, "winner_relay_spikes")
+                context = tuple(source_step.context)
+                emitted = _q255_step_cells(target, "winner_spikes")
+                if (
+                    len(winners) != 11
+                    or len(relays) != 11
+                    or len(context) != 22
+                    or len(emitted) != 11
+                    or set(winners).intersection(relays)
+                    or set(context) != set(winners).union(relays)
+                    or context != tuple(source_step.winner_context)
+                ):
+                    raise FixtureRunnerStop(
+                        f"q255 {regime} STOP at exposure {exposure}: physical context drifted"
+                    )
+                source_winners.append(winners)
+                source_contexts.append(context)
+                target_winners.append(emitted)
+
+                if exposure == screen["base_full_exposure"]:
+                    base_full_identity = circuit.checkpoint_identity()
+
+            final_identity = circuit.checkpoint_identity()
+            if len(set(target_winners)) != expected_exposures:
+                raise FixtureRunnerStop(f"q255 {regime} STOP: target winner tuples are not unique")
+            maximum_winner_overlap = _q255_overlap_gate(
+                regime=regime,
+                source_winners=source_winners,
+                source_contexts=source_contexts,
+                theta_match=definition.config.theta_match,
+            )
+
+            for recurrence, (source, expected_winners) in enumerate(
+                zip(sources, target_winners, strict=True),
+                1,
+            ):
+                replay_steps = circuit.advance_block(
+                    (*source, target_token),
+                    mode=native.TemporalStepMode.READ_ONLY,
+                    reset_before=True,
+                )
+                replay = replay_steps[-1]
+                if (
+                    _q255_step_cells(replay, "winner_spikes") != expected_winners
+                    or replay.matching_segments != 11
+                    or replay.active_segments != 11
+                    or replay.predicted_columns != 11
+                    or replay.allocated_segments != 0
+                    or replay.punished_segments != 0
+                ):
+                    raise FixtureRunnerStop(
+                        f"q255 {regime} STOP at recurrence {recurrence}: stored owners "
+                        f"drifted (winners_equal="
+                        f"{_q255_step_cells(replay, 'winner_spikes') == expected_winners}, "
+                        f"matching={replay.matching_segments}, "
+                        f"active={replay.active_segments}, "
+                        f"predicted_columns={replay.predicted_columns})"
+                    )
+
+            before_novel = circuit.checkpoint_identity()
+            for probe, source in enumerate(novel_sources, 1):
+                novel = circuit.advance_block(
+                    (*source, target_token),
+                    mode=native.TemporalStepMode.READ_ONLY,
+                    reset_before=True,
+                )[-1]
+                if (
+                    novel.matching_segments != 0
+                    or novel.active_segments != 0
+                    or novel.predicted_columns != 0
+                    or novel.allocated_segments != 0
+                    or novel.punished_segments != 0
+                ):
+                    raise FixtureRunnerStop(
+                        f"q255 {regime} STOP at novel probe {probe}: false match or prediction"
+                    )
+            after_novel = circuit.checkpoint_identity()
+            if (
+                after_novel.segment_count != before_novel.segment_count
+                or after_novel.semantic_index_sha256 != before_novel.semantic_index_sha256
+            ):
+                raise FixtureRunnerStop(f"q255 {regime} STOP: read-only probes mutated learned state")
+    except FixtureRunnerStop:
+        raise
+    except Exception as exc:
+        raise FixtureRunnerStop(f"q255 {regime} native execution STOP: {exc}") from exc
+
+    base_cells = definition.config.column_count * definition.config.base_cells_per_column
+    if (
+        base_full_identity is None
+        or base_full_identity.segment_count != screen["base_full_exposure"] * 11
+        or base_full_identity.cohort_count != 0
+        or base_full_identity.next_reserve_cell != base_cells
+    ):
+        raise FixtureRunnerStop(f"q255 {regime} STOP: exposure 2040 base-load gate failed")
+    if (
+        final_identity is None
+        or final_identity.segment_count != screen["expected_target_segments"]
+        or final_identity.cohort_count != 11
+        or final_identity.next_reserve_cell != screen["expected_reserve_cursor"]
+        or final_identity.poison_code != 0
+    ):
+        raise FixtureRunnerStop(f"q255 {regime} STOP: reserve transition drifted")
+    return {
+        "circuit_identity_sha256": observed_digest,
+        "learned_recurrences": len(sources),
+        "maximum_winner_overlap": maximum_winner_overlap,
+        "next_reserve_cell": final_identity.next_reserve_cell,
+        "novel_probes": len(novel_sources),
+        "segment_count": final_identity.segment_count,
+        "unique_source_contexts": len(set(source_contexts)),
+        "unique_target_winner_tuples": len(set(target_winners)),
+    }
+
+
+def _run_source_bound_q255_production_slice(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    arm: tuple[int, int],
+    seed: int,
+) -> dict[str, int | str]:
+    """Run one explicit q=255 production-overlap development candidate."""
+
+    protocol = authority.protocol
+    definitions = _definition_module()
+    governing = _governing_protocol()
+    production_sources = tuple(tuple(pair) for pair in governing.production_overlap_pairs())
+    return _run_full_cohort_q255_regime(
+        authority,
+        regime="production-overlap",
+        definition=definitions.build_full_cohort_q255_production_definition(
+            protocol,
+            arm,
+            seed,
+        ),
+        sources=production_sources,
+        novel_sources=(),
+        target_token=governing.PRODUCTION_TARGET_TOKEN,
+    )
+
+
+def _run_source_bound_q255_disjoint_slice(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    arm: tuple[int, int],
+    seed: int,
+) -> dict[str, int | str]:
+    """Run the target-disjoint control for one production-passing candidate."""
+
+    protocol = authority.protocol
+    definitions = _definition_module()
+    governing = _governing_protocol()
+    learned, novel = governing.target_disjoint_context_ids()
+    return _run_full_cohort_q255_regime(
+        authority,
+        regime="target-disjoint",
+        definition=definitions.build_full_cohort_q255_disjoint_definition(
+            protocol,
+            arm,
+            seed,
+        ),
+        sources=tuple((token_id,) for token_id in learned),
+        novel_sources=tuple((token_id,) for token_id in novel),
+        target_token=governing.DISJOINT_TARGET_TOKEN,
+    )
+
+
+def _run_source_bound_q255_vertical_slices(
+    authority: authority_contract.FrozenPlanAuthority,
+    *,
+    arm: tuple[int, int],
+    seed: int,
+) -> dict[str, dict[str, int | str]]:
+    """Run both q=255 regimes for one explicit development candidate."""
+
+    production = _run_source_bound_q255_production_slice(
+        authority,
+        arm=arm,
+        seed=seed,
+    )
+    disjoint = _run_source_bound_q255_disjoint_slice(
+        authority,
+        arm=arm,
+        seed=seed,
+    )
+    return {"production_overlap": production, "target_disjoint": disjoint}
+
+
 def _execute_frozen_plan(authority: authority_contract.FrozenPlanAuthority) -> int:
     """Execute the first real vertical slice, then stop before later screens."""
 

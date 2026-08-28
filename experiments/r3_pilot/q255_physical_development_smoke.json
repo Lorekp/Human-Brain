@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "artifact_id": "r3-q255-physical-development-smoke",
+  "status": "NONOFFICIAL_SYNTHETIC_AUTHORITY_DIAGNOSTIC",
+  "protocol": {
+    "runnable": false,
+    "sha256": "1cc1c48c57dac9d3a4eb1bbf13534b4a76e9a815fcdf3707051cb28f92575fb4"
+  },
+  "authority": {
+    "kind": "synthetic_test_authority",
+    "official_source_binding": false,
+    "source_bundle_identity_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "claim_boundary": {
+    "scope": "q255 physical development candidate ladder only",
+    "capability_evidence": false,
+    "c1_launched": false,
+    "electrical_q4_grid_executed_here": false,
+    "held_out_data_accessed": false,
+    "independent_confirmation_executed": false,
+    "official_artifact_publication": false,
+    "r3_f0_executed": false,
+    "source_binding_refreshed": false,
+    "threshold_selected": false
+  },
+  "mechanics": {
+    "source_tokens": "READ_ONLY",
+    "target_token": "LEARN",
+    "validated_gates": [
+      "segment_count_and_reserve_transition",
+      "learned_source_recurrence",
+      "target_disjoint_128_novel_zero_match_and_prediction"
+    ]
+  },
+  "candidate_order": [
+    [10, 13],
+    [16, 18],
+    [18, 20],
+    [20, 20]
+  ],
+  "arms": [
+    {
+      "theta_match": 10,
+      "theta_active": 13,
+      "status": "STOP",
+      "seed": 17,
+      "production_overlap": {
+        "circuit_identity_sha256": "82e3d8b65ea6bb9bc528a2d8713d4d781eed6c4094af297375bc9c09ee06f188",
+        "stop_exposure": 1597,
+        "matching": 11,
+        "active": 0,
+        "predicted_columns": 0,
+        "allocated": 0,
+        "punished": 0
+      },
+      "target_disjoint": "NOT_RUN_FAIL_FAST"
+    },
+    {
+      "theta_match": 16,
+      "theta_active": 18,
+      "status": "PASS_ALL_Q255_DEVELOPMENT_SEEDS",
+      "seeds": [
+        {
+          "seed": 3,
+          "production_overlap": {
+            "circuit_identity_sha256": "c1d5c8041fd2ec640ea43da66bc9c2a0d7fe1a67d5aa2066fa12e04946425b88",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 6,
+            "next_reserve_cell": 32856,
+            "novel_probes": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": {
+            "circuit_identity_sha256": "fce0fec20bcfbcff63c7d907e6092956a17f23216ad1bd340af77b29c5d40df1",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 32856,
+            "novel_probes": 128,
+            "novel_false_matches": 0,
+            "novel_predictions": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          }
+        },
+        {
+          "seed": 7,
+          "production_overlap": {
+            "circuit_identity_sha256": "42955545ed6f9d14b4c87c4f88259b4acb21bb3bad42c0cd1ee8aeac52b0be61",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 5,
+            "next_reserve_cell": 32856,
+            "novel_probes": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": {
+            "circuit_identity_sha256": "064038ba1287eeb5aef59baa54dfdcddc9ba1299226b61b68ff2c183c6df56b8",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 32856,
+            "novel_probes": 128,
+            "novel_false_matches": 0,
+            "novel_predictions": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          }
+        },
+        {
+          "seed": 17,
+          "production_overlap": {
+            "circuit_identity_sha256": "c18695c47a63b18834982cc2fbcf328a9a69d7aa4a79b6dd0199b8accb7183b7",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 5,
+            "next_reserve_cell": 32856,
+            "novel_probes": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": {
+            "circuit_identity_sha256": "88dcf16a871674e68a954d0d991b4a7b67837d6e77a7d9fd7f88e173970908dd",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 32856,
+            "novel_probes": 128,
+            "novel_false_matches": 0,
+            "novel_predictions": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          }
+        },
+        {
+          "seed": 29,
+          "production_overlap": {
+            "circuit_identity_sha256": "5ac8fd3c7d1c49eed744c581a5c8240ab1cdac20958b07c7916c098e772ea5bc",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 5,
+            "next_reserve_cell": 32856,
+            "novel_probes": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          },
+          "target_disjoint": {
+            "circuit_identity_sha256": "bae3f443c6c6d81282dbc956921dc3e46442af3a8eec6e25325f73bdf2b0cdc1",
+            "learned_recurrences": 2041,
+            "maximum_winner_overlap": 3,
+            "next_reserve_cell": 32856,
+            "novel_probes": 128,
+            "novel_false_matches": 0,
+            "novel_predictions": 0,
+            "segment_count": 22451,
+            "unique_source_contexts": 2041,
+            "unique_target_winner_tuples": 2041
+          }
+        }
+      ]
+    },
+    {
+      "theta_match": 18,
+      "theta_active": 20,
+      "status": "NOT_RUN_FIRST_PASS_FOUND"
+    },
+    {
+      "theta_match": 20,
+      "theta_active": 20,
+      "status": "NOT_RUN_FIRST_PASS_FOUND"
+    }
+  ],
+  "diagnostic_verdict": {
+    "first_q255_physical_development_pass": [16, 18],
+    "official_threshold_selection": false
+  }
+}

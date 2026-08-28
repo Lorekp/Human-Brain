@@ -16,20 +16,20 @@ from humanbrain.native_temporal_runtime import (
 from humanbrain.sdr_union import token_sdr_indices
 
 
-def build_r3_f0_definition(
-    protocol: dict[str, Any], arm: tuple[int, int], seed: int
+def _build_definition(
+    protocol: dict[str, Any],
+    arm: tuple[int, int],
+    seed: int,
+    *,
+    seed_scope: tuple[int, ...],
 ) -> NativeTemporalCircuitDefinition:
-    """Resolve one exact physical native definition from frozen R3-F0 authority."""
-
     protocol_authority.validate_protocol(protocol, require_runnable=False)
     contract = protocol["native_definition_contract"]
     config_authority = contract["config"]
-    seed_scope = tuple(config_authority["construction_seed_scope"])
     arm_scope = tuple(tuple(value) for value in config_authority["theta_arm_scope"])
     if type(seed) is not int or seed not in seed_scope:
         raise protocol_authority.ProtocolError(
-            "seed must be an exact integer in "
-            "native_definition_contract.config.construction_seed_scope"
+            "seed must be an exact integer in the supplied frozen seed scope"
         )
     if (
         type(arm) is not tuple
@@ -67,6 +67,28 @@ def build_r3_f0_definition(
     )
 
 
+def build_r3_f0_definition(
+    protocol: dict[str, Any], arm: tuple[int, int], seed: int
+) -> NativeTemporalCircuitDefinition:
+    """Resolve one exact physical native definition from frozen R3-F0 authority."""
+
+    seed_scope = tuple(
+        protocol["native_definition_contract"]["config"]["construction_seed_scope"]
+    )
+    return _build_definition(protocol, arm, seed, seed_scope=seed_scope)
+
+
+def _build_q255_development_definition(
+    protocol: dict[str, Any], arm: tuple[int, int], seed: int
+) -> NativeTemporalCircuitDefinition:
+    seed_scope = tuple(
+        protocol["threshold_selection"]["seed_scope"][
+            "electrical_q4_q255_development"
+        ]
+    )
+    return _build_definition(protocol, arm, seed, seed_scope=seed_scope)
+
+
 def build_compressed_reserve_q4_definition(
     protocol: dict[str, Any], arm: tuple[int, int], seed: int
 ) -> NativeTemporalCircuitDefinition:
@@ -101,6 +123,61 @@ def build_compressed_reserve_q4_definition(
     )
     return NativeTemporalCircuitDefinition(
         config=config,
+        token_codes=token_codes,
+        threshold_offsets_mv=base.threshold_offsets_mv,
+    )
+
+
+def build_full_cohort_q255_production_definition(
+    protocol: dict[str, Any], arm: tuple[int, int], seed: int
+) -> NativeTemporalCircuitDefinition:
+    """Build the bounded q=255 production-pair circuit."""
+
+    base = _build_q255_development_definition(protocol, arm, seed)
+    screen = protocol["screens"]["full_cohort_q255"]
+    return NativeTemporalCircuitDefinition(
+        config=replace(
+            base.config,
+            segment_capacity=screen["expected_target_segments"],
+        ),
+        token_codes=base.token_codes,
+        threshold_offsets_mv=base.threshold_offsets_mv,
+    )
+
+
+def build_full_cohort_q255_disjoint_definition(
+    protocol: dict[str, Any], arm: tuple[int, int], seed: int
+) -> NativeTemporalCircuitDefinition:
+    """Build the bounded q=255 target-disjoint control circuit."""
+
+    base = _build_q255_development_definition(protocol, arm, seed)
+    screen = protocol["screens"]["full_cohort_q255"]
+    learned, novel = protocol_authority.target_disjoint_context_ids()
+    token_ids = (*learned, *novel, protocol_authority.DISJOINT_TARGET_TOKEN)
+    token_codes = tuple(
+        (
+            token_id,
+            tuple(
+                sorted(
+                    map(
+                        int,
+                        token_sdr_indices(
+                            token_id,
+                            seed=protocol_authority.PROJECTION_SEED,
+                            n_bits=base.config.column_count,
+                            w_ones=11,
+                        ),
+                    )
+                )
+            ),
+        )
+        for token_id in token_ids
+    )
+    return NativeTemporalCircuitDefinition(
+        config=replace(
+            base.config,
+            segment_capacity=screen["expected_target_segments"],
+        ),
         token_codes=token_codes,
         threshold_offsets_mv=base.threshold_offsets_mv,
     )
