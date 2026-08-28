@@ -236,6 +236,19 @@ pub(crate) struct TemporalCircuitStep {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct TemporalOutputElection {
+    pub(crate) token_id: u32,
+    pub(crate) output_cell_id: u32,
+    pub(crate) activated_columns: u32,
+    pub(crate) candidate_tokens: u32,
+    pub(crate) winner_input_columns: u8,
+    pub(crate) winner_tick: u16,
+    pub(crate) basket_tick: u16,
+    pub(crate) inhibition_onset_tick: u16,
+    pub(crate) simulated_ticks: u16,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct NovelCandidate {
     cell_id: u32,
     column_offset: usize,
@@ -611,7 +624,6 @@ impl TemporalCircuitRuntime {
                 ));
             }
         }
-
         let (source_gid_base, source_count) = match config.context_policy {
             TemporalContextPolicy::BoundWinners => (0, owner_count),
             TemporalContextPolicy::GenericAfferents => (proximal_offset, column_count),
@@ -770,6 +782,175 @@ impl TemporalCircuitRuntime {
         mode: TemporalStepMode,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
         self.step_with_transient(token_id, mode, self.transient_state())
+    }
+
+    /// Elect one token directly from the current physical winner context.
+    ///
+    /// Active distal segments first drive their learned owner cells through
+    /// the same fitted owner/basket races used by ordinary token arrival. One
+    /// winning owner signal per activated column then supplies one eleventh of
+    /// the calibrated active current to every token cell containing that
+    /// column. A second fitted token-cell/basket race emits the result. The
+    /// codebook is static wiring; neither a decoded score argmax nor an
+    /// arriving candidate token participates in the decision.
+    pub(crate) fn elect_output(&mut self) -> Result<TemporalOutputElection, TemporalCircuitStop> {
+        if self.scientific_stop.is_some() {
+            return Err(TemporalCircuitStop::Poisoned);
+        }
+        let transient = self.transient_state();
+        if transient.previous_context_len == 0 && transient.previous_winner_context_len == 0 {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "output election requires a prior physical context",
+            ));
+        }
+        if let Err(stop) = self.normalized_prior_sources(&transient) {
+            return self.fail(stop);
+        }
+        if transient.previous_context_len != CONTEXT_CELLS_U8
+            || transient.previous_winner_context_len != CONTEXT_CELLS_U8
+        {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(
+                "output election requires one complete prior physical context",
+            ));
+        }
+        let recognition_sources = &transient.previous_context[..ACTIVE_COLUMNS];
+        let summary = match self
+            .store
+            .recognize_runtime_context(recognition_sources, &mut self.recognition_scratch)
+        {
+            Ok(summary) => summary,
+            Err(status) => return self.fail(TemporalCircuitStop::StoreRecognition(status)),
+        };
+        let diagnostic_count = summary.owner_result_count;
+        let mut output_active_columns = vec![0u8; self.config.column_count as usize];
+        let reserve = PreparedReservePlan {
+            next_reserve_cell: self.next_reserve_cell,
+            ..EMPTY_RESERVE_PLAN
+        };
+        let mut activated_columns = 0u32;
+        for column in 0..self.config.column_count {
+            let has_active_owner = match self.column_has_active_owner(column, diagnostic_count) {
+                Ok(value) => value,
+                Err(stop) => return self.fail(stop),
+            };
+            if !has_active_owner {
+                continue;
+            }
+            let candidate_count =
+                match self.prepare_column_drives(column, diagnostic_count, reserve, &transient) {
+                    Ok(count) => count,
+                    Err(stop) => return self.fail(stop),
+                };
+            let basket_id = self.basket_offset + column;
+            let candidates = &self.column_drive_scratch[..candidate_count];
+            let race = match coupled_first_spike_race(
+                candidates,
+                BasketDrive {
+                    cell_id: basket_id,
+                    current_pa: TEMPORAL_PHYSICS_IDENTITY.basket_current_pa,
+                    threshold_offset_mv: self.threshold_offset(basket_id),
+                    inhibition_pa: TEMPORAL_PHYSICS_IDENTITY.basket_inhibition_pa,
+                },
+                &mut self.race_scratch,
+            ) {
+                Ok(race) => race,
+                Err(source) => {
+                    return self.fail(TemporalCircuitStop::Physics {
+                        stage: PhysicalStage::ColumnRace,
+                        location: column,
+                        source,
+                    });
+                }
+            };
+            if self
+                .diagnostic_for_owner(race.winner.cell_id, diagnostic_count)
+                .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
+            {
+                output_active_columns[column as usize] = 1;
+                activated_columns += 1;
+            }
+        }
+
+        let synaptic_share_pa = TEMPORAL_PHYSICS_IDENTITY.active_pa / ACTIVE_COLUMNS as f64;
+        let output_offset = self
+            .proximal_relay_offset
+            .checked_add(self.config.column_count)
+            .ok_or(TemporalCircuitStop::StoreOrPlanInvariant(
+                "output physical offsets overflow u32",
+            ))?;
+        let output_cell_count = u32::try_from(self.token_codebook.len()).map_err(|_| {
+            TemporalCircuitStop::StoreOrPlanInvariant("token output population exceeds uint32")
+        })?;
+        let output_basket_id = output_offset.checked_add(output_cell_count).ok_or(
+            TemporalCircuitStop::StoreOrPlanInvariant("output physical offsets overflow u32"),
+        )?;
+        let mut output_drive_scratch = vec![EMPTY_DRIVE; self.token_codebook.len()];
+        let mut candidate_tokens = 0usize;
+        for (token_index, code) in self.token_codebook.iter().enumerate() {
+            let input_columns = code
+                .columns
+                .iter()
+                .filter(|&&column| output_active_columns[column as usize] != 0)
+                .count();
+            if input_columns == 0 {
+                continue;
+            }
+            output_drive_scratch[candidate_tokens] = CandidateDrive {
+                cell_id: output_offset + token_index as u32,
+                current_pa: synaptic_share_pa * input_columns as f64,
+                threshold_offset_mv: 0.0,
+            };
+            candidate_tokens += 1;
+        }
+        let mut output_race_scratch = match CoupledRaceScratch::try_new(self.token_codebook.len()) {
+            Ok(scratch) => scratch,
+            Err(_) => {
+                return self.fail(TemporalCircuitStop::PreallocatedCapacityInvariant(
+                    "output race scratch allocation failed",
+                ));
+            }
+        };
+        let race = match coupled_first_spike_race(
+            &output_drive_scratch[..candidate_tokens],
+            BasketDrive {
+                cell_id: output_basket_id,
+                current_pa: TEMPORAL_PHYSICS_IDENTITY.basket_current_pa,
+                threshold_offset_mv: 0.0,
+                inhibition_pa: TEMPORAL_PHYSICS_IDENTITY.basket_inhibition_pa,
+            },
+            &mut output_race_scratch,
+        ) {
+            Ok(race) => race,
+            Err(source) => {
+                return self.fail(TemporalCircuitStop::Physics {
+                    stage: PhysicalStage::ColumnRace,
+                    location: output_basket_id,
+                    source,
+                });
+            }
+        };
+        let winner_index = (race.winner.cell_id - output_offset) as usize;
+        let winner = self.token_codebook.get(winner_index).ok_or(
+            TemporalCircuitStop::StoreOrPlanInvariant(
+                "output race emitted a cell outside the token population",
+            ),
+        )?;
+        let winner_input_columns = winner
+            .columns
+            .iter()
+            .filter(|&&column| output_active_columns[column as usize] != 0)
+            .count() as u8;
+        Ok(TemporalOutputElection {
+            token_id: winner.token_id,
+            output_cell_id: race.winner.cell_id,
+            activated_columns,
+            candidate_tokens: candidate_tokens as u32,
+            winner_input_columns,
+            winner_tick: race.winner.tick,
+            basket_tick: race.basket_tick,
+            inhibition_onset_tick: race.inhibition_onset_tick,
+            simulated_ticks: race.simulated_ticks,
+        })
     }
 
     /// Execute one ordinary transaction while treating the transient state as
@@ -1141,6 +1322,34 @@ impl TemporalCircuitRuntime {
             .binary_search_by_key(&owner, |diagnostic| diagnostic.owner)
             .ok()
             .map(|index| &diagnostics[index])
+    }
+
+    fn column_has_active_owner(
+        &self,
+        column: u32,
+        diagnostic_count: usize,
+    ) -> Result<bool, TemporalCircuitStop> {
+        let column_index = column as usize;
+        let Some((&cell_start, &cell_end)) = self
+            .column_offsets
+            .get(column_index)
+            .zip(self.column_offsets.get(column_index + 1))
+        else {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "output election references a missing column",
+            ));
+        };
+        if cell_start > cell_end || cell_end > self.column_cells.len() {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "column CSR bounds are malformed",
+            ));
+        }
+        Ok(self.column_cells[cell_start..cell_end]
+            .iter()
+            .any(|&owner| {
+                self.diagnostic_for_owner(owner, diagnostic_count)
+                    .is_some_and(|diagnostic| diagnostic.best_active_segment != NONE)
+            }))
     }
 
     fn prepare_column_drives(
@@ -2495,6 +2704,25 @@ mod tests {
         assert_python_active_step(&second, 2);
         assert_python_boundary_step(&third, 3);
         assert_python_active_step(&fourth, 4);
+    }
+
+    #[test]
+    fn prior_winner_context_physically_elects_the_learned_next_token() {
+        let mut runtime = python_oracle_runtime(255);
+        runtime.recognize(0).expect("public cue boundary");
+
+        let election = runtime
+            .elect_output()
+            .expect("active target owners must emit one token");
+
+        assert_eq!(election.token_id, 1);
+        assert_eq!(election.output_cell_id, 111);
+        assert_eq!(election.activated_columns, ACTIVE_COLUMNS as u32);
+        assert_eq!(election.candidate_tokens, 1);
+        assert_eq!(election.winner_input_columns, ACTIVE_COLUMNS as u8);
+        assert!(election.winner_tick < election.basket_tick);
+        assert_eq!(election.inhibition_onset_tick, election.basket_tick + 1);
+        assert!(election.basket_tick <= election.simulated_ticks);
     }
 
     #[test]
