@@ -1,0 +1,3154 @@
+{
+  "projection_sha256": "dbddb64f0809ec0111ed68a5d02c2abadc0f3fce4c332779ad876397abe741a5",
+  "replay": {
+    "arguments": [
+      -10,
+      -3,
+      4,
+      7
+    ],
+    "arms": [
+      {
+        "desired_outputs": [
+          -10,
+          -3,
+          4,
+          7
+        ],
+        "error": null,
+        "goal": "DONE",
+        "passed": true,
+        "selected_action": "DONE",
+        "selection": {
+          "action": "DONE",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            895.1030890297096,
+            844.5537251065848,
+            659.7695257036919,
+            631.2884443372961,
+            654.3509266853489,
+            636.4039649286391,
+            644.7577316019534,
+            614.0800036112423,
+            611.9121219716644,
+            618.992615887472
+          ],
+          "masked_sink_current_pa": 731.6928687368968,
+          "relation_sha256": "386d32fd3fd988db2c88bd5ac725035f23c85cbba278601f0c9f9700fba70fb9",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 150,
+          "winner_cell": 0
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          10,
+          3,
+          4,
+          7
+        ],
+        "error": null,
+        "goal": "WRAP_ABS",
+        "passed": true,
+        "selected_action": "WRAP_ABS",
+        "selection": {
+          "action": "WRAP_ABS",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            767.1030890297096,
+            825.3537251065848,
+            640.5695257036919,
+            631.2884443372961,
+            635.1509266853488,
+            636.4039649286391,
+            631.9577316019535,
+            601.2800036112424,
+            599.1121219716645,
+            599.7926158874719
+          ],
+          "masked_sink_current_pa": 622.8928687368967,
+          "relation_sha256": "68626316f05b71f231327c15fd4278dd6268a4c5dff8e968c42390fea994208c",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 164,
+          "winner_cell": 1
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          -9,
+          -2,
+          5,
+          8
+        ],
+        "error": null,
+        "goal": "WRAP_ADD[1]",
+        "passed": true,
+        "selected_action": "WRAP_ADD[1]",
+        "selection": {
+          "action": "WRAP_ADD[1]",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            764.4050498140234,
+            607.7537251065847,
+            821.840113938986,
+            806.1590325725903,
+            618.021514920643,
+            625.6745531639332,
+            603.1577316019535,
+            615.711376160262,
+            605.5121219716644,
+            625.392615887472
+          ],
+          "masked_sink_current_pa": 866.0928687368967,
+          "relation_sha256": "b87f0c8124758cd9afd04b942ae882896992ec8f36b5ee70664d8b63ba243c28",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 164,
+          "winner_cell": 2
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          -8,
+          -1,
+          6,
+          9
+        ],
+        "error": null,
+        "goal": "WRAP_ADD[2]",
+        "passed": true,
+        "selected_action": "WRAP_ADD[2]",
+        "selection": {
+          "action": "WRAP_ADD[2]",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            748.4050498140234,
+            609.3537251065848,
+            781.840113938986,
+            882.9590325725902,
+            832.421514920643,
+            744.0745531639332,
+            644.7577316019535,
+            604.511376160262,
+            607.1121219716645,
+            607.7926158874719
+          ],
+          "masked_sink_current_pa": 838.8928687368967,
+          "relation_sha256": "d40d2df0d7bb2cd23acbf7080449bf68a85ba8df7177d3a3a143cc249901f450",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 152,
+          "winner_cell": 3
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          -7,
+          0,
+          7,
+          10
+        ],
+        "error": null,
+        "goal": "WRAP_ADD[3]",
+        "passed": true,
+        "selected_action": "WRAP_ADD[3]",
+        "selection": {
+          "action": "WRAP_ADD[3]",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            726.0050498140233,
+            605.6203917732514,
+            783.4401139389859,
+            844.5590325725902,
+            880.421514920643,
+            792.0745531639332,
+            654.3577316019536,
+            611.4447094935954,
+            603.3787886383311,
+            604.0592825541386
+          ],
+          "masked_sink_current_pa": 804.22620207023,
+          "relation_sha256": "75c7aeb0c69bf5fd6e67ace62bd42748b047e70ff1ce817df992042515bf7e31",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 152,
+          "winner_cell": 4
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          -6,
+          1,
+          8,
+          11
+        ],
+        "error": null,
+        "goal": "WRAP_ADD[4]",
+        "passed": true,
+        "selected_action": "WRAP_ADD[4]",
+        "selection": {
+          "action": "WRAP_ADD[4]",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            718.0050498140233,
+            608.1537251065847,
+            759.4401139389859,
+            804.5590325725901,
+            850.0215149206429,
+            888.0745531639332,
+            662.3577316019534,
+            621.311376160262,
+            609.9121219716644,
+            602.5926158874719
+          ],
+          "masked_sink_current_pa": 799.2928687368968,
+          "relation_sha256": "6e064c5f581370388a7baedfa0c5bebd7718751439d01b852b0304323dd1a018",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 151,
+          "winner_cell": 5
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          -11,
+          -4,
+          3,
+          6
+        ],
+        "error": null,
+        "goal": "WRAP_SUB[1]",
+        "passed": true,
+        "selected_action": "WRAP_SUB[1]",
+        "selection": {
+          "action": "WRAP_SUB[1]",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            815.6050498140235,
+            626.9537251065848,
+            604.2401139389859,
+            601.3590325725902,
+            618.021514920643,
+            625.6745531639332,
+            820.7577316019535,
+            756.511376160262,
+            605.5121219716644,
+            606.1926158874719
+          ],
+          "masked_sink_current_pa": 885.2928687368965,
+          "relation_sha256": "42bdc52d320ef6365a119c852e19cb53fe3dce00632e06e8351e63920ee4995c",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 165,
+          "winner_cell": 6
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          -12,
+          -5,
+          2,
+          5
+        ],
+        "error": null,
+        "goal": "WRAP_SUB[2]",
+        "passed": true,
+        "selected_action": "WRAP_SUB[2]",
+        "selection": {
+          "action": "WRAP_SUB[2]",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            748.4050498140234,
+            609.3537251065848,
+            645.840113938986,
+            602.9590325725902,
+            600.421514920643,
+            608.0745531639332,
+            780.7577316019535,
+            884.511376160262,
+            839.1121219716645,
+            703.7926158874719
+          ],
+          "masked_sink_current_pa": 750.8928687368967,
+          "relation_sha256": "b4701861786ab27b359ebfabf56dce64ca9cfe8c5808e9f5a239756e48ea04a8",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 152,
+          "winner_cell": 7
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          -13,
+          -6,
+          1,
+          4
+        ],
+        "error": null,
+        "goal": "WRAP_SUB[3]",
+        "passed": true,
+        "selected_action": "WRAP_SUB[3]",
+        "selection": {
+          "action": "WRAP_SUB[3]",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            726.0050498140233,
+            601.3537251065848,
+            629.840113938986,
+            609.8923659059235,
+            596.6881815873096,
+            604.3412198305998,
+            782.3577316019537,
+            788.511376160262,
+            887.1121219716645,
+            791.792615887472
+          ],
+          "masked_sink_current_pa": 729.5595354035636,
+          "relation_sha256": "cd4f05fc6d75559ef48865d997c65979d2e09f23cef9fe9d1c7c1bd9876b2482",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 151,
+          "winner_cell": 8
+        },
+        "tied": false
+      },
+      {
+        "desired_outputs": [
+          -14,
+          -7,
+          0,
+          3
+        ],
+        "error": null,
+        "goal": "WRAP_SUB[4]",
+        "passed": true,
+        "selected_action": "WRAP_SUB[4]",
+        "selection": {
+          "action": "WRAP_SUB[4]",
+          "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+          "currents_pa": [
+            719.6050498140235,
+            604.5537251065848,
+            642.640113938986,
+            620.5590325725902,
+            603.621514920643,
+            603.2745531639332,
+            759.9577316019536,
+            756.511376160262,
+            858.3121219716645,
+            887.7926158874719
+          ],
+          "masked_sink_current_pa": 632.4928687368966,
+          "relation_sha256": "8d44b2176a1552f1d3ab0a3ffe0f40d3a7374a006ac01fef2c0efb73fb7aae20",
+          "simultaneous_spike_candidates": 1,
+          "spike_step": 151,
+          "winner_cell": 9
+        },
+        "tied": false
+      }
+    ],
+    "claim_boundary": "Fresh public scalar exact-magnitude one-step development replay only; not composition, Simple-SWE, M0, held-out, C1, or capability evidence.",
+    "passed_goals": 10,
+    "schema": "public-typed-exact-magnitude-atomic-replay-v1",
+    "total_goals": 10,
+    "verdict": "PASS_EXACT_MAGNITUDE_ATOMIC_REPLAY"
+  },
+  "retry_policy": "One fixed seed-17 public atomic replay; no projection, width, reward, epoch, order, rate, fan-in, or action-bank sweep.",
+  "schema": "public-typed-exact-magnitude-reward-actor-v1",
+  "seed": 17,
+  "training": {
+    "argument_grids": [
+      [
+        -12,
+        -5,
+        2,
+        9
+      ],
+      [
+        -11,
+        -4,
+        3,
+        8
+      ]
+    ],
+    "epochs": 3,
+    "frozen_before_gate_target": true,
+    "frozen_checkpoint_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+    "initial_checkpoint_sha256": "e2c198e399ca242a6442b4f4b70d5ee7baaadc221cf78f5495dd57fe47058583",
+    "local_updates": 300,
+    "motor_coverage": [
+      [
+        "DONE",
+        30
+      ],
+      [
+        "WRAP_ABS",
+        30
+      ],
+      [
+        "WRAP_ADD[1]",
+        30
+      ],
+      [
+        "WRAP_ADD[2]",
+        30
+      ],
+      [
+        "WRAP_ADD[3]",
+        30
+      ],
+      [
+        "WRAP_ADD[4]",
+        30
+      ],
+      [
+        "WRAP_SUB[1]",
+        30
+      ],
+      [
+        "WRAP_SUB[2]",
+        30
+      ],
+      [
+        "WRAP_SUB[3]",
+        30
+      ],
+      [
+        "WRAP_SUB[4]",
+        30
+      ]
+    ],
+    "motor_trials": 300,
+    "negative_advantages": 171,
+    "neutral_advantages": 0,
+    "positive_advantages": 129,
+    "public_goals": [
+      "DONE",
+      "WRAP_ABS",
+      "WRAP_ADD[1]",
+      "WRAP_ADD[2]",
+      "WRAP_ADD[3]",
+      "WRAP_ADD[4]",
+      "WRAP_SUB[1]",
+      "WRAP_SUB[2]",
+      "WRAP_SUB[3]",
+      "WRAP_SUB[4]"
+    ],
+    "reward_audit": [
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            1.0
+          ],
+          [
+            "WRAP_ABS",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.19999999999999996
+          ]
+        ],
+        "epoch": 1,
+        "goal": "DONE",
+        "mean_raw_reward": -0.8,
+        "raw_rewards": [
+          [
+            "DONE",
+            1.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_ABS",
+            1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.09999999999999999
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.23333333333333334
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.3666666666666667
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.5
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_ABS",
+        "mean_raw_reward": -0.03333333333333334,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.13333333333333333
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.26666666666666666
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.5333333333333333
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.6
+          ],
+          [
+            "WRAP_ABS",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[1]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.6
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.4
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_ADD[1]",
+        "mean_raw_reward": -0.6,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.25
+          ],
+          [
+            "WRAP_ABS",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[2]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.25
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.75
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_ADD[2]",
+        "mean_raw_reward": -0.25,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[2]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.5
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.13333333333333336
+          ],
+          [
+            "WRAP_ABS",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.4666666666666667
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.8
+          ],
+          [
+            "WRAP_ADD[3]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.8
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.5333333333333332
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.8666666666666667
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_ADD[3]",
+        "mean_raw_reward": -0.13333333333333336,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.3333333333333333
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_ADD[3]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.3333333333333333
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.0875
+          ],
+          [
+            "WRAP_ABS",
+            -0.7875
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.3375
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.5875
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.8375
+          ],
+          [
+            "WRAP_ADD[4]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.1625
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.4125
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.6625
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.9125
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_ADD[4]",
+        "mean_raw_reward": -0.0875,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -0.875
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.5
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.6
+          ],
+          [
+            "WRAP_ABS",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[1]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.4
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_SUB[1]",
+        "mean_raw_reward": -0.6,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.25
+          ],
+          [
+            "WRAP_ABS",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[2]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.25
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_SUB[2]",
+        "mean_raw_reward": -0.25,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.5
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[2]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.13333333333333336
+          ],
+          [
+            "WRAP_ABS",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.5333333333333332
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.4666666666666667
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.8
+          ],
+          [
+            "WRAP_SUB[3]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.8
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_SUB[3]",
+        "mean_raw_reward": -0.13333333333333336,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.3333333333333333
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.6666666666666666
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.3333333333333333
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[3]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.6666666666666666
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.1
+          ],
+          [
+            "WRAP_ABS",
+            -0.9
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.15
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.65
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.9
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.35
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.85
+          ],
+          [
+            "WRAP_SUB[4]",
+            1.0
+          ]
+        ],
+        "epoch": 1,
+        "goal": "WRAP_SUB[4]",
+        "mean_raw_reward": -0.1,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.5
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            1.0
+          ],
+          [
+            "WRAP_ABS",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.19999999999999996
+          ]
+        ],
+        "epoch": 2,
+        "goal": "DONE",
+        "mean_raw_reward": -0.8,
+        "raw_rewards": [
+          [
+            "DONE",
+            1.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.01764705882352941
+          ],
+          [
+            "WRAP_ABS",
+            1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.01764705882352941
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.01764705882352941
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.01764705882352941
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.01764705882352941
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.1
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.21764705882352942
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.33529411764705885
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.45294117647058824
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_ABS",
+        "mean_raw_reward": -0.01764705882352941,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.11764705882352941
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.23529411764705882
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.35294117647058826
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.47058823529411764
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.6
+          ],
+          [
+            "WRAP_ABS",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[1]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.6
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.4
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_ADD[1]",
+        "mean_raw_reward": -0.6,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.25
+          ],
+          [
+            "WRAP_ABS",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[2]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.25
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.75
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_ADD[2]",
+        "mean_raw_reward": -0.25,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[2]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.5
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.13333333333333336
+          ],
+          [
+            "WRAP_ABS",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.4666666666666667
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.8
+          ],
+          [
+            "WRAP_ADD[3]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.8
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.5333333333333332
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.8666666666666667
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_ADD[3]",
+        "mean_raw_reward": -0.13333333333333336,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.3333333333333333
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_ADD[3]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.3333333333333333
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.1
+          ],
+          [
+            "WRAP_ABS",
+            -0.9
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.35
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.6
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.85
+          ],
+          [
+            "WRAP_ADD[4]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.15
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.65
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.9
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_ADD[4]",
+        "mean_raw_reward": -0.1,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.5
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.6
+          ],
+          [
+            "WRAP_ABS",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[1]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.4
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_SUB[1]",
+        "mean_raw_reward": -0.6,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.25
+          ],
+          [
+            "WRAP_ABS",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[2]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.25
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_SUB[2]",
+        "mean_raw_reward": -0.25,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.5
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[2]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.13333333333333336
+          ],
+          [
+            "WRAP_ABS",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.5333333333333332
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.4666666666666667
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.8
+          ],
+          [
+            "WRAP_SUB[3]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.8
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_SUB[3]",
+        "mean_raw_reward": -0.13333333333333336,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.3333333333333333
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.6666666666666666
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.3333333333333333
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[3]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.6666666666666666
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.1
+          ],
+          [
+            "WRAP_ABS",
+            -0.9
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.15
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.65
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.9
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.35
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.85
+          ],
+          [
+            "WRAP_SUB[4]",
+            1.0
+          ]
+        ],
+        "epoch": 2,
+        "goal": "WRAP_SUB[4]",
+        "mean_raw_reward": -0.1,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.5
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            1.0
+          ],
+          [
+            "WRAP_ABS",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.19999999999999996
+          ]
+        ],
+        "epoch": 3,
+        "goal": "DONE",
+        "mean_raw_reward": -0.8,
+        "raw_rewards": [
+          [
+            "DONE",
+            1.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_ABS",
+            1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.03333333333333334
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.09999999999999999
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.23333333333333334
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.3666666666666667
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.5
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_ABS",
+        "mean_raw_reward": -0.03333333333333334,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.13333333333333333
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.26666666666666666
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.5333333333333333
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.6
+          ],
+          [
+            "WRAP_ABS",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[1]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.6
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.4
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_ADD[1]",
+        "mean_raw_reward": -0.6,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.25
+          ],
+          [
+            "WRAP_ABS",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[2]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.25
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.75
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_ADD[2]",
+        "mean_raw_reward": -0.25,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[2]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.5
+          ],
+          [
+            "WRAP_SUB[2]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.13333333333333336
+          ],
+          [
+            "WRAP_ABS",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.4666666666666667
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.8
+          ],
+          [
+            "WRAP_ADD[3]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.8
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.5333333333333332
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.8666666666666667
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_ADD[3]",
+        "mean_raw_reward": -0.13333333333333336,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.3333333333333333
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_ADD[3]",
+            1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.3333333333333333
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.0875
+          ],
+          [
+            "WRAP_ABS",
+            -0.7875
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.3375
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.5875
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.8375
+          ],
+          [
+            "WRAP_ADD[4]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.1625
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.4125
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.6625
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.9125
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_ADD[4]",
+        "mean_raw_reward": -0.0875,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -0.875
+          ],
+          [
+            "WRAP_ADD[1]",
+            0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            0.5
+          ],
+          [
+            "WRAP_ADD[3]",
+            0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            -0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            -0.5
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.6
+          ],
+          [
+            "WRAP_ABS",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[1]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6
+          ],
+          [
+            "WRAP_SUB[3]",
+            -0.4
+          ],
+          [
+            "WRAP_SUB[4]",
+            -0.4
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_SUB[1]",
+        "mean_raw_reward": -0.6,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            -1.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.25
+          ],
+          [
+            "WRAP_ABS",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.75
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[2]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.25
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_SUB[2]",
+        "mean_raw_reward": -0.25,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.5
+          ],
+          [
+            "WRAP_ADD[2]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[2]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.0
+          ]
+        ]
+      },
+      {
+        "argument_grid": 0,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.13333333333333336
+          ],
+          [
+            "WRAP_ABS",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.19999999999999996
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.5333333333333332
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.8666666666666667
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.4666666666666667
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.8
+          ],
+          [
+            "WRAP_SUB[3]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.8
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_SUB[3]",
+        "mean_raw_reward": -0.13333333333333336,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.3333333333333333
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.6666666666666666
+          ],
+          [
+            "WRAP_ADD[3]",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.3333333333333333
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6666666666666666
+          ],
+          [
+            "WRAP_SUB[3]",
+            1.0
+          ],
+          [
+            "WRAP_SUB[4]",
+            0.6666666666666666
+          ]
+        ]
+      },
+      {
+        "argument_grid": 1,
+        "centered_advantages": [
+          [
+            "DONE",
+            0.1
+          ],
+          [
+            "WRAP_ABS",
+            -0.9
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.15
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.4
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.65
+          ],
+          [
+            "WRAP_ADD[4]",
+            -0.9
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.35
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.6
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.85
+          ],
+          [
+            "WRAP_SUB[4]",
+            1.0
+          ]
+        ],
+        "epoch": 3,
+        "goal": "WRAP_SUB[4]",
+        "mean_raw_reward": -0.1,
+        "raw_rewards": [
+          [
+            "DONE",
+            0.0
+          ],
+          [
+            "WRAP_ABS",
+            -1.0
+          ],
+          [
+            "WRAP_ADD[1]",
+            -0.25
+          ],
+          [
+            "WRAP_ADD[2]",
+            -0.5
+          ],
+          [
+            "WRAP_ADD[3]",
+            -0.75
+          ],
+          [
+            "WRAP_ADD[4]",
+            -1.0
+          ],
+          [
+            "WRAP_SUB[1]",
+            0.25
+          ],
+          [
+            "WRAP_SUB[2]",
+            0.5
+          ],
+          [
+            "WRAP_SUB[3]",
+            0.75
+          ],
+          [
+            "WRAP_SUB[4]",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "structural_recruitments": 383
+  },
+  "verdict": "PASS_EXACT_MAGNITUDE_ATOMIC_REPLAY"
+}

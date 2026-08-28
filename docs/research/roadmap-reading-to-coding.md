@@ -319,6 +319,29 @@ action plasticity; the next representation increment must create exact signed
 magnitude cells (or an equivalently margin-producing stage) before any
 multi-edit target is opened.
 
+That representation increment passed cleanly. A fixed, target- and
+action-independent opponent projection transformed each cumulative signed
+threshold bank into exact-magnitude cells; equality cells passed through
+unchanged, and only the resulting spike mask reached a fresh fitted-cell
+population and the same sparse local actor. After the same 300 balanced public
+motor trials, the frozen seed-17 checkpoint selected all 10/10 atomic actions
+exactly on a fresh argument grid. Every race was unique and inference preserved
+the checkpoint hash. This is `PASS_EXACT_MAGNITUDE_ATOMIC_REPLAY`: it validates
+the magnitude representation and licensed one composition trajectory, but it
+does not itself establish composition or open M0, Simple-SWE, held-out, or C1.
+
+The licensed G-RMA1 trajectory is now spent and stopped. From identity on the
+public `abs(x)+3` target, the expected actions were `ABS → ADD3 → DONE`; the
+frozen actor instead selected `ADD3 → ABS → ABS`, yielding `abs(abs(x+3))` and
+outputs `[10, 3, 4, 13]` rather than `[16, 9, 4, 13]`. All selections were
+unique and the checkpoint remained immutable, so this is not a recurrence,
+race, or atomic-recognition failure. It is `STOP_G_RMA1`: the greedy
+goal-conditioned policy lacks a representation of noncommutative edit order
+and remaining horizon. There is no retry or tuning of this actor. The next
+increment must represent multi-action consequences and prove itself on a
+visible mixed-order matrix containing both outer-then-inner and
+inner-then-outer programs before any fresh composition target is spent.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

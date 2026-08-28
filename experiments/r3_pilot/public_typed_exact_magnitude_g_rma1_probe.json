@@ -1,0 +1,221 @@
+{
+  "applied_actions": 3,
+  "arguments": [
+    -13,
+    -6,
+    1,
+    10
+  ],
+  "claim_boundary": "Fresh public scalar three-edit composition evidence only; not Simple-SWE, M0, held-out, C1, or broad coding capability evidence.",
+  "commitments": {
+    "action_cells": 10,
+    "atomic_artifact_sha256": "f86f364e4f6110cb2aa42eb8e16515ba3d258686fa078cff05af0f93ac1f933e",
+    "atomic_verdict": "PASS_EXACT_MAGNITUDE_ATOMIC_REPLAY",
+    "curriculum_epochs": 3,
+    "feature_cells": 260,
+    "frozen_checkpoint_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+    "learning_rate_pa": 32.0,
+    "maximum_weight_pa": 1600.0,
+    "motor_trials": 300,
+    "output_base_current_pa": 600.0,
+    "output_cells_with_sink": 11,
+    "output_race_steps": 600,
+    "pacemaker_all_zero": true,
+    "projection_current_limit_pa": 5000.0,
+    "projection_current_scale_pa": 20000.0,
+    "projection_sha256": "dbddb64f0809ec0111ed68a5d02c2abadc0f3fce4c332779ad876397abe741a5",
+    "projection_steps": 30,
+    "readout_fan_in": 65,
+    "seed": 17
+  },
+  "desired_outputs": [
+    16,
+    9,
+    4,
+    13
+  ],
+  "error": null,
+  "exact_action_sequence": false,
+  "exact_final_outputs": false,
+  "exact_final_tokens": false,
+  "expected_actions": [
+    "WRAP_ABS",
+    "WRAP_ADD[3]",
+    "DONE"
+  ],
+  "expected_final_tokens": [
+    "add",
+    "absolute",
+    "variable-0",
+    "integer",
+    "+",
+    "3",
+    "end"
+  ],
+  "failure_stage": null,
+  "final_outputs": [
+    10,
+    3,
+    4,
+    13
+  ],
+  "final_tokens": [
+    "absolute",
+    "absolute",
+    "add",
+    "variable-0",
+    "integer",
+    "+",
+    "3",
+    "end"
+  ],
+  "frozen_checkpoint_immutable": true,
+  "retry_policy": "One fixed seed-17 three-selection trajectory; no retry, seed, schedule, projection, reward, rate, fan-in, width, or action-bank sweep.",
+  "schema": "public-typed-exact-magnitude-g-rma1-v1",
+  "selection_attempts": 3,
+  "steps": [
+    {
+      "after_outputs": [
+        -10,
+        -3,
+        4,
+        13
+      ],
+      "before_outputs": [
+        -13,
+        -6,
+        1,
+        10
+      ],
+      "program_tokens": [
+        "add",
+        "variable-0",
+        "integer",
+        "+",
+        "3",
+        "end"
+      ],
+      "selected_action": "WRAP_ADD[3]",
+      "selection": {
+        "action": "WRAP_ADD[3]",
+        "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+        "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+        "currents_pa": [
+          689.7383831473567,
+          605.6203917732514,
+          736.5067806056527,
+          735.7590325725903,
+          816.421514920643,
+          708.8745531639331,
+          635.1577316019535,
+          596.511376160262,
+          599.1121219716645,
+          599.7926158874719
+        ],
+        "masked_sink_current_pa": 716.7595354035634,
+        "relation_sha256": "323eb523b003581eff9db48826636af098dee3abbab4da4cd9b3f4be2b954c04",
+        "simultaneous_spike_candidates": 1,
+        "spike_step": 165,
+        "winner_cell": 4
+      },
+      "step": 1
+    },
+    {
+      "after_outputs": [
+        10,
+        3,
+        4,
+        13
+      ],
+      "before_outputs": [
+        -10,
+        -3,
+        4,
+        13
+      ],
+      "program_tokens": [
+        "absolute",
+        "add",
+        "variable-0",
+        "integer",
+        "+",
+        "3",
+        "end"
+      ],
+      "selected_action": "WRAP_ABS",
+      "selection": {
+        "action": "WRAP_ABS",
+        "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+        "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+        "currents_pa": [
+          767.1030890297096,
+          825.3537251065848,
+          640.5695257036919,
+          631.2884443372961,
+          635.1509266853488,
+          636.4039649286391,
+          631.9577316019535,
+          601.2800036112424,
+          599.1121219716645,
+          599.7926158874719
+        ],
+        "masked_sink_current_pa": 622.8928687368967,
+        "relation_sha256": "936a7b10a6c32c4e8c5493236641d587b096491e23d25eaf823f9454db4a5606",
+        "simultaneous_spike_candidates": 1,
+        "spike_step": 164,
+        "winner_cell": 1
+      },
+      "step": 2
+    },
+    {
+      "after_outputs": [
+        10,
+        3,
+        4,
+        13
+      ],
+      "before_outputs": [
+        10,
+        3,
+        4,
+        13
+      ],
+      "program_tokens": [
+        "absolute",
+        "absolute",
+        "add",
+        "variable-0",
+        "integer",
+        "+",
+        "3",
+        "end"
+      ],
+      "selected_action": "WRAP_ABS",
+      "selection": {
+        "action": "WRAP_ABS",
+        "checkpoint_after_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+        "checkpoint_before_sha256": "fbf4141c90a11b40dfdb3cba507c6885c44b525f3113e4439ca347df37836dc6",
+        "currents_pa": [
+          767.1030890297096,
+          825.3537251065848,
+          640.5695257036919,
+          631.2884443372961,
+          635.1509266853488,
+          636.4039649286391,
+          631.9577316019535,
+          601.2800036112424,
+          599.1121219716645,
+          599.7926158874719
+        ],
+        "masked_sink_current_pa": 590.8928687368967,
+        "relation_sha256": "7a6c7507067faf9aa932695f2e15b40478b60fc2d292feca970d4de990d01881",
+        "simultaneous_spike_candidates": 1,
+        "spike_step": 164,
+        "winner_cell": 1
+      },
+      "step": 3
+    }
+  ],
+  "unique_races": true,
+  "verdict": "STOP_G_RMA1"
+}
