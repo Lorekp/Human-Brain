@@ -550,6 +550,17 @@ def test_absolute_is_a_generic_unary_int_primitive_inside_map() -> None:
     )
 
 
+def test_sum_is_a_generic_list_int_reduction() -> None:
+    signature = TypedSignature(
+        entry_point="total",
+        parameters=(ProgramParameter("items", ProgramType.List(ProgramType.Int())),),
+        result=ProgramType.Int(),
+    )
+    program = Program(("sum", "variable-0"), signature)
+
+    assert compile(program).source == "def total(items):\n    return sum(items)\n"
+
+
 def test_nested_typed_if_lowers_an_exact_two_sided_scalar_clamp() -> None:
     signature = TypedSignature(
         entry_point="clamp",

@@ -316,6 +316,7 @@ _PRIMITIVE_SPECS = (
         (_function_type((_A,), _B), _list_type(_A)),
         "map",
     ),
+    _PrimitiveSpec("sum", "operation", _INT, (_list_type(_INT),), "sum"),
     _PrimitiveSpec("bind", "binder", lowering="binder"),
     _PrimitiveSpec("variable-0", "variable", lowering="variable", value=0),
     _PrimitiveSpec("integer", "literal", _INT, lowering="integer"),
@@ -1464,6 +1465,12 @@ def _lower_expression(
             test=_lower_expression(expression.children[0], environment, context),
             body=_lower_expression(expression.children[1], environment, context),
             orelse=_lower_expression(expression.children[2], environment, context),
+        )
+    if lowering == "sum":
+        return ast.Call(
+            func=ast.Name(id="sum", ctx=ast.Load()),
+            args=[_lower_expression(expression.children[0], environment, context)],
+            keywords=[],
         )
     if lowering == "map":
         binder, collection = expression.children

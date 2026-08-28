@@ -24,6 +24,7 @@ pub(crate) enum SurfaceKind {
     LessThan,
     If,
     Map,
+    Sum,
     Bind,
     Variable0,
     Integer,
@@ -217,6 +218,7 @@ impl TypedHoleState {
             | (TypedHoleCue::Expression(TypedValue::Bool), SurfaceKind::LessThan)
             | (TypedHoleCue::Expression(_), SurfaceKind::If)
             | (TypedHoleCue::Expression(TypedValue::ListInt), SurfaceKind::Map)
+            | (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Sum)
             | (TypedHoleCue::Expression(TypedValue::IntToInt), SurfaceKind::Bind)
             | (TypedHoleCue::LiteralSign, SurfaceKind::Plus | SurfaceKind::Minus)
             | (TypedHoleCue::LiteralDigitOrEnd, SurfaceKind::End)
@@ -269,6 +271,9 @@ impl TypedHoleState {
                     (TypedValue::IntToInt, TypedHoleRole::Child0),
                     (TypedValue::ListInt, TypedHoleRole::Child1),
                 ])?;
+            }
+            (TypedHoleCue::Expression(TypedValue::Int), SurfaceKind::Sum) => {
+                self.replace_current_hole([(TypedValue::ListInt, TypedHoleRole::Child0)])?;
             }
             (TypedHoleCue::Expression(TypedValue::IntToInt), SurfaceKind::Bind) => {
                 self.replace_current_hole([(TypedValue::Int, TypedHoleRole::Head)])?;
@@ -411,6 +416,20 @@ mod tests {
                 S::Eos,
             ],
         );
+        assert_eq!(state.cue(), TypedHoleCue::Terminated);
+    }
+
+    #[test]
+    fn sum_advances_to_one_list_collection_and_eos() {
+        let mut state = TypedHoleState::unary(TypedValue::ListInt, TypedValue::Int).unwrap();
+        assert!(state.admits(S::Sum));
+
+        state.advance(S::Sum).unwrap();
+        assert_eq!(state.cue(), TypedHoleCue::Expression(TypedValue::ListInt));
+        assert_eq!(state.role(), TypedHoleRole::Child0);
+        assert_eq!(state.address(), address(&[0]));
+
+        advance_stream(&mut state, &[S::Variable0, S::Eos]);
         assert_eq!(state.cue(), TypedHoleCue::Terminated);
     }
 
