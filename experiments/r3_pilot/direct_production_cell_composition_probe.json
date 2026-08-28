@@ -1,0 +1,824 @@
+{
+  "checkpoint": {
+    "immutable": true,
+    "local_updates": 51,
+    "sha256": "8ed246e7f73c388f763199845a2f04347241c3d8560cf7cf08cbbc35c40950e6",
+    "sha256_after_controls": "8ed246e7f73c388f763199845a2f04347241c3d8560cf7cf08cbbc35c40950e6",
+    "structural_recruitments": 56
+  },
+  "claim_boundary": "Fresh pre-canonical binary-scalar composition probe only; no Simple-SWE, held-out, M0, C1, or spent task material was read.",
+  "controls": {
+    "prompt_swap": {
+      "completion": {
+        "all_decisions_competitive": true,
+        "completed": true,
+        "exact_source": false,
+        "exact_tokens": false,
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 3,
+              "args": [
+                3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": -3,
+              "args": [
+                -3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": -3,
+              "args": [
+                -3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                0,
+                5
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                5,
+                0
+              ],
+              "expected": -5,
+              "pass": false
+            },
+            {
+              "actual": -5,
+              "args": [
+                -5,
+                0
+              ],
+              "expected": -5,
+              "pass": true
+            },
+            {
+              "actual": 2,
+              "args": [
+                2,
+                2
+              ],
+              "expected": 0,
+              "pass": false
+            }
+          ],
+          "passed": 1,
+          "total": 8
+        },
+        "physical_audit_pass": true,
+        "races": [
+          {
+            "accepted_is_legal": true,
+            "accepted_token": "variable-1",
+            "active_assembly_cells": 424,
+            "allowed_tokens": [
+              "add",
+              "subtract",
+              "absolute",
+              "if",
+              "sum",
+              "variable-0",
+              "variable-1",
+              "integer"
+            ],
+            "candidate_count": 8,
+            "physical": true,
+            "position": 0,
+            "prompt_cells": 115,
+            "role_cells": 208,
+            "signature_cells": 172,
+            "spike_time_ms": 7.9,
+            "winner_cell": 9
+          }
+        ],
+        "readout_after_sha256": "f439744d0f049c5f08ccc5098e118150b4c3fc771a89dc2b67e6b6c7f0649e0d",
+        "readout_before_sha256": "f439744d0f049c5f08ccc5098e118150b4c3fc771a89dc2b67e6b6c7f0649e0d",
+        "readout_immutable": true,
+        "source": "def solve(first, second):\n    return first\n",
+        "tokens": [
+          "variable-1"
+        ]
+      },
+      "prompt": "Given integers first and second, return the absolute value of first; second is unused.",
+      "rejected_target_solution": true
+    },
+    "whole_teacher_execution": [
+      {
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": -7,
+              "args": [
+                3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": -13,
+              "args": [
+                -3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": 13,
+              "args": [
+                3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": 7,
+              "args": [
+                -3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": -5,
+              "args": [
+                0,
+                5
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                5,
+                0
+              ],
+              "expected": -5,
+              "pass": false
+            },
+            {
+              "actual": -5,
+              "args": [
+                -5,
+                0
+              ],
+              "expected": -5,
+              "pass": true
+            },
+            {
+              "actual": 0,
+              "args": [
+                2,
+                2
+              ],
+              "expected": 0,
+              "pass": true
+            }
+          ],
+          "passed": 2,
+          "total": 8
+        },
+        "source": "def solve(first, second):\n    return first - second\n",
+        "teacher": 1,
+        "tokens": [
+          "subtract",
+          "variable-1",
+          "variable-0"
+        ]
+      },
+      {
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 3,
+              "args": [
+                3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                -3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                -3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                0,
+                5
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                5,
+                0
+              ],
+              "expected": -5,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                -5,
+                0
+              ],
+              "expected": -5,
+              "pass": false
+            },
+            {
+              "actual": 2,
+              "args": [
+                2,
+                2
+              ],
+              "expected": 0,
+              "pass": false
+            }
+          ],
+          "passed": 0,
+          "total": 8
+        },
+        "source": "def solve(first, second):\n    return abs(first)\n",
+        "teacher": 2,
+        "tokens": [
+          "absolute",
+          "variable-1"
+        ]
+      },
+      {
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 10,
+              "args": [
+                3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": 10,
+              "args": [
+                -3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": -10,
+              "args": [
+                3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": -10,
+              "args": [
+                -3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                0,
+                5
+              ],
+              "expected": 5,
+              "pass": true
+            },
+            {
+              "actual": 0,
+              "args": [
+                5,
+                0
+              ],
+              "expected": -5,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                -5,
+                0
+              ],
+              "expected": -5,
+              "pass": false
+            },
+            {
+              "actual": 2,
+              "args": [
+                2,
+                2
+              ],
+              "expected": 0,
+              "pass": false
+            }
+          ],
+          "passed": 1,
+          "total": 8
+        },
+        "source": "def solve(first, second):\n    return second\n",
+        "teacher": 3,
+        "tokens": [
+          "variable-0"
+        ]
+      },
+      {
+        "execution": {
+          "all_pass": false,
+          "cases": [
+            {
+              "actual": 3,
+              "args": [
+                3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": -3,
+              "args": [
+                -3,
+                10
+              ],
+              "expected": 7,
+              "pass": false
+            },
+            {
+              "actual": 3,
+              "args": [
+                3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": -3,
+              "args": [
+                -3,
+                -10
+              ],
+              "expected": -13,
+              "pass": false
+            },
+            {
+              "actual": 0,
+              "args": [
+                0,
+                5
+              ],
+              "expected": 5,
+              "pass": false
+            },
+            {
+              "actual": 5,
+              "args": [
+                5,
+                0
+              ],
+              "expected": -5,
+              "pass": false
+            },
+            {
+              "actual": -5,
+              "args": [
+                -5,
+                0
+              ],
+              "expected": -5,
+              "pass": true
+            },
+            {
+              "actual": 2,
+              "args": [
+                2,
+                2
+              ],
+              "expected": 0,
+              "pass": false
+            }
+          ],
+          "passed": 1,
+          "total": 8
+        },
+        "source": "def solve(first, second):\n    return first\n",
+        "teacher": 4,
+        "tokens": [
+          "variable-1"
+        ]
+      }
+    ],
+    "whole_teacher_retrieval_rejected": true
+  },
+  "format": "humanbrain.direct-production-cell-composition-probe.v1",
+  "protocol": {
+    "fit_epochs": 8,
+    "fit_examples": 4,
+    "parameter_tuning": false,
+    "prompt_swap_completion_attempts": 1,
+    "target_completion_attempts": 1,
+    "target_instantiated_after_fit": true
+  },
+  "target": {
+    "cases": [
+      {
+        "args": [
+          3,
+          10
+        ],
+        "expected": 7
+      },
+      {
+        "args": [
+          -3,
+          10
+        ],
+        "expected": 7
+      },
+      {
+        "args": [
+          3,
+          -10
+        ],
+        "expected": -13
+      },
+      {
+        "args": [
+          -3,
+          -10
+        ],
+        "expected": -13
+      },
+      {
+        "args": [
+          0,
+          5
+        ],
+        "expected": 5
+      },
+      {
+        "args": [
+          5,
+          0
+        ],
+        "expected": -5
+      },
+      {
+        "args": [
+          -5,
+          0
+        ],
+        "expected": -5
+      },
+      {
+        "args": [
+          2,
+          2
+        ],
+        "expected": 0
+      }
+    ],
+    "completion": {
+      "all_decisions_competitive": true,
+      "completed": true,
+      "exact_source": false,
+      "exact_tokens": false,
+      "execution": {
+        "all_pass": false,
+        "cases": [
+          {
+            "actual": 3,
+            "args": [
+              3,
+              10
+            ],
+            "expected": 7,
+            "pass": false
+          },
+          {
+            "actual": -3,
+            "args": [
+              -3,
+              10
+            ],
+            "expected": 7,
+            "pass": false
+          },
+          {
+            "actual": 3,
+            "args": [
+              3,
+              -10
+            ],
+            "expected": -13,
+            "pass": false
+          },
+          {
+            "actual": -3,
+            "args": [
+              -3,
+              -10
+            ],
+            "expected": -13,
+            "pass": false
+          },
+          {
+            "actual": 0,
+            "args": [
+              0,
+              5
+            ],
+            "expected": 5,
+            "pass": false
+          },
+          {
+            "actual": 5,
+            "args": [
+              5,
+              0
+            ],
+            "expected": -5,
+            "pass": false
+          },
+          {
+            "actual": -5,
+            "args": [
+              -5,
+              0
+            ],
+            "expected": -5,
+            "pass": true
+          },
+          {
+            "actual": 2,
+            "args": [
+              2,
+              2
+            ],
+            "expected": 0,
+            "pass": false
+          }
+        ],
+        "passed": 1,
+        "total": 8
+      },
+      "physical_audit_pass": true,
+      "races": [
+        {
+          "accepted_is_legal": true,
+          "accepted_token": "variable-1",
+          "active_assembly_cells": 415,
+          "allowed_tokens": [
+            "add",
+            "subtract",
+            "absolute",
+            "if",
+            "sum",
+            "variable-0",
+            "variable-1",
+            "integer"
+          ],
+          "candidate_count": 8,
+          "physical": true,
+          "position": 0,
+          "prompt_cells": 101,
+          "role_cells": 208,
+          "signature_cells": 172,
+          "spike_time_ms": 7.9,
+          "winner_cell": 9
+        }
+      ],
+      "readout_after_sha256": "f439744d0f049c5f08ccc5098e118150b4c3fc771a89dc2b67e6b6c7f0649e0d",
+      "readout_before_sha256": "f439744d0f049c5f08ccc5098e118150b4c3fc771a89dc2b67e6b6c7f0649e0d",
+      "readout_immutable": true,
+      "source": "def solve(first, second):\n    return first\n",
+      "tokens": [
+        "variable-1"
+      ]
+    },
+    "expected_source": "def solve(first, second):\n    return second - abs(first)\n",
+    "expected_tokens": [
+      "subtract",
+      "variable-0",
+      "absolute",
+      "variable-1"
+    ],
+    "prompt": "Given integers first and second, return second minus the absolute value of first.",
+    "signature": {
+      "entry_point": "solve",
+      "parameters": [
+        {
+          "name": "first",
+          "type": {
+            "arguments": [],
+            "constructor": "Int"
+          }
+        },
+        {
+          "name": "second",
+          "type": {
+            "arguments": [],
+            "constructor": "Int"
+          }
+        }
+      ],
+      "result": {
+        "arguments": [],
+        "constructor": "Int"
+      }
+    }
+  },
+  "teachers": [
+    {
+      "prompt": "Given integers first and second, return first minus second.",
+      "signature": {
+        "entry_point": "solve",
+        "parameters": [
+          {
+            "name": "first",
+            "type": {
+              "arguments": [],
+              "constructor": "Int"
+            }
+          },
+          {
+            "name": "second",
+            "type": {
+              "arguments": [],
+              "constructor": "Int"
+            }
+          }
+        ],
+        "result": {
+          "arguments": [],
+          "constructor": "Int"
+        }
+      },
+      "tokens": [
+        "subtract",
+        "variable-1",
+        "variable-0"
+      ]
+    },
+    {
+      "prompt": "Given integers first and second, return the absolute value of first; second is unused.",
+      "signature": {
+        "entry_point": "solve",
+        "parameters": [
+          {
+            "name": "first",
+            "type": {
+              "arguments": [],
+              "constructor": "Int"
+            }
+          },
+          {
+            "name": "second",
+            "type": {
+              "arguments": [],
+              "constructor": "Int"
+            }
+          }
+        ],
+        "result": {
+          "arguments": [],
+          "constructor": "Int"
+        }
+      },
+      "tokens": [
+        "absolute",
+        "variable-1"
+      ]
+    },
+    {
+      "prompt": "Given integers first and second, return second unchanged; first is unused.",
+      "signature": {
+        "entry_point": "solve",
+        "parameters": [
+          {
+            "name": "first",
+            "type": {
+              "arguments": [],
+              "constructor": "Int"
+            }
+          },
+          {
+            "name": "second",
+            "type": {
+              "arguments": [],
+              "constructor": "Int"
+            }
+          }
+        ],
+        "result": {
+          "arguments": [],
+          "constructor": "Int"
+        }
+      },
+      "tokens": [
+        "variable-0"
+      ]
+    },
+    {
+      "prompt": "Given integers first and second, return first unchanged; second is unused.",
+      "signature": {
+        "entry_point": "solve",
+        "parameters": [
+          {
+            "name": "first",
+            "type": {
+              "arguments": [],
+              "constructor": "Int"
+            }
+          },
+          {
+            "name": "second",
+            "type": {
+              "arguments": [],
+              "constructor": "Int"
+            }
+          }
+        ],
+        "result": {
+          "arguments": [],
+          "constructor": "Int"
+        }
+      },
+      "tokens": [
+        "variable-1"
+      ]
+    }
+  ],
+  "verdict": "STOP_DIRECT_PROMPT_ASSEMBLY_COMPOSITION"
+}

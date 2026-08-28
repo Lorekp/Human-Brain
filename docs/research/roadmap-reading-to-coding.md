@@ -235,6 +235,17 @@ local three-factor production-cell readout at every typed decision. Prompt and
 role state are refreshed without replaying generated source through the same
 recurrent bottleneck.
 
+That replacement passed its physical mechanism smoke, then stopped honestly on
+its first fresh binary-scalar composition. The fitted checkpoint recorded 51
+local updates and 56 recruitments, but both the target prompt and a fixed prompt
+swap elected root `variable-1`; the target program scored 1/8 cases. All races
+were legal and competitive and inference left the checkpoint byte-identical,
+so the failure is prompt-to-root discrimination rather than cell dynamics,
+typed masking, or compilation. The target is spent. The smallest next
+increment keeps the same cells/readout and adds channel-tagged adjacent-token
+assemblies alongside unigrams, because the current OR-union erases token order
+and multiplicity. That increment must face a different fresh task.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
