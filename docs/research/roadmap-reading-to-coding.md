@@ -256,6 +256,34 @@ is now a genuine unseen-context transfer failure. The next work is a visible,
 freely rerunnable compositional development matrix plus root-current
 localization, not another chain of frozen one-shot micro-probes.
 
+That visible matrix closed the static whole-prompt decoder family. The retained
+role-gated baseline replayed 4/6 teachers but composed 0/6. A disjoint additive
+lexical/role bank and a four-branch lexical-by-role coincidence head each fell
+to 0/6 teacher replay; a generic typed place key recovered only 1/6 and emitted
+the same last-taught program for every case. Localization found that every hole
+still received one 78–84-cell prompt union, while different prompts overlapped
+by 28–60 cells. Role branches therefore collapsed before the physical race;
+depth/child tensor factorization can repair unseen role conjunctions but cannot
+recover lexical alignment already erased by the union. The failed uncommitted
+heads were removed and the last working decoder restored. The immediate coding
+slice now shifts to a generic typed edit loop whose cell-raced actions receive
+real execution outcomes; role-conditioned prompt-span attention remains the
+separate reading/language repair.
+
+The first edit-loop slice then stopped without a retry. Seed 17 raced a generic
+scalar bank (`absolute`/`add`/`subtract`, both operand orientations, and signed
+single-digit literals) for eight public edit proposals from `variable-0`.
+The exact proposals were `x-(-8)`, `abs(x)`, `x+0`, `x-8`, `abs(x)`, `x-4`,
+`x-7`, and `abs(x)`; every proposal remained 0/4 on the public `abs(x)+3`
+canary, so the host oracle undid all eight and the incumbent stayed unchanged.
+This is `STOP_BLIND_TYPED_EDIT_SEARCH`: fitted cells causally selected every
+edit, but the host stored novelty/policy currents, reduced outcomes to a score
+delta, and accepted strict improvements. It is therefore a negative plumbing
+probe, not cell-only feedback learning. The bank will not be narrowed and the
+seed/budget will not be searched. The successor must put raw execution
+observations into a persistent learned cell/synapse policy so proposals are
+conditioned rather than brute-forced.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

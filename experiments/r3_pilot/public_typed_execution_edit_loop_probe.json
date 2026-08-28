@@ -1,0 +1,32 @@
+{
+  "schema": "public-typed-execution-edit-loop-probe-v1",
+  "date": "2026-08-29",
+  "claim_boundary": "Cell-raced proposal generation with a public host-oracle hill climb; not cell-only feedback learning.",
+  "seed": 17,
+  "edit_budget": 8,
+  "candidate_banks": {
+    "operations": ["absolute", "add", "subtract"],
+    "literals": [-9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "orientations": ["existing-left", "existing-right"]
+  },
+  "public_cases": [
+    {"arguments": [-5], "expected": 8},
+    {"arguments": [-2], "expected": 5},
+    {"arguments": [0], "expected": 3},
+    {"arguments": [4], "expected": 7}
+  ],
+  "initial": {"tokens": ["variable-0"], "score": 0},
+  "steps": [
+    {"execution": 1, "operation": "subtract", "literal": -8, "orientation": "existing-left", "proposal_score": 0, "delta": 0, "decision": "UNDO", "simultaneous_spike_candidates": [1, 1, 3, 1, 1]},
+    {"execution": 2, "operation": "absolute", "literal": null, "orientation": null, "proposal_score": 0, "delta": 0, "decision": "UNDO", "simultaneous_spike_candidates": [1, 2, 1]},
+    {"execution": 3, "operation": "add", "literal": 0, "orientation": "existing-right", "proposal_score": 0, "delta": 0, "decision": "UNDO", "simultaneous_spike_candidates": [1, 1, 2, 1, 1]},
+    {"execution": 4, "operation": "subtract", "literal": 8, "orientation": "existing-left", "proposal_score": 0, "delta": 0, "decision": "UNDO", "simultaneous_spike_candidates": [1, 1, 1, 1, 1]},
+    {"execution": 5, "operation": "absolute", "literal": null, "orientation": null, "proposal_score": 0, "delta": 0, "decision": "UNDO", "simultaneous_spike_candidates": [1, 2, 1]},
+    {"execution": 6, "operation": "add", "literal": -4, "orientation": "existing-right", "proposal_score": 0, "delta": 0, "decision": "UNDO", "simultaneous_spike_candidates": [1, 1, 2, 1, 1]},
+    {"execution": 7, "operation": "subtract", "literal": 7, "orientation": "existing-left", "proposal_score": 0, "delta": 0, "decision": "UNDO", "simultaneous_spike_candidates": [1, 1, 1, 1, 1]},
+    {"execution": 8, "operation": "absolute", "literal": null, "orientation": null, "proposal_score": 0, "delta": 0, "decision": "UNDO", "simultaneous_spike_candidates": [1, 2, 1]}
+  ],
+  "final": {"tokens": ["variable-0"], "score": 0},
+  "verdict": "STOP_BLIND_TYPED_EDIT_SEARCH",
+  "retry_policy": "No seed search, candidate-bank narrowing, or budget expansion."
+}
