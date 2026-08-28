@@ -1,0 +1,16 @@
+{
+  "builder_checkpoint_sha256": "939d0bea5fa496f11c6492b253a4ddb9f42d4fcb0d9da4236a59272643df723a",
+  "builder_target_no_argument_generation_calls_maximum": 384,
+  "builder_target_runs_planned": 3,
+  "canonical_target_sandbox_calls_planned": 1,
+  "created_at_utc": "2026-08-28T18:53:44.073111+00:00",
+  "experiment": "r3-public-simple-swe-role-chunk-shape-action",
+  "harness_retries": 0,
+  "model_retries": 0,
+  "probe_source_sha256": "1d3b16be62e0699f45484ae4ad0cd2bae7f580c9d311b9bded614a71ebcdcd6e",
+  "router_checkpoint_sha256": "88f66e2d1e970dba64a42f7971f0b8a196b854620dca5d703db17525b488ea74",
+  "router_target_no_argument_generation_calls_planned": 2,
+  "schema_version": 1,
+  "state": "TARGET_ATTEMPT_SPENT",
+  "target_task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/009"
+}

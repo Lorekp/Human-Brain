@@ -1,0 +1,877 @@
+{
+  "authority": {
+    "builder_sign_input": "raw checker-derived OBS_POS/OBS_NEG token",
+    "expected_routes_and_sources_scored_after_all_target_calls": true,
+    "fresh_routed_action_target": true,
+    "harness_retries": 0,
+    "hidden_results_entered_cell_runtime": false,
+    "historical_prompt_baseline_exposure": true,
+    "model_retries": 0,
+    "partition": "train",
+    "prior_target_artifact_inventory": [],
+    "python_selected_target_operator_or_source": false,
+    "target_task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/009"
+  },
+  "builder_target": {
+    "analyses": [
+      {
+        "compile_valid": true,
+        "constructed_semantic_exact": true,
+        "copy_slots": [
+          0,
+          1,
+          2,
+          1
+        ],
+        "copy_transactions": [
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967290,
+            "copied_event_counts": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21
+            ],
+            "enter_event_count": 8,
+            "exit_resumed_temporal_once": true,
+            "slot": 0,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967291,
+            "copied_event_counts": [
+              10,
+              10,
+              10,
+              10,
+              10,
+              10
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "enter_event_count": 10,
+            "exit_resumed_temporal_once": true,
+            "slot": 1,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967292,
+            "copied_event_counts": [
+              35
+            ],
+            "copied_places": [
+              0
+            ],
+            "enter_event_count": 35,
+            "exit_resumed_temporal_once": true,
+            "slot": 2,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967291,
+            "copied_event_counts": [
+              51,
+              51,
+              51,
+              51,
+              51,
+              51
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "enter_event_count": 51,
+            "exit_resumed_temporal_once": true,
+            "slot": 1,
+            "temporal_event_count_held_across_copied_bytes": true
+          }
+        ],
+        "copy_transactions_exact": true,
+        "emitted_sha256": "204e89ccd012fdffcf2ca507f4b430264664ff08e59cc5572e4f1cb04e867d92",
+        "exact_expected_source": true,
+        "expected_sha256": "204e89ccd012fdffcf2ca507f4b430264664ff08e59cc5572e4f1cb04e867d92",
+        "operator_elected_physically": true,
+        "ordinary_eos": true,
+        "passed": true,
+        "shape": "MAP",
+        "signed_offset": 3,
+        "source": "def solve_26ac026192446751(values):\n    return [item_0 + 3 for item_0 in values]\n"
+      },
+      {
+        "compile_valid": true,
+        "constructed_semantic_exact": true,
+        "copy_slots": [
+          0,
+          1,
+          1,
+          2
+        ],
+        "copy_transactions": [
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967290,
+            "copied_event_counts": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21
+            ],
+            "enter_event_count": 8,
+            "exit_resumed_temporal_once": true,
+            "slot": 0,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967291,
+            "copied_event_counts": [
+              10,
+              10,
+              10,
+              10,
+              10,
+              10
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "enter_event_count": 10,
+            "exit_resumed_temporal_once": true,
+            "slot": 1,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967291,
+            "copied_event_counts": [
+              25,
+              25,
+              25,
+              25,
+              25,
+              25
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "enter_event_count": 25,
+            "exit_resumed_temporal_once": true,
+            "slot": 1,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967292,
+            "copied_event_counts": [
+              29
+            ],
+            "copied_places": [
+              0
+            ],
+            "enter_event_count": 29,
+            "exit_resumed_temporal_once": true,
+            "slot": 2,
+            "temporal_event_count_held_across_copied_bytes": true
+          }
+        ],
+        "copy_transactions_exact": true,
+        "emitted_sha256": "9c80813b7bfcad8c975b1640a1f0e8d6a8b14c0c84cf9f89c6405b7a9c15c1ab",
+        "exact_expected_source": true,
+        "expected_sha256": "9c80813b7bfcad8c975b1640a1f0e8d6a8b14c0c84cf9f89c6405b7a9c15c1ab",
+        "operator_elected_physically": true,
+        "ordinary_eos": true,
+        "passed": true,
+        "shape": "SCALAR",
+        "signed_offset": 3,
+        "source": "def solve_26ac026192446751(values):\n    return values + 3\n"
+      },
+      {
+        "compile_valid": true,
+        "constructed_semantic_exact": true,
+        "copy_slots": [
+          0,
+          1,
+          2,
+          1
+        ],
+        "copy_transactions": [
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967290,
+            "copied_event_counts": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21
+            ],
+            "enter_event_count": 8,
+            "exit_resumed_temporal_once": true,
+            "slot": 0,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967291,
+            "copied_event_counts": [
+              10,
+              10,
+              10,
+              10,
+              10,
+              10
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "enter_event_count": 10,
+            "exit_resumed_temporal_once": true,
+            "slot": 1,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967292,
+            "copied_event_counts": [
+              35
+            ],
+            "copied_places": [
+              0
+            ],
+            "enter_event_count": 35,
+            "exit_resumed_temporal_once": true,
+            "slot": 2,
+            "temporal_event_count_held_across_copied_bytes": true
+          },
+          {
+            "control_advanced_temporal_once": true,
+            "control_token_id": 4294967291,
+            "copied_event_counts": [
+              51,
+              51,
+              51,
+              51,
+              51,
+              51
+            ],
+            "copied_places": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "enter_event_count": 51,
+            "exit_resumed_temporal_once": true,
+            "slot": 1,
+            "temporal_event_count_held_across_copied_bytes": true
+          }
+        ],
+        "copy_transactions_exact": true,
+        "emitted_sha256": "c5697b0062426b3f1ce3aaced2e3552d7acd01973795f921fdb9c4e4fb19081c",
+        "exact_expected_source": true,
+        "expected_sha256": "c5697b0062426b3f1ce3aaced2e3552d7acd01973795f921fdb9c4e4fb19081c",
+        "operator_elected_physically": true,
+        "ordinary_eos": true,
+        "passed": true,
+        "shape": "MAP",
+        "signed_offset": 1,
+        "source": "def solve_26ac026192446751(values):\n    return [item_0 + 1 for item_0 in values]\n"
+      }
+    ],
+    "prompt_steps": [
+      {
+        "active_segments": 273,
+        "allocated_segments": 0,
+        "candidate_segments": 1800,
+        "matching_segments": 293,
+        "postings_visited": 4591,
+        "punished_segments": 0,
+        "steps": 37
+      },
+      {
+        "active_segments": 283,
+        "allocated_segments": 0,
+        "candidate_segments": 1788,
+        "matching_segments": 303,
+        "postings_visited": 4669,
+        "punished_segments": 0,
+        "steps": 37
+      },
+      {
+        "active_segments": 273,
+        "allocated_segments": 0,
+        "candidate_segments": 1800,
+        "matching_segments": 293,
+        "postings_visited": 4591,
+        "punished_segments": 0,
+        "steps": 37
+      }
+    ]
+  },
+  "claim_boundary": "Public TRAIN prompt-plus-serialized-observation two-shape construction only; observation-only shape causality and cross-shape sign causality are not isolated; not arbitrary AST synthesis, transfer, DEV/eval, M0, or C1.",
+  "experiment": "r3-public-simple-swe-role-chunk-shape-action",
+  "gates": {
+    "actual_map_builder_exact": true,
+    "actual_visible_checker_passed": true,
+    "both_single_factor_controls_failed": true,
+    "builder_shape_intervention_scalar_exact": true,
+    "canonical_target_train_sandbox_all_36": true,
+    "list_feedback_advanced_once": true,
+    "payload_control_map_builder_exact": true,
+    "router_physically_selected_test": true,
+    "target_prompt_plus_list_observation_selected_map_shape": true
+  },
+  "generated_at_utc": "2026-08-28T18:53:48.041461+00:00",
+  "generation_budget": {
+    "generation_budget": 128,
+    "longest_expected_source_bytes": 81,
+    "required_calls_including_eos": 82
+  },
+  "history_anchor": {
+    "current_target_task_sha256": "65a1d6b824fbb2694512b1a56468b70de8dc1788aec0d4b896f255e2091b38a7",
+    "historical_prompt_baseline_sha256": "524c9df0971b1684e22398866fef0108f48fd40ab3fe8caeb221196c1e753f8b",
+    "historical_target_occurrences": 2,
+    "historical_target_task_sha256": "e3453e80ed535e5551d8d030c71a9dab20a2c1f00fb468494e335234a58d8be2",
+    "historical_task_content_drift": true
+  },
+  "limitations": {
+    "donor_reuse": "scalar-offset and list-map-add /005 and /006 are reused public TRAIN donors; all PAC2 circuits are fresh",
+    "family_disjoint_transfer_claimed": false,
+    "fixed_map_binder": "item_0",
+    "fixed_source_skeletons": [
+      "def COPY0(COPY1): return COPY1 +/- COPY2",
+      "def COPY0(COPY1): return [item_0 +/- COPY2 for item_0 in COPY1]"
+    ],
+    "freshness_claimed": false,
+    "historical_prompt_exposure": true,
+    "host_factorization": "Python reduces real visible execution into container-shape, sign, and canonical magnitude-byte observations before cells receive them.",
+    "operator_attribution": "Both MAP donors and the MAP target have positive residuals; exact physical plus election is shown, but cross-shape OBS_POS-to-ADD causality is not isolated.",
+    "shape_attribution": "The normalized target prompt independently identifies MAP; OBS_LIST is checker-derived and physically advanced, but OBS_LIST-only causal shape selection is not shown."
+  },
+  "outcome": "PASS_R3_PAC2_TWO_SHAPE_LIST_MAP_CONSTRUCTION",
+  "router_target": {
+    "actual_feedback": {
+      "active_segments": 11,
+      "advanced": true,
+      "allocated_segments": 0,
+      "candidate_segments": 11,
+      "matching_segments": 11,
+      "native_stop": null,
+      "observation_token_id": 1609,
+      "postings_visited": 110,
+      "punished_segments": 0,
+      "steps": 1
+    },
+    "actual_first": {
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 5,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1540,
+        "temporal_event_count": 67,
+        "winner_input_columns": 11
+      },
+      "native_stop": null
+    },
+    "actual_prompt": {
+      "active_segments": 726,
+      "allocated_segments": 0,
+      "candidate_segments": 3113,
+      "matching_segments": 726,
+      "postings_visited": 11275,
+      "punished_segments": 0,
+      "steps": 66
+    },
+    "actual_second": {
+      "generation": {
+        "activated_columns": 11,
+        "candidate_tokens": 5,
+        "path": "TEMPORAL",
+        "physical_election_count": 1,
+        "surface_token_id": 1539,
+        "temporal_event_count": 69,
+        "winner_input_columns": 11
+      },
+      "native_stop": null
+    },
+    "identity_checker": {
+      "cases": [
+        {
+          "error": null,
+          "expected": [
+            3
+          ],
+          "input": [
+            0
+          ],
+          "observed": [
+            0
+          ],
+          "passed": false
+        },
+        {
+          "error": null,
+          "expected": [
+            2,
+            4
+          ],
+          "input": [
+            -1,
+            1
+          ],
+          "observed": [
+            -1,
+            1
+          ],
+          "passed": false
+        },
+        {
+          "error": null,
+          "expected": [
+            7,
+            7,
+            1
+          ],
+          "input": [
+            4,
+            4,
+            -2
+          ],
+          "observed": [
+            4,
+            4,
+            -2
+          ],
+          "passed": false
+        }
+      ],
+      "container_shape": "list_int_to_list_int",
+      "entrypoint": "solve_26ac026192446751",
+      "error": null,
+      "offset": 3,
+      "passed": false,
+      "residual": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "source": "def solve_26ac026192446751(values):\n    return values\n"
+    },
+    "shape_control": "builder input intervention SHAPE_MAP -> SHAPE_SCALAR; router cross-context path was not used"
+  },
+  "runtime": {
+    "elapsed_wall_ns": 14231268800,
+    "native_binary_sha256": "300db0b79cd6a21587c249b7aca409b5afb5b2ccdfec02486528d722fabf0564",
+    "native_source_digest": "1207670e012ef32ad3bf2fe383847ddb904f45df928bd2f7d89e5efabae1295a",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "probe_source_sha256": "1d3b16be62e0699f45484ae4ad0cd2bae7f580c9d311b9bded614a71ebcdcd6e",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "sandbox": {
+    "all_private_cases_held_post_generation": true,
+    "attempted": true,
+    "detail": "",
+    "outcome": "passed",
+    "passed": true,
+    "property_case_count": 32,
+    "python_runtime": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "regression_case_count": 4,
+    "sandboxed": true,
+    "wall_seconds": 0.10330270000122255,
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "schema_version": 1,
+  "spend_marker": {
+    "exclusive_create": true,
+    "path": "public_simple_swe_role_chunk_shape_action_probe.t1_list_map_add-009.spent.json",
+    "sha256": "4e52ee3481dc55ef83cfb5742ef42d0460bbe07eecc223a30eba94ba6438e802"
+  },
+  "training": {
+    "builder_capacity": {
+      "max_pyramidal_cells": 7308,
+      "noninitial_arrivals": 292,
+      "segment_capacity": 3212,
+      "threshold_offset_cells": 16152,
+      "training_sequence_lengths": [
+        60,
+        60,
+        88,
+        88
+      ]
+    },
+    "builder_checkpoint_sha256": "939d0bea5fa496f11c6492b253a4ddb9f42d4fcb0d9da4236a59272643df723a",
+    "router_capacity": {
+      "max_pyramidal_cells": 35540,
+      "noninitial_arrivals": 252,
+      "segment_capacity": 2772,
+      "threshold_offset_cells": 83368,
+      "training_sequence_lengths": [
+        59,
+        59,
+        69,
+        69
+      ]
+    },
+    "router_checkpoint_sha256": "88f66e2d1e970dba64a42f7971f0b8a196b854620dca5d703db17525b488ea74",
+    "task_ids": [
+      "simple-swe-v1/train/tier-0/t0_scalar_offset/005",
+      "simple-swe-v1/train/tier-0/t0_scalar_offset/006",
+      "simple-swe-v1/train/tier-1/t1_list_map_add/005",
+      "simple-swe-v1/train/tier-1/t1_list_map_add/006"
+    ]
+  },
+  "upstream_pac1": {
+    "artifact_sha256": "916765e4bf667f4f654fbfde24492c8f17944891aa2efc9b0e815feb04e677f6",
+    "outcome": "PASS_R3_PAC1_EXECUTION_FEEDBACK_CONSTRUCTION",
+    "source_sha256": "09c92d3a717fb548a7992af5ce21da309425741f3dbc2857b52ea56caee579ea"
+  },
+  "visible_target_checkers": [
+    {
+      "cases": [
+        {
+          "error": null,
+          "expected": [
+            3
+          ],
+          "input": [
+            0
+          ],
+          "observed": [
+            3
+          ],
+          "passed": true
+        },
+        {
+          "error": null,
+          "expected": [
+            2,
+            4
+          ],
+          "input": [
+            -1,
+            1
+          ],
+          "observed": [
+            2,
+            4
+          ],
+          "passed": true
+        },
+        {
+          "error": null,
+          "expected": [
+            7,
+            7,
+            1
+          ],
+          "input": [
+            4,
+            4,
+            -2
+          ],
+          "observed": [
+            7,
+            7,
+            1
+          ],
+          "passed": true
+        }
+      ],
+      "container_shape": "list_int_to_list_int",
+      "entrypoint": "solve_26ac026192446751",
+      "error": null,
+      "offset": 3,
+      "passed": true,
+      "residual": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "source": "def solve_26ac026192446751(values):\n    return [item_0 + 3 for item_0 in values]\n"
+    },
+    {
+      "cases": [
+        {
+          "error": "TypeError",
+          "expected": [
+            3
+          ],
+          "input": [
+            0
+          ],
+          "observed": null,
+          "passed": false
+        },
+        {
+          "error": "TypeError",
+          "expected": [
+            2,
+            4
+          ],
+          "input": [
+            -1,
+            1
+          ],
+          "observed": null,
+          "passed": false
+        },
+        {
+          "error": "TypeError",
+          "expected": [
+            7,
+            7,
+            1
+          ],
+          "input": [
+            4,
+            4,
+            -2
+          ],
+          "observed": null,
+          "passed": false
+        }
+      ],
+      "container_shape": "list_int_to_list_int",
+      "entrypoint": "solve_26ac026192446751",
+      "error": null,
+      "offset": 3,
+      "passed": false,
+      "residual": [],
+      "source": "def solve_26ac026192446751(values):\n    return values + 3\n"
+    },
+    {
+      "cases": [
+        {
+          "error": null,
+          "expected": [
+            3
+          ],
+          "input": [
+            0
+          ],
+          "observed": [
+            1
+          ],
+          "passed": false
+        },
+        {
+          "error": null,
+          "expected": [
+            2,
+            4
+          ],
+          "input": [
+            -1,
+            1
+          ],
+          "observed": [
+            0,
+            2
+          ],
+          "passed": false
+        },
+        {
+          "error": null,
+          "expected": [
+            7,
+            7,
+            1
+          ],
+          "input": [
+            4,
+            4,
+            -2
+          ],
+          "observed": [
+            5,
+            5,
+            -1
+          ],
+          "passed": false
+        }
+      ],
+      "container_shape": "list_int_to_list_int",
+      "entrypoint": "solve_26ac026192446751",
+      "error": null,
+      "offset": 3,
+      "passed": false,
+      "residual": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "source": "def solve_26ac026192446751(values):\n    return [item_0 + 1 for item_0 in values]\n"
+    }
+  ]
+}

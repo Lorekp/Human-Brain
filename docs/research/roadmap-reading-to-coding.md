@@ -192,20 +192,24 @@ Milestone ladder below Gemma already defined (M0 beat random completion
 
 **Public-TRAIN bridge status (2026-08-28).** The smallest closed coding loop
 now works end to end on a scalar template: execute an identity source, reduce
-the visible residual to a sign observation, let fitted-cell races elect a
-BUILD action, forward that action into a separate fitted-cell role/place
-builder, generate source directly, and run the result in the canonical
-sandbox. R3-PAC0 emitted exact `n - 9`; operation and payload interventions
-emitted exact `n + 9` and `n - 8`. R3-PAC1 then removed the builder's direct
-sidecar-magnitude shortcut: it retained the entrypoint across identity
-execution, copied magnitude `2` from the completed residual observation, and
-emitted exact `n - 2`; sign and genuine donor-payload controls emitted exact
-`n + 2` and `n - 7`. Both actual programs passed all 36 TRAIN cases. This does
-**not** open M0 or any protected split. The current bottleneck is now source
-shape: feedback formatting remains host-factorized and the emitted program is
-still a fixed scalar skeleton. The next bridge is a small list-map shape
-router/builder before any family-disjoint or hidden capability cohort is
-spent. The closed typed-projection tuning loop remains closed.
+the visible residual to observations, let fitted-cell races elect actions,
+forward those actions into a separate fitted-cell role/place builder, generate
+source directly, and run the result in the canonical sandbox. R3-PAC0 emitted
+exact `n - 9`; R3-PAC1 retained the entrypoint across identity execution,
+copied magnitude `2` from completed residual feedback, and emitted exact
+`n - 2`. R3-PAC2 then added a second source shape: after real list execution it
+physically emitted `MAP` and `ADD`, copied entrypoint, parameter, magnitude `3`,
+and the repeated iterable, reached ordinary EOS, and emitted exact
+`[item_0 + 3 for item_0 in values]`. Its scalar-shape and donor-payload
+interventions emitted exact `values + 3` and map `+1` controls. All three actual
+programs passed 36 TRAIN cases. PAC2 does not isolate observation-only shape
+causality or cross-shape sign causality: the prompt identifies MAP, all MAP
+donors are positive, feedback remains host-factorized, and both builder
+skeletons are fixed. This does **not** open M0 or any protected split. PAC
+probing now ends; the next step is one frozen generic cell checkpoint across a
+fresh four-family self-posed coding cohort, with raw diagnostics, at most two
+revision cycles, and cell-off/random controls. The closed typed-projection
+tuning loop remains closed.
 
 ### Phase R5 — Scale to billions (continuous)
 
