@@ -1,0 +1,142 @@
+{
+  "authority": {
+    "c1_material_read": false,
+    "development_material_used": false,
+    "held_out_material_read": false,
+    "literal_train_sequence": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "partition": "public-synthetic-train",
+    "synthetic_runtime_authority": true,
+    "untrained_static_distractor_token": 99
+  },
+  "claim_boundary": "One memorized four-token public synthetic TRAIN chain. Cue token 0 arrives once; tokens 1, 2, and 3 are then emitted by native physical output races and each emitted token alone is fed back READ_ONLY. The first election includes an untrained static one-column-overlap distractor, so it is a two-candidate physical race. There is no teacher token after the cue, Python candidate enumeration, argmax, or learned head. This is not open-vocabulary generation, semantic reasoning, generalization, coding ability, held-out evidence, C1, or benchmark evidence.",
+  "experiment": "r3-public-train-free-running-chain-smoke",
+  "free_run": {
+    "contains_multi_candidate_election": true,
+    "cue_arrivals": [
+      0
+    ],
+    "election_candidate_counts": [
+      2,
+      1,
+      1
+    ],
+    "emitted_sequence": [
+      1,
+      2,
+      3
+    ],
+    "expected_sequence": [
+      1,
+      2,
+      3
+    ],
+    "learned_readout_parameters": 0,
+    "python_argmax": false,
+    "python_candidate_enumeration": false,
+    "steps": [
+      {
+        "activated_columns": 11,
+        "basket_tick": 181,
+        "candidate_tokens_physical": 2,
+        "correct": true,
+        "emitted_token_id": 1,
+        "expected_token_id": 1,
+        "feedback_arriving_token_id": 1,
+        "feedback_mode": "READ_ONLY",
+        "feedback_predicted": true,
+        "feedback_predicted_columns": 11,
+        "inhibition_onset_tick": 182,
+        "output_cell_id": 379,
+        "position": 1,
+        "simulated_ticks": 600,
+        "winner_input_columns": 11,
+        "winner_tick": 180
+      },
+      {
+        "activated_columns": 11,
+        "basket_tick": 181,
+        "candidate_tokens_physical": 1,
+        "correct": true,
+        "emitted_token_id": 2,
+        "expected_token_id": 2,
+        "feedback_arriving_token_id": 2,
+        "feedback_mode": "READ_ONLY",
+        "feedback_predicted": true,
+        "feedback_predicted_columns": 11,
+        "inhibition_onset_tick": 182,
+        "output_cell_id": 380,
+        "position": 2,
+        "simulated_ticks": 181,
+        "winner_input_columns": 11,
+        "winner_tick": 180
+      },
+      {
+        "activated_columns": 11,
+        "basket_tick": 181,
+        "candidate_tokens_physical": 1,
+        "correct": true,
+        "emitted_token_id": 3,
+        "expected_token_id": 3,
+        "feedback_arriving_token_id": 3,
+        "feedback_mode": "READ_ONLY",
+        "feedback_predicted": true,
+        "feedback_predicted_columns": 11,
+        "inhibition_onset_tick": 182,
+        "output_cell_id": 381,
+        "position": 3,
+        "simulated_ticks": 181,
+        "winner_input_columns": 11,
+        "winner_tick": 180
+      }
+    ],
+    "teacher_tokens_after_cue": 0
+  },
+  "generated_at_utc": "2026-08-28T02:22:50.335372+00:00",
+  "outcome": "PASS_PUBLIC_TRAIN_FREE_RUNNING_PHYSICAL_CHAIN",
+  "physical_definition": {
+    "active_columns_per_token": 11,
+    "circuit_identity_sha256": "d4d8261a73af3cd1220eeda940c533b002d0f9d30d32ce3ae60a84823ce0b737",
+    "column_count": 54,
+    "context_policy": "BOUND_WINNERS",
+    "max_pyramidal_cells": 108,
+    "maximum_code_overlap": 1,
+    "plasticity_policy": "PLASTIC",
+    "segment_capacity": 33,
+    "theta_active": 20,
+    "theta_match": 18
+  },
+  "runtime": {
+    "elapsed_wall_ns": 3949768300,
+    "native_binary_sha256": "ab585d9c3870470ea53a155514231a3f281576eb14c262c8fea7152dbc7d6ae6",
+    "native_source_digest": "efd2f5f9f8d250f9104ffac6ff10c03471d56a2a6652014117a89973d7c57199",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "schema_version": 1,
+  "training": {
+    "learning_steps": 8,
+    "live_segments": 33,
+    "records": [
+      {
+        "active_segments": 0,
+        "allocated_segments": 33,
+        "matching_segments": 0,
+        "predicted_steps": 0,
+        "replay": 0
+      },
+      {
+        "active_segments": 0,
+        "allocated_segments": 0,
+        "matching_segments": 33,
+        "predicted_steps": 0,
+        "replay": 1
+      }
+    ],
+    "replays": 2
+  }
+}
