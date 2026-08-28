@@ -301,6 +301,24 @@ inverse effect recall itself untested. The next increment must obtain actions
 from a structurally unique competition or from environment-triggered policy
 updates, not another parameter repair of this scheduler.
 
+The structurally different reward-modulated actor reached that next seam but
+failed its public atomic readiness check, so composition remained unopened.
+Each public goal executed all ten fixed typed actions in round-robin order; raw
+L1 progress became a diffuse signed third factor on a sparse action row versus
+a masked sink, while pacemaker bias was clamped out of inference. Three epochs
+produced 300 balanced trials, 300 local updates, and 375 recruitments. The first
+visible replay exposed the expected ±2 compromise under shared shaped reward;
+one standard mean-centered actor-critic advantage repair removed all race ties
+without changing seed, schedule, anatomy, or learning constants. Fresh atomic
+replay still reached only 4/10 exact actions: `DONE`, `ADD2`, `ADD4`, and
+`SUB3`. `ABS` routed to `ADD4`, while five other offsets routed to adjacent
+magnitudes. This is `STOP_PUBLIC_ATOMIC_REPLAY`. G-RMA1 (`ABS → ADD3 → DONE`)
+was never run, and the cumulative-feature actor receives no further reward,
+race, epoch, or bank tuning. The surviving seam is reward-modulated local
+action plasticity; the next representation increment must create exact signed
+magnitude cells (or an equivalently margin-producing stage) before any
+multi-edit target is opened.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

@@ -1,0 +1,62 @@
+{
+  "schema": "public-typed-reward-modulated-atomic-replay-stop-v1",
+  "seed": 17,
+  "curriculum": {
+    "epochs": 3,
+    "public_goals": 10,
+    "performed_actions_per_goal": 10,
+    "motor_trials": 300,
+    "coverage_per_action": 30,
+    "positive_advantages": 129,
+    "neutral_advantages": 0,
+    "negative_advantages": 171,
+    "local_updates": 300,
+    "structural_recruitments": 375,
+    "checkpoint_changed": true,
+    "frozen_before_composition_target": true
+  },
+  "development_change": {
+    "reason": "The initial public replay tied on WRAP_SUB[3] and collapsed mainly to +/-2 compromise actions under raw normalized-L1 reward.",
+    "single_change": "Subtract each goal state's mean raw motor reward to form a generic centered actor-critic advantage.",
+    "unchanged": [
+      "seed",
+      "epochs",
+      "action bank",
+      "training grids",
+      "round-robin order",
+      "cell populations",
+      "sparse anatomy",
+      "learning rate",
+      "race bound"
+    ]
+  },
+  "atomic_replay": {
+    "arguments": [
+      -10,
+      -3,
+      4,
+      7
+    ],
+    "passed_goals": 4,
+    "total_goals": 10,
+    "ties": 0,
+    "selections": {
+      "DONE": "DONE",
+      "WRAP_ABS": "WRAP_ADD[4]",
+      "WRAP_ADD[1]": "WRAP_ADD[2]",
+      "WRAP_ADD[2]": "WRAP_ADD[2]",
+      "WRAP_ADD[3]": "WRAP_ADD[4]",
+      "WRAP_ADD[4]": "WRAP_ADD[4]",
+      "WRAP_SUB[1]": "WRAP_SUB[2]",
+      "WRAP_SUB[2]": "WRAP_SUB[3]",
+      "WRAP_SUB[3]": "WRAP_SUB[3]",
+      "WRAP_SUB[4]": "WRAP_SUB[3]"
+    },
+    "checkpoint_immutable_for_all_selections": true
+  },
+  "composition_gate_opened": false,
+  "verdict": "STOP_PUBLIC_ATOMIC_REPLAY",
+  "retry_policy": "No further reward, race, seed, epoch, order, fan-in, or action-bank tuning for this cumulative-relation-feature actor.",
+  "localization": "Masked-sink signed plasticity and unique fresh action races are viable, but cumulative signed-magnitude features plus shared shaped returns alias neighboring offsets and do not fit the atomic policy.",
+  "claim_boundary": "Fresh public scalar one-step development evidence only. G-RMA1 composition, Simple-SWE, M0, held-out, C1, and capability surfaces remained unopened."
+}
