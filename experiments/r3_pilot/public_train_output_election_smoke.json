@@ -32,13 +32,15 @@
     "winner_tick": 180
   },
   "experiment": "r3-public-train-output-election-smoke",
-  "generated_at_utc": "2026-08-28T02:10:21.648200+00:00",
+  "generated_at_utc": "2026-08-28T02:34:19.975791+00:00",
   "outcome": "PASS_PUBLIC_TRAIN_PHYSICAL_OUTPUT_ELECTION",
   "physical_definition": {
     "active_columns_per_token": 11,
-    "circuit_identity_sha256": "be13472e6f7499e90b3488a8d6129d31d9952ed9a5f9736dcd064435f97af2c0",
+    "circuit_identity_sha256": "dcafa4935888a3778720eff2fd104fa18773a6bd7cdfc164bc2db695c696469b",
     "column_count": 22,
+    "connected_permanence_ticks": 250,
     "context_policy": "BOUND_WINNERS",
+    "initial_permanence_ticks": 255,
     "max_pyramidal_cells": 44,
     "plasticity_policy": "PLASTIC",
     "segment_capacity": 11,
@@ -46,9 +48,9 @@
     "theta_match": 18
   },
   "runtime": {
-    "elapsed_wall_ns": 4010986200,
-    "native_binary_sha256": "ab585d9c3870470ea53a155514231a3f281576eb14c262c8fea7152dbc7d6ae6",
-    "native_source_digest": "efd2f5f9f8d250f9104ffac6ff10c03471d56a2a6652014117a89973d7c57199",
+    "elapsed_wall_ns": 4412052100,
+    "native_binary_sha256": "e386a6c339cff83f13e1d070149b9539beaf443a2a09da9e5427122199a3601d",
+    "native_source_digest": "bd70b5ae77860ed96e3f2683c178a9b5755423a0aaeeab3e1df631cdad6c60e5",
     "platform": "Windows-10-10.0.26200-SP0",
     "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
   },
@@ -65,10 +67,10 @@
         "replay": 0
       },
       {
-        "active_segments": 0,
+        "active_segments": 11,
         "allocated_segments": 0,
         "matching_segments": 11,
-        "predicted_columns": 0,
+        "predicted_columns": 11,
         "replay": 1
       }
     ],
