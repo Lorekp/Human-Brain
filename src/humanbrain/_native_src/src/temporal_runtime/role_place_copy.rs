@@ -11,11 +11,12 @@ use crate::random123::sample_without_replacement;
 
 use super::{TokenCode, ACTIVE_COLUMNS, NONE, PAIRS_PER_SEGMENT};
 
-pub(crate) const SLOT_COUNT: usize = 3;
+pub(crate) const SLOT_COUNT: usize = 4;
+pub(crate) const FIRST_BOUND_SLOT: u8 = 2;
 pub(crate) const MAX_SLOT_TOKENS: usize = 22;
-pub(crate) const SLOT_START_TOKEN_BASE: u32 = u32::MAX - 10;
-pub(crate) const SLOT_END_TOKEN_BASE: u32 = u32::MAX - 7;
-pub(crate) const COPY_SLOT_TOKEN_BASE: u32 = u32::MAX - 4;
+pub(crate) const SLOT_START_TOKEN_BASE: u32 = u32::MAX - 13;
+pub(crate) const SLOT_END_TOKEN_BASE: u32 = u32::MAX - 9;
+pub(crate) const COPY_SLOT_TOKEN_BASE: u32 = u32::MAX - 5;
 pub(crate) const COPY_END_TOKEN_ID: u32 = u32::MAX - 1;
 
 const BINDING_ROWS: usize = MAX_SLOT_TOKENS + 1;
@@ -68,6 +69,10 @@ impl SlotOrdinal {
 
     pub(crate) const fn value(self) -> u8 {
         self.0
+    }
+
+    pub(crate) const fn is_bound(self) -> bool {
+        self.0 >= FIRST_BOUND_SLOT
     }
 
     pub(crate) const fn copy_token_id(self) -> u32 {
@@ -215,8 +220,14 @@ impl RolePlaceCopyState {
         self.enabled && self.slots[slot.index()].ready
     }
 
-    pub(crate) fn has_ready_slot(&self) -> bool {
-        self.enabled && self.slots.iter().any(|slot| slot.ready)
+    pub(crate) fn ready_bound_slot_count(&self) -> u8 {
+        if !self.enabled {
+            return 0;
+        }
+        self.slots[usize::from(FIRST_BOUND_SLOT)..]
+            .iter()
+            .filter(|slot| slot.ready)
+            .count() as u8
     }
 
     pub(crate) fn is_recalling(&self) -> bool {
