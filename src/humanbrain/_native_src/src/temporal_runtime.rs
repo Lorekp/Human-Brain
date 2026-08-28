@@ -873,11 +873,14 @@ impl TemporalCircuitRuntime {
         Ok(step)
     }
 
-    /// Execute the generic plan-commit cue through the ordinary fitted-cell
-    /// path and retain its eleven physical winners for later typed holes.
+    /// Acquire two transferable plan components through ordinary fitted races:
+    /// result-type scaffold and slot-present/absent operation. The retained
+    /// eleven-cell workspace splices five scaffold winners with six operation
+    /// winners; neither cue contains a task, family, primitive, or target.
     pub(crate) fn commit_typed_plan(
         &mut self,
-        plan_commit_token_id: u32,
+        vocabulary: TypedWorkspaceVocabulary,
+        result: TypedValue,
         mode: TemporalStepMode,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
         if self.config.context_policy != TemporalContextPolicy::BoundWinners {
@@ -885,9 +888,38 @@ impl TemporalCircuitRuntime {
                 "typed workspace requires BoundWinners context",
             ));
         }
-        let step = self.step(plan_commit_token_id, mode)?;
-        self.typed_workspace.retain_plan(step.winner_context);
-        Ok(step)
+        let scaffold_token = vocabulary
+            .cue_token(
+                TypedHoleCue::Expression(result),
+                TypedHoleRole::Head,
+            )
+            .expect("expression cue is never terminal");
+        self.step_typed_private_cue(scaffold_token)?;
+        let scaffold = self.step(vocabulary.plan_commit_token_id, mode)?;
+
+        let literal_slot = SlotOrdinal::new(TYPED_LITERAL_SLOT).expect("slot two is in range");
+        let operation_token = vocabulary
+            .operation_component_token(self.role_place_copy.is_ready(literal_slot));
+        self.step_typed_private_cue(operation_token)?;
+        let operation = self.step(vocabulary.plan_commit_token_id, mode)?;
+        self.typed_workspace
+            .retain_plan_components(scaffold.winner_context, operation.winner_context);
+        Ok(operation)
+    }
+
+    fn step_typed_private_cue(
+        &mut self,
+        cue_token_id: u32,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        let cue_boundary = TemporalTransientState {
+            event_count: self.event_count,
+            ..TemporalTransientState::EMPTY
+        };
+        self.step_with_transient(
+            cue_token_id,
+            TemporalStepMode::ReadOnly,
+            cue_boundary,
+        )
     }
 
     /// Re-broadcast the retained plan into one structural cue race, then make
@@ -910,15 +942,7 @@ impl TemporalCircuitRuntime {
                 "typed plan assembly is not committed",
             ));
         }
-        let cue_boundary = TemporalTransientState {
-            event_count: self.event_count,
-            ..TemporalTransientState::EMPTY
-        };
-        let cue = self.step_with_transient(
-            cue_token_id,
-            TemporalStepMode::ReadOnly,
-            cue_boundary,
-        )?;
+        let cue = self.step_typed_private_cue(cue_token_id)?;
         let mixed = match self.typed_workspace.mixed_transient(
             cue_kind,
             cue_role,
@@ -954,7 +978,7 @@ impl TemporalCircuitRuntime {
         if let Err(message) = self.validate_typed_vocabulary_codes(vocabulary) {
             return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
         }
-        let plan = self.commit_typed_plan(vocabulary.plan_commit_token_id, mode)?;
+        let plan = self.commit_typed_plan(vocabulary, result, mode)?;
         if let Err(stop) = self
             .typed_workspace
             .begin_session(vocabulary, parameter, result, mode)
@@ -6047,55 +6071,17 @@ mod tests {
                 }),
             })
             .collect::<Vec<_>>();
-        let columns_for = |token_id| {
-            codebook
-                .iter()
-                .find(|code| code.token_id == token_id)
-                .unwrap()
-                .columns
-        };
-        let prompt_sources = |token_id| {
-            columns_for(token_id)
-                .into_iter()
-                .take(PAIRS_PER_SEGMENT)
-                .map(|column| column * 4)
-                .collect::<Vec<_>>()
-        };
-        let plan_columns = columns_for(PLAN_COMMIT);
-        let add_offsets = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
-        let abs_offsets = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1];
-        let dev_offsets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        let mut segments = Vec::new();
-        for (prompt, offsets) in [
-            (W_ADD, add_offsets),
-            (W_ABS, abs_offsets),
-            (W_DEV, dev_offsets),
-        ] {
-            let sources = prompt_sources(prompt);
-            for (column, offset) in plan_columns.into_iter().zip(offsets) {
-                segments.push(TemporalSegmentInit {
-                    owner: column * 4 + offset,
-                    sources: sources.clone(),
-                    permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
-                });
-            }
-        }
-
         let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
         let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
         circuit_config.segment_capacity = 2_048;
         circuit_config.theta_match = 16;
         circuit_config.theta_active = 18;
-        let mut offsets = vec![0.0; physical_count(circuit_config)];
-        for column in 0..column_count {
-            offsets[(column * 4) as usize] = -7.0;
-        }
         let mut runtime = TemporalCircuitRuntime::new(
             circuit_config,
-            codebook.clone(),
+            codebook,
             base_members(circuit_config),
-            offsets,
-            &segments,
+            vec![0.0; physical_count(circuit_config)],
+            &[],
         )
         .expect("typed composition fixture");
 
@@ -6124,17 +6110,8 @@ mod tests {
                 runtime.step(token_id, mode).expect("literal slot capture");
             }
         };
-        let expected_prompt_winners = |token_id| {
-            let columns = columns_for(token_id);
-            std::array::from_fn::<_, ACTIVE_COLUMNS, _>(|index| columns[index] * 4)
-        };
-
         capture_literal(&mut runtime, digit_5, TemporalStepMode::Learn);
-        let add_prompt = runtime.step(W_ADD, TemporalStepMode::Learn).unwrap();
-        assert_eq!(
-            &add_prompt.winner_context[..ACTIVE_COLUMNS],
-            &expected_prompt_winners(W_ADD)
-        );
+        runtime.step(W_ADD, TemporalStepMode::Learn).unwrap();
         runtime
             .begin_typed_session(
                 vocabulary,
@@ -6149,11 +6126,7 @@ mod tests {
         }
 
         runtime.reset_transient();
-        let abs_prompt = runtime.step(W_ABS, TemporalStepMode::Learn).unwrap();
-        assert_eq!(
-            &abs_prompt.winner_context[..ACTIVE_COLUMNS],
-            &expected_prompt_winners(W_ABS)
-        );
+        runtime.step(W_ABS, TemporalStepMode::Learn).unwrap();
         runtime
             .begin_typed_session(
                 vocabulary,
@@ -6169,11 +6142,7 @@ mod tests {
 
         runtime.reset_transient();
         capture_literal(&mut runtime, digit_3, TemporalStepMode::ReadOnly);
-        let dev_prompt = runtime.step(W_DEV, TemporalStepMode::ReadOnly).unwrap();
-        assert_eq!(
-            &dev_prompt.winner_context[..ACTIVE_COLUMNS],
-            &expected_prompt_winners(W_DEV)
-        );
+        runtime.step(W_DEV, TemporalStepMode::ReadOnly).unwrap();
         runtime
             .begin_typed_session(
                 vocabulary,
@@ -6184,10 +6153,10 @@ mod tests {
             .unwrap();
         let dev_plan = runtime.typed_plan_winners().unwrap();
 
-        assert_eq!(&dev_plan[..6], &abs_plan[..6]);
+        assert_eq!(&dev_plan[..5], &abs_plan[..5]);
         assert_eq!(&dev_plan[5..], &add_plan[5..]);
         assert_ne!(&add_plan[..5], &abs_plan[..5]);
-        assert_ne!(&abs_plan[8..], &add_plan[8..]);
+        assert_ne!(&abs_plan[5..], &add_plan[5..]);
 
         let generated = runtime.generate_typed().expect("teacher-free map-add");
         assert_eq!(
