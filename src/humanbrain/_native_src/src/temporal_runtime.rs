@@ -36,7 +36,8 @@ use role_place_copy::{
 };
 use typed_hole_state::{TypedHoleCue, TypedHoleRole, TypedValue};
 use typed_workspace::{
-    TypedPlanProjection, TypedWorkspaceState, TypedWorkspaceVocabulary, TYPED_CUE_TOKEN_COUNT,
+    context_from_winners, TypedPlanProjection, TypedWorkspaceState, TypedWorkspaceVocabulary,
+    ROLE_POINTER_SURFACE_ORDINALS, ROLE_POINTER_SURFACE_SAMPLE_COUNT, TYPED_CUE_TOKEN_COUNT,
     TYPED_SURFACE_TOKEN_COUNT,
 };
 
@@ -356,6 +357,8 @@ struct PreparedLearnStep {
     append_count: u8,
     punished_count: u32,
     initial_row: TemporalSegmentRow,
+    role_pointer_recurrence_rows: [TemporalSegmentRow; ACTIVE_COLUMNS],
+    role_pointer_recurrence_count: u8,
     next_learning_step: u64,
 }
 
@@ -777,10 +780,10 @@ impl TemporalCircuitRuntime {
             if cells[..predecessor_end]
                 .iter()
                 .copied()
-                .any(|owner| store.runtime_owner_load(owner) != Some(config.max_segments_per_cell))
+                .any(|owner| store.runtime_owner_load(owner).is_none_or(|load| load == 0))
             {
                 return Err(TemporalRuntimeBuildError::Invalid(
-                    "reserve cohort was recruited before its column predecessors were exhausted",
+                    "reserve cohort was recruited while its column had unused predecessors",
                 ));
             }
             predecessor_counts[column] = cohort_end;
@@ -907,7 +910,10 @@ impl TemporalCircuitRuntime {
         let result_scaffold = self.step_typed_private_cue(result_scaffold_token)?;
         self.step(vocabulary.plan_commit_token_id, mode)?;
 
-        self.step_typed_private_cue(vocabulary.neutral_operation_component_token())?;
+        let neutral_operation_token = vocabulary.neutral_operation_component_token();
+        let neutral_operation_fingerprint =
+            self.typed_private_code_base_owners(neutral_operation_token);
+        self.step_typed_private_cue(neutral_operation_token)?;
         let neutral_operation = self.step(vocabulary.plan_commit_token_id, mode)?;
         let any_bound_ready = (FIRST_BOUND_SLOT..SLOT_COUNT as u8).any(|slot_value| {
             let slot = SlotOrdinal::new(slot_value)
@@ -924,6 +930,7 @@ impl TemporalCircuitRuntime {
             None
         };
         let mut bound_contexts = [None; SLOT_COUNT - FIRST_BOUND_SLOT as usize];
+        let mut bound_fingerprints = [None; SLOT_COUNT - FIRST_BOUND_SLOT as usize];
         for slot_value in FIRST_BOUND_SLOT..SLOT_COUNT as u8 {
             let slot = SlotOrdinal::new(slot_value)
                 .expect("bounded slot role iteration always yields one ordinal");
@@ -936,10 +943,12 @@ impl TemporalCircuitRuntime {
                     return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
                 }
             };
+            let component_fingerprint = self.typed_private_code_base_owners(component_token);
             self.step_typed_private_cue(component_token)?;
             let component = self.step(vocabulary.plan_commit_token_id, mode)?;
-            bound_contexts[usize::from(slot_value - FIRST_BOUND_SLOT)] =
-                Some(component.winner_context);
+            let bound_index = usize::from(slot_value - FIRST_BOUND_SLOT);
+            bound_contexts[bound_index] = Some(component.winner_context);
+            bound_fingerprints[bound_index] = Some(component_fingerprint);
             last_component = component;
         }
         self.typed_workspace.retain_plan_components(
@@ -949,6 +958,9 @@ impl TemporalCircuitRuntime {
             any_bound_context,
             bound_contexts[0],
             bound_contexts[1],
+            neutral_operation_fingerprint,
+            bound_fingerprints[0],
+            bound_fingerprints[1],
         );
         Ok(last_component)
     }
@@ -1012,6 +1024,85 @@ impl TemporalCircuitRuntime {
         Ok(address)
     }
 
+    /// Recruit or recall one native recurrent role pointer after a surface has
+    /// already won.  This is intentionally downstream of output election: it
+    /// can bind descendants to an elected operation, but it cannot manufacture
+    /// the first/root surface token.
+    fn bind_current_role_pointer(
+        &mut self,
+        surface_feedback: &TemporalCircuitStep,
+        mode: TemporalStepMode,
+    ) -> Result<(), TemporalCircuitStop> {
+        if !self
+            .typed_workspace
+            .token_opens_role_substructure(surface_feedback.token_id)
+        {
+            return Ok(());
+        }
+        let (plan_commit_token_id, cue_token_id, address_token_id, anchor) =
+            self.typed_workspace.current_role_pointer_tokens()?;
+        self.validate_typed_private_token_code(address_token_id)
+            .map_err(TemporalCircuitStop::MalformedContextOrPolicy)?;
+        let cue = self.step_typed_private_cue(cue_token_id)?;
+        let address = self.step_typed_private_cue(address_token_id)?;
+        let pointer_cue = self.typed_workspace.role_pointer_cue_transient(
+            surface_feedback.token_id,
+            surface_feedback.winner_context,
+            cue.winner_context,
+            address.winner_context,
+            self.relay_offset,
+            address.event_count,
+        )?;
+        let recruited =
+            self.step_with_fresh_identity_transient(plan_commit_token_id, mode, pointer_cue)?;
+        // A structurally re-rooted constructor may have no exact pointer cue.
+        // Keep that transfer path pointer-free instead of treating a bursting
+        // plan-commit race as a recalled identity; its descendants retain the
+        // established semantic/address backoff. Exact pointer contexts predict
+        // all eleven destination columns and continue through recurrence.
+        if mode == TemporalStepMode::ReadOnly
+            && usize::from(recruited.predicted_columns) != ACTIVE_COLUMNS
+        {
+            return self.typed_workspace.mark_role_pointer_unbound(anchor);
+        }
+        let recruited_owners: [u32; ACTIVE_COLUMNS] =
+            std::array::from_fn(|index| recruited.winner_context[index]);
+        if mode == TemporalStepMode::Learn {
+            match usize::from(recruited.allocated_segments) {
+                ACTIVE_COLUMNS => {}
+                0 => {}
+                _ => {
+                    return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                        "typed role pointer cue was only partially allocated",
+                    ));
+                }
+            }
+            return self
+                .typed_workspace
+                .activate_role_pointer(recruited_owners, anchor);
+        }
+
+        // A second fitted plan-commit race sees the recalled assembly itself.
+        // Each canonical recurrence row excludes its owner and receives the
+        // other ten owners, so this step performs native completion/settling.
+        let settle_context =
+            context_from_winners(recruited_owners, self.relay_offset, recruited.event_count)?;
+        let settled = self.step_with_transient(
+            plan_commit_token_id,
+            TemporalStepMode::ReadOnly,
+            settle_context,
+        )?;
+        let settled_owners: [u32; ACTIVE_COLUMNS] =
+            std::array::from_fn(|index| settled.winner_context[index]);
+        if settled_owners != recruited_owners {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "typed role pointer recurrence did not preserve ordered owners",
+            ));
+        }
+        self.typed_workspace
+            .activate_role_pointer(settled_owners, anchor)
+    }
+
     pub(crate) fn typed_plan_winners(&self) -> Option<[u32; ACTIVE_COLUMNS]> {
         self.typed_workspace.plan_winners()
     }
@@ -1027,6 +1118,9 @@ impl TemporalCircuitRuntime {
             return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
         }
         if let Err(message) = self.validate_typed_vocabulary_codes(vocabulary) {
+            return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
+        }
+        if let Err(message) = self.validate_typed_role_pointer_config() {
             return self.fail(TemporalCircuitStop::MalformedContextOrPolicy(message));
         }
         let plan = self.commit_typed_plan(vocabulary, parameter, result, mode)?;
@@ -1086,6 +1180,9 @@ impl TemporalCircuitRuntime {
             return Err(stop);
         }
         let step = self.step(token_id, TemporalStepMode::Learn)?;
+        if let Err(stop) = self.bind_current_role_pointer(&step, TemporalStepMode::Learn) {
+            return self.fail(stop);
+        }
         if let Some(slot) = SlotOrdinal::from_copy_token(token_id) {
             if let Err(stop) = self.drain_typed_teacher_copy(slot) {
                 return self.fail(stop);
@@ -1160,8 +1257,36 @@ impl TemporalCircuitRuntime {
                 return Err("typed vocabulary references an unknown token code");
             }
         }
+        let mut role_surface_columns =
+            [NONE; ROLE_POINTER_SURFACE_ORDINALS.len() * ROLE_POINTER_SURFACE_SAMPLE_COUNT];
+        let mut sampled_count = 0usize;
+        for surface_ordinal in ROLE_POINTER_SURFACE_ORDINALS {
+            let columns = self
+                .token_columns(vocabulary.surface_token_ids[surface_ordinal])
+                .expect("typed surface token presence was validated above");
+            for &column in &columns[..ROLE_POINTER_SURFACE_SAMPLE_COUNT] {
+                if role_surface_columns[..sampled_count].contains(&column) {
+                    return Err("typed role-opening surface samples must be pairwise disjoint");
+                }
+                role_surface_columns[sampled_count] = column;
+                sampled_count += 1;
+            }
+        }
         for &private_id in &private_ids {
             self.validate_typed_private_token_code(private_id)?;
+        }
+        Ok(())
+    }
+
+    fn validate_typed_role_pointer_config(&self) -> Result<(), &'static str> {
+        if self.config.max_segments_per_cell < 2 {
+            return Err("typed role pointers require at least two segments per owner");
+        }
+        if self.config.initial_permanence_ticks < self.config.connected_permanence_ticks {
+            return Err("typed role-pointer recurrence permanence must be connected");
+        }
+        if self.config.theta_active > 2 * PAIRS_PER_SEGMENT as u8 {
+            return Err("typed role-pointer recurrence cannot cross the active threshold");
         }
         Ok(())
     }
@@ -1340,6 +1465,9 @@ impl TemporalCircuitRuntime {
             TemporalStepMode::ReadOnly,
             self.transient_state(),
         )?;
+        if let Err(stop) = self.bind_current_role_pointer(&feedback, TemporalStepMode::ReadOnly) {
+            return self.fail(stop);
+        }
         if let Err(stop) = self.typed_workspace.advance_token(elected.token_id) {
             return self.fail(stop);
         }
@@ -1479,6 +1607,10 @@ impl TemporalCircuitRuntime {
                 TemporalStepMode::ReadOnly,
                 self.transient_state(),
             )?;
+            if let Err(stop) = self.bind_current_role_pointer(&feedback, TemporalStepMode::ReadOnly)
+            {
+                return self.fail(stop);
+            }
             self.role_place_copy.finish_recall();
             if let Err(stop) = self.typed_workspace.advance_token(resumed.token_id) {
                 return self.fail(stop);
@@ -1581,6 +1713,7 @@ impl TemporalCircuitRuntime {
                 diagnostic_count,
                 reserve,
                 EMPTY_EXACT_SOURCE_RESERVATION,
+                false,
                 false,
                 &transient,
             ) {
@@ -1943,6 +2076,31 @@ impl TemporalCircuitRuntime {
         mode: TemporalStepMode,
         transient: TemporalTransientState,
     ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        self.step_with_transient_owner_policy(token_id, mode, transient, false)
+    }
+
+    /// Role-pointer identities need a minimum native code distance for their
+    /// all-other-ten recurrent rows to settle unambiguously. Exact cue replay
+    /// still reserves its learned owners; a novel cue may use only load-zero
+    /// owners, recruiting another ordinary cohort when the current one is
+    /// occupied. This keeps distinct pointer assemblies disjoint without an
+    /// owner registry or a second allocation path.
+    fn step_with_fresh_identity_transient(
+        &mut self,
+        token_id: u32,
+        mode: TemporalStepMode,
+        transient: TemporalTransientState,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
+        self.step_with_transient_owner_policy(token_id, mode, transient, true)
+    }
+
+    fn step_with_transient_owner_policy(
+        &mut self,
+        token_id: u32,
+        mode: TemporalStepMode,
+        transient: TemporalTransientState,
+        require_fresh_identity_owner: bool,
+    ) -> Result<TemporalCircuitStep, TemporalCircuitStop> {
         if self.scientific_stop.is_some() {
             return Err(TemporalCircuitStop::Poisoned);
         }
@@ -2067,6 +2225,7 @@ impl TemporalCircuitRuntime {
                 &columns,
                 diagnostic_count,
                 &exact_source_reservations,
+                require_fresh_identity_owner,
             ) {
                 Ok(plan) => plan,
                 Err(stop) => return self.fail(stop),
@@ -2105,6 +2264,7 @@ impl TemporalCircuitRuntime {
                 reserve_plan,
                 exact_source_reservations[index],
                 persistent_identity_election,
+                require_fresh_identity_owner && persistent_identity_election,
                 &transient,
             ) {
                 Ok(candidate_count) => candidate_count,
@@ -2131,6 +2291,27 @@ impl TemporalCircuitRuntime {
                     });
                 }
             };
+            let reservation = exact_source_reservations[index];
+            if require_fresh_identity_owner && persistent_identity_election {
+                if reservation.exists() {
+                    if race.winner.cell_id != reservation.owner {
+                        return self.fail(TemporalCircuitStop::StoreOrPlanInvariant(
+                            "fresh identity race displaced its exact reserved owner",
+                        ));
+                    }
+                } else {
+                    let winner_load =
+                        match self.prospective_owner_load(race.winner.cell_id, reserve_plan) {
+                            Ok(load) => load,
+                            Err(stop) => return self.fail(stop),
+                        };
+                    if winner_load != 0 {
+                        return self.fail(TemporalCircuitStop::StoreOrPlanInvariant(
+                            "fresh identity race elected a loaded owner",
+                        ));
+                    }
+                }
+            }
             winner_spikes[index] = race.winner;
             basket_spikes[index] = SpikeEvent {
                 cell_id: race.basket_cell_id,
@@ -2148,7 +2329,6 @@ impl TemporalCircuitRuntime {
                     predicted_columns += 1;
                 }
             }
-            let reservation = exact_source_reservations[index];
             if reservation.exists() && reservation.owner == race.winner.cell_id {
                 winner_learning_segments[index] = reservation.segment_id;
             }
@@ -2217,7 +2397,14 @@ impl TemporalCircuitRuntime {
                 reserve_plan,
                 &transient,
             ) {
-                Ok(prepared) => Some(prepared),
+                Ok(mut prepared) => {
+                    if require_fresh_identity_owner {
+                        if let Err(stop) = self.preflight_role_pointer_recurrence(&mut prepared) {
+                            return self.fail(stop);
+                        }
+                    }
+                    Some(prepared)
+                }
                 Err(stop) => return self.fail(stop),
             }
         } else {
@@ -2291,6 +2478,17 @@ impl TemporalCircuitRuntime {
             .binary_search_by_key(&token_id, |code| code.token_id)
             .ok()
             .map(|index| self.token_codebook[index].columns)
+    }
+
+    fn typed_private_code_base_owners(&self, token_id: u32) -> [u32; ACTIVE_COLUMNS] {
+        let base_width = u32::from(self.config.base_cells_per_column);
+        self.token_columns(token_id)
+            .expect("typed private component token presence was validated")
+            .map(|column| {
+                column
+                    .checked_mul(base_width)
+                    .expect("validated column base owner fits uint32")
+            })
     }
 
     fn owner_load(&self, owner: u32) -> Result<u8, TemporalCircuitStop> {
@@ -2488,6 +2686,7 @@ impl TemporalCircuitRuntime {
         reserve: PreparedReservePlan,
         exact_source_reservation: ExactSourceReservation,
         persistent_identity_election: bool,
+        require_fresh_identity_owner: bool,
         transient: &TemporalTransientState,
     ) -> Result<usize, TemporalCircuitStop> {
         if diagnostic_count > self.recognition_scratch.len() {
@@ -2645,10 +2844,28 @@ impl TemporalCircuitRuntime {
             }
         }
 
+        // Fresh identities preserve the full materialized physical work while
+        // making loaded competitors electrically ineligible. With an exact
+        // reservation, only that owner may participate; without one, only
+        // prospective load-zero cells may win. The post-race check below stays
+        // as a fail-closed invariant against any future drive-path regression.
+        if require_fresh_identity_owner {
+            for (offset, &cell_id) in cells.iter().enumerate() {
+                let eligible = if exact_source_reservation.exists() {
+                    cell_id == exact_source_reservation.owner
+                } else {
+                    self.prospective_owner_load(cell_id, reserve)? == 0
+                };
+                if !eligible {
+                    self.column_drive_scratch[offset].current_pa = 0.0;
+                    self.column_drive_scratch[offset].threshold_offset_mv = f64::MAX;
+                }
+            }
+        }
+
         // Keep every materialized cohort cell in the physical race, including
-        // exact zero-drive cells. This preserves the Python oracle's simulated
-        // work and STOP surface; a later sparse elision needs its own parity
-        // proof before changing this boundary.
+        // electrically ineligible cells. This preserves fixed simulated work;
+        // sparse elision would need a separate parity proof.
         Ok(cells.len())
     }
 
@@ -2657,6 +2874,7 @@ impl TemporalCircuitRuntime {
         columns: &[u32; ACTIVE_COLUMNS],
         diagnostic_count: usize,
         exact_source_reservations: &[ExactSourceReservation; ACTIVE_COLUMNS],
+        require_fresh_identity_owner: bool,
     ) -> Result<PreparedReservePlan, TemporalCircuitStop> {
         if diagnostic_count > self.recognition_scratch.len() {
             return Err(TemporalCircuitStop::PreallocatedCapacityInvariant(
@@ -2714,7 +2932,13 @@ impl TemporalCircuitRuntime {
             }
             let mut exhausted = true;
             for &cell in cells {
-                if self.owner_load(cell)? < self.config.max_segments_per_cell {
+                let load = self.owner_load(cell)?;
+                let available = if require_fresh_identity_owner {
+                    load == 0
+                } else {
+                    load < self.config.max_segments_per_cell
+                };
+                if available {
                     exhausted = false;
                     break;
                 }
@@ -3084,8 +3308,140 @@ impl TemporalCircuitRuntime {
             append_count: append_count as u8,
             punished_count,
             initial_row,
+            role_pointer_recurrence_rows: [EMPTY_SEGMENT_ROW; ACTIVE_COLUMNS],
+            role_pointer_recurrence_count: 0,
             next_learning_step,
         })
+    }
+
+    fn preflight_role_pointer_recurrence(
+        &mut self,
+        prepared: &mut PreparedLearnStep,
+    ) -> Result<(), TemporalCircuitStop> {
+        let append_count = usize::from(prepared.append_count);
+        if append_count == 0 {
+            return self.preflight_existing_role_pointer_recurrence(prepared.winner_cells);
+        }
+        if append_count != ACTIVE_COLUMNS || prepared.append_owners != prepared.winner_cells {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "typed role pointer cue was only partially allocated",
+            ));
+        }
+        let mut sorted_owners = prepared.winner_cells;
+        sorted_owners.sort_unstable();
+        if sorted_owners.windows(2).any(|pair| pair[0] == pair[1]) {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "typed role pointer recurrence owners are not injective",
+            ));
+        }
+        let rows: [TemporalSegmentRow; ACTIVE_COLUMNS] = std::array::from_fn(|excluded| {
+            let mut row = EMPTY_SEGMENT_ROW;
+            let mut cursor = 0usize;
+            for (index, owner) in prepared.winner_cells.iter().copied().enumerate() {
+                if index == excluded {
+                    continue;
+                }
+                row.normalized_sources[cursor] = owner;
+                row.permanence_ticks[cursor] = self.config.initial_permanence_ticks;
+                cursor += 1;
+            }
+            debug_assert_eq!(cursor, PAIRS_PER_SEGMENT);
+            row.live_pair_count = PAIRS_PER_SEGMENT as u8;
+            sort_canonical_row_prefix(&mut row);
+            row
+        });
+        let mut compound_owners = [NONE; 2 * ACTIVE_COLUMNS];
+        compound_owners[..ACTIVE_COLUMNS].copy_from_slice(&prepared.append_owners);
+        compound_owners[ACTIVE_COLUMNS..].copy_from_slice(&prepared.winner_cells);
+        let receipt = self
+            .store
+            .preflight_runtime_mutation_backing(&compound_owners, self.config.max_segments_per_cell)
+            .map_err(|error| {
+                map_store_preflight_error(
+                    error,
+                    &self.store,
+                    (2 * ACTIVE_COLUMNS) as u32,
+                    self.config.max_segments_per_cell,
+                )
+            })?;
+        if receipt.prospective_append_count() != (2 * ACTIVE_COLUMNS) as u32
+            || receipt.first_append_segment_id() != self.store.runtime_segment_count()
+        {
+            return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "typed role pointer compound preflight changed append identity",
+            ));
+        }
+        for (&owner, row) in prepared.winner_cells.iter().zip(rows.iter()) {
+            self.store
+                .preflight_runtime_canonical_append(owner, row)
+                .map_err(|error| {
+                    map_store_preflight_error(
+                        error,
+                        &self.store,
+                        0,
+                        self.config.max_segments_per_cell,
+                    )
+                })?;
+        }
+        prepared.role_pointer_recurrence_rows = rows;
+        prepared.role_pointer_recurrence_count = ACTIVE_COLUMNS as u8;
+        Ok(())
+    }
+
+    fn preflight_existing_role_pointer_recurrence(
+        &mut self,
+        owners: [u32; ACTIVE_COLUMNS],
+    ) -> Result<(), TemporalCircuitStop> {
+        let summary = self
+            .store
+            .recognize_runtime_context(&owners, &mut self.recognition_scratch)
+            .map_err(TemporalCircuitStop::StoreRecognition)?;
+        for (excluded, &owner) in owners.iter().enumerate() {
+            let diagnostic = self
+                .diagnostic_for_owner(owner, summary.owner_result_count)
+                .ok_or(TemporalCircuitStop::StoreOrPlanInvariant(
+                    "typed role pointer replay has no recurrent owner diagnostic",
+                ))?;
+            if diagnostic.best_active_segment == NONE
+                || diagnostic.active_potential_contacts != EXACT_SOURCE_PHYSICAL_CONTACTS
+                || diagnostic.active_connected_contacts != EXACT_SOURCE_PHYSICAL_CONTACTS
+            {
+                return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                    "typed role pointer replay has no active exact recurrence row",
+                ));
+            }
+            let row = self
+                .store
+                .runtime_segment_row(diagnostic.best_active_segment)
+                .map_err(|error| {
+                    map_store_preflight_error(
+                        error,
+                        &self.store,
+                        0,
+                        self.config.max_segments_per_cell,
+                    )
+                })?;
+            let mut expected_sources = [NONE; PAIRS_PER_SEGMENT];
+            let mut cursor = 0usize;
+            for (index, source) in owners.iter().copied().enumerate() {
+                if index != excluded {
+                    expected_sources[cursor] = source;
+                    cursor += 1;
+                }
+            }
+            expected_sources.sort_unstable();
+            if row.live_pair_count != PAIRS_PER_SEGMENT as u8
+                || row.normalized_sources != expected_sources
+                || row.permanence_ticks[..PAIRS_PER_SEGMENT]
+                    .iter()
+                    .any(|tick| *tick < self.config.connected_permanence_ticks)
+            {
+                return Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                    "typed role pointer replay recurrence row is not canonical and connected",
+                ));
+            }
+        }
+        Ok(())
     }
 
     fn commit_prevalidated_learning(&mut self, prepared: PreparedLearnStep) {
@@ -3147,6 +3503,12 @@ impl TemporalCircuitRuntime {
         {
             self.store
                 .commit_prevalidated_runtime_canonical_append(owner, &prepared.initial_row);
+        }
+        for index in 0..usize::from(prepared.role_pointer_recurrence_count) {
+            self.store.commit_prevalidated_runtime_canonical_append(
+                prepared.winner_cells[index],
+                &prepared.role_pointer_recurrence_rows[index],
+            );
         }
         self.learning_step = prepared.next_learning_step;
     }
@@ -4492,7 +4854,9 @@ mod tests {
         let mut reserve_config = config(22, 1, TemporalContextPolicy::BoundWinners);
         reserve_config.max_pyramidal_cells = 24;
         reserve_config.segment_capacity = 3;
-        reserve_config.max_segments_per_cell = 1;
+        // Fresh role identities may reserve a cohort once every predecessor is
+        // used, before the ordinary per-owner segment cap is reached.
+        reserve_config.max_segments_per_cell = 4;
         let mut complete = base_members(reserve_config);
         complete[0].extend([22, 23]);
         let offsets = vec![0.0; physical_count(reserve_config)];
@@ -4538,7 +4902,7 @@ mod tests {
                 &[cohort_witness],
             ),
             Err(TemporalRuntimeBuildError::Invalid(
-                "reserve cohort was recruited before its column predecessors were exhausted"
+                "reserve cohort was recruited while its column had unused predecessors"
             ))
         ));
 
@@ -4627,7 +4991,7 @@ mod tests {
                 &premature_later,
             ),
             Err(TemporalRuntimeBuildError::Invalid(
-                "reserve cohort was recruited before its column predecessors were exhausted"
+                "reserve cohort was recruited while its column had unused predecessors"
             ))
         ));
     }
@@ -5779,6 +6143,138 @@ mod tests {
     }
 
     #[test]
+    fn role_pointer_recurrence_capacity_failure_preserves_checkpoint_identity() {
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.segment_capacity = ACTIVE_COLUMNS as u32;
+        let mut runtime = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        );
+        runtime.step(0, TemporalStepMode::ReadOnly).unwrap();
+        let transient = runtime.transient_state();
+        let before_offsets = runtime.column_offsets.clone();
+        let before_cells = runtime.column_cells.clone();
+        let before_alternate_offsets = runtime.alternate_column_offsets.clone();
+        let before_alternate_cells = runtime.alternate_column_cells.clone();
+        let before_cohorts = runtime.cohort_columns.clone();
+        let before_reserve = runtime.next_reserve_cell;
+        let before_context = runtime.previous_context;
+        let before_winner_context = runtime.previous_winner_context;
+        let before_event = runtime.event_count;
+        let before_learning = runtime.learning_step;
+
+        assert_eq!(
+            runtime.step_with_fresh_identity_transient(1, TemporalStepMode::Learn, transient),
+            Err(TemporalCircuitStop::GlobalSegmentCapacity {
+                required: 2 * ACTIVE_COLUMNS as u32,
+                capacity: ACTIVE_COLUMNS as u32,
+            })
+        );
+        assert_eq!(runtime.column_offsets, before_offsets);
+        assert_eq!(runtime.column_cells, before_cells);
+        assert_eq!(runtime.alternate_column_offsets, before_alternate_offsets);
+        assert_eq!(runtime.alternate_column_cells, before_alternate_cells);
+        assert_eq!(runtime.cohort_columns, before_cohorts);
+        assert_eq!(runtime.next_reserve_cell, before_reserve);
+        assert_eq!(runtime.previous_context, before_context);
+        assert_eq!(runtime.previous_winner_context, before_winner_context);
+        assert_eq!(runtime.event_count, before_event);
+        assert_eq!(runtime.learning_step, before_learning);
+        assert_eq!(runtime.store.runtime_segment_count(), 0);
+        assert!((0..circuit_config.max_pyramidal_cells)
+            .all(|owner| runtime.store.runtime_owner_load(owner) == Some(0)));
+        assert_eq!(
+            runtime.scientific_stop,
+            Some(TemporalPoisonCode::GlobalSegmentCapacity)
+        );
+    }
+
+    #[test]
+    fn fresh_identity_excludes_loaded_and_exact_displaced_winners() {
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.novel_race_cap = 1;
+        circuit_config.max_pyramidal_cells += 1;
+        circuit_config.max_segments_per_cell = 4;
+        circuit_config.segment_capacity = 64;
+        let loaded_owner = 11u32;
+        let segments = [TemporalSegmentInit {
+            owner: loaded_owner,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        }];
+        let mut offsets = vec![0.0; physical_count(circuit_config)];
+        offsets[loaded_owner as usize] = -1_000.0;
+        let mut runtime = runtime_with_offsets(circuit_config, offsets, &segments);
+        runtime.step(0, TemporalStepMode::ReadOnly).unwrap();
+        let transient = runtime.transient_state();
+        let fresh = runtime
+            .step_with_fresh_identity_transient(1, TemporalStepMode::Learn, transient)
+            .expect("the loaded negative-threshold owner is electrically ineligible");
+        assert_eq!(fresh.allocated_segments, ACTIVE_COLUMNS as u8);
+        assert_eq!(fresh.winner_spikes[0].cell_id, 22);
+        assert!(!fresh
+            .winner_spikes
+            .iter()
+            .any(|spike| spike.cell_id == loaded_owner));
+        assert_eq!(
+            runtime.store.runtime_segment_count(),
+            1 + 2 * ACTIVE_COLUMNS as u32
+        );
+        assert_eq!(runtime.store.runtime_owner_load(loaded_owner), Some(1));
+        assert_eq!(runtime.scientific_stop, None);
+
+        let mut exact_config = config(22, 2, TemporalContextPolicy::BoundWinners);
+        exact_config.novel_race_cap = 2;
+        exact_config.max_segments_per_cell = 4;
+        exact_config.segment_capacity = 128;
+        let exact_sources = (0..20).step_by(2).collect::<Vec<_>>();
+        let mut exact_and_loaded = Vec::with_capacity(2 * ACTIVE_COLUMNS);
+        for index in 0..ACTIVE_COLUMNS as u32 {
+            exact_and_loaded.push(TemporalSegmentInit {
+                owner: 22 + 2 * index,
+                sources: exact_sources.clone(),
+                permanence_ticks: vec![255; PAIRS_PER_SEGMENT],
+            });
+            exact_and_loaded.push(TemporalSegmentInit {
+                owner: 23 + 2 * index,
+                sources: Vec::new(),
+                permanence_ticks: Vec::new(),
+            });
+        }
+        let mut exact_offsets = vec![0.0; physical_count(exact_config)];
+        for index in 0..ACTIVE_COLUMNS as u32 {
+            exact_offsets[(23 + 2 * index) as usize] = -1_000.0;
+        }
+        let mut displaced = runtime_with_offsets(exact_config, exact_offsets, &exact_and_loaded);
+        displaced.step(0, TemporalStepMode::ReadOnly).unwrap();
+        let transient = displaced.transient_state();
+        let before_context = displaced.previous_context;
+        let before_winner_context = displaced.previous_winner_context;
+        let before_event = displaced.event_count;
+        let before_learning = displaced.learning_step;
+
+        assert_eq!(
+            displaced.step_with_fresh_identity_transient(1, TemporalStepMode::Learn, transient,),
+            Err(TemporalCircuitStop::StoreOrPlanInvariant(
+                "typed role pointer replay has no recurrent owner diagnostic"
+            ))
+        );
+        assert_eq!(displaced.previous_context, before_context);
+        assert_eq!(displaced.previous_winner_context, before_winner_context);
+        assert_eq!(displaced.event_count, before_event);
+        assert_eq!(displaced.learning_step, before_learning);
+        assert_eq!(
+            displaced.store.runtime_segment_count(),
+            2 * ACTIVE_COLUMNS as u32
+        );
+        assert_eq!(
+            displaced.scientific_stop,
+            Some(TemporalPoisonCode::StoreOrPlanInvariant)
+        );
+    }
+
+    #[test]
     fn proximal_physics_stop_precedes_reserve_required_planning() {
         let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
         circuit_config.novel_race_cap = 8;
@@ -6316,6 +6812,611 @@ mod tests {
     }
 
     #[test]
+    fn typed_session_rejects_role_opening_surface_sample_collision_before_commit() {
+        const WORKLOAD: u32 = 800;
+        const PLAN_COMMIT: u32 = 900;
+        const CUE_BASE: u32 = 1_000;
+        const SURFACE_BASE: u32 = 1_100;
+        const ADDRESS_BASE: u32 = 10_000;
+
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            address_token_base: ADDRESS_BASE,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        let mut token_ids = vec![WORKLOAD, PLAN_COMMIT, ADDRESS_BASE];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let mut codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let add_first_column = codebook
+            .iter()
+            .find(|code| code.token_id == vocabulary.surface_token_ids[0])
+            .expect("Add code")
+            .columns[0];
+        codebook
+            .iter_mut()
+            .find(|code| code.token_id == vocabulary.surface_token_ids[1])
+            .expect("Absolute code")
+            .columns[0] = add_first_column;
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.segment_capacity = 128;
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        )
+        .expect("overlapping public surface codes remain a valid base circuit");
+        runtime.step(WORKLOAD, TemporalStepMode::Learn).unwrap();
+        let segment_count = runtime.store.runtime_segment_count();
+
+        assert!(matches!(
+            runtime.begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            ),
+            Err(TemporalCircuitStop::MalformedContextOrPolicy(
+                "typed role-opening surface samples must be pairwise disjoint"
+            ))
+        ));
+        assert_eq!(runtime.typed_workspace.session_mode(), None);
+        assert_eq!(runtime.store.runtime_segment_count(), segment_count);
+    }
+
+    #[test]
+    fn typed_session_rejects_inert_role_pointer_configs_before_plan_commit() {
+        const PLAN_COMMIT: u32 = 900;
+        const CUE_BASE: u32 = 1_000;
+        const SURFACE_BASE: u32 = 1_100;
+        const ADDRESS_BASE: u32 = 10_000;
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            address_token_base: ADDRESS_BASE,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        let mut token_ids = vec![PLAN_COMMIT, ADDRESS_BASE];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+
+        for (case, expected) in [
+            (
+                0,
+                "typed role pointers require at least two segments per owner",
+            ),
+            (
+                1,
+                "typed role-pointer recurrence permanence must be connected",
+            ),
+            (
+                2,
+                "typed role-pointer recurrence cannot cross the active threshold",
+            ),
+        ] {
+            let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+            circuit_config.segment_capacity = 128;
+            if case == 0 {
+                circuit_config.max_segments_per_cell = 1;
+            } else if case == 1 {
+                circuit_config.initial_permanence_ticks =
+                    circuit_config.connected_permanence_ticks - 1;
+            }
+            let mut runtime = TemporalCircuitRuntime::new(
+                circuit_config,
+                codebook.clone(),
+                base_members(circuit_config),
+                vec![0.0; physical_count(circuit_config)],
+                &[],
+            )
+            .expect("base runtime accepts each globally valid fixture config");
+            if case == 2 {
+                runtime.config.theta_active = 2 * PAIRS_PER_SEGMENT as u8 + 1;
+            }
+
+            let result = runtime.begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            );
+            assert!(matches!(
+                result,
+                Err(TemporalCircuitStop::MalformedContextOrPolicy(message)) if message == expected
+            ));
+            assert_eq!(runtime.typed_workspace.session_mode(), None);
+            assert_eq!(runtime.store.runtime_segment_count(), 0);
+            assert_eq!(runtime.learning_step, 0);
+        }
+    }
+
+    #[test]
+    fn typed_role_pointer_forms_recurrent_rows_only_after_root_surface_feedback() {
+        const WORKLOAD: u32 = 900;
+        const PLAN_COMMIT: u32 = 1_000;
+        const CUE_BASE: u32 = 1_100;
+        const SURFACE_BASE: u32 = 1_200;
+        const ADDRESS_BASE: u32 = 10_000;
+
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            address_token_base: ADDRESS_BASE,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        // Root and relative child-zero are the only structural addresses this
+        // one-surface fixture can reach.
+        let mut token_ids = vec![WORKLOAD, PLAN_COMMIT, ADDRESS_BASE, ADDRESS_BASE + 1];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.segment_capacity = 256;
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        )
+        .expect("empty-store role-pointer fixture");
+        let add = vocabulary.surface_token_ids[0];
+        let variable_zero = vocabulary.surface_token_ids[4];
+
+        runtime.step(WORKLOAD, TemporalStepMode::Learn).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        assert_eq!(runtime.typed_workspace.active_role_pointer(), None);
+        let before_surface = runtime.store.runtime_segment_count();
+        runtime.teach_typed_token(add).unwrap();
+        let learned_pointer = runtime
+            .typed_workspace
+            .active_role_pointer()
+            .expect("surface feedback activates one role pointer");
+        assert_eq!(
+            learned_pointer.anchor,
+            typed_hole_state::TypedHoleAddress::root()
+        );
+        // Two surface projections, one pointer cue, and eleven canonical
+        // recurrent rows each add one segment per plan-commit column.
+        assert_eq!(
+            runtime.store.runtime_segment_count() - before_surface,
+            4 * ACTIVE_COLUMNS as u32
+        );
+        for (excluded, &owner) in learned_pointer.owners.iter().enumerate() {
+            let mut expected = [NONE; PAIRS_PER_SEGMENT];
+            let mut cursor = 0usize;
+            for (index, source) in learned_pointer.owners.iter().copied().enumerate() {
+                if index != excluded {
+                    expected[cursor] = source;
+                    cursor += 1;
+                }
+            }
+            expected.sort_unstable();
+            let found = (0..runtime.store.runtime_segment_count()).any(|segment_id| {
+                runtime.store.runtime_segment_owner(segment_id) == Some(owner)
+                    && runtime
+                        .store
+                        .runtime_segment_row(segment_id)
+                        .is_ok_and(|row| {
+                            row.normalized_sources == expected
+                                && row.permanence_ticks
+                                    == [circuit_config.initial_permanence_ticks; PAIRS_PER_SEGMENT]
+                        })
+            });
+            assert!(
+                found,
+                "pointer owner {owner} has no all-other recurrence row"
+            );
+        }
+
+        let before_leaf = runtime.store.runtime_segment_count();
+        runtime.teach_typed_token(variable_zero).unwrap();
+        assert_eq!(
+            runtime.typed_workspace.active_role_pointer(),
+            Some(learned_pointer),
+            "a direct leaf retains rather than overwrites its enclosing pointer"
+        );
+        assert_eq!(
+            runtime.store.runtime_segment_count() - before_leaf,
+            2 * ACTIVE_COLUMNS as u32,
+            "a leaf learns its two surface projections but spends no pointer rows"
+        );
+
+        let learned_segment_count = runtime.store.runtime_segment_count();
+        runtime.reset_transient();
+        runtime.step(WORKLOAD, TemporalStepMode::ReadOnly).unwrap();
+        runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+        // No pointer exists before the first fitted surface race: root
+        // election remains exactly the pre-pointer path.
+        assert_eq!(runtime.typed_workspace.active_role_pointer(), None);
+        let generated = runtime
+            .generate_typed_one()
+            .expect("root fitted race")
+            .expect("unterminated root emits one surface");
+        assert_eq!(generated.surface_token_id, add);
+        assert_eq!(
+            runtime.typed_workspace.active_role_pointer(),
+            Some(learned_pointer)
+        );
+        runtime
+            .prepare_current_typed_context(TemporalStepMode::ReadOnly)
+            .expect("descendant context uses the active role pointer");
+        assert_eq!(&runtime.previous_context[..3], &learned_pointer.owners[..3]);
+        assert_eq!(runtime.store.runtime_segment_count(), learned_segment_count);
+        assert_eq!(runtime.scientific_stop, None);
+    }
+
+    #[test]
+    fn unbound_role_pointer_masks_ancestor_only_inside_transferred_constructor() {
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: 900,
+            address_token_base: 10_000,
+            cue_token_ids: std::array::from_fn(|index| 1_000 + index as u32),
+            surface_token_ids: std::array::from_fn(|index| 1_100 + index as u32),
+        };
+        let context = |base| std::array::from_fn(|index| base + index as u32);
+        let fingerprint =
+            |base| -> [u32; ACTIVE_COLUMNS] { std::array::from_fn(|index| base + index as u32) };
+        let mut workspace = TypedWorkspaceState::EMPTY;
+        workspace.retain_plan_components(
+            context(100),
+            context(200),
+            context(300),
+            None,
+            None,
+            None,
+            fingerprint(300),
+            None,
+            None,
+        );
+        workspace
+            .begin_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::ReadOnly,
+            )
+            .unwrap();
+        let root_pointer = typed_workspace::ActiveRolePointer {
+            owners: std::array::from_fn(|index| 500 + index as u32),
+            anchor: typed_hole_state::TypedHoleAddress::root(),
+        };
+        workspace
+            .activate_role_pointer(root_pointer.owners, root_pointer.anchor)
+            .unwrap();
+
+        workspace
+            .advance_token(vocabulary.surface_token_ids[0])
+            .unwrap();
+        let transferred_anchor = workspace.current_role_pointer_tokens().unwrap().3;
+        workspace
+            .mark_role_pointer_unbound(transferred_anchor)
+            .unwrap();
+        assert_eq!(workspace.active_role_pointer(), None);
+
+        workspace
+            .advance_token(vocabulary.surface_token_ids[1])
+            .unwrap();
+        assert_eq!(
+            workspace.active_role_pointer(),
+            None,
+            "the tombstone masks the ancestor throughout the transferred subtree"
+        );
+        workspace
+            .advance_token(vocabulary.surface_token_ids[4])
+            .unwrap();
+        assert_eq!(
+            workspace.active_role_pointer(),
+            Some(root_pointer),
+            "leaving the subtree prunes the tombstone and restores the ancestor"
+        );
+    }
+
+    #[test]
+    fn root_bound_sensitive_role_pointer_distinguishes_slot_presence_despite_owner_reuse() {
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: 900,
+            address_token_base: 10_000,
+            cue_token_ids: std::array::from_fn(|index| 1_000 + index as u32),
+            surface_token_ids: std::array::from_fn(|index| 1_100 + index as u32),
+        };
+        let context = |base| std::array::from_fn(|index| base + index as u32);
+        let fingerprint =
+            |base| -> [u32; ACTIVE_COLUMNS] { std::array::from_fn(|index| base + index as u32) };
+        let pointer_cue = |lower_bound: bool, upper_bound: bool| {
+            let lower_bound_context = lower_bound.then(|| context(100));
+            let upper_bound_context = upper_bound.then(|| context(100));
+            let mut workspace = TypedWorkspaceState::EMPTY;
+            workspace.retain_plan_components(
+                context(150),
+                context(200),
+                context(100),
+                None,
+                lower_bound_context,
+                upper_bound_context,
+                fingerprint(100),
+                lower_bound.then(|| fingerprint(100)),
+                upper_bound.then(|| fingerprint(100)),
+            );
+            workspace
+                .begin_session(
+                    vocabulary,
+                    TypedValue::Int,
+                    TypedValue::Int,
+                    TemporalStepMode::Learn,
+                )
+                .unwrap();
+            workspace
+                .role_pointer_cue_transient(
+                    vocabulary.surface_token_ids[0],
+                    context(40),
+                    context(70),
+                    context(10),
+                    256,
+                    1,
+                )
+                .unwrap()
+        };
+        let without_bounds = pointer_cue(false, false);
+        // Reuse every neutral plan owner in each bound component. Distinct
+        // source-column bands must still move exactly three cue cells when
+        // either slot changes from absent to present.
+        let with_lower = pointer_cue(true, false);
+        let with_upper = pointer_cue(false, true);
+        for with_bound in [with_lower, with_upper] {
+            assert_eq!(
+                without_bounds.previous_context[..ACTIVE_COLUMNS]
+                    .iter()
+                    .zip(&with_bound.previous_context[..ACTIVE_COLUMNS])
+                    .filter(|(left, right)| left != right)
+                    .count(),
+                3,
+            );
+        }
+
+        let mut circuit_config = config(22, 1, TemporalContextPolicy::BoundWinners);
+        circuit_config.max_pyramidal_cells = 256;
+        circuit_config.novel_race_cap = 2;
+        circuit_config.max_segments_per_cell = 4;
+        circuit_config.segment_capacity = 64;
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        let mut runtime = runtime_with_offsets(
+            circuit_config,
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        );
+        let first = runtime
+            .step_with_fresh_identity_transient(1, TemporalStepMode::Learn, without_bounds)
+            .unwrap();
+        let second = runtime
+            .step_with_fresh_identity_transient(1, TemporalStepMode::Learn, with_lower)
+            .unwrap();
+        assert_ne!(first.winner_context, second.winner_context);
+        assert!(first.winner_context[..ACTIVE_COLUMNS]
+            .iter()
+            .all(|owner| !second.winner_context[..ACTIVE_COLUMNS].contains(owner)));
+        assert_eq!(
+            runtime.store.runtime_segment_count(),
+            4 * ACTIVE_COLUMNS as u32
+        );
+
+        let replay = runtime
+            .step_with_fresh_identity_transient(1, TemporalStepMode::Learn, without_bounds)
+            .unwrap();
+        assert_eq!(
+            replay.winner_context[..ACTIVE_COLUMNS],
+            first.winner_context[..ACTIVE_COLUMNS]
+        );
+        assert_eq!(replay.allocated_segments, 0);
+        assert_eq!(
+            runtime.store.runtime_segment_count(),
+            4 * ACTIVE_COLUMNS as u32
+        );
+    }
+
+    #[test]
+    fn actual_plan_commit_owner_reuse_keeps_lower_role_pointer_fingerprints_disjoint() {
+        const PLAN_COMMIT: u32 = 900;
+        const CUE_BASE: u32 = 1_000;
+        const SURFACE_BASE: u32 = 1_100;
+        const ADDRESS_BASE: u32 = 10_000;
+        let vocabulary = TypedWorkspaceVocabulary {
+            plan_commit_token_id: PLAN_COMMIT,
+            address_token_base: ADDRESS_BASE,
+            cue_token_ids: std::array::from_fn(|index| CUE_BASE + index as u32),
+            surface_token_ids: std::array::from_fn(|index| SURFACE_BASE + index as u32),
+        };
+        let mut token_ids = vec![PLAN_COMMIT, ADDRESS_BASE];
+        token_ids.extend(vocabulary.cue_token_ids);
+        token_ids.extend(vocabulary.surface_token_ids);
+        for slot in 0..SLOT_COUNT as u8 {
+            token_ids.push(role_place_copy::slot_start_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::slot_end_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::copy_slot_token_id(slot).unwrap());
+        }
+        token_ids.push(COPY_END_TOKEN_ID);
+        token_ids.sort_unstable();
+        token_ids.dedup();
+        let codebook = token_ids
+            .iter()
+            .enumerate()
+            .map(|(code_index, &token_id)| TokenCode {
+                token_id,
+                columns: std::array::from_fn(|offset| {
+                    (code_index * ACTIVE_COLUMNS + offset) as u32
+                }),
+            })
+            .collect::<Vec<_>>();
+        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        let mut circuit_config = config(column_count, 2, TemporalContextPolicy::BoundWinners);
+        circuit_config.max_segments_per_cell = 8;
+        circuit_config.segment_capacity = 256;
+        circuit_config.theta_match = 16;
+        circuit_config.theta_active = 18;
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        )
+        .unwrap();
+        let add = vocabulary.surface_token_ids[0];
+        let plus = vocabulary.surface_token_ids[6];
+        let digit_three = vocabulary.surface_token_ids[11];
+        let lower_start = role_place_copy::slot_start_token_id(FIRST_BOUND_SLOT).unwrap();
+        let lower_end = role_place_copy::slot_end_token_id(FIRST_BOUND_SLOT).unwrap();
+
+        let absent_plan = runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        let root_pointer_cue = |runtime: &mut TemporalCircuitRuntime| {
+            let surface = runtime.step(add, TemporalStepMode::ReadOnly).unwrap();
+            let (_, cue_token_id, address_token_id, _) = runtime
+                .typed_workspace
+                .current_role_pointer_tokens()
+                .unwrap();
+            let cue = runtime.step_typed_private_cue(cue_token_id).unwrap();
+            let address = runtime.step_typed_private_cue(address_token_id).unwrap();
+            runtime
+                .typed_workspace
+                .role_pointer_cue_transient(
+                    add,
+                    surface.winner_context,
+                    cue.winner_context,
+                    address.winner_context,
+                    runtime.relay_offset,
+                    address.event_count,
+                )
+                .unwrap()
+                .previous_context[..ACTIVE_COLUMNS]
+                .try_into()
+                .unwrap()
+        };
+        let absent_cue: [u32; ACTIVE_COLUMNS] = root_pointer_cue(&mut runtime);
+
+        runtime.reset_transient();
+        for token_id in [lower_start, plus, digit_three, lower_end] {
+            runtime.step(token_id, TemporalStepMode::Learn).unwrap();
+        }
+        assert!(runtime
+            .role_place_copy
+            .is_ready(SlotOrdinal::new(FIRST_BOUND_SLOT).unwrap()));
+        let lower_plan = runtime
+            .begin_typed_session(
+                vocabulary,
+                TypedValue::Int,
+                TypedValue::Int,
+                TemporalStepMode::Learn,
+            )
+            .unwrap();
+        assert!(
+            absent_plan.winner_context[..ACTIVE_COLUMNS]
+                .iter()
+                .zip(&lower_plan.winner_context[..ACTIVE_COLUMNS])
+                .any(|(absent, lower)| absent == lower),
+            "ordinary two-cell plan races must exercise real owner reuse"
+        );
+        let neutral_code = runtime
+            .token_columns(vocabulary.neutral_operation_component_token())
+            .unwrap();
+        let lower_code = runtime
+            .token_columns(
+                vocabulary
+                    .bound_operation_component_token(SlotOrdinal::new(FIRST_BOUND_SLOT).unwrap())
+                    .unwrap(),
+            )
+            .unwrap();
+        assert!(neutral_code
+            .iter()
+            .all(|column| !lower_code.contains(column)));
+        let base_width = u32::from(circuit_config.base_cells_per_column);
+        let neutral_fingerprint = neutral_code.map(|column| column * base_width);
+        let lower_fingerprint = lower_code.map(|column| column * base_width);
+        let lower_cue: [u32; ACTIVE_COLUMNS] = root_pointer_cue(&mut runtime);
+        assert_eq!(&absent_cue[3..6], &neutral_fingerprint[3..6]);
+        assert_eq!(&lower_cue[3..6], &lower_fingerprint[..3]);
+        assert!(
+            absent_cue[3..6]
+                .iter()
+                .all(|owner| !lower_cue[3..6].contains(owner)),
+            "absent={:?}, lower={:?}",
+            &absent_cue[3..6],
+            &lower_cue[3..6]
+        );
+        assert!(
+            absent_cue
+                .iter()
+                .zip(lower_cue.iter())
+                .filter(|(absent, lower)| **absent != **lower)
+                .count()
+                >= 3
+        );
+    }
+
+    #[test]
     fn typed_workspace_recombines_map_scaffold_with_add_subtree_and_slot_copy() {
         const W_ADD: u32 = 1_000;
         const W_ABS: u32 = 1_001;
@@ -6326,6 +7427,9 @@ mod tests {
         const CUE_BASE: u32 = 1_200;
         const SURFACE_BASE: u32 = 1_300;
         const ADDRESS_BASE: u32 = 10_000;
+        // Five distinct role pointers consume two four-cell plan-commit
+        // cohorts once ordinary plan-component rows occupy the base cohort.
+        const ROLE_POINTER_RESERVE_COHORTS: u32 = 2;
 
         let vocabulary = TypedWorkspaceVocabulary {
             plan_commit_token_id: PLAN_COMMIT,
@@ -6399,7 +7503,7 @@ mod tests {
         token_ids.push(COPY_END_TOKEN_ID);
         token_ids.sort_unstable();
         token_ids.dedup();
-        let codebook = token_ids
+        let mut codebook = token_ids
             .iter()
             .enumerate()
             .map(|(code_index, &token_id)| TokenCode {
@@ -6409,8 +7513,22 @@ mod tests {
                 }),
             })
             .collect::<Vec<_>>();
-        let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
+        // The retained Bind pointer addresses Add's Child1 relative to the
+        // binder anchor. Append that fixture-only code on fresh columns so all
+        // established token-to-column identities remain unchanged.
+        let relative_add_child_one = ADDRESS_BASE + 5;
+        assert!(!token_ids.contains(&relative_add_child_one));
+        codebook.push(TokenCode {
+            token_id: relative_add_child_one,
+            columns: std::array::from_fn(|offset| {
+                (token_ids.len() * ACTIVE_COLUMNS + offset) as u32
+            }),
+        });
+        codebook.sort_unstable_by_key(|code| code.token_id);
+        let column_count = u32::try_from((token_ids.len() + 1) * ACTIVE_COLUMNS).unwrap();
         let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.max_pyramidal_cells +=
+            ROLE_POINTER_RESERVE_COHORTS * ACTIVE_COLUMNS as u32 * 4;
         circuit_config.segment_capacity = 2_048;
         circuit_config.theta_match = 16;
         circuit_config.theta_active = 18;
@@ -6571,7 +7689,20 @@ mod tests {
         const ADDRESS_BASE: u32 = 12_000;
         // Scalar: 4 prompt + 1 workload + 5 plan + (5 dual stores + EOS) = 21.
         // Clamp-sum: 8 prompt + 1 workload + 6 plan + (23 dual stores + EOS) = 62.
-        const MAX_LEARN_ARRIVALS: u32 = 83;
+        const BASE_MAX_LEARN_ARRIVALS: u32 = 83;
+        // Scalar opens Add. Clamp-sum opens Sum, Map, Bind, two If, and two
+        // LessThan expression-role substructures. Integer is a lexical leaf
+        // carried under its enclosing pointer. Each first constructor adds one
+        // ordinary pointer-cue learning arrival plus eleven recurrent rows
+        // outside the ordinary learning transaction.
+        const FIRST_CONSTRUCTOR_POINTER_COUNT: u32 = 8;
+        const MAX_LEARN_ARRIVALS: u32 = BASE_MAX_LEARN_ARRIVALS + FIRST_CONSTRUCTOR_POINTER_COUNT;
+        const RECURRENT_ROLE_POINTER_ROWS: u32 =
+            FIRST_CONSTRUCTOR_POINTER_COUNT * ACTIVE_COLUMNS as u32;
+        // Scalar pointer allocation creates cohort one. The two new clamp-plan
+        // components consume two of its remaining zero-load owners before
+        // seven clamp pointers, so eight pointers require three cohorts total.
+        const ROLE_POINTER_RESERVE_COHORTS: u32 = 3;
 
         let vocabulary = TypedWorkspaceVocabulary {
             plan_commit_token_id: PLAN_COMMIT,
@@ -6652,6 +7783,10 @@ mod tests {
                 S::Eos,
             ],
         );
+        // The retained first If pointer expresses the second If at relative
+        // child ordinal two; the absolute teacher stream alone does not visit
+        // this one-level relative address token.
+        token_ids.push(ADDRESS_BASE + 3);
         for slot in 0..SLOT_COUNT as u8 {
             token_ids.push(role_place_copy::slot_start_token_id(slot).unwrap());
             token_ids.push(role_place_copy::slot_end_token_id(slot).unwrap());
@@ -6672,7 +7807,10 @@ mod tests {
             .collect::<Vec<_>>();
         let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
         let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
-        circuit_config.segment_capacity = MAX_LEARN_ARRIVALS * ACTIVE_COLUMNS as u32;
+        circuit_config.max_pyramidal_cells +=
+            ROLE_POINTER_RESERVE_COHORTS * ACTIVE_COLUMNS as u32 * 4;
+        circuit_config.segment_capacity =
+            MAX_LEARN_ARRIVALS * ACTIVE_COLUMNS as u32 + RECURRENT_ROLE_POINTER_ROWS;
         circuit_config.theta_match = 16;
         circuit_config.theta_active = 18;
         let mut runtime = TemporalCircuitRuntime::new(
@@ -6866,7 +8004,9 @@ mod tests {
         const CUE_BASE: u32 = 1_600;
         const SURFACE_BASE: u32 = 1_700;
         const ADDRESS_BASE: u32 = 10_000;
-
+        // Four distinct role pointers fit one fresh four-cell plan-commit
+        // cohort after the ordinary plan components occupy the base cohort.
+        const ROLE_POINTER_RESERVE_COHORTS: u32 = 1;
         let vocabulary = TypedWorkspaceVocabulary {
             plan_commit_token_id: PLAN_COMMIT,
             address_token_base: ADDRESS_BASE,
@@ -6937,6 +8077,11 @@ mod tests {
             .collect::<Vec<_>>();
         let column_count = u32::try_from(token_ids.len() * ACTIVE_COLUMNS).unwrap();
         let mut circuit_config = config(column_count, 4, TemporalContextPolicy::BoundWinners);
+        circuit_config.max_pyramidal_cells +=
+            ROLE_POINTER_RESERVE_COHORTS * ACTIVE_COLUMNS as u32 * 4;
+        // Reserve headroom changes fitted relay identities; seed 21 preserves
+        // independent lower/upper plan components in this physical layout.
+        circuit_config.construction_seed = 21;
         circuit_config.segment_capacity = 4_096;
         circuit_config.theta_match = 16;
         circuit_config.theta_active = 18;

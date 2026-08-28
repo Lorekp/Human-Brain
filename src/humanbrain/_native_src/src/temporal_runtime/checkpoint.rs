@@ -2017,7 +2017,7 @@ where
             .checked_add(predecessor_count)
             .ok_or(CheckpointV1StateError::CohortChronologyInvariant)?;
         if (predecessor_start..predecessor_end)
-            .any(|owner| owner_loads.load(owner) != Some(owner_cap))
+            .any(|owner| owner_loads.load(owner).is_none_or(|load| load == 0))
         {
             return Err(CheckpointV1StateError::CohortChronologyInvariant);
         }
@@ -5668,6 +5668,50 @@ pub(in crate::temporal_runtime) mod tests {
         .expect("chronologically recruited fixture must build")
     }
 
+    fn fresh_identity_recruited_runtime(
+        context_policy: TemporalContextPolicy,
+    ) -> TemporalCircuitRuntime {
+        let config = TemporalCircuitConfig {
+            column_count: 11,
+            base_cells_per_column: 2,
+            max_pyramidal_cells: 24,
+            segment_capacity: 8,
+            novel_race_cap: 2,
+            prediction_quorum: 1,
+            construction_seed: 0x0102_0304,
+            connected_permanence_ticks: 250,
+            initial_permanence_ticks: 255,
+            permanence_increment_ticks: 50,
+            negative_decrement_ticks: 2,
+            max_segments_per_cell: 2,
+            theta_match: 18,
+            theta_active: 20,
+            context_policy,
+            plasticity_policy: TemporalPlasticityPolicy::Plastic,
+        };
+        let mut members: Vec<Vec<u32>> = (0..config.column_count)
+            .map(|column| vec![2 * column, 2 * column + 1])
+            .collect();
+        members[0].extend([22, 23]);
+        let segments = [0, 1, 22].map(|owner| TemporalSegmentInit {
+            owner,
+            sources: Vec::new(),
+            permanence_ticks: Vec::new(),
+        });
+
+        TemporalCircuitRuntime::new(
+            config,
+            vec![TokenCode {
+                token_id: 7,
+                columns: std::array::from_fn(|index| index as u32),
+            }],
+            members,
+            vec![0.0; 81],
+            &segments,
+        )
+        .expect("fresh-identity cohort with used predecessors must build")
+    }
+
     fn full_section_generic_runtime() -> TemporalCircuitRuntime {
         let config = TemporalCircuitConfig {
             column_count: 11,
@@ -6394,6 +6438,34 @@ pub(in crate::temporal_runtime) mod tests {
                 Ok(())
             );
         }
+    }
+
+    #[test]
+    fn checkpoint_roundtrip_accepts_fresh_identity_cohort_below_cap_and_rejects_unused_predecessor()
+    {
+        let runtime = fresh_identity_recruited_runtime(TemporalContextPolicy::BoundWinners);
+        assert_eq!(runtime.store.runtime_owner_load(0), Some(1));
+        assert_eq!(runtime.store.runtime_owner_load(1), Some(1));
+        assert_eq!(runtime.config.max_segments_per_cell, 2);
+
+        let mut column_replay = [0u32; ACTIVE_COLUMNS];
+        assert_eq!(
+            validate_checkpoint_v1_runtime_state(&runtime, &mut column_replay),
+            Ok(())
+        );
+        let checkpoint = encoded_checkpoint(&runtime);
+        let imported = import_checkpoint_v1(&checkpoint, factory_for_runtime(&runtime))
+            .expect("a fresh-identity cohort below owner cap must round-trip");
+        assert_eq!(encoded_checkpoint(&imported), checkpoint);
+
+        let mut unused_predecessor = checkpoint;
+        let starts = checkpoint_v1_test_section_starts(&unused_predecessor);
+        write_checkpoint_v1_u32(&mut unused_predecessor, starts.segment_owners, 1, 22);
+        refresh_body_and_logical_state_digests(&mut unused_predecessor);
+        assert_eq!(
+            pass2_error(&unused_predecessor, &factory_for_runtime(&runtime)),
+            CheckpointV1Pass2Error::State(CheckpointV1StateError::CohortChronologyInvariant)
+        );
     }
 
     #[test]

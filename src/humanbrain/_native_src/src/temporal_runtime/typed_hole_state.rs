@@ -7,7 +7,7 @@
 //! nested program without introducing task labels.
 
 const MAX_LITERAL_DIGITS: u8 = 4;
-const MAX_HOLE_ADDRESS_DEPTH: u8 = 8;
+pub(super) const MAX_HOLE_ADDRESS_DEPTH: u8 = 8;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TypedValue {
@@ -108,6 +108,29 @@ impl TypedHoleAddress {
             packed_ordinals: self.packed_ordinals >> 2,
             depth: self.depth - 1,
         }
+    }
+
+    /// Express this path relative to an enclosing assembly anchor.
+    ///
+    /// The operation is deliberately fail-closed: a sibling or ancestor is
+    /// not a descendant of the anchor and therefore cannot silently reuse its
+    /// role pointer.  Packed ordinals are little-endian by depth, so removing
+    /// a proven prefix is a bounded shift rather than a host-side path map.
+    pub(crate) fn relative_to(self, anchor: Self) -> Option<Self> {
+        if anchor.depth > self.depth {
+            return None;
+        }
+        let mut index = 0u8;
+        while index < anchor.depth {
+            if self.child_ordinal(index) != anchor.child_ordinal(index) {
+                return None;
+            }
+            index += 1;
+        }
+        Some(Self {
+            packed_ordinals: self.packed_ordinals >> (u32::from(anchor.depth) * 2),
+            depth: self.depth - anchor.depth,
+        })
     }
 
     fn child(self, ordinal: u8) -> Option<Self> {
@@ -395,6 +418,17 @@ mod tests {
             .fold(TypedHoleAddress::root(), |path, &ordinal| {
                 path.child(ordinal).unwrap()
             })
+    }
+
+    #[test]
+    fn structural_address_rebases_only_below_its_exact_anchor() {
+        assert_eq!(
+            address(&[2, 0, 1]).relative_to(address(&[2])),
+            Some(address(&[0, 1]))
+        );
+        assert_eq!(address(&[2]).relative_to(address(&[2])), Some(address(&[])));
+        assert_eq!(address(&[2, 1]).relative_to(address(&[0])), None);
+        assert_eq!(address(&[0]).relative_to(address(&[0, 1])), None);
     }
 
     #[test]
