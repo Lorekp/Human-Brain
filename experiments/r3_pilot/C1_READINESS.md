@@ -42,6 +42,43 @@ Authoritative analysis and repair gates:
 - CN-1 rheobase/recruitment measurements (not its dense C1 drive choice).
 - The generic observation-sink/CUDA mirror, restore-time sink attachment, and
   live dynamics capture fixes committed on master as `f721fa9`.
+- Native mechanism fixtures now materialize the temporal pool cells and execute
+  segment-driven fitted-cell/basket/GABA races, including deterministic
+  multiple-owner arbitration. The nonofficial synthetic-authority q=255
+  development diagnostic rejects seed-17 `(10,13)` at production exposure
+  1,597 (`matching=11`, `active=0`, `allocated=0`). The next candidate,
+  `(16,18)`, passes production-overlap and target-disjoint at development seeds
+  3, 7, 17, and 29: all 2,041 learned-source recurrences select their stored
+  targets and all 128 disjoint novel probes per seed remain at zero matches and
+  predictions. Exact identities and counts are in
+  [q255_physical_development_smoke.json](q255_physical_development_smoke.json).
+  This is not an official threshold selection, confirmation, or R3-F0 result.
+
+The first canonical TRAIN-order precursor then falsifies `(16,18)` for corpus
+use much earlier than the synthetic screen could expose. A production-codebook,
+seed-17 LEARN replay stops inside Genesis at zero-based token 19,841 with 11
+matching segments, zero active segments, and zero replacement allocation. The
+19,842-step trustworthy prefix ran at 2,530.74 steps/s. This is a localized
+context-collision STOP, not a two-book scaling result; the next candidate in the
+frozen ladder is `(18,20)`. Exact source identities and the STOP record are in
+[r3_native_train_multibook_cost.json](../../benchmarks/r3_native_train_multibook_cost.json).
+
+The physical TRAIN-prefix cost ladder now completes the entire 122,253-token
+Genesis prefix with 1,047,305 live segments. At that endpoint the instrumented
+loop measures 1,063.72 steps/s, a straight-line 8.65 h projection for the
+corrected three-arm schedule (1.73x the required rate), down from 3,291.70
+steps/s at 4,096 tokens. This is still synthetic, pre-outcome prefix evidence:
+it excludes later-book growth, construction, checkpoint/I/O, and final arm
+topology. The exact ladder is in
+[r3_native_train_prefix_scaling.json](../../benchmarks/r3_native_train_prefix_scaling.json),
+so it narrows but does not close `C1-COST-DENSE-4096` or authorize C1.
+
+The nested Gate-3 source closure is stale after the native repairs. A dry-run
+refresh changes its bundle SHA-256 from `7830b2fe...` to `244538ac...`; the
+draft check still passes against its historical committed blobs and the
+runnable check still fails closed. Refreeze is deliberately deferred until the
+official q=255/R3-F0 execution closure is complete, so this status update does
+not create a source-current execution authority.
 
 The sparse recognition prototype is control-only evidence. It benchmarks
 `|W|=54`; frozen g=50 produces roughly 64k winners on the initial slice and
@@ -60,13 +97,17 @@ epoch-0 TRAIN
 ```
 
 The prior 8,927,839-step/arm projection omitted one full TRAIN sweep. No
-measured current end-to-end mode fits the 15-hour cap.
+measured current end-to-end mode yet fits the 15-hour cap; the full-Genesis
+result above remains narrower than an end-to-end cap measurement.
 
 ## Required sequence before GO
 
 - [ ] **R3-F0 neuronal fixture:** physical pool cells, segment-triggered plateau
       drive, fitted-cell first-spike race, growth-off structural zero, and
-      repeated/novel/punishment/bit-exact fixtures.
+      repeated/novel/punishment/bit-exact fixtures. Native mechanism slices are
+      green; q=255 development's first synthetic passing candidate `(16,18)`
+      fails the canonical TRAIN-order precursor at Genesis token 19,841. The
+      ladder must continue at `(18,20)` before confirmation or official R3-F0.
 - [ ] **Sparse context assembly gate:** freeze and compare k-capped actual
       recurrent spikes; require repeated-context stability, unrelated-context
       separation, and a bounded coincidence false-positive rate. Supersede the
@@ -79,7 +120,11 @@ measured current end-to-end mode fits the 15-hour cap.
       (`token_overlap_calibration.json`).
 - [ ] **C1-COST-DENSE-4096:** actual production activity masks, dense segment
       matching, physical plateau/race cost, checkpoint/I/O cost, and conservative
-      projection below 13.5 h.
+      projection below 13.5 h. The physical full-Genesis prefix is green at a
+      narrow 8.65 h projection, but later growth, required costs, and final
+      topology remain unmeasured.
+- [ ] Refresh the nested Gate-3 and outer R3 source bindings once the official
+      q=255/R3-F0 execution closure is final; keep `runnable=false` until then.
 - [ ] **CN-2:** formally refreeze substrate, winner source, A3, permanence rule,
       boundaries, evaluation, runtime changes, schedule, and cap behavior.
 - [ ] Corrected dry run and short smoke pass.
