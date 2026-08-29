@@ -495,6 +495,21 @@ routes rather than exact action-pattern rows. Provenance is deliberately
 narrow: a concurrent List-terminal-delegate edit changed the planner checkpoint
 before this run, so the artifact is not evidence from untouched `410869b`.
 
+The newly named V2 gate spent the exact same two tasks, target declarations,
+order, and literal bank against the compiler-generated structure curriculum at
+`a31f647`. The structural repair worked: the declared root-subtract then
+created-child-absolute trajectory was one of four value-exact, structurally
+supported leading sequences. The remaining ambiguity was informational rather than
+structural. The prompt observer recognized the words but returned `UNKNOWN`
+with `prompt has no complete supported operand relation` for the nested
+`subtract(absolute(alpha), beta)` expression; all four sequence currents were
+0 pA and the unique 650 pA STOP cell won. Thus
+`STOP_TYPED_FACTOR_HORIZON2_INT_CREATED_CHILD_V2` banked after 1,317 sequence
+predictions and 8.68 seconds, before actuation, leaving the right arm unrun. No
+fixture or mechanism tuning follows. The next generic increment is a
+compositional prompt-factor representation for nested unary/binary relations;
+the compiler-generated structural successor is no longer this gate's blocker.
+
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
 step 249 under a different winner context shared 8/11 cells with the current

@@ -1,0 +1,117 @@
+{
+  "attempted_tasks": 1,
+  "claim_boundary": "Two visible public Int tasks with compiler-generated structural successor coverage, genuine learned-cell H=2 lookahead over created child sites, one real edit per replan, and terminal DONE. Not Bool/List, Simple-SWE, M0, DEV/eval/held-out, protected data, C1, or broad coding evidence.",
+  "horizon2_source_lf_sha256": "a91714f9c393f3345f9a12da069dc3a7b096560ea37809df1b760b78317a8940",
+  "literal_bank": [
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "mechanism_commit": "a31f64751b6025d99b06087ed4ec2c36bb8b4718",
+  "model_checkpoint_sha256": "1d15cec6f8449937d44ce293ba1d01467a6e245518870c40cad4ee2bf1ab50a5",
+  "passed_tasks": 0,
+  "protocol_source_lf_sha256": "1a7ec5743430b2c1368f2b0c4c3509f248150bb00626e296826d250c9e662d15",
+  "public_protocol_sha256": "8391878e95b6da435308654ed4998f7e3b89af681728f9ecfbe1bbd36c34adfd",
+  "retry_policy": "This V2 public-development artifact and spend marker are exclusive. No prompt, case, current, threshold, literal-bank, candidate-order, seed, fixture, or mechanism tuning is permitted after this spend.",
+  "runner_source_lf_sha256": "9d5ac83d2871c4ce70b3e3d372c311c296bf20f3807328ef128c21ef8b129e1a",
+  "schema": "public-typed-factor-horizon2-int-created-child-v2",
+  "spend_marker_lf_sha256": "80552d5b33905e74bc2a56db74ede5f0f8f874484c603eadabb642c9fff8ab25",
+  "structure_successor_checkpoint_sha256": "95a35644cb0689ddd30dc5994ac4c9f15b61ae019ce377681051845c68d96c8e",
+  "structure_successor_source_lf_sha256": "d1e7670e8f218aa719f8ccd715f404a75a3200ae7f79744dd46a02005b2909bf",
+  "tasks": [
+    {
+      "actual_trajectory": [],
+      "checkpoint_immutable": true,
+      "created_path": [
+        0
+      ],
+      "created_path_absent_initially": true,
+      "created_path_present_hypothetically": false,
+      "desired_outputs": [
+        5,
+        5,
+        10,
+        10
+      ],
+      "done_decision": null,
+      "error": "first H=2 plan stopped: prompt evidence did not uniquely resolve the leading structure tier",
+      "expected_tokens": [
+        "subtract",
+        "absolute",
+        "variable-1",
+        "variable-0"
+      ],
+      "expected_trajectory": [
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "absolute",
+          "path": [
+            0
+          ],
+          "right_source": "NONE",
+          "schema": "APPLY1"
+        },
+        {
+          "left_source": "NONE",
+          "literal": null,
+          "operator": "NONE",
+          "path": [],
+          "right_source": "NONE",
+          "schema": "DONE"
+        }
+      ],
+      "final_outputs": [],
+      "final_tokens": [
+        "variable-1"
+      ],
+      "first_actuation": null,
+      "first_decision": {
+        "candidate_count": 83,
+        "checkpoint_immutable": true,
+        "cumulative_sequence_evaluations": 1317,
+        "expanded_first_count": 4,
+        "first_admissible_count": 83,
+        "first_excluded_count": 0,
+        "first_tier_count": 4,
+        "motor_races_unique": false,
+        "selected_sequence": null,
+        "status": "STOP_PROMPT",
+        "stop_reason": "prompt evidence did not uniquely resolve the leading structure tier",
+        "terminal_attempt_sequence_counts": [
+          1317
+        ],
+        "unique_sequence_predictions": 1317
+      },
+      "h1_exact_actions": [],
+      "hypothetical_second_action_admissible": false,
+      "initial_paths": [
+        []
+      ],
+      "name": "left-created-child",
+      "no_h1_all_case_solution": true,
+      "passed": false,
+      "second_actuation": null,
+      "second_decision": null
+    }
+  ],
+  "total_tasks": 2,
+  "typed_program_source_lf_sha256": "339e55b69c177c7f529a18843e6bdc2bba96d09c251b97306abcfdb86e1d22a2",
+  "verdict": "STOP_TYPED_FACTOR_HORIZON2_INT_CREATED_CHILD_V2",
+  "wall_time_seconds": 8.681373999999778,
+  "world_checkpoint_sha256": "37b5e25bbb532f7398f984defeb52b937a6230535fad76069aefc359a5f5b666"
+}
