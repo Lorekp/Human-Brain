@@ -297,6 +297,13 @@ three task times changed from 263.93→2.33 seconds (scalar offset),
 of three public-TRAIN tasks, not a second 30-task gate or broader capability
 claim.
 
+Commit `fb83d20` separately batches candidate exact-coincidence cells by target
+case. Repeated exact matches, mixed mismatches, inhibitory/subthreshold/
+threshold/suprathreshold currents, semantic decisions, and all frozen audit
+identities remained exact. The 64-row, 30-step synthetic physical phase measured
+51.72x in the implementation run and 73.61x in an independent replay. This does
+not measure complete synthesis wall time or establish capability.
+
 ## Generic semantic breadth and prompt-span input
 
 Commit `75513d2` replaces the live bounded semantic enumerator with one
@@ -319,6 +326,20 @@ operator checkpoint is
 `f9a065c704077bcd2ebdf005498738991f10ce72ca722798359edad5f5d28586`.
 These are live-v2 identities; they do not rewrite the immutable 30-task artifact.
 
+Commit `00ed3e5` adds generic physical `sum`, `less-than`, and predicate
+`count`. A retained Bool predicate at cost 3 must first license its
+`Function[Int,Bool]` binder at cost 4; only then may count compose at cost 6.
+Self-posed checks selected exact `count(3 < item)` for the algebraically
+equivalent surface `item + 2 > 5` and exact cost-9 sum-of-mapped-clamp, with
+immutable checkpoints and deterministic race ledgers. Unsupported candidates
+are pruned only after their physical work is recorded.
+
+This is generic mechanism evidence, not the six-family TRAIN gate. A reviewer
+measured 18.55 seconds for a low-diversity 25-literal cost-9 frontier and
+interrupted a diverse four-item counterpart after 90 seconds. The broad gate
+therefore requires an explicit desired-independent STOP-on-work-overflow bound;
+silently dropping candidates is not accepted as a performance repair.
+
 Commit `c89a3c6` separately banks a checkpoint-free public-TRAIN prompt input
 substrate. It accepts only the frozen callable frame, canonicalizes entrypoint
 and declared argument spellings into roles, emits ordered contiguous 1--4-token
@@ -328,9 +349,9 @@ no learned state, teacher, semantic-factor classifier, desired outputs,
 task/family identity, or candidate programs. Its six focused tests and a
 43-test prompt/shared-consumer command passed.
 
-Both results are mechanisms, not a completed six-family TRAIN breadth gate or
-prompt-only capability evidence. The aggregate and String combinators, learned
-span-to-factor mapping, preregistered TRAIN capacity split, and broad gate remain.
+These results are mechanisms, not a completed six-family TRAIN breadth gate or
+prompt-only capability evidence. The String combinators, learned span-to-factor
+mapping, preregistered TRAIN capacity split, and broad gate remain.
 Public DEV/eval, M0, protected data, held-out Path-2 material, and C1 stay sealed.
 
 ## Path-2 factorized successor replay readiness

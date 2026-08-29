@@ -608,6 +608,15 @@ to 21.05 seconds (42.3x); individual reductions were 263.93→2.33 seconds,
 replay, not a rerun of the frozen 30-task adjudication and not new capability
 evidence.  It makes the six-family TRAIN breadth step practical.
 
+Commit `fb83d20` adds a second, narrower runtime cut: exact typed-coincidence
+detectors now drive all candidate rows for one target case through one fitted
+GLIF population, and semantic-vector races batch by case. Repeated exact
+matches, mismatches, four current regimes, semantic decisions, and the frozen
+projection/detector/operator/current/tier identities remained byte-exact. A
+64-row synthetic physical-phase fixture measured 51.72x in the implementation
+run and 73.61x in an independent replay. This is detector-kernel evidence, not
+an end-to-end synthesis speed or capability result.
+
 The first generic breadth mechanism layer is now banked without opening any of
 those six task outputs.  The live compiler/synthesizer has one retained-frontier
 path: deterministic first/lowest-cost physical observational representatives
@@ -620,6 +629,16 @@ factors, strict decoding, type-total physical copying, and complete UNKNOWN
 inhibition so later String composition cannot win through an unsupported value.
 This is commit `75513d2`, a mechanism result only: it is not a six-family TRAIN
 gate, prompt-only solving, transfer, DEV/eval, M0, held-out, or C1 evidence.
+
+Commit `00ed3e5` extends that same desired-independent frontier with generic
+`sum`, `less-than`, and predicate `count`. A physically retained Bool predicate
+at cost 3 licenses its structural binder at cost 4 before `count` may compose at
+cost 6. Self-posed checks selected exact `count(3 < item)` for the algebraically
+equivalent surface `item + 2 > 5`, and exact cost-9 sum-of-mapped-clamp. The
+checkpoint and ordered race ledger were deterministic. This remains mechanism
+evidence. A reviewer also found that a diverse four-item, 25-literal frontier
+could exceed 90 seconds, so a desired-independent STOP-on-work-overflow bound is
+required before the broad TRAIN gate; silent top-k pruning is not licensed.
 
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
@@ -724,8 +743,9 @@ is proven.
    faster in aggregate.
 2. Expand the generic semantic basis across the six unspent TRAIN families;
    keep prompt/task/family identity out and keep property cases hidden.  The
-   retained Int-extrema and Char/String output substrate is complete; generic
-   aggregate and String combinators plus the broad gate remain.
+   retained Int-extrema, Char/String output substrate, and generic List
+   aggregates are complete; a frontier work bound, String combinators, and the
+   broad gate remain.
 3. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
    before any family-disjoint desired vector is observed.  The checkpoint-free
    physical span input is banked; the learned factor mapping remains.
