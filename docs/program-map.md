@@ -2,8 +2,9 @@
 
 Maintained by the orchestrator. Updated 2026-08-29 after the first broad
 bottom-up typed-semantic TRAIN pass, its speed layer, the first generic breadth
-mechanisms including generic String composition, prompt-span input, and Path-2
-replay preparation. Exact scientific boundaries live in
+mechanisms including generic String composition, the fixed semantic-frontier
+work bound, prompt-span input, and Path-2 replay preparation. Exact scientific
+boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -15,7 +16,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 R4  TRAIN-only prompt → semantic-factor bridge       [physical span input banked]
-R3  Bottom-up typed semantic synthesis               [30/30 + breadth mechanisms]
+R3  Bottom-up typed semantic synthesis               [30/30 + breadth + work bound]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
@@ -52,8 +53,8 @@ Commit `00ed3e5` adds generic physical `sum`, `less-than`, and predicate
 `count`, with predicate retention at cost 3 and binder licensing at cost 4
 before cost-6 count composition. Self-posed count and cost-9 mapped-clamp-sum
 checks pass with immutable checkpoints. A diverse 25-literal frontier exceeded
-90 seconds in review, so the broad gate also requires a desired-independent
-STOP-on-work-overflow bound; no silent top-k shortcut is licensed.
+90 seconds in review, localizing the need for a desired-independent
+STOP-on-work-overflow bound rather than a silent top-k shortcut.
 
 Commit `3daea4c` completes generic String composition with compiler-private
 `AsciiClass`, a frozen 12-class catalog, 13 physical class cells including
@@ -72,8 +73,32 @@ operator checkpoints are respectively `962c2359fb41d7444a24bcacdeb2679caa3d54067
 Root verification passed 95 tests. This is generic mechanism/control evidence,
 not a broad TRAIN breadth or transfer result.
 
-1. Finish the desired-independent frontier work bound, then adjudicate the six
-   unspent TRAIN families once; generic String combinators are complete.
+Commit `7916741` completes that private work bound with fixed limits of 256
+representatives per explicit typed context bucket, 6,000 declared roots,
+30,000 operator predictions, and 80,000 physical races.  The preimplementation
+128 proposal was superseded before gated spend when unchanged count and scalar
+STOP fixtures reached 171/168 representatives; 256 restores the original
+approximately 50% headroom, while both 192 and 256 leave the diverse sentinel
+prediction-first.
+
+Sentinel A remains exhaustive at 4,797 declared and 4,757 supported roots,
+23,642 predictions, 63,456 races, and race SHA-256
+`2ca6e201b448b8b74070c485fe72ec66502fc303fc66e8f3f33f05c61fa82ff2`.
+Sentinel B stops at prediction 30,000/30,001 with 77,964 races, 1,651 declared
+roots, 1,441 supported roots, 174 retained representatives, no partial-tier
+desired race, and prefix SHA-256
+`506b110fac0558063293d08527c8c0ae6ad89849e5d97b24859d6bd82123970c`.
+The new enabled/catalog-off String semantic checkpoints are
+`9ac87703dae72cf6efeee52b5ceaa953dffc072dc5303f3348d8a8b6f51486b6` and
+`ed7dff6036ab522840bca1c0a1b6fd7c2e0de0768be813bb33b1920b5f291af3`;
+the shared 25-literal sentinel checkpoint is
+`13948fd329c79488f2e6532f3e013a10864db584db1c35b4219a1abe3fc9c477`.
+Independent audit passed, and implementer/root verification each passed
+100/100 tests. This is self-posed runtime-safety evidence only.
+
+1. Migrate dense typed physical outputs to the compact authenticated encoding,
+   then freeze and adjudicate the six unspent TRAIN families once; generic
+   String combinators and the work bound are complete.
 2. Complete and freeze the learned prompt-span → semantic-factor mapping on a
    preregistered TRAIN capacity split; its physical input layer is already banked.
 3. Spend the 27 fixed family-disjoint public DEV tasks once, with visible-I/O

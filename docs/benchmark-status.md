@@ -373,8 +373,57 @@ transfer/capability result.
 This is generic mechanism evidence, not the six-family TRAIN gate. A reviewer
 measured 18.55 seconds for a low-diversity 25-literal cost-9 frontier and
 interrupted a diverse four-item counterpart after 90 seconds. The broad gate
-therefore requires an explicit desired-independent STOP-on-work-overflow bound;
-silently dropping candidates is not accepted as a performance repair.
+therefore required an explicit desired-independent STOP-on-work-overflow bound;
+silently dropping candidates was not accepted as a performance repair.
+
+### Desired-independent semantic frontier work bound
+
+Commit `7916741` implements that private bound without changing the public
+`synthesize(signature, case_arguments, desired_outputs)` interface.  Complete
+exact-cost tiers are admitted under fixed limits of 256 retained
+representatives per explicit typed context bucket, 6,000 declared root
+candidates, 30,000 physical operator predictions, and 80,000 physical races.
+Overflow returns `STOP_SEMANTIC_FRONTIER_WORK_BOUND`; unsupported observations
+consume their physical work but not capacity, and an interrupted tier never
+reaches the desired-output race.  The same canonical aggregate-plus-String
+schema table drives runtime reservations and checkpoint identity.
+
+The original 128-representative proposal was transparently superseded before
+implementation and before any gated spend.  Unchanged banked regressions
+reached 171 bound-Int representatives for cost-6 count and 168 root-Int
+representatives for scalar exhaustive STOP.  The fixed 256 cap is the next
+power of two and restores the original headroom rationale: 171→256 is 50%,
+versus the original 87→128 calibration at 47%.  Diagnostic 192 and 256 caps
+both preserved the same prediction-first diverse-sentinel prefix, so the
+correction was not selected from a task outcome.
+
+Sentinel A remains the ordinary exhaustive
+`STOP_NO_EXACT_TYPED_SEMANTIC_PROGRAM`: 4,797 declared roots, 4,757 supported
+roots, 87 root semantic classes, 23,642 predictions, 63,456 races, and normal
+race SHA-256
+`2ca6e201b448b8b74070c485fe72ec66502fc303fc66e8f3f33f05c61fa82ff2`.
+Sentinel B returns the work-bound STOP at cost 3 before prediction 30,001, with
+30,000 completed predictions, 77,964 races, 1,651 declared roots, 1,441
+supported roots, 174 retained representatives, no cost-3 desired race, and
+completed-prefix SHA-256
+`506b110fac0558063293d08527c8c0ae6ad89849e5d97b24859d6bd82123970c`.
+An alternate inconsistent desired vector preserves the exact audit.
+
+The bounded enabled and catalog-off String semantic checkpoints are
+`9ac87703dae72cf6efeee52b5ceaa953dffc072dc5303f3348d8a8b6f51486b6` and
+`ed7dff6036ab522840bca1c0a1b6fd7c2e0de0768be813bb33b1920b5f291af3`.
+The 25-literal sentinel, count, and clamp-map-sum checkpoints are
+`13948fd329c79488f2e6532f3e013a10864db584db1c35b4219a1abe3fc9c477`,
+`4f0ee145047bccba72745a65afd9c261f7dd6d7a845ecc16c90fe104ff2e0ad6`,
+and `09c1e11ba835fd229b2741b0816de4704ea99ae46880ebbc5247e80f862979a2`.
+An independent read-only audit passed.  The implementer passed 100/100 tests in
+103.36 seconds; root passed the same 100/100 in 98.44 seconds.
+
+This is a self-posed deterministic runtime-safety mechanism only.  It is not
+the six-family TRAIN gate, prompt-only completion, family-disjoint transfer,
+DEV/evaluation, M0, protected or held-out evidence, Path-2/C1 evidence, or a
+SWE-bench, Gemma, or Opus capability result.  Compact typed-output migration is
+next; the broad visible-I/O TRAIN gate remains unspent.
 
 Commit `c89a3c6` separately banks a checkpoint-free public-TRAIN prompt input
 substrate. It accepts only the frozen callable frame, canonicalizes entrypoint
@@ -386,9 +435,10 @@ task/family identity, or candidate programs. Its six focused tests and a
 43-test prompt/shared-consumer command passed.
 
 These results are mechanisms, not a completed six-family TRAIN breadth gate or
-prompt-only capability evidence. Generic String combinators are complete; the
-desired-independent frontier work bound, learned span-to-factor mapping,
-preregistered TRAIN capacity split, and broad gate remain.
+prompt-only capability evidence. Generic String combinators and the
+desired-independent frontier work bound are complete; compact typed-output
+migration, the learned span-to-factor mapping, preregistered TRAIN capacity
+split, and broad gate remain.
 Public DEV/eval, M0, protected data, held-out Path-2 material, and C1 stay sealed.
 
 ## Path-2 factorized successor replay readiness

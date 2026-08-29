@@ -673,6 +673,51 @@ Root verification passed 95 tests.  This is self-posed generic mechanism and
 control evidence only, not the broad TRAIN breadth gate or transfer/capability
 evidence.
 
+Commit `7916741` completes the desired-independent semantic-frontier work
+bound without changing the public synthesis interface or opening any of the
+six unspent TRAIN-family desired vectors.  It admits complete exact-cost tiers
+under four fixed private limits: 256 retained representatives per explicit
+typed context bucket, 6,000 declared root candidates, 30,000 physical operator
+predictions, and 80,000 physical races.  Overflow returns
+`STOP_SEMANTIC_FRONTIER_WORK_BOUND`; it never silently drops a representative,
+and an interrupted tier never reaches the desired-output race.  Runtime
+admission and checkpoint hashing consume the same canonical aggregate-plus-
+String schema table, including the 29-race worst-case String copy.
+
+The originally proposed 128-representative cap was transparently superseded
+before implementation and before any gated spend.  The unchanged cost-6 count
+and scalar exhaustive-STOP mechanisms reached 171 bound-Int and 168 root-Int
+representatives, falsifying 128.  Raising the fixed cap to the next power of
+two, 256, restores approximately the original headroom principle: 171→256 is
+50%, versus the original sentinel calibration of 87→128 at 47%.  A tighter
+192 cap and the final 256 cap produced the same prediction-first Sentinel-B
+prefix, so no task outcome selected the correction.
+
+The duplicate-input 25-literal Sentinel A remains an ordinary exhaustive STOP:
+4,797 declared roots, 4,757 supported roots, 87 root semantic classes, 23,642
+predictions, 63,456 races, and normal race SHA-256
+`2ca6e201b448b8b74070c485fe72ec66502fc303fc66e8f3f33f05c61fa82ff2`.
+The diverse permutation Sentinel B stops before prediction 30,001 at cost 3,
+with 30,000 completed predictions, 77,964 races, 1,651 declared roots, 1,441
+supported roots, 174 retained representatives, no cost-3 desired race, and
+completed-prefix SHA-256
+`506b110fac0558063293d08527c8c0ae6ad89849e5d97b24859d6bd82123970c`.
+Changing its inconsistent desired vector preserves the complete prefix.  The
+new bounded semantic checkpoints are enabled String
+`9ac87703dae72cf6efeee52b5ceaa953dffc072dc5303f3348d8a8b6f51486b6`,
+catalog-off String
+`ed7dff6036ab522840bca1c0a1b6fd7c2e0de0768be813bb33b1920b5f291af3`,
+25-literal sentinels
+`13948fd329c79488f2e6532f3e013a10864db584db1c35b4219a1abe3fc9c477`,
+count
+`4f0ee145047bccba72745a65afd9c261f7dd6d7a845ecc16c90fe104ff2e0ad6`,
+and clamp-map-sum
+`09c1e11ba835fd229b2741b0816de4704ea99ae46880ebbc5247e80f862979a2`.
+An independent read-only audit passed; implementer and root runs each passed
+100/100 tests in 103.36 and 98.44 seconds.  This is a self-posed runtime-safety
+mechanism only, not broad TRAIN, prompt-only, transfer, DEV/eval, M0, held-out,
+Path-2, C1, SWE-bench, Gemma, or Opus capability evidence.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
@@ -774,16 +819,18 @@ is proven.
    physical path materially faster without changing winners, race ledgers, or
    checkpoint identity.  A parity-checked first-three-task replay is 42.3x
    faster in aggregate.
-2. Expand the generic semantic basis across the six unspent TRAIN families;
-   keep prompt/task/family identity out.  Retained Int extrema, the Char/String
-   output substrate, generic List aggregates, and generic String combinators are
-   complete; the desired-independent frontier work bound remains in progress
-   before the broad gate.
-3. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
+2. **COMPLETE:** extend the generic semantic basis with retained Int extrema,
+   the Char/String output substrate, List aggregates, String combinators, and
+   the private desired-independent frontier work bound.  No six-family desired
+   vector was opened to implement or calibrate the bound.
+3. Replace dense typed physical outputs with the preregistered compact
+   authenticated encoding, then freeze and spend the broad six-family
+   public-TRAIN visible-I/O gate once.
+4. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
    before any family-disjoint desired vector is observed.  The checkpoint-free
    physical span input is banked; the learned factor mapping remains.
-4. Spend one paired 27-task public DEV gate only after the visible-I/O engine
+5. Spend one paired 27-task public DEV gate only after the visible-I/O engine
    and prompt-only bridge are both frozen. M0 and canonical eval stay sealed.
-5. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
+6. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
    empty state in bounded public-TRAIN chunks; do not import the completed
    dense build or open C1/held-out material.
