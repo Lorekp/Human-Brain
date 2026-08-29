@@ -458,6 +458,19 @@ missing information is now explicit: execution score defines the leading
 physical tier, then generic prompt-derived operand/literal evidence must resolve
 only within that tier so lexical evidence can never override worse behavior.
 
+That hierarchy now passes its sole four-task public H=1 run. Complete physical
+value tiers were formed before prompt evidence existed; generic prompt binding
+then selected the exact tier-local action for both operand orders (`a-b`,
+`b-a`) and both comparison orientations (`x<2`, `2<x`). Every task produced
+the exact program and outputs through one structural prediction and one real
+compiler-owned actuation, with immutable checkpoints. The run took 1.38 s.
+Compiler-owned batching made the audited operator path 2.84× faster, while
+compiled structural races made the supported 83-race successor path 9.71×
+faster with bit-exact ledgers. This is
+`PASS_TYPED_FACTOR_H1_PROMPT_HIERARCHICAL_FRESH`, not family-transfer evidence:
+the next capability gate varies names, prompt surface, literals, and incumbent
+shape before factorized H=2 or any protected milestone is opened.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

@@ -285,6 +285,21 @@ def test_supported_prompt_absent_from_fixed_factor_bank_physically_stops() -> No
     assert decision.winner_cell == decision.stop_cell
 
 
+def test_tier_with_no_prompt_observable_action_has_a_physical_stop_bank() -> None:
+    projection = factors.FixedPromptBindingProjection.build((DONE, SELECTED_ALIAS))
+    decision = projection.project(
+        "Given integers a and b, return a minus b.",
+        _signature("a", "b"),
+    )
+
+    assert projection.patterns == ()
+    assert projection.race_weights_pa.shape == (1, 1)
+    assert projection.action_weights_pa.shape == (2, 0)
+    assert decision.status == factors.PROJECTION_STATUS_STOP_UNSUPPORTED
+    assert decision.physical_winner == factors.PHYSICAL_STOP
+    assert decision.winner_cell == decision.stop_cell == 0
+
+
 def test_binding_projection_is_readonly_and_checkpoint_stable() -> None:
     projection = factors.FixedPromptBindingProjection.build(BINDING_ACTIONS)
     before = projection.live_checkpoint_sha256

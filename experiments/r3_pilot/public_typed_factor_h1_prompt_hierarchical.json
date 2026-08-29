@@ -1,0 +1,356 @@
+{
+  "claim_boundary": "Visible public H=1 Int/Bool factorization only: target-free root operator successors, complete physical leading value tiers, and generic prompt binding before one real actuation. Not List, H>1, Simple-SWE, held-out, protected, M0, C1, or coding capability.",
+  "commitment_sha256": "1d3c40df6b5b66a9e0f64b8f4ce2b9b2643ae5dca7d1b456eadf45bd377fa1d3",
+  "literal_bank": [
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "model_checkpoint_sha256": "de8733825b824d734a22c110627f131aa60fd390e81c01aff1b374b3c1af7176",
+  "passed_tasks": 4,
+  "retry_policy": "One four-task public-development attempt; no retry, prompt, grid, incumbent, literal-bank, tier, current, or task-order tuning.",
+  "schema": "public-typed-factor-h1-prompt-hierarchical-fresh-v1",
+  "tasks": [
+    {
+      "actuator_calls": 1,
+      "candidate_count": 212,
+      "checkpoint_immutable": true,
+      "desired_outputs": [
+        5,
+        -7,
+        0
+      ],
+      "error": null,
+      "final_outputs": [
+        5,
+        -7,
+        0
+      ],
+      "final_tokens": [
+        "subtract",
+        "variable-1",
+        "variable-0"
+      ],
+      "leading_value_tier_actions": [
+        {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SELECTED",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        }
+      ],
+      "leading_value_tier_cells": [
+        73,
+        74
+      ],
+      "leading_value_tier_current_pa": [
+        4500.0,
+        4500.0
+      ],
+      "motor_races_unique": true,
+      "name": "two-int-a-minus-b",
+      "nonroot_unknown_count": 82,
+      "operator_races_unique": true,
+      "passed": true,
+      "prompt": "Return a minus b.",
+      "prompt_matching_tier_cells": [
+        1
+      ],
+      "prompt_pattern": {
+        "left_source": "SCOPE1",
+        "literal": null,
+        "operator": "subtract",
+        "right_source": "SCOPE0"
+      },
+      "prompt_race_unique": true,
+      "prompt_status": "PROJECTED",
+      "root_successor_action_count": 130,
+      "selected_action": {
+        "left_source": "SCOPE1",
+        "literal": null,
+        "operator": "subtract",
+        "path": [],
+        "right_source": "SCOPE0",
+        "schema": "APPLY2"
+      },
+      "selected_candidate_cell": 74,
+      "status": "SELECTED",
+      "structure_prediction_calls": 1,
+      "structure_races_unique": true,
+      "value_stop_in_leading_tier": false
+    },
+    {
+      "actuator_calls": 1,
+      "candidate_count": 212,
+      "checkpoint_immutable": true,
+      "desired_outputs": [
+        -5,
+        7,
+        0
+      ],
+      "error": null,
+      "final_outputs": [
+        -5,
+        7,
+        0
+      ],
+      "final_tokens": [
+        "subtract",
+        "variable-0",
+        "variable-1"
+      ],
+      "leading_value_tier_actions": [
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE1",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE0",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE1",
+          "schema": "APPLY2"
+        }
+      ],
+      "leading_value_tier_cells": [
+        69,
+        72
+      ],
+      "leading_value_tier_current_pa": [
+        4500.0,
+        4500.0
+      ],
+      "motor_races_unique": true,
+      "name": "two-int-b-minus-a",
+      "nonroot_unknown_count": 82,
+      "operator_races_unique": true,
+      "passed": true,
+      "prompt": "Return b minus a.",
+      "prompt_matching_tier_cells": [
+        1
+      ],
+      "prompt_pattern": {
+        "left_source": "SCOPE0",
+        "literal": null,
+        "operator": "subtract",
+        "right_source": "SCOPE1"
+      },
+      "prompt_race_unique": true,
+      "prompt_status": "PROJECTED",
+      "root_successor_action_count": 130,
+      "selected_action": {
+        "left_source": "SCOPE0",
+        "literal": null,
+        "operator": "subtract",
+        "path": [],
+        "right_source": "SCOPE1",
+        "schema": "APPLY2"
+      },
+      "selected_candidate_cell": 72,
+      "status": "SELECTED",
+      "structure_prediction_calls": 1,
+      "structure_races_unique": true,
+      "value_stop_in_leading_tier": false
+    },
+    {
+      "actuator_calls": 1,
+      "candidate_count": 98,
+      "checkpoint_immutable": true,
+      "desired_outputs": [
+        true,
+        true,
+        false,
+        false
+      ],
+      "error": null,
+      "final_outputs": [
+        true,
+        true,
+        false,
+        false
+      ],
+      "final_tokens": [
+        "less-than",
+        "variable-0",
+        "integer",
+        "+",
+        "2",
+        "end"
+      ],
+      "leading_value_tier_actions": [
+        {
+          "left_source": "SCOPE0",
+          "literal": 1,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE0",
+          "literal": 2,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        }
+      ],
+      "leading_value_tier_cells": [
+        12,
+        14
+      ],
+      "leading_value_tier_current_pa": [
+        5800.0,
+        5800.0
+      ],
+      "motor_races_unique": true,
+      "name": "bool-x-less-than-2",
+      "nonroot_unknown_count": 78,
+      "operator_races_unique": true,
+      "passed": true,
+      "prompt": "Return whether x is less than 2.",
+      "prompt_matching_tier_cells": [
+        1
+      ],
+      "prompt_pattern": {
+        "left_source": "SCOPE0",
+        "literal": 2,
+        "operator": "less-than",
+        "right_source": "LITERAL"
+      },
+      "prompt_race_unique": true,
+      "prompt_status": "PROJECTED",
+      "root_successor_action_count": 20,
+      "selected_action": {
+        "left_source": "SCOPE0",
+        "literal": 2,
+        "operator": "less-than",
+        "path": [],
+        "right_source": "LITERAL",
+        "schema": "APPLY2"
+      },
+      "selected_candidate_cell": 14,
+      "status": "SELECTED",
+      "structure_prediction_calls": 1,
+      "structure_races_unique": true,
+      "value_stop_in_leading_tier": false
+    },
+    {
+      "actuator_calls": 1,
+      "candidate_count": 98,
+      "checkpoint_immutable": true,
+      "desired_outputs": [
+        false,
+        false,
+        false,
+        true
+      ],
+      "error": null,
+      "final_outputs": [
+        false,
+        false,
+        false,
+        true
+      ],
+      "final_tokens": [
+        "less-than",
+        "integer",
+        "+",
+        "2",
+        "end",
+        "variable-0"
+      ],
+      "leading_value_tier_actions": [
+        {
+          "left_source": "LITERAL",
+          "literal": 2,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "LITERAL",
+          "literal": 3,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "LITERAL",
+          "literal": 4,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        }
+      ],
+      "leading_value_tier_cells": [
+        15,
+        17,
+        19
+      ],
+      "leading_value_tier_current_pa": [
+        5800.0,
+        5800.0,
+        5800.0
+      ],
+      "motor_races_unique": true,
+      "name": "bool-2-less-than-x",
+      "nonroot_unknown_count": 78,
+      "operator_races_unique": true,
+      "passed": true,
+      "prompt": "Return whether 2 is less than x.",
+      "prompt_matching_tier_cells": [
+        0
+      ],
+      "prompt_pattern": {
+        "left_source": "LITERAL",
+        "literal": 2,
+        "operator": "less-than",
+        "right_source": "SCOPE0"
+      },
+      "prompt_race_unique": true,
+      "prompt_status": "PROJECTED",
+      "root_successor_action_count": 20,
+      "selected_action": {
+        "left_source": "LITERAL",
+        "literal": 2,
+        "operator": "less-than",
+        "path": [],
+        "right_source": "SCOPE0",
+        "schema": "APPLY2"
+      },
+      "selected_candidate_cell": 15,
+      "status": "SELECTED",
+      "structure_prediction_calls": 1,
+      "structure_races_unique": true,
+      "value_stop_in_leading_tier": false
+    }
+  ],
+  "total_tasks": 4,
+  "verdict": "PASS_TYPED_FACTOR_H1_PROMPT_HIERARCHICAL_FRESH",
+  "wall_time_seconds": 1.3814934000038193
+}

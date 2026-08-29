@@ -1,0 +1,252 @@
+{
+  "commitment": {
+    "literal_bank": [
+      -4,
+      -3,
+      -2,
+      -1,
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "planner_source_sha256": "591c1759ea81e9774ae96c80bf5bac587422320fe3d9a103e7631f615d163ed8",
+    "schema": "public-typed-factor-h1-prompt-hierarchical-fresh-v1",
+    "tasks": [
+      {
+        "cases": [
+          [
+            7,
+            2
+          ],
+          [
+            -3,
+            4
+          ],
+          [
+            5,
+            5
+          ]
+        ],
+        "desired_outputs": [
+          5,
+          -7,
+          0
+        ],
+        "incumbent_tokens": [
+          "absolute",
+          "variable-0"
+        ],
+        "name": "two-int-a-minus-b",
+        "prompt": "Return a minus b.",
+        "signature": {
+          "entry_point": "solve",
+          "parameters": [
+            {
+              "name": "a",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            }
+          ],
+          "result": {
+            "arguments": [],
+            "constructor": "Int"
+          }
+        }
+      },
+      {
+        "cases": [
+          [
+            7,
+            2
+          ],
+          [
+            -3,
+            4
+          ],
+          [
+            5,
+            5
+          ]
+        ],
+        "desired_outputs": [
+          -5,
+          7,
+          0
+        ],
+        "incumbent_tokens": [
+          "absolute",
+          "variable-0"
+        ],
+        "name": "two-int-b-minus-a",
+        "prompt": "Return b minus a.",
+        "signature": {
+          "entry_point": "solve",
+          "parameters": [
+            {
+              "name": "a",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            }
+          ],
+          "result": {
+            "arguments": [],
+            "constructor": "Int"
+          }
+        }
+      },
+      {
+        "cases": [
+          [
+            -3
+          ],
+          [
+            0
+          ],
+          [
+            2
+          ],
+          [
+            5
+          ]
+        ],
+        "desired_outputs": [
+          true,
+          true,
+          false,
+          false
+        ],
+        "incumbent_tokens": [
+          "less-than",
+          "variable-0",
+          "variable-0"
+        ],
+        "name": "bool-x-less-than-2",
+        "prompt": "Return whether x is less than 2.",
+        "signature": {
+          "entry_point": "solve",
+          "parameters": [
+            {
+              "name": "x",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            }
+          ],
+          "result": {
+            "arguments": [],
+            "constructor": "Bool"
+          }
+        }
+      },
+      {
+        "cases": [
+          [
+            -3
+          ],
+          [
+            0
+          ],
+          [
+            2
+          ],
+          [
+            5
+          ]
+        ],
+        "desired_outputs": [
+          false,
+          false,
+          false,
+          true
+        ],
+        "incumbent_tokens": [
+          "less-than",
+          "variable-0",
+          "variable-0"
+        ],
+        "name": "bool-2-less-than-x",
+        "prompt": "Return whether 2 is less than x.",
+        "signature": {
+          "entry_point": "solve",
+          "parameters": [
+            {
+              "name": "x",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            }
+          ],
+          "result": {
+            "arguments": [],
+            "constructor": "Bool"
+          }
+        }
+      }
+    ],
+    "validation_targets": [
+      {
+        "expected_tokens": [
+          "subtract",
+          "variable-1",
+          "variable-0"
+        ],
+        "name": "two-int-a-minus-b"
+      },
+      {
+        "expected_tokens": [
+          "subtract",
+          "variable-0",
+          "variable-1"
+        ],
+        "name": "two-int-b-minus-a"
+      },
+      {
+        "expected_tokens": [
+          "less-than",
+          "variable-0",
+          "integer",
+          "+",
+          "2",
+          "end"
+        ],
+        "name": "bool-x-less-than-2"
+      },
+      {
+        "expected_tokens": [
+          "less-than",
+          "integer",
+          "+",
+          "2",
+          "end",
+          "variable-0"
+        ],
+        "name": "bool-2-less-than-x"
+      }
+    ]
+  },
+  "commitment_sha256": "1d3c40df6b5b66a9e0f64b8f4ce2b9b2643ae5dca7d1b456eadf45bd377fa1d3",
+  "disposition": "Retain after PASS, STOP, exception, interruption, or crash; the four-task public-development boundary must never rerun.",
+  "schema": "public-typed-factor-h1-prompt-hierarchical-fresh-v1-spend"
+}

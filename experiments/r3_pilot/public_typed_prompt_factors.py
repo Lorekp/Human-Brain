@@ -705,8 +705,6 @@ class FixedPromptBindingProjection:
             if pattern is not None and pattern not in pattern_list:
                 pattern_list.append(pattern)
         patterns = tuple(pattern_list)
-        if not patterns:
-            raise ValueError("candidate bank has no prompt-observable binary action")
 
         stop_cell = len(patterns)
         race_weights = np.zeros((stop_cell + 1, stop_cell + 1), dtype=np.float64)
