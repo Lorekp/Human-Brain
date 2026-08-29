@@ -140,7 +140,14 @@ def test_predict_many_is_readonly_and_inference_has_no_candidate_program_path() 
 
     source = Path(successor.__file__).read_text(encoding="utf-8")
     tree = ast.parse(source)
-    inference_names = {"predict", "predict_many", "_unary", "_binary", "_source"}
+    inference_names = {
+        "predict",
+        "predict_many",
+        "_predict_effect",
+        "_unary",
+        "_binary",
+        "_source",
+    }
     inference_source = "\n".join(
         ast.get_source_segment(source, node) or ""
         for node in ast.walk(tree)

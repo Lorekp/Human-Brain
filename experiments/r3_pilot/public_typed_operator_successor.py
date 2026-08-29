@@ -294,6 +294,28 @@ class FrozenTypedOperatorSuccessor:
         if before != self.checkpoint_sha256:
             raise RuntimeError("typed operator successor changed before prediction")
 
+        output, races = self._predict_effect(selected, action, scope_tuple)
+
+        after = self.live_checkpoint_sha256
+        if after != before:
+            raise RuntimeError("frozen typed operator successor changed in inference")
+        return TypedOperatorPrediction(
+            output=output,
+            races=races,
+            supported=output.supported,
+            action=action,
+            checkpoint_before_sha256=before,
+            checkpoint_after_sha256=after,
+        )
+
+    def _predict_effect(
+        self,
+        selected: output_cells.TypedOutputEncoding,
+        action: FactorAction,
+        scopes: tuple[output_cells.TypedOutputEncoding, ...],
+    ) -> tuple[output_cells.TypedOutputEncoding, tuple[OperatorRace, ...]]:
+        """Run one effect after the caller authenticates the frozen arrays."""
+
         if action.schema == "DONE" and (
             action.path == ()
             and action.operator == "NONE"
@@ -308,7 +330,7 @@ class FrozenTypedOperatorSuccessor:
             and action.right_source == "NONE"
         ):
             operand = self._source(
-                action.left_source, selected, scope_tuple, action.literal
+                action.left_source, selected, scopes, action.literal
             )
             output, races = self._unary(operand)
         elif action.schema == "APPLY2" and action.operator in {
@@ -317,10 +339,10 @@ class FrozenTypedOperatorSuccessor:
             "less-than",
         }:
             left = self._source(
-                action.left_source, selected, scope_tuple, action.literal
+                action.left_source, selected, scopes, action.literal
             )
             right = self._source(
-                action.right_source, selected, scope_tuple, action.literal
+                action.right_source, selected, scopes, action.literal
             )
             output, races = self._binary(action.operator, left, right)
         elif (
@@ -331,7 +353,7 @@ class FrozenTypedOperatorSuccessor:
             and action.literal is None
         ):
             collection = self._source(
-                action.right_source, selected, scope_tuple, action.literal
+                action.right_source, selected, scopes, action.literal
             )
             if collection.output_type is output_cells.OutputType.LIST_INT:
                 output, races = _decode_copy(collection)
@@ -349,18 +371,7 @@ class FrozenTypedOperatorSuccessor:
                 bank="operator-action-unknown",
             )
             races = (race,)
-
-        after = self.live_checkpoint_sha256
-        if after != before:
-            raise RuntimeError("frozen typed operator successor changed in inference")
-        return TypedOperatorPrediction(
-            output=output,
-            races=races,
-            supported=output.supported,
-            action=action,
-            checkpoint_before_sha256=before,
-            checkpoint_after_sha256=after,
-        )
+        return output, races
 
     def predict_many(
         self,
@@ -376,9 +387,34 @@ class FrozenTypedOperatorSuccessor:
             scopes = tuple(tuple(row) for row in scope_rows)
             if len(scopes) != len(selected_rows):
                 raise ValueError("scope_rows must align with selected observations")
-        return tuple(
-            self.predict(value, action, scopes=row)
+        if not all(
+            isinstance(value, output_cells.TypedOutputEncoding)
+            for value in selected_rows
+        ) or not all(
+            all(isinstance(scope, output_cells.TypedOutputEncoding) for scope in row)
+            for row in scopes
+        ):
+            raise TypeError("batched rows must contain physical typed-output encodings")
+        before = self.live_checkpoint_sha256
+        if before != self.checkpoint_sha256:
+            raise RuntimeError("typed operator successor changed before batch")
+        effects = tuple(
+            self._predict_effect(value, action, row)
             for value, row in zip(selected_rows, scopes, strict=True)
+        )
+        after = self.live_checkpoint_sha256
+        if after != before:
+            raise RuntimeError("frozen typed operator successor changed in batch")
+        return tuple(
+            TypedOperatorPrediction(
+                output=output,
+                races=races,
+                supported=output.supported,
+                action=action,
+                checkpoint_before_sha256=before,
+                checkpoint_after_sha256=after,
+            )
+            for output, races in effects
         )
 
 
