@@ -108,6 +108,18 @@ class ProgramEditSite:
 
 
 @dataclass(frozen=True, slots=True)
+class FactorActionSite:
+    """Compiler-owned metadata sufficient to enumerate generic edit factors."""
+
+    path: tuple[int, ...]
+    result_type_label: str
+    head_production: str
+    scope_binding_type_labels: tuple[str, str]
+    is_binder: bool
+    selected_scope_index: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class FactorAction:
     """One generic, factorized typed edit selected by physical motor races."""
 
@@ -1229,7 +1241,7 @@ def _factor_literal_tokens(value: int) -> tuple[str, ...]:
 
 
 def _inside_binder_scope(
-    sites: Sequence[ProgramEditSite],
+    sites: Sequence[ProgramEditSite | FactorActionSite],
     path: tuple[int, ...],
 ) -> bool:
     return any(
@@ -1259,13 +1271,10 @@ def _factor_literal_bank(literals: Sequence[int]) -> tuple[int, ...]:
 
 
 def _factor_dynamic_sources(
-    site: ProgramEditSite,
-    sites: Sequence[ProgramEditSite],
+    site: FactorActionSite,
+    sites: Sequence[FactorActionSite],
     required_type_label: str,
 ) -> tuple[str, ...]:
-    selected_scope_index: int | None = None
-    if len(site.tokens) == 1 and site.tokens[0] in {"variable-0", "variable-1"}:
-        selected_scope_index = int(site.tokens[0][-1])
     selected_available = site.result_type_label == required_type_label
     inside_binder = _inside_binder_scope(sites, site.path)
 
@@ -1275,7 +1284,7 @@ def _factor_dynamic_sources(
     for index, type_label in enumerate(site.scope_binding_type_labels):
         if type_label != required_type_label:
             continue
-        if selected_available and selected_scope_index == index:
+        if selected_available and site.selected_scope_index == index:
             continue
         if inside_binder and index == 0:
             continue
@@ -1283,7 +1292,7 @@ def _factor_dynamic_sources(
     if (
         inside_binder
         and site.scope_binding_type_labels[0] == required_type_label
-        and not (selected_available and selected_scope_index == 0)
+        and not (selected_available and site.selected_scope_index == 0)
     ):
         sources.append("BOUND0")
     return tuple(sources)
@@ -1304,20 +1313,57 @@ def _ordered_factor_operands(
     return tuple(operands)
 
 
-def factor_action_candidates(
-    program: Program,
-    *,
-    literals: Sequence[int],
-) -> FactorCandidateBank:
-    """Enumerate the complete typed factor bank without materializing edits."""
+def factor_action_sites(program: Program) -> tuple[FactorActionSite, ...]:
+    """Project incumbent edit sites into candidate-enumeration metadata."""
 
     if not isinstance(program, Program):
-        raise TypeError("factor candidate enumeration requires a Program")
-    if _program_sha256(program.tokens, program.signature) != program.sha256:
-        raise ValueError("program digest mismatch")
-    literal_bank = _factor_literal_bank(literals)
-    sites = program_edit_sites(program)
+        raise TypeError("factor-action site projection requires a Program")
+    projected: list[FactorActionSite] = []
+    for site in program_edit_sites(program):
+        selected_scope_index = (
+            int(site.tokens[0][-1])
+            if len(site.tokens) == 1
+            and site.tokens[0] in {"variable-0", "variable-1"}
+            else None
+        )
+        projected.append(
+            FactorActionSite(
+                path=site.path,
+                result_type_label=site.result_type_label,
+                head_production=site.head_production,
+                scope_binding_type_labels=site.scope_binding_type_labels,
+                is_binder=site.is_binder,
+                selected_scope_index=selected_scope_index,
+            )
+        )
+    return tuple(projected)
 
+
+def factor_actions_for_sites(
+    sites: Sequence[FactorActionSite],
+    *,
+    literals: Sequence[int],
+) -> tuple[FactorAction, ...]:
+    """Enumerate actions from compiler-owned typed site metadata.
+
+    This is the common legality seam for real incumbent sites and learned-world-
+    model predictions.  It never materializes, compiles, or executes a candidate
+    program; callers that predict hypothetical structure must supply the same
+    :class:`FactorActionSite` records.  This keeps hypothetical candidate
+    enumeration independent of subtree tokens or candidate AST construction.
+    """
+
+    try:
+        site_bank = tuple(sites)
+    except TypeError as error:
+        raise TypeError(
+            "factor sites must be an iterable of FactorActionSite values"
+        ) from error
+    if not all(type(site) is FactorActionSite for site in site_bank):
+        raise TypeError("factor sites must contain FactorActionSite values")
+    if len({site.path for site in site_bank}) != len(site_bank):
+        raise ValueError("factor sites must have unique paths")
+    literal_bank = _factor_literal_bank(literals)
     actions: list[FactorAction] = []
     seen: set[FactorAction] = set()
 
@@ -1327,9 +1373,9 @@ def factor_action_candidates(
             actions.append(action)
 
     append(_GLOBAL_DONE_FACTOR_ACTION)
-    for site in sites:
+    for site in site_bank:
         if site.result_type_label == "Int":
-            dynamic_sources = _factor_dynamic_sources(site, sites, "Int")
+            dynamic_sources = _factor_dynamic_sources(site, site_bank, "Int")
             for source in dynamic_sources:
                 append(
                     FactorAction(
@@ -1355,7 +1401,7 @@ def factor_action_candidates(
                         )
                     )
         elif site.result_type_label == "Bool":
-            dynamic_sources = _factor_dynamic_sources(site, sites, "Int")
+            dynamic_sources = _factor_dynamic_sources(site, site_bank, "Int")
             for left_source, right_source, literal in _ordered_factor_operands(
                 dynamic_sources,
                 literal_bank,
@@ -1373,7 +1419,7 @@ def factor_action_candidates(
         elif site.result_type_label == "List[Int]":
             for collection_source in _factor_dynamic_sources(
                 site,
-                sites,
+                site_bank,
                 "List[Int]",
             ):
                 append(
@@ -1387,10 +1433,29 @@ def factor_action_candidates(
                     )
                 )
 
+    return tuple(actions)
+
+
+def factor_action_candidates(
+    program: Program,
+    *,
+    literals: Sequence[int],
+) -> FactorCandidateBank:
+    """Enumerate the complete typed factor bank without materializing edits."""
+
+    if not isinstance(program, Program):
+        raise TypeError("factor candidate enumeration requires a Program")
+    if _program_sha256(program.tokens, program.signature) != program.sha256:
+        raise ValueError("program digest mismatch")
+    literal_bank = _factor_literal_bank(literals)
+    actions = factor_actions_for_sites(
+        factor_action_sites(program),
+        literals=literal_bank,
+    )
     return FactorCandidateBank(
         program_sha256=program.sha256,
         literals=literal_bank,
-        actions=tuple(actions),
+        actions=actions,
     )
 
 
@@ -2236,6 +2301,7 @@ __all__ = [
     "Completion",
     "Example",
     "FactorAction",
+    "FactorActionSite",
     "FactorCandidateBank",
     "FrozenCheckpoint",
     "Layer1Protocol",
@@ -2252,6 +2318,8 @@ __all__ = [
     "compile_edit_site",
     "complete",
     "factor_action_candidates",
+    "factor_action_sites",
+    "factor_actions_for_sites",
     "grow",
     "program_edit_sites",
     "replace_subtree",
