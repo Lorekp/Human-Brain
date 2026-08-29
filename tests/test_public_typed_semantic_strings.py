@@ -339,17 +339,29 @@ def test_catalog_off_is_checkpointed_unknown_and_licenses_no_filter() -> None:
         ]
     ) == 12
 
+    off_budget = semantic._SemanticFrontierBudget()
+    enabled_budget = semantic._SemanticFrontierBudget()
+    work_context = semantic._WorkContext(
+        ast_cost=1,
+        environment_type_labels=("Char", "String"),
+        result_type_label="AsciiClass",
+        context_shape=("bound", ((0, 0, "String", 1),)),
+    )
+    off_budget.set_context(work_context)
+    enabled_budget.set_context(work_context)
     evaluator = semantic._CaseEvaluator(
         off.operator,
         exhaustive,
         ("A",),
         ascii_catalog_enabled=off._ascii_catalog_enabled,
+        budget=off_budget,
     )
     enabled_evaluator = semantic._CaseEvaluator(
         on.operator,
         exhaustive,
         ("A",),
         ascii_catalog_enabled=on._ascii_catalog_enabled,
+        budget=enabled_budget,
     )
     class_nodes = tuple(
         node

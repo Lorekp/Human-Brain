@@ -1,7 +1,7 @@
 # Typed semantic frontier work-bound protocol
 
-Status: design frozen; implementation deferred until the in-flight generic
-String semantic layer is banked.
+Status: implemented and verified after the generic String semantic layer was
+banked at commit `3daea4c`.
 
 Date: 2026-08-29.
 
@@ -18,10 +18,10 @@ selection behavior.  A synthesis that would exceed a bound returns an explicit
 scientific STOP before a partial tier can reach the desired-output race.  It
 does not discard a representative and continue.
 
-Implementation must wait until the in-flight String layer is banked.  The final
-implementation must enumerate every aggregate and String physical prediction
-schema, including worst-case String copy/filter/reverse work, before freezing
-the race-admission table and the synthesizer checkpoint.
+The implementation follows the banked String layer and enumerates every
+aggregate and String physical prediction schema, including worst-case String
+copy/filter/reverse work, in the frozen race-admission table authenticated by
+the synthesizer checkpoint.
 
 ## Ownership and interface seam
 
@@ -43,7 +43,7 @@ API.
 
 | Internal constant | Limit |
 | --- | ---: |
-| `MAX_RETAINED_REPRESENTATIVES_PER_BUCKET` | 128 |
+| `MAX_RETAINED_REPRESENTATIVES_PER_BUCKET` | 256 |
 | `MAX_DECLARED_ROOT_CANDIDATES` | 6,000 |
 | `MAX_OPERATOR_PREDICTIONS` | 30,000 |
 | `MAX_PHYSICAL_RACES` | 80,000 |
@@ -52,15 +52,26 @@ These constants are fixed before any of the six unspent TRAIN-family desired
 vectors are opened.  They may not be adapted by task, family, prompt, desired
 output, observed failure, or wall-clock speed.
 
+**Preimplementation supersession (2026-08-29, before any gated spend).** The
+original 128-entry proposal was falsified by unchanged banked mechanism
+regressions: the generic cost-6 predicate-count fixture reached 171 bound-Int
+representatives and the scalar exhaustive no-solution fixture reached 168 root
+Int representatives.  The cap is therefore transparently revised once to 256,
+the next power of two.  This restores approximately the originally intended
+headroom (171→256 is 50%, versus the preregistered 87→128 at 47%).  Sentinel B
+was rerun diagnostically at both 192 and 256 and remained prediction-first at
+exactly 30,000/30,001 with the identical completed prefix.  The other three
+limits, check order, fixtures, and desired-independent protocol are unchanged.
+
 The values leave deterministic headroom above the fixed 25-literal exhaustive
 pressure sentinel:
 
-- worst retained bucket: 87 versus 128;
+- worst retained bucket: 87 versus 256;
 - declared roots: 4,797 versus 6,000;
 - operator predictions: 23,642 versus 30,000;
 - physical races: 63,456 versus 80,000.
 
-The 128-entry bucket bound also limits the next exact-cost scalar operand
+The 256-entry bucket bound also limits the next exact-cost scalar operand
 cross-product independently of how many other typed context buckets exist.
 
 ## Desired-independent retention keys
@@ -114,7 +125,7 @@ do not consume representative capacity.
 
 A compiler binder derives its retention identity from its already-retained
 predicate and the predicate's bound context shape.  Binder nodes consume their
-own `Function[...]` bucket capacity and may not bypass the 128-entry check.
+own `Function[...]` bucket capacity and may not bypass the 256-entry check.
 
 Neither key contains desired outputs, prompt tokens, entry-point or parameter
 names, task identifiers, family identifiers, property rows, sandbox scores,
@@ -157,17 +168,23 @@ prediction if:
 completed_races + schema_max_races > 80_000
 ```
 
-For the banked aggregate layer, the existing upper bounds include:
+The implemented String-inclusive upper bounds are:
 
+- ASCII-class terminal: 1 race;
+- `contains(class, character)`: 2 races;
 - unary absolute: 1 race;
 - add, subtract, or less-than: 2 races;
 - minimum or maximum: 4 races;
-- `List[Int]` copy at capacity four: at most 6 races.
+- `List[Int]` copy at capacity four: at most 6 races;
+- String-position copy at capacity 26: at most 29 races for each filter source
+  copy, filter output copy, and reverse output copy.
 
-The implementation must extend this table after the String layer is banked.
-Every callable `_predict` schema must be covered exhaustively; an unknown schema
-is an implementation error, not permission to run without admission.  The
-completed race counter records actual races, not the conservative reservation.
+Every callable physical prediction schema is covered exhaustively; an unknown
+schema is an implementation error, not permission to run without admission.
+The completed race counter records actual races, not the conservative
+reservation.  Completion also asserts that the physical call returned no more
+races than its reserved schema maximum and cannot take the completed total past
+80,000, so a stale understated schema cannot silently cross the hard bound.
 
 Prediction check precedes race check so identical state always reports the same
 first bound.
@@ -178,8 +195,8 @@ After the full ordered supported output tuple and semantic key are available:
 
 1. reuse the existing representative if the semantic key is already present;
 2. otherwise derive the bucket key;
-3. if the bucket already contains 128 representatives, deny attempted
-   representative 129 before mutating `seen_semantics` or `retained`;
+3. if the bucket already contains 256 representatives, deny attempted
+   representative 257 before mutating `seen_semantics` or `retained`;
 4. otherwise retain it normally.
 
 The same ordering applies to a derived binder.
@@ -230,7 +247,7 @@ interrupted node context.
 `tier_attempts` contains complete tiers only.  The interrupted cost is reported
 by the work-bound record.  Candidate, prediction, race, and representative
 counters report completed work only.  `attempted` reports the denied prospective
-count: for example, 30,001 for a prediction denial or 129 for a representative
+count: for example, 30,001 for a prediction denial or 257 for a representative
 denial.
 
 The ordered race digest covers exactly the completed physical-race prefix.
@@ -251,9 +268,9 @@ Changing a limit, key, schema table, or check order invalidates the synthesizer
 checkpoint.  The budget is readonly inference state and must not change the
 underlying frozen operator checkpoint.
 
-Implementation is intentionally deferred until the String layer is banked so
-one checkpoint authenticates the complete generic semantic basis rather than a
-temporary aggregate-only race table.
+Implementation followed the String bank at `3daea4c`, so one checkpoint now
+authenticates the complete generic aggregate-plus-String semantic basis rather
+than a temporary aggregate-only race table.
 
 ## Sentinel A: exhaustive 25-literal pressure PASS
 
@@ -344,8 +361,10 @@ All rows are permutations of the same four values.  Every current
 desired vector is provably unsatisfiable while the bound body sees four diverse
 values in every case.
 
-An exact physical diagnostic without the prediction/race caps measured where
-representative 129 would be attempted:
+An exact physical diagnostic made under the superseded 128-entry proposal and
+without the prediction/race caps measured where representative 129 would have
+been attempted.  It is retained as historical localization, not the current
+acceptance boundary:
 
 - cost: 3;
 - production: `maximum`;
@@ -361,8 +380,8 @@ representative 129 would be attempted:
 - completed diagnostic race-ledger SHA-256:
   `4cc08ba9f976ed279c3f98728d0ff9505960b4e31c7fe30c231f10a2790bfc5d`.
 
-With the proposed dynamic caps observed after one extra physical call, the
-prediction boundary was reached first at cost 3:
+In the historical post-call diagnostic with the now-implemented dynamic caps,
+the prediction boundary was reached first at cost 3:
 
 - observed post-call predictions: 30,001;
 - observed post-call races: 77,968;
@@ -373,11 +392,21 @@ prediction boundary was reached first at cost 3:
 - diagnostic prefix SHA-256:
   `4f6ba3d331964ee0ec986708ec20ec08b300a0a46c0db021c1ad3d855d2100fc`.
 
-The implemented pre-admission check must deny that call at exactly 30,000
-completed predictions, so the expected bound name is
-`operator-predictions`, `completed=30_000`, and `attempted=30_001`.  Its final
-digest will be the completed pre-call prefix and is therefore not the post-call
-diagnostic digest above.
+The implemented pre-admission check denies that call at exactly 30,000
+completed predictions.  Current verified pre-call telemetry is:
+
+- bound: `operator-predictions`, `completed=30_000`, `attempted=30_001`;
+- interrupted cost: 3, with no cost-3 tier attempt or desired-output race;
+- completed physical races: 77,964;
+- completed declared roots: 1,651;
+- completed supported root candidates: 1,441;
+- completed retained representatives: 174;
+- completed-prefix race-ledger SHA-256:
+  `506b110fac0558063293d08527c8c0ae6ad89849e5d97b24859d6bd82123970c`.
+
+This is the completed pre-call prefix and therefore deliberately differs from
+the historical post-call diagnostic digest above.  Changing the inconsistent
+desired vector preserves the same audit and prefix digest.
 
 Acceptance:
 
@@ -404,7 +433,7 @@ The work bound must leave the existing self-posed aggregate mechanisms intact:
 
 Boundary off-by-one tests must also establish:
 
-- 128 representatives in one bucket are admitted and 129 is denied;
+- 256 representatives in one bucket are admitted and 257 is denied;
 - 6,000 declared roots are admitted and 6,001 is denied before tier work;
 - 30,000 completed predictions are permitted and prediction 30,001 is denied
   before physical execution;

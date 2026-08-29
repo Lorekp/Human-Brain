@@ -26,6 +26,31 @@ from humanbrain.typed_program_types import ProgramType, TypedSignature
 
 STATUS_DONE = "DONE"
 STATUS_STOP = "STOP_NO_EXACT_TYPED_SEMANTIC_PROGRAM"
+STATUS_WORK_BOUND_STOP = "STOP_SEMANTIC_FRONTIER_WORK_BOUND"
+
+_MAX_RETAINED_REPRESENTATIVES_PER_BUCKET = 256
+_MAX_DECLARED_ROOT_CANDIDATES = 6_000
+_MAX_OPERATOR_PREDICTIONS = 30_000
+_MAX_PHYSICAL_RACES = 80_000
+_PREDICTION_SCHEMA_MAX_RACES = (
+    ("absolute", 1),
+    ("add", 2),
+    ("subtract", 2),
+    ("less-than", 2),
+    ("minimum", 4),
+    ("maximum", 4),
+    ("list-copy", 6),
+    ("ascii-class", 1),
+    ("contains", 2),
+    ("string-copy", 29),
+)
+_WORK_BOUND_CHECK_ORDER = (
+    "declared-root-candidates",
+    "operator-predictions",
+    "physical-races",
+    "retained-representatives-per-bucket",
+)
+_CONTEXT_SEMANTIC_KEY_VERSION = "typed-semantic-context-key-v2"
 
 _INT = ProgramType.Int()
 _BOOL = ProgramType.Bool()
@@ -171,23 +196,29 @@ def _string_value_supported(value: object) -> bool:
     )
 
 
-def _string_context_shape(
+def _root_context_shape(
+    arguments: tuple[tuple[object, ...], ...],
+) -> tuple[str, int]:
+    return ("root", len(arguments))
+
+
+def _bound_context_shape(
     signature: TypedSignature,
     arguments: tuple[tuple[object, ...], ...],
-) -> tuple[tuple[tuple[int, bool], ...], ...]:
-    """Authenticate visible String lengths/support separately from outputs."""
+    container_type: ProgramType,
+) -> tuple[str, tuple[tuple[int, int, str, int], ...]]:
+    """Record every visible container flattened into one binder context."""
 
-    return tuple(
-        tuple(
-            (
-                len(value) if type(value) is str else -1,
-                _string_value_supported(value),
-            )
-            for parameter, value in zip(signature.parameters, row, strict=True)
-            if parameter.type == _STRING
+    label = synthesis._type_label(container_type)
+    entries = tuple(
+        (case_index, parameter_index, label, len(value))
+        for case_index, row in enumerate(arguments)
+        for parameter_index, (parameter, value) in enumerate(
+            zip(signature.parameters, row, strict=True)
         )
-        for row in arguments
+        if parameter.type == container_type
     )
+    return ("bound", entries)
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,6 +240,24 @@ class SemanticSynthesisTierAttempt:
 
 
 @dataclass(frozen=True, slots=True)
+class SemanticFrontierWorkBoundAudit:
+    bound_name: str
+    limit: int
+    completed: int
+    attempted: int
+    ast_cost: int
+    environment_type_labels: tuple[str, ...] | None
+    result_type_label: str | None
+    context_shape: tuple[object, ...] | None
+    completed_declared_candidates: int
+    completed_supported_root_candidates: int
+    completed_operator_predictions: int
+    completed_physical_races: int
+    completed_retained_representatives: int
+    completed_operator_races_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
 class TypedSemanticSynthesisDecision:
     status: str
     stop_reason: str | None
@@ -223,6 +272,179 @@ class TypedSemanticSynthesisDecision:
     operator_races_sha256: str
     checkpoint_before_sha256: str
     checkpoint_after_sha256: str
+    work_bound: SemanticFrontierWorkBoundAudit | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _WorkContext:
+    ast_cost: int
+    environment_type_labels: tuple[str, ...]
+    result_type_label: str
+    context_shape: tuple[object, ...]
+
+
+class _WorkBoundDenied(RuntimeError):
+    def __init__(
+        self,
+        *,
+        bound_name: str,
+        limit: int,
+        completed: int,
+        attempted: int,
+        ast_cost: int,
+        context: _WorkContext | None,
+    ) -> None:
+        super().__init__(bound_name)
+        self.bound_name = bound_name
+        self.limit = limit
+        self.completed = completed
+        self.attempted = attempted
+        self.ast_cost = ast_cost
+        self.context = context
+
+
+class _SemanticFrontierBudget:
+    """Private desired-independent admission state for one inference call."""
+
+    def __init__(self) -> None:
+        self.completed_declared_candidates = 0
+        self.completed_supported_root_candidates = 0
+        self.completed_operator_predictions = 0
+        self.completed_physical_races = 0
+        self.completed_retained_representatives = 0
+        self.bucket_counts: dict[tuple[object, ...], int] = {}
+        self.current_context: _WorkContext | None = None
+        self._race_digest = sha256()
+        self._race_digest.update(
+            b"public-typed-semantic-work-bound-race-prefix-v1\0"
+        )
+
+    def admit_tier(self, ast_cost: int, declared_candidates: int) -> None:
+        prospective = self.completed_declared_candidates + declared_candidates
+        if prospective > _MAX_DECLARED_ROOT_CANDIDATES:
+            raise _WorkBoundDenied(
+                bound_name="declared-root-candidates",
+                limit=_MAX_DECLARED_ROOT_CANDIDATES,
+                completed=self.completed_declared_candidates,
+                attempted=prospective,
+                ast_cost=ast_cost,
+                context=None,
+            )
+        # The compiler has completely and deterministically declared this tier;
+        # later physical denial makes it absent only from ``tier_attempts``.
+        self.completed_declared_candidates = prospective
+
+    def set_context(self, context: _WorkContext) -> None:
+        self.current_context = context
+
+    def reserve_prediction(self, schema: str) -> int:
+        schema_max_races = next(
+            (
+                maximum
+                for schema_name, maximum in _PREDICTION_SCHEMA_MAX_RACES
+                if schema_name == schema
+            ),
+            None,
+        )
+        if schema_max_races is None:
+            raise RuntimeError(f"unknown physical prediction schema {schema!r}")
+        if self.current_context is None:
+            raise RuntimeError("physical prediction has no work-bound context")
+        attempted_predictions = self.completed_operator_predictions + 1
+        if attempted_predictions > _MAX_OPERATOR_PREDICTIONS:
+            raise _WorkBoundDenied(
+                bound_name="operator-predictions",
+                limit=_MAX_OPERATOR_PREDICTIONS,
+                completed=self.completed_operator_predictions,
+                attempted=attempted_predictions,
+                ast_cost=self.current_context.ast_cost,
+                context=self.current_context,
+            )
+        attempted_races = self.completed_physical_races + schema_max_races
+        if attempted_races > _MAX_PHYSICAL_RACES:
+            raise _WorkBoundDenied(
+                bound_name="physical-races",
+                limit=_MAX_PHYSICAL_RACES,
+                completed=self.completed_physical_races,
+                attempted=attempted_races,
+                ast_cost=self.current_context.ast_cost,
+                context=self.current_context,
+            )
+        return schema_max_races
+
+    def complete_prediction(
+        self,
+        races: tuple[operator_successor.OperatorRace, ...],
+        reserved_max_races: int,
+    ) -> None:
+        actual_races = len(races)
+        if actual_races > reserved_max_races:
+            raise RuntimeError(
+                "physical prediction exceeded its conservative race reservation"
+            )
+        if self.completed_physical_races + actual_races > _MAX_PHYSICAL_RACES:
+            raise RuntimeError("physical prediction crossed the hard race limit")
+        self.completed_operator_predictions += 1
+        self.completed_physical_races += actual_races
+        for race in races:
+            self._race_digest.update(_canonical_json(asdict(race)))
+
+    def retain(
+        self,
+        *,
+        semantic_key: tuple[object, ...],
+        bucket_key: tuple[object, ...],
+        node_id: str,
+        seen_semantics: dict[tuple[object, ...], str],
+        retained: set[str],
+        context: _WorkContext,
+    ) -> bool:
+        if semantic_key in seen_semantics:
+            return False
+        completed = self.bucket_counts.get(bucket_key, 0)
+        attempted = completed + 1
+        if attempted > _MAX_RETAINED_REPRESENTATIVES_PER_BUCKET:
+            raise _WorkBoundDenied(
+                bound_name="retained-representatives-per-bucket",
+                limit=_MAX_RETAINED_REPRESENTATIVES_PER_BUCKET,
+                completed=completed,
+                attempted=attempted,
+                ast_cost=context.ast_cost,
+                context=context,
+            )
+        seen_semantics[semantic_key] = node_id
+        retained.add(node_id)
+        self.bucket_counts[bucket_key] = attempted
+        self.completed_retained_representatives += 1
+        return True
+
+    def record_supported_root(self) -> None:
+        self.completed_supported_root_candidates += 1
+
+    def audit(self, denial: _WorkBoundDenied) -> SemanticFrontierWorkBoundAudit:
+        context = denial.context
+        return SemanticFrontierWorkBoundAudit(
+            bound_name=denial.bound_name,
+            limit=denial.limit,
+            completed=denial.completed,
+            attempted=denial.attempted,
+            ast_cost=denial.ast_cost,
+            environment_type_labels=(
+                None if context is None else context.environment_type_labels
+            ),
+            result_type_label=None if context is None else context.result_type_label,
+            context_shape=None if context is None else context.context_shape,
+            completed_declared_candidates=self.completed_declared_candidates,
+            completed_supported_root_candidates=(
+                self.completed_supported_root_candidates
+            ),
+            completed_operator_predictions=self.completed_operator_predictions,
+            completed_physical_races=self.completed_physical_races,
+            completed_retained_representatives=(
+                self.completed_retained_representatives
+            ),
+            completed_operator_races_sha256=self._race_digest.hexdigest(),
+        )
 
 
 class _CaseEvaluator:
@@ -233,11 +455,13 @@ class _CaseEvaluator:
         arguments: tuple[object, ...],
         *,
         ascii_catalog_enabled: bool,
+        budget: _SemanticFrontierBudget,
     ) -> None:
         self.model = model
         self.dag = dag
         self.arguments = arguments
         self.ascii_catalog_enabled = ascii_catalog_enabled
+        self.budget = budget
         self.nodes = {node.node_id: node for node in dag.nodes}
         self.memo: dict[
             tuple[str, tuple[object, ...]],
@@ -286,6 +510,8 @@ class _CaseEvaluator:
         selected: output_cells.TypedOutputEncoding,
         action: tp.FactorAction,
         scopes: tuple[output_cells.TypedOutputEncoding, ...] = (),
+        *,
+        schema: str,
     ) -> output_cells.TypedOutputEncoding:
         # ``FrozenTypedSemanticSynthesizer.synthesize`` authenticates the full
         # operator checkpoint before and after the complete readonly DAG
@@ -293,7 +519,9 @@ class _CaseEvaluator:
         # operator array twice for every node, even though no mutation boundary
         # exists between nodes.  Keep the exact physical effect/race path while
         # sharing the enclosing transaction's authentication.
+        reserved_max_races = self.budget.reserve_prediction(schema)
         output, races = self.model._predict_effect(selected, action, scopes)
+        self.budget.complete_prediction(races, reserved_max_races)
         self.predictions += 1
         self.races.extend(races)
         return output
@@ -302,10 +530,12 @@ class _CaseEvaluator:
         self,
         label: str,
     ) -> operator_successor._AsciiClassEncoding:
+        reserved_max_races = self.budget.reserve_prediction("ascii-class")
         output, races = self.model._ascii_class(
             label,
             enabled=self.ascii_catalog_enabled,
         )
+        self.budget.complete_prediction(races, reserved_max_races)
         self.predictions += 1
         self.races.extend(races)
         return output
@@ -315,7 +545,9 @@ class _CaseEvaluator:
         ascii_class: operator_successor._AsciiClassEncoding,
         character: output_cells.TypedOutputEncoding,
     ) -> output_cells.TypedOutputEncoding:
+        reserved_max_races = self.budget.reserve_prediction("contains")
         output, races = self.model._contains(ascii_class, character)
+        self.budget.complete_prediction(races, reserved_max_races)
         self.predictions += 1
         self.races.extend(races)
         return output
@@ -327,7 +559,9 @@ class _CaseEvaluator:
         *,
         bank: str,
     ) -> output_cells.TypedOutputEncoding:
+        reserved_max_races = self.budget.reserve_prediction("string-copy")
         output, races = self.model._string_positions(value, positions, bank=bank)
+        self.budget.complete_prediction(races, reserved_max_races)
         self.predictions += 1
         self.races.extend(races)
         return output
@@ -381,7 +615,7 @@ class _CaseEvaluator:
             operand = self.evaluate(provenance.operand_node_ids[0], bound=bound)
             if not isinstance(operand, output_cells.TypedOutputEncoding):
                 raise RuntimeError("absolute provenance has an internal type operand")
-            output = self._predict(operand, _ABSOLUTE)
+            output = self._predict(operand, _ABSOLUTE, schema="absolute")
         elif production in _BINARY_ACTIONS:
             left = self.evaluate(provenance.operand_node_ids[0], bound=bound)
             right = self.evaluate(provenance.operand_node_ids[1], bound=bound)
@@ -393,6 +627,7 @@ class _CaseEvaluator:
                 left,
                 _BINARY_ACTIONS[production],
                 (right,),
+                schema=production,
             )
         elif production == "map":
             binder = self.nodes[provenance.operand_node_ids[0]]
@@ -404,7 +639,7 @@ class _CaseEvaluator:
             )
             if not isinstance(collection, output_cells.TypedOutputEncoding):
                 raise RuntimeError("map provenance lost its List operand")
-            copied = self._predict(collection, _MAP_COPY)
+            copied = self._predict(collection, _MAP_COPY, schema="list-copy")
             if not copied.supported:
                 output = _unsupported(_LIST_INT)
             else:
@@ -433,7 +668,7 @@ class _CaseEvaluator:
             )
             if not isinstance(collection, output_cells.TypedOutputEncoding):
                 raise RuntimeError("sum provenance lost its List operand")
-            copied = self._predict(collection, _MAP_COPY)
+            copied = self._predict(collection, _MAP_COPY, schema="list-copy")
             if not copied.supported:
                 output = _unsupported(_INT)
             else:
@@ -443,6 +678,7 @@ class _CaseEvaluator:
                         output,
                         _BINARY_ACTIONS["add"],
                         (_encode(item, _INT),),
+                        schema="add",
                     )
                     if not output.supported:
                         break
@@ -456,7 +692,7 @@ class _CaseEvaluator:
             )
             if not isinstance(collection, output_cells.TypedOutputEncoding):
                 raise RuntimeError("count provenance lost its List operand")
-            copied = self._predict(collection, _MAP_COPY)
+            copied = self._predict(collection, _MAP_COPY, schema="list-copy")
             if not copied.supported:
                 output = _unsupported(_INT)
             else:
@@ -476,6 +712,7 @@ class _CaseEvaluator:
                         output,
                         _BINARY_ACTIONS["add"],
                         (_encode(int(_decode_bool(predicate)), _INT),),
+                        schema="add",
                     )
                     if not output.supported:
                         break
@@ -565,7 +802,7 @@ class FrozenTypedSemanticSynthesizer:
     @property
     def live_checkpoint_sha256(self) -> str:
         digest = sha256()
-        digest.update(b"public-typed-semantic-synthesizer-v2\0")
+        digest.update(b"public-typed-semantic-synthesizer-v3-bounded-frontier\0")
         digest.update(self.operator.live_checkpoint_sha256.encode("ascii"))
         digest.update(_canonical_json(self.literal_bank))
         digest.update(np.asarray((self.max_ast_cost,), dtype="<i8").tobytes())
@@ -584,7 +821,58 @@ class FrozenTypedSemanticSynthesizer:
                 )
             )
         )
+        digest.update(
+            _canonical_json(
+                {
+                    "limits": (
+                        _MAX_RETAINED_REPRESENTATIVES_PER_BUCKET,
+                        _MAX_DECLARED_ROOT_CANDIDATES,
+                        _MAX_OPERATOR_PREDICTIONS,
+                        _MAX_PHYSICAL_RACES,
+                    ),
+                    "context_semantic_key_version": (
+                        _CONTEXT_SEMANTIC_KEY_VERSION
+                    ),
+                    "check_order": _WORK_BOUND_CHECK_ORDER,
+                    "prediction_schema_max_races": (
+                        _PREDICTION_SCHEMA_MAX_RACES
+                    ),
+                }
+            )
+        )
         return digest.hexdigest()
+
+    def _work_bound_decision(
+        self,
+        *,
+        denial: _WorkBoundDenied,
+        budget: _SemanticFrontierBudget,
+        attempts: list[SemanticSynthesisTierAttempt],
+        root_semantics: set[tuple[bytes, ...]],
+        before: str,
+    ) -> TypedSemanticSynthesisDecision:
+        after = self.live_checkpoint_sha256
+        if after != before:
+            raise RuntimeError("semantic synthesizer changed during inference")
+        audit = budget.audit(denial)
+        return TypedSemanticSynthesisDecision(
+            status=STATUS_WORK_BOUND_STOP,
+            stop_reason=(
+                "semantic frontier work bound reached: " + denial.bound_name
+            ),
+            candidate_count=budget.completed_supported_root_candidates,
+            observed_semantic_classes=len(root_semantics),
+            tier_attempts=tuple(attempts),
+            selected_candidate_id=None,
+            program=None,
+            source=None,
+            operator_predictions=budget.completed_operator_predictions,
+            operator_races=budget.completed_physical_races,
+            operator_races_sha256=audit.completed_operator_races_sha256,
+            checkpoint_before_sha256=before,
+            checkpoint_after_sha256=after,
+            work_bound=audit,
+        )
 
     def _synthesize_retained(
         self,
@@ -604,6 +892,7 @@ class FrozenTypedSemanticSynthesizer:
         composable: set[str] = set()
         processed: set[str] = set()
         seen_semantics: dict[tuple[object, ...], str] = {}
+        semantic_key_by_node: dict[str, tuple[object, ...]] = {}
         root_semantics: set[tuple[bytes, ...]] = set()
         vectors: dict[str, synthesis.TypedPhysicalSemanticVector] = {}
         evaluations: dict[str, PhysicalCandidateEvaluation] = {}
@@ -613,13 +902,24 @@ class FrozenTypedSemanticSynthesizer:
         total_races = 0
         all_races_digest = sha256()
         all_races_digest.update(b"public-typed-semantic-all-races-string-v1\0")
+        budget = _SemanticFrontierBudget()
         root_environment = tuple(
             synthesis._type_label(parameter.type)
             for parameter in reversed(signature.parameters)
         )
         body_environment = ("Int", *root_environment)
         string_body_environment = ("Char", *root_environment)
-        string_context_shape = _string_context_shape(signature, arguments)
+        root_context_shape = _root_context_shape(arguments)
+        list_bound_context_shape = _bound_context_shape(
+            signature,
+            arguments,
+            _LIST_INT,
+        )
+        string_bound_context_shape = _bound_context_shape(
+            signature,
+            arguments,
+            _STRING,
+        )
         evaluators: tuple[_CaseEvaluator, ...] | None = None
 
         for cost in range(1, self.max_ast_cost + 1):
@@ -633,6 +933,17 @@ class FrozenTypedSemanticSynthesizer:
                 max_ast_cost=self.max_ast_cost,
                 retained_node_ids=composable,
             )
+            tier = dag.tiers[cost - 1]
+            try:
+                budget.admit_tier(cost, len(tier.candidates))
+            except _WorkBoundDenied as denial:
+                return self._work_bound_decision(
+                    denial=denial,
+                    budget=budget,
+                    attempts=attempts,
+                    root_semantics=root_semantics,
+                    before=before,
+                )
             if evaluators is None:
                 evaluators = tuple(
                     _CaseEvaluator(
@@ -640,6 +951,7 @@ class FrozenTypedSemanticSynthesizer:
                         dag,
                         row,
                         ascii_catalog_enabled=self._ascii_catalog_enabled,
+                        budget=budget,
                     )
                     for row in arguments
                 )
@@ -647,7 +959,6 @@ class FrozenTypedSemanticSynthesizer:
                 for evaluator in evaluators:
                     evaluator.extend(dag)
 
-            tier = dag.tiers[cost - 1]
             tier_candidate_ids = {
                 candidate.root_node_id for candidate in tier.candidates
             }
@@ -663,20 +974,58 @@ class FrozenTypedSemanticSynthesizer:
             ):
                 processed.add(node.node_id)
                 if node.provenance.production == "bind":
+                    if len(node.provenance.operand_node_ids) != 1:
+                        raise RuntimeError("compiler binder lost its predicate body")
+                    predicate_id = node.provenance.operand_node_ids[0]
                     if (
                         node.result_type_label == "Function[Char,Bool]"
-                        and len(node.provenance.operand_node_ids) == 1
-                        and node.provenance.operand_node_ids[0] in composable
+                        and predicate_id in composable
                     ):
                         composable.add(node.node_id)
                     if (
                         node.result_type_label
                         in {"Function[Int,Bool]", "Function[Char,Bool]"}
-                        and len(node.provenance.operand_node_ids) == 1
-                        and node.provenance.operand_node_ids[0] in retained
+                        and predicate_id in retained
                     ):
-                        retained.add(node.node_id)
-                        composable.add(node.node_id)
+                        context_shape = (
+                            list_bound_context_shape
+                            if node.result_type_label == "Function[Int,Bool]"
+                            else string_bound_context_shape
+                        )
+                        context = _WorkContext(
+                            ast_cost=cost,
+                            environment_type_labels=node.environment_type_labels,
+                            result_type_label=node.result_type_label,
+                            context_shape=context_shape,
+                        )
+                        budget.set_context(context)
+                        predicate_semantic_key = semantic_key_by_node[predicate_id]
+                        semantic_key = (
+                            node.environment_type_labels,
+                            node.result_type_label,
+                            context_shape,
+                            ("predicate", predicate_semantic_key),
+                        )
+                        try:
+                            retained_new = budget.retain(
+                                semantic_key=semantic_key,
+                                bucket_key=semantic_key[:3],
+                                node_id=node.node_id,
+                                seen_semantics=seen_semantics,
+                                retained=retained,
+                                context=context,
+                            )
+                        except _WorkBoundDenied as denial:
+                            return self._work_bound_decision(
+                                denial=denial,
+                                budget=budget,
+                                attempts=attempts,
+                                root_semantics=root_semantics,
+                                before=before,
+                            )
+                        if retained_new:
+                            semantic_key_by_node[node.node_id] = semantic_key
+                            composable.add(node.node_id)
                     continue
                 string_structural = (
                     node.result_type_label in {"AsciiClass", "Char"}
@@ -690,6 +1039,7 @@ class FrozenTypedSemanticSynthesizer:
                     composable.add(node.node_id)
                 if node.environment_type_labels == root_environment:
                     contexts = tuple((evaluator, ()) for evaluator in evaluators)
+                    context_shape = root_context_shape
                 elif (
                     node.environment_type_labels == body_environment
                     and node.result_type_label in {"Int", "Bool"}
@@ -705,6 +1055,7 @@ class FrozenTypedSemanticSynthesizer:
                         if parameter.type == _LIST_INT
                         for item in value
                     )
+                    context_shape = list_bound_context_shape
                 elif (
                     node.environment_type_labels == string_body_environment
                     and node.result_type_label in {"AsciiClass", "Char", "Bool"}
@@ -720,10 +1071,19 @@ class FrozenTypedSemanticSynthesizer:
                         if parameter.type == _STRING and _string_value_supported(value)
                         for character in value
                     )
+                    context_shape = string_bound_context_shape
                 else:
                     continue
                 if not contexts:
                     continue
+
+                context = _WorkContext(
+                    ast_cost=cost,
+                    environment_type_labels=node.environment_type_labels,
+                    result_type_label=node.result_type_label,
+                    context_shape=context_shape,
+                )
+                budget.set_context(context)
 
                 outputs: list[
                     output_cells.TypedOutputEncoding
@@ -736,7 +1096,16 @@ class FrozenTypedSemanticSynthesizer:
                 for evaluator, bound in contexts:
                     predictions_before = evaluator.predictions
                     races_before = len(evaluator.races)
-                    outputs.append(evaluator.evaluate(node.node_id, bound=bound))
+                    try:
+                        outputs.append(evaluator.evaluate(node.node_id, bound=bound))
+                    except _WorkBoundDenied as denial:
+                        return self._work_bound_decision(
+                            denial=denial,
+                            budget=budget,
+                            attempts=attempts,
+                            root_semantics=root_semantics,
+                            before=before,
+                        )
                     node_predictions += evaluator.predictions - predictions_before
                     node_races += len(evaluator.races) - races_before
                     digest = evaluator.race_digest(races_before)
@@ -753,12 +1122,30 @@ class FrozenTypedSemanticSynthesizer:
                 semantic_key = (
                     node.environment_type_labels,
                     node.result_type_label,
-                    string_context_shape,
+                    context_shape,
                     observation_bytes,
                 )
-                if semantic_key not in seen_semantics:
-                    seen_semantics[semantic_key] = node.node_id
-                    retained.add(node.node_id)
+                if node.node_id in tier_candidate_ids:
+                    budget.record_supported_root()
+                try:
+                    retained_new = budget.retain(
+                        semantic_key=semantic_key,
+                        bucket_key=semantic_key[:3],
+                        node_id=node.node_id,
+                        seen_semantics=seen_semantics,
+                        retained=retained,
+                        context=context,
+                    )
+                except _WorkBoundDenied as denial:
+                    return self._work_bound_decision(
+                        denial=denial,
+                        budget=budget,
+                        attempts=attempts,
+                        root_semantics=root_semantics,
+                        before=before,
+                    )
+                if retained_new:
+                    semantic_key_by_node[node.node_id] = semantic_key
                     composable.add(node.node_id)
                 if node.node_id not in tier_candidate_ids:
                     continue
@@ -909,8 +1296,10 @@ def build_public_typed_semantic_synthesizer(
 __all__ = [
     "FrozenTypedSemanticSynthesizer",
     "PhysicalCandidateEvaluation",
+    "SemanticFrontierWorkBoundAudit",
     "STATUS_DONE",
     "STATUS_STOP",
+    "STATUS_WORK_BOUND_STOP",
     "SemanticSynthesisTierAttempt",
     "TypedSemanticSynthesisDecision",
     "build_public_typed_semantic_synthesizer",
