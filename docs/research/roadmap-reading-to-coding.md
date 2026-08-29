@@ -377,6 +377,20 @@ world model needs a physical `UNKNOWN` successor state (and pair scoring that
 can continue past unknown branches) before the same planning pattern is lifted
 from scalar values into typed AST site/rewrite state.
 
+That first typed-AST lift now passes its public visible matrix. A total
+successor with an explicit physical `UNKNOWN` state kept unsupported branches
+in the bank, while the readonly typed world model predicted every current
+program site × nine generic wrap actions plus one global `DONE`. Fixed
+projections drove separate candidate, site, and action races; only the winning
+site/action actuator mutated the real program. All 8/8 one-edit Int tasks
+selected the exact action and path across depths 0, 1, and 2, recording 1,776
+successor races and 24 selection races with immutable checkpoints. This is
+`PASS_AST_SITE_VISIBLE`, narrowly: H=1 public development with fused wrap
+actions and a fixed six-case output goal, not generic AST synthesis or transfer.
+The next increment factorizes site → schema → operator/production → operand
+binding → literal and carries the total successor into bounded H=2 planning
+over an Int/Bool/List development matrix.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

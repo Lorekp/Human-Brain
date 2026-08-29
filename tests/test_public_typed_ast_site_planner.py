@@ -1,5 +1,7 @@
 import ast
+import hashlib
 import inspect
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -208,3 +210,59 @@ def test_single_public_runner_arm_smoke_does_not_write_artifact() -> None:
     assert arm.candidate_count == 10
     assert arm.successor_race_count == 60
     assert arm.selection_race_count == 3
+
+
+def test_visible_pass_artifact_contract() -> None:
+    artifact_path = (
+        Path(__file__).resolve().parents[1]
+        / "experiments"
+        / "r3_pilot"
+        / "public_typed_ast_site_visible_probe.json"
+    )
+    raw = artifact_path.read_bytes()
+    artifact = json.loads(raw)
+
+    assert hashlib.sha256(raw).hexdigest() == (
+        "6fd138c5da23122cbd0cdf4af286562f69eb1d20b8f9caa162f32b344e0cc69c"
+    )
+    assert artifact["schema"] == "public-typed-ast-site-visible-v1"
+    assert artifact["verdict"] == "PASS_AST_SITE_VISIBLE"
+    assert artifact["passed_tasks"] == artifact["total_tasks"] == 8
+    assert artifact["candidate_count"] == 179
+    assert artifact["successor_race_count"] == 1_776
+    assert artifact["selection_race_count"] == 24
+    assert artifact["total_physical_races"] == 1_800
+    assert artifact["target_free_observations"] == 410
+    assert artifact["selected_real_executions"] == 8
+
+    expected_ledger = (
+        ("root-absolute", (), "WRAP_ABS", 10, 60),
+        ("child-add-one-under-absolute", (0,), "WRAP_ADD[1]", 19, 168),
+        ("child-absolute-under-add-two", (0,), "WRAP_ABS", 28, 276),
+        ("child-subtract-one-under-absolute", (0,), "WRAP_SUB[1]", 19, 168),
+        ("root-absolute-around-add-one", (), "WRAP_ABS", 28, 276),
+        ("root-absolute-around-subtract-two", (), "WRAP_ABS", 28, 276),
+        ("deep-child-absolute", (0, 0), "WRAP_ABS", 37, 492),
+        ("global-done", (), "DONE", 10, 60),
+    )
+    actual_ledger = tuple(
+        (
+            task["name"],
+            tuple(task["selected_path"]),
+            task["selected_action"],
+            task["candidate_count"],
+            task["successor_race_count"],
+        )
+        for task in artifact["tasks"]
+    )
+    assert actual_ledger == expected_ledger
+    assert all(
+        task["passed"]
+        and task["physical_unique"]
+        and task["checkpoint_immutable"]
+        and task["selected_path"] == task["expected_path"]
+        and task["selected_action"] == task["expected_action"]
+        and task["actual_tokens"] == task["expected_tokens"]
+        and task["actual_outputs"] == task["desired_outputs"]
+        for task in artifact["tasks"]
+    )
