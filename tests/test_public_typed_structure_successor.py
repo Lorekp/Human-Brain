@@ -24,6 +24,18 @@ def _int_identity() -> structure.tp.Program:
     return structure.tp.Program(("variable-0",), signature)
 
 
+def _two_int_identity(selected_scope_index: int) -> structure.tp.Program:
+    signature = structure.TypedSignature(
+        "two_int_identity",
+        (
+            structure.ProgramParameter("left", structure.ProgramType.Int()),
+            structure.ProgramParameter("right", structure.ProgramType.Int()),
+        ),
+        structure.ProgramType.Int(),
+    )
+    return structure.tp.Program((f"variable-{selected_scope_index}",), signature)
+
+
 def _list_identity() -> structure.tp.Program:
     list_int = structure.ProgramType.List(structure.ProgramType.Int())
     signature = structure.TypedSignature(
@@ -86,8 +98,8 @@ def test_root_wraps_compose_with_an_unseen_selected_subtree() -> None:
         )
     )
 
-    assert summary.observations == 14
-    assert summary.transition_rows == 11
+    assert summary.observations == 56
+    assert summary.transition_rows == 56
     assert summary.local_rule_rows > 0
     assert unary.supported and binary.supported
     assert unary.predicted.site(()).production == "absolute"
@@ -110,42 +122,66 @@ def test_root_wraps_compose_with_an_unseen_selected_subtree() -> None:
     _assert_unique_and_frozen(model, composed)
 
 
-def test_two_scope_and_comparison_operand_orientations_are_structural() -> None:
+def test_compiler_scope_alias_rows_chain_through_hypothetical_created_children(
+) -> None:
     model, _ = _trained()
-    two_int_signature = structure.TypedSignature(
-        "two_scope",
+    cases = (
         (
-            structure.ProgramParameter("left", structure.ProgramType.Int()),
-            structure.ProgramParameter("right", structure.ProgramType.Int()),
+            _two_int_identity(1),
+            structure.tp.FactorAction(
+                (), "APPLY2", "subtract", "SELECTED", "SCOPE0", None
+            ),
+            (0,),
         ),
-        structure.ProgramType.Int(),
+        (
+            _two_int_identity(0),
+            structure.tp.FactorAction(
+                (), "APPLY2", "subtract", "SCOPE1", "SELECTED", None
+            ),
+            (1,),
+        ),
     )
-    two_int = structure.tp.Program(("variable-0",), two_int_signature)
-    two_int_observation = structure.observe_program_structure(two_int)
-    scope1_first_action = structure.tp.FactorAction(
-        (), "APPLY2", "subtract", "SCOPE1", "SCOPE0", None
-    )
-    scope0_first_action = structure.tp.FactorAction(
-        (), "APPLY2", "subtract", "SCOPE0", "SCOPE1", None
-    )
-    scope1_first = model.predict(two_int_observation, scope1_first_action)
-    scope0_first = model.predict(two_int_observation, scope0_first_action)
 
-    for prediction, action in (
-        (scope1_first, scope1_first_action),
-        (scope0_first, scope0_first_action),
-    ):
-        expected = structure.observe_program_structure(
-            structure.tp.apply_factor_action(two_int, action)
+    for incumbent, first_action, created_child in cases:
+        before = structure.observe_program_structure(incumbent)
+        assert before.site(created_child).presence == structure.ABSENT
+        assert first_action in structure.tp.factor_action_candidates(
+            incumbent,
+            literals=(-3, 3),
+        ).actions
+
+        first = model.predict(before, first_action)
+        post_first = structure.tp.apply_factor_action(incumbent, first_action)
+        expected_first = structure.observe_program_structure(post_first)
+        assert first.supported
+        assert first.predicted.paths == expected_first.paths
+        assert first.predicted.site(created_child).presence == structure.PRESENT
+        _assert_unique_and_frozen(model, first)
+
+        second_action = structure.tp.FactorAction(
+            created_child,
+            "APPLY1",
+            "absolute",
+            "SELECTED",
+            "NONE",
+            None,
         )
-        assert prediction.supported
-        assert prediction.predicted.paths == expected.paths
-        _assert_unique_and_frozen(model, prediction)
-    assert scope1_first.predicted.site((0,)).production == "variable-1"
-    assert scope1_first.predicted.site((1,)).production == "variable-0"
-    assert scope0_first.predicted.site((0,)).production == "variable-0"
-    assert scope0_first.predicted.site((1,)).production == "variable-1"
+        assert second_action in structure.tp.factor_action_candidates(
+            post_first,
+            literals=(-3, 3),
+        ).actions
+        second = model.predict(first.predicted, second_action)
+        expected_second = structure.observe_program_structure(
+            structure.tp.apply_factor_action(post_first, second_action)
+        )
+        assert second.supported
+        assert second.predicted.paths == expected_second.paths
+        assert second.predicted.site(created_child).production == "absolute"
+        _assert_unique_and_frozen(model, second)
 
+
+def test_comparison_operand_orientation_is_structural() -> None:
+    model, _ = _trained()
     bool_signature = structure.TypedSignature(
         "literal_first_comparison",
         (structure.ProgramParameter("value", structure.ProgramType.Int()),),
@@ -228,8 +264,12 @@ def test_map_bind_projects_binder_body_collection_and_scope_metadata() -> None:
         structure.observe_program_structure(mapped),
         selected_body_action,
     )
+    selected_body_program = structure.tp.apply_factor_action(
+        mapped,
+        selected_body_action,
+    )
     selected_body_expected = structure.observe_program_structure(
-        structure.tp.apply_factor_action(mapped, selected_body_action)
+        selected_body_program
     )
     assert selected_body.supported
     assert selected_body.predicted.paths == selected_body_expected.paths
@@ -238,12 +278,16 @@ def test_map_bind_projects_binder_body_collection_and_scope_metadata() -> None:
     body_action = structure.tp.FactorAction(
         (0, 0), "APPLY2", "add", "BOUND0", "LITERAL", 2
     )
+    assert body_action in structure.tp.factor_action_candidates(
+        selected_body_program,
+        literals=(-2, 2),
+    ).actions
     body_prediction = model.predict(
-        structure.observe_program_structure(mapped),
+        structure.observe_program_structure(selected_body_program),
         body_action,
     )
     body_expected = structure.observe_program_structure(
-        structure.tp.apply_factor_action(mapped, body_action)
+        structure.tp.apply_factor_action(selected_body_program, body_action)
     )
     assert body_prediction.supported
     assert body_prediction.predicted.paths == body_expected.paths
@@ -259,7 +303,7 @@ def test_unsupported_row_and_unknown_input_physically_propagate_unknown() -> Non
     unsupported = model.predict(
         observation,
         structure.tp.FactorAction(
-            (), "APPLY2", "add", "SCOPE0", "SCOPE0", None
+            (), "APPLY1", "absolute", "LITERAL", "NONE", 2
         ),
     )
 

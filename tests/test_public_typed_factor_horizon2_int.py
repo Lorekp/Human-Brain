@@ -75,7 +75,7 @@ def test_compiler_site_seam_matches_incumbent_and_map_body_contract() -> None:
     )
 
 
-def test_factorized_h2_predicts_two_plies_and_replans_after_one_actuation(
+def test_factorized_h2_reports_the_new_direct_child_orientation_ambiguity(
     model: h2.FrozenFactorizedHorizon2Int,
 ) -> None:
     cases = ((7, 2), (-3, 4), (5, 5), (0, -2))
@@ -87,67 +87,50 @@ def test_factorized_h2_predicts_two_plies_and_replans_after_one_actuation(
 
     decision = model.plan(observation, prompt, desired)
 
-    expected_first = tp.FactorAction(
-        (), "APPLY2", "subtract", "SCOPE1", "SCOPE0", None
+    expected_sequences = {
+        h2.FactorH2Sequence(
+            tp.FactorAction(
+                (0,), "APPLY2", "subtract", "SELECTED", "SCOPE1", None
+            ),
+            tp.FactorAction((), "DONE", "NONE", "NONE", "NONE", None),
+        ),
+        h2.FactorH2Sequence(
+            tp.FactorAction(
+                (0,), "APPLY2", "subtract", "SCOPE1", "SELECTED", None
+            ),
+            tp.FactorAction((), "DONE", "NONE", "NONE", "NONE", None),
+        ),
+    }
+    assert decision.status == h2.STATUS_STOP_PROMPT
+    assert decision.stop_reason == (
+        "prompt evidence did not uniquely resolve the leading structure tier"
     )
-    expected_second = tp.FactorAction(
-        (), "APPLY1", "absolute", "SELECTED", "NONE", None
-    )
-    assert decision.status == h2.STATUS_SELECTED
     assert decision.candidate_actions == tp.factor_action_candidates(
         incumbent,
         literals=(1,),
     ).actions
-    assert decision.selected_sequence == h2.FactorH2Sequence(
-        expected_first,
-        expected_second,
-    )
-    assert decision.selected_sequence.second.schema != "DONE"
     assert decision.unique_first_expansions == h2.BEAM_WIDTH
-    assert decision.terminal_attempts[-1].exact_leading_sequence_cells == (
-        decision.selected_sequence_cell,
-    )
+    assert decision.selected_sequence is None
+    assert decision.selected_sequence_cell is None
+    assert decision.motor_decision is None
 
-    # The learned first transition creates compiler-representable child sites;
-    # their second-ply actions exist before any actuator touches the incumbent.
-    hypothetical_site_changes = tuple(
-        prediction
-        for prediction in decision.predictions
-        if prediction.sequence.first.path == ()
-        and prediction.sequence.second.path in {(0,), (1,)}
+    attempt = decision.terminal_attempts[-1]
+    assert set(
+        decision.predictions[cell].sequence
+        for cell in attempt.structure_leading_sequence_cells
+    ) == expected_sequences
+    assert attempt.exact_leading_sequence_cells == (
+        attempt.structure_leading_sequence_cells
     )
-    assert hypothetical_site_changes
     assert all(
-        prediction.sequence.second
-        in model.world.candidate_actions(prediction.first_transition.predicted)
-        for prediction in hypothetical_site_changes
+        decision.predictions[cell].first_transition.supported
+        for cell in attempt.structure_leading_sequence_cells
     )
-
-    actuation = model.actuate_and_reobserve(incumbent, decision)
-    assert actuation.actuator_calls == 1
-    assert actuation.program.tokens == (
-        "subtract",
-        "variable-1",
-        "variable-0",
+    assert attempt.prompt_race is not None
+    assert attempt.prompt_race.simultaneous_spike_candidates == 1
+    assert attempt.prompt_race.winner_cell == len(
+        attempt.structure_leading_sequence_cells
     )
-    assert actuation.structure_parity
-    assert actuation.action_site_parity
-    assert actuation.root_output_parity
-
-    replanned = model.plan(actuation.observation, prompt, desired)
-    assert replanned.status == h2.STATUS_SELECTED
-    assert replanned.selected_sequence is not None
-    assert replanned.selected_sequence.first == expected_second
-    assert replanned.selected_sequence.second.schema == "DONE"
-    final = model.actuate_and_reobserve(actuation.program, replanned)
-    assert final.actuator_calls == 1
-    assert final.program.tokens == (
-        "absolute",
-        "subtract",
-        "variable-1",
-        "variable-0",
-    )
-    assert model.plan(final.observation, prompt, desired).status == h2.STATUS_DONE
     assert model.live_checkpoint_sha256 == before == model.checkpoint_sha256
 
     plan_source = inspect.getsource(h2.FrozenFactorizedHorizon2Int.plan)

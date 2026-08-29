@@ -603,27 +603,12 @@ def _relay_value(
     raise AssertionError("learned local rule cannot use a relay value")
 
 
-def _done() -> tp.FactorAction:
-    return tp.FactorAction((), "DONE", "NONE", "NONE", "NONE", None)
+_STRUCTURE_TRAINING_LITERALS = (-1, 1)
 
 
-def _public_synthetic_incumbents() -> tuple[tuple[tp.Program, tp.FactorAction], ...]:
-    int_signature = TypedSignature(
-        "public_int_structure",
-        (ProgramParameter("value", ProgramType.Int()),),
-        ProgramType.Int(),
-    )
-    bool_signature = TypedSignature(
-        "public_bool_structure",
-        (ProgramParameter("value", ProgramType.Int()),),
-        ProgramType.Bool(),
-    )
-    list_int = ProgramType.List(ProgramType.Int())
-    list_signature = TypedSignature(
-        "public_list_structure",
-        (ProgramParameter("items", list_int),),
-        list_int,
-    )
+def _public_structure_representatives() -> tuple[tp.Program, ...]:
+    """Build type/shape representatives for compiler-owned truth generation."""
+
     two_int_signature = TypedSignature(
         "public_two_int_structure",
         (
@@ -632,77 +617,96 @@ def _public_synthetic_incumbents() -> tuple[tuple[tp.Program, tp.FactorAction], 
         ),
         ProgramType.Int(),
     )
-    int_identity = tp.Program(("variable-0",), int_signature)
-    two_int_identity = tp.Program(("variable-0",), two_int_signature)
-    bool_less_than_zero = tp.Program(
-        ("less-than", "variable-0", "integer", "+", "0", "end"),
+    bool_signature = TypedSignature(
+        "public_bool_structure",
+        (
+            ProgramParameter("left", ProgramType.Int()),
+            ProgramParameter("right", ProgramType.Int()),
+        ),
+        ProgramType.Bool(),
+    )
+    list_int = ProgramType.List(ProgramType.Int())
+    list_signature = TypedSignature(
+        "public_list_structure",
+        (
+            ProgramParameter("left_items", list_int),
+            ProgramParameter("right_items", list_int),
+        ),
+        list_int,
+    )
+
+    int_scope0 = tp.Program(("variable-0",), two_int_signature)
+    int_scope1 = tp.Program(("variable-1",), two_int_signature)
+    int_nonleaf = tp.Program(("absolute", "variable-0"), two_int_signature)
+    bool_nonleaf = tp.Program(
+        ("less-than", "variable-0", "variable-1"),
         bool_signature,
     )
-    list_identity = tp.Program(("variable-0",), list_signature)
+    list_scope0 = tp.Program(("variable-0",), list_signature)
+    list_scope1 = tp.Program(("variable-1",), list_signature)
+
     map_identity_action = tp.FactorAction(
         (), "MAP_BIND", "map", "BOUND0", "SELECTED", None
     )
-    map_identity = tp.apply_factor_action(list_identity, map_identity_action)
+    if map_identity_action not in tp.factor_action_candidates(
+        list_scope0,
+        literals=_STRUCTURE_TRAINING_LITERALS,
+    ).actions:
+        raise RuntimeError("representative map action is not compiler-emitted")
+    map_identity = tp.apply_factor_action(list_scope0, map_identity_action)
+    wrap_body_action = tp.FactorAction(
+        (0, 0), "APPLY1", "absolute", "SELECTED", "NONE", None
+    )
+    if wrap_body_action not in tp.factor_action_candidates(
+        map_identity,
+        literals=_STRUCTURE_TRAINING_LITERALS,
+    ).actions:
+        raise RuntimeError("representative body action is not compiler-emitted")
+    map_nonleaf_body = tp.apply_factor_action(map_identity, wrap_body_action)
+    map_literal_body = tp.Program(
+        ("map", "bind", "integer", "+", "1", "end", "variable-0"),
+        list_signature,
+    )
+
     return (
-        (int_identity, _done()),
-        (
-            int_identity,
-            tp.FactorAction((), "APPLY1", "absolute", "SELECTED", "NONE", None),
-        ),
-        (
-            int_identity,
-            tp.FactorAction((), "APPLY2", "add", "SELECTED", "LITERAL", 2),
-        ),
-        (
-            int_identity,
-            tp.FactorAction(
-                (), "APPLY2", "subtract", "SELECTED", "LITERAL", 2
-            ),
-        ),
-        (bool_less_than_zero, _done()),
-        (
-            bool_less_than_zero,
-            tp.FactorAction((), "APPLY2", "less-than", "SCOPE0", "LITERAL", 2),
-        ),
-        (
-            bool_less_than_zero,
-            tp.FactorAction((), "APPLY2", "less-than", "LITERAL", "SCOPE0", 2),
-        ),
-        (
-            two_int_identity,
-            tp.FactorAction((), "APPLY2", "subtract", "SCOPE1", "SCOPE0", None),
-        ),
-        (
-            two_int_identity,
-            tp.FactorAction((), "APPLY2", "subtract", "SCOPE0", "SCOPE1", None),
-        ),
-        (list_identity, _done()),
-        (list_identity, map_identity_action),
-        (map_identity, _done()),
-        (
-            map_identity,
-            tp.FactorAction(
-                (0, 0), "APPLY1", "absolute", "BOUND0", "NONE", None
-            ),
-        ),
-        (
-            map_identity,
-            tp.FactorAction(
-                (0, 0), "APPLY2", "add", "BOUND0", "LITERAL", 2
-            ),
-        ),
+        int_scope0,
+        int_scope1,
+        int_nonleaf,
+        bool_nonleaf,
+        list_scope0,
+        list_scope1,
+        map_nonleaf_body,
+        map_literal_body,
     )
 
 
 def _collect_transitions() -> tuple[_ObservedTransition, ...]:
-    observations: list[_ObservedTransition] = []
-    for incumbent, action in _public_synthetic_incumbents():
+    observations: dict[bytes, _ObservedTransition] = {}
+    for incumbent in _public_structure_representatives():
         before = observe_program_structure(incumbent)
-        after = observe_program_structure(tp.apply_factor_action(incumbent, action))
-        if not _site_ready(before, action):
-            raise RuntimeError("public synthetic transition exceeds local support")
-        observations.append(_ObservedTransition(before, action, after))
-    return tuple(observations)
+        sites = tp.factor_action_sites(incumbent)
+        site_actions = tp.factor_actions_for_sites(
+            sites,
+            literals=_STRUCTURE_TRAINING_LITERALS,
+        )
+        candidate_actions = tp.factor_action_candidates(
+            incumbent,
+            literals=_STRUCTURE_TRAINING_LITERALS,
+        ).actions
+        if site_actions != candidate_actions:
+            raise RuntimeError("compiler factor enumeration seams diverged")
+        for action in candidate_actions:
+            if not _site_ready(before, action):
+                continue
+            features = _encode_action_features(action, ready=True)
+            key = features.tobytes()
+            if key in observations:
+                continue
+            after = observe_program_structure(
+                tp.apply_factor_action(incumbent, action)
+            )
+            observations[key] = _ObservedTransition(before, action, after)
+    return tuple(observations.values())
 
 
 def _freeze_array(value: np.ndarray, dtype: object) -> np.ndarray:
@@ -1056,7 +1060,15 @@ def train_public_structure_successor(
                 previous = rule_indices[field].get(key)
                 if previous is not None:
                     if rule_outputs[field][previous] != output:
-                        raise RuntimeError("one local coincidence observed conflicting posts")
+                        previous_output = rule_outputs[field][previous]
+                        raise RuntimeError(
+                            "local structural truth conflict: "
+                            f"field={field!r}, action={item.action!r}, "
+                            f"route={route.kind!r}, "
+                            f"site_result_type={site.result_type!r}, "
+                            f"previous={previous_output!r}, observed={output!r}; "
+                            "the local feature representation is insufficient"
+                        )
                     continue
                 rule_indices[field][key] = len(rule_rows[field])
                 rule_rows[field].append(features)
@@ -1125,6 +1137,8 @@ def train_public_structure_successor(
         ),
         training_digest=training_digest,
         checkpoint_sha256=checkpoint_sha,
-        host_execution_scope="generic synthetic incumbent edits only",
+        host_execution_scope=(
+            "target-free compiler-generated representative edits only"
+        ),
     )
     return model, summary

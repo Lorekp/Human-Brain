@@ -10,8 +10,8 @@ import numpy as np
 from experiments.r3_pilot import public_typed_structure_successor as structure
 
 
-_CHECKPOINT_SHA256 = "f65d43dfb24d500a96cee4ff0b4906546ada6474e3f3f621c1270655ed686519"
-_SUPPORTED_LEDGER_SHA256 = "61d0361b0bb782dce09999e7ed3dc387f645460107105c0f42b393d2751575f1"
+_CHECKPOINT_SHA256 = "95a35644cb0689ddd30dc5994ac4c9f15b61ae019ce377681051845c68d96c8e"
+_SUPPORTED_LEDGER_SHA256 = "9365c907ff6e0cc5d23974789959ed3cd537d57825d01999bfaad5d9fb040f0f"
 
 
 def _supported_fixture():
