@@ -1,7 +1,8 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-08-29 after the first broad
-bottom-up typed-semantic TRAIN pass. Exact scientific boundaries live in
+bottom-up typed-semantic TRAIN pass, its speed layer, and Path-2 replay
+preparation. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -14,7 +15,7 @@ R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 R4  TRAIN-only prompt → semantic-factor bridge       [next after breadth]
 R3  Bottom-up typed semantic synthesis               [30/30 across 3 TRAIN families]
-R2  Persistent Path-2 reading memory                 [TRAIN build complete; scorer next]
+R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
 
@@ -30,10 +31,12 @@ typed signatures plus four regression I/O rows, not prompts or family/task
 identity. This is physical programming by examples, not canonical prompt-only
 Simple-SWE, family-disjoint transfer, or M0.
 
-The next order is intentionally leakage-safe:
+The next order is intentionally leakage-safe. The semantic physical path is
+already parity-accelerated: a first-round task from each banked family replayed
+42.3x faster in aggregate without changing decisions or race ledgers.
 
-1. Speed up the physical semantic path and add generic combinator/type breadth
-   using only the six unspent TRAIN families.
+1. Add generic combinator/type breadth using only the six unspent TRAIN
+   families.
 2. Learn and freeze a prompt-span → semantic-factor bridge on a preregistered
    TRAIN capacity split.
 3. Spend the 27 fixed family-disjoint public DEV tasks once, with visible-I/O
@@ -47,8 +50,10 @@ ending at 23,286,405 actual segments in a 1.490 GB durable checkpoint. Its final
 isolated cost measurement is pending. A target-independent successor scorer now
 implements per-output-column factorization, stable complete tuples, global
 owner-column non-aliasing, and the sum of actual allocations while reporting
-matching and active telemetry separately. Its source-bound resumable TRAIN-only
-runner is the next engineering step. No held-out or C1 surface is open.
+matching and active telemetry separately. Its separately named source-bound
+resumable TRAIN-only runner is now preflight-ready from empty native/scorer
+state, with a compact per-book journal and no completed-build import. No corpus
+spend occurred, and no held-out or C1 surface is open.
 
 ### Runtime and scale
 

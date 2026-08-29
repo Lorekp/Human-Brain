@@ -297,6 +297,27 @@ three task times changed from 263.93→2.33 seconds (scalar offset),
 of three public-TRAIN tasks, not a second 30-task gate or broader capability
 claim.
 
+## Path-2 factorized successor replay readiness
+
+The separately named public-TRAIN Path-2 successor replay is implemented and
+preflight-ready, but no 49-book replay has been spent. It starts from empty
+native and scorer state, consumes only the authenticated 49-book
+`VerifiedTrainInput` stream, and records complete-tuple/per-column successor
+identity while keeping matching and active telemetry non-gating. An exclusive
+source-bound spend marker, one active book-boundary native checkpoint, compact
+per-book scorer journals, and an atomic cursor manifest make it resumable.
+
+Each scorer record is 62 bytes, for a maximum 131,282,288-byte journal. The
+estimated final durable state is at most 1,621,955,424 bytes and checkpoint
+publication peak is 3,120,208,302 bytes. Scorer restoration is O(authenticated
+prefix records); its 3–8 GiB live Python-memory range is an unmeasured
+engineering estimate, not a demonstrated envelope. The actual source/TRAIN
+preflight returned `PREFLIGHT_READY_NOT_RUN`, with zero held-out/C1 input
+materialization and no marker, manifest, native checkpoint, or simulation run.
+The completed dense checkpoint is deliberately not imported. This is runner
+readiness only, not a Path-2 PASS/STOP, cost-cap result, C1 opening, transfer, or
+capability evidence.
+
 ## Typed-program public TRAIN curriculum
 
 The preregistered Layer-1 recurrent fitted-cell TRAIN run completed once from

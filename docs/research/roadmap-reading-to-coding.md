@@ -669,6 +669,20 @@ evidence only. The next licensed adjudication is a newly named, source-bound,
 public-TRAIN replay from empty state; it is not a calibration-v3 retry and does
 not open held-out or C1 data.
 
+That adjudication is now prepared but remains unspent. Its source-bound runner
+starts both native and scorer state empty, consumes only `VerifiedTrainInput`,
+and checkpoints at book boundaries under an exclusive spend marker and atomic
+manifest. A 62-byte record per token makes the complete scorer journal at most
+131,282,288 bytes without a durable Python `(source,column)` map; one active
+native checkpoint bounds final durable state at 1,621,955,424 bytes and
+publication peak at 3,120,208,302 bytes. Resume reconstructs the scorer in
+O(authenticated prefix tokens), with an explicitly unmeasured 3–8 GiB live
+Python-memory estimate. The real 49-book preflight reports
+`PREFLIGHT_READY_NOT_RUN`, zero held-out/C1 materialization, and no marker,
+manifest, checkpoint, or corpus execution. The old 1.490 GB completed dense
+build is not imported: the scorer needs the chronological native outcomes of a
+fresh replay.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
@@ -692,5 +706,6 @@ is proven.
    before any family-disjoint desired vector is observed.
 4. Spend one paired 27-task public DEV gate only after the visible-I/O engine
    and prompt-only bridge are both frozen. M0 and canonical eval stay sealed.
-5. Resume the completed dense Path-2 checkpoint for its isolated factorized
-   scorer measurement; do not open C1 or held-out material.
+5. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
+   empty state in bounded public-TRAIN chunks; do not import the completed
+   dense build or open C1/held-out material.
