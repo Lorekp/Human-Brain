@@ -233,10 +233,10 @@ class _CaseEvaluator:
         self.memo[key] = output
         return output
 
-    def race_digest(self) -> str:
+    def race_digest(self, start: int = 0) -> str:
         digest = sha256()
         digest.update(b"public-typed-semantic-operator-races-v1\0")
-        for race in self.races:
+        for race in self.races[start:]:
             digest.update(_canonical_json(asdict(race)))
         return digest.hexdigest()
 
@@ -290,6 +290,9 @@ class FrozenTypedSemanticSynthesizer:
         all_races_digest = sha256()
         all_races_digest.update(b"public-typed-semantic-all-races-v1\0")
         observed_classes = 0
+        evaluators = tuple(
+            _CaseEvaluator(self.operator, dag, row) for row in arguments
+        )
 
         for tier in dag.tiers:
             for candidate in tier.candidates:
@@ -298,12 +301,15 @@ class FrozenTypedSemanticSynthesizer:
                 candidate_races = 0
                 candidate_digest = sha256()
                 candidate_digest.update(b"public-typed-semantic-candidate-races-v1\0")
-                for row in arguments:
-                    evaluator = _CaseEvaluator(self.operator, dag, row)
+                for evaluator in evaluators:
+                    predictions_before = evaluator.predictions
+                    races_before = len(evaluator.races)
                     outputs.append(evaluator.evaluate(candidate.root_node_id))
-                    candidate_predictions += evaluator.predictions
-                    candidate_races += len(evaluator.races)
-                    digest = evaluator.race_digest()
+                    candidate_predictions += (
+                        evaluator.predictions - predictions_before
+                    )
+                    candidate_races += len(evaluator.races) - races_before
+                    digest = evaluator.race_digest(races_before)
                     candidate_digest.update(digest.encode("ascii"))
                     all_races_digest.update(digest.encode("ascii"))
                 output_tuple = tuple(outputs)
