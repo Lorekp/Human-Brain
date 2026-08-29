@@ -6,10 +6,8 @@ from time import perf_counter
 
 import numpy as np
 
-from experiments.r3_pilot import public_typed_factor_h1_root as planner
 from experiments.r3_pilot import public_typed_operator_successor as successor
 from experiments.r3_pilot import public_typed_output_cells as output_cells
-from experiments.r3_pilot import public_typed_program_observation as observation
 from humanbrain import typed_program as tp
 from humanbrain.typed_program_types import ProgramParameter, ProgramType, TypedSignature
 
@@ -18,6 +16,10 @@ from humanbrain.typed_program_types import ProgramParameter, ProgramType, TypedS
 # and the ledger pins bit-exact scalar/batch parity under that projection.
 _CHECKPOINT_SHA256 = "92944516be48275ba7633a29a298707393010b85c3a0c60be4b6c73668d7e76e"
 _ROOT_LEDGER_SHA256 = "fa5085b94053924a7bfedea3e0c1422ad1b6acd401358382ed8a62cec7c3ea9f"
+_PUBLIC_TWO_INT_CASES = ((7, 2), (-3, 4), (5, 5))
+_PUBLIC_SELECTED_OUTPUTS = (2, 4, 5)
+_PUBLIC_LITERAL_BANK = tuple(range(-4, 5))
+_PRIMITIVE_OBSERVATIONS = 51_192
 
 
 def _encode_int(value: int):
@@ -91,19 +93,20 @@ def _two_int_incumbent() -> tp.Program:
 
 def _root_workload():
     incumbent = _two_int_incumbent()
-    model = planner.build_public_typed_factor_h1_root()
-    current = observation.observe_current_program_root(
-        incumbent,
-        planner.PUBLIC_TWO_INT_CASES,
+    operator, training = successor.train_public_typed_operator_successor()
+    selected = tuple(_encode_int(value) for value in _PUBLIC_SELECTED_OUTPUTS)
+    scopes = tuple(
+        (_encode_int(right), _encode_int(left))
+        for left, right in _PUBLIC_TWO_INT_CASES
     )
-    selected = tuple(case.output_encoding for case in current.cases)
-    scopes = planner._scope_rows(incumbent, current)
     bank = tp.factor_action_candidates(
         incumbent,
-        literals=planner.PUBLIC_LITERAL_BANK,
+        literals=_PUBLIC_LITERAL_BANK,
     )
     root_actions = tuple(action for action in bank.actions if action.path == ())
-    return incumbent, model, selected, scopes, bank, root_actions
+    assert training.checkpoint_sha256 == _CHECKPOINT_SHA256
+    assert training.primitive_observations == _PRIMITIVE_OBSERVATIONS
+    return incumbent, operator, selected, scopes, bank, root_actions
 
 
 def _assert_prediction_parity(left, right) -> None:
@@ -154,8 +157,7 @@ def _prediction_ledger_sha256(bank, root_actions, batched) -> str:
 def test_action_batch_matches_scalar_races_and_reduces_checkpoint_hashing(
     monkeypatch,
 ) -> None:
-    _, model, selected, scopes, bank, root_actions = _root_workload()
-    operator = model.operator_successor
+    _, operator, selected, scopes, bank, root_actions = _root_workload()
     original_hash = successor._array_sha256
     hash_calls = 0
 
@@ -208,8 +210,8 @@ def test_action_batch_matches_scalar_races_and_reduces_checkpoint_hashing(
 
 
 def test_target_free_root_candidate_ledger_is_bit_exact_after_batching() -> None:
-    _, model, selected, scopes, bank, root_actions = _root_workload()
-    batched = model.operator_successor.predict_actions_many(
+    _, operator, selected, scopes, bank, root_actions = _root_workload()
+    batched = operator.predict_actions_many(
         selected,
         root_actions,
         scope_rows=scopes,
@@ -217,8 +219,8 @@ def test_target_free_root_candidate_ledger_is_bit_exact_after_batching() -> None
 
     assert len(bank.actions) == 212
     assert _prediction_ledger_sha256(bank, root_actions, batched) == _ROOT_LEDGER_SHA256
-    assert model.operator_successor.checkpoint_sha256 == _CHECKPOINT_SHA256
-    assert model.operator_successor.live_checkpoint_sha256 == _CHECKPOINT_SHA256
+    assert operator.checkpoint_sha256 == _CHECKPOINT_SHA256
+    assert operator.live_checkpoint_sha256 == _CHECKPOINT_SHA256
 
 
 def test_event_sparse_batches_preserve_dense_full_current_ledgers() -> None:
