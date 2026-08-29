@@ -1,0 +1,38 @@
+{
+  "artifact_id": "cn2-dev-4096-interpretation-v1",
+  "classification": "STOP_COST_TIMING_CONTAMINATED",
+  "cost_interpretation": {
+    "authoritative_cap_failure": false,
+    "raw_development_cap_hours": 13.5,
+    "raw_projected_total_hours": 16.167570306303684,
+    "reason": "the CN2 measurement overlapped a CPU-bound public source-edit V2 process",
+    "replacement_measurement": "P2-COST-DENSE-TRAIN49-v1",
+    "stop_rule": "do not interpret or bank the raw 16.17 h projection as a cap failure; run the direct full-density cost measurement only after the orchestrator confirms no other heavy process"
+  },
+  "identity_interpretation": {
+    "actual_allocated_segments": 45045,
+    "checkpoint_bytes_exact_after_read_only": true,
+    "checkpoint_identity_exact_after_read_only": true,
+    "exact_read_only_winner_trace": true,
+    "held_out_data_accessed": false,
+    "novel_complete_keys": 4095,
+    "repeated_complete_keys": 0,
+    "verdict": "PASS_CN2_DEV_IDENTITY_DURABILITY",
+    "zero_read_only_allocations": true,
+    "zero_read_only_punishments": true
+  },
+  "observed_overlap": {
+    "cn2_artifact_observed_local_time": "2026-08-29T07:15:13+02:00",
+    "concurrent_process_id": 42732,
+    "concurrent_process_started_local_time": "2026-08-29T07:09:39+02:00",
+    "concurrent_process_workload": "CPU-bound public source-edit V2 lane",
+    "overlap_confirmed": true
+  },
+  "raw_artifact": {
+    "bytes": 10987,
+    "path": "experiments/r3_pilot/cn2_dev_4096.json",
+    "raw_status": "STOP_CN2_DEV_COST_PROJECTION",
+    "sha256": "ccf6dfe53b80478f01099317c255037fd129dbe69f97bf7e783996e68921bc92"
+  },
+  "schema_version": 1
+}
