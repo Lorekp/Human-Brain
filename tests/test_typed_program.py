@@ -12,6 +12,7 @@ from humanbrain.cells import AllenGlif5Parameters
 from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY
 from humanbrain.typed_program import (
     Example,
+    FactorAction,
     FrozenCheckpoint,
     Layer1Protocol,
     Program,
@@ -20,6 +21,7 @@ from humanbrain.typed_program import (
     ProgramParameter,
     ProgramType,
     TypedSignature,
+    apply_factor_action,
     compile,
     complete,
     grow,
@@ -668,9 +670,30 @@ def test_program_edit_seam_exposes_paths_and_replaces_one_typed_subtree() -> Non
     )
 
     assert program_edit_sites(program) == (
-        ProgramEditSite((), program.tokens),
-        ProgramEditSite((0,), ("variable-0",)),
-        ProgramEditSite((1,), ("integer", "+", "3", "end")),
+        ProgramEditSite(
+            (),
+            program.tokens,
+            "Int",
+            "add",
+            ("Int", "unbound"),
+            False,
+        ),
+        ProgramEditSite(
+            (0,),
+            ("variable-0",),
+            "Int",
+            "variable-0",
+            ("Int", "unbound"),
+            False,
+        ),
+        ProgramEditSite(
+            (1,),
+            ("integer", "+", "3", "end"),
+            "Int",
+            "integer",
+            ("Int", "unbound"),
+            False,
+        ),
     )
 
     edited = replace_subtree(
@@ -723,6 +746,128 @@ def test_program_edit_seam_rejects_unknown_paths_and_ill_typed_replacements() ->
     )
     with pytest.raises(ProgramFormatError, match="map requires one explicit binder"):
         replace_subtree(mapped, (0,), function_valued_if)
+
+
+def test_factor_action_preserves_binary_binding_orientation() -> None:
+    integer = ProgramType.Int()
+    signature = TypedSignature(
+        entry_point="difference",
+        parameters=(
+            ProgramParameter("first", integer),
+            ProgramParameter("second", integer),
+        ),
+        result=integer,
+    )
+    incumbent = Program(("variable-1",), signature)
+
+    first_minus_second = apply_factor_action(
+        incumbent,
+        FactorAction((), "APPLY2", "subtract", "SCOPE1", "SCOPE0", None),
+    )
+    second_minus_first = apply_factor_action(
+        incumbent,
+        FactorAction((), "APPLY2", "subtract", "SCOPE0", "SCOPE1", None),
+    )
+
+    assert compile(first_minus_second).source == (
+        "def difference(first, second):\n    return first - second\n"
+    )
+    assert compile(second_minus_first).source == (
+        "def difference(first, second):\n    return second - first\n"
+    )
+
+
+def test_factor_action_preserves_comparison_operand_orientation() -> None:
+    integer = ProgramType.Int()
+    signature = TypedSignature(
+        entry_point="predicate",
+        parameters=(ProgramParameter("value", integer),),
+        result=ProgramType.Bool(),
+    )
+    incumbent = Program(
+        ("less-than", "variable-0", "integer", "+", "0", "end"),
+        signature,
+    )
+
+    value_less_than_two = apply_factor_action(
+        incumbent,
+        FactorAction((), "APPLY2", "less-than", "SCOPE0", "LITERAL", 2),
+    )
+    two_less_than_value = apply_factor_action(
+        incumbent,
+        FactorAction((), "APPLY2", "less-than", "LITERAL", "SCOPE0", 2),
+    )
+
+    assert compile(value_less_than_two).source == (
+        "def predicate(value):\n    return value < 2\n"
+    )
+    assert compile(two_less_than_value).source == (
+        "def predicate(value):\n    return 2 < value\n"
+    )
+
+
+def test_factor_action_builds_map_then_edits_its_typed_binder_body() -> None:
+    list_integer = ProgramType.List(ProgramType.Int())
+    signature = TypedSignature(
+        entry_point="map_values",
+        parameters=(ProgramParameter("values", list_integer),),
+        result=list_integer,
+    )
+    incumbent = Program(("variable-0",), signature)
+    identity_map = apply_factor_action(
+        incumbent,
+        FactorAction((), "MAP_BIND", "map", "BOUND0", "SELECTED", None),
+    )
+    sites = {site.path: site for site in program_edit_sites(identity_map)}
+
+    assert sites[()].result_type_label == "List[Int]"
+    assert sites[()].head_production == "map"
+    assert sites[(0,)].result_type_label == "internal-function"
+    assert sites[(0,)].is_binder
+    assert sites[(0, 0)].result_type_label == "Int"
+    assert sites[(0, 0)].scope_binding_type_labels == ("Int", "List[Int]")
+    assert sites[(1,)].scope_binding_type_labels == ("List[Int]", "unbound")
+
+    absolute_map = apply_factor_action(
+        identity_map,
+        FactorAction((0, 0), "APPLY1", "absolute", "BOUND0", "NONE", None),
+    )
+    add_two_map = apply_factor_action(
+        identity_map,
+        FactorAction((0, 0), "APPLY2", "add", "BOUND0", "LITERAL", 2),
+    )
+
+    assert compile(absolute_map).source == (
+        "def map_values(values):\n    return [abs(item_0) for item_0 in values]\n"
+    )
+    assert compile(add_two_map).source == (
+        "def map_values(values):\n    return [item_0 + 2 for item_0 in values]\n"
+    )
+
+
+def test_factor_action_done_is_identity_and_invalid_tuples_do_not_actuate() -> None:
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    program = Program(("variable-0",), signature)
+
+    assert apply_factor_action(
+        program,
+        FactorAction((), "DONE", "NONE", "NONE", "NONE", None),
+    ) is program
+
+    with pytest.raises(ValueError, match="APPLY1 supports only"):
+        apply_factor_action(
+            program,
+            FactorAction((), "APPLY1", "add", "SELECTED", "NONE", None),
+        )
+    with pytest.raises(ProgramFormatError):
+        apply_factor_action(
+            program,
+            FactorAction((), "APPLY2", "less-than", "SCOPE0", "LITERAL", 2),
+        )
 
 
 def test_variable_one_selects_the_outer_parameter_and_is_masked_without_it() -> None:

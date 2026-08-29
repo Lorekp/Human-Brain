@@ -97,10 +97,51 @@ class Program:
 
 @dataclass(frozen=True, slots=True)
 class ProgramEditSite:
-    """One stable expression path and its complete prefix-token subtree."""
+    """One stable typed expression path and its complete prefix-token subtree."""
 
     path: tuple[int, ...]
     tokens: tuple[str, ...]
+    result_type_label: str
+    head_production: str
+    scope_binding_type_labels: tuple[str, str]
+    is_binder: bool
+
+
+@dataclass(frozen=True, slots=True)
+class FactorAction:
+    """One generic, factorized typed edit selected by physical motor races."""
+
+    path: tuple[int, ...]
+    schema: str
+    operator: str
+    left_source: str
+    right_source: str
+    literal: int | None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.path, tuple) or not all(
+            type(part) is int and part >= 0 for part in self.path
+        ):
+            raise TypeError("factor-action path must contain non-negative integers")
+        if self.schema not in {"DONE", "APPLY1", "APPLY2", "MAP_BIND"}:
+            raise ValueError("unknown factor-action schema")
+        if self.operator not in {
+            "NONE",
+            "absolute",
+            "add",
+            "subtract",
+            "less-than",
+            "map",
+        }:
+            raise ValueError("unknown factor-action operator")
+        sources = {"NONE", "SELECTED", "SCOPE0", "SCOPE1", "BOUND0", "LITERAL"}
+        if self.left_source not in sources or self.right_source not in sources:
+            raise ValueError("unknown factor-action operand source")
+        if self.literal is not None and (
+            type(self.literal) is not int
+            or abs(self.literal) >= 10**_LITERAL_DIGITS
+        ):
+            raise ValueError("factor-action literal exceeds the typed grammar bound")
 
 
 @dataclass(frozen=True, slots=True)
@@ -904,25 +945,143 @@ def _validate_program(tokens: tuple[str, ...], signature: TypedSignature) -> _Ex
     return expression
 
 
+def _type_term_label(
+    term: _TypeTerm,
+    substitutions: Mapping[int, _TypeTerm],
+) -> str:
+    resolved = _resolve(term, substitutions)
+    if isinstance(resolved, _TypeVariable):
+        return "unresolved"
+    if resolved.constructor == "Function":
+        return "internal-function"
+    if not resolved.arguments:
+        return resolved.constructor
+    arguments = ",".join(
+        _type_term_label(argument, substitutions) for argument in resolved.arguments
+    )
+    return f"{resolved.constructor}[{arguments}]"
+
+
+def _typed_edit_site_records(
+    root: _Expression,
+    signature: TypedSignature,
+) -> tuple[
+    tuple[
+        tuple[
+            _Expression,
+            tuple[int, ...],
+            _TypeTerm,
+            tuple[_TypeTerm, ...],
+        ],
+        ...,
+    ],
+    dict[int, _TypeTerm],
+]:
+    """Replay the existing type machinery while retaining each node's local scope."""
+
+    substitutions: dict[int, _TypeTerm] = {}
+    next_variable = 0
+    records: list[
+        tuple[
+            _Expression,
+            tuple[int, ...],
+            _TypeTerm,
+            tuple[_TypeTerm, ...],
+        ]
+    ] = []
+
+    def visit(
+        expression: _Expression,
+        path: tuple[int, ...],
+        expected: _TypeTerm,
+        environment: tuple[_TypeTerm, ...],
+    ) -> None:
+        nonlocal next_variable
+        spec = expression.spec
+
+        if spec.role == "operation":
+            assert spec.result is not None
+            result, arguments, following_variable = _instantiate_spec(
+                spec,
+                next_variable,
+            )
+            if not _unify(result, expected, substitutions):
+                raise ProgramFormatError("operation does not inhabit its typed edit site")
+            next_variable = following_variable
+            if len(arguments) != len(expression.children):
+                raise ProgramFormatError("operation child count differs from its grammar")
+            records.append((expression, path, expected, environment))
+            for child_index, (child, argument) in enumerate(
+                zip(expression.children, arguments, strict=True)
+            ):
+                visit(child, (*path, child_index), argument, environment)
+            return
+
+        if spec.role == "variable":
+            index = int(spec.value)
+            if index >= len(environment) or not _unify(
+                environment[index],
+                expected,
+                substitutions,
+            ):
+                raise ProgramFormatError("variable does not inhabit its typed edit site")
+            records.append((expression, path, expected, environment))
+            return
+
+        if spec.role == "literal":
+            assert spec.result is not None
+            result, _, following_variable = _instantiate_spec(spec, next_variable)
+            if not _unify(result, expected, substitutions):
+                raise ProgramFormatError("literal does not inhabit its typed edit site")
+            next_variable = following_variable
+            records.append((expression, path, expected, environment))
+            return
+
+        if spec.role == "binder":
+            parts = _function_parts(_resolve(expected, substitutions))
+            if parts is None or len(expression.children) != 1:
+                raise ProgramFormatError("binder does not inhabit an internal function site")
+            parameters, result = parts
+            records.append((expression, path, expected, environment))
+            binder_environment = (*reversed(parameters), *environment)
+            visit(expression.children[0], (*path, 0), result, binder_environment)
+            return
+
+        raise ProgramFormatError("structural token cannot describe an edit site")
+
+    environment = tuple(
+        _type_term(parameter.type) for parameter in reversed(signature.parameters)
+    )
+    visit(root, (), _type_term(signature.result), environment)
+    return tuple(records), substitutions
+
+
 def program_edit_sites(program: Program) -> tuple[ProgramEditSite, ...]:
-    """Return every expression subtree in stable preorder path order."""
+    """Return every expression subtree with stable local type/scope metadata."""
 
     if not isinstance(program, Program):
         raise TypeError("program must be a Program")
     root = _validate_program(program.tokens, program.signature)
-    sites: list[ProgramEditSite] = []
+    records, substitutions = _typed_edit_site_records(root, program.signature)
 
-    def visit(expression: _Expression, path: tuple[int, ...]) -> None:
+    sites: list[ProgramEditSite] = []
+    for expression, path, expected, environment in records:
+        scope_labels = tuple(
+            _type_term_label(environment[index], substitutions)
+            if index < len(environment)
+            else "unbound"
+            for index in range(2)
+        )
         sites.append(
             ProgramEditSite(
                 path=path,
                 tokens=program.tokens[expression.token_start : expression.token_stop],
+                result_type_label=_type_term_label(expected, substitutions),
+                head_production=expression.spec.token,
+                scope_binding_type_labels=(scope_labels[0], scope_labels[1]),
+                is_binder=expression.spec.role == "binder",
             )
         )
-        for child_index, child in enumerate(expression.children):
-            visit(child, (*path, child_index))
-
-    visit(root, ())
     return tuple(sites)
 
 
@@ -961,6 +1120,121 @@ def replace_subtree(
     edited = Program(tokens, program.signature)
     compile(edited)
     return edited
+
+
+def _factor_literal_tokens(value: int) -> tuple[str, ...]:
+    sign = "-" if value < 0 else "+"
+    return ("integer", sign, *tuple(str(abs(value))), "end")
+
+
+def _inside_binder_scope(
+    sites: Sequence[ProgramEditSite],
+    path: tuple[int, ...],
+) -> bool:
+    return any(
+        site.is_binder
+        and len(path) > len(site.path)
+        and path[: len(site.path)] == site.path
+        for site in sites
+    )
+
+
+def _factor_source_tokens(
+    action: FactorAction,
+    source: str,
+    selected: ProgramEditSite,
+    sites: Sequence[ProgramEditSite],
+    *,
+    constructed_bound: bool = False,
+) -> tuple[str, ...]:
+    if source == "SELECTED":
+        return selected.tokens
+    if source in {"SCOPE0", "SCOPE1"}:
+        index = int(source[-1])
+        if selected.scope_binding_type_labels[index] == "unbound":
+            raise ValueError(f"{source} is not bound at edit site {selected.path!r}")
+        return (f"variable-{index}",)
+    if source == "BOUND0":
+        if not constructed_bound and not _inside_binder_scope(sites, selected.path):
+            raise ValueError("BOUND0 is available only inside a binder body")
+        return ("variable-0",)
+    if source == "LITERAL":
+        if action.literal is None:
+            raise ValueError("LITERAL source requires one factor-action literal")
+        return _factor_literal_tokens(action.literal)
+    if source == "NONE":
+        raise ValueError("NONE cannot materialize an operand")
+    raise AssertionError("FactorAction rejected an unknown operand source")
+
+
+def apply_factor_action(program: Program, action: FactorAction) -> Program:
+    """Materialize and apply one selected generic action through the typed seam."""
+
+    if not isinstance(program, Program):
+        raise TypeError("factor-action actuator requires a Program")
+    if type(action) is not FactorAction:
+        raise TypeError("factor-action actuator requires a FactorAction")
+    sites = program_edit_sites(program)
+
+    if action.schema == "DONE":
+        if (
+            action.path != ()
+            or action.operator != "NONE"
+            or action.left_source != "NONE"
+            or action.right_source != "NONE"
+            or action.literal is not None
+        ):
+            raise ValueError("DONE must be the global factor-action identity")
+        return program
+
+    selected = next((site for site in sites if site.path == action.path), None)
+    if selected is None:
+        raise ValueError(f"program has no edit site at path {action.path!r}")
+    uses_literal = action.left_source == "LITERAL" or action.right_source == "LITERAL"
+    if uses_literal != (action.literal is not None):
+        raise ValueError("factor-action literal must match its operand sources")
+
+    if action.schema == "APPLY1":
+        if action.operator != "absolute" or action.right_source != "NONE":
+            raise ValueError("APPLY1 supports only unary absolute")
+        operand = _factor_source_tokens(action, action.left_source, selected, sites)
+        replacement = ("absolute", *operand)
+    elif action.schema == "APPLY2":
+        if action.operator not in {"add", "subtract", "less-than"}:
+            raise ValueError("APPLY2 supports add, subtract, or less-than")
+        if action.left_source == "NONE" or action.right_source == "NONE":
+            raise ValueError("APPLY2 requires two operand sources")
+        left = _factor_source_tokens(action, action.left_source, selected, sites)
+        right = _factor_source_tokens(action, action.right_source, selected, sites)
+        replacement = (action.operator, *left, *right)
+    elif action.schema == "MAP_BIND":
+        if (
+            action.operator != "map"
+            or action.left_source != "BOUND0"
+            or action.right_source not in {"SELECTED", "SCOPE0", "SCOPE1"}
+            or action.literal is not None
+        ):
+            raise ValueError(
+                "MAP_BIND requires BOUND0 as its body and one outer collection source"
+            )
+        body = _factor_source_tokens(
+            action,
+            action.left_source,
+            selected,
+            sites,
+            constructed_bound=True,
+        )
+        collection = _factor_source_tokens(
+            action,
+            action.right_source,
+            selected,
+            sites,
+        )
+        replacement = ("map", "bind", *body, *collection)
+    else:
+        raise AssertionError("FactorAction rejected an unknown schema")
+
+    return replace_subtree(program, action.path, replacement)
 
 
 def _program_token_ids(tokens: Sequence[str]) -> tuple[int, ...]:
@@ -1640,6 +1914,7 @@ __all__ = [
     "CompiledPython",
     "Completion",
     "Example",
+    "FactorAction",
     "FrozenCheckpoint",
     "Layer1Protocol",
     "PersistentStateChangedError",
@@ -1650,6 +1925,7 @@ __all__ = [
     "ProgramRaceAudit",
     "ProgramType",
     "TypedSignature",
+    "apply_factor_action",
     "compile",
     "complete",
     "grow",
