@@ -458,9 +458,51 @@ class _PrimitiveSpec:
 
 _INT = _type_term(ProgramType.Int())
 _BOOL = _type_term(ProgramType.Bool())
+_CHAR = _type_term(ProgramType.Char())
+_STRING = _type_term(ProgramType.String())
+_ASCII_CLASS = _ConstructedType("AsciiClass")
 _A = _TypeVariable("a")
 _B = _TypeVariable("b")
 _LITERAL_DIGITS = 4
+
+ASCII_CLASS_LABELS = (
+    "ascii-alphanumeric",
+    "ascii-decimal-digits",
+    "ascii-hex-digits",
+    "ascii-letters",
+    "ascii-lowercase",
+    "ascii-octal-digits",
+    "ascii-printable",
+    "ascii-punctuation",
+    "ascii-uppercase",
+    "ascii-whitespace",
+    "english-consonants",
+    "english-vowels",
+)
+_ASCII_DIGITS = "0123456789"
+_ASCII_LOWERCASE = "abcdefghijklmnopqrstuvwxyz"
+_ASCII_UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+_ASCII_LETTERS = _ASCII_UPPERCASE + _ASCII_LOWERCASE
+_ASCII_PUNCTUATION = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+_ENGLISH_VOWELS = "AEIOUaeiou"
+_ASCII_CLASS_CHARACTERS = {
+    "ascii-alphanumeric": _ASCII_DIGITS + _ASCII_LETTERS,
+    "ascii-decimal-digits": _ASCII_DIGITS,
+    "ascii-hex-digits": _ASCII_DIGITS + "ABCDEFabcdef",
+    "ascii-letters": _ASCII_LETTERS,
+    "ascii-lowercase": _ASCII_LOWERCASE,
+    "ascii-octal-digits": "01234567",
+    "ascii-printable": "".join(chr(code) for code in range(0x20, 0x7F)),
+    "ascii-punctuation": _ASCII_PUNCTUATION,
+    "ascii-uppercase": _ASCII_UPPERCASE,
+    "ascii-whitespace": " \t\n\v\f\r",
+    "english-consonants": "".join(
+        character for character in _ASCII_LETTERS if character not in _ENGLISH_VOWELS
+    ),
+    "english-vowels": _ENGLISH_VOWELS,
+}
+if tuple(_ASCII_CLASS_CHARACTERS) != ASCII_CLASS_LABELS:
+    raise RuntimeError("ASCII class catalog order must be frozen")
 
 # This is the sole language inventory. Its order fixes output-cell identity;
 # its type/role fields drive typed-hole masking and parsing; and its lowering
@@ -489,6 +531,26 @@ _PRIMITIVE_SPECS = (
         _INT,
         (_function_type((_INT,), _BOOL), _list_type(_INT)),
         "count",
+    ),
+    _PrimitiveSpec("contains", "operation", _BOOL, (_ASCII_CLASS, _CHAR), "contains"),
+    _PrimitiveSpec(
+        "filter",
+        "operation",
+        _STRING,
+        (_function_type((_CHAR,), _BOOL), _STRING),
+        "filter",
+    ),
+    _PrimitiveSpec("reverse", "operation", _STRING, (_STRING,), "reverse"),
+    *tuple(
+        _PrimitiveSpec(
+            label,
+            "operation",
+            _ASCII_CLASS,
+            (),
+            "ascii-class",
+            label,
+        )
+        for label in ASCII_CLASS_LABELS
     ),
     _PrimitiveSpec("bind", "binder", lowering="binder"),
     _PrimitiveSpec("variable-0", "variable", lowering="variable", value=0),
@@ -2227,6 +2289,60 @@ def _lower_expression(
             ],
             keywords=[],
         )
+    if lowering == "contains":
+        class_expression, character = expression.children
+        if class_expression.spec.lowering != "ascii-class":
+            raise ProgramFormatError("contains requires one compiler ASCII class")
+        label = str(class_expression.spec.value)
+        try:
+            characters = _ASCII_CLASS_CHARACTERS[label]
+        except KeyError as error:
+            raise ProgramFormatError("contains references an unknown ASCII class") from error
+        return ast.Compare(
+            left=_lower_expression(character, environment, context),
+            ops=[ast.In()],
+            comparators=[ast.Constant(value=characters)],
+        )
+    if lowering == "filter":
+        binder, collection = expression.children
+        if binder.spec.role != "binder" or len(binder.children) != 1:
+            raise ProgramFormatError("filter requires one explicit predicate binder")
+        name = context.name("char")
+        return ast.Call(
+            func=ast.Attribute(
+                value=ast.Constant(value=""),
+                attr="join",
+                ctx=ast.Load(),
+            ),
+            args=[
+                ast.GeneratorExp(
+                    elt=ast.Name(id=name, ctx=ast.Load()),
+                    generators=[
+                        ast.comprehension(
+                            target=ast.Name(id=name, ctx=ast.Store()),
+                            iter=_lower_expression(collection, environment, context),
+                            ifs=[
+                                _lower_expression(
+                                    binder.children[0],
+                                    (name, *environment),
+                                    context,
+                                )
+                            ],
+                            is_async=0,
+                        )
+                    ],
+                )
+            ],
+            keywords=[],
+        )
+    if lowering == "reverse":
+        return ast.Subscript(
+            value=_lower_expression(expression.children[0], environment, context),
+            slice=ast.Slice(step=ast.UnaryOp(op=ast.USub(), operand=ast.Constant(1))),
+            ctx=ast.Load(),
+        )
+    if lowering == "ascii-class":
+        raise ProgramFormatError("compiler ASCII classes cannot escape contains")
     if lowering == "map":
         binder, collection = expression.children
         if binder.spec.role != "binder" or len(binder.children) != 1:

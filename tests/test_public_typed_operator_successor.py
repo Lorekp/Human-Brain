@@ -7,6 +7,7 @@ from pathlib import Path
 
 from experiments.r3_pilot import public_typed_operator_successor as successor
 from experiments.r3_pilot import public_typed_output_cells as outputs
+from humanbrain import typed_program
 from humanbrain.typed_program import FactorAction
 
 
@@ -65,6 +66,7 @@ def test_target_free_integer_operator_transitions_and_unknown_are_physical() -> 
     assert summary.primitive_observations == (
         outputs.INT_KNOWN_CELL_COUNT
         + 3 * outputs.INT_KNOWN_CELL_COUNT**2
+        + len(typed_program.ASCII_CLASS_LABELS) * len(outputs.PRINTABLE_ASCII)
     )
 
 

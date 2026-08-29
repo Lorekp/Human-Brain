@@ -28,9 +28,12 @@ MAX_SCALAR_EXPRESSION_AST_COST = 5
 
 _INT = ProgramType.Int()
 _BOOL = ProgramType.Bool()
+_CHAR = ProgramType.Char()
+_STRING = ProgramType.String()
 _LIST_INT = ProgramType.List(_INT)
 _FUNCTION_INT_INT_LABEL = "Function[Int,Int]"
 _FUNCTION_INT_BOOL_LABEL = "Function[Int,Bool]"
+_FUNCTION_CHAR_BOOL_LABEL = "Function[Char,Bool]"
 _FRAGMENT_PRODUCTIONS = (
     "add",
     "subtract",
@@ -41,6 +44,10 @@ _FRAGMENT_PRODUCTIONS = (
     "map",
     "sum",
     "count",
+    "contains",
+    "filter",
+    "reverse",
+    *typed_program.ASCII_CLASS_LABELS,
     "bind",
     "variable-0",
     "variable-1",
@@ -223,6 +230,13 @@ def _compiler_production_order() -> dict[str, int]:
         "map": ("operation", 2),
         "sum": ("operation", 1),
         "count": ("operation", 2),
+        "contains": ("operation", 2),
+        "filter": ("operation", 2),
+        "reverse": ("operation", 1),
+        **{
+            label: ("operation", 0)
+            for label in typed_program.ASCII_CLASS_LABELS
+        },
         "bind": ("binder", 0),
         "variable-0": ("variable", 0),
         "variable-1": ("variable", 0),
@@ -561,6 +575,112 @@ def _int_result_nodes(
     return tuple(sorted(roots, key=builder.sort_key))
 
 
+def _ascii_class_nodes(
+    builder: _NodeBuilder,
+    environment: tuple[ProgramType, ...],
+) -> tuple[CandidateNode, ...]:
+    return tuple(
+        builder.add(
+            ast_cost=1,
+            environment=environment,
+            result_type_label="AsciiClass",
+            tokens=(label,),
+            provenance=CandidateProvenance(label),
+        )
+        for label in typed_program.ASCII_CLASS_LABELS
+    )
+
+
+def _string_nodes(
+    builder: _NodeBuilder,
+    environment: tuple[ProgramType, ...],
+    max_ast_cost: int,
+    retained_node_ids: frozenset[str] | None,
+) -> tuple[CandidateNode, ...]:
+    """Grow the bounded generic contains/filter/reverse String fragment."""
+
+    collections = list(_variable_nodes(builder, environment, _STRING))
+    roots = list(collections)
+    if not collections:
+        return ()
+
+    def retained(node: CandidateNode) -> bool:
+        return retained_node_ids is None or node.node_id in retained_node_ids
+
+    body_environment = (_CHAR, *environment)
+    classes = _ascii_class_nodes(builder, body_environment)
+    characters = _variable_nodes(builder, body_environment, _CHAR)
+    predicates: list[CandidateNode] = []
+    if max_ast_cost >= 3:
+        for ascii_class in classes:
+            if not retained(ascii_class):
+                continue
+            for character in characters:
+                if not retained(character):
+                    continue
+                predicates.append(
+                    builder.add(
+                        ast_cost=3,
+                        environment=body_environment,
+                        result_type_label="Bool",
+                        tokens=("contains", *ascii_class.tokens, *character.tokens),
+                        provenance=CandidateProvenance(
+                            "contains",
+                            (ascii_class.node_id, character.node_id),
+                        ),
+                    )
+                )
+
+    filters: list[CandidateNode] = []
+    for predicate in predicates:
+        if not retained(predicate):
+            continue
+        binder = builder.add(
+            ast_cost=4,
+            environment=environment,
+            result_type_label=_FUNCTION_CHAR_BOOL_LABEL,
+            tokens=("bind", *predicate.tokens),
+            provenance=CandidateProvenance("bind", (predicate.node_id,)),
+        )
+        if not retained(binder):
+            continue
+        for collection in collections:
+            if not retained(collection) or max_ast_cost < 6:
+                continue
+            filtered = builder.add(
+                ast_cost=6,
+                environment=environment,
+                result_type_label="String",
+                tokens=("filter", *binder.tokens, *collection.tokens),
+                provenance=CandidateProvenance(
+                    "filter",
+                    (binder.node_id, collection.node_id),
+                ),
+            )
+            filters.append(filtered)
+            roots.append(filtered)
+
+    for operand in (*collections, *filters):
+        if not retained(operand):
+            continue
+        reverse_cost = 1 + operand.ast_cost
+        if reverse_cost > max_ast_cost:
+            continue
+        roots.append(
+            builder.add(
+                ast_cost=reverse_cost,
+                environment=environment,
+                result_type_label="String",
+                tokens=("reverse", *operand.tokens),
+                provenance=CandidateProvenance(
+                    "reverse",
+                    (operand.node_id,),
+                ),
+            )
+        )
+    return tuple(sorted(roots, key=builder.sort_key))
+
+
 def enumerate_typed_candidate_dag(
     signature: TypedSignature,
     *,
@@ -616,9 +736,16 @@ def enumerate_typed_candidate_dag(
             max_ast_cost,
             retained,
         )
+    elif signature.result == _STRING:
+        roots = _string_nodes(
+            builder,
+            environment,
+            max_ast_cost,
+            retained,
+        )
     else:
         raise ValueError(
-            "bounded synthesis currently supports Int or List[Int] results"
+            "bounded synthesis currently supports Int, List[Int], or String results"
         )
 
     candidates_by_cost: dict[int, list[TypedCandidate]] = {

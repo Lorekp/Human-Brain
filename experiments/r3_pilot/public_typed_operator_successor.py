@@ -19,7 +19,11 @@ import numpy as np
 
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from humanbrain.resting_glif_race import CompiledRestingGlifRace
-from humanbrain.typed_program import FactorAction
+from humanbrain.typed_program import (
+    ASCII_CLASS_LABELS,
+    FactorAction,
+    _ASCII_CLASS_CHARACTERS,
+)
 
 
 _CONTACT_CURRENT_PA = 5_000.0
@@ -32,6 +36,12 @@ _INT_KNOWN = output_cells.INT_CELL_COUNT - 1
 _PAIR_KNOWN = _INT_KNOWN * _INT_KNOWN
 _PAIR_UNKNOWN = _PAIR_KNOWN
 _PAIR_COUNT = _PAIR_KNOWN + 1
+
+_ASCII_CLASS_UNKNOWN_CELL = len(ASCII_CLASS_LABELS)
+_ASCII_CLASS_CELL_COUNT = _ASCII_CLASS_UNKNOWN_CELL + 1
+_CLASS_CHAR_KNOWN = len(ASCII_CLASS_LABELS) * len(output_cells.PRINTABLE_ASCII)
+_CLASS_CHAR_UNKNOWN = _CLASS_CHAR_KNOWN
+_CLASS_CHAR_COUNT = _CLASS_CHAR_KNOWN + 1
 
 # The bridge's observed effect domain is much smaller than the 16,641-entry
 # physical operand plane.  Keep range expansion from silently growing memory.
@@ -51,7 +61,19 @@ def _array_sha256(*arrays: np.ndarray) -> str:
     digest = sha256()
     digest.update(b"public-typed-operator-successor-v1\0")
     for array in arrays:
+        digest.update(np.asarray(array.shape, dtype="<i8").tobytes())
         digest.update(np.ascontiguousarray(array, dtype=np.float64).tobytes())
+    digest.update(
+        np.asarray(
+            (_ASCII_CLASS_CELL_COUNT, _CLASS_CHAR_COUNT),
+            dtype="<i8",
+        ).tobytes()
+    )
+    for label in ASCII_CLASS_LABELS:
+        digest.update(label.encode("ascii"))
+        digest.update(b"\0")
+        digest.update(_ASCII_CLASS_CHARACTERS[label].encode("ascii"))
+        digest.update(b"\0")
     digest.update(output_cells.TypedOutputCellBank.projection_sha256().encode("ascii"))
     digest.update(
         np.asarray(
@@ -70,6 +92,33 @@ class OperatorRace:
     spike_step: int
     simultaneous_spike_candidates: int
     currents_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class _AsciiClassEncoding:
+    """One compiler-internal physical ASCII-class bank state."""
+
+    label: str | None
+    cells: np.ndarray
+    supported: bool
+    sha256: str
+
+
+@lru_cache(maxsize=_ASCII_CLASS_CELL_COUNT)
+def _ascii_class_from_winner(cell: int) -> _AsciiClassEncoding:
+    if not 0 <= cell < _ASCII_CLASS_CELL_COUNT:
+        raise ValueError("ASCII class winner lies outside its physical bank")
+    cells = output_cells._physical_one_hot(_ASCII_CLASS_CELL_COUNT, cell)
+    label = None if cell == _ASCII_CLASS_UNKNOWN_CELL else ASCII_CLASS_LABELS[cell]
+    digest = sha256()
+    digest.update(b"public-typed-ascii-class-v1\0")
+    digest.update(cells.tobytes())
+    return _AsciiClassEncoding(
+        label=label,
+        cells=cells,
+        supported=label is not None,
+        sha256=digest.hexdigest(),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -434,6 +483,10 @@ class FrozenTypedOperatorSuccessor:
     less_than_weights_pa: np.ndarray
     int_output_bias_pa: np.ndarray
     bool_output_bias_pa: np.ndarray
+    class_pair_class_contacts_pa: np.ndarray
+    class_pair_char_contacts_pa: np.ndarray
+    class_pair_bias_pa: np.ndarray
+    contains_weights_pa: np.ndarray
     checkpoint_sha256: str
     _effect_memo: _OperatorEffectMemo = field(
         default_factory=_OperatorEffectMemo,
@@ -455,6 +508,10 @@ class FrozenTypedOperatorSuccessor:
             self.less_than_weights_pa,
             self.int_output_bias_pa,
             self.bool_output_bias_pa,
+            self.class_pair_class_contacts_pa,
+            self.class_pair_char_contacts_pa,
+            self.class_pair_bias_pa,
+            self.contains_weights_pa,
         )
 
     def effect_memo_info(self) -> OperatorEffectMemoInfo:
@@ -466,6 +523,99 @@ class FrozenTypedOperatorSuccessor:
         """Drop runtime reuse without changing the fitted checkpoint."""
 
         self._effect_memo.clear()
+
+    def _ascii_class(
+        self,
+        label: str,
+        *,
+        enabled: bool,
+    ) -> tuple[_AsciiClassEncoding, tuple[OperatorRace, ...]]:
+        if label not in ASCII_CLASS_LABELS:
+            raise ValueError("unknown frozen ASCII class")
+        cell = (
+            ASCII_CLASS_LABELS.index(label)
+            if enabled
+            else _ASCII_CLASS_UNKNOWN_CELL
+        )
+        currents = (
+            output_cells._physical_one_hot(_ASCII_CLASS_CELL_COUNT, cell)
+            * _CONTACT_CURRENT_PA
+        )
+        race = _physical_race(currents, bank="ascii-class")
+        return _ascii_class_from_winner(race.winner_cell), (race,)
+
+    def _contains(
+        self,
+        ascii_class: _AsciiClassEncoding,
+        character: output_cells.TypedOutputEncoding,
+    ) -> tuple[output_cells.TypedOutputEncoding, tuple[OperatorRace, ...]]:
+        pair_currents = self.class_pair_bias_pa.copy()
+        class_event = _single_event(ascii_class.cells)
+        if class_event is not None:
+            cell, amplitude = class_event
+            pair_currents += self.class_pair_class_contacts_pa[:, cell] * amplitude
+        char_event = _single_event(character.char_cells)
+        if char_event is not None:
+            cell, amplitude = char_event
+            pair_currents += self.class_pair_char_contacts_pa[:, cell] * amplitude
+        pair_race = _physical_race(
+            np.ascontiguousarray(pair_currents),
+            bank="operator-ascii-class-char-pair",
+        )
+        output_currents = self.bool_output_bias_pa.copy()
+        output_currents += self.contains_weights_pa[:, pair_race.winner_cell]
+        output_race = _physical_race(
+            np.ascontiguousarray(output_currents),
+            bank="operator-contains-output",
+        )
+        return _bool_from_winner(output_race.winner_cell), (pair_race, output_race)
+
+    def _string_positions(
+        self,
+        value: output_cells.TypedOutputEncoding,
+        positions: tuple[int, ...],
+        *,
+        bank: str,
+    ) -> tuple[output_cells.TypedOutputEncoding, tuple[OperatorRace, ...]]:
+        if value.output_type is not output_cells.OutputType.STRING:
+            return _unknown_effect(output_cells.OutputType.STRING, f"{bank}-unknown")
+        type_race = _physical_race(
+            value.type_cells * _CONTACT_CURRENT_PA,
+            bank="copy-type",
+        )
+        source_length_race = _physical_race(
+            value.string_length_cells * _CONTACT_CURRENT_PA,
+            bank="copy-string-length",
+        )
+        races: list[OperatorRace] = [type_race, source_length_race]
+        source_length = source_length_race.winner_cell
+        if (
+            source_length == output_cells.STRING_LENGTH_UNKNOWN_CELL
+            or any(not 0 <= position < source_length for position in positions)
+            or len(positions) > output_cells.STRING_CAPACITY
+        ):
+            return _unknown(output_cells.OutputType.STRING), tuple(races)
+        output_length_race = _physical_race(
+            output_cells._physical_one_hot(
+                output_cells.STRING_LENGTH_CELL_COUNT,
+                len(positions),
+            )
+            * _CONTACT_CURRENT_PA,
+            bank=f"{bank}-string-length",
+        )
+        races.append(output_length_race)
+        character_cells: list[int] = []
+        for output_position, source_position in enumerate(positions):
+            race = _physical_race(
+                value.string_item_cells[source_position] * _CONTACT_CURRENT_PA,
+                bank=f"{bank}-string-char-{output_position}",
+            )
+            races.append(race)
+            character_cells.append(race.winner_cell)
+        return (
+            _string_from_winners(len(positions), tuple(character_cells)),
+            tuple(races),
+        )
 
     @staticmethod
     def _source(
@@ -967,6 +1117,40 @@ def train_public_typed_operator_successor(
     subtract[output_cells.INT_UNKNOWN_CELL, _PAIR_UNKNOWN] = _CONTACT_CURRENT_PA
     less_than[output_cells.BOOL_UNKNOWN_CELL, _PAIR_UNKNOWN] = _CONTACT_CURRENT_PA
 
+    class_contacts = np.zeros(
+        (_CLASS_CHAR_COUNT, _ASCII_CLASS_CELL_COUNT),
+        dtype=np.float64,
+    )
+    char_contacts = np.zeros(
+        (_CLASS_CHAR_COUNT, output_cells.CHAR_CELL_COUNT),
+        dtype=np.float64,
+    )
+    class_pair_bias = np.full(
+        _CLASS_CHAR_COUNT,
+        _PAIR_BIAS_PA,
+        dtype=np.float64,
+    )
+    class_pair_bias[_CLASS_CHAR_UNKNOWN] = _UNKNOWN_TONIC_PA
+    contains = np.zeros(
+        (output_cells.BOOL_CELL_COUNT, _CLASS_CHAR_COUNT),
+        dtype=np.float64,
+    )
+    for class_cell, label in enumerate(ASCII_CLASS_LABELS):
+        members = frozenset(_ASCII_CLASS_CHARACTERS[label])
+        for char_cell, character in enumerate(output_cells.PRINTABLE_ASCII):
+            pair_cell = class_cell * len(output_cells.PRINTABLE_ASCII) + char_cell
+            class_contacts[pair_cell, class_cell] = _CONTACT_CURRENT_PA
+            char_contacts[pair_cell, char_cell] = _CONTACT_CURRENT_PA
+            contains[
+                output_cells.BOOL_TRUE_CELL
+                if character in members
+                else output_cells.BOOL_FALSE_CELL,
+                pair_cell,
+            ] = _CONTACT_CURRENT_PA
+    contains[output_cells.BOOL_UNKNOWN_CELL, _CLASS_CHAR_UNKNOWN] = (
+        _CONTACT_CURRENT_PA
+    )
+
     arrays = tuple(
         _freeze(array)
         for array in (
@@ -980,6 +1164,10 @@ def train_public_typed_operator_successor(
             less_than,
             int_bias,
             bool_bias,
+            class_contacts,
+            char_contacts,
+            class_pair_bias,
+            contains,
         )
     )
     checkpoint = _array_sha256(*arrays)
@@ -989,19 +1177,28 @@ def train_public_typed_operator_successor(
         + np.count_nonzero(add)
         + np.count_nonzero(subtract)
         + np.count_nonzero(less_than)
+        + np.count_nonzero(contains)
     )
-    fixed_contacts = int(np.count_nonzero(left_contacts) + np.count_nonzero(right_contacts))
+    fixed_contacts = int(
+        np.count_nonzero(left_contacts)
+        + np.count_nonzero(right_contacts)
+        + np.count_nonzero(class_contacts)
+        + np.count_nonzero(char_contacts)
+    )
     return frozen, TypedOperatorTrainingSummary(
         checkpoint_sha256=checkpoint,
-        primitive_observations=_INT_KNOWN + 3 * _PAIR_KNOWN,
+        primitive_observations=(
+            _INT_KNOWN + 3 * _PAIR_KNOWN + _CLASS_CHAR_KNOWN
+        ),
         unary_observations=_INT_KNOWN,
         binary_observations_per_operator=_PAIR_KNOWN,
         pair_cells=_PAIR_COUNT,
         learned_projection_synapses=learned,
         fixed_pair_contacts=fixed_contacts,
         claim_boundary=(
-            "Target-free local Int/Bool primitive effects and List[Int] identity "
-            "copy only; no candidate AST, composite target, planner, transfer, "
+            "Target-free local Int/Bool and ASCII-class/Char primitive effects, "
+            "plus factorized List[Int]/String copy only; no candidate AST, "
+            "composite target, planner, transfer, "
             "Simple-SWE, M0, held-out, or C1 evidence."
         ),
     )

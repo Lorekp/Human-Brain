@@ -16,7 +16,7 @@ from humanbrain.typed_program_types import ProgramParameter, ProgramType, TypedS
 
 # The checkpoint authenticates output-cells v2 (Int/Bool/List[Int]/Char/String)
 # and the ledger pins bit-exact scalar/batch parity under that projection.
-_CHECKPOINT_SHA256 = "f9a065c704077bcd2ebdf005498738991f10ce72ca722798359edad5f5d28586"
+_CHECKPOINT_SHA256 = "92944516be48275ba7633a29a298707393010b85c3a0c60be4b6c73668d7e76e"
 _ROOT_LEDGER_SHA256 = "fa5085b94053924a7bfedea3e0c1422ad1b6acd401358382ed8a62cec7c3ea9f"
 
 
