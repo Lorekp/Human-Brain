@@ -1,0 +1,111 @@
+{
+  "attempted_tasks": 1,
+  "claim_boundary": "Two visible public Int tasks with genuine learned-cell H=2 lookahead over arbitrary compiler-representable hypothetical second sites, one real first actuation followed by reobservation and replanning, and terminal DONE. Not Bool/List, Simple-SWE, M0, DEV/eval/held-out, protected data, C1, or broad coding evidence.",
+  "literal_bank": [
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "model_checkpoint_sha256": "e27a877ed192aa5e2767e10ac0eb7d84b2fd0230593ad22e4000e6f937b27d88",
+  "passed_tasks": 0,
+  "retry_policy": "Public development fixtures are rerunnable only as a newly named run; this artifact is exclusive and receives no prompt, case, current, literal-bank, candidate-order, seed, or mechanism tuning.",
+  "runner_source_lf_sha256": "1a7ec5743430b2c1368f2b0c4c3509f248150bb00626e296826d250c9e662d15",
+  "schema": "public-typed-factor-horizon2-int-created-child-v1",
+  "tasks": [
+    {
+      "actual_trajectory": [],
+      "checkpoint_immutable": true,
+      "created_path": [
+        0
+      ],
+      "created_path_absent_initially": true,
+      "created_path_present_hypothetically": false,
+      "desired_outputs": [
+        5,
+        5,
+        10,
+        10
+      ],
+      "done_decision": null,
+      "error": "first H=2 plan stopped: all exact terminal sequences produced structural UNKNOWN",
+      "expected_tokens": [
+        "subtract",
+        "absolute",
+        "variable-1",
+        "variable-0"
+      ],
+      "expected_trajectory": [
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "absolute",
+          "path": [
+            0
+          ],
+          "right_source": "NONE",
+          "schema": "APPLY1"
+        },
+        {
+          "left_source": "NONE",
+          "literal": null,
+          "operator": "NONE",
+          "path": [],
+          "right_source": "NONE",
+          "schema": "DONE"
+        }
+      ],
+      "final_outputs": [],
+      "final_tokens": [
+        "variable-1"
+      ],
+      "first_actuation": null,
+      "first_decision": {
+        "candidate_count": 83,
+        "checkpoint_immutable": true,
+        "cumulative_sequence_evaluations": 7790,
+        "expanded_first_count": 83,
+        "first_admissible_count": 83,
+        "first_excluded_count": 0,
+        "first_tier_count": 4,
+        "motor_races_unique": false,
+        "selected_sequence": null,
+        "status": "STOP_TERMINAL_STRUCTURE",
+        "stop_reason": "all exact terminal sequences produced structural UNKNOWN",
+        "terminal_attempt_sequence_counts": [
+          4,
+          1372,
+          6414
+        ],
+        "unique_sequence_predictions": 6414
+      },
+      "h1_exact_actions": [],
+      "hypothetical_second_action_admissible": false,
+      "initial_paths": [
+        []
+      ],
+      "name": "left-created-child",
+      "no_h1_all_case_solution": true,
+      "passed": false,
+      "second_actuation": null,
+      "second_decision": null
+    }
+  ],
+  "total_tasks": 2,
+  "verdict": "STOP_TYPED_FACTOR_HORIZON2_INT_CREATED_CHILD_V1",
+  "wall_time_seconds": 44.35913889999938,
+  "world_checkpoint_sha256": "43fe57aee76dce1bbdacb5d9104bbfdd40dd9da0609c481ed3632069b39912eb"
+}

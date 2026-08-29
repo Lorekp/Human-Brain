@@ -481,6 +481,20 @@ small visible public factor-transfer boundary, not a family-disjoint coding
 task result. It licenses the factorized H=2 lift; List, Simple-SWE, M0, and all
 protected surfaces remain closed.
 
+The first public factorized H=2 created-child gate then stopped before any
+actuation. On the left Int arm there was no H=1 all-case solution, but complete
+STOP-bounded expansion admitted all 83 first actions and evaluated 6,414
+terminal sequences; every exact leading sequence had structural `UNKNOWN`, so
+the right arm remained unrun. A post-run structure-only diagnostic found the
+declared first `subtract(SELECTED,SCOPE0)` transition itself uniquely routed to
+`UNKNOWN`, making all seven fields at all 40 frozen paths unknown; the child
+`(0,)` therefore never became a supported hypothetical site. This is
+`STOP_TYPED_FACTOR_HORIZON2_INT_CREATED_CHILD_V1`, not a reason to tune the
+fixtures. The next mechanism increment must teach generic factorized structural
+routes rather than exact action-pattern rows. Provenance is deliberately
+narrow: a concurrent List-terminal-delegate edit changed the planner checkpoint
+before this run, so the artifact is not evidence from untouched `410869b`.
+
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
 step 249 under a different winner context shared 8/11 cells with the current
