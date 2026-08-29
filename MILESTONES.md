@@ -83,13 +83,15 @@ gemma4-comparison-design.md and are out of scope here.
 
 ## Dependencies and sequencing
 
-Hard prerequisites, in order (preregistration §Dependencies): (1) representation
-choice frozen (codebook); (2) ladder L1 bridge arm executed with the chosen
-readout — its checkpoint is what gets frozen; (3) host runtime pin — DONE
-(python-3.11 resolves to the uv-managed CPython 3.11.15 base interpreter).
-Opening order: freeze ceremony → externally anchored seed commitment → task
-generation → baselines first → cell completions unsealed last.
+The old a013/L1-readout prerequisite has been superseded by the typed semantic
+mainline. Before M0 opens, the generic semantic engine must cover the declared
+TRAIN types/families, the prompt-only semantic bridge must pass its frozen
+TRAIN capacity split with its controls, and the paired visible-I/O/prompt-only
+family-disjoint public DEV gate must pass without tuning on DEV. The final
+prompt-semantic checkpoint, typed compiler identity, source bundle, and
+python-3.11 sandbox then become the objects frozen for M0.
 
-Feasibility (from gemma4-comparison-design.md honest power analysis): M0–M2
-feasible this quarter contingent on the a013 representation + local-learning
-results; M3 plausible within two quarters post-a013.
+Opening order remains: freeze ceremony → externally anchored seed commitment
+→ task generation → baselines first → cell completions unsealed last. The
+30/30 visible-I/O TRAIN bridge is prerequisite mechanism evidence only and does
+not satisfy or partially score M0.

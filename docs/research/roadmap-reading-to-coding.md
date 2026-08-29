@@ -132,7 +132,7 @@ every arm exact=0 (G-P2 fail) though broadcast de-collapsed answers
 (6 distinct, modal 0.167, replay 42/42). N=1024 not spent per
 stop-on-failure. Verdict: docs/research/race-pivot-gate-verdict.md.
 
-### Phase R0-d — Custom architecture pivot — CURRENT
+### Phase R0-d — Custom architecture pivot — EXECUTED; SUCCESSORS ACTIVE
 
 Reservoir-computing family falsified for QA reading after the full chain:
 features (R0/R0-b), associative store on reservoir keys (R0-c), scale alone
@@ -578,6 +578,31 @@ projecting more natural-language patterns onto pre-enumerated H=2 trajectories.
 This remains visible-output public-TRAIN adapter evidence, not prompt-only
 completion, protected/held-out, M0, or C1 evidence.
 
+That replacement now passes its first broad gate. One shared frozen bottom-up
+synthesizer completed all 30 selected canonical public-TRAIN tasks: 10/10
+scalar offsets, 10/10 `List.map(add)`, and 10/10 `List.map(abs)`. It selected
+programs from physical semantic-vector races at exact AST costs 3/5/6, and all
+960 property cases withheld from selection passed in the canonical sandbox.
+The synthesizer saw the typed signature and four regression input/output rows
+per task; it did not see the prompt, task/family identity, or the 32 property
+rows. One immutable checkpoint produced 17,220 candidate evaluations, 110,200
+operator predictions, and 270,200 fitted-GLIF races in 8,937.22 seconds. The
+exact artifact is
+`experiments/r3_pilot/public_typed_semantic_simple_swe_train_bridge_v1.json`
+(SHA-256 `09fbaef134d2ba18a68b513a89d7df5ab8708c8be84940e71a29b710f7ff9767`).
+This is `PASS_PUBLIC_TYPED_SEMANTIC_SIMPLE_SWE_TRAIN_BRIDGE_V1`: physical
+programming by examples on three TRAIN families, not prompt-only completion,
+family-disjoint transfer, M0, protected, held-out, Path-2, or C1 evidence.
+
+The overfit-safe continuation is fixed in three layers. First, improve runtime
+and extend only on the six unspent TRAIN families using generic typed
+combinators rather than family operators. Second, learn and freeze a
+prompt-span-to-semantic-factor bridge on a preregistered TRAIN capacity split;
+do not revive static whole-prompt projection. Third, after both mechanisms are
+frozen, spend the 27 family-disjoint public DEV tasks once with paired
+visible-I/O and canonical prompt-only arms. Opening DEV visible outputs before
+the prompt bridge is frozen would leak the transfer surface into its design.
+
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
 step 249 under a different winner context shared 8/11 cells with the current
@@ -613,6 +638,23 @@ requiring stability of the complete tuple while summing actual allocations
 rather than enforcing `11 * novel_keys`. This is not a calibration-v3 retry,
 threshold change, or license to open protected/C1 data.
 
+The dense Path-2 TRAIN build has independently reached `BUILD_COMPLETE` for all
+49 books and 2,117,412 tokens, with 23,286,405 actual segments and a 1.490 GB
+durable checkpoint. The final isolated Genesis LEARN/READ_ONLY measurement has
+not run, so this is resumable infrastructure state only: there is no cap PASS/
+STOP, C1, held-out, or capability verdict yet.
+
+A separate target-independent factorized scorer now pins the successor
+identity contract in Python plus the actual native one-shared-column fixture.
+It requires stable complete `(source tuple, observed token)` keys, immutable
+token-column codes, owner stability for every exact-source column factor,
+globally non-aliased owner columns, zero-allocation exact replay, and terminal
+storage equal to the sum of actual allocations. Matching and active segment
+telemetry are recorded separately and never gate identity. This is mechanism
+evidence only. The next licensed adjudication is a newly named, source-bound,
+public-TRAIN replay from empty state; it is not a calibration-v3 retry and does
+not open held-out or C1 data.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
@@ -624,11 +666,16 @@ independent of configured N. Multi-GPU/multi-box distribution is the
 post-1e8 discussion, deliberately out of scope until single-box learning
 is proven.
 
-## Immediate queue (this week)
+## Immediate queue
 
-1. GPU agent: 1M stability-pass fix + commit (in flight).
-2. Multi-timescale trace protocol doc + red tests (R0 keystone).
-3. Bible-QA first real run at 128k–1M (R2 start) once R1 lands.
-4. Procedural adapter L1/L2 spike (token injection + readout mirror).
-5. simple-SWE corpus audit for R4 readiness (unopened stack, verified
-   earlier: freeze/reveal machinery 117/0 green).
+1. Bank the semantic 30/30 artifact and make its 8,937-second physical path
+   materially faster without changing winners, race ledgers, or checkpoint
+   identity.
+2. Expand the generic semantic basis across the six unspent TRAIN families;
+   keep prompt/task/family identity out and keep property cases hidden.
+3. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
+   before any family-disjoint desired vector is observed.
+4. Spend one paired 27-task public DEV gate only after the visible-I/O engine
+   and prompt-only bridge are both frozen. M0 and canonical eval stay sealed.
+5. Resume the completed dense Path-2 checkpoint for its isolated factorized
+   scorer measurement; do not open C1 or held-out material.

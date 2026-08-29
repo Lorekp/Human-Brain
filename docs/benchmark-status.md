@@ -1,6 +1,6 @@
 # Benchmark status
 
-Status date: 2026-08-22
+Status date: 2026-08-29
 
 ## What has passed
 
@@ -258,6 +258,32 @@ signatures and was introduced before any canonical freeze, so no evaluation
 artifact required migration. See
 `docs/simple-swe-curriculum.md` for the task split and claim boundary.
 
+## Bottom-up typed semantic public TRAIN bridge
+
+The replacement for the retired H=2 prompt-projection planner has passed its
+first broad public-TRAIN gate. A single frozen bottom-up typed semantic
+synthesizer completed 30/30 canonical TRAIN tasks: 10/10 scalar-offset,
+10/10 `List.map(add)`, and 10/10 `List.map(abs)`. All 960 property cases that
+were excluded from model selection passed in the canonical sandbox. The exact
+selected AST-cost histogram was 10 at cost 3, 10 at cost 5, and 10 at cost 6.
+
+The model received only the typed signature and four visible regression input/
+output rows per task. Prompt text, task/family identity, and all 32 property
+rows per task were excluded. One immutable checkpoint produced 17,220
+candidate evaluations, 1,750 observed semantic classes, 110,200 target-free
+operator predictions, and 270,200 fitted-GLIF races. The run took 8,937.22
+seconds. Independent verification matched all frozen source hashes, rebuilt
+checkpoint identities, reconstructed all selected programs and source hashes,
+and replayed all 30 final sources through the sandbox.
+
+The banked verdict is
+`PASS_PUBLIC_TYPED_SEMANTIC_SIMPLE_SWE_TRAIN_BRIDGE_V1`; the artifact SHA-256
+is `09fbaef134d2ba18a68b513a89d7df5ab8708c8be84940e71a29b710f7ff9767`.
+This is physical programming by examples on three TRAIN families. It is not
+prompt-only completion, family-disjoint transfer, M0, DEV/eval, protected,
+held-out, Path-2, or C1 evidence. The canonical Simple-SWE evaluation remains
+unopened.
+
 ## Typed-program public TRAIN curriculum
 
 The preregistered Layer-1 recurrent fitted-cell TRAIN run completed once from
@@ -387,6 +413,7 @@ not a platform-specific checkout's newline representation.
 | `artifacts/large_scale_capability_validation_v1.json` | `633a3cf3d0ae46f7d7e8c8e5ba0a6cd617566aac66844069499c20a102f0c71d` |
 | `benchmarks/large_scale_capability_protocol_v1.json` | `004caa095e796f8671a5989148b881058c0cdc16334101f31de42784fdd84535` |
 | `benchmarks/simple_swe_protocol_v1.json` | `f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2` |
+| `experiments/r3_pilot/public_typed_semantic_simple_swe_train_bridge_v1.json` | `09fbaef134d2ba18a68b513a89d7df5ab8708c8be84940e71a29b710f7ff9767` |
 | `experiments/r3_pilot/public_train_dev_role_place_scalar_routing_probe.json` | `3afac696077d7524444b9128c52e1c0655468955697626a0451eaaf539f23ec4` |
 | `benchmarks/r3_native_train_full_two_tier_theta16_18_seed17.json` | `a972902e716e521590db61df0efc6292bd469017bd79ce93286aa51e8132d467` |
 | `artifacts/swe-dev-gemma/sqlfluff__sqlfluff-1625/sqlfluff__sqlfluff-1625.traj.json` | `d8d1007bc618f5c28794c21327834018a7187f6822b40c775afe8375d7c9b0a3` |

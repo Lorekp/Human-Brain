@@ -1,67 +1,82 @@
-# Cell-Brain Program Map (the high-level picture)
+# Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated as waves complete. Everything here is
-evidence-linked; design docs live on `codex/a013-cognition-design` unless noted.
+Maintained by the orchestrator. Updated 2026-08-29 after the first broad
+bottom-up typed-semantic TRAIN pass. Exact scientific boundaries live in
+`docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
-## Goal ladder (bottom = done, top = end state)
+## Goal ladder
 
 ```
-R8  Beat Gemma-4-12B on chosen SWE bench          [comparison design in flight]
-R7  Real SWE bench (contamination-audited)         [bench choice in flight]
-R6  Leetcode-style self-posed tasks (simple_swe)   [machinery exists, unopened]
-R5  Word prediction beats n-gram + tiny-LM         [cell-LM v1 protocol in flight]
-R4  Scale ladder: capacity + transfer vs N         [protocol drafted, arms {PARAM}]
-R3  Programs from cells, no memorization           [SEALED NEGATIVE at N=128]
-R2  Speed: faster sim -> bigger brain              [GPU done; CPU in flight]
-R1  Correct, auditable one-shot machinery          [DONE: correction 5 + audits]
+R9  Beat Opus 4.8 on DeepSWE                         [end state]
+R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
+R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
+R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
+R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
+R4  TRAIN-only prompt → semantic-factor bridge       [next after breadth]
+R3  Bottom-up typed semantic synthesis               [30/30 across 3 TRAIN families]
+R2  Persistent Path-2 reading memory                 [TRAIN build complete; scorer next]
+R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
 
-## Sealed evidence base (immutable)
+## Actual frontier
 
-- a012 one-shot (N=128, ridge): 16/16 integrity gates passed; retention fixed
-  by prompt-last framing (0.00007 -> 0.939); capacity 40/42 TRAIN replay;
-  transfer 0/18 calibration; margins strong where committed (median 726 pA).
-- Prior speed gates: 200k cells @144 tok/s CUDA (registered), 843 tok/s @98k
-  native frontier at low activity density; ridge readout O(N^2)/O(N^3) —
-  retired for large arms.
-- GPU optimizer (codex/scale-opt-gpu, ca5c193): 497 tps @100k, 1M cells
-  constructed+run @35 tps; full-touch roofline ~1M on this card.
+### Coding
 
-## Root-cause thesis (drives everything)
+`PASS_PUBLIC_TYPED_SEMANTIC_SIMPLE_SWE_TRAIN_BRIDGE_V1` is the current
+capability frontier. One immutable bottom-up synthesizer selected exact programs
+for 30/30 canonical public-TRAIN tasks across scalar offset, list-map-add, and
+list-map-absolute, then passed 960 property cases hidden from selection. It saw
+typed signatures plus four regression I/O rows, not prompts or family/task
+identity. This is physical programming by examples, not canonical prompt-only
+Simple-SWE, family-disjoint transfer, or M0.
 
-Explicit token identities + monolithic reservoir + ridge readout = tasks
-collide in feature space (state separation ~0.001) -> memorization without
-transfer. Fix order: DISTRIBUTED CODES first (similarity becomes physical
-overlap), then error-gated local learning + replay (dormant machinery exists),
-then regions (E = distribution mechanism, P = processor), then scale arms.
+The next order is intentionally leakage-safe:
 
-## Live workstreams (this wave)
+1. Speed up the physical semantic path and add generic combinator/type breadth
+   using only the six unspent TRAIN families.
+2. Learn and freeze a prompt-span → semantic-factor bridge on a preregistered
+   TRAIN capacity split.
+3. Spend the 27 fixed family-disjoint public DEV tasks once, with visible-I/O
+   and prompt-only arms paired in the same gate.
+4. Only a paired transfer pass licenses the canonical M0 freeze/reveal ceremony.
 
-| Lane | Branch | Deliverable | Status |
-|---|---|---|---|
-| CPU/native optimizer | codex/scale-opt-cpu | throughput curve + optimizations, bit-exact | running (~5h) |
-| Representation study | cognition-design | codebook recommendation + decisive experiment | running (~4.8h) |
-| Regions design (re-dispatch) | cognition-design | E/P architecture + cost model to 1e9 | running |
-| Cognitive-properties verify | cognition-design | verify/complete roadmap doc | running |
-| Teaching matrix verify | cognition-design | verify/complete matrix doc | running |
-| Cell-LM v1 protocol | cognition-design | first word-prediction protocol + dual baselines | just dispatched |
-| Gemma comparison design | cognition-design | bench choice, harness, fairness, milestone ladder | just dispatched |
+### Reading and persistent memory
 
-## Queue after wave lands
+The dense Path-2 build has processed all 49 TRAIN books and 2,117,412 tokens,
+ending at 23,286,405 actual segments in a 1.490 GB durable checkpoint. Its final
+isolated cost measurement is pending. A target-independent successor scorer now
+implements per-output-column factorization, stable complete tuples, global
+owner-column non-aliasing, and the sum of actual allocations while reporting
+matching and active telemetry separately. Its source-bound resumable TRAIN-only
+runner is the next engineering step. No held-out or C1 surface is open.
 
-1. Cross-review all design docs (agents review each other's; parent-authored
-   ones already flagged for verification — 2 of 2 covered).
-2. Freeze a013 arm sizes from CPU optimizer's measured curve.
-3. Implementation order (test-first): codebooks -> error-gated local rule +
-   replay -> workspace broadcast -> cell-LM v1 at small N -> scale arms ->
-   simple_swe opening -> bench harness -> first Gemma comparison.
-4. Merge discipline: design docs merge to master only after cross-review;
-   code merges only with exactness gates + red tests green.
+### Runtime and scale
 
-## Standing risks
+Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
+the mid-scale frontier, and procedural sparse addressing above 10 million
+configured cells. Roughly 190 million resident cells fit on this host under the
+current envelope; reaching the 100-billion-neuron target requires
+event-proportional work plus distributed storage/compute after learning is
+demonstrated. Runtime optimization is part of the model implementation, not an
+optional benchmark exercise.
 
-- Portal key instability (401/400 killed 4 agents; 2 recovered via
-  re-dispatch, 2 via parent-authoring + verify agents).
-- Single-GPU host: 1B-scale arms are sparse-residency native runtime only.
-- Contamination: any bench task the cell system or Gemma has seen is void —
-  comparison design must audit this before R7.
+## Claim and opening discipline
+
+- Public TRAIN mechanism work may be rerun only on a newly named unspent gate.
+- Public DEV desired vectors stay closed until both the generic semantic engine
+  and prompt bridge are frozen.
+- Canonical M0/eval, protected data, held-out Path-2 material, and C1 remain
+  sealed.
+- Host code may enforce grammar, typing, and sandbox policy, but may not execute
+  or rank candidate programs for the neuron-selected synthesis path.
+- Exact microgate passes are substrate to build on, not broad capability claims.
+
+## Banked directions not to revisit
+
+Do not retune the falsified reservoir feature/schedule/codebook/EI/local-rule
+axes, U-STATE, the exact APICAL-AND sweep, whole-sequence lookup, static
+whole-prompt decoders, blind/persistent edit actors, failed beam variants, or
+H=2 prompt-projection patches. On Path-2, do not retry calibration-v3, select
+`(18,20)`, equate surface prediction with owner capture, or require monolithic
+`11 * novel_keys` allocation. The roadmap records the evidence for each
+closure.

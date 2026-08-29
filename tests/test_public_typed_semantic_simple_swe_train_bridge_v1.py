@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections import Counter
+from hashlib import sha256
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,6 +14,70 @@ from experiments.r3_pilot import (
 )
 from humanbrain.simple_swe.protocol import load_protocol
 from humanbrain.simple_swe.sandbox import ExecutionResult
+
+
+def test_banked_typed_semantic_train_bridge_pass_is_exact() -> None:
+    raw = bridge._ARTIFACT_PATH.read_bytes()
+    assert sha256(raw).hexdigest() == (
+        "09fbaef134d2ba18a68b513a89d7df5ab8708c8be84940e71a29b710f7ff9767"
+    )
+    payload = json.loads(raw)
+
+    assert payload["verdict"] == bridge.PASS_VERDICT
+    assert payload["declared_tasks"] == 30
+    assert payload["attempted_tasks"] == 30
+    assert payload["passed_tasks"] == 30
+    assert payload["stop_family"] is None
+    assert payload["stop_reason"] is None
+    assert payload["protocol"] == {
+        "families": list(bridge.PUBLIC_FAMILIES),
+        "partition": "train",
+        "protocol_id": "human-cell-simple-swe-v1",
+        "sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2",
+    }
+    assert payload["visibility_contract"] == {
+        "prompt_visible_to_synthesizer": False,
+        "property_cases_sandboxed_per_task": 32,
+        "property_cases_visible_per_task": 0,
+        "regression_arguments_visible_per_task": 4,
+        "regression_outputs_visible_per_task": 4,
+        "task_or_family_identity_visible_to_synthesizer": False,
+        "typed_signature_visible": True,
+    }
+    assert payload["synthesizer"]["checkpoint_immutable"] is True
+    assert payload["synthesizer"]["checkpoint_sha256"] == (
+        "d28aba8651348646f153461fb306c00f873330968042a43b81475f52cfe8b74f"
+    )
+    assert payload["synthesizer"]["operator_checkpoint_sha256"] == (
+        "62100b5296fe37eb13b3a7a1d9f92f032de494af12c95e20c3d46c4409cca8d0"
+    )
+    assert payload["synthesizer"]["source_freeze"]["bundle_sha256"] == (
+        "fc734e4a3e8fbc2934701d6786978b6175843b91c4b919827851d356e7872841"
+    )
+
+    results = payload["results"]
+    assert len(results) == 30
+    assert len({result["task_id"] for result in results}) == 30
+    assert Counter(result["family"] for result in results) == {
+        family: 10 for family in bridge.PUBLIC_FAMILIES
+    }
+    assert Counter(
+        next(
+            attempt["ast_cost"]
+            for attempt in result["tier_attempts"]
+            if attempt["race"] is not None
+            and attempt["race"]["status"] == "SELECTED"
+        )
+        for result in results
+    ) == {3: 10, 5: 10, 6: 10}
+    assert all(result["passed"] for result in results)
+    assert all(result["checkpoint_immutable"] for result in results)
+    assert all(result["sandbox"]["passed"] for result in results)
+    assert all(
+        result["property_cases_exposed_to_synthesizer"] == 0
+        and result["property_cases_scored_in_sandbox"] == 32
+        for result in results
+    )
 
 
 def test_typed_semantic_train_bridge_static_protocol_and_boundary(tmp_path) -> None:
