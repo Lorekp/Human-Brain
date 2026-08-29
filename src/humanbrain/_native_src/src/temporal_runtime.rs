@@ -6759,6 +6759,94 @@ mod tests {
     }
 
     #[test]
+    fn novel_token_reuses_exact_source_owner_only_in_shared_column() {
+        let circuit_config = config(32, 2, TemporalContextPolicy::BoundWinners);
+        let source_columns: [u32; ACTIVE_COLUMNS] = std::array::from_fn(|index| index as u32);
+        let a_columns: [u32; ACTIVE_COLUMNS] = std::array::from_fn(|index| 11 + index as u32);
+        let b_columns: [u32; ACTIVE_COLUMNS] = std::array::from_fn(|index| 21 + index as u32);
+        assert_eq!(
+            a_columns
+                .iter()
+                .filter(|column| b_columns.contains(column))
+                .count(),
+            1,
+        );
+        let codebook = vec![
+            TokenCode {
+                token_id: 0,
+                columns: source_columns,
+            },
+            TokenCode {
+                token_id: 1,
+                columns: a_columns,
+            },
+            TokenCode {
+                token_id: 2,
+                columns: b_columns,
+            },
+        ];
+        let mut runtime = TemporalCircuitRuntime::new(
+            circuit_config,
+            codebook,
+            base_members(circuit_config),
+            vec![0.0; physical_count(circuit_config)],
+            &[],
+        )
+        .expect("one-column-overlap fixture must build");
+
+        let source = runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let first_a = runtime.step(1, TemporalStepMode::Learn).unwrap();
+        let source_winners = source.winner_spikes.map(|spike| spike.cell_id);
+        let a_winners = first_a.winner_spikes.map(|spike| spike.cell_id);
+        assert_eq!(source.allocated_segments, 0);
+        assert_eq!(first_a.allocated_segments, ACTIVE_COLUMNS as u8);
+        assert_eq!(first_a.predicted_columns, 0);
+
+        runtime.reset_transient();
+        let repeated_source = runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let first_b = runtime.step(2, TemporalStepMode::Learn).unwrap();
+        let b_winners = first_b.winner_spikes.map(|spike| spike.cell_id);
+        assert_eq!(
+            repeated_source.winner_spikes.map(|spike| spike.cell_id),
+            source_winners,
+        );
+        assert_eq!(first_b.allocated_segments, (ACTIVE_COLUMNS - 1) as u8);
+        assert_eq!(first_b.predicted_columns, 1);
+        assert!(!first_b.predicted);
+        assert_ne!(b_winners, a_winners);
+        assert_eq!(
+            b_winners[0],
+            a_winners[ACTIVE_COLUMNS - 1],
+            "the sole shared column must reuse its exact-source owner",
+        );
+        assert_eq!(
+            b_winners
+                .iter()
+                .filter(|winner| a_winners.contains(winner))
+                .count(),
+            1,
+            "no non-shared target column may reuse an A owner",
+        );
+
+        runtime.reset_transient();
+        let replay_source = runtime.step(0, TemporalStepMode::Learn).unwrap();
+        let replay_b = runtime.step(2, TemporalStepMode::Learn).unwrap();
+        assert_eq!(
+            replay_source.winner_spikes.map(|spike| spike.cell_id),
+            source_winners,
+        );
+        assert_eq!(replay_b.allocated_segments, 0);
+        assert_eq!(replay_b.predicted_columns, ACTIVE_COLUMNS as u8);
+        assert!(replay_b.predicted);
+        assert_eq!(replay_b.winner_spikes.map(|spike| spike.cell_id), b_winners,);
+        assert_eq!(
+            runtime.store.runtime_segment_count(),
+            2 * ACTIVE_COLUMNS as u32 - 1
+        );
+        assert_eq!(runtime.scientific_stop, None);
+    }
+
+    #[test]
     fn malformed_paired_context_stops_before_read_only_physics_or_state_advance() {
         let mut runtime = python_oracle_runtime(255);
         runtime.recognize(0).unwrap();

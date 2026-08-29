@@ -211,9 +211,20 @@ def test_banked_v2_artifact_is_inspected_without_replay(monkeypatch) -> None:
         "public_train_exact_identity_replay_v2.interpretation.json"
     )
     interpretation = json.loads(interpretation_path.read_bytes())
-    assert interpretation["classification"] == "STOP_FIRST_IDENTITY_FAILURE_FORMATTING_MASK"
+    assert interpretation["classification"] == (
+        "STOP_INVALID_MONOLITHIC_ALLOCATION_CRITERION"
+    )
+    assert interpretation["verified_prefix"]["identity_verdict"] == (
+        "PASS_STABLE_COMPLETE_TUPLE_PREFIX"
+    )
     assert interpretation["verified_prefix"]["accepted_novel_keys"] == 975_952
     assert interpretation["verified_prefix"]["accepted_repeated_keys"] == 69
+    assert interpretation["verified_prefix"][
+        "historical_v2_expected_segments_from_accepted_novel_keys"
+    ] == 10_735_472
+    assert "expected_segments_from_accepted_novel_keys" not in interpretation[
+        "verified_prefix"
+    ]
     assert interpretation["first_failure_boundary"] == {
         "book": "2 Chronicles",
         "book_ordinal": 13,
@@ -224,3 +235,43 @@ def test_banked_v2_artifact_is_inspected_without_replay(monkeypatch) -> None:
         "token_id": 1073,
         "zero_based_token_index": 2,
     }
+    assert interpretation["criterion_correction"] == {
+        "invalid_assumption": (
+            "every novel full (source winner tuple, token) key must allocate 11 new segments"
+        ),
+        "native_contract": (
+            "persistent identity is factorized by output column; an exact-source "
+            "segment may reserve its owner in a column shared by a previously learned "
+            "successor token, while only the other columns allocate"
+        ),
+        "replacement_rule": (
+            "a novel full key may allocate 0..11 segments but must produce a previously "
+            "unseen complete ordered winner tuple; an exact repeated key must allocate 0 "
+            "and reproduce its stored complete tuple"
+        ),
+        "terminal_segment_rule": (
+            "terminal segment count equals the sum of native allocated_segments, not 11 "
+            "times the number of novel full keys"
+        ),
+    }
+    assert interpretation["boundary_localization"]["production_code_overlap_with_1073"] == {
+        "32": [],
+        "1260": [4078],
+        "1366": [],
+    }
+    assert interpretation["boundary_localization"]["most_likely_allocated_segments"] == 10
+    assert interpretation["target_independent_native_fixture"]["test"] == (
+        "novel_token_reuses_exact_source_owner_only_in_shared_column"
+    )
+    assert interpretation["target_independent_native_fixture"]["status"] == (
+        "PASS_FACTORIZED_IDENTITY_ONE_COLUMN_OVERLAP"
+    )
+    assert hashlib.sha256(Path(probe.__file__).read_bytes()).hexdigest() == (
+        interpretation["raw_evidence"]["probe_source_sha256"]
+    )
+    assert hashlib.sha256(probe.SPEND_MARKER_PATH.read_bytes()).hexdigest() == (
+        interpretation["raw_evidence"]["marker_sha256"]
+    )
+    assert hashlib.sha256(probe.OUTPUT_PATH.read_bytes()).hexdigest() == (
+        interpretation["raw_evidence"]["artifact_sha256"]
+    )

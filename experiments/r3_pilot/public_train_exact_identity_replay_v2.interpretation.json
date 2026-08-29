@@ -1,6 +1,6 @@
 {
   "analysis_id": "public-train-exact-identity-replay-v2-interpretation",
-  "classification": "STOP_FIRST_IDENTITY_FAILURE_FORMATTING_MASK",
+  "classification": "STOP_INVALID_MONOLITHIC_ALLOCATION_CRITERION",
   "raw_evidence": {
     "artifact_sha256": "e5a619b747e7626f21c06a5d5c211fd9c128cf0a70d37692ee407d358a4fb2ec",
     "marker_sha256": "0c7e25462130b413879742a3c918f75ddcece5a4b28cd871ffcaf08ad3df4947",
@@ -16,8 +16,8 @@
     "accepted_novel_keys": 975952,
     "accepted_repeated_keys": 69,
     "accepted_book_resets": 14,
-    "expected_segments_from_accepted_novel_keys": 10735472,
-    "identity_verdict": "PASS_EXACT_IDENTITY_PREFIX"
+    "historical_v2_expected_segments_from_accepted_novel_keys": 10735472,
+    "identity_verdict": "PASS_STABLE_COMPLETE_TUPLE_PREFIX"
   },
   "first_failure_boundary": {
     "book": "2 Chronicles",
@@ -29,6 +29,31 @@
     "expected_allocated_segments": 11,
     "observed_allocated_segments": "not preserved; known only to differ from 11"
   },
-  "derivation": "After 1 Chronicles the live console and ledger had 975952 novel keys, 68 repeats, and 13 resets. The artifact has the same key count plus 69 repeats and 14 resets, so the 2 Chronicles reset and token 1 repeat passed before token 2 failed. NOVEL_KEY_DID_NOT_ALLOCATE_IDENTITY is the only v2 violation branch that passes a scalar expected value to the inherited v1 formatter; that formatter calls list(expected), producing the recorded TypeError before the violation record could be banked.",
-  "claim_boundary": "The single v2 spend was not rerun. This analysis authenticates the positive exact-identity prefix and localizes the masked criterion branch, but cannot recover the failed step's exact allocation count, winner tuple, native diagnostics, checkpoint identity, remaining TRAIN behavior, or a full-TRAIN verdict."
+  "criterion_correction": {
+    "invalid_assumption": "every novel full (source winner tuple, token) key must allocate 11 new segments",
+    "native_contract": "persistent identity is factorized by output column; an exact-source segment may reserve its owner in a column shared by a previously learned successor token, while only the other columns allocate",
+    "replacement_rule": "a novel full key may allocate 0..11 segments but must produce a previously unseen complete ordered winner tuple; an exact repeated key must allocate 0 and reproduce its stored complete tuple",
+    "terminal_segment_rule": "terminal segment count equals the sum of native allocated_segments, not 11 times the number of novel full keys"
+  },
+  "boundary_localization": {
+    "common_public_train_prefix": [49, 1077],
+    "prior_third_tokens_from_the_repeated_source": [32, 1366, 1260],
+    "current_third_token": 1073,
+    "production_code_overlap_with_1073": {
+      "32": [],
+      "1366": [],
+      "1260": [4078]
+    },
+    "mechanism": "the exact repeated source activates the previously learned source-to-1260 row in shared column 4078, so that owner is reused and only the ten non-shared 1073 columns need new segments",
+    "most_likely_allocated_segments": 10,
+    "formal_caveat": "the immutable v2 artifact did not serialize the full-state allocation scalar or row; 10 is the source/codebook/native-contract localization, not recovered raw v2 evidence"
+  },
+  "target_independent_native_fixture": {
+    "path": "src/humanbrain/_native_src/src/temporal_runtime.rs",
+    "test": "novel_token_reuses_exact_source_owner_only_in_shared_column",
+    "status": "PASS_FACTORIZED_IDENTITY_ONE_COLUMN_OVERLAP",
+    "contract": "one shared output column gives first novel allocation 10 and predicted_columns 1, reuses only the shared owner, yields a distinct complete tuple, then replays with allocation 0 and predicted_columns 11; terminal segment count is 21"
+  },
+  "derivation": "After 1 Chronicles the live console and ledger had 975952 novel keys, 68 repeats, and 13 resets. The artifact has the same key count plus 69 repeats and 14 resets, so the 2 Chronicles reset and token 1 repeat passed before token 2 reached the historical NOVEL_KEY_DID_NOT_ALLOCATE_IDENTITY branch. The inherited formatter then called list(11), masking the scalar. That branch is no longer a valid identity stop: the repeated 49,1077 prefix supplies the same complete source tuple, and prior successor 1260 shares production column 4078 with novel successor 1073. Native LEARN reserves exact-source owners per output column and appends only unreserved columns, so partial allocation is the expected factorized behavior.",
+  "claim_boundary": "The single v2 spend was not rerun. This interpretation preserves its raw artifact, source, and marker, authenticates the stable complete-tuple prefix, and rejects only its monolithic novel-allocation criterion. The target-independent native fixture proves the factorized contract without TRAIN replay. The exact full-state failed row, remaining TRAIN behavior, and any full-TRAIN, calibration, held-out, C1, capability, or transfer verdict remain unknown."
 }

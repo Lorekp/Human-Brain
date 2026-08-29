@@ -114,6 +114,30 @@ held-out, C1, capability, or transfer surface was opened, and the run will not
 be retried. See
 [r3-calibration-v3-verdict.md](../../docs/research/r3-calibration-v3-verdict.md).
 
+Two later public-TRAIN diagnostics sharpen that development failure without
+reopening calibration-v3. The first stopped at Genesis token 15,482 only
+because its scorer incorrectly required a novel exact key to have zero
+same-token surface prediction. Native LEARN correctly predicted the observed
+token's columns from an approximate active path while allocating 11 fresh
+owners for the novel exact-source key, so the immutable raw artifact is retained
+with `STOP_INVALID_PROBE_CRITERION / PASS_IDENTITY_SURFACE_SPLIT` rather than as
+an owner-capture failure. The second replay verified a stable complete-tuple
+prefix of 975,952 monolithically allocated novel keys and 69 exact repeated-key
+re-elections through 976,035 accepted steps. Its historical
+`NOVEL_KEY_DID_NOT_ALLOCATE_IDENTITY` branch at 2 Chronicles token index 2 was
+also an invalid scorer criterion, not a native identity failure: every book
+starts `49,1077`, prior successor 1260 and novel successor 1073 share production
+column 4078, and native identity is factorized by output column. The exact-source
+1260 row therefore guarantees partial reuse; the one-overlap topology predicts
+ten new columns. A target-independent native fixture proves that contract with
+allocation 10, one predicted column, a distinct complete tuple, and exact
+zero-allocation replay.
+The inherited formatter still prevented the immutable v2 artifact from
+serializing its full-state row, so the remaining TRAIN behavior is unknown and
+the spend was not rerun. See
+[the v1 caveat](public_train_first_owner_outcome_failure_probe.interpretation.json)
+and [the v2 boundary](public_train_exact_identity_replay_v2.interpretation.json).
+
 The sparse recognition prototype is control-only evidence. It benchmarks
 `|W|=54`; frozen g=50 produces roughly 64k winners on the initial slice and
 74.6k over the 4,096-step confirmation.
@@ -146,7 +170,13 @@ measurement.
       exceeds the exact R3-F0 segment count by 72, while both higher arms fail
       q=255. The official calibration-v3 development path has now rejected at
       seed-17 R3-F0 before terminal identity, so confirmation is closed. The
-      next repair remains provisional pending dedicated failure localization.
+      later exact-identity replay verifies a 975,952-key stable complete-tuple
+      prefix and 69 exact repeats. Its next stop assumed that every novel full
+      key must allocate 11 rows, but a target-independent native fixture proves
+      the intended per-column contract: one exact-source shared output column
+      is reused, ten columns allocate, and the distinct complete tuple then
+      replays exactly with zero allocation. No threshold change, calibration-v3
+      retry, or protected-data access follows from this correction.
 - [ ] **Sparse context assembly gate:** freeze and compare k-capped actual
       recurrent spikes; require repeated-context stability, unrelated-context
       separation, and a bounded coincidence false-positive rate. Supersede the

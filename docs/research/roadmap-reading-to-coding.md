@@ -520,9 +520,30 @@ scorer had conflated global candidate/matching diagnostics with exact-key
 recognition. A one-run `(18,20)` counterfactual pushed those same rows below
 matching while preserving the local outcome, but it cannot select that arm:
 the existing q=255 production-overlap control already stops `(18,20)` through
-stored-owner drift. The next increment keeps `(16,18)`'s learnable-versus-active
-tier semantics and seeks the first actual owner-reuse outcome failure; it does
-not retry or reinterpret calibration-v3.
+stored-owner drift. A later scorer then made two different category errors.
+Its first public-TRAIN probe treated same-token active-path surface prediction
+as owner capture even though native LEARN allocated a fresh exact-source tuple.
+Its corrected replay verified 975,952 monolithically allocated novel keys and
+69 exact complete-tuple repeats before assuming that the next novel full key
+also had to allocate all 11 rows. At the 2 Chronicles boundary, however, the
+exact repeated `49,1077` source had already learned successor 1260, and 1260
+shares production column 4078 with novel successor 1073. Native persistent
+identity is factorized by output column, so this topology predicts reuse of the
+shared exact-source owner and allocation in the other ten columns rather than
+eleven fresh rows.
+
+A target-independent native fixture now pins that contract with two successor
+codes sharing exactly one column: first allocation is 10 with one predicted
+column and only the shared owner reused; the complete tuple differs; replay is
+0 allocation with all 11 columns predicted; terminal storage is 21 rows. This
+reclassifies the spent boundary as
+`STOP_INVALID_MONOLITHIC_ALLOCATION_CRITERION`, not a Path-2 failure. The raw
+probe, marker, and artifact remain immutable, and the masked full-state row and
+remaining TRAIN behavior remain unknown. Any successor scorer must preserve
+both matching-versus-active telemetry and per-column identity factorization,
+requiring stability of the complete tuple while summing actual allocations
+rather than enforcing `11 * novel_keys`. This is not a calibration-v3 retry,
+threshold change, or license to open protected/C1 data.
 
 ### Phase R5 — Scale to billions (continuous)
 

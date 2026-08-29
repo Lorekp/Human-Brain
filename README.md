@@ -81,6 +81,7 @@ The repositories do not import or modify one another.
 | Path-2 full TRAIN development | Native `(16,18)` replay completed all 49 TRAIN books and 2,117,412 token steps without a scientific STOP, ending at 23,286,478 live segments | Gross completion/cost evidence only: the count is 72 above the frozen distinct-key ideal, timing was contaminated by concurrent work, and no held-out/C1 material was read |
 | Path-2 calibration v3 | Electrical and q=4 passed; only `(16,18)` passed both q=255 regimes, then its seed-17 TRAIN R3-F0 scorer stopped before terminal identity | **Terminal `REJECT_R3_CALIBRATION_V3` at `r3_f0_development`; no arm selected and no retry.** Confirmation, held-out, C1, capability, and transfer surfaces remained unopened ([verdict](docs/research/r3-calibration-v3-verdict.md)) |
 | Path-2 first-key localization | At Genesis step 7,933 under `(16,18)`, 11 fully permanent segments from a different winner context shared 8/11 cells and reached the 16-contact matching tier, but remained inactive; the current novel key still allocated 11 owners with no prediction or punishment. A sole `(18,20)` counterfactual kept the same rows candidate-reachable but below matching | Localizes the frozen scorer's exact-fanout mismatch and the two-tier threshold tradeoff. It does **not** select `(18,20)`: that arm already fails the independent q=255 production-overlap control at recurrence 82/123. TRAIN-only diagnostic; no calibration retry, confirmation, held-out, C1, capability, or transfer evidence ([localization](experiments/r3_pilot/public_train_first_key_failure_probe.json), [counterfactual](experiments/r3_pilot/public_train_theta18_collision_boundary_probe.json)) |
+| Path-2 factorized identity boundary | A spent public-TRAIN replay verified 975,952 monolithically allocated novel keys and 69 exact tuple replays, then reached its historical `NOVEL_KEY_DID_NOT_ALLOCATE_IDENTITY` branch at 2 Chronicles token 1073. The repeated source had already learned successor 1260, whose SDR shares only column 4078 with 1073. A target-independent native fixture proves the intended contract: the shared exact-source owner is reused, the other ten columns allocate, the complete tuple is new, and replay is exact with 0 allocation and 11 predicted columns | **`STOP_INVALID_MONOLITHIC_ALLOCATION_CRITERION`, not a Path-2 identity failure.** Native identity is per-column; a novel full token tuple need not allocate all 11 rows. The raw v2 source, marker, and artifact remain immutable, no full-corpus rerun occurred, and calibration-v3, held-out, C1, capability, and transfer surfaces remain closed ([interpretation](experiments/r3_pilot/public_train_exact_identity_replay_v2.interpretation.json)) |
 
 Exact protocols, hashes, hardware, and limitations live in
 [benchmark status](docs/benchmark-status.md). Results are kept even when they
@@ -270,9 +271,14 @@ two-route slot-recombination pass, but no family-disjoint Simple-SWE result.
   the learnable matching tier without entering the active prediction tier; the
   observed token still took the correct novel-allocation path. Raising the arm
   to `(18,20)` rejects that one row but is not a repair because its independent
-  q=255 recurrence control already fails. The next scorer must preserve the
-  matching-versus-active distinction and localize the first real owner-reuse
-  failure instead of retrying calibration-v3. Remaining cap/CN-2 work stays open
+  q=255 recurrence control already fails. Later public diagnostics also removed
+  two scorer errors without reopening that calibration: same-token active-path
+  prediction is surface telemetry, and a novel full token tuple may reuse an
+  exact-source owner in each output column shared with a prior successor. A
+  target-independent native fixture proves that one shared column gives ten
+  allocations followed by exact zero-allocation replay. Any successor scorer
+  must preserve both distinctions and count actual per-column allocations
+  instead of requiring 11 rows per novel full key. Remaining cap/CN-2 work stays open
   ([verdict](docs/research/r3-calibration-v3-verdict.md),
   [readiness](experiments/r3_pilot/C1_READINESS.md)).
 - [Indicator assessment instrument](docs/indicator-assessment/RUBRIC.md)
