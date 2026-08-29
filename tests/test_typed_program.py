@@ -14,6 +14,7 @@ from humanbrain.typed_program import (
     CompiledEditSite,
     Example,
     FactorAction,
+    FactorCandidateBank,
     FrozenCheckpoint,
     Layer1Protocol,
     Program,
@@ -26,6 +27,7 @@ from humanbrain.typed_program import (
     compile,
     compile_edit_site,
     complete,
+    factor_action_candidates,
     grow,
     program_edit_sites,
     replace_subtree,
@@ -1012,6 +1014,203 @@ def test_factor_action_done_is_identity_and_invalid_tuples_do_not_actuate() -> N
             program,
             FactorAction((), "APPLY2", "less-than", "SCOPE0", "LITERAL", 2),
         )
+
+
+def _assert_factor_candidate_bank_compiles(
+    program: Program,
+    bank: FactorCandidateBank,
+) -> None:
+    assert bank.program_sha256 == program.sha256
+    for action in bank.actions:
+        assert compile(apply_factor_action(program, action)).source
+
+
+def test_factor_candidate_bank_is_canonical_hashed_and_rejects_bad_literals() -> None:
+    integer = ProgramType.Int()
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", integer),),
+        result=integer,
+    )
+    program = Program(("variable-0",), signature)
+
+    first = factor_action_candidates(program, literals=(2, -1))
+    reordered = factor_action_candidates(program, literals=(-1, 2))
+    action_records = tuple(
+        {
+            "path": action.path,
+            "schema": action.schema,
+            "operator": action.operator,
+            "left_source": action.left_source,
+            "right_source": action.right_source,
+            "literal": action.literal,
+        }
+        for action in first.actions
+    )
+
+    assert isinstance(first, FactorCandidateBank)
+    assert first == reordered
+    assert first.literals == (-1, 2)
+    assert first.actions[0] == FactorAction(
+        (), "DONE", "NONE", "NONE", "NONE", None
+    )
+    assert sum(action.schema == "DONE" for action in first.actions) == 1
+    assert len(first.actions) == len(set(first.actions))
+    assert first.sha256 == sha256(
+        _canonical_checkpoint_bytes(action_records)
+    ).hexdigest()
+    _assert_factor_candidate_bank_compiles(program, first)
+
+    with pytest.raises(ValueError, match="non-empty"):
+        factor_action_candidates(program, literals=())
+    with pytest.raises(ValueError, match="duplicates"):
+        factor_action_candidates(program, literals=(2, 2))
+    with pytest.raises(TypeError, match="exact Python integers"):
+        factor_action_candidates(program, literals=(True,))
+    with pytest.raises(ValueError, match="grammar bound"):
+        factor_action_candidates(program, literals=(10_000,))
+
+
+def test_factor_candidate_bank_contains_scalar_and_two_parameter_orders() -> None:
+    integer = ProgramType.Int()
+    scalar_signature = TypedSignature(
+        entry_point="scalar",
+        parameters=(ProgramParameter("x", integer),),
+        result=integer,
+    )
+    scalar = Program(("variable-0",), scalar_signature)
+    scalar_bank = factor_action_candidates(scalar, literals=(2,))
+
+    assert FactorAction(
+        (), "APPLY1", "absolute", "SELECTED", "NONE", None
+    ) in scalar_bank.actions
+    assert FactorAction(
+        (), "APPLY2", "subtract", "SELECTED", "LITERAL", 2
+    ) in scalar_bank.actions
+    assert FactorAction(
+        (), "APPLY2", "subtract", "LITERAL", "SELECTED", 2
+    ) in scalar_bank.actions
+    assert not any(
+        "SCOPE0" in {action.left_source, action.right_source}
+        for action in scalar_bank.actions
+    )
+    _assert_factor_candidate_bank_compiles(scalar, scalar_bank)
+
+    binary_signature = TypedSignature(
+        entry_point="difference",
+        parameters=(
+            ProgramParameter("a", integer),
+            ProgramParameter("b", integer),
+        ),
+        result=integer,
+    )
+    binary = Program(("variable-1",), binary_signature)
+    binary_bank = factor_action_candidates(binary, literals=(2,))
+
+    assert FactorAction(
+        (), "APPLY2", "subtract", "SELECTED", "SCOPE0", None
+    ) in binary_bank.actions
+    assert FactorAction(
+        (), "APPLY2", "subtract", "SCOPE0", "SELECTED", None
+    ) in binary_bank.actions
+    assert not any(
+        "SCOPE1" in {action.left_source, action.right_source}
+        for action in binary_bank.actions
+    )
+    _assert_factor_candidate_bank_compiles(binary, binary_bank)
+
+
+def test_factor_candidate_bank_contains_both_bool_comparison_orders() -> None:
+    integer = ProgramType.Int()
+    signature = TypedSignature(
+        entry_point="predicate",
+        parameters=(ProgramParameter("x", integer),),
+        result=ProgramType.Bool(),
+    )
+    program = Program(
+        ("less-than", "variable-0", "integer", "+", "0", "end"),
+        signature,
+    )
+    bank = factor_action_candidates(program, literals=(2,))
+
+    assert FactorAction(
+        (), "APPLY2", "less-than", "SCOPE0", "LITERAL", 2
+    ) in bank.actions
+    assert FactorAction(
+        (), "APPLY2", "less-than", "LITERAL", "SCOPE0", 2
+    ) in bank.actions
+    _assert_factor_candidate_bank_compiles(program, bank)
+
+
+def test_factor_candidate_bank_builds_root_map_and_binder_body_actions() -> None:
+    list_integer = ProgramType.List(ProgramType.Int())
+    signature = TypedSignature(
+        entry_point="map_values",
+        parameters=(ProgramParameter("values", list_integer),),
+        result=list_integer,
+    )
+    incumbent = Program(("variable-0",), signature)
+    root_bank = factor_action_candidates(incumbent, literals=(2,))
+    map_action = FactorAction(
+        (), "MAP_BIND", "map", "BOUND0", "SELECTED", None
+    )
+
+    assert map_action in root_bank.actions
+    _assert_factor_candidate_bank_compiles(incumbent, root_bank)
+
+    identity_map = apply_factor_action(incumbent, map_action)
+    body_bank = factor_action_candidates(identity_map, literals=(2,))
+    assert FactorAction(
+        (0, 0), "APPLY1", "absolute", "SELECTED", "NONE", None
+    ) in body_bank.actions
+    assert FactorAction(
+        (0, 0), "APPLY2", "add", "SELECTED", "LITERAL", 2
+    ) in body_bank.actions
+    assert not any(
+        action.path == (0, 0)
+        and action.operator in {"absolute", "add", "subtract"}
+        and {"SCOPE0", "BOUND0"}
+        & {action.left_source, action.right_source}
+        for action in body_bank.actions
+    )
+    _assert_factor_candidate_bank_compiles(identity_map, body_bank)
+
+    nonleaf_body = Program(
+        ("map", "bind", "absolute", "variable-0", "variable-0"),
+        signature,
+    )
+    nonleaf_bank = factor_action_candidates(nonleaf_body, literals=(2,))
+    assert FactorAction(
+        (0, 0), "APPLY1", "absolute", "BOUND0", "NONE", None
+    ) in nonleaf_bank.actions
+    assert not any(
+        action.path == (0, 0)
+        and "SCOPE0" in {action.left_source, action.right_source}
+        for action in nonleaf_bank.actions
+    )
+    _assert_factor_candidate_bank_compiles(nonleaf_body, nonleaf_bank)
+
+
+def test_factor_candidate_enumeration_never_actuates_or_compiles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    integer = ProgramType.Int()
+    signature = TypedSignature(
+        entry_point="identity",
+        parameters=(ProgramParameter("value", integer),),
+        result=integer,
+    )
+    program = Program(("variable-0",), signature)
+
+    def forbidden(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("candidate enumeration crossed the actuator seam")
+
+    monkeypatch.setattr(typed_program, "apply_factor_action", forbidden)
+    monkeypatch.setattr(typed_program, "replace_subtree", forbidden)
+    monkeypatch.setattr(typed_program, "compile", forbidden)
+
+    bank = factor_action_candidates(program, literals=(2,))
+    assert bank.actions
 
 
 def test_variable_one_selects_the_outer_parameter_and_is_masked_without_it() -> None:

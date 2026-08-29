@@ -144,6 +144,81 @@ class FactorAction:
             raise ValueError("factor-action literal exceeds the typed grammar bound")
 
 
+def _factor_action_record(action: FactorAction) -> dict[str, object]:
+    return {
+        "path": action.path,
+        "schema": action.schema,
+        "operator": action.operator,
+        "left_source": action.left_source,
+        "right_source": action.right_source,
+        "literal": action.literal,
+    }
+
+
+_GLOBAL_DONE_FACTOR_ACTION = FactorAction(
+    (),
+    "DONE",
+    "NONE",
+    "NONE",
+    "NONE",
+    None,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class FactorCandidateBank:
+    """One deterministic typed FactorAction bank for an incumbent program."""
+
+    program_sha256: str
+    literals: tuple[int, ...]
+    actions: tuple[FactorAction, ...]
+    sha256: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.program_sha256, str)
+            or len(self.program_sha256) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.program_sha256
+            )
+        ):
+            raise ValueError("factor candidate bank needs a lowercase program SHA-256")
+        if (
+            not isinstance(self.literals, tuple)
+            or not self.literals
+            or not all(type(value) is int for value in self.literals)
+        ):
+            raise TypeError("factor candidate literals must be a non-empty integer tuple")
+        if len(set(self.literals)) != len(self.literals):
+            raise ValueError("factor candidate literals must be unique")
+        if self.literals != tuple(sorted(self.literals)):
+            raise ValueError("factor candidate literals must be in canonical order")
+        if any(abs(value) >= 10**_LITERAL_DIGITS for value in self.literals):
+            raise ValueError("factor candidate literal exceeds the typed grammar bound")
+        if not isinstance(self.actions, tuple) or not all(
+            type(action) is FactorAction for action in self.actions
+        ):
+            raise TypeError("factor candidate actions must be a tuple of FactorAction values")
+        if len(set(self.actions)) != len(self.actions):
+            raise ValueError("factor candidate actions must be unique")
+        if (
+            not self.actions
+            or self.actions[0] != _GLOBAL_DONE_FACTOR_ACTION
+            or sum(action == _GLOBAL_DONE_FACTOR_ACTION for action in self.actions) != 1
+        ):
+            raise ValueError("factor candidate bank needs one leading global DONE action")
+        object.__setattr__(
+            self,
+            "sha256",
+            sha256(
+                _canonical_json(
+                    tuple(_factor_action_record(action) for action in self.actions)
+                )
+            ).hexdigest(),
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class CompiledEditSite:
     """Trusted Python for one value-producing site of an incumbent program."""
@@ -1165,6 +1240,160 @@ def _inside_binder_scope(
     )
 
 
+def _factor_literal_bank(literals: Sequence[int]) -> tuple[int, ...]:
+    try:
+        supplied = tuple(literals)
+    except TypeError as error:
+        raise TypeError(
+            "factor candidate literals must be an iterable of integers"
+        ) from error
+    if not supplied:
+        raise ValueError("factor candidate literal bank must be non-empty")
+    if not all(type(value) is int for value in supplied):
+        raise TypeError("factor candidate literals must be exact Python integers")
+    if len(set(supplied)) != len(supplied):
+        raise ValueError("factor candidate literal bank must not contain duplicates")
+    if any(abs(value) >= 10**_LITERAL_DIGITS for value in supplied):
+        raise ValueError("factor candidate literal exceeds the typed grammar bound")
+    return tuple(sorted(supplied))
+
+
+def _factor_dynamic_sources(
+    site: ProgramEditSite,
+    sites: Sequence[ProgramEditSite],
+    required_type_label: str,
+) -> tuple[str, ...]:
+    selected_scope_index: int | None = None
+    if len(site.tokens) == 1 and site.tokens[0] in {"variable-0", "variable-1"}:
+        selected_scope_index = int(site.tokens[0][-1])
+    selected_available = site.result_type_label == required_type_label
+    inside_binder = _inside_binder_scope(sites, site.path)
+
+    sources: list[str] = []
+    if selected_available:
+        sources.append("SELECTED")
+    for index, type_label in enumerate(site.scope_binding_type_labels):
+        if type_label != required_type_label:
+            continue
+        if selected_available and selected_scope_index == index:
+            continue
+        if inside_binder and index == 0:
+            continue
+        sources.append(f"SCOPE{index}")
+    if (
+        inside_binder
+        and site.scope_binding_type_labels[0] == required_type_label
+        and not (selected_available and selected_scope_index == 0)
+    ):
+        sources.append("BOUND0")
+    return tuple(sources)
+
+
+def _ordered_factor_operands(
+    dynamic_sources: tuple[str, ...],
+    literals: tuple[int, ...],
+) -> tuple[tuple[str, str, int | None], ...]:
+    operands: list[tuple[str, str, int | None]] = []
+    for left_source in dynamic_sources:
+        for right_source in dynamic_sources:
+            operands.append((left_source, right_source, None))
+    for dynamic_source in dynamic_sources:
+        for literal in literals:
+            operands.append((dynamic_source, "LITERAL", literal))
+            operands.append(("LITERAL", dynamic_source, literal))
+    return tuple(operands)
+
+
+def factor_action_candidates(
+    program: Program,
+    *,
+    literals: Sequence[int],
+) -> FactorCandidateBank:
+    """Enumerate the complete typed factor bank without materializing edits."""
+
+    if not isinstance(program, Program):
+        raise TypeError("factor candidate enumeration requires a Program")
+    if _program_sha256(program.tokens, program.signature) != program.sha256:
+        raise ValueError("program digest mismatch")
+    literal_bank = _factor_literal_bank(literals)
+    sites = program_edit_sites(program)
+
+    actions: list[FactorAction] = []
+    seen: set[FactorAction] = set()
+
+    def append(action: FactorAction) -> None:
+        if action not in seen:
+            seen.add(action)
+            actions.append(action)
+
+    append(_GLOBAL_DONE_FACTOR_ACTION)
+    for site in sites:
+        if site.result_type_label == "Int":
+            dynamic_sources = _factor_dynamic_sources(site, sites, "Int")
+            for source in dynamic_sources:
+                append(
+                    FactorAction(
+                        site.path,
+                        "APPLY1",
+                        "absolute",
+                        source,
+                        "NONE",
+                        None,
+                    )
+                )
+            operands = _ordered_factor_operands(dynamic_sources, literal_bank)
+            for operator in ("add", "subtract"):
+                for left_source, right_source, literal in operands:
+                    append(
+                        FactorAction(
+                            site.path,
+                            "APPLY2",
+                            operator,
+                            left_source,
+                            right_source,
+                            literal,
+                        )
+                    )
+        elif site.result_type_label == "Bool":
+            dynamic_sources = _factor_dynamic_sources(site, sites, "Int")
+            for left_source, right_source, literal in _ordered_factor_operands(
+                dynamic_sources,
+                literal_bank,
+            ):
+                append(
+                    FactorAction(
+                        site.path,
+                        "APPLY2",
+                        "less-than",
+                        left_source,
+                        right_source,
+                        literal,
+                    )
+                )
+        elif site.result_type_label == "List[Int]":
+            for collection_source in _factor_dynamic_sources(
+                site,
+                sites,
+                "List[Int]",
+            ):
+                append(
+                    FactorAction(
+                        site.path,
+                        "MAP_BIND",
+                        "map",
+                        "BOUND0",
+                        collection_source,
+                        None,
+                    )
+                )
+
+    return FactorCandidateBank(
+        program_sha256=program.sha256,
+        literals=literal_bank,
+        actions=tuple(actions),
+    )
+
+
 def _factor_source_tokens(
     action: FactorAction,
     source: str,
@@ -1237,7 +1466,7 @@ def apply_factor_action(program: Program, action: FactorAction) -> Program:
         if (
             action.operator != "map"
             or action.left_source != "BOUND0"
-            or action.right_source not in {"SELECTED", "SCOPE0", "SCOPE1"}
+            or action.right_source not in {"SELECTED", "SCOPE0", "SCOPE1", "BOUND0"}
             or action.literal is not None
         ):
             raise ValueError(
@@ -2007,6 +2236,7 @@ __all__ = [
     "Completion",
     "Example",
     "FactorAction",
+    "FactorCandidateBank",
     "FrozenCheckpoint",
     "Layer1Protocol",
     "PersistentStateChangedError",
@@ -2021,6 +2251,7 @@ __all__ = [
     "compile",
     "compile_edit_site",
     "complete",
+    "factor_action_candidates",
     "grow",
     "program_edit_sites",
     "replace_subtree",
