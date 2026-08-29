@@ -522,6 +522,20 @@ This closes the visible created-child mechanism seam and licenses the next
 public source-editing increment; it is not List/Bool, Simple-SWE, M0, protected,
 C1, family-transfer, or broad coding evidence.
 
+That four-task public source-editing increment is now spent at
+`STOP_PUBLIC_FACTORIZED_SOURCE_EDIT_CANARY_V1` (0/1 attempted; 0/4). On the
+first `abs(value)-3` arm, identity and the one-edit source failed their disjoint
+sandbox cases, no H=1 exact action existed, and the immutable planner selected
+root subtraction before replanning to the absolute edit at child `(0,)`. The
+runner stopped before the two-edit phase because its max-edit control counted
+that selected-but-unactuated second decision as if it were another completed
+edit, then rejected the otherwise valid first-edit prefix. This localizes an
+adapter accounting defect rather than a cell-planning failure. The exact canary
+will not be retried; its second scalar arm and both List arms remain unopened,
+along with canonical Simple-SWE, M0, protected data, and C1. A fresh public
+increment must make the actuation ledger, rather than planned decisions, the
+authority for edit-count controls.
+
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
 step 249 under a different winner context shared 8/11 cells with the current

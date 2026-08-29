@@ -1,0 +1,165 @@
+{
+  "attempted_tasks": 1,
+  "checkpoint_immutable": true,
+  "claim_boundary": "Four source-declared public pre-M0 tasks only; no canonical Simple-SWE partition, M0, DEV/eval, held-out, protected data, or C1.",
+  "model_checkpoint_sha256": "7820c258c0d7d243008c5ec95b7ed19ceb91b77729396877b0d474af5a272f85",
+  "passed_tasks": 0,
+  "prerequisite": {
+    "artifact_sha256": "432872d76a9f628305f2a921843586957f587d033112bde03d28f6a442b10104",
+    "checkpoint_sha256": "7820c258c0d7d243008c5ec95b7ed19ceb91b77729396877b0d474af5a272f85",
+    "verdict": "PASS_TYPED_FACTOR_HORIZON2_INT_CREATED_CHILD_V3"
+  },
+  "results": [
+    {
+      "allowed_trajectories": [
+        [
+          {
+            "left_source": "SELECTED",
+            "literal": 3,
+            "operator": "subtract",
+            "path": [],
+            "right_source": "LITERAL",
+            "schema": "APPLY2"
+          },
+          {
+            "left_source": "SELECTED",
+            "literal": null,
+            "operator": "absolute",
+            "path": [
+              0
+            ],
+            "right_source": "NONE",
+            "schema": "APPLY1"
+          }
+        ],
+        [
+          {
+            "left_source": "SELECTED",
+            "literal": null,
+            "operator": "absolute",
+            "path": [],
+            "right_source": "NONE",
+            "schema": "APPLY1"
+          },
+          {
+            "left_source": "SELECTED",
+            "literal": 3,
+            "operator": "subtract",
+            "path": [],
+            "right_source": "LITERAL",
+            "schema": "APPLY2"
+          }
+        ]
+      ],
+      "checkpoint_immutable": true,
+      "construction_order_alias": true,
+      "error": "max_edits=1 control selected no valid first edit",
+      "final_edit": null,
+      "final_sandbox": null,
+      "h1_exact_actions": [],
+      "incumbent_control": {
+        "detail": "fixed regression case failed",
+        "outcome": "regression_failure",
+        "passed": false,
+        "sandboxed": true,
+        "wall_seconds": 0.08100059999560472
+      },
+      "max_edits_one_control": {
+        "edit": {
+          "checkpoint_immutable": true,
+          "edit_count": 1,
+          "selected_sequences": [
+            {
+              "first": {
+                "left_source": "SELECTED",
+                "literal": 3,
+                "operator": "subtract",
+                "path": [],
+                "right_source": "LITERAL",
+                "schema": "APPLY2"
+              },
+              "second": {
+                "left_source": "SELECTED",
+                "literal": null,
+                "operator": "absolute",
+                "path": [
+                  0
+                ],
+                "right_source": "NONE",
+                "schema": "APPLY1"
+              }
+            },
+            {
+              "first": {
+                "left_source": "SELECTED",
+                "literal": null,
+                "operator": "absolute",
+                "path": [
+                  0
+                ],
+                "right_source": "NONE",
+                "schema": "APPLY1"
+              },
+              "second": {
+                "left_source": "NONE",
+                "literal": null,
+                "operator": "NONE",
+                "path": [],
+                "right_source": "NONE",
+                "schema": "DONE"
+              }
+            }
+          ],
+          "source": "def solve_abs_minus_three(value):\n    return value - 3\n",
+          "status": "MAX_EDITS",
+          "stop_reason": "max_edits=1 reached before another actuation",
+          "tokens": [
+            "subtract",
+            "variable-0",
+            "integer",
+            "+",
+            "3",
+            "end"
+          ]
+        },
+        "sandbox": {
+          "detail": "fixed regression case failed",
+          "outcome": "regression_failure",
+          "passed": false,
+          "sandboxed": true,
+          "wall_seconds": 0.08940160000929609
+        }
+      },
+      "name": "abs-value-minus-three",
+      "passed": false
+    }
+  ],
+  "sandbox": {
+    "limits": {
+      "cpu_seconds": 2,
+      "max_ast_nodes": 128,
+      "max_completion_bytes": 8192,
+      "memory_mib": 128,
+      "output_bytes": 4096,
+      "processes": 1,
+      "python_hash_seed": 17,
+      "wall_seconds": 2.0
+    },
+    "python": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "schema": "public-factorized-source-edit-canary-v1",
+  "task_order": [
+    "abs-value-minus-three",
+    "three-minus-abs-value",
+    "list-map-absolute",
+    "list-map-subtract-two"
+  ],
+  "total_tasks": 4,
+  "verdict": "STOP_PUBLIC_FACTORIZED_SOURCE_EDIT_CANARY_V1",
+  "wall_time_seconds": 49.283818600000814
+}
