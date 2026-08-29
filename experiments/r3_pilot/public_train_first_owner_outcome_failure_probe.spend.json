@@ -1,0 +1,27 @@
+{
+  "arm": [
+    16,
+    18
+  ],
+  "authority": {
+    "bounded_definition_identity_sha256": "955dec02ba31cff53cfaecf1b0d23a6c93757baa06b48bf090eaf5d82bffce94",
+    "expected_train_books": 49,
+    "expected_train_tokens": 2117412,
+    "expected_train_transitions": 2117363,
+    "native_binary_sha256": "300db0b79cd6a21587c249b7aca409b5afb5b2ccdfec02486528d722fabf0564",
+    "native_source_digest": "1207670e012ef32ad3bf2fe383847ddb904f45df928bd2f7d89e5efabae1295a",
+    "production_definition_identity_sha256": "efcd70c8f0a1deeb04ffa32b7d905f42c01000caa33ed18d61ac366594ed9502",
+    "protocol_sha256": "5b916fe88cdba401c2a80e89b25bfc64447d189d216029d65bb40678c499dfa6",
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+  },
+  "canonical_artifact_path": "experiments/r3_pilot/public_train_first_owner_outcome_failure_probe.json",
+  "claim_boundary": "one spent public TRAIN-only owner-outcome replay at arm (16,18), seed 17, over the canonical 49-book stream in frozen order, stopping immediately on the first actual owner-outcome/native/diagnostic-contract failure or otherwise finishing TRAIN; global recognition counts are diagnostics only; no calibration-v3 reinterpretation/retry, threshold change, confirmation, held-out, C1, capability, or transfer evidence",
+  "construction_seed": 17,
+  "created_at_utc": "2026-08-29T03:24:33.263629+00:00",
+  "experiment": "public-train-first-owner-outcome-failure-v1",
+  "probe_source_sha256": "3e285f17137e1b32672fb7d8ef1c0242e2032d25b1672f193e1f0e82f31f24ca",
+  "schema_version": 1,
+  "state": "OWNER_OUTCOME_REPLAY_SPENT"
+}

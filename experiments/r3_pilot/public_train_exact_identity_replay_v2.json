@@ -1,0 +1,438 @@
+{
+  "artifact_id": "public-train-exact-identity-replay-v2",
+  "claim_boundary": "one spent public TRAIN-only exact-identity replay at arm (16,18), seed 17, over the canonical 49-book stream in frozen order, stopping on the first identity/native/diagnostic-shape failure or otherwise finishing TRAIN; no calibration-v3 reinterpretation/retry, threshold change, confirmation, held-out, C1, capability, or transfer evidence",
+  "criterion": {
+    "key": "K=(previous ordered winner tuple, observed token)",
+    "novel": "allocated=11 and globally-new ordered winner tuple",
+    "repeated": "allocated=0 and winners equal stored O(K)",
+    "segments": "terminal native segment_count=11*accepted novel keys",
+    "telemetry": "predicted, predicted_columns, active, matching, candidate, and punishment never determine the identity verdict"
+  },
+  "definition": {
+    "arm": [
+      16,
+      18
+    ],
+    "bounded_definition_identity_sha256": "955dec02ba31cff53cfaecf1b0d23a6c93757baa06b48bf090eaf5d82bffce94",
+    "bounded_segment_capacity": 23290993,
+    "construction_seed": 17,
+    "production_definition_identity_sha256": "efcd70c8f0a1deeb04ffa32b7d905f42c01000caa33ed18d61ac366594ed9502",
+    "production_segment_capacity": 23286406,
+    "protocol_runnable": true,
+    "protocol_sha256": "5b916fe88cdba401c2a80e89b25bfc64447d189d216029d65bb40678c499dfa6"
+  },
+  "environment": {
+    "native_binary_sha256_after": "300db0b79cd6a21587c249b7aca409b5afb5b2ccdfec02486528d722fabf0564",
+    "native_binary_sha256_before": "300db0b79cd6a21587c249b7aca409b5afb5b2ccdfec02486528d722fabf0564",
+    "native_source_digest_after": "1207670e012ef32ad3bf2fe383847ddb904f45df928bd2f7d89e5efabae1295a",
+    "native_source_digest_before": "1207670e012ef32ad3bf2fe383847ddb904f45df928bd2f7d89e5efabae1295a",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "generated_at_utc": "2026-08-29T04:13:48.687507+00:00",
+  "result": {
+    "diagnostic_counter_contract": "0 <= active <= matching <= candidate <= postings; prediction and punishment counters are non-gating telemetry",
+    "error_message": "'int' object is not iterable",
+    "error_type": "TypeError",
+    "kind": "UNEXPECTED_REPLAY_EXCEPTION"
+  },
+  "schema_version": 1,
+  "spend_marker": {
+    "exclusive_create": true,
+    "flushed_and_fsynced_before_run": true,
+    "path": "experiments/r3_pilot/public_train_exact_identity_replay_v2.spend.json",
+    "probe_source_sha256": "6ec043aebe776cca9ffb1985437d9c32464420076dbfa1f3ab2d23f527ee7db9",
+    "sha256": "0c7e25462130b413879742a3c918f75ddcece5a4b28cd871ffcaf08ad3df4947",
+    "sha256_canonical_lf": "0c7e25462130b413879742a3c918f75ddcece5a4b28cd871ffcaf08ad3df4947",
+    "state": "EXACT_IDENTITY_V2_REPLAY_SPENT"
+  },
+  "status": "BANKED_REPLAY_INFRASTRUCTURE_FAILURE",
+  "timing_load": {
+    "allocated_segments": 0,
+    "executed_token_steps": 0,
+    "executed_transition_steps": 0,
+    "gc_during_replay": "disabled",
+    "ledger_book_resets": 14,
+    "ledger_key_count": 975952,
+    "ledger_preallocated_storage_bytes": 238294047,
+    "ledger_repeat_count": 69,
+    "ledger_winner_tuple_count": 975953,
+    "maximum_active_segments": 0,
+    "maximum_candidate_segments": 0,
+    "maximum_matching_segments": 0,
+    "maximum_postings_visited": 0,
+    "native_construction_ns": 1377444000,
+    "native_step_call_ns_max": 0,
+    "native_step_call_ns_mean": 0.0,
+    "native_step_call_ns_total": 0,
+    "pre_run_preparation_ns": 14554659500,
+    "predicted_steps": 0,
+    "punished_segments": 0,
+    "replay_wall_ns": 0,
+    "single_token_native_calls": true,
+    "steps_per_second": 0.0,
+    "tracked_segment_count": 10735472
+  },
+  "train_input": {
+    "books": [
+      {
+        "corpus_index": 0,
+        "ordinal": 0,
+        "short_name": "Genesis",
+        "token_count": 122253,
+        "token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd"
+      },
+      {
+        "corpus_index": 1,
+        "ordinal": 1,
+        "short_name": "Exodus",
+        "token_count": 100485,
+        "token_sha256_le_i32": "db487fa7767f7e716924aeca15f92ae5df5c7429c50c6ee225925cb6902e59f4"
+      },
+      {
+        "corpus_index": 2,
+        "ordinal": 2,
+        "short_name": "Leviticus",
+        "token_count": 74481,
+        "token_sha256_le_i32": "8bd95fc3e15ea0eafd08f9fc8930f079f9bd3a03fe3f56d5b72fe5db645cade6"
+      },
+      {
+        "corpus_index": 3,
+        "ordinal": 3,
+        "short_name": "Numbers",
+        "token_count": 105256,
+        "token_sha256_le_i32": "0f75043589c2928ef222ea69681d595fd0830970f5fdfdb2e7dfbcae6d8e9f20"
+      },
+      {
+        "corpus_index": 4,
+        "ordinal": 4,
+        "short_name": "Deuteronomy",
+        "token_count": 84747,
+        "token_sha256_le_i32": "cdcd36b245ff00e011d1d547e447b96008d8050b070ec0cda276ca82cbefa18a"
+      },
+      {
+        "corpus_index": 5,
+        "ordinal": 5,
+        "short_name": "Joshua",
+        "token_count": 59358,
+        "token_sha256_le_i32": "3765116f0bca38edb24e6f351ab4c005b73cab35acb32b1c6a01ea0c80141f2a"
+      },
+      {
+        "corpus_index": 6,
+        "ordinal": 6,
+        "short_name": "Judges",
+        "token_count": 59406,
+        "token_sha256_le_i32": "9fd2b2432a7141504f88dea968ca1a821daf86c4145770db5645cb5011ad0e3a"
+      },
+      {
+        "corpus_index": 7,
+        "ordinal": 7,
+        "short_name": "Ruth",
+        "token_count": 8003,
+        "token_sha256_le_i32": "0b7aafb007c5203505dadbb8d7d57f365b386a995d119c37fc84e4e25f779d6b"
+      },
+      {
+        "corpus_index": 8,
+        "ordinal": 8,
+        "short_name": "1 Samuel",
+        "token_count": 78963,
+        "token_sha256_le_i32": "700f8649eb4eb5e63ec690b76eb1910fa664d73e526d45697e7659a750b8a4a5"
+      },
+      {
+        "corpus_index": 9,
+        "ordinal": 9,
+        "short_name": "2 Samuel",
+        "token_count": 65898,
+        "token_sha256_le_i32": "116433cefad253cc9309c32c7c889c140b8ca9a06dbd76e496192e3dfb76eada"
+      },
+      {
+        "corpus_index": 10,
+        "ordinal": 10,
+        "short_name": "1 Kings",
+        "token_count": 76083,
+        "token_sha256_le_i32": "37952f092a581366d4a40d1d5eb57079b4ea1480a0d8d8bd868e9e40ba39486b"
+      },
+      {
+        "corpus_index": 11,
+        "ordinal": 11,
+        "short_name": "2 Kings",
+        "token_count": 71460,
+        "token_sha256_le_i32": "4a82291a1c45b896e2be9ae604886931f5b5189bfb0924a7cd398f187ee45a63"
+      },
+      {
+        "corpus_index": 12,
+        "ordinal": 12,
+        "short_name": "1 Chronicles",
+        "token_count": 69640,
+        "token_sha256_le_i32": "4f3fdc9ca014e2d4481afdef9a2d87569b67748a79b5ab36b27ef9eae800d000"
+      },
+      {
+        "corpus_index": 13,
+        "ordinal": 13,
+        "short_name": "2 Chronicles",
+        "token_count": 82985,
+        "token_sha256_le_i32": "3d872864d867311487876363552955df37eb155d1b995ceeb85e2b826a15729b"
+      },
+      {
+        "corpus_index": 14,
+        "ordinal": 14,
+        "short_name": "Ezra",
+        "token_count": 24639,
+        "token_sha256_le_i32": "4f7dd89277aa5a76b93a408556269239f56970c5e2332775a8ec4a6563ca4077"
+      },
+      {
+        "corpus_index": 15,
+        "ordinal": 15,
+        "short_name": "Nehemiah",
+        "token_count": 35466,
+        "token_sha256_le_i32": "ca6774f7407f89dba9aba8648032964883b8f1acdfaacea95310c6e859f1b72c"
+      },
+      {
+        "corpus_index": 16,
+        "ordinal": 16,
+        "short_name": "Esther",
+        "token_count": 18345,
+        "token_sha256_le_i32": "7772febd1ae2bfb2a9a52cb981c08b27b0fd69b747c33a268910eccf472e9bda"
+      },
+      {
+        "corpus_index": 17,
+        "ordinal": 17,
+        "short_name": "Job",
+        "token_count": 64204,
+        "token_sha256_le_i32": "e1e27067948109ed913a430777f620b283710b84f1ff4db1914fc4bce60bd98a"
+      },
+      {
+        "corpus_index": 18,
+        "ordinal": 18,
+        "short_name": "Psalms",
+        "token_count": 149162,
+        "token_sha256_le_i32": "f621ff02038a10ca72e7c08c1ae090917907d62c2ce89ebdb0e61101252a44fd"
+      },
+      {
+        "corpus_index": 19,
+        "ordinal": 19,
+        "short_name": "Proverbs",
+        "token_count": 56449,
+        "token_sha256_le_i32": "c4c2d6e3bf24dbfe68c5ba2ed1dc14bf76a142f1fdb48a56ef862b13609a4ec6"
+      },
+      {
+        "corpus_index": 20,
+        "ordinal": 20,
+        "short_name": "Ecclesiastes",
+        "token_count": 18695,
+        "token_sha256_le_i32": "ca79117f88ee570fd3303546967d5ac0f288e3078863a3ab5239e9ac29ebd2ab"
+      },
+      {
+        "corpus_index": 21,
+        "ordinal": 21,
+        "short_name": "Song of Solomon",
+        "token_count": 9608,
+        "token_sha256_le_i32": "6767eb69a29fb52018a93f68446923005f9adaf8e53ad53c0eed0541e6fa047e"
+      },
+      {
+        "corpus_index": 22,
+        "ordinal": 22,
+        "short_name": "Isaiah",
+        "token_count": 119386,
+        "token_sha256_le_i32": "1850fd43c8e655097b357ede1d006eb08259931ac5cbc5321d32b34baf83f6c8"
+      },
+      {
+        "corpus_index": 23,
+        "ordinal": 23,
+        "short_name": "Jeremiah",
+        "token_count": 134844,
+        "token_sha256_le_i32": "3b1cbc972ba0f3664c65e31c95d430c28e9c688eecb64cfbb8ca7ade24fbc94d"
+      },
+      {
+        "corpus_index": 24,
+        "ordinal": 24,
+        "short_name": "Lamentations",
+        "token_count": 12346,
+        "token_sha256_le_i32": "18bb458eeaf46372c5237a42b2393700d07e3b484ca7e04bc39512dfaa4074bc"
+      },
+      {
+        "corpus_index": 25,
+        "ordinal": 25,
+        "short_name": "Ezekiel",
+        "token_count": 122502,
+        "token_sha256_le_i32": "1c07a0e2aa5f74cd0d0ca5adda3f4249c452fe36a641be7dc56fa2da4b7c9c53"
+      },
+      {
+        "corpus_index": 26,
+        "ordinal": 26,
+        "short_name": "Daniel",
+        "token_count": 37753,
+        "token_sha256_le_i32": "af555f6bbf4eda62fa347dc87b1aa10ec330da9c241d8da13d9939fbc183165f"
+      },
+      {
+        "corpus_index": 44,
+        "ordinal": 27,
+        "short_name": "Romans",
+        "token_count": 34286,
+        "token_sha256_le_i32": "51655f41b4ec384d293eefa57da1e1d3a662be9ca8e0f0813b02120d7f32a6e2"
+      },
+      {
+        "corpus_index": 45,
+        "ordinal": 28,
+        "short_name": "1 Corinthians",
+        "token_count": 33511,
+        "token_sha256_le_i32": "8a83eb6e8fb9a2e52eca072e8b619fd972777ac8ffa0ad1982a9510d830ad133"
+      },
+      {
+        "corpus_index": 46,
+        "ordinal": 29,
+        "short_name": "2 Corinthians",
+        "token_count": 21727,
+        "token_sha256_le_i32": "f26e8b22a14cb70c7a12b6d97c9103db951ccc62aaafec61925112ec9b81bb4c"
+      },
+      {
+        "corpus_index": 47,
+        "ordinal": 30,
+        "short_name": "Galatians",
+        "token_count": 11320,
+        "token_sha256_le_i32": "fc1fe746494c5fc6c504faf24d333e166c89c93e3a46e2270a60fa08532603b8"
+      },
+      {
+        "corpus_index": 48,
+        "ordinal": 31,
+        "short_name": "Ephesians",
+        "token_count": 10771,
+        "token_sha256_le_i32": "e6d9126a92ff4d0be0daa4837c16f79b4a9544e7fafbc32ca73a00ffd4e18c84"
+      },
+      {
+        "corpus_index": 49,
+        "ordinal": 32,
+        "short_name": "Philippians",
+        "token_count": 7833,
+        "token_sha256_le_i32": "be371f6cafb6b0ea17ff70fd2f8b3bad0180cac8304faf8ff4619da33ed90472"
+      },
+      {
+        "corpus_index": 50,
+        "ordinal": 33,
+        "short_name": "Colossians",
+        "token_count": 7085,
+        "token_sha256_le_i32": "dfa320a447f85560a2fc86e2ead5c160ba4990c22a97a5a97b326bca874780d9"
+      },
+      {
+        "corpus_index": 51,
+        "ordinal": 34,
+        "short_name": "1 Thessalonians",
+        "token_count": 6493,
+        "token_sha256_le_i32": "0aabf7c6924d32e041b9c1c83125b5a98f0ebb1cb0aad81d2ec76680c736c526"
+      },
+      {
+        "corpus_index": 52,
+        "ordinal": 35,
+        "short_name": "2 Thessalonians",
+        "token_count": 3505,
+        "token_sha256_le_i32": "001b3e8fa7ade4038a28636d35ea3f912cf5830375f67b0f9780987937f1a524"
+      },
+      {
+        "corpus_index": 53,
+        "ordinal": 36,
+        "short_name": "1 Timothy",
+        "token_count": 8828,
+        "token_sha256_le_i32": "1320b3654528b283f34cd60000d018b7c5af0a82db8e3d6c56cf6f34a0e68b7f"
+      },
+      {
+        "corpus_index": 54,
+        "ordinal": 37,
+        "short_name": "2 Timothy",
+        "token_count": 6241,
+        "token_sha256_le_i32": "c73fb5bd14e4bb870db98242474a8fdc4e06affb4aa80d3cd1e75d904fa812a8"
+      },
+      {
+        "corpus_index": 55,
+        "ordinal": 38,
+        "short_name": "Titus",
+        "token_count": 3619,
+        "token_sha256_le_i32": "257afb1d1e566d33b0b75a9371a02a560bad810fa2436d8a7d27119c4ae2acaf"
+      },
+      {
+        "corpus_index": 56,
+        "ordinal": 39,
+        "short_name": "Philemon",
+        "token_count": 1641,
+        "token_sha256_le_i32": "f3877f3c6488ab6b9f17b0fc0e7644f30c021baf077dbd3c3f61f2d99e5d721c"
+      },
+      {
+        "corpus_index": 57,
+        "ordinal": 40,
+        "short_name": "Hebrews",
+        "token_count": 24996,
+        "token_sha256_le_i32": "dbaa3198217a0349b282e700a0209b4c4bf100eef1f9d946dcf5999c26a5d9e3"
+      },
+      {
+        "corpus_index": 58,
+        "ordinal": 41,
+        "short_name": "James",
+        "token_count": 8080,
+        "token_sha256_le_i32": "eed8a834dddb6b3d161bd39ff2795366c64a274456abda8a65d55bcaabc08828"
+      },
+      {
+        "corpus_index": 59,
+        "ordinal": 42,
+        "short_name": "1 Peter",
+        "token_count": 9223,
+        "token_sha256_le_i32": "14df48c3151b7d5820f6b62810bc9643f72e3ce2170f39e027dc1f2ac8845639"
+      },
+      {
+        "corpus_index": 60,
+        "ordinal": 43,
+        "short_name": "2 Peter",
+        "token_count": 5734,
+        "token_sha256_le_i32": "0abef47ba4665f853a4552d632098dac6b237af5e846c7d9e42decbce9d76802"
+      },
+      {
+        "corpus_index": 61,
+        "ordinal": 44,
+        "short_name": "1 John",
+        "token_count": 8094,
+        "token_sha256_le_i32": "5799489cee9da3ad88a0b5c50170a8f06161c2f739de1b81ea832a525b0a0419"
+      },
+      {
+        "corpus_index": 62,
+        "ordinal": 45,
+        "short_name": "2 John",
+        "token_count": 1008,
+        "token_sha256_le_i32": "594d163c9bb0049ef64a40535dd60d3cff85b1e1b30dd671fff4ccb5f8a55736"
+      },
+      {
+        "corpus_index": 63,
+        "ordinal": 46,
+        "short_name": "3 John",
+        "token_count": 1108,
+        "token_sha256_le_i32": "6097258f13921efb777908e3b2324629c8aa9f8ed0894d65e4fe7c2412ee7bf6"
+      },
+      {
+        "corpus_index": 64,
+        "ordinal": 47,
+        "short_name": "Jude",
+        "token_count": 2354,
+        "token_sha256_le_i32": "d60e2e3c7ae00f4950f8ecfe1be0663617470158d5153fb39cb2079175fb3204"
+      },
+      {
+        "corpus_index": 65,
+        "ordinal": 48,
+        "short_name": "Revelation",
+        "token_count": 37538,
+        "token_sha256_le_i32": "f5e08db69af4e4edbae0008eea612127de45318c435281dc98a1a298c2ffe115"
+      }
+    ],
+    "candidate_id": "cell-lm-v1-freeze-candidate-bible-kjv-pg10-v3",
+    "full_train_book_count": 49,
+    "full_train_token_count": 2117412,
+    "full_train_transition_count": 2117363,
+    "held_out_books_materialized": 0,
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+  },
+  "v1_interpretation": {
+    "classification": "STOP_INVALID_PROBE_CRITERION",
+    "native_contract_verdict": "PASS_IDENTITY_SURFACE_SPLIT",
+    "path": "experiments/r3_pilot/public_train_first_owner_outcome_failure_probe.interpretation.json",
+    "raw_v1_artifact_sha256": "7b936ce1913949733f7c46078579dee411d34954f5c1d4ef0fbe246cdcbb6db1",
+    "sha256": "073b9b2de8fd2f4632850179258e8b630fcb909e1273a183ebe61a9968a96873"
+  }
+}

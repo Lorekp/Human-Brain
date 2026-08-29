@@ -1,0 +1,27 @@
+{
+  "analysis_id": "public-train-first-owner-outcome-failure-v1-interpretation",
+  "classification": "STOP_INVALID_PROBE_CRITERION",
+  "native_contract_verdict": "PASS_IDENTITY_SURFACE_SPLIT",
+  "raw_evidence": {
+    "artifact_sha256": "7b936ce1913949733f7c46078579dee411d34954f5c1d4ef0fbe246cdcbb6db1",
+    "marker_sha256": "99e603c99a854c0699930a438df54437649c2ed0a4ef04eddedaeb40fe2c508a",
+    "probe_source_sha256": "3e285f17137e1b32672fb7d8ef1c0242e2032d25b1672f193e1f0e82f31f24ca",
+    "preserved_unchanged": true
+  },
+  "finding": {
+    "book": "Genesis",
+    "zero_based_token_index": 15482,
+    "token_id": 110,
+    "allocated_segments": 11,
+    "predicted_columns": 11,
+    "appended_owners_equal_winners": true,
+    "foreign_active_owners_equal_winners": false
+  },
+  "interpretation": "LEARN correctly allowed same-token active-path surface prediction while allocating a distinct persistent exact-source identity. The v1 requirement that every novel key have predicted_columns=0 contradicted the native contract and its focused fixture.",
+  "invalid_v1_labels": [
+    "BANKED_FIRST_OWNER_OUTCOME_FAILURE",
+    "NOVEL_KEY_OWNER_OUTCOME",
+    "FOREIGN_ACTIVE_OWNER_CAPTURE"
+  ],
+  "claim_boundary": "This analysis supersedes only the interpretation of the immutable spent v1 artifact. It is not a calibration-v3 verdict, threshold selection, full-TRAIN result, C1 result, held-out result, or capability claim."
+}

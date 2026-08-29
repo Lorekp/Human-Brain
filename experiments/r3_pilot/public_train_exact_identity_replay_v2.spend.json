@@ -1,0 +1,38 @@
+{
+  "arm": [
+    16,
+    18
+  ],
+  "authority": {
+    "bounded_definition_identity_sha256": "955dec02ba31cff53cfaecf1b0d23a6c93757baa06b48bf090eaf5d82bffce94",
+    "expected_train_books": 49,
+    "expected_train_tokens": 2117412,
+    "expected_train_transitions": 2117363,
+    "native_binary_sha256": "300db0b79cd6a21587c249b7aca409b5afb5b2ccdfec02486528d722fabf0564",
+    "native_source_digest": "1207670e012ef32ad3bf2fe383847ddb904f45df928bd2f7d89e5efabae1295a",
+    "production_definition_identity_sha256": "efcd70c8f0a1deeb04ffa32b7d905f42c01000caa33ed18d61ac366594ed9502",
+    "protocol_sha256": "5b916fe88cdba401c2a80e89b25bfc64447d189d216029d65bb40678c499dfa6",
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5",
+    "v1_artifact_sha256": "7b936ce1913949733f7c46078579dee411d34954f5c1d4ef0fbe246cdcbb6db1",
+    "v1_interpretation_sha256": "073b9b2de8fd2f4632850179258e8b630fcb909e1273a183ebe61a9968a96873",
+    "v1_marker_sha256": "99e603c99a854c0699930a438df54437649c2ed0a4ef04eddedaeb40fe2c508a",
+    "v1_probe_source_sha256": "3e285f17137e1b32672fb7d8ef1c0242e2032d25b1672f193e1f0e82f31f24ca"
+  },
+  "canonical_artifact_path": "experiments/r3_pilot/public_train_exact_identity_replay_v2.json",
+  "claim_boundary": "one spent public TRAIN-only exact-identity replay at arm (16,18), seed 17, over the canonical 49-book stream in frozen order, stopping on the first identity/native/diagnostic-shape failure or otherwise finishing TRAIN; no calibration-v3 reinterpretation/retry, threshold change, confirmation, held-out, C1, capability, or transfer evidence",
+  "construction_seed": 17,
+  "created_at_utc": "2026-08-29T03:41:48.837707+00:00",
+  "criterion": {
+    "key": "K=(previous ordered winner tuple, observed token)",
+    "novel": "allocated=11 and globally-new ordered winner tuple",
+    "repeated": "allocated=0 and winners equal stored O(K)",
+    "segments": "terminal native segment_count=11*accepted novel keys",
+    "telemetry": "predicted, predicted_columns, active, matching, candidate, and punishment never determine the identity verdict"
+  },
+  "experiment": "public-train-exact-identity-replay-v2",
+  "probe_source_sha256": "6ec043aebe776cca9ffb1985437d9c32464420076dbfa1f3ab2d23f527ee7db9",
+  "schema_version": 1,
+  "state": "EXACT_IDENTITY_V2_REPLAY_SPENT"
+}
