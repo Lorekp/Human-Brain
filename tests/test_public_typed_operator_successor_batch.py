@@ -14,10 +14,10 @@ from humanbrain import typed_program as tp
 from humanbrain.typed_program_types import ProgramParameter, ProgramType, TypedSignature
 
 
-# 81d4e94's original goldens predated c66ed7f expanding Int cells from
-# [-20, 20] to [-64, 64].  The checkpoint authenticates that projection.
-_CHECKPOINT_SHA256 = "62100b5296fe37eb13b3a7a1d9f92f032de494af12c95e20c3d46c4409cca8d0"
-_ROOT_LEDGER_SHA256 = "7519a7f5887f39047379914b37e7551ef2ea4121264661abbf4c31473314ff6e"
+# The checkpoint authenticates output-cells v2 (Int/Bool/List[Int]/Char/String)
+# and the ledger pins bit-exact scalar/batch parity under that projection.
+_CHECKPOINT_SHA256 = "f9a065c704077bcd2ebdf005498738991f10ce72ca722798359edad5f5d28586"
+_ROOT_LEDGER_SHA256 = "fa5085b94053924a7bfedea3e0c1422ad1b6acd401358382ed8a62cec7c3ea9f"
 
 
 def _encode_int(value: int):
@@ -179,7 +179,9 @@ def test_action_batch_matches_scalar_races_and_reduces_checkpoint_hashing(
 
     assert len(bank.actions) == 212
     assert len(root_actions) == 130
-    assert successor._unknown.cache_parameters()["maxsize"] == 4
+    assert successor._unknown.cache_parameters()["maxsize"] == (
+        len(successor.output_cells.OutputType) + 1
+    )
     assert (
         successor._int_from_winner.cache_parameters()["maxsize"]
         == successor.output_cells.INT_CELL_COUNT

@@ -35,7 +35,7 @@ _BINARY_ACTIONS = {
     operator: tp.FactorAction(
         (), "APPLY2", operator, "SELECTED", "SCOPE0", None
     )
-    for operator in ("add", "subtract")
+    for operator in ("add", "subtract", "minimum", "maximum")
 }
 _MAP_COPY = tp.FactorAction(
     (), "MAP_BIND", "map", "BOUND0", "SELECTED", None
@@ -161,6 +161,17 @@ class _CaseEvaluator:
         self.predictions = 0
         self.races: list[operator_successor.OperatorRace] = []
 
+    def extend(self, dag: synthesis.TypedCandidateDag) -> None:
+        """Add a newly licensed cost tier without discarding physical memo state."""
+
+        if dag.signature != self.dag.signature:
+            raise ValueError("an evaluator cannot cross typed signatures")
+        for node in dag.nodes:
+            incumbent = self.nodes.setdefault(node.node_id, node)
+            if incumbent != node:
+                raise RuntimeError("candidate identity changed across retained tiers")
+        self.dag = dag
+
     def _environment_value(
         self,
         node: synthesis.CandidateNode,
@@ -280,99 +291,148 @@ class FrozenTypedSemanticSynthesizer:
         digest.update(self.operator.live_checkpoint_sha256.encode("ascii"))
         digest.update(_canonical_json(self.literal_bank))
         digest.update(np.asarray((self.max_ast_cost,), dtype="<i8").tobytes())
+        digest.update(b"\0ordered-extrema-retention-v1")
         return digest.hexdigest()
 
-    def synthesize(
+    def _synthesize_retained(
         self,
         signature: TypedSignature,
-        case_arguments: Sequence[tuple[object, ...]],
-        desired_outputs: Sequence[object],
+        arguments: tuple[tuple[object, ...], ...],
+        desired: tuple[output_cells.TypedOutputEncoding, ...],
+        before: str,
     ) -> TypedSemanticSynthesisDecision:
-        before = self.live_checkpoint_sha256
-        if before != self.checkpoint_sha256:
-            raise RuntimeError("semantic synthesizer checkpoint changed before inference")
-        arguments = tuple(tuple(row) for row in case_arguments)
-        desired_raw = tuple(desired_outputs)
-        if not arguments or len(arguments) != len(desired_raw):
-            raise ValueError("visible arguments and desired outputs must align")
-        desired = tuple(_encode(value, signature.result) for value in desired_raw)
-        dag = synthesis.enumerate_typed_candidate_dag(
-            signature,
-            literals=self.literal_bank,
-            max_ast_cost=self.max_ast_cost,
-        )
-        candidates = tuple(
-            candidate for tier in dag.tiers for candidate in tier.candidates
-        )
-        candidate_by_id = {
-            candidate.root_node_id: candidate for candidate in candidates
-        }
+        """Grow exact-cost tiers only from prior physical representatives."""
+
+        retained: set[str] = set()
+        processed: set[str] = set()
+        seen_semantics: dict[
+            tuple[tuple[str, ...], str, tuple[bytes, ...]], str
+        ] = {}
+        root_semantics: set[tuple[bytes, ...]] = set()
         vectors: dict[str, synthesis.TypedPhysicalSemanticVector] = {}
         evaluations: dict[str, PhysicalCandidateEvaluation] = {}
+        candidates_by_id: dict[str, synthesis.TypedCandidate] = {}
         attempts: list[SemanticSynthesisTierAttempt] = []
         total_predictions = 0
         total_races = 0
         all_races_digest = sha256()
-        all_races_digest.update(b"public-typed-semantic-all-races-v1\0")
-        observed_classes = 0
-        evaluators = tuple(
-            _CaseEvaluator(self.operator, dag, row) for row in arguments
+        all_races_digest.update(b"public-typed-semantic-all-races-extrema-v1\0")
+        root_environment = tuple(
+            synthesis._type_label(parameter.type)
+            for parameter in reversed(signature.parameters)
         )
+        body_environment = ("Int", *root_environment)
+        evaluators: tuple[_CaseEvaluator, ...] | None = None
 
-        for tier in dag.tiers:
-            for candidate in tier.candidates:
-                outputs: list[output_cells.TypedOutputEncoding] = []
-                candidate_predictions = 0
-                candidate_races = 0
-                candidate_digest = sha256()
-                candidate_digest.update(b"public-typed-semantic-candidate-races-v1\0")
+        for cost in range(1, self.max_ast_cost + 1):
+            dag = synthesis.enumerate_typed_candidate_dag(
+                signature,
+                literals=self.literal_bank,
+                max_ast_cost=cost,
+                retained_node_ids=retained,
+            )
+            if evaluators is None:
+                evaluators = tuple(
+                    _CaseEvaluator(self.operator, dag, row) for row in arguments
+                )
+            else:
                 for evaluator in evaluators:
+                    evaluator.extend(dag)
+
+            tier = dag.tiers[cost - 1]
+            tier_candidate_ids = {
+                candidate.root_node_id for candidate in tier.candidates
+            }
+            candidates_by_id.update(
+                (candidate.root_node_id, candidate)
+                for candidate in tier.candidates
+            )
+
+            for node in (
+                item
+                for item in dag.nodes
+                if item.ast_cost == cost and item.node_id not in processed
+            ):
+                processed.add(node.node_id)
+                if node.provenance.production == "bind":
+                    continue
+                if node.environment_type_labels == root_environment:
+                    contexts = tuple((evaluator, ()) for evaluator in evaluators)
+                elif (
+                    node.environment_type_labels == body_environment
+                    and node.result_type_label == "Int"
+                ):
+                    contexts = tuple(
+                        (evaluator, (item,))
+                        for evaluator, row in zip(evaluators, arguments, strict=True)
+                        for parameter, value in zip(
+                            signature.parameters,
+                            row,
+                            strict=True,
+                        )
+                        if parameter.type == _LIST_INT
+                        for item in value
+                    )
+                else:
+                    continue
+                if not contexts:
+                    continue
+
+                outputs: list[output_cells.TypedOutputEncoding] = []
+                node_predictions = 0
+                node_races = 0
+                node_digest = sha256()
+                node_digest.update(b"public-typed-semantic-candidate-races-v1\0")
+                for evaluator, bound in contexts:
                     predictions_before = evaluator.predictions
                     races_before = len(evaluator.races)
-                    outputs.append(evaluator.evaluate(candidate.root_node_id))
-                    candidate_predictions += (
-                        evaluator.predictions - predictions_before
-                    )
-                    candidate_races += len(evaluator.races) - races_before
+                    outputs.append(evaluator.evaluate(node.node_id, bound=bound))
+                    node_predictions += evaluator.predictions - predictions_before
+                    node_races += len(evaluator.races) - races_before
                     digest = evaluator.race_digest(races_before)
-                    candidate_digest.update(digest.encode("ascii"))
+                    node_digest.update(digest.encode("ascii"))
                     all_races_digest.update(digest.encode("ascii"))
                 output_tuple = tuple(outputs)
+                observation_bytes = tuple(
+                    output.sha256.encode("ascii") for output in output_tuple
+                )
+                semantic_key = (
+                    node.environment_type_labels,
+                    node.result_type_label,
+                    observation_bytes,
+                )
+                if semantic_key not in seen_semantics:
+                    seen_semantics[semantic_key] = node.node_id
+                    retained.add(node.node_id)
+                total_predictions += node_predictions
+                total_races += node_races
+
+                if node.node_id not in tier_candidate_ids:
+                    continue
                 vector = synthesis.TypedPhysicalSemanticVector(
                     result_type=signature.result,
-                    observations=tuple(
-                        output.sha256.encode("ascii") for output in output_tuple
-                    ),
+                    observations=observation_bytes,
                 )
-                vectors[candidate.root_node_id] = vector
-                evaluations[candidate.root_node_id] = PhysicalCandidateEvaluation(
-                    candidate_id=candidate.root_node_id,
+                vectors[node.node_id] = vector
+                evaluations[node.node_id] = PhysicalCandidateEvaluation(
+                    candidate_id=node.node_id,
                     outputs=output_tuple,
                     vector=vector,
-                    operator_predictions=candidate_predictions,
-                    operator_races=candidate_races,
-                    operator_races_sha256=candidate_digest.hexdigest(),
+                    operator_predictions=node_predictions,
+                    operator_races=node_races,
+                    operator_races_sha256=node_digest.hexdigest(),
                 )
-                total_predictions += candidate_predictions
-                total_races += candidate_races
+                root_semantics.add(observation_bytes)
 
-            if not vectors:
-                attempts.append(
-                    SemanticSynthesisTierAttempt(tier.ast_cost, 0, (), None)
-                )
-                continue
-            dedup = synthesis.deduplicate_physical_semantics(dag, vectors)
-            observed_classes = len(dedup.classes)
-            representative_set = set(dedup.representative_candidate_ids)
             representatives = tuple(
                 candidate.root_node_id
                 for candidate in tier.candidates
-                if candidate.root_node_id in representative_set
+                if candidate.root_node_id in retained
             )
             if not representatives:
                 attempts.append(
                     SemanticSynthesisTierAttempt(
-                        tier.ast_cost,
+                        cost,
                         len(tier.candidates),
                         (),
                         None,
@@ -386,14 +446,14 @@ class FrozenTypedSemanticSynthesizer:
             )
             attempts.append(
                 SemanticSynthesisTierAttempt(
-                    tier.ast_cost,
+                    cost,
                     len(tier.candidates),
                     representatives,
                     race,
                 )
             )
             if race.status == semantic_race.SELECTED:
-                selected = candidate_by_id[race.winner_key]
+                selected = candidates_by_id[race.winner_key]
                 compiled = tp.compile(selected.program)
                 after = self.live_checkpoint_sha256
                 if after != before:
@@ -402,7 +462,7 @@ class FrozenTypedSemanticSynthesizer:
                     status=STATUS_DONE,
                     stop_reason=None,
                     candidate_count=len(vectors),
-                    observed_semantic_classes=observed_classes,
+                    observed_semantic_classes=len(root_semantics),
                     tier_attempts=tuple(attempts),
                     selected_candidate_id=selected.root_node_id,
                     program=selected.program,
@@ -423,7 +483,7 @@ class FrozenTypedSemanticSynthesizer:
             status=STATUS_STOP,
             stop_reason="no unique all-case physical semantic vector in bounded tiers",
             candidate_count=len(vectors),
-            observed_semantic_classes=observed_classes,
+            observed_semantic_classes=len(root_semantics),
             tier_attempts=tuple(attempts),
             selected_candidate_id=None,
             program=None,
@@ -434,6 +494,22 @@ class FrozenTypedSemanticSynthesizer:
             checkpoint_before_sha256=before,
             checkpoint_after_sha256=after,
         )
+
+    def synthesize(
+        self,
+        signature: TypedSignature,
+        case_arguments: Sequence[tuple[object, ...]],
+        desired_outputs: Sequence[object],
+    ) -> TypedSemanticSynthesisDecision:
+        before = self.live_checkpoint_sha256
+        if before != self.checkpoint_sha256:
+            raise RuntimeError("semantic synthesizer checkpoint changed before inference")
+        arguments = tuple(tuple(row) for row in case_arguments)
+        desired_raw = tuple(desired_outputs)
+        if not arguments or len(arguments) != len(desired_raw):
+            raise ValueError("visible arguments and desired outputs must align")
+        desired = tuple(_encode(value, signature.result) for value in desired_raw)
+        return self._synthesize_retained(signature, arguments, desired, before)
 
 
 def build_public_typed_semantic_synthesizer(

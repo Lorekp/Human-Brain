@@ -62,6 +62,15 @@ def _unknown_cell_indices() -> tuple[int, ...]:
             + output_cells.INT_UNKNOWN_CELL
             for position in range(output_cells.LIST_CAPACITY)
         ),
+        output_cells.CHAR_OFFSET + output_cells.CHAR_UNKNOWN_CELL,
+        output_cells.STRING_LENGTH_OFFSET
+        + output_cells.STRING_LENGTH_UNKNOWN_CELL,
+        *tuple(
+            output_cells.STRING_ITEM_OFFSET
+            + position * output_cells.CHAR_CELL_COUNT
+            + output_cells.CHAR_UNKNOWN_CELL
+            for position in range(output_cells.STRING_CAPACITY)
+        ),
     )
 
 

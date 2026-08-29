@@ -6,16 +6,16 @@ programs only when a caller supplies their physical output-cell observations.
 No prompt, task, family, oracle, sandbox, or host-interpreter input crosses the
 interface.
 
-This first bounded fragment covers the productions needed by the current
-public source-edit bridge: scalar integer offsets, ``List[Int]`` map offsets,
-and ``List[Int]`` map absolute-value programs.  The bounds are part of the
-interface rather than an accidental search cutoff.
+The bounded fragment covers the current public source-edit bridge plus generic
+integer minimum/maximum composition.  Recursive growth is licensed only from
+the first physical observational representative at a lower cost.  The bounds
+are part of the interface rather than an accidental search cutoff.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from hashlib import sha256
 
@@ -24,7 +24,7 @@ from humanbrain.typed_program_types import ProgramType, TypedSignature
 
 
 MAX_BRIDGE_AST_COST = 6
-MAX_SCALAR_EXPRESSION_AST_COST = 3
+MAX_SCALAR_EXPRESSION_AST_COST = 5
 
 _INT = ProgramType.Int()
 _LIST_INT = ProgramType.List(_INT)
@@ -32,6 +32,8 @@ _FUNCTION_INT_INT_LABEL = "Function[Int,Int]"
 _FRAGMENT_PRODUCTIONS = (
     "add",
     "subtract",
+    "minimum",
+    "maximum",
     "absolute",
     "map",
     "bind",
@@ -209,6 +211,8 @@ def _compiler_production_order() -> dict[str, int]:
     expected = {
         "add": ("operation", 2),
         "subtract": ("operation", 2),
+        "minimum": ("operation", 2),
+        "maximum": ("operation", 2),
         "absolute": ("operation", 1),
         "map": ("operation", 2),
         "bind": ("binder", 0),
@@ -270,7 +274,10 @@ def _scalar_nodes(
     environment: tuple[ProgramType, ...],
     literals: tuple[int, ...],
     max_ast_cost: int,
+    retained_node_ids: frozenset[str] | None,
 ) -> tuple[CandidateNode, ...]:
+    """Grow recursive scalar tiers from physically retained lower-cost nodes."""
+
     leaves = list(_variable_nodes(builder, environment, _INT))
     for value in literals:
         leaves.append(
@@ -286,30 +293,55 @@ def _scalar_nodes(
             )
         )
     leaves.sort(key=builder.sort_key)
+    nodes_by_cost: dict[int, tuple[CandidateNode, ...]] = {1: tuple(leaves)}
     nodes = list(leaves)
 
-    if max_ast_cost >= 2:
-        for operand in leaves:
-            nodes.append(
-                builder.add(
-                    ast_cost=2,
-                    environment=environment,
-                    result_type_label="Int",
-                    tokens=("absolute", *operand.tokens),
-                    provenance=CandidateProvenance(
-                        "absolute",
-                        (operand.node_id,),
-                    ),
-                )
-            )
+    def retained(node: CandidateNode) -> bool:
+        return retained_node_ids is None or node.node_id in retained_node_ids
 
-    if max_ast_cost >= 3:
-        for production in ("add", "subtract"):
-            for left in leaves:
-                for right in leaves:
-                    nodes.append(
-                        builder.add(
-                            ast_cost=3,
+    def commutative_key(node: CandidateNode) -> tuple[object, ...]:
+        # Prefer the structurally deeper operand on the left, then use the
+        # compiler's deterministic production/token order.
+        return (-node.ast_cost, *builder.sort_key(node))
+
+    for cost in range(2, max_ast_cost + 1):
+        tier: dict[str, CandidateNode] = {}
+        for operand in nodes_by_cost.get(cost - 1, ()):
+            if not retained(operand):
+                continue
+            node = builder.add(
+                ast_cost=cost,
+                environment=environment,
+                result_type_label="Int",
+                tokens=("absolute", *operand.tokens),
+                provenance=CandidateProvenance(
+                    "absolute",
+                    (operand.node_id,),
+                ),
+            )
+            tier[node.node_id] = node
+
+        for production in (
+            "add",
+            "subtract",
+            "minimum",
+            "maximum",
+        ):
+            for left_cost in range(1, cost - 1):
+                right_cost = cost - 1 - left_cost
+                for left in nodes_by_cost.get(left_cost, ()):
+                    if not retained(left):
+                        continue
+                    for right in nodes_by_cost.get(right_cost, ()):
+                        if not retained(right):
+                            continue
+                        if (
+                            production in {"add", "minimum", "maximum"}
+                            and commutative_key(left) > commutative_key(right)
+                        ):
+                            continue
+                        node = builder.add(
+                            ast_cost=cost,
                             environment=environment,
                             result_type_label="Int",
                             tokens=(production, *left.tokens, *right.tokens),
@@ -318,8 +350,11 @@ def _scalar_nodes(
                                 (left.node_id, right.node_id),
                             ),
                         )
-                    )
-    return tuple(sorted(nodes, key=builder.sort_key))
+                        tier[node.node_id] = node
+        ordered = tuple(sorted(tier.values(), key=builder.sort_key))
+        nodes_by_cost[cost] = ordered
+        nodes.extend(ordered)
+    return tuple(nodes)
 
 
 def _list_nodes(
@@ -327,21 +362,34 @@ def _list_nodes(
     environment: tuple[ProgramType, ...],
     literals: tuple[int, ...],
     max_ast_cost: int,
+    retained_node_ids: frozenset[str] | None,
 ) -> tuple[CandidateNode, ...]:
     collections = list(_variable_nodes(builder, environment, _LIST_INT))
-    nodes = list(collections)
-    if max_ast_cost < 4 or not collections:
-        return tuple(sorted(nodes, key=builder.sort_key))
-
+    roots = list(collections)
     body_environment = (_INT, *environment)
     body_nodes = _scalar_nodes(
         builder,
         body_environment,
         literals,
-        min(MAX_SCALAR_EXPRESSION_AST_COST, max_ast_cost - 3),
+        min(
+            MAX_SCALAR_EXPRESSION_AST_COST,
+            max_ast_cost,
+            MAX_BRIDGE_AST_COST - 3,
+        ),
+        retained_node_ids,
     )
+    if max_ast_cost < 4 or not collections:
+        return tuple(sorted(roots, key=builder.sort_key))
+
+    def retained(node: CandidateNode) -> bool:
+        return retained_node_ids is None or node.node_id in retained_node_ids
+
     for body in body_nodes:
+        if not retained(body):
+            continue
         for collection in collections:
+            if not retained(collection):
+                continue
             map_cost = 2 + body.ast_cost + collection.ast_cost
             if map_cost > max_ast_cost:
                 continue
@@ -352,7 +400,7 @@ def _list_nodes(
                 tokens=("bind", *body.tokens),
                 provenance=CandidateProvenance("bind", (body.node_id,)),
             )
-            nodes.append(
+            roots.append(
                 builder.add(
                     ast_cost=map_cost,
                     environment=environment,
@@ -364,7 +412,7 @@ def _list_nodes(
                     ),
                 )
             )
-    return tuple(sorted(nodes, key=builder.sort_key))
+    return tuple(sorted(roots, key=builder.sort_key))
 
 
 def enumerate_typed_candidate_dag(
@@ -372,6 +420,7 @@ def enumerate_typed_candidate_dag(
     *,
     literals: Sequence[int],
     max_ast_cost: int = MAX_BRIDGE_AST_COST,
+    retained_node_ids: Collection[str] | None = None,
 ) -> TypedCandidateDag:
     """Enumerate the bounded bridge fragment by exact increasing AST cost.
 
@@ -386,6 +435,19 @@ def enumerate_typed_candidate_dag(
         raise ValueError(
             f"max_ast_cost must be in [1,{MAX_BRIDGE_AST_COST}] for this fragment"
         )
+    if retained_node_ids is not None:
+        if isinstance(retained_node_ids, (str, bytes, bytearray)):
+            raise TypeError("retained node identities must be a collection of SHA-256s")
+        retained = frozenset(retained_node_ids)
+        if not all(
+            isinstance(node_id, str)
+            and len(node_id) == 64
+            and all(character in "0123456789abcdef" for character in node_id)
+            for node_id in retained
+        ):
+            raise ValueError("retained node identities must be lowercase SHA-256s")
+    else:
+        retained = None
     literal_bank = _literal_bank(literals)
     builder = _NodeBuilder(_compiler_production_order())
     environment = tuple(
@@ -398,6 +460,7 @@ def enumerate_typed_candidate_dag(
             environment,
             literal_bank,
             min(max_ast_cost, MAX_SCALAR_EXPRESSION_AST_COST),
+            retained,
         )
     elif signature.result == _LIST_INT:
         roots = _list_nodes(
@@ -405,6 +468,7 @@ def enumerate_typed_candidate_dag(
             environment,
             literal_bank,
             max_ast_cost,
+            retained,
         )
     else:
         raise ValueError(

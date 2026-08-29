@@ -135,7 +135,7 @@ def test_bounded_tiers_stop_when_literal_is_absent(model) -> None:
         attempt.ast_cost
         for attempt in decision.tier_attempts
         if attempt.evaluated_candidates
-    ) == 3
+    ) == 5
     assert all(
         attempt.race is None
         or attempt.race.status == semantic.semantic_race.STOP_NO_EXACT

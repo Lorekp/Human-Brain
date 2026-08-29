@@ -205,7 +205,7 @@ def _single_event(activity: np.ndarray) -> tuple[int, float] | None:
     return cell, float(activity[cell])
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=len(output_cells.OutputType) + 1)
 def _unknown(output_type: output_cells.OutputType | None) -> output_cells.TypedOutputEncoding:
     """Materialize each immutable physical UNKNOWN encoding once."""
 
@@ -238,6 +238,59 @@ def _bool_from_winner(cell: int) -> output_cells.TypedOutputEncoding:
     return output_cells.TypedOutputCellBank.encode(
         cell == output_cells.BOOL_TRUE_CELL,
         declared_type=output_cells.OutputType.BOOL,
+    )
+
+
+@lru_cache(maxsize=output_cells.CHAR_CELL_COUNT)
+def _char_from_winner(cell: int) -> output_cells.TypedOutputEncoding:
+    """Decode a Char winner through one immutable physical cell pattern."""
+
+    if cell == output_cells.CHAR_UNKNOWN_CELL:
+        return _unknown(output_cells.OutputType.CHAR)
+    return output_cells.TypedOutputCellBank.encode(
+        chr(output_cells.PRINTABLE_ASCII_MIN + cell),
+        declared_type=output_cells.OutputType.CHAR,
+    )
+
+
+def _string_from_winners(
+    length: int,
+    character_cells: tuple[int, ...],
+) -> output_cells.TypedOutputEncoding:
+    """Rebuild one String solely from its physical factor-race winners."""
+
+    if length == output_cells.STRING_LENGTH_UNKNOWN_CELL:
+        return _unknown(output_cells.OutputType.STRING)
+    if length != len(character_cells) or length > output_cells.STRING_CAPACITY:
+        raise RuntimeError("physical String winners do not match their length factor")
+    cells = np.zeros(output_cells.TOTAL_CELL_COUNT, dtype=np.float64)
+    active = np.zeros(len(output_cells.FACTOR_LABELS), dtype=bool)
+    type_cell = tuple(output_cells.OutputType).index(output_cells.OutputType.STRING)
+    cells[output_cells.TYPE_SLICE] = output_cells._physical_one_hot(
+        output_cells.TYPE_CELL_COUNT,
+        type_cell,
+    )
+    active[output_cells.FACTOR_LABELS.index("type")] = True
+    cells[output_cells.STRING_LENGTH_SLICE] = output_cells._physical_one_hot(
+        output_cells.STRING_LENGTH_CELL_COUNT,
+        length,
+    )
+    active[output_cells.FACTOR_LABELS.index("string-length")] = True
+    supported = True
+    for position, cell in enumerate(character_cells):
+        offset = output_cells.STRING_ITEM_OFFSET + position * output_cells.CHAR_CELL_COUNT
+        cells[offset : offset + output_cells.CHAR_CELL_COUNT] = (
+            output_cells._physical_one_hot(output_cells.CHAR_CELL_COUNT, cell)
+        )
+        active[
+            output_cells.FACTOR_LABELS.index(f"string-char-{position}")
+        ] = True
+        supported = supported and cell != output_cells.CHAR_UNKNOWN_CELL
+    return output_cells.TypedOutputCellBank._finish(
+        output_cells.OutputType.STRING,
+        cells,
+        active,
+        supported=supported,
     )
 
 
@@ -299,6 +352,38 @@ def _decode_copy(
         )
         races.append(race)
         return _bool_from_winner(race.winner_cell), tuple(races)
+
+    if encoded.output_type is output_cells.OutputType.CHAR:
+        race = _physical_race(
+            encoded.char_cells * _CONTACT_CURRENT_PA,
+            bank="copy-char",
+        )
+        races.append(race)
+        return _char_from_winner(race.winner_cell), tuple(races)
+
+    if encoded.output_type is output_cells.OutputType.STRING:
+        length_race = _physical_race(
+            encoded.string_length_cells * _CONTACT_CURRENT_PA,
+            bank="copy-string-length",
+        )
+        races.append(length_race)
+        if length_race.winner_cell == output_cells.STRING_LENGTH_UNKNOWN_CELL:
+            return _unknown(output_cells.OutputType.STRING), tuple(races)
+        character_cells: list[int] = []
+        for position in range(length_race.winner_cell):
+            character_race = _physical_race(
+                encoded.string_item_cells[position] * _CONTACT_CURRENT_PA,
+                bank=f"copy-string-char-{position}",
+            )
+            races.append(character_race)
+            character_cells.append(character_race.winner_cell)
+        return (
+            _string_from_winners(
+                length_race.winner_cell,
+                tuple(character_cells),
+            ),
+            tuple(races),
+        )
 
     length_race = _physical_race(
         encoded.list_length_cells * _CONTACT_CURRENT_PA,
@@ -510,6 +595,25 @@ class FrozenTypedOperatorSuccessor:
     ) -> tuple[output_cells.TypedOutputEncoding, tuple[OperatorRace, ...]]:
         return self._binary_many(operator, (left,), (right,))[0]
 
+    def _extremum(
+        self,
+        operator: str,
+        left: output_cells.TypedOutputEncoding,
+        right: output_cells.TypedOutputEncoding,
+    ) -> tuple[output_cells.TypedOutputEncoding, tuple[OperatorRace, ...]]:
+        """Select one operand through less-than cells, then physically copy it."""
+
+        comparison, comparison_races = self._binary("less-than", left, right)
+        event = _single_event(comparison.bool_cells)
+        if event is None or event[0] == output_cells.BOOL_UNKNOWN_CELL:
+            selected = _unknown(output_cells.OutputType.INT)
+        else:
+            less_than = event[0] == output_cells.BOOL_TRUE_CELL
+            take_left = less_than if operator == "minimum" else not less_than
+            selected = left if take_left else right
+        copied, copy_races = _decode_copy(selected)
+        return copied, (*comparison_races, *copy_races)
+
     def _predict_effects_many(
         self,
         selected: tuple[output_cells.TypedOutputEncoding, ...],
@@ -667,6 +771,26 @@ class FrozenTypedOperatorSuccessor:
                     right.sha256,
                 ),
                 lambda: self._binary(action.operator, left, right),
+            )
+        elif action.schema == "APPLY2" and action.operator in {
+            "minimum",
+            "maximum",
+        }:
+            left = self._source(
+                action.left_source, selected, scopes, action.literal
+            )
+            right = self._source(
+                action.right_source, selected, scopes, action.literal
+            )
+            return self._effect_memo.resolve(
+                (
+                    self.checkpoint_sha256,
+                    "extremum",
+                    action.operator,
+                    left.sha256,
+                    right.sha256,
+                ),
+                lambda: self._extremum(action.operator, left, right),
             )
         elif (
             action.schema == "MAP_BIND"

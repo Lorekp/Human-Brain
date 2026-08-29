@@ -1,17 +1,19 @@
 """Factorized physical output cells for typed execution observations.
 
 This substrate represents execution outputs only.  It deliberately contains no
-AST node, edit-site, production, or parent/child structural state.  Scalar
-values use the established thermometer/opponent exact-cell pattern; lists use
-one length bank and four independent item banks rather than a cell per whole
-list.  A materialized target projection drives one fitted GLIF coincidence
-cell only when every active typed factor matches.
+AST node, edit-site, production, parent/child structural state, or character
+class catalog.  Scalar values use the established thermometer/opponent
+exact-cell pattern; lists and strings use one length bank plus independent
+positional banks rather than a cell per whole sequence.  A materialized target
+projection drives one fitted GLIF coincidence cell only when every active typed
+factor matches.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 from hashlib import sha256
 
 import numpy as np
@@ -23,6 +25,8 @@ class OutputType(Enum):
     INT = "Int"
     BOOL = "Bool"
     LIST_INT = "List[Int]"
+    CHAR = "Char"
+    STRING = "String"
 
 
 TYPE_LABELS = tuple(output_type.value for output_type in OutputType)
@@ -44,18 +48,36 @@ LIST_CAPACITY = 4
 LIST_LENGTH_UNKNOWN_CELL = LIST_CAPACITY + 1
 LIST_LENGTH_CELL_COUNT = LIST_CAPACITY + 2
 
+PRINTABLE_ASCII_MIN = 0x20
+PRINTABLE_ASCII_MAX = 0x7E
+PRINTABLE_ASCII = tuple(
+    chr(code) for code in range(PRINTABLE_ASCII_MIN, PRINTABLE_ASCII_MAX + 1)
+)
+CHAR_UNKNOWN_CELL = len(PRINTABLE_ASCII)
+CHAR_CELL_COUNT = CHAR_UNKNOWN_CELL + 1
+
+STRING_CAPACITY = 26
+STRING_LENGTH_UNKNOWN_CELL = STRING_CAPACITY + 1
+STRING_LENGTH_CELL_COUNT = STRING_CAPACITY + 2
+
 TYPE_OFFSET = 0
 INT_OFFSET = TYPE_OFFSET + TYPE_CELL_COUNT
 BOOL_OFFSET = INT_OFFSET + INT_CELL_COUNT
 LIST_LENGTH_OFFSET = BOOL_OFFSET + BOOL_CELL_COUNT
 LIST_ITEM_OFFSET = LIST_LENGTH_OFFSET + LIST_LENGTH_CELL_COUNT
-TOTAL_CELL_COUNT = LIST_ITEM_OFFSET + LIST_CAPACITY * INT_CELL_COUNT
+CHAR_OFFSET = LIST_ITEM_OFFSET + LIST_CAPACITY * INT_CELL_COUNT
+STRING_LENGTH_OFFSET = CHAR_OFFSET + CHAR_CELL_COUNT
+STRING_ITEM_OFFSET = STRING_LENGTH_OFFSET + STRING_LENGTH_CELL_COUNT
+TOTAL_CELL_COUNT = STRING_ITEM_OFFSET + STRING_CAPACITY * CHAR_CELL_COUNT
 
 TYPE_SLICE = slice(TYPE_OFFSET, INT_OFFSET)
 INT_SLICE = slice(INT_OFFSET, BOOL_OFFSET)
 BOOL_SLICE = slice(BOOL_OFFSET, LIST_LENGTH_OFFSET)
 LIST_LENGTH_SLICE = slice(LIST_LENGTH_OFFSET, LIST_ITEM_OFFSET)
-LIST_ITEMS_SLICE = slice(LIST_ITEM_OFFSET, TOTAL_CELL_COUNT)
+LIST_ITEMS_SLICE = slice(LIST_ITEM_OFFSET, CHAR_OFFSET)
+CHAR_SLICE = slice(CHAR_OFFSET, STRING_LENGTH_OFFSET)
+STRING_LENGTH_SLICE = slice(STRING_LENGTH_OFFSET, STRING_ITEM_OFFSET)
+STRING_ITEMS_SLICE = slice(STRING_ITEM_OFFSET, TOTAL_CELL_COUNT)
 
 FACTOR_LABELS = (
     "type",
@@ -63,6 +85,9 @@ FACTOR_LABELS = (
     "bool",
     "list-length",
     *(f"list-item-{position}" for position in range(LIST_CAPACITY)),
+    "char",
+    "string-length",
+    *(f"string-char-{position}" for position in range(STRING_CAPACITY)),
 )
 FACTOR_COUNT = len(FACTOR_LABELS)
 
@@ -72,6 +97,14 @@ _PROJECTION_SCALE_PA = 10_000.0
 _PROJECTION_LIMIT_PA = 5_000.0
 _COINCIDENCE_SCALE_PA = 10_000.0
 _COINCIDENCE_LIMIT_PA = 5_000.0
+_PHYSICAL_ONE_HOT_CACHE_SIZE = (
+    TYPE_CELL_COUNT
+    + 1  # The Int bank uses this path only for UNKNOWN.
+    + BOOL_CELL_COUNT
+    + LIST_LENGTH_CELL_COUNT
+    + CHAR_CELL_COUNT
+    + STRING_LENGTH_CELL_COUNT
+)
 
 
 def _freeze(array: np.ndarray, *, dtype: np.dtype | type = np.float64) -> np.ndarray:
@@ -91,6 +124,7 @@ def _drive_spike_mask(currents_pa: np.ndarray, *, steps: int = _INPUT_STEPS) -> 
     return _freeze(seen.astype(np.float64))
 
 
+@lru_cache(maxsize=_PHYSICAL_ONE_HOT_CACHE_SIZE)
 def _physical_one_hot(cell_count: int, active_cell: int) -> np.ndarray:
     if not 0 <= active_cell < cell_count:
         raise ValueError("active cell lies outside its physical bank")
@@ -102,6 +136,7 @@ def _physical_one_hot(cell_count: int, active_cell: int) -> np.ndarray:
     return spikes
 
 
+@lru_cache(maxsize=1)
 def _int_projection() -> tuple[np.ndarray, np.ndarray]:
     weights = np.zeros(
         (INT_KNOWN_CELL_COUNT, len(INT_THRESHOLDS)), dtype=np.float64
@@ -145,6 +180,19 @@ def _encode_int_bank(value: object) -> tuple[np.ndarray, bool]:
     return spikes, True
 
 
+def _encode_char_bank(value: object) -> tuple[np.ndarray, bool]:
+    if (
+        type(value) is not str
+        or len(value) != 1
+        or not PRINTABLE_ASCII_MIN <= ord(value) <= PRINTABLE_ASCII_MAX
+    ):
+        return _physical_one_hot(CHAR_CELL_COUNT, CHAR_UNKNOWN_CELL), False
+    return (
+        _physical_one_hot(CHAR_CELL_COUNT, ord(value) - PRINTABLE_ASCII_MIN),
+        True,
+    )
+
+
 def _coerce_output_type(value: OutputType | str) -> OutputType:
     if isinstance(value, OutputType):
         return value
@@ -164,6 +212,10 @@ def _inferred_output_type(value: object) -> OutputType | None:
         return OutputType.INT
     if type(value) is list:
         return OutputType.LIST_INT
+    if type(value) is str:
+        # Python has no distinct Char runtime type.  Untagged strings therefore
+        # remain strings even when their length is one; Char is declaration-only.
+        return OutputType.STRING
     return None
 
 
@@ -198,12 +250,29 @@ class TypedOutputEncoding:
         return self.cells[LIST_ITEMS_SLICE].reshape(LIST_CAPACITY, INT_CELL_COUNT)
 
     @property
+    def char_cells(self) -> np.ndarray:
+        return self.cells[CHAR_SLICE]
+
+    @property
+    def string_length_cells(self) -> np.ndarray:
+        return self.cells[STRING_LENGTH_SLICE]
+
+    @property
+    def string_item_cells(self) -> np.ndarray:
+        return self.cells[STRING_ITEMS_SLICE].reshape(
+            STRING_CAPACITY, CHAR_CELL_COUNT
+        )
+
+    @property
     def unknown_active(self) -> bool:
         return bool(
             self.int_cells[INT_UNKNOWN_CELL]
             or self.bool_cells[BOOL_UNKNOWN_CELL]
             or self.list_length_cells[LIST_LENGTH_UNKNOWN_CELL]
             or np.any(self.list_item_cells[:, INT_UNKNOWN_CELL])
+            or self.char_cells[CHAR_UNKNOWN_CELL]
+            or self.string_length_cells[STRING_LENGTH_UNKNOWN_CELL]
+            or np.any(self.string_item_cells[:, CHAR_UNKNOWN_CELL])
         )
 
     @property
@@ -218,25 +287,47 @@ class TypedOutputEncoding:
 
 
 class TypedOutputCellBank:
-    """Encode Int, Bool, and bounded List[Int] outputs into fixed cell banks."""
+    """Encode and decode the supported bounded values in fixed physical banks."""
 
     @staticmethod
     def projection_sha256() -> str:
         weights, bias = _int_projection()
         digest = sha256()
-        digest.update(b"public-typed-output-cells-v1\0")
+        digest.update(b"public-typed-output-cells-v2\0")
         digest.update("\n".join(TYPE_LABELS).encode("ascii"))
         digest.update("\n".join(FACTOR_LABELS).encode("ascii"))
+        digest.update(bytes(range(PRINTABLE_ASCII_MIN, PRINTABLE_ASCII_MAX + 1)))
         digest.update(
             np.asarray(
                 (
+                    TYPE_OFFSET,
+                    TYPE_CELL_COUNT,
+                    INT_OFFSET,
                     INT_MIN,
                     INT_MAX,
                     INT_UNKNOWN_CELL,
+                    INT_CELL_COUNT,
+                    BOOL_OFFSET,
+                    BOOL_FALSE_CELL,
+                    BOOL_TRUE_CELL,
                     BOOL_UNKNOWN_CELL,
+                    BOOL_CELL_COUNT,
+                    LIST_LENGTH_OFFSET,
                     LIST_CAPACITY,
                     LIST_LENGTH_UNKNOWN_CELL,
+                    LIST_LENGTH_CELL_COUNT,
+                    LIST_ITEM_OFFSET,
+                    CHAR_OFFSET,
+                    CHAR_UNKNOWN_CELL,
+                    CHAR_CELL_COUNT,
+                    STRING_LENGTH_OFFSET,
+                    STRING_CAPACITY,
+                    STRING_LENGTH_UNKNOWN_CELL,
+                    STRING_LENGTH_CELL_COUNT,
+                    STRING_ITEM_OFFSET,
                     TOTAL_CELL_COUNT,
+                    FACTOR_COUNT,
+                    _INPUT_STEPS,
                 ),
                 dtype=np.int64,
             ).tobytes()
@@ -290,6 +381,19 @@ class TypedOutputCellBank:
                 cells[offset + INT_UNKNOWN_CELL] = _physical_one_hot(
                     INT_CELL_COUNT, INT_UNKNOWN_CELL
                 )[INT_UNKNOWN_CELL]
+            cells[CHAR_OFFSET + CHAR_UNKNOWN_CELL] = _physical_one_hot(
+                CHAR_CELL_COUNT, CHAR_UNKNOWN_CELL
+            )[CHAR_UNKNOWN_CELL]
+            cells[
+                STRING_LENGTH_OFFSET + STRING_LENGTH_UNKNOWN_CELL
+            ] = _physical_one_hot(
+                STRING_LENGTH_CELL_COUNT, STRING_LENGTH_UNKNOWN_CELL
+            )[STRING_LENGTH_UNKNOWN_CELL]
+            for position in range(STRING_CAPACITY):
+                offset = STRING_ITEM_OFFSET + position * CHAR_CELL_COUNT
+                cells[offset + CHAR_UNKNOWN_CELL] = _physical_one_hot(
+                    CHAR_CELL_COUNT, CHAR_UNKNOWN_CELL
+                )[CHAR_UNKNOWN_CELL]
             active[1:] = True
             return cls._finish(None, cells, active, supported=False)
 
@@ -314,6 +418,36 @@ class TypedOutputCellBank:
             active[2] = True
             return cls._finish(output_type, cells, active, supported=supported)
 
+        char_factor = 4 + LIST_CAPACITY
+        if output_type is OutputType.CHAR:
+            char_cells, supported = _encode_char_bank(value)
+            cells[CHAR_SLICE] = char_cells
+            active[char_factor] = True
+            return cls._finish(output_type, cells, active, supported=supported)
+
+        string_length_factor = char_factor + 1
+        string_item_factor = string_length_factor + 1
+        if output_type is OutputType.STRING:
+            if type(value) is not str or len(value) > STRING_CAPACITY:
+                cells[STRING_LENGTH_SLICE] = _physical_one_hot(
+                    STRING_LENGTH_CELL_COUNT, STRING_LENGTH_UNKNOWN_CELL
+                )
+                active[string_length_factor] = True
+                return cls._finish(output_type, cells, active, supported=False)
+
+            cells[STRING_LENGTH_SLICE] = _physical_one_hot(
+                STRING_LENGTH_CELL_COUNT, len(value)
+            )
+            active[string_length_factor] = True
+            supported = True
+            for position, item in enumerate(value):
+                item_cells, item_supported = _encode_char_bank(item)
+                offset = STRING_ITEM_OFFSET + position * CHAR_CELL_COUNT
+                cells[offset : offset + CHAR_CELL_COUNT] = item_cells
+                active[string_item_factor + position] = True
+                supported = supported and item_supported
+            return cls._finish(output_type, cells, active, supported=supported)
+
         if type(value) is not list or len(value) > LIST_CAPACITY:
             cells[LIST_LENGTH_SLICE] = _physical_one_hot(
                 LIST_LENGTH_CELL_COUNT, LIST_LENGTH_UNKNOWN_CELL
@@ -333,6 +467,104 @@ class TypedOutputCellBank:
             active[4 + position] = True
             supported = supported and item_supported
         return cls._finish(output_type, cells, active, supported=supported)
+
+    @classmethod
+    def decode(cls, encoded: TypedOutputEncoding) -> object:
+        """Recover a value only from a canonical encoding under this projection."""
+
+        if not isinstance(encoded, TypedOutputEncoding):
+            raise TypeError("encoded must be a TypedOutputEncoding")
+        if encoded.cells.shape != (TOTAL_CELL_COUNT,):
+            raise ValueError("encoded cells do not match the current output projection")
+        if encoded.active_factor_mask.shape != (FACTOR_COUNT,):
+            raise ValueError("encoded factor mask does not match the current projection")
+        if (
+            encoded.cells.dtype != np.dtype(np.float64)
+            or encoded.cells.flags.writeable
+            or not encoded.cells.flags.c_contiguous
+        ):
+            raise ValueError("encoded cells must be immutable contiguous float64 values")
+        if (
+            encoded.active_factor_mask.dtype != np.dtype(np.bool_)
+            or encoded.active_factor_mask.flags.writeable
+            or not encoded.active_factor_mask.flags.c_contiguous
+        ):
+            raise ValueError("encoded factor mask must be immutable boolean values")
+        if not encoded.supported or encoded.output_type is None:
+            raise ValueError("UNKNOWN output encodings cannot be decoded")
+
+        output_type = encoded.output_type
+        if output_type is OutputType.INT:
+            value: object = INT_MIN + cls._known_cell(
+                encoded.int_cells, INT_UNKNOWN_CELL, label="Int"
+            )
+        elif output_type is OutputType.BOOL:
+            cell = cls._known_cell(
+                encoded.bool_cells, BOOL_UNKNOWN_CELL, label="Bool"
+            )
+            if cell not in (BOOL_FALSE_CELL, BOOL_TRUE_CELL):
+                raise ValueError("Bool encoding has no canonical value cell")
+            value = cell == BOOL_TRUE_CELL
+        elif output_type is OutputType.LIST_INT:
+            length = cls._known_cell(
+                encoded.list_length_cells,
+                LIST_LENGTH_UNKNOWN_CELL,
+                label="List[Int] length",
+            )
+            if length > LIST_CAPACITY:
+                raise ValueError("List[Int] length lies outside its bounded bank")
+            value = [
+                INT_MIN
+                + cls._known_cell(
+                    encoded.list_item_cells[position],
+                    INT_UNKNOWN_CELL,
+                    label=f"List[Int] item {position}",
+                )
+                for position in range(length)
+            ]
+        elif output_type is OutputType.CHAR:
+            cell = cls._known_cell(
+                encoded.char_cells, CHAR_UNKNOWN_CELL, label="Char"
+            )
+            value = PRINTABLE_ASCII[cell]
+        elif output_type is OutputType.STRING:
+            length = cls._known_cell(
+                encoded.string_length_cells,
+                STRING_LENGTH_UNKNOWN_CELL,
+                label="String length",
+            )
+            if length > STRING_CAPACITY:
+                raise ValueError("String length lies outside its bounded bank")
+            value = "".join(
+                PRINTABLE_ASCII[
+                    cls._known_cell(
+                        encoded.string_item_cells[position],
+                        CHAR_UNKNOWN_CELL,
+                        label=f"String character {position}",
+                    )
+                ]
+                for position in range(length)
+            )
+        else:  # pragma: no cover - exhaustive over the current enum.
+            raise ValueError(f"unsupported output type: {output_type!r}")
+
+        canonical = cls.encode(value, declared_type=output_type)
+        if (
+            canonical.sha256 != encoded.sha256
+            or not np.array_equal(canonical.cells, encoded.cells)
+            or not np.array_equal(
+                canonical.active_factor_mask, encoded.active_factor_mask
+            )
+        ):
+            raise ValueError("encoding is not canonical under the current projection")
+        return value
+
+    @staticmethod
+    def _known_cell(bank: np.ndarray, unknown_cell: int, *, label: str) -> int:
+        selected = np.flatnonzero(bank)
+        if len(selected) != 1 or selected[0] == unknown_cell:
+            raise ValueError(f"{label} encoding does not select one known cell")
+        return int(selected[0])
 
     @classmethod
     def _finish(
@@ -483,6 +715,9 @@ def exact_typed_output_coincidence(
 __all__ = [
     "BOOL_CELL_COUNT",
     "BOOL_UNKNOWN_CELL",
+    "CHAR_CELL_COUNT",
+    "CHAR_OFFSET",
+    "CHAR_UNKNOWN_CELL",
     "FACTOR_LABELS",
     "FixedTypedCoincidenceDetector",
     "INT_CELL_COUNT",
@@ -493,6 +728,14 @@ __all__ = [
     "LIST_LENGTH_CELL_COUNT",
     "LIST_LENGTH_UNKNOWN_CELL",
     "OutputType",
+    "PRINTABLE_ASCII",
+    "PRINTABLE_ASCII_MAX",
+    "PRINTABLE_ASCII_MIN",
+    "STRING_CAPACITY",
+    "STRING_ITEM_OFFSET",
+    "STRING_LENGTH_CELL_COUNT",
+    "STRING_LENGTH_OFFSET",
+    "STRING_LENGTH_UNKNOWN_CELL",
     "TOTAL_CELL_COUNT",
     "TYPE_CELL_COUNT",
     "TypedCoincidenceResult",

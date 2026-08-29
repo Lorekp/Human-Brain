@@ -19,6 +19,7 @@ B_MINUS_A = FactorAction((), "APPLY2", "subtract", "SCOPE0", "SCOPE1", None)
 X_LESS_2 = FactorAction((), "APPLY2", "less-than", "SCOPE0", "LITERAL", 2)
 TWO_LESS_X = FactorAction((), "APPLY2", "less-than", "LITERAL", "SCOPE0", 2)
 X_LESS_3 = FactorAction((), "APPLY2", "less-than", "SCOPE0", "LITERAL", 3)
+OUT_OF_RANGE_LITERAL = factors.output_cells.INT_MAX + 1
 
 BINDING_ACTIONS = (
     DONE,
@@ -161,11 +162,15 @@ def test_signed_and_repeated_literals_are_normalized_by_value() -> None:
     (
         ("Clamp the input between -3 and 2.", factors.STATUS_AMBIGUOUS, (-3, 2)),
         ("Return the absolute value.", factors.STATUS_NO_LITERAL, ()),
-        ("Increase the input by 21.", factors.STATUS_OUT_OF_RANGE, (21,)),
         (
-            "Use 2 for the offset but reject values above 21.",
+            f"Increase the input by {OUT_OF_RANGE_LITERAL}.",
             factors.STATUS_OUT_OF_RANGE,
-            (2, 21),
+            (OUT_OF_RANGE_LITERAL,),
+        ),
+        (
+            f"Use 2 for the offset but reject values above {OUT_OF_RANGE_LITERAL}.",
+            factors.STATUS_OUT_OF_RANGE,
+            (2, OUT_OF_RANGE_LITERAL),
         ),
     ),
 )

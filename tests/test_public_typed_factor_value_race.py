@@ -54,6 +54,22 @@ def test_physical_unknown_is_inhibited_below_stop() -> None:
     assert decision.simultaneous_spike_candidates == 1
 
 
+def test_unsupported_string_is_inhibited_below_stop() -> None:
+    projection = value_race.FixedTypedFactorValueProjection.build(
+        (DONE,),
+        (outputs.TypedOutputCellBank.encode("ok"),),
+    )
+    unsupported = outputs.TypedOutputCellBank.encode("A\n")
+
+    decision = projection.select_unique(((unsupported,),))
+
+    assert not unsupported.supported
+    assert unsupported.unknown_active
+    assert decision.status == "STOP_ALL_UNKNOWN"
+    assert decision.selected_candidate_cell is None
+    assert decision.currents_pa == (-9_300.0, 650.0)
+
+
 def test_tier_currents_preserve_semantic_ties_and_strict_motor_stops() -> None:
     projection = value_race.FixedTypedFactorValueProjection.build(
         (DONE, ADD2, ABS),

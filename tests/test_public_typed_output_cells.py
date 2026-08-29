@@ -29,7 +29,7 @@ def test_lists_use_factor_banks_and_physically_mask_inactive_positions() -> None
     changed = output.TypedOutputCellBank.encode([1, 3])
     empty = output.TypedOutputCellBank.encode([])
 
-    assert output.TOTAL_CELL_COUNT == (
+    assert output.CHAR_OFFSET == (
         output.TYPE_CELL_COUNT
         + output.INT_CELL_COUNT
         + output.BOOL_CELL_COUNT
@@ -69,7 +69,7 @@ def test_invalid_values_activate_physical_unknown_without_aliasing_bool() -> Non
     )
     bad_item = output.TypedOutputCellBank.encode([1, unsupported_int])
     overlong = output.TypedOutputCellBank.encode([0, 1, 2, 3, 4])
-    unsupported = output.TypedOutputCellBank.encode("not-a-typed-output")
+    unsupported = output.TypedOutputCellBank.encode(object())
 
     assert not high_int.supported and high_int.unknown_active
     assert high_int.int_cells[output.INT_UNKNOWN_CELL] == 1.0

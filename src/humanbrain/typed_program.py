@@ -144,6 +144,8 @@ class FactorAction:
             "subtract",
             "less-than",
             "map",
+            "minimum",
+            "maximum",
         }:
             raise ValueError("unknown factor-action operator")
         sources = {"NONE", "SELECTED", "SCOPE0", "SCOPE1", "BOUND0", "LITERAL"}
@@ -468,6 +470,8 @@ _PRIMITIVE_SPECS = (
     _PrimitiveSpec("input-delimiter", "input-delimiter"),
     _PrimitiveSpec("add", "operation", _INT, (_INT, _INT), "add"),
     _PrimitiveSpec("subtract", "operation", _INT, (_INT, _INT), "subtract"),
+    _PrimitiveSpec("minimum", "operation", _INT, (_INT, _INT), "minimum"),
+    _PrimitiveSpec("maximum", "operation", _INT, (_INT, _INT), "maximum"),
     _PrimitiveSpec("absolute", "operation", _INT, (_INT,), "absolute"),
     _PrimitiveSpec("less-than", "operation", _BOOL, (_INT, _INT), "less-than"),
     _PrimitiveSpec("if", "operation", _A, (_BOOL, _A, _A), "if"),
@@ -1520,8 +1524,16 @@ def apply_factor_action(program: Program, action: FactorAction) -> Program:
         operand = _factor_source_tokens(action, action.left_source, selected, sites)
         replacement = ("absolute", *operand)
     elif action.schema == "APPLY2":
-        if action.operator not in {"add", "subtract", "less-than"}:
-            raise ValueError("APPLY2 supports add, subtract, or less-than")
+        if action.operator not in {
+            "add",
+            "subtract",
+            "less-than",
+            "minimum",
+            "maximum",
+        }:
+            raise ValueError(
+                "APPLY2 supports add, subtract, less-than, minimum, or maximum"
+            )
         if action.left_source == "NONE" or action.right_source == "NONE":
             raise ValueError("APPLY2 requires two operand sources")
         left = _factor_source_tokens(action, action.left_source, selected, sites)
@@ -2146,6 +2158,18 @@ def _lower_expression(
         return ast.Call(
             func=ast.Name(id="abs", ctx=ast.Load()),
             args=[_lower_expression(expression.children[0], environment, context)],
+            keywords=[],
+        )
+    if lowering in {"minimum", "maximum"}:
+        return ast.Call(
+            func=ast.Name(
+                id="min" if lowering == "minimum" else "max",
+                ctx=ast.Load(),
+            ),
+            args=[
+                _lower_expression(expression.children[0], environment, context),
+                _lower_expression(expression.children[1], environment, context),
+            ],
             keywords=[],
         )
     if lowering == "less-than":
