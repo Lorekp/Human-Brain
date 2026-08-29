@@ -9,8 +9,9 @@ boundary.  Candidate programs are never constructed, compiled, or executed.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections import OrderedDict
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 from functools import lru_cache
 from hashlib import sha256
 
@@ -30,6 +31,10 @@ _INT_KNOWN = output_cells.INT_CELL_COUNT - 1
 _PAIR_KNOWN = _INT_KNOWN * _INT_KNOWN
 _PAIR_UNKNOWN = _PAIR_KNOWN
 _PAIR_COUNT = _PAIR_KNOWN + 1
+
+# The bridge's observed effect domain is much smaller than the 16,641-entry
+# physical operand plane.  Keep range expansion from silently growing memory.
+_EFFECT_MEMO_MAX_ENTRIES = 4_096
 
 _RACE = CompiledRestingGlifRace.compile(step_count=_RACE_STEPS)
 _UNKNOWN_VALUE = object()
@@ -64,6 +69,72 @@ class OperatorRace:
     spike_step: int
     simultaneous_spike_candidates: int
     currents_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class OperatorEffectMemoInfo:
+    """Auditable snapshot of the runtime-only normalized-effect memo."""
+
+    max_entries: int
+    entries: int
+    hits: int
+    misses: int
+    evictions: int
+
+
+_OperatorEffectKey = tuple[str, ...]
+_OperatorEffect = tuple[
+    output_cells.TypedOutputEncoding,
+    tuple[OperatorRace, ...],
+]
+
+
+@dataclass(slots=True)
+class _OperatorEffectMemo:
+    """Bounded least-recently-used memo; never part of model identity."""
+
+    max_entries: int = _EFFECT_MEMO_MAX_ENTRIES
+    _entries: OrderedDict[_OperatorEffectKey, _OperatorEffect] = field(
+        default_factory=OrderedDict
+    )
+    hits: int = 0
+    misses: int = 0
+    evictions: int = 0
+
+    def __post_init__(self) -> None:
+        if type(self.max_entries) is not int or self.max_entries <= 0:
+            raise ValueError("max_entries must be a positive exact integer")
+
+    def resolve(
+        self,
+        key: _OperatorEffectKey,
+        factory: Callable[[], _OperatorEffect],
+    ) -> _OperatorEffect:
+        effect = self._entries.pop(key, None)
+        if effect is not None:
+            self.hits += 1
+            self._entries[key] = effect
+            return effect
+        self.misses += 1
+        effect = factory()
+        if len(self._entries) >= self.max_entries:
+            self._entries.popitem(last=False)
+            self.evictions += 1
+        self._entries[key] = effect
+        return effect
+
+    def clear(self) -> None:
+        self._entries.clear()
+        self.hits = self.misses = self.evictions = 0
+
+    def info(self) -> OperatorEffectMemoInfo:
+        return OperatorEffectMemoInfo(
+            max_entries=self.max_entries,
+            entries=len(self._entries),
+            hits=self.hits,
+            misses=self.misses,
+            evictions=self.evictions,
+        )
 
 
 def _physical_race(currents_pa: np.ndarray, *, bank: str) -> OperatorRace:
@@ -122,6 +193,21 @@ def _literal_int(value: int) -> output_cells.TypedOutputEncoding:
     return output_cells.TypedOutputCellBank.encode(
         value,
         declared_type=output_cells.OutputType.INT,
+    )
+
+
+def _unknown_effect(
+    output_type: output_cells.OutputType | None,
+    bank: str,
+) -> _OperatorEffect:
+    return (
+        _unknown(output_type),
+        (
+            _physical_race(
+                np.asarray((_UNKNOWN_TONIC_PA,), dtype=np.float64),
+                bank=bank,
+            ),
+        ),
     )
 
 
@@ -209,6 +295,12 @@ class FrozenTypedOperatorSuccessor:
     int_output_bias_pa: np.ndarray
     bool_output_bias_pa: np.ndarray
     checkpoint_sha256: str
+    _effect_memo: _OperatorEffectMemo = field(
+        default_factory=_OperatorEffectMemo,
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
     @property
     def live_checkpoint_sha256(self) -> str:
@@ -224,6 +316,16 @@ class FrozenTypedOperatorSuccessor:
             self.int_output_bias_pa,
             self.bool_output_bias_pa,
         )
+
+    def effect_memo_info(self) -> OperatorEffectMemoInfo:
+        """Return counters for the runtime-only normalized-effect memo."""
+
+        return self._effect_memo.info()
+
+    def clear_effect_memo(self) -> None:
+        """Drop runtime reuse without changing the fitted checkpoint."""
+
+        self._effect_memo.clear()
 
     @staticmethod
     def _source(
@@ -340,7 +442,10 @@ class FrozenTypedOperatorSuccessor:
             and action.right_source == "NONE"
             and action.literal is None
         ):
-            output, races = _decode_copy(selected)
+            return self._effect_memo.resolve(
+                (self.checkpoint_sha256, "copy", selected.sha256),
+                lambda: _decode_copy(selected),
+            )
         elif (
             action.schema == "APPLY1"
             and action.operator == "absolute"
@@ -349,7 +454,10 @@ class FrozenTypedOperatorSuccessor:
             operand = self._source(
                 action.left_source, selected, scopes, action.literal
             )
-            output, races = self._unary(operand)
+            return self._effect_memo.resolve(
+                (self.checkpoint_sha256, "unary-absolute", operand.sha256),
+                lambda: self._unary(operand),
+            )
         elif action.schema == "APPLY2" and action.operator in {
             "add",
             "subtract",
@@ -361,7 +469,16 @@ class FrozenTypedOperatorSuccessor:
             right = self._source(
                 action.right_source, selected, scopes, action.literal
             )
-            output, races = self._binary(action.operator, left, right)
+            return self._effect_memo.resolve(
+                (
+                    self.checkpoint_sha256,
+                    "binary",
+                    action.operator,
+                    left.sha256,
+                    right.sha256,
+                ),
+                lambda: self._binary(action.operator, left, right),
+            )
         elif (
             action.schema == "MAP_BIND"
             and action.operator == "map"
@@ -373,22 +490,25 @@ class FrozenTypedOperatorSuccessor:
                 action.right_source, selected, scopes, action.literal
             )
             if collection.output_type is output_cells.OutputType.LIST_INT:
-                output, races = _decode_copy(collection)
-            else:
-                output = _unknown(output_cells.OutputType.LIST_INT)
-                race = _physical_race(
-                    np.asarray((_UNKNOWN_TONIC_PA,), dtype=np.float64),
-                    bank="operator-map-unknown",
+                return self._effect_memo.resolve(
+                    (
+                        self.checkpoint_sha256,
+                        "map-copy",
+                        collection.sha256,
+                    ),
+                    lambda: _decode_copy(collection),
                 )
-                races = (race,)
-        else:
-            output = _unknown(None)
-            race = _physical_race(
-                np.asarray((_UNKNOWN_TONIC_PA,), dtype=np.float64),
-                bank="operator-action-unknown",
+            return self._effect_memo.resolve(
+                (self.checkpoint_sha256, "map-unknown"),
+                lambda: _unknown_effect(
+                    output_cells.OutputType.LIST_INT,
+                    "operator-map-unknown",
+                ),
             )
-            races = (race,)
-        return output, races
+        return self._effect_memo.resolve(
+            (self.checkpoint_sha256, "action-unknown"),
+            lambda: _unknown_effect(None, "operator-action-unknown"),
+        )
 
     def predict_many(
         self,
@@ -579,6 +699,7 @@ def train_public_typed_operator_successor(
 
 __all__ = [
     "FrozenTypedOperatorSuccessor",
+    "OperatorEffectMemoInfo",
     "OperatorRace",
     "TypedOperatorPrediction",
     "TypedOperatorTrainingSummary",
