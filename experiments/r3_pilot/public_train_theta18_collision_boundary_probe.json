@@ -1,0 +1,210 @@
+{
+  "artifact_id": "public-train-theta18-collision-boundary-v1",
+  "checkpoint_identity_after_boundary": {
+    "cohort_count": 0,
+    "event_count": 7934,
+    "learning_step": 7934,
+    "logical_state_sha256": "91480f9b896b2117e43f292766f338d11383d41e95ce7c748afe985a67f98d83",
+    "next_reserve_cell": 32768,
+    "segment_count": 87263
+  },
+  "claim_boundary": "one actual public TRAIN-only Genesis replay through zero-based token 7,933 at the preregistered arm (18,20), seed 17; known arm-(16,18) collision boundary only; no calibration-v3 reinterpretation/rerun, threshold tuning, later TRAIN tokens, threshold-selection/candidate-repair, confirmation, held-out, C1, capability, or transfer evidence",
+  "definition": {
+    "arm": [
+      18,
+      20
+    ],
+    "bounded_circuit_identity_sha256": "cf272347c188b21ac07cb4d1abb137f62d6cecadd0c33cb9d86fb2a40cd0c638",
+    "bounded_segment_capacity": 87263,
+    "construction_seed": 17,
+    "production_circuit_identity_sha256": "ec92505afdccf245b8b61e8fdbd0dbb52efecd73a29a78c28df6a7bb934aaf80",
+    "protocol_sha256": "5b916fe88cdba401c2a80e89b25bfc64447d189d216029d65bb40678c499dfa6"
+  },
+  "environment": {
+    "native_binary_sha256": "300db0b79cd6a21587c249b7aca409b5afb5b2ccdfec02486528d722fabf0564",
+    "native_source_digest": "1207670e012ef32ad3bf2fe383847ddb904f45df928bd2f7d89e5efabae1295a",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "generated_at_utc": "2026-08-29T02:59:44.315282+00:00",
+  "interpretation": {
+    "candidate_repair_evidence": false,
+    "preexisting_q255_constraint": "independent public q255 production-overlap evidence already STOPs arm (18,20) at recurrence 82/123 with matching=11, active=0, predicted_columns=0, and stored-owner drift; this probe neither reruns nor reinterprets it",
+    "result_scope": "localized_counterfactual_only",
+    "threshold_selection_evidence": false,
+    "what_pass_means": "the authenticated 8/11 foreign row remains candidate-reachable but is below theta_match=18 at this one boundary"
+  },
+  "probe_bound": {
+    "book_ordinal": 0,
+    "book_short_name": "Genesis",
+    "executed_steps": 7934,
+    "last_zero_based_token_index": 7933
+  },
+  "reference": {
+    "artifact_id": "public-train-first-recurrent-key-failure-v1",
+    "artifact_path": "experiments/r3_pilot/public_train_first_key_failure_probe.json",
+    "artifact_sha256_canonical_lf": "1197fcd76b9257d653f91288f6313eaf75649239269d2511dd50aba2b21e9dbe",
+    "commit": "0a6488ac52d17deb384aec4e20c67883ebef5f2e"
+  },
+  "result": {
+    "book_ordinal": 0,
+    "book_short_name": "Genesis",
+    "book_zero_based_token_index": 7933,
+    "checks": {
+      "current_key_outcome_preserved": true,
+      "current_source_reproduced": true,
+      "global_recognition_below_boundary": true,
+      "known_origin_reproduced": true,
+      "known_rows_below_theta_match": true,
+      "known_rows_candidate_reachable": true,
+      "known_rows_reproduced": true,
+      "reference_authenticated": true,
+      "stopped_at_exact_public_boundary": true
+    },
+    "current_source_context": [
+      2291,
+      2351,
+      2744,
+      7455,
+      11184,
+      21178,
+      22029,
+      22079,
+      25908,
+      26836,
+      26887
+    ],
+    "current_source_context_sha256": "75a978499659cdd224978aae6a43e620443614f5cd6a30b088298eb530e8f5f9",
+    "failures": [],
+    "global_zero_based_step_index": 7933,
+    "observed": {
+      "active_segments": 0,
+      "allocated_segments": 11,
+      "candidate_segments": 2233,
+      "matching_segments": 0,
+      "postings_visited": 3751,
+      "predicted": false,
+      "predicted_columns": 0,
+      "punished_segments": 0
+    },
+    "previous_winner_key_sha256": "75a978499659cdd224978aae6a43e620443614f5cd6a30b088298eb530e8f5f9",
+    "previous_winners": [
+      2291,
+      2351,
+      2744,
+      7455,
+      11184,
+      21178,
+      22029,
+      22079,
+      25908,
+      26836,
+      26887
+    ],
+    "reference_current_source_reproduced": true,
+    "row_provenance": {
+      "active": false,
+      "below_theta_match": true,
+      "candidate_reachable": true,
+      "checkpoint_segment_count_after_step": 87263,
+      "connected_contacts": 16,
+      "current_source_context_sha256": "75a978499659cdd224978aae6a43e620443614f5cd6a30b088298eb530e8f5f9",
+      "matching": false,
+      "origin_current_source_overlap_cells": 8,
+      "origin_global_step_index": 249,
+      "origin_source_context": [
+        2291,
+        2351,
+        2744,
+        7455,
+        11184,
+        21178,
+        22025,
+        22072,
+        25908,
+        26836,
+        26885
+      ],
+      "origin_source_context_sha256": "3dd1accd8d7d97927e9a3a7e4da4dc62f03cfc67c9e9560e515de41f1b60e377",
+      "origin_target_token_id": 116,
+      "owner_cells": [
+        5482,
+        17013,
+        17823,
+        19499,
+        21405,
+        25367,
+        27731,
+        28052,
+        29138,
+        30030,
+        32331
+      ],
+      "owner_columns": [
+        685,
+        2126,
+        2227,
+        2437,
+        2675,
+        3170,
+        3466,
+        3506,
+        3642,
+        3753,
+        4041
+      ],
+      "owners_in_current_token_columns": false,
+      "permanence_ticks": [
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255
+      ],
+      "potential_contacts": 16,
+      "recognition_segment_limit_before_step": 87252,
+      "row_sources": [
+        2291,
+        2351,
+        2744,
+        7455,
+        11184,
+        21178,
+        22072,
+        25908,
+        26836,
+        26885
+      ],
+      "segment_ids": [
+        2728,
+        2729,
+        2730,
+        2731,
+        2732,
+        2733,
+        2734,
+        2735,
+        2736,
+        2737,
+        2738
+      ]
+    },
+    "token_id": 32
+  },
+  "schema_version": 1,
+  "status": "PASS_LOCALIZED_THETA18_COLLISION_BOUNDARY",
+  "train_input": {
+    "book_ordinal": 0,
+    "book_short_name": "Genesis",
+    "book_token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd",
+    "held_out_books_materialized": 0,
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+  }
+}

@@ -481,6 +481,20 @@ small visible public factor-transfer boundary, not a family-disjoint coding
 task result. It licenses the factorized H=2 lift; List, Simple-SWE, M0, and all
 protected surfaces remain closed.
 
+On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
+localized rather than guessed. At Genesis step 7,933, eleven segments grown at
+step 249 under a different winner context shared 8/11 cells with the current
+context and therefore reached theta-match 16, but not theta-active 18. Their
+owners were outside the observed token columns, so the current novel key still
+allocated all 11 owners with no prediction or punishment. The exact-fanout
+scorer had conflated global candidate/matching diagnostics with exact-key
+recognition. A one-run `(18,20)` counterfactual pushed those same rows below
+matching while preserving the local outcome, but it cannot select that arm:
+the existing q=255 production-overlap control already stops `(18,20)` through
+stored-owner drift. The next increment keeps `(16,18)`'s learnable-versus-active
+tier semantics and seeks the first actual owner-reuse outcome failure; it does
+not retry or reinterpret calibration-v3.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
