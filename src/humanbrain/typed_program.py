@@ -145,6 +145,32 @@ class FactorAction:
 
 
 @dataclass(frozen=True, slots=True)
+class CompiledEditSite:
+    """Trusted Python for one value-producing site of an incumbent program."""
+
+    path: tuple[int, ...]
+    result_type_label: str
+    scope_type_labels: tuple[str, ...]
+    source: str
+    sha256: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.path, tuple) or not all(
+            type(part) is int and part >= 0 for part in self.path
+        ):
+            raise TypeError("compiled edit-site path must contain non-negative integers")
+        if not isinstance(self.result_type_label, str) or not self.result_type_label:
+            raise ValueError("compiled edit-site result type must be non-empty")
+        if not isinstance(self.scope_type_labels, tuple) or not all(
+            isinstance(label, str) and label for label in self.scope_type_labels
+        ):
+            raise TypeError("compiled edit-site scope types must be non-empty strings")
+        if not isinstance(self.source, str) or not self.source:
+            raise ValueError("compiled edit-site source must be non-empty")
+        object.__setattr__(self, "sha256", sha256(self.source.encode("utf-8")).hexdigest())
+
+
+@dataclass(frozen=True, slots=True)
 class CompiledPython:
     """Structurally emitted, unannotated Python source."""
 
@@ -1867,6 +1893,71 @@ def _lower_expression(
     raise ProgramFormatError("primitive has no structural Python lowering")
 
 
+def compile_edit_site(program: Program, path: tuple[int, ...]) -> CompiledEditSite:
+    """Compile one incumbent value site against its generic local scope."""
+
+    if not isinstance(program, Program):
+        raise TypeError("compile_edit_site requires a Program")
+    if not isinstance(path, tuple) or not all(
+        type(part) is int and part >= 0 for part in path
+    ):
+        raise TypeError("edit-site path must contain non-negative integers")
+    if _program_sha256(program.tokens, program.signature) != program.sha256:
+        raise ValueError("program digest mismatch")
+
+    root = _validate_program(program.tokens, program.signature)
+    records, substitutions = _typed_edit_site_records(root, program.signature)
+    selected = next((record for record in records if record[1] == path), None)
+    if selected is None:
+        raise ValueError(f"program has no edit site at path {path!r}")
+
+    expression, selected_path, expected, environment = selected
+    result_type_label = _type_term_label(expected, substitutions)
+    if expression.spec.role == "binder" or result_type_label == "internal-function":
+        raise ProgramFormatError("binder/internal-function edit sites are non-value probes")
+
+    scope_type_labels = tuple(
+        _type_term_label(binding, substitutions) for binding in environment
+    )
+    scope_names = tuple(f"scope_{index}" for index in range(len(environment)))
+    module = ast.Module(
+        body=[
+            ast.FunctionDef(
+                name="edit_site",
+                args=ast.arguments(
+                    posonlyargs=[],
+                    args=[ast.arg(arg=name) for name in scope_names],
+                    vararg=None,
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    kwarg=None,
+                    defaults=[],
+                ),
+                body=[
+                    ast.Return(
+                        value=_lower_expression(
+                            expression,
+                            scope_names,
+                            _LoweringContext(),
+                        )
+                    )
+                ],
+                decorator_list=[],
+                returns=None,
+                type_comment=None,
+            )
+        ],
+        type_ignores=[],
+    )
+    ast.fix_missing_locations(module)
+    return CompiledEditSite(
+        path=selected_path,
+        result_type_label=result_type_label,
+        scope_type_labels=scope_type_labels,
+        source=ast.unparse(module) + "\n",
+    )
+
+
 def compile(program: Program) -> CompiledPython:
     """Compile only a validated Program/signature into safe structural Python."""
     if not isinstance(program, Program):
@@ -1911,6 +2002,7 @@ def compile(program: Program) -> CompiledPython:
 
 
 __all__ = [
+    "CompiledEditSite",
     "CompiledPython",
     "Completion",
     "Example",
@@ -1927,6 +2019,7 @@ __all__ = [
     "TypedSignature",
     "apply_factor_action",
     "compile",
+    "compile_edit_site",
     "complete",
     "grow",
     "program_edit_sites",

@@ -11,6 +11,7 @@ import pytest
 from humanbrain.cells import AllenGlif5Parameters
 from humanbrain.human_cell_identity import HUMAN_GLIF5_IDENTITY
 from humanbrain.typed_program import (
+    CompiledEditSite,
     Example,
     FactorAction,
     FrozenCheckpoint,
@@ -23,6 +24,7 @@ from humanbrain.typed_program import (
     TypedSignature,
     apply_factor_action,
     compile,
+    compile_edit_site,
     complete,
     grow,
     program_edit_sites,
@@ -746,6 +748,148 @@ def test_program_edit_seam_rejects_unknown_paths_and_ill_typed_replacements() ->
     )
     with pytest.raises(ProgramFormatError, match="map requires one explicit binder"):
         replace_subtree(mapped, (0,), function_valued_if)
+
+
+def test_compile_edit_site_lowers_scalar_root_and_child_with_generic_scope() -> None:
+    signature = TypedSignature(
+        entry_point="offset",
+        parameters=(ProgramParameter("value", ProgramType.Int()),),
+        result=ProgramType.Int(),
+    )
+    program = Program(
+        ("add", "absolute", "variable-0", "integer", "+", "2", "end"),
+        signature,
+    )
+
+    root = compile_edit_site(program, ())
+    child = compile_edit_site(program, (0,))
+
+    assert isinstance(root, CompiledEditSite)
+    assert root.path == ()
+    assert root.result_type_label == "Int"
+    assert root.scope_type_labels == ("Int",)
+    assert root.source == (
+        "def edit_site(scope_0):\n    return abs(scope_0) + 2\n"
+    )
+    assert child.path == (0,)
+    assert child.result_type_label == "Int"
+    assert child.scope_type_labels == ("Int",)
+    assert child.source == "def edit_site(scope_0):\n    return abs(scope_0)\n"
+
+
+def test_compile_edit_site_preserves_two_parameter_de_bruijn_order() -> None:
+    integer = ProgramType.Int()
+    signature = TypedSignature(
+        entry_point="difference",
+        parameters=(
+            ProgramParameter("a", integer),
+            ProgramParameter("b", integer),
+        ),
+        result=integer,
+    )
+
+    a_minus_b = compile_edit_site(
+        Program(("subtract", "variable-1", "variable-0"), signature),
+        (),
+    )
+    b_minus_a = compile_edit_site(
+        Program(("subtract", "variable-0", "variable-1"), signature),
+        (),
+    )
+
+    assert a_minus_b.scope_type_labels == ("Int", "Int")
+    assert a_minus_b.source == (
+        "def edit_site(scope_0, scope_1):\n    return scope_1 - scope_0\n"
+    )
+    assert b_minus_a.source == (
+        "def edit_site(scope_0, scope_1):\n    return scope_0 - scope_1\n"
+    )
+
+
+def test_compile_edit_site_supports_map_body_and_collection_value_sites() -> None:
+    list_integer = ProgramType.List(ProgramType.Int())
+    signature = TypedSignature(
+        entry_point="map_values",
+        parameters=(ProgramParameter("values", list_integer),),
+        result=list_integer,
+    )
+    absolute_map = Program(
+        ("map", "bind", "absolute", "variable-0", "variable-0"),
+        signature,
+    )
+    add_two_map = Program(
+        (
+            "map",
+            "bind",
+            "add",
+            "variable-0",
+            "integer",
+            "+",
+            "2",
+            "end",
+            "variable-0",
+        ),
+        signature,
+    )
+
+    absolute_body = compile_edit_site(absolute_map, (0, 0))
+    add_two_body = compile_edit_site(add_two_map, (0, 0))
+    collection = compile_edit_site(absolute_map, (1,))
+
+    assert absolute_body.result_type_label == "Int"
+    assert absolute_body.scope_type_labels == ("Int", "List[Int]")
+    assert absolute_body.source == (
+        "def edit_site(scope_0, scope_1):\n    return abs(scope_0)\n"
+    )
+    assert add_two_body.scope_type_labels == ("Int", "List[Int]")
+    assert add_two_body.source == (
+        "def edit_site(scope_0, scope_1):\n    return scope_0 + 2\n"
+    )
+    assert collection.result_type_label == "List[Int]"
+    assert collection.scope_type_labels == ("List[Int]",)
+    assert collection.source == "def edit_site(scope_0):\n    return scope_0\n"
+
+
+def test_compile_edit_site_hash_is_deterministic_and_name_independent() -> None:
+    integer = ProgramType.Int()
+    first = Program(
+        ("absolute", "variable-0"),
+        TypedSignature(
+            entry_point="first_name",
+            parameters=(ProgramParameter("first_parameter", integer),),
+            result=integer,
+        ),
+    )
+    second = Program(
+        ("absolute", "variable-0"),
+        TypedSignature(
+            entry_point="second_name",
+            parameters=(ProgramParameter("second_parameter", integer),),
+            result=integer,
+        ),
+    )
+
+    first_site = compile_edit_site(first, ())
+    repeated = compile_edit_site(first, ())
+    renamed = compile_edit_site(second, ())
+
+    assert first_site == repeated == renamed
+    assert first_site.sha256 == sha256(first_site.source.encode("utf-8")).hexdigest()
+
+
+def test_compile_edit_site_rejects_bad_paths_and_non_value_binders() -> None:
+    list_integer = ProgramType.List(ProgramType.Int())
+    signature = TypedSignature(
+        entry_point="mapped",
+        parameters=(ProgramParameter("values", list_integer),),
+        result=list_integer,
+    )
+    program = Program(("map", "bind", "variable-0", "variable-0"), signature)
+
+    with pytest.raises(ValueError, match="no edit site"):
+        compile_edit_site(program, (9,))
+    with pytest.raises(ProgramFormatError, match="non-value"):
+        compile_edit_site(program, (0,))
 
 
 def test_factor_action_preserves_binary_binding_orientation() -> None:
