@@ -6,11 +6,41 @@ import pytest
 
 from experiments.r3_pilot import public_typed_prompt_factors as factors
 from humanbrain.typed_program import FactorAction
+from humanbrain.typed_program_types import ProgramParameter, ProgramType, TypedSignature
 
 
 MATCH_2 = FactorAction((), "APPLY2", "add", "SELECTED", "LITERAL", 2)
 WRONG_3 = FactorAction((), "APPLY2", "add", "SELECTED", "LITERAL", 3)
 NO_LITERAL = FactorAction((), "APPLY1", "absolute", "SELECTED", "NONE", None)
+
+DONE = FactorAction((), "DONE", "NONE", "NONE", "NONE", None)
+SELECTED_ALIAS = FactorAction(
+    (), "APPLY2", "subtract", "SCOPE1", "SELECTED", None
+)
+A_MINUS_B = FactorAction((), "APPLY2", "subtract", "SCOPE1", "SCOPE0", None)
+B_MINUS_A = FactorAction((), "APPLY2", "subtract", "SCOPE0", "SCOPE1", None)
+X_LESS_2 = FactorAction((), "APPLY2", "less-than", "SCOPE0", "LITERAL", 2)
+TWO_LESS_X = FactorAction((), "APPLY2", "less-than", "LITERAL", "SCOPE0", 2)
+X_LESS_3 = FactorAction((), "APPLY2", "less-than", "SCOPE0", "LITERAL", 3)
+
+BINDING_ACTIONS = (
+    DONE,
+    SELECTED_ALIAS,
+    A_MINUS_B,
+    B_MINUS_A,
+    X_LESS_2,
+    TWO_LESS_X,
+    X_LESS_3,
+)
+
+
+def _signature(*names: str, result: ProgramType | None = None) -> TypedSignature:
+    integer = ProgramType.Int()
+    return TypedSignature(
+        "solve",
+        tuple(ProgramParameter(name, integer) for name in names),
+        integer if result is None else result,
+    )
 
 
 def test_natural_paraphrases_extract_the_same_physical_literal_goal() -> None:
@@ -119,6 +149,157 @@ def test_observations_projections_and_races_are_deterministic_and_immutable() ->
     assert not first_race.spike_mask.flags.writeable
     with pytest.raises(ValueError):
         first_race.spike_mask[0] = 0.0
+
+
+@pytest.mark.parametrize(
+    ("prompt", "expected"),
+    (
+        (
+            "Given integers a and b, return a minus b.",
+            factors.PromptOperandPattern("subtract", "SCOPE1", "SCOPE0", None),
+        ),
+        (
+            "Given integers a and b, return b minus a.",
+            factors.PromptOperandPattern("subtract", "SCOPE0", "SCOPE1", None),
+        ),
+        (
+            "Subtract b from a.",
+            factors.PromptOperandPattern("subtract", "SCOPE1", "SCOPE0", None),
+        ),
+        (
+            "Return a-b.",
+            factors.PromptOperandPattern("subtract", "SCOPE1", "SCOPE0", None),
+        ),
+    ),
+)
+def test_two_parameter_prompt_order_maps_to_de_bruijn_sources(
+    prompt: str,
+    expected: factors.PromptOperandPattern,
+) -> None:
+    projection = factors.FixedPromptBindingProjection.build(BINDING_ACTIONS)
+    decision = projection.project(prompt, _signature("a", "b"))
+
+    assert decision.status == factors.PROJECTION_STATUS_PROJECTED
+    assert decision.observation.pattern == expected
+    assert decision.physical_winner == expected
+    expected_action = A_MINUS_B if expected.left_source == "SCOPE1" else B_MINUS_A
+    expected_cell = BINDING_ACTIONS.index(expected_action)
+    assert decision.matching_action_cells == (expected_cell,)
+    assert decision.action_currents_pa[expected_cell] == 5_000.0
+    assert decision.action_currents_pa[BINDING_ACTIONS.index(SELECTED_ALIAS)] == 0.0
+    assert decision.simultaneous_spike_candidates == 1
+
+
+def test_established_first_second_fixture_uses_declared_order_not_names() -> None:
+    observation = factors.observe_prompt_bindings(
+        "Given integers first and second, return first minus second.",
+        _signature("first", "second"),
+    )
+
+    assert observation.supported
+    assert observation.pattern == factors.PromptOperandPattern(
+        "subtract", "SCOPE1", "SCOPE0", None
+    )
+
+
+@pytest.mark.parametrize(
+    ("prompt", "expected_action", "left", "right"),
+    (
+        (
+            "Given integer x, return whether x is less than 2.",
+            X_LESS_2,
+            "SCOPE0",
+            "LITERAL",
+        ),
+        (
+            "Given integer x, return whether 2 is less than x.",
+            TWO_LESS_X,
+            "LITERAL",
+            "SCOPE0",
+        ),
+        ("Return whether x < 2.", X_LESS_2, "SCOPE0", "LITERAL"),
+    ),
+)
+def test_bool_comparison_preserves_literal_orientation(
+    prompt: str,
+    expected_action: FactorAction,
+    left: str,
+    right: str,
+) -> None:
+    projection = factors.FixedPromptBindingProjection.build(BINDING_ACTIONS)
+    decision = projection.project(
+        prompt,
+        _signature("x", result=ProgramType.Bool()),
+    )
+
+    assert decision.status == factors.PROJECTION_STATUS_PROJECTED
+    assert decision.observation.pattern == factors.PromptOperandPattern(
+        "less-than", left, right, 2
+    )
+    assert decision.matching_action_cells == (BINDING_ACTIONS.index(expected_action),)
+
+
+@pytest.mark.parametrize(
+    ("prompt", "status", "observation_status"),
+    (
+        (
+            "Return a minus b or b minus a.",
+            factors.PROJECTION_STATUS_STOP_AMBIGUOUS,
+            factors.BINDING_STATUS_AMBIGUOUS,
+        ),
+        (
+            "Return a divided by b.",
+            factors.PROJECTION_STATUS_STOP_UNKNOWN,
+            factors.BINDING_STATUS_UNKNOWN,
+        ),
+    ),
+)
+def test_ambiguous_and_unknown_operand_prompts_physically_stop(
+    prompt: str,
+    status: str,
+    observation_status: str,
+) -> None:
+    projection = factors.FixedPromptBindingProjection.build(BINDING_ACTIONS)
+    decision = projection.project(prompt, _signature("a", "b"))
+
+    assert decision.status == status
+    assert decision.observation.status == observation_status
+    assert decision.physical_winner == factors.PHYSICAL_STOP
+    assert decision.winner_cell == decision.stop_cell
+    assert decision.race_currents_pa[decision.stop_cell] == 5_000.0
+    assert not any(decision.action_currents_pa)
+    assert decision.matching_action_cells == ()
+    assert decision.simultaneous_spike_candidates == 1
+
+
+def test_supported_prompt_absent_from_fixed_factor_bank_physically_stops() -> None:
+    projection = factors.FixedPromptBindingProjection.build(BINDING_ACTIONS)
+    decision = projection.project(
+        "Return whether x is less than 4.",
+        _signature("x", result=ProgramType.Bool()),
+    )
+
+    assert decision.observation.supported
+    assert decision.status == factors.PROJECTION_STATUS_STOP_UNSUPPORTED
+    assert decision.physical_winner == factors.PHYSICAL_STOP
+    assert decision.winner_cell == decision.stop_cell
+
+
+def test_binding_projection_is_readonly_and_checkpoint_stable() -> None:
+    projection = factors.FixedPromptBindingProjection.build(BINDING_ACTIONS)
+    before = projection.live_checkpoint_sha256
+    decision = projection.project(
+        "Given integers a and b, return a minus b.",
+        _signature("a", "b"),
+    )
+
+    assert before == projection.sha256 == projection.live_checkpoint_sha256
+    assert decision.checkpoint_before_sha256 == decision.checkpoint_after_sha256
+    assert decision.checkpoint_after_sha256 == projection.sha256
+    assert not projection.race_weights_pa.flags.writeable
+    assert not projection.action_weights_pa.flags.writeable
+    with pytest.raises(ValueError):
+        projection.action_weights_pa[0, 0] = 1.0
 
 
 def test_module_has_no_program_output_or_candidate_ranking_seam() -> None:
