@@ -364,6 +364,19 @@ withheld magnitude-3 paired transfer (`abs(x)-3` versus `abs(x-3)`) is absent
 from this learner and now lives behind a separate persisted-PASS authenticator
 and one-shot artifact guard.
 
+That paired boundary is now spent at `STOP_HORIZON2_SUCCESSOR_FRESH_K3`.
+The outer-subtract arm generated exact `ABS → SUB3 → DONE`. The inner-subtract
+arm's first pair race also chose the correct `SUB3 → ABS`, and its selected
+real action produced the expected intermediate values. Replanning then aborted
+before its second action: exhaustive pair generation reached a candidate whose
+intermediate `-21` lay outside the primitive learner's pre-value support
+`[-20,20]`, so all 65 successor value cells received the same base current and
+spiked together. The frozen checkpoint and recorded pair/scoring hashes stayed
+unchanged. This is a useful boundary rather than a reason to retry k=3: the
+world model needs a physical `UNKNOWN` successor state (and pair scoring that
+can continue past unknown branches) before the same planning pattern is lifted
+from scalar values into typed AST site/rewrite state.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

@@ -101,3 +101,28 @@ def test_spend_marker_guard_never_authenticates_or_runs(monkeypatch) -> None:
         lambda *args: (_ for _ in ()).throw(AssertionError("marker guard ran fresh")),
     )
     assert fresh.main() == 2
+
+
+def test_spent_fresh_k3_artifact_is_banked_once() -> None:
+    artifact_raw = fresh._ARTIFACT_PATH.read_bytes()
+    marker_raw = fresh._SPEND_MARKER_PATH.read_bytes()
+    assert sha256(artifact_raw).hexdigest() == (
+        "86fd536784f0d94d85623fc4ceb6a36fbc4b96a1b32167991e195ea2a72a841e"
+    )
+    assert sha256(marker_raw).hexdigest() == (
+        "51601b1300c4039147cd72f3cd8e96c70834bc566538ac6b43a6ed11f2b88f59"
+    )
+
+    payload = json.loads(artifact_raw)
+    marker = json.loads(marker_raw)
+    assert payload["verdict"] == "STOP_HORIZON2_SUCCESSOR_FRESH_K3"
+    assert payload["passed_tasks"] == 1
+    assert payload["total_tasks"] == 2
+    tasks = {task["name"]: task for task in payload["tasks"]}
+    assert tasks["abs(x)-3"]["passed"]
+    assert tasks["abs(x-3)"]["selected_actions"] == ["WRAP_SUB[3]"]
+    assert tasks["abs(x-3)"]["failure_stage"] == "planning_2"
+    assert tasks["abs(x-3)"]["error"] == (
+        "learned-successor-value produced 65 simultaneous first spikes"
+    )
+    assert marker["fresh_commitment_sha256"] == payload["fresh_commitment_sha256"]

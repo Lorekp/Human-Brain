@@ -1,6 +1,9 @@
 .gitattributes text eol=lf
 *.json text eol=lf
 artifacts/procedural_address_space_v1.json binary
+experiments/r3_pilot/public_typed_horizon2_successor_visible_probe.json binary -eol
+experiments/r3_pilot/public_typed_horizon2_successor_fresh_k3_probe.json binary -eol
+experiments/r3_pilot/public_typed_horizon2_successor_fresh_k3.spend.json binary -eol
 *.md text eol=lf
 *.py text eol=lf
 *.rs text eol=lf

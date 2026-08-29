@@ -1,0 +1,51 @@
+{
+  "disposition": "Canonical fresh boundary spent once marker; retain after PASS, STOP, exception, interruption, or crash.",
+  "fresh_commitment": {
+    "arguments": [
+      -14,
+      -8,
+      -2,
+      1,
+      6,
+      11
+    ],
+    "pair_bank_sha256": "0eee88c5c2f23d9249b131574648f5c363f1c5510810beb89aa6aa51f1229cec",
+    "planner_source_sha256": "5a68250e3d0a0be12e9ead28273e387aa9f29b7f0ddd38cef8ecfcb731347f1b",
+    "scoring_sha256": "53fef1753f8bd0fdce79123e89c2985a0d20de57229b271b1bbc856f85ab966b",
+    "successor_checkpoint_sha256": "20cfa5885998a08583e9367b9f97bcbcc3de87e39f61f531a82195eee6987a52",
+    "tasks": [
+      {
+        "expected_actions": [
+          "WRAP_ABS",
+          "WRAP_SUB[3]",
+          "DONE"
+        ],
+        "name": "abs(x)-3",
+        "target_actions": [
+          "WRAP_ABS",
+          "WRAP_SUB[3]"
+        ]
+      },
+      {
+        "expected_actions": [
+          "WRAP_SUB[3]",
+          "WRAP_ABS",
+          "DONE"
+        ],
+        "name": "abs(x-3)",
+        "target_actions": [
+          "WRAP_SUB[3]",
+          "WRAP_ABS"
+        ]
+      }
+    ],
+    "visible_artifact_sha256": "d72e0b98de6d01f6d6901efbd82fcbba9e4f4db0d5f253d45fbf4db8b3105904"
+  },
+  "fresh_commitment_sha256": "f983e051a2db6ad12d895fa3abb8aca8be1b533f539bb5d1fe73d43d2b3ca3d9",
+  "pair_bank_sha256": "0eee88c5c2f23d9249b131574648f5c363f1c5510810beb89aa6aa51f1229cec",
+  "planner_source_sha256": "5a68250e3d0a0be12e9ead28273e387aa9f29b7f0ddd38cef8ecfcb731347f1b",
+  "schema": "public-typed-horizon2-successor-fresh-k3-spend-v1",
+  "scoring_sha256": "53fef1753f8bd0fdce79123e89c2985a0d20de57229b271b1bbc856f85ab966b",
+  "successor_checkpoint_sha256": "20cfa5885998a08583e9367b9f97bcbcc3de87e39f61f531a82195eee6987a52",
+  "visible_artifact_sha256": "d72e0b98de6d01f6d6901efbd82fcbba9e4f4db0d5f253d45fbf4db8b3105904"
+}
