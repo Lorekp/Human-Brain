@@ -182,6 +182,12 @@ unchanged.  A disabled target always has zero matched factor cells, regardless
 of a prediction's winners, and retains its fixed inhibitory current and
 no-spike result.
 
+The detector may expose one module-private `_detect_many_trusted` seam for an
+enclosing operator or semantic entry point that has already called
+`TypedOutputCellBank.validate` on every row.  Public `detect` and `detect_many`
+must still validate external ingress; only the prevalidated private seam is
+used inside the timed 500-by-four physical batch loop.
+
 ## Complete production consumer cutover
 
 ### Active bottom-up path
@@ -479,15 +485,32 @@ must use that same host, interpreter/dependency lock, normal process priority,
 recorded power source/mode, and affinity mask, with no other project gate or
 benchmark running concurrently.
 
+Both capture commands require an explicit `--attest-exclusive-host` operator
+attestation and hold one repository-keyed host mutex at
+`experiments/r3_pilot/.compact_typed_output_benchmark.host.lock` for the full
+capture.  The artifact records the attestation and mutex identity; the mutex
+prevents another copy of this harness from running but does not replace the
+operator's no-other-gate precondition.
+
 Set `PYTHONHASHSEED=0` and set `OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`,
 `MKL_NUM_THREADS`, and `NUMEXPR_NUM_THREADS` to `1` before Python imports
-NumPy.  Run each benchmark in a fresh process, perform two unmeasured
-warmups, then report the median of seven measured iterations using
-`perf_counter`.  Use identical fixed fixtures and construction order.  For
-memory, run `gc.collect()` before starting the measurement, reset the tracer
-peak, and report both tracemalloc peak and process RSS delta after subtracting
-the empty-harness baseline.  The manifest, raw seven timings, and raw memory
-samples are retained with the engineering result.
+NumPy.  Each fast detector/kernel fixture runs in one fresh process with two
+unmeasured warmups followed by seven measured iterations; report the median of
+those seven `perf_counter` timings.  Each self-posed synthesis fixture likewise
+runs in one fresh process, but uses two unmeasured warmups followed by three
+measured iterations and reports their median.  Each work-bound sentinel runs
+once in its own fresh process.
+
+Memory uses seven separate fresh processes per fixture and **no encoding or
+detector object warmup**.  In each process, construct only the deterministic
+raw Python inputs, run `gc.collect()`, start/reset the tracer and capture the
+input-only process-memory baseline, then construct and retain the measured
+objects once.  Report the median of the seven independent tracemalloc peak,
+working-set delta, and private-usage delta samples.  This no-warmup rule is
+intentional: allocator reuse from a discarded object graph would invalidate
+both RSS and retained-object accounting.  Use identical fixed fixtures and
+construction order throughout, and retain the manifest plus every raw timing
+and memory sample with the engineering result.
 
 ### Memory gates
 
