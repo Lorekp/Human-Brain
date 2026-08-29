@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from hashlib import sha256
 
 import numpy as np
@@ -78,7 +79,10 @@ def _physical_race(currents_pa: np.ndarray, *, bank: str) -> OperatorRace:
     )
 
 
+@lru_cache(maxsize=4)
 def _unknown(output_type: output_cells.OutputType | None) -> output_cells.TypedOutputEncoding:
+    """Materialize each immutable physical UNKNOWN encoding once."""
+
     if output_type is None:
         return output_cells.TypedOutputCellBank.encode(_UNKNOWN_VALUE)
     return output_cells.TypedOutputCellBank.encode(
@@ -87,7 +91,10 @@ def _unknown(output_type: output_cells.OutputType | None) -> output_cells.TypedO
     )
 
 
+@lru_cache(maxsize=output_cells.INT_CELL_COUNT)
 def _int_from_winner(cell: int) -> output_cells.TypedOutputEncoding:
+    """Decode an Int winner through one immutable physical cell pattern."""
+
     if cell == output_cells.INT_UNKNOWN_CELL:
         return _unknown(output_cells.OutputType.INT)
     return output_cells.TypedOutputCellBank.encode(
@@ -96,12 +103,25 @@ def _int_from_winner(cell: int) -> output_cells.TypedOutputEncoding:
     )
 
 
+@lru_cache(maxsize=output_cells.BOOL_CELL_COUNT)
 def _bool_from_winner(cell: int) -> output_cells.TypedOutputEncoding:
+    """Decode a Bool winner through one immutable physical cell pattern."""
+
     if cell == output_cells.BOOL_UNKNOWN_CELL:
         return _unknown(output_cells.OutputType.BOOL)
     return output_cells.TypedOutputCellBank.encode(
         cell == output_cells.BOOL_TRUE_CELL,
         declared_type=output_cells.OutputType.BOOL,
+    )
+
+
+@lru_cache(maxsize=output_cells.INT_CELL_COUNT)
+def _literal_int(value: int) -> output_cells.TypedOutputEncoding:
+    """Reuse the immutable physical encoding of a target-free literal."""
+
+    return output_cells.TypedOutputCellBank.encode(
+        value,
+        declared_type=output_cells.OutputType.INT,
     )
 
 
@@ -221,10 +241,7 @@ class FrozenTypedOperatorSuccessor:
         if label == "LITERAL":
             if type(literal) is not int:
                 return _unknown(output_cells.OutputType.INT)
-            return output_cells.TypedOutputCellBank.encode(
-                literal,
-                declared_type=output_cells.OutputType.INT,
-            )
+            return _literal_int(literal)
         return _unknown(None)
 
     def _unary(
@@ -380,7 +397,23 @@ class FrozenTypedOperatorSuccessor:
         *,
         scope_rows: Sequence[Sequence[output_cells.TypedOutputEncoding]] | None = None,
     ) -> tuple[TypedOperatorPrediction, ...]:
+        return self.predict_actions_many(
+            selected,
+            (action,),
+            scope_rows=scope_rows,
+        )[0]
+
+    def predict_actions_many(
+        self,
+        selected: Sequence[output_cells.TypedOutputEncoding],
+        actions: Sequence[FactorAction],
+        *,
+        scope_rows: Sequence[Sequence[output_cells.TypedOutputEncoding]] | None = None,
+    ) -> tuple[tuple[TypedOperatorPrediction, ...], ...]:
+        """Predict a fixed action bank under one checkpoint authentication."""
+
         selected_rows = tuple(selected)
+        action_rows = tuple(actions)
         if scope_rows is None:
             scopes = ((),) * len(selected_rows)
         else:
@@ -395,26 +428,34 @@ class FrozenTypedOperatorSuccessor:
             for row in scopes
         ):
             raise TypeError("batched rows must contain physical typed-output encodings")
+        if not all(type(action) is FactorAction for action in action_rows):
+            raise TypeError("actions must contain FactorAction values")
         before = self.live_checkpoint_sha256
         if before != self.checkpoint_sha256:
             raise RuntimeError("typed operator successor changed before batch")
         effects = tuple(
-            self._predict_effect(value, action, row)
-            for value, row in zip(selected_rows, scopes, strict=True)
+            tuple(
+                self._predict_effect(value, action, row)
+                for value, row in zip(selected_rows, scopes, strict=True)
+            )
+            for action in action_rows
         )
         after = self.live_checkpoint_sha256
         if after != before:
             raise RuntimeError("frozen typed operator successor changed in batch")
         return tuple(
-            TypedOperatorPrediction(
-                output=output,
-                races=races,
-                supported=output.supported,
-                action=action,
-                checkpoint_before_sha256=before,
-                checkpoint_after_sha256=after,
+            tuple(
+                TypedOperatorPrediction(
+                    output=output,
+                    races=races,
+                    supported=output.supported,
+                    action=action,
+                    checkpoint_before_sha256=before,
+                    checkpoint_after_sha256=after,
+                )
+                for output, races in action_effects
             )
-            for output, races in effects
+            for action, action_effects in zip(action_rows, effects, strict=True)
         )
 
 

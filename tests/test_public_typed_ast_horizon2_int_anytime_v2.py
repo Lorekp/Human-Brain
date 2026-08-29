@@ -107,7 +107,12 @@ def test_banked_anytime_v2_pass_ledger_matches_exhaustive_decisions() -> None:
         assert decisions == exhaustive[task["name"]]["decisions"]
         assert all(plan["attempts"] >= 1 for plan in task["plans"])
     test_source = Path(__file__).read_text(encoding="utf-8")
-    assert "v2.run_public_matrix()" not in test_source
+    assert not any(
+        isinstance(call.func, ast.Attribute)
+        and call.func.attr == "run_public_matrix"
+        for call in ast.walk(ast.parse(test_source))
+        if isinstance(call, ast.Call)
+    )
     module_source = Path(v2.__file__).read_text(encoding="utf-8")
     runner = next(
         node

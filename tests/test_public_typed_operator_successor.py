@@ -143,6 +143,7 @@ def test_predict_many_is_readonly_and_inference_has_no_candidate_program_path() 
     inference_names = {
         "predict",
         "predict_many",
+        "predict_actions_many",
         "_predict_effect",
         "_unary",
         "_binary",

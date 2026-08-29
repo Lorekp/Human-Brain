@@ -82,7 +82,12 @@ def test_banked_anytime_stop_ledger_is_exact_and_does_not_rerun_matrix() -> None
         "child-then-root-replan",
     )
     test_source = Path(__file__).read_text(encoding="utf-8")
-    assert "anytime.run_public_matrix()" not in test_source
+    assert not any(
+        isinstance(call.func, ast.Attribute)
+        and call.func.attr == "run_public_matrix"
+        for call in ast.walk(ast.parse(test_source))
+        if isinstance(call, ast.Call)
+    )
     module_source = Path(anytime.__file__).read_text(encoding="utf-8")
     runner = next(
         node
