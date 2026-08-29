@@ -322,9 +322,10 @@ length/position factors (26 positions), strict canonical decoding, physical
 Char/String `DONE` copying, and UNKNOWN inhibition across every new factor.
 The live output projection SHA-256 is
 `f3ebca86516460b7a03ab5588cf26de2c6df07d0f5a109e8a6d5646eed015f44`; the
-operator checkpoint is
+operator checkpoint at that mechanism layer was
 `f9a065c704077bcd2ebdf005498738991f10ce72ca722798359edad5f5d28586`.
-These are live-v2 identities; they do not rewrite the immutable 30-task artifact.
+The later generic String layer extends the operator checkpoint below; neither
+identity rewrites the immutable 30-task artifact.
 
 Commit `00ed3e5` adds generic physical `sum`, `less-than`, and predicate
 `count`. A retained Bool predicate at cost 3 must first license its
@@ -333,6 +334,41 @@ Self-posed checks selected exact `count(3 < item)` for the algebraically
 equivalent surface `item + 2 > 5` and exact cost-9 sum-of-mapped-clamp, with
 immutable checkpoints and deterministic race ledgers. Unsupported candidates
 are pruned only after their physical work is recorded.
+
+Commit `3daea4c` completes the generic String mechanism layer. Its
+compiler-private `AsciiClass` cannot enter public callable signatures and has a
+frozen 12-entry generic catalog. The physical anatomy is 13 class cells
+including UNKNOWN plus 1,141 class-by-printable-Char coincidence cells: 12 x
+95 supported pairs and one UNKNOWN cell. `contains` composes at AST cost 3,
+its retained predicate licenses a `Function[Char,Bool]` binder at cost 4,
+`filter` composes at cost 6, direct `reverse` at cost 2, and
+`reverse(filter(...))` at cost 7. Contains passes through physical
+class/character and Bool races; filter and reverse physically copy String
+length and character factors. Ordered visible String shapes are included in
+the desired-independent observational-retention key.
+
+The catalog-off control keeps the same catalog-dependent compiler inventory,
+node ordering, evaluation contexts, and physical class/contains schedule up to
+the intervention. It instead drives every class terminal to UNKNOWN, evaluates
+the full character predicate traversal, and cannot retain or select a filter;
+post-UNKNOWN output-copy work is causally absent rather than replayed from the
+enabled arm. Compiler whitespace membership includes space, tab, newline,
+vertical tab, form feed, and carriage return. Non-printable and over-capacity
+String synthesis inputs become UNKNOWN and do not enter retention.
+
+Self-posed direct reverse selected at cost 2 with 63 operator predictions, 74
+races, and ordered race SHA-256
+`4ed8ab1c38ec4350a25314a0581c2bd5b5cdde2a1b8503a67b5154fe83a0dace`.
+Vowel filter, decimal-digit filter, and reversed-consonant filter selected at
+costs 6/6/7 with prediction/race totals 364/894, 412/996, and 484/1,274. The
+extended operator checkpoint is
+`92944516be48275ba7633a29a298707393010b85c3a0c60be4b6c73668d7e76e`;
+the enabled and catalog-off semantic checkpoints are
+`962c2359fb41d7444a24bcacdeb2679caa3d5406719e6a6c85887c14a174598e` and
+`8931b4e106e500fa78c93001fe153c740660effa2934193e55668fc1cbedc612`.
+Root verification passed 95 tests. These results are self-posed generic
+mechanism and negative-control evidence only, not a broad TRAIN breadth or
+transfer/capability result.
 
 This is generic mechanism evidence, not the six-family TRAIN gate. A reviewer
 measured 18.55 seconds for a low-diversity 25-literal cost-9 frontier and
@@ -350,8 +386,9 @@ task/family identity, or candidate programs. Its six focused tests and a
 43-test prompt/shared-consumer command passed.
 
 These results are mechanisms, not a completed six-family TRAIN breadth gate or
-prompt-only capability evidence. The String combinators, learned span-to-factor
-mapping, preregistered TRAIN capacity split, and broad gate remain.
+prompt-only capability evidence. Generic String combinators are complete; the
+desired-independent frontier work bound, learned span-to-factor mapping,
+preregistered TRAIN capacity split, and broad gate remain.
 Public DEV/eval, M0, protected data, held-out Path-2 material, and C1 stay sealed.
 
 ## Path-2 factorized successor replay readiness

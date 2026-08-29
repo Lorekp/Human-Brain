@@ -640,6 +640,39 @@ evidence. A reviewer also found that a diverse four-item, 25-literal frontier
 could exceed 90 seconds, so a desired-independent STOP-on-work-overflow bound is
 required before the broad TRAIN gate; silent top-k pruning is not licensed.
 
+Commit `3daea4c` completes the generic String mechanism layer.  A
+compiler-private `AsciiClass` has a frozen 12-entry catalog spanning broad ASCII
+classes plus English vowels and consonants; it cannot enter public callable
+signatures.  The physical substrate has 13 class cells including UNKNOWN and
+1,141 class-by-printable-Char coincidence cells (12 x 95 plus UNKNOWN).
+Generic `contains`, `filter`, and `reverse` compose at exact AST costs 3, 6,
+and 2; the retained predicate licenses its Char-to-Bool binder at cost 4, and
+`reverse(filter(...))` closes at cost 7.  Contains decisions pass through the
+class/Char coincidence and Bool races, while filter and reverse copy String
+length and characters through physical races.  Ordered String input shapes are
+part of the desired-independent retention key.
+
+The catalog-off control preserves the catalog-dependent compiler inventory,
+node order, evaluation contexts, and physical class/contains schedule through
+the intervention, but drives every class terminal to physical UNKNOWN so no
+filter representative can win.  Downstream output-copy work is allowed to stop
+causally after UNKNOWN rather than replaying treatment decisions.  Compiler
+whitespace semantics cover all six ASCII whitespace characters, while
+non-printable or over-26-character synthesis inputs remain UNKNOWN.  Self-posed
+telemetry was 63 predictions/74 races for direct reverse, 364/894 for vowel
+filter, 412/996 for decimal-digit filter, and 484/1,274 for reversed consonant
+filter; the direct-reverse ordered race digest is
+`4ed8ab1c38ec4350a25314a0581c2bd5b5cdde2a1b8503a67b5154fe83a0dace`.
+The operator checkpoint is
+`92944516be48275ba7633a29a298707393010b85c3a0c60be4b6c73668d7e76e`,
+the enabled semantic checkpoint is
+`962c2359fb41d7444a24bcacdeb2679caa3d5406719e6a6c85887c14a174598e`,
+and the catalog-off semantic checkpoint is
+`8931b4e106e500fa78c93001fe153c740660effa2934193e55668fc1cbedc612`.
+Root verification passed 95 tests.  This is self-posed generic mechanism and
+control evidence only, not the broad TRAIN breadth gate or transfer/capability
+evidence.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
@@ -742,10 +775,10 @@ is proven.
    checkpoint identity.  A parity-checked first-three-task replay is 42.3x
    faster in aggregate.
 2. Expand the generic semantic basis across the six unspent TRAIN families;
-   keep prompt/task/family identity out and keep property cases hidden.  The
-   retained Int-extrema, Char/String output substrate, and generic List
-   aggregates are complete; a frontier work bound, String combinators, and the
-   broad gate remain.
+   keep prompt/task/family identity out.  Retained Int extrema, the Char/String
+   output substrate, generic List aggregates, and generic String combinators are
+   complete; the desired-independent frontier work bound remains in progress
+   before the broad gate.
 3. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
    before any family-disjoint desired vector is observed.  The checkpoint-free
    physical span input is banked; the learned factor mapping remains.

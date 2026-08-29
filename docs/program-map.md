@@ -2,8 +2,8 @@
 
 Maintained by the orchestrator. Updated 2026-08-29 after the first broad
 bottom-up typed-semantic TRAIN pass, its speed layer, the first generic breadth
-mechanisms, prompt-span input, and Path-2 replay preparation. Exact scientific
-boundaries live in
+mechanisms including generic String composition, prompt-span input, and Path-2
+replay preparation. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -55,8 +55,25 @@ checks pass with immutable checkpoints. A diverse 25-literal frontier exceeded
 90 seconds in review, so the broad gate also requires a desired-independent
 STOP-on-work-overflow bound; no silent top-k shortcut is licensed.
 
-1. Finish the generic String combinators and desired-independent frontier work
-   bound, then adjudicate the six unspent TRAIN families once.
+Commit `3daea4c` completes generic String composition with compiler-private
+`AsciiClass`, a frozen 12-class catalog, 13 physical class cells including
+UNKNOWN, and 1,141 class-by-printable-Char coincidence cells. Physical
+`reverse`, `contains`, `filter`, and `reverse(filter(...))` close at exact costs
+2/3/6/7, with Char-to-Bool binder licensing at cost 4. Filter decisions and
+String character copies are physical; ordered String shapes participate in
+desired-independent retention. The schedule-matched catalog-off control drives
+class terminals to UNKNOWN and cannot retain a filter winner, while compiler
+whitespace semantics cover all six ASCII whitespace characters. Self-posed
+telemetry spans 63/74 predictions/races for direct reverse through 484/1,274
+for reversed consonant filter. The enabled semantic, catalog-off semantic, and
+operator checkpoints are respectively `962c2359fb41d7444a24bcacdeb2679caa3d5406719e6a6c85887c14a174598e`,
+`8931b4e106e500fa78c93001fe153c740660effa2934193e55668fc1cbedc612`, and
+`92944516be48275ba7633a29a298707393010b85c3a0c60be4b6c73668d7e76e`.
+Root verification passed 95 tests. This is generic mechanism/control evidence,
+not a broad TRAIN breadth or transfer result.
+
+1. Finish the desired-independent frontier work bound, then adjudicate the six
+   unspent TRAIN families once; generic String combinators are complete.
 2. Complete and freeze the learned prompt-span → semantic-factor mapping on a
    preregistered TRAIN capacity split; its physical input layer is already banked.
 3. Spend the 27 fixed family-disjoint public DEV tasks once, with visible-I/O
