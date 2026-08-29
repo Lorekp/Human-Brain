@@ -65,20 +65,21 @@ def _projection(
     bias = _STOP_CURRENT_PA - (case_count - 0.5) * _CASE_WEIGHT_PA
     digest = sha256()
     digest.update(b"public-typed-semantic-vector-projection-v1\0")
-    digest.update(np.asarray((case_count,), dtype="<i8").tobytes())
-    digest.update(np.asarray(weights, dtype="<f8").tobytes())
-    digest.update(np.asarray((bias,), dtype="<f8").tobytes())
-    digest.update(
-        np.asarray(
-            (
-                _MIN_CURRENT_PA,
-                _STOP_CURRENT_PA,
-                _MAX_CURRENT_PA,
-                _INHIBITION_CURRENT_PA,
-            ),
-            dtype="<f8",
-        ).tobytes()
+    case_count_bytes = np.asarray((case_count,), dtype="<i8")
+    digest.update(memoryview(case_count_bytes).cast("B"))
+    digest.update(memoryview(weights).cast("B"))
+    bias_bytes = np.asarray((bias,), dtype="<f8")
+    digest.update(memoryview(bias_bytes).cast("B"))
+    limits_bytes = np.asarray(
+        (
+            _MIN_CURRENT_PA,
+            _STOP_CURRENT_PA,
+            _MAX_CURRENT_PA,
+            _INHIBITION_CURRENT_PA,
+        ),
+        dtype="<f8",
     )
+    digest.update(memoryview(limits_bytes).cast("B"))
     weights.setflags(write=False)
     return weights, bias, digest.hexdigest()
 
@@ -145,14 +146,18 @@ def select_exact_semantic_vector(
         output_cells.FixedTypedCoincidenceDetector.for_target(target)
         for target in desired
     )
+    predictions_by_case = tuple(zip(*rows, strict=True))
+    results_by_case = tuple(
+        detector.detect_many(predictions)
+        for detector, predictions in zip(
+            detectors, predictions_by_case, strict=True
+        )
+    )
     spikes = np.ascontiguousarray(
         np.asarray(
             [
-                [
-                    int(detector.detect(predicted).spiked)
-                    for predicted, detector in zip(row, detectors, strict=True)
-                ]
-                for row in rows
+                [int(results_by_case[case][candidate].spiked) for case in range(len(desired))]
+                for candidate in range(len(rows))
             ],
             dtype=np.float64,
         )
@@ -198,9 +203,8 @@ def select_exact_semantic_vector(
         raise RuntimeError("semantic tier returned an unsupported state")
 
     currents_tuple = tuple(float(value) for value in currents)
-    currents_sha256 = sha256(
-        np.asarray(currents, dtype="<f8").tobytes()
-    ).hexdigest()
+    currents_le = np.ascontiguousarray(currents, dtype="<f8")
+    currents_sha256 = sha256(memoryview(currents_le).cast("B")).hexdigest()
     tier_sha256 = _tier_sha256(tier)
     candidate_hashes = tuple(_vector_sha256(row) for row in rows)
     desired_hash = _vector_sha256(desired)

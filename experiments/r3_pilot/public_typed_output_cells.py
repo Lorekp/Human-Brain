@@ -11,6 +11,7 @@ factor matches.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
@@ -648,8 +649,9 @@ class FixedTypedCoincidenceDetector:
         digest = sha256()
         digest.update(TypedOutputCellBank.projection_sha256().encode("ascii"))
         digest.update(encoded.sha256.encode("ascii"))
-        digest.update(frozen_weights.tobytes())
-        digest.update(np.asarray((bias,), dtype=np.float64).tobytes())
+        digest.update(memoryview(frozen_weights).cast("B"))
+        bias_bytes = np.asarray((bias,), dtype=np.float64)
+        digest.update(memoryview(bias_bytes).cast("B"))
         digest.update(b"1" if enabled else b"0")
         return cls(
             weights=frozen_weights,
@@ -666,36 +668,67 @@ class FixedTypedCoincidenceDetector:
         *,
         declared_type: OutputType | str | None = None,
     ) -> TypedCoincidenceResult:
-        if isinstance(predicted, TypedOutputEncoding):
-            if declared_type is not None:
-                raise ValueError("declared_type cannot accompany an encoded prediction")
-            encoded = predicted
-        else:
-            encoded = TypedOutputCellBank.encode(
-                predicted, declared_type=declared_type
-            )
+        return self.detect_many(
+            (predicted,), declared_type=declared_type
+        )[0]
 
-        matched = int(round(float(self.weights @ encoded.cells)))
-        net = float(self.weights @ encoded.cells + self.bias)
-        current = float(
+    def detect_many(
+        self,
+        predicted: Sequence[object | TypedOutputEncoding],
+        *,
+        declared_type: OutputType | str | None = None,
+    ) -> tuple[TypedCoincidenceResult, ...]:
+        """Drive independent exact-match cells in one fitted-GLIF population."""
+
+        if isinstance(predicted, (str, bytes)):
+            raise TypeError("predicted must be a sequence of typed outputs")
+        if len(predicted) == 0:
+            return ()
+
+        encoded_rows: list[TypedOutputEncoding] = []
+        for item in predicted:
+            if isinstance(item, TypedOutputEncoding):
+                if declared_type is not None:
+                    raise ValueError(
+                        "declared_type cannot accompany an encoded prediction"
+                    )
+                encoded_rows.append(item)
+            else:
+                encoded_rows.append(
+                    TypedOutputCellBank.encode(item, declared_type=declared_type)
+                )
+
+        cells = np.ascontiguousarray(
+            np.stack(tuple(encoded.cells for encoded in encoded_rows), axis=0),
+            dtype=np.float64,
+        )
+        matched_currents = np.ascontiguousarray(cells @ self.weights)
+        currents = np.ascontiguousarray(
             np.clip(
-                net * _COINCIDENCE_SCALE_PA,
+                (matched_currents + self.bias) * _COINCIDENCE_SCALE_PA,
                 -_COINCIDENCE_LIMIT_PA,
                 _COINCIDENCE_LIMIT_PA,
             )
         )
-        spike_mask = _drive_spike_mask(np.asarray((current,), dtype=np.float64))
-        if np.count_nonzero(spike_mask) > 1:
-            raise RuntimeError("typed exact-coincidence detector produced multiple cells")
-        return TypedCoincidenceResult(
-            spiked=bool(spike_mask[0]),
-            spike_mask=spike_mask,
-            current_pa=current,
-            matched_factor_cells=matched,
-            active_target_factors=self.active_target_factors,
-            detector_sha256=self.sha256,
-            predicted_sha256=encoded.sha256,
-        )
+        batch_spike_mask = _drive_spike_mask(currents)
+
+        results: list[TypedCoincidenceResult] = []
+        for index, encoded in enumerate(encoded_rows):
+            spike_mask = _freeze(
+                np.asarray((batch_spike_mask[index],), dtype=np.float64)
+            )
+            results.append(
+                TypedCoincidenceResult(
+                    spiked=bool(spike_mask[0]),
+                    spike_mask=spike_mask,
+                    current_pa=float(currents[index]),
+                    matched_factor_cells=int(round(float(matched_currents[index]))),
+                    active_target_factors=self.active_target_factors,
+                    detector_sha256=self.sha256,
+                    predicted_sha256=encoded.sha256,
+                )
+            )
+        return tuple(results)
 
 
 def exact_typed_output_coincidence(
