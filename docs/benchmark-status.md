@@ -284,6 +284,19 @@ prompt-only completion, family-disjoint transfer, M0, DEV/eval, protected,
 held-out, Path-2, or C1 evidence. The canonical Simple-SWE evaluation remains
 unopened.
 
+A subsequent performance-only implementation keeps the banked artifact
+immutable while removing repeated checkpoint-array hashing inside one
+authenticated semantic inference and replacing dense one-hot operator matrix
+products with event-sparse column gathers plus bounded batched GLIF races.  On
+a fresh replay of the first round-robin task in each banked TRAIN family, all
+selection fields, program/source hashes, operator counts, ordered race digests,
+checkpoint identities, and sandbox results matched the artifact exactly.  The
+three task times changed from 263.93→2.33 seconds (scalar offset),
+602.40→16.71 seconds (`List.map(add)`), and 23.87→2.01 seconds
+(`List.map(abs)`), a 42.3x aggregate reduction.  This is an engineering replay
+of three public-TRAIN tasks, not a second 30-task gate or broader capability
+claim.
+
 ## Typed-program public TRAIN curriculum
 
 The preregistered Layer-1 recurrent fitted-cell TRAIN run completed once from

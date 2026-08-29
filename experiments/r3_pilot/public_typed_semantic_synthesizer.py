@@ -180,10 +180,16 @@ class _CaseEvaluator:
         action: tp.FactorAction,
         scopes: tuple[output_cells.TypedOutputEncoding, ...] = (),
     ) -> output_cells.TypedOutputEncoding:
-        prediction = self.model.predict(selected, action, scopes=scopes)
+        # ``FrozenTypedSemanticSynthesizer.synthesize`` authenticates the full
+        # operator checkpoint before and after the complete readonly DAG
+        # evaluation.  Re-entering ``predict`` here would hash every frozen
+        # operator array twice for every node, even though no mutation boundary
+        # exists between nodes.  Keep the exact physical effect/race path while
+        # sharing the enclosing transaction's authentication.
+        output, races = self.model._predict_effect(selected, action, scopes)
         self.predictions += 1
-        self.races.extend(prediction.races)
-        return prediction.output
+        self.races.extend(races)
+        return output
 
     def evaluate(
         self,

@@ -26,6 +26,7 @@ _CONTACT_CURRENT_PA = 5_000.0
 _PAIR_BIAS_PA = -5_000.0
 _UNKNOWN_TONIC_PA = 1_000.0
 _RACE_STEPS = 600
+_EVENT_BATCH_MAX_ROWS = 256
 
 _INT_KNOWN = output_cells.INT_CELL_COUNT - 1
 _PAIR_KNOWN = _INT_KNOWN * _INT_KNOWN
@@ -123,6 +124,27 @@ class _OperatorEffectMemo:
         self._entries[key] = effect
         return effect
 
+    def miss_mask(
+        self,
+        keys: Sequence[_OperatorEffectKey],
+    ) -> tuple[bool, ...]:
+        """Plan sequential LRU misses without mutating the live memo."""
+
+        simulated: OrderedDict[_OperatorEffectKey, None] = OrderedDict.fromkeys(
+            self._entries
+        )
+        misses: list[bool] = []
+        for key in keys:
+            if key in simulated:
+                simulated.move_to_end(key)
+                misses.append(False)
+                continue
+            misses.append(True)
+            if len(simulated) >= self.max_entries:
+                simulated.popitem(last=False)
+            simulated[key] = None
+        return tuple(misses)
+
     def clear(self) -> None:
         self._entries.clear()
         self.hits = self.misses = self.evictions = 0
@@ -137,17 +159,50 @@ class _OperatorEffectMemo:
         )
 
 
+def _physical_races(
+    currents_pa: np.ndarray,
+    *,
+    bank: str,
+) -> tuple[OperatorRace, ...]:
+    """Race bounded independent rows while retaining each full-current digest."""
+
+    currents = np.ascontiguousarray(currents_pa, dtype=np.float64)
+    if currents.ndim != 2 or not 1 <= currents.shape[0] <= _EVENT_BATCH_MAX_ROWS:
+        raise ValueError(
+            "physical race batch must contain between 1 and "
+            f"{_EVENT_BATCH_MAX_ROWS} rows"
+        )
+    results = _RACE.race_many(currents)
+    return tuple(
+        OperatorRace(
+            bank=bank,
+            candidate_count=currents.shape[1],
+            winner_cell=result.winner_cell,
+            spike_step=result.spike_step,
+            simultaneous_spike_candidates=result.simultaneous_spike_candidates,
+            currents_sha256=sha256(row.tobytes()).hexdigest(),
+        )
+        for row, result in zip(currents, results, strict=True)
+    )
+
+
 def _physical_race(currents_pa: np.ndarray, *, bank: str) -> OperatorRace:
     currents = np.ascontiguousarray(currents_pa, dtype=np.float64)
-    result = _RACE.race_many(currents[None, :])[0]
-    return OperatorRace(
-        bank=bank,
-        candidate_count=len(currents),
-        winner_cell=result.winner_cell,
-        spike_step=result.spike_step,
-        simultaneous_spike_candidates=result.simultaneous_spike_candidates,
-        currents_sha256=sha256(currents.tobytes()).hexdigest(),
-    )
+    if currents.ndim != 1:
+        raise ValueError("physical race currents must be one-dimensional")
+    return _physical_races(currents[None, :], bank=bank)[0]
+
+
+def _single_event(activity: np.ndarray) -> tuple[int, float] | None:
+    """Return one active presynaptic event without decoding its semantic value."""
+
+    active = np.flatnonzero(activity)
+    if active.size == 0:
+        return None
+    if active.size != 1:
+        raise RuntimeError("typed output factor contains multiple active cells")
+    cell = int(active[0])
+    return cell, float(activity[cell])
 
 
 @lru_cache(maxsize=4)
@@ -350,11 +405,102 @@ class FrozenTypedOperatorSuccessor:
         self,
         operand: output_cells.TypedOutputEncoding,
     ) -> tuple[output_cells.TypedOutputEncoding, tuple[OperatorRace, ...]]:
-        currents = np.ascontiguousarray(
-            self.unary_bias_pa + self.unary_absolute_weights_pa @ operand.int_cells
-        )
+        currents = self.unary_bias_pa.copy()
+        event = _single_event(operand.int_cells)
+        if event is not None:
+            cell, amplitude = event
+            currents += self.unary_absolute_weights_pa[:, cell] * amplitude
+        currents = np.ascontiguousarray(currents)
         race = _physical_race(currents, bank="operator-absolute-output")
         return _int_from_winner(race.winner_cell), (race,)
+
+    def _binary_many(
+        self,
+        operator: str,
+        left_rows: Sequence[output_cells.TypedOutputEncoding],
+        right_rows: Sequence[output_cells.TypedOutputEncoding],
+    ) -> tuple[_OperatorEffect, ...]:
+        """Project one-hot spike events and run bounded physical race batches."""
+
+        left = tuple(left_rows)
+        right = tuple(right_rows)
+        if not left or len(left) != len(right):
+            raise ValueError("binary event rows must be nonempty and aligned")
+        if operator not in {"add", "subtract", "less-than"}:
+            raise ValueError("binary event batch has an unsupported operator")
+
+        effects: list[_OperatorEffect] = []
+        for start in range(0, len(left), _EVENT_BATCH_MAX_ROWS):
+            left_chunk = left[start : start + _EVENT_BATCH_MAX_ROWS]
+            right_chunk = right[start : start + _EVENT_BATCH_MAX_ROWS]
+            row_count = len(left_chunk)
+            pair_currents = np.broadcast_to(
+                self.pair_bias_pa,
+                (row_count, _PAIR_COUNT),
+            ).copy()
+            for row, encoded in enumerate(left_chunk):
+                event = _single_event(encoded.int_cells)
+                if event is not None:
+                    cell, amplitude = event
+                    pair_currents[row] += (
+                        self.pair_left_contacts_pa[:, cell] * amplitude
+                    )
+            for row, encoded in enumerate(right_chunk):
+                event = _single_event(encoded.int_cells)
+                if event is not None:
+                    cell, amplitude = event
+                    pair_currents[row] += (
+                        self.pair_right_contacts_pa[:, cell] * amplitude
+                    )
+            pair_currents = np.ascontiguousarray(pair_currents)
+            pair_races = _physical_races(
+                pair_currents,
+                bank="operator-int-pair",
+            )
+            pair_winners = np.fromiter(
+                (race.winner_cell for race in pair_races),
+                dtype=np.intp,
+                count=row_count,
+            )
+
+            if operator == "less-than":
+                output_bias = self.bool_output_bias_pa
+                output_weights = self.less_than_weights_pa
+                output_bank = "operator-less-than-output"
+                decode = _bool_from_winner
+            else:
+                output_bias = self.int_output_bias_pa
+                output_weights = (
+                    self.add_weights_pa
+                    if operator == "add"
+                    else self.subtract_weights_pa
+                )
+                output_bank = f"operator-{operator}-output"
+                decode = _int_from_winner
+
+            output_currents = np.broadcast_to(
+                output_bias,
+                (row_count, output_bias.size),
+            ).copy()
+            for row, cell in enumerate(pair_winners):
+                output_currents[row] += output_weights[:, int(cell)]
+            output_currents = np.ascontiguousarray(output_currents)
+            output_races = _physical_races(
+                output_currents,
+                bank=output_bank,
+            )
+            effects.extend(
+                (
+                    decode(output_race.winner_cell),
+                    (pair_race, output_race),
+                )
+                for pair_race, output_race in zip(
+                    pair_races,
+                    output_races,
+                    strict=True,
+                )
+            )
+        return tuple(effects)
 
     def _binary(
         self,
@@ -362,33 +508,76 @@ class FrozenTypedOperatorSuccessor:
         left: output_cells.TypedOutputEncoding,
         right: output_cells.TypedOutputEncoding,
     ) -> tuple[output_cells.TypedOutputEncoding, tuple[OperatorRace, ...]]:
-        pair_currents = np.ascontiguousarray(
-            self.pair_bias_pa
-            + self.pair_left_contacts_pa @ left.int_cells
-            + self.pair_right_contacts_pa @ right.int_cells
-        )
-        pair_race = _physical_race(pair_currents, bank="operator-int-pair")
-        pair_spike = np.zeros(_PAIR_COUNT, dtype=np.float64)
-        pair_spike[pair_race.winner_cell] = 1.0
+        return self._binary_many(operator, (left,), (right,))[0]
 
-        if operator == "less-than":
-            currents = np.ascontiguousarray(
-                self.bool_output_bias_pa + self.less_than_weights_pa @ pair_spike
-            )
-            output_race = _physical_race(currents, bank="operator-less-than-output")
-            return _bool_from_winner(output_race.winner_cell), (
-                pair_race,
-                output_race,
+    def _predict_effects_many(
+        self,
+        selected: tuple[output_cells.TypedOutputEncoding, ...],
+        action: FactorAction,
+        scopes: tuple[tuple[output_cells.TypedOutputEncoding, ...], ...],
+    ) -> tuple[_OperatorEffect, ...]:
+        if not selected:
+            return ()
+        if action.schema != "APPLY2" or action.operator not in {
+            "add",
+            "subtract",
+            "less-than",
+        }:
+            return tuple(
+                self._predict_effect(value, action, row)
+                for value, row in zip(selected, scopes, strict=True)
             )
 
-        weights = (
-            self.add_weights_pa if operator == "add" else self.subtract_weights_pa
+        left_rows = tuple(
+            self._source(
+                action.left_source,
+                value,
+                row,
+                action.literal,
+            )
+            for value, row in zip(selected, scopes, strict=True)
         )
-        currents = np.ascontiguousarray(
-            self.int_output_bias_pa + weights @ pair_spike
+        right_rows = tuple(
+            self._source(
+                action.right_source,
+                value,
+                row,
+                action.literal,
+            )
+            for value, row in zip(selected, scopes, strict=True)
         )
-        output_race = _physical_race(currents, bank=f"operator-{operator}-output")
-        return _int_from_winner(output_race.winner_cell), (pair_race, output_race)
+        keys = tuple(
+            (
+                self.checkpoint_sha256,
+                "binary",
+                action.operator,
+                left.sha256,
+                right.sha256,
+            )
+            for left, right in zip(left_rows, right_rows, strict=True)
+        )
+        miss_mask = self._effect_memo.miss_mask(keys)
+        miss_indices = tuple(
+            index for index, missed in enumerate(miss_mask) if missed
+        )
+        if miss_indices:
+            missed_effects = self._binary_many(
+                action.operator,
+                tuple(left_rows[index] for index in miss_indices),
+                tuple(right_rows[index] for index in miss_indices),
+            )
+            effects_by_index = dict(
+                zip(miss_indices, missed_effects, strict=True)
+            )
+        else:
+            effects_by_index = {}
+        return tuple(
+            self._effect_memo.resolve(
+                key,
+                lambda index=index: effects_by_index[index],
+            )
+            for index, key in enumerate(keys)
+        )
 
     def predict(
         self,
@@ -554,10 +743,7 @@ class FrozenTypedOperatorSuccessor:
         if before != self.checkpoint_sha256:
             raise RuntimeError("typed operator successor changed before batch")
         effects = tuple(
-            tuple(
-                self._predict_effect(value, action, row)
-                for value, row in zip(selected_rows, scopes, strict=True)
-            )
+            self._predict_effects_many(selected_rows, action, scopes)
             for action in action_rows
         )
         after = self.live_checkpoint_sha256

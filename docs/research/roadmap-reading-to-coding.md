@@ -594,6 +594,20 @@ This is `PASS_PUBLIC_TYPED_SEMANTIC_SIMPLE_SWE_TRAIN_BRIDGE_V1`: physical
 programming by examples on three TRAIN families, not prompt-only completion,
 family-disjoint transfer, M0, protected, held-out, Path-2, or C1 evidence.
 
+The licensed speed pass is now complete without changing that verdict or its
+immutable artifact.  The semantic DAG authenticates the frozen operator once
+at the enclosing inference boundary instead of re-hashing every fitted array
+around every node, while the operator projects one-hot physical events by
+column gather and runs bounded multi-row GLIF races.  A fresh replay of the
+first round-robin task from each of the three banked TRAIN families preserved
+the selected candidate, program/source hashes, candidate/class counts, ordered
+operator-race digest, checkpoint identity, and sandbox result exactly.  Their
+combined recorded task time fell from 890.21 seconds in the immutable artifact
+to 21.05 seconds (42.3x); individual reductions were 263.93→2.33 seconds,
+602.40→16.71 seconds, and 23.87→2.01 seconds.  This is a three-task engineering
+replay, not a rerun of the frozen 30-task adjudication and not new capability
+evidence.  It makes the six-family TRAIN breadth step practical.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -668,9 +682,10 @@ is proven.
 
 ## Immediate queue
 
-1. Bank the semantic 30/30 artifact and make its 8,937-second physical path
-   materially faster without changing winners, race ledgers, or checkpoint
-   identity.
+1. **COMPLETE:** bank the semantic 30/30 artifact and make its 8,937-second
+   physical path materially faster without changing winners, race ledgers, or
+   checkpoint identity.  A parity-checked first-three-task replay is 42.3x
+   faster in aggregate.
 2. Expand the generic semantic basis across the six unspent TRAIN families;
    keep prompt/task/family identity out and keep property cases hidden.
 3. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
