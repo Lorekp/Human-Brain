@@ -1368,6 +1368,31 @@ def _sequence_composition_pattern(
             container_schema="MAP_BIND",
         )
     if (
+        first.path == (0, 0)
+        and evidence.first_selected_source == "BOUND0"
+        and first.schema == "APPLY2"
+        and first.operator in _BINARY_OPERATORS
+        and second.schema == "DONE"
+    ):
+        left = _evidence_operand(
+            first,
+            first.left_source,
+            evidence.first_selected_source,
+        )
+        right = _evidence_operand(
+            first,
+            first.right_source,
+            evidence.first_selected_source,
+        )
+        if left is None or right is None:
+            return None
+        return PromptCompositionPattern(
+            first.operator,
+            left,
+            right,
+            container_schema="MAP_BIND",
+        )
+    if (
         first.path != ()
         or first.schema != "APPLY2"
         or first.operator not in _BINARY_OPERATORS

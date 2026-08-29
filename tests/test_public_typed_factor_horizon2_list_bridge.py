@@ -6,6 +6,7 @@ import pytest
 from experiments.r3_pilot import public_typed_factor_horizon2_int as h2
 from experiments.r3_pilot import public_typed_list_map_behavior as list_behavior
 from experiments.r3_pilot import public_typed_output_cells as output_cells
+from experiments.r3_pilot import public_typed_prompt_factors as prompt_factors
 from humanbrain import typed_program as tp
 from humanbrain.typed_program_types import (
     ProgramParameter,
@@ -87,6 +88,120 @@ def test_prompt_selected_source_subtracts_map_binder_depth() -> None:
     )
     assert h2._prompt_selected_source(state, body_action) == "SCOPE0"
     assert h2._prompt_selected_source(state, collection_action) == "SCOPE1"
+
+
+@pytest.mark.parametrize(
+    ("operator", "literal", "prompt", "source_operator"),
+    (
+        (
+            "add",
+            4,
+            "Return a new list containing every item plus 4.",
+            "+",
+        ),
+        (
+            "subtract",
+            2,
+            "Return a new list with two subtracted from every value.",
+            "-",
+        ),
+    ),
+)
+def test_materialized_map_body_then_done_projects_from_container_prompt(
+    operator: str,
+    literal: int,
+    prompt: str,
+    source_operator: str,
+) -> None:
+    signature = _signature()
+    identity = tp.Program(("variable-0",), signature)
+    map_action = next(
+        action
+        for action in tp.factor_action_candidates(identity, literals=(literal,)).actions
+        if action.schema == "MAP_BIND"
+        and action.left_source == "BOUND0"
+        and action.right_source == "SELECTED"
+    )
+    mapped = tp.apply_factor_action(identity, map_action)
+    body_action = next(
+        action
+        for action in tp.factor_action_candidates(mapped, literals=(literal,)).actions
+        if action.path == (0, 0)
+        and action.schema == "APPLY2"
+        and action.operator == operator
+        and action.left_source == "SELECTED"
+        and action.right_source == "LITERAL"
+        and action.literal == literal
+    )
+    completed = tp.apply_factor_action(mapped, body_action)
+    done = next(
+        action
+        for action in tp.factor_action_candidates(completed, literals=(literal,)).actions
+        if action.schema == "DONE"
+    )
+    evidence = prompt_factors.PromptSequenceEvidence(
+        first_action=body_action,
+        first_selected_source=h2._prompt_selected_source(
+            _PromptSourceState(mapped), body_action
+        ),
+        second_action=done,
+        second_selected_source=None,
+    )
+    observation = prompt_factors.observe_prompt_compositions(
+        prompt, signature
+    )
+
+    projection = prompt_factors.FixedPromptSequenceProjection.build((evidence,))
+    decision = projection.project(prompt, signature)
+
+    assert tp.compile(completed).source == (
+        f"def solve(values):\n"
+        f"    return [item_0 {source_operator} {literal} for item_0 in values]\n"
+    )
+    assert evidence.first_selected_source == "BOUND0"
+    assert observation.supported
+    assert observation.pattern is not None
+    assert observation.pattern.container_schema == "MAP_BIND"
+    assert decision.status == prompt_factors.PROJECTION_STATUS_PROJECTED
+    assert decision.matching_sequence_cells == (0,)
+
+
+def test_scalar_path_coincidence_is_not_a_materialized_map_body() -> None:
+    signature = TypedSignature(
+        "solve_scalar",
+        (ProgramParameter("value", ProgramType.Int()),),
+        ProgramType.Int(),
+    )
+    scalar = tp.Program(("absolute", "absolute", "variable-0"), signature)
+    body_action = next(
+        action
+        for action in tp.factor_action_candidates(scalar, literals=(4,)).actions
+        if action.path == (0, 0)
+        and action.schema == "APPLY2"
+        and action.operator == "add"
+        and action.left_source == "SELECTED"
+        and action.right_source == "LITERAL"
+        and action.literal == 4
+    )
+    completed = tp.apply_factor_action(scalar, body_action)
+    done = next(
+        action
+        for action in tp.factor_action_candidates(completed, literals=(4,)).actions
+        if action.schema == "DONE"
+    )
+    evidence = prompt_factors.PromptSequenceEvidence(
+        first_action=body_action,
+        first_selected_source=h2._prompt_selected_source(
+            _PromptSourceState(scalar), body_action
+        ),
+        second_action=done,
+        second_selected_source=None,
+    )
+
+    projection = prompt_factors.FixedPromptSequenceProjection.build((evidence,))
+
+    assert evidence.first_selected_source == "SCOPE0"
+    assert projection.patterns == ()
 
 
 def _expected_sha256() -> tuple[str, ...]:
