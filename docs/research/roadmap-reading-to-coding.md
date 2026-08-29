@@ -342,6 +342,28 @@ increment must represent multi-action consequences and prove itself on a
 visible mixed-order matrix containing both outer-then-inner and
 inner-then-outer programs before any fresh composition target is spent.
 
+That multi-action increment now passes its full visible development matrix. A
+target-free primitive corpus over values `[-20,20]` grew 410 local
+pre-value × motor-efference × observed-post-value synapses in ten action banks;
+there is no composite target or expected order in that learning stream. The
+readonly successor then predicted two plies in fresh fitted-cell races.
+Per-case exact-value coincidence spikes entered a materialized, hashed fixed
+synaptic projection into 100 ordered-pair cells, and the winning pair spike
+reached the ordinary ten-cell motor bank through another fixed projection.
+Only that motor winner was applied to the real program; no candidate program
+was host-executed or host-ranked.
+
+On both visible grids, every combination of magnitudes 1/2/4, add/subtract,
+and outer-versus-inner absolute placement passed: 24/24 exact action orders,
+program tokens, and outputs. The run recorded 47,520 unique successor races,
+7,200 cell-pair predictions, 72 selected real executions, and immutable
+successor/value hashes. This is `PASS_HORIZON2_SUCCESSOR_VISIBLE`. It solves the
+specific horizon/order defect with a learned cell world model, while remaining
+a bounded exact-value scalar planner rather than broad coding evidence. The
+withheld magnitude-3 paired transfer (`abs(x)-3` versus `abs(x-3)`) is absent
+from this learner and now lives behind a separate persisted-PASS authenticator
+and one-shot artifact guard.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
