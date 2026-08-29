@@ -297,6 +297,42 @@ three task times changed from 263.93→2.33 seconds (scalar offset),
 of three public-TRAIN tasks, not a second 30-task gate or broader capability
 claim.
 
+## Generic semantic breadth and prompt-span input
+
+Commit `75513d2` replaces the live bounded semantic enumerator with one
+incremental retained-frontier path and adds generic `minimum`/`maximum`
+productions. Extrema use the existing physical less-than races followed by a
+physical copy of the selected operand; add/min/max have one deterministic
+commutative syntax order. Retention uses ordered visible root and binder-item
+observations and excludes desired outputs. Self-posed nonnegative, symmetric
+clamp, and mapped-nonnegative programs were selected at AST costs 3, 5, and 6.
+The focused implementation command passed 97 tests; the standalone extrema
+suite passed 10 tests in 6.04 seconds, with the cost-5 clamp call taking 0.91
+seconds on this host.
+
+The same commit adds bounded printable-ASCII Char factors and String
+length/position factors (26 positions), strict canonical decoding, physical
+Char/String `DONE` copying, and UNKNOWN inhibition across every new factor.
+The live output projection SHA-256 is
+`f3ebca86516460b7a03ab5588cf26de2c6df07d0f5a109e8a6d5646eed015f44`; the
+operator checkpoint is
+`f9a065c704077bcd2ebdf005498738991f10ce72ca722798359edad5f5d28586`.
+These are live-v2 identities; they do not rewrite the immutable 30-task artifact.
+
+Commit `c89a3c6` separately banks a checkpoint-free public-TRAIN prompt input
+substrate. It accepts only the frozen callable frame, canonicalizes entrypoint
+and declared argument spellings into roles, emits ordered contiguous 1--4-token
+spans as physically driven 12-of-512 assemblies, and keeps signed literal values
+in a separate physical copy channel while lexical spans see `<INT>`. It contains
+no learned state, teacher, semantic-factor classifier, desired outputs,
+task/family identity, or candidate programs. Its six focused tests and a
+43-test prompt/shared-consumer command passed.
+
+Both results are mechanisms, not a completed six-family TRAIN breadth gate or
+prompt-only capability evidence. The aggregate and String combinators, learned
+span-to-factor mapping, preregistered TRAIN capacity split, and broad gate remain.
+Public DEV/eval, M0, protected data, held-out Path-2 material, and C1 stay sealed.
+
 ## Path-2 factorized successor replay readiness
 
 The separately named public-TRAIN Path-2 successor replay is implemented and

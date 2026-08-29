@@ -1,8 +1,9 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-08-29 after the first broad
-bottom-up typed-semantic TRAIN pass, its speed layer, and Path-2 replay
-preparation. Exact scientific boundaries live in
+bottom-up typed-semantic TRAIN pass, its speed layer, the first generic breadth
+mechanisms, prompt-span input, and Path-2 replay preparation. Exact scientific
+boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -13,8 +14,8 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-R4  TRAIN-only prompt → semantic-factor bridge       [next after breadth]
-R3  Bottom-up typed semantic synthesis               [30/30 across 3 TRAIN families]
+R4  TRAIN-only prompt → semantic-factor bridge       [physical span input banked]
+R3  Bottom-up typed semantic synthesis               [30/30 + breadth mechanisms]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
@@ -35,10 +36,19 @@ The next order is intentionally leakage-safe. The semantic physical path is
 already parity-accelerated: a first-round task from each banked family replayed
 42.3x faster in aggregate without changing decisions or race ledgers.
 
+Commit `75513d2` begins the six-family breadth layer with one incremental
+physical-retention path, generic min/max composition, and bounded Char/String
+output factors with type-total copy and UNKNOWN rejection. Self-posed
+nonnegative, clamp, and mapped-nonnegative programs synthesize at costs 3/5/6;
+no task from the six-family gate has been opened. Commit `c89a3c6` separately
+banks strict callable framing, role-normalized ordered prompt spans, physical
+12-of-512 span assemblies, and a separate signed-literal copy channel. It is an
+input substrate with zero learned state, not yet a prompt-to-factor learner.
+
 1. Add generic combinator/type breadth using only the six unspent TRAIN
    families.
-2. Learn and freeze a prompt-span → semantic-factor bridge on a preregistered
-   TRAIN capacity split.
+2. Complete and freeze the learned prompt-span → semantic-factor mapping on a
+   preregistered TRAIN capacity split; its physical input layer is already banked.
 3. Spend the 27 fixed family-disjoint public DEV tasks once, with visible-I/O
    and prompt-only arms paired in the same gate.
 4. Only a paired transfer pass licenses the canonical M0 freeze/reveal ceremony.

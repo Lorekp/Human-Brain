@@ -608,6 +608,28 @@ to 21.05 seconds (42.3x); individual reductions were 263.93→2.33 seconds,
 replay, not a rerun of the frozen 30-task adjudication and not new capability
 evidence.  It makes the six-family TRAIN breadth step practical.
 
+The first generic breadth mechanism layer is now banked without opening any of
+those six task outputs.  The live compiler/synthesizer has one retained-frontier
+path: deterministic first/lowest-cost physical observational representatives
+are carried forward across root cases and every visible bound list item, while
+desired outputs remain absent until the exact-vector race at the current tier.
+Generic `minimum` and `maximum` compose the existing less-than and copy races;
+self-posed `max(n,0)`, symmetric clamp, and mapped-nonnegative programs closed at
+AST costs 3, 5, and 6.  The same layer adds bounded Char/String physical output
+factors, strict decoding, type-total physical copying, and complete UNKNOWN
+inhibition so later String composition cannot win through an unsupported value.
+This is commit `75513d2`, a mechanism result only: it is not a six-family TRAIN
+gate, prompt-only solving, transfer, DEV/eval, M0, held-out, or C1 evidence.
+
+The prompt-language continuation has also banked its checkpoint-free input
+substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
+declared names by entry/argument roles, represents signed integer lexemes as
+`<INT>` plus a separate physical copy record, and drives every ordered 1--4
+token span through a deterministic 12-of-512 fitted-cell assembly.  It has no
+teacher, factor classifier, desired output, family/task identity, candidate
+program, or trained state.  The learned span-to-semantic-factor mapping and its
+preregistered TRAIN capacity split remain unbuilt; DEV therefore remains sealed.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -701,9 +723,12 @@ is proven.
    checkpoint identity.  A parity-checked first-three-task replay is 42.3x
    faster in aggregate.
 2. Expand the generic semantic basis across the six unspent TRAIN families;
-   keep prompt/task/family identity out and keep property cases hidden.
+   keep prompt/task/family identity out and keep property cases hidden.  The
+   retained Int-extrema and Char/String output substrate is complete; generic
+   aggregate and String combinators plus the broad gate remain.
 3. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
-   before any family-disjoint desired vector is observed.
+   before any family-disjoint desired vector is observed.  The checkpoint-free
+   physical span input is banked; the learned factor mapping remains.
 4. Spend one paired 27-task public DEV gate only after the visible-I/O engine
    and prompt-only bridge are both frozen. M0 and canonical eval stay sealed.
 5. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
