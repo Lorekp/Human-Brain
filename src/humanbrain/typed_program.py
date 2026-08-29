@@ -483,6 +483,13 @@ _PRIMITIVE_SPECS = (
         "map",
     ),
     _PrimitiveSpec("sum", "operation", _INT, (_list_type(_INT),), "sum"),
+    _PrimitiveSpec(
+        "count",
+        "operation",
+        _INT,
+        (_function_type((_INT,), _BOOL), _list_type(_INT)),
+        "count",
+    ),
     _PrimitiveSpec("bind", "binder", lowering="binder"),
     _PrimitiveSpec("variable-0", "variable", lowering="variable", value=0),
     _PrimitiveSpec("variable-1", "variable", lowering="variable", value=1),
@@ -2190,6 +2197,34 @@ def _lower_expression(
         return ast.Call(
             func=ast.Name(id="sum", ctx=ast.Load()),
             args=[_lower_expression(expression.children[0], environment, context)],
+            keywords=[],
+        )
+    if lowering == "count":
+        binder, collection = expression.children
+        if binder.spec.role != "binder" or len(binder.children) != 1:
+            raise ProgramFormatError("count requires one explicit predicate binder")
+        name = context.name("item")
+        return ast.Call(
+            func=ast.Name(id="sum", ctx=ast.Load()),
+            args=[
+                ast.GeneratorExp(
+                    elt=ast.Constant(value=1),
+                    generators=[
+                        ast.comprehension(
+                            target=ast.Name(id=name, ctx=ast.Store()),
+                            iter=_lower_expression(collection, environment, context),
+                            ifs=[
+                                _lower_expression(
+                                    binder.children[0],
+                                    (name, *environment),
+                                    context,
+                                )
+                            ],
+                            is_async=0,
+                        )
+                    ],
+                )
+            ],
             keywords=[],
         )
     if lowering == "map":

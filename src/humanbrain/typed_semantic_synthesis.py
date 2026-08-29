@@ -7,7 +7,7 @@ No prompt, task, family, oracle, sandbox, or host-interpreter input crosses the
 interface.
 
 The bounded fragment covers the current public source-edit bridge plus generic
-integer minimum/maximum composition.  Recursive growth is licensed only from
+integer extrema and list aggregation.  Recursive growth is licensed only from
 the first physical observational representative at a lower cost.  The bounds
 are part of the interface rather than an accidental search cutoff.
 """
@@ -23,19 +23,24 @@ import humanbrain.typed_program as typed_program
 from humanbrain.typed_program_types import ProgramType, TypedSignature
 
 
-MAX_BRIDGE_AST_COST = 6
+MAX_BRIDGE_AST_COST = 9
 MAX_SCALAR_EXPRESSION_AST_COST = 5
 
 _INT = ProgramType.Int()
+_BOOL = ProgramType.Bool()
 _LIST_INT = ProgramType.List(_INT)
 _FUNCTION_INT_INT_LABEL = "Function[Int,Int]"
+_FUNCTION_INT_BOOL_LABEL = "Function[Int,Bool]"
 _FRAGMENT_PRODUCTIONS = (
     "add",
     "subtract",
     "minimum",
     "maximum",
     "absolute",
+    "less-than",
     "map",
+    "sum",
+    "count",
     "bind",
     "variable-0",
     "variable-1",
@@ -214,7 +219,10 @@ def _compiler_production_order() -> dict[str, int]:
         "minimum": ("operation", 2),
         "maximum": ("operation", 2),
         "absolute": ("operation", 1),
+        "less-than": ("operation", 2),
         "map": ("operation", 2),
+        "sum": ("operation", 1),
+        "count": ("operation", 2),
         "bind": ("binder", 0),
         "variable-0": ("variable", 0),
         "variable-1": ("variable", 0),
@@ -366,6 +374,8 @@ def _list_nodes(
 ) -> tuple[CandidateNode, ...]:
     collections = list(_variable_nodes(builder, environment, _LIST_INT))
     roots = list(collections)
+    if max_ast_cost < 4 or not collections:
+        return tuple(sorted(roots, key=builder.sort_key))
     body_environment = (_INT, *environment)
     body_nodes = _scalar_nodes(
         builder,
@@ -378,9 +388,6 @@ def _list_nodes(
         ),
         retained_node_ids,
     )
-    if max_ast_cost < 4 or not collections:
-        return tuple(sorted(roots, key=builder.sort_key))
-
     def retained(node: CandidateNode) -> bool:
         return retained_node_ids is None or node.node_id in retained_node_ids
 
@@ -408,6 +415,145 @@ def _list_nodes(
                     tokens=("map", *binder.tokens, *collection.tokens),
                     provenance=CandidateProvenance(
                         "map",
+                        (binder.node_id, collection.node_id),
+                    ),
+                )
+            )
+    return tuple(sorted(roots, key=builder.sort_key))
+
+
+def _predicate_nodes(
+    builder: _NodeBuilder,
+    environment: tuple[ProgramType, ...],
+    literals: tuple[int, ...],
+    max_ast_cost: int,
+    retained_node_ids: frozenset[str] | None,
+) -> tuple[CandidateNode, ...]:
+    """Grow generic Int comparisons for a predicate binder environment."""
+
+    if max_ast_cost < 3:
+        return ()
+    scalar_nodes = _scalar_nodes(
+        builder,
+        environment,
+        literals,
+        min(MAX_SCALAR_EXPRESSION_AST_COST, max_ast_cost),
+        retained_node_ids,
+    )
+    scalars_by_cost: dict[int, list[CandidateNode]] = {}
+    for node in scalar_nodes:
+        scalars_by_cost.setdefault(node.ast_cost, []).append(node)
+
+    def retained(node: CandidateNode) -> bool:
+        return retained_node_ids is None or node.node_id in retained_node_ids
+
+    predicates: list[CandidateNode] = []
+    for cost in range(3, max_ast_cost + 1):
+        for left_cost in range(1, cost - 1):
+            right_cost = cost - 1 - left_cost
+            for left in scalars_by_cost.get(left_cost, ()):
+                if not retained(left):
+                    continue
+                for right in scalars_by_cost.get(right_cost, ()):
+                    if not retained(right):
+                        continue
+                    predicates.append(
+                        builder.add(
+                            ast_cost=cost,
+                            environment=environment,
+                            result_type_label="Bool",
+                            tokens=("less-than", *left.tokens, *right.tokens),
+                            provenance=CandidateProvenance(
+                                "less-than",
+                                (left.node_id, right.node_id),
+                            ),
+                        )
+                    )
+    return tuple(sorted(predicates, key=builder.sort_key))
+
+
+def _int_result_nodes(
+    builder: _NodeBuilder,
+    environment: tuple[ProgramType, ...],
+    literals: tuple[int, ...],
+    max_ast_cost: int,
+    retained_node_ids: frozenset[str] | None,
+) -> tuple[CandidateNode, ...]:
+    """Grow scalar roots plus generic sum and predicate-count aggregates."""
+
+    roots = list(
+        _scalar_nodes(
+            builder,
+            environment,
+            literals,
+            min(max_ast_cost, MAX_SCALAR_EXPRESSION_AST_COST),
+            retained_node_ids,
+        )
+    )
+    list_nodes = _list_nodes(
+        builder,
+        environment,
+        literals,
+        max_ast_cost,
+        retained_node_ids,
+    )
+    retained_collections = tuple(
+        node
+        for node in list_nodes
+        if retained_node_ids is None or node.node_id in retained_node_ids
+    )
+    if not retained_collections:
+        return tuple(sorted(roots, key=builder.sort_key))
+    body_environment = (_INT, *environment)
+    predicate_nodes = _predicate_nodes(
+        builder,
+        body_environment,
+        literals,
+        max_ast_cost - 3,
+        retained_node_ids,
+    )
+
+    def retained(node: CandidateNode) -> bool:
+        return retained_node_ids is None or node.node_id in retained_node_ids
+
+    for collection in retained_collections:
+        sum_cost = 1 + collection.ast_cost
+        if sum_cost <= max_ast_cost:
+            roots.append(
+                builder.add(
+                    ast_cost=sum_cost,
+                    environment=environment,
+                    result_type_label="Int",
+                    tokens=("sum", *collection.tokens),
+                    provenance=CandidateProvenance(
+                        "sum",
+                        (collection.node_id,),
+                    ),
+                )
+            )
+        for predicate in predicate_nodes:
+            if not retained(predicate):
+                continue
+            count_cost = 2 + predicate.ast_cost + collection.ast_cost
+            if count_cost > max_ast_cost:
+                continue
+            binder = builder.add(
+                ast_cost=1 + predicate.ast_cost,
+                environment=environment,
+                result_type_label=_FUNCTION_INT_BOOL_LABEL,
+                tokens=("bind", *predicate.tokens),
+                provenance=CandidateProvenance("bind", (predicate.node_id,)),
+            )
+            if not retained(binder):
+                continue
+            roots.append(
+                builder.add(
+                    ast_cost=count_cost,
+                    environment=environment,
+                    result_type_label="Int",
+                    tokens=("count", *binder.tokens, *collection.tokens),
+                    provenance=CandidateProvenance(
+                        "count",
                         (binder.node_id, collection.node_id),
                     ),
                 )
@@ -455,11 +601,11 @@ def enumerate_typed_candidate_dag(
     )
 
     if signature.result == _INT:
-        roots = _scalar_nodes(
+        roots = _int_result_nodes(
             builder,
             environment,
             literal_bank,
-            min(max_ast_cost, MAX_SCALAR_EXPRESSION_AST_COST),
+            max_ast_cost,
             retained,
         )
     elif signature.result == _LIST_INT:

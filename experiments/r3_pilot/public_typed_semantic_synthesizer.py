@@ -28,6 +28,7 @@ STATUS_DONE = "DONE"
 STATUS_STOP = "STOP_NO_EXACT_TYPED_SEMANTIC_PROGRAM"
 
 _INT = ProgramType.Int()
+_BOOL = ProgramType.Bool()
 _LIST_INT = ProgramType.List(_INT)
 
 _ABSOLUTE = tp.FactorAction((), "APPLY1", "absolute", "SELECTED", "NONE", None)
@@ -35,7 +36,7 @@ _BINARY_ACTIONS = {
     operator: tp.FactorAction(
         (), "APPLY2", operator, "SELECTED", "SCOPE0", None
     )
-    for operator in ("add", "subtract", "minimum", "maximum")
+    for operator in ("add", "subtract", "minimum", "maximum", "less-than")
 }
 _MAP_COPY = tp.FactorAction(
     (), "MAP_BIND", "map", "BOUND0", "SELECTED", None
@@ -54,9 +55,11 @@ def _canonical_json(value: object) -> bytes:
 def _output_type(value: ProgramType) -> output_cells.OutputType:
     if value == _INT:
         return output_cells.OutputType.INT
+    if value == _BOOL:
+        return output_cells.OutputType.BOOL
     if value == _LIST_INT:
         return output_cells.OutputType.LIST_INT
-    raise ValueError("physical synthesis supports only Int and List[Int]")
+    raise ValueError("physical synthesis supports only Int, Bool, and List[Int]")
 
 
 def _encode(value: object, value_type: ProgramType) -> output_cells.TypedOutputEncoding:
@@ -74,10 +77,12 @@ def _encode(value: object, value_type: ProgramType) -> output_cells.TypedOutputE
 def _unsupported(value_type: ProgramType) -> output_cells.TypedOutputEncoding:
     if value_type == _INT:
         value: object = output_cells.INT_MAX + 1
+    elif value_type == _BOOL:
+        value = None
     elif value_type == _LIST_INT:
         value = [output_cells.INT_MAX + 1]
     else:
-        raise ValueError("physical synthesis supports only Int and List[Int]")
+        raise ValueError("physical synthesis supports only Int, Bool, and List[Int]")
     return output_cells.TypedOutputCellBank.encode(
         value,
         declared_type=_output_type(value_type),
@@ -91,6 +96,15 @@ def _decode_int(value: output_cells.TypedOutputEncoding) -> int:
     if len(cells) != 1 or int(cells[0]) == output_cells.INT_UNKNOWN_CELL:
         raise RuntimeError("physical Int output is not uniquely decodable")
     return output_cells.INT_MIN + int(cells[0])
+
+
+def _decode_bool(value: output_cells.TypedOutputEncoding) -> bool:
+    if not value.supported or value.output_type is not output_cells.OutputType.BOOL:
+        raise RuntimeError("physical operator did not produce a supported Bool")
+    cells = np.flatnonzero(value.bool_cells)
+    if len(cells) != 1 or int(cells[0]) == output_cells.BOOL_UNKNOWN_CELL:
+        raise RuntimeError("physical Bool output is not uniquely decodable")
+    return int(cells[0]) == output_cells.BOOL_TRUE_CELL
 
 
 def _decode_list(value: output_cells.TypedOutputEncoding) -> list[int]:
@@ -182,7 +196,14 @@ class _CaseEvaluator:
         if not 0 <= index < len(values):
             raise RuntimeError("candidate variable lies outside its typed environment")
         label = node.environment_type_labels[index]
-        value_type = _INT if label == "Int" else _LIST_INT
+        if label == "Int":
+            value_type = _INT
+        elif label == "Bool":
+            value_type = _BOOL
+        elif label == "List[Int]":
+            value_type = _LIST_INT
+        else:
+            raise RuntimeError("candidate variable has an unsupported physical type")
         return values[index], value_type
 
     def _predict(
@@ -261,8 +282,53 @@ class _CaseEvaluator:
                         [_decode_int(item) for item in mapped_outputs],
                         _LIST_INT,
                     )
+        elif production == "sum":
+            collection = self.evaluate(
+                provenance.operand_node_ids[0], bound=bound
+            )
+            copied = self._predict(collection, _MAP_COPY)
+            if not copied.supported:
+                output = _unsupported(_INT)
+            else:
+                output = _encode(0, _INT)
+                for item in _decode_list(copied):
+                    output = self._predict(
+                        output,
+                        _BINARY_ACTIONS["add"],
+                        (_encode(item, _INT),),
+                    )
+                    if not output.supported:
+                        break
+        elif production == "count":
+            binder = self.nodes[provenance.operand_node_ids[0]]
+            if binder.provenance.production != "bind":
+                raise RuntimeError("count provenance lost its compiler binder")
+            predicate_id = binder.provenance.operand_node_ids[0]
+            collection = self.evaluate(
+                provenance.operand_node_ids[1], bound=bound
+            )
+            copied = self._predict(collection, _MAP_COPY)
+            if not copied.supported:
+                output = _unsupported(_INT)
+            else:
+                output = _encode(0, _INT)
+                for item in _decode_list(copied):
+                    predicate = self.evaluate(
+                        predicate_id,
+                        bound=(item, *bound),
+                    )
+                    if not predicate.supported:
+                        output = _unsupported(_INT)
+                        break
+                    output = self._predict(
+                        output,
+                        _BINARY_ACTIONS["add"],
+                        (_encode(int(_decode_bool(predicate)), _INT),),
+                    )
+                    if not output.supported:
+                        break
         elif production == "bind":
-            raise RuntimeError("a compiler binder cannot be evaluated outside map")
+            raise RuntimeError("a compiler binder cannot be evaluated outside an aggregate")
         else:
             raise RuntimeError(f"unsupported semantic production {production!r}")
 
@@ -291,7 +357,7 @@ class FrozenTypedSemanticSynthesizer:
         digest.update(self.operator.live_checkpoint_sha256.encode("ascii"))
         digest.update(_canonical_json(self.literal_bank))
         digest.update(np.asarray((self.max_ast_cost,), dtype="<i8").tobytes())
-        digest.update(b"\0ordered-extrema-retention-v1")
+        digest.update(b"\0list-aggregate-retention-v1")
         return digest.hexdigest()
 
     def _synthesize_retained(
@@ -316,7 +382,7 @@ class FrozenTypedSemanticSynthesizer:
         total_predictions = 0
         total_races = 0
         all_races_digest = sha256()
-        all_races_digest.update(b"public-typed-semantic-all-races-extrema-v1\0")
+        all_races_digest.update(b"public-typed-semantic-all-races-list-aggregate-v1\0")
         root_environment = tuple(
             synthesis._type_label(parameter.type)
             for parameter in reversed(signature.parameters)
@@ -325,10 +391,14 @@ class FrozenTypedSemanticSynthesizer:
         evaluators: tuple[_CaseEvaluator, ...] | None = None
 
         for cost in range(1, self.max_ast_cost + 1):
+            # Build against the frozen final bound on every pass.  This keeps
+            # internal List/binder operands structurally present at their own
+            # exact cost; ``retained`` alone decides which prior physical
+            # representatives may compose into later nodes.
             dag = synthesis.enumerate_typed_candidate_dag(
                 signature,
                 literals=self.literal_bank,
-                max_ast_cost=cost,
+                max_ast_cost=self.max_ast_cost,
                 retained_node_ids=retained,
             )
             if evaluators is None:
@@ -355,12 +425,18 @@ class FrozenTypedSemanticSynthesizer:
             ):
                 processed.add(node.node_id)
                 if node.provenance.production == "bind":
+                    if (
+                        node.result_type_label == "Function[Int,Bool]"
+                        and len(node.provenance.operand_node_ids) == 1
+                        and node.provenance.operand_node_ids[0] in retained
+                    ):
+                        retained.add(node.node_id)
                     continue
                 if node.environment_type_labels == root_environment:
                     contexts = tuple((evaluator, ()) for evaluator in evaluators)
                 elif (
                     node.environment_type_labels == body_environment
-                    and node.result_type_label == "Int"
+                    and node.result_type_label in {"Int", "Bool"}
                 ):
                     contexts = tuple(
                         (evaluator, (item,))
@@ -393,6 +469,10 @@ class FrozenTypedSemanticSynthesizer:
                     node_digest.update(digest.encode("ascii"))
                     all_races_digest.update(digest.encode("ascii"))
                 output_tuple = tuple(outputs)
+                total_predictions += node_predictions
+                total_races += node_races
+                if any(not output.supported for output in output_tuple):
+                    continue
                 observation_bytes = tuple(
                     output.sha256.encode("ascii") for output in output_tuple
                 )
@@ -404,9 +484,6 @@ class FrozenTypedSemanticSynthesizer:
                 if semantic_key not in seen_semantics:
                     seen_semantics[semantic_key] = node.node_id
                     retained.add(node.node_id)
-                total_predictions += node_predictions
-                total_races += node_races
-
                 if node.node_id not in tier_candidate_ids:
                     continue
                 vector = synthesis.TypedPhysicalSemanticVector(

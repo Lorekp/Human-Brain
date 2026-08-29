@@ -78,7 +78,9 @@ def test_scalar_fragment_is_cost_ordered_compiler_valid_and_deterministic() -> N
 
     assert first == second
     assert first.literal_bank == (-2, 3)
-    assert tuple(tier.ast_cost for tier in first.tiers) == (1, 2, 3, 4, 5, 6)
+    assert tuple(tier.ast_cost for tier in first.tiers) == tuple(
+        range(1, MAX_BRIDGE_AST_COST + 1)
+    )
     assert tuple(len(tier.candidates) for tier in first.tiers) == (
         3,
         3,
@@ -86,7 +88,13 @@ def test_scalar_fragment_is_cost_ordered_compiler_valid_and_deterministic() -> N
         75,
         552,
         0,
+        0,
+        0,
+        0,
     )
+    # Raising the aggregate bound must not build an irrelevant binder/list
+    # frontier for a scalar-only signature.
+    assert len(first.nodes) == 663
     assert all(
         candidate.ast_cost == tier.ast_cost
         for tier in first.tiers
@@ -125,7 +133,17 @@ def test_list_map_tiers_retain_bind_body_and_collection_provenance() -> None:
         max_ast_cost=MAX_BRIDGE_AST_COST,
     )
 
-    assert tuple(len(tier.candidates) for tier in dag.tiers) == (1, 0, 0, 3, 3, 30)
+    assert tuple(len(tier.candidates) for tier in dag.tiers) == (
+        1,
+        0,
+        0,
+        3,
+        3,
+        30,
+        75,
+        552,
+        0,
+    )
     _candidate_with_tokens(
         dag,
         ("map", "bind", "variable-0", "variable-0"),
