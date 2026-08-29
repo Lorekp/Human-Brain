@@ -29,6 +29,10 @@ from experiments.r3_pilot import (  # noqa: E402
     public_typed_horizon2_successor_planner as physical,
 )
 from humanbrain import typed_program as tp  # noqa: E402
+from humanbrain.resting_glif_race import (  # noqa: E402
+    CompiledRestingGlifRace,
+    RestingGlifRaceFailure,
+)
 from humanbrain.typed_program_types import (  # noqa: E402
     ProgramParameter,
     ProgramType,
@@ -139,6 +143,7 @@ _FULL_MATCH_CURRENT_PA = 5_000.0
 _CONTACT_GAP_PA = 5_000.0
 _UNKNOWN_CURRENT_PA = 1_200.0
 _OUTPUT_CURRENT_PA = 5_000.0
+_RACE = CompiledRestingGlifRace.compile(step_count=physical._RACE_STEPS)
 
 
 def _canonical_json(value: object) -> bytes:
@@ -747,6 +752,41 @@ def _checkpoint_sha256(
     return digest.hexdigest()
 
 
+def _physical_race(
+    currents_pa: np.ndarray,
+    labels: Sequence[str],
+    *,
+    bank: str,
+) -> CellRace:
+    """Run the established resting fitted-cell race without rebuilding cells."""
+
+    currents = np.ascontiguousarray(currents_pa, dtype=np.float64)
+    candidates = tuple(labels)
+    if currents.shape != (len(candidates),) or not candidates:
+        raise ValueError("physical race needs one current per candidate")
+    try:
+        result = _RACE.race_many(currents[None, :], require_unique=False)[0]
+    except RestingGlifRaceFailure as error:
+        raise physical.CellRaceFailure(
+            f"{bank} produced no spike within its fixed bound"
+        ) from error
+    if result.simultaneous_spike_candidates != 1:
+        raise physical.CellRaceFailure(
+            f"{bank} produced {result.simultaneous_spike_candidates} "
+            "simultaneous first spikes"
+        )
+    winner = result.winner_cell
+    return CellRace(
+        bank=bank,
+        candidates=candidates,
+        currents_pa=tuple(float(value) for value in currents),
+        winner_cell=winner,
+        winner=candidates[winner],
+        spike_step=result.spike_step,
+        simultaneous_spike_candidates=1,
+    )
+
+
 def _relay_race(
     value: str | None,
     labels: tuple[str, ...],
@@ -758,7 +798,7 @@ def _relay_race(
     spikes = _one_hot(str(source), labels)
     currents = _OUTPUT_CURRENT_PA * (weights @ spikes)
     currents[labels.index(UNKNOWN)] += _UNKNOWN_CURRENT_PA
-    return physical._physical_race(currents, labels, bank=bank)
+    return _physical_race(currents, labels, bank=bank)
 
 
 def _rule_races(
@@ -771,7 +811,7 @@ def _rule_races(
         f"{rule_bank.field}-rule-{index}"
         for index in range(rule_bank.contacts.shape[0])
     ) + (UNKNOWN,)
-    rule_race = physical._physical_race(
+    rule_race = _physical_race(
         _race_currents(rule_bank.contacts, rule_bank.contact_counts, features),
         rule_labels,
         bank=f"{bank}:local-rule",
@@ -780,7 +820,7 @@ def _rule_races(
     spikes[rule_race.winner_cell] = 1.0
     currents = _OUTPUT_CURRENT_PA * (rule_bank.projection @ spikes)
     currents[rule_bank.labels.index(UNKNOWN)] += _UNKNOWN_CURRENT_PA
-    field_race = physical._physical_race(currents, rule_bank.labels, bank=bank)
+    field_race = _physical_race(currents, rule_bank.labels, bank=bank)
     return rule_race, field_race
 
 
@@ -820,7 +860,7 @@ class FrozenStructureSuccessor:
         _validate_observation(observation)
         ready = _site_ready(observation, action)
         action_features = _encode_action_features(action, ready=ready)
-        transition_race = physical._physical_race(
+        transition_race = _physical_race(
             _race_currents(self.contacts, self.contact_counts, action_features),
             self.transition_labels,
             bank="typed-structure-factor",
