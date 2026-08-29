@@ -471,6 +471,16 @@ faster with bit-exact ledgers. This is
 the next capability gate varies names, prompt surface, literals, and incumbent
 shape before factorized H=2 or any protected milestone is opened.
 
+That transfer gate now passes 4/4 without changing the frozen hierarchy. New
+parameter names, paraphrased subtraction prompts, the signed literal `-2`, new
+case grids, and unseen binary/nested incumbents produced complete leading tiers
+of 2/2/3/2 actions; prompt evidence selected the exact action inside each tier,
+and every task closed through one structural prediction and one real actuation
+in 3.27 seconds total. `PASS_TYPED_FACTOR_H1_FAMILY_TRANSFER_V1` establishes a
+small visible public factor-transfer boundary, not a family-disjoint coding
+task result. It licenses the factorized H=2 lift; List, Simple-SWE, M0, and all
+protected surfaces remain closed.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

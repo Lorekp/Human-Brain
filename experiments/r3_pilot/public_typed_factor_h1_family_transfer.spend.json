@@ -1,0 +1,399 @@
+{
+  "commitment": {
+    "literal_bank": [
+      -4,
+      -3,
+      -2,
+      -1,
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "prior_pass": {
+      "artifact_lf_sha256": "4ee553a90a9c54baaa92d65d731f7b8daec853dad0cad212bbd45c597c8d719a",
+      "commitment_sha256": "1d3c40df6b5b66a9e0f64b8f4ce2b9b2643ae5dca7d1b456eadf45bd377fa1d3",
+      "model_checkpoint_sha256": "de8733825b824d734a22c110627f131aa60fd390e81c01aff1b374b3c1af7176",
+      "planner_source_lf_sha256": "591c1759ea81e9774ae96c80bf5bac587422320fe3d9a103e7631f615d163ed8",
+      "schema": "public-typed-factor-h1-prompt-hierarchical-fresh-v1",
+      "spend_marker_lf_sha256": "8c2ba4791f4ad9dcb7feb05a0773a5ce9d63215529cb3bae58b23e13d91969ad",
+      "verdict": "PASS_TYPED_FACTOR_H1_PROMPT_HIERARCHICAL_FRESH"
+    },
+    "runner_source_lf_sha256": "c9fefc3cc547abbae7833a63cc2f6cb3fd155658a8cf83c7467d31e9e9099807",
+    "schema": "public-typed-factor-h1-family-transfer-v1",
+    "tasks": [
+      {
+        "cases": [
+          [
+            9,
+            -4
+          ],
+          [
+            -6,
+            3
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            0,
+            -1
+          ]
+        ],
+        "desired_outputs": [
+          13,
+          -9,
+          0,
+          1
+        ],
+        "incumbent_tokens": [
+          "add",
+          "variable-0",
+          "integer",
+          "+",
+          "0",
+          "end"
+        ],
+        "name": "two-int-alpha-minus-beta",
+        "prompt": "Subtract beta from alpha.",
+        "signature": {
+          "entry_point": "solve",
+          "parameters": [
+            {
+              "name": "alpha",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            },
+            {
+              "name": "beta",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            }
+          ],
+          "result": {
+            "arguments": [],
+            "constructor": "Int"
+          }
+        }
+      },
+      {
+        "cases": [
+          [
+            9,
+            -4
+          ],
+          [
+            -6,
+            3
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            0,
+            -1
+          ]
+        ],
+        "desired_outputs": [
+          -13,
+          9,
+          0,
+          -1
+        ],
+        "incumbent_tokens": [
+          "add",
+          "variable-0",
+          "integer",
+          "+",
+          "0",
+          "end"
+        ],
+        "name": "two-int-beta-minus-alpha",
+        "prompt": "Subtract alpha from beta.",
+        "signature": {
+          "entry_point": "solve",
+          "parameters": [
+            {
+              "name": "alpha",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            },
+            {
+              "name": "beta",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            }
+          ],
+          "result": {
+            "arguments": [],
+            "constructor": "Int"
+          }
+        }
+      },
+      {
+        "cases": [
+          [
+            -5
+          ],
+          [
+            -2
+          ],
+          [
+            0
+          ],
+          [
+            4
+          ]
+        ],
+        "desired_outputs": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "incumbent_tokens": [
+          "less-than",
+          "absolute",
+          "variable-0",
+          "integer",
+          "+",
+          "4",
+          "end"
+        ],
+        "name": "bool-datum-less-than-neg2",
+        "prompt": "Return whether datum < -2.",
+        "signature": {
+          "entry_point": "solve",
+          "parameters": [
+            {
+              "name": "datum",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            }
+          ],
+          "result": {
+            "arguments": [],
+            "constructor": "Bool"
+          }
+        }
+      },
+      {
+        "cases": [
+          [
+            -5
+          ],
+          [
+            -2
+          ],
+          [
+            0
+          ],
+          [
+            4
+          ]
+        ],
+        "desired_outputs": [
+          false,
+          false,
+          true,
+          true
+        ],
+        "incumbent_tokens": [
+          "less-than",
+          "absolute",
+          "variable-0",
+          "integer",
+          "+",
+          "4",
+          "end"
+        ],
+        "name": "bool-neg2-less-than-datum",
+        "prompt": "Return whether -2 < datum.",
+        "signature": {
+          "entry_point": "solve",
+          "parameters": [
+            {
+              "name": "datum",
+              "type": {
+                "arguments": [],
+                "constructor": "Int"
+              }
+            }
+          ],
+          "result": {
+            "arguments": [],
+            "constructor": "Bool"
+          }
+        }
+      }
+    ],
+    "validation_targets": [
+      {
+        "expected_leading_actions": [
+          {
+            "left_source": "SCOPE1",
+            "literal": null,
+            "operator": "subtract",
+            "path": [],
+            "right_source": "SELECTED",
+            "schema": "APPLY2"
+          },
+          {
+            "left_source": "SCOPE1",
+            "literal": null,
+            "operator": "subtract",
+            "path": [],
+            "right_source": "SCOPE0",
+            "schema": "APPLY2"
+          }
+        ],
+        "expected_selected_action": {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        "expected_tokens": [
+          "subtract",
+          "variable-1",
+          "variable-0"
+        ],
+        "name": "two-int-alpha-minus-beta"
+      },
+      {
+        "expected_leading_actions": [
+          {
+            "left_source": "SELECTED",
+            "literal": null,
+            "operator": "subtract",
+            "path": [],
+            "right_source": "SCOPE1",
+            "schema": "APPLY2"
+          },
+          {
+            "left_source": "SCOPE0",
+            "literal": null,
+            "operator": "subtract",
+            "path": [],
+            "right_source": "SCOPE1",
+            "schema": "APPLY2"
+          }
+        ],
+        "expected_selected_action": {
+          "left_source": "SCOPE0",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE1",
+          "schema": "APPLY2"
+        },
+        "expected_tokens": [
+          "subtract",
+          "variable-0",
+          "variable-1"
+        ],
+        "name": "two-int-beta-minus-alpha"
+      },
+      {
+        "expected_leading_actions": [
+          {
+            "left_source": "SCOPE0",
+            "literal": -4,
+            "operator": "less-than",
+            "path": [],
+            "right_source": "LITERAL",
+            "schema": "APPLY2"
+          },
+          {
+            "left_source": "SCOPE0",
+            "literal": -3,
+            "operator": "less-than",
+            "path": [],
+            "right_source": "LITERAL",
+            "schema": "APPLY2"
+          },
+          {
+            "left_source": "SCOPE0",
+            "literal": -2,
+            "operator": "less-than",
+            "path": [],
+            "right_source": "LITERAL",
+            "schema": "APPLY2"
+          }
+        ],
+        "expected_selected_action": {
+          "left_source": "SCOPE0",
+          "literal": -2,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        },
+        "expected_tokens": [
+          "less-than",
+          "variable-0",
+          "integer",
+          "-",
+          "2",
+          "end"
+        ],
+        "name": "bool-datum-less-than-neg2"
+      },
+      {
+        "expected_leading_actions": [
+          {
+            "left_source": "LITERAL",
+            "literal": -2,
+            "operator": "less-than",
+            "path": [],
+            "right_source": "SCOPE0",
+            "schema": "APPLY2"
+          },
+          {
+            "left_source": "LITERAL",
+            "literal": -1,
+            "operator": "less-than",
+            "path": [],
+            "right_source": "SCOPE0",
+            "schema": "APPLY2"
+          }
+        ],
+        "expected_selected_action": {
+          "left_source": "LITERAL",
+          "literal": -2,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        "expected_tokens": [
+          "less-than",
+          "integer",
+          "-",
+          "2",
+          "end",
+          "variable-0"
+        ],
+        "name": "bool-neg2-less-than-datum"
+      }
+    ]
+  },
+  "commitment_sha256": "39e271690fd2ee9012841f69dae26aedda41f29e06984a5f3f952a9fb5cdf6bb",
+  "disposition": "Retain after PASS, STOP, exception, interruption, or crash; this four-task public family-transfer cohort must never rerun.",
+  "schema": "public-typed-factor-h1-family-transfer-v1-spend"
+}

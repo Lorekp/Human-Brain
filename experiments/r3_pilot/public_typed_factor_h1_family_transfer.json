@@ -1,0 +1,507 @@
+{
+  "claim_boundary": "Visible public Int/Bool H=1 family-factor transfer across renamed bindings, paraphrased operator syntax, signed literal -2, changed cases, and unseen incumbent structures. Reuses the frozen target-free operator/structure successors and physical value/prompt/motor hierarchy. Not List, H>1, Simple-SWE, M0, DEV/eval/held-out, protected, C1, or coding capability.",
+  "commitment_sha256": "39e271690fd2ee9012841f69dae26aedda41f29e06984a5f3f952a9fb5cdf6bb",
+  "literal_bank": [
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "model_checkpoint_sha256": "de8733825b824d734a22c110627f131aa60fd390e81c01aff1b374b3c1af7176",
+  "passed_tasks": 4,
+  "prior_pass": {
+    "artifact_lf_sha256": "4ee553a90a9c54baaa92d65d731f7b8daec853dad0cad212bbd45c597c8d719a",
+    "commitment_sha256": "1d3c40df6b5b66a9e0f64b8f4ce2b9b2643ae5dca7d1b456eadf45bd377fa1d3",
+    "model_checkpoint_sha256": "de8733825b824d734a22c110627f131aa60fd390e81c01aff1b374b3c1af7176",
+    "planner_source_lf_sha256": "591c1759ea81e9774ae96c80bf5bac587422320fe3d9a103e7631f615d163ed8",
+    "schema": "public-typed-factor-h1-prompt-hierarchical-fresh-v1",
+    "spend_marker_lf_sha256": "8c2ba4791f4ad9dcb7feb05a0773a5ce9d63215529cb3bae58b23e13d91969ad",
+    "verdict": "PASS_TYPED_FACTOR_H1_PROMPT_HIERARCHICAL_FRESH"
+  },
+  "retry_policy": "One four-task visible public-development cohort; no retry or task, prompt, case, incumbent, literal-bank, tier, current, mechanism, or ordering tuning.",
+  "schema": "public-typed-factor-h1-family-transfer-v1",
+  "tasks": [
+    {
+      "actuator_calls": 1,
+      "candidate_count": 341,
+      "checkpoint_immutable": true,
+      "desired_outputs": [
+        13,
+        -9,
+        0,
+        1
+      ],
+      "error": null,
+      "expected_leading_value_tier_actions": [
+        {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SELECTED",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        }
+      ],
+      "expected_selected_action": {
+        "left_source": "SCOPE1",
+        "literal": null,
+        "operator": "subtract",
+        "path": [],
+        "right_source": "SCOPE0",
+        "schema": "APPLY2"
+      },
+      "expected_tokens": [
+        "subtract",
+        "variable-1",
+        "variable-0"
+      ],
+      "final_outputs": [
+        13,
+        -9,
+        0,
+        1
+      ],
+      "final_tokens": [
+        "subtract",
+        "variable-1",
+        "variable-0"
+      ],
+      "leading_value_tier_actions": [
+        {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SELECTED",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        }
+      ],
+      "leading_value_tier_cells": [
+        73,
+        74
+      ],
+      "leading_value_tier_current_pa": [
+        5800.0,
+        5800.0
+      ],
+      "motor_races_unique": true,
+      "name": "two-int-alpha-minus-beta",
+      "nonroot_unknown_count": 211,
+      "operator_races_unique": true,
+      "passed": true,
+      "prompt": "Subtract beta from alpha.",
+      "prompt_matching_tier_cells": [
+        1
+      ],
+      "prompt_pattern": {
+        "left_source": "SCOPE1",
+        "literal": null,
+        "operator": "subtract",
+        "right_source": "SCOPE0"
+      },
+      "prompt_race_unique": true,
+      "prompt_status": "PROJECTED",
+      "root_successor_action_count": 130,
+      "selected_action": {
+        "left_source": "SCOPE1",
+        "literal": null,
+        "operator": "subtract",
+        "path": [],
+        "right_source": "SCOPE0",
+        "schema": "APPLY2"
+      },
+      "selected_candidate_cell": 74,
+      "status": "SELECTED",
+      "structure_prediction_calls": 1,
+      "structure_races_unique": true,
+      "value_stop_in_leading_tier": false
+    },
+    {
+      "actuator_calls": 1,
+      "candidate_count": 341,
+      "checkpoint_immutable": true,
+      "desired_outputs": [
+        -13,
+        9,
+        0,
+        -1
+      ],
+      "error": null,
+      "expected_leading_value_tier_actions": [
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE1",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE0",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE1",
+          "schema": "APPLY2"
+        }
+      ],
+      "expected_selected_action": {
+        "left_source": "SCOPE0",
+        "literal": null,
+        "operator": "subtract",
+        "path": [],
+        "right_source": "SCOPE1",
+        "schema": "APPLY2"
+      },
+      "expected_tokens": [
+        "subtract",
+        "variable-0",
+        "variable-1"
+      ],
+      "final_outputs": [
+        -13,
+        9,
+        0,
+        -1
+      ],
+      "final_tokens": [
+        "subtract",
+        "variable-0",
+        "variable-1"
+      ],
+      "leading_value_tier_actions": [
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE1",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE0",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE1",
+          "schema": "APPLY2"
+        }
+      ],
+      "leading_value_tier_cells": [
+        69,
+        72
+      ],
+      "leading_value_tier_current_pa": [
+        5800.0,
+        5800.0
+      ],
+      "motor_races_unique": true,
+      "name": "two-int-beta-minus-alpha",
+      "nonroot_unknown_count": 211,
+      "operator_races_unique": true,
+      "passed": true,
+      "prompt": "Subtract alpha from beta.",
+      "prompt_matching_tier_cells": [
+        1
+      ],
+      "prompt_pattern": {
+        "left_source": "SCOPE0",
+        "literal": null,
+        "operator": "subtract",
+        "right_source": "SCOPE1"
+      },
+      "prompt_race_unique": true,
+      "prompt_status": "PROJECTED",
+      "root_successor_action_count": 130,
+      "selected_action": {
+        "left_source": "SCOPE0",
+        "literal": null,
+        "operator": "subtract",
+        "path": [],
+        "right_source": "SCOPE1",
+        "schema": "APPLY2"
+      },
+      "selected_candidate_cell": 72,
+      "status": "SELECTED",
+      "structure_prediction_calls": 1,
+      "structure_races_unique": true,
+      "value_stop_in_leading_tier": false
+    },
+    {
+      "actuator_calls": 1,
+      "candidate_count": 223,
+      "checkpoint_immutable": true,
+      "desired_outputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "error": null,
+      "expected_leading_value_tier_actions": [
+        {
+          "left_source": "SCOPE0",
+          "literal": -4,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE0",
+          "literal": -3,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE0",
+          "literal": -2,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        }
+      ],
+      "expected_selected_action": {
+        "left_source": "SCOPE0",
+        "literal": -2,
+        "operator": "less-than",
+        "path": [],
+        "right_source": "LITERAL",
+        "schema": "APPLY2"
+      },
+      "expected_tokens": [
+        "less-than",
+        "variable-0",
+        "integer",
+        "-",
+        "2",
+        "end"
+      ],
+      "final_outputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "final_tokens": [
+        "less-than",
+        "variable-0",
+        "integer",
+        "-",
+        "2",
+        "end"
+      ],
+      "leading_value_tier_actions": [
+        {
+          "left_source": "SCOPE0",
+          "literal": -4,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE0",
+          "literal": -3,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SCOPE0",
+          "literal": -2,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "LITERAL",
+          "schema": "APPLY2"
+        }
+      ],
+      "leading_value_tier_cells": [
+        2,
+        4,
+        6
+      ],
+      "leading_value_tier_current_pa": [
+        5800.0,
+        5800.0,
+        5800.0
+      ],
+      "motor_races_unique": true,
+      "name": "bool-datum-less-than-neg2",
+      "nonroot_unknown_count": 203,
+      "operator_races_unique": true,
+      "passed": true,
+      "prompt": "Return whether datum < -2.",
+      "prompt_matching_tier_cells": [
+        2
+      ],
+      "prompt_pattern": {
+        "left_source": "SCOPE0",
+        "literal": -2,
+        "operator": "less-than",
+        "right_source": "LITERAL"
+      },
+      "prompt_race_unique": true,
+      "prompt_status": "PROJECTED",
+      "root_successor_action_count": 20,
+      "selected_action": {
+        "left_source": "SCOPE0",
+        "literal": -2,
+        "operator": "less-than",
+        "path": [],
+        "right_source": "LITERAL",
+        "schema": "APPLY2"
+      },
+      "selected_candidate_cell": 6,
+      "status": "SELECTED",
+      "structure_prediction_calls": 1,
+      "structure_races_unique": true,
+      "value_stop_in_leading_tier": false
+    },
+    {
+      "actuator_calls": 1,
+      "candidate_count": 223,
+      "checkpoint_immutable": true,
+      "desired_outputs": [
+        false,
+        false,
+        true,
+        true
+      ],
+      "error": null,
+      "expected_leading_value_tier_actions": [
+        {
+          "left_source": "LITERAL",
+          "literal": -2,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "LITERAL",
+          "literal": -1,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        }
+      ],
+      "expected_selected_action": {
+        "left_source": "LITERAL",
+        "literal": -2,
+        "operator": "less-than",
+        "path": [],
+        "right_source": "SCOPE0",
+        "schema": "APPLY2"
+      },
+      "expected_tokens": [
+        "less-than",
+        "integer",
+        "-",
+        "2",
+        "end",
+        "variable-0"
+      ],
+      "final_outputs": [
+        false,
+        false,
+        true,
+        true
+      ],
+      "final_tokens": [
+        "less-than",
+        "integer",
+        "-",
+        "2",
+        "end",
+        "variable-0"
+      ],
+      "leading_value_tier_actions": [
+        {
+          "left_source": "LITERAL",
+          "literal": -2,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "LITERAL",
+          "literal": -1,
+          "operator": "less-than",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        }
+      ],
+      "leading_value_tier_cells": [
+        7,
+        9
+      ],
+      "leading_value_tier_current_pa": [
+        5800.0,
+        5800.0
+      ],
+      "motor_races_unique": true,
+      "name": "bool-neg2-less-than-datum",
+      "nonroot_unknown_count": 203,
+      "operator_races_unique": true,
+      "passed": true,
+      "prompt": "Return whether -2 < datum.",
+      "prompt_matching_tier_cells": [
+        0
+      ],
+      "prompt_pattern": {
+        "left_source": "LITERAL",
+        "literal": -2,
+        "operator": "less-than",
+        "right_source": "SCOPE0"
+      },
+      "prompt_race_unique": true,
+      "prompt_status": "PROJECTED",
+      "root_successor_action_count": 20,
+      "selected_action": {
+        "left_source": "LITERAL",
+        "literal": -2,
+        "operator": "less-than",
+        "path": [],
+        "right_source": "SCOPE0",
+        "schema": "APPLY2"
+      },
+      "selected_candidate_cell": 7,
+      "status": "SELECTED",
+      "structure_prediction_calls": 1,
+      "structure_races_unique": true,
+      "value_stop_in_leading_tier": false
+    }
+  ],
+  "total_tasks": 4,
+  "verdict": "PASS_TYPED_FACTOR_H1_FAMILY_TRANSFER_V1",
+  "wall_time_seconds": 3.27097219999996
+}
