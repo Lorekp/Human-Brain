@@ -10,6 +10,21 @@ from experiments.r3_pilot import public_factorized_simple_swe_train_bridge_v1 as
 from humanbrain.simple_swe.protocol import load_protocol
 
 
+def test_public_train_identity_roots_are_physically_supported() -> None:
+    protocol = load_protocol(bridge._PROTOCOL_PATH)
+    support = bridge.require_public_visible_support(
+        bridge.select_public_train_tasks(protocol)
+    )
+
+    assert support == {
+        "tasks": 30,
+        "cases": 120,
+        "int_min": -64,
+        "int_max": 64,
+        "list_capacity": 4,
+    }
+
+
 def test_public_train_bridge_static_protocol_and_recovery_guard(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,

@@ -43,18 +43,29 @@ def test_target_free_integer_operator_transitions_and_unknown_are_physical() -> 
         selected,
         FactorAction((), "APPLY2", "add", "SELECTED", "LITERAL", 2),
     )
+    extended = model.predict(
+        _encode(50, outputs.OutputType.INT),
+        FactorAction((), "APPLY2", "add", "SELECTED", "LITERAL", 9),
+    )
     overflow = model.predict(
-        _encode(20, outputs.OutputType.INT),
+        _encode(outputs.INT_MAX, outputs.OutputType.INT),
         FactorAction((), "APPLY2", "add", "SELECTED", "LITERAL", 2),
     )
 
     assert _active_int(absolute.output) == 7
     assert _active_int(add.output) == -5
+    assert _active_int(extended.output) == 59
     assert overflow.output.supported is False
     assert overflow.output.unknown_active
-    assert all(race.simultaneous_spike_candidates == 1 for race in absolute.races + add.races + overflow.races)
+    assert all(
+        race.simultaneous_spike_candidates == 1
+        for race in absolute.races + add.races + extended.races + overflow.races
+    )
     assert model.live_checkpoint_sha256 == summary.checkpoint_sha256
-    assert summary.primitive_observations == 41 + 3 * 41 * 41
+    assert summary.primitive_observations == (
+        outputs.INT_KNOWN_CELL_COUNT
+        + 3 * outputs.INT_KNOWN_CELL_COUNT**2
+    )
 
 
 def test_scope_binding_and_operand_orientation_share_one_successor() -> None:

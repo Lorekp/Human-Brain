@@ -28,8 +28,8 @@ class OutputType(Enum):
 TYPE_LABELS = tuple(output_type.value for output_type in OutputType)
 TYPE_CELL_COUNT = len(TYPE_LABELS)
 
-INT_MIN = -20
-INT_MAX = 20
+INT_MIN = -64
+INT_MAX = 64
 INT_KNOWN_CELL_COUNT = INT_MAX - INT_MIN + 1
 INT_UNKNOWN_CELL = INT_KNOWN_CELL_COUNT
 INT_CELL_COUNT = INT_KNOWN_CELL_COUNT + 1

@@ -5,7 +5,8 @@ from experiments.r3_pilot import public_typed_output_cells as output
 
 def test_supported_encodings_are_unique_and_bool_precedes_int() -> None:
     integer_values = tuple(
-        output.TypedOutputCellBank.encode(value) for value in (-20, 0, 20)
+        output.TypedOutputCellBank.encode(value)
+        for value in (output.INT_MIN, 0, output.INT_MAX)
     )
     false_value = output.TypedOutputCellBank.encode(False)
     true_value = output.TypedOutputCellBank.encode(True)
@@ -61,11 +62,12 @@ def test_lists_use_factor_banks_and_physically_mask_inactive_positions() -> None
 
 
 def test_invalid_values_activate_physical_unknown_without_aliasing_bool() -> None:
-    high_int = output.TypedOutputCellBank.encode(21)
+    unsupported_int = output.INT_MAX + 1
+    high_int = output.TypedOutputCellBank.encode(unsupported_int)
     bool_as_int = output.TypedOutputCellBank.encode(
         True, declared_type=output.OutputType.INT
     )
-    bad_item = output.TypedOutputCellBank.encode([1, 21])
+    bad_item = output.TypedOutputCellBank.encode([1, unsupported_int])
     overlong = output.TypedOutputCellBank.encode([0, 1, 2, 3, 4])
     unsupported = output.TypedOutputCellBank.encode("not-a-typed-output")
 
@@ -85,11 +87,12 @@ def test_invalid_values_activate_physical_unknown_without_aliasing_bool() -> Non
 
 
 def test_fixed_physical_coincidence_distinguishes_exact_mismatch_and_unknown() -> None:
+    unsupported_int = output.INT_MAX + 1
     detector = output.FixedTypedCoincidenceDetector.for_target([1, -2])
 
     exact = detector.detect([1, -2])
     mismatch = detector.detect([1, -1])
-    unknown = detector.detect([1, 21])
+    unknown = detector.detect([1, unsupported_int])
     wrong_type = detector.detect(True)
 
     assert exact.spiked
@@ -101,9 +104,9 @@ def test_fixed_physical_coincidence_distinguishes_exact_mismatch_and_unknown() -
     assert not unknown.spiked
     assert not wrong_type.spiked
 
-    invalid_target = output.FixedTypedCoincidenceDetector.for_target(21)
+    invalid_target = output.FixedTypedCoincidenceDetector.for_target(unsupported_int)
     assert not invalid_target.enabled
-    assert not invalid_target.detect(21).spiked
+    assert not invalid_target.detect(unsupported_int).spiked
     assert not output.exact_typed_output_coincidence(1, True).spiked
     assert output.exact_typed_output_coincidence([], []).spiked
 

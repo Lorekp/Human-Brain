@@ -38,7 +38,10 @@ from experiments.r3_pilot import (
     public_factorized_source_edit_recovery_v1 as recovery_v1,
 )
 from experiments.r3_pilot import public_factorized_source_editor as source_editor
+from experiments.r3_pilot import public_typed_factor_h1_root as factor_h1
 from experiments.r3_pilot import public_typed_factor_horizon2_int as h2
+from experiments.r3_pilot import public_typed_output_cells as output_cells
+from experiments.r3_pilot import public_typed_program_observation as root_observation
 from humanbrain import typed_program as tp
 from humanbrain.simple_swe.protocol import ProtocolSpec, load_protocol
 from humanbrain.simple_swe.sandbox import (
@@ -116,6 +119,65 @@ def _visible_cases(task: GeneratedTask) -> tuple[source_editor.VisibleCase, ...]
             )
         )
     return tuple(cases)
+
+
+def require_public_visible_support(
+    tasks: Sequence[GeneratedTask],
+) -> dict[str, object]:
+    """Reject unsupported visible incumbents or goals before expensive setup."""
+
+    selected = tuple(tasks)
+    failures: list[dict[str, object]] = []
+    for task in selected:
+        visible = _visible_cases(task)
+        incumbent = tp.Program(("variable-0",), task.public.signature)
+        observed = root_observation.observe_current_program_root(
+            incumbent,
+            tuple(case.arguments for case in visible),
+        )
+        for case, current in zip(visible, observed.cases, strict=True):
+            common = {
+                "task_id": task.public.task_id,
+                "family": task.public.family,
+                "ordinal": task.public.ordinal,
+                "case_index": current.case_index,
+                "arguments": current.arguments,
+                "declared_result": task.public.signature.result.to_record(),
+            }
+            if current.status != root_observation.STATUS_OK:
+                failures.append(
+                    {
+                        **common,
+                        "role": "incumbent",
+                        "value": current.raw_output,
+                        "status": current.status,
+                    }
+                )
+            desired = factor_h1._encode_value(
+                case.expected,
+                task.public.signature.result,
+            )
+            if not desired.supported:
+                failures.append(
+                    {
+                        **common,
+                        "role": "desired",
+                        "value": case.expected,
+                        "status": "OUTPUT_UNKNOWN",
+                    }
+                )
+    if failures:
+        raise RuntimeError(
+            "public TRAIN visible values exceed the physical output bank: "
+            + json.dumps(failures, sort_keys=True, allow_nan=False)
+        )
+    return {
+        "tasks": len(selected),
+        "cases": sum(len(_visible_cases(task)) for task in selected),
+        "int_min": output_cells.INT_MIN,
+        "int_max": output_cells.INT_MAX,
+        "list_capacity": output_cells.LIST_CAPACITY,
+    }
 
 
 def select_public_train_tasks(
@@ -480,8 +542,9 @@ def main() -> int:
     protocol = load_protocol(args.protocol)
     tasks = select_public_train_tasks(protocol)
     prerequisite = _require_bridge_prerequisite()
+    require_public_visible_support(tasks)
 
-    # The exact STOP boundary and repair precede both sandbox and cell setup.
+    # The exact STOP boundary, repair, and support preflight precede setup.
     runtime = _prepare_sandbox(protocol, args.python_executable)
     model = h2.build_public_factorized_horizon2_int(literals=PUBLIC_LITERAL_BANK)
     payload = run_public_train_cohort(
@@ -512,6 +575,7 @@ __all__ = [
     "STOP_VERDICT",
     "UNEXPOSED_PROPERTY_CASES",
     "VISIBLE_REGRESSION_CASES",
+    "require_public_visible_support",
     "run_public_train_cohort",
     "select_public_train_tasks",
     "write_public_artifact",

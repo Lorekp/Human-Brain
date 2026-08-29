@@ -160,7 +160,11 @@ def test_observes_list_absolute_and_list_add_without_whole_list_ids() -> None:
 def test_output_domain_and_result_type_failures_become_physical_unknown() -> None:
     integer_signature = _one_int_signature()
     out_of_domain = tp.Program(
-        ("add", "variable-0", *_integer_literal(20)),
+        (
+            "add",
+            "variable-0",
+            *_integer_literal(observation.output_cells.INT_MAX),
+        ),
         integer_signature,
     )
     too_large = observation.observe_current_program_root(out_of_domain, ((1,),))
@@ -190,7 +194,7 @@ def test_output_domain_and_result_type_failures_become_physical_unknown() -> Non
         (([0, 1, 2, 3, 4],),),
     )
 
-    assert too_large.cases[0].raw_output == 21
+    assert too_large.cases[0].raw_output == observation.output_cells.INT_MAX + 1
     assert too_large.cases[0].status == observation.STATUS_OUTPUT_UNKNOWN
     assert too_large.cases[0].output_encoding.unknown_active
     assert unsupported.cases[0].raw_output == (True, False, False)
