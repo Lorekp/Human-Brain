@@ -71,6 +71,19 @@ def _encode(value: object, value_type: ProgramType) -> output_cells.TypedOutputE
     return encoded
 
 
+def _unsupported(value_type: ProgramType) -> output_cells.TypedOutputEncoding:
+    if value_type == _INT:
+        value: object = output_cells.INT_MAX + 1
+    elif value_type == _LIST_INT:
+        value = [output_cells.INT_MAX + 1]
+    else:
+        raise ValueError("physical synthesis supports only Int and List[Int]")
+    return output_cells.TypedOutputCellBank.encode(
+        value,
+        declared_type=_output_type(value_type),
+    )
+
+
 def _decode_int(value: output_cells.TypedOutputEncoding) -> int:
     if not value.supported or value.output_type is not output_cells.OutputType.INT:
         raise RuntimeError("physical operator did not produce a supported Int")
@@ -170,8 +183,6 @@ class _CaseEvaluator:
         prediction = self.model.predict(selected, action, scopes=scopes)
         self.predictions += 1
         self.races.extend(prediction.races)
-        if not prediction.supported:
-            raise RuntimeError("physical typed operator returned UNKNOWN")
         return prediction.output
 
     def evaluate(
@@ -219,12 +230,20 @@ class _CaseEvaluator:
                 provenance.operand_node_ids[1], bound=bound
             )
             copied = self._predict(collection, _MAP_COPY)
-            items = _decode_list(copied)
-            mapped = [
-                _decode_int(self.evaluate(body_id, bound=(item, *bound)))
-                for item in items
-            ]
-            output = _encode(mapped, _LIST_INT)
+            if not copied.supported:
+                output = _unsupported(_LIST_INT)
+            else:
+                items = _decode_list(copied)
+                mapped_outputs = tuple(
+                    self.evaluate(body_id, bound=(item, *bound)) for item in items
+                )
+                if any(not item.supported for item in mapped_outputs):
+                    output = _unsupported(_LIST_INT)
+                else:
+                    output = _encode(
+                        [_decode_int(item) for item in mapped_outputs],
+                        _LIST_INT,
+                    )
         elif production == "bind":
             raise RuntimeError("a compiler binder cannot be evaluated outside map")
         else:

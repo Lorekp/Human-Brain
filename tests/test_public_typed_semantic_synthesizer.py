@@ -143,6 +143,22 @@ def test_bounded_tiers_stop_when_literal_is_absent(model) -> None:
     )
 
 
+def test_unsupported_distractor_candidate_does_not_abort_search(model) -> None:
+    arguments = ((50,), (0,), (-3,), (8,))
+    decision = model.synthesize(
+        _signature(_INT, _INT),
+        arguments,
+        tuple(row[0] + 2 for row in arguments),
+    )
+
+    assert decision.status == semantic.STATUS_DONE
+    assert decision.program is not None
+    assert decision.program.tokens in {
+        ("add", "variable-0", "integer", "+", "2", "end"),
+        ("add", "integer", "+", "2", "end", "variable-0"),
+    }
+
+
 def test_production_path_contains_no_host_execution_or_ranking() -> None:
     source = inspect.getsource(semantic.FrozenTypedSemanticSynthesizer.synthesize)
     evaluator_source = inspect.getsource(semantic._CaseEvaluator)
