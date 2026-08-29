@@ -411,6 +411,17 @@ changing B, currents, weights, or ordering. It localizes the next speed layer to
 a tie-safe physical candidate representation; it does not invalidate the
 exhaustive H=2 pass or license a host top-k shortcut.
 
+The tie-inclusive successor retained complete simultaneous-spike tiers and
+recovered both root-order tasks. It kept 56 of 160 first candidates and scored
+506 terminal sequences instead of 2,439 exhaustive, but stopped at 2/3 after
+26.51 seconds. The child-to-root task ended on two genuinely different programs,
+`add(abs(x), 3)` and `abs(add(x, 3))`, whose outputs each matched 4/6 cases and
+therefore drove the same terminal current. This is
+`STOP_TYPED_AST_HORIZON2_INT_TIER_BEAM`: the top-B mechanics are repaired, while
+the remaining ambiguity belongs to output-only terminal representation. The
+factorized planner must carry site/structure evidence into scoring; no fixed
+index tie-break or beam-constant tuning follows.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
