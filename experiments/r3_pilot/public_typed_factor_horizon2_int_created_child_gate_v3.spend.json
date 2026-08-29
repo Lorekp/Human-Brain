@@ -1,0 +1,30 @@
+{
+  "horizon2_source_lf_sha256": "694559e170f00088ee11c370d3ce7bfc708c8e20b693502501855fb042eeca7d",
+  "literal_bank": [
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "mechanism_commit": "3f2a3cbe97f4cd935137e4f97970957271b9384a",
+  "model_checkpoint_sha256": "7820c258c0d7d243008c5ec95b7ed19ceb91b77729396877b0d474af5a272f85",
+  "policy": "Durably spent immediately before the first V3 public task; no same-name retry or post-result prompt/current/case/structure tuning.",
+  "prompt_factors_source_lf_sha256": "d740f14731affe5561801e8d0eea3bd37cdf1ddc088e57839d857b5340bcdd5d",
+  "protocol_source_lf_sha256": "1a7ec5743430b2c1368f2b0c4c3509f248150bb00626e296826d250c9e662d15",
+  "public_protocol_sha256": "8391878e95b6da435308654ed4998f7e3b89af681728f9ecfbe1bbd36c34adfd",
+  "runner_source_lf_sha256": "f5ac59a82913f332f6563ad5c1ec057d48c801ecbf919792b8c06e28a0c13e72",
+  "schema": "public-typed-factor-horizon2-int-created-child-v3-spend",
+  "structure_successor_checkpoint_sha256": "95a35644cb0689ddd30dc5994ac4c9f15b61ae019ce377681051845c68d96c8e",
+  "structure_successor_source_lf_sha256": "d1e7670e8f218aa719f8ccd715f404a75a3200ae7f79744dd46a02005b2909bf",
+  "task_order": [
+    "left-created-child",
+    "right-created-child"
+  ],
+  "typed_program_source_lf_sha256": "339e55b69c177c7f529a18843e6bdc2bba96d09c251b97306abcfdb86e1d22a2",
+  "world_checkpoint_sha256": "37b5e25bbb532f7398f984defeb52b937a6230535fad76069aefc359a5f5b666"
+}

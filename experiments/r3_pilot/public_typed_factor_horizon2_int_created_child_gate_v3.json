@@ -1,0 +1,517 @@
+{
+  "attempted_tasks": 2,
+  "claim_boundary": "Two visible public Int tasks with generic compositional sequence-prompt evidence after exact value and supported-structure tiers, genuine learned-cell H=2 lookahead over created child sites, one real edit per replan, and terminal DONE. Not Bool/List, Simple-SWE, M0, DEV/eval/held-out, protected data, C1, or broad coding evidence.",
+  "horizon2_source_lf_sha256": "694559e170f00088ee11c370d3ce7bfc708c8e20b693502501855fb042eeca7d",
+  "literal_bank": [
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "mechanism_commit": "3f2a3cbe97f4cd935137e4f97970957271b9384a",
+  "model_checkpoint_sha256": "7820c258c0d7d243008c5ec95b7ed19ceb91b77729396877b0d474af5a272f85",
+  "passed_tasks": 2,
+  "prompt_factors_source_lf_sha256": "d740f14731affe5561801e8d0eea3bd37cdf1ddc088e57839d857b5340bcdd5d",
+  "prompt_sequence_traces": [
+    {
+      "checkpoint_after_sha256s": [
+        "923ae4b49e2487b5db544877c01f8c42b874f278d231436e535621fa7c827951"
+      ],
+      "checkpoint_before_sha256s": [
+        "923ae4b49e2487b5db544877c01f8c42b874f278d231436e535621fa7c827951"
+      ],
+      "immutable": true,
+      "projection_sha256s": [
+        "923ae4b49e2487b5db544877c01f8c42b874f278d231436e535621fa7c827951"
+      ],
+      "statuses": [
+        "PROJECTED"
+      ],
+      "task_name": "left-created-child"
+    },
+    {
+      "checkpoint_after_sha256s": [
+        "8e90ebc00b84e1edfc8dcce11f8261db425a04827316e0ebe4c7eddb392eeb3a"
+      ],
+      "checkpoint_before_sha256s": [
+        "8e90ebc00b84e1edfc8dcce11f8261db425a04827316e0ebe4c7eddb392eeb3a"
+      ],
+      "immutable": true,
+      "projection_sha256s": [
+        "8e90ebc00b84e1edfc8dcce11f8261db425a04827316e0ebe4c7eddb392eeb3a"
+      ],
+      "statuses": [
+        "PROJECTED"
+      ],
+      "task_name": "right-created-child"
+    }
+  ],
+  "protocol_source_lf_sha256": "1a7ec5743430b2c1368f2b0c4c3509f248150bb00626e296826d250c9e662d15",
+  "public_protocol_sha256": "8391878e95b6da435308654ed4998f7e3b89af681728f9ecfbe1bbd36c34adfd",
+  "retry_policy": "This V3 public-development artifact and spend marker are exclusive. No prompt, case, current, threshold, literal-bank, candidate-order, seed, fixture, structure, or mechanism tuning is permitted after this spend.",
+  "runner_source_lf_sha256": "f5ac59a82913f332f6563ad5c1ec057d48c801ecbf919792b8c06e28a0c13e72",
+  "schema": "public-typed-factor-horizon2-int-created-child-v3",
+  "spend_marker_lf_sha256": "0284a7b6a9e0fb74e02ffcd4c0fa4aea0646d81a01d864ca9f0a76510e7d16c6",
+  "structure_successor_checkpoint_sha256": "95a35644cb0689ddd30dc5994ac4c9f15b61ae019ce377681051845c68d96c8e",
+  "structure_successor_source_lf_sha256": "d1e7670e8f218aa719f8ccd715f404a75a3200ae7f79744dd46a02005b2909bf",
+  "tasks": [
+    {
+      "actual_trajectory": [
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "absolute",
+          "path": [
+            0
+          ],
+          "right_source": "NONE",
+          "schema": "APPLY1"
+        },
+        {
+          "left_source": "NONE",
+          "literal": null,
+          "operator": "NONE",
+          "path": [],
+          "right_source": "NONE",
+          "schema": "DONE"
+        }
+      ],
+      "checkpoint_immutable": true,
+      "created_path": [
+        0
+      ],
+      "created_path_absent_initially": true,
+      "created_path_present_hypothetically": true,
+      "desired_outputs": [
+        5,
+        5,
+        10,
+        10
+      ],
+      "done_decision": {
+        "candidate_count": 423,
+        "checkpoint_immutable": true,
+        "cumulative_sequence_evaluations": 0,
+        "expanded_first_count": 0,
+        "first_admissible_count": 0,
+        "first_excluded_count": 0,
+        "first_tier_count": 0,
+        "motor_races_unique": true,
+        "selected_sequence": {
+          "first": {
+            "left_source": "NONE",
+            "literal": null,
+            "operator": "NONE",
+            "path": [],
+            "right_source": "NONE",
+            "schema": "DONE"
+          },
+          "second": {
+            "left_source": "NONE",
+            "literal": null,
+            "operator": "NONE",
+            "path": [],
+            "right_source": "NONE",
+            "schema": "DONE"
+          }
+        },
+        "status": "DONE",
+        "stop_reason": null,
+        "terminal_attempt_sequence_counts": [],
+        "unique_sequence_predictions": 0
+      },
+      "error": null,
+      "expected_tokens": [
+        "subtract",
+        "absolute",
+        "variable-1",
+        "variable-0"
+      ],
+      "expected_trajectory": [
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SCOPE0",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "absolute",
+          "path": [
+            0
+          ],
+          "right_source": "NONE",
+          "schema": "APPLY1"
+        },
+        {
+          "left_source": "NONE",
+          "literal": null,
+          "operator": "NONE",
+          "path": [],
+          "right_source": "NONE",
+          "schema": "DONE"
+        }
+      ],
+      "final_outputs": [
+        5,
+        5,
+        10,
+        10
+      ],
+      "final_tokens": [
+        "subtract",
+        "absolute",
+        "variable-1",
+        "variable-0"
+      ],
+      "first_actuation": {
+        "action_site_parity": true,
+        "actuator_calls": 1,
+        "root_output_parity": true,
+        "structure_parity": true,
+        "tokens": [
+          "subtract",
+          "variable-1",
+          "variable-0"
+        ]
+      },
+      "first_decision": {
+        "candidate_count": 83,
+        "checkpoint_immutable": true,
+        "cumulative_sequence_evaluations": 1317,
+        "expanded_first_count": 4,
+        "first_admissible_count": 83,
+        "first_excluded_count": 0,
+        "first_tier_count": 4,
+        "motor_races_unique": true,
+        "selected_sequence": {
+          "first": {
+            "left_source": "SELECTED",
+            "literal": null,
+            "operator": "subtract",
+            "path": [],
+            "right_source": "SCOPE0",
+            "schema": "APPLY2"
+          },
+          "second": {
+            "left_source": "SELECTED",
+            "literal": null,
+            "operator": "absolute",
+            "path": [
+              0
+            ],
+            "right_source": "NONE",
+            "schema": "APPLY1"
+          }
+        },
+        "status": "SELECTED",
+        "stop_reason": null,
+        "terminal_attempt_sequence_counts": [
+          1317
+        ],
+        "unique_sequence_predictions": 1317
+      },
+      "h1_exact_actions": [],
+      "hypothetical_second_action_admissible": true,
+      "initial_paths": [
+        []
+      ],
+      "name": "left-created-child",
+      "no_h1_all_case_solution": true,
+      "passed": true,
+      "second_actuation": {
+        "action_site_parity": true,
+        "actuator_calls": 1,
+        "root_output_parity": true,
+        "structure_parity": true,
+        "tokens": [
+          "subtract",
+          "absolute",
+          "variable-1",
+          "variable-0"
+        ]
+      },
+      "second_decision": {
+        "candidate_count": 294,
+        "checkpoint_immutable": true,
+        "cumulative_sequence_evaluations": 8236,
+        "expanded_first_count": 18,
+        "first_admissible_count": 294,
+        "first_excluded_count": 0,
+        "first_tier_count": 5,
+        "motor_races_unique": true,
+        "selected_sequence": {
+          "first": {
+            "left_source": "SELECTED",
+            "literal": null,
+            "operator": "absolute",
+            "path": [
+              0
+            ],
+            "right_source": "NONE",
+            "schema": "APPLY1"
+          },
+          "second": {
+            "left_source": "NONE",
+            "literal": null,
+            "operator": "NONE",
+            "path": [],
+            "right_source": "NONE",
+            "schema": "DONE"
+          }
+        },
+        "status": "SELECTED",
+        "stop_reason": null,
+        "terminal_attempt_sequence_counts": [
+          8236
+        ],
+        "unique_sequence_predictions": 8236
+      }
+    },
+    {
+      "actual_trajectory": [
+        {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SELECTED",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "absolute",
+          "path": [
+            1
+          ],
+          "right_source": "NONE",
+          "schema": "APPLY1"
+        },
+        {
+          "left_source": "NONE",
+          "literal": null,
+          "operator": "NONE",
+          "path": [],
+          "right_source": "NONE",
+          "schema": "DONE"
+        }
+      ],
+      "checkpoint_immutable": true,
+      "created_path": [
+        1
+      ],
+      "created_path_absent_initially": true,
+      "created_path_present_hypothetically": true,
+      "desired_outputs": [
+        -5,
+        -5,
+        -10,
+        -10
+      ],
+      "done_decision": {
+        "candidate_count": 423,
+        "checkpoint_immutable": true,
+        "cumulative_sequence_evaluations": 0,
+        "expanded_first_count": 0,
+        "first_admissible_count": 0,
+        "first_excluded_count": 0,
+        "first_tier_count": 0,
+        "motor_races_unique": true,
+        "selected_sequence": {
+          "first": {
+            "left_source": "NONE",
+            "literal": null,
+            "operator": "NONE",
+            "path": [],
+            "right_source": "NONE",
+            "schema": "DONE"
+          },
+          "second": {
+            "left_source": "NONE",
+            "literal": null,
+            "operator": "NONE",
+            "path": [],
+            "right_source": "NONE",
+            "schema": "DONE"
+          }
+        },
+        "status": "DONE",
+        "stop_reason": null,
+        "terminal_attempt_sequence_counts": [],
+        "unique_sequence_predictions": 0
+      },
+      "error": null,
+      "expected_tokens": [
+        "subtract",
+        "variable-1",
+        "absolute",
+        "variable-0"
+      ],
+      "expected_trajectory": [
+        {
+          "left_source": "SCOPE1",
+          "literal": null,
+          "operator": "subtract",
+          "path": [],
+          "right_source": "SELECTED",
+          "schema": "APPLY2"
+        },
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "absolute",
+          "path": [
+            1
+          ],
+          "right_source": "NONE",
+          "schema": "APPLY1"
+        },
+        {
+          "left_source": "NONE",
+          "literal": null,
+          "operator": "NONE",
+          "path": [],
+          "right_source": "NONE",
+          "schema": "DONE"
+        }
+      ],
+      "final_outputs": [
+        -5,
+        -5,
+        -10,
+        -10
+      ],
+      "final_tokens": [
+        "subtract",
+        "variable-1",
+        "absolute",
+        "variable-0"
+      ],
+      "first_actuation": {
+        "action_site_parity": true,
+        "actuator_calls": 1,
+        "root_output_parity": true,
+        "structure_parity": true,
+        "tokens": [
+          "subtract",
+          "variable-1",
+          "variable-0"
+        ]
+      },
+      "first_decision": {
+        "candidate_count": 83,
+        "checkpoint_immutable": true,
+        "cumulative_sequence_evaluations": 1223,
+        "expanded_first_count": 4,
+        "first_admissible_count": 83,
+        "first_excluded_count": 0,
+        "first_tier_count": 4,
+        "motor_races_unique": true,
+        "selected_sequence": {
+          "first": {
+            "left_source": "SCOPE1",
+            "literal": null,
+            "operator": "subtract",
+            "path": [],
+            "right_source": "SELECTED",
+            "schema": "APPLY2"
+          },
+          "second": {
+            "left_source": "SELECTED",
+            "literal": null,
+            "operator": "absolute",
+            "path": [
+              1
+            ],
+            "right_source": "NONE",
+            "schema": "APPLY1"
+          }
+        },
+        "status": "SELECTED",
+        "stop_reason": null,
+        "terminal_attempt_sequence_counts": [
+          1223
+        ],
+        "unique_sequence_predictions": 1223
+      },
+      "h1_exact_actions": [],
+      "hypothetical_second_action_admissible": true,
+      "initial_paths": [
+        []
+      ],
+      "name": "right-created-child",
+      "no_h1_all_case_solution": true,
+      "passed": true,
+      "second_actuation": {
+        "action_site_parity": true,
+        "actuator_calls": 1,
+        "root_output_parity": true,
+        "structure_parity": true,
+        "tokens": [
+          "subtract",
+          "variable-1",
+          "absolute",
+          "variable-0"
+        ]
+      },
+      "second_decision": {
+        "candidate_count": 294,
+        "checkpoint_immutable": true,
+        "cumulative_sequence_evaluations": 7719,
+        "expanded_first_count": 17,
+        "first_admissible_count": 294,
+        "first_excluded_count": 0,
+        "first_tier_count": 5,
+        "motor_races_unique": true,
+        "selected_sequence": {
+          "first": {
+            "left_source": "SELECTED",
+            "literal": null,
+            "operator": "absolute",
+            "path": [
+              1
+            ],
+            "right_source": "NONE",
+            "schema": "APPLY1"
+          },
+          "second": {
+            "left_source": "NONE",
+            "literal": null,
+            "operator": "NONE",
+            "path": [],
+            "right_source": "NONE",
+            "schema": "DONE"
+          }
+        },
+        "status": "SELECTED",
+        "stop_reason": null,
+        "terminal_attempt_sequence_counts": [
+          7719
+        ],
+        "unique_sequence_predictions": 7719
+      }
+    }
+  ],
+  "total_tasks": 2,
+  "typed_program_source_lf_sha256": "339e55b69c177c7f529a18843e6bdc2bba96d09c251b97306abcfdb86e1d22a2",
+  "verdict": "PASS_TYPED_FACTOR_HORIZON2_INT_CREATED_CHILD_V3",
+  "wall_time_seconds": 145.84768400000758,
+  "world_checkpoint_sha256": "37b5e25bbb532f7398f984defeb52b937a6230535fad76069aefc359a5f5b666"
+}

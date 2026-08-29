@@ -510,6 +510,18 @@ fixture or mechanism tuning follows. The next generic increment is a
 compositional prompt-factor representation for nested unary/binary relations;
 the compiler-generated structural successor is no longer this gate's blocker.
 
+The separately named V3 gate spent that smallest generic prompt increment once
+against the unchanged V1/V2 protocol. Both public Int arms had no physical H=1
+all-case solution. Their nested relations each projected one immutable ordered
+sequence checkpoint, selected the declared root subtraction followed by the
+absolute edit at its compiler-created child, then completed through exactly one
+real edit per replan and terminal `DONE`. Final typed programs and all outputs
+matched the frozen declarations, so the banked result is
+`PASS_TYPED_FACTOR_HORIZON2_INT_CREATED_CHILD_V3` (2/2 in 145.85 seconds).
+This closes the visible created-child mechanism seam and licenses the next
+public source-editing increment; it is not List/Bool, Simple-SWE, M0, protected,
+C1, family-transfer, or broad coding evidence.
+
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
 step 249 under a different winner context shared 8/11 cells with the current
