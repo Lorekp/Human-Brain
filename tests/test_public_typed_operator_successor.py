@@ -11,6 +11,10 @@ from humanbrain import typed_program
 from humanbrain.typed_program import FactorAction
 
 
+_INT_FACTOR_SLOT = outputs.FACTOR_LABELS.index("int")
+_BOOL_FACTOR_SLOT = outputs.FACTOR_LABELS.index("bool")
+
+
 @cache
 def _trained():
     return successor.train_public_typed_operator_successor()
@@ -21,15 +25,17 @@ def _encode(value, declared_type=None):
 
 
 def _active_int(encoded) -> int | None:
-    cell = int(encoded.int_cells.argmax())
-    return None if cell == outputs.INT_UNKNOWN_CELL else outputs.INT_MIN + cell
+    winner = encoded.factor_winner(_INT_FACTOR_SLOT)
+    if winner is None or winner == outputs.INT_UNKNOWN_CELL:
+        return None
+    return outputs.INT_MIN + winner
 
 
 def _active_bool(encoded) -> bool | None:
-    cell = int(encoded.bool_cells.argmax())
-    if cell == outputs.BOOL_UNKNOWN_CELL:
+    winner = encoded.factor_winner(_BOOL_FACTOR_SLOT)
+    if winner is None or winner == outputs.BOOL_UNKNOWN_CELL:
         return None
-    return cell == outputs.BOOL_TRUE_CELL
+    return winner == outputs.BOOL_TRUE_CELL
 
 
 def test_target_free_integer_operator_transitions_and_unknown_are_physical() -> None:

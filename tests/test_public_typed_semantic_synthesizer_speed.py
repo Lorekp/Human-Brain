@@ -50,7 +50,8 @@ def test_enclosing_checkpoint_authentication_preserves_train_fixture_ledger(
 
     reference_ledger = []
 
-    def reference_predict(self, selected, action, scopes=()):
+    def reference_predict(self, selected, action, scopes=(), *, schema):
+        del schema
         prediction = self.model.predict(selected, action, scopes=scopes)
         self.predictions += 1
         self.races.extend(prediction.races)
@@ -66,9 +67,15 @@ def test_enclosing_checkpoint_authentication_preserves_train_fixture_ledger(
 
     optimized_ledger = []
 
-    def recording_optimized_predict(self, selected, action, scopes=()):
+    def recording_optimized_predict(self, selected, action, scopes=(), *, schema):
         races_before = len(self.races)
-        output = optimized_predict(self, selected, action, scopes)
+        output = optimized_predict(
+            self,
+            selected,
+            action,
+            scopes,
+            schema=schema,
+        )
         optimized_ledger.append(
             (output.sha256, tuple(self.races[races_before:]))
         )

@@ -15,6 +15,7 @@ from humanbrain.typed_semantic_synthesis import enumerate_typed_candidate_dag
 
 _INT = ProgramType.Int()
 _LIST_INT = ProgramType.List(_INT)
+_INT_FACTOR_SLOT = outputs.FACTOR_LABELS.index("int")
 
 
 def _signature(argument: ProgramType, result: ProgramType) -> TypedSignature:
@@ -39,8 +40,10 @@ def _synthesizer():
 
 
 def _active_int(encoded: outputs.TypedOutputEncoding) -> int | None:
-    cell = int(encoded.int_cells.argmax())
-    return None if cell == outputs.INT_UNKNOWN_CELL else outputs.INT_MIN + cell
+    winner = encoded.factor_winner(_INT_FACTOR_SLOT)
+    if winner is None or winner == outputs.INT_UNKNOWN_CELL:
+        return None
+    return outputs.INT_MIN + winner
 
 
 def test_minimum_and_maximum_compile_as_generic_typed_productions() -> None:

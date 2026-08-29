@@ -111,6 +111,25 @@ def test_signed_literals_leave_one_lexical_token_but_keep_copy_records() -> None
         {item.typed_output.sha256 for item in observed.signed_literals}
     ) == 3
     assert len({item.semantic_sha256 for item in observed.signed_literals}) == 3
+    assert tuple(
+        item.typed_output_active_cells for item in observed.signed_literals
+    ) == ((0, 66), (0, 74), (0, 69))
+    assert tuple(item.semantic_sha256 for item in observed.signed_literals) == (
+        "b8d23df40f87fd622cf6e4e21c84f3970039160839a73483e72cdf2abe0f5cd4",
+        "6cbe5625560a78c56410891279cb906efc4a7d81fcd27555129ed0a85dc66a99",
+        "c667a364810afdcc05868e35f95f32b11e41a3cfb8feb41f842edf5070809e6b",
+    )
+    assert tuple(item.audit_sha256 for item in observed.signed_literals) == (
+        "133f3548f6eb9837476fbdc13a29fa0badf377565397ed23d095fe1b9b529f12",
+        "d1c8ad1181dca4e4ca97d16ad1241c105f7009e7958b1ccaf9dc80c80c2b19f4",
+        "8248ff9a42d0ef9ad9b1f2b102326ddda1f9d55f915cda060d587663a9b7b983",
+    )
+    assert observed.literal_channel_sha256 == (
+        "81c778aecea452c21170b6ce1f4f3a4e29b87bcc44859e041b15f88d09690326"
+    )
+    assert observed.sha256 == (
+        "737aaa0c3a9a95c316373aec82c5acdb7a6c2503060de71841065e1aa84f2fa0"
+    )
 
     integer_unigrams = tuple(
         span

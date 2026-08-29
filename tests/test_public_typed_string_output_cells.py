@@ -1,9 +1,25 @@
-from dataclasses import replace
+from struct import pack_into
 
 import numpy as np
 import pytest
 
 from experiments.r3_pilot import public_typed_output_cells as output
+
+
+def _forge_encoding(
+    factor_winners_le: object,
+    physical_digest: object,
+) -> output.TypedOutputEncoding:
+    forged = object.__new__(output.TypedOutputEncoding)
+    object.__setattr__(forged, "factor_winners_le", factor_winners_le)
+    object.__setattr__(forged, "physical_digest", physical_digest)
+    return forged
+
+
+def _replace_winner(payload: bytes, slot: int, winner: int) -> bytes:
+    changed = bytearray(payload)
+    pack_into("<H", changed, slot * 2, winner)
+    return bytes(changed)
 
 
 @pytest.mark.parametrize(
@@ -21,7 +37,9 @@ def test_strict_decoder_round_trips_every_supported_output_type(
 ) -> None:
     encoded = output.TypedOutputCellBank.encode(value, declared_type=declared_type)
 
+    assert output.TypedOutputCellBank.validate(encoded) is encoded
     assert output.TypedOutputCellBank.decode(encoded) == value
+    assert output.TypedOutputCellBank._decode_trusted(encoded) == value
 
 
 def test_char_catalog_is_fixed_printable_ascii_and_char_is_declaration_only() -> None:
@@ -36,14 +54,13 @@ def test_char_catalog_is_fixed_printable_ascii_and_char_is_declaration_only() ->
 
     assert char.output_type is output.OutputType.CHAR
     assert char.active_factors == ("type", "char")
-    assert np.flatnonzero(char.char_cells).tolist() == [ord("~") - 0x20]
+    assert char.factor_winner(output.CHAR_FACTOR_SLOT) == ord("~") - 0x20
     assert output.TypedOutputCellBank.decode(char) == "~"
     assert inferred.output_type is output.OutputType.STRING
     assert inferred.active_factors == ("type", "string-length", "string-char-0")
     assert output.TypedOutputCellBank.decode(inferred) == "~"
-    assert not char.cells.flags.writeable
-    assert not char.active_factor_mask.flags.writeable
-    assert not char.char_cells.flags.writeable
+    assert type(char.factor_winners_le) is bytes
+    assert type(char.physical_digest) is bytes
 
 
 def test_repeated_physical_categories_reuse_bounded_readonly_cache_entries() -> None:
@@ -78,21 +95,16 @@ def test_string_uses_length_and_twenty_six_independent_position_factors() -> Non
     empty = output.TypedOutputCellBank.encode("")
 
     assert output.STRING_CAPACITY == 26
-    assert output.TOTAL_CELL_COUNT == (
-        output.TYPE_CELL_COUNT
-        + output.INT_CELL_COUNT
-        + output.BOOL_CELL_COUNT
-        + output.LIST_LENGTH_CELL_COUNT
-        + output.LIST_CAPACITY * output.INT_CELL_COUNT
-        + output.CHAR_CELL_COUNT
-        + output.STRING_LENGTH_CELL_COUNT
-        + output.STRING_CAPACITY * output.CHAR_CELL_COUNT
-    )
     assert encoded.supported
-    assert encoded.string_length_cells[output.STRING_CAPACITY] == 1.0
-    assert tuple(np.count_nonzero(row) for row in encoded.string_item_cells) == (
-        1,
-    ) * output.STRING_CAPACITY
+    assert (
+        encoded.factor_winner(output.STRING_LENGTH_FACTOR_SLOT)
+        == output.STRING_CAPACITY
+    )
+    assert all(
+        encoded.factor_winner(output.STRING_ITEM_FACTOR_START + position)
+        == position
+        for position in range(output.STRING_CAPACITY)
+    )
     assert encoded.active_factors == (
         "type",
         "string-length",
@@ -100,18 +112,36 @@ def test_string_uses_length_and_twenty_six_independent_position_factors() -> Non
     )
     assert output.TypedOutputCellBank.decode(encoded) == text
 
-    difference = np.flatnonzero(encoded.cells != changed.cells)
+    audit = output.TypedOutputCellBank.materialize_for_audit(encoded)
+    changed_audit = output.TypedOutputCellBank.materialize_for_audit(changed)
+    difference = np.flatnonzero(audit.cells != changed_audit.cells)
     changed_start = output.STRING_ITEM_OFFSET + 13 * output.CHAR_CELL_COUNT
     assert np.all(
         (difference >= changed_start)
         & (difference < changed_start + output.CHAR_CELL_COUNT)
     )
+    assert audit.cells.shape == (output.TOTAL_CELL_COUNT,)
+    assert audit.cells.dtype == np.dtype(np.float64)
+    assert audit.cells.flags.c_contiguous and not audit.cells.flags.writeable
+    assert audit.active_factor_mask.shape == (output.FACTOR_COUNT,)
+    assert audit.active_factor_mask.dtype == np.dtype(np.bool_)
+    assert (
+        audit.active_factor_mask.flags.c_contiguous
+        and not audit.active_factor_mask.flags.writeable
+    )
+    assert encoded.active_global_cell_indices() == tuple(
+        int(cell) for cell in np.flatnonzero(audit.cells)
+    )
     assert empty.active_factors == ("type", "string-length")
-    assert not np.any(empty.string_item_cells)
+    for slot in range(output.FACTOR_COUNT):
+        if empty.factor_winner(slot) is None:
+            assert not np.any(
+                output.TypedOutputCellBank._drive_factor(empty, slot, 5_000.0)
+            )
     assert output.TypedOutputCellBank.decode(empty) == ""
 
 
-def test_non_printable_and_overlong_values_use_physical_unknown_cells() -> None:
+def test_non_printable_and_overlong_values_use_physical_unknown_winners() -> None:
     bad_char = output.TypedOutputCellBank.encode(
         "\n", declared_type=output.OutputType.CHAR
     )
@@ -124,20 +154,36 @@ def test_non_printable_and_overlong_values_use_physical_unknown_cells() -> None:
     unsupported = output.TypedOutputCellBank.encode(object())
 
     assert not bad_char.supported and bad_char.unknown_active
-    assert bad_char.char_cells[output.CHAR_UNKNOWN_CELL] == 1.0
+    assert bad_char.factor_winner(output.CHAR_FACTOR_SLOT) == output.CHAR_UNKNOWN_CELL
     assert not multiple_chars.supported and multiple_chars.unknown_active
     assert not bad_string.supported and bad_string.unknown_active
-    assert bad_string.string_item_cells[1, output.CHAR_UNKNOWN_CELL] == 1.0
+    assert (
+        bad_string.factor_winner(output.STRING_ITEM_FACTOR_START + 1)
+        == output.CHAR_UNKNOWN_CELL
+    )
     assert not unicode_string.supported and unicode_string.unknown_active
-    assert unicode_string.string_item_cells[3, output.CHAR_UNKNOWN_CELL] == 1.0
+    assert (
+        unicode_string.factor_winner(output.STRING_ITEM_FACTOR_START + 3)
+        == output.CHAR_UNKNOWN_CELL
+    )
     assert not overlong.supported and overlong.unknown_active
-    assert overlong.string_length_cells[output.STRING_LENGTH_UNKNOWN_CELL] == 1.0
-    assert not np.any(overlong.string_item_cells)
+    assert (
+        overlong.factor_winner(output.STRING_LENGTH_FACTOR_SLOT)
+        == output.STRING_LENGTH_UNKNOWN_CELL
+    )
+    assert all(
+        overlong.factor_winner(output.STRING_ITEM_FACTOR_START + position) is None
+        for position in range(output.STRING_CAPACITY)
+    )
     assert not unsupported.supported and unsupported.unknown_active
-    assert unsupported.char_cells[output.CHAR_UNKNOWN_CELL] == 1.0
-    assert unsupported.string_length_cells[output.STRING_LENGTH_UNKNOWN_CELL] == 1.0
-    assert np.all(
-        unsupported.string_item_cells[:, output.CHAR_UNKNOWN_CELL] == 1.0
+    assert (
+        unsupported.factor_winner(output.STRING_LENGTH_FACTOR_SLOT)
+        == output.STRING_LENGTH_UNKNOWN_CELL
+    )
+    assert all(
+        unsupported.factor_winner(output.STRING_ITEM_FACTOR_START + position)
+        == output.CHAR_UNKNOWN_CELL
+        for position in range(output.STRING_CAPACITY)
     )
     with pytest.raises(ValueError, match="UNKNOWN"):
         output.TypedOutputCellBank.decode(bad_string)
@@ -170,26 +216,87 @@ def test_char_and_string_exact_coincidence_stays_typed_and_positional() -> None:
     assert length_mismatch.matched_factor_cells == 4
 
 
-def test_decoder_rejects_noncanonical_encoding_and_projection_identity_is_fixed() -> None:
+def test_validation_rejects_noncanonical_payloads_and_digest_forgery() -> None:
     encoded = output.TypedOutputCellBank.encode("brain")
-    mutable = replace(encoded, cells=encoded.cells.copy())
-    cells = encoded.cells.copy()
-    inactive_position = 12
-    cells[
-        output.STRING_ITEM_OFFSET
-        + inactive_position * output.CHAR_CELL_COUNT
-        + (ord("X") - output.PRINTABLE_ASCII_MIN)
-    ] = 1.0
-    cells.setflags(write=False)
-    forged = replace(encoded, cells=cells)
+    different = output.TypedOutputCellBank.encode("braim")
+    inactive = 0xFFFF
+    corruptions = (
+        _forge_encoding(bytearray(encoded.factor_winners_le), encoded.physical_digest),
+        _forge_encoding(encoded.factor_winners_le[:-2], encoded.physical_digest),
+        _forge_encoding(encoded.factor_winners_le, encoded.physical_digest[:-1]),
+        _forge_encoding(
+            _replace_winner(
+                encoded.factor_winners_le, output.INT_FACTOR_SLOT, output.INT_CELL_COUNT
+            ),
+            encoded.physical_digest,
+        ),
+        _forge_encoding(
+            _replace_winner(encoded.factor_winners_le, output.TYPE_FACTOR_SLOT, inactive),
+            encoded.physical_digest,
+        ),
+        _forge_encoding(
+            _replace_winner(
+                encoded.factor_winners_le, output.STRING_LENGTH_FACTOR_SLOT, inactive
+            ),
+            encoded.physical_digest,
+        ),
+        _forge_encoding(
+            _replace_winner(
+                encoded.factor_winners_le,
+                output.STRING_ITEM_FACTOR_START + 12,
+                0,
+            ),
+            encoded.physical_digest,
+        ),
+        _forge_encoding(
+            _replace_winner(encoded.factor_winners_le, output.TYPE_FACTOR_SLOT, 0),
+            encoded.physical_digest,
+        ),
+        _forge_encoding(
+            encoded.factor_winners_le,
+            bytes((encoded.physical_digest[0] ^ 1,)) + encoded.physical_digest[1:],
+        ),
+        _forge_encoding(different.factor_winners_le, encoded.physical_digest),
+    )
 
-    with pytest.raises(ValueError, match="immutable"):
-        output.TypedOutputCellBank.decode(mutable)
-    with pytest.raises(ValueError, match="not canonical"):
-        output.TypedOutputCellBank.decode(forged)
+    for forged in corruptions:
+        with pytest.raises((TypeError, ValueError)):
+            output.TypedOutputCellBank.validate(forged)
     with pytest.raises(TypeError, match="TypedOutputEncoding"):
         output.TypedOutputCellBank.decode("brain")  # type: ignore[arg-type]
 
-    projection = output.TypedOutputCellBank.projection_sha256()
-    assert projection == output.TypedOutputCellBank.projection_sha256()
-    assert projection == "f3ebca86516460b7a03ab5588cf26de2c6df07d0f5a109e8a6d5646eed015f44"
+
+def test_all_external_encoding_ingress_rejects_before_physical_work(monkeypatch) -> None:
+    encoded = output.TypedOutputCellBank.encode("brain")
+    forged = _forge_encoding(
+        encoded.factor_winners_le,
+        bytes((encoded.physical_digest[0] ^ 1,)) + encoded.physical_digest[1:],
+    )
+    detector = output.FixedTypedCoincidenceDetector.for_target(encoded)
+
+    def forbidden_drive(*args, **kwargs):
+        raise AssertionError("physical work ran before compact validation")
+
+    monkeypatch.setattr(output, "_drive_spike_mask", forbidden_drive)
+    with pytest.raises(ValueError, match="digest"):
+        output.TypedOutputCellBank.decode(forged)
+    with pytest.raises(ValueError, match="digest"):
+        output.FixedTypedCoincidenceDetector.for_target(forged)
+    with pytest.raises(ValueError, match="digest"):
+        detector.detect(forged)
+
+
+def test_production_core_paths_never_call_audit_materialization(monkeypatch) -> None:
+    encoded = output.TypedOutputCellBank.encode("brain")
+    detector = output.FixedTypedCoincidenceDetector.for_target(encoded)
+
+    def forbidden_materializer(*args, **kwargs):
+        raise AssertionError("production path materialized the dense projection")
+
+    monkeypatch.setattr(
+        output.TypedOutputCellBank,
+        "materialize_for_audit",
+        forbidden_materializer,
+    )
+    assert output.TypedOutputCellBank.decode(encoded) == "brain"
+    assert detector.detect(encoded).spiked

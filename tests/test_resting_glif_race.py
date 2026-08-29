@@ -28,6 +28,16 @@ def _stepwise_race(currents_pa: np.ndarray) -> RestingGlifRaceResult:
     raise AssertionError("stepwise reference did not spike")
 
 
+def _stepwise_accumulated_spike_mask(
+    currents_pa: np.ndarray, *, step_count: int
+) -> np.ndarray:
+    population = AdaptiveGlifPopulation(len(currents_pa))
+    seen = np.zeros(population.cell_count, dtype=np.bool_)
+    for _ in range(step_count):
+        seen |= population.step(currents_pa)
+    return seen
+
+
 def test_compiled_six_row_batch_matches_fresh_stepwise_glif5_races() -> None:
     winner_cells = (0, 1, 7, 31, 42, 64)
     currents = np.full(
@@ -67,3 +77,44 @@ def test_compiled_batch_exposes_co_spikes_and_unique_mode_rejects_them() -> None
         match=r"race row 2 produced 2 simultaneous first spikes",
     ):
         compiled.race_many(currents)
+
+
+def test_compiled_accumulated_mask_matches_stepwise_glif5_for_finite_currents() -> None:
+    step_count = 30
+    random_currents = np.random.default_rng(0).uniform(-5_000.0, 5_000.0, 257)
+    currents = np.ascontiguousarray(
+        np.concatenate(
+            (
+                np.asarray(
+                    (-5_000.0, -1.0, 0.0, 1.0, 2_500.0, 4_375.0, 5_000.0)
+                ),
+                random_currents,
+            )
+        )
+    )
+    expected = _stepwise_accumulated_spike_mask(
+        currents, step_count=step_count
+    )
+
+    compiled = CompiledRestingGlifRace.compile(step_count=step_count)
+    actual = compiled.accumulated_spike_mask(currents)
+
+    np.testing.assert_array_equal(actual, expected)
+    assert tuple(actual[:7]) == (False, False, False, False, False, True, True)
+    assert actual.dtype == np.dtype(np.bool_)
+    assert actual.flags.c_contiguous
+    assert not actual.flags.writeable
+
+
+def test_compiled_accumulated_mask_rejects_invalid_current_vectors() -> None:
+    compiled = CompiledRestingGlifRace.compile(step_count=30)
+
+    for invalid in (
+        np.asarray(1.0),
+        np.empty(0),
+        np.zeros((1, 1)),
+        np.asarray((np.nan,)),
+        np.asarray((np.inf,)),
+    ):
+        with pytest.raises(ValueError, match="currents_pa"):
+            compiled.accumulated_spike_mask(invalid)

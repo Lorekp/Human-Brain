@@ -83,6 +83,47 @@ def test_multiple_exact_vectors_stop_without_candidate_index_tie_break() -> None
     assert audit.tier.rounds[0].race.simultaneous_spike_candidates == 2
 
 
+def test_vector_ingress_validates_once_and_uses_the_trusted_detector_batch(
+    monkeypatch,
+) -> None:
+    desired = (_encode(2), _encode(-3))
+    candidates = (
+        (_encode(2), _encode(-2)),
+        (_encode(2), _encode(-3)),
+    )
+    original_validate = output_cells.TypedOutputCellBank.validate
+    validated: list[output_cells.TypedOutputEncoding] = []
+
+    def counted_validate(cls, encoded):
+        del cls
+        validated.append(encoded)
+        return original_validate(encoded)
+
+    def reject_public_batch(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("vector race repeated public detector validation")
+
+    monkeypatch.setattr(
+        output_cells.TypedOutputCellBank,
+        "validate",
+        classmethod(counted_validate),
+    )
+    monkeypatch.setattr(
+        output_cells.FixedTypedCoincidenceDetector,
+        "detect_many",
+        reject_public_batch,
+    )
+
+    audit = semantic_race.select_exact_semantic_vector(
+        ("wrong", "exact"),
+        candidates,
+        desired,
+    )
+
+    assert audit.status == semantic_race.SELECTED
+    assert validated == [*desired, *candidates[0], *candidates[1]]
+
+
 def test_interface_rejects_misalignment_and_contains_no_host_ranking() -> None:
     desired = (_encode(1),)
 

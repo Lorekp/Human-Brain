@@ -222,7 +222,7 @@ def _literal_copy(
         raise ValueError(
             "signed integer lies outside the physical typed-output copy bank"
         )
-    active_cells = tuple(int(cell) for cell in np.flatnonzero(typed_output.cells))
+    active_cells = typed_output.active_global_cell_indices()
     semantic_record = {
         "value": value,
         "suffix_token_index": suffix_token_index,

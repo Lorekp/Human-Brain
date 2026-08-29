@@ -10,6 +10,11 @@ from humanbrain.typed_program import FactorAction
 
 
 _DONE = FactorAction((), "DONE", "NONE", "NONE", "NONE", None)
+_STRING_LENGTH_FACTOR_SLOT = output.FACTOR_LABELS.index("string-length")
+_STRING_ITEM_FACTOR_SLOTS = tuple(
+    output.FACTOR_LABELS.index(f"string-char-{position}")
+    for position in range(output.STRING_CAPACITY)
+)
 
 
 @cache
@@ -66,8 +71,11 @@ def test_copy_preserves_a_string_with_a_physical_unknown_character() -> None:
 
     assert prediction.output.sha256 == encoded.sha256
     assert prediction.output.supported is False
-    assert prediction.output.string_length_cells[3] == 1.0
-    assert prediction.output.string_item_cells[1, output.CHAR_UNKNOWN_CELL] == 1.0
+    assert prediction.output.factor_winner(_STRING_LENGTH_FACTOR_SLOT) == 3
+    assert (
+        prediction.output.factor_winner(_STRING_ITEM_FACTOR_SLOTS[1])
+        == output.CHAR_UNKNOWN_CELL
+    )
     assert tuple(race.bank for race in prediction.races) == (
         "copy-type",
         "copy-string-length",

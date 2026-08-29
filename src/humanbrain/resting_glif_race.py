@@ -74,6 +74,29 @@ class CompiledRestingGlifRace:
             unit_voltage_threshold=unit_voltage_threshold,
         )
 
+    def accumulated_spike_mask(
+        self,
+        currents_pa: Sequence[float] | np.ndarray,
+    ) -> np.ndarray:
+        """Return cells with any first crossing during the compiled response."""
+
+        currents = np.asarray(currents_pa, dtype=np.float64)
+        if currents.ndim != 1 or currents.size < 1:
+            raise ValueError("currents_pa must be a nonempty current vector")
+        if not np.all(np.isfinite(currents)):
+            raise ValueError("currents_pa must contain only finite values")
+        currents = np.ascontiguousarray(currents)
+
+        # Construction proves positive, monotonic spike gain, so a cell crossed
+        # at any compiled step exactly when it has crossed at the final step.
+        mask = self._unit_voltage[-1] * currents > (
+            self.parameters.threshold_inf_relative_mv
+            + self._unit_voltage_threshold[-1] * currents
+        )
+        mask = np.ascontiguousarray(mask, dtype=np.bool_)
+        mask.setflags(write=False)
+        return mask
+
     def race_many(
         self,
         currents_pa: Sequence[Sequence[float]] | np.ndarray,

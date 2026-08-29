@@ -20,6 +20,7 @@ _PUBLIC_TWO_INT_CASES = ((7, 2), (-3, 4), (5, 5))
 _PUBLIC_SELECTED_OUTPUTS = (2, 4, 5)
 _PUBLIC_LITERAL_BANK = tuple(range(-4, 5))
 _PRIMITIVE_OBSERVATIONS = 51_192
+_INT_FACTOR_SLOT = output_cells.FACTOR_LABELS.index("int")
 
 
 def _encode_int(value: int):
@@ -32,8 +33,18 @@ def _encode_int(value: int):
 def _dense_binary_effect(model, operator, left, right):
     pair_currents = np.ascontiguousarray(
         model.pair_bias_pa
-        + model.pair_left_contacts_pa @ left.int_cells
-        + model.pair_right_contacts_pa @ right.int_cells
+        + model.pair_left_contacts_pa
+        @ output_cells.TypedOutputCellBank._drive_factor(
+            left,
+            _INT_FACTOR_SLOT,
+            1.0,
+        )
+        + model.pair_right_contacts_pa
+        @ output_cells.TypedOutputCellBank._drive_factor(
+            right,
+            _INT_FACTOR_SLOT,
+            1.0,
+        )
     )
     pair_race = successor._physical_race(
         pair_currents,
@@ -69,7 +80,13 @@ def _dense_binary_effect(model, operator, left, right):
 
 def _dense_unary_effect(model, operand):
     currents = np.ascontiguousarray(
-        model.unary_bias_pa + model.unary_absolute_weights_pa @ operand.int_cells
+        model.unary_bias_pa
+        + model.unary_absolute_weights_pa
+        @ output_cells.TypedOutputCellBank._drive_factor(
+            operand,
+            _INT_FACTOR_SLOT,
+            1.0,
+        )
     )
     race = successor._physical_race(
         currents,
@@ -203,10 +220,43 @@ def test_action_batch_matches_scalar_races_and_reduces_checkpoint_hashing(
             strict=True,
         ):
             _assert_prediction_parity(scalar_prediction, batched_prediction)
-            assert not batched_prediction.output.cells.flags.writeable
-            assert not batched_prediction.output.active_factor_mask.flags.writeable
+            assert isinstance(batched_prediction.output.factor_winners_le, bytes)
+            assert len(batched_prediction.output.factor_winners_le) == 72
+            assert isinstance(batched_prediction.output.physical_digest, bytes)
+            assert batched_prediction.output.physical_digest.hex() == (
+                batched_prediction.output.sha256
+            )
     assert operator.checkpoint_sha256 == _CHECKPOINT_SHA256
     assert operator.live_checkpoint_sha256 == _CHECKPOINT_SHA256
+
+
+def test_public_prediction_ingress_validates_each_external_encoding_once(
+    monkeypatch,
+) -> None:
+    model, _ = successor.train_public_typed_operator_successor()
+    selected = (_encode_int(2), _encode_int(4))
+    scopes = ((_encode_int(7),), (_encode_int(-3), _encode_int(5)))
+    action = tp.FactorAction((), "DONE", "NONE", "NONE", "NONE", None)
+    original_validate = output_cells.TypedOutputCellBank.validate
+    validated: list[output_cells.TypedOutputEncoding] = []
+
+    def counted_validate(cls, encoded):
+        del cls
+        validated.append(encoded)
+        return original_validate(encoded)
+
+    monkeypatch.setattr(
+        output_cells.TypedOutputCellBank,
+        "validate",
+        classmethod(counted_validate),
+    )
+
+    model.predict(selected[0], action, scopes=scopes[0])
+    assert validated == [selected[0], *scopes[0]]
+
+    validated.clear()
+    model.predict_actions_many(selected, (action,), scope_rows=scopes)
+    assert validated == [*selected, *scopes[0], *scopes[1]]
 
 
 def test_target_free_root_candidate_ledger_is_bit_exact_after_batching() -> None:

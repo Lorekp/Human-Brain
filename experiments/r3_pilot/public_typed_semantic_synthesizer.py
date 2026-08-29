@@ -13,6 +13,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+from typing import cast
 
 import numpy as np
 
@@ -131,56 +132,6 @@ def _unsupported(value_type: ProgramType) -> output_cells.TypedOutputEncoding:
         value,
         declared_type=_output_type(value_type),
     )
-
-
-def _decode_int(value: output_cells.TypedOutputEncoding) -> int:
-    if not value.supported or value.output_type is not output_cells.OutputType.INT:
-        raise RuntimeError("physical operator did not produce a supported Int")
-    cells = np.flatnonzero(value.int_cells)
-    if len(cells) != 1 or int(cells[0]) == output_cells.INT_UNKNOWN_CELL:
-        raise RuntimeError("physical Int output is not uniquely decodable")
-    return output_cells.INT_MIN + int(cells[0])
-
-
-def _decode_bool(value: output_cells.TypedOutputEncoding) -> bool:
-    if not value.supported or value.output_type is not output_cells.OutputType.BOOL:
-        raise RuntimeError("physical operator did not produce a supported Bool")
-    cells = np.flatnonzero(value.bool_cells)
-    if len(cells) != 1 or int(cells[0]) == output_cells.BOOL_UNKNOWN_CELL:
-        raise RuntimeError("physical Bool output is not uniquely decodable")
-    return int(cells[0]) == output_cells.BOOL_TRUE_CELL
-
-
-def _decode_list(value: output_cells.TypedOutputEncoding) -> list[int]:
-    if not value.supported or value.output_type is not output_cells.OutputType.LIST_INT:
-        raise RuntimeError("physical operator did not produce a supported List[Int]")
-    lengths = np.flatnonzero(value.list_length_cells)
-    if len(lengths) != 1 or int(lengths[0]) > output_cells.LIST_CAPACITY:
-        raise RuntimeError("physical List length is not uniquely decodable")
-    length = int(lengths[0])
-    decoded: list[int] = []
-    for position in range(length):
-        item_cells = np.flatnonzero(value.list_item_cells[position])
-        if len(item_cells) != 1 or int(item_cells[0]) == output_cells.INT_UNKNOWN_CELL:
-            raise RuntimeError("physical List item is not uniquely decodable")
-        decoded.append(output_cells.INT_MIN + int(item_cells[0]))
-    return decoded
-
-
-def _decode_string(value: output_cells.TypedOutputEncoding) -> str:
-    if not value.supported or value.output_type is not output_cells.OutputType.STRING:
-        raise RuntimeError("physical operator did not produce a supported String")
-    lengths = np.flatnonzero(value.string_length_cells)
-    if len(lengths) != 1 or int(lengths[0]) > output_cells.STRING_CAPACITY:
-        raise RuntimeError("physical String length is not uniquely decodable")
-    length = int(lengths[0])
-    characters: list[str] = []
-    for position in range(length):
-        item_cells = np.flatnonzero(value.string_item_cells[position])
-        if len(item_cells) != 1 or int(item_cells[0]) == output_cells.CHAR_UNKNOWN_CELL:
-            raise RuntimeError("physical String character is not uniquely decodable")
-        characters.append(output_cells.PRINTABLE_ASCII[int(item_cells[0])])
-    return "".join(characters)
 
 
 def _string_value_supported(value: object) -> bool:
@@ -643,7 +594,10 @@ class _CaseEvaluator:
             if not copied.supported:
                 output = _unsupported(_LIST_INT)
             else:
-                items = _decode_list(copied)
+                items = cast(
+                    list[int],
+                    output_cells.TypedOutputCellBank._decode_trusted(copied),
+                )
                 mapped_outputs = tuple(
                     self.evaluate(body_id, bound=(item, *bound)) for item in items
                 )
@@ -656,7 +610,10 @@ class _CaseEvaluator:
                 else:
                     output = _encode(
                         [
-                            _decode_int(item)
+                            cast(
+                                int,
+                                output_cells.TypedOutputCellBank._decode_trusted(item),
+                            )
                             for item in mapped_outputs
                             if isinstance(item, output_cells.TypedOutputEncoding)
                         ],
@@ -673,7 +630,10 @@ class _CaseEvaluator:
                 output = _unsupported(_INT)
             else:
                 output = _encode(0, _INT)
-                for item in _decode_list(copied):
+                for item in cast(
+                    list[int],
+                    output_cells.TypedOutputCellBank._decode_trusted(copied),
+                ):
                     output = self._predict(
                         output,
                         _BINARY_ACTIONS["add"],
@@ -697,7 +657,10 @@ class _CaseEvaluator:
                 output = _unsupported(_INT)
             else:
                 output = _encode(0, _INT)
-                for item in _decode_list(copied):
+                for item in cast(
+                    list[int],
+                    output_cells.TypedOutputCellBank._decode_trusted(copied),
+                ):
                     predicate = self.evaluate(
                         predicate_id,
                         bound=(item, *bound),
@@ -711,7 +674,19 @@ class _CaseEvaluator:
                     output = self._predict(
                         output,
                         _BINARY_ACTIONS["add"],
-                        (_encode(int(_decode_bool(predicate)), _INT),),
+                        (
+                            _encode(
+                                int(
+                                    cast(
+                                        bool,
+                                        output_cells.TypedOutputCellBank._decode_trusted(
+                                            predicate
+                                        ),
+                                    )
+                                ),
+                                _INT,
+                            ),
+                        ),
                         schema="add",
                     )
                     if not output.supported:
@@ -730,7 +705,10 @@ class _CaseEvaluator:
             if not collection.supported:
                 output = _unsupported(_STRING)
             else:
-                source = _decode_string(collection)
+                source = cast(
+                    str,
+                    output_cells.TypedOutputCellBank._decode_trusted(collection),
+                )
                 copied = self._string_positions(
                     collection,
                     tuple(range(len(source))),
@@ -741,7 +719,12 @@ class _CaseEvaluator:
                 else:
                     selected_positions: list[int] = []
                     predicate_unsupported = False
-                    for position, character in enumerate(_decode_string(copied)):
+                    for position, character in enumerate(
+                        cast(
+                            str,
+                            output_cells.TypedOutputCellBank._decode_trusted(copied),
+                        )
+                    ):
                         predicate = self.evaluate(
                             predicate_id,
                             bound=(character, *bound),
@@ -752,7 +735,10 @@ class _CaseEvaluator:
                         ):
                             predicate_unsupported = True
                             continue
-                        if _decode_bool(predicate):
+                        if cast(
+                            bool,
+                            output_cells.TypedOutputCellBank._decode_trusted(predicate),
+                        ):
                             selected_positions.append(position)
                     if predicate_unsupported:
                         output = _unsupported(_STRING)
@@ -769,7 +755,10 @@ class _CaseEvaluator:
             if not operand.supported:
                 output = _unsupported(_STRING)
             else:
-                source = _decode_string(operand)
+                source = cast(
+                    str,
+                    output_cells.TypedOutputCellBank._decode_trusted(operand),
+                )
                 output = self._string_positions(
                     operand,
                     tuple(reversed(range(len(source)))),
@@ -883,6 +872,10 @@ class FrozenTypedSemanticSynthesizer:
     ) -> TypedSemanticSynthesisDecision:
         """Grow exact-cost tiers only from prior physical representatives."""
 
+        desired = tuple(
+            output_cells.TypedOutputCellBank.validate(encoded)
+            for encoded in desired
+        )
         retained: set[str] = set()
         # ``composable`` authenticates the task-independent compiler schedule.
         # Ordinarily it follows physical semantic retention exactly.  The

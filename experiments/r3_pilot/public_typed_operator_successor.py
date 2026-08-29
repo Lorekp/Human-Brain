@@ -50,6 +50,21 @@ _EFFECT_MEMO_MAX_ENTRIES = 4_096
 _RACE = CompiledRestingGlifRace.compile(step_count=_RACE_STEPS)
 _UNKNOWN_VALUE = object()
 
+_TYPE_FACTOR_SLOT = output_cells.FACTOR_LABELS.index("type")
+_INT_FACTOR_SLOT = output_cells.FACTOR_LABELS.index("int")
+_BOOL_FACTOR_SLOT = output_cells.FACTOR_LABELS.index("bool")
+_LIST_LENGTH_FACTOR_SLOT = output_cells.FACTOR_LABELS.index("list-length")
+_LIST_ITEM_FACTOR_SLOTS = tuple(
+    output_cells.FACTOR_LABELS.index(f"list-item-{position}")
+    for position in range(output_cells.LIST_CAPACITY)
+)
+_CHAR_FACTOR_SLOT = output_cells.FACTOR_LABELS.index("char")
+_STRING_LENGTH_FACTOR_SLOT = output_cells.FACTOR_LABELS.index("string-length")
+_STRING_ITEM_FACTOR_SLOTS = tuple(
+    output_cells.FACTOR_LABELS.index(f"string-char-{position}")
+    for position in range(output_cells.STRING_CAPACITY)
+)
+
 
 def _freeze(array: np.ndarray) -> np.ndarray:
     frozen = np.ascontiguousarray(array, dtype=np.float64)
@@ -243,7 +258,7 @@ def _physical_race(currents_pa: np.ndarray, *, bank: str) -> OperatorRace:
 
 
 def _single_event(activity: np.ndarray) -> tuple[int, float] | None:
-    """Return one active presynaptic event without decoding its semantic value."""
+    """Return one event from the separate dense ASCII-class mechanism."""
 
     active = np.flatnonzero(activity)
     if active.size == 0:
@@ -252,6 +267,19 @@ def _single_event(activity: np.ndarray) -> tuple[int, float] | None:
         raise RuntimeError("typed output factor contains multiple active cells")
     cell = int(active[0])
     return cell, float(activity[cell])
+
+
+def _drive_factor(
+    encoded: output_cells.TypedOutputEncoding,
+    factor_slot: int,
+) -> np.ndarray:
+    """Drive one compact typed factor through its unchanged physical bank."""
+
+    return output_cells.TypedOutputCellBank._drive_factor(
+        encoded,
+        factor_slot,
+        _CONTACT_CURRENT_PA,
+    )
 
 
 @lru_cache(maxsize=len(output_cells.OutputType) + 1)
@@ -312,34 +340,16 @@ def _string_from_winners(
         return _unknown(output_cells.OutputType.STRING)
     if length != len(character_cells) or length > output_cells.STRING_CAPACITY:
         raise RuntimeError("physical String winners do not match their length factor")
-    cells = np.zeros(output_cells.TOTAL_CELL_COUNT, dtype=np.float64)
-    active = np.zeros(len(output_cells.FACTOR_LABELS), dtype=bool)
-    type_cell = tuple(output_cells.OutputType).index(output_cells.OutputType.STRING)
-    cells[output_cells.TYPE_SLICE] = output_cells._physical_one_hot(
-        output_cells.TYPE_CELL_COUNT,
-        type_cell,
+    winners: list[int | None] = [None] * len(output_cells.FACTOR_LABELS)
+    winners[_TYPE_FACTOR_SLOT] = tuple(output_cells.OutputType).index(
+        output_cells.OutputType.STRING
     )
-    active[output_cells.FACTOR_LABELS.index("type")] = True
-    cells[output_cells.STRING_LENGTH_SLICE] = output_cells._physical_one_hot(
-        output_cells.STRING_LENGTH_CELL_COUNT,
-        length,
-    )
-    active[output_cells.FACTOR_LABELS.index("string-length")] = True
-    supported = True
+    winners[_STRING_LENGTH_FACTOR_SLOT] = length
     for position, cell in enumerate(character_cells):
-        offset = output_cells.STRING_ITEM_OFFSET + position * output_cells.CHAR_CELL_COUNT
-        cells[offset : offset + output_cells.CHAR_CELL_COUNT] = (
-            output_cells._physical_one_hot(output_cells.CHAR_CELL_COUNT, cell)
-        )
-        active[
-            output_cells.FACTOR_LABELS.index(f"string-char-{position}")
-        ] = True
-        supported = supported and cell != output_cells.CHAR_UNKNOWN_CELL
-    return output_cells.TypedOutputCellBank._finish(
+        winners[_STRING_ITEM_FACTOR_SLOTS[position]] = cell
+    return output_cells.TypedOutputCellBank._from_physical_winners(
         output_cells.OutputType.STRING,
-        cells,
-        active,
-        supported=supported,
+        tuple(winners),
     )
 
 
@@ -380,15 +390,13 @@ def _decode_copy(
         )
         return _unknown(None), (race,)
 
-    type_currents = np.ascontiguousarray(
-        encoded.type_cells * _CONTACT_CURRENT_PA
-    )
+    type_currents = _drive_factor(encoded, _TYPE_FACTOR_SLOT)
     type_race = _physical_race(type_currents, bank="copy-type")
     races: list[OperatorRace] = [type_race]
 
     if encoded.output_type is output_cells.OutputType.INT:
         race = _physical_race(
-            encoded.int_cells * _CONTACT_CURRENT_PA,
+            _drive_factor(encoded, _INT_FACTOR_SLOT),
             bank="copy-int",
         )
         races.append(race)
@@ -396,7 +404,7 @@ def _decode_copy(
 
     if encoded.output_type is output_cells.OutputType.BOOL:
         race = _physical_race(
-            encoded.bool_cells * _CONTACT_CURRENT_PA,
+            _drive_factor(encoded, _BOOL_FACTOR_SLOT),
             bank="copy-bool",
         )
         races.append(race)
@@ -404,7 +412,7 @@ def _decode_copy(
 
     if encoded.output_type is output_cells.OutputType.CHAR:
         race = _physical_race(
-            encoded.char_cells * _CONTACT_CURRENT_PA,
+            _drive_factor(encoded, _CHAR_FACTOR_SLOT),
             bank="copy-char",
         )
         races.append(race)
@@ -412,7 +420,7 @@ def _decode_copy(
 
     if encoded.output_type is output_cells.OutputType.STRING:
         length_race = _physical_race(
-            encoded.string_length_cells * _CONTACT_CURRENT_PA,
+            _drive_factor(encoded, _STRING_LENGTH_FACTOR_SLOT),
             bank="copy-string-length",
         )
         races.append(length_race)
@@ -421,7 +429,7 @@ def _decode_copy(
         character_cells: list[int] = []
         for position in range(length_race.winner_cell):
             character_race = _physical_race(
-                encoded.string_item_cells[position] * _CONTACT_CURRENT_PA,
+                _drive_factor(encoded, _STRING_ITEM_FACTOR_SLOTS[position]),
                 bank=f"copy-string-char-{position}",
             )
             races.append(character_race)
@@ -435,7 +443,7 @@ def _decode_copy(
         )
 
     length_race = _physical_race(
-        encoded.list_length_cells * _CONTACT_CURRENT_PA,
+        _drive_factor(encoded, _LIST_LENGTH_FACTOR_SLOT),
         bank="copy-list-length",
     )
     races.append(length_race)
@@ -445,7 +453,7 @@ def _decode_copy(
     values: list[int] = []
     for position in range(length):
         item_race = _physical_race(
-            encoded.list_item_cells[position] * _CONTACT_CURRENT_PA,
+            _drive_factor(encoded, _LIST_ITEM_FACTOR_SLOTS[position]),
             bank=f"copy-list-item-{position}",
         )
         races.append(item_race)
@@ -554,10 +562,9 @@ class FrozenTypedOperatorSuccessor:
         if class_event is not None:
             cell, amplitude = class_event
             pair_currents += self.class_pair_class_contacts_pa[:, cell] * amplitude
-        char_event = _single_event(character.char_cells)
-        if char_event is not None:
-            cell, amplitude = char_event
-            pair_currents += self.class_pair_char_contacts_pa[:, cell] * amplitude
+        char_winner = character.factor_winner(_CHAR_FACTOR_SLOT)
+        if char_winner is not None:
+            pair_currents += self.class_pair_char_contacts_pa[:, char_winner]
         pair_race = _physical_race(
             np.ascontiguousarray(pair_currents),
             bank="operator-ascii-class-char-pair",
@@ -580,11 +587,11 @@ class FrozenTypedOperatorSuccessor:
         if value.output_type is not output_cells.OutputType.STRING:
             return _unknown_effect(output_cells.OutputType.STRING, f"{bank}-unknown")
         type_race = _physical_race(
-            value.type_cells * _CONTACT_CURRENT_PA,
+            _drive_factor(value, _TYPE_FACTOR_SLOT),
             bank="copy-type",
         )
         source_length_race = _physical_race(
-            value.string_length_cells * _CONTACT_CURRENT_PA,
+            _drive_factor(value, _STRING_LENGTH_FACTOR_SLOT),
             bank="copy-string-length",
         )
         races: list[OperatorRace] = [type_race, source_length_race]
@@ -607,7 +614,7 @@ class FrozenTypedOperatorSuccessor:
         character_cells: list[int] = []
         for output_position, source_position in enumerate(positions):
             race = _physical_race(
-                value.string_item_cells[source_position] * _CONTACT_CURRENT_PA,
+                _drive_factor(value, _STRING_ITEM_FACTOR_SLOTS[source_position]),
                 bank=f"{bank}-string-char-{output_position}",
             )
             races.append(race)
@@ -641,10 +648,9 @@ class FrozenTypedOperatorSuccessor:
         operand: output_cells.TypedOutputEncoding,
     ) -> tuple[output_cells.TypedOutputEncoding, tuple[OperatorRace, ...]]:
         currents = self.unary_bias_pa.copy()
-        event = _single_event(operand.int_cells)
-        if event is not None:
-            cell, amplitude = event
-            currents += self.unary_absolute_weights_pa[:, cell] * amplitude
+        winner = operand.factor_winner(_INT_FACTOR_SLOT)
+        if winner is not None:
+            currents += self.unary_absolute_weights_pa[:, winner]
         currents = np.ascontiguousarray(currents)
         race = _physical_race(currents, bank="operator-absolute-output")
         return _int_from_winner(race.winner_cell), (race,)
@@ -673,20 +679,30 @@ class FrozenTypedOperatorSuccessor:
                 self.pair_bias_pa,
                 (row_count, _PAIR_COUNT),
             ).copy()
-            for row, encoded in enumerate(left_chunk):
-                event = _single_event(encoded.int_cells)
-                if event is not None:
-                    cell, amplitude = event
-                    pair_currents[row] += (
-                        self.pair_left_contacts_pa[:, cell] * amplitude
-                    )
-            for row, encoded in enumerate(right_chunk):
-                event = _single_event(encoded.int_cells)
-                if event is not None:
-                    cell, amplitude = event
-                    pair_currents[row] += (
-                        self.pair_right_contacts_pa[:, cell] * amplitude
-                    )
+            left_events = tuple(
+                (row, winner)
+                for row, encoded in enumerate(left_chunk)
+                if (winner := encoded.factor_winner(_INT_FACTOR_SLOT)) is not None
+            )
+            if left_events:
+                rows, winners = zip(*left_events, strict=True)
+                pair_currents[np.asarray(rows, dtype=np.intp)] += (
+                    self.pair_left_contacts_pa[
+                        :, np.asarray(winners, dtype=np.intp)
+                    ].T
+                )
+            right_events = tuple(
+                (row, winner)
+                for row, encoded in enumerate(right_chunk)
+                if (winner := encoded.factor_winner(_INT_FACTOR_SLOT)) is not None
+            )
+            if right_events:
+                rows, winners = zip(*right_events, strict=True)
+                pair_currents[np.asarray(rows, dtype=np.intp)] += (
+                    self.pair_right_contacts_pa[
+                        :, np.asarray(winners, dtype=np.intp)
+                    ].T
+                )
             pair_currents = np.ascontiguousarray(pair_currents)
             pair_races = _physical_races(
                 pair_currents,
@@ -717,8 +733,7 @@ class FrozenTypedOperatorSuccessor:
                 output_bias,
                 (row_count, output_bias.size),
             ).copy()
-            for row, cell in enumerate(pair_winners):
-                output_currents[row] += output_weights[:, int(cell)]
+            output_currents += output_weights[:, pair_winners].T
             output_currents = np.ascontiguousarray(output_currents)
             output_races = _physical_races(
                 output_currents,
@@ -754,11 +769,11 @@ class FrozenTypedOperatorSuccessor:
         """Select one operand through less-than cells, then physically copy it."""
 
         comparison, comparison_races = self._binary("less-than", left, right)
-        event = _single_event(comparison.bool_cells)
-        if event is None or event[0] == output_cells.BOOL_UNKNOWN_CELL:
+        winner = comparison.factor_winner(_BOOL_FACTOR_SLOT)
+        if winner is None or winner == output_cells.BOOL_UNKNOWN_CELL:
             selected = _unknown(output_cells.OutputType.INT)
         else:
-            less_than = event[0] == output_cells.BOOL_TRUE_CELL
+            less_than = winner == output_cells.BOOL_TRUE_CELL
             take_left = less_than if operator == "minimum" else not less_than
             selected = left if take_left else right
         copied, copy_races = _decode_copy(selected)
@@ -852,6 +867,10 @@ class FrozenTypedOperatorSuccessor:
             for scope in scope_tuple
         ):
             raise TypeError("scopes must contain physical typed-output encodings")
+        selected = output_cells.TypedOutputCellBank.validate(selected)
+        scope_tuple = tuple(
+            output_cells.TypedOutputCellBank.validate(scope) for scope in scope_tuple
+        )
         before = self.live_checkpoint_sha256
         if before != self.checkpoint_sha256:
             raise RuntimeError("typed operator successor changed before prediction")
@@ -1013,6 +1032,14 @@ class FrozenTypedOperatorSuccessor:
             raise TypeError("batched rows must contain physical typed-output encodings")
         if not all(type(action) is FactorAction for action in action_rows):
             raise TypeError("actions must contain FactorAction values")
+        selected_rows = tuple(
+            output_cells.TypedOutputCellBank.validate(value)
+            for value in selected_rows
+        )
+        scopes = tuple(
+            tuple(output_cells.TypedOutputCellBank.validate(scope) for scope in row)
+            for row in scopes
+        )
         before = self.live_checkpoint_sha256
         if before != self.checkpoint_sha256:
             raise RuntimeError("typed operator successor changed before batch")

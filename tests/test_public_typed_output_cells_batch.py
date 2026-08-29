@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, fields
 from time import perf_counter
 
 import numpy as np
@@ -23,65 +23,70 @@ def _result_key(result: output.TypedCoincidenceResult) -> tuple[object, ...]:
     )
 
 
-def _regime_detector(
-    predictions: tuple[output.TypedOutputEncoding, ...],
-) -> output.FixedTypedCoincidenceDetector:
-    # These four exact currents cover inhibition, a positive subthreshold row,
-    # the first coarse threshold bin used by this fixture, and saturation.
-    currents_pa = (-5_000.0, 2_500.0, 4_375.0, 5_000.0)
-    weights = np.zeros(output.TOTAL_CELL_COUNT, dtype=np.float64)
-    for encoded, current_pa in zip(predictions, currents_pa, strict=True):
-        cell = int(np.flatnonzero(encoded.int_cells)[0])
-        weights[output.INT_OFFSET + cell] = current_pa / 10_000.0
-    weights.setflags(write=False)
-    return output.FixedTypedCoincidenceDetector(
-        weights=weights,
-        bias=0.0,
-        active_target_factors=1,
-        enabled=True,
-        target_sha256="physical-regime-fixture",
-        sha256="physical-regime-detector",
+def test_four_current_physical_kernel_is_scalar_exact(monkeypatch) -> None:
+    currents = np.asarray((-5_000.0, 2_500.0, 4_375.0, 5_000.0))
+    scalar = tuple(
+        bool(output._drive_spike_mask(np.asarray((current,)))[0])
+        for current in currents
     )
 
+    driven_shapes: list[tuple[int, ...]] = []
+    original_kernel = output._OUTPUT_SPIKE_KERNEL
 
-def test_detect_many_is_scalar_exact_across_physical_current_regimes(
-    monkeypatch,
-) -> None:
-    predictions = tuple(
-        output.TypedOutputCellBank.encode(value) for value in (-3, -2, -1, 0)
+    class TrackingKernel:
+        def accumulated_spike_mask(self, driven: np.ndarray) -> np.ndarray:
+            driven_shapes.append(driven.shape)
+            return original_kernel.accumulated_spike_mask(driven)
+
+    monkeypatch.setattr(output, "_OUTPUT_SPIKE_KERNEL", TrackingKernel())
+    batched = output._drive_spike_mask(currents)
+
+    assert driven_shapes == [(4,)]
+    assert tuple(bool(value) for value in batched) == (
+        False,
+        False,
+        True,
+        True,
     )
-    detector = _regime_detector(predictions)
-    scalar = tuple(detector.detect(predicted) for predicted in predictions)
-
-    population_widths: list[int] = []
-    original_population = output.AdaptiveGlifPopulation
-
-    class TrackingPopulation(original_population):
-        def __init__(self, cell_count: int, *args, **kwargs) -> None:
-            population_widths.append(cell_count)
-            super().__init__(cell_count, *args, **kwargs)
-
-    monkeypatch.setattr(output, "AdaptiveGlifPopulation", TrackingPopulation)
-    batched = detector.detect_many(predictions)
-
-    assert population_widths == [4]
-    assert tuple(result.current_pa for result in batched) == (
-        -5_000.0,
-        2_500.0,
-        4_375.0,
-        5_000.0,
-    )
-    assert tuple(result.spiked for result in batched) == (False, False, True, True)
-    assert tuple(map(_result_key, batched)) == tuple(map(_result_key, scalar))
-    assert detector.detect_many(()) == ()
+    assert tuple(bool(value) for value in batched) == scalar
 
 
-def test_detect_many_preserves_repeated_exact_and_mixed_mismatch_rows() -> None:
+def test_detector_has_exact_compact_storage_and_no_public_constructor() -> None:
     detector = output.FixedTypedCoincidenceDetector.for_target([1, -2])
-    predictions = ([1, -2], [1, -1], [1, -2], [1, output.INT_MAX + 1], True)
 
-    scalar = tuple(detector.detect(predicted) for predicted in predictions)
-    batched = detector.detect_many(predictions)
+    assert [field.name for field in fields(type(detector))] == [
+        "target",
+        "physical_digest",
+    ]
+    assert type(detector.target) is output.TypedOutputEncoding
+    assert len(detector.physical_digest) == 32
+    assert not hasattr(detector, "weights")
+    try:
+        output.FixedTypedCoincidenceDetector()
+    except TypeError:
+        pass
+    else:  # pragma: no cover - documents the constructor prohibition.
+        raise AssertionError("detector constructor must remain bank-owned")
+    try:
+        output.FixedTypedCoincidenceDetector(  # type: ignore[call-arg]
+            detector.target, detector.physical_digest
+        )
+    except TypeError:
+        pass
+    else:  # pragma: no cover - documents the constructor prohibition.
+        raise AssertionError("detector constructor must remain bank-owned")
+
+
+def test_detect_many_preserves_scalar_and_trusted_batch_results(monkeypatch) -> None:
+    detector = output.FixedTypedCoincidenceDetector.for_target([1, -2])
+    raw_predictions = ([1, -2], [1, -1], [1, -2], [1, output.INT_MAX + 1], True)
+    encoded = tuple(
+        output.TypedOutputCellBank.encode(prediction)
+        for prediction in raw_predictions
+    )
+
+    scalar = tuple(detector.detect(prediction) for prediction in encoded)
+    batched = detector.detect_many(encoded)
 
     assert tuple(result.spiked for result in batched) == (
         True,
@@ -92,6 +97,14 @@ def test_detect_many_preserves_repeated_exact_and_mixed_mismatch_rows() -> None:
     )
     assert tuple(result.matched_factor_cells for result in batched) == (4, 3, 4, 3, 0)
     assert tuple(map(_result_key, batched)) == tuple(map(_result_key, scalar))
+
+    def forbidden_validate(*args, **kwargs):
+        raise AssertionError("trusted batch repeated external validation")
+
+    monkeypatch.setattr(output.TypedOutputCellBank, "validate", forbidden_validate)
+    trusted = detector._detect_many_trusted(encoded)
+    assert tuple(map(_result_key, trusted)) == tuple(map(_result_key, scalar))
+    assert detector._detect_many_trusted(()) == ()
 
 
 def test_semantic_race_batch_is_exactly_the_scalar_audit(monkeypatch) -> None:
@@ -110,6 +123,7 @@ def test_semantic_race_batch_is_exactly_the_scalar_audit(monkeypatch) -> None:
     class ScalarDetector:
         def __init__(self, detector: output.FixedTypedCoincidenceDetector) -> None:
             self.detector = detector
+            self.target = detector.target
             self.sha256 = detector.sha256
 
         @classmethod
@@ -117,6 +131,9 @@ def test_semantic_race_batch_is_exactly_the_scalar_audit(monkeypatch) -> None:
             return cls(original_detector.for_target(target))
 
         def detect_many(self, predictions):
+            return tuple(self.detector.detect(predicted) for predicted in predictions)
+
+        def _detect_many_trusted(self, predictions):
             return tuple(self.detector.detect(predicted) for predicted in predictions)
 
     monkeypatch.setattr(

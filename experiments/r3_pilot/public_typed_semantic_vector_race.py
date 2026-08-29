@@ -129,6 +129,11 @@ def select_exact_semantic_vector(
         isinstance(item, output_cells.TypedOutputEncoding) for item in desired
     ):
         raise TypeError("desired_outputs must contain physical typed encodings")
+    detectors = tuple(
+        output_cells.FixedTypedCoincidenceDetector.for_target(target)
+        for target in desired
+    )
+    desired = tuple(detector.target for detector in detectors)
     if not all(item.supported for item in desired):
         raise ValueError("desired_outputs must be physically supported")
 
@@ -141,14 +146,13 @@ def select_exact_semantic_vector(
         for item in row
     ):
         raise TypeError("candidate_outputs must contain physical typed encodings")
-
-    detectors = tuple(
-        output_cells.FixedTypedCoincidenceDetector.for_target(target)
-        for target in desired
+    rows = tuple(
+        tuple(output_cells.TypedOutputCellBank.validate(item) for item in row)
+        for row in rows
     )
     predictions_by_case = tuple(zip(*rows, strict=True))
     results_by_case = tuple(
-        detector.detect_many(predictions)
+        detector._detect_many_trusted(predictions)
         for detector, predictions in zip(
             detectors, predictions_by_case, strict=True
         )
