@@ -522,8 +522,9 @@ This closes the visible created-child mechanism seam and licenses the next
 public source-editing increment; it is not List/Bool, Simple-SWE, M0, protected,
 C1, family-transfer, or broad coding evidence.
 
-That four-task public source-editing increment is now spent at
-`STOP_PUBLIC_FACTORIZED_SOURCE_EDIT_CANARY_V1` (0/1 attempted; 0/4). On the
+That four-task public source-editing increment's raw V1 artifact reported
+`STOP_PUBLIC_FACTORIZED_SOURCE_EDIT_CANARY_V1` (0/1 attempted), but is banked as
+`STOP_INVALID_CANARY_GUARD`. On the
 first `abs(value)-3` arm, identity and the one-edit source failed their disjoint
 sandbox cases, no H=1 exact action existed, and the immutable planner selected
 root subtraction before replanning to the absolute edit at child `(0,)`. The
@@ -531,10 +532,20 @@ runner stopped before the two-edit phase because its max-edit control counted
 that selected-but-unactuated second decision as if it were another completed
 edit, then rejected the otherwise valid first-edit prefix. This localizes an
 adapter accounting defect rather than a cell-planning failure. The exact canary
-will not be retried; its second scalar arm and both List arms remain unopened,
-along with canonical Simple-SWE, M0, protected data, and C1. A fresh public
-increment must make the actuation ledger, rather than planned decisions, the
-authority for edit-count controls.
+was not retried; its raw artifact remains immutable.
+
+A separately named V2 kept the exact four tasks, cases, order, literal bank,
+and created-child V3 prerequisite, changing only the target-independent
+applied-action extractor to use checkpoint steps that record a real actuation. Both
+scalar operand orders and `List.map(abs)` then passed their incumbent, no-H1,
+one-edit-bound, exact-program, terminal-`DONE`, disjoint-sandbox, and immutable-
+checkpoint checks. The fourth task, `List.map(value-2)`, stopped before any
+actuation because prompt evidence did not uniquely resolve its leading
+structure tier. The banked result is
+`STOP_PUBLIC_FACTORIZED_SOURCE_EDIT_CANARY_V2` (3/4 in 721.31 seconds). This is a
+genuine generic nested map-plus-binary prompt-factor boundary, not another
+accounting failure. It establishes a small public source-generation bridge but
+does not open canonical Simple-SWE, M0, protected data, held-out, or C1.
 
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
