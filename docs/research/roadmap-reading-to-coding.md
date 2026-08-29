@@ -434,9 +434,21 @@ window. This is `STOP_TYPED_AST_HORIZON2_INT_ANYTIME`, banked without a retry.
 The next named mechanism ends admissible enumeration at the STOP tier while
 preserving complete simultaneous-spike tiers and uncertainty-driven expansion.
 
+That mechanism now passes. `PASS_TYPED_AST_HORIZON2_INT_ANYTIME_V2` ends each
+complete physical enumeration at the first tier containing STOP, admitted 198
+of 252 first candidates across the nine decisions, and excluded 54 cells below
+the physical frontier without awaiting them. Cached expansion evaluated 738
+unique terminal sequences and 828 cumulative sequence rows across 11 races in
+41.17 seconds, versus 2,439 rows and about 114 seconds for exhaustive H=2. All
+three trajectories were exact: `ABS → ADD1 → DONE`, `ADD1 → ABS → DONE`, and
+child `(0,)::ADD1 → root::ADD2 → DONE`. The optimization is therefore licensed
+for the visible Int planner; broader typed factors and public transfer remain
+the capability-critical work, not another beam implementation.
+
 The compiler-owned factorized H=1 root planner also reached its first honest
 information boundary. Its first two-Int arm scored all 212 compiler-valid
-actions through 636 unique target-free operator races, then stopped before the
+actions through 636 target-free predictions comprising 1,257 unique physical
+operator races, then stopped before the
 motor on a two-way 4,500 pA value tie: `subtract(SCOPE1,SELECTED)` and
 `subtract(SCOPE1,SCOPE0)`. Because the declared public `b` values are all
 nonnegative, selected `abs(b)` and scope `b` are observationally identical.
