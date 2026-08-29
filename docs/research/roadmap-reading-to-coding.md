@@ -560,6 +560,24 @@ cohort will not be retried or replaced by another two-task microprobe; after tha
 mechanism repair, the next adjudication is a broad canonical public-TRAIN
 Simple-SWE bridge. Protected splits, M0, held-out data, and C1 remain closed.
 
+That broad bridge is now spent at
+`STOP_PUBLIC_FACTORIZED_SIMPLE_SWE_TRAIN_BRIDGE_V1`. The frozen shared planner
+attempted 7 of 30 round-robin public-TRAIN tasks before the declared family
+failure limit fired: scalar-offset passed 0/3, List-map-add passed 0/2, and
+List-map-absolute passed 2/2. Every scalar and map-add arm stopped before
+actuation with the same `prompt evidence did not uniquely resolve the leading
+structure tier` boundary; both absolute-map arms completed
+`MAP_BIND → APPLY1 → DONE` and passed the canonical sandbox. The checkpoint
+remained immutable, wall time was 2,781.72 seconds, and the artifact SHA-256 is
+`f748e50cc98ddc987bcdbbc5804b4203e04b0c0376509d66f374f822781fae32`.
+Because the same prompt-tier defect now spans scalar and binary-map families
+after the dedicated nested/container repairs, H=2 prompt-projection patching is
+retired. The next coding mechanism is **bottom-up typed semantic synthesis**:
+compose typed semantic factors from execution-grounded primitives instead of
+projecting more natural-language patterns onto pre-enumerated H=2 trajectories.
+This remains visible-output public-TRAIN adapter evidence, not prompt-only
+completion, protected/held-out, M0, or C1 evidence.
+
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
 step 249 under a different winner context shared 8/11 cells with the current

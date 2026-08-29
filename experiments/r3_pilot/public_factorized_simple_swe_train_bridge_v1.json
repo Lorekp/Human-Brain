@@ -1,0 +1,348 @@
+{
+  "attempted_task_order": [
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/000",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/000",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/000",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/001",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/001",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/001",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/002"
+  ],
+  "attempted_tasks": 7,
+  "claim_boundary": "All 30 tasks from three canonical public TRAIN families; four regression outputs are visible to the editor and 32 property cases are sandbox-only. This is not prompt-only completion, M0, DEV/eval, protected, held-out, Path-2, or C1 evidence.",
+  "declared_tasks": 30,
+  "family_results": {
+    "t0_scalar_offset": {
+      "attempted": 3,
+      "declared": 10,
+      "failed": 3,
+      "gate": 8,
+      "passed": 0
+    },
+    "t1_list_map_abs": {
+      "attempted": 2,
+      "declared": 10,
+      "failed": 0,
+      "gate": 8,
+      "passed": 2
+    },
+    "t1_list_map_add": {
+      "attempted": 2,
+      "declared": 10,
+      "failed": 2,
+      "gate": 8,
+      "passed": 0
+    }
+  },
+  "passed_tasks": 2,
+  "planner": {
+    "builds": 1,
+    "checkpoint_immutable": true,
+    "checkpoint_sha256": "7802cb494eea3e9776ef863a84e0ec9afe93ecd4caebe90d8cbcbf5d44557810",
+    "literal_bank": [
+      -9,
+      -8,
+      -7,
+      -6,
+      -5,
+      -4,
+      -3,
+      -2,
+      -1,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "max_edits": 2
+  },
+  "prerequisite": {
+    "recovery_boundary": {
+      "artifact_sha256": "79ff62f36835eb252c9dacffd5fd2df9da600503724b367c67cb3a61a9239cd4",
+      "checkpoint_immutable": true,
+      "failed_task": "list-map-add-four",
+      "first_applied_action": {
+        "left_source": "BOUND0",
+        "literal": null,
+        "operator": "map",
+        "path": [],
+        "right_source": "SELECTED",
+        "schema": "MAP_BIND"
+      },
+      "model_checkpoint_sha256": "7820c258c0d7d243008c5ec95b7ed19ceb91b77729396877b0d474af5a272f85",
+      "passed_tasks": 1,
+      "schema": "public-factorized-source-edit-recovery-v1",
+      "verdict": "STOP_PUBLIC_FACTORIZED_SOURCE_EDIT_RECOVERY_V1"
+    },
+    "repaired_mechanism": {
+      "module_sha256": {
+        "public_typed_prompt_factors.py": "a03c061c1c6db9bfad49a3a5eca849692545b59f8654b3349d0d189ad07d4da6"
+      },
+      "repair": "materialized MAP_BIND body-to-DONE prompt projection",
+      "verified": true
+    }
+  },
+  "protocol": {
+    "families": [
+      "t0_scalar_offset",
+      "t1_list_map_add",
+      "t1_list_map_abs"
+    ],
+    "partition": "train",
+    "protocol_id": "human-cell-simple-swe-v1",
+    "sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2"
+  },
+  "results": [
+    {
+      "applied_actions": [],
+      "checkpoint_immutable": true,
+      "edit_count": 0,
+      "family": "t0_scalar_offset",
+      "ordinal": 0,
+      "passed": false,
+      "property_cases_exposed_to_planner": 0,
+      "property_cases_scored_in_sandbox": 32,
+      "sandbox": null,
+      "status": "PLANNER_STOP",
+      "stop_reason": "prompt evidence did not uniquely resolve the leading structure tier",
+      "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/000",
+      "task_sha256": "76a3a308651bb98a67801dbcbf7d2750a6de6f30748d6f500a30121dc950ea21",
+      "terminal_program_sha256": "83326463303b584318f256f1cdfb0445e19f94e1af77adacac264fdc84c24673",
+      "terminal_source_sha256": "726ebe4983d93a8319c47177cb2a0f59c3a7893215b088b98b54d2333eed9cf6",
+      "visible_regression_cases": 4,
+      "wall_time_seconds": 223.72090860000753
+    },
+    {
+      "applied_actions": [],
+      "checkpoint_immutable": true,
+      "edit_count": 0,
+      "family": "t1_list_map_add",
+      "ordinal": 0,
+      "passed": false,
+      "property_cases_exposed_to_planner": 0,
+      "property_cases_scored_in_sandbox": 32,
+      "sandbox": null,
+      "status": "PLANNER_STOP",
+      "stop_reason": "prompt evidence did not uniquely resolve the leading structure tier",
+      "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/000",
+      "task_sha256": "d2700b281f9839c0f07abd0717e23ea14bfa49a48f9214667609f5d333caf698",
+      "terminal_program_sha256": "0cb30773c370baee1a5660f058c2000984bc9409fe2d8d074e0472085c0ce792",
+      "terminal_source_sha256": "a07bb44da29224a6f17b29741f1763ccb46751608648276841548e5f7b86eaae",
+      "visible_regression_cases": 4,
+      "wall_time_seconds": 75.21759879999445
+    },
+    {
+      "applied_actions": [
+        {
+          "left_source": "BOUND0",
+          "literal": null,
+          "operator": "map",
+          "path": [],
+          "right_source": "SELECTED",
+          "schema": "MAP_BIND"
+        },
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "absolute",
+          "path": [
+            0,
+            0
+          ],
+          "right_source": "NONE",
+          "schema": "APPLY1"
+        }
+      ],
+      "checkpoint_immutable": true,
+      "edit_count": 2,
+      "family": "t1_list_map_abs",
+      "ordinal": 0,
+      "passed": true,
+      "property_cases_exposed_to_planner": 0,
+      "property_cases_scored_in_sandbox": 32,
+      "sandbox": {
+        "detail": "",
+        "outcome": "passed",
+        "passed": true,
+        "sandboxed": true,
+        "wall_seconds": 0.12518730000010692
+      },
+      "status": "DONE",
+      "stop_reason": null,
+      "task_id": "simple-swe-v1/train/tier-1/t1_list_map_abs/000",
+      "task_sha256": "8f31b752aa2801a4a2f61ddd9d9e5a9de52d39b4e55fe960ae87d797d9073824",
+      "terminal_program_sha256": "c1acd08d858cc37336909889f704e7aeb29ef86ea98f069effb432c5c55ac4f3",
+      "terminal_source_sha256": "b6ca0ea5501140cb44fe5cb80cac7c8a3d0577097a7a263801af3943e9fd2fa4",
+      "visible_regression_cases": 4,
+      "wall_time_seconds": 973.5060884999984
+    },
+    {
+      "applied_actions": [],
+      "checkpoint_immutable": true,
+      "edit_count": 0,
+      "family": "t0_scalar_offset",
+      "ordinal": 1,
+      "passed": false,
+      "property_cases_exposed_to_planner": 0,
+      "property_cases_scored_in_sandbox": 32,
+      "sandbox": null,
+      "status": "PLANNER_STOP",
+      "stop_reason": "prompt evidence did not uniquely resolve the leading structure tier",
+      "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/001",
+      "task_sha256": "65087aed8fc475d533af01823cb5bcd2d5ca6b7c66537a5c9eec9f1f973b0587",
+      "terminal_program_sha256": "94127d0bb4edcd9411922cdfddb99702d09d1b3cf2c9a901a0b7971549af52c8",
+      "terminal_source_sha256": "6ed72cabeb08b7b1f1e3c85e367185e4da5b8577dc28317c02ef68c3f7c08144",
+      "visible_regression_cases": 4,
+      "wall_time_seconds": 224.11289099999703
+    },
+    {
+      "applied_actions": [],
+      "checkpoint_immutable": true,
+      "edit_count": 0,
+      "family": "t1_list_map_add",
+      "ordinal": 1,
+      "passed": false,
+      "property_cases_exposed_to_planner": 0,
+      "property_cases_scored_in_sandbox": 32,
+      "sandbox": null,
+      "status": "PLANNER_STOP",
+      "stop_reason": "prompt evidence did not uniquely resolve the leading structure tier",
+      "task_id": "simple-swe-v1/train/tier-1/t1_list_map_add/001",
+      "task_sha256": "ea0076450d39ff19d27da9844d3fb4ec7d5cdeefbb72aeec6ae6004e515e2d49",
+      "terminal_program_sha256": "44d556c8c7bfdb27a9f5fef2477beb356428bdd1334f97f04b11cc9e2b4c8080",
+      "terminal_source_sha256": "aa627aa39eb8d741da1ba76a61ccf2f8e78f0c5a2fcb1368a62ac43bfa0eb314",
+      "visible_regression_cases": 4,
+      "wall_time_seconds": 76.27671939998982
+    },
+    {
+      "applied_actions": [
+        {
+          "left_source": "BOUND0",
+          "literal": null,
+          "operator": "map",
+          "path": [],
+          "right_source": "SELECTED",
+          "schema": "MAP_BIND"
+        },
+        {
+          "left_source": "SELECTED",
+          "literal": null,
+          "operator": "absolute",
+          "path": [
+            0,
+            0
+          ],
+          "right_source": "NONE",
+          "schema": "APPLY1"
+        }
+      ],
+      "checkpoint_immutable": true,
+      "edit_count": 2,
+      "family": "t1_list_map_abs",
+      "ordinal": 1,
+      "passed": true,
+      "property_cases_exposed_to_planner": 0,
+      "property_cases_scored_in_sandbox": 32,
+      "sandbox": {
+        "detail": "",
+        "outcome": "passed",
+        "passed": true,
+        "sandboxed": true,
+        "wall_seconds": 0.10714330000337213
+      },
+      "status": "DONE",
+      "stop_reason": null,
+      "task_id": "simple-swe-v1/train/tier-1/t1_list_map_abs/001",
+      "task_sha256": "c0c856b1a346481d1ec8b0e3223e3cafe59621dbd838d7c91cd25dcae2bd3922",
+      "terminal_program_sha256": "b652085468ada7c07ed99312489e5298188dc4d0328f197d0889f90fab03ca02",
+      "terminal_source_sha256": "8b7fefd8cf8246c63bfd6d1a8c1ff6d1ce26614f9fb78b2f818a3b92e0e251e9",
+      "visible_regression_cases": 4,
+      "wall_time_seconds": 984.7974150000082
+    },
+    {
+      "applied_actions": [],
+      "checkpoint_immutable": true,
+      "edit_count": 0,
+      "family": "t0_scalar_offset",
+      "ordinal": 2,
+      "passed": false,
+      "property_cases_exposed_to_planner": 0,
+      "property_cases_scored_in_sandbox": 32,
+      "sandbox": null,
+      "status": "PLANNER_STOP",
+      "stop_reason": "prompt evidence did not uniquely resolve the leading structure tier",
+      "task_id": "simple-swe-v1/train/tier-0/t0_scalar_offset/002",
+      "task_sha256": "7953171b75182cc2b620f08155bc9a15fe7c2cb572704c4fe07b53bd509c9978",
+      "terminal_program_sha256": "90895603c4e94043a48a913b5279f25f222c98b8007c8e94217d4d7a754693e6",
+      "terminal_source_sha256": "5f4a7e6af0be5a5d3a4ff4ae4bd547d6f9893d2917e6d8db74f7a4184bea0267",
+      "visible_regression_cases": 4,
+      "wall_time_seconds": 223.99205580000125
+    }
+  ],
+  "sandbox": {
+    "limits": {
+      "cpu_seconds": 1,
+      "max_ast_nodes": 4096,
+      "max_completion_bytes": 16384,
+      "memory_mib": 256,
+      "output_bytes": 65536,
+      "processes": 1,
+      "python_hash_seed": 0,
+      "wall_seconds": 2.0
+    },
+    "python": {
+      "executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "implementation": "cpython",
+      "python_version": "3.11.15"
+    },
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "schema": "public-factorized-simple-swe-train-bridge-v1",
+  "stop_family": "t0_scalar_offset",
+  "stop_reason": "FAMILY_FAILURE_LIMIT",
+  "task_order": [
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/000",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/000",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/000",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/001",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/001",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/001",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/002",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/002",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/002",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/003",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/003",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/003",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/004",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/004",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/004",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/005",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/005",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/005",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/006",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/006",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/006",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/007",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/007",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/007",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/008",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/008",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/008",
+    "simple-swe-v1/train/tier-0/t0_scalar_offset/009",
+    "simple-swe-v1/train/tier-1/t1_list_map_add/009",
+    "simple-swe-v1/train/tier-1/t1_list_map_abs/009"
+  ],
+  "verdict": "STOP_PUBLIC_FACTORIZED_SIMPLE_SWE_TRAIN_BRIDGE_V1",
+  "visibility_contract": {
+    "property_cases_sandboxed_per_task": 32,
+    "property_cases_visible_per_task": 0,
+    "regression_outputs_visible_per_task": 4
+  },
+  "wall_time_seconds": 2781.724378400002
+}
