@@ -22,7 +22,6 @@ from humanbrain.simple_swe.protocol import ExecutionLimits
 from humanbrain.simple_swe.sandbox import ExecutionResult, execute_completion
 from humanbrain.simple_swe.tasks import GeneratedTask
 
-
 STATUS_DONE = "DONE"
 STATUS_MAX_EDITS = "MAX_EDITS"
 STATUS_PLANNER_STOP = "PLANNER_STOP"
@@ -97,6 +96,15 @@ class FactorizedSourceEditResult:
     @property
     def edit_count(self) -> int:
         return len(self.actuations)
+
+    @property
+    def applied_actions(self) -> tuple[tp.FactorAction, ...]:
+        actions: list[tp.FactorAction] = []
+        for actuation in self.actuations:
+            if not isinstance(actuation.applied_action, tp.FactorAction):
+                raise RuntimeError("source-editor actuation has no applied-action provenance")
+            actions.append(actuation.applied_action)
+        return tuple(actions)
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,6 +184,11 @@ class FactorizedSourceEditor:
                     )
                 if actuation.actuator_calls != 1:
                     raise RuntimeError("one selected decision must actuate exactly one edit")
+                if (
+                    decision.selected_sequence is None
+                    or actuation.applied_action != decision.selected_sequence.first
+                ):
+                    raise RuntimeError("actuator applied-action provenance disagrees")
                 if actuation.program.sha256 == program.sha256:
                     raise RuntimeError("selected factor action did not change the incumbent")
                 if actuation.observation.program_sha256 != actuation.program.sha256:

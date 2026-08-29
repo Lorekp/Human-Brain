@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import inspect
+from dataclasses import dataclass
 from typing import Any, cast
 
 import pytest
-
 from experiments.r3_pilot import public_factorized_source_editor as source_editor
 from experiments.r3_pilot import public_typed_factor_horizon2_int as h2
 from humanbrain import typed_program as tp
@@ -18,8 +17,11 @@ from humanbrain.typed_program_types import (
     TypedSignature,
 )
 
-
 _CHECKPOINT = "7" * 64
+_ADD_ONE = tp.FactorAction(
+    (), "APPLY2", "add", "SELECTED", "LITERAL", 1
+)
+_DONE = tp.FactorAction((), "DONE", "NONE", "NONE", "NONE", None)
 
 
 def _signature() -> TypedSignature:
@@ -43,6 +45,7 @@ class _Decision:
     observation: _Observation
     checkpoint_before_sha256: str
     checkpoint_after_sha256: str
+    selected_sequence: h2.FactorH2Sequence | None
     stop_reason: str | None = None
 
 
@@ -87,6 +90,11 @@ class _ScriptedPlanner:
             observation=observation,
             checkpoint_before_sha256=self._live_checkpoint,
             checkpoint_after_sha256=self._live_checkpoint,
+            selected_sequence=(
+                h2.FactorH2Sequence(_ADD_ONE, _DONE)
+                if status == h2.STATUS_SELECTED
+                else None
+            ),
         )
 
     def actuate_and_reobserve(
@@ -94,18 +102,14 @@ class _ScriptedPlanner:
         incumbent: tp.Program,
         decision: _Decision,
     ) -> h2.FactorH2Actuation:
-        edited = tp.apply_factor_action(
-            incumbent,
-            tp.FactorAction(
-                (), "APPLY2", "add", "SELECTED", "LITERAL", 1
-            ),
-        )
+        edited = tp.apply_factor_action(incumbent, _ADD_ONE)
         self.edit_count += 1
         if self._mutate_on_actuation:
             self._live_checkpoint = "8" * 64
         return h2.FactorH2Actuation(
             program=edited,
             observation=cast(Any, self.observe(edited, decision.observation.cases)),
+            applied_action=_ADD_ONE,
             actuator_calls=1,
             structure_parity=True,
             action_site_parity=True,
@@ -137,11 +141,15 @@ def test_source_editor_actuates_one_edit_reobserves_and_finishes_done() -> None:
     assert result.status == source_editor.STATUS_DONE
     assert result.stop_reason is None
     assert result.edit_count == 1
+    assert result.applied_actions == (_ADD_ONE,)
     assert len(result.decisions) == 2
     assert result.decisions[-1].status == h2.STATUS_DONE
     assert result.source == "def solve(x):\n    return x + 1\n"
     assert planner.plan_desired == [(-1, 5), (-1, 5)]
-    assert planner.plan_observations[0].program_sha256 != planner.plan_observations[1].program_sha256
+    assert (
+        planner.plan_observations[0].program_sha256
+        != planner.plan_observations[1].program_sha256
+    )
     assert result.checkpoint_audit.immutable
     assert all(step.immutable for step in result.checkpoint_audit.steps)
 
@@ -162,6 +170,7 @@ def test_source_editor_replans_at_the_bound_without_actuating_past_it() -> None:
 
     assert result.status == source_editor.STATUS_MAX_EDITS
     assert result.edit_count == 1
+    assert result.applied_actions == (_ADD_ONE,)
     assert len(result.decisions) == 2
     assert planner.edit_count == 1
     assert result.source == "def solve(x):\n    return x + 1\n"
@@ -240,4 +249,3 @@ def test_completed_source_uses_public_task_bundle_and_sandbox_seam(
     assert captured["limits"] is limits
     assert planner.plan_observations[0].cases == ((-2,), (4,))
     assert tuple(case.args for case in task.private.regression_cases) == ((0,),)
-

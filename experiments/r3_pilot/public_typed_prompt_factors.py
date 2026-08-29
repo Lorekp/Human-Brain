@@ -8,11 +8,12 @@ represented by the physical Int UNKNOWN cell.
 The flat operand channel remains the H=1 interface: declared parameter
 names/order plus binary operator words become one operator/source/orientation
 pattern, then fixed synapses fan that physical cell into matching
-``FactorAction`` cells.  The H=2 interface adds one conservative composition:
-a root binary relation may wrap either operand in ``absolute`` and project only
-to an ordered root-action then child-action sequence whose compiler-observed
-selected sources agree.  Unsupported or conflicting structure reaches a
-physical STOP cell; prompt evidence never ranks the broader candidate bank.
+``FactorAction`` cells.  The H=2 interface adds conservative compositions: a
+root binary relation may wrap either operand in ``absolute``, or a typed List
+prompt may bind a map element before applying a binary body relation.  Both
+project only to ordered sequences whose compiler-observed selected sources
+agree. Unsupported or conflicting structure reaches a physical STOP cell;
+prompt evidence never ranks the broader candidate bank.
 """
 
 from __future__ import annotations
@@ -23,12 +24,10 @@ from dataclasses import dataclass
 from hashlib import sha256
 
 import numpy as np
-
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from humanbrain.cells import AdaptiveGlifPopulation
 from humanbrain.typed_program import FactorAction
 from humanbrain.typed_program_types import TypedSignature
-
 
 STATUS_SUPPORTED = "SUPPORTED"
 STATUS_NO_LITERAL = "NO_LITERAL"
@@ -58,15 +57,28 @@ _TOKENIZER_SHA256 = sha256(
 ).hexdigest()
 _UNKNOWN_VALUE = object()
 
-_OPERAND_TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*|[+-]?\d+|<|-")
+_OPERAND_TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*|[+-]?\d+|<|-|\+")
 _INFIX_HYPHEN = re.compile(r"(?<=[A-Za-z0-9_])-(?=[A-Za-z0-9_])")
-_BINARY_OPERATORS = frozenset({"subtract", "less-than"})
+_BINARY_OPERATORS = frozenset({"add", "subtract", "less-than"})
 _UNARY_OPERATORS = frozenset({"absolute"})
 _ABSOLUTE_TOKENS = frozenset({"abs", "absolute"})
 _ABSOLUTE_FILLERS = frozenset({"of", "the", "value"})
-_PROMPT_SOURCES = frozenset({"SCOPE0", "SCOPE1", "LITERAL"})
+_PROMPT_SOURCES = frozenset({"SCOPE0", "SCOPE1", "BOUND0", "LITERAL"})
+_NUMBER_WORD_LITERALS = {
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+}
+_MAP_QUANTIFIERS = frozenset({"each", "every"})
 _GENERIC_SINGLE_ARGUMENT = frozenset(
-    {"argument", "datum", "input", "integer", "number", "value"}
+    {"argument", "datum", "element", "input", "integer", "item", "number", "value"}
 )
 _OPERAND_FILLERS = frozenset(
     {
@@ -74,6 +86,8 @@ _OPERAND_FILLERS = frozenset(
         "an",
         "and",
         "compute",
+        "each",
+        "every",
         "for",
         "given",
         "integer",
@@ -362,9 +376,14 @@ def _operand_token(
     declared: dict[str, str | None],
     ordinal: dict[str, str | None],
     parameter_count: int,
+    single_argument_source: str = "SCOPE0",
 ) -> _PromptOperand | object | None:
     if token in declared:
-        source = declared[token]
+        source = (
+            single_argument_source
+            if parameter_count == 1 and single_argument_source == "BOUND0"
+            else declared[token]
+        )
         return (
             _UNRESOLVED_OPERAND
             if source is None
@@ -379,8 +398,10 @@ def _operand_token(
         )
     if re.fullmatch(r"[+-]?\d+", token):
         return _PromptOperand("LITERAL", int(token))
+    if token in _NUMBER_WORD_LITERALS:
+        return _PromptOperand("LITERAL", _NUMBER_WORD_LITERALS[token])
     if parameter_count == 1 and token in _GENERIC_SINGLE_ARGUMENT:
-        return _PromptOperand("SCOPE0")
+        return _PromptOperand(single_argument_source)
     if token in _OPERAND_FILLERS:
         return None
     return _UNRESOLVED_OPERAND
@@ -836,11 +857,12 @@ class PromptComposedOperand:
 
 @dataclass(frozen=True, slots=True)
 class PromptCompositionPattern:
-    """One root binary relation whose operands may carry unary structure."""
+    """One binary relation, optionally inside a map-bound body."""
 
     operator: str
     left: PromptComposedOperand
     right: PromptComposedOperand
+    container_schema: str | None = None
 
     def __post_init__(self) -> None:
         if self.operator not in _BINARY_OPERATORS:
@@ -855,6 +877,8 @@ class PromptCompositionPattern:
         )
         if literal_count > 1:
             raise ValueError("one prompt composition cannot bind two literals")
+        if self.container_schema not in {None, "MAP_BIND"}:
+            raise ValueError("prompt composition has an unsupported container")
 
 
 @dataclass(frozen=True, slots=True)
@@ -871,12 +895,14 @@ class PromptSequenceEvidence:
             self.second_action
         ) is not FactorAction:
             raise TypeError("prompt sequence evidence requires FactorAction values")
-        valid_selected = {None, "SCOPE0", "SCOPE1"}
+        valid_selected = {None, "SCOPE0", "SCOPE1", "BOUND0"}
         if (
             self.first_selected_source not in valid_selected
             or self.second_selected_source not in valid_selected
         ):
-            raise ValueError("selected prompt sources must be SCOPE0/SCOPE1 or absent")
+            raise ValueError(
+                "selected prompt sources must be SCOPE0/SCOPE1/BOUND0 or absent"
+            )
 
 
 def _composed_operand_record(
@@ -896,6 +922,7 @@ def _composition_record(
         "operator": pattern.operator,
         "left": _composed_operand_record(pattern.left),
         "right": _composed_operand_record(pattern.right),
+        "container_schema": pattern.container_schema,
     }
 
 
@@ -939,6 +966,7 @@ def _nearest_composed_operand(
     declared: dict[str, str | None],
     ordinal: dict[str, str | None],
     parameter_count: int,
+    single_argument_source: str,
 ) -> PromptComposedOperand | object | None:
     cursor = start
     inspected = 0
@@ -961,6 +989,7 @@ def _nearest_composed_operand(
             declared=declared,
             ordinal=ordinal,
             parameter_count=parameter_count,
+            single_argument_source=single_argument_source,
         )
         if isinstance(operand, _PromptOperand):
             if step < 0 and not unary and _absolute_prefix_before(
@@ -985,6 +1014,8 @@ def _composition_pattern(
     operator: str,
     left: PromptComposedOperand | object | None,
     right: PromptComposedOperand | object | None,
+    *,
+    container_schema: str | None,
 ) -> PromptCompositionPattern | None:
     if not isinstance(left, PromptComposedOperand) or not isinstance(
         right,
@@ -996,7 +1027,24 @@ def _composition_pattern(
     )
     if literal_count > 1:
         return None
-    return PromptCompositionPattern(operator=operator, left=left, right=right)
+    return PromptCompositionPattern(
+        operator=operator,
+        left=left,
+        right=right,
+        container_schema=container_schema,
+    )
+
+
+def _prompt_container_schema(
+    tokens: tuple[str, ...],
+    signature: TypedSignature,
+) -> str | None:
+    if not _MAP_QUANTIFIERS.intersection(tokens) or len(signature.parameters) != 1:
+        return None
+    parameter_type = signature.parameters[0].type
+    if parameter_type.constructor == "List" and signature.result == parameter_type:
+        return "MAP_BIND"
+    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1033,6 +1081,7 @@ def observe_prompt_compositions(
     recognized = 0
     failures = int(declaration_error is not None)
     parameter_count = len(signature.parameters)
+    container_schema = _prompt_container_schema(tokens, signature)
 
     def record(
         operator: str,
@@ -1041,7 +1090,12 @@ def observe_prompt_compositions(
     ) -> None:
         nonlocal recognized, failures
         recognized += 1
-        pattern = _composition_pattern(operator, left, right)
+        pattern = _composition_pattern(
+            operator,
+            left,
+            right,
+            container_schema=container_schema,
+        )
         if pattern is None:
             failures += 1
         elif pattern not in patterns:
@@ -1053,8 +1107,29 @@ def observe_prompt_compositions(
                 "declared": declared,
                 "ordinal": ordinal,
                 "parameter_count": parameter_count,
+                "single_argument_source": (
+                    "BOUND0" if container_schema == "MAP_BIND" else "SCOPE0"
+                ),
             }
-            if token in {"minus", "-"}:
+            if token in {"plus", "+"}:
+                record(
+                    "add",
+                    _nearest_composed_operand(
+                        tokens,
+                        index - 1,
+                        -1,
+                        stop=None,
+                        **common,
+                    ),
+                    _nearest_composed_operand(
+                        tokens,
+                        index + 1,
+                        1,
+                        stop=None,
+                        **common,
+                    ),
+                )
+            elif token in {"minus", "-"}:
                 record(
                     "subtract",
                     _nearest_composed_operand(
@@ -1112,7 +1187,46 @@ def observe_prompt_compositions(
                         **common,
                     ),
                 )
-            elif token == "subtract":
+            elif token in {"add", "added"}:
+                to_index = next(
+                    (
+                        candidate
+                        for candidate in range(index + 1, min(index + 10, len(tokens)))
+                        if tokens[candidate] == "to"
+                    ),
+                    None,
+                )
+                if to_index is not None:
+                    addend = _nearest_composed_operand(
+                        tokens,
+                        index + 1 if token == "add" else index - 1,
+                        1 if token == "add" else -1,
+                        stop=to_index if token == "add" else None,
+                        **common,
+                    )
+                    base = _nearest_composed_operand(
+                        tokens,
+                        to_index + 1,
+                        1,
+                        stop=None,
+                        **common,
+                    )
+                    record("add", base, addend)
+                else:
+                    right = _nearest_composed_operand(
+                        tokens,
+                        index + 1,
+                        1,
+                        stop=None,
+                        **common,
+                    )
+                    left: PromptComposedOperand | object = PromptComposedOperand(
+                        "BOUND0" if container_schema == "MAP_BIND" else "SCOPE0",
+                        None,
+                        (),
+                    )
+                    record("add", left, right)
+            elif token in {"subtract", "subtracted"}:
                 from_index = next(
                     (
                         candidate
@@ -1124,9 +1238,9 @@ def observe_prompt_compositions(
                 if from_index is not None:
                     subtrahend = _nearest_composed_operand(
                         tokens,
-                        index + 1,
-                        1,
-                        stop=from_index,
+                        index + 1 if token == "subtract" else index - 1,
+                        1 if token == "subtract" else -1,
+                        stop=from_index if token == "subtract" else None,
                         **common,
                     )
                     minuend = _nearest_composed_operand(
@@ -1146,7 +1260,15 @@ def observe_prompt_compositions(
                         **common,
                     )
                     left: PromptComposedOperand | object = (
-                        PromptComposedOperand("SCOPE0", None, ())
+                        PromptComposedOperand(
+                            (
+                                "BOUND0"
+                                if container_schema == "MAP_BIND"
+                                else "SCOPE0"
+                            ),
+                            None,
+                            (),
+                        )
                         if parameter_count == 1
                         else _UNRESOLVED_OPERAND
                     )
@@ -1212,6 +1334,40 @@ def _sequence_composition_pattern(
     first = evidence.first_action
     second = evidence.second_action
     if (
+        first.path == ()
+        and first.schema == "MAP_BIND"
+        and first.operator == "map"
+        and first.left_source == "BOUND0"
+        and second.path == (0, 0)
+        and second.schema == "APPLY2"
+        and second.operator in _BINARY_OPERATORS
+    ):
+        collection = _evidence_operand(
+            first,
+            first.right_source,
+            evidence.first_selected_source,
+        )
+        left = _evidence_operand(
+            second,
+            second.left_source,
+            evidence.second_selected_source,
+        )
+        right = _evidence_operand(
+            second,
+            second.right_source,
+            evidence.second_selected_source,
+        )
+        if collection is None or collection.source not in {"SCOPE0", "SCOPE1"}:
+            return None
+        if left is None or right is None:
+            return None
+        return PromptCompositionPattern(
+            second.operator,
+            left,
+            right,
+            container_schema="MAP_BIND",
+        )
+    if (
         first.path != ()
         or first.schema != "APPLY2"
         or first.operator not in _BINARY_OPERATORS
@@ -1262,7 +1418,7 @@ def _sequence_projection_sha256(
     sequence_weights_pa: np.ndarray,
 ) -> str:
     digest = sha256()
-    digest.update(b"public-typed-prompt-sequence-projection-v1\0")
+    digest.update(b"public-typed-prompt-sequence-projection-v2\0")
     digest.update(
         _canonical_json(tuple(_sequence_evidence_record(item) for item in candidates))
     )
@@ -1435,14 +1591,18 @@ __all__ = [
     "BINDING_STATUS_AMBIGUOUS",
     "BINDING_STATUS_SUPPORTED",
     "BINDING_STATUS_UNKNOWN",
-    "FixedPromptBindingProjection",
-    "FixedPromptLiteralProjection",
-    "FixedPromptSequenceProjection",
     "PHYSICAL_STOP",
     "PROJECTION_STATUS_PROJECTED",
     "PROJECTION_STATUS_STOP_AMBIGUOUS",
     "PROJECTION_STATUS_STOP_UNKNOWN",
     "PROJECTION_STATUS_STOP_UNSUPPORTED",
+    "STATUS_AMBIGUOUS",
+    "STATUS_NO_LITERAL",
+    "STATUS_OUT_OF_RANGE",
+    "STATUS_SUPPORTED",
+    "FixedPromptBindingProjection",
+    "FixedPromptLiteralProjection",
+    "FixedPromptSequenceProjection",
     "PromptBindingObservation",
     "PromptBindingProjectionDecision",
     "PromptComposedOperand",
@@ -1453,10 +1613,6 @@ __all__ = [
     "PromptOperandPattern",
     "PromptSequenceEvidence",
     "PromptSequenceProjectionDecision",
-    "STATUS_AMBIGUOUS",
-    "STATUS_NO_LITERAL",
-    "STATUS_OUT_OF_RANGE",
-    "STATUS_SUPPORTED",
     "observe_prompt_bindings",
     "observe_prompt_compositions",
     "observe_prompt_factors",

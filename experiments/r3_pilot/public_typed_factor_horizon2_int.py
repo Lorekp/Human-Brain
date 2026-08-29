@@ -1125,8 +1125,23 @@ def _prompt_selected_source(
 ) -> str | None:
     if action.schema == "DONE":
         return None
-    selected_index = state.site(action.path).site.selected_scope_index
-    return None if selected_index is None else f"SCOPE{selected_index}"
+    selected = state.site(action.path).site
+    selected_index = selected.selected_scope_index
+    if selected_index is None:
+        return None
+    binder_depth = sum(
+        item.site.is_binder
+        and len(action.path) > len(item.site.path)
+        and action.path[: len(item.site.path)] == item.site.path
+        for item in state.sites
+    )
+    if binder_depth:
+        if selected_index == 0:
+            return "BOUND0"
+        selected_index -= binder_depth
+        if selected_index < 0:
+            return None
+    return f"SCOPE{selected_index}" if selected_index < 2 else None
 
 
 def _prompt_sequence_race(
@@ -1207,6 +1222,7 @@ class FactorizedH2Decision:
 class FactorH2Actuation:
     program: tp.Program
     observation: FactorStateObservation
+    applied_action: tp.FactorAction | None
     actuator_calls: int
     structure_parity: bool
     action_site_parity: bool
@@ -1675,6 +1691,7 @@ class FrozenFactorizedHorizon2Int:
             return FactorH2Actuation(
                 program=incumbent,
                 observation=decision.observation,
+                applied_action=None,
                 actuator_calls=0,
                 structure_parity=True,
                 action_site_parity=True,
@@ -1682,6 +1699,7 @@ class FrozenFactorizedHorizon2Int:
             )
         if (
             decision.status != STATUS_SELECTED
+            or decision.selected_sequence is None
             or decision.motor_decision is None
             or decision.selected_first_transition is None
         ):
@@ -1713,6 +1731,7 @@ class FrozenFactorizedHorizon2Int:
         return FactorH2Actuation(
             program=edited,
             observation=observed,
+            applied_action=decision.selected_sequence.first,
             actuator_calls=1,
             structure_parity=structure_parity,
             action_site_parity=action_site_parity,

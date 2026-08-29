@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
+from types import SimpleNamespace
 
+import pytest
 from experiments.r3_pilot import public_typed_factor_horizon2_int as h2
 from experiments.r3_pilot import public_typed_list_map_behavior as list_behavior
 from experiments.r3_pilot import public_typed_output_cells as output_cells
@@ -11,7 +12,6 @@ from humanbrain.typed_program_types import (
     ProgramType,
     TypedSignature,
 )
-
 
 CASES = (([-3, 0, 4],), ([],), ([2, -1],))
 DESIRED = ([-6, -3, 1], [], [-1, -4])
@@ -33,6 +33,60 @@ def _signature() -> TypedSignature:
         (ProgramParameter("values", list_int),),
         list_int,
     )
+
+
+class _PromptSourceState:
+    def __init__(self, program: tp.Program) -> None:
+        self.sites = tuple(
+            SimpleNamespace(site=site) for site in tp.factor_action_sites(program)
+        )
+
+    def site(self, path: tuple[int, ...]) -> SimpleNamespace:
+        return next(item for item in self.sites if item.site.path == path)
+
+
+def test_prompt_selected_source_subtracts_map_binder_depth() -> None:
+    integer = ProgramType.Int()
+    list_int = ProgramType.List(integer)
+    signature = TypedSignature(
+        "solve",
+        (
+            ProgramParameter("values", list_int),
+            ProgramParameter("offset", integer),
+        ),
+        list_int,
+    )
+    program = tp.Program(
+        ("map", "bind", "variable-1", "variable-1"),
+        signature,
+    )
+    state = _PromptSourceState(program)
+    body = next(
+        item.site
+        for item in state.sites
+        if item.site.selected_scope_index == 1
+        and any(
+            parent.site.is_binder
+            and len(item.site.path) > len(parent.site.path)
+            and item.site.path[: len(parent.site.path)] == parent.site.path
+            for parent in state.sites
+        )
+    )
+    collection = next(
+        item.site
+        for item in state.sites
+        if item.site.path != body.path
+        and item.site.selected_scope_index == 1
+    )
+
+    body_action = tp.FactorAction(
+        body.path, "APPLY1", "absolute", "SELECTED", "NONE", None
+    )
+    collection_action = tp.FactorAction(
+        collection.path, "MAP_BIND", "map", "BOUND0", "SELECTED", None
+    )
+    assert h2._prompt_selected_source(state, body_action) == "SCOPE0"
+    assert h2._prompt_selected_source(state, collection_action) == "SCOPE1"
 
 
 def _expected_sha256() -> tuple[str, ...]:
@@ -82,6 +136,7 @@ def test_factorized_h2_maps_then_replans_one_body_edit(
 ) -> None:
     incumbent = tp.Program(("variable-0",), _signature())
     observation = model.observe(incumbent, CASES)
+    assert h2._prompt_selected_source(observation, MAP_IDENTITY) == "SCOPE0"
     planner_before = model.live_checkpoint_sha256
     terminal_before = model.terminal_behavior.live_checkpoint_sha256
     list_before = model.terminal_behavior.list_map.live_checkpoint_sha256
@@ -104,6 +159,7 @@ def test_factorized_h2_maps_then_replans_one_body_edit(
 
     mapped = model.actuate_and_reobserve(incumbent, first)
     assert mapped.actuator_calls == 1
+    assert mapped.applied_action == MAP_IDENTITY
     assert mapped.program.tokens == (
         "map",
         "bind",
@@ -113,6 +169,9 @@ def test_factorized_h2_maps_then_replans_one_body_edit(
     assert mapped.structure_parity
     assert mapped.action_site_parity
     assert mapped.root_output_parity
+    assert h2._prompt_selected_source(
+        mapped.observation, SUBTRACT_THREE_BODY
+    ) == "BOUND0"
 
     second = model.plan(mapped.observation, PROMPT, DESIRED)
     assert second.status == h2.STATUS_SELECTED
@@ -127,6 +186,7 @@ def test_factorized_h2_maps_then_replans_one_body_edit(
 
     final = model.actuate_and_reobserve(mapped.program, second)
     assert final.actuator_calls == 1
+    assert final.applied_action == SUBTRACT_THREE_BODY
     assert final.program.tokens == (
         "map",
         "bind",

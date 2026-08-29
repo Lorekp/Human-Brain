@@ -1,13 +1,10 @@
 import ast
 from pathlib import Path
 
-import numpy as np
 import pytest
-
 from experiments.r3_pilot import public_typed_prompt_factors as factors
 from humanbrain.typed_program import FactorAction
 from humanbrain.typed_program_types import ProgramParameter, ProgramType, TypedSignature
-
 
 MATCH_2 = FactorAction((), "APPLY2", "add", "SELECTED", "LITERAL", 2)
 WRONG_3 = FactorAction((), "APPLY2", "add", "SELECTED", "LITERAL", 3)
@@ -69,6 +66,29 @@ NONROOT_SEQUENCE = factors.PromptSequenceEvidence(
     ),
     second_selected_source="SCOPE1",
 )
+MAP_BIND = FactorAction(
+    (), "MAP_BIND", "map", "BOUND0", "SELECTED", None
+)
+MAP_SUBTRACT_TWO_SEQUENCE = factors.PromptSequenceEvidence(
+    first_action=MAP_BIND,
+    first_selected_source="SCOPE0",
+    second_action=FactorAction(
+        (0, 0), "APPLY2", "subtract", "SELECTED", "LITERAL", 2
+    ),
+    second_selected_source="BOUND0",
+)
+MAP_ADD_THREE_SEQUENCE = factors.PromptSequenceEvidence(
+    first_action=MAP_BIND,
+    first_selected_source="SCOPE0",
+    second_action=FactorAction(
+        (0, 0), "APPLY2", "add", "SELECTED", "LITERAL", 3
+    ),
+    second_selected_source="BOUND0",
+)
+MAP_SEQUENCE_EVIDENCE = (
+    MAP_SUBTRACT_TWO_SEQUENCE,
+    MAP_ADD_THREE_SEQUENCE,
+)
 
 SEQUENCE_EVIDENCE = (
     ABS_LEFT_SEQUENCE,
@@ -84,6 +104,15 @@ def _signature(*names: str, result: ProgramType | None = None) -> TypedSignature
         "solve",
         tuple(ProgramParameter(name, integer) for name in names),
         integer if result is None else result,
+    )
+
+
+def _list_signature(name: str = "values") -> TypedSignature:
+    list_int = ProgramType.List(ProgramType.Int())
+    return TypedSignature(
+        "solve",
+        (ProgramParameter(name, list_int),),
+        list_int,
     )
 
 
@@ -406,6 +435,54 @@ def test_compositional_prompt_projects_one_ordered_root_child_sequence(
     assert projection.live_checkpoint_sha256 == before
     assert not projection.race_weights_pa.flags.writeable
     assert not projection.sequence_weights_pa.flags.writeable
+
+
+@pytest.mark.parametrize(
+    ("prompt", "expected_cell", "operator", "literal"),
+    (
+        (
+            "Return a new list with two subtracted from every value.",
+            0,
+            "subtract",
+            2,
+        ),
+        ("Add 3 to each element and return the list.", 1, "add", 3),
+        ("Return every element plus 3.", 1, "add", 3),
+        ("Return a list with 3 added to every item.", 1, "add", 3),
+    ),
+)
+def test_map_body_prompt_projects_bound_binary_sequence(
+    prompt: str,
+    expected_cell: int,
+    operator: str,
+    literal: int,
+) -> None:
+    projection = factors.FixedPromptSequenceProjection.build(MAP_SEQUENCE_EVIDENCE)
+    decision = projection.project(prompt, _list_signature())
+
+    assert decision.status == factors.PROJECTION_STATUS_PROJECTED
+    assert decision.matching_sequence_cells == (expected_cell,)
+    assert decision.observation.pattern is not None
+    assert decision.observation.pattern.container_schema == "MAP_BIND"
+    assert decision.observation.pattern.operator == operator
+    assert decision.observation.pattern.left == factors.PromptComposedOperand(
+        "BOUND0", None, ()
+    )
+    assert decision.observation.pattern.right == factors.PromptComposedOperand(
+        "LITERAL", literal, ()
+    )
+    assert decision.sequence_currents_pa[expected_cell] == 5_000.0
+    assert projection.live_checkpoint_sha256 == projection.sha256
+
+
+def test_map_body_sequence_does_not_match_a_scalar_binary_prompt() -> None:
+    projection = factors.FixedPromptSequenceProjection.build(MAP_SEQUENCE_EVIDENCE)
+    decision = projection.project("Return value plus 3.", _signature("value"))
+
+    assert decision.status == factors.PROJECTION_STATUS_STOP_UNSUPPORTED
+    assert decision.observation.pattern is not None
+    assert decision.observation.pattern.container_schema is None
+    assert decision.matching_sequence_cells == ()
 
 
 def test_conflicting_nested_relations_physically_stop_without_sequence_current(
