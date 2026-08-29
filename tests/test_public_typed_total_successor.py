@@ -55,6 +55,17 @@ def test_unknown_propagates_for_every_fixed_action() -> None:
         assert race.simultaneous_spike_candidates == 1
 
 
+def test_batched_predictions_are_bit_exact_to_individual_cell_races() -> None:
+    successor, _ = _trained()
+    states = (-20, -7, 0, 12, 21, total.UNKNOWN)
+
+    batched_predictions, batched_races = successor.predict_many(states, "WRAP_ADD[2]")
+    individual = tuple(successor.predict(state, "WRAP_ADD[2]") for state in states)
+
+    assert batched_predictions == tuple(item[0] for item in individual)
+    assert batched_races == tuple(item[1] for item in individual)
+
+
 def test_unknown_has_no_downstream_target_coincidence() -> None:
     features, digest = total.coincidence_features(
         (total.UNKNOWN, 3, 4),

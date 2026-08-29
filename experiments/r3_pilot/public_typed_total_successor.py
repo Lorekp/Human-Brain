@@ -34,6 +34,10 @@ from experiments.r3_pilot.public_typed_sensorimotor_edit_controller import (  # 
     _drive_spike_mask,
 )
 from humanbrain.cells import AdaptiveGlifPopulation  # noqa: E402
+from humanbrain.resting_glif_race import (  # noqa: E402
+    CompiledRestingGlifRace,
+    RestingGlifRaceFailure,
+)
 
 
 class UnknownSuccessor(Enum):
@@ -61,6 +65,8 @@ _UNKNOWN_PROPAGATION_WEIGHT_PA = banked._SUCCESSOR_MAXIMUM_WEIGHT_PA
 _UNKNOWN_INPUT_CURRENT_PA = 5_000.0
 _COINCIDENCE_SCALE_PA = banked._COINCIDENCE_SCALE_PA
 _COINCIDENCE_LIMIT_PA = banked._COINCIDENCE_LIMIT_PA
+
+_BATCH_RACE = CompiledRestingGlifRace.compile(step_count=banked._RACE_STEPS)
 
 
 class TotalValueCellEncoder:
@@ -164,13 +170,46 @@ class FrozenTotalSuccessor:
         states: Sequence[SuccessorState],
         action: str,
     ) -> tuple[tuple[SuccessorState, ...], tuple[banked.CellRace, ...]]:
-        predictions: list[SuccessorState] = []
-        races: list[banked.CellRace] = []
-        for state in states:
-            predicted, race, _ = self.predict(state, action)
-            predictions.append(predicted)
-            races.append(race)
-        return tuple(predictions), tuple(races)
+        if action not in _ACTION_INDEX:
+            raise ValueError("successor action is outside the fixed motor bank")
+        materialized = tuple(states)
+        if not materialized:
+            return (), ()
+        before_sha = self.live_checkpoint_sha256
+        if before_sha != self.checkpoint_sha256:
+            raise RuntimeError("total successor checkpoint was mutated before prediction")
+        features = np.ascontiguousarray(
+            np.stack(tuple(TotalValueCellEncoder.encode(state) for state in materialized))
+        )
+        action_weights = self.weights_pa[_ACTION_INDEX[action]]
+        currents = np.ascontiguousarray(
+            self.bias_pa[None, :] + features @ action_weights.T
+        )
+        try:
+            compiled = _BATCH_RACE.race_many(currents)
+        except RestingGlifRaceFailure as error:
+            raise banked.CellRaceFailure(str(error)) from error
+        races = tuple(
+            banked.CellRace(
+                bank="total-successor-state",
+                candidates=STATE_LABELS,
+                currents_pa=tuple(float(value) for value in currents[row]),
+                winner_cell=result.winner_cell,
+                winner=STATE_LABELS[result.winner_cell],
+                spike_step=result.spike_step,
+                simultaneous_spike_candidates=result.simultaneous_spike_candidates,
+            )
+            for row, result in enumerate(compiled)
+        )
+        predictions = tuple(
+            UNKNOWN
+            if result.winner_cell == UNKNOWN_CELL
+            else banked.VALUE_MIN + result.winner_cell
+            for result in compiled
+        )
+        if self.live_checkpoint_sha256 != before_sha:
+            raise RuntimeError("frozen total successor changed during prediction")
+        return predictions, races
 
 
 @dataclass(frozen=True, slots=True)
