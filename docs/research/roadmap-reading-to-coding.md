@@ -422,6 +422,30 @@ the remaining ambiguity belongs to output-only terminal representation. The
 factorized planner must carry site/structure evidence into scoring; no fixed
 index tie-break or beam-constant tuning follows.
 
+The first uncertainty-driven extension then banked a narrower implementation
+boundary. It cached 58 first-candidate expansions and evaluated 634 terminal
+sequences across six physical races in 30.42 seconds. Crucially, expanding
+successive complete tiers resolved the earlier child-to-root ambiguity and
+selected the exact `(0,)::WRAP_ADD[1]` action with 6/6 coincidence. All three
+trajectories nevertheless stopped later because the variant enumerated every
+first-ply tier up front: after the physical STOP tier fired, unsupported
+negative-current candidates below that frontier never spiked within the fixed
+window. This is `STOP_TYPED_AST_HORIZON2_INT_ANYTIME`, banked without a retry.
+The next named mechanism ends admissible enumeration at the STOP tier while
+preserving complete simultaneous-spike tiers and uncertainty-driven expansion.
+
+The compiler-owned factorized H=1 root planner also reached its first honest
+information boundary. Its first two-Int arm scored all 212 compiler-valid
+actions through 636 unique target-free operator races, then stopped before the
+motor on a two-way 4,500 pA value tie: `subtract(SCOPE1,SELECTED)` and
+`subtract(SCOPE1,SCOPE0)`. Because the declared public `b` values are all
+nonnegative, selected `abs(b)` and scope `b` are observationally identical.
+This is `STOP_TYPED_FACTOR_H1_ROOT_VALUE_ALIAS`; the other three arms remained
+unrun, and no grid, incumbent, current, or candidate-bank tuning follows. The
+missing information is now explicit: execution score defines the leading
+physical tier, then generic prompt-derived operand/literal evidence must resolve
+only within that tier so lexical evidence can never override worse behavior.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
