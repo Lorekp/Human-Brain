@@ -22,6 +22,7 @@ import numpy as np
 from experiments.r3_pilot import public_typed_factor_h1_root as base_h1
 from experiments.r3_pilot import public_typed_factor_motor as factor_motor
 from experiments.r3_pilot import public_typed_factor_value_race as value_race
+from experiments.r3_pilot import public_typed_list_map_behavior as list_behavior
 from experiments.r3_pilot import public_typed_operator_successor as operator
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import public_typed_program_observation as root_observation
@@ -139,7 +140,7 @@ class FactorStateObservation:
 
     program_sha256: str | None
     signature: TypedSignature
-    cases: tuple[tuple[int, ...], ...]
+    cases: tuple[tuple[object, ...], ...]
     structure: structure.StructureObservation
     sites: tuple[FactorSiteValue, ...]
     root_scope_rows: tuple[tuple[output_cells.TypedOutputEncoding, ...], ...]
@@ -164,7 +165,7 @@ def _state_observation(
     *,
     program_sha256: str | None,
     signature: TypedSignature,
-    cases: tuple[tuple[int, ...], ...],
+    cases: tuple[tuple[object, ...], ...],
     observed_structure: structure.StructureObservation,
     sites: tuple[FactorSiteValue, ...],
     root_scope_rows: tuple[tuple[output_cells.TypedOutputEncoding, ...], ...],
@@ -239,6 +240,163 @@ class FactorBehaviorAdapter(Protocol):
     ) -> tuple[tuple[FactorSiteValue, ...], tuple[operator.OperatorRace, ...]]: ...
 
 
+@dataclass(frozen=True, slots=True)
+class FactorTerminalSequencePrediction:
+    """Final outputs supplied by a replaceable two-action behavior seam."""
+
+    first_action: tp.FactorAction
+    second_action: tp.FactorAction
+    outputs: tuple[output_cells.TypedOutputEncoding, ...]
+    races: tuple[object, ...]
+    supported: bool
+    checkpoint_before_sha256: str
+    checkpoint_after_sha256: str
+
+
+class FactorTerminalSequenceBehavior(Protocol):
+    checkpoint_sha256: str
+
+    @property
+    def live_checkpoint_sha256(self) -> str: ...
+
+    def predict(
+        self,
+        state: FactorStateObservation,
+        first_action: tp.FactorAction,
+        second_action: tp.FactorAction,
+    ) -> FactorTerminalSequencePrediction | None: ...
+
+
+def _list_terminal_checkpoint_sha256(list_sha256: str) -> str:
+    digest = sha256()
+    digest.update(b"public-typed-factor-h2-list-terminal-v1\0")
+    digest.update(list_sha256.encode("ascii"))
+    return digest.hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class FrozenListTerminalSequenceBehavior:
+    """Bridge factor sequences to bounded physical List[Int] behavior."""
+
+    list_map: list_behavior.FrozenListMapBehavior
+    checkpoint_sha256: str
+
+    @classmethod
+    def build(
+        cls,
+        list_map: list_behavior.FrozenListMapBehavior,
+    ) -> FrozenListTerminalSequenceBehavior:
+        if not isinstance(list_map, list_behavior.FrozenListMapBehavior):
+            raise TypeError("list terminal behavior needs FrozenListMapBehavior")
+        return cls(
+            list_map=list_map,
+            checkpoint_sha256=_list_terminal_checkpoint_sha256(
+                list_map.checkpoint_sha256
+            ),
+        )
+
+    @property
+    def live_checkpoint_sha256(self) -> str:
+        return _list_terminal_checkpoint_sha256(
+            self.list_map.live_checkpoint_sha256
+        )
+
+    @staticmethod
+    def _existing_identity_map(
+        state: FactorStateObservation,
+        body_action: tp.FactorAction,
+    ) -> tuple[tp.FactorAction, FactorSiteValue] | None:
+        if (
+            len(body_action.path) < 2
+            or body_action.path[-2:] != (0, 0)
+        ):
+            return None
+        map_path = body_action.path[:-2]
+        try:
+            mapped = state.site(map_path)
+            binder = state.site((*map_path, 0))
+            body = state.site(body_action.path)
+        except ValueError:
+            return None
+        if (
+            mapped.site.head_production != "map"
+            or binder.site.head_production != "bind"
+            or not binder.site.is_binder
+            or body.site.head_production != "variable-0"
+            or body.site.selected_scope_index != 0
+        ):
+            return None
+        return (
+            tp.FactorAction(
+                map_path,
+                "MAP_BIND",
+                "map",
+                "BOUND0",
+                "SELECTED",
+                None,
+            ),
+            mapped,
+        )
+
+    def predict(
+        self,
+        state: FactorStateObservation,
+        first_action: tp.FactorAction,
+        second_action: tp.FactorAction,
+    ) -> FactorTerminalSequencePrediction | None:
+        if not isinstance(state, FactorStateObservation):
+            raise TypeError("list terminal prediction needs a factor state")
+        if type(first_action) is not tp.FactorAction or type(second_action) is not tp.FactorAction:
+            raise TypeError("list terminal prediction needs FactorAction values")
+        before = self.live_checkpoint_sha256
+        if before != self.checkpoint_sha256:
+            raise RuntimeError("list terminal checkpoint changed before prediction")
+
+        map_action: tp.FactorAction
+        body_action: tp.FactorAction
+        selected: FactorSiteValue
+        if (
+            first_action.schema == "MAP_BIND"
+            and first_action.operator == "map"
+            and second_action.path == (*first_action.path, 0, 0)
+        ):
+            try:
+                selected = state.site(first_action.path)
+            except ValueError:
+                return None
+            if selected.site.head_production == "map":
+                return None
+            map_action = first_action
+            body_action = second_action
+        elif second_action == _DONE:
+            existing = self._existing_identity_map(state, first_action)
+            if existing is None:
+                return None
+            map_action, selected = existing
+            body_action = first_action
+        else:
+            return None
+
+        prediction = self.list_map.predict(
+            selected.outputs,
+            map_action,
+            body_action,
+            scope_rows=state.root_scope_rows,
+        )
+        after = self.live_checkpoint_sha256
+        if after != before:
+            raise RuntimeError("frozen list terminal behavior changed in prediction")
+        return FactorTerminalSequencePrediction(
+            first_action=first_action,
+            second_action=second_action,
+            outputs=prediction.outputs,
+            races=prediction.races,
+            supported=prediction.supported,
+            checkpoint_before_sha256=before,
+            checkpoint_after_sha256=after,
+        )
+
+
 def _behavior_checkpoint_sha256(operator_sha256: str) -> str:
     digest = sha256()
     digest.update(b"public-typed-factor-h2-int-behavior-v1\0")
@@ -257,7 +415,7 @@ def _inside_binder(state: FactorStateObservation, path: tuple[int, ...]) -> bool
 
 @dataclass(frozen=True, slots=True)
 class FrozenIntFactorBehaviorAdapter:
-    """Target-free learned operator effects plus bounded Int ancestor replay."""
+    """Target-free learned operator effects plus bounded scalar replay."""
 
     operator_successor: operator.FrozenTypedOperatorSuccessor
     checkpoint_sha256: str
@@ -275,23 +433,13 @@ class FrozenIntFactorBehaviorAdapter:
     ) -> FactorStateObservation:
         if not isinstance(program, tp.Program):
             raise TypeError("factor behavior observation requires a Program")
-        if (
-            base_h1._declared_output_type(program.signature.result)
-            is not output_cells.OutputType.INT
-        ):
-            raise ValueError("this behavior adapter supports Int-result programs only")
+        base_h1._declared_output_type(program.signature.result)
         current = root_observation.observe_current_program_root(program, cases)
         if not current.all_supported:
             raise ValueError("incumbent root observation must be physically supported")
         normalized_cases = tuple(
-            tuple(int(value) for value in row.arguments) for row in current.cases
+            tuple(value for value in row.arguments) for row in current.cases
         )
-        if not all(
-            type(value) is int
-            for row in current.cases
-            for value in row.arguments
-        ):
-            raise ValueError("Int H=2 observation requires only scalar Int cases")
         root_scopes = base_h1._scope_rows(program, current)
         edit_sites = {site.path: site for site in tp.program_edit_sites(program)}
         action_sites = tp.factor_action_sites(program)
@@ -793,11 +941,14 @@ class FactorH2Prediction:
     sequence: FactorH2Sequence
     first_transition: FactorStateTransition
     second_behavior: FactorBehaviorPrediction
+    terminal_behavior: FactorTerminalSequencePrediction | None
 
     @property
     def predicted_final_outputs(
         self,
     ) -> tuple[output_cells.TypedOutputEncoding, ...]:
+        if self.terminal_behavior is not None:
+            return self.terminal_behavior.outputs
         return self.second_behavior.root_outputs
 
 
@@ -1051,10 +1202,15 @@ class FactorH2Actuation:
     root_output_parity: bool
 
 
-def _planner_checkpoint_sha256(world_sha256: str, beam_width: int) -> str:
+def _planner_checkpoint_sha256(
+    world_sha256: str,
+    terminal_behavior_sha256: str,
+    beam_width: int,
+) -> str:
     digest = sha256()
     digest.update(b"public-typed-factor-horizon2-int-v1\0")
     digest.update(world_sha256.encode("ascii"))
+    digest.update(terminal_behavior_sha256.encode("ascii"))
     digest.update(np.asarray((beam_width,), dtype=np.int64).tobytes())
     digest.update(
         np.asarray(
@@ -1076,6 +1232,7 @@ def _planner_checkpoint_sha256(world_sha256: str, beam_width: int) -> str:
 @dataclass(frozen=True, slots=True)
 class FrozenFactorizedHorizon2Int:
     world: FrozenFactorH2WorldModel
+    terminal_behavior: FactorTerminalSequenceBehavior
     beam_width: int
     checkpoint_sha256: str
 
@@ -1083,6 +1240,7 @@ class FrozenFactorizedHorizon2Int:
     def live_checkpoint_sha256(self) -> str:
         return _planner_checkpoint_sha256(
             self.world.live_checkpoint_sha256,
+            self.terminal_behavior.live_checkpoint_sha256,
             self.beam_width,
         )
 
@@ -1183,7 +1341,12 @@ class FrozenFactorizedHorizon2Int:
                 final_cache[item.sequence] = transition
             final_transitions.append((cell, transition))
         structure_flags = tuple(
-            transition.supported for _, transition in final_transitions
+            transition.structure_prediction.supported
+            and all(
+                output.supported
+                for output in predictions[cell].predicted_final_outputs
+            )
+            for cell, transition in final_transitions
         )
         structure_currents = np.asarray(
             (
@@ -1254,9 +1417,12 @@ class FrozenFactorizedHorizon2Int:
         supplied_desired = tuple(desired_outputs)
         if len(supplied_desired) != len(observation.cases):
             raise ValueError("desired outputs must align with the observed cases")
-        desired = tuple(_encode("Int", value) for value in supplied_desired)
+        desired = tuple(
+            base_h1._encode_value(value, observation.signature.result)
+            for value in supplied_desired
+        )
         if not all(item.supported for item in desired):
-            raise ValueError("desired Int outputs must inhabit the physical bank")
+            raise ValueError("desired outputs must inhabit the signature result bank")
         candidate_actions = self.world.candidate_actions(observation)
 
         def done_decision() -> FactorizedH2Decision:
@@ -1310,12 +1476,25 @@ class FrozenFactorizedHorizon2Int:
             observation,
             candidate_actions,
         )
+        first_terminal_predictions = tuple(
+            self.terminal_behavior.predict(observation, action, _DONE)
+            for action in candidate_actions
+        )
         first_projection = value_race.FixedTypedFactorValueProjection.build(
             candidate_actions,
             desired,
         )
         first_features = first_projection.features(
-            tuple(item.root_outputs for item in first_predictions)
+            tuple(
+                prediction.root_outputs
+                if terminal is None
+                else terminal.outputs
+                for prediction, terminal in zip(
+                    first_predictions,
+                    first_terminal_predictions,
+                    strict=True,
+                )
+            )
         )
         first_currents = first_projection.tier_currents(first_features)
         first_selector = CompiledStopBoundedRestingGlifTiers.compile(
@@ -1376,6 +1555,11 @@ class FrozenFactorizedHorizon2Int:
                         sequence=FactorH2Sequence(first_action, second_action),
                         first_transition=first_transition,
                         second_behavior=second_prediction,
+                        terminal_behavior=self.terminal_behavior.predict(
+                            observation,
+                            first_action,
+                            second_action,
+                        ),
                     )
                     for second_action, second_prediction in zip(
                         second_actions,
@@ -1497,9 +1681,20 @@ class FrozenFactorizedHorizon2Int:
         predicted = decision.selected_first_transition.predicted
         structure_parity = observed.structure.paths == predicted.structure.paths
         action_site_parity = observed.action_sites == predicted.action_sites
+        expected_root_outputs = predicted.root_outputs
+        if (
+            decision.selected_sequence is not None
+            and decision.selected_sequence.second == _DONE
+            and decision.selected_sequence_cell is not None
+        ):
+            terminal = decision.predictions[
+                decision.selected_sequence_cell
+            ].terminal_behavior
+            if terminal is not None:
+                expected_root_outputs = terminal.outputs
         root_output_parity = tuple(
             item.sha256 for item in observed.root_outputs
-        ) == tuple(item.sha256 for item in predicted.root_outputs)
+        ) == tuple(item.sha256 for item in expected_root_outputs)
         if not (structure_parity and action_site_parity and root_output_parity):
             raise RuntimeError("first learned transition differs from real reobservation")
         return FactorH2Actuation(
@@ -1530,6 +1725,9 @@ def build_public_factorized_horizon2_int(
         operator_successor=operator_model,
         checkpoint_sha256=behavior_checkpoint,
     )
+    terminal_behavior = FrozenListTerminalSequenceBehavior.build(
+        list_behavior.FrozenListMapBehavior.build(operator_model)
+    )
     world_checkpoint = _world_checkpoint_sha256(
         behavior.checkpoint_sha256,
         structure_model.checkpoint_sha256,
@@ -1543,8 +1741,13 @@ def build_public_factorized_horizon2_int(
     )
     return FrozenFactorizedHorizon2Int(
         world=world,
+        terminal_behavior=terminal_behavior,
         beam_width=BEAM_WIDTH,
-        checkpoint_sha256=_planner_checkpoint_sha256(world_checkpoint, BEAM_WIDTH),
+        checkpoint_sha256=_planner_checkpoint_sha256(
+            world_checkpoint,
+            terminal_behavior.checkpoint_sha256,
+            BEAM_WIDTH,
+        ),
     )
 
 
@@ -1560,10 +1763,13 @@ __all__ = [
     "FactorSiteValue",
     "FactorStateObservation",
     "FactorStateTransition",
+    "FactorTerminalSequenceBehavior",
+    "FactorTerminalSequencePrediction",
     "FactorizedH2Decision",
     "FixedFactorSequenceValueProjection",
     "FrozenFactorH2WorldModel",
     "FrozenFactorizedHorizon2Int",
     "FrozenIntFactorBehaviorAdapter",
+    "FrozenListTerminalSequenceBehavior",
     "build_public_factorized_horizon2_int",
 ]
