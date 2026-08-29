@@ -135,6 +135,8 @@ class AnytimeV2Decision:
     second_ply_transition_expansions: int
     unique_terminal_sequences: int
     terminal_sequence_evaluations: int
+    world_checkpoint_before_sha256: str
+    world_checkpoint_after_sha256: str
 
 
 def plan_site_action_h2_anytime_v2(
@@ -152,6 +154,7 @@ def plan_site_action_h2_anytime_v2(
     if model.live_checkpoint_sha256 != checkpoint_before:
         raise RuntimeError("AST world-model checkpoint changed during tier enumeration")
     if first_ply.status == STOP_ALL_UNKNOWN:
+        checkpoint_after = model.live_checkpoint_sha256
         return AnytimeV2Decision(
             status=STOP_ALL_UNKNOWN,
             error=STOP_ALL_UNKNOWN,
@@ -162,6 +165,8 @@ def plan_site_action_h2_anytime_v2(
             second_ply_transition_expansions=0,
             unique_terminal_sequences=0,
             terminal_sequence_evaluations=0,
+            world_checkpoint_before_sha256=checkpoint_before,
+            world_checkpoint_after_sha256=checkpoint_after,
         )
 
     cache: dict[int, tuple[h2.Horizon2Prediction, ...]] = {}
@@ -194,6 +199,9 @@ def plan_site_action_h2_anytime_v2(
         )
         attempts.append(attempt)
         if terminal is not None:
+            checkpoint_after = model.live_checkpoint_sha256
+            if checkpoint_after != checkpoint_before:
+                raise RuntimeError("AST world-model checkpoint changed during anytime V2 selection")
             return AnytimeV2Decision(
                 status="SELECTED",
                 error=None,
@@ -206,11 +214,14 @@ def plan_site_action_h2_anytime_v2(
                 terminal_sequence_evaluations=sum(
                     recorded.sequence_count for recorded in attempts
                 ),
+                world_checkpoint_before_sha256=checkpoint_before,
+                world_checkpoint_after_sha256=checkpoint_after,
             )
 
     if model.live_checkpoint_sha256 != checkpoint_before:
         raise RuntimeError("AST world-model checkpoint changed during anytime V2")
     if len(cache) < BEAM_WIDTH:
+        checkpoint_after = model.live_checkpoint_sha256
         return AnytimeV2Decision(
             status=STOP_INSUFFICIENT_ADMISSIBLE,
             error=(
@@ -226,6 +237,8 @@ def plan_site_action_h2_anytime_v2(
             terminal_sequence_evaluations=sum(
                 recorded.sequence_count for recorded in attempts
             ),
+            world_checkpoint_before_sha256=checkpoint_before,
+            world_checkpoint_after_sha256=checkpoint_after,
         )
     if len(cache) != len(first_ply.tiers.admissible_candidate_cells):
         raise RuntimeError("anytime V2 did not consume every admissible candidate")
@@ -234,6 +247,7 @@ def plan_site_action_h2_anytime_v2(
     last_error = "terminal uncertainty remained at the physical STOP frontier"
     if attempts and attempts[-1].error is not None:
         last_error = attempts[-1].error
+    checkpoint_after = model.live_checkpoint_sha256
     return AnytimeV2Decision(
         status=STOP_ADMISSIBLE_EXHAUSTED,
         error=last_error,
@@ -246,6 +260,8 @@ def plan_site_action_h2_anytime_v2(
         terminal_sequence_evaluations=sum(
             recorded.sequence_count for recorded in attempts
         ),
+        world_checkpoint_before_sha256=checkpoint_before,
+        world_checkpoint_after_sha256=checkpoint_after,
     )
 
 
@@ -311,7 +327,6 @@ def run_public_task(
     model: world.FrozenAstWorldModel,
     task: h2.PublicHorizon2Task,
 ) -> AnytimeV2TaskResult:
-    h2._validate_public_target(task)
     program = tp.Program(task.incumbent_tokens, site.visible_scalar_signature())
     actual_decisions: list[tuple[tuple[int, ...], str]] = []
     plans: list[AnytimeV2PlanRecord] = []
@@ -395,6 +410,7 @@ def run_public_task(
         raise RuntimeError("anytime V2 runner lost scalar final outputs")
     actual = tuple(actual_decisions)
     checkpoint_immutable = checkpoint_before == model.live_checkpoint_sha256
+    h2._validate_public_target(task)
     passed = (
         error is None
         and actual == task.expected_decisions

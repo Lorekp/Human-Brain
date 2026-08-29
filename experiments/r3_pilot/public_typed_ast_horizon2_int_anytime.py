@@ -346,6 +346,8 @@ class AnytimeHorizon2Decision:
     second_ply_transition_expansions: int
     unique_terminal_sequences: int
     terminal_sequence_evaluations: int
+    world_checkpoint_before_sha256: str
+    world_checkpoint_after_sha256: str
 
 
 def plan_site_action_h2_anytime(
@@ -361,6 +363,9 @@ def plan_site_action_h2_anytime(
         raise RuntimeError("AST world-model checkpoint changed before anytime planning")
     first_ply = _enumerate_first_ply_tiers(model, observation, desired)
     if first_ply.status != RETAINED or first_ply.tier_beam is None:
+        checkpoint_after = model.live_checkpoint_sha256
+        if checkpoint_after != checkpoint_before:
+            raise RuntimeError("AST world-model checkpoint changed during anytime STOP")
         return AnytimeHorizon2Decision(
             status=first_ply.status,
             error=first_ply.error,
@@ -371,6 +376,8 @@ def plan_site_action_h2_anytime(
             second_ply_transition_expansions=0,
             unique_terminal_sequences=0,
             terminal_sequence_evaluations=0,
+            world_checkpoint_before_sha256=checkpoint_before,
+            world_checkpoint_after_sha256=checkpoint_after,
         )
 
     cache: dict[int, tuple[h2.Horizon2Prediction, ...]] = {}
@@ -398,6 +405,9 @@ def plan_site_action_h2_anytime(
         )
         attempts.append(attempt)
         if terminal is not None:
+            checkpoint_after = model.live_checkpoint_sha256
+            if checkpoint_after != checkpoint_before:
+                raise RuntimeError("AST world-model checkpoint changed during anytime selection")
             return AnytimeHorizon2Decision(
                 status="SELECTED",
                 error=None,
@@ -410,6 +420,8 @@ def plan_site_action_h2_anytime(
                 terminal_sequence_evaluations=sum(
                     recorded.sequence_count for recorded in attempts
                 ),
+                world_checkpoint_before_sha256=checkpoint_before,
+                world_checkpoint_after_sha256=checkpoint_after,
             )
 
     if len(cache) != len(first_ply.predictions):
@@ -419,6 +431,9 @@ def plan_site_action_h2_anytime(
     last_error = "anytime terminal scoring exhausted all physical first-ply tiers"
     if attempts and attempts[-1].error is not None:
         last_error = attempts[-1].error
+    checkpoint_after = model.live_checkpoint_sha256
+    if checkpoint_after != checkpoint_before:
+        raise RuntimeError("AST world-model checkpoint changed during anytime exhaustion")
     return AnytimeHorizon2Decision(
         status=STOP_ANYTIME_EXHAUSTED,
         error=last_error,
@@ -431,6 +446,8 @@ def plan_site_action_h2_anytime(
         terminal_sequence_evaluations=sum(
             recorded.sequence_count for recorded in attempts
         ),
+        world_checkpoint_before_sha256=checkpoint_before,
+        world_checkpoint_after_sha256=checkpoint_after,
     )
 
 
@@ -491,7 +508,6 @@ def run_public_task(
     model: world.FrozenAstWorldModel,
     task: h2.PublicHorizon2Task,
 ) -> AnytimePublicTaskResult:
-    h2._validate_public_target(task)
     program = tp.Program(task.incumbent_tokens, site.visible_scalar_signature())
     actual_decisions: list[tuple[tuple[int, ...], str]] = []
     plans: list[AnytimePlanRecord] = []
@@ -571,6 +587,7 @@ def run_public_task(
         raise RuntimeError("anytime H=2 runner lost scalar final outputs")
     actual = tuple(actual_decisions)
     checkpoint_immutable = checkpoint_before == model.live_checkpoint_sha256
+    h2._validate_public_target(task)
     passed = (
         error is None
         and actual == task.expected_decisions

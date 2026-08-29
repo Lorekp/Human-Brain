@@ -1,0 +1,48 @@
+{
+  "schema": "public-typed-ast-horizon2-int-anytime-v2-banked-pass",
+  "source_commit": "fc4e82d",
+  "verdict": "PASS_TYPED_AST_HORIZON2_INT_ANYTIME_V2",
+  "passed_tasks": 3,
+  "total_tasks": 3,
+  "first_predictions_scored": 252,
+  "admissible_first_candidates": 198,
+  "excluded_first_candidates": 54,
+  "first_ply_tiers_enumerated": 41,
+  "first_ply_tiers_consumed": 22,
+  "first_candidates_expanded": 81,
+  "second_ply_transition_expansions": 730,
+  "unique_terminal_sequences": 738,
+  "terminal_sequence_evaluations": 828,
+  "terminal_race_attempts": 11,
+  "wall_time_seconds": 41.1713905,
+  "tasks": [
+    {
+      "name": "absolute-then-add",
+      "actual_decisions": [[[], "WRAP_ABS"], [[], "WRAP_ADD[1]"], [[], "DONE"]],
+      "plans": [
+        {"first": 10, "admissible": 10, "excluded": 0, "tiers_used": 2, "expanded_first": 10, "expanded_second": 90, "unique_sequences": 91, "sequence_evaluations": 91, "attempts": 1},
+        {"first": 19, "admissible": 19, "excluded": 0, "tiers_used": 4, "expanded_first": 19, "expanded_second": 180, "unique_sequences": 181, "sequence_evaluations": 181, "attempts": 1},
+        {"first": 37, "admissible": 28, "excluded": 9, "tiers_used": 1, "expanded_first": 4, "expanded_second": 30, "unique_sequences": 31, "sequence_evaluations": 31, "attempts": 1}
+      ]
+    },
+    {
+      "name": "add-then-absolute",
+      "actual_decisions": [[[], "WRAP_ADD[1]"], [[], "WRAP_ABS"], [[], "DONE"]],
+      "plans": [
+        {"first": 10, "admissible": 10, "excluded": 0, "tiers_used": 2, "expanded_first": 10, "expanded_second": 90, "unique_sequences": 91, "sequence_evaluations": 91, "attempts": 1},
+        {"first": 28, "admissible": 19, "excluded": 9, "tiers_used": 3, "expanded_first": 5, "expanded_second": 40, "unique_sequences": 41, "sequence_evaluations": 41, "attempts": 1},
+        {"first": 37, "admissible": 28, "excluded": 9, "tiers_used": 2, "expanded_first": 4, "expanded_second": 30, "unique_sequences": 31, "sequence_evaluations": 31, "attempts": 1}
+      ]
+    },
+    {
+      "name": "child-then-root-replan",
+      "actual_decisions": [[[0], "WRAP_ADD[1]"], [[], "WRAP_ADD[2]"], [[], "DONE"]],
+      "plans": [
+        {"first": 19, "admissible": 19, "excluded": 0, "tiers_used": 4, "expanded_first": 19, "expanded_second": 180, "unique_sequences": 181, "sequence_evaluations": 271, "attempts": 3},
+        {"first": 37, "admissible": 28, "excluded": 9, "tiers_used": 3, "expanded_first": 6, "expanded_second": 60, "unique_sequences": 60, "sequence_evaluations": 60, "attempts": 1},
+        {"first": 55, "admissible": 37, "excluded": 18, "tiers_used": 1, "expanded_first": 4, "expanded_second": 30, "unique_sequences": 31, "sequence_evaluations": 31, "attempts": 1}
+      ]
+    }
+  ],
+  "claim_boundary": "Sole visible public Int run. Complete physical tiers through STOP, cached learned second plies, no host top-k/ranking or candidate execution. Not Bool/List, fresh/sealed transfer, Simple-SWE, M0, held-out, C1, or broad coding evidence."
+}

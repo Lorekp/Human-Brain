@@ -1,0 +1,41 @@
+{
+  "schema": "public-typed-ast-horizon2-int-anytime-v1-banked-stop",
+  "source_commit": "d3af779",
+  "verdict": "STOP_TYPED_AST_HORIZON2_INT_ANYTIME",
+  "passed_tasks": 0,
+  "total_tasks": 3,
+  "first_predictions_scored": 160,
+  "first_candidates_expanded": 58,
+  "second_ply_transition_expansions": 540,
+  "unique_terminal_sequences": 544,
+  "terminal_sequence_evaluations": 634,
+  "terminal_race_attempts": 6,
+  "first_ply_tiers_consumed": 12,
+  "wall_time_seconds": 30.418630200001644,
+  "tasks": [
+    {
+      "name": "absolute-then-add",
+      "actual_decision_prefix": [
+        [[], "WRAP_ABS"],
+        [[], "WRAP_ADD[1]"]
+      ],
+      "stop": "STOP_FIRST_PLY_TIER_ENUMERATION"
+    },
+    {
+      "name": "add-then-absolute",
+      "actual_decision_prefix": [
+        [[], "WRAP_ADD[1]"]
+      ],
+      "stop": "STOP_FIRST_PLY_TIER_ENUMERATION"
+    },
+    {
+      "name": "child-then-root-replan",
+      "actual_decision_prefix": [
+        [[0], "WRAP_ADD[1]"]
+      ],
+      "stop": "STOP_FIRST_PLY_TIER_ENUMERATION"
+    }
+  ],
+  "stop_reason": "After the physical STOP tier fired, full enumeration waited for below-STOP negative-current candidates that did not spike within 600 steps.",
+  "claim_boundary": "Public visible Int development only; no Bool/List, fresh/sealed, Simple-SWE, M0, held-out, or C1 data. This ledger was reconstructed from the retained sole-run output without rerunning the spent matrix."
+}

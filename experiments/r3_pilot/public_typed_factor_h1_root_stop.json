@@ -1,0 +1,23 @@
+{
+  "schema": "public-typed-factor-h1-root-v1-banked-stop",
+  "source_commit": "d3af779",
+  "verdict": "STOP_TYPED_FACTOR_H1_ROOT_VALUE_ALIAS",
+  "attempted_tasks": 1,
+  "planned_tasks": 4,
+  "candidate_count": 212,
+  "operator_predictions": 636,
+  "physical_operator_races": 1257,
+  "operator_races_unique": true,
+  "value_tie": [
+    {"candidate_cell": 73, "action": "subtract(SCOPE1,SELECTED)", "current_pa": 4500.0},
+    {"candidate_cell": 74, "action": "subtract(SCOPE1,SCOPE0)", "current_pa": 4500.0}
+  ],
+  "stop_current_pa": 650.0,
+  "structure_prediction_calls": 0,
+  "motor_ran": false,
+  "actuation_ran": false,
+  "checkpoint_immutable": true,
+  "remaining_tasks_unrun": 3,
+  "stop_reason": "The public b values 2, 4, and 5 make selected abs(b) observationally identical to scope b.",
+  "claim_boundary": "Visible public root-development arm only. No grid, incumbent, current, bank, or tie-policy tuning; no protected, M0, held-out, or C1 data."
+}

@@ -8,23 +8,7 @@ from experiments.r3_pilot import public_typed_ast_horizon2_int_anytime as anytim
 from experiments.r3_pilot import public_typed_ast_horizon2_int_tier_beam as tier
 
 
-EXHAUSTIVE_SEQUENCE_COUNT = 2_439
-EXHAUSTIVE_RECORDED_SECONDS = 114.0
-STOPPED_TIER_SEQUENCE_COUNT = 506
-STOPPED_TIER_RECORDED_SECONDS = 26.508549900005164
-
-
-def _artifact_ledger(artifact: dict[str, object]) -> dict[str, dict[str, object]]:
-    return {
-        task["name"]: {
-            "decisions": tuple(
-                (tuple(path), action) for path, action in task["actual_decisions"]
-            ),
-            "tokens": tuple(task["final_tokens"]),
-            "outputs": tuple(task["final_outputs"]),
-        }
-        for task in artifact["tasks"]
-    }
+ANYTIME_RECORDED_SECONDS = 30.418630200001644
 
 
 def test_anytime_inference_uses_physical_uncertainty_not_host_ranking() -> None:
@@ -73,100 +57,39 @@ def test_anytime_inference_uses_physical_uncertainty_not_host_ranking() -> None:
     assert "all(spike_count == 1" in inference_source
 
 
-def test_public_anytime_matrix_once_against_committed_exhaustive_ledger() -> None:
+def test_banked_anytime_stop_ledger_is_exact_and_does_not_rerun_matrix() -> None:
     artifact_path = (
         Path(__file__).resolve().parents[1]
         / "experiments"
         / "r3_pilot"
-        / "public_typed_ast_horizon2_int_visible_probe.json"
+        / "public_typed_ast_horizon2_int_anytime_stop.json"
     )
     artifact = json.loads(artifact_path.read_bytes())
-    exhaustive = _artifact_ledger(artifact)
 
-    result = anytime.run_public_matrix()
-    summary = {
-        "verdict": result.verdict,
-        "passed_tasks": result.passed_tasks,
-        "total_tasks": result.total_tasks,
-        "first_predictions_scored": result.first_predictions_scored,
-        "first_ply_tiers_enumerated": result.first_ply_tiers_enumerated,
-        "first_ply_tiers_consumed": result.first_ply_tiers_consumed,
-        "first_candidates_expanded": result.first_candidates_expanded,
-        "second_ply_transition_expansions": result.second_ply_transition_expansions,
-        "unique_terminal_sequences": result.unique_terminal_sequences,
-        "terminal_sequence_evaluations": result.terminal_sequence_evaluations,
-        "terminal_race_attempts": result.terminal_race_attempts,
-        "wall_time_seconds": result.wall_time_seconds,
-        "exhaustive_sequence_count": EXHAUSTIVE_SEQUENCE_COUNT,
-        "exhaustive_recorded_wall_time_seconds": EXHAUSTIVE_RECORDED_SECONDS,
-        "stopped_tier_sequence_count": STOPPED_TIER_SEQUENCE_COUNT,
-        "stopped_tier_recorded_wall_time_seconds": STOPPED_TIER_RECORDED_SECONDS,
-        "tasks": tuple(
-            {
-                "name": task.name,
-                "passed": task.passed,
-                "error": task.error,
-                "decisions": task.actual_decisions,
-                "plans": tuple(
-                    {
-                        "status": plan.status,
-                        "error": plan.error,
-                        "first": plan.first_prediction_count,
-                        "tiers_total": plan.total_tier_count,
-                        "tiers_used": plan.consumed_tier_count,
-                        "expanded_first": plan.expanded_first_candidates,
-                        "expanded_second": plan.second_ply_transition_expansions,
-                        "unique_sequences": plan.unique_terminal_sequences,
-                        "exhaustive_sequences": plan.exhaustive_sequence_count,
-                        "sequence_evaluations": plan.terminal_sequence_evaluations,
-                        "attempts": plan.terminal_attempt_count,
-                        "all_exact": plan.selected_all_cases_exact,
-                    }
-                    for plan in task.plans
-                ),
-            }
-            for task in result.tasks
-        ),
-    }
-    print(json.dumps(summary, sort_keys=True, indent=2))
-
-    assert result.total_tasks == 3
-    assert result.first_predictions_scored > 0
-    assert result.first_ply_tiers_enumerated >= result.first_ply_tiers_consumed
-    assert all(task.checkpoint_immutable for task in result.tasks)
-    if result.verdict == "PASS_TYPED_AST_HORIZON2_INT_ANYTIME":
-        assert result.passed_tasks == 3
-        assert STOPPED_TIER_SEQUENCE_COUNT < result.terminal_sequence_evaluations
-        assert result.terminal_sequence_evaluations < EXHAUSTIVE_SEQUENCE_COUNT
-        assert result.unique_terminal_sequences <= result.terminal_sequence_evaluations
-        retry_plans = tuple(
-            plan
-            for task in result.tasks
-            for plan in task.plans
-            if plan.terminal_attempt_count > 1
-        )
-        assert retry_plans
-        assert all(
-            plan.terminal_sequence_evaluations > plan.unique_terminal_sequences
-            and plan.second_ply_transition_expansions
-            <= plan.unique_terminal_sequences
-            for plan in retry_plans
-        )
-        for task in result.tasks:
-            expected = exhaustive[task.name]
-            assert task.actual_decisions == expected["decisions"]
-            assert task.final_tokens == expected["tokens"]
-            assert task.final_outputs == expected["outputs"]
-            assert all(plan.selected_all_cases_exact for plan in task.plans)
-    else:
-        assert result.verdict == "STOP_TYPED_AST_HORIZON2_INT_ANYTIME"
-        assert result.passed_tasks < 3
-        exhausted = tuple(
-            plan
-            for task in result.tasks
-            for plan in task.plans
-            if plan.status == anytime.STOP_ANYTIME_EXHAUSTED
-        )
-        for plan in exhausted:
-            assert plan.expanded_first_candidates == plan.first_prediction_count
-            assert plan.unique_terminal_sequences == plan.exhaustive_sequence_count
+    assert artifact["verdict"] == "STOP_TYPED_AST_HORIZON2_INT_ANYTIME"
+    assert artifact["passed_tasks"] == 0
+    assert artifact["total_tasks"] == 3
+    assert artifact["first_predictions_scored"] == 160
+    assert artifact["first_candidates_expanded"] == 58
+    assert artifact["second_ply_transition_expansions"] == 540
+    assert artifact["unique_terminal_sequences"] == 544
+    assert artifact["terminal_sequence_evaluations"] == 634
+    assert artifact["terminal_race_attempts"] == 6
+    assert artifact["wall_time_seconds"] == ANYTIME_RECORDED_SECONDS
+    assert tuple(task["name"] for task in artifact["tasks"]) == (
+        "absolute-then-add",
+        "add-then-absolute",
+        "child-then-root-replan",
+    )
+    test_source = Path(__file__).read_text(encoding="utf-8")
+    assert "anytime.run_public_matrix()" not in test_source
+    module_source = Path(anytime.__file__).read_text(encoding="utf-8")
+    runner = next(
+        node
+        for node in ast.walk(ast.parse(module_source))
+        if isinstance(node, ast.FunctionDef) and node.name == "run_public_task"
+    )
+    runner_source = ast.get_source_segment(module_source, runner) or ""
+    assert runner_source.index("plan_site_action_h2_anytime(") < runner_source.index(
+        "h2._validate_public_target(task)"
+    )

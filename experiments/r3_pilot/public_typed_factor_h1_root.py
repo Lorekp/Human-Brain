@@ -1,9 +1,9 @@
 """Integrated physical H=1 factor planner for one typed root edit.
 
-The incumbent alone is compiled and observed.  Every compiler-valid factor
+The incumbent alone is compiled and observed.  Every compiler-valid root
 action receives a target-free operator-successor prediction and remains in the
-fixed value race; non-root actions receive physical typed UNKNOWN at this
-root-only boundary.  The expensive structural successor runs exactly once,
+fixed value race; non-root actions receive physical typed UNKNOWN without an
+invalid root-value prediction.  The expensive structural successor runs once,
 after the unique value winner has passed through all six motor races.  Only
 that structurally supported motor decision may reach the sole actuator.
 """
@@ -28,7 +28,7 @@ from humanbrain.typed_program_types import ProgramType
 
 
 PUBLIC_TWO_INT_CASES = ((7, 2), (-3, 4), (5, 5))
-PUBLIC_BOOL_CASES = ((-1,), (2,), (4,))
+PUBLIC_BOOL_CASES = ((-3,), (0,), (2,), (5,))
 PUBLIC_LITERAL_BANK = tuple(range(-4, 5))
 
 STATUS_SELECTED = "SELECTED"
@@ -238,18 +238,24 @@ class FrozenTypedFactorH1Root:
         unknown_root = _typed_unknown(declared_root)
         candidate_predictions: list[CandidateValuePrediction] = []
         scored_rows: list[tuple[output_cells.TypedOutputEncoding, ...]] = []
-        for action in candidate_bank.actions:
-            effects = self.operator_successor.predict_many(
+        root_actions = tuple(
+            action for action in candidate_bank.actions if action.path == ()
+        )
+        root_effect_rows = iter(
+            self.operator_successor.predict_actions_many(
                 selected_rows,
-                action,
+                root_actions,
                 scope_rows=scopes,
             )
+        )
+        for action in candidate_bank.actions:
             root_supported = action.path == ()
-            scored = (
-                tuple(effect.output for effect in effects)
-                if root_supported
-                else (unknown_root,) * len(effects)
-            )
+            if root_supported:
+                effects = next(root_effect_rows)
+                scored = tuple(effect.output for effect in effects)
+            else:
+                effects = ()
+                scored = (unknown_root,) * len(selected_rows)
             candidate_predictions.append(
                 CandidateValuePrediction(
                     action=action,
