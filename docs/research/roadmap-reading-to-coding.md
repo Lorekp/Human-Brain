@@ -402,6 +402,15 @@ runtime optimization. `PASS_TYPED_AST_HORIZON2_INT` does not establish an
 arbitrary hypothetical second site, Bool/List, fresh/sealed transfer, M0,
 Simple-SWE, held-out, or C1 evidence.
 
+The first B=4 runtime variant then stopped before second-ply expansion. It
+scored 39 first candidates in 2.44 seconds, but fixed intermediate-value
+currents gave nine simultaneous beam spikes on both one-site tasks and a
+two-cell preliminary value-race tie on the site-change task. No candidate was
+retained or expanded. This is `STOP_TYPED_AST_HORIZON2_INT_BEAM`, banked without
+changing B, currents, weights, or ordering. It localizes the next speed layer to
+a tie-safe physical candidate representation; it does not invalidate the
+exhaustive H=2 pass or license a host top-k shortcut.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /
