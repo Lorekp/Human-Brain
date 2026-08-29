@@ -1104,7 +1104,7 @@ class FactorH2TerminalAttempt:
     final_structure_supported: tuple[bool, ...]
     structure_tier: RestingGlifTierBeamResult | None
     structure_leading_sequence_cells: tuple[int, ...]
-    prompt_decision: prompt_factors.PromptBindingProjectionDecision | None
+    prompt_decision: prompt_factors.PromptSequenceProjectionDecision | None
     prompt_sequence_currents_pa: tuple[float, ...]
     prompt_race: RestingGlifRaceResult | None
     selected_sequence_cell: int | None
@@ -1119,41 +1119,52 @@ class _TerminalResolution:
     final_transitions: tuple[tuple[int, FactorStateTransition], ...]
 
 
+def _prompt_selected_source(
+    state: FactorStateObservation,
+    action: tp.FactorAction,
+) -> str | None:
+    if action.schema == "DONE":
+        return None
+    selected_index = state.site(action.path).site.selected_scope_index
+    return None if selected_index is None else f"SCOPE{selected_index}"
+
+
 def _prompt_sequence_race(
     predictions: tuple[FactorH2Prediction, ...],
     leading_cells: tuple[int, ...],
     prompt: str,
-    signature: TypedSignature,
+    observation: FactorStateObservation,
 ) -> tuple[
-    prompt_factors.PromptBindingProjectionDecision,
+    prompt_factors.PromptSequenceProjectionDecision,
     tuple[float, ...],
     RestingGlifRaceResult,
     int | None,
 ]:
-    actions: list[tp.FactorAction] = []
-    for cell in leading_cells:
-        sequence = predictions[cell].sequence
-        for action in (sequence.first, sequence.second):
-            if action not in actions:
-                actions.append(action)
-    projection = prompt_factors.FixedPromptBindingProjection.build(tuple(actions))
-    decision = projection.project(prompt, signature)
-    action_index = {action: index for index, action in enumerate(actions)}
-    currents: list[float] = []
-    for cell in leading_cells:
-        sequence = predictions[cell].sequence
-        sequence_actions = (
-            (sequence.first,)
-            if sequence.first == sequence.second
-            else (sequence.first, sequence.second)
+    evidence = tuple(
+        prompt_factors.PromptSequenceEvidence(
+            first_action=predictions[cell].sequence.first,
+            first_selected_source=_prompt_selected_source(
+                observation,
+                predictions[cell].sequence.first,
+            ),
+            second_action=predictions[cell].sequence.second,
+            second_selected_source=_prompt_selected_source(
+                predictions[cell].first_transition.predicted,
+                predictions[cell].sequence.second,
+            ),
         )
-        currents.append(
-            sum(
-                decision.action_currents_pa[action_index[action]]
-                for action in sequence_actions
-            )
+        for cell in leading_cells
+    )
+    projection = prompt_factors.FixedPromptSequenceProjection.build(evidence)
+    decision = projection.project(prompt, observation.signature)
+    if len(decision.sequence_currents_pa) != len(leading_cells):
+        raise RuntimeError(
+            "prompt sequence projection lost leading-cell alignment"
         )
-    physical_currents = (*currents, _PROMPT_STOP_CURRENT_PA)
+    physical_currents = (
+        *decision.sequence_currents_pa,
+        _PROMPT_STOP_CURRENT_PA,
+    )
     race = _PROMPT_RACE.race_many(
         np.asarray((physical_currents,), dtype=np.float64)
     )[0]
@@ -1208,7 +1219,7 @@ def _planner_checkpoint_sha256(
     beam_width: int,
 ) -> str:
     digest = sha256()
-    digest.update(b"public-typed-factor-horizon2-int-v1\0")
+    digest.update(b"public-typed-factor-horizon2-int-v2\0")
     digest.update(world_sha256.encode("ascii"))
     digest.update(terminal_behavior_sha256.encode("ascii"))
     digest.update(np.asarray((beam_width,), dtype=np.int64).tobytes())
@@ -1257,6 +1268,7 @@ class FrozenFactorizedHorizon2Int:
         expanded_first_cells: tuple[int, ...],
         desired: tuple[output_cells.TypedOutputEncoding, ...],
         prompt: str,
+        observation: FactorStateObservation,
         final_cache: dict[FactorH2Sequence, FactorStateTransition],
     ) -> _TerminalResolution:
         sequences = tuple(item.sequence for item in predictions)
@@ -1270,7 +1282,7 @@ class FrozenFactorizedHorizon2Int:
         structure_flags: tuple[bool, ...] = ()
         structure_tier: RestingGlifTierBeamResult | None = None
         structure_leading: tuple[int, ...] = ()
-        prompt_decision: prompt_factors.PromptBindingProjectionDecision | None = None
+        prompt_decision: prompt_factors.PromptSequenceProjectionDecision | None = None
         prompt_currents: tuple[float, ...] = ()
         prompt_race: RestingGlifRaceResult | None = None
         final_transitions: list[tuple[int, FactorStateTransition]] = []
@@ -1387,7 +1399,7 @@ class FrozenFactorizedHorizon2Int:
                 predictions,
                 structure_leading,
                 prompt,
-                predictions[0].first_transition.predicted.signature,
+                observation,
             )
         except (RestingGlifRaceFailure, RuntimeError) as error:
             return finish(selected=None, retryable=False, reason=str(error))
@@ -1578,6 +1590,7 @@ class FrozenFactorizedHorizon2Int:
                 tuple(expanded_cells),
                 desired,
                 prompt,
+                observation,
                 final_cache,
             )
             attempts.append(resolution.attempt)

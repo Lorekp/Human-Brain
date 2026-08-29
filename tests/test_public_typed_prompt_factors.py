@@ -33,6 +33,50 @@ BINDING_ACTIONS = (
     X_LESS_3,
 )
 
+ABS_LEFT_SEQUENCE = factors.PromptSequenceEvidence(
+    first_action=FactorAction(
+        (), "APPLY2", "subtract", "SELECTED", "SCOPE0", None
+    ),
+    first_selected_source="SCOPE1",
+    second_action=FactorAction(
+        (0,), "APPLY1", "absolute", "SELECTED", "NONE", None
+    ),
+    second_selected_source="SCOPE1",
+)
+ABS_RIGHT_SEQUENCE = factors.PromptSequenceEvidence(
+    first_action=FactorAction(
+        (), "APPLY2", "subtract", "SCOPE1", "SELECTED", None
+    ),
+    first_selected_source="SCOPE0",
+    second_action=FactorAction(
+        (1,), "APPLY1", "absolute", "SELECTED", "NONE", None
+    ),
+    second_selected_source="SCOPE0",
+)
+FLAT_SUBTRACT_SEQUENCE = factors.PromptSequenceEvidence(
+    first_action=A_MINUS_B,
+    first_selected_source=None,
+    second_action=DONE,
+    second_selected_source=None,
+)
+NONROOT_SEQUENCE = factors.PromptSequenceEvidence(
+    first_action=FactorAction(
+        (0,), "APPLY2", "subtract", "SELECTED", "SCOPE0", None
+    ),
+    first_selected_source="SCOPE1",
+    second_action=FactorAction(
+        (0, 0), "APPLY1", "absolute", "SELECTED", "NONE", None
+    ),
+    second_selected_source="SCOPE1",
+)
+
+SEQUENCE_EVIDENCE = (
+    ABS_LEFT_SEQUENCE,
+    ABS_RIGHT_SEQUENCE,
+    FLAT_SUBTRACT_SEQUENCE,
+    NONROOT_SEQUENCE,
+)
+
 
 def _signature(*names: str, result: ProgramType | None = None) -> TypedSignature:
     integer = ProgramType.Int()
@@ -315,6 +359,71 @@ def test_binding_projection_is_readonly_and_checkpoint_stable() -> None:
     assert not projection.action_weights_pa.flags.writeable
     with pytest.raises(ValueError):
         projection.action_weights_pa[0, 0] = 1.0
+
+
+@pytest.mark.parametrize(
+    ("prompt", "expected_cell", "nested_side"),
+    (
+        (
+            "Subtract beta from the absolute value of alpha.",
+            0,
+            "left",
+        ),
+        ("Return abs(alpha) minus beta.", 0, "left"),
+        (
+            "Subtract the absolute value of beta from alpha.",
+            1,
+            "right",
+        ),
+        ("Return alpha minus abs(beta).", 1, "right"),
+    ),
+)
+def test_compositional_prompt_projects_one_ordered_root_child_sequence(
+    prompt: str,
+    expected_cell: int,
+    nested_side: str,
+) -> None:
+    projection = factors.FixedPromptSequenceProjection.build(SEQUENCE_EVIDENCE)
+    decision = projection.project(prompt, _signature("alpha", "beta"))
+
+    assert decision.status == factors.PROJECTION_STATUS_PROJECTED
+    assert decision.matching_sequence_cells == (expected_cell,)
+    assert decision.sequence_currents_pa[expected_cell] == 5_000.0
+    assert sum(value > 0.0 for value in decision.sequence_currents_pa) == 1
+    assert decision.simultaneous_spike_candidates == 1
+    assert decision.observation.pattern is not None
+    if nested_side == "left":
+        nested = decision.observation.pattern.left
+        plain = decision.observation.pattern.right
+    else:
+        nested = decision.observation.pattern.right
+        plain = decision.observation.pattern.left
+    assert nested.unary_operators == ("absolute",)
+    assert plain.unary_operators == ()
+    before = projection.sha256
+    assert decision.checkpoint_before_sha256 == before
+    assert decision.checkpoint_after_sha256 == before
+    assert projection.live_checkpoint_sha256 == before
+    assert not projection.race_weights_pa.flags.writeable
+    assert not projection.sequence_weights_pa.flags.writeable
+
+
+def test_conflicting_nested_relations_physically_stop_without_sequence_current(
+) -> None:
+    projection = factors.FixedPromptSequenceProjection.build(SEQUENCE_EVIDENCE)
+    decision = projection.project(
+        "Return abs(alpha) minus beta or alpha minus abs(beta).",
+        _signature("alpha", "beta"),
+    )
+
+    assert decision.status == factors.PROJECTION_STATUS_STOP_AMBIGUOUS
+    assert decision.observation.status == factors.BINDING_STATUS_AMBIGUOUS
+    assert len(decision.observation.patterns) == 2
+    assert decision.physical_winner == factors.PHYSICAL_STOP
+    assert decision.winner_cell == decision.stop_cell
+    assert decision.race_currents_pa[decision.stop_cell] == 5_000.0
+    assert decision.matching_sequence_cells == ()
+    assert not any(decision.sequence_currents_pa)
 
 
 def test_module_has_no_program_output_or_candidate_ranking_seam() -> None:

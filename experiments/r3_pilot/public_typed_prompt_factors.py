@@ -5,10 +5,14 @@ It has no task-family vocabulary or structural edit knowledge.  A unique
 in-range integer becomes an exact typed-output goal; every ambiguous state is
 represented by the physical Int UNKNOWN cell.
 
-The operand channel is similarly narrow: declared parameter names/order plus
-binary operator words become one operator/source/orientation pattern.  A fixed
-synaptic projection fans that physical pattern cell into every matching
-``FactorAction`` cell.  Site and schema are intentionally outside this layer.
+The flat operand channel remains the H=1 interface: declared parameter
+names/order plus binary operator words become one operator/source/orientation
+pattern, then fixed synapses fan that physical cell into matching
+``FactorAction`` cells.  The H=2 interface adds one conservative composition:
+a root binary relation may wrap either operand in ``absolute`` and project only
+to an ordered root-action then child-action sequence whose compiler-observed
+selected sources agree.  Unsupported or conflicting structure reaches a
+physical STOP cell; prompt evidence never ranks the broader candidate bank.
 """
 
 from __future__ import annotations
@@ -57,6 +61,9 @@ _UNKNOWN_VALUE = object()
 _OPERAND_TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*|[+-]?\d+|<|-")
 _INFIX_HYPHEN = re.compile(r"(?<=[A-Za-z0-9_])-(?=[A-Za-z0-9_])")
 _BINARY_OPERATORS = frozenset({"subtract", "less-than"})
+_UNARY_OPERATORS = frozenset({"absolute"})
+_ABSOLUTE_TOKENS = frozenset({"abs", "absolute"})
+_ABSOLUTE_FILLERS = frozenset({"of", "the", "value"})
 _PROMPT_SOURCES = frozenset({"SCOPE0", "SCOPE1", "LITERAL"})
 _GENERIC_SINGLE_ARGUMENT = frozenset(
     {"argument", "datum", "input", "integer", "number", "value"}
@@ -808,12 +815,629 @@ class FixedPromptBindingProjection:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class PromptComposedOperand:
+    """One declared source with a generic outer-to-inner unary chain."""
+
+    source: str
+    literal: int | None
+    unary_operators: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if self.source not in _PROMPT_SOURCES:
+            raise ValueError("composed prompt operand has an unsupported source")
+        if (self.source == "LITERAL") != (self.literal is not None):
+            raise ValueError("composed prompt literal must agree with its source")
+        if self.literal is not None and type(self.literal) is not int:
+            raise TypeError("composed prompt literal must be an integer")
+        if not all(operator in _UNARY_OPERATORS for operator in self.unary_operators):
+            raise ValueError("composed prompt operand has an unsupported unary operator")
+
+
+@dataclass(frozen=True, slots=True)
+class PromptCompositionPattern:
+    """One root binary relation whose operands may carry unary structure."""
+
+    operator: str
+    left: PromptComposedOperand
+    right: PromptComposedOperand
+
+    def __post_init__(self) -> None:
+        if self.operator not in _BINARY_OPERATORS:
+            raise ValueError("prompt composition has an unsupported binary operator")
+        if not isinstance(self.left, PromptComposedOperand) or not isinstance(
+            self.right,
+            PromptComposedOperand,
+        ):
+            raise TypeError("prompt composition requires two composed operands")
+        literal_count = int(self.left.source == "LITERAL") + int(
+            self.right.source == "LITERAL"
+        )
+        if literal_count > 1:
+            raise ValueError("one prompt composition cannot bind two literals")
+
+
+@dataclass(frozen=True, slots=True)
+class PromptSequenceEvidence:
+    """Two ordered actions plus selected-source identities at their sites."""
+
+    first_action: FactorAction
+    first_selected_source: str | None
+    second_action: FactorAction
+    second_selected_source: str | None
+
+    def __post_init__(self) -> None:
+        if type(self.first_action) is not FactorAction or type(
+            self.second_action
+        ) is not FactorAction:
+            raise TypeError("prompt sequence evidence requires FactorAction values")
+        valid_selected = {None, "SCOPE0", "SCOPE1"}
+        if (
+            self.first_selected_source not in valid_selected
+            or self.second_selected_source not in valid_selected
+        ):
+            raise ValueError("selected prompt sources must be SCOPE0/SCOPE1 or absent")
+
+
+def _composed_operand_record(
+    operand: PromptComposedOperand,
+) -> dict[str, object]:
+    return {
+        "source": operand.source,
+        "literal": operand.literal,
+        "unary_operators": operand.unary_operators,
+    }
+
+
+def _composition_record(
+    pattern: PromptCompositionPattern,
+) -> dict[str, object]:
+    return {
+        "operator": pattern.operator,
+        "left": _composed_operand_record(pattern.left),
+        "right": _composed_operand_record(pattern.right),
+    }
+
+
+def _sequence_evidence_record(
+    evidence: PromptSequenceEvidence,
+) -> dict[str, object]:
+    return {
+        "first_action": _factor_action_record(evidence.first_action),
+        "first_selected_source": evidence.first_selected_source,
+        "second_action": _factor_action_record(evidence.second_action),
+        "second_selected_source": evidence.second_selected_source,
+    }
+
+
+def _absolute_prefix_before(
+    tokens: tuple[str, ...],
+    operand_index: int,
+    *,
+    stop: int | None,
+) -> bool:
+    cursor = operand_index - 1
+    inspected = 0
+    while cursor >= 0 and inspected < 6:
+        if stop is not None and cursor == stop:
+            break
+        token = tokens[cursor]
+        if token in _ABSOLUTE_FILLERS:
+            cursor -= 1
+            inspected += 1
+            continue
+        return token in _ABSOLUTE_TOKENS
+    return False
+
+
+def _nearest_composed_operand(
+    tokens: tuple[str, ...],
+    start: int,
+    step: int,
+    *,
+    stop: int | None,
+    declared: dict[str, str | None],
+    ordinal: dict[str, str | None],
+    parameter_count: int,
+) -> PromptComposedOperand | object | None:
+    cursor = start
+    inspected = 0
+    unary: list[str] = []
+    while 0 <= cursor < len(tokens) and inspected < 10:
+        if stop is not None and cursor == stop:
+            break
+        token = tokens[cursor]
+        if token in _ABSOLUTE_TOKENS:
+            unary.append("absolute")
+            cursor += step
+            inspected += 1
+            continue
+        if unary and token in _ABSOLUTE_FILLERS:
+            cursor += step
+            inspected += 1
+            continue
+        operand = _operand_token(
+            token,
+            declared=declared,
+            ordinal=ordinal,
+            parameter_count=parameter_count,
+        )
+        if isinstance(operand, _PromptOperand):
+            if step < 0 and not unary and _absolute_prefix_before(
+                tokens,
+                cursor,
+                stop=stop,
+            ):
+                unary.append("absolute")
+            return PromptComposedOperand(
+                source=operand.source,
+                literal=operand.literal,
+                unary_operators=tuple(unary),
+            )
+        if operand is _UNRESOLVED_OPERAND:
+            return _UNRESOLVED_OPERAND
+        cursor += step
+        inspected += 1
+    return None
+
+
+def _composition_pattern(
+    operator: str,
+    left: PromptComposedOperand | object | None,
+    right: PromptComposedOperand | object | None,
+) -> PromptCompositionPattern | None:
+    if not isinstance(left, PromptComposedOperand) or not isinstance(
+        right,
+        PromptComposedOperand,
+    ):
+        return None
+    literal_count = int(left.source == "LITERAL") + int(
+        right.source == "LITERAL"
+    )
+    if literal_count > 1:
+        return None
+    return PromptCompositionPattern(operator=operator, left=left, right=right)
+
+
+@dataclass(frozen=True, slots=True)
+class PromptCompositionObservation:
+    prompt_sha256: str
+    signature_sha256: str
+    tokens: tuple[str, ...]
+    recognized_expression_count: int
+    patterns: tuple[PromptCompositionPattern, ...]
+    status: str
+    pattern: PromptCompositionPattern | None
+    reason: str
+    sha256: str
+
+    @property
+    def supported(self) -> bool:
+        return self.status == BINDING_STATUS_SUPPORTED
+
+
+def observe_prompt_compositions(
+    prompt: str,
+    signature: TypedSignature,
+) -> PromptCompositionObservation:
+    """Observe one root binary relation and its nested unary operand structure."""
+
+    if type(prompt) is not str or not prompt:
+        raise ValueError("prompt composition observation requires non-empty text")
+    if not isinstance(signature, TypedSignature):
+        raise TypeError("prompt composition observation requires a TypedSignature")
+
+    tokens = _prompt_operand_tokens(prompt)
+    declared, ordinal, declaration_error = _declared_sources(signature)
+    patterns: list[PromptCompositionPattern] = []
+    recognized = 0
+    failures = int(declaration_error is not None)
+    parameter_count = len(signature.parameters)
+
+    def record(
+        operator: str,
+        left: PromptComposedOperand | object | None,
+        right: PromptComposedOperand | object | None,
+    ) -> None:
+        nonlocal recognized, failures
+        recognized += 1
+        pattern = _composition_pattern(operator, left, right)
+        if pattern is None:
+            failures += 1
+        elif pattern not in patterns:
+            patterns.append(pattern)
+
+    if declaration_error is None:
+        for index, token in enumerate(tokens):
+            common = {
+                "declared": declared,
+                "ordinal": ordinal,
+                "parameter_count": parameter_count,
+            }
+            if token in {"minus", "-"}:
+                record(
+                    "subtract",
+                    _nearest_composed_operand(
+                        tokens,
+                        index - 1,
+                        -1,
+                        stop=None,
+                        **common,
+                    ),
+                    _nearest_composed_operand(
+                        tokens,
+                        index + 1,
+                        1,
+                        stop=None,
+                        **common,
+                    ),
+                )
+            elif (
+                token == "less"
+                and index + 1 < len(tokens)
+                and tokens[index + 1] == "than"
+            ):
+                record(
+                    "less-than",
+                    _nearest_composed_operand(
+                        tokens,
+                        index - 1,
+                        -1,
+                        stop=None,
+                        **common,
+                    ),
+                    _nearest_composed_operand(
+                        tokens,
+                        index + 2,
+                        1,
+                        stop=None,
+                        **common,
+                    ),
+                )
+            elif token == "<":
+                record(
+                    "less-than",
+                    _nearest_composed_operand(
+                        tokens,
+                        index - 1,
+                        -1,
+                        stop=None,
+                        **common,
+                    ),
+                    _nearest_composed_operand(
+                        tokens,
+                        index + 1,
+                        1,
+                        stop=None,
+                        **common,
+                    ),
+                )
+            elif token == "subtract":
+                from_index = next(
+                    (
+                        candidate
+                        for candidate in range(index + 1, min(index + 10, len(tokens)))
+                        if tokens[candidate] == "from"
+                    ),
+                    None,
+                )
+                if from_index is not None:
+                    subtrahend = _nearest_composed_operand(
+                        tokens,
+                        index + 1,
+                        1,
+                        stop=from_index,
+                        **common,
+                    )
+                    minuend = _nearest_composed_operand(
+                        tokens,
+                        from_index + 1,
+                        1,
+                        stop=None,
+                        **common,
+                    )
+                    record("subtract", minuend, subtrahend)
+                else:
+                    right = _nearest_composed_operand(
+                        tokens,
+                        index + 1,
+                        1,
+                        stop=None,
+                        **common,
+                    )
+                    left: PromptComposedOperand | object = (
+                        PromptComposedOperand("SCOPE0", None, ())
+                        if parameter_count == 1
+                        else _UNRESOLVED_OPERAND
+                    )
+                    record("subtract", left, right)
+
+    if len(patterns) == 1 and failures == 0:
+        status = BINDING_STATUS_SUPPORTED
+        pattern = patterns[0]
+        reason = "one declared compositional operand relation"
+    elif len(patterns) > 1 or (patterns and failures):
+        status = BINDING_STATUS_AMBIGUOUS
+        pattern = None
+        reason = "prompt contains conflicting or partially unresolved relations"
+    else:
+        status = BINDING_STATUS_UNKNOWN
+        pattern = None
+        reason = (
+            declaration_error
+            or "prompt has no complete supported compositional operand relation"
+        )
+
+    signature_sha = sha256(_canonical_json(signature.to_record())).hexdigest()
+    record_value = {
+        "prompt_sha256": sha256(prompt.encode("utf-8")).hexdigest(),
+        "signature_sha256": signature_sha,
+        "tokens": tokens,
+        "recognized_expression_count": recognized,
+        "patterns": tuple(_composition_record(item) for item in patterns),
+        "status": status,
+        "pattern": None if pattern is None else _composition_record(pattern),
+        "reason": reason,
+    }
+    return PromptCompositionObservation(
+        prompt_sha256=record_value["prompt_sha256"],
+        signature_sha256=signature_sha,
+        tokens=tokens,
+        recognized_expression_count=recognized,
+        patterns=tuple(patterns),
+        status=status,
+        pattern=pattern,
+        reason=reason,
+        sha256=sha256(_canonical_json(record_value)).hexdigest(),
+    )
+
+
+def _evidence_operand(
+    action: FactorAction,
+    source: str,
+    selected_source: str | None,
+) -> PromptComposedOperand | None:
+    normalized = selected_source if source == "SELECTED" else source
+    if normalized not in _PROMPT_SOURCES:
+        return None
+    literal = action.literal if normalized == "LITERAL" else None
+    if (normalized == "LITERAL") != (literal is not None):
+        return None
+    return PromptComposedOperand(normalized, literal, ())
+
+
+def _sequence_composition_pattern(
+    evidence: PromptSequenceEvidence,
+) -> PromptCompositionPattern | None:
+    first = evidence.first_action
+    second = evidence.second_action
+    if (
+        first.path != ()
+        or first.schema != "APPLY2"
+        or first.operator not in _BINARY_OPERATORS
+    ):
+        return None
+    left = _evidence_operand(
+        first,
+        first.left_source,
+        evidence.first_selected_source,
+    )
+    right = _evidence_operand(
+        first,
+        first.right_source,
+        evidence.first_selected_source,
+    )
+    if left is None or right is None:
+        return None
+    if second.schema == "DONE":
+        return PromptCompositionPattern(first.operator, left, right)
+    if (
+        second.schema != "APPLY1"
+        or second.operator != "absolute"
+        or second.right_source != "NONE"
+        or second.path not in {(0,), (1,)}
+    ):
+        return None
+    child_index = second.path[0]
+    nested = _evidence_operand(
+        second,
+        second.left_source,
+        evidence.second_selected_source,
+    )
+    operands = [left, right]
+    if nested is None or nested != operands[child_index]:
+        return None
+    operands[child_index] = PromptComposedOperand(
+        nested.source,
+        nested.literal,
+        ("absolute", *nested.unary_operators),
+    )
+    return PromptCompositionPattern(first.operator, operands[0], operands[1])
+
+
+def _sequence_projection_sha256(
+    candidates: tuple[PromptSequenceEvidence, ...],
+    patterns: tuple[PromptCompositionPattern, ...],
+    race_weights_pa: np.ndarray,
+    sequence_weights_pa: np.ndarray,
+) -> str:
+    digest = sha256()
+    digest.update(b"public-typed-prompt-sequence-projection-v1\0")
+    digest.update(
+        _canonical_json(tuple(_sequence_evidence_record(item) for item in candidates))
+    )
+    digest.update(
+        _canonical_json(tuple(_composition_record(item) for item in patterns))
+    )
+    digest.update(race_weights_pa.tobytes())
+    digest.update(sequence_weights_pa.tobytes())
+    digest.update(str(_PROMPT_RACE_STEPS).encode("ascii"))
+    return digest.hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class PromptSequenceProjectionDecision:
+    status: str
+    observation: PromptCompositionObservation
+    physical_winner: PromptCompositionPattern | str
+    winner_cell: int
+    stop_cell: int
+    spike_step: int
+    simultaneous_spike_candidates: int
+    input_cells: tuple[float, ...]
+    race_currents_pa: tuple[float, ...]
+    sequence_currents_pa: tuple[float, ...]
+    matching_sequence_cells: tuple[int, ...]
+    projection_sha256: str
+    checkpoint_before_sha256: str
+    checkpoint_after_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class FixedPromptSequenceProjection:
+    """Readonly prompt-composition race and exact pattern-to-sequence synapses."""
+
+    candidate_bank: tuple[PromptSequenceEvidence, ...]
+    patterns: tuple[PromptCompositionPattern, ...]
+    race_weights_pa: np.ndarray
+    sequence_weights_pa: np.ndarray
+    sha256: str
+
+    @classmethod
+    def build(
+        cls,
+        candidate_bank: tuple[PromptSequenceEvidence, ...]
+        | list[PromptSequenceEvidence],
+    ) -> FixedPromptSequenceProjection:
+        candidates = tuple(candidate_bank)
+        if not candidates or not all(
+            type(item) is PromptSequenceEvidence for item in candidates
+        ):
+            raise TypeError(
+                "prompt sequence projection needs PromptSequenceEvidence candidates"
+            )
+        if len(set(candidates)) != len(candidates):
+            raise ValueError("prompt sequence candidate bank must be unique")
+
+        pattern_list: list[PromptCompositionPattern] = []
+        candidate_patterns: list[PromptCompositionPattern | None] = []
+        for evidence in candidates:
+            pattern = _sequence_composition_pattern(evidence)
+            candidate_patterns.append(pattern)
+            if pattern is not None and pattern not in pattern_list:
+                pattern_list.append(pattern)
+        patterns = tuple(pattern_list)
+        stop_cell = len(patterns)
+        race_weights = np.zeros((stop_cell + 1, stop_cell + 1), dtype=np.float64)
+        for pattern_cell in range(stop_cell):
+            race_weights[pattern_cell, pattern_cell] = _PROMPT_CONTACT_CURRENT_PA
+        race_weights[stop_cell, stop_cell] = _PROMPT_CONTACT_CURRENT_PA
+
+        sequence_weights = np.zeros(
+            (len(candidates), len(patterns)),
+            dtype=np.float64,
+        )
+        for sequence_cell, pattern in enumerate(candidate_patterns):
+            if pattern is not None:
+                sequence_weights[sequence_cell, patterns.index(pattern)] = (
+                    _PROMPT_CONTACT_CURRENT_PA
+                )
+        frozen_race = _freeze_projection(race_weights)
+        frozen_sequences = _freeze_projection(sequence_weights)
+        digest = _sequence_projection_sha256(
+            candidates,
+            patterns,
+            frozen_race,
+            frozen_sequences,
+        )
+        return cls(
+            candidate_bank=candidates,
+            patterns=patterns,
+            race_weights_pa=frozen_race,
+            sequence_weights_pa=frozen_sequences,
+            sha256=digest,
+        )
+
+    @property
+    def live_checkpoint_sha256(self) -> str:
+        return _sequence_projection_sha256(
+            self.candidate_bank,
+            self.patterns,
+            self.race_weights_pa,
+            self.sequence_weights_pa,
+        )
+
+    def project(
+        self,
+        prompt: str,
+        signature: TypedSignature,
+    ) -> PromptSequenceProjectionDecision:
+        """Race one prompt composition, then project its exact sequence cells."""
+
+        before = self.live_checkpoint_sha256
+        if before != self.sha256:
+            raise RuntimeError("prompt sequence projection changed before inference")
+        observation = observe_prompt_compositions(prompt, signature)
+        pattern_cell: int | None = None
+        if observation.supported and observation.pattern in self.patterns:
+            pattern_cell = self.patterns.index(observation.pattern)
+
+        stop_cell = len(self.patterns)
+        input_cells = np.zeros(stop_cell + 1, dtype=np.float64)
+        input_cells[stop_cell if pattern_cell is None else pattern_cell] = 1.0
+        race_currents = np.ascontiguousarray(self.race_weights_pa @ input_cells)
+        winner_cell, spike_step, simultaneous = _physical_first_spike(race_currents)
+
+        pattern_spikes = np.zeros(len(self.patterns), dtype=np.float64)
+        if pattern_cell is None:
+            if winner_cell != stop_cell:
+                raise RuntimeError("physical prompt composition UNKNOWN did not stop")
+            physical_winner: PromptCompositionPattern | str = PHYSICAL_STOP
+            if observation.status == BINDING_STATUS_AMBIGUOUS:
+                status = PROJECTION_STATUS_STOP_AMBIGUOUS
+            elif observation.status == BINDING_STATUS_UNKNOWN:
+                status = PROJECTION_STATUS_STOP_UNKNOWN
+            else:
+                status = PROJECTION_STATUS_STOP_UNSUPPORTED
+        else:
+            if winner_cell != pattern_cell:
+                raise RuntimeError("prompt composition race lost its exact cell")
+            pattern_spikes[pattern_cell] = 1.0
+            physical_winner = self.patterns[pattern_cell]
+            status = PROJECTION_STATUS_PROJECTED
+
+        sequence_currents = np.ascontiguousarray(
+            self.sequence_weights_pa @ pattern_spikes
+        )
+        matching = tuple(int(cell) for cell in np.flatnonzero(sequence_currents))
+        after = self.live_checkpoint_sha256
+        if after != before or after != self.sha256:
+            raise RuntimeError("prompt sequence projection changed during inference")
+        return PromptSequenceProjectionDecision(
+            status=status,
+            observation=observation,
+            physical_winner=physical_winner,
+            winner_cell=winner_cell,
+            stop_cell=stop_cell,
+            spike_step=spike_step,
+            simultaneous_spike_candidates=simultaneous,
+            input_cells=tuple(float(value) for value in input_cells),
+            race_currents_pa=tuple(float(value) for value in race_currents),
+            sequence_currents_pa=tuple(float(value) for value in sequence_currents),
+            matching_sequence_cells=matching,
+            projection_sha256=self.sha256,
+            checkpoint_before_sha256=before,
+            checkpoint_after_sha256=after,
+        )
+
+
 __all__ = [
     "BINDING_STATUS_AMBIGUOUS",
     "BINDING_STATUS_SUPPORTED",
     "BINDING_STATUS_UNKNOWN",
     "FixedPromptBindingProjection",
     "FixedPromptLiteralProjection",
+    "FixedPromptSequenceProjection",
     "PHYSICAL_STOP",
     "PROJECTION_STATUS_PROJECTED",
     "PROJECTION_STATUS_STOP_AMBIGUOUS",
@@ -821,13 +1445,19 @@ __all__ = [
     "PROJECTION_STATUS_STOP_UNSUPPORTED",
     "PromptBindingObservation",
     "PromptBindingProjectionDecision",
+    "PromptComposedOperand",
+    "PromptCompositionObservation",
+    "PromptCompositionPattern",
     "PromptFactorObservation",
     "PromptLiteralFactorRace",
     "PromptOperandPattern",
+    "PromptSequenceEvidence",
+    "PromptSequenceProjectionDecision",
     "STATUS_AMBIGUOUS",
     "STATUS_NO_LITERAL",
     "STATUS_OUT_OF_RANGE",
     "STATUS_SUPPORTED",
     "observe_prompt_bindings",
+    "observe_prompt_compositions",
     "observe_prompt_factors",
 ]

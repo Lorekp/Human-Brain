@@ -140,6 +140,55 @@ def test_factorized_h2_reports_the_new_direct_child_orientation_ambiguity(
     assert not any(token in world_source for token in forbidden)
 
 
+def test_nested_prompt_breaks_only_the_value_and_structure_leading_tier() -> None:
+    integer = ProgramType.Int()
+    signature = TypedSignature(
+        "solve",
+        (
+            ProgramParameter("left", integer),
+            ProgramParameter("right", integer),
+        ),
+        integer,
+    )
+    incumbent = tp.Program(("variable-1",), signature)
+    cases = ((-6, 1), (6, 1), (-6, -2), (6, -2))
+    desired = (5, 5, 8, 8)
+    expected = h2.FactorH2Sequence(
+        tp.FactorAction(
+            (), "APPLY2", "subtract", "SELECTED", "SCOPE0", None
+        ),
+        tp.FactorAction(
+            (0,), "APPLY1", "absolute", "SELECTED", "NONE", None
+        ),
+    )
+    nested_model = h2.build_public_factorized_horizon2_int(
+        literals=tuple(range(-4, 5))
+    )
+    observation = nested_model.observe(incumbent, cases)
+    before = nested_model.live_checkpoint_sha256
+
+    decision = nested_model.plan(
+        observation,
+        "Subtract right from the absolute value of left.",
+        desired,
+    )
+
+    assert decision.status == h2.STATUS_SELECTED
+    assert decision.selected_sequence == expected
+    assert decision.selected_sequence_cell is not None
+    attempt = decision.terminal_attempts[-1]
+    assert len(attempt.structure_leading_sequence_cells) > 1
+    assert attempt.prompt_decision is not None
+    assert attempt.prompt_decision.status == h2.prompt_factors.PROJECTION_STATUS_PROJECTED
+    local_winner = attempt.structure_leading_sequence_cells.index(
+        decision.selected_sequence_cell
+    )
+    assert attempt.prompt_decision.matching_sequence_cells == (local_winner,)
+    assert attempt.prompt_sequence_currents_pa[local_winner] == 5_000.0
+    assert attempt.prompt_sequence_currents_pa[-1] == h2._PROMPT_STOP_CURRENT_PA
+    assert nested_model.live_checkpoint_sha256 == before == nested_model.checkpoint_sha256
+
+
 def test_unsupported_int_ancestor_propagates_physical_unknown(
     model: h2.FrozenFactorizedHorizon2Int,
 ) -> None:
