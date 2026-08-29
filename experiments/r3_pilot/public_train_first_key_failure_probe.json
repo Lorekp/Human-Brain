@@ -1,0 +1,205 @@
+{
+  "artifact_id": "public-train-first-recurrent-key-failure-v1",
+  "checkpoint_identity_after_first_result": {
+    "cohort_count": 0,
+    "event_count": 7934,
+    "learning_step": 7934,
+    "logical_state_sha256": "91480f9b896b2117e43f292766f338d11383d41e95ce7c748afe985a67f98d83",
+    "next_reserve_cell": 32768,
+    "segment_count": 87263
+  },
+  "claim_boundary": "one public TRAIN-only Genesis prefix at frozen arm (16,18), seed 17; first exact recurrent-key ledger mismatch only; one post-step native checkpoint; no threshold selection/retry, repair, held-out, confirmation, C1, capability, or transfer evidence",
+  "definition": {
+    "arm": [
+      16,
+      18
+    ],
+    "bounded_circuit_identity_sha256": "c353e08f81164dbac9e9ff9f9e47b5253dddf63953b0ba76f1b3b9e6edfe189f",
+    "bounded_segment_capacity": 274989,
+    "construction_seed": 17,
+    "production_circuit_identity_sha256": "efcd70c8f0a1deeb04ffa32b7d905f42c01000caa33ed18d61ac366594ed9502",
+    "protocol_sha256": "5b916fe88cdba401c2a80e89b25bfc64447d189d216029d65bb40678c499dfa6"
+  },
+  "environment": {
+    "native_binary_sha256": "300db0b79cd6a21587c249b7aca409b5afb5b2ccdfec02486528d722fabf0564",
+    "native_source_digest": "1207670e012ef32ad3bf2fe383847ddb904f45df928bd2f7d89e5efabae1295a",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "generated_at_utc": "2026-08-29T02:42:07.218492+00:00",
+  "probe_bound_steps": 25000,
+  "result": {
+    "book_ordinal": 0,
+    "book_short_name": "Genesis",
+    "book_zero_based_token_index": 7933,
+    "expected_active_segments": 0,
+    "expected_matching_segments": 0,
+    "expected_source_fanout": 0,
+    "global_zero_based_step_index": 7933,
+    "key_was_known": false,
+    "kind": "FIRST_RECURRENT_KEY_MISMATCH",
+    "lifecycle": {
+      "calculated_post_step_active_preexisting_rows": 0,
+      "calculated_post_step_matching_preexisting_rows": 11,
+      "checkpoint_body_sha256": "9c776e4f8611d0ca02e83837804d008acec37c98652e0df85bbf55158dd674d9",
+      "checkpoint_rows_equal_step_counters": true,
+      "checkpoint_segment_count_after_step": 87263,
+      "classification": "WINNER_KEY_DIVERGENCE",
+      "current_source_context": [
+        2291,
+        2351,
+        2744,
+        7455,
+        11184,
+        21178,
+        22029,
+        22079,
+        25908,
+        26836,
+        26887
+      ],
+      "current_source_context_sha256": "75a978499659cdd224978aae6a43e620443614f5cd6a30b088298eb530e8f5f9",
+      "current_step_punished_segments": 0,
+      "current_token_columns": [
+        302,
+        1266,
+        1422,
+        1489,
+        1755,
+        2503,
+        2697,
+        3250,
+        3385,
+        3498,
+        3628
+      ],
+      "exact_source_deactivated_segments": 0,
+      "exact_source_rows_below_connected_after_noninitial_ticks": 0,
+      "foreign_matching_segments": 11,
+      "observed_active_segments": 0,
+      "observed_matching_segments": 11,
+      "recognition_segment_limit_before_step": 87252,
+      "segment_groups": [
+        {
+          "active": false,
+          "below_connected_overlap_pairs": 0,
+          "connected_contacts": 16,
+          "matching": true,
+          "origin_current_source_overlap_cells": 8,
+          "origin_global_step_index": 249,
+          "origin_source_context_sha256": "3dd1accd8d7d97927e9a3a7e4da4dc62f03cfc67c9e9560e515de41f1b60e377",
+          "owner_cells": [
+            5482,
+            17013,
+            17823,
+            19499,
+            21405,
+            25367,
+            27731,
+            28052,
+            29138,
+            30030,
+            32331
+          ],
+          "owner_columns": [
+            685,
+            2126,
+            2227,
+            2437,
+            2675,
+            3170,
+            3466,
+            3506,
+            3642,
+            3753,
+            4041
+          ],
+          "owners_in_current_token_columns": false,
+          "permanence_ticks": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "potential_contacts": 16,
+          "row_sources": [
+            2291,
+            2351,
+            2744,
+            7455,
+            11184,
+            21178,
+            22072,
+            25908,
+            26836,
+            26885
+          ],
+          "segment_ids": [
+            2728,
+            2729,
+            2730,
+            2731,
+            2732,
+            2733,
+            2734,
+            2735,
+            2736,
+            2737,
+            2738
+          ],
+          "source_relation": "DIVERGED_SOURCE"
+        }
+      ],
+      "segments_without_allocation_origin": 0
+    },
+    "observed": {
+      "active_segments": 0,
+      "allocated_segments": 11,
+      "candidate_segments": 2233,
+      "matching_segments": 11,
+      "postings_visited": 3751,
+      "predicted": false,
+      "predicted_columns": 0,
+      "punished_segments": 0
+    },
+    "outcome_expectation": [
+      11,
+      0,
+      0
+    ],
+    "outcome_mismatch": false,
+    "previous_winner_key_sha256": "75a978499659cdd224978aae6a43e620443614f5cd6a30b088298eb530e8f5f9",
+    "previous_winners": [
+      2291,
+      2351,
+      2744,
+      7455,
+      11184,
+      21178,
+      22029,
+      22079,
+      25908,
+      26836,
+      26887
+    ],
+    "recognition_mismatch": true,
+    "token_id": 32
+  },
+  "schema_version": 1,
+  "status": "BANKED_FIRST_RECURRENT_KEY_MISMATCH",
+  "train_input": {
+    "book_ordinal": 0,
+    "book_short_name": "Genesis",
+    "book_token_sha256_le_i32": "fa0a5681a295d95ef0f732969d8d5871d909e5071de14e6e68400cb8d870e1fd",
+    "held_out_books_materialized": 0,
+    "tokenizer_sha256": "130f42fc92e5c1f42c53d8904aeefbc4db21c189dc5b9fae98157dc06c9218a2",
+    "train_input_authority_sha256": "29304cf71cce83ab34ee8253117043aec8413806ba0047ff850bb3c93a31d966",
+    "train_stream_sha256": "f5d2ef9a096e1bb184af925d0523e3a3b80c5bdf7e821b9fca9f65c66059e7b5"
+  }
+}
