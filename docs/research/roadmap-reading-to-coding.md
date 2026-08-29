@@ -547,6 +547,19 @@ genuine generic nested map-plus-binary prompt-factor boundary, not another
 accounting failure. It establishes a small public source-generation bridge but
 does not open canonical Simple-SWE, M0, protected data, held-out, or C1.
 
+The fresh two-task recovery is now spent at
+`STOP_PUBLIC_FACTORIZED_SOURCE_EDIT_RECOVERY_V1` (1/2 in 416.17 seconds).
+`4 - abs(datum)` completed through two real edits, terminal `DONE`, exact source,
+and the disjoint sandbox. On List-map-add, the repaired prompt representation
+selected and actuated the generic `MAP_BIND` action, producing the exact identity
+map, but replanning stopped before the binary body action because the
+already-materialized map prompt did not resolve that leading structure tier.
+This separates candidate generation from post-map replanning: the former now
+works, while the latter needs one generic existing-map-body projection. The
+cohort will not be retried or replaced by another two-task microprobe; after that
+mechanism repair, the next adjudication is a broad canonical public-TRAIN
+Simple-SWE bridge. Protected splits, M0, held-out data, and C1 remain closed.
+
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
 step 249 under a different winner context shared 8/11 cells with the current
