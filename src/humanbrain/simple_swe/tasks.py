@@ -127,7 +127,7 @@ def _property_inputs(
     return values[:count]
 
 
-def _make_task(
+def make_task(
     *,
     partition: str,
     family: str,
@@ -138,6 +138,7 @@ def _make_task(
     regression_inputs: Sequence[tuple[JsonValue, ...]],
     property_inputs: Sequence[tuple[tuple[JsonValue, ...], str]],
 ) -> GeneratedTask:
+    """Construct one committed task bundle for visible development tooling."""
     tier = int(family[1])
     task_id = f"simple-swe-v1/{partition}/tier-{tier}/{family}/{ordinal:03d}"
     parameter_names = tuple(parameter.name for parameter in signature.parameters)
@@ -964,9 +965,9 @@ def _build_task(
     signature = specification.callable_type.bind(
         f"solve_{entry_point_digest[:16]}"
     )
-    make_task = partial(_make_task, signature=signature)
+    task_factory = partial(make_task, signature=signature)
     return specification.builder(
-        rng, property_count, make_task, partition, family, ordinal
+        rng, property_count, task_factory, partition, family, ordinal
     )
 
 

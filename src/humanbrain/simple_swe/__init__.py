@@ -6,6 +6,7 @@ from humanbrain.simple_swe.tasks import (
     GeneratedTask,
     family_callable_types,
     generate_visible_partition,
+    make_task,
 )
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "family_callable_types",
     "generate_visible_partition",
     "load_protocol",
+    "make_task",
 ]
