@@ -1,4 +1,6 @@
 import ast
+import hashlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -223,4 +225,61 @@ def test_public_matrix_passes_both_orders_and_real_site_change_replan() -> None:
         and task.final_outputs == public_task.desired_outputs
         and all(decision.physical_unique for decision in task.decisions)
         for task, public_task in zip(result.tasks, planner.PUBLIC_TASKS, strict=True)
+    )
+
+
+def test_visible_horizon2_pass_artifact_contract() -> None:
+    artifact_path = (
+        Path(__file__).resolve().parents[1]
+        / "experiments"
+        / "r3_pilot"
+        / "public_typed_ast_horizon2_int_visible_probe.json"
+    )
+    raw = artifact_path.read_bytes()
+    artifact = json.loads(raw)
+
+    assert hashlib.sha256(raw).hexdigest() == (
+        "c861a859540af57081af1d8aa1c4a6270e5e79965de1a631dca74eb62a2aff58"
+    )
+    assert artifact["schema"] == "public-typed-ast-horizon2-int-v1"
+    assert artifact["verdict"] == "PASS_TYPED_AST_HORIZON2_INT"
+    assert artifact["passed_tasks"] == artifact["total_tasks"] == 3
+    assert artifact["target_free_observations"] == 410
+
+    expected_ledger = (
+        (
+            "absolute-then-add",
+            (((), "WRAP_ABS"), ((), "WRAP_ADD[1]"), ((), "DONE")),
+            (91, 181, 361),
+        ),
+        (
+            "add-then-absolute",
+            (((), "WRAP_ADD[1]"), ((), "WRAP_ABS"), ((), "DONE")),
+            (91, 271, 361),
+        ),
+        (
+            "child-then-root-replan",
+            (((0,), "WRAP_ADD[1]"), ((), "WRAP_ADD[2]"), ((), "DONE")),
+            (181, 361, 541),
+        ),
+    )
+    actual_ledger = tuple(
+        (
+            task["name"],
+            tuple(
+                (tuple(path), action)
+                for path, action in task["actual_decisions"]
+            ),
+            tuple(decision["sequence_count"] for decision in task["decisions"]),
+        )
+        for task in artifact["tasks"]
+    )
+    assert actual_ledger == expected_ledger
+    assert sum(sum(counts) for _, _, counts in actual_ledger) == 2_439
+    assert all(
+        task["passed"]
+        and task["checkpoint_immutable"]
+        and task["actual_decisions"] == task["expected_decisions"]
+        and all(decision["physical_unique"] for decision in task["decisions"])
+        for task in artifact["tasks"]
     )

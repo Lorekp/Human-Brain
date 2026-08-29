@@ -391,6 +391,17 @@ The next increment factorizes site → schema → operator/production → operan
 binding → literal and carries the total successor into bounded H=2 planning
 over an Int/Bool/List development matrix.
 
+The smallest genuine H=2 typed-AST slice now passes 3/3 visible Int tasks.
+All incumbent sites entered the first-ply bank, and each first winner was scored
+from a learned-cell second-ply root-wrap prediction; selected first edits alone
+were actuated before real observation and replanning. This recovered both
+noncommutative orders and a real path change from child `(0,)` to root `()`.
+Exact enumeration evaluated 2,439 sequence cells across nine decisions and the
+sole artifact run took about 114 s, so B=4 physical beam selection is the next
+runtime optimization. `PASS_TYPED_AST_HORIZON2_INT` does not establish an
+arbitrary hypothetical second site, Bool/List, fresh/sealed transfer, M0,
+Simple-SWE, held-out, or C1 evidence.
+
 ### Phase R5 — Scale to billions (continuous)
 
 Tiered runtime per capacity envelope: CUDA ≤200k / CPU frontier to 6M /

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 import sys
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from hashlib import sha256
 from pathlib import Path
 from typing import Sequence
@@ -49,6 +49,9 @@ _FACTOR_MOTOR_CURRENT_PA = 5_000.0
 _MAX_DECISIONS = 3
 
 PUBLIC_ARGUMENTS = site.VISIBLE_ARGUMENTS
+_VISIBLE_ARTIFACT_PATH = Path(__file__).with_name(
+    "public_typed_ast_horizon2_int_visible_probe.json"
+)
 
 
 def _canonical_json(value: object) -> bytes:
@@ -719,3 +722,24 @@ def run_public_matrix(
             "Simple-SWE, held-out, or C1 evidence."
         ),
     )
+
+
+def write_visible_artifact(
+    result: PublicMatrixResult,
+    path: Path = _VISIBLE_ARTIFACT_PATH,
+) -> None:
+    """Persist one guarded public H=2 development result."""
+    if path.exists():
+        raise FileExistsError(f"visible AST H=2 artifact already exists: {path}")
+    path.write_bytes(_canonical_json(asdict(result)) + b"\n")
+
+
+def main() -> int:
+    result = run_public_matrix()
+    write_visible_artifact(result)
+    print(json.dumps(asdict(result), sort_keys=True, indent=2))
+    return 0 if result.verdict == "PASS_TYPED_AST_HORIZON2_INT" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
