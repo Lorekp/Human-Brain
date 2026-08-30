@@ -879,6 +879,35 @@ is self-posed capacity localization only, not public/canonical/protected input,
 prompt-only coding, family transfer, DEV/eval, M0, Path-2, C1, or benchmark
 evidence.
 
+The first separately named local-span successor then stopped even earlier at
+`STOP_SELF_POSED_MULTISPAN_EVENT_BRIDGE_V3_ATOMIC_READINESS`.  Before scoring
+any composition, it froze three disjoint atomic factor triads, six cyclic
+connector/distractor rows per triad, and one authenticated local prefix teacher
+per row: 18 matched groups, 54 lessons, 36 FIT / 18 heldout, and four/two
+appearances per factor.  The extraction schedule used the factor surface plus
+connector plus first distractor (three raw tokens, or four for `less than`) and
+was fixed without a margin winner or tie-break.  Fresh unchanged V2 anatomy
+replayed all FIT rows but only 4/18 heldout rows, for 40/54 exact overall.  The
+14 mismatches were heldout false negatives—two each for absolute, add, map,
+maximum, minimum, subtract, and sum—so the composition surface remained sealed
+at zero attempts.  Frozen telemetry is 31 excitatory and three inhibitory head
+updates, 3,266 committed cell ticks, E/H maxima 4/1, and the same two
+`uint16[24,1536]` arrays (147,456 bytes).  Extraction, input, curriculum, split,
+checkpoint, and result SHA-256 identities are respectively
+`809a2ed889765d1bb531a7ccbccd21878f1a171f2ba12d065e1cc8ef94a459a8`,
+`127f148edf67f0bb8746c317b6aac7f36f36338f5d13a4873026153284575ecf`,
+`e3d9f12017b27c8d492e026d61a8140f11555ce8f237453448bfb6aca81d0578`,
+`438c62f56d45667bd3a52316048101ce3536f37b8cf7cbe956f77af0f8d87a03`,
+`244429c7061e0e2e85a9088997417e9dbb5e3840c2572132dbc4bb655af1ab0c`,
+and `cf623dafde5c02b9c226a60e010348eb9b9a6c44633f29fcd82653dfa5940fd4`.
+There is no extraction, curriculum, current, epoch, or tie-rule retry.  This
+closes the new local-prefix curriculum under independent binary factor heads;
+the structurally different successor is one exclusive physical factor-plus-
+STOP competition per span, not another threshold or lesson repair.  This is
+self-posed atomic-readiness evidence only, not composition, public/canonical/
+protected input, prompt-only coding, transfer, DEV/eval, M0, Path-2, C1, or
+benchmark evidence.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -980,15 +1009,16 @@ is proven.
    third scalar-clamp failure, localizing complete-tier declaration overflow,
    bound-context representative overflow, and four-row output aliasing.  The
    cohort is terminal and will not be retried or tuned.
-4. **IN PROGRESS, PARALLEL LANES:** (a) build a desired-independent semantic
-   frontier V2 on self-posed numeric-composition and work-scaling fixtures,
-   factorizing operator skeletons from literal/role slots rather than raising
-   a spent bound; (b) after the terminal V1 identifiability STOP, build the
-   separately named self-posed compositional prompt-factor V2 with matched cue
-   counterfactuals and the unchanged role-normalized span interface.  No
-   identity restoration, smaller post-hoc split, learner run on the collapsed
-   public manifest, or public desired/result artifact is licensed.  DEV stays
-   sealed.
+4. **IN PROGRESS, PARALLEL LANES:** (a) integrate the banked packed binding/
+   proof-forest substrate into the desired-free semantic V2 frontier under the
+   unchanged numeric caps, with the self-posed 19-literal cost-9 stress fixture
+   as the computational-factorization boundary; (b) after the terminal
+   same-union composition STOP, build a separately named self-posed multi-span
+   bridge that learns only singular local factor events and composes them
+   through fixed physical admission/order/duplicate/overlap/copy races.  Do
+   not raise a spent bound, retune the terminal 108-lesson learner, expose raw
+   span candidates for host union/filtering, or open any public desired/result
+   artifact.  DEV stays sealed.
 5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
    Do not replay the spent six-family gate as capability evidence.  Both engine
    and bridge lanes must pass before any family-disjoint desired vector opens.
