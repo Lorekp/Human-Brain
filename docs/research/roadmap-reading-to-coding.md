@@ -982,6 +982,39 @@ step must execute the complete electrical controls, fit once, and require all
 is not prompt-only coding, transfer, DEV/eval, M0, Path-2, C1, or benchmark
 evidence.
 
+That frozen learner execution is now terminal at
+`STOP_SELF_POSED_EXCLUSIVE_FACTOR_WORKSPACE_V4_ATOMIC_READINESS`.  The five
+principal controls passed through one batched fitted-GLIF race and complete
+observed principal, basket, collision, and delayed-relay traces; circuit-off
+produced zero decisions and collision-disable changed the tied control.  The
+exact four-epoch FIT schedule then reached 44/54 atomic rows: 35/36 FIT and
+9/18 heldout.  All ten failures were unique wrong-factor winners, not STOPs or
+collisions: maximum→absolute once in FIT, then add→maximum,
+maximum→absolute, less-than→subtract twice, sum→less-than,
+minimum→count, map→minimum twice, and count→map in heldout.  The frozen
+state recorded 72 excitatory and 69 inhibitory update events, 14,857 committed
+cell ticks, maxima 4/4, and the exact 73,728-byte `uint8` footprint.
+
+Atomic inference authenticated the immutable checkpoint immediately before
+and after the single 54-row physical batch.  Composition stayed sealed at zero
+attempts, as did duplicate, overlap, and capacity controls; terminal `resolve`
+reauthenticates both checkpoint and atomic result before inspecting its batch.
+Checkpoint, electrical-preflight, projection-panel, factor-registry, and atomic
+result SHA-256 are respectively
+`c1cd4557a1c72a0389b4a5953de38dd795b63e52359ee72102cbc24906ce8384`,
+`62bc36373323a169acd7e9397ef621d9d2aa921ed2213dea374d8f540ebbf696`,
+`68c949b62e4ba9a13076dd17795bb4cc201f11f93521bf6ba176b4e110b55ab1`,
+`e5c5019e020c691edeed05b4068190fcd2b2c9ed6a2b3384949231fa1510368f`,
+and `9d5d37940716066cfde6e8057370aad7a30680f56180b55612a67af5788affc0`.
+Exclusive WTA therefore repaired the tie/collision decision seam but did not
+repair shared-feature credit assignment.  No V4 constant, schedule, cap, or
+curriculum will be tuned.  Its structurally different successor uses a fresh
+disjoint self-posed curriculum and causal teacher-clamped competitive
+plasticity or branch-local credit so earlier rival cells are corrected without
+a host classifier.  This remains self-posed atomic-readiness evidence only,
+not composition, public/canonical/protected input, prompt-only coding,
+transfer, DEV/eval, M0, Path-2, C1, or benchmark evidence.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -1083,16 +1116,17 @@ is proven.
    third scalar-clamp failure, localizing complete-tier declaration overflow,
    bound-context representative overflow, and four-row output aliasing.  The
    cohort is terminal and will not be retried or tuned.
-4. **IN PROGRESS, PARALLEL LANES:** (a) now that the mandatory packed relation
+4. **IN PROGRESS / PARALLEL LANES:** (a) now that the mandatory packed relation
    session is complete, make packed families the primary desired-free semantic
    frontier agenda under the unchanged numeric caps, with the self-posed
    19-literal cost-9 stress fixture as the computational-factorization
    boundary; every concrete input, relation operation, topology observation,
    and proof merge must pass through the exact pre-event work ledger; (b)
-   implement the now-frozen V4
-   exclusive factor workspace, execute its full electrical preflight, and open
-   composition only after exact 54/54 atomic readiness.  Do not raise a spent
-   bound, retune either terminal learner, expose raw span candidates for host
+   **COMPLETE / STOP:** the frozen V4 exclusive factor workspace passed its
+   full electrical preflight but reached only 44/54 atomic rows, so composition
+   and all compositor controls remained sealed at zero.  A fresh disjoint V5
+   competitive-plasticity successor is being designed; V4 receives no retry or
+   tuning.  Do not raise a spent bound, expose raw span candidates for host
    union/filtering, or open any public desired/result artifact.  DEV stays
    sealed.
 5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
