@@ -49,9 +49,14 @@ ambiguity, and selected-only proof materialization. A fresh panel reused the
 exact frozen roster and again stopped with three selected rows: scalar
 nonnegative retained two exact proofs, clamp-map-sum retained ten, and both
 stayed `STOP_AMBIGUOUS`; map-count reached exactly 30,000 selected-proof units
-with zero published proofs. The generic successor is factorizing that map-count
-publication under the unchanged cap. None of this is prompt-only solving,
-transfer, or capability evidence.
+with zero published proofs. A generic V4 selected-proof factorizer subsequently
+selected a self-posed 19-literal map-count case with one proof at 16,436 units,
+but the fresh immutable canonical V3 panel still stopped 3/6: map-count again
+hit 30,000, while scalar nonnegative and clamp-map-sum retained two and ten
+proofs. The live successor therefore publishes only a prompt-authorized plan
+slice before proof materialization; it does not raise caps, replay a spent
+panel, or use a host tie-break. None of this is prompt-only solving, transfer,
+or capability evidence.
 
 The first canonical factor-workspace protocol froze 90 appearances into 42
 causal identities with a 24-FIT/18-heldout split, then stopped before arrays or
@@ -70,7 +75,10 @@ unchanged. Its single learner spend passed all 13 pre-array controls, one 48-row
 FIT pass, 48/48 immutable FIT replay, and only then 24/24 untouched-heldout
 replay. Teacher-off, cell-off, factor derangement, duplicate, and fifth-factor
 controls stayed negative. This freezes a public-TRAIN factor checkpoint, not a
-prompt or joint result.
+prompt or joint result. A later integration audit found that its exact learned
+arrays were available only inside the executable experiment path, so a static,
+side-effect-free factor capsule and target-free raw-span inference adapter are
+required before the canonical joint can consume it.
 
 Prompt structural-selection V1 authenticated the same 90 appearances into 42
 physical causal identities and froze eight required relay channels, then stopped
@@ -92,19 +100,36 @@ froze its checkpoint, and stopped atomically before canonical learning:
 19/24 FIT identities were representable, while five clamp-sum identities alone
 required the absent generic atom `nesting-relation|depth|depth|4`. Canonical
 teacher updates and heldout target reads/replays remained zero. V3 is terminal;
-the fresh successor retires absolute nesting depth in favor of occurrence-bound
-ordered immediate edges. No prompt checkpoint or joint TRAIN integration is yet
-licensed.
+the V4 data-only successor is now frozen. It retires absolute nesting depth in
+favor of occurrence-bound ordered immediate edges, freezes 103 atoms and 24
+transitions over 110 fresh self-posed lessons, and admits all 24 FIT identities
+without merging or splitting the six structural classes. A recursive-add poison
+separates occurrence graphs that a deduplicated edge-type set would alias. The
+separately named V4 learner then learned 110/110 self-posed lessons while all
+six causal controls stayed at 0/110. One authorized FIT pass replayed all 24/24
+identities and 357/357 ordered occurrences, including 117 immediate-edge
+bindings, before physical STOP. Its immutable checkpoint is
+`e81336c6901edac0aada25c4ad89857686008fb276b94f705944ff9962a67d69`;
+heldout teacher/target/input/replay counts remain zero. An integration audit
+then localized the same artifact seam as the factor workspace: normal import
+reruns the executable learner instead of loading a teacher-free checkpoint.
+Commit `77d341f` closes the prompt side with a 272,040-byte authenticated static
+capsule. Teacher-free inference reproduces the banked checkpoint and actual
+winners without importing learner, target protocol, annotation, or manifest
+modules. The factor capsule and plan-slice remain prerequisites; no joint TRAIN
+result exists yet.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
 domains, held-out whole systems/layouts, symbol-renaming reruns, fixed baselines
 and causal ablations, and a domain-adapter boundary that forbids embedded
 solvers. Generation fails closed until a separate nine-artifact common-
-architecture binding exists. The regulatory generator/raw-event adapter and the
-spatial raw-byte fixture adapter are now frozen only on quarantined,
-non-adjudicative fixtures; all frozen spatial surfaces still STOP even with a
-forged binding. No G0 cohort has been generated or scored.
+architecture binding exists. The regulatory generator/raw-event adapter is
+frozen on quarantined non-adjudicative fixtures. The spatial lane now also has a
+frozen cue-key-door generator with 64 injective layouts and a quarantined
+fixture, while its candidate adapter exposes only opaque observation/action
+fields. No common learner, authenticated nine-artifact binding, adjudicative
+cohort, evaluator, or G0 score exists.
 
 ## Active-cell scaling and dynamics
 

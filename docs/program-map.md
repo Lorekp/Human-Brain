@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-30 after generic cross-type
-breadth and its fresh canonical panel, the role-bound factor checkpoint, the
-compositional prompt protocol, and fail-closed G0 source preflights. Exact
+Maintained by the orchestrator. Updated 2026-08-30 after the occurrence-bound
+prompt learner, generic selected-proof factorizer and fresh canonical panel,
+role-bound factor checkpoint, and frozen spatial generator. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,9 +14,9 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-G0  Frozen-architecture cross-domain generalization  [protocol/source preflights; unspent]
-R4  TRAIN-only prompt → semantic-factor bridge       [factor ready; prompt V4 protocol active]
-R3  Bottom-up typed semantic synthesis               [map-count factorization active]
+G0  Frozen-architecture cross-domain generalization  [generators frozen; common binding absent]
+R4  TRAIN-only prompt → semantic-factor bridge       [learned; static inference capsules active]
+R3  Bottom-up typed semantic synthesis               [canonical V3 STOP; plan-slice active]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
@@ -56,9 +56,12 @@ three selected rows, scalar ambiguity, and two unsupported `List[Int] -> Int`
 rows. V3 then added a signature-only generic clamp-map-sum/add-count route. Its
 fresh panel reused the exact roster and again stopped: clamp-map-sum became
 representable but retained ten exact visible-I/O proofs, while map-count reached
-the unchanged 30,000-unit selected-proof bound with no published proof. The live
-R3 item factorizes map-count publication under that same cap; spent panels, V2/
-V3 bytes, existing routes, and explicit ambiguity remain fixed.
+the unchanged 30,000-unit selected-proof bound with no published proof. Generic
+V4 factorization selects one self-posed map-count proof at 16,436 units, but the
+fresh canonical V3 panel remains an honest 3/6 STOP with map-count at 30,000.
+The live R3 item is a private prompt-authorized plan-slice receipt that narrows
+recipe domains before proof materialization. Spent panels, frozen routes, the
+unchanged caps, and explicit ambiguity remain fixed.
 
 On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
 24-FIT/18-heldout surface and then stopped before arrays or learning. Two
@@ -73,7 +76,10 @@ the representation with physical content×selector-role conjunctions and
 independent simultaneous factor membership on a new 48/24 cohort. Its single
 learner spend passed 13/13 pre-array controls, 48/48 FIT replay, and then 24/24
 untouched heldout, with teacher/cell/derangement/capacity controls negative. The
-factor checkpoint is frozen; this is public-TRAIN mechanism evidence only.
+factor checkpoint is frozen; this is public-TRAIN mechanism evidence only. Its
+learned arrays were local to the executable experiment, so a static checkpoint
+capsule plus target-free raw-span inference adapter is now being published for
+joint consumption.
 
 Prompt-selection V1 is also terminal, but at an earlier seam. It authenticated
 90 full prompt/signature appearances into 42 physical causal identities and
@@ -91,8 +97,18 @@ lessons. Its learner learned 138/138 exactly and all six controls falsified,
 then stopped before canonical learning because five of 24 FIT identities alone
 required the absent absolute-depth-4 atom; all other channels admitted 24/24.
 Canonical updates and heldout target reads/replays stayed zero. V3 is terminal.
-The fresh V4 protocol replaces absolute depth with occurrence-bound ordered
-immediate edges and must freeze before its separately named learner runs.
+The V4 data-only protocol is frozen: it replaces absolute depth with
+occurrence-bound ordered immediate edges, freezes 103 atoms / 24 transitions and
+110 fresh lessons, admits 24/24 FIT identities with the same six structural
+classes, and keeps heldout reads/replays at zero. Its separately named learner
+learned 110/110 self-posed lessons with six 0/110 controls, then one authorized
+FIT pass replayed 24/24 identities and 357/357 ordered occurrences. Checkpoint
+`e81336c6901edac0aada25c4ad89857686008fb276b94f705944ff9962a67d69`
+is frozen with all heldout counters at zero. Commit `77d341f` publishes its
+authenticated static capsule: teacher-free inference reconstructs the exact
+checkpoint and actual physical winners without importing learner or target-
+bearing modules. The factor capsule and prompt-authorized plan-slice are still
+active; no canonical joint TRAIN result exists yet.
 
 The following paragraphs retain precursor mechanism and performance detail.
 

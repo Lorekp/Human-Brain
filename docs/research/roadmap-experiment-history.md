@@ -176,10 +176,23 @@ Milestones:
   count orientations;
 - cost-9 / larger-grammar scaling remains an active engineering boundary.
 
+The generic typed breadth line then preserved scalar, List, and String routes
+while adding a signature-only `List[Int] -> Int` construction. Its first fixed
+six-row canonical panel selected three rows, kept scalar nonnegative and
+clamp-map-sum explicitly ambiguous, and stopped map-count at the 30,000-unit
+selected-proof bound. Generic V4 factorization later selected one self-posed
+19-literal map-count proof at 16,436 units, but the separately named immutable
+canonical V3 panel remained 3/6: the same two ambiguities survived and
+map-count again reached 30,000. This localized the next seam to
+prompt-authorized recipe/domain slicing before proof materialization, not a cap
+increase, spent-panel retry, or host tie-break.
+
 Current source:
 
 - [`typed_semantic_packed_frontier_v3.py`](../../experiments/r3_pilot/typed_semantic_packed_frontier_v3.py)
 - [`typed_semantic_packed_frontier_full_typed_v1.py`](../../experiments/r3_pilot/typed_semantic_packed_frontier_full_typed_v1.py)
+- [`typed_semantic_packed_generic_train_breadth_v4.py`](../../experiments/r3_pilot/typed_semantic_packed_generic_train_breadth_v4.py)
+- [`packed_generic_typed_canonical_train_freeze_v3.py`](../../experiments/r3_pilot/packed_generic_typed_canonical_train_freeze_v3.py)
 
 ## 8. Prompt-factor learning lineage
 
@@ -206,6 +219,44 @@ Current source:
 - [`teacher_gated_factor_workspace_v5.py`](../../experiments/r3_pilot/teacher_gated_factor_workspace_v5.py)
 - [`teacher_gated_factor_workspace_v5_protocol.py`](../../experiments/r3_pilot/teacher_gated_factor_workspace_v5_protocol.py)
 
+Canonical TRAIN structural selection then exposed a separate representation
+lineage. V1 stopped before learning because the available annotations had no
+exact structural relay targets; a compiler-owned data capsule supplied abstract
+targets without executable programs. V2 learned only 16/24 FIT identities: its
+whole-target trace aliased identities and its FIT-only registry could not express
+unseen atoms. V3 replaced whole-target heads with channel-local compositional
+atoms and ordered transitions. Its learner passed 138/138 self-posed lessons and
+six 0/138 causal controls, froze checkpoint
+`7cb126fa194a96a26072f59d326cdb1a7c32cffa06bd5d07e27e28df8101720a`,
+then stopped atomically at 19/24 canonical FIT projections. All five unsupported
+identities required only `nesting-relation|depth|depth|4`; canonical teacher
+updates and heldout reads/replays remained zero. The terminal V3 result is banked
+at commit `582de79`; its successor must remove absolute depth rather than extend
+the spent depth vocabulary.
+
+The V4 protocol did exactly that: it replaced absolute depth with
+occurrence-addressed ordered immediate parent-child edges, froze 103 atoms and
+24 transitions over 110 fresh self-posed lessons, and admitted 24/24 FIT
+identities without changing the six canonical structural classes. Its fresh
+learner learned 110/110 self-posed lessons while all six controls stayed at
+0/110, then used one authorized FIT teacher pass and replayed 24/24 identities
+and 357/357 occurrences before physical STOP. Checkpoint
+`e81336c6901edac0aada25c4ad89857686008fb276b94f705944ff9962a67d69`
+is banked at commit `561a581`; all heldout counters are zero.
+
+An integration audit then found that importing the learner reran training and
+that the learned arrays were not available as a static consumer artifact. Commit
+`77d341f` publishes a side-effect-free authenticated capsule and teacher-free
+`infer_prompt(...)` seam. It reconstructs the exact checkpoint and banked actual
+winners without importing learner, annotation, manifest, or target protocol
+modules during normal inference.
+
+Current canonical prompt source:
+
+- [`public_train_prompt_selection_v4.py`](../../experiments/r3_pilot/public_train_prompt_selection_v4.py)
+- [`public_train_prompt_selection_v4_protocol.py`](../../experiments/r3_pilot/public_train_prompt_selection_v4_protocol.py)
+- [`public_train_prompt_selection_v4_static_checkpoint_capsule_v1.py`](../../experiments/r3_pilot/public_train_prompt_selection_v4_static_checkpoint_capsule_v1.py)
+
 ## 9. Joint prompt-factor + semantic selection
 
 The first frozen self-posed joint matrix now connects learned V5 factor relays
@@ -215,6 +266,14 @@ resolve exact semantics before selected-proof materialization.
 It passed 3/3 treatment rows and 4/4 controls. This proves the **joint seam** only;
 it does not establish canonical TRAIN prompt learning, family-disjoint transfer,
 or domain generality.
+
+The canonical joint has not yet run. It requires three consumable authorities:
+the static prompt certificate, a static factor checkpoint plus target-free raw-
+span adapter, and a private prompt-authorized plan-slice receipt issued before
+selected proof materialization. The latter is necessary because the visible-I/O
+race already identifies an e-class while two/ten concrete proofs can still
+remain inside it. No expected/teacher fields from either learner result may act
+as inference evidence.
 
 Reference:
 

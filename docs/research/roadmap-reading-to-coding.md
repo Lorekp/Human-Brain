@@ -251,10 +251,10 @@ The project must not describe itself as a domain-general learner before G0.
 | --- | --- | --- |
 | **Substrate / runtime** | Large native/CUDA execution demonstrated; compact typed outputs pass parity gates; lazy packed proof plans preserve cost-5 physics and make cost 7 fit under the unchanged cap | Can capability mechanisms scale without changing scientific semantics? |
 | **R2 reading / persistent memory** | Dense 49-book TRAIN build exists; factorized successor criterion is pinned; fresh source-bound replay is preflight-ready but unspent | Does persistent identity survive the full fresh TRAIN replay under the corrected factorized criterion? |
-| **R3 semantic learning / planning** | Generic scalar/List/String/cross-type breadth passes; the fresh fixed-roster panel stops with three selected, two explicit ambiguities, and map-count at the unchanged selected-proof work bound | Can generic map-count proof publication fit under the same cap while prompt/structural evidence resolves legitimate visible-I/O ambiguity? |
-| **R4 language → semantic factors** | Role-bound factor-workspace V4 passes 48/48 FIT then 24/24 untouched heldout; prompt V3 learns 138/138 self-posed lessons but stops atomically because five canonical FIT identities require an absent absolute-depth-4 atom | Does the occurrence-bound immediate-edge successor admit all canonical FIT structure and learn it without whole-target heads, target-derived vocabulary, or heldout target reads? |
-| **Joint language + semantics** | Self-posed joint matrix passes 3/3 treatments + 4/4 controls | Does the joint seam survive canonical TRAIN breadth without task/family identity or hidden outputs? |
-| **G0 domain generality** | Numerical preregistration plus regulatory/raw-spatial fixture source preflights are frozen and fail closed; no common-architecture binding, adjudicative cohort, learner, or outcome exists | Can the frozen architecture learn at least two structurally different non-coding domains with zero domain-specific computational primitives? |
+| **R3 semantic learning / planning** | Generic V4 factorization selects a self-posed map-count proof below cap, but the fresh fixed-roster V3 panel remains 3/6: two explicit ambiguities and canonical map-count at the unchanged selected-proof bound | Can a prompt-authorized plan slice narrow retained recipe domains before materialization while preserving physical authority and explicit STOP? |
+| **R4 language → semantic factors** | Role-bound factor V4 passes 48/48 FIT then 24/24 untouched heldout; occurrence-bound prompt V4 learns 110/110 self-posed and replays 24/24 FIT identities / 357 occurrences; its exact checkpoint now has a static teacher-free inference capsule | Can the factor checkpoint receive the same static target-free inference seam, so both learned states are consumable by the joint? |
+| **Joint language + semantics** | Self-posed joint matrix passes 3/3 treatments + 4/4 controls; canonical integration is blocked only on the factor capsule and pre-materialization plan-slice authority | Does the clean prompt + factor + plan-slice joint survive the fixed canonical TRAIN roster without task/family identity or hidden outputs? |
+| **G0 domain generality** | Numerical preregistration, regulatory fixtures, and a frozen 64-layout cue-key-door spatial generator exist; no common-architecture binding, adjudicative cohort, learner, evaluator, or outcome exists | Can the frozen architecture learn at least two structurally different non-coding domains with zero domain-specific computational primitives? |
 | **R5 family-disjoint code DEV** | Sealed | Does the frozen TRAIN architecture transfer to the 27 untouched public DEV tasks? |
 | **R6 Simple-SWE M0-M3** | Sealed | Can prompt-only coding beat the preregistered baselines? |
 
@@ -365,10 +365,15 @@ work accounting, selected-only proof materialization, and explicit ambiguity.
 Its fresh V2 panel reused the exact roster and stopped without retuning: the same
 three scalar/String rows selected; scalar nonnegative retained two exact proofs;
 clamp-map-sum retained ten; and map-count hit exactly 30,000 selected-proof units
-with zero published proofs. The next generic successor factorizes map-count proof
-publication under the same cap. Independent prompt, structural, or
-information-seeking evidence—not a host tie-break—must resolve the two legitimate
-visible-I/O ambiguities.
+with zero published proofs. Generic V4 factorization then selected one self-posed
+19-literal map-count proof at 16,436 units, proving that union/product
+factorization can remove the local blow-up. The separately named immutable
+canonical V3 panel nevertheless remained 3/6: canonical map-count again reached
+30,000 while the two ambiguities survived unchanged. The next successor is
+therefore a private prompt-authorized plan-slice receipt that constrains recipe
+families/domains before proof materialization. It must preserve the visible-I/O
+winner, selected-only work, explicit ambiguity, and unchanged caps; it may not
+use a host tie-break, replay a spent panel, or filter rendered programs.
 
 ## R4 — Learn language → semantic factors — ACTIVE
 
@@ -414,7 +419,11 @@ execution passed all 13 controls before either array existed, performed one
 48-lesson FIT pass, froze two immutable arrays, replayed FIT 48/48 exact, and
 only then opened untouched heldout for a 24/24 exact replay. Teacher-off made no
 updates; cell-off, factor derangement, duplicate, and fifth-factor controls all
-stayed negative. The factor checkpoint is frozen; do not retry V3 or V4.
+stayed negative. The factor checkpoint is frozen; do not retry V3 or V4. An
+integration audit found that its exact arrays were local to the executable
+experiment rather than a side-effect-free consumer artifact. A static factor
+capsule and raw-span, target-free inference adapter are now required; canonical
+joint inference must not import or execute the spent learner.
 
 ### Spent prompt selection V2 and compositional successor
 
@@ -449,18 +458,25 @@ all six causal controls remained at 0/138, then froze its checkpoint before
 canonical projection. Projection stopped atomically at 19/24 FIT: five clamp-sum
 identities alone required `nesting-relation|depth|depth|4`; every other channel
 was 24/24 supported. Canonical teacher updates and heldout target reads/replays
-were zero. V3 is terminal. The fresh successor removes absolute depth and uses
-occurrence-bound ordered immediate parent-child edges; it must collision-audit
-all 42 identities before a separately named learner runs. Ultimately require one
-physical prompt-only retained e-class winner with zero desired reads; proof
-exposure requires prompt winner, authoritative retained root/e-class, and
-selected proof e-class to agree.
+were zero. V3 is terminal. V4 removes absolute depth and uses
+occurrence-addressed ordered immediate parent-child edges. Its protocol admits
+24/24 FIT identities without changing the six structural classes; its fresh
+learner learned 110/110 self-posed lessons with six 0/110 controls, then one
+authorized FIT pass replayed 24/24 identities and 357/357 occurrences before
+physical STOP. The immutable checkpoint is frozen with zero heldout reads.
 
-After both checkpoints freeze, join them once to the generic packed TRAIN engine
-on fixed TRAIN rows and rerun the terminal joint controls. Learning must exclude
-desired outputs, programs, family/task IDs, DEV material, and hidden property
-rows. These passes establish a canonical TRAIN language-to-semantics freeze,
-not family-disjoint transfer or domain generality.
+The learned prompt state is now consumable through a static authenticated
+capsule: normal inference imports neither the learner nor target-bearing
+protocol/annotation modules, reconstructs the exact checkpoint, and emits only
+actual physical winners, occurrence bindings, and STOP. The remaining order is
+static factor inference, prompt-authorized pre-materialization plan slicing, and
+one fresh fixed-roster canonical joint. Require one prompt-authorized retained
+e-class/plan-slice authority with zero desired reads; the visible-I/O race winner,
+prompt authority, retained e-class, and materialized proof must agree. Learning
+and inference must exclude desired outputs, programs, family/task IDs, DEV
+material, hidden property rows, and expected/teacher fields. A pass establishes
+a canonical TRAIN language-to-semantics freeze, not family-disjoint transfer or
+domain generality.
 
 ## G0 — Frozen-architecture cross-domain generalization — NEW HARD GATE
 
@@ -508,11 +524,11 @@ required artifact classes. This is still an unspent design result.
 
 The regulatory raw-event generator/adapter is frozen on two quarantined fixture
 seeds while every adjudicative seed and cohort constructor remains fail-closed.
-The spatial candidate adapter and fixture preflight likewise expose only opaque
-7×7×3 bytes, direction, raw action, reward, and boundary fields; every frozen
-surface stops before inspecting even a forged architecture binding. An actual
-spatial environment generator, common architecture, cohort, learner, evaluator,
-and outcome still do not exist.
+The spatial lane now has a frozen cue-key-door generator with 64 injective
+layouts plus a quarantined fixture; its candidate adapter exposes only opaque
+7×7×3 bytes, direction, raw action, reward, and boundary fields. No adjudicative
+spatial seed has been executed. A common architecture, authenticated nine-part
+binding, cohort, learner, evaluator, and outcome still do not exist.
 
 `PASS_FROZEN_ARCH_CROSS_DOMAIN_G0` would justify calling the architecture a
 **candidate domain-general learner**. It would not imply AGI or human-level
@@ -653,22 +669,25 @@ Do not collapse these into "general intelligence."
 
 ## Parallel lane A — generic semantic engine
 
-1. Factorize generic map-count selected-proof publication under the unchanged
-   cap; never replay or retune the spent canonical V2 panel.
-2. Preserve explicit ambiguity/version-space states and selected-only proof
-   materialization; use independent prompt/structural/information evidence for
-   ambiguity rather than a host tie-break.
-3. No family-specific operators or cap increases based on spent panel outcomes.
+1. Preserve the banked generic map-count factorizer and terminal canonical V3
+   panel; never replay or retune a spent panel.
+2. Issue a private prompt-authorized plan-slice receipt before proof
+   materialization, constraining only authenticated e-class/recipe topology and
+   domains—not rendered source, desired outputs, or task/family labels.
+3. Preserve explicit ambiguity/STOP, selected-only proof work, and the unchanged
+   30k/30k/80k caps. No family-specific operators or host tie-breaks.
 
 ## Parallel lane B — canonical language learning
 
-1. Preserve the frozen factor-workspace V4 checkpoint; never retry V3 or V4.
-2. Preserve terminal prompt-selection V3 and freeze its fresh occurrence-bound
-   immediate-edge successor before running a separately named learner.
-3. Use the V5 causal teacher-gated/branch-local mechanism; do not restore task,
-   family, ordinal, entrypoint spelling, or audit hashes as semantic features.
-4. Freeze both checkpoints and the joint TRAIN controls before any DEV desired
-   vector is visible.
+1. Preserve the frozen factor-workspace and prompt V4 checkpoints; never retry
+   their spent learners.
+2. Publish the factor state as a side-effect-free static capsule with raw-span,
+   target-free inference, matching the already banked prompt capsule boundary.
+3. Join actual prompt/factor winners through the private plan-slice authority;
+   do not restore task, family, ordinal, entrypoint spelling, audit hashes, or
+   expected/teacher fields as semantic features.
+4. Spend one fresh fixed-roster canonical TRAIN joint and controls before any DEV
+   desired vector is visible.
 
 ## Parallel lane C — reading/persistent memory
 
@@ -679,8 +698,8 @@ Do not collapse these into "general intelligence."
 
 ## New lane D — domain generality
 
-1. Complete the actual spatial generator source beyond the frozen raw-byte
-   fixture preflight without executing adjudicative seeds.
+1. Preserve the frozen 64-layout spatial generator without executing
+   adjudicative seeds.
 2. Freeze the common post-R3/R4 architecture, nine-part artifact binding, and
    generality-budget ledger against the machine-frozen G0 protocol.
 3. Generate fresh synthetic regulatory and causal/spatial cohorts only after the
