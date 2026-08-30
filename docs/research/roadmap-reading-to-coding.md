@@ -1299,6 +1299,7 @@ packed grammar is still the narrow `List[Int] -> Int` sum/count slice and V5
 still learns self-posed cues rather than canonical TRAIN language.  DEV, M0,
 held-out, Path-2, C1, SWE-bench, Gemma, and Opus remain sealed.
 
+## Domain-adapter boundary
 The first generic TRAIN-breadth layer now passes for `Int -> Int`.  One deep
 desired-free `build(signature,cases,literals,max_cost) -> select(desired)` seam
 binds the caller's typed signature to the retained packed scalar V3 workset and
@@ -1448,48 +1449,61 @@ is proven.
 
 ## Immediate queue
 
-1. **COMPLETE:** bank the semantic 30/30 artifact and make its 8,937-second
-   physical path materially faster without changing winners, race ledgers, or
-   checkpoint identity.  A parity-checked first-three-task replay is 42.3x
-   faster in aggregate.
-2. **COMPLETE:** extend the generic semantic basis with retained Int extrema,
-   the Char/String output substrate, List aggregates, String combinators, and
-   the private desired-independent frontier work bound.  No six-family desired
-   vector was opened to implement or calibrate the bound.
-3. **COMPLETE / STOP:** freeze and spend the broad six-family public-TRAIN
-   visible-I/O gate once.  It stopped after 13/60 tasks and 6 passes on the
-   third scalar-clamp failure, localizing complete-tier declaration overflow,
-   bound-context representative overflow, and four-row output aliasing.  The
-   cohort is terminal and will not be retried or tuned.
-4. **COMPLETE / PARALLEL LANE PASSES:** (a) **FULL-TYPED PACKED SLICE PASS:**
-   after the same-cap V3 scalar seam, a desired-free `List[Int] -> Int` frontier
-   now physically composes sum and both less-than-to-count orientations under
-   authenticated typed contexts and selected-only proof materialization;
-   (b) **COMPLETE / V5 LEARNER PASS:** after all 52 electrical controls, one
-   frozen FIT pass now reaches exact 54/54 atomic replay, 18/18 two-event
-   composition, and 21/21 registered compositor controls.  Teacher-off,
-   cell-off, and permuted-teacher panels remain causally negative for the true
-   labels.
-5. **COMPLETE / JOINT SELF-POSED PASS:** the frozen seven-row prompt-factor plus
-   visible-I/O matrix passes 3/3 treatments and 4/4 controls.  It proves the
-   relay-to-family-admission-to-selected-proof seam without public or canonical
-   inputs; it is not breadth or prompt-transfer evidence.
-6. Implement `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2`: extend the same desired-
-   free packed-primary engine across the generic scalar, List, and String TRAIN
-   basis, then require one fixed canonical TRAIN engineering row per family
-   under the unchanged work cap.  Do not inspect DEV or add family operators.
-7. Implement `PUBLIC_TRAIN_FACTOR_WORKSPACE_V2`: freeze the exact 42-identity
-   canonical inventory, 24/18 split, and 78 matched counterfactual lessons, then
-   grow V5 into a repeated masked-WTA, capacity-four physical factor-set
-   workspace.  Desired outputs, programs, family IDs, DEV, and property rows
-   remain outside learning.
-8. Implement `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1`: learn TRAIN-only
-   root/edge, operand-orientation, and literal-role relays, then require a unique
-   physical prompt-only packed e-class winner with zero desired reads.  Factor-
-   set admission alone does not license this gate.
-9. Spend one paired 27-task public DEV gate only after the engine breadth,
-   factor-set bridge, prompt-selection checkpoint, and terminal joint controls
-   all pass unchanged. M0 and canonical eval stay sealed.
-10. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
-   empty state in bounded public-TRAIN chunks; do not import the completed
-   dense build or open C1/held-out material.
+## Parallel lane A — generic semantic engine
+
+1. Implement and freeze `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2` across generic
+   scalar/List/String semantics under the existing work caps.
+2. Preserve explicit ambiguity/version-space states and selected-only proof
+   materialization.
+3. No family-specific operators or cap increases based on the spent six-family
+   results.
+
+## Parallel lane B — canonical language learning
+
+1. Implement `PUBLIC_TRAIN_FACTOR_AND_JOINT_FREEZE_V2` using the 42 canonical
+   semantic prompt identities plus matched self-posed counterfactuals.
+2. Use the V5 causal teacher-gated/branch-local mechanism; do not restore task,
+   family, ordinal, entrypoint spelling, or audit hashes as semantic features.
+3. Freeze the joint TRAIN checkpoint before any DEV desired vector is visible.
+
+## Parallel lane C — reading/persistent memory
+
+1. Spend/resume the prepared fresh source-bound 49-book factorized-successor
+   TRAIN replay in bounded chunks.
+2. Do not import the completed dense build into the adjudicative scorer.
+3. Keep held-out/C1 sealed until the corrected TRAIN criterion has a verdict.
+
+## New lane D — domain generality
+
+1. Finalize the exact G0 numerical thresholds, generators, seeds, and split sizes
+   without using adjudicative outcomes.
+2. Freeze the common post-R3/R4 architecture and generality-budget ledger.
+3. Generate fresh synthetic regulatory and causal/spatial cohorts only after the
+   freeze.
+4. Spend G0 before R5 DEV.
+5. If G0 STOPs, prioritize the localized domain-general mechanism before adding
+   more coding-specific machinery.
+
+## Protected opening order
+
+```text
+R3 packed TRAIN breadth freeze
+        +
+R4 canonical prompt/joint TRAIN freeze
+        |
+        v
+G0 frozen-architecture cross-domain gate
+        |
+        v
+R5 paired 27-task family-disjoint public DEV
+        |
+        v
+R6 Simple-SWE M0 -> M3
+        |
+        v
+real held-out SWE / model comparisons
+```
+
+This ordering is deliberate. It makes it harder to accidentally optimize the
+architecture around coding benchmarks and then mistake that specialization for
+a generally learning network.
