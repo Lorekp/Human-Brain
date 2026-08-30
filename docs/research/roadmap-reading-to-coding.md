@@ -252,7 +252,7 @@ The project must not describe itself as a domain-general learner before G0.
 | **Substrate / runtime** | Large native/CUDA execution demonstrated; compact typed outputs pass parity gates; lazy packed proof plans preserve cost-5 physics and make cost 7 fit under the unchanged cap | Can capability mechanisms scale without changing scientific semantics? |
 | **R2 reading / persistent memory** | Dense 49-book TRAIN build exists; factorized successor criterion is pinned; fresh source-bound replay is preflight-ready but unspent | Does persistent identity survive the full fresh TRAIN replay under the corrected factorized criterion? |
 | **R3 semantic learning / planning** | Bottom-up semantic 30/30 first TRAIN gate; six-family gate STOP localized; packed scalar/full-typed slices and generic scalar plus List TRAIN-breadth layers pass | Can the packed engine add the generic String layer under the unchanged work budget? |
-| **R4 language → semantic factors** | Self-posed V5 passes; canonical factor-workspace V2 froze 42/24/18/78 then stopped before arrays because identical physical inputs demanded minimum versus maximum singletons | Can a fresh causal factor-set protocol represent same-span multi-label semantics before prompt-only structure/literal selection? |
+| **R4 language → semantic factors** | Factor-workspace V3 freezes a conflict-free 72-lesson factor-set protocol over the canonical 42/24/18 inventory; prompt-selection V1 stops prelearning because the available annotations contain factors but no exact structural relay targets | Can V3 learn the frozen factor sets while a separate compiler-owned TRAIN capsule supplies identifiable abstract structural teachers? |
 | **Joint language + semantics** | Self-posed joint matrix passes 3/3 treatments + 4/4 controls | Does the joint seam survive canonical TRAIN breadth without task/family identity or hidden outputs? |
 | **G0 domain generality** | **NEW, unspent** | Can the frozen architecture learn at least two structurally different non-coding domains with zero domain-specific computational primitives? |
 | **R5 family-disjoint code DEV** | Sealed | Does the frozen TRAIN architecture transfer to the 27 untouched public DEV tasks? |
@@ -377,20 +377,36 @@ V2 is terminal at `STOP_PUBLIC_TRAIN_FACTOR_WORKSPACE_V2_INPUT_ALIAS`. Two
 post-selector 12-cell inputs each demanded both minimum and maximum as different
 singletons; seven FIT and three heldout lessons were contradictory before any
 electrical control, array allocation, or learning attempt. The fresh V3 protocol
-must define causal input keys without labels/hashes and map each key to one exact
-factor set. In particular, the shared minimum/maximum assembly teaches
+now defines causal input keys without labels/hashes and maps each key to one exact
+factor set. Its 12 factor-set classes contain 72 fresh lessons (48 FIT / 24
+heldout), exactly four/two distinct causal inputs per class, with zero stripped-key
+conflicts. In particular, the shared minimum/maximum assembly teaches
 `{minimum, maximum}` through repeated masked WTA, matching the canonical
 same-span semantics. Different factors may overlap or nest; a repeated factor
 poisons the case and a fifth distinct factor triggers capacity STOP. Candidate
-admission must compare exact physical factor sets.
+admission must compare exact physical factor sets. The data-only protocol is
+frozen; the learner execution is the live gate.
 
-### Next R4 gate 2 — `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1`
+### Next R4 gate 2 — structural annotation then prompt selection successor
 
-Factor sets alone cannot identify an AST. Bind role-normalized prompts to typed
-signatures and learn TRAIN-only root/edge, operand-orientation, nesting, and
-literal-slot relays. Require one physical prompt-only retained e-class winner
-with zero desired reads; proof exposure requires prompt winner, authoritative
-retained root/e-class, and selected proof e-class to agree.
+Factor sets alone cannot identify an AST. The spent
+`PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1` binds 90 role-normalized prompt/signature
+appearances to 42 physical causal identities and freezes the required root/edge,
+operand-orientation, nesting, parameter-role, literal-slot/copy, and terminal
+root/e-class relay vocabulary. It stops before learning at
+`STOP_PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1_EXACT_STRUCTURAL_RELAY_TARGETS_UNAVAILABLE`:
+the banked annotations expose only span/factor fields and contain zero exact
+structural target sets.
+
+The smallest successor is a separately frozen, compiler-owned public-TRAIN
+structural annotation capsule. It may publish abstract relay teachers, but must
+not expose executable programs/ASTs/sources, desired or property rows, task/family
+identity, entrypoint spelling, audit hashes as neural evidence, or protected
+surfaces. Rerun the same physical causal-key total-function/collision audit, then
+learn the structural relays in a newly named prompt-selection gate. Require one
+physical prompt-only retained e-class winner with zero desired reads; proof
+exposure requires prompt winner, authoritative retained root/e-class, and
+selected proof e-class to agree.
 
 After both checkpoints freeze, join them once to the generic packed TRAIN engine
 on fixed TRAIN rows and rerun the terminal joint controls. Learning must exclude
@@ -455,7 +471,7 @@ Opening conditions:
 
 1. `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2` passes and freezes;
 2. `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3` passes and freezes;
-3. `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1` passes and freezes;
+3. a fresh successor to the terminal prompt-selection V1 passes and freezes;
 4. the canonical TRAIN joint matrix and terminal controls pass unchanged;
 5. G0 receives its frozen-architecture cross-domain verdict under the same
    common-learning architecture;
@@ -586,10 +602,12 @@ Do not collapse these into "general intelligence."
 
 ## Parallel lane B — canonical language learning
 
-1. Freeze and execute `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3`, replacing V2's
-   impossible singleton aliases with causal factor-set targets.
-2. Implement `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1` for root/edge,
-   orientation, nesting, and literal-slot selection with zero desired reads.
+1. Execute the frozen `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3` factor-set protocol;
+   do not retune its fresh cohort after the learner result.
+2. Freeze the separate compiler-owned TRAIN structural annotation capsule, then
+   run a newly named prompt-selection successor for root/edge, orientation,
+   nesting, parameter-role, and literal-slot/copy selection with zero desired
+   reads.
 3. Use the V5 causal teacher-gated/branch-local mechanism; do not restore task,
    family, ordinal, entrypoint spelling, or audit hashes as semantic features.
 4. Freeze both checkpoints and the joint TRAIN controls before any DEV desired

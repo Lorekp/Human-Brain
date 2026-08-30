@@ -1,6 +1,6 @@
 # Benchmark status
 
-Status date: 2026-08-29
+Status date: 2026-08-30
 
 ## What has passed
 
@@ -17,6 +17,52 @@ split through mini-swe-agent 2.4.6 and the official cached Docker image
   infrastructure or ambiguous failure.
 - Combined developmental/native integration: 69 forced-CPU tests and 4 real
   CUDA tests passed, plus Rust formatting, Clippy, and Cargo tests.
+
+## Current packed TRAIN and generality frontier
+
+The earlier sections below retain the chronological mechanism record. The live
+frontier is narrower and uses the packed-primary build/select seam:
+
+- compact typed physical outputs passed all 44 frozen parity, memory, and
+  work-bound gates with no dense production compatibility route;
+- lazy packed proof plans preserve the complete cost-5 physical ledger and
+  selected proof identity, while reducing the 19-literal cost-7 build from
+  29,703 to 22,456 relation units under the unchanged 30,000 cap;
+- construction-certified desired-free `Int -> Int` breadth selects generic
+  signed offset, nonnegative maximum, and nested clamp from one frontier;
+- construction-certified desired-free `List[Int] -> List[Int]` breadth selects
+  generic map-absolute and map-add through the full-typed workset with zero
+  scalar-route work.
+
+The scalar and List breadth layers build without desired reads or proofs,
+materialize only the selected proof, and return `NO_EXACT` for a
+root-preserving desired permutation. This is generic TRAIN mechanism evidence,
+not String breadth, canonical prompt-only solving, family-disjoint transfer, or
+protected capability evidence.
+
+The first canonical factor-workspace protocol froze 90 appearances into 42
+causal identities with a 24-FIT/18-heldout split, then stopped before arrays or
+learning. Identical physical inputs demanded minimum and maximum as incompatible
+singleton labels. The V3 successor protocol is now frozen with 12 factor-set
+classes and 72 fresh lessons (48 FIT / 24 heldout), exactly four/two distinct
+causal inputs per class, and zero stripped-key conflicts. Both V2 aliases teach
+`{minimum, maximum}`. This is an identifiable data-only protocol, not yet a
+learned workspace result; restoring hashes, labels, task/family identity, or
+ordinal features is forbidden.
+
+Prompt structural-selection V1 authenticated the same 90 appearances into 42
+physical causal identities and froze eight required relay channels, then stopped
+prelearning: the available semantic annotations contain only span/factor fields
+and zero exact structural target sets. No learner, candidate, proof, desired or
+program evidence was constructed. Its successor is a separate compiler-owned
+TRAIN annotation capsule followed by a newly named causal-key collision audit,
+not prompt/factor heuristics.
+
+Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
+unspent design uses regulatory and spatial non-coding domains, held-out whole
+systems/layouts, symbol-renaming reruns, fixed baselines and causal ablations,
+and a domain-adapter boundary that forbids embedded solvers. No G0 cohort has
+been generated or scored.
 
 ## Active-cell scaling and dynamics
 

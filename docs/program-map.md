@@ -1,9 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-29 after the first broad
-bottom-up typed-semantic TRAIN pass, its speed layer, the first generic breadth
-mechanisms including generic String composition, the fixed semantic-frontier
-work bound, prompt-span input, and Path-2 replay preparation. Exact scientific
+Maintained by the orchestrator. Updated 2026-08-30 after the packed semantic
+frontier, generic scalar/List TRAIN-breadth layers, canonical factor-workspace
+identifiability result, and frozen-architecture G0 design. Exact scientific
 boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -15,8 +14,9 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-R4  TRAIN-only prompt → semantic-factor bridge       [physical span input banked]
-R3  Bottom-up typed semantic synthesis               [30/30 + breadth + work bound]
+G0  Frozen-architecture cross-domain generalization  [protocol design; unspent]
+R4  TRAIN-only prompt → semantic-factor bridge       [factor-set successor active]
+R3  Bottom-up typed semantic synthesis               [packed scalar + List banked]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
@@ -32,6 +32,45 @@ list-map-absolute, then passed 960 property cases hidden from selection. It saw
 typed signatures plus four regression I/O rows, not prompts or family/task
 identity. This is physical programming by examples, not canonical prompt-only
 Simple-SWE, family-disjoint transfer, or M0.
+
+The current R3 construction seam is packed and desired-free. V3 retains
+factorized semantic families and materializes only the physically selected
+proof. V4 replaces eager operator MDD topology with content-addressed lazy proof
+recipes: unchanged cost-5 physics and proof identity are preserved, while the
+19-literal cost-7 build falls from 29,703 to 22,456 relation units under the
+same 30,000 cap. That is a runtime/mechanism result, not added capability.
+
+`PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2` has two banked signature-routed layers:
+
+- `Int -> Int`: signed offset, nonnegative maximum, and nested clamp from one
+  14-root frontier;
+- `List[Int] -> List[Int]`: generic map-absolute and map-add through the
+  full-typed workset, with causally zero scalar-route work.
+
+Both layers build with no desired reads or proofs, expose only selected proofs,
+and return explicit `NO_EXACT` for a root-preserving desired permutation. The
+String TRAIN-breadth layer is the remaining R3 freeze item; the older generic
+String mechanisms below are inputs to that construction, not a gate result.
+
+On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
+24-FIT/18-heldout surface and then stopped before arrays or learning. Two
+identical physical inputs demanded minimum and maximum as incompatible singleton
+labels. V2 is terminal; V3 maps each causal assembly to one exact factor set,
+including `{minimum, maximum}` for the shared assembly. Its frozen data-only
+protocol has 12 classes and 72 fresh lessons (48 FIT / 24 heldout), exactly
+four/two distinct causal inputs per class, and zero stripped-key conflicts. The
+learner execution is active.
+
+Prompt-selection V1 is also terminal, but at an earlier seam. It authenticated
+90 full prompt/signature appearances into 42 physical causal identities and
+froze eight structural relay channels, then stopped before learning because the
+available annotations contain only span/factor fields and zero exact structural
+target sets. A separate compiler-owned TRAIN annotation capsule must publish
+abstract relay teachers without exposing executable program/AST/source or
+desired/property/task/family/protected evidence; a newly named prompt-selection
+successor will rerun the causal-key collision audit.
+
+The following paragraphs retain precursor mechanism and performance detail.
 
 The next order is intentionally leakage-safe. The semantic physical path is
 already parity-accelerated: a first-round task from each banked family replayed
@@ -96,14 +135,14 @@ the shared 25-literal sentinel checkpoint is
 Independent audit passed, and implementer/root verification each passed
 100/100 tests. This is self-posed runtime-safety evidence only.
 
-1. Migrate dense typed physical outputs to the compact authenticated encoding,
-   then freeze and adjudicate the six unspent TRAIN families once; generic
-   String combinators and the work bound are complete.
-2. Complete and freeze the learned prompt-span → semantic-factor mapping on a
-   preregistered TRAIN capacity split; its physical input layer is already banked.
-3. Spend the 27 fixed family-disjoint public DEV tasks once, with visible-I/O
-   and prompt-only arms paired in the same gate.
-4. Only a paired transfer pass licenses the canonical M0 freeze/reveal ceremony.
+The protected opening order is now:
+
+1. freeze generic String breadth, factor-set V3, prompt structural selection,
+   and their canonical TRAIN joint controls;
+2. spend frozen-architecture G0 on regulatory and spatial non-coding domains;
+3. only after the G0 verdict, spend the 27 family-disjoint DEV tasks once;
+4. only a paired transfer pass licenses canonical M0-M3 and later SWE/model
+   comparisons.
 
 ### Reading and persistent memory
 
