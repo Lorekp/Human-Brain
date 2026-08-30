@@ -823,6 +823,23 @@ caller arrays and diagnostic snapshots cannot alias the frozen checkpoint.
 This is a two-factor self-posed learner mechanism, not the full 24-factor
 curriculum, public-TRAIN bridge, prompt-only coding, transfer, or DEV evidence.
 
+The unchanged V2 anatomy now also passes the exact cumulative core curriculum:
+54 self-posed lessons split into 36 FIT and 18 held-out sequences across add,
+subtract, minimum, maximum, absolute, less-than, map, sum, and count.  Each
+factor has four FIT and two held-out matched contrast groups; pair and triad
+rows preserve width and token multiset so shared-token activity cannot solve the
+label, while held-out slot/transition features must already occur in the
+corresponding FIT positives.  All 54 sequences classify exactly.  Nine heads
+are active, the other 15 stay silent, maximum E/H ticks are 4/1, and four
+epochs produce 35 excitatory updates, eight inhibitory updates, and 5,479
+committed cell ticks without reaching the cap.  Public freeze requires exactly
+all four core layers (24 groups, 54/36/18 lessons, nine taught factors); shorter
+prefixes are rejected and prior-layer retention is checked only through the
+single full checkpoint.  Group and authentication identities remain outside
+cell drives, currents, updates, and semantic inference.  This is still a
+self-posed nine-factor mechanism, not all-24 coverage, public-TRAIN learning,
+joint integration, prompt-only coding, family transfer, or DEV evidence.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a

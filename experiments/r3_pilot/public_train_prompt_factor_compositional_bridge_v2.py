@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
@@ -58,7 +58,17 @@ FACTOR_REGISTRY = (
 _FACTOR_INDEX = MappingProxyType(
     {factor: index for index, factor in enumerate(FACTOR_REGISTRY)}
 )
-_SLICE_FACTORS = ("add", "subtract")
+_CURRICULUM_LAYER_FACTORS = (
+    ("add", "subtract"),
+    ("minimum", "maximum"),
+    ("absolute", "less-than"),
+    ("map", "sum", "count"),
+)
+_GROUPS_PER_LAYER = 6
+_FIT_GROUPS_PER_LAYER = 4
+_HELDOUT_GROUPS_PER_LAYER = 2
+_MAX_FACTOR_CUE_ASSEMBLY_OVERLAP = 3
+_MIN_GROUP_ORDER_CELL_DIFFERENCE = 24
 
 HEAD_COUNT = len(FACTOR_REGISTRY)
 BANK_CELL_COUNT = 512
@@ -239,6 +249,25 @@ class CompositionalLesson:
         )
         if self.present_factors != ordered:
             raise ValueError("present_factors must use registry order")
+
+
+@dataclass(frozen=True, slots=True)
+class CompositionalContrastGroup:
+    """Validation-only matched cue counterfactuals with no semantic identity."""
+
+    lessons: tuple[CompositionalLesson, ...]
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.lessons) is not tuple
+            or len(self.lessons) < 2
+            or not all(
+                isinstance(lesson, CompositionalLesson) for lesson in self.lessons
+            )
+        ):
+            raise ValueError(
+                "a compositional contrast group needs at least two lessons"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -850,6 +879,105 @@ def _feature_keys(
     )
 
 
+def _feature_assemblies(
+    tokens: tuple[str, ...],
+) -> tuple[
+    tuple[_FeatureAssembly, ...],
+    tuple[_FeatureAssembly, ...],
+    tuple[_FeatureAssembly, ...],
+]:
+    return (
+        tuple(_feature_assembly(_TOKEN_BANK, (token,)) for token in tokens),
+        tuple(
+            _feature_assembly(_SLOT_BANK, (slot, token))
+            for slot, token in enumerate(tokens)
+        ),
+        tuple(
+            _feature_assembly(_TRANSITION_BANK, (left, right))
+            for left, right in zip(tokens, tokens[1:])
+        ),
+    )
+
+
+def _validate_feature_geometry(
+    groups: tuple[CompositionalContrastGroup, ...],
+    lessons: tuple[CompositionalLesson, ...],
+    active_factors: tuple[str, ...],
+) -> None:
+    assemblies_by_tokens = {
+        lesson.prompt_input.canonical_tokens: _feature_assemblies(
+            lesson.prompt_input.canonical_tokens
+        )
+        for lesson in lessons
+    }
+    keys_by_cells: tuple[dict[tuple[int, ...], tuple[object, ...]], ...] = (
+        {},
+        {},
+        {},
+    )
+    for bank_groups in assemblies_by_tokens.values():
+        for bank_index, assemblies in enumerate(bank_groups):
+            for assembly in assemblies:
+                prior_key = keys_by_cells[bank_index].setdefault(
+                    assembly.local_cells,
+                    assembly.key,
+                )
+                if prior_key != assembly.key:
+                    raise ValueError(
+                        "distinct projector keys cannot share a feature assembly"
+                    )
+
+    cue_cells = {
+        factor: set(_assembly_cells(_TOKEN_BANK, (factor,)))
+        for factor in active_factors
+    }
+    for left_index, left in enumerate(active_factors):
+        for right in active_factors[left_index + 1 :]:
+            if (
+                len(cue_cells[left] & cue_cells[right])
+                > _MAX_FACTOR_CUE_ASSEMBLY_OVERLAP
+            ):
+                raise ValueError(
+                    "factor cue assemblies exceed the preregistered overlap"
+                )
+
+    for group in groups:
+        grouped_assemblies = tuple(
+            assemblies_by_tokens[lesson.prompt_input.canonical_tokens]
+            for lesson in group.lessons
+        )
+        token_activity = tuple(
+            {
+                cell
+                for assembly in assemblies[_TOKEN_BANK]
+                for cell in assembly.global_cells
+            }
+            for assemblies in grouped_assemblies
+        )
+        if any(active != token_activity[0] for active in token_activity[1:]):
+            raise ValueError(
+                "matched contrasts must have identical token-bank activity"
+            )
+        order_activity = tuple(
+            {
+                cell
+                for bank_index in (_SLOT_BANK, _TRANSITION_BANK)
+                for assembly in assemblies[bank_index]
+                for cell in assembly.global_cells
+            }
+            for assemblies in grouped_assemblies
+        )
+        for left_index, left in enumerate(order_activity):
+            for right in order_activity[left_index + 1 :]:
+                if (
+                    len(left ^ right)
+                    < _MIN_GROUP_ORDER_CELL_DIFFERENCE
+                ):
+                    raise ValueError(
+                        "matched contrast order features are insufficiently distinct"
+                    )
+
+
 def _curriculum_sha256(lessons: tuple[CompositionalLesson, ...]) -> str:
     return _namespaced_sha256(
         b"prompt-factor-compositional-v2-curriculum\0",
@@ -868,20 +996,24 @@ def _curriculum_sha256(lessons: tuple[CompositionalLesson, ...]) -> str:
 
 
 def _validate_curriculum(
-    curriculum: Sequence[CompositionalLesson],
+    curriculum: Sequence[CompositionalContrastGroup],
     split: CompositionalSplit,
 ) -> tuple[
+    tuple[CompositionalContrastGroup, ...],
     tuple[CompositionalLesson, ...],
     tuple[CompositionalLesson, ...],
     tuple[CompositionalLesson, ...],
 ]:
     if isinstance(curriculum, (str, bytes)):
-        raise TypeError("curriculum must be a sequence of lessons")
-    lessons = tuple(curriculum)
-    if not lessons or not all(
-        isinstance(lesson, CompositionalLesson) for lesson in lessons
+        raise TypeError("curriculum must be a sequence of contrast groups")
+    groups = tuple(curriculum)
+    if not groups or not all(
+        isinstance(group, CompositionalContrastGroup) for group in groups
     ):
-        raise TypeError("curriculum must contain CompositionalLesson values")
+        raise TypeError(
+            "curriculum must contain CompositionalContrastGroup values"
+        )
+    lessons = tuple(lesson for group in groups for lesson in group.lessons)
     if not isinstance(split, CompositionalSplit):
         raise TypeError("split must be CompositionalSplit")
     identities = tuple(
@@ -889,6 +1021,11 @@ def _validate_curriculum(
     )
     if len(identities) != len(set(identities)):
         raise ValueError("curriculum whole-span identities must be unique")
+    exact_sequences = tuple(
+        lesson.prompt_input.canonical_tokens for lesson in lessons
+    )
+    if len(exact_sequences) != len(set(exact_sequences)):
+        raise ValueError("curriculum exact canonical sequences must be unique")
     expected = set(identities)
     fit_ids = set(split.fit_span_sha256s)
     generalization_ids = set(split.generalization_span_sha256s)
@@ -904,24 +1041,51 @@ def _validate_curriculum(
         for lesson in lessons
         if lesson.prompt_input.whole_span_sha256 in generalization_ids
     )
-    if any(
-        lesson.present_factors not in (("add",), ("subtract",))
-        for lesson in lessons
-    ):
-        raise ValueError("the first compositional slice trains add/subtract only")
-
-    groups: dict[tuple[str, ...], list[CompositionalLesson]] = defaultdict(list)
-    for lesson in lessons:
-        groups[tuple(sorted(lesson.prompt_input.canonical_tokens))].append(lesson)
-    if len(groups) != 6:
-        raise ValueError("the slice requires six matched contrast groups")
-    fit_groups = 0
-    generalization_groups = 0
-    for grouped in groups.values():
-        if len(grouped) != 2 or {
-            lesson.present_factors for lesson in grouped
-        } != {("add",), ("subtract",)}:
-            raise ValueError("each contrast group needs one add and one subtract sequence")
+    layer_by_factors = {
+        frozenset(factors): factors for factors in _CURRICULUM_LAYER_FACTORS
+    }
+    group_counts: Counter[tuple[str, ...]] = Counter()
+    fit_group_counts: Counter[tuple[str, ...]] = Counter()
+    heldout_group_counts: Counter[tuple[str, ...]] = Counter()
+    for group in groups:
+        grouped = group.lessons
+        if any(
+            len(lesson.prompt_input.canonical_tokens) != 4
+            for lesson in grouped
+        ):
+            raise ValueError("core curriculum lessons must contain exactly four tokens")
+        token_multisets = {
+            tuple(sorted(lesson.prompt_input.canonical_tokens))
+            for lesson in grouped
+        }
+        if len(token_multisets) != 1:
+            raise ValueError(
+                "matched contrast lessons must have equal-width token multisets"
+            )
+        if any(len(lesson.present_factors) != 1 for lesson in grouped):
+            raise ValueError("core curriculum lessons must teach one atomic factor")
+        if any(
+            lesson.prompt_input.canonical_tokens[0]
+            != lesson.present_factors[0]
+            for lesson in grouped
+        ):
+            raise ValueError("each atomic factor must be its lesson's leading cue")
+        taught = tuple(lesson.present_factors[0] for lesson in grouped)
+        factor_set = frozenset(taught)
+        layer_factors = layer_by_factors.get(factor_set)
+        if layer_factors is None:
+            raise ValueError("contrast group does not belong to a frozen core layer")
+        if (
+            len(grouped) != len(layer_factors)
+            or tuple(
+                factor for factor in FACTOR_REGISTRY if factor in factor_set
+            )
+            != layer_factors
+            or Counter(taught) != Counter(layer_factors)
+        ):
+            raise ValueError(
+                "contrast group must teach each frozen layer factor exactly once"
+            )
         memberships = {
             "fit"
             if lesson.prompt_input.whole_span_sha256 in fit_ids
@@ -930,17 +1094,49 @@ def _validate_curriculum(
         }
         if len(memberships) != 1:
             raise ValueError("a matched contrast group cannot cross the split")
-        fit_groups += int("fit" in memberships)
-        generalization_groups += int("generalization" in memberships)
-    if fit_groups != 4 or generalization_groups != 2:
-        raise ValueError("the slice requires exactly four FIT and two generalization groups")
-    for factor in _SLICE_FACTORS:
+        group_counts[layer_factors] += 1
+        fit_group_counts[layer_factors] += int("fit" in memberships)
+        heldout_group_counts[layer_factors] += int(
+            "generalization" in memberships
+        )
+
+    active_layers = tuple(
+        layer
+        for layer in _CURRICULUM_LAYER_FACTORS
+        if group_counts[layer]
+    )
+    if active_layers != _CURRICULUM_LAYER_FACTORS:
+        raise ValueError(
+            "public bridge requires exactly layers 0-3 of the core curriculum"
+        )
+    for layer in active_layers:
+        if (
+            group_counts[layer] != _GROUPS_PER_LAYER
+            or fit_group_counts[layer] != _FIT_GROUPS_PER_LAYER
+            or heldout_group_counts[layer] != _HELDOUT_GROUPS_PER_LAYER
+        ):
+            raise ValueError(
+                "each active layer requires exactly four FIT and two heldout groups"
+            )
+    active_factors = tuple(factor for layer in active_layers for factor in layer)
+    if (
+        len(groups),
+        len(lessons),
+        len(fit),
+        len(generalization),
+        len(active_factors),
+    ) != (24, 54, 36, 18, 9):
+        raise ValueError(
+            "public bridge requires 24 groups, 54 lessons, 36 FIT, "
+            "18 heldout, and nine taught factors"
+        )
+    for factor in active_factors:
         if sum(lesson.present_factors == (factor,) for lesson in fit) != 4:
             raise ValueError(f"FIT requires four {factor} sequences")
         if sum(
             lesson.present_factors == (factor,) for lesson in generalization
         ) != 2:
-            raise ValueError(f"generalization requires two {factor} sequences")
+            raise ValueError(f"heldout requires two {factor} sequences")
 
     fit_sequences = {lesson.prompt_input.canonical_tokens for lesson in fit}
     if any(
@@ -948,32 +1144,40 @@ def _validate_curriculum(
         for lesson in generalization
     ):
         raise ValueError("generalization exact spans must be absent from FIT")
-    fit_features = tuple(set() for _ in range(3))
+    fit_features = {
+        factor: tuple(set() for _ in range(3)) for factor in active_factors
+    }
     for lesson in fit:
         for destination, source in zip(
-            fit_features,
+            fit_features[lesson.present_factors[0]],
             _feature_keys(lesson.prompt_input.canonical_tokens),
             strict=True,
         ):
             destination.update(source)
     for lesson in generalization:
+        factor = lesson.present_factors[0]
         token_keys, slot_keys, transition_keys = _feature_keys(
             lesson.prompt_input.canonical_tokens
         )
-        if not token_keys <= fit_features[0] or not slot_keys <= fit_features[1]:
-            raise ValueError("generalization token/slot features must occur in FIT")
-        if len(transition_keys & fit_features[2]) < min(2, len(transition_keys)):
-            raise ValueError("generalization needs overlapping ordered transitions")
-    return lessons, fit, generalization
+        factor_features = fit_features[factor]
+        if (
+            not token_keys <= factor_features[0]
+            or not slot_keys <= factor_features[1]
+        ):
+            raise ValueError("heldout token/slot features must occur in factor FIT")
+        if len(transition_keys & factor_features[2]) < 2:
+            raise ValueError("heldout needs overlapping ordered factor transitions")
+    _validate_feature_geometry(groups, lessons, active_factors)
+    return groups, lessons, fit, generalization
 
 
 def build_frozen_bridge(
-    curriculum: Sequence[CompositionalLesson],
+    curriculum: Sequence[CompositionalContrastGroup],
     split: CompositionalSplit,
 ) -> FrozenCompositionalBridge:
     """Fit exactly four epochs and return an immutable compositional bridge."""
 
-    lessons, fit, generalization = _validate_curriculum(curriculum, split)
+    groups, lessons, fit, generalization = _validate_curriculum(curriculum, split)
     excitatory = np.zeros((HEAD_COUNT, INPUT_CELL_COUNT), dtype=TICK_DTYPE)
     inhibitory = np.zeros((HEAD_COUNT, INPUT_CELL_COUNT), dtype=TICK_DTYPE)
     ordered_fit = tuple(
@@ -1000,11 +1204,27 @@ def build_frozen_bridge(
             inhibitory_updates += len(learned.inhibitory_head_updates)
             committed_ticks += learned.committed_cell_ticks
 
+    if np.any(excitatory >= TICK_CAP) or np.any(inhibitory >= TICK_CAP):
+        raise RuntimeError("core curriculum reached the preregistered tick cap")
+    for lesson in lessons:
+        races = _race_heads(
+            excitatory,
+            inhibitory,
+            _project_prompt(lesson.prompt_input),
+        )
+        present = tuple(
+            race.factor for race in races if race.decision == PRESENT
+        )
+        if present != lesson.present_factors:
+            raise RuntimeError(
+                "frozen anatomy failed exact core curriculum classification"
+            )
+
     summary = BridgeBuildSummary(
         epochs=TRAINING_EPOCHS,
         fit_sequence_count=len(fit),
         generalization_sequence_count=len(generalization),
-        matched_contrast_group_count=6,
+        matched_contrast_group_count=len(groups),
         excitatory_head_update_events=excitatory_updates,
         inhibitory_head_update_events=inhibitory_updates,
         committed_cell_ticks=committed_ticks,
@@ -1070,6 +1290,7 @@ __all__ = [
     "TRAINING_EPOCHS",
     "BridgeBuildSummary",
     "CompositionalInference",
+    "CompositionalContrastGroup",
     "CompositionalLesson",
     "CompositionalPromptInput",
     "CompositionalSplit",
