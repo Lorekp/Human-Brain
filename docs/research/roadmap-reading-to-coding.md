@@ -855,6 +855,30 @@ cell drives, currents, updates, and semantic inference.  This is still a
 self-posed nine-factor mechanism, not all-24 coverage, public-TRAIN learning,
 joint integration, prompt-only coding, family transfer, or DEV evidence.
 
+The first exact same-anatomy composition extension is now terminal at
+`STOP_SELF_POSED_CORE_PROMPT_COMPOSITION_V1`.  It rebuilt the three disjoint
+512-cell banks and all 24 heads from zero under the unchanged four-epoch local
+rule, then expanded the frozen self-posed core to 108 lessons / 42 matched
+groups: 72 FIT and 36 heldout sequences, with 54 atomic one-factor rows and 54
+two-factor compositions across the same nine taught heads.  All fixture,
+feature-support, and prelearning integrity gates passed, but exact replay ended
+with 11 mismatches.  The frozen checkpoint recorded 77 excitatory and 43
+inhibitory head updates, 15,282 committed cell ticks, and E/H maxima 14/10;
+inference left it byte-identical.  Input, curriculum, checkpoint, and result
+SHA-256 identities are respectively
+`516e401c4dbac54ab20f2183fa39e9ac11abe4756155c9739f9722f72b97ece9`,
+`deb4b8e1cb79d8dc1bbff51a2234eac06eda3dcfe03e722ed6e9a6464f139080`,
+`ad4585ad76d184f36cf0edd0a52883d68fb13ed73735e4f20dcd73eb60892c47`,
+and `1b229f5e091cc38b46de3bee78b89fc34778f72fd1066327b2fbfc8dfe0406b1`.
+No current, cue, epoch, curriculum, or race constant is tuned and there is no
+retry.  This closes direct multi-label composition in one four-token prompt
+union under the current anatomy; it does not falsify local factor learning.
+The successor must keep atomic/local factor cues on separate short spans and
+compose their physical events without a host semantic union or filter.  This
+is self-posed capacity localization only, not public/canonical/protected input,
+prompt-only coding, family transfer, DEV/eval, M0, Path-2, C1, or benchmark
+evidence.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
