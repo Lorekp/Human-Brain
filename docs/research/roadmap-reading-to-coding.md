@@ -1107,6 +1107,56 @@ a host classifier.  This remains self-posed atomic-readiness evidence only,
 not composition, public/canonical/protected input, prompt-only coding,
 transfer, DEV/eval, M0, Path-2, C1, or benchmark evidence.
 
+That fresh V5 successor is now frozen as a data-only protocol after a holistic
+independent audit.  It keeps 54 disjoint self-posed atomic lessons (36 FIT / 18
+heldout) and constructs no learner arrays.  An exact-domain two-compartment
+storage/readout primitive accepts only 0/5,000 pA set and read gates, while a
+separate two-principal direct channel accepts only 0/10,000 pA; invalid or
+overdriven currents fail before state mutation.  Full four-slot selector fixtures
+bind spike provenance without label or control-name drive.  The future causal
+teacher/scout path persists selected content through teacher tick 1,134, read
+1,135, match 1,136, update 1,137, commit 1,138, and reset 1,139.
+
+The compositor protocol is now physical rather than a host precedence table.  A
+62-cell ingress buffer, pre-event occupancy snapshot, sequential first-free
+admission, and 126-cell buffered-copy coincidence path preserve exact identity.
+Separate one-hot overlap and capacity latches make poison absorbing and preserve
+the first cause.  Five exclusive EOS outcomes cover zero, one, or two factors plus
+overlap or capacity poison, with no partial factor emission.  Event completion at
++10 rearms readiness, +11 admits exactly one next-ingress-or-EOS request, and the
+selected gate fires at +12; EOS resets at relay +3, reset +4, and next-case ready
++5.  All 12 duplicate, six overlap, and three capacity controls obey physical
+duplicate-before-overlap-before-capacity precedence.  The future terminal deep
+interface authenticates and inspects gates in exact 54-atomic -> 18-composition ->
+21-control order, proving downstream results absent and attempts zero before it
+may touch any requested-batch field on an earlier STOP.
+
+The frozen protocol SHA-256 is
+`587bd68a293ca2116570cf4e5ee7a860bbdd9928138982ae43748c4f87a252c1`.
+Direct-channel, persistent-latch, selector-preflight, teacher/scout, ingress,
+admission, EOS, compositor, composition-execution, and future-authentication roots
+are respectively
+`dbd0ca3f5aeb7103c897dc5ffa279ef3fe602ab66ca133eeb9c3317ae188601b`,
+`bdec7d4c02c89da8399659684751c5d94ee27388503478fad987f887f085dcaf`,
+`b4d6cceae873edcd6e886ddb7f41a01e7ed659f6929029dcf6f77828c33ae073`,
+`94711addfea3c24279105db21cabe2a0c8b77191f85103fd9843150506492fb6`,
+`d8a787a63a4dece82a07c72645bd24cf24ff713cd56263649706bf759bef90b3`,
+`bae23fae4aedff113c30ae69de484e4ea6d61b42601f1b3965659699926d6f67`,
+`fbda21ef7328ec54bf4030e80a9ce8ff25da0c1f535c9e09a302ccfcd63c9c6b`,
+`56636b8acb5a386999bcc26471adde467f809329f459f9f7b26775677f745dc8`,
+`50dbae9c1d85cd6598a26493205e274b4f434499534d5eac8a6886f330a1545a`,
+and `958c173df96b4df257df93f8ffbcc2aeddcc950bc11e87750848f901675ea986`.
+The exact source/test SHA-256 pair is
+`d62fe76444ef48f0b58723f0cede1b6ca76e86c78623eb43c07f38be8e8c8746`
+/ `aaad0c021174a28baa70b22f77966dae4dc8c4471ff529be368db5878cbcf65d`.
+Root and independent runs passed 12/12 focused and 30/30 selected V3/V4/V5
+lineage tests.  Public, canonical, protected, learning-run, composition-result,
+and composition-attempt counts are all zero.  This licenses only the V5 learner
+execution: complete electrical preflight, one frozen fit, and 54/54 atomic replay
+before any composition or compositor-control execution.  It is not learning,
+composition, prompt-only coding, transfer, DEV/eval, M0, Path-2, C1, SWE-bench,
+Gemma, Opus, or other capability evidence.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -1215,13 +1265,14 @@ is proven.
    atomically at 30,000/30,001 during retained-group authentication.  The next
    engine seam is succinct retained-publication metadata authentication and
    selected-proof headroom under the unchanged cap; (b) **COMPLETE / STOP:**
-   V4 reached only 44/54 atomic rows and receives
-   no retry.  Its fresh disjoint V5 data-only protocol has sound curriculum and
-   analytical credit assignment, but independent audit is requiring exact
-   selector-latch, teacher/scout, compositor, composition-gate, and terminal-
-   authentication timing before the protocol can be banked or a learner can
-   run.  Do not expose raw span candidates for host union/filtering or open any
-   public desired/result artifact.  DEV stays sealed.
+   V4 reached only 44/54 atomic rows and receives no retry.  Its fresh disjoint
+   V5 data-only protocol now has a holistic independent SHIP across the exact
+   selector-latch, teacher/scout, staged compositor, EOS/reset/ready barrier,
+   composition gate, and terminal-authentication timing.  The next separately
+   named learner must execute complete electrical preflight, fit once, and pass
+   all 54 atomic rows before opening the 18 composition cases and exact 21
+   compositor controls.  Do not expose raw span candidates for host union/filtering
+   or open any public desired/result artifact.  DEV stays sealed.
 5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
    Do not replay the spent six-family gate as capability evidence.  Both engine
    and bridge lanes must pass before any family-disjoint desired vector opens.
