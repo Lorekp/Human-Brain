@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-30 after the generic
-scalar/List/String breadth, fixed canonical packed panel, public-TRAIN factor
-and structural-learning results, and machine-frozen G0 preregistration. Exact
+Maintained by the orchestrator. Updated 2026-08-30 after generic cross-type
+breadth and its fresh canonical panel, the role-bound factor checkpoint, the
+compositional prompt protocol, and fail-closed G0 source preflights. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,9 +14,9 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-G0  Frozen-architecture cross-domain generalization  [numeric protocol frozen; unspent]
-R4  TRAIN-only prompt → semantic-factor bridge       [fresh successors active]
-R3  Bottom-up typed semantic synthesis               [cross-type successor active]
+G0  Frozen-architecture cross-domain generalization  [protocol/source preflights; unspent]
+R4  TRAIN-only prompt → semantic-factor bridge       [factor ready; prompt learner active]
+R3  Bottom-up typed semantic synthesis               [map-count factorization active]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
@@ -51,11 +51,14 @@ same 30,000 cap. That is a runtime/mechanism result, not added capability.
 
 All three layers build with no desired reads or proofs, expose only selected
 proofs, and return explicit `NO_EXACT` for a root-preserving desired
-permutation. The fixed six-row canonical panel then banked an honest STOP: three
-rows selected, scalar nonnegative remained explicitly ambiguous, and the two
-`List[Int] -> Int` rows stopped unsupported with zero work. The live R3 item is
-a separately named generic cross-type layer for clamp-sum and add-count; the
-spent panel, existing V2 bytes, work caps, and scalar ambiguity remain fixed.
+permutation. The first fixed six-row canonical panel banked an honest STOP with
+three selected rows, scalar ambiguity, and two unsupported `List[Int] -> Int`
+rows. V3 then added a signature-only generic clamp-map-sum/add-count route. Its
+fresh panel reused the exact roster and again stopped: clamp-map-sum became
+representable but retained ten exact visible-I/O proofs, while map-count reached
+the unchanged 30,000-unit selected-proof bound with no published proof. The live
+R3 item factorizes map-count publication under that same cap; spent panels, V2/
+V3 bytes, existing routes, and explicit ambiguity remain fixed.
 
 On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
 24-FIT/18-heldout surface and then stopped before arrays or learning. Two
@@ -65,10 +68,12 @@ including `{minimum, maximum}` for the shared assembly. Its frozen data-only
 protocol has 12 classes and 72 fresh lessons (48 FIT / 24 heldout), exactly
 four/two distinct causal inputs per class, and zero stripped-key conflicts. Its
 FIT execution stopped at 43/48 exact after five collisions, with zero heldout
-treatment attempts and a passing 68/68 electrical/control preflight. V4 now
-freezes the fresh repair: physical content×selector-role conjunctions and
-independent simultaneous factor membership on a new 48/24 cohort. Its one
-learner execution is active; this is not a V3 retry.
+treatment attempts and a passing 68/68 electrical/control preflight. V4 repairs
+the representation with physical content×selector-role conjunctions and
+independent simultaneous factor membership on a new 48/24 cohort. Its single
+learner spend passed 13/13 pre-array controls, 48/48 FIT replay, and then 24/24
+untouched heldout, with teacher/cell/derangement/capacity controls negative. The
+factor checkpoint is frozen; this is public-TRAIN mechanism evidence only.
 
 Prompt-selection V1 is also terminal, but at an earlier seam. It authenticated
 90 full prompt/signature appearances into 42 physical causal identities and
@@ -80,7 +85,10 @@ and 722 abstract relay labels, while executable program/AST/source and
 desired/property/task/family/protected evidence remain excluded. Prompt-
 selection V2 then stopped at 16/24 FIT and 0/18 heldout: its whole-target trace
 still aliases identities and its FIT-only registry cannot represent unseen
-atoms. A fresh V3 compositional role/filler protocol is active; V2 is terminal.
+atoms. The fresh V3 data-only protocol passes with 15 grammar productions,
+eight channels, 132 atoms, 28 ordered transitions, and 138 collision-free
+self-posed lessons. Its learner spend is active; V2 is terminal, and protocol
+passage alone does not license the joint TRAIN seam.
 
 The following paragraphs retain precursor mechanism and performance detail.
 

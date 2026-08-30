@@ -40,13 +40,18 @@ frontier is narrower and uses the packed-primary build/select seam:
 
 The scalar, List, and String breadth layers build without desired reads or proofs,
 materialize only the selected proof, and return `NO_EXACT` for a
-root-preserving desired permutation. The fixed six-row canonical TRAIN panel
-then stopped honestly at 3 selected / 3 stopped: scalar clamp and two String
-rows selected, scalar nonnegative retained a two-proof `STOP_AMBIGUOUS`, and the
-two `List[Int] -> Int` rows stopped as unsupported with zero build work. No caps
-or rows were changed. This localizes the next R3 work to a fresh generic
-cross-type layer; it is not prompt-only solving, transfer, or capability
-evidence.
+root-preserving desired permutation. The first fixed six-row canonical TRAIN
+panel stopped honestly with three selected rows; scalar nonnegative stayed
+explicitly ambiguous and both `List[Int] -> Int` rows were unsupported. The
+separately named V3 cross-type layer then added generic clamp-map-sum and
+add-count behind a signature-only route while preserving the old routes, caps,
+ambiguity, and selected-only proof materialization. A fresh panel reused the
+exact frozen roster and again stopped with three selected rows: scalar
+nonnegative retained two exact proofs, clamp-map-sum retained ten, and both
+stayed `STOP_AMBIGUOUS`; map-count reached exactly 30,000 selected-proof units
+with zero published proofs. The generic successor is factorizing that map-count
+publication under the unchanged cap. None of this is prompt-only solving,
+transfer, or capability evidence.
 
 The first canonical factor-workspace protocol froze 90 appearances into 42
 causal identities with a 24-FIT/18-heldout split, then stopped before arrays or
@@ -57,12 +62,15 @@ class, and zero stripped-key conflicts. Both V2 aliases teach
 `{minimum, maximum}`. Its single FIT execution stopped at 43/48 exact: all four
 minimum/maximum inputs and one once-seen add input collided. Heldout treatment
 attempts remained zero and the electrical/control preflight passed 68/68. V3 is
-terminal. The frozen V4 protocol now introduces the fresh repair: 5,120 physical
-content×selector-role conjunction cells and 24 independent simultaneous
-factor-membership relays over a new 48/24 cohort. Content-only views remain
-aliased while role-bound views are conflict-free; capacity four and duplicate/
-fifth-factor poisons remain unchanged. Its one learner spend is active, not a
-V3 retry.
+terminal. V4 introduced 5,120 physical content×selector-role conjunction cells
+and 24 independent simultaneous factor-membership relays over a new 48/24
+cohort. Content-only views remain aliased while role-bound views are
+conflict-free; capacity four and duplicate/fifth-factor poisons remain
+unchanged. Its single learner spend passed all 13 pre-array controls, one 48-row
+FIT pass, 48/48 immutable FIT replay, and only then 24/24 untouched-heldout
+replay. Teacher-off, cell-off, factor derangement, duplicate, and fifth-factor
+controls stayed negative. This freezes a public-TRAIN factor checkpoint, not a
+prompt or joint result.
 
 Prompt structural-selection V1 authenticated the same 90 appearances into 42
 physical causal identities and froze eight required relay channels, then stopped
@@ -75,15 +83,23 @@ program/AST/source or desired/property/task/family/protected evidence exposed to
 the learner. Prompt-selection V2 then stopped at 16/24 FIT and 0/18 heldout.
 All four causal controls falsified, but its whole-target 12-lane trace still
 aliased FIT identities and its FIT-only output registry made unseen structural
-atoms unrepresentable. A fresh V3 compositional role/filler protocol is the live
-gate; V2 is terminal and does not license joint TRAIN integration.
+atoms unrepresentable. The fresh V3 data-only protocol now passes its self-posed
+prelearning gate with 15 grammar productions, eight channel-local schemas, 132
+atoms, 28 ordered transitions, and 138 unique physical lessons with complete
+support and matched order/role counterfactuals. It reads no canonical target
+payload and allocates no learner state. Its separately named learner spend is
+the live gate; V2 remains terminal and V3 protocol passage alone does not
+license joint TRAIN integration.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
 domains, held-out whole systems/layouts, symbol-renaming reruns, fixed baselines
 and causal ablations, and a domain-adapter boundary that forbids embedded
 solvers. Generation fails closed until a separate nine-artifact common-
-architecture binding exists. No G0 cohort has been generated or scored.
+architecture binding exists. The regulatory generator/raw-event adapter and the
+spatial raw-byte fixture adapter are now frozen only on quarantined,
+non-adjudicative fixtures; all frozen spatial surfaces still STOP even with a
+forged binding. No G0 cohort has been generated or scored.
 
 ## Active-cell scaling and dynamics
 
