@@ -933,6 +933,40 @@ capability evidence.  The next exact engine seam is succinct retained-
 publication metadata authentication plus selected-proof headroom under the
 same cap.
 
+That separately named V3 seam now passes under the unchanged 30,000-unit cap.
+Construction-time validation produces one rooted publication certificate and
+direct immutable family/e-class indexes; the retained decision arena uses an
+unaliased read-only node map whose exact identity is pinned by the workset.
+Selection performs one already-metered traversal of only the winning roots,
+revalidating exact node type, schema, edge domain/order, child membership, and
+content address before it may count a proof or expose a witness.  Desired
+outputs remain absent from build, and build still constructs zero proof forests
+or concrete/rendered witnesses.
+
+The unchanged 19-literal cost-5 stress is READY at 29,703 units with seven
+families, 249 e-nodes, 230 e-classes, 422 physical predictions, 723 cache hits,
+1,489 races, and zero witnesses.  Its frontier/build-work/event SHA-256 roots
+are `e0eecb0a980d14e77bb0e2fe0ec7d74d09408ceae8b6ebfe8a06f394653f7b81`,
+`2f675749810e971359757f26f88f5d12745b1fafa94698fbc864da67169c58a7`,
+and `1d02c9fa19c25799a856a042caf442b343d67705c705245dedb3cc285e792dd8`.
+The unique clamp then selects exact `min(max(x, -4), 6)` at 29,729 units and
+1,490 races, leaving 271 units of real headroom; its selected forest remains
+the V2 semantic identity
+`b05a2a5334ae4e28fad50b8e3b914d120002128998820792c70a95bc6c490d13`.
+A supported-but-absent vector reaches physical `STOP_NO_EXACT` at 29,711 with
+no proof work.  A 29,702 cap stops atomically before frontier seal at attempted
+unit 29,703, while the cost-9 stress remains an authenticated atomic STOP at
+30,000/30,001 after completing cost 5.
+
+The frozen V3 source/test SHA-256 pair is
+`4e9c90b0757860f9c445c6c11c8c8911e1b45a90aef7dba95fc64c5be451007e`
+/ `80ebe726f046e8e1f255f912d05bb43def2f379e7126ab2672133bdf9cc52bee`.
+Root passed 10/10 focused tests and an independent read-only integrity audit
+returned SHIP on the exact snapshot.  This closes the scalar selected-proof
+headroom mechanism only.  The next engine increment is full typed integration;
+this is not public/canonical data, DEV, M0, transfer, SWE-bench, Gemma, Opus, or
+other capability evidence.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
@@ -1258,13 +1292,12 @@ is proven.
    third scalar-clamp failure, localizing complete-tier declaration overflow,
    bound-context representative overflow, and four-row output aliasing.  The
    cohort is terminal and will not be retried or tuned.
-4. **IN PROGRESS / PARALLEL LANES:** (a) **COMPLETE / BUILD-COMPRESSION PASS +
-   SELECTION STOP:** the session-owned semantic-partition workset now imports
-   trusted ephemeral roots once and authenticates one publication traversal.
-   The 19-literal cost-5 build is READY at 29,951 units, but selection stops
-   atomically at 30,000/30,001 during retained-group authentication.  The next
-   engine seam is succinct retained-publication metadata authentication and
-   selected-proof headroom under the unchanged cap; (b) **COMPLETE / STOP:**
+4. **IN PROGRESS / PARALLEL LANES:** (a) **COMPLETE / SAME-CAP V3 PASS:** the
+   construction-certified packed frontier now builds the 19-literal cost-5
+   stress at 29,703 units and selects the exact clamp at 29,729, leaving 271
+   units of selected-proof headroom under the unchanged cap.  Its next engine
+   seam is full typed integration, not another scalar metadata optimization;
+   (b) **COMPLETE / STOP:**
    V4 reached only 44/54 atomic rows and receives no retry.  Its fresh disjoint
    V5 data-only protocol now has a holistic independent SHIP across the exact
    selector-latch, teacher/scout, staged compositor, EOS/reset/ready barrier,
