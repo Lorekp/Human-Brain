@@ -15,7 +15,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [protocol/source preflights; unspent]
-R4  TRAIN-only prompt → semantic-factor bridge       [factor ready; prompt learner active]
+R4  TRAIN-only prompt → semantic-factor bridge       [factor ready; prompt V4 protocol active]
 R3  Bottom-up typed semantic synthesis               [map-count factorization active]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
@@ -85,10 +85,14 @@ and 722 abstract relay labels, while executable program/AST/source and
 desired/property/task/family/protected evidence remain excluded. Prompt-
 selection V2 then stopped at 16/24 FIT and 0/18 heldout: its whole-target trace
 still aliases identities and its FIT-only registry cannot represent unseen
-atoms. The fresh V3 data-only protocol passes with 15 grammar productions,
-eight channels, 132 atoms, 28 ordered transitions, and 138 collision-free
-self-posed lessons. Its learner spend is active; V2 is terminal, and protocol
-passage alone does not license the joint TRAIN seam.
+atoms. The V3 data-only protocol passed with 15 grammar productions, eight
+channels, 132 atoms, 28 ordered transitions, and 138 collision-free self-posed
+lessons. Its learner learned 138/138 exactly and all six controls falsified,
+then stopped before canonical learning because five of 24 FIT identities alone
+required the absent absolute-depth-4 atom; all other channels admitted 24/24.
+Canonical updates and heldout target reads/replays stayed zero. V3 is terminal.
+The fresh V4 protocol replaces absolute depth with occurrence-bound ordered
+immediate edges and must freeze before its separately named learner runs.
 
 The following paragraphs retain precursor mechanism and performance detail.
 
@@ -157,8 +161,8 @@ Independent audit passed, and implementer/root verification each passed
 
 The protected opening order is now:
 
-1. freeze the fresh packed cross-type panel successor, factor-workspace V4
-   learner, prompt-selection V3 successor, and their canonical TRAIN controls;
+1. freeze the fresh packed cross-type panel successor, preserve factor-workspace
+   V4, freeze the prompt-selection V4 successor, and run canonical TRAIN controls;
 2. spend frozen-architecture G0 on regulatory and spatial non-coding domains;
 3. only after the G0 verdict, spend the 27 family-disjoint DEV tasks once;
 4. only a paired transfer pass licenses canonical M0-M3 and later SWE/model

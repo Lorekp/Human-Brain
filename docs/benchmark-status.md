@@ -83,13 +83,18 @@ program/AST/source or desired/property/task/family/protected evidence exposed to
 the learner. Prompt-selection V2 then stopped at 16/24 FIT and 0/18 heldout.
 All four causal controls falsified, but its whole-target 12-lane trace still
 aliased FIT identities and its FIT-only output registry made unseen structural
-atoms unrepresentable. The fresh V3 data-only protocol now passes its self-posed
+atoms unrepresentable. The V3 data-only protocol passed its self-posed
 prelearning gate with 15 grammar productions, eight channel-local schemas, 132
 atoms, 28 ordered transitions, and 138 unique physical lessons with complete
-support and matched order/role counterfactuals. It reads no canonical target
-payload and allocates no learner state. Its separately named learner spend is
-the live gate; V2 remains terminal and V3 protocol passage alone does not
-license joint TRAIN integration.
+support and matched order/role counterfactuals. Its separately named learner
+then learned all 138 lessons exactly while all six controls stayed at 0/138,
+froze its checkpoint, and stopped atomically before canonical learning:
+19/24 FIT identities were representable, while five clamp-sum identities alone
+required the absent generic atom `nesting-relation|depth|depth|4`. Canonical
+teacher updates and heldout target reads/replays remained zero. V3 is terminal;
+the fresh successor retires absolute nesting depth in favor of occurrence-bound
+ordered immediate edges. No prompt checkpoint or joint TRAIN integration is yet
+licensed.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding

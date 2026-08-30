@@ -252,7 +252,7 @@ The project must not describe itself as a domain-general learner before G0.
 | **Substrate / runtime** | Large native/CUDA execution demonstrated; compact typed outputs pass parity gates; lazy packed proof plans preserve cost-5 physics and make cost 7 fit under the unchanged cap | Can capability mechanisms scale without changing scientific semantics? |
 | **R2 reading / persistent memory** | Dense 49-book TRAIN build exists; factorized successor criterion is pinned; fresh source-bound replay is preflight-ready but unspent | Does persistent identity survive the full fresh TRAIN replay under the corrected factorized criterion? |
 | **R3 semantic learning / planning** | Generic scalar/List/String/cross-type breadth passes; the fresh fixed-roster panel stops with three selected, two explicit ambiguities, and map-count at the unchanged selected-proof work bound | Can generic map-count proof publication fit under the same cap while prompt/structural evidence resolves legitimate visible-I/O ambiguity? |
-| **R4 language → semantic factors** | Role-bound factor-workspace V4 passes 48/48 FIT then 24/24 untouched heldout; compositional prompt V3 protocol passes its self-posed support gate while its learner spend remains active | Does the prompt learner admit all canonical FIT structure without whole-target heads, target-derived vocabulary, or heldout target reads? |
+| **R4 language → semantic factors** | Role-bound factor-workspace V4 passes 48/48 FIT then 24/24 untouched heldout; prompt V3 learns 138/138 self-posed lessons but stops atomically because five canonical FIT identities require an absent absolute-depth-4 atom | Does the occurrence-bound immediate-edge successor admit all canonical FIT structure and learn it without whole-target heads, target-derived vocabulary, or heldout target reads? |
 | **Joint language + semantics** | Self-posed joint matrix passes 3/3 treatments + 4/4 controls | Does the joint seam survive canonical TRAIN breadth without task/family identity or hidden outputs? |
 | **G0 domain generality** | Numerical preregistration plus regulatory/raw-spatial fixture source preflights are frozen and fail closed; no common-architecture binding, adjudicative cohort, learner, or outcome exists | Can the frozen architecture learn at least two structurally different non-coding domains with zero domain-specific computational primitives? |
 | **R5 family-disjoint code DEV** | Sealed | Does the frozen TRAIN architecture transfer to the 27 untouched public DEV tasks? |
@@ -439,16 +439,22 @@ all 18 heldout identities stopped. The causal controls all falsified, but its
 whole-target 12-lane trace still aliased FIT identities and its FIT-only output
 registry made unseen structural atoms unrepresentable. V2 is terminal.
 
-The fresh V3 protocol now passes its self-posed prelearning gate. It declares 15
+The V3 protocol passes its self-posed prelearning gate. It declares 15
 compiler-grammar productions before canonical dependency binding, then freezes
 eight channel-local relation/role/filler schemas, 132 atoms, 28 ordered
 transitions, and 138 unique physical lessons with complete support plus matched
 order/role counterfactuals. It reads no canonical target payload and allocates no
-learner state. Its separately named learner must train the self-posed curriculum
-before attempting the 24 canonical FIT identities, with zero heldout target read
-or replay. Require one physical prompt-only retained e-class winner with zero
-desired reads; proof exposure requires prompt winner, authoritative retained
-root/e-class, and selected proof e-class to agree.
+learner state. Its separately named learner learned all 138 lessons exactly while
+all six causal controls remained at 0/138, then froze its checkpoint before
+canonical projection. Projection stopped atomically at 19/24 FIT: five clamp-sum
+identities alone required `nesting-relation|depth|depth|4`; every other channel
+was 24/24 supported. Canonical teacher updates and heldout target reads/replays
+were zero. V3 is terminal. The fresh successor removes absolute depth and uses
+occurrence-bound ordered immediate parent-child edges; it must collision-audit
+all 42 identities before a separately named learner runs. Ultimately require one
+physical prompt-only retained e-class winner with zero desired reads; proof
+exposure requires prompt winner, authoritative retained root/e-class, and
+selected proof e-class to agree.
 
 After both checkpoints freeze, join them once to the generic packed TRAIN engine
 on fixed TRAIN rows and rerun the terminal joint controls. Learning must exclude
@@ -657,8 +663,8 @@ Do not collapse these into "general intelligence."
 ## Parallel lane B — canonical language learning
 
 1. Preserve the frozen factor-workspace V4 checkpoint; never retry V3 or V4.
-2. Complete the separately named prompt-selection V3 learner spend; V2 remains
-   terminal and V3 protocol passage is not a learner result.
+2. Preserve terminal prompt-selection V3 and freeze its fresh occurrence-bound
+   immediate-edge successor before running a separately named learner.
 3. Use the V5 causal teacher-gated/branch-local mechanism; do not restore task,
    family, ordinal, entrypoint spelling, or audit hashes as semantic features.
 4. Freeze both checkpoints and the joint TRAIN controls before any DEV desired
