@@ -251,10 +251,10 @@ The project must not describe itself as a domain-general learner before G0.
 | --- | --- | --- |
 | **Substrate / runtime** | Large native/CUDA execution demonstrated; compact typed outputs pass parity gates; lazy packed proof plans preserve cost-5 physics and make cost 7 fit under the unchanged cap | Can capability mechanisms scale without changing scientific semantics? |
 | **R2 reading / persistent memory** | Dense 49-book TRAIN build exists; factorized successor criterion is pinned; fresh source-bound replay is preflight-ready but unspent | Does persistent identity survive the full fresh TRAIN replay under the corrected factorized criterion? |
-| **R3 semantic learning / planning** | Bottom-up semantic 30/30 first TRAIN gate; six-family gate STOP localized; packed scalar/full-typed slices and generic scalar plus List TRAIN-breadth layers pass | Can the packed engine add the generic String layer under the unchanged work budget? |
-| **R4 language → semantic factors** | Factor-workspace V3 freezes a conflict-free 72-lesson factor-set protocol over the canonical 42/24/18 inventory; prompt-selection V1 stops prelearning because the available annotations contain factors but no exact structural relay targets | Can V3 learn the frozen factor sets while a separate compiler-owned TRAIN capsule supplies identifiable abstract structural teachers? |
+| **R3 semantic learning / planning** | Generic scalar/List/String breadth passes; the fixed six-row canonical panel stops 3 selected / 3 stopped, localizing explicit scalar ambiguity and two unsupported `List[Int] -> Int` compositions | Can a fresh generic cross-type layer add clamp-sum and add-count without changing the spent panel, caps, or existing routes? |
+| **R4 language → semantic factors** | Role-bound factor-workspace V4 protocol is frozen after V3's 43/48 FIT STOP; prompt-selection V2 stops at 16/24 FIT and 0/18 heldout, localizing whole-target aliasing and unsupported output atoms | Does one V4 learner spend pass while a fresh compositional prompt V3 protocol supplies atom/transition support independent of canonical targets? |
 | **Joint language + semantics** | Self-posed joint matrix passes 3/3 treatments + 4/4 controls | Does the joint seam survive canonical TRAIN breadth without task/family identity or hidden outputs? |
-| **G0 domain generality** | **NEW, unspent** | Can the frozen architecture learn at least two structurally different non-coding domains with zero domain-specific computational primitives? |
+| **G0 domain generality** | Numerical/seeding/adapter/ablation preregistration is machine-frozen; no common-architecture binding, generator execution, cohort, or outcome exists | Can the frozen architecture learn at least two structurally different non-coding domains with zero domain-specific computational primitives? |
 | **R5 family-disjoint code DEV** | Sealed | Does the frozen TRAIN architecture transfer to the 27 untouched public DEV tasks? |
 | **R6 Simple-SWE M0-M3** | Sealed | Can prompt-only coding beat the preregistered baselines? |
 
@@ -338,6 +338,10 @@ Banked positive mechanisms include:
   signed offset, nonnegative maximum, and nested clamp;
 - construction-certified desired-free `List[Int] -> List[Int]` TRAIN breadth
   for generic map-absolute and map-add, with zero scalar-route work.
+- construction-certified desired-free `String -> String` TRAIN breadth for
+  direct reverse, generic ASCII-class filters, and reverse-after-filter through
+  physical class/contains/String-copy semantics and V4 lazy proof plans, with
+  causally zero scalar/List-route work.
 
 The six-family TRAIN STOP established the current constraints:
 
@@ -346,14 +350,19 @@ The six-family TRAIN STOP established the current constraints:
 - preserve explicit version-space ambiguity when visible evidence is
   insufficient.
 
-### Next R3 gate — `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2`
+### Spent R3 panel and successor
 
-Retain the banked generic scalar and List layers, then extend the same
-desired-free packed-primary engine across the generic String TRAIN basis under
-unchanged work/accounting rules. Require one fixed canonical TRAIN engineering
-row per family. Do not inspect DEV and do not add family-specific operators.
+`PACKED_GENERIC_TYPED_CANONICAL_TRAIN_FREEZE_V1` froze all six ordinal-zero row
+identities before the first outcome and stopped honestly at three selected / three
+stopped. Scalar clamp and both String rows selected. Scalar nonnegative retained
+two exact proofs and stayed `STOP_AMBIGUOUS`; the two `List[Int] -> Int` rows
+stopped unsupported with zero build work. No row substitution, task/family
+evidence, cap increase, DEV read, or hidden host tie-break occurred.
 
-A PASS licenses the canonical TRAIN joint freeze, not DEV by itself.
+The smallest successor is a separately named generic cross-type breadth layer
+for clamp-sum and add-count, followed by a fresh canonical panel version using
+the already frozen roster. Preserve V2 bytes, existing routes, work accounting,
+selected-only proof materialization, and the honest scalar ambiguity.
 
 ## R4 — Learn language → semantic factors — ACTIVE
 
@@ -371,7 +380,7 @@ Current lessons:
   atomic/composition/control chain;
 - the first joint self-posed V5 → packed semantic matrix passes.
 
-### Next R4 gate 1 — `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3`
+### Spent R4 factor workspace V3 and successor
 
 V2 is terminal at `STOP_PUBLIC_TRAIN_FACTOR_WORKSPACE_V2_INPUT_ALIAS`. Two
 post-selector 12-cell inputs each demanded both minimum and maximum as different
@@ -384,10 +393,20 @@ conflicts. In particular, the shared minimum/maximum assembly teaches
 `{minimum, maximum}` through repeated masked WTA, matching the canonical
 same-span semantics. Different factors may overlap or nest; a repeated factor
 poisons the case and a fifth distinct factor triggers capacity STOP. Candidate
-admission must compare exact physical factor sets. The data-only protocol is
-frozen; the learner execution is the live gate.
+admission must compare exact physical factor sets. The data-only protocol froze
+cleanly, but its single learner execution stopped at
+`STOP_PUBLIC_TRAIN_FACTOR_WORKSPACE_V3_FIT_READINESS`: 43/48 FIT lessons were
+exact, while all four minimum/maximum inputs and one once-seen add input
+collided. The 68/68 electrical/control preflight passed, immutable read-only
+controls stayed clean, and heldout treatment attempts were zero.
 
-### Next R4 gate 2 — structural annotation then prompt selection successor
+V3 is terminal. The fresh V4 protocol now freezes a 5,120-cell physical
+content×selector-role conjunction population and 24 independent simultaneous
+factor-membership relays over a new 48/24 cohort. Content-only projections retain
+six target conflicts while role-bound projections have none, making the repair
+causal. Execute it once; do not retry V3 or inspect its heldout treatment rows.
+
+### Spent prompt selection V2 and compositional successor
 
 Factor sets alone cannot identify an AST. The spent
 `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1` binds 90 role-normalized prompt/signature
@@ -398,12 +417,22 @@ root/e-class relay vocabulary. It stops before learning at
 the banked annotations expose only span/factor fields and contain zero exact
 structural target sets.
 
-The smallest successor is a separately frozen, compiler-owned public-TRAIN
-structural annotation capsule. It may publish abstract relay teachers, but must
-not expose executable programs/ASTs/sources, desired or property rows, task/family
-identity, entrypoint spelling, audit hashes as neural evidence, or protected
-surfaces. Rerun the same physical causal-key total-function/collision audit, then
-learn the structural relays in a newly named prompt-selection gate. Require one
+The separately frozen compiler-owned public-TRAIN structural annotation capsule
+now passes identifiability. It maps all 42 causal identities to 13 generic
+structural target sets and 722 abstract relay labels without exposing executable
+programs/ASTs/sources, desired/property rows, task/family identity, entrypoint
+spelling, audit hashes as neural evidence, or protected surfaces.
+
+Prompt-selection V2 then spent the frozen 24/18 split once. It stopped at
+`STOP_PUBLIC_TRAIN_PROMPT_SELECTION_V2_FIT`: 16/24 FIT identities were exact and
+all 18 heldout identities stopped. The causal controls all falsified, but its
+whole-target 12-lane trace still aliased FIT identities and its FIT-only output
+registry made unseen structural atoms unrepresentable. V2 is terminal.
+
+Freeze a fresh V3 protocol with compiler-grammar-owned compositional
+role/filler/relation atoms declared independently of canonical targets and a
+matched self-posed TRAIN support cohort. Only after that protocol passes may a
+new learner attempt the abstract structural relays. Require one
 physical prompt-only retained e-class winner with zero desired reads; proof
 exposure requires prompt winner, authoritative retained root/e-class, and
 selected proof e-class to agree.
@@ -453,6 +482,10 @@ Detailed protocol and claim boundary:
 Established primary-source benchmark patterns and proposed numerical
 preregistration values:
 [`g0-established-benchmark-patterns.md`](g0-established-benchmark-patterns.md).
+The exact values are now machine-frozen in
+`experiments/g0/frozen_cross_domain_g0_preregistration_v1.py` with generation
+fail-closed until a separate common-architecture binding authenticates all nine
+required artifact classes. This is still an unspent design result.
 
 `PASS_FROZEN_ARCH_CROSS_DOMAIN_G0` would justify calling the architecture a
 **candidate domain-general learner**. It would not imply AGI or human-level
@@ -469,9 +502,9 @@ architecture transfers beyond TRAIN families.
 
 Opening conditions:
 
-1. `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2` passes and freezes;
-2. `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3` passes and freezes;
-3. a fresh successor to the terminal prompt-selection V1 passes and freezes;
+1. a fresh successor to the terminal canonical packed panel passes and freezes;
+2. factor-workspace V4 passes and freezes;
+3. a fresh successor to terminal prompt-selection V2 passes and freezes;
 4. the canonical TRAIN joint matrix and terminal controls pass unchanged;
 5. G0 receives its frozen-architecture cross-domain verdict under the same
    common-learning architecture;
@@ -593,8 +626,8 @@ Do not collapse these into "general intelligence."
 
 ## Parallel lane A — generic semantic engine
 
-1. Complete and freeze `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2`; scalar and List
-   layers are banked and the generic String layer remains.
+1. Freeze the separately named generic `List[Int] -> Int` cross-type breadth
+   layer, then rerun the already frozen six-row roster in a fresh panel version.
 2. Preserve explicit ambiguity/version-space states and selected-only proof
    materialization.
 3. No family-specific operators or cap increases based on the spent six-family
@@ -602,12 +635,10 @@ Do not collapse these into "general intelligence."
 
 ## Parallel lane B — canonical language learning
 
-1. Execute the frozen `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3` factor-set protocol;
-   do not retune its fresh cohort after the learner result.
-2. Freeze the separate compiler-owned TRAIN structural annotation capsule, then
-   run a newly named prompt-selection successor for root/edge, orientation,
-   nesting, parameter-role, and literal-slot/copy selection with zero desired
-   reads.
+1. Execute the frozen factor-workspace V4 role-binding protocol once; V3 remains
+   terminal and its heldout treatment remains unopened.
+2. Freeze prompt-selection V3 around compositional role/filler/relation atoms
+   and a matched self-posed support cohort; V2 remains terminal.
 3. Use the V5 causal teacher-gated/branch-local mechanism; do not restore task,
    family, ordinal, entrypoint spelling, or audit hashes as semantic features.
 4. Freeze both checkpoints and the joint TRAIN controls before any DEV desired
@@ -622,9 +653,10 @@ Do not collapse these into "general intelligence."
 
 ## New lane D — domain generality
 
-1. Finalize the exact G0 numerical thresholds, generators, seeds, and split sizes
-   without using adjudicative outcomes.
-2. Freeze the common post-R3/R4 architecture and generality-budget ledger.
+1. Implement/authenticate the frozen regulatory and spatial generator/adapter
+   sources without executing the adjudicative seeds.
+2. Freeze the common post-R3/R4 architecture, nine-part artifact binding, and
+   generality-budget ledger against the machine-frozen G0 protocol.
 3. Generate fresh synthetic regulatory and causal/spatial cohorts only after the
    freeze.
 4. Spend G0 before R5 DEV.

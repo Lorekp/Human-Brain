@@ -1,9 +1,9 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-30 after the packed semantic
-frontier, generic scalar/List TRAIN-breadth layers, canonical factor-workspace
-identifiability result, and frozen-architecture G0 design. Exact scientific
-boundaries live in
+Maintained by the orchestrator. Updated 2026-08-30 after the generic
+scalar/List/String breadth, fixed canonical packed panel, public-TRAIN factor
+and structural-learning results, and machine-frozen G0 preregistration. Exact
+scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -14,9 +14,9 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-G0  Frozen-architecture cross-domain generalization  [protocol design; unspent]
-R4  TRAIN-only prompt → semantic-factor bridge       [factor-set successor active]
-R3  Bottom-up typed semantic synthesis               [packed scalar + List banked]
+G0  Frozen-architecture cross-domain generalization  [numeric protocol frozen; unspent]
+R4  TRAIN-only prompt → semantic-factor bridge       [fresh successors active]
+R3  Bottom-up typed semantic synthesis               [cross-type successor active]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
@@ -40,35 +40,47 @@ recipes: unchanged cost-5 physics and proof identity are preserved, while the
 19-literal cost-7 build falls from 29,703 to 22,456 relation units under the
 same 30,000 cap. That is a runtime/mechanism result, not added capability.
 
-`PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2` has two banked signature-routed layers:
+`PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2` has three banked signature-routed layers:
 
 - `Int -> Int`: signed offset, nonnegative maximum, and nested clamp from one
   14-root frontier;
 - `List[Int] -> List[Int]`: generic map-absolute and map-add through the
-  full-typed workset, with causally zero scalar-route work.
+  full-typed workset, with causally zero scalar-route work;
+- `String -> String`: direct reverse, ASCII-class filters, and reverse-after-
+  filter with causally zero scalar/List-route work.
 
-Both layers build with no desired reads or proofs, expose only selected proofs,
-and return explicit `NO_EXACT` for a root-preserving desired permutation. The
-String TRAIN-breadth layer is the remaining R3 freeze item; the older generic
-String mechanisms below are inputs to that construction, not a gate result.
+All three layers build with no desired reads or proofs, expose only selected
+proofs, and return explicit `NO_EXACT` for a root-preserving desired
+permutation. The fixed six-row canonical panel then banked an honest STOP: three
+rows selected, scalar nonnegative remained explicitly ambiguous, and the two
+`List[Int] -> Int` rows stopped unsupported with zero work. The live R3 item is
+a separately named generic cross-type layer for clamp-sum and add-count; the
+spent panel, existing V2 bytes, work caps, and scalar ambiguity remain fixed.
 
 On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
 24-FIT/18-heldout surface and then stopped before arrays or learning. Two
 identical physical inputs demanded minimum and maximum as incompatible singleton
-labels. V2 is terminal; V3 maps each causal assembly to one exact factor set,
+labels. V2 is terminal; V3 mapped each causal assembly to one exact factor set,
 including `{minimum, maximum}` for the shared assembly. Its frozen data-only
 protocol has 12 classes and 72 fresh lessons (48 FIT / 24 heldout), exactly
-four/two distinct causal inputs per class, and zero stripped-key conflicts. The
-learner execution is active.
+four/two distinct causal inputs per class, and zero stripped-key conflicts. Its
+FIT execution stopped at 43/48 exact after five collisions, with zero heldout
+treatment attempts and a passing 68/68 electrical/control preflight. V4 now
+freezes the fresh repair: physical content×selector-role conjunctions and
+independent simultaneous factor membership on a new 48/24 cohort. Its one
+learner execution is active; this is not a V3 retry.
 
 Prompt-selection V1 is also terminal, but at an earlier seam. It authenticated
 90 full prompt/signature appearances into 42 physical causal identities and
 froze eight structural relay channels, then stopped before learning because the
 available annotations contain only span/factor fields and zero exact structural
-target sets. A separate compiler-owned TRAIN annotation capsule must publish
-abstract relay teachers without exposing executable program/AST/source or
-desired/property/task/family/protected evidence; a newly named prompt-selection
-successor will rerun the causal-key collision audit.
+target sets. The separate compiler-owned TRAIN annotation capsule now passes:
+its 42 physical causal identities map without alias to 13 generic target sets
+and 722 abstract relay labels, while executable program/AST/source and
+desired/property/task/family/protected evidence remain excluded. Prompt-
+selection V2 then stopped at 16/24 FIT and 0/18 heldout: its whole-target trace
+still aliases identities and its FIT-only registry cannot represent unseen
+atoms. A fresh V3 compositional role/filler protocol is active; V2 is terminal.
 
 The following paragraphs retain precursor mechanism and performance detail.
 
@@ -137,8 +149,8 @@ Independent audit passed, and implementer/root verification each passed
 
 The protected opening order is now:
 
-1. freeze generic String breadth, factor-set V3, prompt structural selection,
-   and their canonical TRAIN joint controls;
+1. freeze the fresh packed cross-type panel successor, factor-workspace V4
+   learner, prompt-selection V3 successor, and their canonical TRAIN controls;
 2. spend frozen-architecture G0 on regulatory and spatial non-coding domains;
 3. only after the G0 verdict, spend the 27 family-disjoint DEV tasks once;
 4. only a paired transfer pass licenses canonical M0-M3 and later SWE/model
