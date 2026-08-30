@@ -1,8 +1,9 @@
 # Compact typed-output encoding protocol
 
-Status: design frozen; implementation unstarted.
+Status: executed and banked; all 44 frozen gates passed.  The six-family
+public-TRAIN breadth gate remains unopened.
 
-Date: 2026-08-29.
+Date: 2026-08-30.
 
 ## Decision and sequencing
 
@@ -29,6 +30,46 @@ and fixes the final STOP/counter semantics that this representation change must
 preserve.  The two changes both touch the synthesizer and must not be developed
 as overlapping edits.  The six-family TRAIN desired vectors and property rows
 remain sealed throughout implementation and tuning.
+
+## Banked execution result
+
+The dense baseline was banked first, the exact retired 19-source / 21-test
+execution closure was removed at `39a6b16`, and the production cutover landed
+at source commit `82b57a0222a2123706d1b2a39f37c10733be73c7`.  The sole compact
+capture is:
+
+```text
+experiments/r3_pilot/compact_typed_output_compact_v1.json
+raw SHA-256:     f503820711ebc597aeac6b96e6d89dce17c48be7b756b182619a7238b531e179
+payload SHA-256: beab356461d443fc5ac5f5cb5198e755e3e6927b48a8aa860bc8fdbd68b3604e
+verdict:         PASS_COMPACT_TYPED_OUTPUT_ENCODING
+publication:     PUBLISHED_COMPACT_PASS
+```
+
+Independent loading recomputed the payload digest, and the raw file digest
+matched the capture report.  All 44 comparison gates passed.  The artifact
+records a clean tracked worktree and clean relevant sources at the source
+commit, zero external task/corpus inputs, zero production audit-materialization
+calls, protocol SHA-256
+`c4d16ba0b0830aaa608eaeaf62d9844baf117d1c6133147517943523c7b65dd4`,
+harness SHA-256
+`c7adefc019b5d8b6268c7788833c22f8202685884aab692931b635b04c9da874`,
+environment SHA-256
+`6664ec6870408ac1a3195567d4c525a71463cce3dc8a6e3a85b648f6e263187b`,
+and exact scientific golden
+`287987cea7306778d79ba0e726b50fde304860e00f8ae8b2d2057b0c432920ee`.
+
+Measured tracemalloc peaks were 705,722 bytes for 2,000 String encodings,
+592,795 bytes for 1,000 detectors, and 729,906 bytes for the String-heavy
+frontier.  Immediate/recorded reductions were 76.76x/75.75x for Strings and
+51.40x/44.89x for detectors; the frontier retained 1.35% of its dense peak.
+Every runtime fixture preserved its exact result hash and passed its frozen
+limit: detector grid 0.004114 s, 64-row GLIF kernel 0.0000209 s, aggregates
+0.0834--1.6950 s, and String fixtures 0.0814--0.1869 s.  Sentinel A preserved
+its ordinary exhaustive STOP and race digest in 21.812 s; Sentinel B preserved
+its prediction-first 30,000-prediction work-bound STOP and completed-prefix
+digest in 3.576 s.  This closes only the compact representation/runtime
+prerequisite; it does not spend or strengthen any coding-capability gate.
 
 ## Why the current representation stops scaling
 
@@ -565,12 +606,12 @@ STOP.
 
 ## Claim boundary
 
-This document preregisters a representation and runtime optimization.  Its
-implementation has not started.  The cited measurements are synthetic or
-self-posed engineering evidence already banked elsewhere.
+This document preregistered a representation and runtime optimization.  The
+implementation and sole capture are now complete.  The cited measurements are
+synthetic or self-posed engineering evidence.
 
-Passing this protocol will establish compact-storage and exact-physics parity
-only.  It will not be a broad six-family TRAIN result, prompt-only completion,
+The banked PASS establishes compact-storage and exact-physics parity only.  It
+is not a broad six-family TRAIN result, prompt-only completion,
 family-disjoint transfer, DEV/evaluation, M0, held-out, Path-2, C1, SWE-bench,
 Gemma, or Opus capability result.  No canonical TRAIN desired vector or
 property row, DEV material, M0/evaluation material, held-out material, or C1

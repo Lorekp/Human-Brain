@@ -718,6 +718,26 @@ An independent read-only audit passed; implementer and root runs each passed
 mechanism only, not broad TRAIN, prompt-only, transfer, DEV/eval, M0, held-out,
 Path-2, C1, SWE-bench, Gemma, or Opus capability evidence.
 
+The compact typed-output prerequisite is now banked.  Commit `82b57a0`
+replaced every production 3,284-cell dense value with an immutable 104-byte
+winner-plus-digest encoding, cut the active operator, semantic, vector-race,
+prompt-literal, and fitted-GLIF paths over to the compact interface, and left
+no dense compatibility route or production audit materialization.  The sole
+canonical capture is
+`experiments/r3_pilot/compact_typed_output_compact_v1.json` (raw SHA-256
+`f503820711ebc597aeac6b96e6d89dce17c48be7b756b182619a7238b531e179`,
+payload SHA-256
+`beab356461d443fc5ac5f5cb5198e755e3e6927b48a8aa860bc8fdbd68b3604e`).
+All 44 frozen gates passed with exact scientific golden
+`287987cea7306778d79ba0e726b50fde304860e00f8ae8b2d2057b0c432920ee`:
+2,000 Strings peaked at 705,722 bytes (75.75x below the recorded dense
+baseline), 1,000 detectors at 592,795 bytes (44.89x), the String-heavy frontier
+at 1.35%, all nine runtime result hashes remained exact, and both work-bound
+sentinels preserved their STOP point and race digest.  The artifact used zero
+external task/corpus inputs.  This is representation, exact-physics, and
+engineering-performance evidence only; the six-family TRAIN outputs remain
+unspent and every DEV/eval, M0, held-out, Path-2, and C1 claim remains closed.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
@@ -823,8 +843,8 @@ is proven.
    the Char/String output substrate, List aggregates, String combinators, and
    the private desired-independent frontier work bound.  No six-family desired
    vector was opened to implement or calibrate the bound.
-3. Replace dense typed physical outputs with the preregistered compact
-   authenticated encoding, then freeze and spend the broad six-family
+3. **IN PROGRESS:** the preregistered compact authenticated encoding is banked
+   with all 44 gates passing.  Next freeze and spend the broad six-family
    public-TRAIN visible-I/O gate once.
 4. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
    before any family-disjoint desired vector is observed.  The checkpoint-free
