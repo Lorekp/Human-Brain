@@ -799,6 +799,23 @@ self-posed relation/forest tests, but it is not yet wired into frontier
 construction and therefore provides no frontier-work reduction, joint
 integration, or capability evidence by itself.
 
+A first frontier-integration candidate was rejected before commit and fully
+reverted.  It reported the 19-literal cost-9 fixture READY at 15,719 stored
+packed records, but only after generating and physically grouping all 69,798
+concrete recipes, then building singleton diagrams and unioning them post hoc.
+The 30,000 gate therefore counted net durable inventory while the transient
+recipe construction and relation operations remained unbounded.  An
+independent audit correctly classified this as storage/accounting compression,
+not computational factorization; its earlier live-relation authentication gap
+was repairable but did not cure the architectural defect.  No READY result or
+source diff was banked, and baseline V2 still stops at admission 30,001.  The
+successor must make packed family relations the primary agenda, compose them
+from slot domains and child physical e-classes, predict once per distinct child
+semantic tuple, materialize only selected or first-two ambiguity witnesses,
+charge cumulative relational work under the unchanged numeric caps, and
+recursively authenticate every live relation/forest/observation mapping before
+selection.  Post-hoc packing of concrete candidates is now a named anti-pattern.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
