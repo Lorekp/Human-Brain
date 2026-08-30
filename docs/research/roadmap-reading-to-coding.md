@@ -816,6 +816,31 @@ charge cumulative relational work under the unchanged numeric caps, and
 recursively authenticate every live relation/forest/observation mapping before
 selection.  Post-hoc packing of concrete candidates is now a named anti-pattern.
 
+The mandatory pre-enumeration relation session is now implemented below that
+frontier seam.  Relations, family slices, proof forests, normalization, exact
+and saturating counts, first witnesses, and canonical observations have no
+public computation path outside one `PackedRelationSession`.  Its immutable
+ledger pre-charges every operation lookup, supplied domain value, supplied
+binding row (including duplicates), live decision-node/edge traversal,
+node/edge proposal, and proof-family union.  A 200,000-row duplicate stream
+under limit 17 consumed only 16 row bodies before the next row was denied;
+there is no longer a post-hoc concrete-enumeration path hidden behind a small
+packed result.  Authenticated cache entries bind the operation key, exact
+result type, result SHA-256 identity, and entry digest, and recursive live
+node/edge/slice/forest plus valid-value cache substitution controls fail before
+returning an observation.
+
+The representative relation/forest trace consumed exactly 243 units: nine
+operation lookups, four domain reads, three row reads, 49 node reads, 164 edge
+reads, three node proposals, ten edge proposals, and one proof union.  A
+200-value union required 1,413 units, a 608-binding forest build 744, and its
+exact-count observation 213; each succeeds at that exact limit and fails at
+one less before unit `limit + 1`.  Focused verification is 10/10 with an
+independent SHIP audit.  This is a work-accounting, authentication, and deep
+interface prerequisite only: it is not wired into semantic V2, does not make
+packed families the primary agenda, does not move the 19-literal STOP, and is
+not joint integration, public DEV, M0, held-out, or capability evidence.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
@@ -1058,12 +1083,13 @@ is proven.
    third scalar-clamp failure, localizing complete-tier declaration overflow,
    bound-context representative overflow, and four-row output aliasing.  The
    cohort is terminal and will not be retried or tuned.
-4. **IN PROGRESS, PARALLEL LANES:** (a) make the banked packed binding/
-   proof-forest substrate the primary desired-free semantic frontier agenda
-   under the unchanged numeric caps, with the self-posed 19-literal cost-9
-   stress fixture as the computational-factorization boundary; every concrete
-   input, relation operation, topology observation, and proof merge must pass
-   through one exact pre-event work ledger; (b) implement the now-frozen V4
+4. **IN PROGRESS, PARALLEL LANES:** (a) now that the mandatory packed relation
+   session is complete, make packed families the primary desired-free semantic
+   frontier agenda under the unchanged numeric caps, with the self-posed
+   19-literal cost-9 stress fixture as the computational-factorization
+   boundary; every concrete input, relation operation, topology observation,
+   and proof merge must pass through the exact pre-event work ledger; (b)
+   implement the now-frozen V4
    exclusive factor workspace, execute its full electrical preflight, and open
    composition only after exact 54/54 atomic readiness.  Do not raise a spent
    bound, retune either terminal learner, expose raw span candidates for host
