@@ -53,10 +53,15 @@ with zero published proofs. A generic V4 selected-proof factorizer subsequently
 selected a self-posed 19-literal map-count case with one proof at 16,436 units,
 but the fresh immutable canonical V3 panel still stopped 3/6: map-count again
 hit 30,000, while scalar nonnegative and clamp-map-sum retained two and ten
-proofs. The live successor therefore publishes only a prompt-authorized plan
-slice before proof materialization; it does not raise caps, replay a spent
-panel, or use a host tie-break. None of this is prompt-only solving, transfer,
-or capability evidence.
+proofs. Commit `41cc0a5` now banks the self-posed prompt-authorized plan-slice
+mechanism: it authenticates one retained occurrence/factor topology before
+selection, keeps desired outputs out of construction and authorization, and
+materializes only after the normal physical visible-I/O winner agrees with the
+authorized e-class. The 19-literal map-count case selects one proof at 26,073
+relation units under the unchanged 30,000 cap; a mismatched visible target
+stops before materialization. Its caller-created structural certificate is
+mechanism input, not learned canonical prompt authority. None of this is
+prompt-only solving, transfer, or capability evidence.
 
 The first canonical factor-workspace protocol froze 90 appearances into 42
 causal identities with a 24-FIT/18-heldout split, then stopped before arrays or
@@ -76,9 +81,11 @@ FIT pass, 48/48 immutable FIT replay, and only then 24/24 untouched-heldout
 replay. Teacher-off, cell-off, factor derangement, duplicate, and fifth-factor
 controls stayed negative. This freezes a public-TRAIN factor checkpoint, not a
 prompt or joint result. A later integration audit found that its exact learned
-arrays were available only inside the executable experiment path, so a static,
-side-effect-free factor capsule and target-free raw-span inference adapter are
-required before the canonical joint can consume it.
+arrays were available only inside the executable experiment path. Commit
+`ce838bb` closes that artifact seam with a 9,092-byte authenticated static
+capsule and target-free raw-span inference adapter. Normal inference imports
+neither the executable learner nor its target-bearing protocol and publishes
+only physical factor occupancy or explicit STOP.
 
 Prompt structural-selection V1 authenticated the same 90 appearances into 42
 physical causal identities and froze eight required relay channels, then stopped
@@ -116,8 +123,12 @@ reruns the executable learner instead of loading a teacher-free checkpoint.
 Commit `77d341f` closes the prompt side with a 272,040-byte authenticated static
 capsule. Teacher-free inference reproduces the banked checkpoint and actual
 winners without importing learner, target protocol, annotation, or manifest
-modules. The factor capsule and plan-slice remain prerequisites; no joint TRAIN
-result exists yet.
+modules. Both static checkpoint capsules and the self-posed plan-slice mechanism
+now exist. Commit `63831f8` then ran actual prompt authority and stopped before
+factor inference because prompt V4 did not yet expose a learned physical
+direction/cue-slot/selected-slot selector. A fresh target-free physical
+prompt×factor attention successor is active; canonical occurrence conversion
+and the fixed-roster joint remain unspent.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
@@ -128,8 +139,12 @@ architecture binding exists. The regulatory generator/raw-event adapter is
 frozen on quarantined non-adjudicative fixtures. The spatial lane now also has a
 frozen cue-key-door generator with 64 injective layouts and a quarantined
 fixture, while its candidate adapter exposes only opaque observation/action
-fields. No common learner, authenticated nine-artifact binding, adjudicative
-cohort, evaluator, or G0 score exists.
+fields. Commits `4843236` and `9ad36b3` add a domain-neutral 65,536-cell opaque
+event projection, shared factorized output race, and a direct one-byte local
+associative memory exercised only on quarantined regulatory- and
+spatial-shaped fixtures. They do not yet provide factorized relation
+composition. No authenticated nine-artifact binding, adjudicative cohort,
+evaluator, or G0 score exists.
 
 ## Active-cell scaling and dynamics
 

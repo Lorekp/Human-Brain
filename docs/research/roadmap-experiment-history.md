@@ -267,19 +267,47 @@ It passed 3/3 treatment rows and 4/4 controls. This proves the **joint seam** on
 it does not establish canonical TRAIN prompt learning, family-disjoint transfer,
 or domain generality.
 
-The canonical joint has not yet run. It requires three consumable authorities:
-the static prompt certificate, a static factor checkpoint plus target-free raw-
-span adapter, and a private prompt-authorized plan-slice receipt issued before
-selected proof materialization. The latter is necessary because the visible-I/O
-race already identifies an e-class while two/ten concrete proofs can still
-remain inside it. No expected/teacher fields from either learner result may act
-as inference evidence.
+The three consumer mechanisms now exist separately. Commit `ce838bb` publishes
+the exact factor V4 arrays as a side-effect-free static capsule with target-free
+raw-span inference. Commit `41cc0a5` publishes a self-posed private
+pre-materialization plan-slice receipt; its 19-literal map-count treatment
+selects one proof at 26,073/30,000 relation units only after the normal physical
+winner agrees with the authorized e-class. Its caller-created structural
+certificate is not learned canonical authority.
+
+The canonical joint has not yet run. Commit `63831f8` authenticates the actual
+prompt certificate and exact raw span/literal/signature inputs, then stops with
+zero factor inference attempts at
+`STOP_CANONICAL_TRAIN_JOINT_FACTOR_SELECTOR_BINDING_V1`: prompt V4 does not
+publish a learned direction/cue-slot/selected-slot relay, so accepting a caller
+factor observation would leak semantic choice. The fresh successor performs a
+target-free full carrier scan plus physical prompt-conditioned coincidence;
+its exact cell-identity authority and occurrence-level conversion must freeze
+before the fixed roster is spent. No expected/teacher fields from either learner
+result may act as inference evidence.
 
 Reference:
 
 - [`joint_prompt_factor_packed_full_typed_v1.py`](../../experiments/r3_pilot/joint_prompt_factor_packed_full_typed_v1.py)
 
-## 10. Retired directions
+## 10. Common G0 substrate begins
+
+Commit `4843236` adds a domain-neutral opaque-byte projection with 65,536 input
+cells, sparse value/position/binding assemblies, recurrent trace lanes, and one
+shared factorized fitted-GLIF output race. Commit `9ad36b3` adds a frozen local
+one-byte associative memory over ordered event traces. Regulatory- and
+spatial-shaped quarantined fixtures recall through one checkpoint; reversed or
+unknown inputs STOP, teacher/cell-off commit no ticks, and contradictory teachers
+produce a physical collision. This is projection and direct association only:
+factorized relation composition, adjudicative cohorts, the nine-artifact
+binding, evaluator, and G0 result remain absent.
+
+References:
+
+- [`common_event_cells_v1.py`](../../experiments/g0/common_event_cells_v1.py)
+- [`common_event_associative_memory_v1.py`](../../experiments/g0/common_event_associative_memory_v1.py)
+
+## 11. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:
 
@@ -294,7 +322,7 @@ Do not reopen these without a new falsifiable rationale and a newly named gate:
 - leaking hidden property/DEV outcomes back into selection or architecture
   design.
 
-## 11. Why this history is separate
+## 12. Why this history is separate
 
 The main roadmap should answer:
 

@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-30 after the occurrence-bound
-prompt learner, generic selected-proof factorizer and fresh canonical panel,
-role-bound factor checkpoint, and frozen spatial generator. Exact
+Maintained by the orchestrator. Updated 2026-08-30 after both static learned
+checkpoint capsules, prompt-authorized packed plan slicing, canonical attention
+localization, and the first two domain-neutral G0 substrate layers. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,9 +14,9 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-G0  Frozen-architecture cross-domain generalization  [generators frozen; common binding absent]
+G0  Frozen-architecture cross-domain generalization  [common projection + direct memory; binding absent]
 R4  TRAIN-only prompt → semantic-factor bridge       [learned; static inference capsules active]
-R3  Bottom-up typed semantic synthesis               [canonical V3 STOP; plan-slice active]
+R3  Bottom-up typed semantic synthesis               [plan-slice banked; canonical joint pending]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
@@ -59,9 +59,12 @@ representable but retained ten exact visible-I/O proofs, while map-count reached
 the unchanged 30,000-unit selected-proof bound with no published proof. Generic
 V4 factorization selects one self-posed map-count proof at 16,436 units, but the
 fresh canonical V3 panel remains an honest 3/6 STOP with map-count at 30,000.
-The live R3 item is a private prompt-authorized plan-slice receipt that narrows
-recipe domains before proof materialization. Spent panels, frozen routes, the
-unchanged caps, and explicit ambiguity remain fixed.
+Commit `41cc0a5` banks that private prompt-authorized plan-slice mechanism. Its
+self-posed 19-literal map-count treatment selects one proof at 26,073 relation
+units, but its structural certificate is not learned canonical prompt
+authority. The live R3/R4 integration item is therefore the private conversion
+from actual prompt/factor attention winners into that receipt. Spent panels,
+frozen routes, unchanged caps, and explicit ambiguity remain fixed.
 
 On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
 24-FIT/18-heldout surface and then stopped before arrays or learning. Two
@@ -76,10 +79,10 @@ the representation with physical content×selector-role conjunctions and
 independent simultaneous factor membership on a new 48/24 cohort. Its single
 learner spend passed 13/13 pre-array controls, 48/48 FIT replay, and then 24/24
 untouched heldout, with teacher/cell/derangement/capacity controls negative. The
-factor checkpoint is frozen; this is public-TRAIN mechanism evidence only. Its
-learned arrays were local to the executable experiment, so a static checkpoint
-capsule plus target-free raw-span inference adapter is now being published for
-joint consumption.
+factor checkpoint is frozen; this is public-TRAIN mechanism evidence only.
+Commit `ce838bb` publishes its exact arrays as a static authenticated capsule
+with target-free raw-span inference, without importing the executable learner
+or target protocol during normal inference.
 
 Prompt-selection V1 is also terminal, but at an earlier seam. It authenticated
 90 full prompt/signature appearances into 42 physical causal identities and
@@ -107,8 +110,11 @@ FIT pass replayed 24/24 identities and 357/357 ordered occurrences. Checkpoint
 is frozen with all heldout counters at zero. Commit `77d341f` publishes its
 authenticated static capsule: teacher-free inference reconstructs the exact
 checkpoint and actual physical winners without importing learner or target-
-bearing modules. The factor capsule and prompt-authorized plan-slice are still
-active; no canonical joint TRAIN result exists yet.
+bearing modules. Commit `63831f8` then authenticated an actual prompt handoff
+and stopped before factor inference at the missing physical
+direction/cue-slot/selected-slot attention relay. A fresh target-free
+prompt×factor attention successor is active. No canonical joint TRAIN result
+exists yet.
 
 The following paragraphs retain precursor mechanism and performance detail.
 
