@@ -1,6 +1,6 @@
 # Benchmark status
 
-Status date: 2026-08-30
+Status date: 2026-08-31
 
 ## What has passed
 
@@ -53,15 +53,16 @@ with zero published proofs. A generic V4 selected-proof factorizer subsequently
 selected a self-posed 19-literal map-count case with one proof at 16,436 units,
 but the fresh immutable canonical V3 panel still stopped 3/6: map-count again
 hit 30,000, while scalar nonnegative and clamp-map-sum retained two and ten
-proofs. Commit `41cc0a5` now banks the self-posed prompt-authorized plan-slice
-mechanism: it authenticates one retained occurrence/factor topology before
-selection, keeps desired outputs out of construction and authorization, and
-materializes only after the normal physical visible-I/O winner agrees with the
-authorized e-class. The 19-literal map-count case selects one proof at 26,073
-relation units under the unchanged 30,000 cap; a mismatched visible target
-stops before materialization. Its caller-created structural certificate is
-mechanism input, not learned canonical prompt authority. None of this is
-prompt-only solving, transfer, or capability evidence.
+proofs. Commit `41cc0a5` banks the self-posed prompt-authorized plan-slice
+mechanism. Commit `b277dc7` then learned a complete self-posed physical
+eight-occurrence view with source carriers, ordered factor slots, edges and
+occupancy, relation/domain/copy relays, and typed signature relays. Commit
+`9a7679e` privately converts its issued exact-object certificate into the banked
+structural receipt. The 19-literal map-count case still selects one proof at
+26,073 relation units under the unchanged 30,000 cap, now without a
+caller-created structural certificate. Its physical cues remain host-assembled
+self-posed inputs, so this is not canonical prompt authority, prompt-only
+solving, transfer, or capability evidence.
 
 The first canonical factor-workspace protocol froze 90 appearances into 42
 causal identities with a 24-FIT/18-heldout split, then stopped before arrays or
@@ -125,10 +126,17 @@ capsule. Teacher-free inference reproduces the banked checkpoint and actual
 winners without importing learner, target protocol, annotation, or manifest
 modules. Both static checkpoint capsules and the self-posed plan-slice mechanism
 now exist. Commit `63831f8` then ran actual prompt authority and stopped before
-factor inference because prompt V4 did not yet expose a learned physical
-direction/cue-slot/selected-slot selector. A fresh target-free physical
-prompt×factor attention successor is active; canonical occurrence conversion
-and the fixed-roster joint remain unspent.
+factor inference because prompt V4 did not expose a learned physical
+direction/cue-slot/selected-slot selector. Commit `1d949dc` added target-free
+physical prompt×factor attention, but `d655ee9` proved that its aggregate
+winners cannot be reconstructed post hoc into occurrence-local carriers.
+Commit `ad07c21` froze the resulting FIT-only annotation-contract STOP before
+allocation: legacy annotations contain no stable occurrence carriers, ordered
+factor events, domains, or copy groups. The self-posed V6 mechanism and private
+plan conversion show that the downstream physical vocabulary works. The
+remaining canonical problem is upstream and causal: selector geometry must be
+emitted at structural-event production time and then learned from raw prompt
+evidence. The fixed-roster joint remains unspent.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
@@ -139,12 +147,16 @@ architecture binding exists. The regulatory generator/raw-event adapter is
 frozen on quarantined non-adjudicative fixtures. The spatial lane now also has a
 frozen cue-key-door generator with 64 injective layouts and a quarantined
 fixture, while its candidate adapter exposes only opaque observation/action
-fields. Commits `4843236` and `9ad36b3` add a domain-neutral 65,536-cell opaque
-event projection, shared factorized output race, and a direct one-byte local
-associative memory exercised only on quarantined regulatory- and
-spatial-shaped fixtures. They do not yet provide factorized relation
-composition. No authenticated nine-artifact binding, adjudicative cohort,
-evaluator, or G0 score exists.
+fields. Commits `4843236`, `9ad36b3`, and `973c3e5` add a domain-neutral
+65,536-cell opaque event projection, shared factorized output race, direct local
+associative memory, and a 520,547-cell factorized transition memory exercised
+only on quarantined regulatory- and spatial-shaped fixtures. The binding ledger
+at `c0b513a` authenticates 3/9 classes and stops before generation. Commit
+`5488574` freezes the missing action framing, baseline/ablation, seed, and exact
+evaluator/bootstrap sources; `5892aa3` freezes the exact base+G0 dependency and
+runtime identity. An integrated common neuronal checkpoint with physical
+multi-byte emission is still missing. No adjudicative cohort, terminal
+50,000-resample run, or G0 score exists.
 
 ## Active-cell scaling and dynamics
 

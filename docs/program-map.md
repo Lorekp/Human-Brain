@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-30 after both static learned
-checkpoint capsules, prompt-authorized packed plan slicing, canonical attention
-localization, and the first two domain-neutral G0 substrate layers. Exact
+Maintained by the orchestrator. Updated 2026-08-31 after physical occurrence
+factorization, private prompt-authorized packed plan conversion, canonical
+source-binding localization, and the G0 execution/environment source freezes. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,9 +14,9 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-G0  Frozen-architecture cross-domain generalization  [common projection + direct memory; binding absent]
-R4  TRAIN-only prompt → semantic-factor bridge       [learned; static inference capsules active]
-R3  Bottom-up typed semantic synthesis               [plan-slice banked; canonical joint pending]
+G0  Frozen-architecture cross-domain generalization  [3/9 ledger-bound; integrated checkpoint pending]
+R4  TRAIN-only prompt → semantic-factor bridge       [source-selector teacher target pending]
+R3  Bottom-up typed semantic synthesis               [physical plan authority banked; joint pending]
 R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
 R1  Fast, auditable simulated-cell substrate         [continuous]
 ```
@@ -59,12 +59,15 @@ representable but retained ten exact visible-I/O proofs, while map-count reached
 the unchanged 30,000-unit selected-proof bound with no published proof. Generic
 V4 factorization selects one self-posed map-count proof at 16,436 units, but the
 fresh canonical V3 panel remains an honest 3/6 STOP with map-count at 30,000.
-Commit `41cc0a5` banks that private prompt-authorized plan-slice mechanism. Its
-self-posed 19-literal map-count treatment selects one proof at 26,073 relation
-units, but its structural certificate is not learned canonical prompt
-authority. The live R3/R4 integration item is therefore the private conversion
-from actual prompt/factor attention winners into that receipt. Spent panels,
-frozen routes, unchanged caps, and explicit ambiguity remain fixed.
+Commit `41cc0a5` banks that private prompt-authorized plan-slice mechanism.
+Commits `b277dc7` and `9a7679e` add a self-posed learned physical
+occurrence/factor/relation/domain/copy vocabulary and privately convert its
+issued exact-object authority into the structural receipt. The 19-literal
+map-count treatment selects one proof at 26,073 relation units with zero desired
+reads or proofs during build. The live R3/R4 item is no longer the downstream
+converter; it is learning occurrence-local selector/source events from raw
+canonical prompts. Spent panels, frozen routes, unchanged caps, and explicit
+ambiguity remain fixed.
 
 On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
 24-FIT/18-heldout surface and then stopped before arrays or learning. Two
@@ -110,11 +113,24 @@ FIT pass replayed 24/24 identities and 357/357 ordered occurrences. Checkpoint
 is frozen with all heldout counters at zero. Commit `77d341f` publishes its
 authenticated static capsule: teacher-free inference reconstructs the exact
 checkpoint and actual physical winners without importing learner or target-
-bearing modules. Commit `63831f8` then authenticated an actual prompt handoff
-and stopped before factor inference at the missing physical
-direction/cue-slot/selected-slot attention relay. A fresh target-free
-prompt×factor attention successor is active. No canonical joint TRAIN result
-exists yet.
+bearing modules. Commit `63831f8` authenticated an actual prompt handoff and
+stopped before factor inference at the missing physical
+direction/cue-slot/selected-slot attention relay. `1d949dc` added aggregate
+target-free physical attention; `d655ee9` proved that its winners cannot be
+converted post hoc into occurrence-local carriers. `ad07c21` then froze a
+zero-allocation FIT annotation STOP: legacy evidence has no stable
+carrier/factor/relation/domain/copy event targets. The next fresh capsule must
+emit exact raw source-selector identity at structural-event production time. No
+canonical joint TRAIN result exists yet.
+
+G0 remains a falsification guardrail while language/software work is primary.
+The common event projection, direct associative memory, and factorized
+transition memory are banked on quarantined fixtures. The current nine-class
+binding ledger is 3/9. Action framing, all fixed baselines/ablations,
+deterministic seed derivation, the exact evaluator/bootstrap source, and the
+base+G0 dependency/environment identity are separately frozen. The remaining
+architecture-source class is an integrated common checkpoint with physical
+multi-byte output; no adjudicative cohort or outcome exists.
 
 The following paragraphs retain precursor mechanism and performance detail.
 
