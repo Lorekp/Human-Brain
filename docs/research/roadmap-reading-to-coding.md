@@ -735,8 +735,30 @@ baseline), 1,000 detectors at 592,795 bytes (44.89x), the String-heavy frontier
 at 1.35%, all nine runtime result hashes remained exact, and both work-bound
 sentinels preserved their STOP point and race digest.  The artifact used zero
 external task/corpus inputs.  This is representation, exact-physics, and
-engineering-performance evidence only; the six-family TRAIN outputs remain
-unspent and every DEV/eval, M0, held-out, Path-2, and C1 claim remains closed.
+engineering-performance evidence only; that prerequisite capture opened no
+six-family TRAIN output, DEV/eval, M0, held-out, Path-2, or C1 surface.
+
+The frozen six-family public-TRAIN visible-I/O gate is now spent at
+`STOP_PUBLIC_TYPED_SEMANTIC_SIX_FAMILY_TRAIN_GATE_V1`.  The ordinal-major
+round-robin attempted 13/60 tasks and passed 6 before the third scalar-clamp
+failure made its 8/10 family threshold impossible.  Both observed
+nonnegative, String-filter, and filter-then-reverse tasks passed at exact AST
+costs 3, 6, and 7.  All three scalar clamps instead stopped before their
+cost-5 tier because complete-tier declaration projected 7,897--10,363 roots
+against the frozen 6,000 limit.  Both map-count tasks stopped on the 257th
+bound-context representative against the frozen 256 cap.  Both clamp-sum
+tasks selected the same unique cost-2 `sum(variable-0)` visible-I/O match and
+then failed a sandbox-only property case, exposing four-row observational
+aliasing and first-cost early termination rather than a race or syntax defect.
+The immutable artifact is
+`experiments/r3_pilot/public_typed_semantic_six_family_train_gate_v1.json`
+(raw SHA-256
+`c663ef1d167d09ab8d8811c6766280b4490f2d22a194d0dde3fe872318d59538`,
+payload SHA-256
+`df016c57ba16020da999d14877d32d597a9d6435d01791c43033b459d1e170f4`).
+The checkpoint stayed exact.  There is no retry, bound change, cohort
+replacement, or task-specific repair; generic successor work uses self-posed
+fixtures, and DEV remains sealed.
 
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
@@ -843,14 +865,23 @@ is proven.
    the Char/String output substrate, List aggregates, String combinators, and
    the private desired-independent frontier work bound.  No six-family desired
    vector was opened to implement or calibrate the bound.
-3. **IN PROGRESS:** the preregistered compact authenticated encoding is banked
-   with all 44 gates passing.  Next freeze and spend the broad six-family
-   public-TRAIN visible-I/O gate once.
-4. Build the TRAIN-only prompt-span → semantic-factor bridge and freeze it
-   before any family-disjoint desired vector is observed.  The checkpoint-free
-   physical span input is banked; the learned factor mapping remains.
-5. Spend one paired 27-task public DEV gate only after the visible-I/O engine
-   and prompt-only bridge are both frozen. M0 and canonical eval stay sealed.
-6. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
+3. **COMPLETE / STOP:** freeze and spend the broad six-family public-TRAIN
+   visible-I/O gate once.  It stopped after 13/60 tasks and 6 passes on the
+   third scalar-clamp failure, localizing complete-tier declaration overflow,
+   bound-context representative overflow, and four-row output aliasing.  The
+   cohort is terminal and will not be retried or tuned.
+4. **IN PROGRESS, PARALLEL LANES:** (a) build a desired-independent semantic
+   frontier V2 on self-posed numeric-composition and work-scaling fixtures,
+   factorizing operator skeletons from literal/role slots rather than raising
+   a spent bound; (b) execute the preregistered TRAIN-only prompt-span to
+   semantic-factor bridge unchanged, using prompts/signatures and atomic factor
+   annotations but no desired outputs or result artifacts.  DEV stays sealed.
+5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
+   Do not replay the spent six-family gate as capability evidence.  Both engine
+   and bridge lanes must pass before any family-disjoint desired vector opens.
+6. Spend one paired 27-task public DEV gate only after the engine successor,
+   prompt-only bridge, and their joint integration are frozen. M0 and canonical
+   eval stay sealed.
+7. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
    empty state in bounded public-TRAIN chunks; do not import the completed
    dense build or open C1/held-out material.
