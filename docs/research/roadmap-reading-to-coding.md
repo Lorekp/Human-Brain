@@ -967,6 +967,43 @@ headroom mechanism only.  The next engine increment is full typed integration;
 this is not public/canonical data, DEV, M0, transfer, SWE-bench, Gemma, Opus, or
 other capability evidence.
 
+The first packed-primary full-typed slice now passes on a bounded
+`List[Int] -> Int` grammar.  Build accepts the typed signature, four self-posed
+argument rows, generic integer literals, and a maximum AST cost, but no desired
+outputs.  Packed item-role and literal domains compose two physical less-than
+orientations in the Bool bound context; a compiler-only generic predicate
+binder carries those events into a physical count fold in the root context.
+Physical sum is the cost-2 control.  The same V3 construction-certified workset
+owns publication and selected-only proof materialization; typed context,
+family, root, and direct-lookup metadata are separately authenticated.
+
+The cost-6 frontier is READY at 1,839 relation units with 10 families, 24
+e-nodes, 18 e-classes, seven root e-classes, 63 physical predictions, 95 cache
+hits, 136 races, and zero desired reads, forests, or witnesses.  Exact
+`count(item < 2)` and `count(2 < item)` each select uniquely at 1,866 units and
+137 races.  The cost-2 sum control builds at 326 units / 14 predictions / 38
+races and selects uniquely at 345 units / 39 races.  Their frontier/selection
+roots are respectively
+`29213c2fed27c383940efe369b675e0f64d4695f1084926fb47b1b5959e3e7a1`,
+`8580ff6d3b47eaf2056584355ac8c583c7bc5dc4462d03d8c0a72385e60f1e74`,
+`47ecd3ba2d32b6be3a370eb75c92045d9ae6880bae062a3044e4b448c95f9d06`,
+`65015e3514f758428c7268700ac547b2a791780dbcd6aa7483279a39751bfa39`,
+and `badc3f5b6a27e7c1259e6487faf6c4c260b9a380a9c8e71267df3189fc616ffd`.
+
+An independent audit found that the first draft's object-valued root lookup
+could redirect a physical count winner to an unrelated sum proof.  The repaired
+deep seam removes that path: an authenticated ID-to-ordinal table resolves only
+through the authoritative retained root tuple, and both tuple and e-class IDs
+must equal the physical winner before selected-proof work.  The exact redirect
+regression now fails with zero forest/witness work.  Frozen source/test SHA-256
+are `e488cc1a461b148b96c854a66ff7ffacc39384bcbe59f61787021b72eb85704f`
+/ `c13e5e5c1db8d0dd81583cc12d7630b7d9ecdab4f2b8a5f1d96495067aa7e3fe`.
+Implementer and independent runs passed 4/4 focused plus 3/3 proportional
+lineage, and root passed 4/4 focused.  This is a self-posed full-typed packed
+sum/count integration mechanism PASS only, not broader grammar, prompt
+integration, public/canonical data, DEV/M0, transfer, SWE-bench, Gemma, Opus,
+or capability evidence.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
@@ -1330,11 +1367,10 @@ is proven.
    third scalar-clamp failure, localizing complete-tier declaration overflow,
    bound-context representative overflow, and four-row output aliasing.  The
    cohort is terminal and will not be retried or tuned.
-4. **IN PROGRESS / PARALLEL LANES:** (a) **COMPLETE / SAME-CAP V3 PASS:** the
-   construction-certified packed frontier now builds the 19-literal cost-5
-   stress at 29,703 units and selects the exact clamp at 29,729, leaving 271
-   units of selected-proof headroom under the unchanged cap.  Its next engine
-   seam is full typed integration, not another scalar metadata optimization;
+4. **COMPLETE / PARALLEL LANE PASSES:** (a) **FULL-TYPED PACKED SLICE PASS:**
+   after the same-cap V3 scalar seam, a desired-free `List[Int] -> Int` frontier
+   now physically composes sum and both less-than-to-count orientations under
+   authenticated typed contexts and selected-only proof materialization;
    (b) **COMPLETE / V5 LEARNER PASS:** after all 52 electrical controls, one
    frozen FIT pass now reaches exact 54/54 atomic replay, 18/18 two-event
    composition, and 21/21 registered compositor controls.  Teacher-off,
