@@ -841,6 +841,50 @@ interface prerequisite only: it is not wired into semantic V2, does not make
 packed families the primary agenda, does not move the 19-literal STOP, and is
 not joint integration, public DEV, M0, held-out, or capability evidence.
 
+The first packed-primary scalar frontier vertical slice is now banked.  One
+enclosing relation session consumes the raw argument and literal streams before
+host canonicalization, creates family relations before semantic expansion, and
+partitions them by child physical e-classes.  It never calls the concrete-row
+constructor, predicts each distinct child value tuple once, keeps `x+x`
+multiplicity, and admits `x+0 -> x` only through the authenticated proof
+normalization seam.  The desired vector is absent from build.
+
+An independent audit blocked the first draft because every e-class eagerly
+contained a proof forest whose first-two concrete witnesses already existed
+before selection.  The repaired e-class contains authenticated proof slices
+only.  Build now records zero proof-forest constructions and zero concrete or
+rendered witnesses; after the physical desired race, the same retained session
+constructs exactly the selected forest and renders one unique or the first two
+ambiguous witnesses.  A forced post-race relation overflow returns an atomic
+STOP without exposing the race, forest identity, or partial witness.
+
+The unique clamp fixture froze seven families, 17 e-nodes, and 14 e-classes,
+then selected exact `min(max(x, -4), 6)`.  Build consumed 3,700 relation units,
+68 physical predictions, 23 cache hits, and 209 races; selection closed at
+4,259 units / 210 races with one witness.  Frontier, build-work, and selected-
+forest SHA-256 are respectively
+`d3bb6a71fe1e1c1b59220a31ea8bb496dd34e414674e0fad6a0f30c6aefa8bbf`,
+`a1642ed73848e94fd7c4e4fd9ed4cb389a03459cf21470607b145af75c606b2a`,
+and `116d5bf9df7291e366f1b1894cad1997266a592009d8c538bac7d9abbc049e85`.
+The ambiguity fixture built at 249 units, then stopped with exactly `x` and
+`abs(x)` after one selected forest and 418 cumulative units.
+
+The unchanged 19-literal cost-9 stress remains an honest
+`STOP_PACKED_SCALAR_FRONTIER_WORK_BOUND` after completing cost 3.  It stops at
+relation unit 30,001 during `decision-node-read`, with 30,000 completed units,
+321 predictions, 304 cache hits, 1,085 races, zero proof witnesses, and no
+exposed partial topology.  Frontier/work/event SHA-256 are
+`7b9eec0de1e3e8f33ff000ac7946f01a172ec13ff8e17111f681ddfc68f41f00`,
+`9aa96034838dc8c10fbd8c747e0037cac51297b6bcb20f2137c02363b0aed557`,
+and `2850cf276693ba25e6d225cf9a24f42fb5c8e8751f53626894d92d3319d7f44f`.
+Trace attribution found 2,018 recursive relation-authentication calls consuming
+17,949 of 25,664 topology reads, or 59.8% of the entire work ledger.  The next
+deep seam is therefore a session-owned semantic-partition workset with metered
+ephemeral roots and publish-once authentication, not a cap increase or a full
+generic-join engine.  This is self-posed scalar computational-factorization
+mechanism evidence only, not full typed V2, joint integration, public/canonical
+data, DEV, M0, transfer, or capability evidence.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
@@ -1116,19 +1160,19 @@ is proven.
    third scalar-clamp failure, localizing complete-tier declaration overflow,
    bound-context representative overflow, and four-row output aliasing.  The
    cohort is terminal and will not be retried or tuned.
-4. **IN PROGRESS / PARALLEL LANES:** (a) now that the mandatory packed relation
-   session is complete, make packed families the primary desired-free semantic
-   frontier agenda under the unchanged numeric caps, with the self-posed
-   19-literal cost-9 stress fixture as the computational-factorization
-   boundary; every concrete input, relation operation, topology observation,
-   and proof merge must pass through the exact pre-event work ledger; (b)
-   **COMPLETE / STOP:** the frozen V4 exclusive factor workspace passed its
-   full electrical preflight but reached only 44/54 atomic rows, so composition
-   and all compositor controls remained sealed at zero.  A fresh disjoint V5
-   competitive-plasticity successor is being designed; V4 receives no retry or
-   tuning.  Do not raise a spent bound, expose raw span candidates for host
-   union/filtering, or open any public desired/result artifact.  DEV stays
-   sealed.
+4. **IN PROGRESS / PARALLEL LANES:** (a) **COMPLETE / MECHANISM PASS + STRESS
+   STOP:** packed families are now the primary desired-free scalar frontier and
+   proof materialization is strictly post-race.  The 19-literal cost-9 fixture
+   still stops at 30,000/30,001 after cost 3; implement the separately designed
+   session-owned semantic-partition workset so trusted ephemeral roots are
+   imported once and authenticated once at publication, without changing any
+   cap; (b) **COMPLETE / STOP:** V4 reached only 44/54 atomic rows and receives
+   no retry.  Its fresh disjoint V5 data-only protocol has sound curriculum and
+   analytical credit assignment, but independent audit is requiring exact
+   selector-latch, teacher/scout, compositor, composition-gate, and terminal-
+   authentication timing before the protocol can be banked or a learner can
+   run.  Do not expose raw span candidates for host union/filtering or open any
+   public desired/result artifact.  DEV stays sealed.
 5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
    Do not replay the spent six-family gate as capability evidence.  Both engine
    and bridge lanes must pass before any family-disjoint desired vector opens.
