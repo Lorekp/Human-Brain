@@ -1191,6 +1191,44 @@ before any composition or compositor-control execution.  It is not learning,
 composition, prompt-only coding, transfer, DEV/eval, M0, Path-2, C1, SWE-bench,
 Gemma, Opus, or other capability evidence.
 
+That separately named V5 learner execution now passes its complete self-posed
+causal chain.  All 52 electrical controls execute before either treatment array
+is allocated.  Exactly one rooted 36-lesson FIT pass updates the two
+`uint8[24,512]` arrays, after which the 24,576-byte checkpoint freezes
+immediately.  Learning records 18 excitatory events, zero inhibitory events,
+216/0 committed ticks, and maxima 2/0 under cap four.  Physical teacher-off and
+cell-off interventions each produce 54 STOPs; a frozen teacher-label derangement
+replays all 54 mapped labels but zero true labels, while all 15 untaught rows
+remain byte-zero.
+
+The frozen checkpoint then passes exact 54/54 atomic replay before opening
+18/18 two-factor compositions, which in turn pass before the registered 12
+duplicate, six overlap, and three capacity controls execute at 21/21.  Ordered
+composition publications bind the protocol's exact factor/neutral/factor span
+mapping and one-hot relay-derived events.  Registered control publications bind
+ordered input-event identities, attempted/accepted/duplicate counts, poison and
+exclusive EOS state, the complete -1..+10 causal stage trace, reset at +3/+4,
+and ready reinitialization at +5.  Re-rooted negative controls that moved a
+factor relay onto the neutral span or erased EOS/reset provenance now fail at
+the terminal validators rather than passing on aggregate counts.
+
+Electrical-preflight, checkpoint, atomic, composition, and control SHA-256 roots
+are respectively
+`c93cafed8773069b039f921c283f8c50023d3fcba72d6ad39d004b603556211c`,
+`96e29d03e5b2d9f699281d62fa159bb047add7f0024cfe44ce24c11413024c0e`,
+`9b75e031caf1c40729d223342a641eeb712a63457bc55ba3eef819e1239aeae8`,
+`f6d96fa61256ed1a0658ed67f432d0cb7aaa9b2556e77ff6f8376a307795abc7`,
+and `c2290b393bad73c32b5247a3a8722a5930c05f93561191ccd2e3dba472735d29`.
+The frozen learner source/test SHA-256 pair is
+`c76292164b43586b9400f8277f1c2aa71b2a136f113f36bc3f89712f0ca6895d`
+/ `811fd9ae205e6c14db249ba4896e60a444483f6f7e04b2af5dceb6bc4563074c`.
+Implementer and independent exact-snapshot runs passed 12/12 focused and 42/42
+selected lineage tests; root passed 12/12 focused.  Public, canonical, and
+protected input counts remain zero.  This is a self-posed teacher-gated local
+learning, atomic-readiness, and two-event composition mechanism PASS only.  It
+does not establish public prompt learning, joint typed synthesis, DEV/eval, M0,
+Path-2, C1, SWE-bench, Gemma, Opus, or other capability evidence.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -1297,15 +1335,12 @@ is proven.
    stress at 29,703 units and selects the exact clamp at 29,729, leaving 271
    units of selected-proof headroom under the unchanged cap.  Its next engine
    seam is full typed integration, not another scalar metadata optimization;
-   (b) **COMPLETE / STOP:**
-   V4 reached only 44/54 atomic rows and receives no retry.  Its fresh disjoint
-   V5 data-only protocol now has a holistic independent SHIP across the exact
-   selector-latch, teacher/scout, staged compositor, EOS/reset/ready barrier,
-   composition gate, and terminal-authentication timing.  The next separately
-   named learner must execute complete electrical preflight, fit once, and pass
-   all 54 atomic rows before opening the 18 composition cases and exact 21
-   compositor controls.  Do not expose raw span candidates for host union/filtering
-   or open any public desired/result artifact.  DEV stays sealed.
+   (b) **COMPLETE / V5 LEARNER PASS:** after all 52 electrical controls, one
+   frozen FIT pass now reaches exact 54/54 atomic replay, 18/18 two-event
+   composition, and 21/21 registered compositor controls.  Teacher-off,
+   cell-off, and permuted-teacher panels remain causally negative for the true
+   labels.  The next bridge work is the frozen joint self-posed prompt-factor +
+   visible-I/O matrix; public desired/result artifacts and DEV stay sealed.
 5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
    Do not replay the spent six-family gate as capability evidence.  Both engine
    and bridge lanes must pass before any family-disjoint desired vector opens.
