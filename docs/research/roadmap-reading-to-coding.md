@@ -1266,6 +1266,39 @@ learning, atomic-readiness, and two-event composition mechanism PASS only.  It
 does not establish public prompt learning, joint typed synthesis, DEV/eval, M0,
 Path-2, C1, SWE-bench, Gemma, Opus, or other capability evidence.
 
+The first frozen joint prompt-factor plus packed visible-I/O matrix now passes
+its exact seven self-posed rows.  Build authenticates and resolves the frozen V5
+bridge before constructing the desired-free full-typed frontier.  Ordered
+one-hot relay cells, not diagnostic factor strings, drive the physical generic
+family-admission lineages.  Three treatments selected exact sum and both
+less-than orientations feeding count; the two count rows used the same ordered
+`count -> less-than` factor trace, so only the later visible-I/O race could
+choose `item < 2` versus `2 < item`.  Factor-off, cyclically deranged relays,
+and reversed factor order all stopped before engine construction or desired
+access.  The visible-I/O-off control built the same prompt-admitted engine but
+stopped at its physical STOP cell with no proof exposure.
+
+The joint physical winner is authoritative.  Only after it wins uniquely may
+the packed selector materialize a proof, and the result remains hidden unless
+the joint winner, packed race winner, and packed selected e-class are identical.
+An independent audit blocked the first draft because the wrapper exposed the
+live packed frontier and its constructor accepted self-consistently re-rooted
+admission records.  The repaired public surface exposes no packed object or
+alternate desired/proof method.  An identity-registered private construction
+receipt now binds the executed projected-relay digest, prompt and root audits,
+packed frontier, intervention, V5 commit `5cb01cc`, and full-typed commit
+`b0e95e8`; a re-rooted receipt fails before desired access or proof work.
+The matrix passed 3/3 treatments and 4/4 controls with zero public, canonical,
+or protected inputs.  Its protocol SHA-256 is
+`31db541ea28753d45a396e2e12ee6c9f7c349d883a4ef8c15d036f37facb727e`;
+the frozen source/test SHA-256 pair is
+`e6cd1d829fe6c09279395a56f9bcf78e8670291dc4c803ce82601838a26e11bb` /
+`fa79df1b29ad1a813a7de6aba1ff686b317fa037f98f58dbb63ab2fe59a21cd9`.
+Root passed 5/5 focused tests.  This closes only the self-posed joint seam: the
+packed grammar is still the narrow `List[Int] -> Int` sum/count slice and V5
+still learns self-posed cues rather than canonical TRAIN language.  DEV, M0,
+held-out, Path-2, C1, SWE-bench, Gemma, and Opus remain sealed.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -1375,14 +1408,22 @@ is proven.
    frozen FIT pass now reaches exact 54/54 atomic replay, 18/18 two-event
    composition, and 21/21 registered compositor controls.  Teacher-off,
    cell-off, and permuted-teacher panels remain causally negative for the true
-   labels.  The next bridge work is the frozen joint self-posed prompt-factor +
-   visible-I/O matrix; public desired/result artifacts and DEV stay sealed.
-5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
-   Do not replay the spent six-family gate as capability evidence.  Both engine
-   and bridge lanes must pass before any family-disjoint desired vector opens.
-6. Spend one paired 27-task public DEV gate only after the engine successor,
-   prompt-only bridge, and their joint integration are frozen. M0 and canonical
-   eval stay sealed.
-7. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
+   labels.
+5. **COMPLETE / JOINT SELF-POSED PASS:** the frozen seven-row prompt-factor plus
+   visible-I/O matrix passes 3/3 treatments and 4/4 controls.  It proves the
+   relay-to-family-admission-to-selected-proof seam without public or canonical
+   inputs; it is not breadth or prompt-transfer evidence.
+6. Implement `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2`: extend the same desired-
+   free packed-primary engine across the generic scalar, List, and String TRAIN
+   basis, then require one fixed canonical TRAIN engineering row per family
+   under the unchanged work cap.  Do not inspect DEV or add family operators.
+7. Implement `PUBLIC_TRAIN_FACTOR_AND_JOINT_FREEZE_V2`: learn canonical TRAIN
+   spans from 42 semantic identities plus matched self-posed counterfactuals,
+   freeze once, and terminally join it to the breadth engine on one TRAIN row
+   per family.  Desired outputs, programs, family IDs, DEV, and property rows
+   remain outside learning.
+8. Spend one paired 27-task public DEV gate only after both named TRAIN freezes
+   pass unchanged. M0 and canonical eval stay sealed.
+9. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
    empty state in bounded public-TRAIN chunks; do not import the completed
    dense build or open C1/held-out material.
