@@ -1,0 +1,247 @@
+{
+  "claim_boundary": "Provenance-only registry. Identifier or prompt occurrence does not prove desired-output exposure. No regression row, property row, prompt text, completion, or task source was inspected to build this file.",
+  "counts": {
+    "prompt_only_exposed_tasks": 60,
+    "prompt_only_unexposed_tasks": 0,
+    "r3_task_specific_artifact_mention_tasks": 24,
+    "r3_task_specific_no_mention_tasks": 36,
+    "r3_task_specific_no_mention_by_family": {
+      "t0_scalar_clamp": 2,
+      "t0_scalar_nonnegative": 4,
+      "t1_string_filter_class": 10,
+      "t2_clamp_then_sum": 3,
+      "t2_filter_then_reverse": 10,
+      "t2_map_then_count": 7
+    }
+  },
+  "declared_task_ids": [
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/000",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/000",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/000",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/000",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/000",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/000",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/001",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/001",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/001",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/001",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/001",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/001",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/002",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/002",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/002",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/002",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/002",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/002",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/003",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/003",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/003",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/003",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/003",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/003",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/004",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/004",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/004",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/004",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/004",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/004",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/005",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/005",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/005",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/005",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/005",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/005",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/006",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/006",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/006",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/006",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/006",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/006",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/007",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/007",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/007",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/007",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/007",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/007",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/008",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/008",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/008",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/008",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/008",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/008",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/009",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/009",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/009",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/009",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/009",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/009"
+  ],
+  "families": [
+    "t0_scalar_clamp",
+    "t0_scalar_nonnegative",
+    "t1_string_filter_class",
+    "t2_clamp_then_sum",
+    "t2_map_then_count",
+    "t2_filter_then_reverse"
+  ],
+  "partition": "train",
+  "payload_sha256": "91a4b2db928cbc894dabc65355d77a0fc778ab28221994980406356598e68efc",
+  "prior_r3_artifact_presence": {
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/000": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_probe.json@097bc92394c96935b76f5d3a10b2f159b3f85e09"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/001": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.json@0c4f4cb1a2ae7aa0c63a7174094da4fecbd43bc6"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/002": [
+      "experiments/r3_pilot/public_simple_swe_role_chunk_multistep_clamp_action_probe.json@9fbb925e0bcc8f0ecefb8b7960674a161cd75f13"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/003": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.json@b8727ce2c5537fcca5c322712717ab95a12c936f",
+      "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.spent.json@b8727ce2c5537fcca5c322712717ab95a12c936f"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/004": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.json@417d948267c6a612c20fff66d8a99b70f099385f",
+      "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.spent.json@417d948267c6a612c20fff66d8a99b70f099385f"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/006": [
+      "experiments/r3_pilot/public_simple_swe_role_chunk_multistep_clamp_action_probe.json@9fbb925e0bcc8f0ecefb8b7960674a161cd75f13",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_multistep_clamp_action_probe.t0_scalar_clamp-006.spent.json@9fbb925e0bcc8f0ecefb8b7960674a161cd75f13"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/007": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_probe.json@097bc92394c96935b76f5d3a10b2f159b3f85e09",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_multistep_clamp_action_probe.json@9fbb925e0bcc8f0ecefb8b7960674a161cd75f13"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/009": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.json@e96e6f14d6788114d8fe022d4ec2ed0723578839",
+      "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.t0_scalar_clamp-009.spent.json@e96e6f14d6788114d8fe022d4ec2ed0723578839"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/000": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_probe.json@097bc92394c96935b76f5d3a10b2f159b3f85e09"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/005": [
+      "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.json@503bb4fb6b556ba735564f49b22cd2c5e2b578d8",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.json@bc5bf5a1e5f46b2713c268a77fb78b0ec6b9d267",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.json@8cf313253c45c14da0c5d84fae02bfb8c3cac1c5"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/006": [
+      "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.json@503bb4fb6b556ba735564f49b22cd2c5e2b578d8",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.json@bc5bf5a1e5f46b2713c268a77fb78b0ec6b9d267",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.json@8cf313253c45c14da0c5d84fae02bfb8c3cac1c5"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/007": [
+      "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.json@503bb4fb6b556ba735564f49b22cd2c5e2b578d8",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_feedback_action_probe.t0_scalar_nonnegative-007.spent.json@503bb4fb6b556ba735564f49b22cd2c5e2b578d8"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/008": [
+      "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.json@8cf313253c45c14da0c5d84fae02bfb8c3cac1c5",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_route_probe.t0_scalar_nonnegative-008.spent.json@8cf313253c45c14da0c5d84fae02bfb8c3cac1c5"
+    ],
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/009": [
+      "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.json@bc5bf5a1e5f46b2713c268a77fb78b0ec6b9d267",
+      "experiments/r3_pilot/public_simple_swe_role_chunk_layer0_action_probe.t0_scalar_nonnegative-009.spent.json@bc5bf5a1e5f46b2713c268a77fb78b0ec6b9d267"
+    ],
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/000": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_probe.json@3678054bb5028f4f08bec60012c730238f37c41c",
+      "experiments/r3_pilot/public_simple_swe_native_typed_scaffold_reroot_probe.json@082e873f2c12a0b3635c84d71fc1bad642d73c8a"
+    ],
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/001": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_probe.json@3678054bb5028f4f08bec60012c730238f37c41c"
+    ],
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/002": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_shift_sum_probe.json@a9f6e587ea6f3e353480c98a708921fcea9d334f"
+    ],
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/003": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.json@0c4f4cb1a2ae7aa0c63a7174094da4fecbd43bc6",
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.spent.json@0c4f4cb1a2ae7aa0c63a7174094da4fecbd43bc6"
+    ],
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/004": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_root_operation_transfer_probe.json@417d948267c6a612c20fff66d8a99b70f099385f"
+    ],
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/006": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_literal_leaf_pointer_probe.json@b8727ce2c5537fcca5c322712717ab95a12c936f"
+    ],
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/008": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_breadth_probe.json@e96e6f14d6788114d8fe022d4ec2ed0723578839"
+    ],
+    "simple-swe-v1/train/tier-2/t2_map_then_count/000": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_map_count_probe.json@cd6160418804bfacf6f6a771affd1b551a530ca0"
+    ],
+    "simple-swe-v1/train/tier-2/t2_map_then_count/001": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_map_count_probe.json@cd6160418804bfacf6f6a771affd1b551a530ca0"
+    ],
+    "simple-swe-v1/train/tier-2/t2_map_then_count/002": [
+      "experiments/r3_pilot/public_simple_swe_native_typed_clamp_sum_cross_donor_probe.json@0c4f4cb1a2ae7aa0c63a7174094da4fecbd43bc6"
+    ]
+  },
+  "prompt_only_baseline": {
+    "artifact_sha256": "524c9df0971b1684e22398866fef0108f48fd40ab3fe8caeb221196c1e753f8b",
+    "path": "artifacts/simple_swe_public_baseline_v1.json",
+    "record_commit": "4df4966b3f8745f8510700994b765e0f8a31ed8e"
+  },
+  "prompt_previously_public_task_ids": [
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/000",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/000",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/000",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/000",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/000",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/000",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/001",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/001",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/001",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/001",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/001",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/001",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/002",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/002",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/002",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/002",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/002",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/002",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/003",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/003",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/003",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/003",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/003",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/003",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/004",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/004",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/004",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/004",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/004",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/004",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/005",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/005",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/005",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/005",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/005",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/005",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/006",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/006",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/006",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/006",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/006",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/006",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/007",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/007",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/007",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/007",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/007",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/007",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/008",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/008",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/008",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/008",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/008",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/008",
+    "simple-swe-v1/train/tier-0/t0_scalar_clamp/009",
+    "simple-swe-v1/train/tier-0/t0_scalar_nonnegative/009",
+    "simple-swe-v1/train/tier-1/t1_string_filter_class/009",
+    "simple-swe-v1/train/tier-2/t2_clamp_then_sum/009",
+    "simple-swe-v1/train/tier-2/t2_map_then_count/009",
+    "simple-swe-v1/train/tier-2/t2_filter_then_reverse/009"
+  ],
+  "protocol_id": "human-cell-simple-swe-v1",
+  "protocol_sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2",
+  "schema": "public-typed-semantic-six-family-train-exposure-registry-v1"
+}
