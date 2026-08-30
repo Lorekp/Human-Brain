@@ -925,6 +925,38 @@ self-posed atomic-readiness evidence only, not composition, public/canonical/
 protected input, prompt-only coding, transfer, DEV/eval, M0, Path-2, C1, or
 benchmark evidence.
 
+The structurally different V4 successor is now frozen as a data-only protocol,
+without constructing learner arrays or running either atomic learning or
+composition.  Three disjoint factor triads define 18 matched groups and 54
+four-token lessons (36 FIT / 18 heldout); one shared marker is permuted through
+four FIT and two exact-disjoint heldout rows per factor.  Every heldout row has
+complete token/slot support and at least two of three transition features in
+its factor's FIT positives, while all inputs remain disjoint from spent V3.
+The exact causal FIT order is rooted and repeats unchanged for four epochs.
+
+The protocol replaces 24 independent thresholds with one 25-principal physical
+competition: 24 factor cells plus tonic STOP, basket inhibition, collision
+detection, and delayed factor/STOP relays.  Raw local scores span -528..528 and
+are explicitly mapped by `current_score=max(raw_score,0)` before indexing the
+529-entry fitted-GLIF latency table, preventing Python negative-index wrap.
+Five executed `race_many(require_unique=False)` principal controls freeze empty
+STOP, adversarial score -1 STOP, factor/STOP score-12 collision STOP, two-factor
+score-13 collision STOP, and unique score-13 factor acceptance.  The full
+basket/collision/relay circuit remains deliberately deferred to the learner's
+mandatory electrical preflight.  The future local state is exactly two
+`uint8[24,1536]` E/H arrays (73,728 bytes total), cap four.  Protocol, latency,
+topology, electrical-control, and local-rule SHA-256 roots are respectively
+`37aa868988319bd70cea735ad715736dabaef2ac59a45ee0c70677fa89ac2124`,
+`8d896eba62371a1a38ed4e071a4a82b02da7d2a3eb3debdd810d8aa36482d471`,
+`68a9f3fbdcdae30053e84b644819e1308f26cdd130d484b7c72709e78785595f`,
+`4f9ff76e89eccf7294f992d97a4d2c38530e9b4283fb03ffca99f3bc8fe010e2`,
+and `1ea847dc847c52c5244c70500a9112919114c04913f80ae113a113eb577b1279`.
+This is preregistration and principal-race mechanism evidence only.  The next
+step must execute the complete electrical controls, fit once, and require all
+54 atomic rows before any of the 18 two-event composition cases can open; it
+is not prompt-only coding, transfer, DEV/eval, M0, Path-2, C1, or benchmark
+evidence.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -1026,16 +1058,17 @@ is proven.
    third scalar-clamp failure, localizing complete-tier declaration overflow,
    bound-context representative overflow, and four-row output aliasing.  The
    cohort is terminal and will not be retried or tuned.
-4. **IN PROGRESS, PARALLEL LANES:** (a) integrate the banked packed binding/
-   proof-forest substrate into the desired-free semantic V2 frontier under the
-   unchanged numeric caps, with the self-posed 19-literal cost-9 stress fixture
-   as the computational-factorization boundary; (b) after the terminal
-   same-union composition STOP, build a separately named self-posed multi-span
-   bridge that learns only singular local factor events and composes them
-   through fixed physical admission/order/duplicate/overlap/copy races.  Do
-   not raise a spent bound, retune the terminal 108-lesson learner, expose raw
-   span candidates for host union/filtering, or open any public desired/result
-   artifact.  DEV stays sealed.
+4. **IN PROGRESS, PARALLEL LANES:** (a) make the banked packed binding/
+   proof-forest substrate the primary desired-free semantic frontier agenda
+   under the unchanged numeric caps, with the self-posed 19-literal cost-9
+   stress fixture as the computational-factorization boundary; every concrete
+   input, relation operation, topology observation, and proof merge must pass
+   through one exact pre-event work ledger; (b) implement the now-frozen V4
+   exclusive factor workspace, execute its full electrical preflight, and open
+   composition only after exact 54/54 atomic readiness.  Do not raise a spent
+   bound, retune either terminal learner, expose raw span candidates for host
+   union/filtering, or open any public desired/result artifact.  DEV stays
+   sealed.
 5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
    Do not replay the spent six-family gate as capability evidence.  Both engine
    and bridge lanes must pass before any family-disjoint desired vector opens.
