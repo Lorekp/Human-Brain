@@ -1299,14 +1299,75 @@ packed grammar is still the narrow `List[Int] -> Int` sum/count slice and V5
 still learns self-posed cues rather than canonical TRAIN language.  DEV, M0,
 held-out, Path-2, C1, SWE-bench, Gemma, and Opus remain sealed.
 
-The overfit-safe continuation is fixed in three layers. First, improve runtime
-and extend only on the six unspent TRAIN families using generic typed
-combinators rather than family operators. Second, learn and freeze a
-prompt-span-to-semantic-factor bridge on a preregistered TRAIN capacity split;
-do not revive static whole-prompt projection. Third, after both mechanisms are
-frozen, spend the 27 family-disjoint public DEV tasks once with paired
-visible-I/O and canonical prompt-only arms. Opening DEV visible outputs before
-the prompt bridge is frozen would leak the transfer surface into its design.
+The first generic TRAIN-breadth layer now passes for `Int -> Int`.  One deep
+desired-free `build(signature,cases,literals,max_cost) -> select(desired)` seam
+binds the caller's typed signature to the retained packed scalar V3 workset and
+emits exact caller-named source only after selected-proof materialization.  The
+same 14-root frontier selects generic signed offset, nonnegative maximum, and
+nested clamp programs.  Build consumes 1,391 relation units, 41 physical
+predictions, 11 cache hits, and 128 races with zero proof witnesses; offset and
+nonnegative select at 1,412 units / 129 races, and clamp at 1,416 / 129, each
+with exactly one witness.  Permuting the desired vector leaves typed/packed
+build roots identical and returns `STOP_NO_EXACT`.
+
+An independent audit blocked the first wrapper certificate because all of its
+hashes could be recomputed around unchanged physical roots and a substituted
+function/parameter signature.  The repair uses an identity-registered private
+construction receipt binding the exact typed state/signature object, packed
+frontier, and V3 workset owner.  The exact re-root regression now fails before
+desired access, physical work, or proof construction.  Frozen source/test
+SHA-256 are
+`b263690a8327b3a38074f70acc0236e776a1f136e165f59766b87e6b90a1c236` /
+`081b72ef379ed438bb90b0e257ce4fe4f07320eb0cfc309ff9f33d8509bd4e5b`;
+the issued receipt root is
+`3b02f10edc464596a5c16b2e739bcd55a822e281c09f501798f9d386ee4238b3`.
+Focused verification is 4/4 and the repaired exact-snapshot audit returned
+SHIP.  This is the scalar 3/9 TRAIN mechanism layer,
+not List/String breadth, a canonical TRAIN panel, prompt-only solving, DEV,
+M0, held-out, SWE-bench, Gemma, or Opus evidence.
+
+Post-joint source inventory falsified the earlier assumption that engine breadth
+plus one factor bridge could directly license paired DEV.  The 90 canonical
+TRAIN appearances collapse to 42 semantic prompt identities and 13 active
+factors.  Exact annotations include three-factor filter/reverse and four-factor
+clamp/sum and map/count plans; minimum and maximum may share one span, and
+different factor spans may overlap or nest.  V5's capacity-two, exclusive
+one-factor-per-span, overlap-poison compositor therefore cannot be reused
+unchanged.  The TRAIN successor must use repeated masked factor/STOP races per
+span, a physical four-factor occupancy plus cardinality workspace, legal
+different-factor overlap, same-factor duplicate poison, and fifth-factor
+capacity poison.  Candidate admission compares exact factor sets physically;
+prompt publication order remains audit evidence and is not host-reordered into
+AST order.
+
+The exact TRAIN factor protocol reserves 18 untouched canonical identities and
+uses the 24-identity complement for initial FIT.  Because absolute, filter,
+reverse, and the three active String classes have no examples in that
+complement, a matched self-posed curriculum is mandatory: 78 distinct atomic
+counterfactual identities give each of the 13 active factors exactly four FIT
+and two heldout inputs.  One provisional checkpoint must pass the 78 atomic
+counterfactuals plus canonical 24/18 transfer split before a deployment
+checkpoint is rebuilt from zero on all permitted TRAIN inputs.
+
+A separate third freeze is also mandatory before paired DEV.  Existing factor
+targets contain only span boundaries, span identity, and factor label; they do
+not teach an AST root/edge, operand orientation, nesting, or literal role, and
+`PromptSpanInput` does not itself retain the typed signature record.  Exact
+factor sets can therefore admit multiple literals, orientations, and programs.
+`PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1` must bind prompt inputs to signatures,
+learn root/edge, argument/operand, and literal-slot relays from TRAIN-only
+prompt-semantic targets, and produce a physical prompt-only e-class winner with
+zero desired reads.  Proof exposure requires prompt winner == authoritative
+retained root/e-class == selected proof e-class.  Until that checkpoint exists,
+the canonical prompt-only DEV arm remains sealed.
+
+The overfit-safe continuation is consequently fixed in four layers. First,
+extend the packed engine on generic TRAIN combinators. Second, learn and freeze
+the four-factor canonical factor-set bridge. Third, learn and freeze prompt-only
+root/structure/operand/literal selection. Fourth, spend the 27 family-disjoint
+public DEV tasks once with paired visible-I/O and canonical prompt-only arms.
+Opening DEV before both prompt checkpoints are frozen would leak the transfer
+surface into their design.
 
 On the Path-2 reading mainline, the first calibration-v3 TRAIN mismatch is now
 localized rather than guessed. At Genesis step 7,933, eleven segments grown at
@@ -1417,13 +1478,18 @@ is proven.
    free packed-primary engine across the generic scalar, List, and String TRAIN
    basis, then require one fixed canonical TRAIN engineering row per family
    under the unchanged work cap.  Do not inspect DEV or add family operators.
-7. Implement `PUBLIC_TRAIN_FACTOR_AND_JOINT_FREEZE_V2`: learn canonical TRAIN
-   spans from 42 semantic identities plus matched self-posed counterfactuals,
-   freeze once, and terminally join it to the breadth engine on one TRAIN row
-   per family.  Desired outputs, programs, family IDs, DEV, and property rows
+7. Implement `PUBLIC_TRAIN_FACTOR_WORKSPACE_V2`: freeze the exact 42-identity
+   canonical inventory, 24/18 split, and 78 matched counterfactual lessons, then
+   grow V5 into a repeated masked-WTA, capacity-four physical factor-set
+   workspace.  Desired outputs, programs, family IDs, DEV, and property rows
    remain outside learning.
-8. Spend one paired 27-task public DEV gate only after both named TRAIN freezes
-   pass unchanged. M0 and canonical eval stay sealed.
-9. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
+8. Implement `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1`: learn TRAIN-only
+   root/edge, operand-orientation, and literal-role relays, then require a unique
+   physical prompt-only packed e-class winner with zero desired reads.  Factor-
+   set admission alone does not license this gate.
+9. Spend one paired 27-task public DEV gate only after the engine breadth,
+   factor-set bridge, prompt-selection checkpoint, and terminal joint controls
+   all pass unchanged. M0 and canonical eval stay sealed.
+10. Spend/resume the prepared source-bound Path-2 factorized scorer replay from
    empty state in bounded public-TRAIN chunks; do not import the completed
    dense build or open C1/held-out material.
