@@ -249,10 +249,10 @@ The project must not describe itself as a domain-general learner before G0.
 
 | Lane | Current state | Next hard question |
 | --- | --- | --- |
-| **Substrate / runtime** | Large native/CUDA execution demonstrated; compact typed outputs passed all frozen parity/runtime gates | Can capability mechanisms scale without changing scientific semantics? |
+| **Substrate / runtime** | Large native/CUDA execution demonstrated; compact typed outputs pass parity gates; lazy packed proof plans preserve cost-5 physics and make cost 7 fit under the unchanged cap | Can capability mechanisms scale without changing scientific semantics? |
 | **R2 reading / persistent memory** | Dense 49-book TRAIN build exists; factorized successor criterion is pinned; fresh source-bound replay is preflight-ready but unspent | Does persistent identity survive the full fresh TRAIN replay under the corrected factorized criterion? |
-| **R3 semantic learning / planning** | Bottom-up semantic 30/30 first TRAIN gate; six-family gate STOP localized; packed scalar V3, full-typed sum/count, and generic scalar TRAIN-breadth layer pass | Can the packed engine add generic List/String breadth under the unchanged work budget? |
-| **R4 language → semantic factors** | Public TRAIN manifest was unidentifiable; self-posed V5 teacher-gated learner passes 54/54 atomic, 18/18 compositions, 21/21 controls; exact canonical inventory is 42 semantic identities and 13 active factors | Can the same learning rule acquire a capacity-four canonical factor set and then prompt-only structure/literal selection? |
+| **R3 semantic learning / planning** | Bottom-up semantic 30/30 first TRAIN gate; six-family gate STOP localized; packed scalar/full-typed slices and generic scalar plus List TRAIN-breadth layers pass | Can the packed engine add the generic String layer under the unchanged work budget? |
+| **R4 language → semantic factors** | Self-posed V5 passes; canonical factor-workspace V2 froze 42/24/18/78 then stopped before arrays because identical physical inputs demanded minimum versus maximum singletons | Can a fresh causal factor-set protocol represent same-span multi-label semantics before prompt-only structure/literal selection? |
 | **Joint language + semantics** | Self-posed joint matrix passes 3/3 treatments + 4/4 controls | Does the joint seam survive canonical TRAIN breadth without task/family identity or hidden outputs? |
 | **G0 domain generality** | **NEW, unspent** | Can the frozen architecture learn at least two structurally different non-coding domains with zero domain-specific computational primitives? |
 | **R5 family-disjoint code DEV** | Sealed | Does the frozen TRAIN architecture transfer to the 27 untouched public DEV tasks? |
@@ -330,9 +330,14 @@ Banked positive mechanisms include:
 - compact exact typed physical outputs;
 - packed semantic families with selected-only proof materialization;
 - scalar same-cap V3 selection;
+- lazy proof-plan V4, which preserves the cost-5 physical ledger and selected
+  proof identity while reducing the 19-literal cost-7 build to 22,456 relation
+  units under the unchanged 30,000 cap;
 - first full-typed `List[Int] -> Int` sum/count packed slice;
 - construction-certified desired-free `Int -> Int` TRAIN breadth for generic
-  signed offset, nonnegative maximum, and nested clamp.
+  signed offset, nonnegative maximum, and nested clamp;
+- construction-certified desired-free `List[Int] -> List[Int]` TRAIN breadth
+  for generic map-absolute and map-add, with zero scalar-route work.
 
 The six-family TRAIN STOP established the current constraints:
 
@@ -343,8 +348,8 @@ The six-family TRAIN STOP established the current constraints:
 
 ### Next R3 gate — `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2`
 
-Retain the banked generic scalar layer, then extend the same desired-free
-packed-primary engine across the generic List and String TRAIN basis under
+Retain the banked generic scalar and List layers, then extend the same
+desired-free packed-primary engine across the generic String TRAIN basis under
 unchanged work/accounting rules. Require one fixed canonical TRAIN engineering
 row per family. Do not inspect DEV and do not add family-specific operators.
 
@@ -366,14 +371,18 @@ Current lessons:
   atomic/composition/control chain;
 - the first joint self-posed V5 → packed semantic matrix passes.
 
-### Next R4 gate 1 — `PUBLIC_TRAIN_FACTOR_WORKSPACE_V2`
+### Next R4 gate 1 — `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3`
 
-Freeze the exact 42-identity canonical TRAIN inventory, its 24 FIT / 18
-untouched split, and 78 matched self-posed counterfactual lessons covering the
-13 active factors. Grow the V5 branch-local learner into repeated masked
-factor/STOP races with physical capacity four. Different factors may overlap or
-nest; a repeated factor poisons the case and a fifth distinct factor triggers
-capacity STOP. Candidate admission must compare exact physical factor sets.
+V2 is terminal at `STOP_PUBLIC_TRAIN_FACTOR_WORKSPACE_V2_INPUT_ALIAS`. Two
+post-selector 12-cell inputs each demanded both minimum and maximum as different
+singletons; seven FIT and three heldout lessons were contradictory before any
+electrical control, array allocation, or learning attempt. The fresh V3 protocol
+must define causal input keys without labels/hashes and map each key to one exact
+factor set. In particular, the shared minimum/maximum assembly teaches
+`{minimum, maximum}` through repeated masked WTA, matching the canonical
+same-span semantics. Different factors may overlap or nest; a repeated factor
+poisons the case and a fifth distinct factor triggers capacity STOP. Candidate
+admission must compare exact physical factor sets.
 
 ### Next R4 gate 2 — `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1`
 
@@ -425,6 +434,9 @@ Core requirements:
 
 Detailed protocol and claim boundary:
 [`frozen-architecture-cross-domain-generalization.md`](frozen-architecture-cross-domain-generalization.md).
+Established primary-source benchmark patterns and proposed numerical
+preregistration values:
+[`g0-established-benchmark-patterns.md`](g0-established-benchmark-patterns.md).
 
 `PASS_FROZEN_ARCH_CROSS_DOMAIN_G0` would justify calling the architecture a
 **candidate domain-general learner**. It would not imply AGI or human-level
@@ -442,7 +454,7 @@ architecture transfers beyond TRAIN families.
 Opening conditions:
 
 1. `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2` passes and freezes;
-2. `PUBLIC_TRAIN_FACTOR_WORKSPACE_V2` passes and freezes;
+2. `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3` passes and freezes;
 3. `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1` passes and freezes;
 4. the canonical TRAIN joint matrix and terminal controls pass unchanged;
 5. G0 receives its frozen-architecture cross-domain verdict under the same
@@ -565,8 +577,8 @@ Do not collapse these into "general intelligence."
 
 ## Parallel lane A — generic semantic engine
 
-1. Implement and freeze `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2` across generic
-   scalar/List/String semantics under the existing work caps.
+1. Complete and freeze `PACKED_GENERIC_TYPED_TRAIN_BREADTH_V2`; scalar and List
+   layers are banked and the generic String layer remains.
 2. Preserve explicit ambiguity/version-space states and selected-only proof
    materialization.
 3. No family-specific operators or cap increases based on the spent six-family
@@ -574,8 +586,8 @@ Do not collapse these into "general intelligence."
 
 ## Parallel lane B — canonical language learning
 
-1. Implement `PUBLIC_TRAIN_FACTOR_WORKSPACE_V2` using the 42 canonical semantic
-   prompt identities, exact 24/18 split, and 78 matched counterfactuals.
+1. Freeze and execute `PUBLIC_TRAIN_FACTOR_WORKSPACE_V3`, replacing V2's
+   impossible singleton aliases with causal factor-set targets.
 2. Implement `PUBLIC_TRAIN_PROMPT_SELECTION_FREEZE_V1` for root/edge,
    orientation, nesting, and literal-slot selection with zero desired reads.
 3. Use the V5 causal teacher-gated/branch-local mechanism; do not restore task,
