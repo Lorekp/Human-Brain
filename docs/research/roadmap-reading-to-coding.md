@@ -784,6 +784,21 @@ is therefore a version-space, scheduling, accounting, and ambiguity mechanism
 result, not completion of the roadmap's computational factorization lane or a
 license for joint freeze, public DEV, M0, held-out, Path-2, or capability claims.
 
+The first reusable computational-compression substrate is now implemented
+below that frontier seam.  Immutable content-addressed multi-valued decision
+diagrams represent finite typed literal/role binding relations with canonical
+natural join, Cartesian product, constraints, projection-distinct, exact set
+union/difference, exact and saturating counts, and deterministic witnesses.
+Every reachable decision node and edge is charged explicitly.  Slot occurrence
+identity preserves multiplicity such as `x+x`; an identity like `x+0 → x`
+requires a separately authenticated proof-normalization projection rather than
+falling out of set semantics.  Merkle-authenticated packed proof forests merge
+duplicate bindings only within one family while keeping distinct proof families
+separate and retaining their first two witnesses.  The substrate passes its
+self-posed relation/forest tests, but it is not yet wired into frontier
+construction and therefore provides no frontier-work reduction, joint
+integration, or capability evidence by itself.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
