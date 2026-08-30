@@ -885,6 +885,54 @@ generic-join engine.  This is self-posed scalar computational-factorization
 mechanism evidence only, not full typed V2, joint integration, public/canonical
 data, DEV, M0, transfer, or capability evidence.
 
+That publish-once workset is now implemented as a separately named V2.  One
+session-owned semantic-partition arena imports each ephemeral relation root,
+captures and authenticates the reachable topology in one publication traversal,
+and retains the exact arena/root/group capsule for selection without a topology
+replay.  Opaque process-local partition nonces never enter public roots.  The
+published family, e-node, and e-class records are constructionally immutable,
+and one authenticated component capsule binds their exact bijections rather than
+re-running a second component verifier.  Constraints and the explicit
+`x + 0 -> x` proof normalization remain metered and rooted; build still contains
+no desired vector, proof forest, or concrete/rendered witness.
+
+The small unique clamp now builds at 1,515 relation units with 68 physical
+predictions, 23 cache hits, and 209 races, then materializes only exact
+`min(max(x, -4), 6)` after the frozen desired race.  Its frontier, build-work,
+and selected-forest SHA-256 are respectively
+`cb9718712400bbaa753f90294fdc3740dee0e8b73dce95d70f93ef23b6cae3fe`,
+`3208fd4fe24ced6efe10e942ec2bd7dff29f5daa90c726525c057ae3954ab7d8`,
+and `b05a2a5334ae4e28fad50b8e3b914d120002128998820792c70a95bc6c490d13`.
+The ambiguity fixture builds at 195 units, retains proof-distinct `x` and
+`abs(x)`, and exposes exactly those two witnesses only after one selected
+forest.
+
+The unchanged 19-literal cost-5 stress build is now `READY` at 29,951 of
+30,000 relation units: seven families, 249 e-nodes, 230 e-classes, 422 physical
+predictions, 723 prediction-cache hits, 1,489 races, and zero proof witnesses.
+Its frontier/build-work/event SHA-256 are
+`2eea8c295685b1aa7ac98bdbdf42444f4fd9b344a5059f72bc98bce6324f20a8`,
+`de95d63069272ede0565aa8b5578d06145b5fdaeed7bd40780877ee47b178b4b`,
+and `bed750213bf1ee8b3608a451b4db212092d6e9df9f57f26ef7f78a03e5528aef`.
+At a cap of 29,950 the same build fails atomically before publication seal.  At
+the unchanged cap, a supported-but-absent `(31, 31, 31, 31, 31)` selection
+honestly stops at 30,000/30,001 during retained-group authentication, before
+the first desired-value read, desired race, forest, or witness.  Its
+selection/work/event SHA-256 are
+`531979f6db6680c708a5530f0fe8439297445c2c06985a474399157e35807e75`,
+`368096a3cd82d1d21605e591c10d1241a9004c5288efb869ee40e17481738e01`,
+and `082e5f6ef82b85e081cc39436de4f471836122affe8b1499b28481dd733992a9`.
+The cost-9 stress likewise remains an authenticated atomic STOP after cost 5
+at 30,000/30,001, with frontier/work/event roots
+`ad49a95c9b9355562e6f65a1cb4d26676892efe5fd3ced4746b924c1749bed76`,
+`d983079204d5cc62e96903f2fc1a84bd3a5bb25aa976e7f85d0ae3d33ca96fe8`,
+and `8e4de868fc00be50d455bc8d6b61b5737acfd6d5c72f5c2de60b8f5f2efc18a3`.
+This is a self-posed scalar build/compression mechanism PASS with an explicit
+selection-headroom STOP, not end-to-end cost-5 solving or full typed/public/
+capability evidence.  The next exact engine seam is succinct retained-
+publication metadata authentication plus selected-proof headroom under the
+same cap.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
@@ -1160,13 +1208,14 @@ is proven.
    third scalar-clamp failure, localizing complete-tier declaration overflow,
    bound-context representative overflow, and four-row output aliasing.  The
    cohort is terminal and will not be retried or tuned.
-4. **IN PROGRESS / PARALLEL LANES:** (a) **COMPLETE / MECHANISM PASS + STRESS
-   STOP:** packed families are now the primary desired-free scalar frontier and
-   proof materialization is strictly post-race.  The 19-literal cost-9 fixture
-   still stops at 30,000/30,001 after cost 3; implement the separately designed
-   session-owned semantic-partition workset so trusted ephemeral roots are
-   imported once and authenticated once at publication, without changing any
-   cap; (b) **COMPLETE / STOP:** V4 reached only 44/54 atomic rows and receives
+4. **IN PROGRESS / PARALLEL LANES:** (a) **COMPLETE / BUILD-COMPRESSION PASS +
+   SELECTION STOP:** the session-owned semantic-partition workset now imports
+   trusted ephemeral roots once and authenticates one publication traversal.
+   The 19-literal cost-5 build is READY at 29,951 units, but selection stops
+   atomically at 30,000/30,001 during retained-group authentication.  The next
+   engine seam is succinct retained-publication metadata authentication and
+   selected-proof headroom under the unchanged cap; (b) **COMPLETE / STOP:**
+   V4 reached only 44/54 atomic rows and receives
    no retry.  Its fresh disjoint V5 data-only protocol has sound curriculum and
    analytical credit assignment, but independent audit is requiring exact
    selector-latch, teacher/scout, compositor, composition-gate, and terminal-
