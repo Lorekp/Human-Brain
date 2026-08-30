@@ -760,6 +760,30 @@ The checkpoint stayed exact.  There is no retry, bound change, cohort
 replacement, or task-specific repair; generic successor work uses self-posed
 fixtures, and DEV remains sealed.
 
+The first desired-independent semantic version-space V2 mechanism now passes
+its self-posed vertical slice.  Frontier construction accepts typed arguments
+and literals but no desired vector; only a complete frozen frontier may enter
+the existing physical exact-vector selection race.  Minimum-complete-root
+scheduling selected a unique scalar clamp at cost 5 after 8,395 canonical
+admissions, 5,355 actual operator-effect simulations, and 16,342 fitted-GLIF
+races.  A cost-6 predicate-count proof is admitted before every cost-7+ demand,
+although the 19-literal cost-9 stress build still stops on canonical admission
+30,001.  A separate ambiguity fixture retains plain sum at cost 2 and a
+proof-distinct clamp-map-sum at cost 9, then returns
+`STOP_AMBIGUOUS_VISIBLE_SPEC` from the physical multiple-exact race.
+
+Exact operator effects are memoized before simulation, so every audited
+prediction/race now equals actual physical work and repeated rows cannot bypass
+the unchanged 30,000/30,000/80,000 recipe/prediction/race limits.  The ordered
+root recipe IDs, physical output hashes, program identities, and live callable
+signature are bound into a selection manifest and the frontier digest, sealed,
+and reauthenticated before every race.  Independent forced-tamper checks pass.
+Operator-skeleton and literal/role-slot identities are currently authenticated
+metadata only: concrete literal-bound normal forms are still enumerated.  This
+is therefore a version-space, scheduling, accounting, and ambiguity mechanism
+result, not completion of the roadmap's computational factorization lane or a
+license for joint freeze, public DEV, M0, held-out, Path-2, or capability claims.
+
 The prompt-language continuation has also banked its checkpoint-free input
 substrate at `c89a3c6`.  It authenticates the frozen callable frame, replaces
 declared names by entry/argument roles, represents signed integer lexemes as
