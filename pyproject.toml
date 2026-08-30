@@ -13,6 +13,7 @@ dependencies = ["numpy>=2.0"]
 test = ["pytest>=8.0"]
 swe = ["mini-swe-agent==2.4.6"]
 visualizer = ["dearpygui==2.3.1"]
+g0 = ["minigrid==3.1.0"]
 # Dense-ridge statistics/consolidation backend for the ladder harness
 # (--ridge-backend scipy; required by the R0/R0-b mechanical gates,
 # optional at runtime: 'auto' falls back to numpy without it).
