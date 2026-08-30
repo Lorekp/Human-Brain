@@ -784,6 +784,21 @@ substrate or local factor learning.  The successor is a self-posed
 compositional curriculum with matched cue counterfactuals and the same semantic
 input invariants; public DEV remains sealed.
 
+The smallest separately named compositional V2 slice now passes on self-posed
+add/subtract contrasts.  Canonical token, relative-slot/token, and ordered
+transition features occupy three disjoint 512-cell fitted-GLIF banks; all 24
+factor heads exist, while only add and subtract learn in this slice.  The frozen
+local state is exactly two `uint16[24,1536]` E/H arrays (147,456 bytes).  A
+false-negative update moves the PRESENT drive 600→632 pA and a second moves it
+to 664 pA past the fixed 650 pA STOP cell; decisions come from the 600-step cell
+races, with STOP winning a complete tie.  Four FIT matched contrast groups per
+factor trained locally, and all four sequences in two disjoint held-out groups
+recombined correctly while the other 22 heads stayed silent.  Relabeling and
+reordering authentication hashes leaves learned state and inference unchanged;
+caller arrays and diagnostic snapshots cannot alias the frozen checkpoint.
+This is a two-factor self-posed learner mechanism, not the full 24-factor
+curriculum, public-TRAIN bridge, prompt-only coding, transfer, or DEV evidence.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
