@@ -769,6 +769,21 @@ teacher, factor classifier, desired output, family/task identity, candidate
 program, or trained state.  The learned span-to-semantic-factor mapping and its
 preregistered TRAIN capacity split remain unbuilt; DEV therefore remains sealed.
 
+The preregistered public-TRAIN prompt-factor V1 manifest has now stopped before
+learning at `STOP_PUBLIC_TRAIN_PROMPT_FACTOR_IDENTIFIABILITY_V1`.  The exact 90
+prompt/signature appearances collapse to 42 distinct role-normalized
+`PromptSpanInput` identities, with 48 duplicate appearances in 19 groups.
+Independently, `absolute`, ASCII decimal digits, ASCII lowercase, and English
+vowels occur in fewer than three distinct physical inputs, so the frozen 72/18
+capacity split is not identifiable.  No split, learner arrays, updates, or
+checkpoint were constructed.  Entry-point, argument, ordinal, family, task, and
+whole-prompt audit identities will not be restored to manufacture uniqueness,
+and neither the split nor the minimum distinct-input rule will be weakened.
+This closes the original capacity manifest, not the checkpoint-free span
+substrate or local factor learning.  The successor is a self-posed
+compositional curriculum with matched cue counterfactuals and the same semantic
+input invariants; public DEV remains sealed.
+
 The overfit-safe continuation is fixed in three layers. First, improve runtime
 and extend only on the six unspent TRAIN families using generic typed
 combinators rather than family operators. Second, learn and freeze a
@@ -873,9 +888,12 @@ is proven.
 4. **IN PROGRESS, PARALLEL LANES:** (a) build a desired-independent semantic
    frontier V2 on self-posed numeric-composition and work-scaling fixtures,
    factorizing operator skeletons from literal/role slots rather than raising
-   a spent bound; (b) execute the preregistered TRAIN-only prompt-span to
-   semantic-factor bridge unchanged, using prompts/signatures and atomic factor
-   annotations but no desired outputs or result artifacts.  DEV stays sealed.
+   a spent bound; (b) after the terminal V1 identifiability STOP, build the
+   separately named self-posed compositional prompt-factor V2 with matched cue
+   counterfactuals and the unchanged role-normalized span interface.  No
+   identity restoration, smaller post-hoc split, learner run on the collapsed
+   public manifest, or public desired/result artifact is licensed.  DEV stays
+   sealed.
 5. Freeze a self-posed joint prompt-factor plus visible-I/O integration matrix.
    Do not replay the spent six-family gate as capability evidence.  Both engine
    and bridge lanes must pass before any family-disjoint desired vector opens.
