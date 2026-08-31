@@ -825,13 +825,67 @@ for `common_microrepository_autonomous_correction_v1.py`, and
 `9c68b3f657495096e6c151b3d70ff285928d961c7ae822e160ac96a356ca0cfd`
 for the heterogeneous focused test.
 
-The next mechanism gate is a learned lexical source-factor tier above exact
-episodic recall: tokenize source, project adjacent semantic trigrams through the
-generic common-event cells, and admit a factor only after independent-source
-provenance plus a unique factor-local win. Exact ambiguity must never fall
-through, and unknown or conflicting factor evidence must STOP. Public DEV,
-canonical M0, held-out/C1, G0 adjudication, and protected evaluation surfaces
-remain sealed.
+Commit `69cb0ae99c16bb43b96f9c5924e9959331b5ee68` adds the first learned
+lexical source-factor tier above the exact episodic repository memory. A bounded
+source-view adapter preserves the exact projection and builds a second Python
+view from at most 256 source bytes, 64 normalized semantic tokens, and 24
+deduplicated adjacent token trigrams. Names, numbers, and strings receive fixed
+IDs, trivia is dropped, operators retain stable schema IDs, and each eight-byte
+trigram is projected through the generic common-event cells. The composite
+memory advances its exact child and factor state from the same authenticated
+controller experience, retains no raw source, lexemes, lessons, experiences, or
+parent, and admits a factor only after at least two distinct source roots plus a
+unique factor-local physical action win. Exact recall remains authoritative:
+only exact context/candidate UNKNOWN reaches the lexical tier; exact ambiguity
+does not fall through, while factor-gate, unknown, ambiguous, and conflicting
+evidence STOP.
+
+The focused String gate used one policy, four training sources, and six real
+repository consequence lessons. Its frozen composite contains 16 factor rows,
+seven admitted factors, and four source-provenance rows. Five reverse-only
+factors select the support-2 action, two copy-only factors select support 1, and
+the nine shared/conflicting factors remain unadmitted. Two byte-new sources then
+recalled the corresponding actions and each committed with one selected source
+materialization and one repository test, with zero unselected materializations
+or tests. Comment/string-only and neither-pattern controls returned UNKNOWN,
+the both-pattern control returned CONFLICT, disabling the factor gate stopped
+before lexical projection, candidate reversal preserved both choices, duplicate
+source replay was rejected before mutation, and the 256-byte source-capacity
+preflight rejected oversized input.
+
+Cumulative accounted learning is 151,200 factor cell-steps plus 18,000 exact
+cell-steps, or 169,200 total. The composite stores 96 trainable bytes and 3,530
+checkpoint-array bytes across both tiers. The fresh reverse and copy recalls
+cost 132,880 and 126,232 cell-steps. At the frozen caps, the current accounting
+has a 432,352-cell-step maximum—12,568 exact projection, 3,000 exact-context
+race, 1,800 possible exact-candidate race, 9,984 lexical projection, 360,000
+factor-match races, 43,200 factor-local action races, and 1,800 consensus—below
+the 500,000-step bound.
+
+This is fixed-tokenizer lexical motif association, not learned tokenization or
+source semantics. The byte-distinct variants are not independent repositories
+or task families; much of their novelty is deliberately normalized away, and
+the discriminating slice motifs occur in live but repair-irrelevant helper
+functions. Only one policy exercises the factor tier. The result therefore does
+not establish causal role/dataflow learning, broad coding, SWE performance, or
+benchmark progress. Public DEV, canonical M0, held-out/C1, G0 adjudication,
+Path-2 evaluation, and protected surfaces stayed sealed. The next falsification
+gate should hold a lexical motif constant while moving it between causally
+relevant and irrelevant live code, and express the same behavior with a
+lexically different implementation; transfer should follow learned causal role
+or dataflow and abstain on the decoy.
+
+Evidence SHA-256s are
+`7801bfa4f9dde69bca8d972f9cfc4c01081f7a9bbc32457a8b55ed798b7e6df5`
+for `common_repository_source_views_v1.py`,
+`e49e2bcd2c49e8ceb7ecd6ecdda4775d9c3610d664e0061a2160c243086ae5f2`
+for `common_continual_repository_action_memory_v1.py`,
+`84060c7cd19cf7a42c6d2633dbed7573ffe4a0e5ec6b51f93a1d5cbb1c3af053`
+for `common_factorized_repository_action_memory_v1.py`,
+`08fa7a5856a43be9c07ecdac2b6f02051d099f11593d6f59dff67e144d286763`
+for `common_microrepository_autonomous_correction_v1.py`, and
+`11e5f83001b9fb77f883a245f0f43db18d91ad260cdff21f9fda3b80c28b3760`
+for the focused test.
 
 ## Active-cell scaling and dynamics
 

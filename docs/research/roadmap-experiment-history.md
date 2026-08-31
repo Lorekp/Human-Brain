@@ -560,11 +560,38 @@ examples, so this banks exact-source typed cross-policy action retrieval only,
 not unseen semantic consequence learning, broad coding, SWE, or benchmark
 evidence.
 
-The next planned layer is learned lexical source-factor recall above the exact
-episodic route. Adjacent semantic token trigrams should enter the generic common
-event cells, with factor admission gated by independent-source provenance and a
-unique factor-local win. Exact ambiguity never falls through; conflicting or
-unknown factor evidence STOPs. Evaluation surfaces remain sealed.
+Commit `69cb0ae` implements the planned lexical source-factor route above exact
+episodic recall. A fixed Python tokenizer maps at most 256 source bytes and 64
+normalized semantic tokens into at most 24 deduplicated adjacent trigrams, each
+projected through the generic common-event cells. One immutable replay-free
+composite advances its exact child and factor rows from the same authenticated
+controller consequence cohort. Two distinct source roots plus a unique
+factor-local physical action win are required for admission; exact recall stays
+authoritative, only exact UNKNOWN falls through, and factor gate, unknown,
+ambiguity, and conflict STOP.
+
+The one-policy focused gate learned from four training sources and six real
+consequence lessons. Sixteen factor rows produced seven admissions: five
+reverse-only factors select support 2, two copy-only factors select support 1,
+and nine common factors remain unadmitted. Two byte-new sources each transferred
+in one selected materialization/test with zero unselected work. Candidate
+reversal preserved both choices; comment/string-only and neither controls were
+UNKNOWN, both live patterns CONFLICTed, factor-gate ablation stopped before
+lexical projection, duplicate replay was rejected, and the 256-byte preflight
+bounded the observation. Cumulative factor/exact/total learning was
+151,200/18,000/169,200 cell-steps; the composite stores 96 trainable and 3,530
+checkpoint-array bytes. Fresh recalls cost 132,880 and 126,232 cell-steps, and
+the cap-level maximum is 432,352 under the 500,000-step bound.
+
+This banks fixed-tokenizer lexical motif association only. The byte-distinct
+variants are not independent repository/task families, much novelty is removed
+by normalization, the discriminating motifs occur in repair-irrelevant helpers,
+and only one policy is tested. No source semantics, causal role/dataflow, broad
+coding, SWE, or benchmark claim follows. Public DEV, canonical M0, held-out/C1,
+G0 adjudication, Path-2 evaluation, and protected surfaces stayed sealed. The
+next falsification gate should distinguish the same motif in causally relevant
+versus irrelevant live code and transfer an equivalent behavior across different
+syntax before a stronger abstraction claim.
 
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions

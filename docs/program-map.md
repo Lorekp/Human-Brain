@@ -428,7 +428,8 @@ repository frontier (the two nonempty learned prefixes), so repository actions
 do not redefine the semantic selection surface.
 
 The continual memory is now one flat immutable catalogue with at most two
-policy roots, four policy-qualified actions, and two exact source contexts.
+policy roots, four policy-qualified actions, and four exact source contexts;
+the earlier A-B-A'-B' gate used two of those contexts.
 Authenticated source projection happens once in the controller and the same
 `RepositorySourceContextV1` is passed to recall; this removes one
 `P(n)=49n+24` projection, changing the modeled `n=256` successful recall from
@@ -444,12 +445,48 @@ hidden `[-2]` input overlaps prefit examples, so the mapped claim is only
 replay-free exact-source typed cross-policy action retrieval, not unseen
 semantic transfer, broad coding, SWE, or benchmark evidence.
 
-The next layer should preserve exact episodic recall and add a learned lexical
-source-factor route above it. Tokenized adjacent semantic trigrams feed the
-generic common-event projection; factor admission requires independent-source
-provenance and one unique factor-local win. An exact ambiguous match never falls
-through, and factor conflict or unknown evidence STOPs. Public DEV, canonical
-M0, held-out/C1, G0 adjudication, and protected evaluation surfaces stay sealed.
+Commit `69cb0ae` adds `common_repository_source_views_v1.py` as the bounded
+environment adapter for exact and Python-lexical source views. It preserves the
+existing exact-source context byte-for-byte, then maps at most 256 source bytes
+and 64 normalized semantic tokens into at most 24 deduplicated adjacent
+trigrams. Names, numbers, and strings collapse to fixed IDs, trivia disappears,
+operators retain stable IDs, and every eight-byte trigram enters the generic
+common-event projection. The retained lexical view contains only authenticated
+roots, traces, counts, and work, not source bytes or lexemes.
+
+`common_factorized_repository_action_memory_v1.py` owns the exact-plus-factor
+checkpoint. Each authenticated controller experience advances the unchanged
+exact child and a flat factor catalogue without replay or parent retention.
+Admission requires two distinct source roots and a unique factor-local E/H
+action race. Recall always runs exact episodic memory first; only exact UNKNOWN
+falls through. Admitted factors independently match the observed view, rerun
+their local action races, and must reach one physical consensus. Gate,
+unknown, ambiguous, and conflicting states STOP. The common repository
+controller accepts either exact concrete memory type through the same
+`recall_attested_source` interface, reconstructs action evidence from the
+authenticated neutral bank, and remains candidate-order independent.
+
+The focused one-policy gate learned from four training sources and six
+consequence lessons: 16 factor rows yielded five reverse/support-2 and two
+copy/support-1 admissions, while nine common factors stayed unadmitted. Four
+source-provenance rows, 151,200 cumulative factor-learning cell-steps, and
+18,000 exact-learning steps produce a 169,200-step composite with 96 trainable
+and 3,530 checkpoint-array bytes. Two byte-new transfers each used one selected
+materialization/test and zero unselected work; their recalls cost 132,880 and
+126,232 cell-steps. UNKNOWN/UNKNOWN/CONFLICT controls, factor-gate ablation,
+exact-first precedence, candidate reversal, duplicate replay rejection, and the
+256-byte preflight preserve the boundary. Worst-case recall at the caps is
+432,352 cell-steps under the current accounting, below 500,000.
+
+This remains a fixed-tokenizer, one-policy lexical motif result. The byte-new
+variants are not independent repositories or task families, much novelty is
+normalized away, and the decisive motifs live in repair-irrelevant helpers. It
+does not establish learned semantics, causal role/dataflow, broad coding, SWE,
+or benchmark capability. Public DEV, canonical M0, held-out/C1, G0 adjudication,
+Path-2 evaluation, and protected surfaces stayed sealed. The next gate should
+hold surface motifs constant across causally relevant and irrelevant live code
+while expressing equivalent behavior with different syntax, requiring transfer
+to follow learned role/dataflow and abstain on decoys.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
