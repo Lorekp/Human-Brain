@@ -436,6 +436,26 @@ increment after four honest blocker localizations, without candidate pruning or
 host consequences; learned reusable fragment discovery remains open. The spent
 V3 cohort remains closed.
 
+Commit `f86a1a1` then removes redundant work without changing that evidence.
+The 129 predicate plans share one desired-free multi-literal frontier and one
+topology enumeration, but retain independent singleton-domain certificates,
+receipts, cumulative work roots, candidate identities, and duplicate semantic
+vectors. The focused complete-bank run improves from about 161.28 to 48.05
+seconds (3.36x), with relation work 67,338→10,609 and races 4,773→1,064 under
+the unchanged cap. This is exact construction acceleration, not a new plan or
+capability result.
+
+Commit `c728412` opens that discovery increment with a two-program
+content-addressed fragment library. Physical selection of the solved plans
+precedes fragment exposure; 16 typed subtree occurrences become 13 E/H cells,
+with three consolidations across two recurring cells. A fresh desired-free
+frontier reactivates those cells, forms generic type/scope-compatible one-edit
+relations, and selects a never-trained `abs(item) < 5` program in one physical
+semantic race. The original equivalent-composition target remains multiple-
+exact rather than being pruned, and library ablation removes every recipe. The
+result is narrow within-domain compositional reuse under explicit typed edit
+metadata and host visible-case execution, not parsing or arbitrary induction.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the
@@ -453,6 +473,29 @@ fresh R3; independent contradictions collide then revise, duplicate/dependent
 provenance does not vote, and selected-child failure never falls back. The final
 router adds 65 cells and 1,544 checkpoint-array bytes. The remaining boundary is
 unseen-query-context abstraction rather than another exact-cue router.
+
+Commit `e936323` crosses that boundary narrowly by learning evidence on separate
+physical factors and composing it at recall. A and B are never trained together;
+unordered A+B sums to semantic `(0,2)`, while singles tie tonic, physical
+factor ambiguity/unknown STOP, and one then two contrary A lessons collide at
+`(1,1)` then revise to exact `(2,1)`. Factor, router, and selected-child causal
+stops remain explicit; child roots and replay-free advancement remain exact.
+The result adds 65 cells and grows from 464 to 824 checkpoint-array bytes. The
+next boundary is autonomous factor discovery from repeated raw context, not
+another caller-framed factor tuple.
+
+Commit `45a9a94` crosses that next boundary for fixed, externally presegmented
+one- and two-byte contexts. It hashes each authenticated physical position-
+value-binding assembly into the existing 12-lane factor geometry, admits a
+branch only after two independent accepted provenance votes plus a unique
+physical support/route win, and later equality-races raw branches before
+invoking the unchanged factor router. Of six initial parent factors only
+recurring A/B are admitted, so never-fitted raw `ab` composes to semantic
+`(0,4)` without a caller factor tuple. Projection/plasticity controls admit
+nothing; two contrary A observations collide at `(2,2)`, a third revises to
+exact `(3,2)`, and duplicate replay adds no vote. The composite owns 75 added
+cells and 2,208 checkpoint-array bytes. The remaining boundary is learned
+variable-length chunking/segmentation rather than a larger fixed raw frame.
 
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
@@ -477,6 +520,15 @@ eager/lazy parity and the same 16,200-byte payload with 64-slot buffers. The
 nominal construction saving is 16,000,000 bytes at one million and 1.6 TB at
 logical 100 billion. This is focused construction/payload evidence only, not
 throughput, capability, or fully materialized 100-billion residency.
+
+Two immediate throughput hypotheses then failed their predeclared gates and
+were fully reverted. A resident GID/dynamics hot-cold split measured -1.49% at
+131,072 residents and +0.55% at 1,048,576. A target-sorted adaptive resident
+cursor measured +7.1% for 1,024 events but only +0.62% at `K=R/16`; execution
+stopped before the larger/poison branches, so they carry no claim. The exact
+`d90ebbe` source and hash were restored after each STOP. These results redirect
+the speed lane toward materially batched event/state work rather than another
+scalar storage or lookup substitution.
 
 ## 11. Common G0 substrate begins
 

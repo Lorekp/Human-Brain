@@ -304,6 +304,32 @@ fixed self-posed catalog rather than learned abstraction discovery. Typed
 certificates, candidate manifests, and compilation remain scaffolds, and the
 spent V3 cohort remains closed.
 
+Commit `f86a1a1` removes the bank's 129-fold predicate construction replay.
+`PackedPhysicalPredicateGatedFoldV1.build_literal_domain` now builds one shared
+multi-literal frontier; the plan-slice substrate enumerates its common topology
+once, indexes authenticated occurrence/slot/value domains, and issues 129
+independent singleton-domain receipts only if every slice is unique. Each
+publication freezes its own cumulative authorization-work receipt, so later
+shared-session work cannot rewrite earlier accounting. Candidate keys, order,
+duplicate output vectors, one final semantic race, and zero preselection
+materialization remain exact. Focused wall time improves 3.36x and relation
+work falls 84.25% under the same cap. This is a reusable construction-sharing
+seam, not a broader search space or capability increment.
+
+Commit `c728412` begins replacing that catalog boundary with reusable learned
+parts. Two uniquely selected solved plans expose 16 typed edit-site occurrences;
+content-addressed E/H races consolidate them into 13 fragment cells, including
+two recurring cells and three reused occurrences. The library retains 13,338
+bytes of cell state plus 449 explicit host token bytes. On fresh visible cases it
+physically reactivates the prototypes, generically enumerates cross-program
+type/scope-compatible one-edit relations, computes desired-free semantic
+vectors, and runs one final physical race. Program/source construction occurs
+only after a unique winner. A novel `abs(item) < 5` composition succeeds while
+an equivalent-recipe target remains an honest multiple-exact STOP and disabling
+prototype cells yields no recipes. This is learned typed-fragment reuse with
+host edit-site, execution, and compiler scaffolding—not autonomous parsing or
+broad program induction.
+
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
 memory, and 569,715-cell integrated checkpoint with framed physical multi-byte
@@ -466,6 +492,34 @@ checkpoint-array bytes, while child work/storage remains separate. This is
 revisable retrieval-view selection for recurring contexts, not unseen-context
 abstraction, corpus retrieval, language, or coding evidence.
 
+Commit `e936323` adds a factorized successor over the same frozen dual-view
+child. Each explicitly framed 12-cell factor learns local exact/semantic
+excitatory and inhibitory ticks solely from a physical race over public child
+output-cell consequences. Recall physically recognizes each factor, sums local
+evidence commutatively, races the two routes, and relays only the selected
+child's active output cells. A and B are never co-trained, yet A+B selects
+semantic at `(0,2)` in either order; factor ambiguity/unknown, factor/router
+ablation, and selected-child failure all STOP. Contrary evidence collides at
+`(1,1)` then revises to exact at `(2,1)`. The router adds 65 cells and grows from
+464 initial to 824 revised checkpoint-array bytes. Factor discovery from raw
+contexts remains open.
+
+Commit `45a9a94` adds a thin raw-context front end without changing that
+router's ownership of route E/H, consequence selection, provenance, collision,
+or revision. It authenticates a bounded one- or two-byte `CommonEventFrame`,
+projects each physical position-value-binding assembly into a 12-lane branch,
+and admits only branches whose repeated independent parent evidence wins a
+support-tonic race and whose route action spikes uniquely. Recall equality-
+races every raw branch against the admitted bank, then passes the recovered
+unordered assemblies to the existing factor router; unknown, ambiguous, or
+projection-off input stops before routing and child failure never falls back.
+In the focused fixture, only recurring A/B are admitted from six parent factors,
+unseen `ab` selects semantic at `(0,4)`, contrary evidence collides at `(2,2)`
+then revises to exact at `(3,2)`, and duplicate replay does not vote. The layer
+adds six discovery cells above the 69-cell parent for 75 composite cells and
+2,208 checkpoint-array bytes. Variable-length segmentation and arbitrary
+latent-factor discovery remain open.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
@@ -559,6 +613,14 @@ traffic at logical 65,536 and 100 billion finishes at 16,200 bytes with 64-slot
 buffers and exact eager/lazy state, event, ledger, counter, and tight-overflow
 parity. This is construction/payload scaling, not a throughput or fully
 materialized-residency result.
+
+Two uncommitted follow-ups remain deliberately absent from the runtime. A
+hot/cold resident split reached only +0.55% at one million residents, and an
+adaptive sorted resident cursor reached only +0.62% at `K=R/16`; both missed a
+predeclared 10% end-to-end gate and were reverted to the exact `d90ebbe` source.
+The active design boundary is therefore bulk event/state processing—potentially
+paired with packed dormant storage or vectorized GLIF—not another scalar lookup
+or layout-only patch.
 
 ## Claim and opening discipline
 

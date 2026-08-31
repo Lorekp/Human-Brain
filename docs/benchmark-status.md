@@ -325,6 +325,32 @@ selected child STOP never falls back. The final router adds 65 cells and 1,544
 checkpoint-array bytes. This is revisable view selection for recurring query
 contexts, not unseen-context abstraction or language/coding/corpus evidence.
 
+Commit `e936323` advances that boundary to unordered factor composition. Two
+physical 12-cell factors learn semantic-route evidence separately from public
+child output consequences; their never-co-trained A+B composition then selects
+semantic from summed `(0,2)` evidence, independent of factor order. Single
+factors remain below tonic, an 11/12-by-11/12 collision and a displaced factor
+STOP explicitly, and one then two contrary A lessons yield collision `(1,1)`
+then exact revision `(2,1)` without fallback or child mutation. The router adds
+65 cells; its initial two-row checkpoint arrays occupy 464 bytes and four-row
+revised state 824 bytes. This is novel composition of explicitly framed learned
+physical factors, not autonomous factor discovery, corpus retrieval, language,
+or coding evidence.
+
+Commit `45a9a94` removes the caller-supplied factor tuple for one bounded raw-
+context case. Each authenticated, externally presegmented one- or two-byte
+`CommonEventFrame` projects its physical position-value bindings into 12-lane
+branches. A branch is admitted only after at least two independent accepted
+parent-provenance votes beat a physical support tonic and the parent route race
+has one winner. Six parent factors are learned initially but only the recurring
+A and B branches are admitted; the never-fitted raw `ab` frame then selects the
+semantic child at `(0,4)`. Projection/plasticity controls admit nothing, two
+contrary A observations collide at `(2,2)`, a third revises to exact at `(3,2)`,
+and replay adds duplicate provenance without a vote. The composite adds 75
+cells and 2,208 checkpoint-array bytes. This is repeated position-value-binding
+discovery under fixed framing, not arbitrary factor/boundary discovery,
+language, coding, corpus, protected-transfer, or benchmark evidence.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for
@@ -408,6 +434,16 @@ bytes with 64-slot phase buffers and exact eager/lazy dynamics, queue, ledger,
 counter, and overflow parity. This removes a nominal 1.6-TB construction
 request at logical 100 billion, but does not show throughput or fully
 materialized 100-billion feasibility.
+
+Two focused throughput successors were falsified and fully reverted. Splitting
+resident GIDs from dynamics saved `4C-48` bytes but changed representative
+medians by -1.49% at 131,072 residents and only +0.55% at 1,048,576, far below
+the required 10%. An adaptive monotone resident cursor then improved a 1,024-
+event case by 7.1% but only 0.62% at `K=R/16` (4.6180→4.5893 ms), again below
+the gate; the larger and poison branches were not reached and are not claimed.
+`procedural.rs` is restored exactly to the `d90ebbe` source. The next credible
+speed step must batch event/state work rather than retry a scalar layout or
+membership-lookup substitution.
 
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
@@ -497,6 +533,32 @@ the focused visible cases uniquely select raw SUM, ABS-map-SUM, and threshold 5,
 with item 64 separating raw SUM from the threshold catalog. This is a self-posed
 complete-plan selection mechanism, not learned catalog construction, public
 transfer, parsing, broad coding, or SWE evidence.
+
+Commit `f86a1a1` keeps that exact 131-candidate roster but shares construction
+across the 129 predicate thresholds. One desired-free multi-literal frontier
+matches the common topology once; a generic batch authorization pass then
+issues one separately charged, authenticated singleton-domain certificate and
+receipt per threshold. All receipt objects, hashes, and cumulative authorization-
+work roots remain distinct; duplicate semantic vectors, candidate order, and
+ambiguity/no-match behavior are unchanged. The same focused test fell from
+about 161.28 to 48.05 seconds (3.36x); relation work fell 67,338→10,609,
+predictions 2,322→533, and physical races 4,773→1,064 under the unchanged
+30,000-unit cap. This is exact mechanism acceleration on the same visible
+self-posed bank, not new candidates, learning, coding, or benchmark evidence.
+
+Commit `c728412` adds the first learned reusable program-fragment library above
+that bank. Two solved plans are admitted only after their 131-way physical
+semantic races; 16 typed subtree occurrences train 13 exact E/H fragment cells,
+with three occurrences consolidated across two recurring cells. The frozen cell
+state is 13,338 bytes plus 449 bytes of explicit host token payload. A fresh
+desired-free frontier reactivates all 13 prototypes, enumerates type/scope-
+compatible one-edit relations, executes them only on visible cases, and uses one
+final semantic-vector race; source materializes only for the unique
+`abs(item) < 5` composition. Unknown outputs, an observed equivalent-recipe tie,
+empty-input ambiguity, and prototype-cell ablation all STOP with zero proof.
+This is self-posed within-domain one-edit recombination under explicit typed
+edit metadata and host execution/compiler scaffolding, not parsing, arbitrary
+program induction, public transfer, or SWE evidence.
 
 ## Active-cell scaling and dynamics
 
