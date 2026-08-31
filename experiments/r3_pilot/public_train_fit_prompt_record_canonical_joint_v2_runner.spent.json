@@ -1,0 +1,13 @@
+{
+  "created_at_utc": "2026-08-31T10:15:20.285898+00:00",
+  "executor_name": "banked-v2-bound-execution",
+  "no_retry": true,
+  "prepared_sha256": "f007d9865130f227cf8e1b6549914c95cee2083b18a66976ad942747f65d5866",
+  "protocol_bank_commit": "61477f9797dbe6df6b6e7f0653e701c5660fb03e",
+  "protocol_root_sha256": "5eb01df63fa0d0f375e5180bde91d01a395e509f2f34e6a46782fed77d53ea91",
+  "real_electrical_executor": true,
+  "result_path": "experiments/r3_pilot/public_train_fit_prompt_record_canonical_joint_v2_runner.result.json",
+  "runner_source_sha256": "06277c8fad47f39c2c94f232d221b3b46691948ad6f81647a481640de40d7092",
+  "schema": "PUBLIC_TRAIN_FIT_PROMPT_RECORD_CANONICAL_JOINT_V2_RUNNER",
+  "state": "PUBLIC_TRAIN_JOINT_V2_ATTEMPT_SPENT"
+}
