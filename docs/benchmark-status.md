@@ -193,6 +193,18 @@ stops and then revises while preserving prior episodes. Commit `9f7b0fc` then
 proved the existing one-byte input representation has zero shared lane/value
 fillers; `6248269` appends exactly sixteen generic four-lane/base-four input
 neurons, reused uniformly across all 256 byte values, without adding COPY logic.
+Commit `92ddf8c` uses those fillers in a relation-gated lane-local transform:
+two independently addressed complete physical contexts learn COPY and recombine
+the unseen whole byte `1B`; one shifted context causes neuronal conflict and a
+second revises the winner while an unrelated relation remains unchanged. Commit
+`74250ab` makes that revision sequential: each frozen successor authenticates
+and clones its parent, consumes only the newly supplied physical context, and
+freezes without replaying prior lessons. The parent arrays and provenance stay
+byte-identical, duplicate/dependent/teacher-off/cell-off additions commit zero
+ticks, and provenance grows by exact prefix. This is bounded self-posed
+new-context plasticity for a lane-local one-byte relation. Whole-context grouping
+and context/source independence are still host-address scaffolds; it is not
+language, coding, corpus, or broad continual-learning evidence.
 Commit `a1cda05` also vectorizes the shared
 compiled-GLIF first-crossing scan; focused parity is unchanged and one local
 4,096-row by 65-candidate, 600-step batch improved from 87.6k to 157.5k races/s

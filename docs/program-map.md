@@ -255,7 +255,14 @@ abstains and contradictory evidence first stops and then revises without
 deleting unrelated episodes. Commit `9f7b0fc` localized the next variable-COPY
 blocker to zero reusable input lane/value cells; `6248269` resolves only that
 representation gap with sixteen shared four-lane/base-four physical fillers.
-The variable relation learner, learned retrieval, corpus ingestion, and broader
+Commit `92ddf8c` then learns a generic relation-conditioned lane-local transform
+from complete physical contexts and recombines an unseen whole byte. Commit
+`74250ab` adds frozen-parent continual extension: a successor consumes only a
+new context, conflicts after one shifted context, revises after the next, and
+preserves parent and unrelated relation state without replay. The remaining
+scaffolds are host grouping of a complete context batch and host-address
+coincidence for context/source independence. Learned retrieval, corpus
+ingestion, event-stream consolidation, learned independence, and broader
 transfer remain open R2 work.
 
 ### Runtime and scale
