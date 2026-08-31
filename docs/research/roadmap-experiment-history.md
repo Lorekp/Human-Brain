@@ -344,6 +344,11 @@ exactly `72*T + 24` bytes, preserves the public ABI/checkpoint record layout and
 scientific ordering, and passes the focused release fixture. This is another
 private scratch-memory result, not physical 100-billion-cell feasibility.
 
+Commit `cf1cddb` then stopped full-touch stepping from reserving the
+event-proportional-only `dormant_values` scratch. It saves exactly `8R` bytes in
+full-touch mode while preserving event-proportional behavior and all public,
+checkpoint, ordering, counter, capacity, and scientific semantics.
+
 Commit `61b345f` then composed the append-effect stack with predictive
 segmentation through only a learned two-cell `NEW/CONTINUE -> OPEN/EXTEND`
 router. The 69,208-cell, 308-byte composite passed four fresh self-posed
@@ -393,9 +398,25 @@ incomplete+novel training feature remains an explicit abstention. Training is
 still transport-separated and environmental stream start/end plus carrier,
 projection, reducer, typed, and compiler scaffolds remain.
 
-This moves the next shared R3/R4/R2 seam to composing the issued continuous
-schema sequence into executable witnesses, followed by learning away carrier
-and consequence scaffolds. The spent V3 cohort remains closed.
+Commit `315f865` next added an exact issued-certificate continuation to the
+executable bridge; certificate checkpoint identity is authenticated and
+recognition is not rerun. Commit `8b797a4` composed that seam with continuous
+grouping, producing ordered A/B/A count/sum/count and B/A sum/count witness
+sequences with zero new cells/state and causal gate/relay stops.
+
+Commit `ad6eb57` published a desired-free physical ABS-map-SUM root with zero
+new cells/state. Commit `7954f29` then learned an eight-byte IDENTITY/ABS relay
+that selects exactly one raw-SUM or ABS-map-SUM receipt across fresh and
+relabelled self-posed tasks. Commit `151402a` separately learned an eight-byte
+predicate PASS/FAIL to accumulator ADD/HOLD transition; an explicit physical
+equality relation binds the tested item to the accumulated item, yielding one
+fresh conditional-sum witness with causal stops.
+
+The live failure boundary is now outside those inner mechanisms: caller-
+supplied occurrence topology still encodes raw-versus-ABS task meaning, and the
+conditional fold still receives threshold/case framing. The next R3/R4 seam is
+example-grounded task and parameter induction with honest ambiguity, followed
+by learned carrier/consequence scaffolds. The spent V3 cohort remains closed.
 
 ## 11. Common G0 substrate begins
 

@@ -349,6 +349,13 @@ sparse configuration and 72,000,024 bytes at `T=1,000,000`. Focused parity,
 release compilation, formatting, and accounting checks pass; public ABI,
 checkpoint records, ordering, counters, and capacity behavior are unchanged.
 
+Commit `cf1cddb` then removes the full-touch reservation for `dormant_values`,
+which only event-proportional retirement uses. The exact full-touch saving is
+`8R` bytes: 524,288 bytes at `R=65,536`, 8,000,000 bytes at one million, and a
+theoretical 800 GB at 100 billion. The representative full-touch payload falls
+from 6,325,560 to 5,801,272 bytes. Event-proportional behavior and all public,
+checkpoint, ordering, counter, capacity, and scientific semantics remain exact.
+
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
 each produce one exact proof. Prototype, schema-cell, comparator, and deranged
@@ -393,10 +400,27 @@ Fresh one-interval streams infer boundary indices `(4,6)` and `(3)` with exact
 schema sequences `(A,B,A)` and `(B,A)`; five causal controls stop. The total is
 69,231 cells and 60 runtime bytes.
 
-Across R3, R4, and R2, the next shared seam is composing the issued continuous
-schema sequence into ordered executable witnesses, then learning away carrier
-and consequence scaffolds. These results are not public transfer, parsing,
-general coding, or SWE evidence.
+Commit `315f865` adds exact issued-certificate continuation to the executable
+bridge without rerunning occurrence recognition. Commit `8b797a4` composes it
+with the learned boundary gate: fresh A/B/A and B/A continuous streams publish
+ordered count/sum/count and sum/count witnesses. The layer adds zero cells and
+learned bytes; gate-off performs zero bridge/proof work and relay-off stops
+after grouping but before a frontier.
+
+Commit `ad6eb57` publishes one desired-free ABS-map-SUM plan by reusing the
+banked unary ABS population with zero new cells/state. Commit `7954f29` adds a
+two-cell, eight-byte learned IDENTITY/ABS race that selects exactly one raw-SUM
+or ABS-map-SUM receipt on fresh values, lengths, opaque relabeling, event
+permutation, reversed carrier, and a same-prompt law flip. Its composed total is
+69,234 cells and 776 persistent bytes. Commit `151402a` adds a separate eight-
+byte causal PASS/FAIL-to-ADD/HOLD gate for a fused conditional sum. A physical
+packed equality relation ensures the tested and accumulated item are the same
+occurrence; fresh thresholds/values/lengths and causal controls pass.
+
+Caller-supplied occurrence topology still encodes raw-versus-ABS task meaning,
+and the conditional fold still receives threshold/case framing. The next seam
+is example-grounded task and parameter induction with honest ambiguity, not
+public transfer, parsing, broad coding, or SWE evidence.
 
 ## Active-cell scaling and dynamics
 

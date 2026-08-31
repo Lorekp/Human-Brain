@@ -252,10 +252,30 @@ abstains. Training still uses transport-separated self-posed bundles, and
 environmental stream start/end, carrier/equality/projection, reducer, typed
 enumeration, and compilation scaffolds remain.
 
-The next shared R3/R4/R2 seam is therefore to compose those issued continuous
-schema sequences into executable witnesses, then learn away carrier and
-consequence-projection scaffolds. This work remains self-posed and does not
-reopen the spent V3 cohort.
+Commit `315f865` adds an exact bridge continuation that consumes an already-
+issued occurrence certificate, binds its checkpoint authority, and enters the
+existing relay/action/residual/plan-slice path without rerunning recognition.
+Commit `8b797a4` uses that seam to turn continuous A/B/A and B/A streams into
+ordered count/sum/count and sum/count witnesses. The composition adds zero cells
+or learned bytes; gate-off and bridge-relay-off stop before proof publication.
+
+Commit `ad6eb57` publishes a desired-free physical ABS-map-SUM root by reusing
+the banked unary ABS population, adding zero cells or state. Commit `7954f29`
+then learns an IDENTITY-versus-ABS transform race from causal consequences. Its
+two cells and eight learned bytes select exactly one raw-SUM or ABS-map-SUM
+receipt across fresh lengths, values, relabeling, event permutation, reversed
+carrier, and a same-prompt law flip. Commit `151402a` independently learns the
+more general predicate-outcome-to-ADD/HOLD transition used by
+`sum(x if x < k else 0 for x in xs)`. A packed equality relation binds the
+predicate item and accumulator item as the same occurrence; the increment uses
+eight learned bytes and stops under consequence/feature/action ablations.
+
+These are genuine self-posed coding mechanisms, but caller-supplied occurrence
+topology still carries raw-versus-ABS task meaning, while threshold/cases,
+candidate rosters, typed certificates, and compilation remain scaffolds. The
+next R3/R4 seam is example-grounded task/parameter induction with explicit
+ambiguity, followed by learned carrier and consequence projection. The spent V3
+cohort remains closed.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -446,6 +466,13 @@ sparse configuration and 72,000,024 bytes when `T=1,000,000`. Public ABI and
 checkpoint records, event/GLIF order, counters, capacity semantics, and raw
 dynamics stay unchanged. This remains focused substrate-memory evidence, not a
 physical 100-billion-cell or capability result.
+
+Commit `cf1cddb` scopes `dormant_values` to event-proportional stepping, the
+only mode that reads it. Full-touch mode therefore saves exactly `8R` bytes:
+524,288 bytes at `R=65,536`, 8,000,000 bytes at one million residents, and a
+theoretical 800 GB at 100 billion residents. Event-proportional behavior, ABI,
+checkpoints, ordering, counters, capacity semantics, and neural dynamics remain
+unchanged; physical 100-billion-cell residency is still not established.
 
 ## Claim and opening discipline
 
