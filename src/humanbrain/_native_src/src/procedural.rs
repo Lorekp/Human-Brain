@@ -483,42 +483,82 @@ impl IntervalLedger {
 
     /// Union-merge an ascending unique run into this ledger, OR-ing `flag`
     /// into every run member. Caller must have validated fit with
-    /// [`can_fit_run`]; `scratch` is an equally reserved working ledger.
-    fn merge_run_in_place(&mut self, run: &[u64], flag: u8, scratch: &mut Self) {
-        scratch.clear();
+    /// [`can_fit_run`]. The merge walks backward so unread ledger entries are
+    /// never overwritten and no second full-capacity ledger is required.
+    fn merge_run_in_place(&mut self, run: &[u64], flag: u8) {
+        if run.is_empty() {
+            return;
+        }
+
+        debug_assert_eq!(self.gids.len(), self.flags.len());
+        debug_assert!(self.gids.windows(2).all(|pair| pair[0] < pair[1]));
+        debug_assert!(run.windows(2).all(|pair| pair[0] < pair[1]));
+
+        let old_len = self.gids.len();
         let mut i = 0usize;
         let mut j = 0usize;
-        while i < self.gids.len() && j < run.len() {
+        let mut overlap = 0usize;
+        while i < old_len && j < run.len() {
             match self.gids[i].cmp(&run[j]) {
-                Ordering::Less => {
-                    scratch.gids.push(self.gids[i]);
-                    scratch.flags.push(self.flags[i]);
-                    i += 1;
-                }
-                Ordering::Greater => {
-                    scratch.gids.push(run[j]);
-                    scratch.flags.push(flag);
-                    j += 1;
-                }
+                Ordering::Less => i += 1,
+                Ordering::Greater => j += 1,
                 Ordering::Equal => {
-                    scratch.gids.push(self.gids[i]);
-                    scratch.flags.push(self.flags[i] | flag);
+                    overlap += 1;
                     i += 1;
                     j += 1;
                 }
             }
         }
-        while i < self.gids.len() {
-            scratch.gids.push(self.gids[i]);
-            scratch.flags.push(self.flags[i]);
-            i += 1;
+
+        let merged_len = old_len + run.len() - overlap;
+        debug_assert!(merged_len <= self.gids.capacity());
+        debug_assert!(merged_len <= self.flags.capacity());
+        self.gids.resize(merged_len, 0);
+        self.flags.resize(merged_len, 0);
+
+        i = old_len;
+        j = run.len();
+        let mut write = merged_len;
+        while i > 0 && j > 0 {
+            let old_gid = self.gids[i - 1];
+            let old_flags = self.flags[i - 1];
+            match old_gid.cmp(&run[j - 1]) {
+                Ordering::Greater => {
+                    i -= 1;
+                    write -= 1;
+                    self.gids[write] = old_gid;
+                    self.flags[write] = old_flags;
+                }
+                Ordering::Less => {
+                    j -= 1;
+                    write -= 1;
+                    self.gids[write] = run[j];
+                    self.flags[write] = flag;
+                }
+                Ordering::Equal => {
+                    i -= 1;
+                    j -= 1;
+                    write -= 1;
+                    self.gids[write] = old_gid;
+                    self.flags[write] = old_flags | flag;
+                }
+            }
         }
-        while j < run.len() {
-            scratch.gids.push(run[j]);
-            scratch.flags.push(flag);
-            j += 1;
+        while i > 0 {
+            let old_gid = self.gids[i - 1];
+            let old_flags = self.flags[i - 1];
+            i -= 1;
+            write -= 1;
+            self.gids[write] = old_gid;
+            self.flags[write] = old_flags;
         }
-        std::mem::swap(self, scratch);
+        while j > 0 {
+            j -= 1;
+            write -= 1;
+            self.gids[write] = run[j];
+            self.flags[write] = flag;
+        }
+        debug_assert_eq!(write, 0);
     }
 
     fn count_flags(&self, mask: u8) -> usize {
@@ -536,7 +576,6 @@ struct RuntimeScratch {
     row_targets: Vec<u64>,
     row_used: HashSet<u64>,
     interval_ledger: IntervalLedger,
-    ledger_scratch: IntervalLedger,
     gid_run: Vec<u64>,
     /// Per-step retirement runs (ascending GIDs by construction): cells whose
     /// fused pass just left them fast-rest with an eligibility tail. Cleared
@@ -560,7 +599,6 @@ impl RuntimeScratch {
             row_targets: reserved_vec(fanout)?,
             row_used,
             interval_ledger: IntervalLedger::try_new(config.interval_distinct_capacity)?,
-            ledger_scratch: IntervalLedger::try_new(config.interval_distinct_capacity)?,
             gid_run: reserved_vec(config.resident_capacity)?,
             dormant_gids: reserved_vec(config.resident_capacity)?,
             dormant_values: reserved_vec(config.resident_capacity)?,
@@ -575,8 +613,6 @@ impl RuntimeScratch {
             + self.row_used.capacity() * size_of::<u64>()
             + self.interval_ledger.gids.capacity() * size_of::<u64>()
             + self.interval_ledger.flags.capacity() * size_of::<u8>()
-            + self.ledger_scratch.gids.capacity() * size_of::<u64>()
-            + self.ledger_scratch.flags.capacity() * size_of::<u8>()
             + self.gid_run.capacity() * size_of::<u64>()
             + self.dormant_gids.capacity() * size_of::<u64>()
             + self.dormant_values.capacity() * size_of::<f64>()
@@ -1325,8 +1361,7 @@ impl ProceduralRuntime {
             {
                 let run = &self.scratch.gid_run;
                 let ledger = &mut self.scratch.interval_ledger;
-                let ledger_scratch = &mut self.scratch.ledger_scratch;
-                ledger.merge_run_in_place(run, SEEN_RESIDENT, ledger_scratch);
+                ledger.merge_run_in_place(run, SEEN_RESIDENT);
             } else {
                 // Exact fallback near the distinct capacity: per-GID marks
                 // keep the original fail-stop abort timing.
@@ -1389,8 +1424,7 @@ impl ProceduralRuntime {
             if MERGE_FRESH_RUN && !self.scratch.gid_run.is_empty() {
                 let run = &self.scratch.gid_run;
                 let ledger = &mut self.scratch.interval_ledger;
-                let ledger_scratch = &mut self.scratch.ledger_scratch;
-                ledger.merge_run_in_place(run, SEEN_RESIDENT, ledger_scratch);
+                ledger.merge_run_in_place(run, SEEN_RESIDENT);
             }
             self.pending_head += due_count;
             self.release_consumed_prefix();
@@ -1504,8 +1538,7 @@ impl ProceduralRuntime {
                         // Pre-verified to fit: mark the whole stepped run.
                         let run = &self.scratch.gid_run;
                         let ledger = &mut self.scratch.interval_ledger;
-                        let ledger_scratch = &mut self.scratch.ledger_scratch;
-                        ledger.merge_run_in_place(run, SEEN_UPDATED, ledger_scratch);
+                        ledger.merge_run_in_place(run, SEEN_UPDATED);
                     }
                     if !self.scratch.step_spikes.is_empty() {
                         // Spiking GIDs are a subset of the stepped run just
@@ -1513,8 +1546,7 @@ impl ProceduralRuntime {
                         // never trip the distinct capacity.
                         let run = &self.scratch.step_spikes;
                         let ledger = &mut self.scratch.interval_ledger;
-                        let ledger_scratch = &mut self.scratch.ledger_scratch;
-                        ledger.merge_run_in_place(run, SEEN_SPIKING, ledger_scratch);
+                        ledger.merge_run_in_place(run, SEEN_SPIKING);
                     }
                 } else {
                     // Exact fallback near the distinct capacity: materialize
@@ -3862,7 +3894,6 @@ mod tests {
         };
         let time_merged = || {
             let mut ledger = build_ledger();
-            let mut scratch = super::IntervalLedger::try_new(CAPACITY).unwrap();
             let mut run = Vec::with_capacity(FRESH);
             let start = std::time::Instant::now();
             for index in 0..FRESH {
@@ -3875,7 +3906,7 @@ mod tests {
                     )
                     .unwrap();
             }
-            ledger.merge_run_in_place(&run, super::SEEN_RESIDENT, &mut scratch);
+            ledger.merge_run_in_place(&run, super::SEEN_RESIDENT);
             let elapsed = start.elapsed().as_nanos();
             assert_eq!(ledger.gids.len(), PRELOADED + FRESH);
             elapsed
@@ -3910,6 +3941,162 @@ mod tests {
         assert!(
             merged_median_ns < scalar_median_ns,
             "one union merge must beat repeated interleaved Vec insertions"
+        );
+    }
+
+    #[test]
+    fn interval_ledger_in_place_merge_matches_oracle_and_reclaims_duplicate_capacity() {
+        fn merge_forward_oracle(
+            source: &super::IntervalLedger,
+            run: &[u64],
+            flag: u8,
+            output: &mut super::IntervalLedger,
+        ) {
+            output.clear();
+            let mut i = 0usize;
+            let mut j = 0usize;
+            while i < source.gids.len() && j < run.len() {
+                match source.gids[i].cmp(&run[j]) {
+                    std::cmp::Ordering::Less => {
+                        output.gids.push(source.gids[i]);
+                        output.flags.push(source.flags[i]);
+                        i += 1;
+                    }
+                    std::cmp::Ordering::Greater => {
+                        output.gids.push(run[j]);
+                        output.flags.push(flag);
+                        j += 1;
+                    }
+                    std::cmp::Ordering::Equal => {
+                        output.gids.push(source.gids[i]);
+                        output.flags.push(source.flags[i] | flag);
+                        i += 1;
+                        j += 1;
+                    }
+                }
+            }
+            output.gids.extend_from_slice(&source.gids[i..]);
+            output.flags.extend_from_slice(&source.flags[i..]);
+            output.gids.extend_from_slice(&run[j..]);
+            output
+                .flags
+                .extend(std::iter::repeat_n(flag, run.len() - j));
+        }
+
+        const EXISTING: usize = 16_384;
+        const RUN: usize = 16_384;
+        const CAPACITY: usize = EXISTING + RUN;
+        const WARMUP: usize = 1;
+        const SAMPLES: usize = 7;
+
+        let build_ledger = || {
+            let mut ledger = super::IntervalLedger::try_new(CAPACITY).unwrap();
+            for index in 0..EXISTING {
+                let gid = (index * 2) as u64;
+                ledger
+                    .mark_single(gid, super::SEEN_RESIDENT, CAPACITY)
+                    .unwrap();
+                if index % 2 == 0 {
+                    ledger
+                        .mark_single(gid, super::SEEN_UPDATED, CAPACITY)
+                        .unwrap();
+                }
+                if index % 5 == 0 {
+                    ledger
+                        .mark_single(gid, super::SEEN_SPIKING, CAPACITY)
+                        .unwrap();
+                }
+            }
+            ledger
+        };
+        let run: Vec<_> = (0..RUN).map(|index| (index * 3) as u64).collect();
+
+        // Interleaved overlap exercises every merge arm and nontrivial prior
+        // flag combinations. The independent forward-buffer oracle is the
+        // exact algorithm replaced by the backward in-place merge.
+        let source = build_ledger();
+        let mut oracle = super::IntervalLedger::try_new(CAPACITY).unwrap();
+        merge_forward_oracle(&source, &run, super::SEEN_UPDATED, &mut oracle);
+        let mut merged = build_ledger();
+        assert!(merged.can_fit_run(&run, CAPACITY));
+        merged.merge_run_in_place(&run, super::SEEN_UPDATED);
+        assert_eq!(merged.gids, oracle.gids);
+        assert_eq!(merged.flags, oracle.flags);
+        assert!(merged.gids.windows(2).all(|pair| pair[0] < pair[1]));
+
+        // Account the removed persistent allocation at a representative
+        // capacity. The historical second ledger had exactly the same two
+        // reserved vectors as the live ledger plus its two Vec headers.
+        const PAYLOAD_DISTINCT: usize = 65_536;
+        let mut config = ep_config(
+            (PAYLOAD_DISTINCT + 1) as u64,
+            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
+        );
+        config.resident_capacity = PAYLOAD_DISTINCT;
+        config.event_capacity = 64;
+        config.spike_capacity = 64;
+        config.interval_distinct_capacity = PAYLOAD_DISTINCT;
+        let decay = [0.5, 0.5];
+        let runtime = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
+        let ledger_capacity_bytes = runtime.scratch.interval_ledger.gids.capacity()
+            * std::mem::size_of::<u64>()
+            + runtime.scratch.interval_ledger.flags.capacity() * std::mem::size_of::<u8>();
+        let reclaimed_bytes = ledger_capacity_bytes + std::mem::size_of::<super::IntervalLedger>();
+        assert_eq!(
+            ledger_capacity_bytes,
+            PAYLOAD_DISTINCT * (std::mem::size_of::<u64>() + std::mem::size_of::<u8>())
+        );
+        assert_eq!(
+            reclaimed_bytes,
+            PAYLOAD_DISTINCT * 9 + std::mem::size_of::<super::IntervalLedger>()
+        );
+
+        let time_oracle = || {
+            let source = build_ledger();
+            let mut output = super::IntervalLedger::try_new(CAPACITY).unwrap();
+            let start = std::time::Instant::now();
+            merge_forward_oracle(&source, &run, super::SEEN_UPDATED, &mut output);
+            let elapsed = start.elapsed().as_nanos();
+            assert_eq!(output.gids.len(), oracle.gids.len());
+            elapsed
+        };
+        let time_in_place = || {
+            let mut ledger = build_ledger();
+            let start = std::time::Instant::now();
+            ledger.merge_run_in_place(&run, super::SEEN_UPDATED);
+            let elapsed = start.elapsed().as_nanos();
+            assert_eq!(ledger.gids.len(), oracle.gids.len());
+            elapsed
+        };
+        let mut oracle_samples = Vec::with_capacity(SAMPLES);
+        let mut in_place_samples = Vec::with_capacity(SAMPLES);
+        for repetition in 0..WARMUP + SAMPLES {
+            let (oracle_ns, in_place_ns) = if repetition % 2 == 0 {
+                (time_oracle(), time_in_place())
+            } else {
+                let in_place_ns = time_in_place();
+                (time_oracle(), in_place_ns)
+            };
+            if repetition >= WARMUP {
+                oracle_samples.push(oracle_ns);
+                in_place_samples.push(in_place_ns);
+            }
+        }
+        oracle_samples.sort_unstable();
+        in_place_samples.sort_unstable();
+        let oracle_median_ns = oracle_samples[SAMPLES / 2];
+        let in_place_median_ns = in_place_samples[SAMPLES / 2];
+        eprintln!(
+            "interval-ledger-in-place oracle_median_ns={} in_place_median_ns={} ratio={:.2}x existing={} run={} samples={} current_payload_bytes={} reclaimed_bytes={} reclaimed_at_1m_bytes={}",
+            oracle_median_ns,
+            in_place_median_ns,
+            oracle_median_ns as f64 / in_place_median_ns as f64,
+            EXISTING,
+            RUN,
+            SAMPLES,
+            runtime.payload_bytes(),
+            reclaimed_bytes,
+            1_000_000usize * 9 + std::mem::size_of::<super::IntervalLedger>(),
         );
     }
 
@@ -4045,8 +4232,7 @@ mod tests {
             {
                 let run = &runtime.scratch.gid_run;
                 let ledger = &mut runtime.scratch.interval_ledger;
-                let ledger_scratch = &mut runtime.scratch.ledger_scratch;
-                ledger.merge_run_in_place(run, super::SEEN_RESIDENT, ledger_scratch);
+                ledger.merge_run_in_place(run, super::SEEN_RESIDENT);
             }
             runtime.staged.sort_unstable_by_key(|state| state.gid);
             runtime.absorb_staged_with_order::<false>().unwrap();
@@ -4067,8 +4253,7 @@ mod tests {
             {
                 let run = &runtime.scratch.gid_run;
                 let ledger = &mut runtime.scratch.interval_ledger;
-                let ledger_scratch = &mut runtime.scratch.ledger_scratch;
-                ledger.merge_run_in_place(run, super::SEEN_RESIDENT, ledger_scratch);
+                ledger.merge_run_in_place(run, super::SEEN_RESIDENT);
             }
             runtime.absorb_staged_with_order::<true>().unwrap();
             let elapsed = start.elapsed().as_nanos();
