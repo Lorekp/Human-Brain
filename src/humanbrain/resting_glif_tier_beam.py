@@ -17,6 +17,7 @@ import numpy as np
 
 from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
 from humanbrain.resting_glif_race import (
+    CompiledRestingGlifRace,
     RestingGlifRaceFailure,
     RestingGlifRaceResult,
 )
@@ -154,6 +155,11 @@ class CompiledRestingGlifTierBeam:
             raise ValueError("compiled resting GLIF5 spike gain must be monotonic")
         self._unit_voltage.setflags(write=False)
         self._unit_voltage_threshold.setflags(write=False)
+        self._race_kernel = CompiledRestingGlifRace(
+            parameters=parameters,
+            unit_voltage=self._unit_voltage,
+            unit_voltage_threshold=self._unit_voltage_threshold,
+        )
         self._projection = projection
         self.beam_width = beam_width
         self.candidate_count = projection.candidate_count
@@ -241,6 +247,137 @@ class CompiledRestingGlifTierBeam:
                 )
         raise RestingGlifRaceFailure(
             "tier race produced no spike within its fixed bound"
+        )
+
+    def _first_tiers_many(
+        self,
+        currents_pa: np.ndarray,
+    ) -> tuple[tuple[RestingGlifRaceResult, tuple[int, ...]], ...]:
+        races = self._race_kernel.race_many(currents_pa, require_unique=False)
+        steps = np.fromiter(
+            (race.spike_step for race in races),
+            dtype=np.intp,
+            count=len(races),
+        )
+        fired = self._unit_voltage[steps, None] * currents_pa > (
+            self.parameters.threshold_inf_relative_mv
+            + self._unit_voltage_threshold[steps, None] * currents_pa
+        )
+        tiers: list[tuple[RestingGlifRaceResult, tuple[int, ...]]] = []
+        for race, row in zip(races, fired, strict=True):
+            cells = tuple(int(cell) for cell in np.flatnonzero(row))
+            if (
+                not cells
+                or cells[0] != race.winner_cell
+                or len(cells) != race.simultaneous_spike_candidates
+            ):
+                raise RuntimeError("batched first-spike tier changed")
+            tiers.append((race, cells))
+        return tuple(tiers)
+
+    def select_many(
+        self,
+        currents_pa: Sequence[Sequence[float]] | np.ndarray,
+        *,
+        stop_cell: int | None = None,
+    ) -> tuple[RestingGlifTierBeamResult, ...]:
+        """Select complete physical tiers for independent current rows."""
+
+        currents = np.asarray(currents_pa, dtype=np.float64)
+        if (
+            currents.ndim != 2
+            or currents.shape[0] < 1
+            or currents.shape[1] != self.candidate_count
+        ):
+            raise ValueError(
+                "currents_pa must be nonempty rows matching the compiled candidate count"
+            )
+        if not np.all(np.isfinite(currents)):
+            raise ValueError("currents_pa must contain only finite values")
+        if np.any(currents < self.min_current_pa) or np.any(
+            currents > self.max_current_pa
+        ):
+            raise ValueError("currents_pa left the compiled current envelope")
+        if stop_cell is not None:
+            if type(stop_cell) is not int or not 0 <= stop_cell < self.candidate_count:
+                raise ValueError("stop_cell must identify one compiled cell")
+            if self.beam_width > self.candidate_count - 1:
+                raise ValueError("beam_width exceeds the non-STOP candidate count")
+
+        working = np.ascontiguousarray(currents.copy())
+        projection_before = self.live_inhibition_projection_sha256
+        if projection_before != self.inhibition_projection_sha256:
+            raise RuntimeError("tier self-inhibition projection changed before selection")
+
+        row_count = working.shape[0]
+        retained_cells: list[list[int]] = [[] for _ in range(row_count)]
+        retained_candidates: list[list[int]] = [[] for _ in range(row_count)]
+        rounds: list[list[RestingGlifTierBeamRound]] = [
+            [] for _ in range(row_count)
+        ]
+        inhibited = np.zeros((row_count, self.candidate_count), dtype=np.bool_)
+        active = np.arange(row_count, dtype=np.intp)
+        while active.size:
+            active_currents = np.ascontiguousarray(working[active])
+            first_tiers = self._first_tiers_many(active_currents)
+            next_active: list[int] = []
+            for local_row, (race, tier_cells) in enumerate(first_tiers):
+                row = int(active[local_row])
+                before = tuple(float(current) for current in working[row])
+                tier_index = len(rounds[row])
+                tier_ids = np.asarray(tier_cells, dtype=np.intp)
+                if np.any(inhibited[row, tier_ids]):
+                    raise RuntimeError("a physically inhibited tier cell fired twice")
+                leading_stop = (
+                    tier_index == 0
+                    and stop_cell is not None
+                    and stop_cell in tier_cells
+                )
+                trigger = np.zeros(self.candidate_count, dtype=np.float64)
+                trigger[tier_ids] = 1.0
+                working[row] += self._projection.project(trigger)
+                inhibited[row, tier_ids] = True
+                retained_cells[row].extend(tier_cells)
+                if not leading_stop:
+                    retained_candidates[row].extend(
+                        cell for cell in tier_cells if cell != stop_cell
+                    )
+                rounds[row].append(
+                    RestingGlifTierBeamRound(
+                        tier_index=tier_index,
+                        race=race,
+                        tier_cells=tier_cells,
+                        leading_stop=leading_stop,
+                        currents_before_pa=before,
+                        currents_after_pa=tuple(
+                            float(current) for current in working[row]
+                        ),
+                    )
+                )
+                if (
+                    not leading_stop
+                    and len(retained_candidates[row]) < self.beam_width
+                ):
+                    next_active.append(row)
+            active = np.asarray(next_active, dtype=np.intp)
+
+        projection_after = self.live_inhibition_projection_sha256
+        if projection_after != projection_before:
+            raise RuntimeError("tier self-inhibition projection changed during selection")
+        return tuple(
+            RestingGlifTierBeamResult(
+                status=(
+                    STOP_LEADING_TIER if row_rounds[-1].leading_stop else RETAINED
+                ),
+                retained_cells=tuple(retained_cells[row]),
+                retained_candidate_cells=tuple(retained_candidates[row]),
+                rounds=tuple(row_rounds),
+                stop_cell=stop_cell,
+                final_currents_pa=tuple(float(current) for current in working[row]),
+                inhibition_projection_before_sha256=projection_before,
+                inhibition_projection_after_sha256=projection_after,
+            )
+            for row, row_rounds in enumerate(rounds)
         )
 
     def select(

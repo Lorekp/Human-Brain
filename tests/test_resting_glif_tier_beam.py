@@ -102,6 +102,81 @@ def test_stop_cell_participates_in_and_closes_the_leading_tier() -> None:
     assert result.retained_candidate_cells == ()
 
 
+def test_batched_tier_beam_is_exactly_the_scalar_ledger() -> None:
+    currents = np.asarray(
+        (
+            (
+                3_400.0,
+                3_000.0,
+                600.0,
+                1_400.0,
+                3_000.0,
+                1_800.0,
+                3_000.0,
+                1_000.0,
+            ),
+            (
+                600.0,
+                1_000.0,
+                3_400.0,
+                1_400.0,
+                1_800.0,
+                2_200.0,
+                2_600.0,
+                3_400.0,
+            ),
+            (
+                3_400.0,
+                600.0,
+                3_400.0,
+                1_800.0,
+                2_600.0,
+                3_400.0,
+                2_200.0,
+                1_000.0,
+            ),
+        ),
+        dtype=np.float64,
+    )
+    selector = _selector(beam_width=2)
+
+    expected = tuple(selector.select(row, stop_cell=7) for row in currents)
+    observed = selector.select_many(currents, stop_cell=7)
+
+    assert observed == expected
+    assert observed[0].rounds[1].tier_cells == (1, 4, 6)
+    assert observed[1].status == STOP_LEADING_TIER
+    assert observed[1].rounds[0].tier_cells == (2, 7)
+
+
+def test_batched_tier_beam_handles_current_24_by_25_match_shape() -> None:
+    selector = CompiledRestingGlifTierBeam.compile(
+        candidate_count=25,
+        step_count=RACE_STEPS,
+        min_current_pa=600.0,
+        max_current_pa=3_000.0,
+        inhibition_current_pa=7_000.0,
+        beam_width=1,
+    )
+    currents = np.full((24, 25), 600.0, dtype=np.float64)
+    currents[:, 24] = 2_360.0
+    currents[np.arange(24), np.arange(24)] = 2_520.0
+
+    observed = selector.select_many(currents, stop_cell=24)
+
+    assert len(observed) == 24
+    assert tuple(result.retained_candidate_cells for result in observed) == tuple(
+        (row,) for row in range(24)
+    )
+    assert all(result.status == RETAINED for result in observed)
+    assert all(
+        result.inhibition_projection_before_sha256
+        == result.inhibition_projection_after_sha256
+        == selector.inhibition_projection_sha256
+        for result in observed
+    )
+
+
 def test_sparse_projection_hash_is_immutable_and_selector_has_no_host_top_k() -> None:
     projection = FixedTierSelfInhibition.materialize(
         candidate_count=400,
