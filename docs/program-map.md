@@ -355,6 +355,29 @@ process operations, and rollback remain explicit host scaffolding. This is one
 self-posed `List[Int] -> Int` microrepository loop, not a general tool-using
 software agent.
 
+Commit `e49d227` adds the parallel String-family mechanism in
+`causal_microrepository_repair_loop_v2.py`. Its cost-7 frontier derives two
+sequence-relation receipts from source-free executions of the authenticated
+root and selected witness programs, with membership, order, cardinality, and
+bounded lineage cells replacing the List/ABS relation arrays. The String policy
+reuses only the authenticated generic 5-feature×5-action arrays, then builds a
+three-terminal desired-free frontier whose two selected edits compose reverse
+after decimal filtering. String parsing, site enumeration, donor/context
+extraction, execution, compilation, and repository I/O remain explicit
+adapters.
+
+Commit `9552144` adds
+`causal_raw_context_microrepository_repair_loop_v2.py` and splits the V1
+repository adapter into private snapshot and finalization phases. Both the
+original V1 prepare path and the raw path attest one source snapshot first; the
+raw path then reads visible cases, recalls the frozen `7fef9a9` bridge, and
+passes its already-built frontier into the private finalizer. The public repair
+method is unchanged byte-for-byte. Preparation stores only authenticated hashes
+and work counts, retains no raw stream, adds no cells or checkpoint arrays, and
+performs no desired read, source materialization, patch, or test. Its wrapper's
+one-shot `repair` delegates exactly once to the existing V1 closed loop. This is
+a narrow orchestration seam, not a new repository ontology.
+
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
 memory, and 569,715-cell integrated checkpoint with framed physical multi-byte
@@ -706,6 +729,15 @@ are non-inlined so small/idle monomorphized code remains scalar. Exact focused
 parity and the unchanged 5,181,240-byte payload accompany 3.199x ordering,
 2.289x delivery, and 1.297x four-step recurrent speedups; K=64/no-spike is
 1.005x and idle 0.949x. This is one local CPU FULL_TOUCH implementation result.
+
+The subsequent event-scratch phase-alias prototype reused `event_work` for
+submission canonicalization, dense radix ordering, staged cells, and merge. It
+was bit-exact on the focused fixture and reduced payload by 1,310,744 bytes at
+E=32,768, but missed the retained recurrent, K=64, and idle absolute-time gates.
+All changes were removed, leaving `procedural.rs` at
+`33dbc45dd1fcc7584ca4b6650be152c3cbcc61e6c9ef4465867b751b15e6a68f`.
+Do not reintroduce that lifetime alias as a standalone optimization without a
+materially different dispatch design and stable timing protocol.
 
 ## Claim and opening discipline
 

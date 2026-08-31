@@ -478,6 +478,28 @@ source. Zero-write/test causal controls and the forced-failure rollback pass.
 This is the first retained end-to-end repository repair in this line, but only
 for one self-posed typed task with explicit environment adapters.
 
+Commit `e49d227` repeats the mechanism test on a disjoint `String -> String`
+family. Selected-program executions, rather than host-recomputed answers, teach
+two membership/order/cardinality/lineage relation cells from a generic cost-7
+frontier. The String checkpoint imports none of the List/ABS relation arrays;
+it reuses only the authenticated generic action-policy state. Two fresh
+cell-selected edits compose decimal filtering and reversal, with one later
+desired race and repository patch/test. The 1/1 focused fixture took about 76.5
+seconds and retained ambiguity, gate, drift, order, and rollback controls. This
+is one within-domain family transfer under substantial typed environment
+scaffolding.
+
+Commit `9552144` connects the retained deterministic raw-chunk bridge to the
+actual V1 repository boundary. The adapter now freezes and attests one source
+snapshot before visible case loading and raw recall; one fresh A+D stream
+reactivates two distinct learned relation receipts, and the unchanged V1 repair
+performs the sole desired read, selection, materialization, patch, test, and
+COMMIT/REVISE race. Preparation adds no learned storage and retains no raw
+stream. The focused fixture passed 1/1 in 216.20 seconds with ambiguity,
+unknown, no-match, source-drift, and exact failure-rollback controls. This closes
+one raw deterministic motif→repository action loop, not language understanding
+or general software engineering.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the
@@ -612,6 +634,16 @@ unchanged 5,181,240-byte payload accompany 3.199x ordering, 2.289x delivery,
 and 1.297x four-step recurrent gains; K=64/no-spike is 1.005x and idle 0.949x.
 The result is retained CPU FULL_TOUCH acceleration, not broad runtime or
 physical 100-billion-cell evidence.
+
+A bounded successor tried to reclaim the separate submitted-event scratch by
+phase-aliasing submission canonicalization, radix work, staged cells, and merge
+through `event_work`. Focused parity and the exact 1,310,744-byte payload saving
+passed, but retained absolute timing did not: recurrent 4,366,300 ns, K=64
+1,488,500 ns, and idle 4,258,000 ns all exceeded their fixed baselines. The
+prototype was fully reverted to procedural source SHA-256
+`33dbc45dd1fcc7584ca4b6650be152c3cbcc61e6c9ef4465867b751b15e6a68f`.
+This negative result rules out that alias as a standalone successor; it does not
+rule out a materially broader fused kernel.
 
 ## 11. Common G0 substrate begins
 

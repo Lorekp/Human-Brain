@@ -517,6 +517,18 @@ N=8,192/F=4 recurrent trace 1.297x (5,429,500→4,187,400 ns); K=64/no-spike was
 FULL_TOUCH kernel evidence, not a broad runtime or physical 100-billion-cell
 result.
 
+A later bounded prototype phase-aliased submitted-event canonicalization,
+dense-radix work, staged cells, and pending merge through the existing
+`event_work` buffer. It preserved focused state/event/counter parity and reduced
+the representative payload from 5,181,240 to 3,870,496 bytes, an exact
+1,310,744-byte saving. It nevertheless failed the retained absolute timing
+gates: recurrent 4,366,300 ns exceeded 4,313,022 ns, K=64 reached 1,488,500 ns
+versus 1,394,929 ns, and idle reached 4,258,000 ns versus 2,797,480 ns. The
+prototype was fully reverted; `procedural.rs` remains at SHA-256
+`33dbc45dd1fcc7584ca4b6650be152c3cbcc61e6c9ef4465867b751b15e6a68f`.
+This is a negative focused runtime result: scratch-memory savings alone do not
+justify perturbing the retained scalar crossover paths.
+
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
 each produce one exact proof. Prototype, schema-cell, comparator, and deranged
@@ -660,6 +672,34 @@ revision and rollback. The focused fixture passed 1/1 in about 82.4 seconds.
 This is one visible `List[Int] -> Int` repair under explicit JSON, filesystem,
 compiler, and process scaffolding—not family transfer or general repository
 repair.
+
+Commit `e49d227` transfers the relation mechanism to one fresh `String ->
+String` family without copying the learned List/ABS relation arrays. A shared
+cost-7 training frontier executes only the authenticated root and selected
+witness programs, learns two physical sequence relations from membership,
+order, cardinality, and lineage consequences, and reuses the existing 50-byte
+generic action-policy arrays by authenticated object identity. On fresh visible
+cases, exactly two cell-selected edits compose
+`reverse(filter(decimal, payload))`; desired outputs remain sealed until one
+terminal race, materialization, patch, and repository test. The focused fixture
+passed 1/1 in about 76.5 seconds with causal, ambiguity, order-reversal, drift,
+and rollback controls. The new relation state is 4,228 bytes. Typed DSL/site
+enumeration, donor/context extraction, execution, compiler, filesystem, and
+process handling remain host scaffolding, so this is one family-transfer result,
+not broad String coding.
+
+Commit `9552144` then closes the raw bridge around the unchanged V1 repository
+repair. Source attestation happens before the case read and before one
+authenticated A+D raw-stream recall; two distinct learned relation receipts
+authorize the same desired-free two-actuation frontier with no added cells,
+checkpoint arrays, raw retention, materialization, patch, or test during
+preparation. The one-shot repair later performs one desired read, one terminal
+race, one selected materialization, one patch/test, and the existing learned
+COMMIT/REVISE consequence race. The focused fixture passed 1/1 in 216.20
+seconds, including ambiguity, unknown, no-match, pre/post-attestation drift,
+and exact forced-failure rollback controls. This is deterministic opaque-motif
+authorization of one visible `List[Int] -> Int` repository repair—not natural
+language understanding, arbitrary repository repair, or benchmark evidence.
 
 ## Active-cell scaling and dynamics
 
