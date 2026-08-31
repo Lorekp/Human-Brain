@@ -1,0 +1,174 @@
+{
+  "benchmark_deny_manifest": {
+    "domains": [
+      "huggingface.co",
+      "swebench.com"
+    ],
+    "paths": [
+      "deepswe.json",
+      "swe-bench.json",
+      "swe_bench.json"
+    ],
+    "schema": "humanbrain.benchmark-deny-manifest.v1",
+    "sha256": []
+  },
+  "benchmark_policy": {
+    "forbidden_path_tokens": [
+      "deepswe",
+      "swe-bench",
+      "swe_bench",
+      "swebench"
+    ],
+    "statement": "Official Rust Book raw Markdown only; Hugging Face datasets, benchmark tasks, gold patches, and solution corpora are absent."
+  },
+  "caps": {
+    "max_bytes_per_source": 190000,
+    "max_tokenish_per_source": 50000,
+    "max_total_bytes": 190000,
+    "max_total_tokenish": 50000
+  },
+  "file_inventory_sha256": "d6513177013ca7c4c5d2253bf0bb2e508a5ba379f400b231287f45cd32b5c444",
+  "files": [
+    {
+      "bytes": 25424,
+      "chapter": "ownership",
+      "content_type": "markdown",
+      "path": "src/ch04-01-what-is-ownership.md",
+      "sha256": "7c6b95dfc1a5e87f39a40bcda2ab794ebfcd239326d13ea5c3bd432691ff381a",
+      "split": "acquire",
+      "symbol": "rust.memory.ownership"
+    },
+    {
+      "bytes": 10608,
+      "chapter": "borrowing",
+      "content_type": "markdown",
+      "path": "src/ch04-02-references-and-borrowing.md",
+      "sha256": "7d983eec6235630df6e85c7a5b4cfbdfc7c380c780f60774df65ba2fa1d05ca4",
+      "split": "acquire",
+      "symbol": "rust.memory.borrowing"
+    },
+    {
+      "bytes": 13237,
+      "chapter": "slices",
+      "content_type": "markdown",
+      "path": "src/ch04-03-slices.md",
+      "sha256": "fb0ac90f3652f4096624bc008f2a5ade603ed1d7af078281cec7a88da66e82bb",
+      "split": "acquire",
+      "symbol": "rust.memory.slices"
+    },
+    {
+      "bytes": 26432,
+      "chapter": "recoverable-errors",
+      "content_type": "markdown",
+      "path": "src/ch09-02-recoverable-errors-with-result.md",
+      "sha256": "dab3e88d324cdde74cf96356c58a423747a5735ac6848d8d4592dc7c13637c62",
+      "split": "acquire",
+      "symbol": "rust.errors.result"
+    },
+    {
+      "bytes": 18682,
+      "chapter": "traits",
+      "content_type": "markdown",
+      "path": "src/ch10-02-traits.md",
+      "sha256": "705ae11758c687175e47104a302a9b5f694d04d683bffc28dcc61ffe9a0dc80e",
+      "split": "acquire",
+      "symbol": "rust.abstraction.traits"
+    },
+    {
+      "bytes": 30935,
+      "chapter": "lifetimes",
+      "content_type": "markdown",
+      "path": "src/ch10-03-lifetime-syntax.md",
+      "sha256": "8660fe043e6ca70645f6734f357dc61224ecd4e3454ebde7b696f89d6a0d6e91",
+      "split": "acquire",
+      "symbol": "rust.memory.lifetimes"
+    },
+    {
+      "bytes": 25511,
+      "chapter": "testing",
+      "content_type": "markdown",
+      "path": "src/ch11-01-writing-tests.md",
+      "sha256": "03cec10df505d25d37717447f906d392506c18f4af1ba7ef9cc32f05cfc15359",
+      "split": "acquire",
+      "symbol": "rust.testing.writing_tests"
+    },
+    {
+      "bytes": 10152,
+      "chapter": "iterators",
+      "content_type": "markdown",
+      "path": "src/ch13-02-iterators.md",
+      "sha256": "5f2a112bb6bbda36bc2ae2bf29196b433dd0fbcf649fcb0dd3f9448094592fd1",
+      "split": "acquire",
+      "symbol": "rust.iteration.iterators"
+    },
+    {
+      "bytes": 11867,
+      "chapter": "message-passing",
+      "content_type": "markdown",
+      "path": "src/ch16-02-message-passing.md",
+      "sha256": "883ed745d87151fa820cd337420a24f59cf8391d4ce87d2ee22af3bd278e05d1",
+      "split": "acquire",
+      "symbol": "rust.concurrent.message_passing"
+    },
+    {
+      "bytes": 12519,
+      "chapter": "shared-state",
+      "content_type": "markdown",
+      "path": "src/ch16-03-shared-state.md",
+      "sha256": "9aa8adf23ccf6ceaf7586b9aac35c30769bd13ebfbb8950a185d9b136104f10b",
+      "split": "acquire",
+      "symbol": "rust.concurrent.shared_state"
+    }
+  ],
+  "raw_markdown_policy": {
+    "content_type": "markdown",
+    "resolve_mdbook_includes": false,
+    "resolve_rustdoc_includes": false,
+    "statement": "Ingest authenticated chapter bytes exactly as raw Markdown."
+  },
+  "schema": "humanbrain.rust-book-knowledge-lock.v1",
+  "source": {
+    "archive_bytes": 5975646,
+    "archive_path": "rust-book-nostarch-third-printing.tar.gz",
+    "archive_root": "book-nostarch-third-printing",
+    "archive_sha256": "74fb097c9fb2b8c4cccabfe0e6eb060a78add3037f051932d60e347e68286dca",
+    "attribution": "The Rust Project Developers, The Rust Programming Language",
+    "canonical_url": "https://github.com/rust-lang/book/archive/refs/tags/nostarch-third-printing.tar.gz",
+    "extracted_root": "rust-book-nostarch-third-printing/book-nostarch-third-printing",
+    "license_evidence_url": "https://github.com/rust-lang/book/tree/844ddcd4d6d7726143ed8165950e395ccfd1f155",
+    "license_expression_spdx": "MIT OR Apache-2.0",
+    "license_spdx": "MIT",
+    "licenses": [
+      {
+        "bytes": 10847,
+        "path": "LICENSE-APACHE",
+        "sha256": "0f2763086f981043fb18879abfa15e75ecfc188219ef9eba4483f45ce7438e1c",
+        "spdx": "Apache-2.0",
+        "url": "https://github.com/rust-lang/book/blob/844ddcd4d6d7726143ed8165950e395ccfd1f155/LICENSE-APACHE"
+      },
+      {
+        "bytes": 1071,
+        "path": "LICENSE-MIT",
+        "sha256": "0621878e61f0d0fda054bcbe02df75192c28bde1ecc8289cbd86aeba2dd72720",
+        "spdx": "MIT",
+        "url": "https://github.com/rust-lang/book/blob/844ddcd4d6d7726143ed8165950e395ccfd1f155/LICENSE-MIT"
+      }
+    ],
+    "provenance_confidence": 1.0,
+    "release_tag": "nostarch-third-printing",
+    "source_id": "rust-book-nostarch-third-printing",
+    "upstream_revision": "844ddcd4d6d7726143ed8165950e395ccfd1f155"
+  },
+  "totals": {
+    "included": {
+      "bytes": 185367,
+      "files": 10
+    },
+    "splits": {
+      "acquire": {
+        "bytes": 185367,
+        "files": 10
+      }
+    }
+  }
+}
