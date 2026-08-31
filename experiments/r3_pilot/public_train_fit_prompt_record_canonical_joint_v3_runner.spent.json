@@ -1,0 +1,15 @@
+{
+  "bound_engine_bank_commit": "70a5e1f68373aeaf474e041f4551a84fc30e7488",
+  "bound_engine_source_sha256": "70dbaf9acaab42c9084276fc89115cdfd57172322aa06ba07cde5ebbec078f73",
+  "created_at_utc": "2026-08-31T10:56:33.950241+00:00",
+  "executor_name": "canonical-v3-exact-row-executor",
+  "no_retry": true,
+  "prepared_sha256": "d916baa6beaf193170004e49709c6bb180655b6bccdeb25f58b23b179f3f2433",
+  "protocol_bank_commit": "0541ee2adb37bfed7a50f2b484859f9fc35e946a",
+  "protocol_root_sha256": "265df3427f54bf95c1516bcf91081a6a54fef47b1b4e70bd7af8a92783d7d660",
+  "real_electrical_executor": true,
+  "result_path": "experiments/r3_pilot/public_train_fit_prompt_record_canonical_joint_v3_runner.result.json",
+  "runner_source_sha256": "377c3d1350c7c89b563be3500c78e8566e3448b1facb5b70ca120a7b31a463c0",
+  "schema": "PUBLIC_TRAIN_FIT_PROMPT_RECORD_CANONICAL_JOINT_V3_RUNNER",
+  "state": "PUBLIC_TRAIN_JOINT_V3_ATTEMPT_SPENT"
+}
