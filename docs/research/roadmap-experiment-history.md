@@ -500,6 +500,19 @@ unknown, no-match, source-drift, and exact failure-rollback controls. This close
 one raw deterministic motif→repository action loop, not language understanding
 or general software engineering.
 
+Commit `6010131` turns one real repository failure into a second physical plan.
+Two source-free String candidate records are exact on fresh visible palindrome
+cases. Receipt support makes the two-relation candidate win a compiled
+three-cell GLIF race; a fresh non-palindrome repository consequence makes that
+patch fail. The existing learned policy selects REVISE, the adapter restores
+the exact original bytes, and a bounded +2 inhibitory update makes the
+one-relation candidate win the next race and pass. Candidate order/remapping,
+gate, forged-input, drift, repeated-winner, and two-failure controls preserve
+the result. The controller adds 86 checkpoint-array bytes and 3,600 candidate
+cell-steps; its 1/1 focused run took about 58.9 seconds. This is autonomous
+correction for one binary-feedback two-candidate repair, not failure diagnosis
+or broad continual coding.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the

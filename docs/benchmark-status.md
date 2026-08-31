@@ -701,6 +701,22 @@ and exact forced-failure rollback controls. This is deterministic opaque-motif
 authorization of one visible `List[Int] -> Int` repository repair—not natural
 language understanding, arbitrary repository repair, or benchmark evidence.
 
+Commit `6010131` adds the first retained failure-driven repository replan. On
+fresh visible String cases, two authenticated candidates are both exact; their
+receipt support drives a true three-cell compiled-GLIF race with a tonic STOP
+cell, not a host argmax. The support-2 candidate is materialized and fails one
+real repository test, the learned consequence policy selects REVISE, original
+bytes are restored exactly, and +2 inhibitory state changes the next physical
+race so the support-1 candidate is selected, tested, and committed. The main
+ledger has one desired/eligibility read-race, two candidate races,
+materializations, patches, tests, consequence roots, and consequence races, one
+revision/replan/revert/commit, and zero unselected materializations or tests.
+Checkpoint arrays are 86 bytes and the two candidate races cost 3,600 cell
+steps. The focused fixture passed 1/1 in about 58.9 seconds with revision,
+replan, repeated-winner, order/remap, forged-record/consequence, source-drift,
+and two-failure budget controls. This is one two-candidate String repair with
+binary test feedback—not diagnosis, general debugging, or SWE evidence.
+
 ## Active-cell scaling and dynamics
 
 The first registered scaling grid varied active cells (24, 48, 96, 192),

@@ -378,6 +378,19 @@ performs no desired read, source materialization, patch, or test. Its wrapper's
 one-shot `repair` delegates exactly once to the existing V1 closed loop. This is
 a narrow orchestration seam, not a new repository ontology.
 
+Commit `6010131` exposes source-free authenticated candidate records and
+one-record materialization on `StringRelationFrontierV2`, then adds
+`common_microrepository_autonomous_correction_v1.py`. Its two candidate cells
+canonicalize record identities, store receipt support in uint8 excitatory state,
+and compete with one tonic STOP cell through `CompiledRestingGlifTierBeam`.
+Repository FAIL passes through the retained generic consequence-policy cells;
+REVISE triggers exact rollback and a local inhibitory update before the same
+bank reraces. The controller stores 4 E/H bytes, 8 address bytes, and two
+37-byte attempt-provenance rows. Candidate records contain no source,
+terminal/operator/path/type label, and the generic controller never accesses
+the frontier's private terminals. Filesystem, subprocess, compiler,
+attestation, PASS/FAIL hashing, and rollback remain environment adapters.
+
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
 memory, and 569,715-cell integrated checkpoint with framed physical multi-byte
