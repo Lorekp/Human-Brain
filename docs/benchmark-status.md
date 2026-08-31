@@ -134,9 +134,16 @@ Commit `ad07c21` froze the resulting FIT-only annotation-contract STOP before
 allocation: legacy annotations contain no stable occurrence carriers, ordered
 factor events, domains, or copy groups. The self-posed V6 mechanism and private
 plan conversion show that the downstream physical vocabulary works. The
-remaining canonical problem is upstream and causal: selector geometry must be
-emitted at structural-event production time and then learned from raw prompt
-evidence. The fixed-roster joint remains unspent.
+remaining canonical problem was upstream and causal. Commit `e2cc14a` localized
+59 raw spans to 472 valid selector geometries with zero exact authorization.
+Commit `56b9c73` then publishes producer-owned geometry and 372 complete FIT
+targets. Commit `3ac16dc` learns all 372 with direct physical conjunction cells,
+recurrently reusing output-only occurrence carriers to reconstruct nine complete
+views (77 sources, 68 edges, 164 factor slots, 9 relations, and 18 each domains,
+copy groups, and signatures). Teacher-off, cell-off, 59 geometry derangements,
+and 1,675 recurrent nonlessons produce zero READY. Because 77 targets reduce to
+26 local cues, this is explicitly same-FIT contextual replay, not unseen prompt
+transfer. Target-free static packaging and the fixed-roster joint remain unspent.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
@@ -150,13 +157,23 @@ fixture, while its candidate adapter exposes only opaque observation/action
 fields. Commits `4843236`, `9ad36b3`, and `973c3e5` add a domain-neutral
 65,536-cell opaque event projection, shared factorized output race, direct local
 associative memory, and a 520,547-cell factorized transition memory exercised
-only on quarantined regulatory- and spatial-shaped fixtures. The binding ledger
-at `c0b513a` authenticates 3/9 classes and stops before generation. Commit
-`5488574` freezes the missing action framing, baseline/ablation, seed, and exact
-evaluator/bootstrap sources; `5892aa3` freezes the exact base+G0 dependency and
-runtime identity. An integrated common neuronal checkpoint with physical
-multi-byte emission is still missing. No adjudicative cohort, terminal
-50,000-resample run, or G0 score exists.
+only on quarantined regulatory- and spatial-shaped fixtures. Commit `20ee0ea`
+adds the missing 569,715-cell integrated common checkpoint with framed physical
+multi-byte emission on self-posed data. Commit `d987edd` binds all 9/9 frozen
+architecture classes to exact opaque singleton authority, and `29f8b84` exposes
+immutable regulatory/spatial generation plans while executing neither generator.
+Commit `5488574` freezes action framing, baseline/ablation, seed, and exact
+evaluator/bootstrap sources; `5892aa3` freezes the base+G0 dependency and runtime
+identity. No adjudicative cohort, terminal 50,000-resample run, or G0 score exists.
+
+Commit `3524da8` banks a separate self-posed common-cell knowledge slice:
+source-conditioned episodes retain particulars while exact subject/relation
+semantic cells consolidate, abstain under conflicting evidence, and revise after
+additional support without deleting unrelated knowledge. Its claim is limited to
+exact keys and one-byte objects. Commit `a1cda05` also vectorizes the shared
+compiled-GLIF first-crossing scan; focused parity is unchanged and one local
+4,096-row by 65-candidate, 600-step batch improved from 87.6k to 157.5k races/s
+(1.80x). That timing is a machine-local kernel result, not capability evidence.
 
 ## Active-cell scaling and dynamics
 

@@ -1,9 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-31 after physical occurrence
-factorization, private prompt-authorized packed plan conversion, canonical
-source-binding localization, and the G0 execution/environment source freezes. Exact
-scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-08-31 after producer-owned physical
+occurrence events, same-FIT causal occurrence learning, complete G0 architecture
+binding, and compiled-race vectorization. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -14,11 +13,11 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-G0  Frozen-architecture cross-domain generalization  [3/9 ledger-bound; integrated checkpoint pending]
-R4  TRAIN-only prompt → semantic-factor bridge       [source-selector teacher target pending]
+G0  Frozen-architecture cross-domain generalization  [9/9 bound; generation plans frozen; cohorts unspent]
+R4  TRAIN-only prompt → semantic-factor bridge       [same-FIT causal learner banked; static/joint pending]
 R3  Bottom-up typed semantic synthesis               [physical plan authority banked; joint pending]
-R2  Persistent Path-2 reading memory                 [fresh scorer replay prepared]
-R1  Fast, auditable simulated-cell substrate         [continuous]
+R2  Persistent knowledge and reading memory          [episodic revision slice banked; abstraction pending]
+R1  Fast, auditable simulated-cell substrate         [continuous; compiled batch race 1.80x locally]
 ```
 
 ## Actual frontier
@@ -65,9 +64,13 @@ occurrence/factor/relation/domain/copy vocabulary and privately convert its
 issued exact-object authority into the structural receipt. The 19-literal
 map-count treatment selects one proof at 26,073 relation units with zero desired
 reads or proofs during build. The live R3/R4 item is no longer the downstream
-converter; it is learning occurrence-local selector/source events from raw
-canonical prompts. Spent panels, frozen routes, unchanged caps, and explicit
-ambiguity remain fixed.
+converter. Commit `56b9c73` now publishes producer-owned occurrence-local
+selector/source events for all 59 raw FIT spans plus 18 typed literals. Commit
+`3ac16dc` learns the resulting 372/372 source/edge/factor/relation/domain/copy/
+signature targets with direct physical conjunction cells and recurrent carrier
+reuse. This is same-FIT contextual replay, not unseen-prompt transfer; target-free
+static packaging and a real prompt-to-event canonical handoff remain pending.
+Spent panels, frozen routes, unchanged caps, and explicit ambiguity remain fixed.
 
 On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
 24-FIT/18-heldout surface and then stopped before arrays or learning. Two
@@ -119,18 +122,23 @@ direction/cue-slot/selected-slot attention relay. `1d949dc` added aggregate
 target-free physical attention; `d655ee9` proved that its winners cannot be
 converted post hoc into occurrence-local carriers. `ad07c21` then froze a
 zero-allocation FIT annotation STOP: legacy evidence has no stable
-carrier/factor/relation/domain/copy event targets. The next fresh capsule must
-emit exact raw source-selector identity at structural-event production time. No
-canonical joint TRAIN result exists yet.
+carrier/factor/relation/domain/copy event targets. Commit `e2cc14a` localized
+the remaining ambiguity to 59 raw spans admitting 472 valid selector geometries
+and zero authorized exact choices. Commit `56b9c73` closes that producer
+contract with 372 compiler-owned FIT targets, and `3ac16dc` learns all 372 from
+stripped physical bundles. Only 26 local cues exist, so the source carrier
+learner correctly claims same-FIT contextual replay rather than unseen transfer.
+No canonical joint TRAIN result exists yet.
 
 G0 remains a falsification guardrail while language/software work is primary.
-The common event projection, direct associative memory, and factorized
-transition memory are banked on quarantined fixtures. The current nine-class
-binding ledger is 3/9. Action framing, all fixed baselines/ablations,
-deterministic seed derivation, the exact evaluator/bootstrap source, and the
-base+G0 dependency/environment identity are separately frozen. The remaining
-architecture-source class is an integrated common checkpoint with physical
-multi-byte output; no adjudicative cohort or outcome exists.
+The common event projection, direct associative memory, factorized transition
+memory, and 569,715-cell integrated checkpoint with framed physical multi-byte
+emission are banked on quarantined self-posed fixtures (`20ee0ea`). Commit
+`d987edd` binds all 9/9 frozen architecture classes to exact opaque singleton
+authority. Commit `29f8b84` adds immutable regulatory/spatial generation plans
+that still execute neither generator. Action framing, fixed baselines/ablations,
+seed derivation, evaluator/bootstrap source, and environment identity remain
+frozen. No adjudicative cohort, evaluation outcome, or G0 score exists.
 
 The following paragraphs retain precursor mechanism and performance detail.
 
@@ -218,6 +226,13 @@ resumable TRAIN-only runner is now preflight-ready from empty native/scorer
 state, with a compact per-book journal and no completed-build import. No corpus
 spend occurred, and no held-out or C1 surface is open.
 
+Commit `3524da8` separately banks a small common-cell knowledge slice: six
+self-posed source-conditioned episodes consolidate into exact subject/relation
+semantic cells, retain contradictory particulars, abstain under conflict, and
+revise after additional evidence without deleting unrelated knowledge. It is
+limited to exact keys and one-byte objects; learned retrieval, cross-context
+abstraction, corpus ingestion, and transfer remain open R2 work.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
@@ -227,6 +242,11 @@ current envelope; reaching the 100-billion-neuron target requires
 event-proportional work plus distributed storage/compute after learning is
 demonstrated. Runtime optimization is part of the model implementation, not an
 optional benchmark exercise.
+
+Commit `a1cda05` vectorizes the first-crossing scan inside the shared compiled
+GLIF batch race. Focused parity stayed exact; on one local 4,096-row by
+65-candidate, 600-step batch, median throughput rose from 87.6k to 157.5k
+races/s (1.80x). This is a machine-local kernel result, not capability evidence.
 
 ## Claim and opening discipline
 
