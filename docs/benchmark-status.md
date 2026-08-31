@@ -328,15 +328,16 @@ remained exact. Final source SHA-256 is
 This is a local kernel result only: it changes no Path-2 outcome, neural work
 ledger, or capability claim.
 
-Commits `c587c32`, `2b709eb`, and `6b6ec0e` then remove three full-capacity
-scratch allocations without changing the scientific result: the interval-ledger
-union runs backward in place, one GID vector is phase-aliased across fresh,
-population, dormant, and spike runs, and the current-step `last_spikes` suffix
-replaces `step_spikes`. Together they reclaim exactly `9D + 16R + 96` bytes:
-1,638,496 bytes at `D=R=65,536` and 25,000,096 bytes at one million. The
-representative payload falls from 7,419,776 to 6,371,152 bytes. Final source
-SHA-256 at `6b6ec0e` is
-`b553de5ca9e146e8d70b1797d00866a8abeee7fc8a6ed3c9255b73cae4833a2e`.
+Commits `c587c32`, `2b709eb`, `6b6ec0e`, and `2e49f0a` remove three
+full-capacity scratch allocations and pack the remaining interval flags without
+changing the scientific result: the ledger union runs backward in place, one
+GID vector is phase-aliased across fresh/population/dormant/spike runs, the
+current-step `last_spikes` suffix replaces `step_spikes`, and three interleaved
+u64 bitplanes replace one byte per distinct GID. Together they reclaim exactly
+`10D + 16R + 96 - 24*ceil(D/64)` bytes: 1,679,456 bytes at
+`D=R=65,536` and 25,625,096 bytes at one million. The representative payload
+falls from 8,009,648 to 6,330,192 bytes. Final source SHA-256 at `2e49f0a` is
+`351010973f44722dd393d98f03de6ff193eb8e6294d1fb9418af2ccc552aacb6`.
 These remain focused synthetic parity/memory results; physical 100-billion-cell
 residency is not established.
 
@@ -355,10 +356,21 @@ adds 19 cells and 178 persistent bytes. Host graph view, carrier allocation,
 endpoint framing, generic graph actions, and consequence projection remain
 explicit.
 
-Across R3, R4, and R2, the next shared seam is to compose the exact occurrence
-certificate with learned content/action schemas into a desired-free executable
-witness, then learn away its remaining host grouping and consequence scaffolds.
-Neither result is public transfer, parsing, general coding, or SWE evidence.
+Commit `064dd8d` composes the exact occurrence certificate with the learned
+content/action schema into a desired-free executable witness. A non-identity
+2x2 uint8 E/H relay maps only the authenticated occurrence schema cell to a
+physical reducer-action receipt; a residual certificate and identity-issued
+plan-slice receipt then authorize exactly one count or raw-sum proof. Fresh C5,
+F4, opaque relabel/reordered-record, and same-prompt topology-law-flip cases
+pass, while relation/relay/action/residual controls stop before packed build.
+The 69,232-cell composite adds zero functional cells, eight learned bytes, and
+accounts 768 persistent bytes. Bridge-only fit/build work is 5,580/1,860
+physical cell steps, with dependency and packed work separately receipt-bound.
+
+Across R3, R4, and R2, the next shared seam is predictive grouping without
+explicit OPEN/EXTEND/EOS or hidden boundary metadata, then learning away carrier
+and consequence scaffolds. These results are not public transfer, parsing,
+general coding, or SWE evidence.
 
 ## Active-cell scaling and dynamics
 

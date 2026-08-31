@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-08-31 after the terminal V3 joint
-static-event STOP, content-addressed causal schemas, anonymous occurrence-graph
-certificates, and procedural scratch-allocation reductions. Exact scientific
+static-event STOP, the occurrence-to-executable causal bridge, and packed
+procedural scratch/ledger reductions. Exact scientific
 boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -16,7 +16,7 @@ R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
 R4  TRAIN-only prompt → semantic-factor bridge       [joint V3 static on/off STOP; cohort immutable]
-R3  Bottom-up typed semantic synthesis               [content and occurrence schemas banked; executable bridge next]
+R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [predictive segmentation + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
 ```
@@ -225,11 +225,21 @@ certificates. It adds 19 cells and 178 persistent bytes. Host carrier allocation
 graph consequence projection, endpoint framing, and action scaffolds remain
 explicit.
 
-The common next R3/R4/R2 seam is now to compose those exact certificates with
-learned content/action schemas into desired-free executable witnesses, then
-remove the remaining grouping, carrier-allocation, and consequence-validation
-scaffolds. This composition must stay self-posed until its causal boundary is
-clear; it does not reopen the spent V3 cohort.
+Commit `064dd8d` composes the exact occurrence certificate with the learned
+content/action schema through a non-identity 2x2 uint8 E/H relay. Its private
+authority chain reads only the authenticated occurrence schema cell, wins a
+physical reducer-action race, binds the residual scaffold, authorizes one plan
+slice, and materializes one count or raw-sum witness. Fresh length, topology,
+opaque relabel/reordered-record, and same-prompt law-flip cases pass; four cell
+ablations stop before packed construction. The 69,232-cell composite adds zero
+functional cells and eight learned bytes. Explicit OPEN/EXTEND/EOS bundle cues,
+carrier/equality/graph projection, prompt binding, fixed reducers, typed
+enumeration, and compilation remain scaffolds.
+
+The next shared R3/R4/R2 seam is therefore predictive grouping of continuous
+neutral occurrence streams without hiding a boundary in interval identity,
+source IDs, order, or host length, followed by learned carrier/projection
+scaffolds. This work remains self-posed and does not reopen the spent V3 cohort.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -401,6 +411,15 @@ counters, exact overflow behavior, API, and scientific accounting. Final source
 SHA-256 is
 `3016fd0a44d891c8f2b8b161f5c2a011713e70cfd0848f0585442f969927958e`.
 This is not a Path-2 result, reduced neural work, or capability evidence.
+
+Commits `c587c32`, `2b709eb`, `6b6ec0e`, and `2e49f0a` then remove the duplicate
+interval ledger, phase-alias the full-capacity GID scratch, reuse the current-step
+spike suffix, and pack the remaining ledger flags into interleaved bitplanes.
+The cumulative exact saving is
+`10D + 16R + 96 - 24*ceil(D/64)` bytes: 1,679,456 bytes at
+`D=R=65,536` and 25,625,096 bytes at one million. The representative payload
+falls from 8,009,648 to 6,330,192 bytes. These are exact substrate-memory results,
+not physical 100-billion-cell residency or capability evidence.
 
 ## Claim and opening discipline
 

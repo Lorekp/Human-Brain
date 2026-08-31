@@ -328,13 +328,15 @@ exact. Final source SHA-256 is
 `3016fd0a44d891c8f2b8b161f5c2a011713e70cfd0848f0585442f969927958e`.
 It does not change Path-2 evidence, neural work, or capability.
 
-Commits `c587c32`, `2b709eb`, and `6b6ec0e` successively removed the duplicate
-interval-ledger buffer, the dormant-GID vector, and the per-step spike-GID vector
-by backward in-place union and exact phase aliasing. The representative payload
-fell from 7,419,776 to 6,371,152 bytes; the exact reclaimed capacity is
-`9D + 16R + 96` bytes. Focused parity fixtures preserved raw dynamics, queues,
-spikes, counters, failure boundaries, event order, and accounting. This is
-implementation evidence only, not a 100-billion-cell residency result.
+Commits `c587c32`, `2b709eb`, `6b6ec0e`, and `2e49f0a` successively removed the
+duplicate interval-ledger buffer, phase-aliased the full-capacity GID scratch,
+reused the current-step spike suffix, and packed the remaining interval flags
+into three interleaved u64 bitplanes. The representative payload fell from
+8,009,648 to 6,330,192 bytes; the exact reclaimed capacity is
+`10D + 16R + 96 - 24*ceil(D/64)` bytes. Focused parity fixtures preserved raw
+dynamics, queues, spikes, counters, failure boundaries, event order, and
+accounting. This is implementation evidence only, not a 100-billion-cell
+residency result.
 
 Commit `61b345f` then composed the append-effect stack with predictive
 segmentation through only a learned two-cell `NEW/CONTINUE -> OPEN/EXTEND`
@@ -360,10 +362,20 @@ lengths and opaque relabeling issue exact occurrence-graph certificates. The
 ablations. Host carrier allocation, endpoint framing, graph actions, and
 consequence projection remain scaffolds.
 
-These results move the next shared R3/R4/R2 seam from discovering reusable
-schemas to composing their exact certificates into desired-free executable
-witnesses, followed by learning away the remaining grouping, carrier, and
-consequence scaffolds. The spent V3 cohort remains closed.
+Commit `064dd8d` then composed the exact occurrence certificate with the learned
+content/action schema. A learned non-identity 2x2 uint8 E/H relay consumes only
+the authenticated occurrence schema cell, wins one physical reducer-action
+receipt, obtains a residual certificate and identity-issued plan-slice receipt,
+and materializes exactly one count or raw-sum executable witness. Fresh C5/F4,
+opaque relabel/reordered-record, and same-prompt topology-law-flip cases pass;
+relation/relay/action/residual controls stop before packed construction. The
+69,232-cell composite adds zero functional cells and eight learned bytes, with
+5,580 bridge-only fit steps and 1,860 READY bridge steps.
+
+This moves the next shared R3/R4/R2 seam to predictive grouping of continuous
+neutral occurrence streams without explicit OPEN/EXTEND/EOS or hidden boundary
+metadata, followed by learning away carrier and consequence scaffolds. The
+spent V3 cohort remains closed.
 
 ## 11. Common G0 substrate begins
 
