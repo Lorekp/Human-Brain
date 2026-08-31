@@ -149,22 +149,22 @@ def test_v2_learns_and_revises_physical_copy_routes_across_contexts() -> None:
     ready = copy_v2.fit_common_one_byte_copy_relation_v2(
         copy_a + copy_b + dependent + unrelated_a + unrelated_b
     )
-    conflicted = copy_v2.fit_common_one_byte_copy_relation_v2(
-        copy_a
-        + copy_b
-        + dependent
-        + shifted_c
-        + unrelated_a
-        + unrelated_b
+    parent_checkpoint_before_extension = ready.checkpoint_sha256
+    parent_arrays_before_extension = tuple(
+        array.tobytes(order="C") for _, array in ready._checkpoint_arrays()
     )
-    revised = copy_v2.fit_common_one_byte_copy_relation_v2(
-        copy_a
-        + copy_b
-        + dependent
-        + shifted_c
-        + shifted_d
-        + unrelated_a
-        + unrelated_b
+    parent_provenance = ready.training_summary.provenance
+    conflicted = copy_v2.extend_common_one_byte_copy_relation_v2(
+        ready,
+        shifted_c,
+    )
+    revised = copy_v2.extend_common_one_byte_copy_relation_v2(
+        conflicted,
+        shifted_d,
+    )
+    no_op_extension = copy_v2.extend_common_one_byte_copy_relation_v2(
+        ready,
+        copy_a + dependent + teacher_off_lessons + cell_off_lessons,
     )
     teacher_off = copy_v2.fit_common_one_byte_copy_relation_v2(
         teacher_off_lessons
@@ -193,6 +193,43 @@ def test_v2_learns_and_revises_physical_copy_routes_across_contexts() -> None:
         _shift_fillers(_HELDOUT_VALUE)
     )
 
+    first_extension = conflicted.extension_summary
+    second_extension = revised.extension_summary
+    no_op_summary = no_op_extension.extension_summary
+    assert first_extension is not None
+    assert second_extension is not None
+    assert no_op_summary is not None
+    assert first_extension.parent_checkpoint_sha256 == ready.checkpoint_sha256
+    assert first_extension.new_lesson_count == 8
+    assert first_extension.accepted_new_context_count == 1
+    assert first_extension.physical_observation_ticks == 32
+    assert first_extension.committed_local_update_ticks == 32
+    assert first_extension.relation_excitatory_update_ticks == 12
+    assert first_extension.route_excitatory_update_ticks == 16
+    assert first_extension.route_inhibitory_update_ticks == 16
+    assert first_extension.committed_update_ticks == 76
+    assert first_extension.parent_provenance_count == 4
+    assert first_extension.retained_parent_provenance_count == 4
+    assert first_extension.total_provenance_count == 5
+    assert second_extension.parent_checkpoint_sha256 == conflicted.checkpoint_sha256
+    assert second_extension.accepted_new_context_count == 1
+    assert second_extension.committed_update_ticks == 76
+    assert second_extension.total_provenance_count == 6
+    assert conflicted.training_summary.provenance[:4] == parent_provenance
+    assert revised.training_summary.provenance[:4] == parent_provenance
+
+    assert no_op_summary.new_lesson_count == 32
+    assert no_op_summary.active_context_group_count == 2
+    assert no_op_summary.accepted_new_context_count == 0
+    assert no_op_summary.duplicate_context_count == 1
+    assert no_op_summary.dependent_context_count == 1
+    assert no_op_summary.teacher_off_lesson_count == 8
+    assert no_op_summary.cell_off_lesson_count == 8
+    assert no_op_summary.physical_observation_ticks == 64
+    assert no_op_summary.committed_update_ticks == 0
+    assert no_op_summary.provenance_added == ()
+    assert no_op_extension.training_summary.provenance == parent_provenance
+
     assert teacher_off.recall(heldout, relation).status == "ABSTAIN_UNKNOWN_RELATION"
     assert cell_off.recall(heldout, relation).status == "ABSTAIN_UNKNOWN_RELATION"
     assert ready.recall(heldout, relation, cell_gate=False).status == "STOP_CELL_OFF"
@@ -216,11 +253,17 @@ def test_v2_learns_and_revises_physical_copy_routes_across_contexts() -> None:
     assert unrelated_root is not None
     assert conflicted.relation_state_sha256(unrelated_relation) == unrelated_root
     assert revised.relation_state_sha256(unrelated_relation) == unrelated_root
+    assert no_op_extension.relation_state_sha256(unrelated_relation) == unrelated_root
     unrelated_recall = ready.recall(heldout, unrelated_relation)
     assert unrelated_recall.status == "READY"
     assert unrelated_recall.output.active_cells == _teacher_cells(_HELDOUT_VALUE)
     assert ready.relation_state_sha256(unrelated_relation) == unrelated_root
     assert ready.checkpoint_sha256 == checkpoint_before_controls
+    assert ready.checkpoint_sha256 == parent_checkpoint_before_extension
+    assert tuple(
+        array.tobytes(order="C") for _, array in ready._checkpoint_arrays()
+    ) == parent_arrays_before_extension
+    assert ready.extension_summary is None
 
     summary = ready.training_summary
     assert summary.independent_context_count == 4

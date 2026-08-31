@@ -6,7 +6,9 @@ cells to the unchanged CommonEvent V1 output population.  Relation, context,
 source, input, and teacher evidence enter only as authenticated cell addresses.
 
 COPY is the self-posed curriculum used by the focused experiment; the learner
-itself can acquire any lane-local filler permutation.  It retains no raw byte,
+itself can acquire any lane-local filler permutation.  A frozen checkpoint can
+be extended from new physical contexts by cloning its immutable arrays and
+freezing a successor without replaying prior lessons.  It retains no raw byte,
 digit tuple, event name, or whole-byte lookup.
 """
 
@@ -26,9 +28,11 @@ from experiments.g0 import common_event_cells_v2 as projection
 SCOPE = "COMMON_ONE_BYTE_COPY_RELATION_V2"
 STATUS = "SELF_POSED_RELATION_GATED_ONE_BYTE_FILLER_RECOMBINATION"
 CLAIM_BOUNDARY = (
-    "self-posed-two-context-lane-local-one-byte-filler-recombination-only-"
-    "no-language-coding-corpus-or-protected-transfer-evidence"
+    "self-posed-sequential-new-context-lane-local-one-byte-filler-"
+    "recombination-and-revision-only-no-language-coding-corpus-or-"
+    "protected-transfer-evidence"
 )
+EXTENSION_STATUS = "SEQUENTIAL_NEW_PHYSICAL_CONTEXTS_ONLY_NO_PARENT_REPLAY"
 
 PROJECTION_SOURCE_COMMIT = "6248269"
 EXPECTED_PROJECTION_SOURCE_SHA256 = (
@@ -315,6 +319,46 @@ class RelationGatedTrainingSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class RelationGatedExtensionSummary:
+    status: str
+    parent_checkpoint_sha256: str
+    checkpoint_sha256: str
+    new_lesson_count: int
+    teacher_on_lesson_count: int
+    teacher_off_lesson_count: int
+    cell_on_lesson_count: int
+    cell_off_lesson_count: int
+    active_context_group_count: int
+    accepted_new_context_count: int
+    duplicate_context_count: int
+    dependent_context_count: int
+    incomplete_context_count: int
+    contradictory_context_count: int
+    new_relation_count: int
+    parent_provenance_count: int
+    retained_parent_provenance_count: int
+    total_provenance_count: int
+    physical_observation_ticks: int
+    committed_local_update_ticks: int
+    relation_excitatory_update_ticks: int
+    route_excitatory_update_ticks: int
+    route_inhibitory_update_ticks: int
+    parent_checkpoint_array_bytes: int
+    checkpoint_array_bytes: int
+    context_steps: tuple[ContextConsolidationStep, ...]
+    provenance_added: tuple[PhysicalContextProvenance, ...]
+
+    @property
+    def committed_update_ticks(self) -> int:
+        return (
+            self.committed_local_update_ticks
+            + self.relation_excitatory_update_ticks
+            + self.route_excitatory_update_ticks
+            + self.route_inhibitory_update_ticks
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class RelationGatedCopyRecall:
     status: str
     output: output_projection.CommonOutputDecision
@@ -424,6 +468,12 @@ CONFIG_RECORD = {
     "plasticity": (
         "teacher-gated-positive-target-and-negative-previously-observed-rival"
     ),
+    "continual_extension": {
+        "status": EXTENSION_STATUS,
+        "parent_checkpoint_authentication": True,
+        "parent_lesson_replay_count": 0,
+        "state_transition": "clone-immutable-arrays-apply-new-contexts-freeze",
+    },
     "raw_byte_digit_name_or_hash_used_after_projection": False,
     "whole_byte_static_result_lookup": False,
     "new_cell_count": NEW_CELL_COUNT,
@@ -455,6 +505,7 @@ class FrozenCommonOneByteCopyRelationV2:
         "_context_route_targets",
         "_context_sources",
         "_context_subjects",
+        "_extension_summary",
         "_metadata",
         "_relation_cells",
         "_relation_count",
@@ -481,6 +532,7 @@ class FrozenCommonOneByteCopyRelationV2:
         context_count: int,
         metadata: bytes,
         summary: RelationGatedTrainingSummary,
+        extension_summary: RelationGatedExtensionSummary | None,
         construction_token: object,
     ) -> None:
         if construction_token is not _CONSTRUCTION_TOKEN:
@@ -544,6 +596,7 @@ class FrozenCommonOneByteCopyRelationV2:
         self._context_count = context_count
         self._metadata = bytes(metadata)
         self._summary = summary
+        self._extension_summary = extension_summary
         for name, array in (
             ("_relation_cells", relation_cells),
             ("_relation_excitatory", relation_excitatory),
@@ -590,6 +643,11 @@ class FrozenCommonOneByteCopyRelationV2:
     def training_summary(self) -> RelationGatedTrainingSummary:
         self.authenticate()
         return self._summary
+
+    @property
+    def extension_summary(self) -> RelationGatedExtensionSummary | None:
+        self.authenticate()
+        return self._extension_summary
 
     def authenticate(self) -> None:
         _authenticate_dependencies()
@@ -1151,8 +1209,490 @@ def fit_common_one_byte_copy_relation_v2(
         context_count=context_count,
         metadata=metadata,
         summary=summary,
+        extension_summary=None,
         construction_token=_CONSTRUCTION_TOKEN,
     )
+
+
+def extend_common_one_byte_copy_relation_v2(
+    parent: FrozenCommonOneByteCopyRelationV2,
+    lessons: tuple[RelationGatedOneByteLesson, ...],
+) -> FrozenCommonOneByteCopyRelationV2:
+    """Freeze a successor from novel physical contexts without parent replay."""
+
+    if type(parent) is not FrozenCommonOneByteCopyRelationV2:
+        raise TypeError("parent must be an exact frozen V2 checkpoint")
+    if type(lessons) is not tuple or any(
+        type(lesson) is not RelationGatedOneByteLesson for lesson in lessons
+    ):
+        raise TypeError("lessons must be an exact tuple of new physical lessons")
+    _authenticate_dependencies()
+    parent.authenticate()
+    parent_checkpoint_sha256 = parent.checkpoint_sha256
+    parent_summary = parent.training_summary
+    cells = projection.CommonOneByteFillerCells()
+
+    relation_cells = np.array(parent._relation_cells, copy=True, order="C")
+    relation_excitatory = np.array(
+        parent._relation_excitatory,
+        copy=True,
+        order="C",
+    )
+    relation_support_counts = np.array(
+        parent._relation_support_counts,
+        copy=True,
+        order="C",
+    )
+    route_excitatory = np.array(
+        parent._route_excitatory,
+        copy=True,
+        order="C",
+    )
+    route_inhibitory = np.array(
+        parent._route_inhibitory,
+        copy=True,
+        order="C",
+    )
+    context_relation_slots = np.array(
+        parent._context_relation_slots,
+        copy=True,
+        order="C",
+    )
+    context_subjects = np.array(
+        parent._context_subjects,
+        copy=True,
+        order="C",
+    )
+    context_sources = np.array(
+        parent._context_sources,
+        copy=True,
+        order="C",
+    )
+    context_route_targets = np.array(
+        parent._context_route_targets,
+        copy=True,
+        order="C",
+    )
+    relation_count = parent._relation_count
+    context_count = parent._context_count
+    parent_relation_count = relation_count
+    parent_context_count = context_count
+
+    groups: dict[
+        tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]],
+        _ContextAccumulator,
+    ] = {}
+    physical_observation_ticks = 0
+    for ordinal, lesson in enumerate(lessons):
+        input_routes = _input_route_indices(cells, lesson.input_frame)
+        teacher_candidates = _teacher_candidate_indices(
+            lesson.teacher_output_cells
+        )
+        if not lesson.teacher_gate or not lesson.cell_gate:
+            continue
+        physical_observation_ticks += LANES
+        key = (lesson.relation_cells, lesson.context_cells, lesson.source_cells)
+        accumulator = groups.get(key)
+        if accumulator is None:
+            accumulator = _ContextAccumulator(
+                first_ordinal=ordinal,
+                relation_cells=lesson.relation_cells,
+                context_cells=lesson.context_cells,
+                source_cells=lesson.source_cells,
+                counts=np.zeros((INPUT_FILLER_CELLS, RADIX), dtype=TICK_DTYPE),
+            )
+            groups[key] = accumulator
+        for lane, flat_input in enumerate(input_routes):
+            candidate = teacher_candidates[lane]
+            previous = int(accumulator.counts[flat_input, candidate])
+            accumulator.counts[flat_input, candidate] = min(
+                previous + POSITIVE_TICK,
+                TICK_CAP,
+            )
+
+    duplicate_context_count = 0
+    dependent_context_count = 0
+    incomplete_context_count = 0
+    contradictory_context_count = 0
+    accepted_new_context_count = 0
+    committed_local_ticks = 0
+    relation_update_ticks = 0
+    route_e_ticks = 0
+    route_h_ticks = 0
+    extension_steps: list[ContextConsolidationStep] = []
+    provenance_added: list[PhysicalContextProvenance] = []
+
+    for group in sorted(groups.values(), key=lambda row: row.first_ordinal):
+        target_candidates: list[int] = []
+        minimum_observations = TICK_CAP
+        complete = True
+        internally_contradictory = False
+        for flat_input in range(INPUT_FILLER_CELLS):
+            active = np.flatnonzero(group.counts[flat_input] > 0)
+            if len(active) != 1:
+                complete = False
+                internally_contradictory = internally_contradictory or len(active) > 1
+                target_candidates.append(-1)
+                continue
+            target = int(active[0])
+            observations = int(group.counts[flat_input, target])
+            minimum_observations = min(minimum_observations, observations)
+            if observations < MIN_CONTEXT_ROUTE_OBSERVATIONS:
+                complete = False
+            target_candidates.append(target)
+        complete_route_count = sum(target >= 0 for target in target_candidates)
+        if not complete:
+            incomplete_context_count += 1
+            contradictory_context_count += int(internally_contradictory)
+            extension_steps.append(
+                ContextConsolidationStep(
+                    first_lesson_ordinal=group.first_ordinal,
+                    status=(
+                        "CONTEXT_CONTRADICTION"
+                        if internally_contradictory
+                        else "CONTEXT_INCOMPLETE"
+                    ),
+                    relation_schema_cell_id=None,
+                    provenance_cell_id=None,
+                    complete_route_count=complete_route_count,
+                    minimum_route_observations=(
+                        0 if minimum_observations == TICK_CAP else minimum_observations
+                    ),
+                    relation_support_count=0,
+                    excitatory_update_ticks=0,
+                    inhibitory_update_ticks=0,
+                )
+            )
+            continue
+
+        active_relation = np.asarray(group.relation_cells, dtype=np.int32)
+        matching = tuple(
+            row
+            for row in range(relation_count)
+            if bool(np.all(relation_cells[row] == active_relation))
+        )
+        if len(matching) > 1:
+            raise RuntimeError("physical relation schema duplicated")
+        slot = matching[0] if matching else None
+        if slot is not None:
+            exact_duplicate = any(
+                int(context_relation_slots[row]) == slot
+                and bool(
+                    np.all(
+                        context_subjects[row]
+                        == np.asarray(group.context_cells, dtype=np.int32)
+                    )
+                )
+                and bool(
+                    np.all(
+                        context_sources[row]
+                        == np.asarray(group.source_cells, dtype=np.int32)
+                    )
+                )
+                for row in range(context_count)
+            )
+            dependent = any(
+                int(context_relation_slots[row]) == slot
+                and (
+                    bool(
+                        np.all(
+                            context_subjects[row]
+                            == np.asarray(group.context_cells, dtype=np.int32)
+                        )
+                    )
+                    or bool(
+                        np.all(
+                            context_sources[row]
+                            == np.asarray(group.source_cells, dtype=np.int32)
+                        )
+                    )
+                )
+                for row in range(context_count)
+            )
+        else:
+            exact_duplicate = False
+            dependent = False
+        if exact_duplicate or dependent:
+            duplicate_context_count += int(exact_duplicate)
+            dependent_context_count += int(dependent and not exact_duplicate)
+            extension_steps.append(
+                ContextConsolidationStep(
+                    first_lesson_ordinal=group.first_ordinal,
+                    status=(
+                        "DUPLICATE_CONTEXT_IGNORED"
+                        if exact_duplicate
+                        else "DEPENDENT_CONTEXT_IGNORED"
+                    ),
+                    relation_schema_cell_id=(
+                        None
+                        if slot is None
+                        else RELATION_SCHEMA_CELL_OFFSET + slot
+                    ),
+                    provenance_cell_id=None,
+                    complete_route_count=complete_route_count,
+                    minimum_route_observations=minimum_observations,
+                    relation_support_count=(
+                        0 if slot is None else int(relation_support_counts[slot])
+                    ),
+                    excitatory_update_ticks=0,
+                    inhibitory_update_ticks=0,
+                )
+            )
+            continue
+        if slot is None:
+            if relation_count == MAX_RELATIONS:
+                raise RuntimeError("relation schema capacity exhausted")
+            slot = relation_count
+            relation_count += 1
+            relation_cells[slot] = active_relation
+        if context_count == MAX_INDEPENDENT_CONTEXTS:
+            raise RuntimeError("physical context provenance capacity exhausted")
+
+        provenance_cell_id = PROVENANCE_CELL_OFFSET + context_count
+        context_relation_slots[context_count] = slot
+        context_subjects[context_count] = np.asarray(
+            group.context_cells,
+            dtype=np.int32,
+        )
+        context_sources[context_count] = np.asarray(
+            group.source_cells,
+            dtype=np.int32,
+        )
+        context_route_targets[context_count] = np.asarray(
+            target_candidates,
+            dtype=np.int8,
+        )
+
+        previous_relation = relation_excitatory[slot].astype(np.uint16)
+        updated_relation = np.minimum(previous_relation + POSITIVE_TICK, TICK_CAP)
+        relation_excitatory[slot] = updated_relation.astype(TICK_DTYPE)
+        committed_relation = int(
+            np.sum(updated_relation - previous_relation, dtype=np.uint64)
+        )
+        relation_update_ticks += committed_relation
+        relation_support_counts[slot] = min(
+            int(relation_support_counts[slot]) + 1,
+            TICK_CAP,
+        )
+
+        context_e_ticks = 0
+        context_h_ticks = 0
+        route_output_cells: list[int] = []
+        for flat_input, target in enumerate(target_candidates):
+            lane = flat_input // RADIX
+            local_input = flat_input - lane * RADIX
+            previous_targets = tuple(
+                int(candidate)
+                for candidate in np.flatnonzero(
+                    route_excitatory[slot, lane, local_input] > 0
+                )
+                if int(candidate) != target
+            )
+            previous_e = int(route_excitatory[slot, lane, local_input, target])
+            updated_e = min(previous_e + POSITIVE_TICK, TICK_CAP)
+            route_excitatory[slot, lane, local_input, target] = updated_e
+            context_e_ticks += updated_e - previous_e
+            for rival in previous_targets:
+                previous_h = int(
+                    route_inhibitory[slot, lane, local_input, rival]
+                )
+                updated_h = min(previous_h + NEGATIVE_TICK, TICK_CAP)
+                route_inhibitory[slot, lane, local_input, rival] = updated_h
+                context_h_ticks += updated_h - previous_h
+            route_output_cells.append(_OUTPUT_CANDIDATES_BY_LANE[lane][target])
+
+        context_local_ticks = int(
+            np.sum(group.counts, dtype=np.uint64)
+        )
+        committed_local_ticks += context_local_ticks
+        route_e_ticks += context_e_ticks
+        route_h_ticks += context_h_ticks
+        contradictory_context_count += int(context_h_ticks > 0)
+        accepted_new_context_count += 1
+        support_count = int(relation_support_counts[slot])
+        added = PhysicalContextProvenance(
+            provenance_cell_id=provenance_cell_id,
+            relation_schema_cell_id=RELATION_SCHEMA_CELL_OFFSET + slot,
+            context_cells=group.context_cells,
+            source_cells=group.source_cells,
+            route_output_cells=tuple(route_output_cells),
+            minimum_route_observations=minimum_observations,
+        )
+        provenance_added.append(added)
+        extension_steps.append(
+            ContextConsolidationStep(
+                first_lesson_ordinal=group.first_ordinal,
+                status=(
+                    "INDEPENDENT_CONTEXT_REVISION_EVIDENCE"
+                    if context_h_ticks
+                    else "INDEPENDENT_CONTEXT_CONSOLIDATED"
+                ),
+                relation_schema_cell_id=RELATION_SCHEMA_CELL_OFFSET + slot,
+                provenance_cell_id=provenance_cell_id,
+                complete_route_count=complete_route_count,
+                minimum_route_observations=minimum_observations,
+                relation_support_count=support_count,
+                excitatory_update_ticks=committed_relation + context_e_ticks,
+                inhibitory_update_ticks=context_h_ticks,
+            )
+        )
+        context_count += 1
+
+    arrays = (
+        ("relation-cells", relation_cells),
+        ("relation-excitatory", relation_excitatory),
+        ("relation-support-counts", relation_support_counts),
+        ("route-excitatory", route_excitatory),
+        ("route-inhibitory", route_inhibitory),
+        ("context-relation-slots", context_relation_slots),
+        ("context-subjects", context_subjects),
+        ("context-sources", context_sources),
+        ("context-route-targets", context_route_targets),
+    )
+    checkpoint_array_bytes = sum(array.nbytes for _, array in arrays)
+    metadata_record = {
+        "scope": SCOPE,
+        "status": EXTENSION_STATUS,
+        "claim_boundary": CLAIM_BOUNDARY,
+        "config_sha256": CONFIG_SHA256,
+        "parent_checkpoint_sha256": parent_checkpoint_sha256,
+        "parent_lesson_replay_count": 0,
+        "new_lesson_count": len(lessons),
+        "active_context_group_count": len(groups),
+        "accepted_new_context_count": accepted_new_context_count,
+        "relation_count": relation_count,
+        "independent_context_count": context_count,
+        "raw_byte_digit_name_hash_or_whole_byte_identity_retained": False,
+        "prior_memory_mutation_count": 0,
+        "prior_schema_mutation_count": 0,
+        "generator_corpus_path2_dev_m0_protected_g0_coding_inputs": (
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ),
+    }
+    metadata = _canonical_json(metadata_record)
+    checkpoint_sha256 = sha256(
+        _checkpoint_payload(metadata, arrays)
+    ).hexdigest()
+    cumulative_provenance = (
+        *parent_summary.provenance,
+        *provenance_added,
+    )
+    cumulative_summary = RelationGatedTrainingSummary(
+        lesson_count=parent_summary.lesson_count + len(lessons),
+        teacher_on_lesson_count=(
+            parent_summary.teacher_on_lesson_count
+            + sum(lesson.teacher_gate for lesson in lessons)
+        ),
+        teacher_off_lesson_count=(
+            parent_summary.teacher_off_lesson_count
+            + sum(not lesson.teacher_gate for lesson in lessons)
+        ),
+        cell_on_lesson_count=(
+            parent_summary.cell_on_lesson_count
+            + sum(lesson.cell_gate for lesson in lessons)
+        ),
+        cell_off_lesson_count=(
+            parent_summary.cell_off_lesson_count
+            + sum(not lesson.cell_gate for lesson in lessons)
+        ),
+        context_group_count=parent_summary.context_group_count + len(groups),
+        independent_context_count=context_count,
+        dependent_context_count=(
+            parent_summary.dependent_context_count + dependent_context_count
+        ),
+        incomplete_context_count=(
+            parent_summary.incomplete_context_count + incomplete_context_count
+        ),
+        contradictory_context_count=(
+            parent_summary.contradictory_context_count
+            + contradictory_context_count
+        ),
+        relation_count=relation_count,
+        local_physical_update_ticks=(
+            parent_summary.local_physical_update_ticks + committed_local_ticks
+        ),
+        relation_excitatory_update_ticks=(
+            parent_summary.relation_excitatory_update_ticks
+            + relation_update_ticks
+        ),
+        route_excitatory_update_ticks=(
+            parent_summary.route_excitatory_update_ticks + route_e_ticks
+        ),
+        route_inhibitory_update_ticks=(
+            parent_summary.route_inhibitory_update_ticks + route_h_ticks
+        ),
+        maximum_excitatory_tick=max(
+            int(np.max(relation_excitatory, initial=0)),
+            int(np.max(route_excitatory, initial=0)),
+        ),
+        maximum_inhibitory_tick=int(np.max(route_inhibitory, initial=0)),
+        synaptic_state_bytes=(
+            relation_excitatory.nbytes
+            + route_excitatory.nbytes
+            + route_inhibitory.nbytes
+        ),
+        checkpoint_array_bytes=checkpoint_array_bytes,
+        context_steps=(*parent_summary.context_steps, *extension_steps),
+        provenance=cumulative_provenance,
+        checkpoint_sha256=checkpoint_sha256,
+    )
+    extension_summary = RelationGatedExtensionSummary(
+        status=EXTENSION_STATUS,
+        parent_checkpoint_sha256=parent_checkpoint_sha256,
+        checkpoint_sha256=checkpoint_sha256,
+        new_lesson_count=len(lessons),
+        teacher_on_lesson_count=sum(lesson.teacher_gate for lesson in lessons),
+        teacher_off_lesson_count=sum(not lesson.teacher_gate for lesson in lessons),
+        cell_on_lesson_count=sum(lesson.cell_gate for lesson in lessons),
+        cell_off_lesson_count=sum(not lesson.cell_gate for lesson in lessons),
+        active_context_group_count=len(groups),
+        accepted_new_context_count=accepted_new_context_count,
+        duplicate_context_count=duplicate_context_count,
+        dependent_context_count=dependent_context_count,
+        incomplete_context_count=incomplete_context_count,
+        contradictory_context_count=contradictory_context_count,
+        new_relation_count=relation_count - parent_relation_count,
+        parent_provenance_count=parent_context_count,
+        retained_parent_provenance_count=len(parent_summary.provenance),
+        total_provenance_count=context_count,
+        physical_observation_ticks=physical_observation_ticks,
+        committed_local_update_ticks=committed_local_ticks,
+        relation_excitatory_update_ticks=relation_update_ticks,
+        route_excitatory_update_ticks=route_e_ticks,
+        route_inhibitory_update_ticks=route_h_ticks,
+        parent_checkpoint_array_bytes=parent_summary.checkpoint_array_bytes,
+        checkpoint_array_bytes=checkpoint_array_bytes,
+        context_steps=tuple(extension_steps),
+        provenance_added=tuple(provenance_added),
+    )
+    successor = FrozenCommonOneByteCopyRelationV2(
+        relation_cells=relation_cells,
+        relation_excitatory=relation_excitatory,
+        relation_support_counts=relation_support_counts,
+        route_excitatory=route_excitatory,
+        route_inhibitory=route_inhibitory,
+        context_relation_slots=context_relation_slots,
+        context_subjects=context_subjects,
+        context_sources=context_sources,
+        context_route_targets=context_route_targets,
+        relation_count=relation_count,
+        context_count=context_count,
+        metadata=metadata,
+        summary=cumulative_summary,
+        extension_summary=extension_summary,
+        construction_token=_CONSTRUCTION_TOKEN,
+    )
+    parent.authenticate()
+    if parent.checkpoint_sha256 != parent_checkpoint_sha256:
+        raise RuntimeError("parent checkpoint changed during continual extension")
+    return successor
 
 
 _authenticate_dependencies()
@@ -1166,6 +1706,7 @@ __all__ = [
     "CORPUS_INPUT_COUNT",
     "DEV_INPUT_COUNT",
     "DOMAIN_SPECIFIC_COMPUTATIONAL_PRIMITIVE_DELTA",
+    "EXTENSION_STATUS",
     "FUSED_ROUTE_SIMULATED_CELL_COUNT",
     "G0_INPUT_COUNT",
     "M0_INPUT_COUNT",
@@ -1189,7 +1730,9 @@ __all__ = [
     "FrozenCommonOneByteCopyRelationV2",
     "PhysicalContextProvenance",
     "RelationGatedCopyRecall",
+    "RelationGatedExtensionSummary",
     "RelationGatedOneByteLesson",
     "RelationGatedTrainingSummary",
+    "extend_common_one_byte_copy_relation_v2",
     "fit_common_one_byte_copy_relation_v2",
 ]
