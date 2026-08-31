@@ -377,6 +377,40 @@ relation, ambiguity/no-match, and opaque-remap controls pass. This is still
 deterministic motif-to-relation learning under typed execution scaffolding, not
 raw natural-language task understanding or repository repair.
 
+Commit `16ee379` adds an acquire-only raw-document factor-to-declared-symbol
+cell memory and selected-only candidate environment. Commit `0a5783a` then
+froze one human-curated, previously unspent Python-docs heapq gate, and commit
+`972a76f` records the sole immutable result. The task asked for the requested
+number of largest entries without naming an API. The frozen memory selected
+`heapq.nlargest` over `heapq.nsmallest`: learned evidence was 5–4 and the final
+physical lane was 17–16. The selected candidate produced `[9, 7]`, `[-1, -3]`,
+and `[4, 4]`, matching all three frozen oracle cases. Exactly one candidate was
+materialized and executed after one main and five no-materialization control
+recalls.
+
+All five controls passed. Reversing candidate order reproduced the complete main
+recall root; cell-off stopped before selection; no-plasticity produced zero
+scores and a physical-race STOP; signature-only acquired no matching task factor;
+and the conflict memory tied 5–5/17–17 and stopped on collision. The main memory
+contains 46 distinct factor rows, two symbols, and 84 association updates in 92
+trainable and 832 provenance bytes, with 3,412 checkpoint-array bytes. Training
+used 108,361 cell-steps; main recall used 38,790, including 12,000 physical-race
+steps and ten synaptic reads. Its checkpoint is
+`6056f16c928c08bd9701dd15e3fecf70ed74544179978664267d3f552488a981`.
+The authenticated result receipt is
+`019ac75d46f9dde4eaafa638aa4aa067350dc83ce04382476941451399bbe186`,
+and the result-file SHA-256 is
+`220e8e866d7d46e763b7b843c8aee3086c7d448d7018d3ffe334837372a24c7d`.
+
+The licensed claim is one fresh self-posed, human-curated, two-API
+documentation-factor-to-action selection with 3/3 selected-candidate outputs.
+It is not broad coding, semantic reasoning, repository work, LeetCode,
+SWE-bench, benchmark, or general-intelligence evidence. The next acquisition
+direction is a bounded, licensed Rust Book slice. The declared-symbol seam is
+still human-ontology/annotation-assisted, and an authenticated Rust
+candidate-handle adapter is required before selected symbols can support any
+Rust execution claim.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for

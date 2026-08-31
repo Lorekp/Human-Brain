@@ -716,6 +716,40 @@ tied, duplicate, ablated, and opaque-remapped controls preserve the causal
 boundary. The bridge stores 804 checkpoint-array bytes and no raw streams. This
 closes raw deterministic motif→relation activation, not language understanding.
 
+Commit `16ee379` opens a separate licensed-document acquisition path without
+changing the coding-policy lane above. Acquire-only documentation groups project
+lexical factors and declared symbols into common-cell assemblies; binary uint8
+co-occurrence synapses retain the learned decision state, while authenticated
+task and candidate projections meet only at recall. A physical common-cell race,
+not a host argmax, authorizes at most one candidate materialization. The frozen
+heapq state contains four admitted chunks, two associated groups, 46 factor rows,
+two symbols, and 84 association updates. It owns 92 trainable bytes and 832
+provenance bytes within 3,412 checkpoint-array bytes. Training used 108,361
+cell-steps; the scored recall used 38,790, of which 12,000 were physical-race
+steps and ten were synaptic reads.
+
+Commit `0a5783a` preregistered one human-curated fresh self-posed Python-docs
+choice between `heapq.nlargest` and `heapq.nsmallest`, with no prior scored
+recall, materialization, or candidate execution. Commit `972a76f` preserves the
+first and only result. The frozen memory selected `heapq.nlargest` by 5–4 learned
+ticks and a 17–16 physical lane; its single authenticated materialization and
+execution returned `[9, 7]`, `[-1, -3]`, and `[4, 4]` for 3/3 frozen oracle
+matches. Candidate-order reversal reproduced the full recall root. Cell-off,
+no-plasticity, signature-only, and 5–5 conflict controls each abstained through
+their preregistered STOP, so all five controls passed. Result receipt
+`019ac75d46f9dde4eaafa638aa4aa067350dc83ce04382476941451399bbe186`
+binds the record; its exact file SHA-256 is
+`220e8e866d7d46e763b7b843c8aee3086c7d448d7018d3ffe334837372a24c7d`.
+
+The result supports only causal documentation-factor-to-API-action selection
+for this one human-curated two-candidate setting. It does not support broad
+coding, semantic reasoning, repository repair, LeetCode, SWE-bench, benchmark,
+or general-intelligence claims. The next acquisition direction is a bounded,
+licensed Rust Book slice. Declared-symbol extraction remains a
+human-ontology/annotation-assisted seam, and an authenticated Rust
+candidate-handle adapter must exist before a selected symbol can license any
+Rust candidate execution claim.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing

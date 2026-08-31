@@ -781,6 +781,37 @@ checkpoint-array bytes and retains no raw stream. Desired outputs remain outside
 the bridge until the returned terminal frontier is selected. This is a causal
 raw-motif gate for one two-edit policy, not task-language parsing.
 
+Commit `16ee379` adds the separate raw-document knowledge-to-action bridge.
+Explicitly admitted acquire-only signature/description groups are projected into
+exact factor and declared-symbol cell assemblies; binary uint8 association ticks
+are the only trainable decision state, and a common-cell physical race is the
+only authority that may release one authenticated candidate source. The frozen
+Python-docs heapq memory admitted four chunks as two associated groups, produced
+46 distinct factor rows and 84 association updates, and retained 92 trainable
+bytes plus 832 provenance bytes in 3,412 checkpoint-array bytes. Training cost
+108,361 cell-steps. Its main recall cost 38,790 cell-steps, including 12,000 for
+the physical output race and ten synaptic reads.
+
+Commit `0a5783a` preregistered the first scored spend directly on that bridge;
+commit `972a76f` records its immutable result. On the one human-curated fresh
+self-posed task, the frozen acquire-only memory selected `heapq.nlargest` over
+`heapq.nsmallest` by 5–4 learned ticks and a 17–16 physical race. Exactly one
+selected candidate was materialized and executed after the main and five control
+recalls, and its three outputs matched the frozen oracle 3/3. Candidate-order
+reversal preserved the authenticated recall; cell-off, no-plasticity,
+signature-only, and conflict controls stopped as specified. The result receipt
+is `019ac75d46f9dde4eaafa638aa4aa067350dc83ce04382476941451399bbe186`;
+the result-file SHA-256 is
+`220e8e866d7d46e763b7b843c8aee3086c7d448d7018d3ffe334837372a24c7d`.
+
+This is evidence only for causal documentation-factor-to-API-action selection
+in one two-candidate setting. It is not broad coding, semantic reasoning,
+repository work, LeetCode, SWE-bench, benchmark, or general-intelligence
+evidence. The next licensed acquisition direction is a bounded Rust Book slice.
+The declared-symbol seam remains human-ontology/annotation-assisted, and an
+authenticated Rust candidate-handle adapter must bind a selected symbol to one
+executable candidate before any Rust execution claim is licensed.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
