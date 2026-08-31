@@ -532,6 +532,40 @@ than meanings learned from language. This banks exact recurring-source action
 preference and revision, not semantic context, language understanding, or broad
 continual coding.
 
+Commit `76c23d3` generalizes the action-memory seam across separately learned
+String and recurrent `List[Int] -> Int` policies. A neutral authenticated bank
+owns exactly two frontier-bound candidate records and stable action identities
+derived from the policy checkpoint plus ordered nonempty relation receipts. The
+common controller now depends on a repository-action protocol, delegating typed
+visible-output encoding, selected-only materialization, and the real learned
+consequence race to each frontier. The List mechanism keeps root/final semantic
+terminals separate from two nonempty learned-prefix repository terminals.
+Committed result roots include the ordered lesson-body cohort, and every lesson
+binds back to the controller trajectory and result.
+
+Its A-B-A'-B' gate froze all frontiers before hidden fixtures: String A passed
+with support 2; List B failed support 2, rolled back, and passed with support 1;
+then relocated/renamed fresh String A' and List B' each recalled the corresponding
+action in one attempt. Five selected sources were materialized and tested, and
+zero unselected sources were. Candidate reversal, unknown typed bank, recall and
+candidate gates, and relocation/renaming controls either preserved the choice or
+stopped preaction. The single flat immutable memory contains two policies, four
+actions, two exact contexts, and three provenance rows in 16 trainable bytes and
+768 checkpoint-array bytes, with no replay, raw retention, or parent mutation.
+The heterogeneous fixture and controller regression both passed after audited
+fixes. Reusing the controller's authenticated source projection removes one
+`P(n)=49n+24` projection; modeled successful recall at `n=256` falls from 28,736
+to 16,168 cell-steps, about 44%. The List B hidden `[-2]` case overlaps prefit
+examples, so this banks exact-source typed cross-policy action retrieval only,
+not unseen semantic consequence learning, broad coding, SWE, or benchmark
+evidence.
+
+The next planned layer is learned lexical source-factor recall above the exact
+episodic route. Adjacent semantic token trigrams should enter the generic common
+event cells, with factor admission gated by independent-source provenance and a
+unique factor-local win. Exact ambiguity never falls through; conflicting or
+unknown factor evidence STOPs. Evaluation surfaces remain sealed.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the

@@ -414,6 +414,43 @@ Harbor/Cedar are arbitrary source-comment identities, so the module establishes
 replay-free exact recurring visible-source action preference, not semantic
 context, language, or broad continual repository learning.
 
+Commit `76c23d3` replaces the String-specific controller seam with
+`common_repository_action_bank_v1.py`. The leaf module owns neutral exact-two
+candidate records, frontier-bound candidate identity, stable policy-qualified
+action identity, selected patch witnesses, and authenticated consequence
+decisions. `RepositoryActionFrontierV1` is the controller-facing protocol:
+concrete frontiers supply their action bank, encode visible expected values,
+materialize only the selected candidate, and run their own learned consequence
+policy. `StringRelationFrontierV2` and `RecurrentFragmentRelationFrontierV2`
+implement that protocol without type branches in the controller. The recurrent
+List adapter retains a separate semantic frontier (root and final program) and
+repository frontier (the two nonempty learned prefixes), so repository actions
+do not redefine the semantic selection surface.
+
+The continual memory is now one flat immutable catalogue with at most two
+policy roots, four policy-qualified actions, and two exact source contexts.
+Authenticated source projection happens once in the controller and the same
+`RepositorySourceContextV1` is passed to recall; this removes one
+`P(n)=49n+24` projection, changing the modeled `n=256` successful recall from
+28,736 to 16,168 cell-steps (about 44% less work). Result authentication binds
+the ordered lesson-body cohort into the controller-result root, while each
+physical lesson binds back to the trajectory and result. The A-B-A'-B' gate
+stores two policies, four actions, two contexts, and three provenance rows in
+16 trainable bytes and 768 checkpoint-array bytes. It performs five selected
+materializations/tests and zero unselected ones; unknown-bank, gate,
+candidate-reversal, and repository relocation/rename controls preserve the
+preaction boundary. Two focused tests passed after audited fixes. List B's
+hidden `[-2]` input overlaps prefit examples, so the mapped claim is only
+replay-free exact-source typed cross-policy action retrieval, not unseen
+semantic transfer, broad coding, SWE, or benchmark evidence.
+
+The next layer should preserve exact episodic recall and add a learned lexical
+source-factor route above it. Tokenized adjacent semantic trigrams feed the
+generic common-event projection; factor admission requires independent-source
+provenance and one unique factor-local win. An exact ambiguous match never falls
+through, and factor conflict or unknown evidence STOPs. Public DEV, canonical
+M0, held-out/C1, G0 adjudication, and protected evaluation surfaces stay sealed.
+
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
 memory, and 569,715-cell integrated checkpoint with framed physical multi-byte

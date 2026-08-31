@@ -780,6 +780,59 @@ for `common_microrepository_autonomous_correction_v1.py`, and
 `6fab1904dcbcb496a3503d26e73b8212f3360360529b94abe6b1505d31ad7513`
 for its focused test.
 
+Commit `76c23d3f96c7241ffb183e1f5772beffd6112cb8` generalizes that
+memory across separately learned `String -> String` and `List[Int] -> Int`
+policies. A new neutral action bank authenticates exactly two frontier-bound
+candidates and gives each learned action a stable identity derived from its
+policy checkpoint plus ordered nonempty relation receipts. Both concrete
+frontiers implement one repository-action protocol for visible-output encoding,
+selected materialization, and the policy's real consequence race. The List
+adapter keeps its root/final semantic terminals separate from its two
+learned-prefix repository terminals. Committed controller results are bound to
+the ordered lesson-body roots, and each lesson binds back to the controller
+trajectory and result.
+
+The heterogeneous A-B-A'-B' gate froze all four desired-free frontiers before
+installing hidden fixtures. String A committed the support-2 action; List B
+failed support 2, rolled back, and committed support 1; one immutable memory
+then recalled those choices for relocated/renamed fresh String A' and List B'
+frontiers in one repository test each. Across the gate there were five selected
+source materializations and five repository tests, with zero unselected ones.
+Candidate-order reversal, repository relocation/renaming, an unknown typed
+action bank, and recall/candidate gate controls preserved the boundary or
+stopped before desired evidence, materialization, and testing. The flat memory
+contains two policies, four actions, two exact source contexts, and three
+provenance rows in 16 trainable bytes and 768 checkpoint-array bytes, with no
+parent replay, raw-lesson retention, or parent mutation. The heterogeneous
+fixture and the existing autonomous-controller regression both passed after
+the audited fixes.
+
+Source projection is now performed once and its authenticated context is reused
+by recall rather than projecting the same bytes again. For source length `n`,
+the generic common-event projection costs `P(n)=49n+24` cell-steps; at `n=256`
+the modeled successful-recall work falls from 28,736 to 16,168 cell-steps,
+about 44%. This is exact-source, typed, cross-policy action retrieval only. The
+List B hidden input `[-2]` overlaps the policy's prefit examples, so it is not an
+unseen semantic-consequence result; none of this establishes learned source
+semantics, broad coding, SWE performance, or benchmark progress.
+Evidence SHA-256s are
+`0f3d6f0808ac3b885ce588f7cb7e6fb8ba84219f93b6edc60e0244afbf5bec81`
+for `common_repository_action_bank_v1.py`,
+`55e31964127a53800ed978e4dd415439cf235262e87a6bfc842e1852b9aa21de`
+for `common_continual_repository_action_memory_v1.py`,
+`043e93dfd875008ee2dd3ea7e044c3be847c1daa7b45e600e15bc955adbc4857`
+for `common_microrepository_autonomous_correction_v1.py`, and
+`9c68b3f657495096e6c151b3d70ff285928d961c7ae822e160ac96a356ca0cfd`
+for the heterogeneous focused test.
+
+The next mechanism gate is a learned lexical source-factor tier above exact
+episodic recall: tokenize source, project adjacent semantic trigrams through the
+generic common-event cells, and admit a factor only after independent-source
+provenance plus a unique factor-local win. Exact ambiguity must never fall
+through, and unknown or conflicting factor evidence must STOP. Public DEV,
+canonical M0, held-out/C1, G0 adjudication, and protected evaluation surfaces
+remain sealed.
+
 ## Active-cell scaling and dynamics
 
 The first registered scaling grid varied active cells (24, 48, 96, 192),
