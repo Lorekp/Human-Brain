@@ -1,0 +1,270 @@
+{
+  "base_commit": "16ee37949689ca656c8d5186d1e1ec99534c24d3",
+  "candidate_set_sha256": "c8e9f2d2220d59f7e2698d06ee002a798bc0fe8f7fb84041fa2a83b012467d04",
+  "candidates": [
+    {
+      "ast_sha256": "b1266c70135c62da19795887d4eafdf6bfdaebefa069a657efab825a65660ff8",
+      "candidate_id": "select_largest",
+      "projection_sha256": "a4f6c738492d0b8024ca7ed00ca81627745ed540fd8766208ea15cd8900c800e",
+      "source": "import heapq\n\ndef select_high(data, limit):\n    return heapq.nlargest(limit, data)\n",
+      "source_sha256": "d82c92087fef77ac285373ab93ae01f432d026cc513cd2af98116847c80c49a0",
+      "symbol": "heapq.nlargest"
+    },
+    {
+      "ast_sha256": "63684219b75eff641865aae14e9b556f33d286a7a2829de0fd3f3726b8121040",
+      "candidate_id": "select_smallest",
+      "projection_sha256": "dddcd52fdb117557f969dc8490b718b339debc6631a7f6bc10386fbb0e59204e",
+      "source": "import heapq\n\ndef select_high(data, limit):\n    return heapq.nsmallest(limit, data)\n",
+      "source_sha256": "a0fab300249c10078d28fba5e1da3ef3509026060f2bc4eeb9886633ff77cb44",
+      "symbol": "heapq.nsmallest"
+    }
+  ],
+  "claim_boundary": "one-fresh-self-posed-python-documentation-two-api-causal-cell-selection-gate; not broad coding, repository, leetcode, swe-bench, benchmark, semantic-reasoning, or general-intelligence evidence",
+  "controls": {
+    "candidate_order_reversal": {
+      "expected": "same-authenticated-recall-root-as-main",
+      "materialization_count": 0
+    },
+    "cell_off": {
+      "expected_status": "STOP_KNOWLEDGE_ACTION_CELL_OFF",
+      "materialization_count": 0
+    },
+    "conflict": {
+      "admitted_chunk_groups": [
+        [
+          "326a9d9cc6ee317ad03272119fa0496b0cdc90f34a639d7e5788fd4384be806c",
+          "3beb18c9816ea14aed097f079dba17ee7b37708f15c9de71af408056eaf6b830",
+          "5a0f28854ede563ff73826c67b28c42ad707ddd3b862779a47ed6568027c53e0",
+          "4c99b81ebeef4a2b69c9e08eb8166357c5ecaa877d846ef6e7045d58ae13f3da"
+        ]
+      ],
+      "checkpoint_sha256": "119fc857f7ae1e5764b442573a0fa4feea60ebab14602f793c9cf19b611af782",
+      "expected_status": "STOP_KNOWLEDGE_ACTION_PHYSICAL_RACE",
+      "graph_sha256": "07a0c8577f75742c082bd07a6fc039ebbcfa809c5780c2ebd97541961c34c83f",
+      "materialization_count": 0,
+      "producer_receipt_sha256": "14ea05b2a2bc905661092f4ce089f99545671cb8d36144875ddb153bc12d3048",
+      "projection_sha256": "c5c0b5484d0116a6f55b1485c9e991ba2c8d37eb33ed9c4de91d667945607d18"
+    },
+    "no_plasticity": {
+      "checkpoint_sha256": "d0faf7e764dea9a94aab8d86e681fae8305ebcb00ae2b1e16a4737b9197d689c",
+      "expected_status": "STOP_KNOWLEDGE_ACTION_PHYSICAL_RACE",
+      "materialization_count": 0
+    },
+    "signature_only": {
+      "admitted_chunk_groups": [
+        [
+          "326a9d9cc6ee317ad03272119fa0496b0cdc90f34a639d7e5788fd4384be806c"
+        ],
+        [
+          "5a0f28854ede563ff73826c67b28c42ad707ddd3b862779a47ed6568027c53e0"
+        ]
+      ],
+      "checkpoint_sha256": "fc3246ec83fbe174a51dfbedd106b49826341e9d1ca9ccfb70a56fba85bcd208",
+      "expected_status": "STOP_KNOWLEDGE_ACTION_NO_MATCHED_FACTOR",
+      "graph_sha256": "956f3089ff9d2d6697cf1edc8bfb621f2e48b9f7e0de387768949ca35dde9f0f",
+      "materialization_count": 0,
+      "producer_receipt_sha256": "debc0ab42baa31752d40d5926a36133ff8750c88db9d0572d042f25d2f34ffe4",
+      "projection_sha256": "8c2073876af6d230a6d147d18d98aff3a261c7c5eda7cbae3e0b016122ab6a54"
+    }
+  },
+  "corpus": {
+    "adapter_version_sha256": "1b0f15a63b5e7c8548af3b449e5bb97818283cfb8dd567571db0118e051647f6",
+    "archive_sha256": "de728eb5b1de8d44ab04f234caeef0bc237bebcb8a6af8a219f35f9d9e35c0c0",
+    "benchmark_deny_manifest_sha256": "d47b01163e4ea4f282ccbca56d943d75a3ff2cd1a7e479ad139c1063bf03f12e",
+    "chunk_count": 75642,
+    "chunks": [
+      {
+        "chunk_id": "326a9d9cc6ee317ad03272119fa0496b0cdc90f34a639d7e5788fd4384be806c",
+        "ordinal": 50,
+        "path": "library/heapq.txt",
+        "role": "signature",
+        "source_file_raw_sha256": "8e41e3f0aa5d333285d513c7ed394f57662e5ee08dd33351bb49d82090449144",
+        "source_id": "python-3.14.7-docs",
+        "split": "acquire",
+        "text_sha256": "e1f90a56d249ce741924d62f60675d2b31232b0fab42cd4481ff9019e50e192d"
+      },
+      {
+        "chunk_id": "3beb18c9816ea14aed097f079dba17ee7b37708f15c9de71af408056eaf6b830",
+        "ordinal": 51,
+        "path": "library/heapq.txt",
+        "role": "description",
+        "source_file_raw_sha256": "8e41e3f0aa5d333285d513c7ed394f57662e5ee08dd33351bb49d82090449144",
+        "source_id": "python-3.14.7-docs",
+        "split": "acquire",
+        "text_sha256": "abf9062a46462cc56187a08e0ddfa1c35ec4871b42c3ceccd37cdbf94f54c5fc"
+      },
+      {
+        "chunk_id": "5a0f28854ede563ff73826c67b28c42ad707ddd3b862779a47ed6568027c53e0",
+        "ordinal": 52,
+        "path": "library/heapq.txt",
+        "role": "signature",
+        "source_file_raw_sha256": "8e41e3f0aa5d333285d513c7ed394f57662e5ee08dd33351bb49d82090449144",
+        "source_id": "python-3.14.7-docs",
+        "split": "acquire",
+        "text_sha256": "1c44c352a90674eae79b6af7c6b597d0e250537c1a81e8b89124f957f34ee86c"
+      },
+      {
+        "chunk_id": "4c99b81ebeef4a2b69c9e08eb8166357c5ecaa877d846ef6e7045d58ae13f3da",
+        "ordinal": 53,
+        "path": "library/heapq.txt",
+        "role": "description",
+        "source_file_raw_sha256": "8e41e3f0aa5d333285d513c7ed394f57662e5ee08dd33351bb49d82090449144",
+        "source_id": "python-3.14.7-docs",
+        "split": "acquire",
+        "text_sha256": "4a36892edfb3de526fda708a2e35fcf4abd9b9b626387577cade2acb2a1e2ae7"
+      }
+    ],
+    "exact_dedup_cluster_count": 66517,
+    "file_inventory_sha256": "98221e5aaaf4b8adff5cc02e9e5ad3d1ec55d075ceefdae01a78963c6818acbc",
+    "included_bytes": 10302122,
+    "included_files": 504,
+    "input_manifest_sha256": "50fb77783062f9cb36d7e4538ad17bdce625bae35a2a1d9256c7cb5660240dfe",
+    "lock_path": "data/knowledge/python-3.14.7-docs.lock.json",
+    "lock_sha256": "c5e8f906437e9b1fe82a1fbe5289b5f630eea49fcfbc74e03cb7ca857461620c",
+    "receipt_sha256": "9c384c545941c4092e0f54c14701d2b559fd53c5f5fda2d70d3d20ed898e7567",
+    "records_sha256": "693f0f178a3ef4d746243a4545a0d2ac0a3b16a1dceac33e7aede48ac546bb8e",
+    "selected_decision_state": "only-explicitly-admitted-acquire-chunks-enter-factor-symbol-arrays; full-corpus-records-root-is-opaque-provenance",
+    "source_id": "python-3.14.7-docs",
+    "split": "acquire",
+    "split_chunk_counts": {
+      "acquire": 54556,
+      "holdout": 8718,
+      "validation": 12368
+    },
+    "tokenish": 2575596
+  },
+  "execution": {
+    "case_inputs": [
+      [
+        [
+          7,
+          1,
+          9,
+          3
+        ],
+        2
+      ],
+      [
+        [
+          -5,
+          -1,
+          -3
+        ],
+        2
+      ],
+      [
+        [
+          4,
+          4,
+          2
+        ],
+        2
+      ]
+    ],
+    "case_inputs_sha256": "7c07eec3cd986c378cd0df485ef416549ebff70c4ecbaaf2c5b4f95f79ea0da9",
+    "function_name": "select_high",
+    "oracle": [
+      [
+        9,
+        7
+      ],
+      [
+        -1,
+        -3
+      ],
+      [
+        4,
+        4
+      ]
+    ],
+    "oracle_sha256": "0098d7d65fad2a28f4d0984b6a7b69b90779e9171ed3bea35a8f02cac25c0329",
+    "output_contract": "oracle-is-not-an-input-to-recall; execute-only-the-selected-candidate-once-after-all-recalls",
+    "result_receipt_namespace": "humanbrain-python-docs-heapq-causal-gate-result-v1",
+    "run_contract": "one-main-recall; five-no-materialization-control-recalls; at-most-one-selected-candidate-materialization-and-execution"
+  },
+  "freshness": {
+    "curation_disclosure": "human-curated-known-acquire-documentation-api-pair-and-task; not blind or randomly sampled",
+    "fit_candidate_input_count": 0,
+    "fit_task_input_count": 0,
+    "prior_candidate_execution_count": 0,
+    "prior_candidate_materialization_count": 0,
+    "prior_scored_recall_count": 0,
+    "status": "pre-registered-unspent-at-manifest-freeze"
+  },
+  "implementation": {
+    "files": [
+      {
+        "path": "data/knowledge/python-3.14.7-docs.lock.json",
+        "sha256": "c5e8f906437e9b1fe82a1fbe5289b5f630eea49fcfbc74e03cb7ca857461620c"
+      },
+      {
+        "path": "experiments/g0/common_event_cells_v1.py",
+        "sha256": "f425c07c44942ff7cd9672a506f616d9e6f9640c52340b481a81ad7b1603eaeb"
+      },
+      {
+        "path": "experiments/r3_pilot/common_knowledge_action_memory_v1.py",
+        "sha256": "49e9e55e9d98f80d7bf295acb906824062074124d9f69c60ca52ca7440dd9ba7"
+      },
+      {
+        "path": "experiments/r3_pilot/common_rooted_structured_event_graph_v1.py",
+        "sha256": "7754a3c80b205beefb86e48ac9ebe3ee86408097354f8de96069ef0fab74070c"
+      },
+      {
+        "path": "src/humanbrain/knowledge_cell_projection.py",
+        "sha256": "3a3d5ef05e9453fbbdf4df1a08df4470568a9c9889913a31c7bb7ce0662a5ab5"
+      },
+      {
+        "path": "src/humanbrain/knowledge_corpus.py",
+        "sha256": "f7ec7ee1183535ecf5d98a807bd5cf0e395558ec33962ade3dd99f96d14d05c2"
+      },
+      {
+        "path": "tools/build_python_docs_knowledge_corpus.py",
+        "sha256": "9d40c2fb42e5a788ddffc314ad2e66bd250c6cdd55d9bf1f90d0115a1ecc290f"
+      }
+    ],
+    "knowledge_bridge_commit": "16ee37949689ca656c8d5186d1e1ec99534c24d3"
+  },
+  "manifest_sha256": "b3420802d1f773b49ecb9680a3019cdff8411a741cffecac4dce8e5073edc4cd",
+  "memory": {
+    "config_sha256": "ca4ce6e32a4f8adc8ffb0243ab5a424da98ef619838dea2145ddc61dd9a3bdd2",
+    "expected_checkpoint_sha256": "6056f16c928c08bd9701dd15e3fecf70ed74544179978664267d3f552488a981",
+    "expected_no_plasticity_checkpoint_sha256": "d0faf7e764dea9a94aab8d86e681fae8305ebcb00ae2b1e16a4737b9197d689c",
+    "fit_candidate_input_count": 0,
+    "fit_split": "acquire",
+    "fit_task_input_count": 0,
+    "raw_text_retention_count": 0
+  },
+  "projection": {
+    "admitted_chunk_groups": [
+      [
+        "326a9d9cc6ee317ad03272119fa0496b0cdc90f34a639d7e5788fd4384be806c",
+        "3beb18c9816ea14aed097f079dba17ee7b37708f15c9de71af408056eaf6b830"
+      ],
+      [
+        "5a0f28854ede563ff73826c67b28c42ad707ddd3b862779a47ed6568027c53e0",
+        "4c99b81ebeef4a2b69c9e08eb8166357c5ecaa877d846ef6e7045d58ae13f3da"
+      ]
+    ],
+    "graph_sha256": "b12a02cbc23d45d1d70737a70923913ce93f11515683fb3ef77ad0de605ee02a",
+    "producer_receipt_sha256": "3dd8962d540371feb37475d3b7b5799eff8742ec2425b1e40cd91e1bfc818a9a",
+    "projection_sha256": "17171e4ad641a0a88ceb04e0e28e3b46bf52f741276cbd73c2e6cb7d43a98497"
+  },
+  "schema": "humanbrain.python-docs-heapq-causal-gate.v1",
+  "scope": "PYTHON_DOCS_HEAPQ_CAUSAL_GATE_V1",
+  "task": {
+    "factors": [
+      "tok:downward",
+      "tok:entries",
+      "tok:from",
+      "tok:largest",
+      "tok:number",
+      "tok:of",
+      "tok:ordered",
+      "tok:requested",
+      "tok:return",
+      "tok:the"
+    ],
+    "projection_sha256": "4b053735f618d049ede6eb067cf617cde86fc3317abe9d1c7fff0c8132ef0ab4",
+    "text": "Return the requested number of largest entries, ordered from largest downward."
+  }
+}
