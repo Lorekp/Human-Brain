@@ -560,6 +560,17 @@ composite adds 125 cells and 25,064 checkpoint-array bytes. This remains fixed
 one-event-lookahead learning over deterministic opaque motifs of length 2–5,
 not noisy language or ambiguous-grammar segmentation.
 
+Commit `7fef9a9` connects those admitted raw traces to the d9 recurrent coding
+policy. Training supplies streams, visible cases, and observed intervention
+effects—never relation IDs, order, spans, factors, or edit paths. A physical
+two-candidate consequence race trains a 3×2 uint8 E/H bridge; support requires
+two independent provenances. Recall segments a fresh A+D stream, equality-races
+its admitted traces, requires two distinct relation-cell winners, and only then
+invokes the unchanged d9 affordance/effect loop. The composite adds 804
+checkpoint-array bytes and retains no raw stream. Desired outputs remain outside
+the bridge until the returned terminal frontier is selected. This is a causal
+raw-motif gate for one two-edit policy, not task-language parsing.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
@@ -686,6 +697,15 @@ regression and idle to a 9.2% regression. Both exact prototypes were fully
 reverted with unchanged 5,181,240-byte payload. The implementation boundary is
 now a separately compiled/count-gated dense radix/run path that leaves the
 small and idle scalar loop intact.
+
+Commit `56d22a5` implements that boundary with a fixed 4,096-event crossover.
+The production path keeps scalar source generation; large generated tails use a
+stable target-only LSD radix in the phase-dead submitted-event buffer, and large
+due queues use equal-target runs with one resident lookup per run. Both helpers
+are non-inlined so small/idle monomorphized code remains scalar. Exact focused
+parity and the unchanged 5,181,240-byte payload accompany 3.199x ordering,
+2.289x delivery, and 1.297x four-step recurrent speedups; K=64/no-spike is
+1.005x and idle 0.949x. This is one local CPU FULL_TOUCH implementation result.
 
 ## Claim and opening discipline
 

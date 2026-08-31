@@ -532,6 +532,15 @@ opaque remapping/refit preserves the law. The composite adds 125 cells and
 25,064 bytes. Fixed one-event lookahead and deterministic length-2–5 motifs
 remain a much narrower claim than language segmentation.
 
+Commit `7fef9a9` learns a small consequence bridge from those raw traces to the
+two d9 relation cells. Physical candidate-intervention outputs, not relation
+labels, train uint8 E/H rows with a two-independent-provenance threshold.
+Fresh A+D segmentation activates both distinct receipts and the unchanged d9
+policy performs exactly two commits before desired outputs appear. Unknown,
+tied, duplicate, ablated, and opaque-remapped controls preserve the causal
+boundary. The bridge stores 804 checkpoint-array bytes and no raw streams. This
+closes raw deterministic motif→relation activation, not language understanding.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing
@@ -595,6 +604,14 @@ the dense gains improved to 3.577x, 2.515x, and 1.296x, but K=64/no-spike and
 idle regressed 28.3% and 9.2%. It too was reverted to the same source hash.
 The dense kernels are credible; the remaining hypothesis is hybrid dispatch
 that preserves the original scalar code path for small and idle workloads.
+
+Commit `56d22a5` passes that hypothesis with one fixed 4,096-event threshold and
+no sweep. Non-inlined stable target radix and equal-target delivery helpers
+retain the existing scalar source and small/idle paths. Exact focused parity and
+unchanged 5,181,240-byte payload accompany 3.199x ordering, 2.289x delivery,
+and 1.297x four-step recurrent gains; K=64/no-spike is 1.005x and idle 0.949x.
+The result is retained CPU FULL_TOUCH acceleration, not broad runtime or
+physical 100-billion-cell evidence.
 
 ## 11. Common G0 substrate begins
 

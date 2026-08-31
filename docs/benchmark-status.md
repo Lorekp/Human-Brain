@@ -363,6 +363,20 @@ revision all pass. The composite adds 125 cells and 25,064 checkpoint-array
 bytes. This is deterministic motif segmentation with fixed one-event lookahead,
 not natural-language, noisy, open-vocabulary, or ambiguous-grammar evidence.
 
+Commit `7fef9a9` learns the missing raw-chunk-to-coding-policy bridge. Each
+authenticated chunk trace races the two d9 relation interventions by their
+visible execution consequences; at least two independent provenances must agree
+before its uint8 E/H row can activate a relation cell. Eight accepted lessons
+produce three trace rows, two ready relation bindings, 12 E/H bytes, and 804
+total checkpoint-array bytes; duplicate provenance does not vote and a 2-vs-2
+row remains ambiguous. A fresh never-co-trained A+D stream cuts internally,
+activates both distinct relation receipts, and gates the d9 rollout to exactly
+two actuations and commits with zero unselected splice execution. Desired
+outputs enter only after terminal construction. Hypothesis, admission, bridge,
+relation, ambiguity/no-match, and opaque-remap controls pass. This is still
+deterministic motif-to-relation learning under typed execution scaffolding, not
+raw natural-language task understanding or repository repair.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for
@@ -490,6 +504,18 @@ reverted. Both retained exact state, event order, counters, fail-stop behavior,
 and the 5,181,240-byte payload. Dense radix/run kernels therefore have real
 leverage, but they must be isolated behind a small-work scalar path rather than
 perturbing the generic hot loop.
+
+Commit `56d22a5` retains that isolation. Stable target-only LSD radix ordering
+and equal-target resident delivery live in non-inlined helpers and activate only
+at a fixed 4,096-event crossover; scalar generation and the original scalar
+small/idle paths remain intact. The focused release fixture preserved exact
+state, pending order, spikes, counters, capacity fail-stop, binary64 addition
+order, and the 5,181,240-byte payload. Ordering improved 3.199x
+(1,553,000→485,500 ns), delivery 2.289x (600,600→262,400 ns), and the four-step
+N=8,192/F=4 recurrent trace 1.297x (5,429,500→4,187,400 ns); K=64/no-spike was
+1.005x and idle 0.949x relative to scalar. This is CPU-specific focused
+FULL_TOUCH kernel evidence, not a broad runtime or physical 100-billion-cell
+result.
 
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
