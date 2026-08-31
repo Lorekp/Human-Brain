@@ -300,7 +300,7 @@ Reference:
 
 - [`joint_prompt_factor_packed_full_typed_v1.py`](../../experiments/r3_pilot/joint_prompt_factor_packed_full_typed_v1.py)
 
-## 10. Consequence abstractions, terminal V3, and fresh-run merge
+## 10. Consequence abstractions, terminal V3, reusable schemas, and scratch reduction
 
 The adjacent self-posed abstraction lane continued beyond relative literal role,
 ordered operand, and residual-singleton routing. Commit `aa91fa2` used append
@@ -328,6 +328,14 @@ exact. Final source SHA-256 is
 `3016fd0a44d891c8f2b8b161f5c2a011713e70cfd0848f0585442f969927958e`.
 It does not change Path-2 evidence, neural work, or capability.
 
+Commits `c587c32`, `2b709eb`, and `6b6ec0e` successively removed the duplicate
+interval-ledger buffer, the dormant-GID vector, and the per-step spike-GID vector
+by backward in-place union and exact phase aliasing. The representative payload
+fell from 7,419,776 to 6,371,152 bytes; the exact reclaimed capacity is
+`9D + 16R + 96` bytes. Focused parity fixtures preserved raw dynamics, queues,
+spikes, counters, failure boundaries, event order, and accounting. This is
+implementation evidence only, not a 100-billion-cell residency result.
+
 Commit `61b345f` then composed the append-effect stack with predictive
 segmentation through only a learned two-cell `NEW/CONTINUE -> OPEN/EXTEND`
 router. The 69,208-cell, 308-byte composite passed four fresh self-posed
@@ -338,10 +346,24 @@ interval cues, predicate/addition/reducer code, typed decoding, and compilation
 remain explicit, so the claim is narrow composition rather than parsing,
 arbitrary algorithms, public transfer, or coding capability.
 
-These results localize the next shared R3/R4/R2 seam to a reusable content-
-addressed schema/static-event abstraction: learned content should address and
-reuse an event schema without cohort labels, family identity, or desired
-outputs.
+Commit `17c891f` then learned two content-addressed causal segment schemas. Its
+A/B/A-prime/fresh-B-prime assignments are `(0,1,0,1)`; four fresh transfers each
+produce one exact proof, while prototype/schema/comparator/action-map controls
+stop. The five-cell, 274-byte increment never reads the upstream selected action,
+but probe grouping, consequence validation, reducer scaffolds, and compilation
+remain explicit.
+
+Commit `b5be799` independently learned anonymous variable-length occurrence
+bundles. A label-free chain/fanout A/B/A-prime stream assigns `(0,1,0)`; fresh
+lengths and opaque relabeling issue exact occurrence-graph certificates. The
+19-cell, 178-byte increment stops under mixed topology and replay/relation/action
+ablations. Host carrier allocation, endpoint framing, graph actions, and
+consequence projection remain scaffolds.
+
+These results move the next shared R3/R4/R2 seam from discovering reusable
+schemas to composing their exact certificates into desired-free executable
+witnesses, followed by learning away the remaining grouping, carrier, and
+consequence scaffolds. The spent V3 cohort remains closed.
 
 ## 11. Common G0 substrate begins
 

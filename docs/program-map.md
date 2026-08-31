@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-08-31 after the terminal V3 joint
-static-event STOP, consequence-learned append/reducer composition, segmented
-anonymous aggregates, and procedural fresh-run acceleration. Exact scientific
+static-event STOP, content-addressed causal schemas, anonymous occurrence-graph
+certificates, and procedural scratch-allocation reductions. Exact scientific
 boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -16,9 +16,9 @@ R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
 R4  TRAIN-only prompt → semantic-factor bridge       [joint V3 static on/off STOP; cohort immutable]
-R3  Bottom-up typed semantic synthesis               [segmented anonymous aggregate composition banked]
-R2  Persistent knowledge and reading memory          [predictive segmentation banked; reusable schema next]
-R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + fresh-run merge banked]
+R3  Bottom-up typed semantic synthesis               [content and occurrence schemas banked; executable bridge next]
+R2  Persistent knowledge and reading memory          [predictive segmentation + reusable schemas banked]
+R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
 ```
 
 ## Actual frontier
@@ -210,10 +210,26 @@ predicate/addition/reducer implementations, typed decoding, and compilation
 remain explicit. This is one self-posed anonymous `List[Int] -> Int`
 composition, not prompt parsing, public transfer, or coding capability.
 
-The common next R3/R4/R2 seam is therefore a reusable content-addressed
-schema/static-event abstraction: learned content should address, instantiate,
-and reuse an event schema without cohort labels, family identity, or desired
-outputs.
+Commit `17c891f` learns exactly two content-addressed causal segment schemas.
+A/B/A-prime/fresh-B-prime assign `(0,1,0,1)`; four fresh count/sum, relabel,
+and causal-law-flip builds each publish one proof. Five controls fail causally,
+and the learned schema cell selects the reducer without reading the upstream
+selected action. The increment adds five cells and 274 persistent bytes, but
+probe grouping, consequence validation, reducer implementations, and compilation
+remain scaffolds.
+
+Commit `b5be799` independently learns variable-length anonymous occurrence
+bundles. A label-free chain/fanout A/B/A-prime stream assigns `(0,1,0)`, while
+fresh lengths and opaque cell relabeling issue exact occurrence-graph
+certificates. It adds 19 cells and 178 persistent bytes. Host carrier allocation,
+graph consequence projection, endpoint framing, and action scaffolds remain
+explicit.
+
+The common next R3/R4/R2 seam is now to compose those exact certificates with
+learned content/action schemas into desired-free executable witnesses, then
+remove the remaining grouping, carrier-allocation, and consequence-validation
+scaffolds. This composition must stay self-posed until its causal boundary is
+clear; it does not reopen the spent V3 cohort.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition

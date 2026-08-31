@@ -328,10 +328,37 @@ remained exact. Final source SHA-256 is
 This is a local kernel result only: it changes no Path-2 outcome, neural work
 ledger, or capability claim.
 
-Across R3, R4, and R2, the next shared seam is a reusable content-addressed
-schema/static-event abstraction: learned content must select and reuse an event
-schema without cohort-specific static labels, host family identity, or desired
-outputs.
+Commits `c587c32`, `2b709eb`, and `6b6ec0e` then remove three full-capacity
+scratch allocations without changing the scientific result: the interval-ledger
+union runs backward in place, one GID vector is phase-aliased across fresh,
+population, dormant, and spike runs, and the current-step `last_spikes` suffix
+replaces `step_spikes`. Together they reclaim exactly `9D + 16R + 96` bytes:
+1,638,496 bytes at `D=R=65,536` and 25,000,096 bytes at one million. The
+representative payload falls from 7,419,776 to 6,371,152 bytes. Final source
+SHA-256 at `6b6ec0e` is
+`b553de5ca9e146e8d70b1797d00866a8abeee7fc8a6ed3c9255b73cae4833a2e`.
+These remain focused synthetic parity/memory results; physical 100-billion-cell
+residency is not established.
+
+Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
+prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
+each produce one exact proof. Prototype, schema-cell, comparator, and deranged
+action controls stop causally. The learned schema cell selects the reducer with
+zero direct upstream selected-action reads; packed outcome recomputation is
+consequence validation. The increment adds five cells and 274 persistent bytes.
+
+Commit `b5be799` banks a separate anonymous occurrence-bundle schema. A
+label-free chain/fanout A/B/A-prime stream assigns `(0,1,0)`; fresh B4, A5, and
+opaque relabeling issue exact occurrence-graph certificates. Mixed topology,
+relation-cell-off, action-cell-off, and replay-off controls stop. The increment
+adds 19 cells and 178 persistent bytes. Host graph view, carrier allocation,
+endpoint framing, generic graph actions, and consequence projection remain
+explicit.
+
+Across R3, R4, and R2, the next shared seam is to compose the exact occurrence
+certificate with learned content/action schemas into a desired-free executable
+witness, then learn away its remaining host grouping and consequence scaffolds.
+Neither result is public transfer, parsing, general coding, or SWE evidence.
 
 ## Active-cell scaling and dynamics
 
