@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-31 after the terminal V1 joint
-work-contract localization, causal relative-literal-role transfer, eventwise
-knowledge consolidation, and compositional input-filler projection. Exact
+Maintained by the orchestrator. Updated 2026-08-31 after the terminal V2 joint
+static-control localization, consequence-learned residual-literal routing,
+predictive event segmentation, and exact large-batch GLIF acceleration. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -15,10 +15,10 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  TRAIN-only prompt → semantic-factor bridge       [joint V1 pre-semantic STOP; fresh successor needed]
-R3  Bottom-up typed semantic synthesis               [relative literal-role transfer banked]
-R2  Persistent knowledge and reading memory          [eventwise consolidation banked; segmentation pending]
-R1  Fast, auditable simulated-cell substrate         [continuous; compiled batch race 1.80x locally]
+R4  TRAIN-only prompt → semantic-factor bridge       [joint V2 static-control STOP; fresh successor needed]
+R3  Bottom-up typed semantic synthesis               [ordered operands + residual literal route banked]
+R2  Persistent knowledge and reading memory          [eventwise consolidation + predictive segmentation banked]
+R1  Fast, auditable simulated-cell substrate         [continuous; large compiled race 5.56x locally]
 ```
 
 ## Actual frontier
@@ -155,12 +155,37 @@ protocol's record-count-derived 562. No desired/proof/normal-build, retry, or
 sealed input occurred. A fresh successor must bind work to the normalized
 physical candidate surface; V1 is immutable and must not be retried.
 
+Commit `61477f9` froze that fresh V2 successor before visible I/O using the
+producer-normalized surface: both source-order rows have 69 unique assemblies,
+two literals, and exactly 554 candidates. Commit `db01d6d` banked a separate
+batch-producer/static/converter execution engine plus an exact-object one-shot
+runner. Its sole execution at `1722567` is terminally spent. Both producer-off
+rows passed at 554 candidates; gain-one source selection on static-cells-off row
+0 then failed before static inference because it supplied no downstream
+certificate. Source logic proves this means either zero selected events or an
+event set rejected by the producer's host 8/9 admission gate; the immutable
+artifact stopped too early to distinguish them. The run ended after 1,108
+producer queries and 33,240 fitted steps with zero static
+queries, plan builds, desired reads, proofs, normal rows, retries, or sealed
+inputs. V2 therefore supplies no semantic joint result and must not be retried;
+the static-control receipt assumption may change only in a separately named
+fresh successor.
+
 Commit `2f6637f` advances the adjacent abstraction lane: causal packed PASS/FAIL
 outcomes teach anonymous UNIQUE versus REPEATED literal roles on `-14/-12`, then
 recall an unseen `-13` under shifted spans, move the hole when repetition moves
 to unseen `-11`, and survive opaque value-cell relabeling. It preserves token
 positions and multiplicity but still uses a fixed structural template, so it is
 relative-role transfer rather than general prompt parsing or SWE evidence.
+Commit `50adc0a` composes that state with a two-action consequence-trained order
+policy, transferring repeated-to-operand-zero/one across unseen values and both
+`R,R,S` / `S,R,R` physical orders. Commit `b181ec3` then learns whether the
+authenticated residual singleton replaces the explicit `-15` additive foil.
+It adds three cells and four persistent bytes, transfers unseen `-13/4`,
+`-11/-6`, and opaque `17/31`, and produces one desired-free exact executable
+witness. The count/comparison/addition topology, typed decoder, token clock,
+destination hole, and reducer remain explicit scaffolds; these are reusable
+causal variable-binding mechanisms, not general coding capability.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -285,7 +310,12 @@ transfer remain open R2 work. Commit `65d36ba` subsequently adds event-stream
 consolidation for one active context: one physical lesson advances a rooted
 16x4 accumulator, and a neuronal completeness race consolidates without host
 grouping, finalize, or replay. Learned context segmentation/independence remains
-open.
+open. Commit `65344e1` removes the next timing annotation: consequence
+match/mismatch plus a learned two-action cue opens a new internal provenance
+segment on a later unchanged transform, one physical event at a time. It still
+consumes the first missed post-completion observation at the segmentation layer
+and allocates the free provenance slot sequentially on the host, so learned
+boundary timing is banked while general stream routing remains open.
 
 ### Runtime and scale
 
@@ -297,10 +327,21 @@ event-proportional work plus distributed storage/compute after learning is
 demonstrated. Runtime optimization is part of the model implementation, not an
 optional benchmark exercise.
 
-Commit `a1cda05` vectorizes the first-crossing scan inside the shared compiled
-GLIF batch race. Focused parity stayed exact; on one local 4,096-row by
-65-candidate, 600-step batch, median throughput rose from 87.6k to 157.5k
-races/s (1.80x). This is a machine-local kernel result, not capability evidence.
+Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
+`4fb725b` then keeps the original IEEE crossing predicate but replaces the full
+steps-by-rows lattice with vectorized binary probes above 38,400 logical
+cell-steps. Dense-reference parity, winner/co-spike/no-spike behavior, and
+scientific accounting remain exact. Local full-call medians improved 2.04x at
+64 rows, 2.97x at 256, and 5.56x at 4,096 rows for 65 candidates and 600 steps,
+while eliminating the large crossing scratch lattice. These are machine-local
+implementation results, not capability evidence or reduced neural work.
+
+Commits `70584a1` and `a3a4291` separately batch the 554 independent physical
+prompt-source selector cells and issue the original exact producer certificate.
+All nine FIT certificates, events, roots, and counters match the scalar path.
+The selector-only fixture improved 3.65x locally; complete certificate creation
+improved 1.10x because downstream inference dominates. This is exact same-FIT
+stage acceleration, not new prompt coverage or transfer.
 
 ## Claim and opening discipline
 

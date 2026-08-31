@@ -173,6 +173,21 @@ joint outcome occurred. This is a pre-semantic work-contract falsification; V1
 must not be retried, and a fresh successor must freeze the normalized candidate
 surface explicitly.
 
+Commit `61477f9` froze that fresh V2 surface at `(554,554)` candidates and
+separated source-order eligibility from later visible-I/O pairing. Commit
+`db01d6d` banked an exact-object batch/static/converter engine and canonical
+one-shot runner. The sole V2 execution is terminally spent at `1722567`.
+Producer-off passed both rows with 554 candidates and no selected event. The
+first static-cells-off treatment then failed before static inference because
+gain-one source selection supplied no downstream certificate. Producer source
+logic makes the exact boundary clear: selection was either zero or failed the
+host 6/7-raw + 2-literal, total-8/9 admission gate. The immutable result stopped
+before retaining that source receipt, so it cannot distinguish those branches.
+It records 1,108 producer queries, 33,240 fitted GLIF steps, and
+zero static queries, plan builds, desired reads, proofs, normal rows, retries,
+or sealed inputs. V2 is an early causal-control/receipt-contract STOP, not a
+semantic joint result; it must not be retried or reclassified.
+
 Commit `2f6637f` separately learns a reusable relative literal role from causal
 packed outcomes. Repeated `-14/-12` examples teach anonymous UNIQUE versus
 REPEATED roles; an entirely unseen `-13` value and shifted spans recall the
@@ -181,6 +196,17 @@ opaque 5/13 physical relabel preserves the result. Equality, cell, outcome,
 order, and ambiguity controls falsify it. The enclosing structural template is
 still fixed scaffolding, so this is relative-role transfer rather than general
 prompt understanding or coding capability.
+
+Commit `50adc0a` learns the next relative relation: a two-action uint8 policy
+maps physical `R,R,S` / `S,R,R` order to repeated operand zero/one from packed
+consequences and transfers unseen `-13/-11` plus opaque relabeling. Commit
+`b181ec3` composes that checkpoint with a three-cell, four-byte residual route.
+Two consequence episodes teach whether the authenticated singleton replaces the
+fixed `-15` additive foil; fresh `-13/4`, `-11/-6`, same-repeated/different-
+residual, shifted/permuted, and opaque `17/31` recalls all select the exact
+desired-free witness. The reducer, program topology, typed decoder, token clock,
+and destination hole remain explicit scaffolds, so the narrow claim is reusable
+causal variable binding rather than operator discovery or coding capability.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
@@ -237,10 +263,31 @@ on the eighth balanced event. A four-event pause resumes to the same terminal
 state without a tuple, groupby, finalize call, or parent replay. Host physical
 address equality still supplies context segmentation and independence, so this
 is eventwise one-byte consolidation rather than broad continual abstraction.
-Commit `a1cda05` also vectorizes the shared
-compiled-GLIF first-crossing scan; focused parity is unchanged and one local
-4,096-row by 65-candidate, 600-step batch improved from 87.6k to 157.5k races/s
-(1.80x). That timing is a machine-local kernel result, not capability evidence.
+Commit `65344e1` learns the next boundary-timing relation from one physical event
+at a time. After two surprise boundaries, the cue alone opens a new internal
+provenance segment under an unchanged transform. Cue/plasticity/comparator-off,
+shuffle, swapped-cue, teacher/cell-off, ambiguity, premature-NEW, and capacity
+controls STOP. The first missed post-completion observation is still consumed
+by the segmentation layer and free provenance slots remain sequentially host
+allocated, so this is predictive boundary timing rather than general stream
+routing.
+
+Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
+`4fb725b` now keeps the exact original IEEE crossing predicate while using about
+`ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for
+large batches. Eight focused dense-reference tests preserve exact winners,
+steps, co-spikes, no-spike/error order, inputs, and scientific accounting. Local
+full-call medians for 65 candidates and 600 steps changed from 0.400→0.196 ms
+at 64 rows (2.04x), 0.987→0.332 ms at 256 (2.97x), and 28.441→5.116 ms at
+4,096 (5.56x). These timings and scratch-memory savings are machine-local
+implementation evidence, not capability or reduced neural work.
+
+Commits `70584a1` and `a3a4291` batch the independent prompt-source selector
+and pass the exact selection through the original certificate authority. All
+nine FIT certificate SHA-256s, payloads, views, events, and counters match the
+scalar producer. A 50-activation local selector fixture improved 3.65x, while
+full certificate construction improved 1.10x because static inference remains
+dominant. This is stage-local same-FIT parity/performance evidence only.
 
 ## Active-cell scaling and dynamics
 

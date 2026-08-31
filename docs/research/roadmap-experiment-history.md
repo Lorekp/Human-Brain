@@ -275,16 +275,26 @@ selects one proof at 26,073/30,000 relation units only after the normal physical
 winner agrees with the authorized e-class. Its caller-created structural
 certificate is not learned canonical authority.
 
-The canonical joint has not yet run. Commit `63831f8` authenticates the actual
-prompt certificate and exact raw span/literal/signature inputs, then stops with
-zero factor inference attempts at
-`STOP_CANONICAL_TRAIN_JOINT_FACTOR_SELECTOR_BINDING_V1`: prompt V4 does not
-publish a learned direction/cue-slot/selected-slot relay, so accepting a caller
-factor observation would leak semantic choice. The fresh successor performs a
-target-free full carrier scan plus physical prompt-conditioned coincidence;
-its exact cell-identity authority and occurrence-level conversion must freeze
-before the fixed roster is spent. No expected/teacher fields from either learner
-result may act as inference evidence.
+The first canonical actual-record joint later reached a banked exact-object
+runner. Its V1 spend stopped before semantic work because the protocol counted
+70 span records while the producer normalized them to 69 unique assemblies:
+the authentic candidate surface was 554 rather than 562. A fresh V2 protocol
+froze the normalized geometry before visible-I/O pairing and selected two new
+source-order appearances. Its separate batch/static/converter runner was banked
+at `db01d6d` and executed once at `1722567`. Both producer-off rows passed at
+554 candidates. Gain-one source selection on static-cells-off row 0 then failed
+before static inference because no downstream certificate was present. Source
+logic narrows that to zero selected events or rejection by the host 8/9 event-
+shape gate, but the terminal artifact did not retain enough receipt data to
+choose between them. V2 ended before static accounting, converter, desired,
+proof, or normal work. Both V1 and V2 are terminal and immutable; each failure
+localized a causal execution contract rather than a semantic result.
+
+In parallel, the abstraction lane learned relative literal roles (`2f6637f`),
+relative ordered operands (`50adc0a`), and residual-singleton routing into one
+additive hole (`b181ec3`) from packed consequences. These mechanisms transfer
+unseen payloads and physical order/position changes, but the program topology,
+typed decoder, reducer, and destination holes remain explicit scaffolding.
 
 Reference:
 
