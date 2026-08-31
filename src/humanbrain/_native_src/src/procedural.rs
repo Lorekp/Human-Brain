@@ -646,13 +646,14 @@ impl IntervalLedger {
     /// Stage one canonically ordered GID for a later sorted-run merge. Existing
     /// ledger members are marked immediately; absent members append to `run`
     /// without shifting either ledger vector. `run` is step-local, ascending,
-    /// unique, and backed by already-accounted runtime scratch.
+    /// unique, and grows fallibly within its independent logical ceiling.
     fn stage_single_in_run(
         &mut self,
         gid: u64,
         flag: u8,
         run: &mut Vec<u64>,
-        capacity: usize,
+        run_capacity: usize,
+        distinct_capacity: usize,
     ) -> Result<(), u32> {
         if let Ok(index) = self.gids.binary_search(&gid) {
             self.or_entry_flags(index, flag);
@@ -673,12 +674,11 @@ impl IntervalLedger {
             .len()
             .checked_add(run.len())
             .ok_or(PROCEDURAL_DISTINCT_CAPACITY)?;
-        if pending_distinct >= capacity {
+        if pending_distinct >= distinct_capacity {
             return Err(PROCEDURAL_DISTINCT_CAPACITY);
         }
-        if run.len() >= run.capacity() {
-            return Err(PROCEDURAL_ALLOCATION);
-        }
+        let required_len = run.len().checked_add(1).ok_or(PROCEDURAL_ALLOCATION)?;
+        ensure_geometric_vec_backing(run, required_len, run_capacity)?;
         run.push(gid);
         Ok(())
     }
@@ -872,12 +872,12 @@ struct RuntimeScratch {
     row_used: HashSet<u64>,
     interval_ledger: IntervalLedger,
     /// Fresh-target run in both modes. Event-proportional stepping also reuses
-    /// the resident-sized allocation for the stepped population, ascending
-    /// dormant-retirement GIDs, and current-step spike GIDs. Full-touch reads
-    /// those latter runs directly from their authoritative sorted arrays.
+    /// occupancy-backed storage for the stepped population, ascending dormant
+    /// retirements, and current-step spikes. Full-touch reads those latter runs
+    /// directly from their authoritative sorted arrays.
     gid_run: Vec<u64>,
     /// Values parallel to the dormant-retirement phase of `gid_run`.
-    /// Capacity is needed only by event-proportional stepping.
+    /// Event-proportional backing grows with the peak stepped population.
     dormant_values: Vec<f64>,
 }
 
@@ -885,11 +885,6 @@ impl RuntimeScratch {
     fn try_new(config: &ProceduralConfig) -> Result<Self, u32> {
         let fanout = usize::try_from(config.fanout).map_err(|_| PROCEDURAL_ALLOCATION)?;
         let row_members = fanout.checked_add(1).ok_or(PROCEDURAL_ALLOCATION)?;
-        let gid_run_capacity = if config.stepping_mode == PROCEDURAL_STEPPING_FULL_TOUCH {
-            config.resident_capacity.min(config.event_capacity)
-        } else {
-            config.resident_capacity
-        };
         let mut row_used = HashSet::new();
         row_used
             .try_reserve(row_members)
@@ -900,12 +895,12 @@ impl RuntimeScratch {
             row_targets: reserved_vec(fanout)?,
             row_used,
             interval_ledger: IntervalLedger::try_new(config.interval_distinct_capacity)?,
-            gid_run: reserved_vec(gid_run_capacity)?,
-            dormant_values: if config.stepping_mode == PROCEDURAL_STEPPING_EVENT_PROPORTIONAL {
-                reserved_vec(config.resident_capacity)?
+            gid_run: if config.stepping_mode == PROCEDURAL_STEPPING_FULL_TOUCH {
+                reserved_vec(config.resident_capacity.min(config.event_capacity))?
             } else {
                 Vec::new()
             },
+            dormant_values: Vec::new(),
         })
     }
 
@@ -1527,6 +1522,9 @@ impl ProceduralRuntime {
                         event.target_gid,
                         SEEN_RESIDENT,
                         &mut self.scratch.gid_run,
+                        self.config
+                            .resident_capacity
+                            .min(self.config.event_capacity),
                         self.config.interval_distinct_capacity,
                     )?;
                 } else {
@@ -1741,10 +1739,17 @@ impl ProceduralRuntime {
         if !self.residents.is_empty() {
             // Entry residents are already ascending-unique: mark them as one
             // sorted run instead of one hash operation per cell. Full-touch
-            // streams the authoritative resident array directly; the larger
-            // event-proportional scratch remains unchanged.
+            // streams the authoritative resident array directly; the
+            // event-proportional run grows to the observed resident count.
             let distinct_capacity = self.config.interval_distinct_capacity;
             if self.event_proportional() {
+                if let Err(code) = ensure_geometric_vec_backing(
+                    &mut self.scratch.gid_run,
+                    self.residents.len(),
+                    self.config.resident_capacity,
+                ) {
+                    return self.poison(code);
+                }
                 self.scratch.gid_run.clear();
                 self.scratch
                     .gid_run
@@ -1811,7 +1816,7 @@ impl ProceduralRuntime {
             let event_proportional = self.event_proportional();
             // Collect this step's ascending run of absent nonzero event
             // targets. Full-touch reserves only the maximum possible fresh
-            // run; event-proportional retains its resident-sized workspace.
+            // run; event-proportional grows the same buffer geometrically.
             self.scratch.gid_run.clear();
             let due_count = self
                 .pending_slice()
@@ -1867,6 +1872,26 @@ impl ProceduralRuntime {
             // cells are retired from the stepped set in event-proportional
             // mode, so this work count is where their cost disappears.
             let population = self.residents.len() + self.staged_len();
+            if event_proportional && population > 0 {
+                // Phase buffers are logical resident-capacity resources, but
+                // their physical backing follows the largest population
+                // actually stepped. Both allocations remain before the
+                // integer population merge and before any GLIF integration.
+                if let Err(code) = ensure_geometric_vec_backing(
+                    &mut self.scratch.gid_run,
+                    population,
+                    self.config.resident_capacity,
+                ) {
+                    return self.poison(code);
+                }
+                if let Err(code) = ensure_geometric_vec_backing(
+                    &mut self.scratch.dormant_values,
+                    population,
+                    self.config.resident_capacity,
+                ) {
+                    return self.poison(code);
+                }
+            }
             let mut merge_spiking_run = false;
             cell_steps = match cell_steps.checked_add(population as u64) {
                 Some(value) => value,
@@ -3532,6 +3557,84 @@ mod tests {
 
     #[test]
     fn dormant_scratch_reuse_preserves_dynamics_and_scopes_value_capacity() {
+        fn capacity_runtime(configured_cells: u64, capacity: usize) -> ProceduralRuntime {
+            let mut config = ep_config(configured_cells, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+            config.resident_capacity = capacity;
+            config.event_capacity = 64;
+            config.spike_capacity = 64;
+            config.interval_distinct_capacity = capacity;
+            let decay = [0.5, 0.5];
+            ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap()
+        }
+
+        fn pending_image(runtime: &ProceduralRuntime) -> Vec<(u64, u64, u64, u64, u64)> {
+            runtime
+                .pending_slice()
+                .iter()
+                .map(|event| {
+                    (
+                        event.due_step,
+                        event.target_gid,
+                        event.source_gid,
+                        event.edge_slot,
+                        event.current_pa.to_bits(),
+                    )
+                })
+                .collect()
+        }
+
+        fn assert_non_payload_parity(left: &ProceduralRuntime, right: &ProceduralRuntime) {
+            let resident_image = |runtime: &ProceduralRuntime| {
+                runtime
+                    .residents
+                    .iter()
+                    .map(|state| {
+                        let record = state.record();
+                        (record.gid, record_bits(&record))
+                    })
+                    .collect::<Vec<_>>()
+            };
+            let dormant_image = |runtime: &ProceduralRuntime| {
+                runtime
+                    .dormant
+                    .iter()
+                    .map(|(gid, entry)| (*gid, entry.eligibility.to_bits(), entry.elig_step))
+                    .collect::<Vec<_>>()
+            };
+            let spike_image = |runtime: &ProceduralRuntime| {
+                runtime
+                    .last_spikes
+                    .iter()
+                    .map(|spike| (spike.step, spike.gid))
+                    .collect::<Vec<_>>()
+            };
+
+            assert_eq!(resident_image(left), resident_image(right));
+            assert_eq!(dormant_image(left), dormant_image(right));
+            assert_eq!(pending_image(left), pending_image(right));
+            assert_eq!(spike_image(left), spike_image(right));
+            assert_eq!(left.pending_head, right.pending_head);
+            assert_eq!(left.current_step, right.current_step);
+            assert_eq!(left.poisoned, right.poisoned);
+            assert_eq!(
+                left.scratch.interval_ledger.gids,
+                right.scratch.interval_ledger.gids
+            );
+            assert_eq!(
+                left.scratch.interval_ledger.flags_image(),
+                right.scratch.interval_ledger.flags_image()
+            );
+
+            let mut left_counters = left.counters;
+            let mut right_counters = right.counters;
+            left_counters.native_payload_bytes = 0;
+            right_counters.native_payload_bytes = 0;
+            assert_eq!(
+                counters_raw_bytes(&left_counters),
+                counters_raw_bytes(&right_counters)
+            );
+        }
+
         const CELLS: u64 = 32;
         const STEPS: usize = 120;
         let mut batches = vec![Vec::<ProceduralEventRecord>::new(); STEPS];
@@ -3576,53 +3679,111 @@ mod tests {
             assert_eq!(expected.to_bits(), actual.to_bits(), "gid {gid}");
         }
 
-        const CAPACITY: usize = 65_536;
-        let mut config = ep_config(
-            (CAPACITY + 1) as u64,
-            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
-        );
-        config.resident_capacity = CAPACITY;
-        config.event_capacity = 64;
-        config.spike_capacity = 64;
-        config.interval_distinct_capacity = CAPACITY;
-        let decay = [0.5, 0.5];
-        let runtime = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
-        let mut full_touch_config = config;
-        full_touch_config.stepping_mode = PROCEDURAL_STEPPING_FULL_TOUCH;
-        let full_touch_runtime =
-            ProceduralRuntime::new(ep_glif(), full_touch_config, decay, decay, [0.0; 2]).unwrap();
-        assert_eq!(runtime.scratch.gid_run.capacity(), CAPACITY);
-        assert_eq!(runtime.scratch.dormant_values.capacity(), CAPACITY);
-        assert_eq!(full_touch_runtime.scratch.gid_run.capacity(), 64);
-        assert_eq!(full_touch_runtime.scratch.dormant_values.capacity(), 0);
-        let reclaimed_bytes = runtime.scratch.gid_run.capacity() * std::mem::size_of::<u64>()
-            + std::mem::size_of::<Vec<u64>>();
+        const SMALL_CAPACITY: usize = 65_536;
+        const LARGE_CAPACITY: usize = 100_000_000_000;
+        const CONFIGURED_CELLS: u64 = 100_000_000_128;
+        const EMPTY_PAYLOAD_BYTES: usize = 9_528;
+        const PREVIOUS_SMALL_PAYLOAD_BYTES: usize = 1_058_104;
+
+        let mut lazy_small = capacity_runtime(CONFIGURED_CELLS, SMALL_CAPACITY);
+        let mut lazy_large = capacity_runtime(CONFIGURED_CELLS, LARGE_CAPACITY);
+        assert_eq!(lazy_small.scratch.gid_run.capacity(), 0);
+        assert_eq!(lazy_small.scratch.dormant_values.capacity(), 0);
+        assert_eq!(lazy_large.scratch.gid_run.capacity(), 0);
+        assert_eq!(lazy_large.scratch.dormant_values.capacity(), 0);
+        assert_eq!(lazy_small.payload_bytes(), EMPTY_PAYLOAD_BYTES);
+        assert_eq!(lazy_large.payload_bytes(), EMPTY_PAYLOAD_BYTES);
+
+        // Recreate the previous eager backing as an exact behavioral oracle;
+        // it differs only in physical Vec capacity.
+        let mut eager_small = capacity_runtime(CONFIGURED_CELLS, SMALL_CAPACITY);
+        eager_small
+            .scratch
+            .gid_run
+            .try_reserve_exact(SMALL_CAPACITY)
+            .unwrap();
+        eager_small
+            .scratch
+            .dormant_values
+            .try_reserve_exact(SMALL_CAPACITY)
+            .unwrap();
+        assert_eq!(eager_small.scratch.gid_run.capacity(), SMALL_CAPACITY);
         assert_eq!(
-            reclaimed_bytes,
-            CAPACITY * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>()
+            eager_small.scratch.dormant_values.capacity(),
+            SMALL_CAPACITY
         );
-        let mode_scoped_bytes = CAPACITY * std::mem::size_of::<f64>();
-        let full_touch_gid_scope = (CAPACITY - config.event_capacity) * std::mem::size_of::<u64>();
-        assert_eq!(mode_scoped_bytes, 524_288);
-        assert_eq!(runtime.payload_bytes(), 6_325_560);
-        assert_eq!(full_touch_gid_scope, 523_776);
-        assert_eq!(full_touch_runtime.payload_bytes(), 5_277_496);
+        assert_eq!(eager_small.payload_bytes(), PREVIOUS_SMALL_PAYLOAD_BYTES);
+
+        let high_base = CONFIGURED_CELLS - 64;
+        let mut high_batches = vec![Vec::<ProceduralEventRecord>::new(); STEPS];
+        for offset in 0..8u64 {
+            high_batches[0].push(drive(high_base + offset, 0, 10.0));
+        }
+        for offset in [1u64, 3, 20] {
+            high_batches[60].push(drive(high_base + offset, 60, 10.0));
+        }
+        let lazy_small_trace = run_steps(&mut lazy_small, &high_batches);
+        let lazy_large_trace = run_steps(&mut lazy_large, &high_batches);
+        let eager_small_trace = run_steps(&mut eager_small, &high_batches);
+        assert_eq!(lazy_small_trace, lazy_large_trace);
+        assert_eq!(lazy_small_trace, eager_small_trace);
+        assert_non_payload_parity(&lazy_small, &lazy_large);
+        assert_non_payload_parity(&lazy_small, &eager_small);
+        assert!(lazy_small.scratch.gid_run.capacity() > 0);
+        assert!(lazy_small.scratch.gid_run.capacity() < SMALL_CAPACITY);
         assert_eq!(
-            runtime.payload_bytes() - full_touch_runtime.payload_bytes(),
-            mode_scoped_bytes + full_touch_gid_scope
+            lazy_small.scratch.gid_run.capacity(),
+            lazy_large.scratch.gid_run.capacity()
         );
         assert_eq!(
-            96_384_528usize - 1_000_000usize * 8 - (1_000_000usize - 64) * 8,
-            80_385_040
+            lazy_small.scratch.dormant_values.capacity(),
+            lazy_large.scratch.dormant_values.capacity()
         );
+        assert_eq!(lazy_small.payload_bytes(), lazy_large.payload_bytes());
+
+        // Tight logical ceilings still reject the same first canonical event
+        // after retaining the same accepted high-GID staged prefix.
+        let mut tight_lazy = capacity_runtime(CONFIGURED_CELLS, 2);
+        let mut tight_eager = capacity_runtime(CONFIGURED_CELLS, 2);
+        tight_eager.scratch.gid_run.try_reserve_exact(2).unwrap();
+        tight_eager
+            .scratch
+            .dormant_values
+            .try_reserve_exact(2)
+            .unwrap();
+        let tight_events = [
+            drive(high_base, 0, 0.25),
+            drive(high_base + 1, 0, 0.25),
+            drive(high_base + 2, 0, 0.25),
+        ];
+        let tight_lazy_status = tight_lazy.advance(1, &tight_events);
+        let tight_eager_status = tight_eager.advance(1, &tight_events);
+        assert_eq!(tight_lazy_status, super::PROCEDURAL_RESIDENT_CAPACITY);
+        assert_eq!(tight_lazy_status, tight_eager_status);
+        assert_non_payload_parity(&tight_lazy, &tight_eager);
+        assert_eq!(tight_lazy.scratch.gid_run, vec![high_base, high_base + 1]);
+        assert_eq!(
+            (0..tight_lazy.staged_len())
+                .map(|index| tight_lazy.staged_gid(index))
+                .collect::<Vec<_>>(),
+            vec![high_base, high_base + 1]
+        );
+        assert_eq!(tight_lazy.pending_logical_len(), tight_events.len());
+
+        let saved_small = PREVIOUS_SMALL_PAYLOAD_BYTES - EMPTY_PAYLOAD_BYTES;
+        assert_eq!(saved_small, 16 * SMALL_CAPACITY);
+        assert_eq!(saved_small, 1_048_576);
+        assert_eq!(16usize * 1_000_000, 16_000_000);
+        assert_eq!(16usize * LARGE_CAPACITY, 1_600_000_000_000);
         eprintln!(
-            "dormant-scratch-reuse event_proportional_payload_bytes={} full_touch_payload_bytes={} prior_reclaimed_bytes={} mode_scoped_bytes={} full_touch_gid_scope_bytes={} full_touch_total_scope_at_1m_bytes={}",
-            runtime.payload_bytes(),
-            full_touch_runtime.payload_bytes(),
-            reclaimed_bytes,
-            mode_scoped_bytes,
-            full_touch_gid_scope,
-            1_000_000usize * 8 + (1_000_000usize - 64) * 8
+            "occupancy-backed-ep-scratch empty_payload_bytes={} post_traffic_payload_bytes={} gid_capacity={} dormant_capacity={} saved_at_65536_bytes={} saved_at_1m_bytes={} nominal_saved_at_100b_bytes={}",
+            EMPTY_PAYLOAD_BYTES,
+            lazy_large.payload_bytes(),
+            lazy_large.scratch.gid_run.capacity(),
+            lazy_large.scratch.dormant_values.capacity(),
+            saved_small,
+            16usize * 1_000_000,
+            16usize * LARGE_CAPACITY,
         );
     }
 
@@ -4786,7 +4947,7 @@ mod tests {
             }
             if merged_offender.is_none()
                 && merged_ledger
-                    .stage_single_in_run(gid, super::SEEN_RESIDENT, &mut fresh_run, 7)
+                    .stage_single_in_run(gid, super::SEEN_RESIDENT, &mut fresh_run, 7, 7)
                     .is_err()
             {
                 merged_offender = Some(gid);
@@ -4916,6 +5077,7 @@ mod tests {
                         (index * 2 + 1) as u64,
                         super::SEEN_RESIDENT,
                         &mut run,
+                        CAPACITY,
                         CAPACITY,
                     )
                     .unwrap();
@@ -5084,21 +5246,45 @@ mod tests {
             let final_gid = 1_000_000u64 + capacity as u64;
             if capacity == 0 {
                 assert_eq!(
-                    ledger.stage_single_in_run(final_gid, SEEN_RESIDENT, &mut staged, capacity),
+                    ledger.stage_single_in_run(
+                        final_gid,
+                        SEEN_RESIDENT,
+                        &mut staged,
+                        capacity,
+                        capacity,
+                    ),
                     Err(super::PROCEDURAL_DISTINCT_CAPACITY)
                 );
             } else {
                 assert_eq!(
-                    ledger.stage_single_in_run(final_gid, SEEN_RESIDENT, &mut staged, capacity),
+                    ledger.stage_single_in_run(
+                        final_gid,
+                        SEEN_RESIDENT,
+                        &mut staged,
+                        capacity,
+                        capacity,
+                    ),
                     Ok(())
                 );
                 assert_eq!(
-                    ledger.stage_single_in_run(final_gid, SEEN_RESIDENT, &mut staged, capacity),
+                    ledger.stage_single_in_run(
+                        final_gid,
+                        SEEN_RESIDENT,
+                        &mut staged,
+                        capacity,
+                        capacity,
+                    ),
                     Ok(())
                 );
                 assert_eq!(staged, vec![final_gid]);
                 assert_eq!(
-                    ledger.stage_single_in_run(final_gid + 1, SEEN_RESIDENT, &mut staged, capacity),
+                    ledger.stage_single_in_run(
+                        final_gid + 1,
+                        SEEN_RESIDENT,
+                        &mut staged,
+                        capacity,
+                        capacity,
+                    ),
                     Err(super::PROCEDURAL_DISTINCT_CAPACITY)
                 );
             }
