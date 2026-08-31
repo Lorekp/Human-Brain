@@ -20,9 +20,13 @@ from hashlib import sha256
 from typing import NamedTuple
 
 import numpy as np
-from experiments.g0 import common_event_cells_v1 as common_events
 from experiments.r3_pilot import common_repository_action_bank_v1 as action_bank
-from humanbrain.resting_glif_tier_beam import RETAINED, CompiledRestingGlifTierBeam
+from experiments.r3_pilot import common_repository_source_views_v1 as source_views
+from humanbrain.resting_glif_tier_beam import (
+    RETAINED,
+    STOP_LEADING_TIER,
+    CompiledRestingGlifTierBeam,
+)
 
 SCHEMA = "COMMON_CONTINUAL_REPOSITORY_ACTION_MEMORY_V1"
 RECALLED = f"{SCHEMA}_RECALLED"
@@ -39,12 +43,12 @@ STOP_ACTION_BANK = f"STOP_{SCHEMA}_ACTION_BANK"
 OUTCOME_COMMIT = "COMMIT"
 OUTCOME_REVISE = "REVISE"
 
-MAX_CONTEXTS = 2
+MAX_CONTEXTS = 4
 ACTION_COUNT = action_bank.CANDIDATE_COUNT
 MAX_POLICY_BANKS = 2
 MAX_GLOBAL_ACTIONS = MAX_POLICY_BANKS * ACTION_COUNT
 MAX_PROVENANCE_ROWS = 8
-TRACE_LANES = 12
+TRACE_LANES = source_views.TRACE_LANES
 EVIDENCE_TICKS = 4
 TICK_CAP = 16
 
@@ -60,9 +64,9 @@ CANDIDATE_CURRENT_MAX_PA = 7_000.0
 INHIBITION_CURRENT_PA = 7_000.0
 
 FIXED_CONTROLLER_CELL_COUNT = 6
-MAX_ADDED_CELL_COUNT = 12
-MAX_TRAINABLE_STATE_BYTES = 16
-MAX_CHECKPOINT_ARRAY_BYTES = 1_544
+MAX_ADDED_CELL_COUNT = 14
+MAX_TRAINABLE_STATE_BYTES = 32
+MAX_CHECKPOINT_ARRAY_BYTES = 1_720
 MAX_CONTROLLER_CELL_STEPS = 500_000
 
 PUBLIC_INPUT_COUNT = 0
@@ -82,16 +86,14 @@ CLAIM_BOUNDARY = (
     "understanding, broad coding, or protected benchmark evidence"
 )
 
-_SOURCE_CONTEXT_NAMESPACE = b"common-repository-source-context-v1"
 _CONTROLLER_RESULT_NAMESPACE = b"common-repository-controller-result-v1"
 _LESSON_BODY_NAMESPACE = b"common-repository-action-lesson-body-v1"
 _LESSON_NAMESPACE = b"common-repository-action-lesson-v1"
 _CANDIDATE_NAMESPACE = b"common-repository-action-candidate-v1"
 _RECALL_NAMESPACE = b"common-repository-action-recall-v1"
-_CHECKPOINT_NAMESPACE = b"common-continual-repository-action-checkpoint-v1"
+_CHECKPOINT_NAMESPACE = b"common-continual-repository-action-checkpoint-v2"
 _PHYSICAL_TIER_NAMESPACE = b"common-repository-action-physical-tier-v1"
 
-_SOURCE_CELLS = common_events.CommonEventCells()
 _CONTEXT_SELECTOR = CompiledRestingGlifTierBeam.compile(
     candidate_count=MAX_CONTEXTS + 1,
     step_count=RACE_TICKS,
@@ -142,72 +144,12 @@ def _digest(namespace: bytes, value: object) -> str:
     return sha256(namespace + b"\0" + _canonical_json(value)).hexdigest()
 
 
-def _bytes_sha256(value: bytes) -> str:
-    return sha256(value).hexdigest()
-
-
 def _array_sha256(value: np.ndarray) -> str:
     return sha256(value.tobytes(order="C")).hexdigest()
 
 
 def _valid_sha256(value: object) -> bool:
     return action_bank.valid_sha256(value)
-
-
-class RepositorySourceContextV1(NamedTuple):
-    source_sha256: str
-    frame_sha256: str
-    trace_cells: tuple[int, ...]
-    projection_cell_steps: int
-    sha256: str
-
-    def authenticate(self) -> None:
-        if (
-            not _valid_sha256(self.source_sha256)
-            or not _valid_sha256(self.frame_sha256)
-            or type(self.trace_cells) is not tuple
-            or len(self.trace_cells) != TRACE_LANES
-            or any(type(cell) is not int for cell in self.trace_cells)
-            or type(self.projection_cell_steps) is not int
-            or self.projection_cell_steps < 0
-        ):
-            raise ValueError("repository source context shape changed")
-        expected = _digest(
-            _SOURCE_CONTEXT_NAMESPACE,
-            {
-                "source": self.source_sha256,
-                "frame": self.frame_sha256,
-                "trace": self.trace_cells,
-                "projection_cell_steps": self.projection_cell_steps,
-            },
-        )
-        if self.sha256 != expected:
-            raise ValueError("repository source context authentication failed")
-
-
-def project_attested_repository_source_v1(source: bytes) -> RepositorySourceContextV1:
-    """Project one already-attested visible source; retain no raw bytes."""
-
-    if type(source) is not bytes:
-        raise TypeError("repository source must be exact bytes")
-    frame = _SOURCE_CELLS.project(source)
-    result = RepositorySourceContextV1(
-        source_sha256=_bytes_sha256(source),
-        frame_sha256=frame.sha256,
-        trace_cells=frame.trace_cells,
-        projection_cell_steps=frame.work.total,
-        sha256=_digest(
-            _SOURCE_CONTEXT_NAMESPACE,
-            {
-                "source": _bytes_sha256(source),
-                "frame": frame.sha256,
-                "trace": frame.trace_cells,
-                "projection_cell_steps": frame.work.total,
-            },
-        ),
-    )
-    result.authenticate()
-    return result
 
 
 class _RepositoryActionConsequenceV1(NamedTuple):
@@ -283,7 +225,7 @@ class PhysicalRepositoryActionLessonV1(NamedTuple):
         bank = tuple(sorted(self.action_bank_sha256s))
         bodies = self.controller_lesson_body_sha256s
         attempts = self.controller_attempt_sha256s
-        RepositorySourceContextV1(
+        source_views.RepositorySourceContextV1(
             source_sha256=self.source_sha256,
             frame_sha256=self.source_context_frame_sha256,
             trace_cells=self.source_context_trace_cells,
@@ -393,13 +335,13 @@ def _seal_physical_repository_action_lessons_v1(
     *,
     controller_trajectory_sha256: str,
     controller_status: str,
-    action_bank: action_bank.FrozenRepositoryActionBankV1,
-    source_context: RepositorySourceContextV1,
+    bank_checkpoint: action_bank.FrozenRepositoryActionBankV1,
+    source_context: source_views.RepositorySourceContextV1,
     consequences: tuple[_RepositoryActionConsequenceV1, ...],
 ) -> tuple[str, tuple[PhysicalRepositoryActionLessonV1, ...]]:
     """Controller-internal seam: seal one actual trajectory without a cycle."""
 
-    action_bank.authenticate()
+    bank_checkpoint.authenticate()
     source_context.authenticate()
     if type(consequences) is not tuple or not 1 <= len(consequences) <= 2:
         raise TypeError("controller consequences must be one exact nonempty tuple")
@@ -419,10 +361,10 @@ def _seal_physical_repository_action_lessons_v1(
         )
     ):
         raise ValueError("only one complete committed controller trajectory is learnable")
-    policy_checkpoint_sha256 = action_bank.policy_checkpoint_sha256
-    frontier_sha256 = action_bank.frontier_sha256
-    bank = tuple(sorted(action_bank.action_sha256s))
-    candidates = {item.sha256: item for item in action_bank.records}
+    policy_checkpoint_sha256 = bank_checkpoint.policy_checkpoint_sha256
+    frontier_sha256 = bank_checkpoint.frontier_sha256
+    bank = tuple(sorted(bank_checkpoint.action_sha256s))
+    candidates = {item.sha256: item for item in bank_checkpoint.records}
     for consequence in consequences:
         candidate = candidates.get(consequence.candidate_sha256)
         if (
@@ -448,7 +390,7 @@ def _seal_physical_repository_action_lessons_v1(
             "controller_final_passed_cell": 1,
             "controller_attempt_sha256s": attempt_roots,
             "frontier_sha256": frontier_sha256,
-            "action_bank_sha256": action_bank.sha256,
+            "action_bank_sha256": bank_checkpoint.sha256,
             "action_bank_sha256s": bank,
             "candidate_sha256": consequence.candidate_sha256,
             "candidate_action_sha256": action_bank.repository_action_sha256_v1(
@@ -800,6 +742,16 @@ class FrozenContinualRepositoryActionMemoryV1:
         return self._summary
 
     @property
+    def policy_checkpoint_sha256s(self) -> tuple[str, ...]:
+        self.authenticate()
+        return tuple(bytes(row).hex() for row in self._policy_roots)
+
+    @property
+    def action_sha256s(self) -> tuple[str, ...]:
+        self.authenticate()
+        return tuple(bytes(row).hex() for row in self._action_roots)
+
+    @property
     def provenance(self) -> tuple[RepositoryActionProvenanceV1, ...]:
         self.authenticate()
         return tuple(
@@ -911,7 +863,7 @@ class FrozenContinualRepositoryActionMemoryV1:
 
     def recall_attested_context(
         self,
-        context: RepositorySourceContextV1,
+        context: source_views.RepositorySourceContextV1,
         bank: action_bank.FrozenRepositoryActionBankV1,
         *,
         candidate_records: Sequence[action_bank.RepositoryActionCandidateRecordV1]
@@ -921,7 +873,7 @@ class FrozenContinualRepositoryActionMemoryV1:
         candidate_gate: bool = True,
     ) -> RepositoryActionRecallV1:
         self.authenticate()
-        if type(context) is not RepositorySourceContextV1:
+        if type(context) is not source_views.RepositorySourceContextV1:
             raise TypeError("repository action recall requires one exact source context")
         if type(bank) is not action_bank.FrozenRepositoryActionBankV1:
             raise TypeError("repository action recall requires one exact action bank")
@@ -1017,6 +969,8 @@ class FrozenContinualRepositoryActionMemoryV1:
             status = STOP_ACTION_BANK
         elif not context_gate:
             status = STOP_CONTEXT_GATE
+        elif context_physical.status == STOP_LEADING_TIER:
+            status = STOP_CONTEXT_UNKNOWN
         elif context_physical.status != RETAINED:
             status = STOP_CONTEXT_AMBIGUOUS
         elif len(context_physical.retained_candidate_cells) != 1:
@@ -1083,6 +1037,8 @@ class FrozenContinualRepositoryActionMemoryV1:
             candidate_steps = (ACTION_COUNT + 1) * RACE_TICKS
             if not candidate_gate:
                 status = STOP_CANDIDATE_GATE
+            elif candidate_physical.status == STOP_LEADING_TIER:
+                status = STOP_CANDIDATE_UNKNOWN
             elif candidate_physical.status != RETAINED:
                 status = STOP_CANDIDATE_AMBIGUOUS
             elif len(candidate_physical.retained_candidate_cells) != 1:
@@ -1127,6 +1083,39 @@ class FrozenContinualRepositoryActionMemoryV1:
         result.authenticate()
         self.authenticate()
         return result
+
+    def recall_attested_source(
+        self,
+        source: bytes,
+        context: source_views.RepositorySourceContextV1,
+        bank: action_bank.FrozenRepositoryActionBankV1,
+        *,
+        candidate_records: Sequence[action_bank.RepositoryActionCandidateRecordV1]
+        | None = None,
+        recall_gate: bool = True,
+        context_gate: bool = True,
+        candidate_gate: bool = True,
+        factor_gate: bool = True,
+    ) -> RepositoryActionRecallV1:
+        """Recall exact source context; ``factor_gate`` is interface-only here."""
+
+        if type(source) is not bytes:
+            raise TypeError("repository action recall requires exact source bytes")
+        if type(context) is not source_views.RepositorySourceContextV1:
+            raise TypeError("repository action recall requires one exact source context")
+        if type(factor_gate) is not bool:
+            raise TypeError("repository factor gate must be one exact boolean")
+        context.authenticate()
+        if sha256(source).hexdigest() != context.source_sha256:
+            raise ValueError("repository source context does not attest source bytes")
+        return self.recall_attested_context(
+            context,
+            bank,
+            candidate_records=candidate_records,
+            recall_gate=recall_gate,
+            context_gate=context_gate,
+            candidate_gate=candidate_gate,
+        )
 
 
 def _validate_lessons(lessons: tuple[PhysicalRepositoryActionLessonV1, ...]) -> None:
@@ -1603,9 +1592,7 @@ __all__ = [
     "RepositoryActionRecallV1",
     "RepositoryActionRecallWorkV1",
     "RepositoryActionTrainingSummaryV1",
-    "RepositorySourceContextV1",
     "advance_continual_repository_action_memory_v1",
     "controller_result_sha256_v1",
-    "project_attested_repository_source_v1",
     "start_continual_repository_action_memory_v1",
 ]

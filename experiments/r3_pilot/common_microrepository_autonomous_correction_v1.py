@@ -25,7 +25,9 @@ from typing import NamedTuple
 
 import numpy as np
 from experiments.r3_pilot import common_continual_repository_action_memory_v1 as continual_memory
+from experiments.r3_pilot import common_factorized_repository_action_memory_v1 as factor_memory
 from experiments.r3_pilot import common_repository_action_bank_v1 as action_bank
+from experiments.r3_pilot import common_repository_source_views_v1 as source_views
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import public_typed_semantic_vector_race as semantic_race
 from humanbrain.resting_glif_tier_beam import (
@@ -811,7 +813,7 @@ class PreparedAutonomousCorrectionV1:
         source_path: Path,
         expected_path: Path,
         original_source: bytes,
-        source_context: continual_memory.RepositorySourceContextV1 | None,
+        source_context: source_views.RepositorySourceContextV1 | None,
         cells: _CorrectionCellsV1 | None,
         state: PreparedAutonomousCorrectionStateV1,
     ) -> None:
@@ -908,7 +910,7 @@ class PreparedAutonomousCorrectionV1:
                 continual_memory._seal_physical_repository_action_lessons_v1(
                     controller_trajectory_sha256=trajectory_sha256,
                     controller_status=status,
-                    action_bank=self._bank,
+                    bank_checkpoint=self._bank,
                     source_context=self._source_context,
                     consequences=tuple(consequences),
                 )
@@ -1289,11 +1291,15 @@ def prepare_autonomous_correction_v1(
     candidate_records: Sequence[action_bank.RepositoryActionCandidateRecordV1]
     | None = None,
     relation_support_gate: bool = True,
-    action_memory: continual_memory.FrozenContinualRepositoryActionMemoryV1
-    | None = None,
+    action_memory: (
+        continual_memory.FrozenContinualRepositoryActionMemoryV1
+        | factor_memory.FrozenFactorizedRepositoryActionMemoryV1
+        | None
+    ) = None,
     memory_recall_gate: bool = True,
     memory_context_gate: bool = True,
     memory_candidate_gate: bool = True,
+    memory_factor_gate: bool = True,
 ) -> PreparedAutonomousCorrectionV1:
     """Attest one frozen frontier and allocate the 86-byte candidate checkpoint."""
     bank = frontier.repository_action_bank
@@ -1333,30 +1339,41 @@ def prepare_autonomous_correction_v1(
             memory_recall_gate,
             memory_context_gate,
             memory_candidate_gate,
+            memory_factor_gate,
         )
     ):
         raise TypeError("correction preparation gates must be exact booleans")
+    if action_memory is not None and type(action_memory) not in (
+        continual_memory.FrozenContinualRepositoryActionMemoryV1,
+        factor_memory.FrozenFactorizedRepositoryActionMemoryV1,
+    ):
+        raise TypeError("action_memory must be one exact frozen repository memory")
+    factor_source_within_capacity = (
+        type(action_memory)
+        is not factor_memory.FrozenFactorizedRepositoryActionMemoryV1
+        or len(original_source) <= source_views.MAX_SOURCE_BYTES
+    )
     source_context_frame_sha256 = "0" * 64
     source_context_sha256 = "0" * 64
-    source_context: continual_memory.RepositorySourceContextV1 | None = None
+    source_context: source_views.RepositorySourceContextV1 | None = None
     learned_recall = None
     learned_evidence: dict[str, tuple[int, int]] | None = None
-    if attested:
-        source_context = continual_memory.project_attested_repository_source_v1(
+    if attested and factor_source_within_capacity:
+        source_context = source_views.project_attested_repository_source_v1(
             original_source
         )
         source_context_frame_sha256 = source_context.frame_sha256
         source_context_sha256 = source_context.sha256
         if action_memory is not None:
-            if type(action_memory) is not continual_memory.FrozenContinualRepositoryActionMemoryV1:
-                raise TypeError("action_memory must be one exact frozen continual memory")
-            learned_recall = action_memory.recall_attested_context(
+            learned_recall = action_memory.recall_attested_source(
+                original_source,
                 source_context,
                 bank,
                 candidate_records=supplied_records,
                 recall_gate=memory_recall_gate,
                 context_gate=memory_context_gate,
                 candidate_gate=memory_candidate_gate,
+                factor_gate=memory_factor_gate,
             )
             learned_recall.authenticate()
             if (
@@ -1372,16 +1389,18 @@ def prepare_autonomous_correction_v1(
                 == source_context.trace_cells
                 and learned_recall.frontier_sha256 == bank.frontier_sha256
                 and learned_recall.selected_candidate_action_sha256 is not None
+                and learned_recall.selected_candidate_action_sha256
+                in bank.action_sha256s
             ):
                 learned_evidence = {
-                    item.candidate_action_sha256: (
+                    bank.action_sha256_for(item): (
                         0,
                         0
-                        if item.candidate_action_sha256
+                        if bank.action_sha256_for(item)
                         == learned_recall.selected_candidate_action_sha256
                         else 2,
                     )
-                    for item in learned_recall.candidates
+                    for item in supplied_records
                 }
     cells: _CorrectionCellsV1 | None = None
     if not attested:
