@@ -33,6 +33,12 @@ const GLOBAL_PURPOSE_ID: u64 = 1;
 const GLOBAL_FALLBACK_PURPOSE_ID: u64 = 255;
 const ROLE_COUNTER_WORD: u64 = 0x524F4C45;
 const MAX_CANDIDATE_ATTEMPTS: u64 = 128;
+// Fixed dense crossover, chosen from algorithmic/cache cost rather than gate
+// tuning: radix ordering makes at least two full event-buffer passes plus a
+// 2 KiB histogram, and grouped delivery scans every event before amortizing
+// resident lookup. Below 4K events the existing in-cache comparison/scalar
+// paths remain the smaller mechanism; dense N=8192,F=4 produces 32K events.
+const DENSE_EVENT_THRESHOLD: usize = 4_096;
 
 type CommonConfiguration = (GlifConfig, ProceduralConfig, [f64; 2], [f64; 2], [f64; 2]);
 
@@ -1631,6 +1637,74 @@ impl ProceduralRuntime {
         Ok(())
     }
 
+    /// Stable target-only LSD radix ordering for a scalar source-major tail.
+    /// Source rows already arrive in ascending `(source, slot)` order and all
+    /// generated events share one due step, so stability yields the exact
+    /// canonical `(due, target, source, slot)` image. The dead submitted-event
+    /// phase buffer is the sole radix destination; payload capacity is fixed.
+    #[inline(never)]
+    fn stable_radix_sort_generated_tail(&mut self, tail_start: usize) -> Result<(), u32> {
+        let tail_len = self.pending.len() - tail_start;
+        if self.scratch.submitted_events.capacity() < tail_len {
+            return Err(PROCEDURAL_ALLOCATION);
+        }
+        let template = self.pending[tail_start];
+        let first_target = template.target_gid;
+        let mut differing_bits = 0u64;
+        for event in &self.pending[tail_start + 1..] {
+            differing_bits |= event.target_gid ^ first_target;
+        }
+        let tail = &mut self.pending[tail_start..];
+        let work = &mut self.scratch.submitted_events;
+        work.clear();
+        if differing_bits == 0 {
+            return Ok(());
+        }
+        work.resize(tail_len, template);
+        let mut source_is_tail = true;
+        for byte_index in 0..8 {
+            let shift = byte_index * 8;
+            if differing_bits & (0xFFu64 << shift) == 0 {
+                continue;
+            }
+            let mut positions = [0usize; 256];
+            if source_is_tail {
+                for event in tail.iter() {
+                    positions[((event.target_gid >> shift) & 0xFF) as usize] += 1;
+                }
+            } else {
+                for event in work.iter() {
+                    positions[((event.target_gid >> shift) & 0xFF) as usize] += 1;
+                }
+            }
+            let mut offset = 0usize;
+            for count in &mut positions {
+                let bucket_len = *count;
+                *count = offset;
+                offset += bucket_len;
+            }
+            if source_is_tail {
+                for event in tail.iter() {
+                    let bucket = ((event.target_gid >> shift) & 0xFF) as usize;
+                    work[positions[bucket]] = *event;
+                    positions[bucket] += 1;
+                }
+            } else {
+                for event in work.iter() {
+                    let bucket = ((event.target_gid >> shift) & 0xFF) as usize;
+                    tail[positions[bucket]] = *event;
+                    positions[bucket] += 1;
+                }
+            }
+            source_is_tail = !source_is_tail;
+        }
+        if !source_is_tail {
+            tail.copy_from_slice(work);
+        }
+        work.clear();
+        Ok(())
+    }
+
     /// Order the live queue after a generation phase. Only the appended tail
     /// is sorted; it is then linear-merged with the already-sorted live
     /// prefix, yielding exactly the fully ascending canonical order a
@@ -1638,7 +1712,12 @@ impl ProceduralRuntime {
     /// within the tail or across the seam; the merged queue is committed
     /// before reporting the duplicate so a poisoned snapshot shows the same
     /// byte content as the previous implementation.
-    fn finish_step_queue_order(&mut self, tail_start: usize) -> Result<(), u32> {
+    #[inline(never)]
+    fn finish_step_queue_order(
+        &mut self,
+        tail_start: usize,
+        dense_kernels_enabled: bool,
+    ) -> Result<(), u32> {
         debug_assert!(self.staged_is_empty());
         debug_assert!(self.staged_index.is_empty());
         let head = self.pending_head;
@@ -1647,7 +1726,9 @@ impl ProceduralRuntime {
             // and duplicate-free by construction.
             return Ok(());
         }
-        {
+        if self.pending.len() - tail_start >= DENSE_EVENT_THRESHOLD && dense_kernels_enabled {
+            self.stable_radix_sort_generated_tail(tail_start)?;
+        } else {
             let tail = &mut self.pending[tail_start..];
             tail.sort_unstable_by(event_order);
         }
@@ -1711,14 +1792,93 @@ impl ProceduralRuntime {
         Ok(())
     }
 
-    fn advance(&mut self, step_count: u64, events: &[ProceduralEventRecord]) -> u32 {
-        self.advance_with_fresh_run::<true, true>(step_count, events)
+    /// Dense canonical equal-target delivery. Resident targets pay one binary
+    /// search per run and retain the original per-event binary64 addition
+    /// order. Absent/dormant targets keep the scalar state machine unchanged.
+    #[inline(never)]
+    fn deliver_due_target_runs<const MERGE_FRESH_RUN: bool, const CANONICAL_STAGED_RUN: bool>(
+        &mut self,
+        due_count: usize,
+        delivered_events: &mut u64,
+    ) -> Result<(), u32> {
+        let consumption_base = self.pending_head;
+        let mut index = 0usize;
+        while index < due_count {
+            let first = self.pending[consumption_base + index];
+            let mut run_end = index + 1;
+            while run_end < due_count
+                && self.pending[consumption_base + run_end].target_gid == first.target_gid
+            {
+                run_end += 1;
+            }
+            *delivered_events = delivered_events
+                .checked_add(1)
+                .ok_or(PROCEDURAL_STEP_OVERFLOW)?;
+            match self.resident_index(first.target_gid) {
+                Ok(resident_index) => {
+                    let current = canonical_zero(first.current_pa);
+                    let value = self.residents[resident_index].synaptic_current + current;
+                    self.residents[resident_index].synaptic_current = canonical_zero(value);
+                    for event_index in index + 1..run_end {
+                        *delivered_events = delivered_events
+                            .checked_add(1)
+                            .ok_or(PROCEDURAL_STEP_OVERFLOW)?;
+                        let event = self.pending[consumption_base + event_index];
+                        let current = canonical_zero(event.current_pa);
+                        let value = self.residents[resident_index].synaptic_current + current;
+                        self.residents[resident_index].synaptic_current = canonical_zero(value);
+                    }
+                }
+                Err(_) => {
+                    self.apply_event_with_fresh_run::<MERGE_FRESH_RUN, CANONICAL_STAGED_RUN>(
+                        first,
+                    )?;
+                    for event_index in index + 1..run_end {
+                        *delivered_events = delivered_events
+                            .checked_add(1)
+                            .ok_or(PROCEDURAL_STEP_OVERFLOW)?;
+                        let event = self.pending[consumption_base + event_index];
+                        self.apply_event_with_fresh_run::<MERGE_FRESH_RUN, CANONICAL_STAGED_RUN>(
+                            event,
+                        )?;
+                    }
+                }
+            }
+            index = run_end;
+        }
+        Ok(())
     }
 
+    fn advance(&mut self, step_count: u64, events: &[ProceduralEventRecord]) -> u32 {
+        self.advance_with_dense_policy::<true, true>(step_count, events, true)
+    }
+
+    #[cfg(test)]
     fn advance_with_fresh_run<const MERGE_FRESH_RUN: bool, const CANONICAL_STAGED_RUN: bool>(
         &mut self,
         step_count: u64,
         events: &[ProceduralEventRecord],
+    ) -> u32 {
+        self.advance_with_dense_policy::<MERGE_FRESH_RUN, CANONICAL_STAGED_RUN>(
+            step_count, events, true,
+        )
+    }
+
+    #[cfg(test)]
+    fn advance_with_scalar_dense_policy(
+        &mut self,
+        step_count: u64,
+        events: &[ProceduralEventRecord],
+    ) -> u32 {
+        self.advance_with_dense_policy::<true, true>(step_count, events, false)
+    }
+
+    #[inline(never)]
+    fn advance_with_dense_policy<const MERGE_FRESH_RUN: bool, const CANONICAL_STAGED_RUN: bool>(
+        &mut self,
+        step_count: u64,
+        events: &[ProceduralEventRecord],
+        dense_kernels_enabled: bool,
     ) -> u32 {
         if self.poisoned != PROCEDURAL_OK {
             return PROCEDURAL_POISONED;
@@ -1834,16 +1994,27 @@ impl ProceduralRuntime {
             debug_assert!(self.staged_index.is_empty());
             self.clear_staged();
             let consumption_base = self.pending_head;
-            for index in 0..due_count {
-                let event = self.pending[consumption_base + index];
-                delivered_events = match delivered_events.checked_add(1) {
-                    Some(value) => value,
-                    None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
-                };
-                if let Err(code) =
-                    self.apply_event_with_fresh_run::<MERGE_FRESH_RUN, CANONICAL_STAGED_RUN>(event)
+            if due_count >= DENSE_EVENT_THRESHOLD && dense_kernels_enabled {
+                if let Err(code) = self
+                    .deliver_due_target_runs::<MERGE_FRESH_RUN, CANONICAL_STAGED_RUN>(
+                        due_count,
+                        &mut delivered_events,
+                    )
                 {
                     return self.poison(code);
+                }
+            } else {
+                for index in 0..due_count {
+                    let event = self.pending[consumption_base + index];
+                    delivered_events = match delivered_events.checked_add(1) {
+                        Some(value) => value,
+                        None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
+                    };
+                    if let Err(code) = self
+                        .apply_event_with_fresh_run::<MERGE_FRESH_RUN, CANONICAL_STAGED_RUN>(event)
+                    {
+                        return self.poison(code);
+                    }
                 }
             }
             if MERGE_FRESH_RUN && !self.scratch.gid_run.is_empty() {
@@ -2255,7 +2426,7 @@ impl ProceduralRuntime {
                     };
                 }
             }
-            if let Err(code) = self.finish_step_queue_order(tail_start) {
+            if let Err(code) = self.finish_step_queue_order(tail_start, dense_kernels_enabled) {
                 return self.poison(code);
             }
             queue_peak = queue_peak.max(self.pending_logical_len());
@@ -5927,5 +6098,402 @@ mod tests {
             "B-G1 FAILED: {amortized_us_per_op:.4} us/op amortized at S={STAGED_BURST} \
              (gate < {threshold_us_per_op} us/op)"
         );
+    }
+
+    #[test]
+    fn hybrid_dense_radix_delivery_is_exact_and_clears_release_gates() {
+        fn event_words(event: &ProceduralEventRecord) -> [u64; 5] {
+            [
+                event.due_step,
+                event.target_gid,
+                event.source_gid,
+                event.edge_slot,
+                event.current_pa.to_bits(),
+            ]
+        }
+
+        fn assert_events_exact(left: &[ProceduralEventRecord], right: &[ProceduralEventRecord]) {
+            assert_eq!(left.len(), right.len());
+            for (index, (left, right)) in left.iter().zip(right).enumerate() {
+                assert_eq!(event_words(left), event_words(right), "event {index}");
+            }
+        }
+
+        fn assert_runtime_exact(left: &ProceduralRuntime, right: &ProceduralRuntime) {
+            assert_eq!(left.current_step, right.current_step);
+            assert_eq!(left.poisoned, right.poisoned);
+            assert_eq!(left.pending_head, right.pending_head);
+            assert_eq!(left.residents.len(), right.residents.len());
+            for (left, right) in left.residents.iter().zip(&right.residents) {
+                assert_eq!(left.gid, right.gid);
+                assert_eq!(record_bits(&left.record()), record_bits(&right.record()));
+            }
+            let left_staged = left.staged_states();
+            let right_staged = right.staged_states();
+            assert_eq!(left_staged.len(), right_staged.len());
+            for (left, right) in left_staged.iter().zip(&right_staged) {
+                assert_eq!(left.gid, right.gid);
+                assert_eq!(record_bits(&left.record()), record_bits(&right.record()));
+            }
+            assert_eq!(left.dormant.len(), right.dormant.len());
+            for ((left_gid, left_entry), (right_gid, right_entry)) in
+                left.dormant.iter().zip(&right.dormant)
+            {
+                assert_eq!(left_gid, right_gid);
+                assert_eq!(
+                    left_entry.eligibility.to_bits(),
+                    right_entry.eligibility.to_bits()
+                );
+                assert_eq!(left_entry.elig_step, right_entry.elig_step);
+            }
+            assert_events_exact(&left.pending, &right.pending);
+            assert_eq!(left.last_spikes.len(), right.last_spikes.len());
+            for (left, right) in left.last_spikes.iter().zip(&right.last_spikes) {
+                assert_eq!((left.step, left.gid), (right.step, right.gid));
+            }
+            assert_eq!(
+                counters_raw_bytes(&left.counters),
+                counters_raw_bytes(&right.counters)
+            );
+            assert_eq!(left.payload_bytes(), right.payload_bytes());
+        }
+
+        fn config(cells: usize, fanout: usize, event_capacity: usize) -> ProceduralConfig {
+            ProceduralConfig {
+                configured_cells: cells as u64,
+                fanout: fanout as u64,
+                seed: 71,
+                resident_capacity: cells,
+                event_capacity,
+                spike_capacity: cells.saturating_mul(4),
+                interval_distinct_capacity: cells,
+                recurrent_weight_pa: 0.25,
+                recurrent_delay_steps: 1,
+                recurrent_decay: 1e-8,
+                eligibility_decay: 0.5,
+                stepping_mode: PROCEDURAL_STEPPING_FULL_TOUCH,
+            }
+        }
+
+        fn runtime(config: ProceduralConfig) -> ProceduralRuntime {
+            ProceduralRuntime::new(ep_glif(), config, [0.5; 2], [0.5; 2], [0.0; 2]).unwrap()
+        }
+
+        fn median(samples: &mut [u128]) -> u128 {
+            samples.sort_unstable();
+            samples[samples.len() / 2]
+        }
+
+        const N: usize = 8_192;
+        const F: usize = 4;
+        const E: usize = N * F;
+        let recurrent_config = config(N, F, E);
+        let recurrent_events: Vec<_> = (0..N as u64).map(|gid| drive(gid, 0, 2.0)).collect();
+
+        let mut recurrent_scalar = runtime(recurrent_config);
+        let mut recurrent_optimized = runtime(recurrent_config);
+        assert_eq!(
+            recurrent_scalar.advance_with_scalar_dense_policy(4, &recurrent_events),
+            super::PROCEDURAL_OK
+        );
+        assert_eq!(
+            recurrent_optimized.advance(4, &recurrent_events),
+            super::PROCEDURAL_OK
+        );
+        assert_runtime_exact(&recurrent_optimized, &recurrent_scalar);
+        assert_eq!(recurrent_optimized.counters.generated_edges, E as u64);
+        assert_eq!(
+            recurrent_optimized.counters.delivered_events,
+            (N + E) as u64
+        );
+        assert_eq!(recurrent_optimized.payload_bytes(), 5_181_240);
+
+        // Recover the unchanged scalar source-major image from one canonical
+        // generated queue, then compare dense ordering with a future prefix.
+        let mut one_step = runtime(recurrent_config);
+        assert_eq!(
+            one_step.advance_with_scalar_dense_policy(1, &recurrent_events),
+            super::PROCEDURAL_OK
+        );
+        let canonical_generated = one_step.pending.clone();
+        assert_eq!(canonical_generated.len(), E);
+        let mut source_major = canonical_generated.clone();
+        source_major.sort_unstable_by(|left, right| {
+            left.source_gid
+                .cmp(&right.source_gid)
+                .then_with(|| left.edge_slot.cmp(&right.edge_slot))
+        });
+        let future = ProceduralEventRecord {
+            due_step: 9,
+            target_gid: 0,
+            source_gid: 0,
+            edge_slot: 0,
+            current_pa: 0.125,
+        };
+        let mut order_scalar = runtime(config(N, F, E + 1));
+        let mut order_optimized = runtime(config(N, F, E + 1));
+        order_scalar.pending.push(future);
+        order_optimized.pending.push(future);
+        order_scalar.pending.extend_from_slice(&source_major);
+        order_optimized.pending.extend_from_slice(&source_major);
+        order_scalar.finish_step_queue_order(1, false).unwrap();
+        order_optimized.finish_step_queue_order(1, true).unwrap();
+        assert_events_exact(&order_optimized.pending, &order_scalar.pending);
+        assert_events_exact(&order_optimized.pending[..E], &canonical_generated);
+        assert_eq!(
+            order_optimized.payload_bytes(),
+            order_scalar.payload_bytes()
+        );
+
+        // Delivery-only parity isolates the equal-target resident kernel.
+        let make_delivery = || {
+            let mut runtime = runtime(recurrent_config);
+            assert_eq!(
+                runtime.advance_with_scalar_dense_policy(1, &recurrent_events),
+                super::PROCEDURAL_OK
+            );
+            runtime
+        };
+        let mut delivery_scalar = make_delivery();
+        let mut delivery_optimized = make_delivery();
+        let mut scalar_delivered = 0u64;
+        for index in 0..E {
+            scalar_delivered += 1;
+            let event = delivery_scalar.pending[index];
+            delivery_scalar
+                .apply_event_with_fresh_run::<true, true>(event)
+                .unwrap();
+        }
+        let mut optimized_delivered = 0u64;
+        delivery_optimized
+            .deliver_due_target_runs::<true, true>(E, &mut optimized_delivered)
+            .unwrap();
+        assert_eq!(optimized_delivered, scalar_delivered);
+        assert_runtime_exact(&delivery_optimized, &delivery_scalar);
+
+        // Dense preflight failure remains before either helper and preserves
+        // the exact partial state/counter image and first error code.
+        let overflow_config = config(64, F, 64 * F - 1);
+        let overflow_events: Vec<_> = (0..64).map(|gid| drive(gid, 0, 2.0)).collect();
+        let mut overflow_scalar = runtime(overflow_config);
+        let mut overflow_optimized = runtime(overflow_config);
+        assert_eq!(
+            overflow_scalar.advance_with_scalar_dense_policy(1, &overflow_events),
+            super::PROCEDURAL_EVENT_CAPACITY
+        );
+        assert_eq!(
+            overflow_optimized.advance(1, &overflow_events),
+            super::PROCEDURAL_EVENT_CAPACITY
+        );
+        assert_runtime_exact(&overflow_optimized, &overflow_scalar);
+
+        const WARMUP: usize = 2;
+        const SAMPLES: usize = 9;
+        let mut ordering_scalar_samples = Vec::with_capacity(SAMPLES);
+        let mut ordering_optimized_samples = Vec::with_capacity(SAMPLES);
+        let mut delivery_scalar_samples = Vec::with_capacity(SAMPLES);
+        let mut delivery_optimized_samples = Vec::with_capacity(SAMPLES);
+        let mut recurrent_scalar_samples = Vec::with_capacity(SAMPLES);
+        let mut recurrent_optimized_samples = Vec::with_capacity(SAMPLES);
+        for repetition in 0..WARMUP + SAMPLES {
+            let time_ordering = |optimized: bool| {
+                let mut runtime = runtime(recurrent_config);
+                runtime.pending.extend_from_slice(&source_major);
+                let start = std::time::Instant::now();
+                runtime.finish_step_queue_order(0, optimized).unwrap();
+                let elapsed = start.elapsed().as_nanos();
+                std::hint::black_box(runtime.pending[0].target_gid);
+                elapsed
+            };
+            let time_delivery = |optimized: bool| {
+                let mut runtime = make_delivery();
+                let mut delivered = 0u64;
+                let start = std::time::Instant::now();
+                if optimized {
+                    runtime
+                        .deliver_due_target_runs::<true, true>(E, &mut delivered)
+                        .unwrap();
+                } else {
+                    for index in 0..E {
+                        delivered += 1;
+                        let event = runtime.pending[index];
+                        runtime
+                            .apply_event_with_fresh_run::<true, true>(event)
+                            .unwrap();
+                    }
+                }
+                let elapsed = start.elapsed().as_nanos();
+                std::hint::black_box((delivered, runtime.residents[0].synaptic_current));
+                elapsed
+            };
+            let time_recurrent = |optimized: bool| {
+                let mut runtime = runtime(recurrent_config);
+                let start = std::time::Instant::now();
+                let status = if optimized {
+                    runtime.advance(4, &recurrent_events)
+                } else {
+                    runtime.advance_with_scalar_dense_policy(4, &recurrent_events)
+                };
+                let elapsed = start.elapsed().as_nanos();
+                std::hint::black_box((status, runtime.counters.generated_edges));
+                elapsed
+            };
+            let (
+                ordering_scalar,
+                ordering_optimized,
+                delivery_scalar,
+                delivery_optimized,
+                recurrent_scalar,
+                recurrent_optimized,
+            ) = if repetition % 2 == 0 {
+                (
+                    time_ordering(false),
+                    time_ordering(true),
+                    time_delivery(false),
+                    time_delivery(true),
+                    time_recurrent(false),
+                    time_recurrent(true),
+                )
+            } else {
+                let ordering_optimized = time_ordering(true);
+                let ordering_scalar = time_ordering(false);
+                let delivery_optimized = time_delivery(true);
+                let delivery_scalar = time_delivery(false);
+                let recurrent_optimized = time_recurrent(true);
+                let recurrent_scalar = time_recurrent(false);
+                (
+                    ordering_scalar,
+                    ordering_optimized,
+                    delivery_scalar,
+                    delivery_optimized,
+                    recurrent_scalar,
+                    recurrent_optimized,
+                )
+            };
+            if repetition >= WARMUP {
+                ordering_scalar_samples.push(ordering_scalar);
+                ordering_optimized_samples.push(ordering_optimized);
+                delivery_scalar_samples.push(delivery_scalar);
+                delivery_optimized_samples.push(delivery_optimized);
+                recurrent_scalar_samples.push(recurrent_scalar);
+                recurrent_optimized_samples.push(recurrent_optimized);
+            }
+        }
+
+        // Count-first thresholding keeps K=64/no-spike and empty traces on the
+        // same scalar instructions for both policy values.
+        const SPARSE_CELLS: usize = 64;
+        const SPARSE_STEPS: u64 = 131_072;
+        const IDLE_STEPS: u64 = 262_144;
+        let make_sparse = || {
+            let mut runtime = runtime(config(SPARSE_CELLS, F, SPARSE_CELLS));
+            runtime.residents = (0..SPARSE_CELLS)
+                .map(|gid| {
+                    let mut cell = CellState::canonical_rest(gid as u64);
+                    cell.voltage = 0.25;
+                    cell
+                })
+                .collect();
+            runtime
+        };
+        let mut sparse_scalar_samples = Vec::with_capacity(SAMPLES);
+        let mut sparse_optimized_samples = Vec::with_capacity(SAMPLES);
+        let mut idle_scalar_samples = Vec::with_capacity(SAMPLES);
+        let mut idle_optimized_samples = Vec::with_capacity(SAMPLES);
+        for repetition in 0..WARMUP + SAMPLES {
+            let time_sparse = |optimized: bool| {
+                let mut runtime = make_sparse();
+                let start = std::time::Instant::now();
+                let status =
+                    runtime.advance_with_dense_policy::<true, true>(SPARSE_STEPS, &[], optimized);
+                let elapsed = start.elapsed().as_nanos();
+                std::hint::black_box((status, runtime.counters.cell_step_evaluations));
+                elapsed
+            };
+            let time_idle = |optimized: bool| {
+                let mut runtime = runtime(config(64, F, 64));
+                let start = std::time::Instant::now();
+                let status =
+                    runtime.advance_with_dense_policy::<true, true>(IDLE_STEPS, &[], optimized);
+                let elapsed = start.elapsed().as_nanos();
+                std::hint::black_box(status);
+                elapsed
+            };
+            let (sparse_scalar, sparse_optimized, idle_scalar, idle_optimized) =
+                if repetition % 2 == 0 {
+                    (
+                        time_sparse(false),
+                        time_sparse(true),
+                        time_idle(false),
+                        time_idle(true),
+                    )
+                } else {
+                    let sparse_optimized = time_sparse(true);
+                    let sparse_scalar = time_sparse(false);
+                    let idle_optimized = time_idle(true);
+                    let idle_scalar = time_idle(false);
+                    (sparse_scalar, sparse_optimized, idle_scalar, idle_optimized)
+                };
+            if repetition >= WARMUP {
+                sparse_scalar_samples.push(sparse_scalar);
+                sparse_optimized_samples.push(sparse_optimized);
+                idle_scalar_samples.push(idle_scalar);
+                idle_optimized_samples.push(idle_optimized);
+            }
+        }
+
+        let ordering_scalar_ns = median(&mut ordering_scalar_samples);
+        let ordering_optimized_ns = median(&mut ordering_optimized_samples);
+        let delivery_scalar_ns = median(&mut delivery_scalar_samples);
+        let delivery_optimized_ns = median(&mut delivery_optimized_samples);
+        let recurrent_scalar_ns = median(&mut recurrent_scalar_samples);
+        let recurrent_optimized_ns = median(&mut recurrent_optimized_samples);
+        let sparse_scalar_ns = median(&mut sparse_scalar_samples);
+        let sparse_optimized_ns = median(&mut sparse_optimized_samples);
+        let idle_scalar_ns = median(&mut idle_scalar_samples);
+        let idle_optimized_ns = median(&mut idle_optimized_samples);
+        let ordering_speedup = ordering_scalar_ns as f64 / ordering_optimized_ns as f64;
+        let delivery_speedup = delivery_scalar_ns as f64 / delivery_optimized_ns as f64;
+        let recurrent_speedup = recurrent_scalar_ns as f64 / recurrent_optimized_ns as f64;
+        let sparse_ratio = sparse_optimized_ns as f64 / sparse_scalar_ns as f64;
+        let idle_ratio = idle_optimized_ns as f64 / idle_scalar_ns as f64;
+        eprintln!(
+            "hybrid-dense ordering={}=>{}ns ({:.3}x) delivery={}=>{}ns ({:.3}x) recurrent={}=>{}ns ({:.3}x) sparse={}=>{}ns ({:.3}x) idle={}=>{}ns ({:.3}x) payload_bytes={}",
+            ordering_scalar_ns,
+            ordering_optimized_ns,
+            ordering_speedup,
+            delivery_scalar_ns,
+            delivery_optimized_ns,
+            delivery_speedup,
+            recurrent_scalar_ns,
+            recurrent_optimized_ns,
+            recurrent_speedup,
+            sparse_scalar_ns,
+            sparse_optimized_ns,
+            sparse_ratio,
+            idle_scalar_ns,
+            idle_optimized_ns,
+            idle_ratio,
+            recurrent_optimized.payload_bytes(),
+        );
+        if !cfg!(debug_assertions) {
+            assert!(
+                ordering_speedup >= 1.50,
+                "ordering gate: {ordering_speedup:.3}x"
+            );
+            assert!(
+                delivery_speedup >= 1.50,
+                "delivery gate: {delivery_speedup:.3}x"
+            );
+            assert!(
+                recurrent_speedup >= 1.15,
+                "recurrent gate: {recurrent_speedup:.3}x"
+            );
+            assert!(
+                sparse_ratio <= 1.03,
+                "sparse regression: {sparse_ratio:.3}x"
+            );
+            assert!(idle_ratio <= 1.03, "idle regression: {idle_ratio:.3}x");
+        }
     }
 }
