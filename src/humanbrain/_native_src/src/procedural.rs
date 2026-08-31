@@ -40,6 +40,47 @@ const MAX_CANDIDATE_ATTEMPTS: u64 = 128;
 // paths remain the smaller mechanism; dense N=8192,F=4 produces 32K events.
 const DENSE_EVENT_THRESHOLD: usize = 4_096;
 
+#[cfg(test)]
+std::thread_local! {
+    static FUSE_INTERMEDIATE_RECURRENT_TAIL: std::cell::Cell<bool> =
+        const { std::cell::Cell::new(true) };
+    static FUSED_INTERMEDIATE_RECURRENT_TAILS: std::cell::Cell<usize> =
+        const { std::cell::Cell::new(0) };
+}
+
+#[inline(always)]
+fn intermediate_recurrent_tail_fusion_enabled() -> bool {
+    #[cfg(test)]
+    {
+        return FUSE_INTERMEDIATE_RECURRENT_TAIL.with(std::cell::Cell::get);
+    }
+    #[cfg(not(test))]
+    {
+        true
+    }
+}
+
+#[cfg(test)]
+fn set_intermediate_recurrent_tail_fusion(enabled: bool) {
+    FUSE_INTERMEDIATE_RECURRENT_TAIL.with(|value| value.set(enabled));
+}
+
+#[cfg(test)]
+fn reset_fused_intermediate_recurrent_tail_count() {
+    FUSED_INTERMEDIATE_RECURRENT_TAILS.with(|value| value.set(0));
+}
+
+#[cfg(test)]
+fn fused_intermediate_recurrent_tail_count() -> usize {
+    FUSED_INTERMEDIATE_RECURRENT_TAILS.with(std::cell::Cell::get)
+}
+
+#[inline(always)]
+fn note_fused_intermediate_recurrent_tail() {
+    #[cfg(test)]
+    FUSED_INTERMEDIATE_RECURRENT_TAILS.with(|value| value.set(value.get() + 1));
+}
+
 type CommonConfiguration = (GlifConfig, ProceduralConfig, [f64; 2], [f64; 2], [f64; 2]);
 
 pub const PROCEDURAL_OK: u32 = 0;
@@ -1705,6 +1746,69 @@ impl ProceduralRuntime {
         Ok(())
     }
 
+    #[inline]
+    fn can_fuse_intermediate_recurrent_tail(
+        &self,
+        step_offset: u64,
+        step_count: u64,
+        tail_start: usize,
+        generated_this_step: usize,
+        generated_edges_before: u64,
+        delivered_events: u64,
+    ) -> bool {
+        if generated_this_step < DENSE_EVENT_THRESHOLD
+            || !intermediate_recurrent_tail_fusion_enabled()
+            || self.event_proportional()
+            || self.config.recurrent_delay_steps != 1
+            || step_offset >= step_count - 1
+            || self.pending_head != tail_start
+        {
+            return false;
+        }
+        let configured_cells = match usize::try_from(self.config.configured_cells) {
+            Ok(value) => value,
+            Err(_) => return false,
+        };
+        if self.residents.len() != configured_cells
+            || !self
+                .residents
+                .iter()
+                .enumerate()
+                .all(|(gid, state)| state.gid == gid as u64)
+        {
+            return false;
+        }
+        let generated_u64 = match u64::try_from(generated_this_step) {
+            Ok(value) => value,
+            Err(_) => return false,
+        };
+        let queued_after_generation =
+            match self.pending_logical_len().checked_add(generated_this_step) {
+                Some(value) => value,
+                None => return false,
+            };
+        queued_after_generation <= self.config.event_capacity
+            && generated_edges_before.checked_add(generated_u64).is_some()
+            && delivered_events.checked_add(generated_u64).is_some()
+    }
+
+    #[inline]
+    fn apply_source_major_full_coverage_tail(&mut self, tail_start: usize) {
+        debug_assert!(!self.event_proportional());
+        debug_assert_eq!(self.pending_head, tail_start);
+        debug_assert_eq!(self.residents.len(), self.config.configured_cells as usize);
+        for event_index in tail_start..self.pending.len() {
+            let event = self.pending[event_index];
+            let target = event.target_gid as usize;
+            debug_assert_eq!(self.residents[target].gid, event.target_gid);
+            let current = canonical_zero(event.current_pa);
+            let value = self.residents[target].synaptic_current + current;
+            self.residents[target].synaptic_current = canonical_zero(value);
+        }
+        self.pending.truncate(tail_start);
+        note_fused_intermediate_recurrent_tail();
+    }
+
     /// Order the live queue after a generation phase. Only the appended tail
     /// is sorted; it is then linear-merged with the already-sorted live
     /// prefix, yielding exactly the fully ascending canonical order a
@@ -1971,7 +2075,7 @@ impl ProceduralRuntime {
         let mut generated_edges = 0u64;
         let mut delivered_events = 0u64;
 
-        for _ in 0..step_count {
+        for step_offset in 0..step_count {
             let step_spike_start = self.last_spikes.len();
             let event_proportional = self.event_proportional();
             // Collect this step's ascending run of absent nonzero event
@@ -2372,6 +2476,15 @@ impl ProceduralRuntime {
             // The result is byte-identical to sorting the whole live queue:
             // both produce the full queue in ascending canonical key order.
             let tail_start = self.pending.len();
+            let generated_edges_before = generated_edges;
+            let fuse_intermediate_recurrent_tail = self.can_fuse_intermediate_recurrent_tail(
+                step_offset,
+                step_count,
+                tail_start,
+                generated_this_step,
+                generated_edges_before,
+                delivered_events,
+            );
             for spike_index in 0..step_spike_count {
                 let source = if event_proportional {
                     self.scratch.gid_run[spike_index]
@@ -2426,10 +2539,24 @@ impl ProceduralRuntime {
                     };
                 }
             }
-            if let Err(code) = self.finish_step_queue_order(tail_start, dense_kernels_enabled) {
-                return self.poison(code);
+            if fuse_intermediate_recurrent_tail {
+                let queued_before_handoff = self.pending_logical_len();
+                let delivered_after_handoff = delivered_events
+                    .checked_add(generated_this_step as u64)
+                    .expect("fused delivered-event arithmetic was preflighted");
+                debug_assert_eq!(
+                    generated_edges,
+                    generated_edges_before + generated_this_step as u64
+                );
+                self.apply_source_major_full_coverage_tail(tail_start);
+                delivered_events = delivered_after_handoff;
+                queue_peak = queue_peak.max(queued_before_handoff);
+            } else {
+                if let Err(code) = self.finish_step_queue_order(tail_start, dense_kernels_enabled) {
+                    return self.poison(code);
+                }
+                queue_peak = queue_peak.max(self.pending_logical_len());
             }
-            queue_peak = queue_peak.max(self.pending_logical_len());
             self.current_step += 1;
         }
 
@@ -6495,5 +6622,333 @@ mod tests {
             );
             assert!(idle_ratio <= 1.03, "idle regression: {idle_ratio:.3}x");
         }
+    }
+
+    #[test]
+    fn advance_local_fused_recurrent_handoff_is_exact_and_clears_release_gates() {
+        fn config(cells: usize, fanout: usize, event_capacity: usize) -> ProceduralConfig {
+            ProceduralConfig {
+                configured_cells: cells as u64,
+                fanout: fanout as u64,
+                seed: 71,
+                resident_capacity: cells,
+                event_capacity,
+                spike_capacity: cells.saturating_mul(4),
+                interval_distinct_capacity: cells,
+                recurrent_weight_pa: 0.25,
+                recurrent_delay_steps: 1,
+                recurrent_decay: 1e-8,
+                eligibility_decay: 0.5,
+                stepping_mode: PROCEDURAL_STEPPING_FULL_TOUCH,
+            }
+        }
+
+        fn runtime(config: ProceduralConfig) -> ProceduralRuntime {
+            ProceduralRuntime::new(ep_glif(), config, [0.5; 2], [0.5; 2], [0.0; 2]).unwrap()
+        }
+
+        fn event_bits(event: &ProceduralEventRecord) -> [u64; 5] {
+            [
+                event.due_step,
+                event.target_gid,
+                event.source_gid,
+                event.edge_slot,
+                event.current_pa.to_bits(),
+            ]
+        }
+
+        fn resident_image(runtime: &ProceduralRuntime) -> Vec<Vec<u8>> {
+            runtime
+                .residents
+                .iter()
+                .map(|state| resident_raw_bytes(&state.record()).to_vec())
+                .collect()
+        }
+
+        fn staged_image(runtime: &ProceduralRuntime) -> Vec<Vec<u8>> {
+            runtime
+                .staged_states()
+                .iter()
+                .map(|state| resident_raw_bytes(&state.record()).to_vec())
+                .collect()
+        }
+
+        fn assert_runtime_exact(left: &ProceduralRuntime, right: &ProceduralRuntime) {
+            assert_eq!(left.current_step, right.current_step);
+            assert_eq!(left.poisoned, right.poisoned);
+            assert_eq!(left.pending_head, right.pending_head);
+            assert_eq!(resident_image(left), resident_image(right));
+            assert_eq!(staged_image(left), staged_image(right));
+            assert_eq!(left.pending.len(), right.pending.len());
+            for (left, right) in left.pending.iter().zip(&right.pending) {
+                assert_eq!(event_bits(left), event_bits(right));
+            }
+            assert_eq!(left.last_spikes.len(), right.last_spikes.len());
+            for (left, right) in left.last_spikes.iter().zip(&right.last_spikes) {
+                assert_eq!((left.step, left.gid), (right.step, right.gid));
+            }
+            assert_eq!(left.dormant.len(), right.dormant.len());
+            for ((left_gid, left_entry), (right_gid, right_entry)) in
+                left.dormant.iter().zip(&right.dormant)
+            {
+                assert_eq!(left_gid, right_gid);
+                assert_eq!(
+                    (left_entry.eligibility.to_bits(), left_entry.elig_step),
+                    (right_entry.eligibility.to_bits(), right_entry.elig_step)
+                );
+            }
+            assert_eq!(
+                counters_raw_bytes(&left.counters),
+                counters_raw_bytes(&right.counters)
+            );
+            assert_eq!(left.payload_bytes(), right.payload_bytes());
+        }
+
+        fn run_with_policy(
+            config: ProceduralConfig,
+            steps: u64,
+            events: &[ProceduralEventRecord],
+            fuse: bool,
+        ) -> (ProceduralRuntime, u32, usize) {
+            let mut runtime = runtime(config);
+            super::set_intermediate_recurrent_tail_fusion(fuse);
+            super::reset_fused_intermediate_recurrent_tail_count();
+            let status = runtime.advance(steps, events);
+            let fused = super::fused_intermediate_recurrent_tail_count();
+            (runtime, status, fused)
+        }
+
+        fn assert_retained_boundary(
+            config: ProceduralConfig,
+            steps: u64,
+            events: &[ProceduralEventRecord],
+        ) -> ProceduralRuntime {
+            let (retained, retained_status, retained_fused) =
+                run_with_policy(config, steps, events, false);
+            let (candidate, candidate_status, candidate_fused) =
+                run_with_policy(config, steps, events, true);
+            assert_eq!(candidate_status, retained_status);
+            assert_eq!(retained_fused, 0);
+            assert_eq!(candidate_fused, 0);
+            assert_runtime_exact(&candidate, &retained);
+            candidate
+        }
+
+        fn median(samples: &mut [u128]) -> u128 {
+            samples.sort_unstable();
+            samples[samples.len() / 2]
+        }
+
+        const N: usize = 8_192;
+        const F: usize = 4;
+        const E: usize = N * F;
+        let recurrent_config = config(N, F, E);
+        let recurrent_events: Vec<_> = (0..N as u64).map(|gid| drive(gid, 0, 2.0)).collect();
+
+        let (retained, retained_status, retained_fused) =
+            run_with_policy(recurrent_config, 4, &recurrent_events, false);
+        let (fused, fused_status, fused_count) =
+            run_with_policy(recurrent_config, 4, &recurrent_events, true);
+        assert_eq!(retained_status, super::PROCEDURAL_OK);
+        assert_eq!(fused_status, super::PROCEDURAL_OK);
+        assert_eq!(retained_fused, 0);
+        assert_eq!(fused_count, 1);
+        assert_runtime_exact(&fused, &retained);
+        assert_eq!(fused.current_step, 4);
+        assert_eq!(fused.pending_logical_len(), 0);
+        assert!(fused.staged_is_empty());
+        assert!(fused.dormant.is_empty());
+        assert_eq!(fused.counters.generated_edges, E as u64);
+        assert_eq!(fused.counters.delivered_events, (N + E) as u64);
+        assert_eq!(fused.payload_bytes(), 5_181_240);
+
+        // The final internal step retains its canonical pending boundary.
+        let final_step = assert_retained_boundary(recurrent_config, 1, &recurrent_events);
+        assert_eq!(final_step.pending_logical_len(), E);
+
+        // Every exclusion keeps the retained queue/delivery path unchanged.
+        let partial_events: Vec<_> = (0..(N / 2) as u64).map(|gid| drive(gid, 0, 2.0)).collect();
+        assert_retained_boundary(recurrent_config, 2, &partial_events);
+
+        let mut event_proportional_config = recurrent_config;
+        event_proportional_config.stepping_mode = PROCEDURAL_STEPPING_EVENT_PROPORTIONAL;
+        assert_retained_boundary(event_proportional_config, 2, &recurrent_events);
+
+        let mut future_config = recurrent_config;
+        future_config.event_capacity += 1;
+        let mut future_events = recurrent_events.clone();
+        future_events.push(ProceduralEventRecord {
+            due_step: 9,
+            target_gid: 0,
+            source_gid: 0,
+            edge_slot: 0,
+            current_pa: 0.125,
+        });
+        let future = assert_retained_boundary(future_config, 2, &future_events);
+        assert_eq!(future.pending_logical_len(), 1);
+        assert_eq!(future.pending_slice()[0].due_step, 9);
+
+        const SMALL_N: usize = 512;
+        let small_events: Vec<_> = (0..SMALL_N as u64).map(|gid| drive(gid, 0, 2.0)).collect();
+        assert_retained_boundary(config(SMALL_N, F, SMALL_N * F), 2, &small_events);
+
+        let overflow_config = config(64, F, 64 * F - 1);
+        let overflow_events: Vec<_> = (0..64).map(|gid| drive(gid, 0, 2.0)).collect();
+        let overflow = assert_retained_boundary(overflow_config, 2, &overflow_events);
+        assert_eq!(overflow.poisoned, super::PROCEDURAL_EVENT_CAPACITY);
+        assert_eq!(overflow.current_step, 0);
+
+        let mut arithmetic = runtime(config(1, 4_096, 4_096));
+        arithmetic.residents.push(CellState::canonical_rest(0));
+        assert!(!arithmetic.can_fuse_intermediate_recurrent_tail(0, 2, 0, 4_096, u64::MAX, 0,));
+        assert!(!arithmetic.can_fuse_intermediate_recurrent_tail(0, 2, 0, 4_096, 0, u64::MAX,));
+
+        const WARMUP: usize = 2;
+        const SAMPLES: usize = 9;
+        let mut recurrent_retained_samples = Vec::with_capacity(SAMPLES);
+        let mut recurrent_fused_samples = Vec::with_capacity(SAMPLES);
+        for repetition in 0..WARMUP + SAMPLES {
+            let time_recurrent = |fuse: bool| {
+                let mut runtime = runtime(recurrent_config);
+                super::set_intermediate_recurrent_tail_fusion(fuse);
+                super::reset_fused_intermediate_recurrent_tail_count();
+                let start = std::time::Instant::now();
+                let status = runtime.advance(4, &recurrent_events);
+                let elapsed = start.elapsed().as_nanos();
+                assert_eq!(status, super::PROCEDURAL_OK);
+                assert_eq!(
+                    super::fused_intermediate_recurrent_tail_count(),
+                    usize::from(fuse)
+                );
+                std::hint::black_box((runtime.counters.generated_edges, runtime.current_step));
+                elapsed
+            };
+            let (retained_ns, fused_ns) = if repetition % 2 == 0 {
+                (time_recurrent(false), time_recurrent(true))
+            } else {
+                let fused_ns = time_recurrent(true);
+                let retained_ns = time_recurrent(false);
+                (retained_ns, fused_ns)
+            };
+            if repetition >= WARMUP {
+                recurrent_retained_samples.push(retained_ns);
+                recurrent_fused_samples.push(fused_ns);
+            }
+        }
+
+        const K64: usize = 64;
+        const K64_STEPS: u64 = 131_072;
+        const IDLE_STEPS: u64 = 262_144;
+        let make_k64 = || {
+            let mut runtime = runtime(config(K64, F, K64));
+            runtime.residents = (0..K64)
+                .map(|gid| {
+                    let mut cell = CellState::canonical_rest(gid as u64);
+                    cell.voltage = 0.25;
+                    cell
+                })
+                .collect();
+            runtime
+        };
+        let mut k64_retained_samples = Vec::with_capacity(SAMPLES);
+        let mut k64_fused_samples = Vec::with_capacity(SAMPLES);
+        let mut idle_retained_samples = Vec::with_capacity(SAMPLES);
+        let mut idle_fused_samples = Vec::with_capacity(SAMPLES);
+        for repetition in 0..WARMUP + SAMPLES {
+            let time_k64 = |fuse: bool| {
+                let mut runtime = make_k64();
+                super::set_intermediate_recurrent_tail_fusion(fuse);
+                super::reset_fused_intermediate_recurrent_tail_count();
+                let start = std::time::Instant::now();
+                let status = runtime.advance(K64_STEPS, &[]);
+                let elapsed = start.elapsed().as_nanos();
+                assert_eq!(status, super::PROCEDURAL_OK);
+                assert_eq!(super::fused_intermediate_recurrent_tail_count(), 0);
+                std::hint::black_box(runtime.counters.cell_step_evaluations);
+                elapsed
+            };
+            let time_idle = |fuse: bool| {
+                let mut runtime = runtime(config(K64, F, K64));
+                super::set_intermediate_recurrent_tail_fusion(fuse);
+                super::reset_fused_intermediate_recurrent_tail_count();
+                let start = std::time::Instant::now();
+                let status = runtime.advance(IDLE_STEPS, &[]);
+                let elapsed = start.elapsed().as_nanos();
+                assert_eq!(status, super::PROCEDURAL_OK);
+                assert_eq!(super::fused_intermediate_recurrent_tail_count(), 0);
+                std::hint::black_box(runtime.current_step);
+                elapsed
+            };
+            let (k64_retained, k64_fused, idle_retained, idle_fused) = if repetition % 2 == 0 {
+                (
+                    time_k64(false),
+                    time_k64(true),
+                    time_idle(false),
+                    time_idle(true),
+                )
+            } else {
+                let k64_fused = time_k64(true);
+                let k64_retained = time_k64(false);
+                let idle_fused = time_idle(true);
+                let idle_retained = time_idle(false);
+                (k64_retained, k64_fused, idle_retained, idle_fused)
+            };
+            if repetition >= WARMUP {
+                k64_retained_samples.push(k64_retained);
+                k64_fused_samples.push(k64_fused);
+                idle_retained_samples.push(idle_retained);
+                idle_fused_samples.push(idle_fused);
+            }
+        }
+
+        let recurrent_retained_ns = median(&mut recurrent_retained_samples);
+        let recurrent_fused_ns = median(&mut recurrent_fused_samples);
+        let k64_retained_ns = median(&mut k64_retained_samples);
+        let k64_fused_ns = median(&mut k64_fused_samples);
+        let idle_retained_ns = median(&mut idle_retained_samples);
+        let idle_fused_ns = median(&mut idle_fused_samples);
+        let recurrent_speedup = recurrent_retained_ns as f64 / recurrent_fused_ns as f64;
+        let k64_ratio = k64_fused_ns as f64 / k64_retained_ns as f64;
+        let idle_ratio = idle_fused_ns as f64 / idle_retained_ns as f64;
+        eprintln!(
+            "fused-recurrent-handoff recurrent_raw={:?}=>{:?} median={}=>{}ns ({:.3}x) k64_raw={:?}=>{:?} median={}=>{}ns ({:.3}x) idle_raw={:?}=>{:?} median={}=>{}ns ({:.3}x) payload_bytes={}",
+            recurrent_retained_samples,
+            recurrent_fused_samples,
+            recurrent_retained_ns,
+            recurrent_fused_ns,
+            recurrent_speedup,
+            k64_retained_samples,
+            k64_fused_samples,
+            k64_retained_ns,
+            k64_fused_ns,
+            k64_ratio,
+            idle_retained_samples,
+            idle_fused_samples,
+            idle_retained_ns,
+            idle_fused_ns,
+            idle_ratio,
+            fused.payload_bytes(),
+        );
+        if !cfg!(debug_assertions) {
+            assert!(
+                recurrent_speedup >= 1.15,
+                "recurrent speedup gate: {recurrent_speedup:.3}x"
+            );
+            assert!(
+                recurrent_fused_ns <= 4_313_022,
+                "recurrent absolute gate: {recurrent_fused_ns}ns"
+            );
+            assert!(k64_ratio <= 1.03, "K64 ratio gate: {k64_ratio:.3}x");
+            assert!(
+                k64_fused_ns <= 1_394_929,
+                "K64 absolute gate: {k64_fused_ns}ns"
+            );
+            assert!(idle_ratio <= 1.03, "idle ratio gate: {idle_ratio:.3}x");
+            assert!(
+                idle_fused_ns <= 2_797_480,
+                "idle absolute gate: {idle_fused_ns}ns"
+            );
+        }
+        super::set_intermediate_recurrent_tail_fusion(true);
     }
 }
