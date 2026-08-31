@@ -26,6 +26,7 @@ from typing import NamedTuple
 import numpy as np
 from experiments.r3_pilot import causal_microrepository_repair_loop_v2 as string_repair
 from experiments.r3_pilot import causal_recurrent_fragment_relation_policy_v2 as recurrent
+from experiments.r3_pilot import common_continual_repository_action_memory_v1 as continual_memory
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import public_typed_semantic_vector_race as semantic_race
 from humanbrain.resting_glif_tier_beam import (
@@ -39,6 +40,7 @@ PREPARED = f"{SCHEMA}_PREPARED"
 COMMITTED = f"{SCHEMA}_COMMITTED"
 STOP_ATTESTATION = f"STOP_{SCHEMA}_ATTESTATION"
 STOP_RELATION_SUPPORT = f"STOP_{SCHEMA}_RELATION_SUPPORT"
+STOP_LEARNED_RECALL = f"STOP_{SCHEMA}_LEARNED_RECALL"
 STOP_ADAPTER_INPUT = f"STOP_{SCHEMA}_ADAPTER_INPUT"
 STOP_SOURCE_DRIFT = f"STOP_{SCHEMA}_SOURCE_DRIFT"
 STOP_ELIGIBILITY = f"STOP_{SCHEMA}_ELIGIBILITY"
@@ -82,6 +84,7 @@ _STATE_NAMESPACE = b"common-autonomous-correction-state-v1"
 _PREPARED_NAMESPACE = b"common-autonomous-correction-prepared-v1"
 _CONSEQUENCE_NAMESPACE = b"common-autonomous-correction-consequence-v1"
 _ATTEMPT_NAMESPACE = b"common-autonomous-correction-attempt-v1"
+_RESULT_TRAJECTORY_NAMESPACE = b"common-autonomous-correction-result-trajectory-v1"
 _RESULT_NAMESPACE = b"common-autonomous-correction-result-v1"
 
 
@@ -231,7 +234,10 @@ class PreparedAutonomousCorrectionStateV1(NamedTuple):
     policy_checkpoint_sha256: str
     root_program_sha256: str
     root_source_sha256: str
+    source_context_sha256: str
+    source_context_frame_sha256: str
     candidate_checkpoint_sha256: str | None
+    learned_recall_sha256: str | None
     candidate_count: int
     source_reads_during_prepare: int
     desired_reads_during_prepare: int
@@ -249,11 +255,93 @@ class AutonomousCorrectionResultV1(NamedTuple):
     desired_vector_sha256: str | None
     eligibility_race_sha256: str | None
     attempts: tuple[AutonomousCorrectionAttemptV1, ...]
+    repository_actions: tuple[continual_memory.PhysicalRepositoryActionLessonV1, ...]
     source_before_sha256: str
     source_after_sha256: str
+    source_context_sha256: str
     work: AutonomousCorrectionWorkV1
     claim_boundary: str
+    trajectory_sha256: str
     sha256: str
+
+    def authenticate(self) -> None:
+        for attempt in self.attempts:
+            if not _authenticate_attempt(attempt):
+                raise ValueError("autonomous correction attempt authentication failed")
+        final_checkpoint_sha256 = (
+            None if self.final_checkpoint is None else self.final_checkpoint.sha256
+        )
+        trajectory = _result_trajectory_sha256(
+            status=self.status,
+            prepared_sha256=self.prepared_sha256,
+            initial_checkpoint_sha256=self.initial_checkpoint_sha256,
+            final_checkpoint_sha256=final_checkpoint_sha256,
+            desired_sha256=self.desired_vector_sha256,
+            eligibility_sha256=self.eligibility_race_sha256,
+            attempts=self.attempts,
+            source_before_sha256=self.source_before_sha256,
+            source_after_sha256=self.source_after_sha256,
+            source_context_sha256=self.source_context_sha256,
+            work=self.work,
+            claim_boundary=self.claim_boundary,
+        )
+        if trajectory != self.trajectory_sha256:
+            raise ValueError("autonomous correction trajectory authentication failed")
+        if self.status == COMMITTED:
+            if not self.repository_actions or len(self.repository_actions) != len(
+                self.attempts
+            ):
+                raise ValueError("committed correction lesson cohort changed")
+            for ordinal, (attempt, lesson) in enumerate(
+                zip(self.attempts, self.repository_actions, strict=True),
+                start=1,
+            ):
+                lesson.authenticate()
+                expected_outcome = (
+                    continual_memory.OUTCOME_COMMIT
+                    if attempt.consequence_action_key
+                    == recurrent.ACTION_KEYS[recurrent.ACTION_COMMIT]
+                    else continual_memory.OUTCOME_REVISE
+                    if attempt.consequence_action_key
+                    == recurrent.ACTION_KEYS[recurrent.ACTION_REVISE]
+                    else ""
+                )
+                if (
+                    lesson.controller_trajectory_sha256 != trajectory
+                    or lesson.controller_result_sha256 != self.sha256
+                    or lesson.controller_status != self.status
+                    or lesson.attempt_ordinal != ordinal
+                    or lesson.attempt_count != len(self.attempts)
+                    or lesson.attempt_sha256 != attempt.sha256
+                    or lesson.consequence_sha256 != attempt.consequence_sha256
+                    or lesson.candidate_sha256 != attempt.candidate_sha256
+                    or lesson.program_sha256 != attempt.program_sha256
+                    or lesson.passed_cell
+                    != int(attempt.repository_test_exit_code == 0)
+                    or lesson.rolled_back != attempt.rolled_back
+                    or lesson.committed != attempt.committed
+                    or lesson.outcome_key != expected_outcome
+                    or lesson.source_sha256 != self.source_before_sha256
+                    or lesson.source_context_sha256
+                    != self.source_context_sha256
+                ):
+                    raise ValueError("committed correction lesson binding changed")
+            bodies = tuple(
+                lesson.lesson_body_sha256 for lesson in self.repository_actions
+            )
+            expected_result = continual_memory.controller_result_sha256_v1(
+                trajectory,
+                bodies,
+            )
+        else:
+            if self.repository_actions:
+                raise ValueError("non-committed correction exposed learnable lessons")
+            expected_result = _digest(
+                _RESULT_NAMESPACE,
+                {"trajectory": trajectory, "lesson_bodies": ()},
+            )
+        if self.sha256 != expected_result:
+            raise ValueError("autonomous correction result authentication failed")
 
 
 class _CorrectionCellsV1:
@@ -280,6 +368,10 @@ class _CorrectionCellsV1:
         self,
         frontier_sha256: str,
         candidates: Sequence[string_repair.StringRelationCandidateRecordV2],
+        *,
+        policy_checkpoint_sha256: str,
+        learned_evidence: dict[str, tuple[int, int]] | None = None,
+        learned_recall_sha256: str | None = None,
     ) -> None:
         frozen = tuple(sorted(candidates, key=lambda item: item.sha256))
         if (
@@ -300,13 +392,37 @@ class _CorrectionCellsV1:
         )
         if len(set(addresses)) != CANDIDATE_COUNT:
             raise ValueError("candidate cell addresses collided")
+        evidence = {} if learned_evidence is None else dict(learned_evidence)
+        action_sha256s = tuple(
+            continual_memory.repository_action_sha256_v1(
+                policy_checkpoint_sha256,
+                item.applied_relation_receipt_sha256s,
+            )
+            for item in frozen
+        )
+        if evidence and set(evidence) != set(action_sha256s):
+            raise ValueError("learned evidence must address the exact stable action bank")
+        if evidence and (
+            sum(value == (0, 0) for value in evidence.values()) != 1
+            or sum(value == (0, 2) for value in evidence.values()) != 1
+        ):
+            raise ValueError("learned recall must inject one bounded physical preference")
         self._frontier_sha256 = frontier_sha256
         self._candidates = frozen
         self._excitatory = np.asarray(
-            tuple(item.receipt_cell_support for item in frozen),
+            tuple(
+                item.receipt_cell_support + evidence.get(action_sha256, (0, 0))[0]
+                for item, action_sha256 in zip(frozen, action_sha256s, strict=True)
+            ),
             dtype=np.uint8,
         )
-        self._inhibitory = np.zeros(CANDIDATE_COUNT, dtype=np.uint8)
+        self._inhibitory = np.asarray(
+            tuple(
+                evidence.get(action_sha256, (0, 0))[1]
+                for action_sha256 in action_sha256s
+            ),
+            dtype=np.uint8,
+        )
         self._addresses = np.asarray(addresses, dtype="<u4")
         self._provenance = np.zeros(
             (ATTEMPT_LIMIT, PROVENANCE_ROW_BYTES),
@@ -333,13 +449,15 @@ class _CorrectionCellsV1:
                 "candidates": tuple(
                     {
                         "candidate": item.sha256,
+                        "action": action_sha256s[index],
                         "program": item.program_sha256,
                         "receipts": item.applied_relation_receipt_sha256s,
                         "support": item.receipt_cell_support,
                         "outputs": _encoding_vector_sha256(item.physical_outputs),
                     }
-                    for item in frozen
+                    for index, item in enumerate(frozen)
                 ),
+                "learned_recall": learned_recall_sha256,
                 "tonic_current": TONIC_CURRENT,
                 "attempt_limit": ATTEMPT_LIMIT,
                 "physical_selector": {
@@ -433,6 +551,10 @@ class _CorrectionCellsV1:
             CANDIDATE_CURRENT_BASE_PA + CANDIDATE_CURRENT_GAIN_PA * candidate_drive
         )
         currents[STOP_CELL] = CANDIDATE_CURRENT_BASE_PA + CANDIDATE_CURRENT_GAIN_PA * TONIC_CURRENT
+        if np.any(currents < CANDIDATE_CURRENT_BASE_PA) or np.any(
+            currents > CANDIDATE_CURRENT_MAX_PA
+        ):
+            raise RuntimeError("candidate recall escaped the compiled current envelope")
         physical = self._selector.select(currents, stop_cell=STOP_CELL)
         tier_sha256 = _physical_tier_sha256(physical)
         self._tier_sha256s.append(tier_sha256)
@@ -479,7 +601,8 @@ class _CorrectionCellsV1:
         self._provenance[attempt - 1, :] = np.frombuffer(row, dtype=np.uint8)
         self._filled_rows += 1
         if action == recurrent.ACTION_REVISE and update_inhibitory:
-            self._inhibitory[index] = np.uint8(int(self._inhibitory[index]) + 2)
+            self._inhibitory.fill(0)
+            self._inhibitory[index] = np.uint8(2)
             self._replan_updates += 1
 
 
@@ -573,6 +696,66 @@ def _attempt(
     )
 
 
+def _authenticate_attempt(value: AutonomousCorrectionAttemptV1) -> bool:
+    if type(value) is not AutonomousCorrectionAttemptV1:
+        return False
+    payload = {
+        "attempt": value.attempt,
+        "candidate": value.candidate_sha256,
+        "address": value.candidate_address,
+        "support": value.receipt_cell_support,
+        "program": value.program_sha256,
+        "witness": value.witness_sha256,
+        "source": value.selected_source_sha256,
+        "exit": value.repository_test_exit_code,
+        "stdout": value.repository_test_stdout_sha256,
+        "stderr": value.repository_test_stderr_sha256,
+        "consequence": value.consequence_sha256,
+        "action": value.consequence_action_key,
+        "rolled_back": value.rolled_back,
+        "committed": value.committed,
+    }
+    return (
+        value.sha256 == _digest(_ATTEMPT_NAMESPACE, payload)
+        and value.attempt in (1, 2)
+        and value.receipt_cell_support > 0
+    )
+
+
+def _result_trajectory_sha256(
+    *,
+    status: str,
+    prepared_sha256: str,
+    initial_checkpoint_sha256: str | None,
+    final_checkpoint_sha256: str | None,
+    desired_sha256: str | None,
+    eligibility_sha256: str | None,
+    attempts: Sequence[AutonomousCorrectionAttemptV1],
+    source_before_sha256: str,
+    source_after_sha256: str,
+    source_context_sha256: str,
+    work: AutonomousCorrectionWorkV1,
+    claim_boundary: str,
+) -> str:
+    return _digest(
+        _RESULT_TRAJECTORY_NAMESPACE,
+        {
+            "status": status,
+            "prepared": prepared_sha256,
+            "initial_checkpoint": initial_checkpoint_sha256,
+            "final_checkpoint": final_checkpoint_sha256,
+            "desired": desired_sha256,
+            "eligibility": eligibility_sha256,
+            "attempts": tuple(item.sha256 for item in attempts),
+            "source_before": source_before_sha256,
+            "source_after": source_after_sha256,
+            "source_context": source_context_sha256,
+            "work": work._asdict(),
+            "claim": claim_boundary,
+        },
+    )
+
+
 def _empty_work() -> dict[str, int]:
     return {
         "source_reads": 0,
@@ -638,6 +821,7 @@ class PreparedAutonomousCorrectionV1:
         "_original_source",
         "_policy",
         "_repo_root",
+        "_source_context",
         "_source_path",
         "_spec",
         "state",
@@ -653,6 +837,7 @@ class PreparedAutonomousCorrectionV1:
         source_path: Path,
         expected_path: Path,
         original_source: bytes,
+        source_context: continual_memory.RepositorySourceContextV1 | None,
         cells: _CorrectionCellsV1 | None,
         state: PreparedAutonomousCorrectionStateV1,
     ) -> None:
@@ -663,6 +848,7 @@ class PreparedAutonomousCorrectionV1:
         self._source_path = source_path
         self._expected_path = expected_path
         self._original_source = original_source
+        self._source_context = source_context
         self._cells = cells
         self._initial_checkpoint_sha256 = None if cells is None else cells.state.sha256
         self.state = state
@@ -686,33 +872,112 @@ class PreparedAutonomousCorrectionV1:
         final_source = self._original_source if source_after is None else source_after
         work = self._work(counters)
         final_checkpoint = None if self._cells is None else self._cells.state
-        payload = {
-            "status": status,
-            "prepared": self.state.sha256,
-            "initial_checkpoint": self._initial_checkpoint_sha256,
-            "final_checkpoint": None if final_checkpoint is None else final_checkpoint.sha256,
-            "desired": desired_sha256,
-            "eligibility": eligibility_sha256,
-            "attempts": tuple(item.sha256 for item in attempts),
-            "source_before": _bytes_sha256(self._original_source),
-            "source_after": _bytes_sha256(final_source),
-            "work": work._asdict(),
-            "claim": CLAIM_BOUNDARY,
-        }
-        return AutonomousCorrectionResultV1(
+        attempt_tuple = tuple(attempts)
+        source_before_sha256 = _bytes_sha256(self._original_source)
+        source_after_sha256 = _bytes_sha256(final_source)
+        source_context_sha256 = (
+            "0" * 64 if self._source_context is None else self._source_context.sha256
+        )
+        trajectory_sha256 = _result_trajectory_sha256(
+            status=status,
+            prepared_sha256=self.state.sha256,
+            initial_checkpoint_sha256=self._initial_checkpoint_sha256,
+            final_checkpoint_sha256=(
+                None if final_checkpoint is None else final_checkpoint.sha256
+            ),
+            desired_sha256=desired_sha256,
+            eligibility_sha256=eligibility_sha256,
+            attempts=attempt_tuple,
+            source_before_sha256=source_before_sha256,
+            source_after_sha256=source_after_sha256,
+            source_context_sha256=source_context_sha256,
+            work=work,
+            claim_boundary=CLAIM_BOUNDARY,
+        )
+        repository_actions: tuple[
+            continual_memory.PhysicalRepositoryActionLessonV1, ...
+        ] = ()
+        if status == COMMITTED:
+            if self._cells is None or self._source_context is None:
+                raise RuntimeError("committed correction lost its authenticated source cells")
+            self._source_context.authenticate()
+            candidates = {item.sha256: item for item in self._cells.candidates}
+            consequences: list[
+                continual_memory._RepositoryActionConsequenceV1
+            ] = []
+            for attempt in attempt_tuple:
+                candidate = candidates.get(attempt.candidate_sha256)
+                if candidate is None or candidate.program_sha256 != attempt.program_sha256:
+                    raise RuntimeError("repository action candidate provenance changed")
+                if attempt.consequence_action_key == recurrent.ACTION_KEYS[
+                    recurrent.ACTION_COMMIT
+                ]:
+                    outcome_key = continual_memory.OUTCOME_COMMIT
+                elif attempt.consequence_action_key == recurrent.ACTION_KEYS[
+                    recurrent.ACTION_REVISE
+                ]:
+                    outcome_key = continual_memory.OUTCOME_REVISE
+                else:
+                    raise RuntimeError("repository consequence action is not learnable")
+                consequences.append(
+                    continual_memory._RepositoryActionConsequenceV1(
+                        candidate_sha256=candidate.sha256,
+                        applied_relation_receipt_sha256s=(
+                            candidate.applied_relation_receipt_sha256s
+                        ),
+                        program_sha256=candidate.program_sha256,
+                        attempt_sha256=attempt.sha256,
+                        consequence_sha256=attempt.consequence_sha256,
+                        passed_cell=int(attempt.repository_test_exit_code == 0),
+                        outcome_key=outcome_key,
+                        rolled_back=attempt.rolled_back,
+                        committed=attempt.committed,
+                    )
+                )
+            action_bank = tuple(
+                sorted(
+                    continual_memory.repository_action_sha256_v1(
+                        self._policy.checkpoint_sha256,
+                        candidate.applied_relation_receipt_sha256s,
+                    )
+                    for candidate in self._cells.candidates
+                )
+            )
+            result_sha256, repository_actions = (
+                continual_memory._seal_physical_repository_action_lessons_v1(
+                    policy_checkpoint_sha256=self._policy.checkpoint_sha256,
+                    controller_trajectory_sha256=trajectory_sha256,
+                    controller_status=status,
+                    frontier_sha256=self._frontier.state.sha256,
+                    action_bank_sha256s=action_bank,
+                    source_context=self._source_context,
+                    consequences=tuple(consequences),
+                )
+            )
+        else:
+            result_sha256 = _digest(
+                _RESULT_NAMESPACE,
+                {"trajectory": trajectory_sha256, "lesson_bodies": ()},
+            )
+        result = AutonomousCorrectionResultV1(
             status=status,
             prepared_sha256=self.state.sha256,
             initial_checkpoint_sha256=self._initial_checkpoint_sha256,
             final_checkpoint=final_checkpoint,
             desired_vector_sha256=desired_sha256,
             eligibility_race_sha256=eligibility_sha256,
-            attempts=tuple(attempts),
-            source_before_sha256=_bytes_sha256(self._original_source),
-            source_after_sha256=_bytes_sha256(final_source),
+            attempts=attempt_tuple,
+            repository_actions=repository_actions,
+            source_before_sha256=source_before_sha256,
+            source_after_sha256=source_after_sha256,
+            source_context_sha256=source_context_sha256,
             work=work,
             claim_boundary=CLAIM_BOUNDARY,
-            sha256=_digest(_RESULT_NAMESPACE, payload),
+            trajectory_sha256=trajectory_sha256,
+            sha256=result_sha256,
         )
+        result.authenticate()
+        return result
 
     def _rollback(self, counters: dict[str, int]) -> tuple[bool, bytes]:
         try:
@@ -998,8 +1263,11 @@ def _prepared_state(
     frontier: string_repair.StringRelationFrontierV2,
     spec: AutonomousCorrectionSpecV1,
     observed_source_sha256: str,
+    source_context_sha256: str,
+    source_context_frame_sha256: str,
     cells: _CorrectionCellsV1 | None,
     source_reads: int,
+    learned_recall_sha256: str | None,
 ) -> PreparedAutonomousCorrectionStateV1:
     candidate_checkpoint = None if cells is None else cells.state.sha256
     partial = PreparedAutonomousCorrectionStateV1(
@@ -1008,7 +1276,10 @@ def _prepared_state(
         policy_checkpoint_sha256=policy.checkpoint_sha256,
         root_program_sha256=spec.root_program_sha256,
         root_source_sha256=observed_source_sha256,
+        source_context_sha256=source_context_sha256,
+        source_context_frame_sha256=source_context_frame_sha256,
         candidate_checkpoint_sha256=candidate_checkpoint,
+        learned_recall_sha256=learned_recall_sha256,
         candidate_count=0 if cells is None else len(cells.candidates),
         source_reads_during_prepare=source_reads,
         desired_reads_during_prepare=0,
@@ -1029,6 +1300,11 @@ def prepare_autonomous_correction_v1(
     *,
     candidate_records: Sequence[string_repair.StringRelationCandidateRecordV2] | None = None,
     relation_support_gate: bool = True,
+    action_memory: continual_memory.FrozenContinualRepositoryActionMemoryV1
+    | None = None,
+    memory_recall_gate: bool = True,
+    memory_context_gate: bool = True,
+    memory_candidate_gate: bool = True,
 ) -> PreparedAutonomousCorrectionV1:
     """Attest one frozen frontier and allocate the 86-byte candidate checkpoint."""
     policy.authenticate()
@@ -1060,14 +1336,81 @@ def prepare_autonomous_correction_v1(
         and observed_source_sha256 == spec.root_source_sha256
         and records_authentic
     )
+    if any(
+        type(gate) is not bool
+        for gate in (
+            relation_support_gate,
+            memory_recall_gate,
+            memory_context_gate,
+            memory_candidate_gate,
+        )
+    ):
+        raise TypeError("correction preparation gates must be exact booleans")
+    source_context_frame_sha256 = "0" * 64
+    source_context_sha256 = "0" * 64
+    source_context: continual_memory.RepositorySourceContextV1 | None = None
+    learned_recall = None
+    learned_evidence: dict[str, tuple[int, int]] | None = None
+    if attested:
+        source_context = continual_memory.project_attested_repository_source_v1(
+            original_source
+        )
+        source_context_frame_sha256 = source_context.frame_sha256
+        source_context_sha256 = source_context.sha256
+        if action_memory is not None:
+            if type(action_memory) is not continual_memory.FrozenContinualRepositoryActionMemoryV1:
+                raise TypeError("action_memory must be one exact frozen continual memory")
+            learned_recall = action_memory.recall_attested_source(
+                original_source,
+                frontier,
+                candidate_records=supplied_records,
+                recall_gate=memory_recall_gate,
+                context_gate=memory_context_gate,
+                candidate_gate=memory_candidate_gate,
+            )
+            learned_recall.authenticate()
+            if (
+                learned_recall.status == continual_memory.RECALLED
+                and learned_recall.memory_checkpoint_sha256
+                == action_memory.checkpoint_sha256
+                and learned_recall.policy_checkpoint_sha256
+                == policy.checkpoint_sha256
+                and learned_recall.source_sha256 == observed_source_sha256
+                and learned_recall.source_context_frame_sha256
+                == source_context_frame_sha256
+                and learned_recall.source_context_trace_cells
+                == source_context.trace_cells
+                and learned_recall.frontier_sha256 == frontier.state.sha256
+                and learned_recall.selected_candidate_action_sha256 is not None
+            ):
+                learned_evidence = {
+                    item.candidate_action_sha256: (
+                        0,
+                        0
+                        if item.candidate_action_sha256
+                        == learned_recall.selected_candidate_action_sha256
+                        else 2,
+                    )
+                    for item in learned_recall.candidates
+                }
     cells: _CorrectionCellsV1 | None = None
     if not attested:
         status = STOP_ATTESTATION
     elif not relation_support_gate:
         status = STOP_RELATION_SUPPORT
+    elif action_memory is not None and learned_evidence is None:
+        status = STOP_LEARNED_RECALL
     else:
         try:
-            cells = _CorrectionCellsV1(frontier.state.sha256, supplied_records)
+            cells = _CorrectionCellsV1(
+                frontier.state.sha256,
+                supplied_records,
+                policy_checkpoint_sha256=policy.checkpoint_sha256,
+                learned_evidence=learned_evidence,
+                learned_recall_sha256=(
+                    None if learned_recall is None else learned_recall.sha256
+                ),
+            )
         except ValueError:
             status = STOP_RELATION_SUPPORT
         else:
@@ -1078,8 +1421,13 @@ def prepare_autonomous_correction_v1(
         frontier=frontier,
         spec=spec,
         observed_source_sha256=observed_source_sha256,
+        source_context_sha256=source_context_sha256,
+        source_context_frame_sha256=source_context_frame_sha256,
         cells=cells,
         source_reads=1,
+        learned_recall_sha256=(
+            None if learned_recall is None else learned_recall.sha256
+        ),
     )
     return PreparedAutonomousCorrectionV1(
         policy=policy,
@@ -1089,6 +1437,7 @@ def prepare_autonomous_correction_v1(
         source_path=source_path,
         expected_path=expected_path,
         original_source=original_source,
+        source_context=source_context,
         cells=cells,
         state=state,
     )
