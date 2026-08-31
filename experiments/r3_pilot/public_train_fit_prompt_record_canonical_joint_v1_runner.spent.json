@@ -1,0 +1,11 @@
+{
+  "created_at_utc": "2026-08-31T09:34:08.324748+00:00",
+  "no_retry": true,
+  "prepared_sha256": "d02abb1e2068c69d68bf6ee22218a42531e14d08aac4b9bc2b9eb514797cd423",
+  "protocol_bank_commit": "c9ae0fdad7534a5b9ed44e6cab8d057afcd1f7f0",
+  "protocol_root_sha256": "524947ef3a29dbb4a7292c4e386d69090d9027c72fccb9559409aff1cf9cc6d0",
+  "result_path": "experiments/r3_pilot/public_train_fit_prompt_record_canonical_joint_v1_runner.result.json",
+  "runner_source_sha256": "160e824cae03f24c5d78c0057f7567736c2cd787cac85978377b3f3291bd946e",
+  "schema": "PUBLIC_TRAIN_FIT_PROMPT_RECORD_CANONICAL_JOINT_V1_RUNNER",
+  "state": "PUBLIC_TRAIN_JOINT_ATTEMPT_SPENT"
+}

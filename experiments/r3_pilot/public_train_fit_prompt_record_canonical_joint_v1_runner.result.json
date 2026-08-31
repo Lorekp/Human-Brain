@@ -1,0 +1,84 @@
+{
+  "execution": [
+    "STOP_PUBLIC_TRAIN_FIT_PROMPT_RECORD_CANONICAL_JOINT_V1",
+    "producer candidate count changed",
+    "d02abb1e2068c69d68bf6ee22218a42531e14d08aac4b9bc2b9eb514797cd423",
+    [
+      [
+        "producer-off",
+        0,
+        "STOP_PACKED_PUBLIC_TRAIN_FIT_PROMPT_RECORD_AUTHORIZED_PLAN_FRONTIER_V1_SOURCE_EVENT_CERTIFICATE",
+        "STOP_PUBLIC_TRAIN_FIT_PROMPT_RECORD_SOURCE_EVENT_PRODUCER_V1_ZERO",
+        null,
+        "STOP_PACKED_PUBLIC_TRAIN_FIT_PROMPT_RECORD_AUTHORIZED_PLAN_FRONTIER_V1_SOURCE_EVENT_CERTIFICATE",
+        null,
+        554,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        null,
+        0,
+        0,
+        0,
+        0,
+        "791d9f923488234ce2b100b19009f0cb3c86aa217aad9f03d185c886c7c9cb9f",
+        "43c13635fb081322168b085bd1e4f1f5f3fd30aa4ba696eadf3ba3008b500625",
+        "d48ef5a8bfd9fb55e1c3e68b0e0796f97a8360138dafc4dda212d9a1f414cac9",
+        null,
+        "15e6916711335c4fd113cbd577d8578c103ba8a53f51a5b5475662b90a5a5692"
+      ]
+    ],
+    [
+      554,
+      0,
+      16620,
+      0,
+      0,
+      0,
+      0,
+      "76ac3bb5805c0330b55450d0b6110904e507d9b5fbc8ebf7f8c073b7a3fcdacb"
+    ],
+    0,
+    0,
+    "90159fd4fa679fd564c9d4b50f714fd528cff0cd072e1e4579d99630a4534f06"
+  ],
+  "prepared_sha256": "d02abb1e2068c69d68bf6ee22218a42531e14d08aac4b9bc2b9eb514797cd423",
+  "prespend_contract_sha256": "03f8e0d944970c8532c765fd63c4e6ae61b38d87b2060fa9b992db06b51e31e1",
+  "protocol": {
+    "bank_commit": "c9ae0fdad7534a5b9ed44e6cab8d057afcd1f7f0",
+    "outcome_contract_sha256": "3ed755cebe6bfc76c865733ee83a2edb5f712fa9885238e24e0437c904ce580c",
+    "protocol_sha256": "524947ef3a29dbb4a7292c4e386d69090d9027c72fccb9559409aff1cf9cc6d0",
+    "source_sha256": "a149b3468a980517c30d7322a4247b9f7506306fc80f2ced4d0ff9ab479a97a0"
+  },
+  "schema": "PUBLIC_TRAIN_FIT_PROMPT_RECORD_CANONICAL_JOINT_V1_RUNNER",
+  "scope": {
+    "c1_inputs": 0,
+    "cap_raises": 0,
+    "coding_capability_claim": false,
+    "dev_inputs": 0,
+    "g0_inputs": 0,
+    "heldout_inputs": 0,
+    "m0_inputs": 0,
+    "old_panel_outcome_reads": 0,
+    "protected_inputs": 0,
+    "public_train_same_fit_finite_cue_replay": true,
+    "retries": 0,
+    "row_substitutions": 0,
+    "search_attempts": 0,
+    "unseen_transfer_claim": false
+  },
+  "spend_marker": {
+    "exclusive_create": true,
+    "flushed_and_fsynced_before_first_build": true,
+    "path": "experiments/r3_pilot/public_train_fit_prompt_record_canonical_joint_v1_runner.spent.json",
+    "sha256": "5c45278c3f8aaa6cbe2857e95d855799d933fccae84255077bcc31a9c6f33c6b",
+    "state": "PUBLIC_TRAIN_JOINT_ATTEMPT_SPENT"
+  },
+  "stop_reason": "producer candidate count changed",
+  "verdict": "STOP_PUBLIC_TRAIN_FIT_PROMPT_RECORD_CANONICAL_JOINT_V1"
+}
