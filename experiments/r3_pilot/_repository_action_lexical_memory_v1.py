@@ -1411,30 +1411,3 @@ def advance_factorized_repository_action_memory_v1(
     ):
         raise RuntimeError("factorized repository action advance mutated its parent")
     return successor
-
-
-__all__ = [
-    "ACTION_COUNT",
-    "EVIDENCE_TICKS",
-    "EXACT_EPISODIC",
-    "LEXICAL_FACTOR",
-    "MAX_ADMITTED_FACTORS",
-    "MAX_FACTOR_ROWS",
-    "MAX_PROVENANCE_SOURCE_ROWS",
-    "MIN_INDEPENDENT_SOURCE_ROOTS",
-    "SCHEMA",
-    "STOP_FACTOR_AMBIGUOUS",
-    "STOP_FACTOR_CONFLICT",
-    "STOP_FACTOR_GATE",
-    "STOP_FACTOR_UNKNOWN",
-    "FactorizedRepositoryActionExperienceV1",
-    "FactorizedRepositoryActionRecallV1",
-    "FactorizedRepositoryActionRecallWorkV1",
-    "FactorizedRepositoryActionTrainingSummaryV1",
-    "FactorizedRepositoryFactorAdmissionV1",
-    "FactorizedRepositorySourceProvenanceV1",
-    "FrozenFactorizedRepositoryActionMemoryV1",
-    "advance_factorized_repository_action_memory_v1",
-    "make_factorized_repository_action_experience_v1",
-    "start_factorized_repository_action_memory_v1",
-]

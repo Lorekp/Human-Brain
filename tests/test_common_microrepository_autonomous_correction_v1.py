@@ -13,6 +13,7 @@ from experiments.r3_pilot import causal_recurrent_fragment_relation_policy_v2 as
 from experiments.r3_pilot import causal_reusable_program_fragment_library_v1 as fragments
 from experiments.r3_pilot import causal_task_observation_candidate_plan_bank_v1 as bank
 from experiments.r3_pilot import common_microrepository_autonomous_correction_v1 as correction
+from experiments.r3_pilot import common_repository_action_bank_v1 as action_bank
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import typed_semantic_packed_absolute_map_fold_v1 as absolute
 from humanbrain import typed_program
@@ -227,8 +228,8 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
     assert [item.receipt_cell_support for item in result.attempts] == [2, 1]
     assert [item.repository_test_exit_code for item in result.attempts] == [3, 0]
     assert [item.consequence_action_key for item in result.attempts] == [
-        recurrent.ACTION_KEYS[recurrent.ACTION_REVISE],
-        recurrent.ACTION_KEYS[recurrent.ACTION_COMMIT],
+        action_bank.OUTCOME_REVISE,
+        action_bank.OUTCOME_COMMIT,
     ]
     assert [item.rolled_back for item in result.attempts] == [True, False]
     assert [item.committed for item in result.attempts] == [False, True]
@@ -466,6 +467,15 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
 
     implementation = inspect.getsource(correction)
     candidate_race = inspect.getsource(correction._CorrectionCellsV1.race)
+    prepare_parameters = inspect.signature(
+        correction.prepare_autonomous_correction_v1
+    ).parameters
+    assert "action_observation" in prepare_parameters
+    assert "memory_structural_role_gate" in prepare_parameters
+    assert "memory_lexical_factor_gate" in prepare_parameters
+    assert "memory_factor_gate" not in prepare_parameters
+    assert "recall_attested_source(" not in implementation
+    assert implementation.count("recall_attested_observation(") == 1
     assert "_terminals" not in implementation
     assert "next(" not in implementation
     assert "terminal:commit" not in implementation
@@ -484,4 +494,4 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
     assert candidate_race.count("self._selector.select(currents, stop_cell=STOP_CELL)") == 1
     assert implementation.count("frontier.materialize_selected(candidate)") == 1
     assert implementation.count("subprocess.run(") == 1
-    assert implementation.count("_read_desired(") == 2
+    assert implementation.count("_read_visible_expected(") == 2

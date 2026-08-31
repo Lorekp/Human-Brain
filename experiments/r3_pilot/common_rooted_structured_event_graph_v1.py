@@ -33,6 +33,7 @@ _EVENT_ROOT_NAMESPACE = b"common-rooted-structured-event-root-v1"
 _CARRIER_ROOT_NAMESPACE = b"common-rooted-structured-carrier-root-v1"
 _INCIDENCE_NAMESPACE = b"common-rooted-structured-incidence-v1"
 _GRAPH_NAMESPACE = b"common-rooted-structured-event-graph-v1"
+_PRODUCER_RECEIPT_NAMESPACE = b"common-structured-event-graph-producer-receipt-v1"
 _CELLS = common_events.CommonEventCells()
 
 
@@ -62,6 +63,60 @@ def _valid_sha256(value: object) -> bool:
     except ValueError:
         return False
     return True
+
+
+class StructuredEventGraphProducerReceiptV1(NamedTuple):
+    """Domain-neutral producer attestation for one source-bound graph."""
+
+    source_sha256: str
+    graph_sha256: str
+    producer_schema_sha256: str
+    producer_attestation_sha256: str
+    sha256: str
+
+    def authenticate(self) -> None:
+        payload = {
+            "source": self.source_sha256,
+            "graph": self.graph_sha256,
+            "producer_schema": self.producer_schema_sha256,
+            "producer_attestation": self.producer_attestation_sha256,
+        }
+        if (
+            not _valid_sha256(self.source_sha256)
+            or not _valid_sha256(self.graph_sha256)
+            or not _valid_sha256(self.producer_schema_sha256)
+            or not _valid_sha256(self.producer_attestation_sha256)
+            or self.sha256 != _digest(_PRODUCER_RECEIPT_NAMESPACE, payload)
+        ):
+            raise StructuredEventGraphError(
+                "structured-event graph producer receipt authentication failed"
+            )
+
+
+def make_structured_event_graph_producer_receipt_v1(
+    *,
+    source_sha256: str,
+    graph_sha256: str,
+    producer_schema_sha256: str,
+    producer_attestation_sha256: str,
+) -> StructuredEventGraphProducerReceiptV1:
+    """Seal one producer's authenticated source-to-graph assertion."""
+
+    payload = {
+        "source": source_sha256,
+        "graph": graph_sha256,
+        "producer_schema": producer_schema_sha256,
+        "producer_attestation": producer_attestation_sha256,
+    }
+    receipt = StructuredEventGraphProducerReceiptV1(
+        source_sha256=source_sha256,
+        graph_sha256=graph_sha256,
+        producer_schema_sha256=producer_schema_sha256,
+        producer_attestation_sha256=producer_attestation_sha256,
+        sha256=_digest(_PRODUCER_RECEIPT_NAMESPACE, payload),
+    )
+    receipt.authenticate()
+    return receipt
 
 
 def _authenticate_projection(
