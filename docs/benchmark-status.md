@@ -301,6 +301,21 @@ by the segmentation layer and free provenance slots remain sequentially host
 allocated, so this is predictive boundary timing rather than general stream
 routing.
 
+Commit `78580cb` adds a dual exact/semantic memory view. Exact source episodes
+retain A/B identity and contradictory C/D shifted particulars, while sixteen
+lane/value semantic choices generalize over 256 whole bytes, first conflict and
+then revise without changing an unrelated relation. Its exact side still used a
+cumulative refit. Commit `65e5808` replaces that limitation with a replay-free
+exact V2 delta: each accepted episode adds one match cell and 96 flat checkpoint
+bytes over one immutable V1 base, with no retained V2 parent. Commit `900bc20`
+combines both extensions. C and D each append eight exact rows (768 bytes) and
+advance the semantic conflict/revision state using only new lessons; A/B/C/D
+recall, source provenance, parent immutability, and unrelated-state roots remain
+exact. Semantic 1,120-byte synaptic and 8,744-byte array storage is accounted
+separately from the inherited 1,572,864-byte exact base. This is bounded
+self-posed replay-free continual memory, not total compression, learned corpus
+retrieval, language, coding, or broad continual-learning evidence.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for
@@ -355,6 +370,15 @@ which only event-proportional retirement uses. The exact full-touch saving is
 theoretical 800 GB at 100 billion. The representative full-touch payload falls
 from 6,325,560 to 5,801,272 bytes. Event-proportional behavior and all public,
 checkpoint, ordering, counter, capacity, and scientific semantics remain exact.
+
+Commit `018b3a3` further scopes the phase-aliased full-touch GID run to fresh
+targets only, `T=min(R,Q)`, streaming resident and spike GIDs from authoritative
+sorted arrays. At `R=D=65,536, Q=64`, payload falls 5,801,272→5,277,496 bytes,
+an exact `8*(R-Q)=523,776`-byte saving; at one million residents the saving is
+7,999,488 bytes. Event-proportional allocation is unchanged. The 100-billion
+arithmetic saving is about 800 GB, but the present 72R resident state and packed
+ledger would still require roughly 7.2 TB and 837.5 GB, respectively. This is a
+focused substrate-memory result, not physical 100-billion residency or capability.
 
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
@@ -417,10 +441,24 @@ byte causal PASS/FAIL-to-ADD/HOLD gate for a fused conditional sum. A physical
 packed equality relation ensures the tested and accumulated item are the same
 occurrence; fresh thresholds/values/lengths and causal controls pass.
 
-Caller-supplied occurrence topology still encodes raw-versus-ABS task meaning,
-and the conditional fold still receives threshold/case framing. The next seam
-is example-grounded task and parameter induction with honest ambiguity, not
-public transfer, parsing, broad coding, or SWE evidence.
+Commit `e146761` removes caller-supplied raw-versus-ABS meaning for one fixed
+two-candidate slice: both physical consequences are projected before receipt,
+visible examples train a two-cell/eight-byte race, and ambiguous nonnegative
+examples stop before packed work. Commit `29e8d71` then canonicalizes the generic
+all-identity `add(x,0)` family to its authenticated child, fixing threshold zero
+without creating a bogus root or proof.
+
+The first desired-free complete threshold-bank run stopped on that zero defect;
+the fresh retry stopped before receipt because boundary candidates `-64` and
+`64` lose their supported Bool binder in unrelated generic predicate-count
+expansion. The 131-way draft was deleted rather than pruned. The next seam is the
+generic full-range predicate-gated-fold publication prerequisite. Commit
+`6089f3c` banks it: `-64`, `0`, `5`, and `64` all reach READY through one minimal
+authorized topology with zero desired reads before materialization, while
+predicate/action cell ablations stop. A fresh exact bank of raw, ABS, and all
+129 thresholds with one honest ambiguity-preserving semantic race is now the
+active experiment. None of this is public transfer, parsing, broad coding, or
+SWE evidence.
 
 ## Active-cell scaling and dynamics
 

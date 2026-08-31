@@ -270,12 +270,28 @@ more general predicate-outcome-to-ADD/HOLD transition used by
 predicate item and accumulator item as the same occurrence; the increment uses
 eight learned bytes and stops under consequence/feature/action ablations.
 
-These are genuine self-posed coding mechanisms, but caller-supplied occurrence
-topology still carries raw-versus-ABS task meaning, while threshold/cases,
-candidate rosters, typed certificates, and compilation remain scaffolds. The
-next R3/R4 seam is example-grounded task/parameter induction with explicit
-ambiguity, followed by learned carrier and consequence projection. The spent V3
-cohort remains closed.
+Commit `e146761` removes the caller-supplied raw-versus-ABS label in a fixed
+two-candidate experiment. Both physical plans are built before any receipt is
+issued, visible example consequences drive a two-cell/eight-byte causal race,
+and a nonnegative collision stops without packed work. This is example-grounded
+task induction, but the two candidates, typed operators, and compiler are still
+explicit. Commit `29e8d71` separately makes authenticated `add(x, 0)` families
+canonicalize to the existing child without inventing an e-node or proof; this
+unblocks threshold zero but does not itself learn a threshold.
+
+A fresh complete bank of raw sum, ABS-map-sum, and all 129 thresholds in
+`[-64, 64]` then stopped twice before selection or proof. The first run exposed
+the zero-identity defect. After that repair, the boundary candidates `-64` and
+`64` still failed in inherited generic predicate-count expansion with an
+unsupported Bool binder. The draft bank was removed rather than pruned or
+rescued with host consequences. The active prerequisite is a generic full-range
+publisher for only the authorized predicate-gated-fold topology. Commit
+`6089f3c` now banks that repair: thresholds `-64`, `0`, `5`, and `64` all publish
+through the same raw-sum, item-less-than-literal, learned equality/shared-action,
+binder, map, and sum path, with no threshold branch or unrelated generic
+predicate families. The desired-free 131-way race is therefore being retried as
+a fresh successor. Typed certificates, candidate manifests, and compilation
+remain scaffolds, and the spent V3 cohort remains closed.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -413,6 +429,21 @@ two-cell OPEN/EXTEND router. Its evidence remains the narrow self-posed aggregat
 stream above; content-addressed schema selection, learned provenance allocation,
 and broader continual transfer remain open R2 work.
 
+Commit `78580cb` composes two views of the same self-posed experience: exact
+source-conditioned episodes retain contradictory particulars, while sixteen
+lane/value semantic routes generalize identity or shifted transforms over 256
+whole bytes, conflict, and revise. That first composite honestly refit its exact
+view from cumulative episodes. Commit `65e5808` supplies the missing exact
+extension: one immutable V1 base plus a flat V2 delta appends each accepted
+episode with one match cell and 96 checkpoint-array bytes, retaining no V2
+parent and replaying no prior lesson. Commit `900bc20` combines the two. New C
+and D contexts each add eight exact rows (768 bytes) while the semantic view
+conflicts then revises; all A/B/C/D episodes, source provenance, both parent
+checkpoints, and an unrelated relation remain authenticated. Semantic storage
+is still reported separately (1,120 synaptic and 8,744 checkpoint-array bytes),
+so this is replay-free continual dual-view memory, not a combined compression,
+language, corpus, or broad retrieval result.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
@@ -473,6 +504,15 @@ only mode that reads it. Full-touch mode therefore saves exactly `8R` bytes:
 theoretical 800 GB at 100 billion residents. Event-proportional behavior, ABI,
 checkpoints, ordering, counters, capacity semantics, and neural dynamics remain
 unchanged; physical 100-billion-cell residency is still not established.
+
+Commit `018b3a3` then reserves the phase-aliased full-touch GID run for fresh
+targets only, `T=min(R,Q)`, while resident and spike GIDs stream from their
+authoritative sorted arrays. The representative payload falls from 5,801,272 to
+5,277,496 bytes, exactly `8*(R-Q)=523,776` bytes; the one-million-resident saving
+at `Q=64` is 7,999,488 bytes. Event-proportional allocation and behavior are
+unchanged. At 100 billion residents the scratch arithmetic saves about 800 GB,
+but current resident state alone would require about 7.2 TB and the packed ledger
+about 837.5 GB, so a structural sparse/implicit residency step remains required.
 
 ## Claim and opening discipline
 

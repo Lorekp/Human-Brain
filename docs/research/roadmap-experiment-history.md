@@ -412,11 +412,35 @@ predicate PASS/FAIL to accumulator ADD/HOLD transition; an explicit physical
 equality relation binds the tested item to the accumulated item, yielding one
 fresh conditional-sum witness with causal stops.
 
-The live failure boundary is now outside those inner mechanisms: caller-
-supplied occurrence topology still encodes raw-versus-ABS task meaning, and the
-conditional fold still receives threshold/case framing. The next R3/R4 seam is
-example-grounded task and parameter induction with honest ambiguity, followed
-by learned carrier/consequence scaffolds. The spent V3 cohort remains closed.
+Commit `e146761` next removed the caller-supplied raw/ABS label for a fixed
+two-candidate slice. Both physical consequences are visible before a receipt;
+the example race learns one choice and stops on ambiguity. Commit `29e8d71`
+fixed the generic rootless `add(x,0)` identity publication that the first
+complete threshold-bank attempt exposed. A fresh 131-candidate retry then
+stopped before receipt at thresholds `-64` and `64`, where inherited generic
+predicate-count expansion loses a supported Bool binder. Both draft banks were
+removed. Commit `6089f3c` then replaced that inherited expansion for this
+mechanism with a full-range publisher that constructs only the authorized
+predicate-gated-fold topology; `-64`, `0`, `5`, and `64` all publish and retain
+their causal gate stops. The complete bank is now being retried fresh without
+candidate pruning or host consequences. The spent V3 cohort remains closed.
+
+In the memory lane, commit `78580cb` combined exact source episodes with a
+sixteen-choice lane-local semantic transform view, retaining contradictions
+while conflict and revision changed only the semantic route. It still refit the
+exact view cumulatively. Commit `65e5808` added a flat replay-free exact delta
+over one immutable V1 base at 96 bytes and one match cell per accepted episode.
+Commit `900bc20` composed both successors: C and D each append eight exact rows
+using only new lessons while semantic state conflicts then revises, and all old
+episodes, provenance, parents, and unrelated state remain exact. This is not a
+combined compression or corpus-retrieval claim.
+
+In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
+`min(R,Q)` by streaming authoritative resident/spike arrays. It saves
+`8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing
+event-proportional behavior. The arithmetic is useful, but 72R resident state
+and the packed ledger still make physical 100-billion residency infeasible; the
+next useful step must be structural rather than another scratch-only claim.
 
 ## 11. Common G0 substrate begins
 
