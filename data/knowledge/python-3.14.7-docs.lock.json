@@ -1,0 +1,3889 @@
+{
+  "benchmark_deny_manifest": {
+    "domains": [
+      "huggingface.co",
+      "swebench.com"
+    ],
+    "paths": [
+      "deepswe.json",
+      "swe-bench.json",
+      "swe_bench.json"
+    ],
+    "schema": "humanbrain.benchmark-deny-manifest.v1",
+    "sha256": []
+  },
+  "benchmark_policy": {
+    "forbidden_path_tokens": [
+      "deepswe",
+      "swe-bench",
+      "swe_bench",
+      "swebench"
+    ],
+    "statement": "Official Python documentation only; benchmark datasets, task instances, gold patches, and solution corpora are absent."
+  },
+  "caps": {
+    "max_bytes_per_source": 10500000,
+    "max_tokenish_per_source": 3000000,
+    "max_total_bytes": 10500000,
+    "max_total_tokenish": 3000000
+  },
+  "family_split_sha256": "43488dd1080cb55c111c0c2725ac8ea399e05295a53c142a0131f625fc3fd961",
+  "family_splits": {
+    "acquire": [
+      "deprecations",
+      "distributing",
+      "faq",
+      "glossary",
+      "installing",
+      "library"
+    ],
+    "excluded": [
+      "meta",
+      "whatsnew"
+    ],
+    "holdout": [
+      "howto",
+      "reference",
+      "using"
+    ],
+    "validation": [
+      "c-api",
+      "extending",
+      "tutorial"
+    ]
+  },
+  "file_inventory_sha256": "98221e5aaaf4b8adff5cc02e9e5ad3d1ec55d075ceefdae01a78963c6818acbc",
+  "files": [
+    {
+      "bytes": 1219,
+      "exclude_reason": "legal-meta",
+      "family": "meta",
+      "path": "about.txt",
+      "sha256": "7bba4feef942289438751041965eda8fb78ed55cbbd768d29f5a7c974d836aca",
+      "split": "excluded"
+    },
+    {
+      "bytes": 3949,
+      "exclude_reason": "legal-meta",
+      "family": "meta",
+      "path": "bugs.txt",
+      "sha256": "778a15518abaa2b79b49bc03f463b27614603bf12d2042afcf52580d389518e3",
+      "split": "excluded"
+    },
+    {
+      "bytes": 1150,
+      "family": "c-api",
+      "path": "c-api/abstract.txt",
+      "sha256": "725acd709893638bd0ce09d58443a2302c0757f26b9b75937fe7447632a024ec",
+      "split": "validation"
+    },
+    {
+      "bytes": 7329,
+      "family": "c-api",
+      "path": "c-api/allocation.txt",
+      "sha256": "92c3a1afd2f7e9b1c49ab6d0022a4efdcca0a3fe26259254512058e788f2fa75",
+      "split": "validation"
+    },
+    {
+      "bytes": 4906,
+      "family": "c-api",
+      "path": "c-api/apiabiversion.txt",
+      "sha256": "81bb568c3e12b151ee3dc5eb1b93ce99137e28f54b5d7b3643e51bb8e7084c80",
+      "split": "validation"
+    },
+    {
+      "bytes": 30229,
+      "family": "c-api",
+      "path": "c-api/arg.txt",
+      "sha256": "b1ef5f4ae8dc60c8adc58a422e8d6243cb1cc3ead1dcff2e7c5cc3fd8f614719",
+      "split": "validation"
+    },
+    {
+      "bytes": 1166,
+      "family": "c-api",
+      "path": "c-api/bool.txt",
+      "sha256": "305460b0e99e24456db35d12e41e27f04455a6b82010fccec316207207340f15",
+      "split": "validation"
+    },
+    {
+      "bytes": 24304,
+      "family": "c-api",
+      "path": "c-api/buffer.txt",
+      "sha256": "2e129d5dfe06b9122989b3315c23749336d5ef97178ae10501b14c59f9dcbd49",
+      "split": "validation"
+    },
+    {
+      "bytes": 3486,
+      "family": "c-api",
+      "path": "c-api/bytearray.txt",
+      "sha256": "e272cd52808cfc43129efab4d4727b20626f2830dbe6b375c7aeb1f0a980f912",
+      "split": "validation"
+    },
+    {
+      "bytes": 12637,
+      "family": "c-api",
+      "path": "c-api/bytes.txt",
+      "sha256": "0c76b9ae0c046fc95059274b64a8f5ad52e6dfb522d2c3bf1f9b3db0fc381f5a",
+      "split": "validation"
+    },
+    {
+      "bytes": 17200,
+      "family": "c-api",
+      "path": "c-api/call.txt",
+      "sha256": "bacd33b905ee5945119267607b9bade91079077e0570d1cddb02f9f6e4306fef",
+      "split": "validation"
+    },
+    {
+      "bytes": 7177,
+      "family": "c-api",
+      "path": "c-api/capsule.txt",
+      "sha256": "61d1a32eaa6b83ae8e0a86073fd22d8224b6e21b69ffe9aea21cce4d1a6f6f07",
+      "split": "validation"
+    },
+    {
+      "bytes": 2029,
+      "family": "c-api",
+      "path": "c-api/cell.txt",
+      "sha256": "5f1e35a3f74c4998acf07a30677fb4d214cd20943562a4c27e6c23ae108189b0",
+      "split": "validation"
+    },
+    {
+      "bytes": 15623,
+      "family": "c-api",
+      "path": "c-api/code.txt",
+      "sha256": "bcf61ae60ade24a2921aecbaa08c1ec2a882011f150d0c3e8c199ca4f0efb2d6",
+      "split": "validation"
+    },
+    {
+      "bytes": 5961,
+      "family": "c-api",
+      "path": "c-api/codec.txt",
+      "sha256": "61dcc4989b6b2fd353acbc5f26833fa14d4cea2fed8325dc3e4792a0be129c93",
+      "split": "validation"
+    },
+    {
+      "bytes": 5156,
+      "family": "c-api",
+      "path": "c-api/complex.txt",
+      "sha256": "56f8f931c40d047b5ad80de25046aef1ff260a9bd2dfa342767b78a019d04c19",
+      "split": "validation"
+    },
+    {
+      "bytes": 3492,
+      "family": "c-api",
+      "path": "c-api/concrete.txt",
+      "sha256": "312d919dceb58f528682ab43a9f369cd1aac8d96281d4fafb7bd0c2a8ff2044b",
+      "split": "validation"
+    },
+    {
+      "bytes": 5622,
+      "family": "c-api",
+      "path": "c-api/contextvars.txt",
+      "sha256": "815cfa5032bb8930d2199ee85be0686e31640f1d8cc42e96ee82183234742c0d",
+      "split": "validation"
+    },
+    {
+      "bytes": 9407,
+      "family": "c-api",
+      "path": "c-api/conversion.txt",
+      "sha256": "52c7ce7537840080ba5523bcf65aa5e0f103ff9ebe139cf119c5a397537b47f9",
+      "split": "validation"
+    },
+    {
+      "bytes": 788,
+      "family": "c-api",
+      "path": "c-api/coro.txt",
+      "sha256": "f4fd4dbf8243a67051d11425eaefc209b82b2a4dea5fce80464ec5e58f21d5a4",
+      "split": "validation"
+    },
+    {
+      "bytes": 3424,
+      "family": "c-api",
+      "path": "c-api/curses.txt",
+      "sha256": "ea69f7fdc4161647eda983c89ae2a9e126ea7c15d8d4a2f0d199d34fa9f91ce9",
+      "split": "validation"
+    },
+    {
+      "bytes": 10302,
+      "family": "c-api",
+      "path": "c-api/datetime.txt",
+      "sha256": "6e16f6a2fe96f2e5cff1b6a05917d12feb6c96371b1053aa6c325a9ea05d3902",
+      "split": "validation"
+    },
+    {
+      "bytes": 7247,
+      "family": "c-api",
+      "path": "c-api/descriptor.txt",
+      "sha256": "f80d2e64e1af31d3c379d3538972a277e9a503f6f5dd5f8e337c12d5ab618347",
+      "split": "validation"
+    },
+    {
+      "bytes": 25937,
+      "family": "c-api",
+      "path": "c-api/dict.txt",
+      "sha256": "e98e9aab4019738f68a9aaf55597692a4d35d0e1f1ce06f05d6d8e19e48aba17",
+      "split": "validation"
+    },
+    {
+      "bytes": 68624,
+      "family": "c-api",
+      "path": "c-api/exceptions.txt",
+      "sha256": "a600d6d7f2e8ac8589dd6f1e149c98f85fd1745cdc94673ddfc1d63b5d98ba75",
+      "split": "validation"
+    },
+    {
+      "bytes": 8424,
+      "family": "c-api",
+      "path": "c-api/extension-modules.txt",
+      "sha256": "83f394e35d0cdd5656ece3d410bf0fe041f26eb67074ede8d850af86da4571db",
+      "split": "validation"
+    },
+    {
+      "bytes": 5537,
+      "family": "c-api",
+      "path": "c-api/file.txt",
+      "sha256": "cc016055f1c0985c3a4398a40bd13341c032aaa00819c74c8ece2863777c13a2",
+      "split": "validation"
+    },
+    {
+      "bytes": 7796,
+      "family": "c-api",
+      "path": "c-api/float.txt",
+      "sha256": "5e66ab88fea8ae27e3daf6515e83513d258c0f98c5935c435d286bbbe9a27308",
+      "split": "validation"
+    },
+    {
+      "bytes": 9808,
+      "family": "c-api",
+      "path": "c-api/frame.txt",
+      "sha256": "3f0a4e43587d5422fbdcab2f5a349e064844556dbd05ee160e63c7fa619aedc1",
+      "split": "validation"
+    },
+    {
+      "bytes": 7760,
+      "family": "c-api",
+      "path": "c-api/function.txt",
+      "sha256": "f470af6456f4f82d8ade26eb0b3420ec45f5e33e42a5f630f950736962e054d4",
+      "split": "validation"
+    },
+    {
+      "bytes": 11968,
+      "family": "c-api",
+      "path": "c-api/gcsupport.txt",
+      "sha256": "cd1f64aa013e2457f81179282ac1c20104e00abb6dc33efc297a8db62c49d743",
+      "split": "validation"
+    },
+    {
+      "bytes": 2674,
+      "family": "c-api",
+      "path": "c-api/gen.txt",
+      "sha256": "870305f2ba8fca0d8d01ffa0612711ab83bd967970fceac66ce77abb5e8efa68",
+      "split": "validation"
+    },
+    {
+      "bytes": 3988,
+      "family": "c-api",
+      "path": "c-api/hash.txt",
+      "sha256": "8f5d9f5ed0bc42c9945033e6bb41f9cb14688ec175fa68c99e77c131600c09f9",
+      "split": "validation"
+    },
+    {
+      "bytes": 14070,
+      "family": "c-api",
+      "path": "c-api/import.txt",
+      "sha256": "a62b393a6da683bea58fe226dc91697731de2a09f92c53123b5ce094f97aa8f1",
+      "split": "validation"
+    },
+    {
+      "bytes": 3937,
+      "family": "c-api",
+      "path": "c-api/index.txt",
+      "sha256": "164d3c7e17c21065a2a272e5d586f69e42945051f5e7e2da74572b86d6003695",
+      "split": "validation"
+    },
+    {
+      "bytes": 361,
+      "family": "c-api",
+      "path": "c-api/init.txt",
+      "sha256": "dadb5c87fffc1fea27cd729b686c40cd93bdb2e98b175b1b1eefad84f90bef34",
+      "split": "validation"
+    },
+    {
+      "bytes": 73276,
+      "family": "c-api",
+      "path": "c-api/init_config.txt",
+      "sha256": "c0a2fb2c420081565588d1e0e345ee717addc9952a84e204621260dde5240fcd",
+      "split": "validation"
+    },
+    {
+      "bytes": 34481,
+      "family": "c-api",
+      "path": "c-api/interp-lifecycle.txt",
+      "sha256": "a7788701787fdd66de6872b87cb8c682d9fc687882ed2a3f13eedbf26bdd3d9d",
+      "split": "validation"
+    },
+    {
+      "bytes": 41182,
+      "family": "c-api",
+      "path": "c-api/intro.txt",
+      "sha256": "5d194915644ab8b6646475c09ea303830348be5119930f81eb06ec1ef8615590",
+      "split": "validation"
+    },
+    {
+      "bytes": 2100,
+      "family": "c-api",
+      "path": "c-api/iter.txt",
+      "sha256": "6933d35881a14f34aba643df76f70cb8183fa251c525510f2bc735c3fdaf050d",
+      "split": "validation"
+    },
+    {
+      "bytes": 5613,
+      "family": "c-api",
+      "path": "c-api/iterator.txt",
+      "sha256": "0eb4fc9a4a98fab5c6ad0af4d04f17f25038bd951937169bd708585c50f6a57c",
+      "split": "validation"
+    },
+    {
+      "bytes": 10850,
+      "family": "c-api",
+      "path": "c-api/lifecycle.txt",
+      "sha256": "9bd88a1c85bf405cf598f9eb698496354e5a662e15b2adbf314e6a4872b7b6b3",
+      "split": "validation"
+    },
+    {
+      "bytes": 8510,
+      "family": "c-api",
+      "path": "c-api/list.txt",
+      "sha256": "4fc9e4c0c10f354bb5323cf6090c286c5d9219fc21a261640745c7cc0f8c7c74",
+      "split": "validation"
+    },
+    {
+      "bytes": 28761,
+      "family": "c-api",
+      "path": "c-api/long.txt",
+      "sha256": "0e1b0e1aa4a406a59322b80e4a75e66fd69b54cd4a804f7895d177052029a14d",
+      "split": "validation"
+    },
+    {
+      "bytes": 4927,
+      "family": "c-api",
+      "path": "c-api/mapping.txt",
+      "sha256": "4a5515b4271626e11aa851eda9448049463f886b9ba8694ea81edddde22e3ad5",
+      "split": "validation"
+    },
+    {
+      "bytes": 3468,
+      "family": "c-api",
+      "path": "c-api/marshal.txt",
+      "sha256": "23743efcb634738797478feff6c0a277d5afb3c5628e6388a12bbbd88ab078c3",
+      "split": "validation"
+    },
+    {
+      "bytes": 34282,
+      "family": "c-api",
+      "path": "c-api/memory.txt",
+      "sha256": "76bdcda2752cbd821208b74c290c3e262614528fbe57ded3a6c5c89674c2d064",
+      "split": "validation"
+    },
+    {
+      "bytes": 2872,
+      "family": "c-api",
+      "path": "c-api/memoryview.txt",
+      "sha256": "dcc08b4bb44bba1d680dd68e5e8d5ad3247ae660f16428a1b1fc40c68a3c75a7",
+      "split": "validation"
+    },
+    {
+      "bytes": 2639,
+      "family": "c-api",
+      "path": "c-api/method.txt",
+      "sha256": "ea01891edcbdafc443726a11248badca002c8419ab514c25b3e6939a976759f1",
+      "split": "validation"
+    },
+    {
+      "bytes": 26122,
+      "family": "c-api",
+      "path": "c-api/module.txt",
+      "sha256": "9a9bcb907fefba607429b24c6453d48bc8c136a4056df80206b01e27699bd2ba",
+      "split": "validation"
+    },
+    {
+      "bytes": 10321,
+      "family": "c-api",
+      "path": "c-api/monitoring.txt",
+      "sha256": "b64f8f48988dc86a348b44eb8703b48ecb4c1c017a309f80519bb3cf1921e6e0",
+      "split": "validation"
+    },
+    {
+      "bytes": 503,
+      "family": "c-api",
+      "path": "c-api/none.txt",
+      "sha256": "00cb6ed1499d6c2be199b5528d5ff5db60ca83b4222cff4a333dc6b18f0e1b02",
+      "split": "validation"
+    },
+    {
+      "bytes": 12315,
+      "family": "c-api",
+      "path": "c-api/number.txt",
+      "sha256": "4985edd81ff09f9103684d46778ec212e3a0e981061b215c9713a73fec80f4d8",
+      "split": "validation"
+    },
+    {
+      "bytes": 30455,
+      "family": "c-api",
+      "path": "c-api/object.txt",
+      "sha256": "1b3f440f57a9e41517476ad9941540e1747147d349a2e5d3c184bf8289c9fdc6",
+      "split": "validation"
+    },
+    {
+      "bytes": 1071,
+      "family": "c-api",
+      "path": "c-api/objimpl.txt",
+      "sha256": "05f057272463c1209c5ce93202d562dcfcbd133b88a33b7797c991d21cebcdd3",
+      "split": "validation"
+    },
+    {
+      "bytes": 3945,
+      "family": "c-api",
+      "path": "c-api/perfmaps.txt",
+      "sha256": "a54f5b732ea78ae02b55209fcf7ef29b337324f2d29760fa3b7ce2adce2a0c34",
+      "split": "validation"
+    },
+    {
+      "bytes": 1580,
+      "family": "c-api",
+      "path": "c-api/picklebuffer.txt",
+      "sha256": "08b928434fe14b6b434d64f6a1199e86002d7128f674844413d5ea1c413dc163",
+      "split": "validation"
+    },
+    {
+      "bytes": 9684,
+      "family": "c-api",
+      "path": "c-api/profiling.txt",
+      "sha256": "9f3e39b2cbbd18ca17e22535330d5c6ab5fde518c9f227a1569be7800bccab7c",
+      "split": "validation"
+    },
+    {
+      "bytes": 7010,
+      "family": "c-api",
+      "path": "c-api/refcounting.txt",
+      "sha256": "912c3997830c2198bf14be6ac5b6fa43831aa8888d6b3f00f213863c57cce41e",
+      "split": "validation"
+    },
+    {
+      "bytes": 3898,
+      "family": "c-api",
+      "path": "c-api/reflection.txt",
+      "sha256": "023b31ab9bdd1625ee60c91021a2eec688b08f2cfb1c7dfb0d6c20422a51bc2e",
+      "split": "validation"
+    },
+    {
+      "bytes": 7267,
+      "family": "c-api",
+      "path": "c-api/sequence.txt",
+      "sha256": "d49e853339aaf80654119e40e6222d9f5aa7261d91f56e4deb7e0ab540c45c00",
+      "split": "validation"
+    },
+    {
+      "bytes": 7713,
+      "family": "c-api",
+      "path": "c-api/set.txt",
+      "sha256": "424ddd8542551a5892b7b82dedf47d5f941423d34d4aa2daef9edab320bc03e0",
+      "split": "validation"
+    },
+    {
+      "bytes": 4680,
+      "family": "c-api",
+      "path": "c-api/slice.txt",
+      "sha256": "daad96b2913a476a7fd903ca0abff019eb2ce8682ea406d5e48c73fea29cb974",
+      "split": "validation"
+    },
+    {
+      "bytes": 35244,
+      "family": "c-api",
+      "path": "c-api/stable.txt",
+      "sha256": "87ad039418f928ffe1b5ea087fa2e0976d9f36459deeec113d2c82cb60379aec",
+      "split": "validation"
+    },
+    {
+      "bytes": 31128,
+      "family": "c-api",
+      "path": "c-api/structures.txt",
+      "sha256": "e60baacac69ee209f94a387d4a524643bae2659cc8837bb6b53f4be45c675ffe",
+      "split": "validation"
+    },
+    {
+      "bytes": 16831,
+      "family": "c-api",
+      "path": "c-api/subinterpreters.txt",
+      "sha256": "93e71fe69cb85222b6c04bbcd689cfe27b81d0b82d381721a9e47d8856c91db8",
+      "split": "validation"
+    },
+    {
+      "bytes": 9318,
+      "family": "c-api",
+      "path": "c-api/synchronization.txt",
+      "sha256": "72f36832b188d3b3c80b35adc8f08ab9a9652a8a7a2a1197436d25e4370f7dc5",
+      "split": "validation"
+    },
+    {
+      "bytes": 17272,
+      "family": "c-api",
+      "path": "c-api/sys.txt",
+      "sha256": "e1c617da9c003832c07872802433902d8f16f9c5bd931c23cc2dd48693028622",
+      "split": "validation"
+    },
+    {
+      "bytes": 30841,
+      "family": "c-api",
+      "path": "c-api/threads.txt",
+      "sha256": "d92dfa7f12043a42491e197d55762e9dcd14ef013817d0fe11e65e993d1fb367",
+      "split": "validation"
+    },
+    {
+      "bytes": 3079,
+      "family": "c-api",
+      "path": "c-api/time.txt",
+      "sha256": "fad5e86cdd46d3164af16025947684a7c7f043b45a1061c0b7fbc46db8afff54",
+      "split": "validation"
+    },
+    {
+      "bytes": 5492,
+      "family": "c-api",
+      "path": "c-api/tls.txt",
+      "sha256": "ff02d704caa492cc2cf42292ba2bacadd0ceb4b77e2f2df8e8d260664a8f4d04",
+      "split": "validation"
+    },
+    {
+      "bytes": 8394,
+      "family": "c-api",
+      "path": "c-api/tuple.txt",
+      "sha256": "ce58d76ecf769bb8a1b9bcc5e0a72f6e82c3332c0f037d1b1805a0a892b1cd37",
+      "split": "validation"
+    },
+    {
+      "bytes": 23132,
+      "family": "c-api",
+      "path": "c-api/type.txt",
+      "sha256": "0d431698443a49f1ad0c8c7b94e9cfee4039cd3d639a44d400959c455489cf5f",
+      "split": "validation"
+    },
+    {
+      "bytes": 1601,
+      "family": "c-api",
+      "path": "c-api/typehints.txt",
+      "sha256": "83a9a9df227fa8125322c61d5f01cc9a60f6a59ecb1952041c5e50f9603bffbe",
+      "split": "validation"
+    },
+    {
+      "bytes": 132277,
+      "family": "c-api",
+      "path": "c-api/typeobj.txt",
+      "sha256": "83432479f45109c2078e70e634239d77115754c66f821d3ad74da16e350c98fe",
+      "split": "validation"
+    },
+    {
+      "bytes": 75427,
+      "family": "c-api",
+      "path": "c-api/unicode.txt",
+      "sha256": "485b318bd1baf4b7a6df8834cbb11193d1fd947c566848fcbc3e217d9572f19c",
+      "split": "validation"
+    },
+    {
+      "bytes": 914,
+      "family": "c-api",
+      "path": "c-api/utilities.txt",
+      "sha256": "dcc5f27ceb6f72ce5511bc92f02039a26237e57bed98af173fc71c337ab9c965",
+      "split": "validation"
+    },
+    {
+      "bytes": 20511,
+      "family": "c-api",
+      "path": "c-api/veryhigh.txt",
+      "sha256": "64e76a3d6155734240ebaf934b0a78440fc3d52df68e8013e92866baab6f12bb",
+      "split": "validation"
+    },
+    {
+      "bytes": 5055,
+      "family": "c-api",
+      "path": "c-api/weakref.txt",
+      "sha256": "434d83b51d4245e8b17e5cd59ba0e587c4a325fd9714532d6da8589d6c901393",
+      "split": "validation"
+    },
+    {
+      "bytes": 175638,
+      "exclude_reason": "legal-meta",
+      "family": "meta",
+      "path": "contents.txt",
+      "sha256": "35450906a768ce20ab5cf19a9295debf21eb9435173d48590dbef8a9f9788288",
+      "split": "excluded"
+    },
+    {
+      "bytes": 491,
+      "exclude_reason": "legal-meta",
+      "family": "meta",
+      "path": "copyright.txt",
+      "sha256": "1940d63949553cc2b19847b160ba67e65eb18a8b18de187de42828c860ee4240",
+      "split": "excluded"
+    },
+    {
+      "bytes": 221,
+      "family": "deprecations",
+      "path": "deprecations/c-api-pending-removal-in-3.14.txt",
+      "sha256": "7079c81fcdf225186e7b5fae49d57ea8e85766b522c3f9c4c9d4eefc7386d414",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4746,
+      "family": "deprecations",
+      "path": "deprecations/c-api-pending-removal-in-3.15.txt",
+      "sha256": "e4b408c528f8b953668db381b501f4f468360d495e65f14f6a33f799d896cca9",
+      "split": "acquire"
+    },
+    {
+      "bytes": 97,
+      "family": "deprecations",
+      "path": "deprecations/c-api-pending-removal-in-3.16.txt",
+      "sha256": "eda784fcf2a27fd4d02604336731f87768f7836a1c391e56a8d5ed9c7f88b7e5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2095,
+      "family": "deprecations",
+      "path": "deprecations/c-api-pending-removal-in-3.18.txt",
+      "sha256": "015a10c4b5f43f7611013f4027e4d4c6c201a9789d35dd53e47696efd131c437",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1367,
+      "family": "deprecations",
+      "path": "deprecations/c-api-pending-removal-in-future.txt",
+      "sha256": "69fe567baa89a5bade8de391e3b530d76b174db31f72957afcd266e1c8f2d49b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 23388,
+      "family": "deprecations",
+      "path": "deprecations/index.txt",
+      "sha256": "f7374a8a4cd046ad69d9e16a095f3255a7ffed7aba120e54529bb163a2cf8007",
+      "split": "acquire"
+    },
+    {
+      "bytes": 770,
+      "family": "deprecations",
+      "path": "deprecations/pending-removal-in-3.13.txt",
+      "sha256": "03abecc53fe5856c20f48456ee014e55a2608eeb98d027cd0ef074031b7d1f94",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3375,
+      "family": "deprecations",
+      "path": "deprecations/pending-removal-in-3.14.txt",
+      "sha256": "3384549e353ed3a12674b99b7519165f09b9501517c642d2be2946897af4281e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3238,
+      "family": "deprecations",
+      "path": "deprecations/pending-removal-in-3.15.txt",
+      "sha256": "6c3056351ff686e40b4d02125c43cc7c166b0e49a378d0e89b4488b2ceae373b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3343,
+      "family": "deprecations",
+      "path": "deprecations/pending-removal-in-3.16.txt",
+      "sha256": "671c05784c843a12f24c430c0f36ededfda141774cc7e1fa93fafe21c04b935a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2385,
+      "family": "deprecations",
+      "path": "deprecations/pending-removal-in-3.17.txt",
+      "sha256": "23ee8553a65713b850c0893b8c7755303f2f583ec1f27e046328a93f5ac69b8c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 315,
+      "family": "deprecations",
+      "path": "deprecations/pending-removal-in-3.18.txt",
+      "sha256": "6cd82ac8251cafccb17157dd482226de1d3f425fd9792d6a4392670686ffcf9b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 207,
+      "family": "deprecations",
+      "path": "deprecations/pending-removal-in-3.19.txt",
+      "sha256": "6087116380bd69849348dc62f95dc2c3ed051a3fc83fbcb0bc7673f2b81acb06",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5608,
+      "family": "deprecations",
+      "path": "deprecations/pending-removal-in-future.txt",
+      "sha256": "675b7778607c999f7ac651e347963ee025ae6cba752d6c5f7d68a9add9b4f07f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 237,
+      "family": "distributing",
+      "path": "distributing/index.txt",
+      "sha256": "ccc123fa3bef4c8ce822ac38ab449a91c64cf035898cca493ee4fb214b5c9f6b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 745,
+      "family": "extending",
+      "path": "extending/building.txt",
+      "sha256": "a51d0c5ae8dfc752ba66e12970284cc8dc3bc1c40e39a35a45089b5cef60dbc4",
+      "split": "validation"
+    },
+    {
+      "bytes": 14663,
+      "family": "extending",
+      "path": "extending/embedding.txt",
+      "sha256": "959dbbe458bb0dc8e6eba1ba6c01c16b271fd421763e9bc5cf798db048b1c0c5",
+      "split": "validation"
+    },
+    {
+      "bytes": 57100,
+      "family": "extending",
+      "path": "extending/extending.txt",
+      "sha256": "7ed5a5c7df217b4e089615a6d36031b3a952bb64d3bf4a4412eb9bb1168da1e4",
+      "split": "validation"
+    },
+    {
+      "bytes": 3768,
+      "family": "extending",
+      "path": "extending/index.txt",
+      "sha256": "1e4e2a99bedebe82d2ded3fc63e43397645880211eb8adef90648b9b052fe984",
+      "split": "validation"
+    },
+    {
+      "bytes": 25338,
+      "family": "extending",
+      "path": "extending/newtypes.txt",
+      "sha256": "ff37bd22ba86c7bd513a81a3db3a5ec987e8ab59bf6842760608d301f7485363",
+      "split": "validation"
+    },
+    {
+      "bytes": 50390,
+      "family": "extending",
+      "path": "extending/newtypes_tutorial.txt",
+      "sha256": "6910378ea077302c8ec353aa10712aefb106565972ef34bd44a537dc533f0fea",
+      "split": "validation"
+    },
+    {
+      "bytes": 7253,
+      "family": "extending",
+      "path": "extending/windows.txt",
+      "sha256": "44989fe3d8d925f3da4619ea07c75eeb1a912e45a9e9b5b8b1b50e8ebbbd1a82",
+      "split": "validation"
+    },
+    {
+      "bytes": 33316,
+      "family": "faq",
+      "path": "faq/design.txt",
+      "sha256": "88ae1c567421c854bda2949fc785b9e3701ab0c8712b2d12177e43c0a093dbb5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9650,
+      "family": "faq",
+      "path": "faq/extending.txt",
+      "sha256": "7b5a6073a06356c8b4728a1e1e2c122f72de31b073cb646a71ace465b097016d",
+      "split": "acquire"
+    },
+    {
+      "bytes": 18876,
+      "family": "faq",
+      "path": "faq/general.txt",
+      "sha256": "740f0ab05b6f5445c0ee48c72524dcf551bae97ffeac2e2bb10a39e38f97fdf9",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2286,
+      "family": "faq",
+      "path": "faq/gui.txt",
+      "sha256": "44b17d5c5a92b4d118fb86c483aeac3b115ae5d67954222e15cb55d2b3514a1a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 295,
+      "family": "faq",
+      "path": "faq/index.txt",
+      "sha256": "f844125b6b3d6c111714a6c1b5211f3bd3d256f4a2a9a3cefa4a5be3c6158359",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2243,
+      "family": "faq",
+      "path": "faq/installed.txt",
+      "sha256": "6edb16f0a7a8c5324a60d67570c4badbb0d0bd9c4f9b448ecc28cba1392c6ee5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 24179,
+      "family": "faq",
+      "path": "faq/library.txt",
+      "sha256": "ab02c47512a51aabc8063152ea241c07693f1f276212a60ce1fd572ac598ceb5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 75420,
+      "family": "faq",
+      "path": "faq/programming.txt",
+      "sha256": "b828f7382379f6dc272ace4957b7833325f1e5fa4e7fb11eb68f5b0490623bad",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11792,
+      "family": "faq",
+      "path": "faq/windows.txt",
+      "sha256": "e9a6d390e851712bc535c14f60ce0192303980f7999a5ba5f16b1038276b022c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 71431,
+      "family": "glossary",
+      "path": "glossary.txt",
+      "sha256": "934bc6d0df7011a9405cdceaa6b9e9a520a01b756cdaed5a7a2a4115f7c81994",
+      "split": "acquire"
+    },
+    {
+      "bytes": 21636,
+      "family": "howto",
+      "path": "howto/a-conceptual-overview-of-asyncio.txt",
+      "sha256": "a37659177f27c8cc9f60a5bbb74da8516f564ea6c8715c5d34cfd6191bb1a5bb",
+      "split": "holdout"
+    },
+    {
+      "bytes": 10156,
+      "family": "howto",
+      "path": "howto/annotations.txt",
+      "sha256": "06303fc1aefd739e188eab96e11347971bff9a457335c323509b3399b23a1ba4",
+      "split": "holdout"
+    },
+    {
+      "bytes": 2625,
+      "family": "howto",
+      "path": "howto/argparse-optparse.txt",
+      "sha256": "dfa7b37295e9ce3a4cf46b82e0b3a26976b7e84cd8ab9bbf62322603e35a49ca",
+      "split": "holdout"
+    },
+    {
+      "bytes": 27139,
+      "family": "howto",
+      "path": "howto/argparse.txt",
+      "sha256": "5a83f4b76e3a1f8321bb4ee891782f702ee1e70fbda6e92e9d7f22897fea75b4",
+      "split": "holdout"
+    },
+    {
+      "bytes": 133,
+      "family": "howto",
+      "path": "howto/clinic.txt",
+      "sha256": "68d6e5fc58404e5db575232d0d0e0dae97d729db4e8a86eeafefc1648c32d570",
+      "split": "holdout"
+    },
+    {
+      "bytes": 699,
+      "family": "howto",
+      "path": "howto/cporting.txt",
+      "sha256": "ee46c6f85311e92aad5de156202a05b19ef3cb6bd0e9a297e0465af2076c39fd",
+      "split": "holdout"
+    },
+    {
+      "bytes": 24068,
+      "family": "howto",
+      "path": "howto/curses.txt",
+      "sha256": "c18caa5e3418b8722fa27bb3add5fba38d127080085046f13c5a8c4271a41920",
+      "split": "holdout"
+    },
+    {
+      "bytes": 44189,
+      "family": "howto",
+      "path": "howto/descriptor.txt",
+      "sha256": "bbbda09d2187bdbbc4663f6e1b53546855c017b373ddb19f2faabdabfc7410bc",
+      "split": "holdout"
+    },
+    {
+      "bytes": 41750,
+      "family": "howto",
+      "path": "howto/enum.txt",
+      "sha256": "2fcccc5f40ef79d765275b3ebcf919584076111aba6e318c3ee762492c9e33f5",
+      "split": "holdout"
+    },
+    {
+      "bytes": 16489,
+      "family": "howto",
+      "path": "howto/free-threading-extensions.txt",
+      "sha256": "b27a46d58d1310d96e19166777bee034de2becfb957a7e53c8716a026b02784c",
+      "split": "holdout"
+    },
+    {
+      "bytes": 12284,
+      "family": "howto",
+      "path": "howto/free-threading-python.txt",
+      "sha256": "7471395e87c48788c3b347a376a436813f912071eec1b6dd2d9f4e14868e477a",
+      "split": "holdout"
+    },
+    {
+      "bytes": 46465,
+      "family": "howto",
+      "path": "howto/functional.txt",
+      "sha256": "2c6a805ecc6459565c0595e381a3f7aa052c474aff44ca475d911dc16a1b177a",
+      "split": "holdout"
+    },
+    {
+      "bytes": 22821,
+      "family": "howto",
+      "path": "howto/gdb_helpers.txt",
+      "sha256": "aac3e4a1440c42d5230d69e52ca390d50f510f89e61e165874d39a05f9d3e1ab",
+      "split": "holdout"
+    },
+    {
+      "bytes": 1173,
+      "family": "howto",
+      "path": "howto/index.txt",
+      "sha256": "aa7f7ccb4b6a0f081e284cae41fc7201065a123047840c6e7e8ceba79e7af2ac",
+      "split": "holdout"
+    },
+    {
+      "bytes": 19157,
+      "family": "howto",
+      "path": "howto/instrumentation.txt",
+      "sha256": "4df7307bf300d8398090b42ec4c59f3c4d086edb0e1f3b68fa833ab7a77d363c",
+      "split": "holdout"
+    },
+    {
+      "bytes": 11431,
+      "family": "howto",
+      "path": "howto/ipaddress.txt",
+      "sha256": "a0b5360114be3ad7e9992976ed52ce2be50f5b2f839744938cf8bbd6b26273eb",
+      "split": "holdout"
+    },
+    {
+      "bytes": 21589,
+      "family": "howto",
+      "path": "howto/isolating-extensions.txt",
+      "sha256": "abd2debec262f3cc4b199712e7e95bc398219cc9fb15c6c0fdcd06938c4989df",
+      "split": "holdout"
+    },
+    {
+      "bytes": 159930,
+      "family": "howto",
+      "path": "howto/logging-cookbook.txt",
+      "sha256": "ed358c7851c14c2cbb5a7d8e9cd113e634d4949eff3ece5e5df653494d507986",
+      "split": "holdout"
+    },
+    {
+      "bytes": 46596,
+      "family": "howto",
+      "path": "howto/logging.txt",
+      "sha256": "34ae4978ba561f70a54311691010cff5798ca859371c2721b91be465dfa4e87a",
+      "split": "holdout"
+    },
+    {
+      "bytes": 22690,
+      "family": "howto",
+      "path": "howto/mro.txt",
+      "sha256": "af650c580a035880db7bc35f1aee8fe77557ad761398f03f560ae1dd9743deec",
+      "split": "holdout"
+    },
+    {
+      "bytes": 12807,
+      "family": "howto",
+      "path": "howto/perf_profiling.txt",
+      "sha256": "3236143bf3d99b0c283aeddb0ed17e087fefe0017eb15f548236416f546494f6",
+      "split": "holdout"
+    },
+    {
+      "bytes": 827,
+      "family": "howto",
+      "path": "howto/pyporting.txt",
+      "sha256": "62eefd7be85a66eed834d7819c067cbe856dd05bde59d3d3cbda7b716131dcd0",
+      "split": "holdout"
+    },
+    {
+      "bytes": 60529,
+      "family": "howto",
+      "path": "howto/regex.txt",
+      "sha256": "ab31448e571aa7d4ba32ed4fb6fb69fae018e50560f7ca6df46354be0a929683",
+      "split": "holdout"
+    },
+    {
+      "bytes": 28615,
+      "family": "howto",
+      "path": "howto/remote_debugging.txt",
+      "sha256": "16c3fe66f2aafcdc22de94ccac8903a7335256babd4fb5e811f64b415a5f8d93",
+      "split": "holdout"
+    },
+    {
+      "bytes": 18481,
+      "family": "howto",
+      "path": "howto/sockets.txt",
+      "sha256": "a94cccd97661d2642c5a4474e81af8fe8a42f5c607e88074bd3bb68347db3237",
+      "split": "holdout"
+    },
+    {
+      "bytes": 13610,
+      "family": "howto",
+      "path": "howto/sorting.txt",
+      "sha256": "6e11fd8b2e55a9768b996db87efb2a6195a082a3e6e5e1429ac8b478b9f2559e",
+      "split": "holdout"
+    },
+    {
+      "bytes": 8547,
+      "family": "howto",
+      "path": "howto/timerfd.txt",
+      "sha256": "56c15e9c3505e92000ef730ee895c0415d8a394b18faa92655b8e15838d6f974",
+      "split": "holdout"
+    },
+    {
+      "bytes": 29921,
+      "family": "howto",
+      "path": "howto/unicode.txt",
+      "sha256": "bb202942070459fd77c61c593d51b0789094c6da57f51cfff50eeff7deb5eed5",
+      "split": "holdout"
+    },
+    {
+      "bytes": 20882,
+      "family": "howto",
+      "path": "howto/urllib2.txt",
+      "sha256": "29dfb3d1900ba2bf7672fd2b4452b3f23de61fa04d1ef932a2e663de2ef8768e",
+      "split": "holdout"
+    },
+    {
+      "bytes": 499,
+      "exclude_reason": "legal-meta",
+      "family": "meta",
+      "path": "improve-page-nojs.txt",
+      "sha256": "99be4069dd5d748392d812caf3224d6eee41ef8476a8981ca4980e914f8a032b",
+      "split": "excluded"
+    },
+    {
+      "bytes": 684,
+      "exclude_reason": "legal-meta",
+      "family": "meta",
+      "path": "improve-page.txt",
+      "sha256": "7fcdece6dd9cdcef9dd874035dd9f1a12bcd8f383262a5970650ccaac0cdb33c",
+      "split": "excluded"
+    },
+    {
+      "bytes": 6640,
+      "family": "installing",
+      "path": "installing/index.txt",
+      "sha256": "f8ce73386a7e49b6df98c8611b41247eb75dc34d3d77e43930584d1442e3661f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7660,
+      "family": "library",
+      "path": "library/__future__.txt",
+      "sha256": "cbd2a0b249aec05f0206cb14e49f2872041ec83002f35c03341ddc42179cc3ce",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11442,
+      "family": "library",
+      "path": "library/__main__.txt",
+      "sha256": "085a840fdd38bd1d0e65e8eaec0d6ca3237ef331e5b930a547a0be1b50439385",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7250,
+      "family": "library",
+      "path": "library/_thread.txt",
+      "sha256": "b2d24ef4c9fd3e457eb73729ecbed9c99bfe35972901c13fd6780c6e87a68187",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11744,
+      "family": "library",
+      "path": "library/abc.txt",
+      "sha256": "122254a17991bf1ee881c1dcc64514d2d96a21d50c7686a4edefbe4be3a05b27",
+      "split": "acquire"
+    },
+    {
+      "bytes": 399,
+      "family": "library",
+      "path": "library/aifc.txt",
+      "sha256": "ec0391052eb53f1cfbe167737327b2b77923857eb0154c8da268d373ba0b463e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4083,
+      "family": "library",
+      "path": "library/allos.txt",
+      "sha256": "d44efbc41aeb42c7087f6bece18644c553ca834d5034fa5670cbca46c113fa47",
+      "split": "acquire"
+    },
+    {
+      "bytes": 29520,
+      "family": "library",
+      "path": "library/annotationlib.txt",
+      "sha256": "330d59b2a4773633148d5b26ebe689f066d9998fbf9bcc5f9c95f80f3df0e3f6",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1965,
+      "family": "library",
+      "path": "library/archiving.txt",
+      "sha256": "f45f1e4830e131c629a522872d966f73025af6b0f8bbfe29d41cd992b895e665",
+      "split": "acquire"
+    },
+    {
+      "bytes": 85848,
+      "family": "library",
+      "path": "library/argparse.txt",
+      "sha256": "a9b9f5457e9ea6ccd8fa5a4e07af7867221b936341f6fec6293f7575151a8250",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11246,
+      "family": "library",
+      "path": "library/array.txt",
+      "sha256": "fb44ee62394263102fd1f5a79173b2eab4aa80ee91edcbd2894bcb67e6d4657c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 92255,
+      "family": "library",
+      "path": "library/ast.txt",
+      "sha256": "aec02960de7d9c70db8a588751328cb62ae0d0dc85434f74652313d509e57867",
+      "split": "acquire"
+    },
+    {
+      "bytes": 484,
+      "family": "library",
+      "path": "library/asynchat.txt",
+      "sha256": "56aef7e9bbd9ae2110b6a321ebc22b256607fb0c681ed28537fad34b47fc9090",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10817,
+      "family": "library",
+      "path": "library/asyncio-api-index.txt",
+      "sha256": "06fa6279a8a8c8d1a648e60b9311f047963d717220e6a3800f2216e2139a083a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 13234,
+      "family": "library",
+      "path": "library/asyncio-dev.txt",
+      "sha256": "52e33330526c66a1415b933b51b922cb447452e12b77d763e76f14219a959d98",
+      "split": "acquire"
+    },
+    {
+      "bytes": 65847,
+      "family": "library",
+      "path": "library/asyncio-eventloop.txt",
+      "sha256": "e0d58c4eaf2544fd57da62f7d48d404524d4be0bdd44e4e00e7cded2c3e5d118",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1599,
+      "family": "library",
+      "path": "library/asyncio-exceptions.txt",
+      "sha256": "aeb42a40c4d3b8cae56aa7b3e2f2452a3194a816b96aabdb2c94d47bcff29fce",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2758,
+      "family": "library",
+      "path": "library/asyncio-extending.txt",
+      "sha256": "0ce0367ecaa09db8b4f2866a5d733ba95c6a744d9d53a802caefa9910235d28f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8214,
+      "family": "library",
+      "path": "library/asyncio-future.txt",
+      "sha256": "ac75f6c412e3c5cd714180f41ad9f3abf872aff1f9d38bcca2b8995b2505be5e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4657,
+      "family": "library",
+      "path": "library/asyncio-graph.txt",
+      "sha256": "a8000b33ea14dead1eec4ecfec06a1fd4807941cf338ad7df3d654630e724061",
+      "split": "acquire"
+    },
+    {
+      "bytes": 29006,
+      "family": "library",
+      "path": "library/asyncio-llapi-index.txt",
+      "sha256": "7962375003de1a96b819fd25570a5aeb26b4cdfc1fd87a8a3785a92b56ece03e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2886,
+      "family": "library",
+      "path": "library/asyncio-platforms.txt",
+      "sha256": "5cfdab57d41b74d7e1ca61d473c7464b0199b673b6e06f4c5f3e1edbb5d5ff30",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4168,
+      "family": "library",
+      "path": "library/asyncio-policy.txt",
+      "sha256": "67c96a26960616b8a18279ae61773e1baa339a63120609c71b86335bce6ddd5f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 30426,
+      "family": "library",
+      "path": "library/asyncio-protocol.txt",
+      "sha256": "3472c724b88c6bf83808cd754cbf0e1a184092a9a1c8d965f4aa800f7510d0c7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7082,
+      "family": "library",
+      "path": "library/asyncio-queue.txt",
+      "sha256": "9c78f4929af689b0d3c2f73a885a8640771df782a08747ff12bed36b7273c282",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5738,
+      "family": "library",
+      "path": "library/asyncio-runner.txt",
+      "sha256": "8df7bd5715509dda4fadbc930b32080490cb34f979068e22f1dcd1a373c02b58",
+      "split": "acquire"
+    },
+    {
+      "bytes": 16260,
+      "family": "library",
+      "path": "library/asyncio-stream.txt",
+      "sha256": "aab007ad20a442b3227006c5138fec578f31436bcad82fd7c8d8d8aa561e64a0",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10380,
+      "family": "library",
+      "path": "library/asyncio-subprocess.txt",
+      "sha256": "40d884c2f3916770b7305682e024a1ecfa307f25bc69c3a84515a02b0aabb498",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11966,
+      "family": "library",
+      "path": "library/asyncio-sync.txt",
+      "sha256": "cfe12ed03a2442a15eccf212ae20dc92f6a15e027ca1980d1eb7ada92257d7a0",
+      "split": "acquire"
+    },
+    {
+      "bytes": 50648,
+      "family": "library",
+      "path": "library/asyncio-task.txt",
+      "sha256": "ff4a24dc05a0d5500a7d8fae741301e4f0c09bce44c4bb6b6959f5db7059b076",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5308,
+      "family": "library",
+      "path": "library/asyncio-threading.txt",
+      "sha256": "cfcd296effc43f7c45630a8b444b55b9c34a1a752a049a1de430708a5634069a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6489,
+      "family": "library",
+      "path": "library/asyncio-tools.txt",
+      "sha256": "fd66132358b8909e9c0efe5cf5bcdb3b129ae023f27be2e77e47d4a47bceafc5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3107,
+      "family": "library",
+      "path": "library/asyncio.txt",
+      "sha256": "4110274f324df22dee4f9b216f60ffd6cd38d9ac77b7c585f7070c7de9837fcd",
+      "split": "acquire"
+    },
+    {
+      "bytes": 450,
+      "family": "library",
+      "path": "library/asyncore.txt",
+      "sha256": "4d7f78149a7a82e76e51766e7b4fbebb9b2c2ea85231ce107e3ed103792c4517",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4256,
+      "family": "library",
+      "path": "library/atexit.txt",
+      "sha256": "9a096a7c4b42a8e6b4498ae40917a2973c24b67e105cd096561b57d888ca5fc1",
+      "split": "acquire"
+    },
+    {
+      "bytes": 390,
+      "family": "library",
+      "path": "library/audioop.txt",
+      "sha256": "19a816b55dc4fc7e3cd5ace6a0399bb82486c47fe1c9d585b67a75cb102a25de",
+      "split": "acquire"
+    },
+    {
+      "bytes": 44581,
+      "family": "library",
+      "path": "library/audit_events.txt",
+      "sha256": "0f7a8321dedc2a34ee95d865c88e37d65b0076361b5527302e677acd952c031d",
+      "split": "acquire"
+    },
+    {
+      "bytes": 12972,
+      "family": "library",
+      "path": "library/base64.txt",
+      "sha256": "103c91c5b9a390e4850d5d611ed1e3918804bcb2bad1e7f91667274a92b9522b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 15408,
+      "family": "library",
+      "path": "library/bdb.txt",
+      "sha256": "fbb73344c9882be4c9324d8a905e427e37d361792232b06f9b9e233978ef6074",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1683,
+      "family": "library",
+      "path": "library/binary.txt",
+      "sha256": "855b035d468cc4da49b9e86dc7fc480fac6dd1ace0c56b4b96ffdb5bcbc333fe",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6381,
+      "family": "library",
+      "path": "library/binascii.txt",
+      "sha256": "0a2c73b2cdd2a2c50651201dc8d15b7f030b9202992e352d01988f7295f1b5cf",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9070,
+      "family": "library",
+      "path": "library/bisect.txt",
+      "sha256": "9da5d4cbaf9636290a4705ba59d0ada0f8aab8761f07114d91bc3d4ce8504284",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1422,
+      "family": "library",
+      "path": "library/builtins.txt",
+      "sha256": "d3f4815137f57e5a683e55f5d4fc193b2f136b8b7d8b2eda38650bfe5e160e20",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11955,
+      "family": "library",
+      "path": "library/bz2.txt",
+      "sha256": "4e32dc3f1641b7c9e687a8bcad565d10a5617ef922272d74436c84a7b89f78d2",
+      "split": "acquire"
+    },
+    {
+      "bytes": 21910,
+      "family": "library",
+      "path": "library/calendar.txt",
+      "sha256": "5b1b166e655537a00b95aae420bf46b97ea78ce7d53b36567010956a9aa3e0f3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 548,
+      "family": "library",
+      "path": "library/cgi.txt",
+      "sha256": "1256da93e7e072c695a9f1c365ee4bd6268ecd7d067650fd6750217e8b925e7e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 560,
+      "family": "library",
+      "path": "library/cgitb.txt",
+      "sha256": "64bd4569a0221ad6d3c309aaa3f611c1edb76347f7b523fde6605b04b1119730",
+      "split": "acquire"
+    },
+    {
+      "bytes": 376,
+      "family": "library",
+      "path": "library/chunk.txt",
+      "sha256": "d35fc5b7363c7b20047e085a25365eb47e25b86e4be6534396dec2ed65157396",
+      "split": "acquire"
+    },
+    {
+      "bytes": 18493,
+      "family": "library",
+      "path": "library/cmath.txt",
+      "sha256": "44b8964130abead16bb7efe749256cc790023910dd7a7e35b6cd4c449ff2a64a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 13491,
+      "family": "library",
+      "path": "library/cmd.txt",
+      "sha256": "79f3cc23fa91b707bd6f952ef70e8c18667a58da856610610b10a507bf046ffe",
+      "split": "acquire"
+    },
+    {
+      "bytes": 763,
+      "family": "library",
+      "path": "library/cmdline.txt",
+      "sha256": "4aeebffe73c2fd30a84a0aae191aef89f783ad3e47046d1b2c0d1835376a6e72",
+      "split": "acquire"
+    },
+    {
+      "bytes": 736,
+      "family": "library",
+      "path": "library/cmdlinelibs.txt",
+      "sha256": "b847060e6392b0163cb4f652eef97cb570b8134be284af3c33b55d33fe849df5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8042,
+      "family": "library",
+      "path": "library/code.txt",
+      "sha256": "f3b4ddd4604eec4f2fd3b8532ff0532518524f5ead5e6a98011db0a606e68ec6",
+      "split": "acquire"
+    },
+    {
+      "bytes": 78515,
+      "family": "library",
+      "path": "library/codecs.txt",
+      "sha256": "81cecf4f95e904c516260c9d9b97c8f724d09e40979e57ecf634d595ecf65873",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2824,
+      "family": "library",
+      "path": "library/codeop.txt",
+      "sha256": "cf1419420adb8d1fda0925d53d37bb93e5a218e294142638035204dabbab7874",
+      "split": "acquire"
+    },
+    {
+      "bytes": 22858,
+      "family": "library",
+      "path": "library/collections.abc.txt",
+      "sha256": "73b85d08c57ffa31aed26d07743a354e3e56e1674a78d843a3e9740ffe956ccb",
+      "split": "acquire"
+    },
+    {
+      "bytes": 49904,
+      "family": "library",
+      "path": "library/collections.txt",
+      "sha256": "8bb1062739640b7e7a408f14e88ae89ec0e95b1298ad13dcb5d83874b9443531",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1654,
+      "family": "library",
+      "path": "library/colorsys.txt",
+      "sha256": "4ade80bd0b7e95ab799a0668451c30f0b2182a90f39eb0192776f849fdad6421",
+      "split": "acquire"
+    },
+    {
+      "bytes": 13348,
+      "family": "library",
+      "path": "library/compileall.txt",
+      "sha256": "d03460473307a4ba1d770955aa30660628a5b00975028ce671f10c8af22c734c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 740,
+      "family": "library",
+      "path": "library/compression.txt",
+      "sha256": "221f083f01d07e10c61a42b30ab4c37d69743f94ce4ffff4f8c5390cb853ef65",
+      "split": "acquire"
+    },
+    {
+      "bytes": 34157,
+      "family": "library",
+      "path": "library/compression.zstd.txt",
+      "sha256": "0b7b2321bb3052d251f46d7e5e97aa0bf7772e272a7dfe124412dc8928f155ed",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3639,
+      "family": "library",
+      "path": "library/concurrency.txt",
+      "sha256": "9144f5df9b4603da0f0464aa57f89ec00ef63ff1028df57c4633484981dd97dd",
+      "split": "acquire"
+    },
+    {
+      "bytes": 28858,
+      "family": "library",
+      "path": "library/concurrent.futures.txt",
+      "sha256": "309b2731ec20bbfda6d114d1cfe317482e3a5e4f8a1de4ef3597fd8aa7dee656",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11031,
+      "family": "library",
+      "path": "library/concurrent.interpreters.txt",
+      "sha256": "1e84e4f65156653169550ed0b0556e1a6c951995dcc4c7f7d5785c6a694d3af4",
+      "split": "acquire"
+    },
+    {
+      "bytes": 224,
+      "family": "library",
+      "path": "library/concurrent.txt",
+      "sha256": "971b0a3e8aeb3ff1ca5bccb292522134a8fc2b62e672680ab6487623f082f41a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 51761,
+      "family": "library",
+      "path": "library/configparser.txt",
+      "sha256": "81014d0b9db49eab3348feaf4c37309c6913ad223afc47bb84fb9e16f88fc616",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3906,
+      "family": "library",
+      "path": "library/constants.txt",
+      "sha256": "a66d0957a27d711d92ba586e775243730b8023a789317ce0046cfcc56ef55bed",
+      "split": "acquire"
+    },
+    {
+      "bytes": 35422,
+      "family": "library",
+      "path": "library/contextlib.txt",
+      "sha256": "d052a915c6f488d233a154cdf114647abea3f0a6eb3f4223700601174947c2a1",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10322,
+      "family": "library",
+      "path": "library/contextvars.txt",
+      "sha256": "aa2f47ca064909cb8f78d53de876d9a93bee35186f2eed9ea087a8d7d28273de",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4083,
+      "family": "library",
+      "path": "library/copy.txt",
+      "sha256": "c9bcc6e7de5853cad7165d5782ec39cf172317ec97a68d7444bd502c9f620539",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1768,
+      "family": "library",
+      "path": "library/copyreg.txt",
+      "sha256": "8920a42fcd42938145c15bf4360ecc639b40143bded3155ee8c0e2af1ea20909",
+      "split": "acquire"
+    },
+    {
+      "bytes": 633,
+      "family": "library",
+      "path": "library/crypt.txt",
+      "sha256": "190a22984af956ae3febdb8a7ac83796efe1a2c8c4eba19ced8d6cf4bcc77e56",
+      "split": "acquire"
+    },
+    {
+      "bytes": 935,
+      "family": "library",
+      "path": "library/crypto.txt",
+      "sha256": "f23ecf5f15ce9712c23cc6b16d42eb41e97515681e1308e1a46e8b3a38940d14",
+      "split": "acquire"
+    },
+    {
+      "bytes": 23247,
+      "family": "library",
+      "path": "library/csv.txt",
+      "sha256": "963321eeff5f05e369fd0e69d6eccc14171bf85db3148e59cdb00d6e667df9fa",
+      "split": "acquire"
+    },
+    {
+      "bytes": 107513,
+      "family": "library",
+      "path": "library/ctypes.txt",
+      "sha256": "920537e7f0a4854ca8fad8f93557553a66b1132b468c55bc248735db491b1bbd",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10635,
+      "family": "library",
+      "path": "library/curses.ascii.txt",
+      "sha256": "70f83d9614f4d571d0d548421c288911f4f6d5f68dafcd44c7c505c240f99143",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2746,
+      "family": "library",
+      "path": "library/curses.panel.txt",
+      "sha256": "21d485fcd6c181714ed9b98b0395bf5b0b81f41ed72e033f8304a3f605df5604",
+      "split": "acquire"
+    },
+    {
+      "bytes": 85665,
+      "family": "library",
+      "path": "library/curses.txt",
+      "sha256": "a03ed95fadecf3c605165a93a1efe09b067a896245506b22e3d57a4159a6f870",
+      "split": "acquire"
+    },
+    {
+      "bytes": 617,
+      "family": "library",
+      "path": "library/custominterp.txt",
+      "sha256": "1bc62812ebbedff1b9f68043bf617d388566e2c048727025bb9e373869254d4e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 32030,
+      "family": "library",
+      "path": "library/dataclasses.txt",
+      "sha256": "b60f05e764e6110457304e745e601fa54f10b2726b2606105c71efa4d50db71c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3286,
+      "family": "library",
+      "path": "library/datatypes.txt",
+      "sha256": "f5a5400588a3785f529c570464c24c05954b421e46d16c19031c9ea0d40d1935",
+      "split": "acquire"
+    },
+    {
+      "bytes": 111887,
+      "family": "library",
+      "path": "library/datetime.txt",
+      "sha256": "897e6f354105e8819889b83dddef435884fddb8f760b71dd240a0c13f244a506",
+      "split": "acquire"
+    },
+    {
+      "bytes": 15211,
+      "family": "library",
+      "path": "library/dbm.txt",
+      "sha256": "848261958d3aa08923acfcb45b115223deaad2fe6602a612319073d5e0dd3959",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1837,
+      "family": "library",
+      "path": "library/debug.txt",
+      "sha256": "376b868e14b50b1f73e6ada871625051a0d28ed6d23c8839906e5f56521f07e8",
+      "split": "acquire"
+    },
+    {
+      "bytes": 78408,
+      "family": "library",
+      "path": "library/decimal.txt",
+      "sha256": "9b16752066bde065494ac3cc812bee8414d9ed2da3447c0aa0e2bb2e3b503c2b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5431,
+      "family": "library",
+      "path": "library/development.txt",
+      "sha256": "2fd90566ca48e6d62a0b3e9b2308d836e6448e5cfbbb4a659b585f25c1cf24cb",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6776,
+      "family": "library",
+      "path": "library/devmode.txt",
+      "sha256": "daabe1592091abd897928657290ba6133382c9d69fdec2665a154a11d0aec092",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10375,
+      "family": "library",
+      "path": "library/dialog.txt",
+      "sha256": "f5cee9e5b1aed9999b7f1f48caf4b1faa2327bf73032f7885aa689b3481c4713",
+      "split": "acquire"
+    },
+    {
+      "bytes": 34789,
+      "family": "library",
+      "path": "library/difflib.txt",
+      "sha256": "c530f5039f74b40a4b8962ec3623f6d1dedc54515a93b82bb313f91e6892fe8b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 57936,
+      "family": "library",
+      "path": "library/dis.txt",
+      "sha256": "7cdea2a939f521f06f056f9af8af204424b0851799f63901b76958e1a21ae5e1",
+      "split": "acquire"
+    },
+    {
+      "bytes": 843,
+      "family": "library",
+      "path": "library/distribution.txt",
+      "sha256": "32a0f63cfb20e2529faa30b0ace1423e9e8a650d888a515893a5e6122255f62f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 450,
+      "family": "library",
+      "path": "library/distutils.txt",
+      "sha256": "72d8c7904384f9d813cbdb3588c43492aa15b694263cd43ee649cdd0cfef1589",
+      "split": "acquire"
+    },
+    {
+      "bytes": 70110,
+      "family": "library",
+      "path": "library/doctest.txt",
+      "sha256": "9060ae8e24b0421bf438a6c4de51e076d8f7ff6a5a1641d3e268ae5f41b42076",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7654,
+      "family": "library",
+      "path": "library/email.charset.txt",
+      "sha256": "c46c2d01dd695ec981d0f5a9e7f077c544d0fae299e816b01817beb594670d32",
+      "split": "acquire"
+    },
+    {
+      "bytes": 30314,
+      "family": "library",
+      "path": "library/email.compat32-message.txt",
+      "sha256": "8bb65c5f8507d9ee1b46990ff4663960ad7a8e93c3b29c0dd5c89832309389b0",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8433,
+      "family": "library",
+      "path": "library/email.contentmanager.txt",
+      "sha256": "9e268d1e74862542ed4f7e83e7cb216618b8196cfede49dd6311a14e9bcf7241",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2702,
+      "family": "library",
+      "path": "library/email.encoders.txt",
+      "sha256": "0032e5d7542c1e4e12aeb217f0c8b47db5c41c07cc903871982a3fe2c65608be",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4773,
+      "family": "library",
+      "path": "library/email.errors.txt",
+      "sha256": "510cad5f51382b921874b1d33452e4ba29f149c54d9884abdeeccd0e34c0f8ea",
+      "split": "acquire"
+    },
+    {
+      "bytes": 14045,
+      "family": "library",
+      "path": "library/email.examples.txt",
+      "sha256": "7833bb1e603b048d1d9c825363c21a48cb9f4a7cc615f8b72631c21c7d8c2cde",
+      "split": "acquire"
+    },
+    {
+      "bytes": 12092,
+      "family": "library",
+      "path": "library/email.generator.txt",
+      "sha256": "6acc32fe424fd180252a000410172f946aa74f277ce90591e3786839c5f65d11",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9472,
+      "family": "library",
+      "path": "library/email.header.txt",
+      "sha256": "4b904c1614a7f131c0986e0dadb038a4a83c3f1c19bce1a3339f0daacab92690",
+      "split": "acquire"
+    },
+    {
+      "bytes": 17115,
+      "family": "library",
+      "path": "library/email.headerregistry.txt",
+      "sha256": "be49cd9162a4984801c5a5ab98ad82bd3a437d3e8f09b853b66536db432c2dc7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2417,
+      "family": "library",
+      "path": "library/email.iterators.txt",
+      "sha256": "95fc94191a1006f055a84ab37edf472c9786876b39c24362e74cdc498631b455",
+      "split": "acquire"
+    },
+    {
+      "bytes": 30455,
+      "family": "library",
+      "path": "library/email.message.txt",
+      "sha256": "572b60ebc68a7f588fce71295e624ae252aa24adf6a13e101f558fc1884cc69b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9777,
+      "family": "library",
+      "path": "library/email.mime.txt",
+      "sha256": "2ebe70e88cc8dc9a6e97d988284ed02592552a828e24ec009e31334d2802e940",
+      "split": "acquire"
+    },
+    {
+      "bytes": 12510,
+      "family": "library",
+      "path": "library/email.parser.txt",
+      "sha256": "d580496715f2344f97e766c294aaaa39aa241827b0d4804fd8ddfc392a3eb8ed",
+      "split": "acquire"
+    },
+    {
+      "bytes": 26044,
+      "family": "library",
+      "path": "library/email.policy.txt",
+      "sha256": "c872edc1d22a7a111d136c13ecfa831c1248c281612959dc315df5f07cfec591",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6252,
+      "family": "library",
+      "path": "library/email.txt",
+      "sha256": "506b3f6d11ee50dc5730b4ad0b1ee06800bc8ae644809dd0cbfd5b739622b905",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9043,
+      "family": "library",
+      "path": "library/email.utils.txt",
+      "sha256": "e2bb1fc76b380377b1f2e42c6aecb6ea1d4f84aaba1dc47f4065074af9575317",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5095,
+      "family": "library",
+      "path": "library/ensurepip.txt",
+      "sha256": "3d010e16cf01ce57aac350ba03e4fac0b9c9c1921ec4057ecfb63a0ebd175ef3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 32989,
+      "family": "library",
+      "path": "library/enum.txt",
+      "sha256": "4f0f999175cbd2c9c3ac70f009521384ffe191ac2495cb164a489c10d3e8daea",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9433,
+      "family": "library",
+      "path": "library/errno.txt",
+      "sha256": "8668ecd0ab07f44ba399c10483f6618e041637a317a949398d26f14b06c90cfe",
+      "split": "acquire"
+    },
+    {
+      "bytes": 38477,
+      "family": "library",
+      "path": "library/exceptions.txt",
+      "sha256": "021b0b708acce675dcd4288843d4495e754e6da3b2c0d113dbc755923cbcc40b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10211,
+      "family": "library",
+      "path": "library/faulthandler.txt",
+      "sha256": "7de1e047339a9c2526a8f5b01771c39447ffbf08de4487a5c290f92dcee32c3b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10344,
+      "family": "library",
+      "path": "library/fcntl.txt",
+      "sha256": "87a070bc94d6e99b53a617f4838a87e270e5a8eb085950df76e260c0afd3e912",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5557,
+      "family": "library",
+      "path": "library/filecmp.txt",
+      "sha256": "4008915d678d914d069ee54820ead57173f5956a895ec92dfdc0e4a87e6cc878",
+      "split": "acquire"
+    },
+    {
+      "bytes": 876,
+      "family": "library",
+      "path": "library/fileformats.txt",
+      "sha256": "36dd93f5834e6b5bc462697692151ea74b43b235a38343cf930b604fb4b6d843",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8566,
+      "family": "library",
+      "path": "library/fileinput.txt",
+      "sha256": "f70296d0a926fc8c696fcc47c31c8de3451b650156b2ce99e3cf40d0591c6af5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2104,
+      "family": "library",
+      "path": "library/filesys.txt",
+      "sha256": "7d7564da1ad9db374fc1292c4a1073e1951618b409a1e8c55421b4e979c3bac3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3733,
+      "family": "library",
+      "path": "library/fnmatch.txt",
+      "sha256": "4d650f6b00635b170d32be561d990f940153a46e655dafb0ff83935130445103",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8949,
+      "family": "library",
+      "path": "library/fractions.txt",
+      "sha256": "3be2328019dc7d0b1c73878b09fd62a1f5e91a4fe79382f472eddde3b7c3b946",
+      "split": "acquire"
+    },
+    {
+      "bytes": 299,
+      "family": "library",
+      "path": "library/frameworks.txt",
+      "sha256": "2be5260a7c2703c86658f266f2d121536e2b2445b0284a36c3fe559a79a5ab3f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 20388,
+      "family": "library",
+      "path": "library/ftplib.txt",
+      "sha256": "fa5ff944aad3fcf6e05a9b2d7befbb6c1d8afaebea266fa76b92316cbd47202c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 597,
+      "family": "library",
+      "path": "library/functional.txt",
+      "sha256": "8e631104a80235ff8ee63d13e7de805375037ce2fd314d7bc6b714c004f865a8",
+      "split": "acquire"
+    },
+    {
+      "bytes": 87810,
+      "family": "library",
+      "path": "library/functions.txt",
+      "sha256": "55301cad55fc531f3fe52738e374c35c0c200023a1fd53371b18dc15ff2a7820",
+      "split": "acquire"
+    },
+    {
+      "bytes": 29916,
+      "family": "library",
+      "path": "library/functools.txt",
+      "sha256": "720337fe8dfa6f30c52b354026a407321605f7f451f21ee46a1299b6db422fe6",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11930,
+      "family": "library",
+      "path": "library/gc.txt",
+      "sha256": "892d473420ca26cfbdb7a98ea03f0fe9338fd49a686f8e9cb9b8e8d16d2e58cf",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8918,
+      "family": "library",
+      "path": "library/getopt.txt",
+      "sha256": "68b338308f32f1440fadc9bc97799bba2262c13f01243b3f5353b93feda8225e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2545,
+      "family": "library",
+      "path": "library/getpass.txt",
+      "sha256": "f34ab81d727a7808b591577092c9ffae81d7e8772637fad4ea06d9d76f520f53",
+      "split": "acquire"
+    },
+    {
+      "bytes": 23531,
+      "family": "library",
+      "path": "library/gettext.txt",
+      "sha256": "57fa7f2f20302af98e35962ff9587ccb9082bd4fd55bb581d197e1dd5e422bb8",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6923,
+      "family": "library",
+      "path": "library/glob.txt",
+      "sha256": "a86d331da9af7d0097b861c43607ec336f834f0d3b9c9723e570818020dfaadd",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8273,
+      "family": "library",
+      "path": "library/graphlib.txt",
+      "sha256": "b9ced18f5e26e3f59dc7865c017bbc4d770ca45b55ffce7809f0654bdf1fad58",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2290,
+      "family": "library",
+      "path": "library/grp.txt",
+      "sha256": "9689f0351fc5f69b9cb9c8fc19e12744b3ef1c8d3d355165a0ed5b008264c965",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10491,
+      "family": "library",
+      "path": "library/gzip.txt",
+      "sha256": "474d38af76fbc5ba81485cebdca633e58867b65a8e9257b0248658c0389515d3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 28063,
+      "family": "library",
+      "path": "library/hashlib.txt",
+      "sha256": "6d305bd082133c6e35521037ec7a7ec892cb25600aa5a3bc35c69d437a80f446",
+      "split": "acquire"
+    },
+    {
+      "bytes": 16608,
+      "family": "library",
+      "path": "library/heapq.txt",
+      "sha256": "8e41e3f0aa5d333285d513c7ed394f57662e5ee08dd33351bb49d82090449144",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4626,
+      "family": "library",
+      "path": "library/hmac.txt",
+      "sha256": "c8760867eae9e2dc2fd0ea7cea203d06131eee5c9ff7e9296119f8b42ec7b9ed",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1218,
+      "family": "library",
+      "path": "library/html.entities.txt",
+      "sha256": "e83ead67b4958fa54ab9eca34aa0705349c46e5f003233b289c7e90449718441",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11566,
+      "family": "library",
+      "path": "library/html.parser.txt",
+      "sha256": "597b12a74266d89ef40a0768418aac732baf1833a1a1ef05de9d3da4cf64ec06",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1356,
+      "family": "library",
+      "path": "library/html.txt",
+      "sha256": "4319a8c2b0d87e0e4c218e98264f73b0a1bbb055a8bb8b6eb35d5a3e02c24aa9",
+      "split": "acquire"
+    },
+    {
+      "bytes": 21502,
+      "family": "library",
+      "path": "library/http.client.txt",
+      "sha256": "9d9ddc3ee03f87083348254b44cb4240466e50cf8ce59f99112f194a363f96a6",
+      "split": "acquire"
+    },
+    {
+      "bytes": 26343,
+      "family": "library",
+      "path": "library/http.cookiejar.txt",
+      "sha256": "7ea3707fa09ebd7f551fe2cce78b60222e42691a80a0298d438495f059cd4b83",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9037,
+      "family": "library",
+      "path": "library/http.cookies.txt",
+      "sha256": "2043fc13f7d7fa9eed26d21676356426f9faf99a3752cebadba22939d26734a4",
+      "split": "acquire"
+    },
+    {
+      "bytes": 23995,
+      "family": "library",
+      "path": "library/http.server.txt",
+      "sha256": "781ec8589cf86810f27e8282971682aa96d4a5ed1da281ca2805ecfd02a8254a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 24354,
+      "family": "library",
+      "path": "library/http.txt",
+      "sha256": "97c050c3c2966cb294e0fa039382915ec5b1415600ed61038628c69fc82b1d49",
+      "split": "acquire"
+    },
+    {
+      "bytes": 985,
+      "family": "library",
+      "path": "library/i18n.txt",
+      "sha256": "3933181803cdc5afd587f8c8f58f9c523415e47d41eb6ec6c62c3e82d631488f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 39750,
+      "family": "library",
+      "path": "library/idle.txt",
+      "sha256": "799a9a3a9b436985d04571dbdba9d07ad43ef9c42b0758a890ec9aab63abe434",
+      "split": "acquire"
+    },
+    {
+      "bytes": 24400,
+      "family": "library",
+      "path": "library/imaplib.txt",
+      "sha256": "57787e3b41cb3597755b9f062e8ccbc97b7ecc479cd3332904e8eddb25cda147",
+      "split": "acquire"
+    },
+    {
+      "bytes": 558,
+      "family": "library",
+      "path": "library/imghdr.txt",
+      "sha256": "748fa92cb18199640fde8c51fea37263ab8f73d56c2271c83783a89627e81d08",
+      "split": "acquire"
+    },
+    {
+      "bytes": 423,
+      "family": "library",
+      "path": "library/imp.txt",
+      "sha256": "e01affd798633fd749d8e9a67e8148e181e2e1332827edb092c4f068185957d8",
+      "split": "acquire"
+    },
+    {
+      "bytes": 19719,
+      "family": "library",
+      "path": "library/importlib.metadata.txt",
+      "sha256": "162850a1a894732b6348f842d0c8607a0358480f5b39a8ad11c51717cbf03d7f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6041,
+      "family": "library",
+      "path": "library/importlib.resources.abc.txt",
+      "sha256": "54c8aa626a973c3c34f2210b45e5a6023d14ddd22fe7341e85c4a7883f8d3a62",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9060,
+      "family": "library",
+      "path": "library/importlib.resources.txt",
+      "sha256": "a4b1a5baa4ec8f47492ff499848c350161701ccce8ec9f269062245f5ef16321",
+      "split": "acquire"
+    },
+    {
+      "bytes": 53167,
+      "family": "library",
+      "path": "library/importlib.txt",
+      "sha256": "f6abd3d2d855d5c44981734d6b8a1226eb56c0e36a592e0438e366c9fed128c3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 15925,
+      "family": "library",
+      "path": "library/index.txt",
+      "sha256": "33dcf05655e5b7de72b480c4bcce35feb7c7c62494081bd39871a0a8dae773f7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 70614,
+      "family": "library",
+      "path": "library/inspect.txt",
+      "sha256": "f96de1b0dad4238c1050ab288146d921ed4cc1798961d116a2e734db62222c0c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4569,
+      "family": "library",
+      "path": "library/internet.txt",
+      "sha256": "5914ab740f4308a29a03158c8cb6b2af354730669918b5cabd25d2f1b9537018",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7938,
+      "family": "library",
+      "path": "library/intro.txt",
+      "sha256": "d416c8adc6eafaf757bd81d5fc209869293504a5be43f4fc52f79e1ba7428d99",
+      "split": "acquire"
+    },
+    {
+      "bytes": 46719,
+      "family": "library",
+      "path": "library/io.txt",
+      "sha256": "17e4fc78728cce6bf6bd24369bf4989a211097dbdcb99113b5485e2db7a56f44",
+      "split": "acquire"
+    },
+    {
+      "bytes": 35631,
+      "family": "library",
+      "path": "library/ipaddress.txt",
+      "sha256": "7d970705e9867331f563e9f1b3a6c6b4994957a08aa0fd99cc3b8e76e8975b97",
+      "split": "acquire"
+    },
+    {
+      "bytes": 765,
+      "family": "library",
+      "path": "library/ipc.txt",
+      "sha256": "81cf861df155baafba283bd4771568905eb910d78201345bcb19cb1d6ca6ce7f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 49800,
+      "family": "library",
+      "path": "library/itertools.txt",
+      "sha256": "a7de62feff8462e8a426a4b6cb801df5373d443df29217d7ec8f04cc5004823a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 28706,
+      "family": "library",
+      "path": "library/json.txt",
+      "sha256": "d6e102b572cab03aad608e4ea8a7a1c081e9b421e5049cd2dd3df94cd1027779",
+      "split": "acquire"
+    },
+    {
+      "bytes": 949,
+      "family": "library",
+      "path": "library/keyword.txt",
+      "sha256": "f67c35420caa0ce9b4a2bb6ba6e1ee9b0ef9c82eae98cc3b6c361b603ce22696",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1675,
+      "family": "library",
+      "path": "library/language.txt",
+      "sha256": "0e644a1c0c7faf2f5dc5fc0536fcce9091eff1893f154111642d13268cd8906c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2598,
+      "family": "library",
+      "path": "library/linecache.txt",
+      "sha256": "08415767e7f0717479e0f57fc4d34d6cac047843a723f55573882dfbef33a4a7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 29388,
+      "family": "library",
+      "path": "library/locale.txt",
+      "sha256": "9a8d5501fd78dfd2b1aebd0a826a7b44c40188f6dd9f584fe5b4629a2ba10125",
+      "split": "acquire"
+    },
+    {
+      "bytes": 38829,
+      "family": "library",
+      "path": "library/logging.config.txt",
+      "sha256": "bf1ffaf0543d1360096a0fe3cd013e5fc60ffd8b941b9515dcc91ea66c999984",
+      "split": "acquire"
+    },
+    {
+      "bytes": 48128,
+      "family": "library",
+      "path": "library/logging.handlers.txt",
+      "sha256": "b2e45cfa6f2332fc07c48ef11c29f28abc381c7f26bb2a35279e166c3cf8edda",
+      "split": "acquire"
+    },
+    {
+      "bytes": 70499,
+      "family": "library",
+      "path": "library/logging.txt",
+      "sha256": "8b69ca2af9dd778a8426576240d96c01668c5ac06b3fe129a9bff7529869f18f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 18186,
+      "family": "library",
+      "path": "library/lzma.txt",
+      "sha256": "13c60db362106957bed44f180a33cedfae7cdca797c9b4991eeb09e90a967218",
+      "split": "acquire"
+    },
+    {
+      "bytes": 64577,
+      "family": "library",
+      "path": "library/mailbox.txt",
+      "sha256": "9649831b3eae4035f8cc71808497ad47ba23b4c409b72fda0eab6ae45f3b2838",
+      "split": "acquire"
+    },
+    {
+      "bytes": 382,
+      "family": "library",
+      "path": "library/mailcap.txt",
+      "sha256": "e14f11de95df416df95df61b40f9598613bf5f44580f0162e68726fe5409bf38",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2642,
+      "family": "library",
+      "path": "library/markup.txt",
+      "sha256": "bddbe28f88e526484f5e770256e79fb25c9d5632b27c3081275ce1493e332591",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7374,
+      "family": "library",
+      "path": "library/marshal.txt",
+      "sha256": "0b77bb76c1b5ed47b8c0e49912d9c01eda65117197e2f5a4638c85029cf0fc50",
+      "split": "acquire"
+    },
+    {
+      "bytes": 47462,
+      "family": "library",
+      "path": "library/math.txt",
+      "sha256": "f1f49a0ccb75c69edb0f326bd1454f2ce878ef8abca9a40dc5417bc02fe57c63",
+      "split": "acquire"
+    },
+    {
+      "bytes": 13222,
+      "family": "library",
+      "path": "library/mimetypes.txt",
+      "sha256": "8af55187a3f4da60a09862910fce77922b8e38b5c1b44f93268d5c3d3fd8ff1e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 392,
+      "family": "library",
+      "path": "library/mm.txt",
+      "sha256": "30a3c049e5e393c8d375ea1218f8c7a183bb43e28760538c1a95a2a071637ee2",
+      "split": "acquire"
+    },
+    {
+      "bytes": 14960,
+      "family": "library",
+      "path": "library/mmap.txt",
+      "sha256": "f72ad862cd990f27e7d264598d488b93bfd6a7ef4f9f1e46f347c2bc5d8875c7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3046,
+      "family": "library",
+      "path": "library/modulefinder.txt",
+      "sha256": "bff9f397b285ce6c32a899d782116b5f7df3c7f978ce83d96c03518937df703c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1653,
+      "family": "library",
+      "path": "library/modules.txt",
+      "sha256": "a19fcd115fafc7e7a14669c6a528c797f09cb89f98f0218599bcf663956f6238",
+      "split": "acquire"
+    },
+    {
+      "bytes": 417,
+      "family": "library",
+      "path": "library/msilib.txt",
+      "sha256": "fc3513cf96cc7585147fc05faca68eca2161de4a497331bf77c6f04cb98945fa",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6840,
+      "family": "library",
+      "path": "library/msvcrt.txt",
+      "sha256": "84c3649cb1559bdd2069a723d4c4da395cbd0cfb73bb159e8778b4fae0883543",
+      "split": "acquire"
+    },
+    {
+      "bytes": 16298,
+      "family": "library",
+      "path": "library/multiprocessing.shared_memory.txt",
+      "sha256": "223ef18bc47bae8474e19d6308f5e47eedb70e11e34464f6cde5b387b6ba2236",
+      "split": "acquire"
+    },
+    {
+      "bytes": 123293,
+      "family": "library",
+      "path": "library/multiprocessing.txt",
+      "sha256": "882db591b31743ebdeebb38106381c41a3810f4a9e1ec06d6ce196233ece80a2",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2177,
+      "family": "library",
+      "path": "library/netdata.txt",
+      "sha256": "0ad39dbaad7c30fe6a38dd75258c9c78f068678a96b2727c2dcd8498a20c2d1f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3119,
+      "family": "library",
+      "path": "library/netrc.txt",
+      "sha256": "7e3ac3b86645e6e867fd8c5f332e6b2a94ec59a546c25719b63eda267cc5a54e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 404,
+      "family": "library",
+      "path": "library/nis.txt",
+      "sha256": "0d15db37ea11de795e2a0fc797d122e12b0e929ac03512e197d4101802e311a7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 380,
+      "family": "library",
+      "path": "library/nntplib.txt",
+      "sha256": "c3c271a1fc914a195c5f0b36ff79113b8ca1acc7d1f52038e6730ddf5b94d377",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7082,
+      "family": "library",
+      "path": "library/numbers.txt",
+      "sha256": "c7eda2ddbaf66f19b19408a78cf37abe4581262d5f37fd90aa8980663734f656",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2452,
+      "family": "library",
+      "path": "library/numeric.txt",
+      "sha256": "a03ecc6510d1d4dacd2992ae419dac5276cb14509ffd339cb26cadaba1988aea",
+      "split": "acquire"
+    },
+    {
+      "bytes": 19496,
+      "family": "library",
+      "path": "library/operator.txt",
+      "sha256": "7641334bcb3a1064f4b47e65d8dd383491d483508de515c9e6bda8edaf8d9386",
+      "split": "acquire"
+    },
+    {
+      "bytes": 77818,
+      "family": "library",
+      "path": "library/optparse.txt",
+      "sha256": "ea841dc0e10d664a582848b1562f826a215d2c06e2e73faad3bcebbcae379ed6",
+      "split": "acquire"
+    },
+    {
+      "bytes": 21597,
+      "family": "library",
+      "path": "library/os.path.txt",
+      "sha256": "82332b860752ba7054b12da16d430e65718907cb48a65b8938f9f83d3a49ac50",
+      "split": "acquire"
+    },
+    {
+      "bytes": 190366,
+      "family": "library",
+      "path": "library/os.txt",
+      "sha256": "2f38a6685115ee5f185a47e229efd15ecb60c4b623e79dd019012a7fc8d0737b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 428,
+      "family": "library",
+      "path": "library/ossaudiodev.txt",
+      "sha256": "0369a3bc19527a490429e43a9b9c358744d9ee664b81d75dfa4711a0086acd9f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 69079,
+      "family": "library",
+      "path": "library/pathlib.txt",
+      "sha256": "40c4d76e052f93f58cc826140206df4e08a91cff69ed09fff234251cc58b9ed4",
+      "split": "acquire"
+    },
+    {
+      "bytes": 27591,
+      "family": "library",
+      "path": "library/pdb.txt",
+      "sha256": "b66efc574921240887a1314b3d2f40f898d8f8dde42d0ce657669c03c5de0518",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2534,
+      "family": "library",
+      "path": "library/persistence.txt",
+      "sha256": "5f6725ec90f79c71ec330071366cad17828537227efd995306ac2bb9d7e5e59a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 49083,
+      "family": "library",
+      "path": "library/pickle.txt",
+      "sha256": "f7c96ea428150c9b46a69abcef578daca04d7c5e4ee4efaef56f00376668f2d7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3493,
+      "family": "library",
+      "path": "library/pickletools.txt",
+      "sha256": "4cc95d2503a6e58e9b36cd98f925ca45efea6089dffb97c8d675d80d228e6ad4",
+      "split": "acquire"
+    },
+    {
+      "bytes": 448,
+      "family": "library",
+      "path": "library/pipes.txt",
+      "sha256": "bd7e104c0e95a609c6470f9c24dd81a8850e67ffbd91fc2e98661fcc2cd8bd72",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8682,
+      "family": "library",
+      "path": "library/pkgutil.txt",
+      "sha256": "7c1d3ff8b30407ac1b5dd5ed3a04dbbc1e7daa690442238c6b3af0abc1e8a73c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 12552,
+      "family": "library",
+      "path": "library/platform.txt",
+      "sha256": "4637fbc00bc6c831d8ec32d7375713ac91fca75d622e4d63fe847a4ff68d9bfe",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5674,
+      "family": "library",
+      "path": "library/plistlib.txt",
+      "sha256": "fddffa1a846a0d0008de01caaad0704fd65dab944ee54e895d42a13416479e3a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8154,
+      "family": "library",
+      "path": "library/poplib.txt",
+      "sha256": "a7af9148ecfc6fcccc599b1e8831c0dd82a23ebef9482a12cd2c82a4e855ad44",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3138,
+      "family": "library",
+      "path": "library/posix.txt",
+      "sha256": "d014af3ace8cecf00b50f3de86253c07592a3bc1240b9df3d1b59593d678b77a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 15689,
+      "family": "library",
+      "path": "library/pprint.txt",
+      "sha256": "91811a39f8eac1f1d025702faa563b257b9b1a50c04a629c850730d89ae39fb6",
+      "split": "acquire"
+    },
+    {
+      "bytes": 29157,
+      "family": "library",
+      "path": "library/profile.txt",
+      "sha256": "3c2cec5ec50645696e81ea8e0af731b03d52c81463d6f4548dad891ff4ae2982",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4553,
+      "family": "library",
+      "path": "library/pty.txt",
+      "sha256": "37f32f76027cf03a797adf8f1adb681ea2d6f1a9046c665e506d55193a7e6c77",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2500,
+      "family": "library",
+      "path": "library/pwd.txt",
+      "sha256": "ae0b5d8d01366064fb09b9fbebc4c68aa81a672eff38cf1246fab54c1c12d3bd",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6179,
+      "family": "library",
+      "path": "library/py_compile.txt",
+      "sha256": "5c99ea9c84a007894f0280ab86535fd58c6273ea4efaf49fc0b844d9ad24ce93",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4174,
+      "family": "library",
+      "path": "library/pyclbr.txt",
+      "sha256": "b3b8a9787f5ef6e2c301accb81694c49a7254c3dccae0356ab9040a813bab7aa",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4864,
+      "family": "library",
+      "path": "library/pydoc.txt",
+      "sha256": "90adc63885e675e486e50a72245513cb1cd0d2ba8087e1de96701f5b569d53c8",
+      "split": "acquire"
+    },
+    {
+      "bytes": 34628,
+      "family": "library",
+      "path": "library/pyexpat.txt",
+      "sha256": "e6eeebd22447673235b80b40dafb19848d6abb670e16b75e98303cbdfc418b41",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4123,
+      "family": "library",
+      "path": "library/python.txt",
+      "sha256": "a14b011c9eebff3ae4750d63fae022c208cc6ba1f71aea8ecab7214723f927b3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11440,
+      "family": "library",
+      "path": "library/queue.txt",
+      "sha256": "cb0c0a8159a669ca9dc530a71f9c357bd2e77a6a9a4bf61073796effbb976fc2",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2293,
+      "family": "library",
+      "path": "library/quopri.txt",
+      "sha256": "4a2723db8a23cfb3ab596705bb6792adfac0c2c40d8552a675c41e762fe8e4d0",
+      "split": "acquire"
+    },
+    {
+      "bytes": 26736,
+      "family": "library",
+      "path": "library/random.txt",
+      "sha256": "f08e8fde9780a51d239b99512d94293dec2e4cfac8387738950d9df0b9194d13",
+      "split": "acquire"
+    },
+    {
+      "bytes": 71015,
+      "family": "library",
+      "path": "library/re.txt",
+      "sha256": "927f0bc22cf96fb02b4ebca10d08502a7b3f1ac9709e55bf622b82d4a8baa1a7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 13295,
+      "family": "library",
+      "path": "library/readline.txt",
+      "sha256": "cc62bf275e8d2e4f72889cb000f28448beaac1012dc9c95418b247c81e0af3a7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1280,
+      "family": "library",
+      "path": "library/removed.txt",
+      "sha256": "97b9f0ca26bebfbbfe9f512d83b07d0cb5e48003c1b146786b328218c1843308",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6710,
+      "family": "library",
+      "path": "library/reprlib.txt",
+      "sha256": "a9e929547b6bc32722b02bee34b34e3f47cd36f16790bf04bf234293ce15444d",
+      "split": "acquire"
+    },
+    {
+      "bytes": 13071,
+      "family": "library",
+      "path": "library/resource.txt",
+      "sha256": "522183b24ec2f8c5692e65f2168386743d57542bca51c2ff1fffe4f155b403e0",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2242,
+      "family": "library",
+      "path": "library/rlcompleter.txt",
+      "sha256": "d2f250e6d098198acfbb59c6327ef8ac792c6150ea1fe5556238bde89816dae7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7969,
+      "family": "library",
+      "path": "library/runpy.txt",
+      "sha256": "cd5ad1643dd9a3cd52a1981fc5a725dc0681c29e972cf78b231a42679e66fb9b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5027,
+      "family": "library",
+      "path": "library/sched.txt",
+      "sha256": "5a4cf17d52a19cf4ba332e8119a47c682d1b73365c8e2ad8f2b2bf3e4bcd5bd9",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5350,
+      "family": "library",
+      "path": "library/secrets.txt",
+      "sha256": "ac0ada47568f218d1a41e54a61b93ceefde7c2359faec7f6667e48654750b078",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1319,
+      "family": "library",
+      "path": "library/security_warnings.txt",
+      "sha256": "2fa56723d64adb7aab4938945474f12a0a171632b6815132d3415a1a5e40aa19",
+      "split": "acquire"
+    },
+    {
+      "bytes": 28119,
+      "family": "library",
+      "path": "library/select.txt",
+      "sha256": "a82da6b759ce21fb04f993b8413969c2bf34f3df11e54b8f08e3255ed6271379",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8621,
+      "family": "library",
+      "path": "library/selectors.txt",
+      "sha256": "3b444a322ecbfe4832eb9c2e5e6d4de4922db1fc427c22af712439100b4b07f8",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8426,
+      "family": "library",
+      "path": "library/shelve.txt",
+      "sha256": "f90cba56bab8c631e0acfeda88ea59c962a23e79352adf500f2519fbef2ded8c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 16277,
+      "family": "library",
+      "path": "library/shlex.txt",
+      "sha256": "08166d5a7d549e5ee3866ef676d4d14b84c7377e7e006144b35e4ef3de50389f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 34583,
+      "family": "library",
+      "path": "library/shutil.txt",
+      "sha256": "f81bb5bd967ae6af48daaf921ecea2aade29fc2ba26af23726adaa4081b17a5b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 25958,
+      "family": "library",
+      "path": "library/signal.txt",
+      "sha256": "a2fdcc59651cc60df449f8ec66654332284d9d1ce9f03bcf0ef8b21740a9a366",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10629,
+      "family": "library",
+      "path": "library/site.txt",
+      "sha256": "53bcdbeb54bb5f4f1df3180893701b1d06afb98816635f97e05a06e8ee5870db",
+      "split": "acquire"
+    },
+    {
+      "bytes": 484,
+      "family": "library",
+      "path": "library/smtpd.txt",
+      "sha256": "9d1eaa2f7a014e48915892d54b5a199429f63541f3c6f3c22be260a38ca31323",
+      "split": "acquire"
+    },
+    {
+      "bytes": 22637,
+      "family": "library",
+      "path": "library/smtplib.txt",
+      "sha256": "476b61195a74198991aec688cf4e9e38bde672985104b64a51a02443783ee1a9",
+      "split": "acquire"
+    },
+    {
+      "bytes": 552,
+      "family": "library",
+      "path": "library/sndhdr.txt",
+      "sha256": "7bf879576327c4c4e5b68a64edf46e391d62ea21edcffb499f97f6cbba1907e6",
+      "split": "acquire"
+    },
+    {
+      "bytes": 85289,
+      "family": "library",
+      "path": "library/socket.txt",
+      "sha256": "23846381e083329778fd077439cfabac1859b08bebdb01a8d7f08418d517df4c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 24149,
+      "family": "library",
+      "path": "library/socketserver.txt",
+      "sha256": "266ae45b1cd2a0a4475f1d9eb469178b4b4f74695041698997a7f7db6a6541c8",
+      "split": "acquire"
+    },
+    {
+      "bytes": 519,
+      "family": "library",
+      "path": "library/spwd.txt",
+      "sha256": "fa7ebbfb0cee27f3de9144ab2d6ba246117c5e24e6b7b69525e16f3ce48d60cc",
+      "split": "acquire"
+    },
+    {
+      "bytes": 82683,
+      "family": "library",
+      "path": "library/sqlite3.txt",
+      "sha256": "3891f2ef91f9779daf0fbb89e37f9d295177afaa738bb1e12db0b696042bf275",
+      "split": "acquire"
+    },
+    {
+      "bytes": 101414,
+      "family": "library",
+      "path": "library/ssl.txt",
+      "sha256": "3e33a3e52ef0ea421c0546268e254e9e3b7bb438d16f05bb9ee14ee271d0a5ca",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10050,
+      "family": "library",
+      "path": "library/stat.txt",
+      "sha256": "33eb19a7d1ff7f118bf51ed229553d0aec3369922b9afc1fcd58751a3d7f119d",
+      "split": "acquire"
+    },
+    {
+      "bytes": 41258,
+      "family": "library",
+      "path": "library/statistics.txt",
+      "sha256": "924cd2d3cbe5e4307e117aa55f3575694b7ce1f4fda6f702619d717bb5414973",
+      "split": "acquire"
+    },
+    {
+      "bytes": 230008,
+      "family": "library",
+      "path": "library/stdtypes.txt",
+      "sha256": "1e4f964d64e3046ae2cbf6d266c74dbbd17e0a41d3bffbe17e8f158a7d25b2d3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11183,
+      "family": "library",
+      "path": "library/string.templatelib.txt",
+      "sha256": "9b2fdd3aa9037ac8e5faf7e1679240e429f31defba6b32b8ef01b30466734b6c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 42610,
+      "family": "library",
+      "path": "library/string.txt",
+      "sha256": "9b242c9e71957e35f9f9a4d249ca8646f7c1b1c98d44a65a0214de0671d3e313",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4055,
+      "family": "library",
+      "path": "library/stringprep.txt",
+      "sha256": "b437b8796bdf5611f8cc1903b8bcbabe3c44b3442858692447d4d0325317f366",
+      "split": "acquire"
+    },
+    {
+      "bytes": 25393,
+      "family": "library",
+      "path": "library/struct.txt",
+      "sha256": "6987c094c6709019296298d6073ab59be55a46267dbfdc2786b6a2bf1e8b0f64",
+      "split": "acquire"
+    },
+    {
+      "bytes": 57040,
+      "family": "library",
+      "path": "library/subprocess.txt",
+      "sha256": "0601d60212992e0958c727955c5982799ac5d0571d67081e33aa464cd62dc04e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 388,
+      "family": "library",
+      "path": "library/sunau.txt",
+      "sha256": "2b6447000e37ebfc19bddadf77eb60573d708d39cb488456ee364a1e4d5e61fa",
+      "split": "acquire"
+    },
+    {
+      "bytes": 999,
+      "family": "library",
+      "path": "library/superseded.txt",
+      "sha256": "2911029241f5d3ba1ca246854ce6076ada9c585a3e18a80d2effd24631cc64fe",
+      "split": "acquire"
+    },
+    {
+      "bytes": 8716,
+      "family": "library",
+      "path": "library/symtable.txt",
+      "sha256": "533929662c007e390731160f41ea91a12da80ae93baa05f436d3f36962c3b81b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 12298,
+      "family": "library",
+      "path": "library/sys.monitoring.txt",
+      "sha256": "78f94a72d381fea7d7d5403ef30384711173a60265244771c1af79d4d02e61cf",
+      "split": "acquire"
+    },
+    {
+      "bytes": 88686,
+      "family": "library",
+      "path": "library/sys.txt",
+      "sha256": "8c6aab3ade1c7c7537212e3be7c620a0c5e0f9fb7efbc04c9a9eb075f49503a3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5960,
+      "family": "library",
+      "path": "library/sys_path_init.txt",
+      "sha256": "ae0512283d5a1281403ac9eabf01ae900d0fd116f3a86d7a8a2634e06c19ec3b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 20988,
+      "family": "library",
+      "path": "library/sysconfig.txt",
+      "sha256": "ec057dddaaeb780ed0e8202c41114e682dad59d46ee0f3f15ea037e86e39dcb3",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5920,
+      "family": "library",
+      "path": "library/syslog.txt",
+      "sha256": "d2f8bb060c2075e5c295f108f0e4b34d95ab5681aae1dd04d64d579e4624d485",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1576,
+      "family": "library",
+      "path": "library/tabnanny.txt",
+      "sha256": "afc315a3386eab70899dec9b8999d904df026fa92c07ae1973d27a8d43811977",
+      "split": "acquire"
+    },
+    {
+      "bytes": 49531,
+      "family": "library",
+      "path": "library/tarfile.txt",
+      "sha256": "5e53fce2b639cfdc2c5a66116e5c698bfd2124554e171ceaaae7c7a3a0f242f9",
+      "split": "acquire"
+    },
+    {
+      "bytes": 520,
+      "family": "library",
+      "path": "library/telnetlib.txt",
+      "sha256": "ad70492dac7f8456b760fd91aebc771fea28b17be2c18884a1aab56aee641439",
+      "split": "acquire"
+    },
+    {
+      "bytes": 18902,
+      "family": "library",
+      "path": "library/tempfile.txt",
+      "sha256": "728377aa189c7ba26b43784d2eaa76b3e832865ab4309fac5674f3fbd8d5cfff",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4120,
+      "family": "library",
+      "path": "library/termios.txt",
+      "sha256": "341c5fa150725bd0ac037668fd52009673e977f6a4643e6e54fd4cb3069476a5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 59278,
+      "family": "library",
+      "path": "library/test.txt",
+      "sha256": "b9de7ae638b2faa38f632b51c4d486c03eb7833af82ed185b06a9299ef9d8cd4",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1876,
+      "family": "library",
+      "path": "library/text.txt",
+      "sha256": "67d561364941a810a6ea829abce192cf271eb48f12eda28c44f9b01bfae60758",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10681,
+      "family": "library",
+      "path": "library/textwrap.txt",
+      "sha256": "d0cb8527392eabd47c7519dec6b42a2baa6c2673034e74b3c93e6fade058f80d",
+      "split": "acquire"
+    },
+    {
+      "bytes": 49252,
+      "family": "library",
+      "path": "library/threading.txt",
+      "sha256": "da034afe045e465f190e5349540464abfa246c5518b0bef6633a333dd4e75d9b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 17562,
+      "family": "library",
+      "path": "library/threadsafety.txt",
+      "sha256": "471d7de04263e19e27f44c62348d7ddf3f14245a891a31f48ed0faca4154b8ea",
+      "split": "acquire"
+    },
+    {
+      "bytes": 39240,
+      "family": "library",
+      "path": "library/time.txt",
+      "sha256": "1c5e89faf7be6c0e94c000fc2aa55c0a4fff0676ebe43fd1e8c284ad8958ab3a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 12941,
+      "family": "library",
+      "path": "library/timeit.txt",
+      "sha256": "8c62ff861144820f72f85442c43577a18b6c01334086ec1d797b80b7a34482bd",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5669,
+      "family": "library",
+      "path": "library/tk.txt",
+      "sha256": "ffbff9f9b263673250aff899fce54ad48c4a1510268f323aa88237d209704f3c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1351,
+      "family": "library",
+      "path": "library/tkinter.colorchooser.txt",
+      "sha256": "5255e79b93885901793b8a844cda820d168eef545f98a9f0b23d85d8333db8e2",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2164,
+      "family": "library",
+      "path": "library/tkinter.dnd.txt",
+      "sha256": "89fe9bff678447bdfc0a3f03024f086971f15fe12c93f55c2ea8be5af09ea926",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4145,
+      "family": "library",
+      "path": "library/tkinter.font.txt",
+      "sha256": "a5e44733aaa0d6c5c0bcc4b6d369d54d199731672eefd93195aa26842ef44c72",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5496,
+      "family": "library",
+      "path": "library/tkinter.messagebox.txt",
+      "sha256": "b5948fa54e652f26198b8904431a58387587aba6fc7e5e5b30b3682bf911a6c1",
+      "split": "acquire"
+    },
+    {
+      "bytes": 1032,
+      "family": "library",
+      "path": "library/tkinter.scrolledtext.txt",
+      "sha256": "11ccff57d19e99eb2fdbe1c194fbf1f05d403f8de3f8472e8fd56addc1e0feb9",
+      "split": "acquire"
+    },
+    {
+      "bytes": 73341,
+      "family": "library",
+      "path": "library/tkinter.ttk.txt",
+      "sha256": "16b8187935d851672aac3439b5c351f208d3e6cca33427bed918efd2d27dea7d",
+      "split": "acquire"
+    },
+    {
+      "bytes": 229013,
+      "family": "library",
+      "path": "library/tkinter.txt",
+      "sha256": "1ae491dacb83a559d60074b3075c5fddbdf252ff40b7c95cf7ef55b640aa7c88",
+      "split": "acquire"
+    },
+    {
+      "bytes": 17386,
+      "family": "library",
+      "path": "library/token.txt",
+      "sha256": "153b4e2b059e08913816461778d5b04e6f0859f6046831ac35626c7ae8dbcd2e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 9864,
+      "family": "library",
+      "path": "library/tokenize.txt",
+      "sha256": "9909f187afc9498430f959e5a8c9f6e1956a00440d16cbe15c8a96b3b21f2a3f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6144,
+      "family": "library",
+      "path": "library/tomllib.txt",
+      "sha256": "debdfac91186fdffd282037ab3fd97dcb25487111515ed4b7fa4f853f5d05c39",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6488,
+      "family": "library",
+      "path": "library/trace.txt",
+      "sha256": "3312d5cf655a15914397beb8a4ebf77c83d456986db8eeb1b831239299ae94a7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 26242,
+      "family": "library",
+      "path": "library/traceback.txt",
+      "sha256": "8ec6ddb2890998061b12ef58f72d7c923441715ae6ea84701208f4823753a648",
+      "split": "acquire"
+    },
+    {
+      "bytes": 24414,
+      "family": "library",
+      "path": "library/tracemalloc.txt",
+      "sha256": "665789b8432caaae19928575a153818b58cf624c8294bcefa30f0d401c903784",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2354,
+      "family": "library",
+      "path": "library/tty.txt",
+      "sha256": "c815a631ff7a3499aa6ee7be3a2e12002e26d86ce1ba4409f3024637aabd7969",
+      "split": "acquire"
+    },
+    {
+      "bytes": 79558,
+      "family": "library",
+      "path": "library/turtle.txt",
+      "sha256": "339ba0217d3405c19a11447b976b9df1ec4ee3c4be6237170783508a45c52870",
+      "split": "acquire"
+    },
+    {
+      "bytes": 15585,
+      "family": "library",
+      "path": "library/types.txt",
+      "sha256": "3b7703f8704dbedfef9b7107650355167a2a08dba25ef3077a6d9b228a039f72",
+      "split": "acquire"
+    },
+    {
+      "bytes": 136001,
+      "family": "library",
+      "path": "library/typing.txt",
+      "sha256": "f7ff3840148d46d180acdc7cdd30ad82440d87669a515d5a76f5f24916b52561",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6754,
+      "family": "library",
+      "path": "library/unicodedata.txt",
+      "sha256": "d92aa89717ff8e6d3eeaac4f95a02e7d2ea67b2ed2acf63f085be379904b2f3e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 45570,
+      "family": "library",
+      "path": "library/unittest.mock-examples.txt",
+      "sha256": "9757bcb7fab42be4d13f510edbc16a19658c02f32620e6dad41634e71a2b22c2",
+      "split": "acquire"
+    },
+    {
+      "bytes": 96967,
+      "family": "library",
+      "path": "library/unittest.mock.txt",
+      "sha256": "92460dd3202209d9b1483384059678b1c84fe96c617f4cc808385af3d3eedf73",
+      "split": "acquire"
+    },
+    {
+      "bytes": 98036,
+      "family": "library",
+      "path": "library/unittest.txt",
+      "sha256": "7aa675e2d63a2e5dd67014421c51c6a373c1e0167fb93cd341e1aade1ec9c243",
+      "split": "acquire"
+    },
+    {
+      "bytes": 884,
+      "family": "library",
+      "path": "library/unix.txt",
+      "sha256": "8ddd0f43e7ca1fe5d06fca962d72c6ab356960a3455c0c957109da6912aceeba",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2124,
+      "family": "library",
+      "path": "library/urllib.error.txt",
+      "sha256": "d5ab5d09a926f4a61c369608a291221b56c2f8fdead886d1497f114e6662b75e",
+      "split": "acquire"
+    },
+    {
+      "bytes": 31091,
+      "family": "library",
+      "path": "library/urllib.parse.txt",
+      "sha256": "b58cb0227fd3c14e1abf8e79218e7eefbaeb9e39cfc3db99ce7407f6e95acb7f",
+      "split": "acquire"
+    },
+    {
+      "bytes": 54602,
+      "family": "library",
+      "path": "library/urllib.request.txt",
+      "sha256": "c5caa3d024e229f48d905b78d14fe5d24896984f683beaad9879c8d757ceb289",
+      "split": "acquire"
+    },
+    {
+      "bytes": 2801,
+      "family": "library",
+      "path": "library/urllib.robotparser.txt",
+      "sha256": "019de3697f5b34ff9b0da85d400a34c8c0dcb7f07e3cb84203c101691dd6d0ec",
+      "split": "acquire"
+    },
+    {
+      "bytes": 456,
+      "family": "library",
+      "path": "library/urllib.txt",
+      "sha256": "1c510fa57f46a95231690e746084a76ea3c84b0b82af12c02fe1f6e12e1545db",
+      "split": "acquire"
+    },
+    {
+      "bytes": 535,
+      "family": "library",
+      "path": "library/uu.txt",
+      "sha256": "ada030418df5b556d2a2988a3e6077fedc9c89895e8f6a6feb1b9e9c625a4dd5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 16178,
+      "family": "library",
+      "path": "library/uuid.txt",
+      "sha256": "430ac41abdfcd143636334afa9f86cf87e6083bac354c94d59343f47c5fe941c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 29946,
+      "family": "library",
+      "path": "library/venv.txt",
+      "sha256": "3ddacd9185de05433c541a1dc986900d0a93f5c06549ae328a269775cb4d2136",
+      "split": "acquire"
+    },
+    {
+      "bytes": 30920,
+      "family": "library",
+      "path": "library/warnings.txt",
+      "sha256": "282a0c115d14921f5b1df1abe8716898bffc81512d580d486093ff7bdb4eb53c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 7116,
+      "family": "library",
+      "path": "library/wave.txt",
+      "sha256": "f2c6fcc50b7813d52cbb540a168abe9090dbd65002137c4775470f64c450c413",
+      "split": "acquire"
+    },
+    {
+      "bytes": 20513,
+      "family": "library",
+      "path": "library/weakref.txt",
+      "sha256": "d3e31aa5f0aa7ca3d2afb53d03bea2bf7e9643109f1f93391065afa7b0449a00",
+      "split": "acquire"
+    },
+    {
+      "bytes": 11025,
+      "family": "library",
+      "path": "library/webbrowser.txt",
+      "sha256": "4608936863aac9f868704d007e12edc3a51d357f50b14b4a151ca249f0395cdd",
+      "split": "acquire"
+    },
+    {
+      "bytes": 497,
+      "family": "library",
+      "path": "library/windows.txt",
+      "sha256": "4960361ef3e47f28b3e5c0e7599416d8022f0eea496ae9bb9202357c8acf7e1a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 23739,
+      "family": "library",
+      "path": "library/winreg.txt",
+      "sha256": "2f7b5c70be1c2e7933443cc80b730abf91aca89f1a5d8c657846ec88b16f3839",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5768,
+      "family": "library",
+      "path": "library/winsound.txt",
+      "sha256": "2657eff66965dda4747ca6c729f5a9c8cdee00dc3ea721e0a3b3547ee5282982",
+      "split": "acquire"
+    },
+    {
+      "bytes": 34226,
+      "family": "library",
+      "path": "library/wsgiref.txt",
+      "sha256": "d262abe859d1cb6c1fa3a367c57545187126ec370b1df3e990cd19f08ea50210",
+      "split": "acquire"
+    },
+    {
+      "bytes": 389,
+      "family": "library",
+      "path": "library/xdrlib.txt",
+      "sha256": "887c684b45f63214838f0c0ace2b8e0a908ea6d4446e704786c34744f737f918",
+      "split": "acquire"
+    },
+    {
+      "bytes": 12055,
+      "family": "library",
+      "path": "library/xml.dom.minidom.txt",
+      "sha256": "77c434889b12fe541b9a0c102ab84b979a1a7106e73d5a42a77816039a8a96ca",
+      "split": "acquire"
+    },
+    {
+      "bytes": 4765,
+      "family": "library",
+      "path": "library/xml.dom.pulldom.txt",
+      "sha256": "c9da0ad960041e8419b6a110caeb09d046ec6473e3c58468c7903f15ebd15cd1",
+      "split": "acquire"
+    },
+    {
+      "bytes": 36547,
+      "family": "library",
+      "path": "library/xml.dom.txt",
+      "sha256": "d5daea8153d099bd64c53aafbef27d835dc0fe5809bf283c7f4221ae67523843",
+      "split": "acquire"
+    },
+    {
+      "bytes": 56826,
+      "family": "library",
+      "path": "library/xml.etree.elementtree.txt",
+      "sha256": "9bb13700a640f144b7a5ac72eeec0c35f8fc92c3e12593d8e86db53a563ad69b",
+      "split": "acquire"
+    },
+    {
+      "bytes": 16241,
+      "family": "library",
+      "path": "library/xml.sax.handler.txt",
+      "sha256": "9895fb72235f26202966d45772e7c1f0e2a5373bf8fb7e92d68132f0bffa5934",
+      "split": "acquire"
+    },
+    {
+      "bytes": 10618,
+      "family": "library",
+      "path": "library/xml.sax.reader.txt",
+      "sha256": "facffb62f3c372352fd948b9568b1559ffae03d0e57722c3a9a3fe7625ebd548",
+      "split": "acquire"
+    },
+    {
+      "bytes": 6271,
+      "family": "library",
+      "path": "library/xml.sax.txt",
+      "sha256": "2e817999045baf4efc893e5a7276cb189798768e44d5a48ac60257a453c833b8",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3785,
+      "family": "library",
+      "path": "library/xml.sax.utils.txt",
+      "sha256": "32fa3e2a38bda0b9b30f978d1d360e7e121d32813404842ee03c13e10233ac2a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 3359,
+      "family": "library",
+      "path": "library/xml.txt",
+      "sha256": "fce63d0ad5de41e7029e0f3c874102cbdf383bb115c8865ce1432e4b0a9fc7ad",
+      "split": "acquire"
+    },
+    {
+      "bytes": 21392,
+      "family": "library",
+      "path": "library/xmlrpc.client.txt",
+      "sha256": "5ca55bb567482c0d618f172725e910ea23c0212be95753c7f870e879da56e26a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 15978,
+      "family": "library",
+      "path": "library/xmlrpc.server.txt",
+      "sha256": "f4ecf211901e2ced1e3f055373314d9747a2d11676040c5b22ff453c3167e31a",
+      "split": "acquire"
+    },
+    {
+      "bytes": 454,
+      "family": "library",
+      "path": "library/xmlrpc.txt",
+      "sha256": "53c7eac3ffc80caa4a1a199f12a07e15830699c29fe44881d5c26e1cc36380b9",
+      "split": "acquire"
+    },
+    {
+      "bytes": 13262,
+      "family": "library",
+      "path": "library/zipapp.txt",
+      "sha256": "a3b654f66cbad60c59dc77e18bcefc433700f1de8044e443a256b4c2d9637594",
+      "split": "acquire"
+    },
+    {
+      "bytes": 33595,
+      "family": "library",
+      "path": "library/zipfile.txt",
+      "sha256": "d3de16437fe534274cc9157d4ae002b5fb362c918f8092e56d547737f0e1ab4c",
+      "split": "acquire"
+    },
+    {
+      "bytes": 5870,
+      "family": "library",
+      "path": "library/zipimport.txt",
+      "sha256": "47eb1bb06d28b573e922b02abee03c7884c98364c62850b9307ce77386635782",
+      "split": "acquire"
+    },
+    {
+      "bytes": 16008,
+      "family": "library",
+      "path": "library/zlib.txt",
+      "sha256": "72243b9361ece5d3c744709b76163aeb2d3898588db8f1aa482fee42ada443e7",
+      "split": "acquire"
+    },
+    {
+      "bytes": 14713,
+      "family": "library",
+      "path": "library/zoneinfo.txt",
+      "sha256": "72fb7684870d677c2ad08cf977fbb16c5b0aba05e763674e1a8599fc30377ac5",
+      "split": "acquire"
+    },
+    {
+      "bytes": 59747,
+      "exclude_reason": "legal-meta",
+      "family": "meta",
+      "path": "license.txt",
+      "sha256": "277eb92d422fc2612bdac106d906786054b93bb90389ffd47487455c2d412f50",
+      "split": "excluded"
+    },
+    {
+      "bytes": 61864,
+      "family": "reference",
+      "path": "reference/compound_stmts.txt",
+      "sha256": "f68de821198523dbd76bd4217dab577462356eff3617a808c49526c8d40ec4a9",
+      "split": "holdout"
+    },
+    {
+      "bytes": 152180,
+      "family": "reference",
+      "path": "reference/datamodel.txt",
+      "sha256": "4f61a67791460bc2d07e7e0d41edf55530c4cd5c7efcdc26fbfe5288fcac2220",
+      "split": "holdout"
+    },
+    {
+      "bytes": 22140,
+      "family": "reference",
+      "path": "reference/executionmodel.txt",
+      "sha256": "76c4fe98bb37a0064e1ea996d4c2bb8fdf0257d2566ad6549cdfbec27f8d7c0e",
+      "split": "holdout"
+    },
+    {
+      "bytes": 79894,
+      "family": "reference",
+      "path": "reference/expressions.txt",
+      "sha256": "b96c76b6a195f9db1461e30e7b2d0ff9d43eac4c8f20751af0600953129e47cd",
+      "split": "holdout"
+    },
+    {
+      "bytes": 76594,
+      "family": "reference",
+      "path": "reference/grammar.txt",
+      "sha256": "03308c8c3751878e6beb6925b471350f5f862971703f2538c50ec6e21fb0d780",
+      "split": "holdout"
+    },
+    {
+      "bytes": 40161,
+      "family": "reference",
+      "path": "reference/import.txt",
+      "sha256": "12188375257feb5f2ff867e5d38e0c0eb6ac2d24483e9fa1f095e145d6498a1d",
+      "split": "holdout"
+    },
+    {
+      "bytes": 3082,
+      "family": "reference",
+      "path": "reference/index.txt",
+      "sha256": "1c3f97a83fbd2b30fc6cbec14671a832a0d09c3a6e06c02cdcb8daac1dc5e090",
+      "split": "holdout"
+    },
+    {
+      "bytes": 8295,
+      "family": "reference",
+      "path": "reference/introduction.txt",
+      "sha256": "7f9d45f2bf7a913d58b428b214007bdae1d280491ec34b2c2d28b444873af2c6",
+      "split": "holdout"
+    },
+    {
+      "bytes": 48808,
+      "family": "reference",
+      "path": "reference/lexical_analysis.txt",
+      "sha256": "9e3b62f582e6bd56370947f49df2632519367e42d37d3050d1a0884037079928",
+      "split": "holdout"
+    },
+    {
+      "bytes": 34679,
+      "family": "reference",
+      "path": "reference/simple_stmts.txt",
+      "sha256": "2f6d6ef866ca0c691cb12af9a2b1e4a4344fbd0409bfb3240c15b9c75ad85665",
+      "split": "holdout"
+    },
+    {
+      "bytes": 2568,
+      "family": "reference",
+      "path": "reference/toplevel_components.txt",
+      "sha256": "0685413bb6e734cd5eb9077ba07e6117d7aa10bf50d2b02609b5275a33ec73eb",
+      "split": "holdout"
+    },
+    {
+      "bytes": 5331,
+      "family": "tutorial",
+      "path": "tutorial/appendix.txt",
+      "sha256": "9903f9219652be15b699d279fb00bf0f469146a59d965af96f73935f7c5b6a49",
+      "split": "validation"
+    },
+    {
+      "bytes": 4473,
+      "family": "tutorial",
+      "path": "tutorial/appetite.txt",
+      "sha256": "89ef124ae698b3205ba90b90622713bf692158e38cade640b38091c63caf4f1b",
+      "split": "validation"
+    },
+    {
+      "bytes": 35434,
+      "family": "tutorial",
+      "path": "tutorial/classes.txt",
+      "sha256": "e33919107562523bbf8d185e45953579f986cee7cd26697db850ee8cdf6ed885",
+      "split": "validation"
+    },
+    {
+      "bytes": 38492,
+      "family": "tutorial",
+      "path": "tutorial/controlflow.txt",
+      "sha256": "831a9247fec5f991d049391b8b5322e62d0408f5334c00ace842d9440be9cb8d",
+      "split": "validation"
+    },
+    {
+      "bytes": 24310,
+      "family": "tutorial",
+      "path": "tutorial/datastructures.txt",
+      "sha256": "1bca1d272703cdf3792af178e45e84a6bcdec19e6aeae7e157f42c6f6213d452",
+      "split": "validation"
+    },
+    {
+      "bytes": 23494,
+      "family": "tutorial",
+      "path": "tutorial/errors.txt",
+      "sha256": "0da31148a7e6571c3cbdafc6fba8c428b2d182ec399c779c5bbd663bbeea1362",
+      "split": "validation"
+    },
+    {
+      "bytes": 12248,
+      "family": "tutorial",
+      "path": "tutorial/floatingpoint.txt",
+      "sha256": "783ed86151eb1fcc1b1c2d8241a510698289d544359004c9f9d9cdba0557e894",
+      "split": "validation"
+    },
+    {
+      "bytes": 6948,
+      "family": "tutorial",
+      "path": "tutorial/index.txt",
+      "sha256": "75c6bd0bf27148c49d54a354fa43bd4dab434ce617abdd19912a136f0199fd72",
+      "split": "validation"
+    },
+    {
+      "bytes": 19706,
+      "family": "tutorial",
+      "path": "tutorial/inputoutput.txt",
+      "sha256": "c5eb21d92d1a8596dc4c79d6a3ada13ce4e6bb9529a3040c4e7fe5cdbb8914cd",
+      "split": "validation"
+    },
+    {
+      "bytes": 2121,
+      "family": "tutorial",
+      "path": "tutorial/interactive.txt",
+      "sha256": "23e3bbcdc4fdebc340182cffb325fdfb023dc010adb0561c68c4869b421e1e90",
+      "split": "validation"
+    },
+    {
+      "bytes": 6120,
+      "family": "tutorial",
+      "path": "tutorial/interpreter.txt",
+      "sha256": "2be5320799add967fbd828416de4c142ff0405b927f26db5843fa2d14bc28c20",
+      "split": "validation"
+    },
+    {
+      "bytes": 18097,
+      "family": "tutorial",
+      "path": "tutorial/introduction.txt",
+      "sha256": "3b2b3ee6a51fa0ab05a53dad40764f2c989d4b295dbb7048ebfafb263b3be697",
+      "split": "validation"
+    },
+    {
+      "bytes": 24604,
+      "family": "tutorial",
+      "path": "tutorial/modules.txt",
+      "sha256": "8a651ac99ecddcd951ac63084016a254fe6a1e516862a53a05f025ce64a888f5",
+      "split": "validation"
+    },
+    {
+      "bytes": 10865,
+      "family": "tutorial",
+      "path": "tutorial/stdlib.txt",
+      "sha256": "1060480d046e2065c535bab7b28005f9ad7524a9d61394ece952686a4ce3ba7c",
+      "split": "validation"
+    },
+    {
+      "bytes": 14601,
+      "family": "tutorial",
+      "path": "tutorial/stdlib2.txt",
+      "sha256": "b293feb8f384d57d9b9f070dd357e5a9ab98edd4b1fcc62ee30c21b2ad0abf10",
+      "split": "validation"
+    },
+    {
+      "bytes": 7425,
+      "family": "tutorial",
+      "path": "tutorial/venv.txt",
+      "sha256": "bbfe8fe6247c7e8c587d549bec1a0096cc6a2128e69d1948a6f2cffc9e014003",
+      "split": "validation"
+    },
+    {
+      "bytes": 3163,
+      "family": "tutorial",
+      "path": "tutorial/whatnow.txt",
+      "sha256": "88e816fdf6cc6d3f327d6dfb0207274d46716d47236ca0700e1c29bde8c9f312",
+      "split": "validation"
+    },
+    {
+      "bytes": 2824,
+      "family": "using",
+      "path": "using/android.txt",
+      "sha256": "bbbdcd9af48c248b955ba3d9945059deecd2ddffd27b37bf327032f7ec9d710c",
+      "split": "holdout"
+    },
+    {
+      "bytes": 45655,
+      "family": "using",
+      "path": "using/cmdline.txt",
+      "sha256": "966282eea7c51c49b6d1e05931ce60971b743e87d930fe2ecd4f75aa6ea5820b",
+      "split": "holdout"
+    },
+    {
+      "bytes": 46102,
+      "family": "using",
+      "path": "using/configure.txt",
+      "sha256": "8db13d3f0d710a5ffbee2583797a0de0331bb407477b9990c98a82de13ec7985",
+      "split": "holdout"
+    },
+    {
+      "bytes": 755,
+      "family": "using",
+      "path": "using/editors.txt",
+      "sha256": "8a26df4e35431711985af33b4947373bcaa88553fc26615afdde7b65cd367158",
+      "split": "holdout"
+    },
+    {
+      "bytes": 1771,
+      "family": "using",
+      "path": "using/index.txt",
+      "sha256": "caf9ec1ce71fec8c3f13afb366b0c067ba15774e3b02444538177a7cb70cca85",
+      "split": "holdout"
+    },
+    {
+      "bytes": 16272,
+      "family": "using",
+      "path": "using/ios.txt",
+      "sha256": "b3a89a2b0ccfa9b3d7ce3787793d49146306f660cda029fa246988aa0f648ecd",
+      "split": "holdout"
+    },
+    {
+      "bytes": 18174,
+      "family": "using",
+      "path": "using/mac.txt",
+      "sha256": "d55d02fefeed30e234e62e3eed7cebd9a8157c848e8fb7d4afe5845d2af76adc",
+      "split": "holdout"
+    },
+    {
+      "bytes": 6381,
+      "family": "using",
+      "path": "using/unix.txt",
+      "sha256": "2d2a0a160b84cf38325e5a535564a4424b1595ffae2ed068e0a0b73bbae8efae",
+      "split": "holdout"
+    },
+    {
+      "bytes": 114122,
+      "family": "using",
+      "path": "using/windows.txt",
+      "sha256": "4a99227a52ae0d2ceed4641e9c63e0d12b286c9955fdc19e28ecf50a04ed73d5",
+      "split": "holdout"
+    },
+    {
+      "bytes": 56161,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/2.0.txt",
+      "sha256": "4f253ebb1fab958a284d91c0cd543a8688c3d49d72ed4cb5846d20aa5be4487d",
+      "split": "excluded"
+    },
+    {
+      "bytes": 35299,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/2.1.txt",
+      "sha256": "bdf27daa1efd92f128851b3b04125b15841963bea4c365bc2f404c3744763855",
+      "split": "excluded"
+    },
+    {
+      "bytes": 56093,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/2.2.txt",
+      "sha256": "9ef881229e0a1b620279f59ed5bec76193adaa982a3678bb7e93234e91f3759f",
+      "split": "excluded"
+    },
+    {
+      "bytes": 83983,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/2.3.txt",
+      "sha256": "129fbb315d2090962210b7d9022eb5cd4b51f42c7d27098ac4fa56f8bd58c011",
+      "split": "excluded"
+    },
+    {
+      "bytes": 60024,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/2.4.txt",
+      "sha256": "7806f3470c37509341769f3ea3817f6eefe2f2b482c8c1580e3e03e08ab76c56",
+      "split": "excluded"
+    },
+    {
+      "bytes": 94111,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/2.5.txt",
+      "sha256": "5b5466e9544c309bf66901af6dc4ba14136a022f050f42eed286e6916d1db047",
+      "split": "excluded"
+    },
+    {
+      "bytes": 123445,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/2.6.txt",
+      "sha256": "da2b87bf625138f45ae75152be611e69487fac05846ce9b641f957b3bb34aa64",
+      "split": "excluded"
+    },
+    {
+      "bytes": 110412,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/2.7.txt",
+      "sha256": "b1c383af3f2aa45858a05ad479dcb1639846ea15e158adcf287e3d465e34d5f9",
+      "split": "excluded"
+    },
+    {
+      "bytes": 35435,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.0.txt",
+      "sha256": "28d73ffca193989c4fcca063cd210cadd7b323700e3cb7003df4fb138b101e4d",
+      "split": "excluded"
+    },
+    {
+      "bytes": 20595,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.1.txt",
+      "sha256": "97ebd810994d655a0afcf15a7948d9a08d22b40ee8463c87349a0503691cd7fb",
+      "split": "excluded"
+    },
+    {
+      "bytes": 83229,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.10.txt",
+      "sha256": "cafa1a0676e6c6d02e42f3216a7bf06fa6330e5bb834446edf0c7f8aacaa7496",
+      "split": "excluded"
+    },
+    {
+      "bytes": 97036,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.11.txt",
+      "sha256": "923a8fc1e8977f529b8e53edae7c445248f5ea7ab65e16a815d0e4ade596def9",
+      "split": "excluded"
+    },
+    {
+      "bytes": 115470,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.12.txt",
+      "sha256": "f527c44f387f65e41aeba448825364aa9043cba0c06695d401ee2b9a6a3b774e",
+      "split": "excluded"
+    },
+    {
+      "bytes": 122270,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.13.txt",
+      "sha256": "c4d3f8788a4de61fffa7c94024a901268d818c0cab324453d2bfb7b471b96f1a",
+      "split": "excluded"
+    },
+    {
+      "bytes": 137792,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.14.txt",
+      "sha256": "7b58bf4942d8c68929a9f85ad8227030867498c96d460c970ebb468f52379fad",
+      "split": "excluded"
+    },
+    {
+      "bytes": 100515,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.2.txt",
+      "sha256": "9dab30d8520a8c6967b80992edf4e25a903f5da212cc1d81498101139799b6d7",
+      "split": "excluded"
+    },
+    {
+      "bytes": 89842,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.3.txt",
+      "sha256": "223a13aad858ed7f5e3d75efc38b964899a401f709cec84439b5b1651a55c902",
+      "split": "excluded"
+    },
+    {
+      "bytes": 96425,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.4.txt",
+      "sha256": "46cc162fd6b5ae93a61a950ab016614e246286fe55d93effddd5c7dd0edb83bd",
+      "split": "excluded"
+    },
+    {
+      "bytes": 79580,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.5.txt",
+      "sha256": "3032868c708d4b6234800ce53fe8e489d0ca52d3e4b781329a5c9a0a39da429b",
+      "split": "excluded"
+    },
+    {
+      "bytes": 80946,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.6.txt",
+      "sha256": "8a4268e830401e9f4c70bef89b005de3b3f767eeb265f4b4fe504128df8141b3",
+      "split": "excluded"
+    },
+    {
+      "bytes": 90493,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.7.txt",
+      "sha256": "197b912fc9088a3def1e6d92957cfe667dd86e83d9a861107ef4cc5a59d1c359",
+      "split": "excluded"
+    },
+    {
+      "bytes": 85854,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.8.txt",
+      "sha256": "c3a18691e0c04e3094fafe7d993ddfd5308815606f598fae23b1b2cc254dfffe",
+      "split": "excluded"
+    },
+    {
+      "bytes": 61311,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/3.9.txt",
+      "sha256": "d6609f7eb537f32c66e55245edb6c5503c531ea3829bd37076a96e0735ea8d72",
+      "split": "excluded"
+    },
+    {
+      "bytes": 2186252,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/changelog.txt",
+      "sha256": "5bfe1e05274ae8823e66e676da3a79393d705710c38b82b9410e5cd0169c80a2",
+      "split": "excluded"
+    },
+    {
+      "bytes": 16065,
+      "exclude_reason": "whatsnew-family",
+      "family": "whatsnew",
+      "path": "whatsnew/index.txt",
+      "sha256": "a3af11a05a137b5dc3cd11991012e24fec64ad4f8272408b1de833907eecee57",
+      "split": "excluded"
+    }
+  ],
+  "included_inventory_sha256": "7743407cf7fb06be78045eca84e02d88cb22cb751095f501eb45ca0aa9bba6a0",
+  "schema": "humanbrain.python-docs-knowledge-lock.v1",
+  "source": {
+    "archive_bytes": 4617392,
+    "archive_path": "python-3.14-docs-text.zip",
+    "archive_sha256": "de728eb5b1de8d44ab04f234caeef0bc237bebcb8a6af8a219f35f9d9e35c0c0",
+    "attribution": "Python Software Foundation, Python 3.14.7 documentation",
+    "canonical_url": "https://docs.python.org/3/archives/python-3.14-docs-text.zip",
+    "extracted_root": "python-3.14-docs-text/python-3.14-docs-text",
+    "license_evidence_url": "https://docs.python.org/3.14/license.html",
+    "license_spdx": "PSF-2.0",
+    "provenance_confidence": 1.0,
+    "source_id": "python-3.14.7-docs",
+    "upstream_revision": "3.14.7"
+  },
+  "split_policy": "Whole top-level documentation families frozen before cell learning; target approximately 70/15/15 by included raw bytes. No file crosses acquire, validation, or holdout.",
+  "totals": {
+    "archive": {
+      "bytes": 14662987,
+      "files": 536
+    },
+    "excluded": {
+      "bytes": 4360865,
+      "files": 32
+    },
+    "included": {
+      "bytes": 10302122,
+      "files": 504
+    },
+    "splits": {
+      "acquire": {
+        "byte_percent_x100": 6999,
+        "bytes": 7210313,
+        "files": 354
+      },
+      "holdout": {
+        "byte_percent_x100": 1485,
+        "bytes": 1529560,
+        "files": 49
+      },
+      "validation": {
+        "byte_percent_x100": 1516,
+        "bytes": 1562249,
+        "files": 101
+      }
+    }
+  }
+}
