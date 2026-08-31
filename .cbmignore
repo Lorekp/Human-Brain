@@ -1,0 +1,3 @@
+# Local test artifacts and nested worktrees are not repository source.
+.pytest_tmp/
+.worktrees/

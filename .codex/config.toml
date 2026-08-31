@@ -1,0 +1,12 @@
+# Project-scoped Mem0 connection for Codex. Keep the token in the Windows
+# user environment as MEM0_API_KEY; never commit it here.
+[mcp_servers.mem0]
+url = "https://mcp.mem0.ai/mcp/"
+bearer_token_env_var = "MEM0_API_KEY"
+
+# Keep codebase-memory's session watcher rooted in this checkout. The global
+# registration has no cwd, so it cannot reliably associate Codex sessions with
+# this repository's path-derived graph.
+[mcp_servers.codebase-memory-mcp]
+command = "C:/Users/laure/.local/bin/codebase-memory-mcp.exe"
+cwd = "C:/Users/laure/Desktop/DeepSim/Human Brain"
