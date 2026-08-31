@@ -445,6 +445,18 @@ the gate; the larger and poison branches were not reached and are not claimed.
 speed step must batch event/state work rather than retry a scalar layout or
 membership-lookup substitution.
 
+A canonical due-target batch plus packed dormant-store prototype then passed
+exact residents, logical dormant export, staged/pending/spike state, all non-
+payload counters, same-target binary64 order, and first-overflow parity. Dense
+delivery improved 1.242x and H=32,768 dormant backing fell from 1,835,008 to
+786,432 bytes, but dormant reactivation was only 1.183x, four-step recurrent
+generate-and-deliver only 1.026x, and idle work regressed 10.1%. Those miss the
+predeclared 1.20x, 1.10x, and <=3% gates, so the prototype was fully reverted;
+`procedural.rs` is clean at SHA-256
+`1651a4325bb271329e421501ccfb6a934b4a9f507ae8cf10ec3ebde160ec9906`.
+The result redirects runtime work to source/connectivity generation or a larger
+combined kernel rather than another standalone delivery/dormant variant.
+
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
 each produce one exact proof. Prototype, schema-cell, comparator, and deranged

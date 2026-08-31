@@ -618,9 +618,15 @@ Two uncommitted follow-ups remain deliberately absent from the runtime. A
 hot/cold resident split reached only +0.55% at one million residents, and an
 adaptive sorted resident cursor reached only +0.62% at `K=R/16`; both missed a
 predeclared 10% end-to-end gate and were reverted to the exact `d90ebbe` source.
-The active design boundary is therefore bulk event/state processing—potentially
-paired with packed dormant storage or vectorized GLIF—not another scalar lookup
-or layout-only patch.
+A subsequent canonical target-run delivery plus packed dormant-store prototype
+preserved exact state, event, spike, counter, cancellation, and first-overflow
+behavior. It improved dense delivery 1.242x and reduced nominal dormant backing
+from 56H to 24H, but reached only 1.183x dormant reactivation, 1.026x on a
+four-step recurrent trace, and regressed idle work 10.1%; it therefore failed
+the predeclared gates and was also fully reverted. The active design boundary is
+now a materially larger source/connectivity or combined state-generation batch
+kernel—not another scalar lookup, layout-only, or standalone delivery/storage
+patch.
 
 ## Claim and opening discipline
 

@@ -530,6 +530,18 @@ stopped before the larger/poison branches, so they carry no claim. The exact
 the speed lane toward materially batched event/state work rather than another
 scalar storage or lookup substitution.
 
+The next coherent batch prototype grouped canonical due-target runs and replaced
+the dormant B-tree with a packed sorted base plus sparse mutation overlay. Exact
+state, queue, spike, non-payload counter, binary64 cancellation order, and first-
+overflow partial-state parity all passed. Dense delivery improved 1.242x and
+H=32,768 dormant backing fell from an accounted 1,835,008 to 786,432 bytes, but
+dormant reactivation reached only 1.183x against a 1.20x gate, the four-step
+N=8,192/F=4 recurrent trace reached only 1.026x against 1.10x, and idle work
+regressed 10.1%. The entire prototype was reverted to source hash
+`1651a4325bb271329e421501ccfb6a934b4a9f507ae8cf10ec3ebde160ec9906`.
+This closes standalone target/dormant batching; source/connectivity generation
+or a combined state-generation kernel is the next speed hypothesis.
+
 ## 11. Common G0 substrate begins
 
 Commit `4843236` adds a domain-neutral opaque-byte projection with 65,536 input
