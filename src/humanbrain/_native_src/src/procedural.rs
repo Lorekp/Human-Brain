@@ -419,6 +419,33 @@ fn reserved_vec<T>(capacity: usize) -> Result<Vec<T>, u32> {
     Ok(values)
 }
 
+/// Grow physical backing to a deterministic geometric target while keeping
+/// the configured logical ceiling authoritative. `try_reserve_exact` may
+/// return a larger allocator capacity; payload accounting reports that actual
+/// capacity rather than the requested target.
+fn ensure_geometric_vec_backing<T>(
+    values: &mut Vec<T>,
+    required_len: usize,
+    logical_capacity: usize,
+) -> Result<(), u32> {
+    if required_len > logical_capacity {
+        return Err(PROCEDURAL_ALLOCATION);
+    }
+    if required_len <= values.capacity() {
+        return Ok(());
+    }
+    let target = required_len
+        .checked_next_power_of_two()
+        .unwrap_or(logical_capacity)
+        .min(logical_capacity);
+    if target < required_len {
+        return Err(PROCEDURAL_ALLOCATION);
+    }
+    values
+        .try_reserve_exact(target - values.len())
+        .map_err(|_| PROCEDURAL_ALLOCATION)
+}
+
 fn push_bounded<T>(
     values: &mut Vec<T>,
     value: T,
@@ -454,11 +481,25 @@ impl IntervalLedger {
         entry_count / Self::WORD_BITS + usize::from(entry_count % Self::WORD_BITS != 0)
     }
 
-    fn try_new(capacity: usize) -> Result<Self, u32> {
+    fn try_new(_capacity: usize) -> Result<Self, u32> {
+        // Capacity is a logical ceiling. Unused physical-allocation failure
+        // intentionally moves from creation to the first ledger materialization.
         Ok(Self {
-            gids: reserved_vec(capacity)?,
-            flag_words: reserved_vec(Self::flag_word_count(capacity))?,
+            gids: Vec::new(),
+            flag_words: Vec::new(),
         })
+    }
+
+    fn ensure_backing(&mut self, entry_count: usize, capacity: usize) -> Result<(), u32> {
+        if entry_count > capacity {
+            return Err(PROCEDURAL_DISTINCT_CAPACITY);
+        }
+        ensure_geometric_vec_backing(&mut self.gids, entry_count, capacity)?;
+        ensure_geometric_vec_backing(
+            &mut self.flag_words,
+            Self::flag_word_count(entry_count),
+            Self::flag_word_count(capacity),
+        )
     }
 
     fn clear(&mut self) {
@@ -576,6 +617,7 @@ impl IntervalLedger {
     fn push_entry_for_test(&mut self, gid: u64, flags: u8) {
         debug_assert!(self.gids.last().is_none_or(|last| *last < gid));
         let old_len = self.gids.len();
+        self.ensure_backing(old_len + 1, usize::MAX).unwrap();
         self.gids.push(gid);
         self.insert_entry_flags(old_len, old_len, flags);
     }
@@ -589,10 +631,11 @@ impl IntervalLedger {
                 Ok(())
             }
             Err(insertion) => {
-                if self.gids.len() >= capacity || self.gids.len() >= self.gids.capacity() {
+                if self.gids.len() >= capacity {
                     return Err(PROCEDURAL_DISTINCT_CAPACITY);
                 }
                 let old_len = self.gids.len();
+                self.ensure_backing(old_len + 1, capacity)?;
                 self.gids.insert(insertion, gid);
                 self.insert_entry_flags(insertion, old_len, flag);
                 Ok(())
@@ -630,7 +673,7 @@ impl IntervalLedger {
             .len()
             .checked_add(run.len())
             .ok_or(PROCEDURAL_DISTINCT_CAPACITY)?;
-        if pending_distinct >= capacity || pending_distinct >= self.gids.capacity() {
+        if pending_distinct >= capacity {
             return Err(PROCEDURAL_DISTINCT_CAPACITY);
         }
         if run.len() >= run.capacity() {
@@ -647,11 +690,7 @@ impl IntervalLedger {
     where
         F: Fn(&T) -> u64,
     {
-        let reserved_room = self.gids.capacity().saturating_sub(self.gids.len());
-        let room = capacity
-            .min(self.gids.capacity())
-            .saturating_sub(self.gids.len());
-        let room = room.min(reserved_room);
+        let room = capacity.saturating_sub(self.gids.len());
         if run.len() <= room {
             return true;
         }
@@ -682,12 +721,18 @@ impl IntervalLedger {
     /// into every run member. Caller must have validated fit with
     /// [`can_fit_run`]. The merge walks backward so unread ledger entries are
     /// never overwritten and no second full-capacity ledger is required.
-    fn merge_sorted_by<T, F>(&mut self, run: &[T], flag: u8, gid_of: F)
+    fn merge_sorted_by<T, F>(
+        &mut self,
+        run: &[T],
+        flag: u8,
+        capacity: usize,
+        gid_of: F,
+    ) -> Result<(), u32>
     where
         F: Fn(&T) -> u64,
     {
         if run.is_empty() {
-            return;
+            return Ok(());
         }
 
         debug_assert_eq!(
@@ -715,7 +760,11 @@ impl IntervalLedger {
             }
         }
 
-        let merged_len = old_len + run.len() - overlap;
+        let merged_len = old_len
+            .checked_add(run.len())
+            .and_then(|value| value.checked_sub(overlap))
+            .ok_or(PROCEDURAL_DISTINCT_CAPACITY)?;
+        self.ensure_backing(merged_len, capacity)?;
         debug_assert!(merged_len <= self.gids.capacity());
         debug_assert!(Self::flag_word_count(merged_len) <= self.flag_words.capacity());
         self.gids.resize(merged_len, 0);
@@ -765,18 +814,29 @@ impl IntervalLedger {
             self.set_entry_flags(write, flag);
         }
         debug_assert_eq!(write, 0);
+        Ok(())
     }
 
-    fn merge_run_in_place(&mut self, run: &[u64], flag: u8) {
-        self.merge_sorted_by(run, flag, |gid| *gid);
+    fn merge_run_in_place(&mut self, run: &[u64], flag: u8, capacity: usize) -> Result<(), u32> {
+        self.merge_sorted_by(run, flag, capacity, |gid| *gid)
     }
 
-    fn merge_cell_run_in_place(&mut self, run: &[CellState], flag: u8) {
-        self.merge_sorted_by(run, flag, |state| state.gid);
+    fn merge_cell_run_in_place(
+        &mut self,
+        run: &[CellState],
+        flag: u8,
+        capacity: usize,
+    ) -> Result<(), u32> {
+        self.merge_sorted_by(run, flag, capacity, |state| state.gid)
     }
 
-    fn merge_spike_run_in_place(&mut self, run: &[ProceduralSpikeRecord], flag: u8) {
-        self.merge_sorted_by(run, flag, |spike| spike.gid);
+    fn merge_spike_run_in_place(
+        &mut self,
+        run: &[ProceduralSpikeRecord],
+        flag: u8,
+        capacity: usize,
+    ) -> Result<(), u32> {
+        self.merge_sorted_by(run, flag, capacity, |spike| spike.gid)
     }
 
     fn count_flags(&self, mask: u8) -> usize {
@@ -1069,7 +1129,9 @@ impl ProceduralRuntime {
             // undefined stepping mode on every path.
             return Err(PROCEDURAL_INVALID);
         }
-        let residents = reserved_vec(config.resident_capacity)?;
+        // Resident capacity is likewise logical: physical allocation is
+        // fallible at first staging rather than at creation.
+        let residents = Vec::new();
         let staged_capacity = config.resident_capacity.min(config.event_capacity);
         // Compact staged-slot offsets are stored as u32 in the delivery-phase
         // membership index; fail loudly at construction if a capacity could
@@ -1160,6 +1222,23 @@ impl ProceduralRuntime {
         self.residents.len() + self.staged_len() + self.dormant.len()
     }
 
+    /// Reserve the next active slot before a fresh or reactivated cell enters
+    /// staging. Absorption can then merge without allocating inside the
+    /// population/GLIF phase.
+    fn ensure_resident_backing_for_staged(&mut self) -> Result<(), u32> {
+        let required_len = self
+            .residents
+            .len()
+            .checked_add(self.staged_len())
+            .and_then(|value| value.checked_add(1))
+            .ok_or(PROCEDURAL_ALLOCATION)?;
+        ensure_geometric_vec_backing(
+            &mut self.residents,
+            required_len,
+            self.config.resident_capacity,
+        )
+    }
+
     #[inline]
     fn staged_len(&self) -> usize {
         self.scratch.event_work.len()
@@ -1213,6 +1292,7 @@ impl ProceduralRuntime {
 
     #[cfg(test)]
     fn push_staged_unindexed(&mut self, state: CellState) {
+        self.ensure_resident_backing_for_staged().unwrap();
         debug_assert!(self.staged_len() < self.staged_capacity());
         self.scratch
             .event_work
@@ -1414,6 +1494,7 @@ impl ProceduralRuntime {
                         // becomes one staged slot, so no capacity check is due
                         // -- mirroring the full-touch path, where an event to
                         // an existing resident performs none either.
+                        self.ensure_resident_backing_for_staged()?;
                         self.push_staged::<CANONICAL_STAGED_RUN>(state);
                         return Ok(());
                     }
@@ -1440,9 +1521,7 @@ impl ProceduralRuntime {
                 if self.total_residents() == self.config.resident_capacity {
                     return Err(PROCEDURAL_RESIDENT_CAPACITY);
                 }
-                if self.total_residents() == self.residents.capacity() + self.staged_capacity() {
-                    return Err(PROCEDURAL_ALLOCATION);
-                }
+                self.ensure_resident_backing_for_staged()?;
                 if MERGE_FRESH_RUN {
                     self.scratch.interval_ledger.stage_single_in_run(
                         event.target_gid,
@@ -1677,7 +1756,11 @@ impl ProceduralRuntime {
                 {
                     let run = &self.scratch.gid_run;
                     let ledger = &mut self.scratch.interval_ledger;
-                    ledger.merge_run_in_place(run, SEEN_RESIDENT);
+                    if let Err(code) =
+                        ledger.merge_run_in_place(run, SEEN_RESIDENT, distinct_capacity)
+                    {
+                        return self.poison(code);
+                    }
                 } else {
                     // Exact fallback near the distinct capacity: per-GID
                     // marks keep the original fail-stop abort timing.
@@ -1698,7 +1781,11 @@ impl ProceduralRuntime {
             {
                 let run = &self.residents;
                 let ledger = &mut self.scratch.interval_ledger;
-                ledger.merge_cell_run_in_place(run, SEEN_RESIDENT);
+                if let Err(code) =
+                    ledger.merge_cell_run_in_place(run, SEEN_RESIDENT, distinct_capacity)
+                {
+                    return self.poison(code);
+                }
             } else {
                 // Exact fallback near the distinct capacity: per-GID marks
                 // keep the original fail-stop abort timing.
@@ -1757,7 +1844,13 @@ impl ProceduralRuntime {
             if MERGE_FRESH_RUN && !self.scratch.gid_run.is_empty() {
                 let run = &self.scratch.gid_run;
                 let ledger = &mut self.scratch.interval_ledger;
-                ledger.merge_run_in_place(run, SEEN_RESIDENT);
+                if let Err(code) = ledger.merge_run_in_place(
+                    run,
+                    SEEN_RESIDENT,
+                    self.config.interval_distinct_capacity,
+                ) {
+                    return self.poison(code);
+                }
             }
             if !event_proportional {
                 // Every later full-touch run already exists in an
@@ -1839,14 +1932,22 @@ impl ProceduralRuntime {
                         // does not change the following GLIF operation order.
                         let run = &self.scratch.gid_run;
                         let ledger = &mut self.scratch.interval_ledger;
-                        ledger.merge_run_in_place(run, SEEN_UPDATED);
+                        if let Err(code) =
+                            ledger.merge_run_in_place(run, SEEN_UPDATED, distinct_capacity)
+                        {
+                            return self.poison(code);
+                        }
                         self.scratch.gid_run.clear();
                     } else {
                         // Full-touch streams the same ascending population
                         // directly from the authoritative resident array.
                         let run = &self.residents;
                         let ledger = &mut self.scratch.interval_ledger;
-                        ledger.merge_cell_run_in_place(run, SEEN_UPDATED);
+                        if let Err(code) =
+                            ledger.merge_cell_run_in_place(run, SEEN_UPDATED, distinct_capacity)
+                        {
+                            return self.poison(code);
+                        }
                     }
                     let mut write = 0usize;
                     for read in 0..self.residents.len() {
@@ -1905,6 +2006,13 @@ impl ProceduralRuntime {
                     // The population run selected the exact fallback above;
                     // per-cell marking now owns accounting, so reuse it for
                     // the ascending dormant-retirement GIDs.
+                    if let Err(code) = self
+                        .scratch
+                        .interval_ledger
+                        .ensure_backing(distinct_capacity, distinct_capacity)
+                    {
+                        return self.poison(code);
+                    }
                     self.scratch.gid_run.clear();
                     for index in 0..self.residents.len() {
                         let mut retired: Option<(u64, f64)> = None;
@@ -2031,11 +2139,23 @@ impl ProceduralRuntime {
                 if event_proportional {
                     let run = &self.scratch.gid_run;
                     let ledger = &mut self.scratch.interval_ledger;
-                    ledger.merge_run_in_place(run, SEEN_SPIKING);
+                    if let Err(code) = ledger.merge_run_in_place(
+                        run,
+                        SEEN_SPIKING,
+                        self.config.interval_distinct_capacity,
+                    ) {
+                        return self.poison(code);
+                    }
                 } else {
                     let run = &self.last_spikes[step_spike_start..];
                     let ledger = &mut self.scratch.interval_ledger;
-                    ledger.merge_spike_run_in_place(run, SEEN_SPIKING);
+                    if let Err(code) = ledger.merge_spike_run_in_place(
+                        run,
+                        SEEN_SPIKING,
+                        self.config.interval_distinct_capacity,
+                    ) {
+                        return self.poison(code);
+                    }
                 }
             }
 
@@ -3712,46 +3832,135 @@ mod tests {
             counters_raw_bytes(&expected_counters)
         );
 
-        const CAPACITY: usize = 65_536;
-        const PRE_SPIKE_SUFFIX_PAYLOAD_BYTES: usize = 6_849_872;
-        let mut payload_config = ep_config(
-            (CAPACITY + 1) as u64,
-            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
-        );
-        payload_config.resident_capacity = CAPACITY;
+        const LOGICAL_65K: usize = 65_536;
+        const LOGICAL_100B: usize = 100_000_000_000;
+        const EMPTY_PAYLOAD_BYTES: usize = 10_040;
+        const FOUR_CELL_PAYLOAD_BYTES: usize = 10_384;
+        let mut payload_config = ep_config(LOGICAL_100B as u64, PROCEDURAL_STEPPING_FULL_TOUCH);
+        payload_config.resident_capacity = LOGICAL_65K;
         payload_config.event_capacity = 64;
         payload_config.spike_capacity = 64;
-        payload_config.interval_distinct_capacity = CAPACITY;
+        payload_config.interval_distinct_capacity = LOGICAL_65K;
+        let mut huge_logical_config = payload_config;
+        huge_logical_config.resident_capacity = LOGICAL_100B;
+        huge_logical_config.interval_distinct_capacity = LOGICAL_100B;
         let decay = [0.5, 0.5];
-        let payload_runtime =
+        let mut payload_runtime =
             ProceduralRuntime::new(ep_glif(), payload_config, decay, decay, [0.0; 2]).unwrap();
-        let reclaimed_bytes =
-            CAPACITY * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>();
-        assert_eq!(reclaimed_bytes, 524_312);
-        assert_eq!(payload_runtime.payload_bytes(), 6_325_560);
+        let mut huge_logical_runtime =
+            ProceduralRuntime::new(ep_glif(), huge_logical_config, decay, decay, [0.0; 2]).unwrap();
+        for runtime in [&payload_runtime, &huge_logical_runtime] {
+            assert_eq!(runtime.residents.capacity(), 0);
+            assert_eq!(runtime.scratch.interval_ledger.gids.capacity(), 0);
+            assert_eq!(runtime.scratch.interval_ledger.flag_words.capacity(), 0);
+            assert_eq!(runtime.payload_bytes(), EMPTY_PAYLOAD_BYTES);
+        }
+
+        let high_events = vec![
+            drive(LOGICAL_100B as u64 - 3, 0, 0.5),
+            drive(LOGICAL_100B as u64 - 11, 0, 0.5),
+            drive(LOGICAL_100B as u64 - 5, 0, 0.5),
+            drive(LOGICAL_100B as u64 - 17, 0, 0.5),
+        ];
         assert_eq!(
-            payload_runtime.payload_bytes() + reclaimed_bytes,
-            PRE_SPIKE_SUFFIX_PAYLOAD_BYTES
+            payload_runtime.advance(1, &high_events),
+            super::PROCEDURAL_OK
         );
-        let mut full_touch_payload_config = payload_config;
-        full_touch_payload_config.stepping_mode = PROCEDURAL_STEPPING_FULL_TOUCH;
-        let full_touch_payload =
-            ProceduralRuntime::new(ep_glif(), full_touch_payload_config, decay, decay, [0.0; 2])
-                .unwrap();
-        let scoped_bytes = (CAPACITY - payload_config.event_capacity) * std::mem::size_of::<u64>();
-        assert_eq!(full_touch_payload.scratch.gid_run.capacity(), 64);
-        assert_eq!(scoped_bytes, 523_776);
-        assert_eq!(full_touch_payload.payload_bytes(), 5_277_496);
-        assert_eq!(5_801_272 - full_touch_payload.payload_bytes(), scoped_bytes);
-        assert_eq!(88_384_528usize - (1_000_000usize - 64) * 8, 80_385_040);
+        assert_eq!(
+            huge_logical_runtime.advance(1, &high_events),
+            super::PROCEDURAL_OK
+        );
+        assert_eq!(
+            state_images(&payload_runtime.residents),
+            state_images(&huge_logical_runtime.residents)
+        );
+        assert_eq!(
+            spike_words(&payload_runtime.last_spikes),
+            spike_words(&huge_logical_runtime.last_spikes)
+        );
+        assert_eq!(
+            event_words(payload_runtime.pending_slice()),
+            event_words(huge_logical_runtime.pending_slice())
+        );
+        let counters_without_payload = |mut counters: ProceduralCounters| {
+            counters.native_payload_bytes = 0;
+            counters_raw_bytes(&counters).to_vec()
+        };
+        assert_eq!(
+            counters_without_payload(payload_runtime.counters),
+            counters_without_payload(huge_logical_runtime.counters)
+        );
+        for runtime in [&payload_runtime, &huge_logical_runtime] {
+            assert_eq!(runtime.residents.capacity(), 4);
+            assert_eq!(runtime.scratch.interval_ledger.gids.capacity(), 4);
+            assert_eq!(runtime.scratch.interval_ledger.flag_words.capacity(), 1);
+            assert_eq!(runtime.payload_bytes(), FOUR_CELL_PAYLOAD_BYTES);
+        }
+
+        // Both logical ceilings still reject the same third canonical event
+        // after accepting the same two high-GID cells; only the selected
+        // public status differs.
+        let overflow_events = high_events[..3].to_vec();
+        let mut resident_tight = payload_config;
+        resident_tight.resident_capacity = 2;
+        resident_tight.event_capacity = 4;
+        resident_tight.spike_capacity = 4;
+        resident_tight.interval_distinct_capacity = 4;
+        let mut resident_overflow =
+            ProceduralRuntime::new(ep_glif(), resident_tight, decay, decay, [0.0; 2]).unwrap();
+        assert_eq!(
+            resident_overflow.advance(1, &overflow_events),
+            super::PROCEDURAL_RESIDENT_CAPACITY
+        );
+        let mut distinct_tight = resident_tight;
+        distinct_tight.resident_capacity = 4;
+        distinct_tight.interval_distinct_capacity = 2;
+        let mut distinct_overflow =
+            ProceduralRuntime::new(ep_glif(), distinct_tight, decay, decay, [0.0; 2]).unwrap();
+        assert_eq!(
+            distinct_overflow.advance(1, &overflow_events),
+            super::PROCEDURAL_DISTINCT_CAPACITY
+        );
+        let accepted = |runtime: &ProceduralRuntime| {
+            (0..runtime.staged_len())
+                .map(|index| runtime.staged_gid(index))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(accepted(&resident_overflow), accepted(&distinct_overflow));
+        assert_eq!(accepted(&resident_overflow).len(), 2);
+        assert_eq!(resident_overflow.current_step, 0);
+        assert_eq!(distinct_overflow.current_step, 0);
+        assert_eq!(
+            resident_overflow.pending_logical_len(),
+            overflow_events.len()
+        );
+        assert_eq!(
+            distinct_overflow.pending_logical_len(),
+            overflow_events.len()
+        );
+
+        let barrier_65k = LOGICAL_65K * std::mem::size_of::<CellState>()
+            + LOGICAL_65K * std::mem::size_of::<u64>()
+            + super::IntervalLedger::flag_word_count(LOGICAL_65K) * std::mem::size_of::<[u64; 3]>();
+        assert_eq!(barrier_65k, 5_267_456);
+        assert_eq!(5_277_496usize - EMPTY_PAYLOAD_BYTES, barrier_65k);
+        let barrier_1m = 1_000_000usize * std::mem::size_of::<CellState>()
+            + 1_000_000usize * std::mem::size_of::<u64>()
+            + super::IntervalLedger::flag_word_count(1_000_000) * std::mem::size_of::<[u64; 3]>();
+        assert_eq!(barrier_1m, 80_375_000);
+        assert_eq!(80_385_040usize - EMPTY_PAYLOAD_BYTES, barrier_1m);
+        let arithmetic_barrier_100b = LOGICAL_100B * std::mem::size_of::<CellState>()
+            + LOGICAL_100B * std::mem::size_of::<u64>()
+            + super::IntervalLedger::flag_word_count(LOGICAL_100B)
+                * std::mem::size_of::<[u64; 3]>();
+        assert_eq!(arithmetic_barrier_100b, 8_037_500_000_000);
         eprintln!(
-            "full-touch-authoritative-runs event_proportional_payload_bytes={} full_touch_payload_bytes={} scoped_bytes={} scoped_at_1m_bytes={} success_spikes={} final_step_spikes={}",
-            payload_runtime.payload_bytes(),
-            full_touch_payload.payload_bytes(),
-            scoped_bytes,
-            (1_000_000usize - 64) * std::mem::size_of::<u64>(),
-            runtime.last_spikes.len(),
-            runtime.scratch.gid_run.len()
+            "logical-capacity-backing empty_payload_bytes={} four_cell_payload_bytes={} saved_at_65k_bytes={} saved_at_1m_bytes={} arithmetic_barrier_at_100b_bytes={}",
+            EMPTY_PAYLOAD_BYTES,
+            FOUR_CELL_PAYLOAD_BYTES,
+            barrier_65k,
+            barrier_1m,
+            arithmetic_barrier_100b
         );
     }
 
@@ -4711,7 +4920,9 @@ mod tests {
                     )
                     .unwrap();
             }
-            ledger.merge_run_in_place(&run, super::SEEN_RESIDENT);
+            ledger
+                .merge_run_in_place(&run, super::SEEN_RESIDENT, CAPACITY)
+                .unwrap();
             let elapsed = start.elapsed().as_nanos();
             assert_eq!(ledger.gids.len(), PRELOADED + FRESH);
             elapsed
@@ -4846,13 +5057,17 @@ mod tests {
             }
             let full_run: Vec<_> = (0..capacity as u64).collect();
             assert!(ledger.can_fit_run(&full_run, capacity));
-            ledger.merge_run_in_place(&full_run, SEEN_UPDATED);
+            ledger
+                .merge_run_in_place(&full_run, SEEN_UPDATED, capacity)
+                .unwrap();
             for gid in &full_run {
                 oracle_mark(&mut oracle, *gid, SEEN_UPDATED, capacity).unwrap();
             }
             let overlap_run: Vec<_> = (0..capacity as u64).step_by(3).collect();
             assert!(ledger.can_fit_run(&overlap_run, capacity));
-            ledger.merge_run_in_place(&overlap_run, SEEN_SPIKING);
+            ledger
+                .merge_run_in_place(&overlap_run, SEEN_SPIKING, capacity)
+                .unwrap();
             for gid in &overlap_run {
                 oracle_mark(&mut oracle, *gid, SEEN_SPIKING, capacity).unwrap();
             }
@@ -5000,7 +5215,9 @@ mod tests {
         merge_forward_oracle(&source, &run, super::SEEN_UPDATED, &mut oracle);
         let mut merged = build_ledger();
         assert!(merged.can_fit_run(&run, CAPACITY));
-        merged.merge_run_in_place(&run, super::SEEN_UPDATED);
+        merged
+            .merge_run_in_place(&run, super::SEEN_UPDATED, CAPACITY)
+            .unwrap();
         assert_eq!(merged.gids, oracle.gids);
         assert_eq!(merged.flags_image(), oracle.flags_image());
         assert!(merged.gids.windows(2).all(|pair| pair[0] < pair[1]));
@@ -5048,7 +5265,9 @@ mod tests {
         let time_in_place = || {
             let mut ledger = build_ledger();
             let start = std::time::Instant::now();
-            ledger.merge_run_in_place(&run, super::SEEN_UPDATED);
+            ledger
+                .merge_run_in_place(&run, super::SEEN_UPDATED, CAPACITY)
+                .unwrap();
             let elapsed = start.elapsed().as_nanos();
             assert_eq!(ledger.gids.len(), oracle.gids.len());
             elapsed
@@ -5220,7 +5439,9 @@ mod tests {
             {
                 let run = &runtime.scratch.gid_run;
                 let ledger = &mut runtime.scratch.interval_ledger;
-                ledger.merge_run_in_place(run, super::SEEN_RESIDENT);
+                ledger
+                    .merge_run_in_place(run, super::SEEN_RESIDENT, CAPACITY)
+                    .unwrap();
             }
             runtime.sort_staged();
             runtime.absorb_staged_with_order::<false>().unwrap();
@@ -5241,7 +5462,9 @@ mod tests {
             {
                 let run = &runtime.scratch.gid_run;
                 let ledger = &mut runtime.scratch.interval_ledger;
-                ledger.merge_run_in_place(run, super::SEEN_RESIDENT);
+                ledger
+                    .merge_run_in_place(run, super::SEEN_RESIDENT, CAPACITY)
+                    .unwrap();
             }
             runtime.absorb_staged_with_order::<true>().unwrap();
             let elapsed = start.elapsed().as_nanos();
