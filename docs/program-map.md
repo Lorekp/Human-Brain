@@ -391,6 +391,29 @@ terminal/operator/path/type label, and the generic controller never accesses
 the frontier's private terminals. Filesystem, subprocess, compiler,
 attestation, PASS/FAIL hashing, and rollback remain environment adapters.
 
+Commit `37dbb9e` adds
+`common_continual_repository_action_memory_v1.py` as a lower-level one-way
+dependency of that controller. It projects already-attested visible source
+bytes through the generic common-event cells into fixed physical context cues,
+binds stable action identity to the String policy checkpoint plus ordered
+authenticated receipts, and learns context/action E/H evidence only from the
+controller's committed physical PASS/FAIL consequence records. Frozen flat
+successors authenticate and copy their parent arrays, accept only ordered new
+lesson cohorts, retain neither raw source/lesson bytes nor a parent object, and
+advance without replaying earlier lessons. Recall runs before desired evidence,
+materialization, or repository tests; its selected-vs-nonselected inhibition
+feeds the controller's existing compiled-GLIF candidate race rather than
+returning a host-side action label. The focused four-episode String curriculum
+fit the policy once, made six selected patches/tests and zero unselected ones,
+recalled Harbor after repository relocation/rename, revised Cedar after a later
+failure, and preserved the Harbor evidence across that revision. The final
+memory uses 8 trainable bytes, 1,024 checkpoint-array bytes, and 10,800 learning
+cell-steps; its root is
+`c000a7d44de33d224ec69a4fb445a556ebb9f7a59bea9d030ab2037041f74246`.
+Harbor/Cedar are arbitrary source-comment identities, so the module establishes
+replay-free exact recurring visible-source action preference, not semantic
+context, language, or broad continual repository learning.
+
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
 memory, and 569,715-cell integrated checkpoint with framed physical multi-byte

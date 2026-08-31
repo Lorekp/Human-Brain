@@ -513,6 +513,25 @@ cell-steps; its 1/1 focused run took about 58.9 seconds. This is autonomous
 correction for one binary-feedback two-candidate repair, not failure diagnosis
 or broad continual coding.
 
+Commit `37dbb9e` makes those real committed action consequences replay-free and
+continual. After one String policy fit, a first Harbor episode fails then passes,
+a disjoint Cedar episode learns the opposite successful action, a relocated and
+renamed Harbor repository recalls its learned action in one test, and a later
+Cedar episode fails its old choice before revising to the alternate. Immutable
+successors consume only new authenticated action lessons: the intermediate
+Cedar contradiction stops, the next ordered lesson revises it, earlier Harbor
+evidence stays exact, and parent replay/mutation/raw retention remain zero. The
+sole focused run took 54.510913 seconds and made six selected
+materializations/tests, zero unselected ones, 10,800 memory cell-steps, eight
+trainable bytes, and 1,024 checkpoint-array bytes. Policy root
+`7eb12ff4bbf07d97effecb2744860fa9783c7d7ec144ec05264bcac0dad5ac78`
+leads to final memory root
+`c000a7d44de33d224ec69a4fb445a556ebb9f7a59bea9d030ab2037041f74246`.
+The Harbor/Cedar comments are arbitrary categorical visible-source cues rather
+than meanings learned from language. This banks exact recurring-source action
+preference and revision, not semantic context, language understanding, or broad
+continual coding.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the

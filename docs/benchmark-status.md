@@ -753,6 +753,33 @@ replan, repeated-winner, order/remap, forged-record/consequence, source-drift,
 and two-failure budget controls. This is one two-candidate String repair with
 binary test feedback—not diagnosis, general debugging, or SWE evidence.
 
+Commit `37dbb9e6d100d6671ead74a1b3c9c4692b337487` adds replay-free
+continual repository-action memory around that controller. One String policy
+fit produced checkpoint
+`7eb12ff4bbf07d97effecb2744860fa9783c7d7ec144ec05264bcac0dad5ac78`.
+Actual committed test consequences taught opposite action preferences for two
+recurring visible-source projections, then a later Cedar failure collided and
+revised only the Cedar preference while the immutable Harbor parent evidence
+and recall stayed exact. A relocated/renamed Harbor repository recalled its
+learned successful action first; candidate reversal, context swap, one-byte
+unknown source, cell/gate ablations, and forged-root/consequence controls kept
+the boundary causal. The sole focused fixture passed in 54.510913 seconds with
+exactly six selected source materializations and six repository tests, zero
+unselected materializations/tests, 10,800 memory cell-steps, eight trainable
+bytes, and 1,024 checkpoint-array bytes. Its final immutable memory root is
+`c000a7d44de33d224ec69a4fb445a556ebb9f7a59bea9d030ab2037041f74246`;
+parent mutation, retained-parent, raw-lesson retention, and parent-lesson replay
+counts are zero. The arbitrary Harbor/Cedar source comments are categorical
+identity cues, not learned semantics. This is exact recurring visible-source
+action preference with consequence-driven revision—not semantic context,
+language understanding, broad continual coding, or SWE evidence. SHA-256s are
+`1067620044194b9e0efa91ac4827f45f0753971f50c3651c984cce90f3de382b`
+for `common_continual_repository_action_memory_v1.py`,
+`a2f1f8b09a4000904ae3199469ef404ac6059cc2ae37bf9cc42048443c72223f`
+for `common_microrepository_autonomous_correction_v1.py`, and
+`6fab1904dcbcb496a3503d26e73b8212f3360360529b94abe6b1505d31ad7513`
+for its focused test.
+
 ## Active-cell scaling and dynamics
 
 The first registered scaling grid varied active cells (24, 48, 96, 192),
