@@ -658,6 +658,29 @@ prototype was fully reverted to procedural source SHA-256
 This negative result rules out that alias as a standalone successor; it does not
 rule out a materially broader fused kernel.
 
+Commit `e096d2d` passes the bounded broader hypothesis. A private advance-local
+gate requires FULL_TOUCH, delay one, a following step in the same call, no live
+future prefix, at least 4,096 generated events, complete identity-ordered
+residency, and successful queue/generated/delivered arithmetic preflight. The
+unchanged source-major generator still writes authoritative pending first; only
+complete success applies that tail directly to target residents in the same
+per-target source/slot order and clears it. Exact raw resident, pending, spike,
+dormant, counter, poison, and final-boundary parity passed with one fused
+handoff and the unchanged 5,181,240-byte payload. The nine sorted retained→fused
+release samples in ns were recurrent
+`[3249400,3512200,3543100,3671600,3735200,3804700,3878400,3987400,4230000]`→
+`[2496100,2556200,2628600,2749500,2829500,3001700,3222800,3223600,4663400]`,
+K=64 `[809700,845600,891700,974300,1089100,1132200,1317800,1348300,1544800]`→
+`[788700,788900,802100,1005500,1016000,1297700,1443700,1462200,1498500]`,
+and idle `[1636700,1934600,2302000,2370700,2379600,2625000,2739000,2780200,2999200]`→
+`[1569000,1581300,1748700,1887600,2128800,2327200,2371500,2446900,3051800]`.
+Medians were 3,735,200→2,829,500 ns (1.320x; ≥1.15x and ≤4,313,022 ns),
+1,089,100→1,016,000 ns (0.933x; ≤1.03x and ≤1,394,929 ns), and
+2,379,600→2,128,800 ns (0.895x; ≤1.03x and ≤2,797,480 ns). Source SHA-256 is
+`e93cd287bd8dfcda4c4c9b1db45fcdb4746c4113daec9d7da89f799a7cacfb99`.
+This is one focused CPU recurrent-handoff result; all excluded shapes retain
+the prior path, and no broad runtime or physical 100-billion-cell claim follows.
+
 ## 11. Common G0 substrate begins
 
 Commit `4843236` adds a domain-neutral opaque-byte projection with 65,536 input

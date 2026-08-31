@@ -529,6 +529,30 @@ prototype was fully reverted; `procedural.rs` remains at SHA-256
 This is a negative focused runtime result: scratch-memory savings alone do not
 justify perturbing the retained scalar crossover paths.
 
+Commit `e096d2d` retains the broader advance-local fusion instead. Its private
+gate requires FULL_TOUCH, delay one, another step in the same advance, no live
+future prefix, at least 4,096 generated events, identity-complete residents,
+and checked queue/generated/delivered arithmetic. Generation still appends the
+source-major tail to authoritative pending; only complete success adds that
+tail directly to target residents in the same per-target source/slot order and
+clears it. Exact resident/pending/spike/dormant/counter/poison/final-boundary
+parity passed with exactly one handoff and the unchanged 5,181,240-byte payload.
+The nine sorted release samples in ns were recurrent
+`[3249400,3512200,3543100,3671600,3735200,3804700,3878400,3987400,4230000]`
+to `[2496100,2556200,2628600,2749500,2829500,3001700,3222800,3223600,4663400]`,
+K=64 `[809700,845600,891700,974300,1089100,1132200,1317800,1348300,1544800]`
+to `[788700,788900,802100,1005500,1016000,1297700,1443700,1462200,1498500]`,
+and idle `[1636700,1934600,2302000,2370700,2379600,2625000,2739000,2780200,2999200]`
+to `[1569000,1581300,1748700,1887600,2128800,2327200,2371500,2446900,3051800]`.
+Medians were 3,735,200→2,829,500 ns (1.320x; gates ≥1.15x and ≤4,313,022 ns),
+1,089,100→1,016,000 ns (0.933x; gates ≤1.03x and ≤1,394,929 ns), and
+2,379,600→2,128,800 ns (0.895x; gates ≤1.03x and ≤2,797,480 ns).
+`procedural.rs` SHA-256 is
+`e93cd287bd8dfcda4c4c9b1db45fcdb4746c4113daec9d7da89f799a7cacfb99`.
+This is focused CPU evidence for one exact recurrent handoff, not broad runtime
+or physical 100-billion-cell evidence; every excluded case retains the prior
+path.
+
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
 each produce one exact proof. Prototype, schema-cell, comparator, and deranged

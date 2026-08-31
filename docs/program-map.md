@@ -752,6 +752,32 @@ All changes were removed, leaving `procedural.rs` at
 Do not reintroduce that lifetime alias as a standalone optimization without a
 materially different dispatch design and stable timing protocol.
 
+Commit `e096d2d` adds that materially broader design without changing the public
+ABI or runtime payload. Immediately before queue ordering, a private gate admits
+only FULL_TOUCH, delay-one, nonfinal same-advance steps with no live future
+prefix, at least 4,096 generated events, every configured GID resident in
+identity order, and successful queue/generated/delivered arithmetic preflight.
+The unchanged generator first appends its source-major events to authoritative
+pending, preserving partial-pending poison semantics; after complete success a
+private helper adds the tail directly to `residents[target_gid]` in canonical
+per-target source/slot order and clears it. Final-step, partial-resident,
+event-proportional, future-prefix, small-work, and questionable-overflow cases
+use the retained radix/grouped-delivery path. Exact focused parity, one eligible
+handoff, and the 5,181,240-byte payload passed. Sorted retained→fused release
+samples in ns were recurrent
+`[3249400,3512200,3543100,3671600,3735200,3804700,3878400,3987400,4230000]`→
+`[2496100,2556200,2628600,2749500,2829500,3001700,3222800,3223600,4663400]`,
+K=64 `[809700,845600,891700,974300,1089100,1132200,1317800,1348300,1544800]`→
+`[788700,788900,802100,1005500,1016000,1297700,1443700,1462200,1498500]`,
+and idle `[1636700,1934600,2302000,2370700,2379600,2625000,2739000,2780200,2999200]`→
+`[1569000,1581300,1748700,1887600,2128800,2327200,2371500,2446900,3051800]`.
+Their medians were 3,735,200→2,829,500 ns (1.320x; ≥1.15x and ≤4,313,022),
+1,089,100→1,016,000 ns (0.933x; ≤1.03x and ≤1,394,929), and
+2,379,600→2,128,800 ns (0.895x; ≤1.03x and ≤2,797,480). The exact source
+SHA-256 is `e93cd287bd8dfcda4c4c9b1db45fcdb4746c4113daec9d7da89f799a7cacfb99`.
+This maps one CPU-specific handoff optimization, not a general runtime or
+100-billion-cell throughput result.
+
 ## Claim and opening discipline
 
 - Public TRAIN mechanism work may be rerun only on a newly named unspent gate.
