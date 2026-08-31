@@ -341,6 +341,14 @@ falls from 8,009,648 to 6,330,192 bytes. Final source SHA-256 at `2e49f0a` is
 These remain focused synthetic parity/memory results; physical 100-billion-cell
 residency is not established.
 
+Commit `7fa6231` then phase-aliases compact staged records into the existing
+`event_work` buffer, removing the separate staged `Vec<CellState>`. The exact
+saving is `72*T + 24` bytes for
+`T=min(resident_capacity,event_capacity)`: 4,632 bytes in the representative
+sparse configuration and 72,000,024 bytes at `T=1,000,000`. Focused parity,
+release compilation, formatting, and accounting checks pass; public ABI,
+checkpoint records, ordering, counters, and capacity behavior are unchanged.
+
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
 each produce one exact proof. Prototype, schema-cell, comparator, and deranged
@@ -367,8 +375,26 @@ The 69,232-cell composite adds zero functional cells, eight learned bytes, and
 accounts 768 persistent bytes. Bridge-only fit/build work is 5,580/1,860
 physical cell steps, with dependency and packed work separately receipt-bound.
 
-Across R3, R4, and R2, the next shared seam is predictive grouping without
-explicit OPEN/EXTEND/EOS or hidden boundary metadata, then learning away carrier
+Commit `c75458a` then tests the raw neutral-stream boundary honestly. Relabeled
+chain and reordered fanout transports group under one opaque interval with zero
+new cells or learned bytes. When the same neutral edge stream is continuously
+presented with incompatible hidden cuts after edge two versus edge four, the
+first novel edge produces an exact `CONTINUE=16 / NEW=16` collision and
+`STOP_SEGMENT_AMBIGUITY`. No length, source-range, order, name, or interval cue
+is supplied.
+
+Commit `54e5a5c` learns the additional evidence rather than hiding metadata.
+An authentic prefix-completion receipt and physical source recurrence activate
+one of four coincidence cells; two banked action interventions produce a unique
+READY consequence that updates 16 bytes of uint8 E/H state. Feature exposures
+are `(5,0,4,4)` for incomplete/recurrent, incomplete/novel,
+complete/recurrent, and complete/novel, so the unseen case remains an abstention.
+Fresh one-interval streams infer boundary indices `(4,6)` and `(3)` with exact
+schema sequences `(A,B,A)` and `(B,A)`; five causal controls stop. The total is
+69,231 cells and 60 runtime bytes.
+
+Across R3, R4, and R2, the next shared seam is composing the issued continuous
+schema sequence into ordered executable witnesses, then learning away carrier
 and consequence scaffolds. These results are not public transfer, parsing,
 general coding, or SWE evidence.
 

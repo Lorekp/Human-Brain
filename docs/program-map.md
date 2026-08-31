@@ -236,10 +236,26 @@ functional cells and eight learned bytes. Explicit OPEN/EXTEND/EOS bundle cues,
 carrier/equality/graph projection, prompt binding, fixed reducers, typed
 enumeration, and compilation remain scaffolds.
 
-The next shared R3/R4/R2 seam is therefore predictive grouping of continuous
-neutral occurrence streams without hiding a boundary in interval identity,
-source IDs, order, or host length, followed by learned carrier/projection
-scaffolds. This work remains self-posed and does not reopen the spent V3 cohort.
+Commit `c75458a` exposes the honest limit of raw predictive grouping. Separate
+transport-delimited chain/fanout streams group under one opaque interval, but
+two continuous streams whose hidden boundary moves after edge two versus edge
+four produce the exact same physical NEW/CONTINUE race (`16/16`) and stop at the
+first novel source. No boundary metadata is smuggled into the input.
+
+Commit `54e5a5c` supplies the missing observable evidence. Four physical
+coincidence cells combine an authentic prefix-completion certificate with
+source recurrence; a 16-byte uint8 E/H race learns from the consequences of
+trying both banked actions. Fresh continuous streams infer boundaries `(4,6)`
+and `(3)` and issue schema sequences `(A,B,A)` and `(B,A)` under one opaque
+interval. The unobserved incomplete+novel feature remains untrained and
+abstains. Training still uses transport-separated self-posed bundles, and
+environmental stream start/end, carrier/equality/projection, reducer, typed
+enumeration, and compilation scaffolds remain.
+
+The next shared R3/R4/R2 seam is therefore to compose those issued continuous
+schema sequences into executable witnesses, then learn away carrier and
+consequence-projection scaffolds. This work remains self-posed and does not
+reopen the spent V3 cohort.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -420,6 +436,16 @@ The cumulative exact saving is
 `D=R=65,536` and 25,625,096 bytes at one million. The representative payload
 falls from 8,009,648 to 6,330,192 bytes. These are exact substrate-memory results,
 not physical 100-billion-cell residency or capability evidence.
+
+Commit `7fa6231` removes the remaining separate staged-cell allocation by
+encoding compact staged records into the already-reserved `event_work` scratch
+after submitted-event merging and before generated-event merging. The exact
+x64 saving is `72*T + 24` bytes for
+`T=min(resident_capacity,event_capacity)`: 4,632 bytes in the representative
+sparse configuration and 72,000,024 bytes when `T=1,000,000`. Public ABI and
+checkpoint records, event/GLIF order, counters, capacity semantics, and raw
+dynamics stay unchanged. This remains focused substrate-memory evidence, not a
+physical 100-billion-cell or capability result.
 
 ## Claim and opening discipline
 

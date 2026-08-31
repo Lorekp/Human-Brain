@@ -338,6 +338,12 @@ dynamics, queues, spikes, counters, failure boundaries, event order, and
 accounting. This is implementation evidence only, not a 100-billion-cell
 residency result.
 
+Commit `7fa6231` then removed the separate staged-cell vector by phase-aliasing
+compact staged records into the already-reserved event-work buffer. It reclaims
+exactly `72*T + 24` bytes, preserves the public ABI/checkpoint record layout and
+scientific ordering, and passes the focused release fixture. This is another
+private scratch-memory result, not physical 100-billion-cell feasibility.
+
 Commit `61b345f` then composed the append-effect stack with predictive
 segmentation through only a learned two-cell `NEW/CONTINUE -> OPEN/EXTEND`
 router. The 69,208-cell, 308-byte composite passed four fresh self-posed
@@ -372,10 +378,24 @@ relation/relay/action/residual controls stop before packed construction. The
 69,232-cell composite adds zero functional cells and eight learned bytes, with
 5,580 bridge-only fit steps and 1,860 READY bridge steps.
 
-This moves the next shared R3/R4/R2 seam to predictive grouping of continuous
-neutral occurrence streams without explicit OPEN/EXTEND/EOS or hidden boundary
-metadata, followed by learning away carrier and consequence scaffolds. The
-spent V3 cohort remains closed.
+Commit `c75458a` then exposed the raw-neutral grouping limit: separately framed
+relabeled chain/fanout transports group under one opaque interval, but
+continuous streams with incompatible hidden cuts collide exactly
+`CONTINUE=16 / NEW=16` at the first novel edge and stop. No boundary surrogate
+is added.
+
+Commit `54e5a5c` adds four completeness-by-recurrence coincidence cells and a
+16-byte uint8 E/H decision race. Plasticity observes only the unique authentic
+READY consequence of trying both banked actions. Fresh continuous streams infer
+boundaries `(4,6)` and `(3)` and issue `(A,B,A)` / `(B,A)` schema sequences;
+completion, recurrence, gate, router, and replay controls stop. The absent
+incomplete+novel training feature remains an explicit abstention. Training is
+still transport-separated and environmental stream start/end plus carrier,
+projection, reducer, typed, and compiler scaffolds remain.
+
+This moves the next shared R3/R4/R2 seam to composing the issued continuous
+schema sequence into executable witnesses, followed by learning away carrier
+and consequence scaffolds. The spent V3 cohort remains closed.
 
 ## 11. Common G0 substrate begins
 
