@@ -143,7 +143,19 @@ views (77 sources, 68 edges, 164 factor slots, 9 relations, and 18 each domains,
 copy groups, and signatures). Teacher-off, cell-off, 59 geometry derangements,
 and 1,675 recurrent nonlessons produce zero READY. Because 77 targets reduce to
 26 local cues, this is explicitly same-FIT contextual replay, not unseen prompt
-transfer. Target-free static packaging and the fixed-roster joint remain unspent.
+transfer. Commit `d2376c7` publishes a 19,970-byte target-free occurrence-factor
+capsule; normal inference imports neither learner nor V2 teacher. Commit
+`41ad28c` privately converts its exact physical relay view into the packed
+desired-free build / desired-only selection authority. Commit `1232d2d` closes
+the upstream runtime seam with a 13,306-byte frozen 1x941 E/H+GLIF candidate
+selector over actual prompt span/literal records; it has no input-root,
+task/family/name/program/desired/order authority and returns neutral events only
+after the static occurrence gate is READY. All nine FIT identities replay, but
+the evidence remains finite-cohort same-FIT cue membership. Commit `69677f7`
+then authenticates the whole actual-record path into a desired-free packed
+frontier. The representative build is READY with zero desired reads/proofs, but
+its desired tuple stops at authorized-eclass mismatch; no panel search was used.
+The fixed-roster joint remains unspent.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
@@ -164,13 +176,24 @@ architecture classes to exact opaque singleton authority, and `29f8b84` exposes
 immutable regulatory/spatial generation plans while executing neither generator.
 Commit `5488574` freezes action framing, baseline/ablation, seed, and exact
 evaluator/bootstrap sources; `5892aa3` freezes the base+G0 dependency and runtime
-identity. No adjudicative cohort, terminal 50,000-resample run, or G0 score exists.
+identity. Commit `9d3ed86` authenticates a zero-execution materialization STOP:
+the pinned spatial `MemoryEnv` admits at most 120 distinct full initial layouts,
+below the preregistered 192 pairwise-distinct requirement. The spent transaction
+remains immutable and a fresh generator/preregistration is required. No
+adjudicative cohort, terminal 50,000-resample run, or G0 score exists.
 
 Commit `3524da8` banks a separate self-posed common-cell knowledge slice:
 source-conditioned episodes retain particulars while exact subject/relation
 semantic cells consolidate, abstain under conflicting evidence, and revise after
 additional support without deleting unrelated knowledge. Its claim is limited to
-exact keys and one-byte objects. Commit `a1cda05` also vectorizes the shared
+exact keys and one-byte objects. Commit `f5ec8c2` adds a cross-context relation
+schema slice: two independent contexts publish a one-byte relation-wide constant
+into a novel subject, one context abstains, and contradictory evidence first
+stops and then revises while preserving prior episodes. Commit `9f7b0fc` then
+proved the existing one-byte input representation has zero shared lane/value
+fillers; `6248269` appends exactly sixteen generic four-lane/base-four input
+neurons, reused uniformly across all 256 byte values, without adding COPY logic.
+Commit `a1cda05` also vectorizes the shared
 compiled-GLIF first-crossing scan; focused parity is unchanged and one local
 4,096-row by 65-candidate, 600-step batch improved from 87.6k to 157.5k races/s
 (1.80x). That timing is a machine-local kernel result, not capability evidence.

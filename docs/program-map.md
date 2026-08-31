@@ -1,8 +1,9 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-31 after producer-owned physical
-occurrence events, same-FIT causal occurrence learning, complete G0 architecture
-binding, and compiled-race vectorization. Exact scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-08-31 after target-free physical
+prompt-to-occurrence inference, static packed-plan authorization, cross-context
+knowledge consolidation, and compositional input-filler projection. Exact
+scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -13,10 +14,10 @@ R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
-G0  Frozen-architecture cross-domain generalization  [9/9 bound; generation plans frozen; cohorts unspent]
-R4  TRAIN-only prompt → semantic-factor bridge       [same-FIT causal learner banked; static/joint pending]
+G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
+R4  TRAIN-only prompt → semantic-factor bridge       [target-free same-FIT path banked; fresh joint pending]
 R3  Bottom-up typed semantic synthesis               [physical plan authority banked; joint pending]
-R2  Persistent knowledge and reading memory          [episodic revision slice banked; abstraction pending]
+R2  Persistent knowledge and reading memory          [cross-context consolidation banked; abstraction pending]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled batch race 1.80x locally]
 ```
 
@@ -68,8 +69,16 @@ converter. Commit `56b9c73` now publishes producer-owned occurrence-local
 selector/source events for all 59 raw FIT spans plus 18 typed literals. Commit
 `3ac16dc` learns the resulting 372/372 source/edge/factor/relation/domain/copy/
 signature targets with direct physical conjunction cells and recurrent carrier
-reuse. This is same-FIT contextual replay, not unseen-prompt transfer; target-free
-static packaging and a real prompt-to-event canonical handoff remain pending.
+reuse. Commit `d2376c7` publishes its immutable target-free static capsule;
+`41ad28c` privately converts an exact static relay certificate into the packed
+desired-free build / desired-only select seam. Commit `1232d2d` then learns the
+missing actual prompt-record candidate membership as a frozen 1x941 E/H+GLIF
+head and returns neutral events only after the static occurrence gate accepts
+them. Commit `69677f7` joins those three exact-object seams: one actual FIT prompt
+builds a desired-free packed frontier with zero desired reads/proofs, while its
+representative desired tuple honestly stops at authorized-eclass mismatch. This
+is an end-to-end same-FIT mechanism path, not unseen-prompt transfer; the fresh
+fixed-roster TRAIN joint remains pending.
 Spent panels, frozen routes, unchanged caps, and explicit ambiguity remain fixed.
 
 On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
@@ -128,7 +137,12 @@ and zero authorized exact choices. Commit `56b9c73` closes that producer
 contract with 372 compiler-owned FIT targets, and `3ac16dc` learns all 372 from
 stripped physical bundles. Only 26 local cues exist, so the source carrier
 learner correctly claims same-FIT contextual replay rather than unseen transfer.
-No canonical joint TRAIN result exists yet.
+Commit `d2376c7` removes the executable learner/teacher from normal inference,
+`41ad28c` binds the resulting exact-object relay view to packed plan authority,
+`1232d2d` supplies the target-free prompt-record-to-neutral-event handoff, and
+`69677f7` reaches the private desired-free packed frontier from actual records.
+Its representative desired selection stopped at e-class mismatch, so no
+fixed-roster joint TRAIN result exists yet.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -138,7 +152,11 @@ emission are banked on quarantined self-posed fixtures (`20ee0ea`). Commit
 authority. Commit `29f8b84` adds immutable regulatory/spatial generation plans
 that still execute neither generator. Action framing, fixed baselines/ablations,
 seed derivation, evaluator/bootstrap source, and environment identity remain
-frozen. No adjudicative cohort, evaluation outcome, or G0 score exists.
+frozen. Commit `9d3ed86` then stopped the first materialization transaction before
+generation: the pinned spatial `MemoryEnv` can provide at most 120 distinct full
+initial layouts, below the preregistered 192 pairwise-distinct requirement. A
+fresh generator/preregistration is required; no adjudicative cohort, evaluation
+outcome, or G0 score exists.
 
 The following paragraphs retain precursor mechanism and performance detail.
 
@@ -230,8 +248,15 @@ Commit `3524da8` separately banks a small common-cell knowledge slice: six
 self-posed source-conditioned episodes consolidate into exact subject/relation
 semantic cells, retain contradictory particulars, abstain under conflict, and
 revise after additional evidence without deleting unrelated knowledge. It is
-limited to exact keys and one-byte objects; learned retrieval, cross-context
-abstraction, corpus ingestion, and transfer remain open R2 work.
+limited to exact keys and one-byte objects. Commit `f5ec8c2` adds 32 reusable
+relation-schema cells: two independent source/subject contexts can publish a
+one-byte relation-wide consequence into a novel subject, while one context
+abstains and contradictory evidence first stops and then revises without
+deleting unrelated episodes. Commit `9f7b0fc` localized the next variable-COPY
+blocker to zero reusable input lane/value cells; `6248269` resolves only that
+representation gap with sixteen shared four-lane/base-four physical fillers.
+The variable relation learner, learned retrieval, corpus ingestion, and broader
+transfer remain open R2 work.
 
 ### Runtime and scale
 
