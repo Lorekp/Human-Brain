@@ -422,8 +422,19 @@ predicate-count expansion loses a supported Bool binder. Both draft banks were
 removed. Commit `6089f3c` then replaced that inherited expansion for this
 mechanism with a full-range publisher that constructs only the authorized
 predicate-gated-fold topology; `-64`, `0`, `5`, and `64` all publish and retain
-their causal gate stops. The complete bank is now being retried fresh without
-candidate pruning or host consequences. The spent V3 cohort remains closed.
+their causal gate stops. Mandatory preflight then exposed inherited generic
+predicate-count breadth separately in raw SUM at item 64 and, after raw was
+repaired, in ABS-map-SUM. Commit `63ed457` banks the minimal raw publisher;
+commit `d9c0d39` banks the minimal ABS publisher. Each authenticates its full-
+range slice before outputs with zero proof/materialization and retains its causal
+STOP. Commit `4efa736` then banks all 131 desired-free candidates: raw SUM,
+ABS-map-SUM, and each predicate threshold from `-64` through `64`. One physical
+semantic-vector race selects across the complete authenticated bank; ambiguity
+and no-match STOP with zero materialization, and focused observations uniquely
+select raw, ABS, and threshold 5. This closes the self-posed complete-plan-bank
+increment after four honest blocker localizations, without candidate pruning or
+host consequences; learned reusable fragment discovery remains open. The spent
+V3 cohort remains closed.
 
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
@@ -435,12 +446,37 @@ using only new lessons while semantic state conflicts then revises, and all old
 episodes, provenance, parents, and unrelated state remain exact. This is not a
 combined compression or corpus-retrieval claim.
 
+Commit `b8f2baa` learned which view to retrieve for two recurring opaque query
+contexts from public exact/semantic child output-cell consequences. Reversed
+R1/R2 laws teach history-versus-current routing and the checkpoint transfers to
+fresh R3; independent contradictions collide then revise, duplicate/dependent
+provenance does not vote, and selected-child failure never falls back. The final
+router adds 65 cells and 1,544 checkpoint-array bytes. The remaining boundary is
+unseen-query-context abstraction rather than another exact-cue router.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing
 event-proportional behavior. The arithmetic is useful, but 72R resident state
 and the packed ledger still make physical 100-billion residency infeasible; the
 next useful step must be structural rather than another scratch-only claim.
+
+Commit `9aa4d10` made resident and interval-ledger physical backing grow with
+occupancy rather than configured logical capacity. Empty 65,536- and 100-billion-
+capacity runtimes both occupy 10,040 bytes; the same four high-GID cells occupy
+10,384 bytes with exact dynamics and overflow parity. It removes 5,267,456 eager
+bytes at 65,536 and 80,375,000 at one million, but a fully materialized 100-
+billion runtime still computes to 8,037,500,000,000 bytes. The result is sparse
+logical construction, not physical 100-billion feasibility.
+
+Commit `d90ebbe` removes the next construction barrier by making both
+event-proportional phase buffers grow with peak stepped occupancy. Empty payload
+falls from 1,058,104 to 9,528 bytes at `R=65,536`, an exact `16R` saving; the
+same focused high-GID traffic at logical 65,536 and 100 billion produces exact
+eager/lazy parity and the same 16,200-byte payload with 64-slot buffers. The
+nominal construction saving is 16,000,000 bytes at one million and 1.6 TB at
+logical 100 billion. This is focused construction/payload evidence only, not
+throughput, capability, or fully materialized 100-billion residency.
 
 ## 11. Common G0 substrate begins
 

@@ -289,9 +289,20 @@ publisher for only the authorized predicate-gated-fold topology. Commit
 `6089f3c` now banks that repair: thresholds `-64`, `0`, `5`, and `64` all publish
 through the same raw-sum, item-less-than-literal, learned equality/shared-action,
 binder, map, and sum path, with no threshold branch or unrelated generic
-predicate families. The desired-free 131-way race is therefore being retried as
-a fresh successor. Typed certificates, candidate manifests, and compilation
-remain scaffolds, and the spent V3 cohort remains closed.
+predicate families. The next mandatory preflight then exposed the same breadth
+leak independently in raw SUM and ABS-map-SUM. Commit `63ed457` gives raw SUM a
+minimal input/seed/SUM publisher; commit `d9c0d39` gives ABS-map-SUM a minimal
+input/seed/raw-source/ABS/binder/map/SUM publisher. Both authenticate full-range
+item-64 slices with zero proof or materialization before selection, and their
+causal gates still stop. Commit `4efa736` composes those publishers into a bank
+of exactly 131 independently authenticated desired-free plans: raw SUM,
+ABS-map-SUM, and predicate-gated SUM for every threshold `-64..64`. Selection
+uses one physical exact-semantic-vector race over all 131 plans; zero or multiple
+matches STOP without proof materialization, while unique raw, ABS, and threshold-
+5 observations materialize only the winner. Candidate construction remains a
+fixed self-posed catalog rather than learned abstraction discovery. Typed
+certificates, candidate manifests, and compilation remain scaffolds, and the
+spent V3 cohort remains closed.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -444,6 +455,17 @@ is still reported separately (1,120 synaptic and 8,744 checkpoint-array bytes),
 so this is replay-free continual dual-view memory, not a combined compression,
 language, corpus, or broad retrieval result.
 
+Commit `b8f2baa` adds a learned retrieval-view router over that immutable dual
+view. Two recurring opaque query contexts learn exact-history versus semantic-
+current routing from public child output-cell consequences across reversed R1/R2
+laws, then transfer those routes to fresh R3. Duplicate/dependent provenance
+adds no vote; one independent contradiction produces an explicit route
+collision and the second revises the history route. A selected child STOP never
+falls back. The final eight-row router owns 65 added cells and 1,544 flat
+checkpoint-array bytes, while child work/storage remains separate. This is
+revisable retrieval-view selection for recurring contexts, not unseen-context
+abstraction, corpus retrieval, language, or coding evidence.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
@@ -513,6 +535,30 @@ at `Q=64` is 7,999,488 bytes. Event-proportional allocation and behavior are
 unchanged. At 100 billion residents the scratch arithmetic saves about 800 GB,
 but current resident state alone would require about 7.2 TB and the packed ledger
 about 837.5 GB, so a structural sparse/implicit residency step remains required.
+
+Commit `9aa4d10` supplies that construction-time structural step: resident and
+interval-ledger vectors now begin empty and grow geometrically with occupancy,
+while configured `R`/`D` remain authoritative logical ceilings and allocation is
+preflighted before GLIF mutation. Empty runtimes with either 65,536 or 100
+billion logical resident/distinct capacity report the same 10,040-byte payload;
+four high-GID materializations report 10,384 bytes with exact state, spike,
+pending-event, counter, and overflow parity. This removes 5,267,456 bytes of
+eager backing at 65,536 and 80,375,000 bytes at one million. Fully materializing
+100 billion cells would still require 8,037,500,000,000 bytes under the current
+state/ledger layout, so this establishes cheap sparse logical addressability,
+not physical 100-billion-cell residency.
+
+Commit `d90ebbe` makes the two event-proportional phase buffers occupancy-backed
+as well. The GID run and parallel dormant values begin empty, grow
+geometrically within the existing resident/event ceilings, and preflight both
+allocations before the integer ledger merge and either GLIF branch. Empty
+payload is now 9,528 bytes rather than 1,058,104 at `R=65,536`, saving exactly
+`16R`; at one million the arithmetic saving is 16,000,000 bytes, and at logical
+100 billion it avoids a nominal 1.6-TB construction request. Identical focused
+traffic at logical 65,536 and 100 billion finishes at 16,200 bytes with 64-slot
+buffers and exact eager/lazy state, event, ledger, counter, and tight-overflow
+parity. This is construction/payload scaling, not a throughput or fully
+materialized-residency result.
 
 ## Claim and opening discipline
 

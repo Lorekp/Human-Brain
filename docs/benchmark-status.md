@@ -316,6 +316,15 @@ separately from the inherited 1,572,864-byte exact base. This is bounded
 self-posed replay-free continual memory, not total compression, learned corpus
 retrieval, language, coding, or broad continual-learning evidence.
 
+Commit `b8f2baa` adds a flat learned exact-versus-semantic retrieval router over
+that frozen child. Public child output-cell consequences teach two recurring
+opaque query contexts across reversed R1/R2 laws, and the resulting routes
+transfer to fresh R3. Duplicate/dependent evidence retains provenance but adds
+no vote; one independent contradiction collides and the second revises; a
+selected child STOP never falls back. The final router adds 65 cells and 1,544
+checkpoint-array bytes. This is revisable view selection for recurring query
+contexts, not unseen-context abstraction or language/coding/corpus evidence.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for
@@ -379,6 +388,26 @@ an exact `8*(R-Q)=523,776`-byte saving; at one million residents the saving is
 arithmetic saving is about 800 GB, but the present 72R resident state and packed
 ledger would still require roughly 7.2 TB and 837.5 GB, respectively. This is a
 focused substrate-memory result, not physical 100-billion residency or capability.
+
+Commit `9aa4d10` then makes resident and interval-ledger backing occupancy-lazy:
+both vectors start empty, grow geometrically under unchanged logical ceilings,
+and preflight allocation before GLIF mutation. Logical 65,536 and 100-billion
+runtimes both report 10,040 bytes empty and 10,384 bytes after the same four
+high-GID cells, with exact state/spike/pending/counter and overflow parity. The
+removed eager barrier is 5,267,456 bytes at 65,536 and 80,375,000 bytes at one
+million. Current fully materialized 100-billion arithmetic remains
+8,037,500,000,000 bytes, so this is sparse logical construction evidence, not
+physical 100-billion residency.
+
+Commit `d90ebbe` applies the same occupancy principle to event-proportional
+phase scratch. Its GID and dormant-value vectors now start empty and grow
+fallibly before ledger merge and GLIF integration. Empty payload at resident
+capacity 65,536 falls from 1,058,104 to 9,528 bytes, exactly `16R` fewer; the
+same focused high-GID traffic at logical 65,536 and 100 billion ends at 16,200
+bytes with 64-slot phase buffers and exact eager/lazy dynamics, queue, ledger,
+counter, and overflow parity. This removes a nominal 1.6-TB construction
+request at logical 100 billion, but does not show throughput or fully
+materialized 100-billion feasibility.
 
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
@@ -455,10 +484,19 @@ expansion. The 131-way draft was deleted rather than pruned. The next seam is th
 generic full-range predicate-gated-fold publication prerequisite. Commit
 `6089f3c` banks it: `-64`, `0`, `5`, and `64` all reach READY through one minimal
 authorized topology with zero desired reads before materialization, while
-predicate/action cell ablations stop. A fresh exact bank of raw, ABS, and all
-129 thresholds with one honest ambiguity-preserving semantic race is now the
-active experiment. None of this is public transfer, parsing, broad coding, or
-SWE evidence.
+predicate/action cell ablations stop. Mandatory preflight next localized two
+more independent inherited-breadth failures: raw SUM at item 64, then ABS-map-
+SUM after raw was repaired. Commit `63ed457` publishes only input/seed/raw-SUM;
+commit `d9c0d39` publishes only input/seed/raw-source/ABS/binder/map/SUM. Both
+authenticate item-64 slices with zero preselection proof/materialization and
+retain their causal stops. Commit `4efa736` then builds and authenticates exactly
+131 desired-free candidates—raw SUM, ABS-map-SUM, and every predicate threshold
+from `-64` through `64`—before one 131-way physical semantic-vector race per
+selection. Ambiguous and unmatched observations STOP with zero materialization;
+the focused visible cases uniquely select raw SUM, ABS-map-SUM, and threshold 5,
+with item 64 separating raw SUM from the threshold catalog. This is a self-posed
+complete-plan selection mechanism, not learned catalog construction, public
+transfer, parsing, broad coding, or SWE evidence.
 
 ## Active-cell scaling and dynamics
 
