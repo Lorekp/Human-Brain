@@ -949,6 +949,45 @@ for the V2-memory test, and
 `14e0d9a273e2340c97cd659445e9400279f20e58f3d1871e726add0fa65cb786`
 for the controller test.
 
+Commit `984cf4442c081d49a6024feeb35610e80c1a5be8` freezes the first public
+role-transfer mini-SWE layer around that unchanged V2 checkpoint, action bank,
+and controller. The answer-blind harness builds all 12 source-only observations
+before any evaluator oracle is staged. Hidden input/output pairs are visible
+only to the selected repository test, while the append-only artifact ledger
+binds the memory, bank, policy, frontier, root-program roots, and literal cohort
+manifest
+`f528a0d77aa173ec24d7fca650bbd3dc099b9f6513d2496dcad1f4c5b18b8198`.
+
+The 12 byte-new positives are six reverse/identity pairs, with pair mates six
+rows apart. Surface, syntax-packaging, length-5/6 parity-probe,
+graph-isomorphic, decoy-context, and role-counterfactual pairs each require
+opposite physical actions. R and I have identical selected-occurrence
+histograms, `{0: 2, 1: 2, 2: 1, 3: 1}`; six candidate-order reversals are
+balanced 3/3. All 12 recalls were `RECALLED` at the structural-role tier and
+all 12 repositories committed in one attempt. Selected action roots split 6/6,
+unselected source materializations and tests stayed zero, and frozen memory and
+action-bank roots remained unchanged.
+
+Five causal controls passed: an unseen selected slice stopped as lexical
+UNKNOWN, a mixed-role conditional stopped at structural-role CONFLICT, disabling
+the role gate stopped without lexical rescue, a spliced producer receipt was
+rejected before recall, and reversing candidate records preserved the selected
+action. The focused command
+`.\.venv\Scripts\python.exe -m pytest -q tests\test_public_role_transfer_mini_swe_v1.py --basetemp .pytest_tmp\stage4-speed-audit-public-v1`
+exited zero in about 98 seconds. The final test-only `Counter` assertion pinning
+the equal R/I occurrence distributions was source/static-verified afterward;
+the 98-second gate was not rerun for that assertion.
+
+Evidence SHA-256s are
+`25b0249d5caa9198eb79af6a438811011a8bde2cbd641f03bd78041cb9f85e9d`
+for `public_role_transfer_mini_swe_v1.py` and
+`8d559cf504ac41d50f196f5837df31030f88767ad190a6dbb90aff14b48def9e`
+for the final focused test. This is fresh single-function microrepository
+structural-role transfer only. `syntax_packaging` is a source-expression variant
+inside one `solution.py`, not true package/module or multi-file transfer. The
+parity probe observes only lengths 5 and 6, so it is not broad distribution
+shift evidence. No LeetCode, external SWE, or broader benchmark result follows.
+
 ## Active-cell scaling and dynamics
 
 The first registered scaling grid varied active cells (24, 48, 96, 192),

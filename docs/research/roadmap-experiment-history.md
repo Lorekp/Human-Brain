@@ -621,6 +621,38 @@ surfaces remained sealed. The next gate must hold the V2 checkpoint frozen while
 testing family-disjoint surface, packaging, decoy-context, and role-counterfactual
 variants before any broader coding claim.
 
+Commit `984cf4442c081d49a6024feeb35610e80c1a5be8` executes that public gate
+without a cognitive change. One answer-blind harness first constructs all
+source-only observations, then stages the hidden oracle solely for the selected
+repository test. Its literal 12-case manifest root is
+`f528a0d77aa173ec24d7fca650bbd3dc099b9f6513d2496dcad1f4c5b18b8198`.
+Six reverse/identity pairs cover surface, syntax-packaging, the adapter's
+length-5/6 parity probe, graph-isomorphic syntax, decoy context, and a returned-
+role counterfactual. Pair mates are six rows apart, both action strata have
+selected-occurrence counts `{0: 2, 1: 2, 2: 1, 3: 1}`, and six reversed
+candidate orders are balanced 3/3.
+
+All 12 byte-new positives recalled at the structural-role tier and committed in
+one attempt. Action roots split 6/6; no unselected source was materialized or
+tested; the frozen memory and bank roots did not change. Unknown, mixed-role
+conflict, structural-role gate, producer-receipt splice, and candidate-order
+controls preserved the boundary. The focused command
+`.\.venv\Scripts\python.exe -m pytest -q tests\test_public_role_transfer_mini_swe_v1.py --basetemp .pytest_tmp\stage4-speed-audit-public-v1`
+exited zero in about 98 seconds. The final test strengthening that pins the two
+occurrence `Counter` values was source/static-verified without rerunning the
+98-second gate. Evidence SHA-256s are
+`25b0249d5caa9198eb79af6a438811011a8bde2cbd641f03bd78041cb9f85e9d`
+for the experiment and
+`8d559cf504ac41d50f196f5837df31030f88767ad190a6dbb90aff14b48def9e`
+for the final test.
+
+This advances the evidence from a four-source fixture to fresh
+single-function microrepository structural-role transfer. It does not establish
+true multi-file, package, or module transfer: `syntax_packaging` names only an
+expression-level spelling. Lengths 5/6 are not broad distribution-shift
+evidence, and the result is not LeetCode, external SWE, or a public benchmark
+score.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the

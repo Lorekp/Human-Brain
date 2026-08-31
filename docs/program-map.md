@@ -527,6 +527,44 @@ benchmark progress, or autonomous software intelligence. Public DEV, canonical
 M0, held-out/C1, G0 adjudication, Path-2 evaluation, and protected surfaces
 remained sealed.
 
+Commit `984cf4442c081d49a6024feeb35610e80c1a5be8` adds the next public layer
+without changing cognition. `public_role_transfer_mini_swe_v1.py` is one
+answer-blind environment harness around the frozen V2 memory, repository action
+bank, and controller. It constructs every source-only observation before
+staging evaluator oracles, then gives the oracle only to the selected action's
+repository test. A dedicated `ArtifactLedger` binds the frozen roots and the
+12-case manifest
+`f528a0d77aa173ec24d7fca650bbd3dc099b9f6513d2496dcad1f4c5b18b8198`.
+
+The fresh cohort contains six counterbalanced reverse/identity pairs across
+surface, syntax-packaging, length-5/6 parity-probe, graph-isomorphic,
+decoy-context, and role-counterfactual variants. Pair mates are six rows apart;
+both action strata have the selected-occurrence histogram
+`{0: 2, 1: 2, 2: 1, 3: 1}`, and the first six rows reverse candidate order with
+three rows per action. All 12 recalled through the structural-role tier and
+committed in one attempt, the two physical actions split 6/6, no unselected
+source was materialized or tested, and memory/action-bank roots stayed
+unchanged. Unknown, mixed-role conflict, structural-role-gate, producer-receipt
+splice, and candidate-order controls all preserved the preaction or choice
+boundary.
+
+The focused command
+`.\.venv\Scripts\python.exe -m pytest -q tests\test_public_role_transfer_mini_swe_v1.py --basetemp .pytest_tmp\stage4-speed-audit-public-v1`
+exited zero in about 98 seconds. The final test strengthening that pins the two
+selected-occurrence `Counter` values was source/static-verified without
+rerunning that 98-second gate. Evidence SHA-256s are
+`25b0249d5caa9198eb79af6a438811011a8bde2cbd641f03bd78041cb9f85e9d`
+for the experiment and
+`8d559cf504ac41d50f196f5837df31030f88767ad190a6dbb90aff14b48def9e`
+for the final test.
+
+This establishes fresh single-function microrepository structural-role
+transfer only. `syntax_packaging` refers to an equivalent expression spelling
+inside `solution.py`, not a Python package, module graph, or multi-file task;
+the parity probe covers only the adapter's authenticated lengths 5 and 6, not a
+broad distribution shift. It is not LeetCode, external SWE, or benchmark
+evidence.
+
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
 memory, and 569,715-cell integrated checkpoint with framed physical multi-byte
