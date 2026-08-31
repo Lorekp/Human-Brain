@@ -33,6 +33,7 @@ from typing import NamedTuple
 
 import numpy as np
 from experiments.r3_pilot import causal_reusable_program_fragment_library_v1 as fragments
+from experiments.r3_pilot import common_repository_action_bank_v1 as action_bank
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import public_typed_semantic_vector_race as semantic_race
 from humanbrain import typed_program
@@ -1208,12 +1209,14 @@ def _build_state_sha256(state: RecurrentFragmentBuildState) -> str:
 
 
 class RecurrentFragmentRelationFrontierV2:
-    """Desired-free recurrent rollout and two-terminal semantic frontier."""
+    """Desired-free recurrent rollout with semantic and repository frontiers."""
 
     __slots__ = (
+        "_action_bank",
         "_cases",
         "_materialized",
         "_policy",
+        "_repository_terminals",
         "_signature",
         "_source_materialization_count",
         "_state",
@@ -1264,7 +1267,11 @@ class RecurrentFragmentRelationFrontierV2:
         committed_edits = 0
         revisions = 0
         applied: list[str] = []
+        committed_prefixes: list[
+            tuple[typed_program.Program, tuple[str, ...]]
+        ] = []
         terminals: tuple[_TerminalProgram, ...] = ()
+        repository_terminals: tuple[_TerminalProgram, ...] = ()
 
         status = READY
         if not replay_cell_gate:
@@ -1434,6 +1441,7 @@ class RecurrentFragmentRelationFrontierV2:
                 if effect_action == ACTION_COMMIT:
                     committed_edits += 1
                     applied.append(record.receipt_sha256)
+                    committed_prefixes.append((program, tuple(applied)))
                 elif effect_action == ACTION_REVISE:
                     program = before
                     revisions += 1
@@ -1466,11 +1474,14 @@ class RecurrentFragmentRelationFrontierV2:
         terminal_case_executions = 0
         physical_output_encodings = 0
         if status == READY:
-            built: list[_TerminalProgram] = []
-            for terminal_program, terminal_relations in (
+            semantic_specs = (
                 (root, ()),
                 (program, tuple(applied)),
-            ):
+            )
+            repository_specs = tuple(committed_prefixes)
+            unique_specs = (*semantic_specs, repository_specs[0])
+            built: dict[tuple[str, tuple[str, ...]], _TerminalProgram] = {}
+            for terminal_program, terminal_relations in unique_specs:
                 try:
                     values = fragments._execute_without_rendering(
                         terminal_program.tokens,
@@ -1479,13 +1490,13 @@ class RecurrentFragmentRelationFrontierV2:
                     )
                 except (ArithmeticError, RuntimeError, TypeError, ValueError):
                     status = STOP_NO_TERMINAL
-                    built = []
+                    built = {}
                     break
                 terminal_case_executions += len(frozen_cases)
                 physical_outputs = fragments._encode_outputs(values)
                 if physical_outputs is None:
                     status = STOP_NO_TERMINAL
-                    built = []
+                    built = {}
                     break
                 physical_output_encodings += len(physical_outputs)
                 key = "terminal:" + _digest(
@@ -1495,19 +1506,35 @@ class RecurrentFragmentRelationFrontierV2:
                         "relations": terminal_relations,
                     },
                 )
-                built.append(
-                    _TerminalProgram(
-                        key=key,
-                        tokens=terminal_program.tokens,
-                        program_sha256=terminal_program.sha256,
-                        physical_outputs=physical_outputs,
-                        applied_relation_receipt_sha256s=terminal_relations,
-                    )
+                built[(terminal_program.sha256, terminal_relations)] = _TerminalProgram(
+                    key=key,
+                    tokens=terminal_program.tokens,
+                    program_sha256=terminal_program.sha256,
+                    physical_outputs=physical_outputs,
+                    applied_relation_receipt_sha256s=terminal_relations,
                 )
-            terminals = tuple(built)
-            if len(terminals) != 2 or len({item.key for item in terminals}) != 2:
+            if status == READY:
+                terminals = tuple(
+                    built[(item.sha256, relations)]
+                    for item, relations in semantic_specs
+                )
+                repository_terminals = tuple(
+                    built.get(
+                        (item.sha256, relations),
+                        built[(program.sha256, tuple(applied))],
+                    )
+                    for item, relations in repository_specs
+                )
+            if (
+                len(terminals) != 2
+                or len({item.key for item in terminals}) != 2
+                or len(repository_terminals) != action_bank.CANDIDATE_COUNT
+                or len({item.key for item in repository_terminals})
+                != action_bank.CANDIDATE_COUNT
+            ):
                 status = STOP_NO_TERMINAL
                 terminals = ()
+                repository_terminals = ()
 
         work = RecurrentFragmentBuildWork(
             root_rollouts=1 if status == READY or selected_actuations else 0,
@@ -1560,9 +1587,32 @@ class RecurrentFragmentRelationFrontierV2:
         instance._signature = signature
         instance._cases = frozen_cases
         instance._terminals = terminals
+        instance._repository_terminals = repository_terminals
         instance._state = state
         instance._materialized = {}
         instance._source_materialization_count = 0
+        instance._action_bank = (
+            action_bank.FrozenRepositoryActionBankV1(
+                policy_checkpoint_sha256=policy.checkpoint_sha256,
+                frontier_sha256=state.sha256,
+                root_program_sha256=root.sha256,
+                case_count=len(frozen_cases),
+                records=tuple(
+                    action_bank.make_repository_action_candidate_v1(
+                        frontier_sha256=state.sha256,
+                        program_sha256=item.program_sha256,
+                        physical_outputs=item.physical_outputs,
+                        applied_relation_receipt_sha256s=(
+                            item.applied_relation_receipt_sha256s
+                        ),
+                    )
+                    for item in repository_terminals
+                ),
+            )
+            if status == READY
+            and len(repository_terminals) == action_bank.CANDIDATE_COUNT
+            else None
+        )
         instance._authenticate()
         return instance
 
@@ -1578,6 +1628,90 @@ class RecurrentFragmentRelationFrontierV2:
     @property
     def source_materialization_count(self) -> int:
         return self._source_materialization_count
+
+    @property
+    def root_program_sha256(self) -> str:
+        return self._policy._records[0].base_program_sha256
+
+    @property
+    def repository_action_bank(self) -> action_bank.FrozenRepositoryActionBankV1:
+        if self._action_bank is None:
+            raise RuntimeError("List frontier has no complete repository action bank")
+        self._action_bank.authenticate()
+        return self._action_bank
+
+    @property
+    def candidate_records(
+        self,
+    ) -> tuple[action_bank.RepositoryActionCandidateRecordV1, ...]:
+        return self.repository_action_bank.records
+
+    def materialize_selected(
+        self,
+        candidate: action_bank.RepositoryActionCandidateRecordV1,
+    ) -> action_bank.RepositoryPatchWitnessV1:
+        self._authenticate()
+        candidate.authenticate()
+        matches = tuple(
+            terminal
+            for terminal in self._repository_terminals
+            if terminal.program_sha256 == candidate.program_sha256
+            and terminal.applied_relation_receipt_sha256s
+            == candidate.applied_relation_receipt_sha256s
+            and terminal.physical_outputs == candidate.physical_outputs
+            and candidate.frontier_sha256 == self._state.sha256
+        )
+        if len(matches) != 1 or candidate not in self.repository_action_bank.records:
+            raise ValueError("selected List candidate record is not authentic")
+        terminal = matches[0]
+        program = typed_program.Program(terminal.tokens, self._signature)
+        source = typed_program.compile(program).source
+        self._source_materialization_count += 1
+        return action_bank.make_repository_patch_witness_v1(
+            candidate=candidate,
+            source=source,
+        )
+
+    def encode_visible_expected(
+        self,
+        raw: object,
+    ) -> tuple[output_cells.TypedOutputEncoding, ...]:
+        if (
+            type(raw) is not list
+            or len(raw) != self._state.case_count
+            or any(type(value) is not int for value in raw)
+        ):
+            raise ValueError("visible expected values must align exact Int outputs")
+        encoded = fragments._encode_outputs(tuple(raw))
+        if encoded is None:
+            raise ValueError("visible expected Int outputs are not physically encodable")
+        return encoded
+
+    def race_repository_consequence(
+        self,
+        passed_cell: int,
+    ) -> action_bank.RepositoryConsequenceDecisionV1:
+        if passed_cell not in (0, 1):
+            raise ValueError("repository consequence must be one physical bit")
+        feature = FEATURE_EFFECT_MATCH if passed_cell else FEATURE_EFFECT_MISMATCH
+        action, race = _policy_race(
+            self._policy._policy_excitatory,
+            self._policy._policy_inhibitory,
+            feature,
+        )
+        expected_action = ACTION_COMMIT if passed_cell else ACTION_REVISE
+        if action != expected_action:
+            raise RuntimeError("List consequence policy returned the wrong action")
+        return action_bank.make_repository_consequence_decision_v1(
+            policy_checkpoint_sha256=self._policy.checkpoint_sha256,
+            passed_cell=passed_cell,
+            outcome_key=(
+                action_bank.OUTCOME_COMMIT
+                if passed_cell
+                else action_bank.OUTCOME_REVISE
+            ),
+            physical_race_sha256=race.sha256,
+        )
 
     def _authenticate(self) -> None:
         self._policy.authenticate()
@@ -1600,7 +1734,17 @@ class RecurrentFragmentRelationFrontierV2:
             or state.sha256 != _build_state_sha256(state)
         ):
             raise RuntimeError("recurrent relation frontier changed")
-        for terminal in self._terminals:
+        if state.status == READY:
+            bank = self.repository_action_bank
+            if (
+                len(self._repository_terminals) != action_bank.CANDIDATE_COUNT
+                or bank.policy_checkpoint_sha256 != state.policy_checkpoint_sha256
+                or bank.frontier_sha256 != state.sha256
+                or bank.root_program_sha256 != self.root_program_sha256
+                or bank.case_count != state.case_count
+            ):
+                raise RuntimeError("recurrent repository action bank changed")
+        for terminal in (*self._terminals, *self._repository_terminals):
             if (
                 typed_program.Program(terminal.tokens, self._signature).sha256
                 != terminal.program_sha256

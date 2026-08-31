@@ -1,7 +1,7 @@
 """Bounded cell-state correction after one real repository-test failure.
 
-The adapter consumes the source-free candidate-record seam of the committed
-String relation frontier.  Two relation-supported candidates are frozen before
+The adapter consumes the type-neutral source-free candidate-record seam.  Two
+relation-supported candidates are frozen before
 one desired read.  A two-cell E/H race first prefers the candidate with two
 physical receipt cells.  A failed repository test produces only a PASS/FAIL
 consequence receipt; the recurrent action cells select REVISE, exact rollback
@@ -24,9 +24,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 import numpy as np
-from experiments.r3_pilot import causal_microrepository_repair_loop_v2 as string_repair
-from experiments.r3_pilot import causal_recurrent_fragment_relation_policy_v2 as recurrent
 from experiments.r3_pilot import common_continual_repository_action_memory_v1 as continual_memory
+from experiments.r3_pilot import common_repository_action_bank_v1 as action_bank
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import public_typed_semantic_vector_race as semantic_race
 from humanbrain.resting_glif_tier_beam import (
@@ -55,7 +54,7 @@ STOP_REPLAN_GATE = f"STOP_{SCHEMA}_REPLAN_GATE"
 STOP_ROLLBACK = f"STOP_{SCHEMA}_ROLLBACK"
 STOP_ATTEMPT_BUDGET = f"STOP_{SCHEMA}_ATTEMPT_BUDGET"
 
-CANDIDATE_COUNT = 2
+CANDIDATE_COUNT = action_bank.CANDIDATE_COUNT
 ATTEMPT_LIMIT = 2
 TONIC_CURRENT = 1
 RACE_TICKS = 600
@@ -73,9 +72,9 @@ UNSELECTED_SOURCE_MATERIALIZATIONS = 0
 UNSELECTED_REPOSITORY_TESTS = 0
 
 CLAIM_BOUNDARY = (
-    "one fresh self-posed String repository fixture with a two-candidate frozen "
-    "relation frontier; cell state revises once after a real failed test and "
-    "commits a different second patch; manifests, attestation, selected compiler, "
+    "one fresh self-posed repository fixture with a two-candidate learned-prefix "
+    "frontier; cell state revises once after a real failed test and commits a "
+    "different second patch; manifests, attestation, selected compilation, "
     "filesystem/process I/O, PASS/FAIL hashing, and rollback remain host scaffolding"
 )
 
@@ -297,15 +296,7 @@ class AutonomousCorrectionResultV1(NamedTuple):
                 start=1,
             ):
                 lesson.authenticate()
-                expected_outcome = (
-                    continual_memory.OUTCOME_COMMIT
-                    if attempt.consequence_action_key
-                    == recurrent.ACTION_KEYS[recurrent.ACTION_COMMIT]
-                    else continual_memory.OUTCOME_REVISE
-                    if attempt.consequence_action_key
-                    == recurrent.ACTION_KEYS[recurrent.ACTION_REVISE]
-                    else ""
-                )
+                expected_outcome = attempt.consequence_action_key
                 if (
                     lesson.controller_trajectory_sha256 != trajectory
                     or lesson.controller_result_sha256 != self.sha256
@@ -367,18 +358,21 @@ class _CorrectionCellsV1:
     def __init__(
         self,
         frontier_sha256: str,
-        candidates: Sequence[string_repair.StringRelationCandidateRecordV2],
+        bank: action_bank.FrozenRepositoryActionBankV1,
+        candidates: Sequence[action_bank.RepositoryActionCandidateRecordV1],
         *,
-        policy_checkpoint_sha256: str,
         learned_evidence: dict[str, tuple[int, int]] | None = None,
         learned_recall_sha256: str | None = None,
     ) -> None:
+        bank.authenticate()
         frozen = tuple(sorted(candidates, key=lambda item: item.sha256))
         if (
             len(frozen) != CANDIDATE_COUNT
             or len({item.sha256 for item in frozen}) != CANDIDATE_COUNT
             or any(
-                item.frontier_sha256 != frontier_sha256 or item.receipt_cell_support <= 0
+                item.frontier_sha256 != frontier_sha256
+                or item.receipt_cell_support <= 0
+                or item not in bank.records
                 for item in frozen
             )
         ):
@@ -394,10 +388,7 @@ class _CorrectionCellsV1:
             raise ValueError("candidate cell addresses collided")
         evidence = {} if learned_evidence is None else dict(learned_evidence)
         action_sha256s = tuple(
-            continual_memory.repository_action_sha256_v1(
-                policy_checkpoint_sha256,
-                item.applied_relation_receipt_sha256s,
-            )
+            bank.action_sha256_for(item)
             for item in frozen
         )
         if evidence and set(evidence) != set(action_sha256s):
@@ -476,7 +467,7 @@ class _CorrectionCellsV1:
     @property
     def candidates(
         self,
-    ) -> tuple[string_repair.StringRelationCandidateRecordV2, ...]:
+    ) -> tuple[action_bank.RepositoryActionCandidateRecordV1, ...]:
         return self._candidates
 
     @property
@@ -520,7 +511,7 @@ class _CorrectionCellsV1:
 
     def _candidate_index(
         self,
-        candidate: string_repair.StringRelationCandidateRecordV2,
+        candidate: action_bank.RepositoryActionCandidateRecordV1,
     ) -> int:
         matches = tuple(index for index, item in enumerate(self._candidates) if item == candidate)
         if len(matches) != 1:
@@ -529,7 +520,7 @@ class _CorrectionCellsV1:
 
     def address(
         self,
-        candidate: string_repair.StringRelationCandidateRecordV2,
+        candidate: action_bank.RepositoryActionCandidateRecordV1,
     ) -> int:
         return int(self._addresses[self._candidate_index(candidate)])
 
@@ -538,7 +529,7 @@ class _CorrectionCellsV1:
         eligible_sha256s: Sequence[str],
     ) -> tuple[
         str,
-        string_repair.StringRelationCandidateRecordV2 | None,
+        action_bank.RepositoryActionCandidateRecordV1 | None,
         str | None,
     ]:
         if set(eligible_sha256s) != {item.sha256 for item in self._candidates}:
@@ -576,8 +567,8 @@ class _CorrectionCellsV1:
     def record_action(
         self,
         attempt: int,
-        candidate: string_repair.StringRelationCandidateRecordV2,
-        action: int,
+        candidate: action_bank.RepositoryActionCandidateRecordV1,
+        outcome_key: str,
         *,
         update_inhibitory: bool,
     ) -> None:
@@ -586,9 +577,9 @@ class _CorrectionCellsV1:
         index = self._candidate_index(candidate)
         action_code = (
             1
-            if action == recurrent.ACTION_COMMIT
+            if outcome_key == action_bank.OUTCOME_COMMIT
             else 2
-            if action == recurrent.ACTION_REVISE
+            if outcome_key == action_bank.OUTCOME_REVISE
             else 3
         )
         row = (
@@ -600,7 +591,7 @@ class _CorrectionCellsV1:
             raise RuntimeError("candidate provenance row budget changed")
         self._provenance[attempt - 1, :] = np.frombuffer(row, dtype=np.uint8)
         self._filled_rows += 1
-        if action == recurrent.ACTION_REVISE and update_inhibitory:
+        if outcome_key == action_bank.OUTCOME_REVISE and update_inhibitory:
             self._inhibitory.fill(0)
             self._inhibitory[index] = np.uint8(2)
             self._replan_updates += 1
@@ -649,9 +640,9 @@ def _authenticate_consequence(value: RepositoryConsequenceV1) -> bool:
 def _attempt(
     *,
     attempt: int,
-    candidate: string_repair.StringRelationCandidateRecordV2,
+    candidate: action_bank.RepositoryActionCandidateRecordV1,
     address: int,
-    witness: string_repair.StringRelationWitnessV2,
+    witness: action_bank.RepositoryPatchWitnessV1,
     selected_source_sha256: str,
     exit_code: int,
     stdout_sha256: str,
@@ -666,7 +657,7 @@ def _attempt(
         "candidate": candidate.sha256,
         "address": address,
         "support": candidate.receipt_cell_support,
-        "program": witness.program.sha256,
+        "program": witness.program_sha256,
         "witness": witness.sha256,
         "source": selected_source_sha256,
         "exit": exit_code,
@@ -682,7 +673,7 @@ def _attempt(
         candidate_sha256=candidate.sha256,
         candidate_address=address,
         receipt_cell_support=candidate.receipt_cell_support,
-        program_sha256=witness.program.sha256,
+        program_sha256=witness.program_sha256,
         witness_sha256=witness.sha256,
         selected_source_sha256=selected_source_sha256,
         repository_test_exit_code=exit_code,
@@ -779,28 +770,11 @@ def _empty_work() -> dict[str, int]:
     }
 
 
-def _read_desired(
-    path: Path,
-    *,
-    case_count: int,
-) -> tuple[output_cells.TypedOutputEncoding, ...]:
+def _read_visible_expected(path: Path) -> object:
     record = json.loads(path.read_text(encoding="utf-8"))
     if type(record) is not dict or set(record) != {"expected"}:
         raise ValueError("expected manifest schema changed")
-    values = record["expected"]
-    if (
-        type(values) is not list
-        or len(values) != case_count
-        or any(type(value) is not str for value in values)
-    ):
-        raise ValueError("expected manifest must align exact String outputs")
-    return tuple(
-        output_cells.TypedOutputCellBank.encode(
-            value,
-            declared_type=output_cells.OutputType.STRING,
-        )
-        for value in values
-    )
+    return record["expected"]
 
 
 def _child_path(root: Path, relative: str) -> Path:
@@ -814,12 +788,12 @@ def _child_path(root: Path, relative: str) -> Path:
 
 class PreparedAutonomousCorrectionV1:
     __slots__ = (
+        "_bank",
         "_cells",
         "_expected_path",
         "_frontier",
         "_initial_checkpoint_sha256",
         "_original_source",
-        "_policy",
         "_repo_root",
         "_source_context",
         "_source_path",
@@ -830,8 +804,8 @@ class PreparedAutonomousCorrectionV1:
     def __init__(
         self,
         *,
-        policy: string_repair.FrozenStringRelationPolicyV2,
-        frontier: string_repair.StringRelationFrontierV2,
+        bank: action_bank.FrozenRepositoryActionBankV1,
+        frontier: action_bank.RepositoryActionFrontierV1,
         spec: AutonomousCorrectionSpecV1,
         repo_root: Path,
         source_path: Path,
@@ -841,7 +815,7 @@ class PreparedAutonomousCorrectionV1:
         cells: _CorrectionCellsV1 | None,
         state: PreparedAutonomousCorrectionStateV1,
     ) -> None:
-        self._policy = policy
+        self._bank = bank
         self._frontier = frontier
         self._spec = spec
         self._repo_root = repo_root
@@ -909,13 +883,9 @@ class PreparedAutonomousCorrectionV1:
                 candidate = candidates.get(attempt.candidate_sha256)
                 if candidate is None or candidate.program_sha256 != attempt.program_sha256:
                     raise RuntimeError("repository action candidate provenance changed")
-                if attempt.consequence_action_key == recurrent.ACTION_KEYS[
-                    recurrent.ACTION_COMMIT
-                ]:
+                if attempt.consequence_action_key == action_bank.OUTCOME_COMMIT:
                     outcome_key = continual_memory.OUTCOME_COMMIT
-                elif attempt.consequence_action_key == recurrent.ACTION_KEYS[
-                    recurrent.ACTION_REVISE
-                ]:
+                elif attempt.consequence_action_key == action_bank.OUTCOME_REVISE:
                     outcome_key = continual_memory.OUTCOME_REVISE
                 else:
                     raise RuntimeError("repository consequence action is not learnable")
@@ -934,22 +904,11 @@ class PreparedAutonomousCorrectionV1:
                         committed=attempt.committed,
                     )
                 )
-            action_bank = tuple(
-                sorted(
-                    continual_memory.repository_action_sha256_v1(
-                        self._policy.checkpoint_sha256,
-                        candidate.applied_relation_receipt_sha256s,
-                    )
-                    for candidate in self._cells.candidates
-                )
-            )
             result_sha256, repository_actions = (
                 continual_memory._seal_physical_repository_action_lessons_v1(
-                    policy_checkpoint_sha256=self._policy.checkpoint_sha256,
                     controller_trajectory_sha256=trajectory_sha256,
                     controller_status=status,
-                    frontier_sha256=self._frontier.state.sha256,
-                    action_bank_sha256s=action_bank,
+                    action_bank=self._bank,
                     source_context=self._source_context,
                     consequences=tuple(consequences),
                 )
@@ -1015,10 +974,8 @@ class PreparedAutonomousCorrectionV1:
                 source_after=current_source,
             )
         try:
-            desired = _read_desired(
-                self._expected_path,
-                case_count=self._frontier.state.case_count,
-            )
+            raw_expected = _read_visible_expected(self._expected_path)
+            desired = self._frontier.encode_visible_expected(raw_expected)
         except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
             counters["desired_manifest_reads"] = 1
             return self._result(status=STOP_ADAPTER_INPUT, counters=counters)
@@ -1057,6 +1014,26 @@ class PreparedAutonomousCorrectionV1:
                 )
             try:
                 witness = self._frontier.materialize_selected(candidate)
+            except (RuntimeError, TypeError, ValueError):
+                return self._result(
+                    status=STOP_MATERIALIZATION,
+                    counters=counters,
+                    attempts=attempts,
+                    desired_sha256=desired_sha256,
+                    eligibility_sha256=eligibility.sha256,
+                )
+            try:
+                if type(witness) is not action_bank.RepositoryPatchWitnessV1:
+                    raise TypeError("frontier returned a non-neutral patch witness")
+                witness.authenticate()
+                if (
+                    witness.frontier_sha256 != self._bank.frontier_sha256
+                    or witness.candidate_sha256 != candidate.sha256
+                    or witness.program_sha256 != candidate.program_sha256
+                    or witness.applied_relation_receipt_sha256s
+                    != candidate.applied_relation_receipt_sha256s
+                ):
+                    raise ValueError("patch witness is outside the selected action")
             except (RuntimeError, TypeError, ValueError):
                 return self._result(
                     status=STOP_MATERIALIZATION,
@@ -1140,23 +1117,36 @@ class PreparedAutonomousCorrectionV1:
                     eligibility_sha256=eligibility.sha256,
                     source_after=restored,
                 )
-            feature = (
-                recurrent.FEATURE_EFFECT_MATCH
-                if consequence.passed_cell
-                else recurrent.FEATURE_EFFECT_MISMATCH
-            )
-            action, _ = recurrent._policy_race(
-                self._policy._policy_excitatory,
-                self._policy._policy_inhibitory,
-                feature,
-            )
+            try:
+                decision = self._frontier.race_repository_consequence(
+                    consequence.passed_cell
+                )
+                if type(decision) is not action_bank.RepositoryConsequenceDecisionV1:
+                    raise TypeError("frontier returned a non-neutral consequence")
+                decision.authenticate()
+                if (
+                    decision.policy_checkpoint_sha256
+                    != self._bank.policy_checkpoint_sha256
+                    or decision.passed_cell != consequence.passed_cell
+                ):
+                    raise ValueError("consequence decision is outside the action bank")
+            except (RuntimeError, TypeError, ValueError):
+                exact, restored = self._rollback(counters)
+                return self._result(
+                    status=STOP_CONSEQUENCE_POLICY if exact else STOP_ROLLBACK,
+                    counters=counters,
+                    attempts=attempts,
+                    desired_sha256=desired_sha256,
+                    eligibility_sha256=eligibility.sha256,
+                    source_after=restored,
+                )
             counters["consequence_policy_races"] += 1
-            action_key = recurrent.ACTION_KEYS[action]
-            if exit_code == 0 and action == recurrent.ACTION_COMMIT:
+            action_key = decision.outcome_key
+            if exit_code == 0 and action_key == action_bank.OUTCOME_COMMIT:
                 self._cells.record_action(
                     attempt_number,
                     candidate,
-                    action,
+                    action_key,
                     update_inhibitory=False,
                 )
                 counters["commits"] += 1
@@ -1210,7 +1200,7 @@ class PreparedAutonomousCorrectionV1:
                     committed=False,
                 )
             )
-            if exit_code == 0 or action != recurrent.ACTION_REVISE:
+            if exit_code == 0 or action_key != action_bank.OUTCOME_REVISE:
                 return self._result(
                     status=STOP_CONSEQUENCE_POLICY,
                     counters=counters,
@@ -1232,7 +1222,7 @@ class PreparedAutonomousCorrectionV1:
             self._cells.record_action(
                 attempt_number,
                 candidate,
-                action,
+                action_key,
                 update_inhibitory=replan_cell_gate and inhibitory_update_gate,
             )
             if not replan_cell_gate:
@@ -1259,8 +1249,7 @@ class PreparedAutonomousCorrectionV1:
 def _prepared_state(
     *,
     status: str,
-    policy: string_repair.FrozenStringRelationPolicyV2,
-    frontier: string_repair.StringRelationFrontierV2,
+    bank: action_bank.FrozenRepositoryActionBankV1,
     spec: AutonomousCorrectionSpecV1,
     observed_source_sha256: str,
     source_context_sha256: str,
@@ -1272,8 +1261,8 @@ def _prepared_state(
     candidate_checkpoint = None if cells is None else cells.state.sha256
     partial = PreparedAutonomousCorrectionStateV1(
         status=status,
-        frontier_sha256=frontier.state.sha256,
-        policy_checkpoint_sha256=policy.checkpoint_sha256,
+        frontier_sha256=bank.frontier_sha256,
+        policy_checkpoint_sha256=bank.policy_checkpoint_sha256,
         root_program_sha256=spec.root_program_sha256,
         root_source_sha256=observed_source_sha256,
         source_context_sha256=source_context_sha256,
@@ -1294,11 +1283,11 @@ def _prepared_state(
 
 
 def prepare_autonomous_correction_v1(
-    policy: string_repair.FrozenStringRelationPolicyV2,
-    frontier: string_repair.StringRelationFrontierV2,
+    frontier: action_bank.RepositoryActionFrontierV1,
     spec: AutonomousCorrectionSpecV1,
     *,
-    candidate_records: Sequence[string_repair.StringRelationCandidateRecordV2] | None = None,
+    candidate_records: Sequence[action_bank.RepositoryActionCandidateRecordV1]
+    | None = None,
     relation_support_gate: bool = True,
     action_memory: continual_memory.FrozenContinualRepositoryActionMemoryV1
     | None = None,
@@ -1307,9 +1296,8 @@ def prepare_autonomous_correction_v1(
     memory_candidate_gate: bool = True,
 ) -> PreparedAutonomousCorrectionV1:
     """Attest one frozen frontier and allocate the 86-byte candidate checkpoint."""
-    policy.authenticate()
-    if frontier.status != string_repair.READY:
-        raise ValueError("autonomous correction requires one READY String frontier")
+    bank = frontier.repository_action_bank
+    bank.authenticate()
     repo_root = spec.repo_root.resolve(strict=True)
     if not repo_root.is_dir() or not spec.test_command:
         raise ValueError("repository root and test command are required")
@@ -1320,19 +1308,21 @@ def prepare_autonomous_correction_v1(
     except OSError:
         original_source = b""
     observed_source_sha256 = _bytes_sha256(original_source)
-    authentic_records = tuple(
-        item for item in frontier.candidate_records if item.receipt_cell_support > 0
-    )
+    authentic_records = bank.records
     supplied_records = authentic_records if candidate_records is None else tuple(candidate_records)
     canonical = {item.sha256: item for item in authentic_records}
     records_authentic = (
         len(supplied_records) == CANDIDATE_COUNT
         and len(canonical) == CANDIDATE_COUNT
+        and all(
+            type(item) is action_bank.RepositoryActionCandidateRecordV1
+            for item in supplied_records
+        )
         and all(canonical.get(item.sha256) == item for item in supplied_records)
         and len({item.sha256 for item in supplied_records}) == CANDIDATE_COUNT
     )
     attested = (
-        frontier.state.root_program_sha256 == spec.root_program_sha256
+        bank.root_program_sha256 == spec.root_program_sha256
         and observed_source_sha256 == spec.root_source_sha256
         and records_authentic
     )
@@ -1360,9 +1350,9 @@ def prepare_autonomous_correction_v1(
         if action_memory is not None:
             if type(action_memory) is not continual_memory.FrozenContinualRepositoryActionMemoryV1:
                 raise TypeError("action_memory must be one exact frozen continual memory")
-            learned_recall = action_memory.recall_attested_source(
-                original_source,
-                frontier,
+            learned_recall = action_memory.recall_attested_context(
+                source_context,
+                bank,
                 candidate_records=supplied_records,
                 recall_gate=memory_recall_gate,
                 context_gate=memory_context_gate,
@@ -1374,13 +1364,13 @@ def prepare_autonomous_correction_v1(
                 and learned_recall.memory_checkpoint_sha256
                 == action_memory.checkpoint_sha256
                 and learned_recall.policy_checkpoint_sha256
-                == policy.checkpoint_sha256
+                == bank.policy_checkpoint_sha256
                 and learned_recall.source_sha256 == observed_source_sha256
                 and learned_recall.source_context_frame_sha256
                 == source_context_frame_sha256
                 and learned_recall.source_context_trace_cells
                 == source_context.trace_cells
-                and learned_recall.frontier_sha256 == frontier.state.sha256
+                and learned_recall.frontier_sha256 == bank.frontier_sha256
                 and learned_recall.selected_candidate_action_sha256 is not None
             ):
                 learned_evidence = {
@@ -1403,9 +1393,9 @@ def prepare_autonomous_correction_v1(
     else:
         try:
             cells = _CorrectionCellsV1(
-                frontier.state.sha256,
+                bank.frontier_sha256,
+                bank,
                 supplied_records,
-                policy_checkpoint_sha256=policy.checkpoint_sha256,
                 learned_evidence=learned_evidence,
                 learned_recall_sha256=(
                     None if learned_recall is None else learned_recall.sha256
@@ -1417,8 +1407,7 @@ def prepare_autonomous_correction_v1(
             status = PREPARED
     state = _prepared_state(
         status=status,
-        policy=policy,
-        frontier=frontier,
+        bank=bank,
         spec=spec,
         observed_source_sha256=observed_source_sha256,
         source_context_sha256=source_context_sha256,
@@ -1430,7 +1419,7 @@ def prepare_autonomous_correction_v1(
         ),
     )
     return PreparedAutonomousCorrectionV1(
-        policy=policy,
+        bank=bank,
         frontier=frontier,
         spec=spec,
         repo_root=repo_root,

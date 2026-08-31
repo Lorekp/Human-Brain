@@ -211,7 +211,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
     )
     materializations_before = frontier.source_materialization_count
     prepared = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         primary_spec,
     )
@@ -283,7 +282,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
     )
     before = frontier.source_materialization_count
     support_off = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         support_spec,
         relation_support_gate=False,
@@ -308,7 +306,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
         visible_expected=visible_expected,
     )
     forged_bank = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         forged_bank_spec,
         candidate_records=(forged_record, supported[1]),
@@ -325,7 +322,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
         visible_expected=visible_expected,
     )
     revision_off = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         revision_spec,
     ).repair(revision_cell_gate=False)
@@ -345,7 +341,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
         visible_expected=visible_expected,
     )
     replan_off = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         replan_spec,
     ).repair(replan_cell_gate=False)
@@ -365,7 +360,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
         visible_expected=visible_expected,
     )
     repeated = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         repeat_spec,
     ).repair(inhibitory_update_gate=False)
@@ -386,7 +380,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
         visible_expected=visible_expected,
     )
     forged = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         forged_spec,
     ).repair(forge_consequence_attempt=1)
@@ -406,7 +399,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
         drift_source=True,
     )
     drifted = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         drift_spec,
     ).repair()
@@ -428,7 +420,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
         visible_expected=visible_expected,
     )
     remapped = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         remap_spec,
         candidate_records=tuple(reversed(supported)),
@@ -455,7 +446,6 @@ def test_cell_state_replans_after_one_real_repository_failure(tmp_path: Path) ->
         force_failure=True,
     )
     both_failed = correction.prepare_autonomous_correction_v1(
-        policy,
         frontier,
         both_fail_spec,
     ).repair()

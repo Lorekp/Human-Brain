@@ -34,6 +34,7 @@ from typing import NamedTuple
 
 import numpy as np
 from experiments.r3_pilot import causal_recurrent_fragment_relation_policy_v2 as recurrent
+from experiments.r3_pilot import common_repository_action_bank_v1 as action_bank
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import public_typed_semantic_vector_race as semantic_race
 from experiments.r3_pilot import typed_semantic_packed_generic_train_breadth_v2 as breadth
@@ -970,17 +971,6 @@ class StringRelationSelectionV2(NamedTuple):
     sha256: str
 
 
-class StringRelationCandidateRecordV2(NamedTuple):
-    """Authenticated source-free terminal record for a downstream cell race."""
-
-    frontier_sha256: str
-    program_sha256: str
-    physical_outputs: tuple[output_cells.TypedOutputEncoding, ...]
-    applied_relation_receipt_sha256s: tuple[str, ...]
-    receipt_cell_support: int
-    sha256: str
-
-
 class _StringTerminal(NamedTuple):
     key: str
     program: typed_program.Program
@@ -1161,6 +1151,7 @@ class StringRelationFrontierV2:
     """Desired-free recurrent rollout over fresh visible String cases."""
 
     __slots__ = (
+        "_action_bank",
         "_materialization_count",
         "_policy",
         "_state",
@@ -1183,69 +1174,100 @@ class StringRelationFrontierV2:
     def source_materialization_count(self) -> int:
         return self._materialization_count
 
+    @property
+    def root_program_sha256(self) -> str:
+        return self._state.root_program_sha256
+
+    @property
+    def repository_action_bank(self) -> action_bank.FrozenRepositoryActionBankV1:
+        if self._action_bank is None:
+            raise RuntimeError("String frontier has no complete repository action bank")
+        self._action_bank.authenticate()
+        return self._action_bank
+
     def _candidate_record(
         self,
         terminal: _StringTerminal,
-    ) -> StringRelationCandidateRecordV2:
-        record_sha256 = _digest(
-            b"causal-string-relation-candidate-record-v2",
-            {
-                "frontier": self._state.sha256,
-                "program": terminal.program.sha256,
-                "outputs": _encoding_vector_sha256(terminal.physical_outputs),
-                "receipts": terminal.applied_receipts,
-                "support": len(terminal.applied_receipts),
-            },
-        )
-        return StringRelationCandidateRecordV2(
+    ) -> action_bank.RepositoryActionCandidateRecordV1:
+        return action_bank.make_repository_action_candidate_v1(
             frontier_sha256=self._state.sha256,
             program_sha256=terminal.program.sha256,
             physical_outputs=terminal.physical_outputs,
             applied_relation_receipt_sha256s=terminal.applied_receipts,
-            receipt_cell_support=len(terminal.applied_receipts),
-            sha256=record_sha256,
         )
 
     @property
-    def candidate_records(self) -> tuple[StringRelationCandidateRecordV2, ...]:
+    def candidate_records(
+        self,
+    ) -> tuple[action_bank.RepositoryActionCandidateRecordV1, ...]:
         """Return source-free records; terminal programs remain frontier-owned."""
-        self._policy.authenticate()
-        return tuple(self._candidate_record(item) for item in self._terminals)
+        return self.repository_action_bank.records
 
     def materialize_selected(
         self,
-        candidate: StringRelationCandidateRecordV2,
-    ) -> StringRelationWitnessV2:
+        candidate: action_bank.RepositoryActionCandidateRecordV1,
+    ) -> action_bank.RepositoryPatchWitnessV1:
         """Compile exactly one candidate after authenticating its frozen record."""
         self._policy.authenticate()
+        candidate.authenticate()
         matches = tuple(
             terminal
             for terminal in self._terminals
-            if self._candidate_record(terminal) == candidate
+            if terminal.applied_receipts
+            and self._candidate_record(terminal) == candidate
         )
         if len(matches) != 1:
             raise ValueError("selected String candidate record is not authentic")
         terminal = matches[0]
         compiled = typed_program.compile(terminal.program)
         self._materialization_count += 1
-        witness_sha256 = _digest(
-            b"causal-string-relation-witness-v2",
-            {
-                "frontier": self._state.sha256,
-                "key": terminal.key,
-                "program": terminal.program.sha256,
-                "source": _bytes_sha256(compiled.source.encode("utf-8")),
-                "outputs": _encoding_vector_sha256(terminal.physical_outputs),
-                "receipts": terminal.applied_receipts,
-            },
-        )
-        return StringRelationWitnessV2(
-            key=terminal.key,
-            program=terminal.program,
+        return action_bank.make_repository_patch_witness_v1(
+            candidate=candidate,
             source=compiled.source,
-            physical_outputs=terminal.physical_outputs,
-            applied_relation_receipt_sha256s=terminal.applied_receipts,
-            sha256=witness_sha256,
+        )
+
+    def encode_visible_expected(
+        self,
+        raw: object,
+    ) -> tuple[output_cells.TypedOutputEncoding, ...]:
+        if (
+            type(raw) is not list
+            or len(raw) != self._state.case_count
+            or any(type(value) is not str for value in raw)
+        ):
+            raise ValueError("visible expected values must align exact String outputs")
+        return _encode_strings(raw)
+
+    def race_repository_consequence(
+        self,
+        passed_cell: int,
+    ) -> action_bank.RepositoryConsequenceDecisionV1:
+        if passed_cell not in (0, 1):
+            raise ValueError("repository consequence must be one physical bit")
+        feature = (
+            recurrent.FEATURE_EFFECT_MATCH
+            if passed_cell
+            else recurrent.FEATURE_EFFECT_MISMATCH
+        )
+        action, race = recurrent._policy_race(
+            self._policy._policy_excitatory,
+            self._policy._policy_inhibitory,
+            feature,
+        )
+        expected_action = (
+            recurrent.ACTION_COMMIT if passed_cell else recurrent.ACTION_REVISE
+        )
+        if action != expected_action:
+            raise RuntimeError("String consequence policy returned the wrong action")
+        return action_bank.make_repository_consequence_decision_v1(
+            policy_checkpoint_sha256=self._policy.checkpoint_sha256,
+            passed_cell=passed_cell,
+            outcome_key=(
+                action_bank.OUTCOME_COMMIT
+                if passed_cell
+                else action_bank.OUTCOME_REVISE
+            ),
+            physical_race_sha256=race.sha256,
         )
 
     @classmethod
@@ -1306,6 +1328,7 @@ class StringRelationFrontierV2:
             instance._state = state
             instance._terminals = terminals
             instance._materialization_count = 0
+            instance._action_bank = None
             return instance
 
         inputs = tuple(row[0] for row in frozen_cases)
@@ -1428,6 +1451,26 @@ class StringRelationFrontierV2:
         instance._state = state
         instance._terminals = terminals
         instance._materialization_count = 0
+        supported = tuple(item for item in terminals if item.applied_receipts)
+        instance._action_bank = (
+            action_bank.FrozenRepositoryActionBankV1(
+                policy_checkpoint_sha256=policy.checkpoint_sha256,
+                frontier_sha256=state.sha256,
+                root_program_sha256=root.sha256,
+                case_count=len(frozen_cases),
+                records=tuple(
+                    action_bank.make_repository_action_candidate_v1(
+                        frontier_sha256=state.sha256,
+                        program_sha256=item.program.sha256,
+                        physical_outputs=item.physical_outputs,
+                        applied_relation_receipt_sha256s=item.applied_receipts,
+                    )
+                    for item in supported
+                ),
+            )
+            if status == READY and len(supported) == action_bank.CANDIDATE_COUNT
+            else None
+        )
         return instance
 
     def select(
@@ -1445,7 +1488,26 @@ class StringRelationFrontierV2:
         witness = None
         if race.status == semantic_race.SELECTED and race.winner_key is not None:
             terminal = next(item for item in self._terminals if item.key == race.winner_key)
-            witness = self.materialize_selected(self._candidate_record(terminal))
+            compiled = typed_program.compile(terminal.program)
+            self._materialization_count += 1
+            witness = StringRelationWitnessV2(
+                key=terminal.key,
+                program=terminal.program,
+                source=compiled.source,
+                physical_outputs=terminal.physical_outputs,
+                applied_relation_receipt_sha256s=terminal.applied_receipts,
+                sha256=_digest(
+                    b"causal-string-relation-witness-v2",
+                    {
+                        "frontier": self._state.sha256,
+                        "key": terminal.key,
+                        "program": terminal.program.sha256,
+                        "source": _bytes_sha256(compiled.source.encode("utf-8")),
+                        "outputs": _encoding_vector_sha256(terminal.physical_outputs),
+                        "receipts": terminal.applied_receipts,
+                    },
+                ),
+            )
         selection_sha256 = _digest(
             b"causal-string-relation-selection-v2",
             {

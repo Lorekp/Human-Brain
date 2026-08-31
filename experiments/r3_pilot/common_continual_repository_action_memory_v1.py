@@ -21,7 +21,7 @@ from typing import NamedTuple
 
 import numpy as np
 from experiments.g0 import common_event_cells_v1 as common_events
-from experiments.r3_pilot import causal_microrepository_repair_loop_v2 as string_repair
+from experiments.r3_pilot import common_repository_action_bank_v1 as action_bank
 from humanbrain.resting_glif_tier_beam import RETAINED, CompiledRestingGlifTierBeam
 
 SCHEMA = "COMMON_CONTINUAL_REPOSITORY_ACTION_MEMORY_V1"
@@ -40,7 +40,9 @@ OUTCOME_COMMIT = "COMMIT"
 OUTCOME_REVISE = "REVISE"
 
 MAX_CONTEXTS = 2
-ACTION_COUNT = 2
+ACTION_COUNT = action_bank.CANDIDATE_COUNT
+MAX_POLICY_BANKS = 2
+MAX_GLOBAL_ACTIONS = MAX_POLICY_BANKS * ACTION_COUNT
 MAX_PROVENANCE_ROWS = 8
 TRACE_LANES = 12
 EVIDENCE_TICKS = 4
@@ -59,7 +61,7 @@ INHIBITION_CURRENT_PA = 7_000.0
 
 FIXED_CONTROLLER_CELL_COUNT = 6
 MAX_ADDED_CELL_COUNT = 12
-MAX_TRAINABLE_STATE_BYTES = 104
+MAX_TRAINABLE_STATE_BYTES = 16
 MAX_CHECKPOINT_ARRAY_BYTES = 1_544
 MAX_CONTROLLER_CELL_STEPS = 500_000
 
@@ -74,13 +76,12 @@ HELDOUT_INPUT_COUNT = 0
 
 CLAIM_BOUNDARY = (
     "non-adversarial integration-authenticated replay-free exact recurring "
-    "visible-source projection retrieval of one "
-    "policy-bound ordered-relation repository action preference, with provenance "
+    "visible-source projection retrieval across two policy-bound ordered-relation "
+    "repository action banks, with provenance "
     "and revision from authenticated controller consequences; not language "
     "understanding, broad coding, or protected benchmark evidence"
 )
 
-_ACTION_NAMESPACE = b"common-repository-action-abstraction-v1"
 _SOURCE_CONTEXT_NAMESPACE = b"common-repository-source-context-v1"
 _CONTROLLER_RESULT_NAMESPACE = b"common-repository-controller-result-v1"
 _LESSON_BODY_NAMESPACE = b"common-repository-action-lesson-body-v1"
@@ -110,7 +111,9 @@ _CANDIDATE_SELECTOR = CompiledRestingGlifTierBeam.compile(
 _CONSTRUCTION_TOKEN = object()
 
 _CHECKPOINT_ARRAY_NAMES = (
+    "policy-roots",
     "action-roots",
+    "action-policy-indices",
     "context-cues",
     "context-frame-roots",
     "excitatory",
@@ -148,41 +151,7 @@ def _array_sha256(value: np.ndarray) -> str:
 
 
 def _valid_sha256(value: object) -> bool:
-    return bool(
-        type(value) is str
-        and len(value) == 64
-        and all(character in "0123456789abcdef" for character in value)
-    )
-
-
-def canonical_repository_action_receipts_v1(
-    values: Sequence[str],
-) -> tuple[str, ...]:
-    """Preserve authenticated actuation order; do not sort composition."""
-
-    receipts = tuple(values)
-    if (
-        not receipts
-        or len(set(receipts)) != len(receipts)
-        or any(not _valid_sha256(value) for value in receipts)
-    ):
-        raise ValueError("repository action receipts must be distinct SHA-256 roots")
-    return receipts
-
-
-def repository_action_sha256_v1(
-    policy_checkpoint_sha256: str,
-    values: Sequence[str],
-) -> str:
-    if not _valid_sha256(policy_checkpoint_sha256):
-        raise ValueError("repository action requires one policy checkpoint root")
-    return _digest(
-        _ACTION_NAMESPACE,
-        {
-            "policy": policy_checkpoint_sha256,
-            "receipts": canonical_repository_action_receipts_v1(values),
-        },
-    )
+    return action_bank.valid_sha256(value)
 
 
 class RepositorySourceContextV1(NamedTuple):
@@ -253,7 +222,7 @@ class _RepositoryActionConsequenceV1(NamedTuple):
     committed: bool
 
     def authenticate(self) -> None:
-        canonical_repository_action_receipts_v1(
+        action_bank.canonical_repository_action_receipts_v1(
             self.applied_relation_receipt_sha256s
         )
         expected_outcome = OUTCOME_COMMIT if self.passed_cell == 1 else OUTCOME_REVISE
@@ -285,6 +254,7 @@ class PhysicalRepositoryActionLessonV1(NamedTuple):
     controller_committed: bool
     controller_final_passed_cell: int
     frontier_sha256: str
+    action_bank_sha256: str
     action_bank_sha256s: tuple[str, ...]
     candidate_sha256: str
     candidate_action_sha256: str
@@ -307,7 +277,7 @@ class PhysicalRepositoryActionLessonV1(NamedTuple):
     sha256: str
 
     def authenticate(self) -> None:
-        receipts = canonical_repository_action_receipts_v1(
+        receipts = action_bank.canonical_repository_action_receipts_v1(
             self.applied_relation_receipt_sha256s
         )
         bank = tuple(sorted(self.action_bank_sha256s))
@@ -339,6 +309,7 @@ class PhysicalRepositoryActionLessonV1(NamedTuple):
                     self.controller_trajectory_sha256,
                     self.controller_result_sha256,
                     self.frontier_sha256,
+                    self.action_bank_sha256,
                     self.candidate_action_sha256,
                     self.lesson_body_sha256,
                 )
@@ -353,7 +324,10 @@ class PhysicalRepositoryActionLessonV1(NamedTuple):
             or any(not _valid_sha256(value) for value in bank)
             or self.candidate_action_sha256 not in bank
             or self.candidate_action_sha256
-            != repository_action_sha256_v1(self.policy_checkpoint_sha256, receipts)
+            != action_bank.repository_action_sha256_v1(
+                self.policy_checkpoint_sha256,
+                receipts,
+            )
             or type(bodies) is not tuple
             or len(bodies) != self.attempt_count
             or len(set(bodies)) != self.attempt_count
@@ -417,16 +391,15 @@ def controller_result_sha256_v1(
 
 def _seal_physical_repository_action_lessons_v1(
     *,
-    policy_checkpoint_sha256: str,
     controller_trajectory_sha256: str,
     controller_status: str,
-    frontier_sha256: str,
-    action_bank_sha256s: Sequence[str],
+    action_bank: action_bank.FrozenRepositoryActionBankV1,
     source_context: RepositorySourceContextV1,
     consequences: tuple[_RepositoryActionConsequenceV1, ...],
 ) -> tuple[str, tuple[PhysicalRepositoryActionLessonV1, ...]]:
     """Controller-internal seam: seal one actual trajectory without a cycle."""
 
+    action_bank.authenticate()
     source_context.authenticate()
     if type(consequences) is not tuple or not 1 <= len(consequences) <= 2:
         raise TypeError("controller consequences must be one exact nonempty tuple")
@@ -446,13 +419,25 @@ def _seal_physical_repository_action_lessons_v1(
         )
     ):
         raise ValueError("only one complete committed controller trajectory is learnable")
-    bank = tuple(sorted(action_bank_sha256s))
+    policy_checkpoint_sha256 = action_bank.policy_checkpoint_sha256
+    frontier_sha256 = action_bank.frontier_sha256
+    bank = tuple(sorted(action_bank.action_sha256s))
+    candidates = {item.sha256: item for item in action_bank.records}
+    for consequence in consequences:
+        candidate = candidates.get(consequence.candidate_sha256)
+        if (
+            candidate is None
+            or candidate.program_sha256 != consequence.program_sha256
+            or candidate.applied_relation_receipt_sha256s
+            != consequence.applied_relation_receipt_sha256s
+        ):
+            raise ValueError("controller consequence is outside the authenticated bank")
     attempt_count = len(consequences)
     attempt_roots = tuple(item.attempt_sha256 for item in consequences)
     body_payloads: list[dict[str, object]] = []
     body_roots: list[str] = []
     for offset, consequence in enumerate(consequences):
-        receipts = canonical_repository_action_receipts_v1(
+        receipts = action_bank.canonical_repository_action_receipts_v1(
             consequence.applied_relation_receipt_sha256s
         )
         payload: dict[str, object] = {
@@ -463,9 +448,10 @@ def _seal_physical_repository_action_lessons_v1(
             "controller_final_passed_cell": 1,
             "controller_attempt_sha256s": attempt_roots,
             "frontier_sha256": frontier_sha256,
+            "action_bank_sha256": action_bank.sha256,
             "action_bank_sha256s": bank,
             "candidate_sha256": consequence.candidate_sha256,
-            "candidate_action_sha256": repository_action_sha256_v1(
+            "candidate_action_sha256": action_bank.repository_action_sha256_v1(
                 policy_checkpoint_sha256,
                 receipts,
             ),
@@ -630,8 +616,9 @@ def _recall_payload(record: dict[str, object]) -> dict[str, object]:
 
 class RepositoryActionTrainingSummaryV1(NamedTuple):
     mode: str
-    policy_checkpoint_sha256: str
+    policy_checkpoint_sha256s: tuple[str, ...]
     parent_checkpoint_sha256: str | None
+    policy_count: int
     context_count: int
     action_count: int
     provenance_count: int
@@ -707,7 +694,9 @@ class FrozenContinualRepositoryActionMemoryV1:
     """One flat immutable context/action checkpoint; no parent or raw lesson."""
 
     __slots__ = (
+        "_policy_roots",
         "_action_roots",
+        "_action_policy_indices",
         "_checkpoint_sha256",
         "_context_cues",
         "_context_frame_roots",
@@ -727,7 +716,9 @@ class FrozenContinualRepositoryActionMemoryV1:
     def __init__(
         self,
         *,
+        policy_roots: np.ndarray,
         action_roots: np.ndarray,
+        action_policy_indices: np.ndarray,
         context_cues: np.ndarray,
         context_frame_roots: np.ndarray,
         excitatory: np.ndarray,
@@ -745,7 +736,11 @@ class FrozenContinualRepositoryActionMemoryV1:
     ) -> None:
         if construction_token is not _CONSTRUCTION_TOKEN:
             raise TypeError("continual repository action memories are builder-owned")
+        self._policy_roots = _freeze_array(policy_roots, np.uint8)
         self._action_roots = _freeze_array(action_roots, np.uint8)
+        self._action_policy_indices = _freeze_array(
+            action_policy_indices, np.uint8
+        )
         self._context_cues = _freeze_array(context_cues, "<u4")
         self._context_frame_roots = _freeze_array(context_frame_roots, np.uint8)
         self._excitatory = _freeze_array(excitatory, np.uint8)
@@ -776,7 +771,9 @@ class FrozenContinualRepositoryActionMemoryV1:
 
     def _arrays(self) -> tuple[tuple[str, np.ndarray], ...]:
         arrays = (
+            self._policy_roots,
             self._action_roots,
+            self._action_policy_indices,
             self._context_cues,
             self._context_frame_roots,
             self._excitatory,
@@ -827,14 +824,18 @@ class FrozenContinualRepositoryActionMemoryV1:
         arrays = self._arrays()
         if any(array.flags.writeable for _, array in arrays):
             raise RuntimeError("continual repository action checkpoint became mutable")
+        policies = self._policy_roots.shape[0]
+        actions = self._action_roots.shape[0]
         contexts = self._context_cues.shape[0]
         rows = self._provenance_passed.shape[0]
         expected_shapes = (
-            (ACTION_COUNT, 32),
+            (policies, 32),
+            (actions, 32),
+            (actions,),
             (contexts, TRACE_LANES),
             (contexts, 32),
-            (contexts, ACTION_COUNT),
-            (contexts, ACTION_COUNT),
+            (contexts, actions),
+            (contexts, actions),
             (rows,),
             (rows,),
             (rows,),
@@ -847,14 +848,24 @@ class FrozenContinualRepositoryActionMemoryV1:
         if tuple(array.shape for _, array in arrays) != expected_shapes:
             raise RuntimeError("continual repository action checkpoint shape changed")
         if (
-            not 1 <= contexts <= MAX_CONTEXTS
+            not 1 <= policies <= MAX_POLICY_BANKS
+            or actions != policies * ACTION_COUNT
+            or actions > MAX_GLOBAL_ACTIONS
+            or not 1 <= contexts <= MAX_CONTEXTS
             or not 1 <= rows <= MAX_PROVENANCE_ROWS
-            or len({bytes(row) for row in self._action_roots}) != ACTION_COUNT
+            or len({bytes(row) for row in self._policy_roots}) != policies
+            or len({bytes(row) for row in self._action_roots}) != actions
+            or tuple(int(value) for value in self._action_policy_indices)
+            != tuple(
+                policy_index
+                for policy_index in range(policies)
+                for _ in range(ACTION_COUNT)
+            )
             or len({tuple(row) for row in self._context_cues.tolist()}) != contexts
             or np.any(self._excitatory > TICK_CAP)
             or np.any(self._inhibitory > TICK_CAP)
             or np.any(self._provenance_context_indices >= contexts)
-            or np.any(self._provenance_action_indices >= ACTION_COUNT)
+            or np.any(self._provenance_action_indices >= actions)
             or np.any(self._provenance_passed > 1)
             or np.any(self._provenance_ordinals < 1)
             or np.any(self._provenance_ordinals > 2)
@@ -863,21 +874,29 @@ class FrozenContinualRepositoryActionMemoryV1:
             raise RuntimeError("continual repository action checkpoint values changed")
         trainable = int(self._excitatory.nbytes + self._inhibitory.nbytes)
         checkpoint_bytes = sum(array.nbytes for _, array in arrays)
-        provenance = sum(array.nbytes for _, array in arrays[5:])
+        provenance = sum(array.nbytes for _, array in arrays[7:])
         summary = self._summary
+        policy_roots = tuple(bytes(row).hex() for row in self._policy_roots)
         if (
-            not _valid_sha256(summary.policy_checkpoint_sha256)
+            type(summary.mode) is not str
+            or not summary.mode
+            or summary.policy_checkpoint_sha256s != policy_roots
+            or any(not _valid_sha256(value) for value in policy_roots)
             or (
                 summary.parent_checkpoint_sha256 is not None
                 and not _valid_sha256(summary.parent_checkpoint_sha256)
             )
+            or summary.policy_count != policies
             or summary.context_count != contexts
-            or summary.action_count != ACTION_COUNT
+            or summary.action_count != actions
             or summary.provenance_count != rows
+            or not 1 <= summary.new_lesson_count <= 2
             or summary.parent_lesson_replay_count != 0
             or summary.retained_parent_count != 0
             or summary.raw_lesson_retention_count != 0
             or summary.parent_mutation_count != 0
+            or summary.added_cell_count
+            != FIXED_CONTROLLER_CELL_COUNT + contexts + actions
             or summary.added_cell_count > MAX_ADDED_CELL_COUNT
             or summary.trainable_state_bytes != trainable
             or summary.provenance_state_bytes != provenance
@@ -890,58 +909,78 @@ class FrozenContinualRepositoryActionMemoryV1:
         ):
             raise RuntimeError("continual repository action checkpoint authentication failed")
 
-    def recall_attested_source(
+    def recall_attested_context(
         self,
-        source: bytes,
-        frontier: string_repair.StringRelationFrontierV2,
+        context: RepositorySourceContextV1,
+        bank: action_bank.FrozenRepositoryActionBankV1,
         *,
-        candidate_records: Sequence[
-            string_repair.StringRelationCandidateRecordV2
-        ]
+        candidate_records: Sequence[action_bank.RepositoryActionCandidateRecordV1]
         | None = None,
         recall_gate: bool = True,
         context_gate: bool = True,
         candidate_gate: bool = True,
     ) -> RepositoryActionRecallV1:
         self.authenticate()
+        if type(context) is not RepositorySourceContextV1:
+            raise TypeError("repository action recall requires one exact source context")
+        if type(bank) is not action_bank.FrozenRepositoryActionBankV1:
+            raise TypeError("repository action recall requires one exact action bank")
+        context.authenticate()
+        bank.authenticate()
         if any(
             type(gate) is not bool
             for gate in (recall_gate, context_gate, candidate_gate)
         ):
             raise TypeError("repository action recall gates must be exact booleans")
-        context = project_attested_repository_source_v1(source)
-        authentic = tuple(
-            item for item in frontier.candidate_records if item.receipt_cell_support > 0
-        )
+        authentic = bank.records
         supplied = authentic if candidate_records is None else tuple(candidate_records)
         canonical = {item.sha256: item for item in authentic}
         records_authentic = (
             len(supplied) == ACTION_COUNT
             and len(canonical) == ACTION_COUNT
+            and all(
+                type(item) is action_bank.RepositoryActionCandidateRecordV1
+                for item in supplied
+            )
             and len({item.sha256 for item in supplied}) == ACTION_COUNT
-            and all(canonical.get(item.sha256) == item for item in supplied)
+            and all(
+                canonical.get(item.sha256) == item
+                for item in supplied
+            )
         )
-        policy = self._summary.policy_checkpoint_sha256
+        policy = bank.policy_checkpoint_sha256
         candidate_rows: list[
-            tuple[str, string_repair.StringRelationCandidateRecordV2]
+            tuple[str, action_bank.RepositoryActionCandidateRecordV1]
         ] = []
         if records_authentic:
             candidate_rows = sorted(
                 (
-                    repository_action_sha256_v1(
-                        policy,
-                        item.applied_relation_receipt_sha256s,
-                    ),
+                    bank.action_sha256_for(item),
                     item,
                 )
                 for item in supplied
             )
-        memory_actions = tuple(bytes(row).hex() for row in self._action_roots)
+        policy_matches = tuple(
+            index
+            for index, row in enumerate(self._policy_roots)
+            if bytes(row).hex() == policy
+        )
         supplied_actions = tuple(row[0] for row in candidate_rows)
+        memory_action_indices = {
+            bytes(row).hex(): index for index, row in enumerate(self._action_roots)
+        }
+        policy_index = policy_matches[0] if len(policy_matches) == 1 else None
         bank_valid = (
-            frontier.state.policy_checkpoint_sha256 == policy
-            and tuple(sorted(supplied_actions)) == tuple(sorted(memory_actions))
+            records_authentic
+            and policy_index is not None
+            and tuple(sorted(supplied_actions)) == tuple(sorted(bank.action_sha256s))
             and len(set(supplied_actions)) == ACTION_COUNT
+            and all(action in memory_action_indices for action in supplied_actions)
+            and all(
+                int(self._action_policy_indices[memory_action_indices[action]])
+                == policy_index
+                for action in supplied_actions
+            )
         )
 
         arrivals = np.count_nonzero(
@@ -974,6 +1013,8 @@ class FrozenContinualRepositoryActionMemoryV1:
 
         if not recall_gate:
             status = STOP_RECALL_GATE
+        elif not bank_valid:
+            status = STOP_ACTION_BANK
         elif not context_gate:
             status = STOP_CONTEXT_GATE
         elif context_physical.status != RETAINED:
@@ -993,16 +1034,11 @@ class FrozenContinualRepositoryActionMemoryV1:
             != context.frame_sha256
         ):
             status = STOP_CONTEXT_COLLISION
-        elif not bank_valid:
-            status = STOP_ACTION_BANK
         else:
             context_index = context_physical.retained_candidate_cells[0]
-            action_to_index = {
-                bytes(row).hex(): index for index, row in enumerate(self._action_roots)
-            }
             candidates_list: list[RepositoryActionCandidateV1] = []
             for action_sha256, record in candidate_rows:
-                action_index = action_to_index[action_sha256]
+                action_index = memory_action_indices[action_sha256]
                 excitatory = int(self._excitatory[context_index, action_index])
                 inhibitory = int(self._inhibitory[context_index, action_index])
                 address = int.from_bytes(bytes.fromhex(action_sha256)[:4], "little")
@@ -1075,8 +1111,8 @@ class FrozenContinualRepositoryActionMemoryV1:
             source_sha256=context.source_sha256,
             source_context_frame_sha256=context.frame_sha256,
             source_context_trace_cells=context.trace_cells,
-            frontier_sha256=frontier.state.sha256,
-            action_bank_sha256s=tuple(sorted(memory_actions)),
+            frontier_sha256=bank.frontier_sha256,
+            action_bank_sha256s=tuple(sorted(bank.action_sha256s)),
             candidates=candidates,
             selected_candidate_action_sha256=selected_action,
             context_index=context_index,
@@ -1113,6 +1149,7 @@ def _validate_lessons(lessons: tuple[PhysicalRepositoryActionLessonV1, ...]) -> 
         first.controller_attempt_sha256s,
         first.controller_status,
         first.frontier_sha256,
+        first.action_bank_sha256,
         first.action_bank_sha256s,
         first.source_context_sha256,
         first.attempt_count,
@@ -1126,6 +1163,7 @@ def _validate_lessons(lessons: tuple[PhysicalRepositoryActionLessonV1, ...]) -> 
             lesson.controller_attempt_sha256s,
             lesson.controller_status,
             lesson.frontier_sha256,
+            lesson.action_bank_sha256,
             lesson.action_bank_sha256s,
             lesson.source_context_sha256,
             lesson.attempt_count,
@@ -1154,16 +1192,19 @@ def _mutable_arrays(
     bank = tuple(sorted(lessons[0].action_bank_sha256s))
     if any(
         lesson.policy_checkpoint_sha256 != policy
+        or lesson.action_bank_sha256 != lessons[0].action_bank_sha256
         or tuple(sorted(lesson.action_bank_sha256s)) != bank
         for lesson in lessons
     ):
         raise ValueError("repository action lesson policy/bank changed")
     if parent is None:
         arrays = [
+            np.asarray([tuple(bytes.fromhex(policy))], dtype=np.uint8),
             np.asarray(
                 [tuple(bytes.fromhex(value)) for value in bank],
                 dtype=np.uint8,
             ),
+            np.zeros((ACTION_COUNT,), dtype=np.uint8),
             np.empty((0, TRACE_LANES), dtype="<u4"),
             np.empty((0, 32), dtype=np.uint8),
             np.empty((0, ACTION_COUNT), dtype=np.uint8),
@@ -1179,12 +1220,62 @@ def _mutable_arrays(
         ]
         prior_steps = 0
     else:
-        if parent.training_summary.policy_checkpoint_sha256 != policy:
-            raise ValueError("repository action memory policy changed")
-        if tuple(bytes(row).hex() for row in parent._action_roots) != bank:
-            raise ValueError("repository action memory bank changed")
         arrays = [array.copy() for _, array in parent._arrays()]
         prior_steps = parent.training_summary.learning_cell_steps
+        policy_roots = tuple(bytes(row).hex() for row in arrays[0])
+        if policy in policy_roots:
+            policy_index = policy_roots.index(policy)
+            existing_bank = tuple(
+                bytes(arrays[1][index]).hex()
+                for index, owner in enumerate(arrays[2])
+                if int(owner) == policy_index
+            )
+            if existing_bank != bank:
+                raise ValueError("repository action memory policy bank changed")
+        else:
+            if len(policy_roots) >= MAX_POLICY_BANKS:
+                raise ValueError("repository action policy capacity exceeded")
+            existing_actions = {bytes(row).hex() for row in arrays[1]}
+            if existing_actions.intersection(bank):
+                raise ValueError("repository action roots collided across policies")
+            policy_index = len(policy_roots)
+            arrays[0] = np.concatenate(
+                (
+                    arrays[0],
+                    np.frombuffer(bytes.fromhex(policy), dtype=np.uint8)[None, :],
+                ),
+                axis=0,
+            )
+            arrays[1] = np.concatenate(
+                (
+                    arrays[1],
+                    np.asarray(
+                        [tuple(bytes.fromhex(value)) for value in bank],
+                        dtype=np.uint8,
+                    ),
+                ),
+                axis=0,
+            )
+            arrays[2] = np.concatenate(
+                (
+                    arrays[2],
+                    np.full((ACTION_COUNT,), policy_index, dtype=np.uint8),
+                )
+            )
+            arrays[5] = np.concatenate(
+                (
+                    arrays[5],
+                    np.zeros((arrays[5].shape[0], ACTION_COUNT), dtype=np.uint8),
+                ),
+                axis=1,
+            )
+            arrays[6] = np.concatenate(
+                (
+                    arrays[6],
+                    np.zeros((arrays[6].shape[0], ACTION_COUNT), dtype=np.uint8),
+                ),
+                axis=1,
+            )
     return arrays, prior_steps
 
 
@@ -1194,7 +1285,9 @@ def _apply_lessons(
 ) -> tuple[list[np.ndarray], int]:
     arrays, learning_steps = _mutable_arrays(parent, lessons)
     (
+        policy_roots,
         action_roots,
+        action_policy_indices,
         context_cues,
         context_frame_roots,
         excitatory,
@@ -1273,10 +1366,18 @@ def _apply_lessons(
                 axis=0,
             )
             excitatory = np.concatenate(
-                (excitatory, np.zeros((1, ACTION_COUNT), dtype=np.uint8)), axis=0
+                (
+                    excitatory,
+                    np.zeros((1, action_roots.shape[0]), dtype=np.uint8),
+                ),
+                axis=0,
             )
             inhibitory = np.concatenate(
-                (inhibitory, np.zeros((1, ACTION_COUNT), dtype=np.uint8)), axis=0
+                (
+                    inhibitory,
+                    np.zeros((1, action_roots.shape[0]), dtype=np.uint8),
+                ),
+                axis=0,
             )
         action_index = action_indices.get(lesson.candidate_action_sha256)
         if action_index is None:
@@ -1337,7 +1438,9 @@ def _apply_lessons(
     if provenance_passed.shape[0] > MAX_PROVENANCE_ROWS:
         raise ValueError("repository action provenance capacity exceeded")
     return [
+        policy_roots,
         action_roots,
+        action_policy_indices,
         context_cues,
         context_frame_roots,
         excitatory,
@@ -1356,30 +1459,32 @@ def _apply_lessons(
 def _freeze_memory(
     arrays: list[np.ndarray],
     *,
-    policy_checkpoint_sha256: str,
     parent_checkpoint_sha256: str | None,
     mode: str,
     new_lesson_count: int,
     learning_cell_steps: int,
 ) -> FrozenContinualRepositoryActionMemoryV1:
-    contexts = arrays[1].shape[0]
-    rows = arrays[7].shape[0]
-    trainable = int(arrays[3].nbytes + arrays[4].nbytes)
-    provenance = sum(array.nbytes for array in arrays[5:])
+    policies = arrays[0].shape[0]
+    actions = arrays[1].shape[0]
+    contexts = arrays[3].shape[0]
+    rows = arrays[9].shape[0]
+    trainable = int(arrays[5].nbytes + arrays[6].nbytes)
+    provenance = sum(array.nbytes for array in arrays[7:])
     checkpoint_bytes = sum(array.nbytes for array in arrays)
     partial = RepositoryActionTrainingSummaryV1(
         mode=mode,
-        policy_checkpoint_sha256=policy_checkpoint_sha256,
+        policy_checkpoint_sha256s=tuple(bytes(row).hex() for row in arrays[0]),
         parent_checkpoint_sha256=parent_checkpoint_sha256,
+        policy_count=policies,
         context_count=contexts,
-        action_count=ACTION_COUNT,
+        action_count=actions,
         provenance_count=rows,
         new_lesson_count=new_lesson_count,
         parent_lesson_replay_count=0,
         retained_parent_count=0,
         raw_lesson_retention_count=0,
         parent_mutation_count=0,
-        added_cell_count=FIXED_CONTROLLER_CELL_COUNT + contexts + ACTION_COUNT,
+        added_cell_count=FIXED_CONTROLLER_CELL_COUNT + contexts + actions,
         trainable_state_bytes=trainable,
         provenance_state_bytes=provenance,
         checkpoint_array_bytes=checkpoint_bytes,
@@ -1393,19 +1498,21 @@ def _freeze_memory(
     checkpoint = _checkpoint_sha256(partial, frozen_arrays)
     summary = partial._replace(checkpoint_sha256=checkpoint)
     result = FrozenContinualRepositoryActionMemoryV1(
-        action_roots=arrays[0],
-        context_cues=arrays[1],
-        context_frame_roots=arrays[2],
-        excitatory=arrays[3],
-        inhibitory=arrays[4],
-        provenance_context_indices=arrays[5],
-        provenance_action_indices=arrays[6],
-        provenance_passed=arrays[7],
-        provenance_ordinals=arrays[8],
-        provenance_result_roots=arrays[9],
-        provenance_lesson_roots=arrays[10],
-        provenance_program_roots=arrays[11],
-        provenance_consequence_roots=arrays[12],
+        policy_roots=arrays[0],
+        action_roots=arrays[1],
+        action_policy_indices=arrays[2],
+        context_cues=arrays[3],
+        context_frame_roots=arrays[4],
+        excitatory=arrays[5],
+        inhibitory=arrays[6],
+        provenance_context_indices=arrays[7],
+        provenance_action_indices=arrays[8],
+        provenance_passed=arrays[9],
+        provenance_ordinals=arrays[10],
+        provenance_result_roots=arrays[11],
+        provenance_lesson_roots=arrays[12],
+        provenance_program_roots=arrays[13],
+        provenance_consequence_roots=arrays[14],
         summary=summary,
         construction_token=_CONSTRUCTION_TOKEN,
     )
@@ -1425,7 +1532,6 @@ def start_continual_repository_action_memory_v1(
     arrays, learning_steps = _apply_lessons(None, lessons)
     return _freeze_memory(
         arrays,
-        policy_checkpoint_sha256=lessons[0].policy_checkpoint_sha256,
         parent_checkpoint_sha256=None,
         mode="INITIAL_REPOSITORY_ACTION_MEMORY",
         new_lesson_count=len(lessons),
@@ -1453,7 +1559,6 @@ def advance_continual_repository_action_memory_v1(
     arrays, learning_steps = _apply_lessons(parent, new_lessons)
     successor = _freeze_memory(
         arrays,
-        policy_checkpoint_sha256=parent.training_summary.policy_checkpoint_sha256,
         parent_checkpoint_sha256=parent_root,
         mode="REPLAY_FREE_REPOSITORY_ACTION_ADVANCE",
         new_lesson_count=len(new_lessons),
@@ -1500,9 +1605,7 @@ __all__ = [
     "RepositoryActionTrainingSummaryV1",
     "RepositorySourceContextV1",
     "advance_continual_repository_action_memory_v1",
-    "canonical_repository_action_receipts_v1",
     "controller_result_sha256_v1",
     "project_attested_repository_source_v1",
-    "repository_action_sha256_v1",
     "start_continual_repository_action_memory_v1",
 ]

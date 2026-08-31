@@ -163,7 +163,7 @@ def test_recurrent_fragment_relations_compose_two_fresh_selected_edits() -> None
     assert frontier.state.work.committed_edits <= recurrent.MAX_COMMITTED_EDITS
     assert frontier.state.work.revisions == 0
     assert frontier.state.work.unselected_splice_executions == 0
-    assert frontier.state.work.terminal_case_executions == 2 * len(fresh_cases)
+    assert frontier.state.work.terminal_case_executions == 3 * len(fresh_cases)
     assert frontier.source_materialization_count == 0
 
     no_match = frontier.select(_encoded((1, 2, 3, 4, 5)))
