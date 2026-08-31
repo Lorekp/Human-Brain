@@ -376,24 +376,145 @@ fn push_bounded<T>(
 /// sorted-run merges.
 struct IntervalLedger {
     gids: Vec<u64>, // ascending, unique
-    flags: Vec<u8>, // parallel accumulated SEEN_* bits
+    /// Three membership bitplanes per 64 parallel GIDs: resident, updated,
+    /// and spiking. Grouping the planes in one word record retains one Vec
+    /// header while reducing the former byte-per-GID allocation to 3/8 byte
+    /// per reserved GID (rounded to whole 64-GID words).
+    flag_words: Vec<[u64; 3]>,
 }
 
 impl IntervalLedger {
+    const WORD_BITS: usize = u64::BITS as usize;
+
+    #[inline]
+    fn flag_word_count(entry_count: usize) -> usize {
+        entry_count / Self::WORD_BITS + usize::from(entry_count % Self::WORD_BITS != 0)
+    }
+
     fn try_new(capacity: usize) -> Result<Self, u32> {
-        let mut gids = Vec::new();
-        gids.try_reserve_exact(capacity)
-            .map_err(|_| PROCEDURAL_ALLOCATION)?;
-        let mut flags = Vec::new();
-        flags
-            .try_reserve_exact(capacity)
-            .map_err(|_| PROCEDURAL_ALLOCATION)?;
-        Ok(Self { gids, flags })
+        Ok(Self {
+            gids: reserved_vec(capacity)?,
+            flag_words: reserved_vec(Self::flag_word_count(capacity))?,
+        })
     }
 
     fn clear(&mut self) {
         self.gids.clear();
-        self.flags.clear();
+        self.flag_words.clear();
+    }
+
+    #[inline]
+    fn entry_flags(&self, index: usize) -> u8 {
+        debug_assert!(index < self.gids.len());
+        let bit = 1u64 << (index % Self::WORD_BITS);
+        let word = self.flag_words[index / Self::WORD_BITS];
+        u8::from(word[0] & bit != 0) * SEEN_RESIDENT
+            | u8::from(word[1] & bit != 0) * SEEN_UPDATED
+            | u8::from(word[2] & bit != 0) * SEEN_SPIKING
+    }
+
+    #[inline]
+    fn set_entry_flags(&mut self, index: usize, flags: u8) {
+        debug_assert!(index < self.gids.len());
+        debug_assert_eq!(flags & !(SEEN_RESIDENT | SEEN_UPDATED | SEEN_SPIKING), 0);
+        let bit = 1u64 << (index % Self::WORD_BITS);
+        let word = &mut self.flag_words[index / Self::WORD_BITS];
+        for (plane, flag) in [SEEN_RESIDENT, SEEN_UPDATED, SEEN_SPIKING]
+            .into_iter()
+            .enumerate()
+        {
+            if flags & flag != 0 {
+                word[plane] |= bit;
+            } else {
+                word[plane] &= !bit;
+            }
+        }
+    }
+
+    #[inline]
+    fn or_entry_flags(&mut self, index: usize, flags: u8) {
+        debug_assert!(index < self.gids.len());
+        debug_assert_eq!(flags & !(SEEN_RESIDENT | SEEN_UPDATED | SEEN_SPIKING), 0);
+        let bit = 1u64 << (index % Self::WORD_BITS);
+        let word = &mut self.flag_words[index / Self::WORD_BITS];
+        if flags & SEEN_RESIDENT != 0 {
+            word[0] |= bit;
+        }
+        if flags & SEEN_UPDATED != 0 {
+            word[1] |= bit;
+        }
+        if flags & SEEN_SPIKING != 0 {
+            word[2] |= bit;
+        }
+    }
+
+    /// Insert one parallel flag entry while shifting the packed suffix by one
+    /// bit. GID insertion still dominates at eight bytes per shifted entry;
+    /// the flag move touches only three u64 words per 64 shifted entries.
+    fn insert_entry_flags(&mut self, index: usize, old_len: usize, flags: u8) {
+        debug_assert_eq!(self.gids.len(), old_len + 1);
+        debug_assert!(index <= old_len);
+        let old_word_count = Self::flag_word_count(old_len);
+        let new_word_count = Self::flag_word_count(old_len + 1);
+        debug_assert!(new_word_count <= self.flag_words.capacity());
+        self.flag_words.resize(new_word_count, [0; 3]);
+
+        let start_word = index / Self::WORD_BITS;
+        let start_bit = index % Self::WORD_BITS;
+        let lower_mask = if start_bit == 0 {
+            0
+        } else {
+            (1u64 << start_bit) - 1
+        };
+        for plane in 0..3 {
+            let mut carry = 0u64;
+            for word_index in start_word..old_word_count {
+                let original = self.flag_words[word_index][plane];
+                let preserved = if word_index == start_word {
+                    original & lower_mask
+                } else {
+                    0
+                };
+                let shifted = if word_index == start_word {
+                    original & !lower_mask
+                } else {
+                    original
+                };
+                self.flag_words[word_index][plane] = preserved | (shifted << 1) | carry;
+                carry = shifted >> (Self::WORD_BITS - 1);
+            }
+            if new_word_count > old_word_count {
+                self.flag_words[old_word_count][plane] = carry;
+            }
+        }
+        self.set_entry_flags(index, flags);
+    }
+
+    #[inline]
+    fn resize_flag_words(&mut self, entry_count: usize) {
+        let words = Self::flag_word_count(entry_count);
+        debug_assert!(words <= self.flag_words.capacity());
+        self.flag_words.resize(words, [0; 3]);
+    }
+
+    #[inline]
+    fn flag_capacity_bytes(&self) -> usize {
+        self.flag_words.capacity() * size_of::<[u64; 3]>()
+    }
+
+    #[cfg(test)]
+    fn flags_image(&self) -> Vec<u8> {
+        (0..self.gids.len())
+            .map(|index| self.entry_flags(index))
+            .collect()
+    }
+
+    #[cfg(test)]
+    fn push_entry_for_test(&mut self, gid: u64, flags: u8) {
+        debug_assert!(self.gids.last().is_none_or(|last| *last < gid));
+        let old_len = self.gids.len();
+        self.gids.push(gid);
+        self.insert_entry_flags(old_len, old_len, flags);
     }
 
     /// Exact single-GID mark preserving the previous fail-stop timing: the
@@ -401,15 +522,16 @@ impl IntervalLedger {
     fn mark_single(&mut self, gid: u64, flag: u8, capacity: usize) -> Result<(), u32> {
         match self.gids.binary_search(&gid) {
             Ok(index) => {
-                self.flags[index] |= flag;
+                self.or_entry_flags(index, flag);
                 Ok(())
             }
             Err(insertion) => {
                 if self.gids.len() >= capacity || self.gids.len() >= self.gids.capacity() {
                     return Err(PROCEDURAL_DISTINCT_CAPACITY);
                 }
+                let old_len = self.gids.len();
                 self.gids.insert(insertion, gid);
-                self.flags.insert(insertion, flag);
+                self.insert_entry_flags(insertion, old_len, flag);
                 Ok(())
             }
         }
@@ -427,7 +549,7 @@ impl IntervalLedger {
         capacity: usize,
     ) -> Result<(), u32> {
         if let Ok(index) = self.gids.binary_search(&gid) {
-            self.flags[index] |= flag;
+            self.or_entry_flags(index, flag);
             return Ok(());
         }
         if let Some(last) = run.last() {
@@ -490,7 +612,10 @@ impl IntervalLedger {
             return;
         }
 
-        debug_assert_eq!(self.gids.len(), self.flags.len());
+        debug_assert_eq!(
+            self.flag_words.len(),
+            Self::flag_word_count(self.gids.len())
+        );
         debug_assert!(self.gids.windows(2).all(|pair| pair[0] < pair[1]));
         debug_assert!(run.windows(2).all(|pair| pair[0] < pair[1]));
 
@@ -512,60 +637,75 @@ impl IntervalLedger {
 
         let merged_len = old_len + run.len() - overlap;
         debug_assert!(merged_len <= self.gids.capacity());
-        debug_assert!(merged_len <= self.flags.capacity());
+        debug_assert!(Self::flag_word_count(merged_len) <= self.flag_words.capacity());
         self.gids.resize(merged_len, 0);
-        self.flags.resize(merged_len, 0);
+        self.resize_flag_words(merged_len);
 
         i = old_len;
         j = run.len();
         let mut write = merged_len;
         while i > 0 && j > 0 {
             let old_gid = self.gids[i - 1];
-            let old_flags = self.flags[i - 1];
+            let old_flags = self.entry_flags(i - 1);
             match old_gid.cmp(&run[j - 1]) {
                 Ordering::Greater => {
                     i -= 1;
                     write -= 1;
                     self.gids[write] = old_gid;
-                    self.flags[write] = old_flags;
+                    self.set_entry_flags(write, old_flags);
                 }
                 Ordering::Less => {
                     j -= 1;
                     write -= 1;
                     self.gids[write] = run[j];
-                    self.flags[write] = flag;
+                    self.set_entry_flags(write, flag);
                 }
                 Ordering::Equal => {
                     i -= 1;
                     j -= 1;
                     write -= 1;
                     self.gids[write] = old_gid;
-                    self.flags[write] = old_flags | flag;
+                    self.set_entry_flags(write, old_flags | flag);
                 }
             }
         }
         while i > 0 {
             let old_gid = self.gids[i - 1];
-            let old_flags = self.flags[i - 1];
+            let old_flags = self.entry_flags(i - 1);
             i -= 1;
             write -= 1;
             self.gids[write] = old_gid;
-            self.flags[write] = old_flags;
+            self.set_entry_flags(write, old_flags);
         }
         while j > 0 {
             j -= 1;
             write -= 1;
             self.gids[write] = run[j];
-            self.flags[write] = flag;
+            self.set_entry_flags(write, flag);
         }
         debug_assert_eq!(write, 0);
     }
 
     fn count_flags(&self, mask: u8) -> usize {
-        self.flags
-            .iter()
-            .filter(|entry_flags| **entry_flags & mask != 0)
-            .count()
+        let mut count = 0usize;
+        let trailing_bits = self.gids.len() % Self::WORD_BITS;
+        for (word_index, word) in self.flag_words.iter().enumerate() {
+            let mut selected = 0u64;
+            if mask & SEEN_RESIDENT != 0 {
+                selected |= word[0];
+            }
+            if mask & SEEN_UPDATED != 0 {
+                selected |= word[1];
+            }
+            if mask & SEEN_SPIKING != 0 {
+                selected |= word[2];
+            }
+            if word_index + 1 == self.flag_words.len() && trailing_bits != 0 {
+                selected &= (1u64 << trailing_bits) - 1;
+            }
+            count += selected.count_ones() as usize;
+        }
+        count
     }
 }
 
@@ -607,7 +747,7 @@ impl RuntimeScratch {
             + self.row_targets.capacity() * size_of::<u64>()
             + self.row_used.capacity() * size_of::<u64>()
             + self.interval_ledger.gids.capacity() * size_of::<u64>()
-            + self.interval_ledger.flags.capacity() * size_of::<u8>()
+            + self.interval_ledger.flag_capacity_bytes()
             + self.gid_run.capacity() * size_of::<u64>()
             + self.dormant_values.capacity() * size_of::<f64>()
     }
@@ -2521,6 +2661,7 @@ mod tests {
         humanbrain_procedural_runtime_snapshot, CellState, DormantEntry, GlifConfig,
         ProceduralConfig, ProceduralCounters, ProceduralEventRecord, ProceduralResidentRecord,
         ProceduralRuntime, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL, PROCEDURAL_STEPPING_FULL_TOUCH,
+        SEEN_RESIDENT, SEEN_SPIKING, SEEN_UPDATED,
     };
     use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -3314,7 +3455,7 @@ mod tests {
         );
 
         const CAPACITY: usize = 65_536;
-        const LEGACY_PAYLOAD_BYTES: usize = 6_895_464;
+        const LEGACY_PAYLOAD_BYTES: usize = 6_854_504;
         let mut payload_config = ep_config(
             (CAPACITY + 1) as u64,
             PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
@@ -4260,6 +4401,183 @@ mod tests {
     }
 
     #[test]
+    fn interval_ledger_packed_flag_words_match_byte_oracle_across_boundaries() {
+        fn oracle_mark(
+            oracle: &mut BTreeMap<u64, u8>,
+            gid: u64,
+            flag: u8,
+            capacity: usize,
+        ) -> Result<(), u32> {
+            if let Some(flags) = oracle.get_mut(&gid) {
+                *flags |= flag;
+                return Ok(());
+            }
+            if oracle.len() >= capacity {
+                return Err(super::PROCEDURAL_DISTINCT_CAPACITY);
+            }
+            oracle.insert(gid, flag);
+            Ok(())
+        }
+
+        fn assert_oracle(ledger: &super::IntervalLedger, oracle: &BTreeMap<u64, u8>) {
+            assert_eq!(ledger.gids, oracle.keys().copied().collect::<Vec<_>>());
+            assert_eq!(
+                ledger.flags_image(),
+                oracle.values().copied().collect::<Vec<_>>()
+            );
+            for mask in 0..=(SEEN_RESIDENT | SEEN_UPDATED | SEEN_SPIKING) {
+                assert_eq!(
+                    ledger.count_flags(mask),
+                    oracle.values().filter(|flags| **flags & mask != 0).count(),
+                    "mask {mask}"
+                );
+            }
+        }
+
+        const CAPACITIES: [usize; 7] = [0, 1, 63, 64, 65, 129, 130];
+        const FLAGS: [u8; 3] = [SEEN_RESIDENT, SEEN_UPDATED, SEEN_SPIKING];
+        for capacity in CAPACITIES {
+            let expected_words = super::IntervalLedger::flag_word_count(capacity);
+            let mut ledger = super::IntervalLedger::try_new(capacity).unwrap();
+            assert_eq!(ledger.gids.capacity(), capacity);
+            assert_eq!(ledger.flag_words.capacity(), expected_words);
+            assert_eq!(
+                ledger.flag_capacity_bytes(),
+                expected_words * std::mem::size_of::<[u64; 3]>()
+            );
+            let mut oracle = BTreeMap::new();
+
+            // Even GIDs append first; inserting the odd GIDs afterward shifts
+            // suffixes from every odd bit offset, including carries across
+            // each 63/64/65 and 129/130 word boundary.
+            let insertion_order = (0..capacity).step_by(2).chain((1..capacity).step_by(2));
+            for index in insertion_order {
+                let gid = (index * 2) as u64;
+                let flag = FLAGS[index % FLAGS.len()];
+                assert_eq!(
+                    ledger.mark_single(gid, flag, capacity),
+                    oracle_mark(&mut oracle, gid, flag, capacity)
+                );
+                assert_oracle(&ledger, &oracle);
+            }
+            // Existing members remain markable at full capacity, with all
+            // composite masks represented exactly by the three planes.
+            for index in 0..capacity {
+                let gid = (index * 2) as u64;
+                let flag = FLAGS[(index + 1) % FLAGS.len()];
+                assert_eq!(
+                    ledger.mark_single(gid, flag, capacity),
+                    oracle_mark(&mut oracle, gid, flag, capacity)
+                );
+                assert_oracle(&ledger, &oracle);
+            }
+            let overflow_gid = (capacity * 2 + 1) as u64;
+            assert_eq!(
+                ledger.mark_single(overflow_gid, SEEN_RESIDENT, capacity),
+                Err(super::PROCEDURAL_DISTINCT_CAPACITY)
+            );
+            assert_eq!(
+                oracle_mark(&mut oracle, overflow_gid, SEEN_RESIDENT, capacity),
+                Err(super::PROCEDURAL_DISTINCT_CAPACITY)
+            );
+            assert_oracle(&ledger, &oracle);
+
+            // Clear retains allocations; an overlapping full-universe merge
+            // exercises new, old, and equal arms plus OR accumulation.
+            ledger.clear();
+            oracle.clear();
+            for gid in (0..capacity as u64).step_by(2) {
+                let flag = if gid % 4 == 0 {
+                    SEEN_RESIDENT
+                } else {
+                    SEEN_SPIKING
+                };
+                ledger.mark_single(gid, flag, capacity).unwrap();
+                oracle_mark(&mut oracle, gid, flag, capacity).unwrap();
+            }
+            let full_run: Vec<_> = (0..capacity as u64).collect();
+            assert!(ledger.can_fit_run(&full_run, capacity));
+            ledger.merge_run_in_place(&full_run, SEEN_UPDATED);
+            for gid in &full_run {
+                oracle_mark(&mut oracle, *gid, SEEN_UPDATED, capacity).unwrap();
+            }
+            let overlap_run: Vec<_> = (0..capacity as u64).step_by(3).collect();
+            assert!(ledger.can_fit_run(&overlap_run, capacity));
+            ledger.merge_run_in_place(&overlap_run, SEEN_SPIKING);
+            for gid in &overlap_run {
+                oracle_mark(&mut oracle, *gid, SEEN_SPIKING, capacity).unwrap();
+            }
+            assert_oracle(&ledger, &oracle);
+            assert!(!ledger.can_fit_run(&[overflow_gid], capacity));
+
+            // Stage admission accepts exactly the last available distinct GID
+            // (and its repeat), then rejects the first following offender.
+            ledger.clear();
+            for gid in 0..capacity.saturating_sub(1) as u64 {
+                ledger.mark_single(gid, SEEN_RESIDENT, capacity).unwrap();
+            }
+            let mut staged = Vec::with_capacity(capacity.max(1));
+            let final_gid = 1_000_000u64 + capacity as u64;
+            if capacity == 0 {
+                assert_eq!(
+                    ledger.stage_single_in_run(final_gid, SEEN_RESIDENT, &mut staged, capacity),
+                    Err(super::PROCEDURAL_DISTINCT_CAPACITY)
+                );
+            } else {
+                assert_eq!(
+                    ledger.stage_single_in_run(final_gid, SEEN_RESIDENT, &mut staged, capacity),
+                    Ok(())
+                );
+                assert_eq!(
+                    ledger.stage_single_in_run(final_gid, SEEN_RESIDENT, &mut staged, capacity),
+                    Ok(())
+                );
+                assert_eq!(staged, vec![final_gid]);
+                assert_eq!(
+                    ledger.stage_single_in_run(final_gid + 1, SEEN_RESIDENT, &mut staged, capacity),
+                    Err(super::PROCEDURAL_DISTINCT_CAPACITY)
+                );
+            }
+        }
+
+        const DISTINCT: usize = 65_536;
+        const PREVIOUS_PAYLOAD_BYTES: usize = 6_371_152;
+        let mut config = ep_config(
+            (DISTINCT + 1) as u64,
+            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
+        );
+        config.resident_capacity = DISTINCT;
+        config.event_capacity = 64;
+        config.spike_capacity = 64;
+        config.interval_distinct_capacity = DISTINCT;
+        let decay = [0.5, 0.5];
+        let runtime = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
+        let words = super::IntervalLedger::flag_word_count(DISTINCT);
+        let old_flag_bytes = DISTINCT * std::mem::size_of::<u8>();
+        let new_flag_bytes = words * std::mem::size_of::<[u64; 3]>();
+        let header_delta = std::mem::size_of::<super::IntervalLedger>()
+            - std::mem::size_of::<Vec<u64>>()
+            - std::mem::size_of::<Vec<u8>>();
+        let reclaimed_bytes = old_flag_bytes - new_flag_bytes - header_delta;
+        assert_eq!(header_delta, 0);
+        assert_eq!(reclaimed_bytes, 40_960);
+        assert_eq!(
+            runtime.payload_bytes() + reclaimed_bytes,
+            PREVIOUS_PAYLOAD_BYTES
+        );
+        eprintln!(
+            "packed-ledger-flags current_payload_bytes={} old_flag_bytes={} new_flag_bytes={} reclaimed_bytes={} reclaimed_at_1m_bytes={}",
+            runtime.payload_bytes(),
+            old_flag_bytes,
+            new_flag_bytes,
+            reclaimed_bytes,
+            1_000_000usize
+                - super::IntervalLedger::flag_word_count(1_000_000)
+                    * std::mem::size_of::<[u64; 3]>()
+        );
+    }
+
+    #[test]
     fn interval_ledger_in_place_merge_matches_oracle_and_reclaims_duplicate_capacity() {
         fn merge_forward_oracle(
             source: &super::IntervalLedger,
@@ -4273,29 +4591,28 @@ mod tests {
             while i < source.gids.len() && j < run.len() {
                 match source.gids[i].cmp(&run[j]) {
                     std::cmp::Ordering::Less => {
-                        output.gids.push(source.gids[i]);
-                        output.flags.push(source.flags[i]);
+                        output.push_entry_for_test(source.gids[i], source.entry_flags(i));
                         i += 1;
                     }
                     std::cmp::Ordering::Greater => {
-                        output.gids.push(run[j]);
-                        output.flags.push(flag);
+                        output.push_entry_for_test(run[j], flag);
                         j += 1;
                     }
                     std::cmp::Ordering::Equal => {
-                        output.gids.push(source.gids[i]);
-                        output.flags.push(source.flags[i] | flag);
+                        output.push_entry_for_test(source.gids[i], source.entry_flags(i) | flag);
                         i += 1;
                         j += 1;
                     }
                 }
             }
-            output.gids.extend_from_slice(&source.gids[i..]);
-            output.flags.extend_from_slice(&source.flags[i..]);
-            output.gids.extend_from_slice(&run[j..]);
-            output
-                .flags
-                .extend(std::iter::repeat_n(flag, run.len() - j));
+            while i < source.gids.len() {
+                output.push_entry_for_test(source.gids[i], source.entry_flags(i));
+                i += 1;
+            }
+            while j < run.len() {
+                output.push_entry_for_test(run[j], flag);
+                j += 1;
+            }
         }
 
         const EXISTING: usize = 16_384;
@@ -4336,7 +4653,7 @@ mod tests {
         assert!(merged.can_fit_run(&run, CAPACITY));
         merged.merge_run_in_place(&run, super::SEEN_UPDATED);
         assert_eq!(merged.gids, oracle.gids);
-        assert_eq!(merged.flags, oracle.flags);
+        assert_eq!(merged.flags_image(), oracle.flags_image());
         assert!(merged.gids.windows(2).all(|pair| pair[0] < pair[1]));
 
         // Account the removed persistent allocation at a representative
@@ -4355,15 +4672,19 @@ mod tests {
         let runtime = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
         let ledger_capacity_bytes = runtime.scratch.interval_ledger.gids.capacity()
             * std::mem::size_of::<u64>()
-            + runtime.scratch.interval_ledger.flags.capacity() * std::mem::size_of::<u8>();
+            + runtime.scratch.interval_ledger.flag_capacity_bytes();
         let reclaimed_bytes = ledger_capacity_bytes + std::mem::size_of::<super::IntervalLedger>();
+        let flag_words = super::IntervalLedger::flag_word_count(PAYLOAD_DISTINCT);
         assert_eq!(
             ledger_capacity_bytes,
-            PAYLOAD_DISTINCT * (std::mem::size_of::<u64>() + std::mem::size_of::<u8>())
+            PAYLOAD_DISTINCT * std::mem::size_of::<u64>()
+                + flag_words * std::mem::size_of::<[u64; 3]>()
         );
         assert_eq!(
             reclaimed_bytes,
-            PAYLOAD_DISTINCT * 9 + std::mem::size_of::<super::IntervalLedger>()
+            PAYLOAD_DISTINCT * std::mem::size_of::<u64>()
+                + flag_words * std::mem::size_of::<[u64; 3]>()
+                + std::mem::size_of::<super::IntervalLedger>()
         );
 
         let time_oracle = || {
@@ -4411,7 +4732,10 @@ mod tests {
             SAMPLES,
             runtime.payload_bytes(),
             reclaimed_bytes,
-            1_000_000usize * 9 + std::mem::size_of::<super::IntervalLedger>(),
+            1_000_000usize * std::mem::size_of::<u64>()
+                + super::IntervalLedger::flag_word_count(1_000_000)
+                    * std::mem::size_of::<[u64; 3]>()
+                + std::mem::size_of::<super::IntervalLedger>(),
         );
     }
 
@@ -4595,8 +4919,8 @@ mod tests {
                 canonical_runtime.scratch.interval_ledger.gids
             );
             assert_eq!(
-                indexed_runtime.scratch.interval_ledger.flags,
-                canonical_runtime.scratch.interval_ledger.flags
+                indexed_runtime.scratch.interval_ledger.flags_image(),
+                canonical_runtime.scratch.interval_ledger.flags_image()
             );
             assert_eq!(
                 indexed_runtime.payload_bytes(),
