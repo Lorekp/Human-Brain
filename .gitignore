@@ -1,4 +1,5 @@
 .hf-cache/
+.knowledge-cache/
 .models/
 .native-cache/
 .mswea-config/
