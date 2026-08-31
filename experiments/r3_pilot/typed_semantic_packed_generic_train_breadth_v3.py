@@ -468,19 +468,20 @@ class _ListIntBuilder(full_typed._Builder):
                 root_candidate=False,
                 constraint_kind=("nonzero-right" if 0 in self.literals else None),
             )
-            for production, children in (
-                ("less-than-added-literal", (added, literal)),
-                ("less-than-literal-added", (literal, added)),
-            ):
-                predicate = self._family(
-                    production,
-                    children,
-                    context_role="bound",
-                    environment_type_labels=("Int", "List[Int]"),
-                    result_type_label="Bool",
-                    root_candidate=False,
-                )
-                self._predicate_count(predicate, collection)
+            if added.root_id is not None:
+                for production, children in (
+                    ("less-than-added-literal", (added, literal)),
+                    ("less-than-literal-added", (literal, added)),
+                ):
+                    predicate = self._family(
+                        production,
+                        children,
+                        context_role="bound",
+                        environment_type_labels=("Int", "List[Int]"),
+                        result_type_label="Bool",
+                        root_candidate=False,
+                    )
+                    self._predicate_count(predicate, collection)
 
             if self.max_ast_cost >= 9:
                 lower_bounded = self._family(

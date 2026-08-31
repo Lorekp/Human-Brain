@@ -454,13 +454,20 @@ class _SemanticPartitionWorkset(v3._SemanticPartitionWorkset):
                     [],
                 )
             )
-        if not groups:
+        family_root: str | None
+        if groups:
+            family_root = self._aggregate_plan(
+                "family-coverage",
+                plan.schema,
+                group_plan_ids,
+            )
+        elif plan.normalization_id is not None and normalization_recipes:
+            # Every operator tuple canonicalized to an existing child.  Retain
+            # only the authenticated normalization proof; publishing a fresh
+            # semantic group here would create a bogus duplicate program.
+            family_root = None
+        else:
             raise RuntimeError("semantic family produced no supported proof plan")
-        family_root = self._aggregate_plan(
-            "family-coverage",
-            plan.schema,
-            group_plan_ids,
-        )
 
         normalization: v2.PackedNormalizationRecord | None = None
         if plan.normalization_id is not None:
