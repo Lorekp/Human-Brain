@@ -415,6 +415,46 @@ impl IntervalLedger {
         }
     }
 
+    /// Stage one canonically ordered GID for a later sorted-run merge. Existing
+    /// ledger members are marked immediately; absent members append to `run`
+    /// without shifting either ledger vector. `run` is step-local, ascending,
+    /// unique, and backed by already-accounted runtime scratch.
+    fn stage_single_in_run(
+        &mut self,
+        gid: u64,
+        flag: u8,
+        run: &mut Vec<u64>,
+        capacity: usize,
+    ) -> Result<(), u32> {
+        if let Ok(index) = self.gids.binary_search(&gid) {
+            self.flags[index] |= flag;
+            return Ok(());
+        }
+        if let Some(last) = run.last() {
+            match last.cmp(&gid) {
+                Ordering::Less => {}
+                Ordering::Equal => return Ok(()),
+                // Due events are delivered in canonical target order. Treat a
+                // broken internal ordering invariant as fail-stop rather than
+                // silently constructing a non-mergeable run.
+                Ordering::Greater => return Err(PROCEDURAL_INVALID),
+            }
+        }
+        let pending_distinct = self
+            .gids
+            .len()
+            .checked_add(run.len())
+            .ok_or(PROCEDURAL_DISTINCT_CAPACITY)?;
+        if pending_distinct >= capacity || pending_distinct >= self.gids.capacity() {
+            return Err(PROCEDURAL_DISTINCT_CAPACITY);
+        }
+        if run.len() >= run.capacity() {
+            return Err(PROCEDURAL_ALLOCATION);
+        }
+        run.push(gid);
+        Ok(())
+    }
+
     /// True when an ascending unique run certainly fits within `capacity`.
     /// The cheap size upper bound answers immediately in the common case;
     /// only a near-full ledger pays the exact new-GID walk.
@@ -712,23 +752,15 @@ pub struct ProceduralRuntime {
     current_step: u64,
     /// Long-lived resident cells in ascending GID order.
     residents: Vec<CellState>,
-    /// Cells materialized by the current step's deliveries. Kept separate so
-    /// an insertion costs O(1) instead of shifting the sorted array; they are
-    /// merged back during the step's fused update pass.
+    /// Cells materialized by the current step's deliveries. Production events
+    /// arrive in canonical target order, so this is already an ascending unique
+    /// run and insertion is O(1); it is merged back during the fused pass.
     staged: Vec<CellState>,
-    /// Delivery-phase membership index for `staged`: gid -> slot offset into
-    /// the `staged` Vec (`cpu-seams-spec.md` Seam B). Valid ONLY while
-    /// `staged` accumulates between fused passes -- after the fused pass of
-    /// step t-1 cleared it, until `absorb_staged` of step t runs (invariant
-    /// D2). The fused pass sorts `staged`, invalidating slots; no
-    /// `apply_event` can run between that sort and the clearing absorb (same
-    /// step, same `&mut self` call chain), and a poison abort in that window
-    /// is terminal (`advance` fails closed), so stale contents are never
-    /// read: do NOT add a reader outside the delivery phase, and do not
-    /// re-key after the sort -- scoping is the fix. Emptied only by
-    /// `absorb_staged`, the single removal path (nothing ever removes one
-    /// staged entry). Never iterated for semantics; pure lookup structure
-    /// replacing the O(S) `.position()` scan in `apply_event` with O(log S).
+    /// GID -> slot reference index retained for the in-module noncanonical
+    /// scalar oracle and its payload/layout parity checks. The shipped advance
+    /// path leaves it empty: canonical same-target events are consecutive and
+    /// resolve against `staged.last()` in O(1), while new targets append in
+    /// ascending order. Never iterated for semantics.
     staged_index: BTreeMap<u64, u32>,
     /// Pending future events. Slots `[0..pending_head)` are consumed; the
     /// live queue is `[pending_head..)` in canonical ascending key order.
@@ -829,11 +861,9 @@ impl ProceduralRuntime {
                 * (size_of::<u64>()
                     + size_of::<DormantEntry>()
                     + 4 * size_of::<usize>())
-            // Conservative B-tree node estimate for the delivery-phase
-            // staged membership index (key + value plus order and parent
-            // linkage), styled after the dormant-store term above. The term
-            // is len-deterministic: zero outside a delivery phase and
-            // exactly one entry per staged cell during one.
+            // Preserve the established reference-path B-tree accounting term.
+            // It is identically zero in the shipped canonical advance path,
+            // including every successful counter checkpoint.
             + self
                 .staged_index
                 .len()
@@ -867,12 +897,23 @@ impl ProceduralRuntime {
     /// past every unmerged slot (`write == read + staged_index` is kept as an
     /// invariant), so no survivor is ever written out of bounds and no
     /// not-yet-read resident is ever clobbered.
+    #[cfg(test)]
     fn absorb_staged(&mut self) -> Result<(), u32> {
+        self.absorb_staged_with_order::<false>()
+    }
+
+    fn absorb_staged_with_order<const CANONICAL_STAGED_RUN: bool>(&mut self) -> Result<(), u32> {
         if self.staged.is_empty() {
             debug_assert!(self.staged_index.is_empty());
             return Ok(());
         }
-        self.staged.sort_unstable_by_key(|state| state.gid);
+        if !CANONICAL_STAGED_RUN {
+            self.staged.sort_unstable_by_key(|state| state.gid);
+        }
+        debug_assert!(self
+            .staged
+            .windows(2)
+            .all(|window| window[0].gid < window[1].gid));
         let main_len = self.residents.len();
         let staged_len = self.staged.len();
         let merged_len = main_len + staged_len;
@@ -900,11 +941,8 @@ impl ProceduralRuntime {
         }
         debug_assert_eq!(read, write);
         self.staged.clear();
-        // Invariant D2 (`cpu-seams-spec.md` Seam B.3): the membership index
-        // is only valid while `staged` accumulates. Clearing it here beside
-        // the Vec is the single removal path -- there are no individual
-        // tombstones because nothing ever removes one staged entry, so no
-        // stale slot can outlive the sort that invalidates it.
+        // Clear the reference-path index beside the Vec. Production keeps it
+        // empty, so this preserves the old lifecycle and accounting at O(1).
         self.staged_index.clear();
         Ok(())
     }
@@ -970,7 +1008,29 @@ impl ProceduralRuntime {
         }
     }
 
+    #[cfg(test)]
     fn apply_event(&mut self, event: ProceduralEventRecord) -> Result<(), u32> {
+        self.apply_event_with_fresh_run::<false, false>(event)
+    }
+
+    fn push_staged<const CANONICAL_STAGED_RUN: bool>(&mut self, state: CellState) {
+        if CANONICAL_STAGED_RUN {
+            debug_assert!(self
+                .staged
+                .last()
+                .is_none_or(|previous| previous.gid < state.gid));
+        }
+        self.staged.push(state);
+        if !CANONICAL_STAGED_RUN {
+            self.staged_index
+                .insert(state.gid, self.staged.len() as u32 - 1);
+        }
+    }
+
+    fn apply_event_with_fresh_run<const MERGE_FRESH_RUN: bool, const CANONICAL_STAGED_RUN: bool>(
+        &mut self,
+        event: ProceduralEventRecord,
+    ) -> Result<(), u32> {
         let current = canonical_zero(event.current_pa);
         match self.resident_index(event.target_gid) {
             Ok(index) => {
@@ -1010,15 +1070,23 @@ impl ProceduralRuntime {
                         // becomes one staged slot, so no capacity check is due
                         // -- mirroring the full-touch path, where an event to
                         // an existing resident performs none either.
-                        self.staged.push(state);
-                        self.staged_index
-                            .insert(state.gid, self.staged.len() as u32 - 1);
+                        self.push_staged::<CANONICAL_STAGED_RUN>(state);
                         return Ok(());
                     }
                 }
-                if let Some(&slot) = self.staged_index.get(&event.target_gid) {
-                    let value = self.staged[slot as usize].synaptic_current + current;
-                    self.staged[slot as usize].synaptic_current = canonical_zero(value);
+                let staged_slot = if CANONICAL_STAGED_RUN {
+                    self.staged
+                        .last()
+                        .filter(|state| state.gid == event.target_gid)
+                        .map(|_| self.staged.len() - 1)
+                } else {
+                    self.staged_index
+                        .get(&event.target_gid)
+                        .map(|slot| *slot as usize)
+                };
+                if let Some(slot) = staged_slot {
+                    let value = self.staged[slot].synaptic_current + current;
+                    self.staged[slot].synaptic_current = canonical_zero(value);
                     return Ok(());
                 }
                 if current.to_bits() == 0 {
@@ -1030,16 +1098,23 @@ impl ProceduralRuntime {
                 if self.total_residents() == self.residents.capacity() + self.staged.capacity() {
                     return Err(PROCEDURAL_ALLOCATION);
                 }
-                self.scratch.interval_ledger.mark_single(
-                    event.target_gid,
-                    SEEN_RESIDENT,
-                    self.config.interval_distinct_capacity,
-                )?;
+                if MERGE_FRESH_RUN {
+                    self.scratch.interval_ledger.stage_single_in_run(
+                        event.target_gid,
+                        SEEN_RESIDENT,
+                        &mut self.scratch.gid_run,
+                        self.config.interval_distinct_capacity,
+                    )?;
+                } else {
+                    self.scratch.interval_ledger.mark_single(
+                        event.target_gid,
+                        SEEN_RESIDENT,
+                        self.config.interval_distinct_capacity,
+                    )?;
+                }
                 let mut state = CellState::canonical_rest(event.target_gid);
                 state.synaptic_current = current;
-                self.staged.push(state);
-                self.staged_index
-                    .insert(state.gid, self.staged.len() as u32 - 1);
+                self.push_staged::<CANONICAL_STAGED_RUN>(state);
             }
         }
         Ok(())
@@ -1211,6 +1286,14 @@ impl ProceduralRuntime {
     }
 
     fn advance(&mut self, step_count: u64, events: &[ProceduralEventRecord]) -> u32 {
+        self.advance_with_fresh_run::<true, true>(step_count, events)
+    }
+
+    fn advance_with_fresh_run<const MERGE_FRESH_RUN: bool, const CANONICAL_STAGED_RUN: bool>(
+        &mut self,
+        step_count: u64,
+        events: &[ProceduralEventRecord],
+    ) -> u32 {
         if self.poisoned != PROCEDURAL_OK {
             return PROCEDURAL_POISONED;
         }
@@ -1265,6 +1348,10 @@ impl ProceduralRuntime {
         let mut delivered_events = 0u64;
 
         for _ in 0..step_count {
+            // Reuse the resident-capacity scratch first as this step's
+            // ascending run of absent nonzero event targets. The same vector
+            // is cleared below and rebuilt as the stepped-population run.
+            self.scratch.gid_run.clear();
             let due_count = self
                 .pending_slice()
                 .partition_point(|event| event.due_step <= self.current_step);
@@ -1293,9 +1380,17 @@ impl ProceduralRuntime {
                     Some(value) => value,
                     None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
                 };
-                if let Err(code) = self.apply_event(event) {
+                if let Err(code) =
+                    self.apply_event_with_fresh_run::<MERGE_FRESH_RUN, CANONICAL_STAGED_RUN>(event)
+                {
                     return self.poison(code);
                 }
+            }
+            if MERGE_FRESH_RUN && !self.scratch.gid_run.is_empty() {
+                let run = &self.scratch.gid_run;
+                let ledger = &mut self.scratch.interval_ledger;
+                let ledger_scratch = &mut self.scratch.ledger_scratch;
+                ledger.merge_run_in_place(run, SEEN_RESIDENT, ledger_scratch);
             }
             self.pending_head += due_count;
             self.release_consumed_prefix();
@@ -1314,7 +1409,13 @@ impl ProceduralRuntime {
             };
             if population > 0 {
                 // Ascending merged run of every GID stepped this step.
-                self.staged.sort_unstable_by_key(|state| state.gid);
+                if !CANONICAL_STAGED_RUN {
+                    self.staged.sort_unstable_by_key(|state| state.gid);
+                }
+                debug_assert!(self
+                    .staged
+                    .windows(2)
+                    .all(|window| window[0].gid < window[1].gid));
                 {
                     let run = &mut self.scratch.gid_run;
                     run.clear();
@@ -1344,7 +1445,7 @@ impl ProceduralRuntime {
                     // over the single ascending array in place. This replaces
                     // the previous per-cell hash marks and the trailing
                     // retain() scan with one sequential sweep.
-                    if let Err(code) = self.absorb_staged() {
+                    if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
                         return self.poison(code);
                     }
                     let mut write = 0usize;
@@ -1420,7 +1521,7 @@ impl ProceduralRuntime {
                     // the staged insertions into the sorted array, then run
                     // the original per-cell loop whose abort timing matches
                     // the previous implementation bit for bit.
-                    if let Err(code) = self.absorb_staged() {
+                    if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
                         return self.poison(code);
                     }
                     for index in 0..self.residents.len() {
@@ -3535,6 +3636,493 @@ mod tests {
                 "fixture must actually spike cells"
             );
         }
+    }
+
+    #[test]
+    fn fresh_resident_run_matches_scalar_oracle_and_removes_interleaved_shifts() {
+        let keyed = |target_gid: u64, source_gid: u64, current_pa: f64| ProceduralEventRecord {
+            due_step: 1,
+            target_gid,
+            source_gid,
+            edge_slot: 0,
+            current_pa,
+        };
+        let preload: Vec<_> = [0u64, 2, 4, 6]
+            .into_iter()
+            .map(|gid| drive(gid, 0, 0.25))
+            .collect();
+        let make_preloaded = |distinct_capacity: usize| {
+            let mut config = ep_config(64, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+            config.resident_capacity = 64;
+            config.interval_distinct_capacity = distinct_capacity;
+            let decay = [0.5, 0.5];
+            let mut runtime =
+                ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
+            assert_eq!(runtime.advance(1, &preload), super::PROCEDURAL_OK);
+            // Keep dormant-state parity non-vacuous while the interleaved
+            // active ledger remains exactly the four even GIDs above.
+            runtime.dormant.insert(
+                30,
+                DormantEntry {
+                    eligibility: 0.25,
+                    elig_step: 0,
+                },
+            );
+            runtime
+        };
+
+        let resident_images = |runtime: &ProceduralRuntime| -> Vec<Vec<u8>> {
+            runtime
+                .residents
+                .iter()
+                .map(|state| resident_raw_bytes(&state.record()).to_vec())
+                .collect()
+        };
+        let staged_images = |runtime: &ProceduralRuntime| -> Vec<Vec<u8>> {
+            runtime
+                .staged
+                .iter()
+                .map(|state| resident_raw_bytes(&state.record()).to_vec())
+                .collect()
+        };
+        let pending_words = |runtime: &ProceduralRuntime| -> Vec<[u64; 5]> {
+            runtime
+                .pending
+                .iter()
+                .map(|event| {
+                    [
+                        event.due_step,
+                        event.target_gid,
+                        event.source_gid,
+                        event.edge_slot,
+                        event.current_pa.to_bits(),
+                    ]
+                })
+                .collect()
+        };
+        let dormant_words = |runtime: &ProceduralRuntime| -> Vec<(u64, u64, u64)> {
+            runtime
+                .dormant
+                .iter()
+                .map(|(gid, entry)| (*gid, entry.eligibility.to_bits(), entry.elig_step))
+                .collect()
+        };
+        let spike_words = |runtime: &ProceduralRuntime| -> Vec<(u64, u64)> {
+            runtime
+                .last_spikes
+                .iter()
+                .map(|spike| (spike.step, spike.gid))
+                .collect()
+        };
+        let assert_raw_parity = |merged: &ProceduralRuntime, scalar: &ProceduralRuntime| {
+            assert_eq!(resident_images(merged), resident_images(scalar));
+            assert_eq!(staged_images(merged), staged_images(scalar));
+            assert_eq!(pending_words(merged), pending_words(scalar));
+            assert_eq!(merged.pending_head, scalar.pending_head);
+            assert_eq!(dormant_words(merged), dormant_words(scalar));
+            assert_eq!(spike_words(merged), spike_words(scalar));
+            assert_eq!(
+                counters_raw_bytes(&merged.counters),
+                counters_raw_bytes(&scalar.counters)
+            );
+            assert_eq!(merged.current_step, scalar.current_step);
+            assert_eq!(merged.poisoned, scalar.poisoned);
+        };
+
+        // Canonical target/source order interleaves four preloaded even GIDs
+        // with four fresh odd GIDs. Repeated fresh targets exercise exact
+        // accumulation order, including a cancellation that is order-sensitive
+        // in binary64 and a canonical-zero miss before a nonzero repeat.
+        let success_events = vec![
+            keyed(0, 0, 2.0),
+            keyed(1, 1, 2.0),
+            keyed(1, 40, 0.5),
+            keyed(2, 2, 2.0),
+            keyed(3, 3, 1e16),
+            keyed(3, 40, -1e16),
+            keyed(3, 41, 2.0),
+            keyed(4, 4, 2.0),
+            keyed(5, 5, -0.0),
+            keyed(5, 42, 2.0),
+            keyed(6, 6, 2.0),
+            keyed(7, 7, 2.0),
+            keyed(7, 43, -0.5),
+        ];
+        let mut merged = make_preloaded(64);
+        let mut scalar = make_preloaded(64);
+        assert_eq!(merged.advance(1, &success_events), super::PROCEDURAL_OK);
+        assert_eq!(
+            scalar.advance_with_fresh_run::<false, false>(1, &success_events),
+            super::PROCEDURAL_OK
+        );
+        assert_raw_parity(&merged, &scalar);
+        assert!(merged.staged.is_empty());
+        assert!(!merged.last_spikes.is_empty());
+        assert!(!merged.pending_slice().is_empty());
+        assert!(!merged.dormant.is_empty());
+
+        // With four entry residents and capacity seven, 1/3/5 fit and fresh
+        // gid 7 is the exact first offender. The merged path must poison at the
+        // same event as scalar insertion, leaving every externally observable
+        // partial mutation byte-identical.
+        let overflow_events = vec![
+            keyed(0, 0, 0.125),
+            keyed(1, 1, 1.0),
+            keyed(1, 40, 0.5),
+            keyed(2, 2, 0.125),
+            keyed(3, 3, 1.0),
+            keyed(4, 4, 0.125),
+            keyed(5, 5, -0.0),
+            keyed(5, 42, 1.0),
+            keyed(6, 6, 0.125),
+            keyed(7, 7, 1.0),
+            keyed(8, 8, 1.0),
+        ];
+        let mut merged_overflow = make_preloaded(7);
+        let mut scalar_overflow = make_preloaded(7);
+        assert_eq!(
+            merged_overflow.advance(1, &overflow_events),
+            super::PROCEDURAL_DISTINCT_CAPACITY
+        );
+        assert_eq!(
+            scalar_overflow.advance_with_fresh_run::<false, false>(1, &overflow_events),
+            super::PROCEDURAL_DISTINCT_CAPACITY
+        );
+        assert_raw_parity(&merged_overflow, &scalar_overflow);
+        let accepted: Vec<_> = merged_overflow
+            .staged
+            .iter()
+            .map(|state| state.gid)
+            .collect();
+        assert_eq!(accepted, vec![1, 3, 5]);
+        assert!(!merged_overflow.staged_index.contains_key(&7));
+
+        let mut scalar_ledger = super::IntervalLedger::try_new(7).unwrap();
+        let mut merged_ledger = super::IntervalLedger::try_new(7).unwrap();
+        for gid in [0u64, 2, 4, 6] {
+            scalar_ledger
+                .mark_single(gid, super::SEEN_RESIDENT, 7)
+                .unwrap();
+            merged_ledger
+                .mark_single(gid, super::SEEN_RESIDENT, 7)
+                .unwrap();
+        }
+        let mut fresh_run = Vec::with_capacity(7);
+        let fresh_targets = [1u64, 1, 3, 5, 5, 7, 9];
+        let mut scalar_offender = None;
+        let mut merged_offender = None;
+        for gid in fresh_targets {
+            if scalar_offender.is_none()
+                && scalar_ledger
+                    .mark_single(gid, super::SEEN_RESIDENT, 7)
+                    .is_err()
+            {
+                scalar_offender = Some(gid);
+            }
+            if merged_offender.is_none()
+                && merged_ledger
+                    .stage_single_in_run(gid, super::SEEN_RESIDENT, &mut fresh_run, 7)
+                    .is_err()
+            {
+                merged_offender = Some(gid);
+            }
+        }
+        assert_eq!(scalar_offender, Some(7));
+        assert_eq!(merged_offender, scalar_offender);
+        assert_eq!(fresh_run, vec![1, 3, 5]);
+
+        // Lightweight median at a shift-heavy, interleaved shape. Construction
+        // of the identical preloaded ledgers is outside the timed region; the
+        // merged sample includes all binary searches plus the union merge.
+        const PRELOADED: usize = 4_096;
+        const FRESH: usize = 2_048;
+        const CAPACITY: usize = PRELOADED + FRESH + 8;
+        const WARMUP: usize = 1;
+        const SAMPLES: usize = 7;
+        let build_ledger = || {
+            let mut ledger = super::IntervalLedger::try_new(CAPACITY).unwrap();
+            for index in 0..PRELOADED {
+                ledger
+                    .mark_single((index * 2) as u64, super::SEEN_UPDATED, CAPACITY)
+                    .unwrap();
+            }
+            ledger
+        };
+        let time_scalar = || {
+            let mut ledger = build_ledger();
+            let start = std::time::Instant::now();
+            for index in 0..FRESH {
+                ledger
+                    .mark_single((index * 2 + 1) as u64, super::SEEN_RESIDENT, CAPACITY)
+                    .unwrap();
+            }
+            let elapsed = start.elapsed().as_nanos();
+            assert_eq!(ledger.gids.len(), PRELOADED + FRESH);
+            elapsed
+        };
+        let time_merged = || {
+            let mut ledger = build_ledger();
+            let mut scratch = super::IntervalLedger::try_new(CAPACITY).unwrap();
+            let mut run = Vec::with_capacity(FRESH);
+            let start = std::time::Instant::now();
+            for index in 0..FRESH {
+                ledger
+                    .stage_single_in_run(
+                        (index * 2 + 1) as u64,
+                        super::SEEN_RESIDENT,
+                        &mut run,
+                        CAPACITY,
+                    )
+                    .unwrap();
+            }
+            ledger.merge_run_in_place(&run, super::SEEN_RESIDENT, &mut scratch);
+            let elapsed = start.elapsed().as_nanos();
+            assert_eq!(ledger.gids.len(), PRELOADED + FRESH);
+            elapsed
+        };
+        let mut scalar_samples = Vec::with_capacity(SAMPLES);
+        let mut merged_samples = Vec::with_capacity(SAMPLES);
+        for repetition in 0..WARMUP + SAMPLES {
+            let (scalar_ns, merged_ns) = if repetition % 2 == 0 {
+                (time_scalar(), time_merged())
+            } else {
+                let merged_ns = time_merged();
+                (time_scalar(), merged_ns)
+            };
+            if repetition >= WARMUP {
+                scalar_samples.push(scalar_ns);
+                merged_samples.push(merged_ns);
+            }
+        }
+        scalar_samples.sort_unstable();
+        merged_samples.sort_unstable();
+        let scalar_median_ns = scalar_samples[SAMPLES / 2];
+        let merged_median_ns = merged_samples[SAMPLES / 2];
+        eprintln!(
+            "fresh-resident-run scalar_median_ns={} merged_median_ns={} speedup={:.2}x preloaded={} fresh={} samples={}",
+            scalar_median_ns,
+            merged_median_ns,
+            scalar_median_ns as f64 / merged_median_ns as f64,
+            PRELOADED,
+            FRESH,
+            SAMPLES
+        );
+        assert!(
+            merged_median_ns < scalar_median_ns,
+            "one union merge must beat repeated interleaved Vec insertions"
+        );
+    }
+
+    #[test]
+    fn canonical_staged_run_matches_indexed_oracle_and_elides_tree_and_sorts() {
+        let keyed = |target_gid: u64, source_gid: u64, current_pa: f64| ProceduralEventRecord {
+            due_step: 1,
+            target_gid,
+            source_gid,
+            edge_slot: 0,
+            current_pa,
+        };
+        let preload: Vec<_> = [0u64, 2, 4, 6]
+            .into_iter()
+            .map(|gid| drive(gid, 0, 0.25))
+            .collect();
+        let make_preloaded = || {
+            let mut config = ep_config(64, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+            config.resident_capacity = 64;
+            let decay = [0.5, 0.5];
+            let mut runtime =
+                ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
+            assert_eq!(runtime.advance(1, &preload), super::PROCEDURAL_OK);
+            runtime.dormant.insert(
+                30,
+                DormantEntry {
+                    eligibility: 0.25,
+                    elig_step: 0,
+                },
+            );
+            runtime
+        };
+        let events = vec![
+            keyed(0, 0, 2.0),
+            keyed(1, 1, 2.0),
+            keyed(1, 40, 0.5),
+            keyed(2, 2, 2.0),
+            keyed(3, 3, 1e16),
+            keyed(3, 40, -1e16),
+            keyed(3, 41, 2.0),
+            keyed(4, 4, 2.0),
+            keyed(5, 5, -0.0),
+            keyed(5, 42, 2.0),
+            keyed(6, 6, 2.0),
+            keyed(7, 7, 2.0),
+            keyed(7, 43, -0.5),
+            keyed(30, 30, 2.0),
+            keyed(30, 50, 0.25),
+        ];
+        let mut canonical = make_preloaded();
+        let mut indexed = make_preloaded();
+        assert_eq!(canonical.advance(1, &events), super::PROCEDURAL_OK);
+        assert_eq!(
+            indexed.advance_with_fresh_run::<true, false>(1, &events),
+            super::PROCEDURAL_OK
+        );
+        let resident_images = |runtime: &ProceduralRuntime| -> Vec<Vec<u8>> {
+            runtime
+                .residents
+                .iter()
+                .map(|state| resident_raw_bytes(&state.record()).to_vec())
+                .collect()
+        };
+        let pending_words = |runtime: &ProceduralRuntime| -> Vec<[u64; 5]> {
+            runtime
+                .pending
+                .iter()
+                .map(|event| {
+                    [
+                        event.due_step,
+                        event.target_gid,
+                        event.source_gid,
+                        event.edge_slot,
+                        event.current_pa.to_bits(),
+                    ]
+                })
+                .collect()
+        };
+        let dormant_words = |runtime: &ProceduralRuntime| -> Vec<(u64, u64, u64)> {
+            runtime
+                .dormant
+                .iter()
+                .map(|(gid, entry)| (*gid, entry.eligibility.to_bits(), entry.elig_step))
+                .collect()
+        };
+        let spike_words = |runtime: &ProceduralRuntime| -> Vec<(u64, u64)> {
+            runtime
+                .last_spikes
+                .iter()
+                .map(|spike| (spike.step, spike.gid))
+                .collect()
+        };
+        assert_eq!(resident_images(&canonical), resident_images(&indexed));
+        assert_eq!(pending_words(&canonical), pending_words(&indexed));
+        assert_eq!(canonical.pending_head, indexed.pending_head);
+        assert_eq!(dormant_words(&canonical), dormant_words(&indexed));
+        assert_eq!(spike_words(&canonical), spike_words(&indexed));
+        assert_eq!(
+            counters_raw_bytes(&canonical.counters),
+            counters_raw_bytes(&indexed.counters)
+        );
+        assert_eq!(canonical.poisoned, indexed.poisoned);
+        assert_eq!(canonical.payload_bytes(), indexed.payload_bytes());
+        assert!(canonical.staged.is_empty());
+        assert!(canonical.staged_index.is_empty());
+        assert!(!canonical.last_spikes.is_empty());
+
+        // Isolate canonical staged admission and absorption from GLIF work.
+        // Both arms use the already-banked fresh-ledger run; the oracle alone
+        // maintains the B-tree and repeats the two historical staged sorts.
+        const FRESH: usize = 8_192;
+        const CAPACITY: usize = FRESH + 16;
+        const WARMUP: usize = 1;
+        const SAMPLES: usize = 7;
+        let make_timing_runtime = || {
+            let mut config = ep_config((CAPACITY + 1) as u64, PROCEDURAL_STEPPING_FULL_TOUCH);
+            config.resident_capacity = CAPACITY;
+            config.event_capacity = CAPACITY;
+            config.spike_capacity = CAPACITY;
+            config.interval_distinct_capacity = CAPACITY;
+            let decay = [0.5, 0.5];
+            ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap()
+        };
+        let time_indexed = || {
+            let mut runtime = make_timing_runtime();
+            runtime.scratch.gid_run.clear();
+            let start = std::time::Instant::now();
+            for gid in 0..FRESH as u64 {
+                runtime
+                    .apply_event_with_fresh_run::<true, false>(drive(gid, 0, 1.0))
+                    .unwrap();
+            }
+            {
+                let run = &runtime.scratch.gid_run;
+                let ledger = &mut runtime.scratch.interval_ledger;
+                let ledger_scratch = &mut runtime.scratch.ledger_scratch;
+                ledger.merge_run_in_place(run, super::SEEN_RESIDENT, ledger_scratch);
+            }
+            runtime.staged.sort_unstable_by_key(|state| state.gid);
+            runtime.absorb_staged_with_order::<false>().unwrap();
+            let elapsed = start.elapsed().as_nanos();
+            assert_eq!(runtime.residents.len(), FRESH);
+            assert!(runtime.staged_index.is_empty());
+            (elapsed, runtime)
+        };
+        let time_canonical = || {
+            let mut runtime = make_timing_runtime();
+            runtime.scratch.gid_run.clear();
+            let start = std::time::Instant::now();
+            for gid in 0..FRESH as u64 {
+                runtime
+                    .apply_event_with_fresh_run::<true, true>(drive(gid, 0, 1.0))
+                    .unwrap();
+            }
+            {
+                let run = &runtime.scratch.gid_run;
+                let ledger = &mut runtime.scratch.interval_ledger;
+                let ledger_scratch = &mut runtime.scratch.ledger_scratch;
+                ledger.merge_run_in_place(run, super::SEEN_RESIDENT, ledger_scratch);
+            }
+            runtime.absorb_staged_with_order::<true>().unwrap();
+            let elapsed = start.elapsed().as_nanos();
+            assert_eq!(runtime.residents.len(), FRESH);
+            assert!(runtime.staged_index.is_empty());
+            (elapsed, runtime)
+        };
+        let mut indexed_samples = Vec::with_capacity(SAMPLES);
+        let mut canonical_samples = Vec::with_capacity(SAMPLES);
+        for repetition in 0..WARMUP + SAMPLES {
+            let ((indexed_ns, indexed_runtime), (canonical_ns, canonical_runtime)) =
+                if repetition % 2 == 0 {
+                    (time_indexed(), time_canonical())
+                } else {
+                    let canonical = time_canonical();
+                    (time_indexed(), canonical)
+                };
+            assert_eq!(
+                resident_images(&indexed_runtime),
+                resident_images(&canonical_runtime)
+            );
+            assert_eq!(
+                indexed_runtime.scratch.interval_ledger.gids,
+                canonical_runtime.scratch.interval_ledger.gids
+            );
+            assert_eq!(
+                indexed_runtime.scratch.interval_ledger.flags,
+                canonical_runtime.scratch.interval_ledger.flags
+            );
+            assert_eq!(
+                indexed_runtime.payload_bytes(),
+                canonical_runtime.payload_bytes()
+            );
+            if repetition >= WARMUP {
+                indexed_samples.push(indexed_ns);
+                canonical_samples.push(canonical_ns);
+            }
+        }
+        indexed_samples.sort_unstable();
+        canonical_samples.sort_unstable();
+        let indexed_median_ns = indexed_samples[SAMPLES / 2];
+        let canonical_median_ns = canonical_samples[SAMPLES / 2];
+        eprintln!(
+            "canonical-staged-run indexed_median_ns={} canonical_median_ns={} speedup={:.2}x fresh={} samples={}",
+            indexed_median_ns,
+            canonical_median_ns,
+            indexed_median_ns as f64 / canonical_median_ns as f64,
+            FRESH,
+            SAMPLES
+        );
+        assert!(
+            canonical_median_ns < indexed_median_ns,
+            "canonical Vec admission and one merge must beat B-tree indexing plus two sorts"
+        );
     }
 
     #[test]
