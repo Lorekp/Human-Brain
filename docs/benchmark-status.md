@@ -155,7 +155,32 @@ the evidence remains finite-cohort same-FIT cue membership. Commit `69677f7`
 then authenticates the whole actual-record path into a desired-free packed
 frontier. The representative build is READY with zero desired reads/proofs, but
 its desired tuple stops at authorized-eclass mismatch; no panel search was used.
-The fixed-roster joint remains unspent.
+Commit `c9ae0fd` freezes the fresh two-row joint preregistration by atomically
+pairing each source-order physical prompt record with its own visible I/O. Its
+runtime rows are opaque, build payloads are desired/name/root/program-free, and
+swapped or forged rows stop before electrical/proof work. The initially proposed
+shape-only desired opener was rejected because it could accept an unrelated
+same-shaped frontier; the frozen protocol exposes no desired-opening interface.
+Commit `156dc24` banks the separate exact payload-to-frontier runner. Its one
+authorized execution is terminally spent at `7f4d576`: producer-off performed
+the real zero-gain selector work, then V1 stopped before either normal build
+because it observed 554 candidates rather than the frozen 562. Both exact rows
+contain 70 span records but normalize to 69 unique physical assemblies; eight
+selector geometries per assembly plus two literal events gives `69*8+2=554`.
+The protocol had counted records rather than the producer's unique-assembly
+surface. No desired/proof/normal-build, retry, search, sealed input, or semantic
+joint outcome occurred. This is a pre-semantic work-contract falsification; V1
+must not be retried, and a fresh successor must freeze the normalized candidate
+surface explicitly.
+
+Commit `2f6637f` separately learns a reusable relative literal role from causal
+packed outcomes. Repeated `-14/-12` examples teach anonymous UNIQUE versus
+REPEATED roles; an entirely unseen `-13` value and shifted spans recall the
+correct hole, swapping the repeated value to unseen `-11` swaps the hole, and an
+opaque 5/13 physical relabel preserves the result. Equality, cell, outcome,
+order, and ambiguity controls falsify it. The enclosing structural template is
+still fixed scaffolding, so this is relative-role transfer rather than general
+prompt understanding or coding capability.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
@@ -205,6 +230,13 @@ ticks, and provenance grows by exact prefix. This is bounded self-posed
 new-context plasticity for a lane-local one-byte relation. Whole-context grouping
 and context/source independence are still host-address scaffolds; it is not
 language, coding, corpus, or broad continual-learning evidence.
+Commit `65d36ba` removes the first of those two scaffolds. A rooted successor
+now accepts exactly one physical lesson at a time; persistent route evidence,
+conflict/ready cells, and a neuronal completeness race automatically consolidate
+on the eighth balanced event. A four-event pause resumes to the same terminal
+state without a tuple, groupby, finalize call, or parent replay. Host physical
+address equality still supplies context segmentation and independence, so this
+is eventwise one-byte consolidation rather than broad continual abstraction.
 Commit `a1cda05` also vectorizes the shared
 compiled-GLIF first-crossing scan; focused parity is unchanged and one local
 4,096-row by 65-candidate, 600-step batch improved from 87.6k to 157.5k races/s

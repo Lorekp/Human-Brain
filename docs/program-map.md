@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-31 after target-free physical
-prompt-to-occurrence inference, static packed-plan authorization, cross-context
+Maintained by the orchestrator. Updated 2026-08-31 after the terminal V1 joint
+work-contract localization, causal relative-literal-role transfer, eventwise
 knowledge consolidation, and compositional input-filler projection. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
@@ -15,9 +15,9 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  TRAIN-only prompt → semantic-factor bridge       [target-free same-FIT path banked; fresh joint pending]
-R3  Bottom-up typed semantic synthesis               [physical plan authority banked; joint pending]
-R2  Persistent knowledge and reading memory          [cross-context consolidation banked; abstraction pending]
+R4  TRAIN-only prompt → semantic-factor bridge       [joint V1 pre-semantic STOP; fresh successor needed]
+R3  Bottom-up typed semantic synthesis               [relative literal-role transfer banked]
+R2  Persistent knowledge and reading memory          [eventwise consolidation banked; segmentation pending]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled batch race 1.80x locally]
 ```
 
@@ -78,7 +78,11 @@ them. Commit `69677f7` joins those three exact-object seams: one actual FIT prom
 builds a desired-free packed frontier with zero desired reads/proofs, while its
 representative desired tuple honestly stops at authorized-eclass mismatch. This
 is an end-to-end same-FIT mechanism path, not unseen-prompt transfer; the fresh
-fixed-roster TRAIN joint remains pending.
+fixed-roster TRAIN joint was preregistered at `c9ae0fd`, exact-bound by the
+`156dc24` runner, and spent once at `7f4d576`. It stopped in the first zero-gain
+producer control on the 554-versus-562 normalized-candidate contract mismatch,
+before private desired evidence or either normal build. Shape/count coincidence
+remains explicitly insufficient, and the terminal V1 cohort will not be retried.
 Spent panels, frozen routes, unchanged caps, and explicit ambiguity remain fixed.
 
 On R4, factor-workspace V2 froze the public 90-appearance, 42-identity,
@@ -142,7 +146,21 @@ Commit `d2376c7` removes the executable learner/teacher from normal inference,
 `1232d2d` supplies the target-free prompt-record-to-neutral-event handoff, and
 `69677f7` reaches the private desired-free packed frontier from actual records.
 Its representative desired selection stopped at e-class mismatch, so no
-fixed-roster joint TRAIN result exists yet.
+fixed-roster semantic joint result exists yet. Commit `156dc24` then banks an
+exact-binding one-shot runner for the `c9ae0fd` roster. The single V1 execution
+at `7f4d576` is terminally spent and stopped in producer-off before either normal
+build: each row has 70 span records but only 69 unique assemblies after producer
+normalization, so the authentic candidate surface is `69*8+2=554`, not the
+protocol's record-count-derived 562. No desired/proof/normal-build, retry, or
+sealed input occurred. A fresh successor must bind work to the normalized
+physical candidate surface; V1 is immutable and must not be retried.
+
+Commit `2f6637f` advances the adjacent abstraction lane: causal packed PASS/FAIL
+outcomes teach anonymous UNIQUE versus REPEATED literal roles on `-14/-12`, then
+recall an unseen `-13` under shifted spans, move the hole when repetition moves
+to unseen `-11`, and survive opaque value-cell relabeling. It preserves token
+positions and multiplicity but still uses a fixed structural template, so it is
+relative-role transfer rather than general prompt parsing or SWE evidence.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -263,7 +281,11 @@ preserves parent and unrelated relation state without replay. The remaining
 scaffolds are host grouping of a complete context batch and host-address
 coincidence for context/source independence. Learned retrieval, corpus
 ingestion, event-stream consolidation, learned independence, and broader
-transfer remain open R2 work.
+transfer remain open R2 work. Commit `65d36ba` subsequently adds event-stream
+consolidation for one active context: one physical lesson advances a rooted
+16x4 accumulator, and a neuronal completeness race consolidates without host
+grouping, finalize, or replay. Learned context segmentation/independence remains
+open.
 
 ### Runtime and scale
 
