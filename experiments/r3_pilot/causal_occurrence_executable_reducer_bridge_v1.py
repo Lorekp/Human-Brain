@@ -833,6 +833,48 @@ class FrozenCausalOccurrenceExecutableReducerBridgeV1:
             residual_cell_gate=residual_cell_gate,
         )
 
+    def build_from_occurrence_certificate(
+        self,
+        certificate: occurrence.OccurrenceGraphSchemaCertificate,
+        span_records: Sequence[Mapping[str, object]],
+        literal_records: Sequence[Mapping[str, object]],
+        signature_role_record: Mapping[str, object],
+        *,
+        signature: TypedSignature,
+        cases: Iterable[tuple[object, ...]],
+        literals: Iterable[int],
+        max_cost: int,
+        relay_cell_gate: bool = True,
+        reducer_action_cell_gate: bool = True,
+        residual_equality_gate: bool = True,
+        residual_literal_role_gate: bool = True,
+        residual_order_gate: bool = True,
+        residual_upstream_cell_gate: bool = True,
+        residual_relation_gate: bool = True,
+        residual_cell_gate: bool = True,
+    ) -> OccurrenceExecutableWitnessCertificate:
+        """Continue from one exact occurrence certificate without recognition."""
+
+        return _build_witness_from_occurrence_certificate(
+            self,
+            certificate,
+            span_records,
+            literal_records,
+            signature_role_record,
+            signature=signature,
+            cases=cases,
+            literals=literals,
+            max_cost=max_cost,
+            relay_cell_gate=relay_cell_gate,
+            reducer_action_cell_gate=reducer_action_cell_gate,
+            residual_equality_gate=residual_equality_gate,
+            residual_literal_role_gate=residual_literal_role_gate,
+            residual_order_gate=residual_order_gate,
+            residual_upstream_cell_gate=residual_upstream_cell_gate,
+            residual_relation_gate=residual_relation_gate,
+            residual_cell_gate=residual_cell_gate,
+        )
+
 
 def _training_work_payload(value: BridgeTrainingWork) -> dict[str, object]:
     return {field: getattr(value, field) for field in value._fields if field != "sha256"}
@@ -1164,6 +1206,55 @@ def _build_witness(
             witness=None,
             work=work,
         )
+
+    return _build_witness_from_occurrence_certificate(
+        checkpoint,
+        certificate,
+        span_records,
+        literal_records,
+        signature_role_record,
+        signature=signature,
+        cases=cases,
+        literals=literals,
+        max_cost=max_cost,
+        relay_cell_gate=relay_cell_gate,
+        reducer_action_cell_gate=reducer_action_cell_gate,
+        residual_equality_gate=residual_equality_gate,
+        residual_literal_role_gate=residual_literal_role_gate,
+        residual_order_gate=residual_order_gate,
+        residual_upstream_cell_gate=residual_upstream_cell_gate,
+        residual_relation_gate=residual_relation_gate,
+        residual_cell_gate=residual_cell_gate,
+    )
+
+
+def _build_witness_from_occurrence_certificate(
+    checkpoint: FrozenCausalOccurrenceExecutableReducerBridgeV1,
+    certificate: occurrence.OccurrenceGraphSchemaCertificate,
+    span_records: Sequence[Mapping[str, object]],
+    literal_records: Sequence[Mapping[str, object]],
+    signature_role_record: Mapping[str, object],
+    *,
+    signature: TypedSignature,
+    cases: Iterable[tuple[object, ...]],
+    literals: Iterable[int],
+    max_cost: int,
+    relay_cell_gate: bool,
+    reducer_action_cell_gate: bool,
+    residual_equality_gate: bool,
+    residual_literal_role_gate: bool,
+    residual_order_gate: bool,
+    residual_upstream_cell_gate: bool,
+    residual_relation_gate: bool,
+    residual_cell_gate: bool,
+) -> OccurrenceExecutableWitnessCertificate:
+    checkpoint.authenticate()
+    receipt = occurrence._authenticate_certificate(certificate)
+    if receipt.checkpoint_sha256 != checkpoint._occurrence_checkpoint.checkpoint_sha256:
+        raise ValueError("occurrence certificate checkpoint authority changed")
+    binding = occurrence.require_occurrence_graph_schema(certificate)
+    occurrence_steps = receipt.work.total_physical_cell_steps
+    source_cell = binding.schema_cell_id
 
     relay = _race_relay(
         checkpoint._excitatory,

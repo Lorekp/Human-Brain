@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 from itertools import pairwise
 
+import pytest
 from experiments.g0 import common_event_cells_v1 as common_cells
 from experiments.r3_pilot import causal_anonymous_occurrence_bundle_schema_v1 as occurrence
 from experiments.r3_pilot import causal_append_effect_reducer_learner_v1 as append
@@ -313,7 +314,9 @@ def _execute(source: str) -> tuple[int, ...]:
     return tuple(aggregate(list(values)) for (values,) in FINAL_CASES)  # type: ignore[operator]
 
 
-def test_occurrence_bundle_materializes_two_desired_free_executable_witnesses() -> None:
+def test_occurrence_bundle_materializes_two_desired_free_executable_witnesses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     signature = _signature()
     base_episodes = (
         append.CausalAppendEffectEpisode(
@@ -517,6 +520,62 @@ def test_occurrence_bundle_materializes_two_desired_free_executable_witnesses() 
         assert stopped.exact_proof_count == 0
         assert stopped.witness is None
         assert stopped.work.packed_frontier_build_count == 0
+
+    issued_c5 = occurrence_checkpoint.recognize(c5_events)
+    occurrence.require_occurrence_graph_schema(issued_c5)
+    other_occurrence_checkpoint = (
+        occurrence.fit_causal_anonymous_occurrence_bundle_schema_v1(
+            _chain(_relabel(_groups(0, 1, 2), multiplier=13, offset=7))
+            + _fanout(_relabel(_groups(3, 4, 5), multiplier=15, offset=11))
+            + _closed(
+                _chain(
+                    _relabel(_groups(6, 7, 8, 9), multiplier=17, offset=13)
+                )
+            )
+        )
+    )
+    wrong_checkpoint_certificate = other_occurrence_checkpoint.recognize(c5_events)
+    assert issued_c5.checkpoint_sha256 != wrong_checkpoint_certificate.checkpoint_sha256
+
+    def recognize_is_forbidden(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("certificate continuation must not recognize events")
+
+    monkeypatch.setattr(
+        occurrence.FrozenAnonymousOccurrenceBundleSchemaV1,
+        "recognize",
+        recognize_is_forbidden,
+    )
+
+    def build_from_certificate(
+        certificate: occurrence.OccurrenceGraphSchemaCertificate,
+    ) -> bridge.OccurrenceExecutableWitnessCertificate:
+        return checkpoint.build_from_occurrence_certificate(
+            certificate,
+            prompt_spans,
+            prompt_literals,
+            SIGNATURE_ROLE,
+            signature=signature,
+            cases=FINAL_CASES,
+            literals=(-13, 0, 4),
+            max_cost=8,
+        )
+
+    continued = build_from_certificate(issued_c5)
+    assert continued.status == bridge.READY
+    assert continued.exact_proof_count == 1
+    assert continued.witness is not None
+    assert continued.witness.source == count_source
+    assert continued._receipt.occurrence_certificate_sha256 == issued_c5.sha256
+    forged = object.__new__(occurrence.OccurrenceGraphSchemaCertificate)
+    with pytest.raises(TypeError, match="exact issued"):
+        build_from_certificate(forged)
+    with pytest.raises(ValueError, match="checkpoint authority"):
+        build_from_certificate(wrong_checkpoint_certificate)
+    certificate_source = inspect.getsource(
+        bridge._build_witness_from_occurrence_certificate
+    )
+    assert ".recognize(" not in certificate_source
+    assert ".selected_actions" not in certificate_source
 
     hidden_build_inputs = {
         "probe_cases",
