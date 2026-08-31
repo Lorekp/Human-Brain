@@ -887,6 +887,68 @@ for `common_microrepository_autonomous_correction_v1.py`, and
 `11e5f83001b9fb77f883a245f0f43db18d91ad260cdff21f9fda3b80c28b3760`
 for the focused test.
 
+Commits `a09465329733ad9784cc7fee26c462bf4bb09f13`,
+`531c6b21056bd585d9aef43525fd917cee644b3d`, and
+`ad39f18c93c337a3866790763df25647b2336057` replace the public lexical-only
+controller seam with an authenticated rooted-role V2 facade. The Python adapter
+emits a complete bounded rooted event graph, a domain-neutral receipt binds its
+source and graph roots to the producer schema and attestation, and the generic
+role projector relays anonymous graph paths through common-event cells. The V2
+memory imports neither the Python adapter nor its ontology. The prior
+exact-plus-lexical checkpoint remains a private child with no old-path shim.
+
+Recall is exact-terminal first. Only exact context/candidate UNKNOWN reaches a
+two-cell physical role-applicability race; a clean STOP result alone falls
+through to lexical recall. A role match enters the detailed role race, while
+conflict and invalid physical results terminate. Frozen source provenance keeps
+the full V2 experience root beside the private lexical root. Authentication
+also binds every successful recall tier to its exact work shape, so a correctly
+re-digested structural `RECALLED` record carrying exact-only work is rejected.
+
+The focused one-policy pilot used four counterbalanced, alpha-renamed sources
+and saturated all eight role rows. Four selected return-boundary factors each
+had two-source support and admitted; four live decoys accumulated four-source
+conflicting evidence and remained unadmitted. Fresh reverse and identity sources
+recalled opposite actions through the structural-role tier. All lexical
+admissions remained non-decisive. Mixed source/graph receipts, exact-first
+precedence, structural and lexical gate ablations, unknown and role-conflict
+controls, candidate reversal, immutable-parent checks, and the forged
+status/tier/work record preserved the boundary. The post-fix root gate passed
+the focused V2 and controller tests; the broader adapter/role/V2/controller
+slice passed six focused tests.
+
+The graph is bounded to 8 events, 16 carriers, and 24 incidences. Role projection
+is bounded to depth 3 and 8 factors. The composite is capped at 192 trainable
+bytes and 7,352 checkpoint-array bytes, with a 384 KiB transient NumPy bound, a
+512,000 recall-cell-step cap, and an 8,192 root-read cap. This is a saturated
+four-source, eight-role pilot of authenticated rooted source-to-sink provenance
+association and transfer. It establishes neither general role discovery nor
+learned causal semantics, broad coding, SWE performance, benchmark progress, or
+autonomous software intelligence. Public DEV, canonical M0, held-out/C1, G0
+adjudication, Path-2 evaluation, and protected surfaces remained sealed.
+
+Evidence SHA-256s are
+`ab75de4281ebff2870ebf4d13686191e30205149944a5d6ac8d9dcf7f2cb5173`
+for `python_entry_return_provenance_v1.py`,
+`7754a3c80b205beefb86e48ac9ebe3ee86408097354f8de96069ef0fab74070c`
+for `common_rooted_structured_event_graph_v1.py`,
+`1e3b972c8b0f81084738dd4b59502fd606ff6e67ccbfa1d2ce60a4e939fac0d5`
+for `common_structured_role_path_projection_v1.py`,
+`ee0748c2f4ede9ebf6baf01157a09ef434ad8207d20a6b9002e82372d0c211f6`
+for `_repository_action_lexical_memory_v1.py`,
+`7f5e8ec6c49245851e57ab7e808e5549cdd61578d4662388960c715796c981df`
+for `common_repository_action_memory_v2.py`,
+`59321392d083bd59b1af8acfcb601ea55c11f188acf7466777f0b0a6a22b8852`
+for `common_microrepository_autonomous_correction_v1.py`,
+`ba9148c649e3cdf84c66d0701355e422b0a7f555bc15347355be1b5d50b486fd`
+for the Python-adapter test,
+`07d896721e6284ac6b0653110a1a358c4eee032eb68deb569d58cb128df81f74`
+for the role-projection test,
+`99182c61d591f8f42f637abcbaf900a8d9d1382d78500b3558d5687c30361a7e`
+for the V2-memory test, and
+`14e0d9a273e2340c97cd659445e9400279f20e58f3d1871e726add0fa65cb786`
+for the controller test.
+
 ## Active-cell scaling and dynamics
 
 The first registered scaling grid varied active cells (24, 48, 96, 192),

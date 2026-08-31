@@ -593,6 +593,34 @@ next falsification gate should distinguish the same motif in causally relevant
 versus irrelevant live code and transfer an equivalent behavior across different
 syntax before a stronger abstraction claim.
 
+Commits `a094653`, `531c6b2`, and `ad39f18` execute that next bounded
+falsification step. An answer-blind Python adapter emits a complete rooted event
+graph and a neutral receipt binds the source, graph, producer schema, and
+producer attestation. A generic common-event-cell relay projects anonymous paths
+into authenticated structural role factors. The new repository-action V2 facade
+then orders exact episodic, structural-role, and lexical recall without importing
+the Python adapter. The prior factorized exact-plus-lexical checkpoint is now a
+private child rather than a compatibility API, and full V2 experience roots are
+retained in frozen per-source provenance.
+
+The four-source one-policy pilot saturated all eight role rows. Four selected
+source-to-return-boundary factors admitted with independent support and
+transferred opposite actions to fresh reverse and identity sources; four
+lexically similar decoys accumulated conflicting evidence and did not admit.
+Lexical evidence was non-decisive. Receipt splicing, exact-first precedence,
+role/lexical gates, unknown/conflict, candidate-order, immutability, and forged
+status/tier/work controls all preserved the boundary. The composite is capped at
+192 trainable and 7,352 checkpoint-array bytes under 384 KiB transient,
+512,000-cell-step recall, and 8,192-read caps.
+
+This banks only authenticated, bounded rooted source-to-sink provenance
+association and transfer. It is not general role discovery, learned causal
+semantics, broad coding, SWE, benchmark, or autonomous-software evidence. Public
+DEV, canonical M0, held-out/C1, G0 adjudication, Path-2 evaluation, and protected
+surfaces remained sealed. The next gate must hold the V2 checkpoint frozen while
+testing family-disjoint surface, packaging, decoy-context, and role-counterfactual
+variants before any broader coding claim.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the

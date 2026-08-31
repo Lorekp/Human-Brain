@@ -454,20 +454,20 @@ operators retain stable IDs, and every eight-byte trigram enters the generic
 common-event projection. The retained lexical view contains only authenticated
 roots, traces, counts, and work, not source bytes or lexemes.
 
-`common_factorized_repository_action_memory_v1.py` owns the exact-plus-factor
-checkpoint. Each authenticated controller experience advances the unchanged
-exact child and a flat factor catalogue without replay or parent retention.
-Admission requires two distinct source roots and a unique factor-local E/H
-action race. Recall always runs exact episodic memory first; only exact UNKNOWN
-falls through. Admitted factors independently match the observed view, rerun
-their local action races, and must reach one physical consensus. Gate,
-unknown, ambiguous, and conflicting states STOP. The common repository
-controller accepts either exact concrete memory type through the same
-`recall_attested_source` interface, reconstructs action evidence from the
-authenticated neutral bank, and remains candidate-order independent.
+At commit `69cb0ae`, `common_factorized_repository_action_memory_v1.py` owned
+the exact-plus-factor checkpoint. Each authenticated controller experience
+advanced the unchanged exact child and a flat factor catalogue without replay
+or parent retention. Admission required two distinct source roots and a unique
+factor-local E/H action race. Recall ran exact episodic memory first; only exact
+UNKNOWN fell through. Admitted factors independently matched the observed
+view, reran their local action races, and had to reach one physical consensus.
+Gate, unknown, ambiguous, and conflicting states stopped. At that milestone,
+the common repository controller accepted either exact concrete memory type
+through the same `recall_attested_source` interface. That public concrete-type
+union and source-recall seam were retired by commit `ad39f18`.
 
-The focused one-policy gate learned from four training sources and six
-consequence lessons: 16 factor rows yielded five reverse/support-2 and two
+The commit-`69cb0ae` focused one-policy gate learned from four training sources
+and six consequence lessons: 16 factor rows yielded five reverse/support-2 and two
 copy/support-1 admissions, while nine common factors stayed unadmitted. Four
 source-provenance rows, 151,200 cumulative factor-learning cell-steps, and
 18,000 exact-learning steps produce a 169,200-step composite with 96 trainable
@@ -478,8 +478,8 @@ exact-first precedence, candidate reversal, duplicate replay rejection, and the
 256-byte preflight preserve the boundary. Worst-case recall at the caps is
 432,352 cell-steps under the current accounting, below 500,000.
 
-This remains a fixed-tokenizer, one-policy lexical motif result. The byte-new
-variants are not independent repositories or task families, much novelty is
+That result remains a fixed-tokenizer, one-policy lexical motif result. The
+byte-new variants are not independent repositories or task families, much novelty is
 normalized away, and the decisive motifs live in repair-irrelevant helpers. It
 does not establish learned semantics, causal role/dataflow, broad coding, SWE,
 or benchmark capability. Public DEV, canonical M0, held-out/C1, G0 adjudication,
@@ -487,6 +487,45 @@ Path-2 evaluation, and protected surfaces stayed sealed. The next gate should
 hold surface motifs constant across causally relevant and irrelevant live code
 while expressing equivalent behavior with different syntax, requiring transfer
 to follow learned role/dataflow and abstain on decoys.
+
+Commits `a094653`, `531c6b2`, and `ad39f18` now implement the next bounded
+route. `python_entry_return_provenance_v1.py` is an answer-blind environment
+adapter that emits a complete bounded rooted event graph. The generic
+`common_structured_role_path_projection_v1.py` relays anonymous graph paths
+through common-event cells and exposes authenticated role factors without
+importing Python. A neutral producer receipt binds the adapter's source root,
+graph root, schema root, and producer attestation; it is a trusted producer
+assertion, not proof that the adapter's semantics are correct.
+
+`common_repository_action_memory_v2.py` is now the sole controller-visible
+repository-memory facade. It authenticates one receipt-bound observation and
+orders recall as exact episodic first, then a two-cell physical applicability
+race into structural-role recall, then lexical recall only when the physical
+STOP cell wins because no admitted role matches. Conflicts and invalid physical
+outputs stop instead of falling through. Frozen provenance retains one full V2
+experience root per source, and authenticated `RECALLED` records require the
+work shape of their exact, structural-role, or lexical tier. The former
+exact-plus-lexical implementation survives only as private
+`_repository_action_lexical_memory_v1.py`; there is no compatibility shim.
+
+The saturated one-policy pilot learned four sources and all eight available
+role rows. Four selected source-to-return-boundary factors admitted across two
+independent source roots; four decoys accumulated conflicting evidence and did
+not admit. Fresh reverse and identity variants selected opposite actions through
+the structural-role tier while lexical factors made no decision. Receipt
+splicing, exact-first precedence, role/lexical gates, unknown and conflict
+controls, candidate reversal, immutable-parent checks, and a re-digested forged
+tier/work record preserved the boundary. Bounds are at most 8 events, 16
+carriers, 24 incidences, role depth 3, and 8 role factors; the V2 memory is
+capped at 192 trainable bytes, 7,352 checkpoint-array bytes, a 384 KiB transient NumPy
+bound, a 512,000 recall-cell-step cap, and an 8,192 root-read cap.
+
+This is only authenticated, bounded rooted source-to-sink provenance
+association and transfer in a four-source fixture. It does not establish
+general role discovery, learned causal semantics, broad coding, SWE performance,
+benchmark progress, or autonomous software intelligence. Public DEV, canonical
+M0, held-out/C1, G0 adjudication, Path-2 evaluation, and protected surfaces
+remained sealed.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
