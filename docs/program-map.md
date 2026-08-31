@@ -344,6 +344,17 @@ extraction, intervention framing, token splicing, execution, and compilation
 remain explicit scaffolds, so this is one self-posed two-edit mechanism rather
 than general program induction or SWE evidence.
 
+Commit `3890523` wraps that frozen policy in the first retained repository
+adapter. `prepare_microrepository_repair_v1` authenticates the learned root
+against one source file and constructs the two-edit frontier from visible cases
+without reading desired outputs. Its one-shot `repair` performs one terminal
+selection, one source materialization, one file write, and one repository test;
+the test exit becomes the existing generic effect feature and the frozen cell
+policy chooses COMMIT or REVISE. All parsing, source attestation, filesystem and
+process operations, and rollback remain explicit host scaffolding. This is one
+self-posed `List[Int] -> Int` microrepository loop, not a general tool-using
+software agent.
+
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
 memory, and 569,715-cell integrated checkpoint with framed physical multi-byte
@@ -664,6 +675,17 @@ but the four-step recurrent trace regressed to 0.907x; the code was fully
 reverted. Standalone source ILP is therefore also closed. The active speed
 hypothesis is a fused generate/canonicalize/deliver kernel that removes the
 downstream handoff cost rather than accelerating one phase in isolation.
+
+That fused hypothesis localized useful dense kernels but still failed its full
+controls. Four-lane generation plus stable target radix and equal-target
+delivery reached 2.443x ordering, 2.478x delivery, and 1.356x on the four-step
+trace, yet only 1.021x for generation-plus-canonicalization and a 3.3% idle
+regression. Keeping scalar generation raised the dense results to 3.577x,
+2.515x, and 1.296x respectively, but changed K=64/no-spike to a 28.3%
+regression and idle to a 9.2% regression. Both exact prototypes were fully
+reverted with unchanged 5,181,240-byte payload. The implementation boundary is
+now a separately compiled/count-gated dense radix/run path that leaves the
+small and idle scalar loop intact.
 
 ## Claim and opening discipline
 

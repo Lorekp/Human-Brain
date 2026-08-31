@@ -478,6 +478,19 @@ was fully reverted to the same source hash. Standalone source batching is thus
 falsified; the next candidate must fuse generation, canonicalization, and
 delivery so the phase handoff does not erase the local gain.
 
+The first fused successor combined that source batch with stable target-only
+radix canonicalization and equal-target delivery. Ordering and delivery improved
+2.443x and 2.478x, and the four-step recurrent trace improved 1.356x, but
+generation-plus-canonicalization reached only 1.021x and idle work regressed
+3.3%, just outside the fixed controls. It was fully reverted. Repeating the
+radix/delivery kernels with the original scalar source loop strengthened the
+dense result to 3.577x ordering, 2.515x delivery, and 1.296x recurrent, but
+regressed K=64/no-spike 28.3% and idle 9.2%; that attempt was also fully
+reverted. Both retained exact state, event order, counters, fail-stop behavior,
+and the 5,181,240-byte payload. Dense radix/run kernels therefore have real
+leverage, but they must be isolated behind a small-work scalar path rather than
+perturbing the generic hot loop.
+
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
 each produce one exact proof. Prototype, schema-cell, comparator, and deranged
@@ -606,6 +619,21 @@ program. Focused execution was 1/1 in 69.3 seconds with causal STOP controls.
 This is a visible self-posed two-edit relation-policy result under typed parser,
 role, intervention, evaluator, and compiler scaffolding—not prompt parsing,
 public transfer, or software-engineering capability.
+
+Commit `3890523` closes that mechanism around one actual self-posed
+microrepository. Preparation attests the repository's buggy root source against
+the learned recurrent-policy receipts, reads only visible cases, and performs
+the same desired-free two-actuation rollout. Repair then reads the visible
+expected outputs once, runs one terminal cell race, materializes one selected
+source, patches one file, and runs the repository test once. The test
+consequence enters the frozen learned policy as MATCH/MISMATCH; its physical
+COMMIT/REVISE race either retains the patch or restores the original bytes.
+Relation, policy, actuation, ambiguity, no-match, and source-drift controls
+perform no patch or test, while a forced failing test produces one learned
+revision and rollback. The focused fixture passed 1/1 in about 82.4 seconds.
+This is one visible `List[Int] -> Int` repair under explicit JSON, filesystem,
+compiler, and process scaffolding—not family transfer or general repository
+repair.
 
 ## Active-cell scaling and dynamics
 

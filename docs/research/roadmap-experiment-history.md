@@ -468,6 +468,16 @@ races, and only then uses desired output cells once to materialize the novel
 ABS-map/ABS-threshold-5 program. The result is one self-posed recurrent two-edit
 composition under explicit typed and execution scaffolds, not broad coding.
 
+Commit `3890523` then exercises that policy through one real microrepository
+boundary. An attested buggy source and visible input cases produce the
+desired-free two-edit frontier; visible expected outputs are read only for one
+terminal race, after which exactly one source is materialized, one file is
+patched, and one repository test is run. The learned effect policy maps the
+observed consequence to COMMIT or REVISE, and the latter restores the original
+source. Zero-write/test causal controls and the forced-failure rollback pass.
+This is the first retained end-to-end repository repair in this line, but only
+for one self-posed typed task with explicit environment adapters.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the
@@ -575,6 +585,16 @@ fully reverted to source hash
 `1651a4325bb271329e421501ccfb6a934b4a9f507ae8cf10ec3ebde160ec9906`.
 This closes standalone source ILP and motivates one fused
 generate/canonicalize/deliver experiment rather than another phase-local patch.
+
+The fused attempt preserved exact parity and payload while reaching 2.443x
+canonical ordering, 2.478x equal-target delivery, and 1.356x on the four-step
+trace. It still missed its generation-plus-canonicalization gate at 1.021x and
+regressed idle work 3.3%, so it was reverted. A second attempt kept scalar
+source generation and isolated only radix ordering plus target-run delivery;
+the dense gains improved to 3.577x, 2.515x, and 1.296x, but K=64/no-spike and
+idle regressed 28.3% and 9.2%. It too was reverted to the same source hash.
+The dense kernels are credible; the remaining hypothesis is hybrid dispatch
+that preserves the original scalar code path for small and idle workloads.
 
 ## 11. Common G0 substrate begins
 
