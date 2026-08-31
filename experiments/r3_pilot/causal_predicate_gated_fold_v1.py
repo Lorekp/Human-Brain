@@ -566,15 +566,13 @@ class _PredicateGateListIntBuilder(breadth_v4._ListIntBuilder):
         self,
         signature: TypedSignature,
         supplied_case_arguments: Iterable[tuple[object, ...]],
-        threshold: int,
+        supplied_literals: Iterable[int],
         checkpoint: FrozenPredicateGateV1,
         *,
         predicate_cell_gate: bool,
         action_cell_gate: bool,
     ) -> None:
         checkpoint._authenticate()
-        if type(threshold) is not int:
-            raise TypeError("threshold must be an exact integer")
         if type(predicate_cell_gate) is not bool or type(action_cell_gate) is not bool:
             raise TypeError("inference gates must be exact bools")
         operator = breadth_v4.operator_successor.train_public_typed_operator_successor()[0]
@@ -583,7 +581,7 @@ class _PredicateGateListIntBuilder(breadth_v4._ListIntBuilder):
         super().__init__(
             signature,
             supplied_case_arguments,
-            (threshold,),
+            supplied_literals,
             FIXED_MAX_COST,
             operator,
         )
@@ -874,8 +872,19 @@ class _PredicateGateListIntBuilder(breadth_v4._ListIntBuilder):
         )
 
 
-def freeze_predicate_gated_fold_scaffold() -> plan_slice.StructuralFactorCertificate:
+def freeze_predicate_gated_fold_scaffold(
+    literal_domain: Iterable[int] | None = None,
+) -> plan_slice.StructuralFactorCertificate:
     """Freeze the operator-name-free shared-item gate/map/sum topology."""
+
+    domains: tuple[plan_slice.StructuralDomainConstraint, ...] = ()
+    if literal_domain is not None:
+        frozen_domain = tuple(literal_domain)
+        if not frozen_domain or any(type(value) is not int for value in frozen_domain):
+            raise ValueError("predicate scaffold domain needs exact integer literals")
+        domains = (
+            plan_slice.StructuralDomainConstraint(6, 0, frozen_domain),
+        )
 
     return plan_slice.freeze_structural_factor_certificate(
         (
@@ -909,15 +918,29 @@ def freeze_predicate_gated_fold_scaffold() -> plan_slice.StructuralFactorCertifi
             plan_slice.StructuralOccurrence(3, 1, (_ROLE_INT,), (2,)),
             plan_slice.StructuralOccurrence(1, 1, (_ROLE_LIST_INT,), (3,)),
         ),
+        domains=domains,
         literal_slot_copy_groups=(((6, 0),),),
     )
+
+
+def _freeze_literal_domain(literals: Iterable[int]) -> tuple[int, ...]:
+    if isinstance(literals, (str, bytes, bytearray)):
+        raise TypeError("predicate literals must be an iterable of exact integers")
+    frozen = tuple(literals)
+    if not frozen:
+        raise ValueError("predicate literal domain must not be empty")
+    if any(type(value) is not int for value in frozen):
+        raise TypeError("predicate literals must be exact integers")
+    if len(set(frozen)) != len(frozen):
+        raise ValueError("predicate literal domain must not contain duplicates")
+    return frozen
 
 
 def _build_frontier(
     checkpoint: FrozenPredicateGateV1,
     signature: TypedSignature,
     cases: Iterable[tuple[object, ...]],
-    threshold: int,
+    literals: Iterable[int],
     *,
     predicate_cell_gate: bool,
     action_cell_gate: bool,
@@ -936,7 +959,7 @@ def _build_frontier(
     builder = _PredicateGateListIntBuilder(
         signature,
         cases,
-        threshold,
+        literals,
         checkpoint,
         predicate_cell_gate=predicate_cell_gate,
         action_cell_gate=action_cell_gate,
@@ -1105,31 +1128,12 @@ class PackedPhysicalPredicateGatedFoldV1:
         raise TypeError("use PackedPhysicalPredicateGatedFoldV1.build")
 
     @classmethod
-    def build(
+    def _publish_frontier_slice(
         cls,
         checkpoint: FrozenPredicateGateV1,
-        signature: TypedSignature,
-        cases: Iterable[tuple[object, ...]],
-        threshold: int,
-        *,
-        predicate_cell_gate: bool = True,
-        action_cell_gate: bool = True,
+        frontier: breadth_v4.PackedGenericTypedTrainBreadthV4,
+        certificate: plan_slice.StructuralFactorCertificate,
     ) -> PackedPhysicalPredicateGatedFoldV1:
-        if type(checkpoint) is not FrozenPredicateGateV1:
-            raise TypeError("exact frozen predicate gate checkpoint required")
-        checkpoint._authenticate()
-        try:
-            frontier = _build_frontier(
-                checkpoint,
-                signature,
-                cases,
-                threshold,
-                predicate_cell_gate=predicate_cell_gate,
-                action_cell_gate=action_cell_gate,
-            )
-        except _GateInferenceStop as error:
-            raise PredicateGatedFoldBuildStop(error.status, error.detail) from error
-        certificate = freeze_predicate_gated_fold_scaffold()
         receipt: plan_slice.PlanSliceReceipt | None = None
         authorized = 0
         stop_reason: str | None = None
@@ -1154,7 +1158,33 @@ class PackedPhysicalPredicateGatedFoldV1:
                 else:
                     status = STOP_PLAN_SLICE
                     stop_reason = slice_status
-        work = frontier.work
+        return cls._freeze_frontier_slice(
+            checkpoint=checkpoint,
+            frontier=frontier,
+            certificate=certificate,
+            status=status,
+            stop_reason=stop_reason,
+            authorized=authorized,
+            receipt=receipt,
+        )
+
+    @classmethod
+    def _freeze_frontier_slice(
+        cls,
+        *,
+        checkpoint: FrozenPredicateGateV1,
+        frontier: breadth_v4.PackedGenericTypedTrainBreadthV4,
+        certificate: plan_slice.StructuralFactorCertificate,
+        status: str,
+        stop_reason: str | None,
+        authorized: int,
+        receipt: plan_slice.PlanSliceReceipt | None,
+    ) -> PackedPhysicalPredicateGatedFoldV1:
+        publication_work_sha256 = (
+            frontier.work.sha256
+            if receipt is None
+            else receipt.authorization_work_receipt_sha256
+        )
         partial = PredicateGatedFoldState(
             status,
             stop_reason,
@@ -1169,7 +1199,7 @@ class PackedPhysicalPredicateGatedFoldV1:
             REUSED_TYPED_BOOL_CELL_COUNT,
             NEW_ACTION_CELL_COUNT,
             NEW_PERSISTENT_STATE_BYTES,
-            work.sha256,
+            publication_work_sha256,
             "",
         )
         state = partial._replace(sha256=_digest(b"publication-state", _state_payload(partial)))
@@ -1182,6 +1212,130 @@ class PackedPhysicalPredicateGatedFoldV1:
         instance._materialization = None
         instance._authenticate()
         return instance
+
+    @classmethod
+    def build(
+        cls,
+        checkpoint: FrozenPredicateGateV1,
+        signature: TypedSignature,
+        cases: Iterable[tuple[object, ...]],
+        threshold: int,
+        *,
+        predicate_cell_gate: bool = True,
+        action_cell_gate: bool = True,
+    ) -> PackedPhysicalPredicateGatedFoldV1:
+        if type(checkpoint) is not FrozenPredicateGateV1:
+            raise TypeError("exact frozen predicate gate checkpoint required")
+        checkpoint._authenticate()
+        literal_domain = _freeze_literal_domain((threshold,))
+        try:
+            frontier = _build_frontier(
+                checkpoint,
+                signature,
+                cases,
+                literal_domain,
+                predicate_cell_gate=predicate_cell_gate,
+                action_cell_gate=action_cell_gate,
+            )
+        except _GateInferenceStop as error:
+            raise PredicateGatedFoldBuildStop(error.status, error.detail) from error
+        return cls._publish_frontier_slice(
+            checkpoint,
+            frontier,
+            freeze_predicate_gated_fold_scaffold(),
+        )
+
+    @classmethod
+    def build_literal_domain(
+        cls,
+        checkpoint: FrozenPredicateGateV1,
+        signature: TypedSignature,
+        cases: Iterable[tuple[object, ...]],
+        literals: Iterable[int],
+        *,
+        predicate_cell_gate: bool = True,
+        action_cell_gate: bool = True,
+    ) -> tuple[PackedPhysicalPredicateGatedFoldV1, ...]:
+        """Publish one desired-free frontier and authorize one slice per literal."""
+
+        if type(checkpoint) is not FrozenPredicateGateV1:
+            raise TypeError("exact frozen predicate gate checkpoint required")
+        checkpoint._authenticate()
+        literal_domain = _freeze_literal_domain(literals)
+        try:
+            frontier = _build_frontier(
+                checkpoint,
+                signature,
+                cases,
+                literal_domain,
+                predicate_cell_gate=predicate_cell_gate,
+                action_cell_gate=action_cell_gate,
+            )
+        except _GateInferenceStop as error:
+            raise PredicateGatedFoldBuildStop(error.status, error.detail) from error
+        if frontier.status != breadth_v4.FRONTIER_READY:
+            raise PredicateGatedFoldBuildStop(STOP_FRONTIER, frontier.status)
+
+        certificates = tuple(
+            freeze_predicate_gated_fold_scaffold((literal,))
+            for literal in literal_domain
+        )
+        try:
+            (
+                slice_status,
+                authorized_counts,
+                authenticated_receipts,
+                *_roots,
+            ) = plan_slice._bind_certificate_domain_batch(frontier, certificates)
+        except packed.PackedRelationWorkLimitExceeded as error:
+            raise PredicateGatedFoldBuildStop(
+                STOP_WORK_BOUND,
+                "predicate-gated domain authorization exceeded packed work",
+            ) from error
+        if (
+            slice_status != plan_slice.FRONTIER_READY
+            or authorized_counts != (1,) * len(literal_domain)
+            or len(authenticated_receipts) != len(literal_domain)
+        ):
+            raise PredicateGatedFoldBuildStop(
+                STOP_PLAN_SLICE,
+                f"predicate-gated domain authorization stopped: {slice_status}",
+            )
+        frozen_publications = tuple(
+            cls._freeze_frontier_slice(
+                checkpoint=checkpoint,
+                frontier=frontier,
+                certificate=certificate,
+                status=READY,
+                stop_reason=None,
+                authorized=1,
+                receipt=receipt,
+            )
+            for certificate, receipt in zip(
+                certificates,
+                authenticated_receipts,
+                strict=True,
+            )
+        )
+        if (
+            len(frozen_publications) != len(literal_domain)
+            or len({id(item._frontier) for item in frozen_publications}) != 1
+            or len({id(receipt) for receipt in authenticated_receipts})
+            != len(literal_domain)
+            or len({receipt.sha256 for receipt in authenticated_receipts})
+            != len(literal_domain)
+            or len(
+                {
+                    receipt.authorization_work_receipt_sha256
+                    for receipt in authenticated_receipts
+                }
+            )
+            != len(literal_domain)
+        ):
+            raise RuntimeError("predicate literal-domain slice publication was not independent")
+        for publication in frozen_publications:
+            publication._authenticate()
+        return frozen_publications
 
     @property
     def state(self) -> PredicateGatedFoldState:
@@ -1220,7 +1374,16 @@ class PackedPhysicalPredicateGatedFoldV1:
             or state.frontier_sha256 != self._frontier.sha256
             or state.structural_certificate_sha256 != self._structural_certificate.sha256
             or state.plan_slice_receipt_sha256 != (None if receipt is None else receipt.sha256)
-            or (self._materialization is None and state.build_work_sha256 != self.work.sha256)
+            or (
+                receipt is not None
+                and state.build_work_sha256
+                != receipt.authorization_work_receipt_sha256
+            )
+            or (
+                receipt is None
+                and self._materialization is None
+                and state.build_work_sha256 != self.work.sha256
+            )
         ):
             raise RuntimeError("predicate-gated fold publication authentication failed")
         if receipt is not None:

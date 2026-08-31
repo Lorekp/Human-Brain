@@ -226,19 +226,29 @@ class CausalTaskObservationCandidatePlanBankV1:
             )
         )
 
-        for threshold in PREDICATE_THRESHOLDS:
-            key = predicate_candidate_key(threshold)
-            try:
-                publication = predicate_fold.PackedPhysicalPredicateGatedFoldV1.build(
+        try:
+            predicate_publications = (
+                predicate_fold.PackedPhysicalPredicateGatedFoldV1.build_literal_domain(
                     checkpoint,
                     signature,
                     frozen_cases,
-                    threshold,
+                    PREDICATE_THRESHOLDS,
                 )
-            except predicate_fold.PredicateGatedFoldBuildStop as error:
-                raise CandidatePlanBankBuildStop(
-                    f"{key} stopped: {error.status}"
-                ) from error
+            )
+        except predicate_fold.PredicateGatedFoldBuildStop as error:
+            raise CandidatePlanBankBuildStop(
+                f"predicate literal-domain publication stopped: {error.status}"
+            ) from error
+        if len(predicate_publications) != len(PREDICATE_THRESHOLDS):
+            raise CandidatePlanBankBuildStop(
+                "predicate literal-domain publication changed its roster"
+            )
+        for threshold, publication in zip(
+            PREDICATE_THRESHOLDS,
+            predicate_publications,
+            strict=True,
+        ):
+            key = predicate_candidate_key(threshold)
             candidates.append(
                 _freeze_candidate(
                     key=key,

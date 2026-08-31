@@ -101,6 +101,64 @@ def test_candidate_bank_builds_before_one_exact_race_and_materializes_selected_o
     assert publication.state.proof_materializations_during_build == 0
     assert publication.state.semantic_races_during_build == 0
     assert publication.materialized_witness_count == 0
+    predicate_candidates = publication._candidates[2:]
+    assert len(predicate_candidates) == len(bank.PREDICATE_THRESHOLDS) == 129
+    assert len({id(candidate.publication._frontier) for candidate in predicate_candidates}) == 1
+    assert (
+        len(
+            {
+                id(candidate.publication._frontier._route._workset)
+                for candidate in predicate_candidates
+            }
+        )
+        == 1
+    )
+    predicate_receipts = tuple(
+        candidate.publication.plan_slice_receipt
+        for candidate in predicate_candidates
+    )
+    assert all(receipt is not None for receipt in predicate_receipts)
+    assert len({id(receipt) for receipt in predicate_receipts}) == 129
+    assert len({receipt.sha256 for receipt in predicate_receipts}) == 129
+    assert (
+        len(
+            {
+                receipt.authorization_work_receipt_sha256
+                for receipt in predicate_receipts
+            }
+        )
+        == 129
+    )
+    assert all(
+        len(candidate.publication._structural_certificate.domains) == 1
+        and candidate.publication._structural_certificate.domains[0].occurrence == 6
+        and candidate.publication._structural_certificate.domains[0].slot == 0
+        and candidate.publication._structural_certificate.domains[0].allowed_values
+        == (candidate.threshold,)
+        for candidate in predicate_candidates
+    )
+    predicate_by_threshold = {
+        candidate.threshold: candidate for candidate in predicate_candidates
+    }
+    assert (
+        predicate_by_threshold[0].physical_outputs
+        == predicate_by_threshold[1].physical_outputs
+    )
+    assert predicate_by_threshold[0].receipt_sha256 != predicate_by_threshold[1].receipt_sha256
+    shared_frontier = predicate_candidates[0].publication._frontier
+    shared_state = shared_frontier._route.state
+    shared_work = shared_frontier.work
+    print(
+        "candidate-bank-shared-frontier "
+        f"relation_units={shared_work.relation.completed_units} "
+        f"predictions={shared_work.physical_predictions} "
+        f"cache_hits={shared_work.prediction_cache_hits} "
+        f"races={shared_work.physical_races} "
+        f"families={len(shared_state.families)} "
+        f"enodes={len(shared_state.enodes)} "
+        f"eclasses={len(shared_state.eclasses)} "
+        f"roots={len(shared_state.root_eclasses)}"
+    )
     assert all(
         candidate.publication.work.concrete_proof_witnesses == 0
         and candidate.publication.work.materialized_witnesses == 0

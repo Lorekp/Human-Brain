@@ -351,6 +351,15 @@ class _SliceCandidate(NamedTuple):
     topology_sha256: str
 
 
+class _TopologySliceCandidate(NamedTuple):
+    eclass: packed_v3.PackedEClass
+    group: packed_v3.PackedSemanticGroupRef
+    family: packed_v3.PackedFamily
+    node: _SliceNodeBinding
+    root_slot_maps: Mapping[tuple[int, int], int]
+    nodes_by_occurrence: Mapping[int, _SliceNodeBinding]
+
+
 class _IssuedPlanBinding(NamedTuple):
     frontier: breadth_v4.PackedGenericTypedTrainBreadthV4
     route: breadth_v4._PackedListIntFrontier
@@ -584,6 +593,7 @@ def _match_node(
     schema: tuple[packed.TypedSlot, ...],
     occurrence_index: int,
     memo: dict[tuple[str, tuple[tuple[object, ...], ...], int], tuple[_SliceNodeBinding, ...]],
+    match_limit: int | None = 2,
 ) -> tuple[_SliceNodeBinding, ...]:
     key = (root_id, tuple(slot.to_record() for slot in schema), occurrence_index)
     workset.session.charge_workset("authorized-slice-match-lookup")
@@ -669,6 +679,7 @@ def _match_node(
                 schema=child_schema,
                 occurrence_index=child_occurrence,
                 memo=memo,
+                match_limit=match_limit,
             )
             if not options:
                 valid = False
@@ -689,7 +700,7 @@ def _match_node(
                 topology_sha256=_digest("authorized-slice-node", _node_payload(partial))
             )
             matches.setdefault(binding.topology_sha256, binding)
-            if len(matches) >= 2:
+            if match_limit is not None and len(matches) >= match_limit:
                 result = tuple(matches.values())
                 memo[key] = result
                 return result
@@ -717,6 +728,20 @@ def _root_slot_maps(
             visit(child, tuple(local_to_root[index] for index in occupancy))
 
     visit(root, tuple(range(len(root.schema))))
+    return result
+
+
+def _nodes_by_occurrence(root: _SliceNodeBinding) -> dict[int, _SliceNodeBinding]:
+    result: dict[int, _SliceNodeBinding] = {}
+
+    def visit(node: _SliceNodeBinding) -> None:
+        incumbent = result.setdefault(node.occurrence, node)
+        if incumbent is not node:
+            raise RuntimeError("authorized topology repeated an occurrence")
+        for child in node.children:
+            visit(child)
+
+    visit(root)
     return result
 
 
@@ -750,6 +775,17 @@ def _constrained_root_domains(
         if root_plan is None
         else root_plan.domains
     )
+    constrained = _filter_root_domains(certificate, root_slot_maps, root_domains)
+    if constrained is None:
+        raise RuntimeError("authorized domain constraints became contradictory")
+    return constrained
+
+
+def _filter_root_domains(
+    certificate: StructuralFactorCertificate,
+    root_slot_maps: Mapping[tuple[int, int], int],
+    root_domains: tuple[tuple[int, ...], ...],
+) -> tuple[tuple[int, tuple[int, ...]], ...] | None:
     allowed: dict[int, set[int]] = {}
     for constraint in certificate.domains:
         root_slot = root_slot_maps[(constraint.occurrence, constraint.slot)]
@@ -757,7 +793,7 @@ def _constrained_root_domains(
         if root_slot in allowed:
             values &= allowed[root_slot]
         if not values:
-            raise RuntimeError("authorized domain constraints became contradictory")
+            return None
         allowed[root_slot] = values
     return tuple((slot, tuple(sorted(values))) for slot, values in sorted(allowed.items()))
 
@@ -918,6 +954,297 @@ def _bind_certificate(
         root_receipt,
         build_work,
         receipt.authorization_work_receipt_sha256,
+    )
+
+
+def _bind_certificate_domain_batch(
+    frontier: breadth_v4.PackedGenericTypedTrainBreadthV4,
+    certificates: Iterable[StructuralFactorCertificate],
+) -> tuple[
+    str,
+    tuple[int, ...],
+    tuple[PlanSliceReceipt, ...],
+    str,
+    str,
+    str,
+]:
+    """Match shared topology once, then authorize independent domain slices."""
+
+    frozen_certificates = tuple(certificates)
+    if not frozen_certificates:
+        raise ValueError("domain-slice batch needs at least one certificate")
+    for certificate in frozen_certificates:
+        _authenticate_certificate(certificate)
+    reference = frozen_certificates[0]
+    if any(
+        certificate.occurrences != reference.occurrences
+        or certificate.literal_slot_copy_groups
+        != reference.literal_slot_copy_groups
+        for certificate in frozen_certificates[1:]
+    ):
+        raise ValueError("domain-slice batch certificates must share one topology")
+
+    frontier._authenticate()
+    route = frontier._route
+    if type(route) is not breadth_v4._PackedListIntFrontier:
+        raise RuntimeError("plan slicing requires the exact generic V4 cross-type route")
+    frozen = route.state.frozen_workset
+    authenticated = route._workset._authenticated
+    component = route._authenticated_components
+    typed_capsule = route._typed_capsule
+    if (
+        type(frozen) is not packed_v4.PackedFrozenWorkset
+        or type(authenticated) is not packed_v4._AuthenticatedFrozen
+        or type(component) is not packed_v3._AuthenticatedComponents
+        or type(typed_capsule) is not full_typed._AuthenticatedTypedCapsule
+        or authenticated is not route._workset._authenticated
+        or component is not route._workset._component_capsule
+    ):
+        raise RuntimeError("generic V4 retained capsules are unavailable")
+    workset = cast(breadth_v4._FactorizedSemanticPartitionWorkset, route._workset)
+    session = workset.session
+    for certificate in frozen_certificates:
+        session.charge_workset("authorized-slice-certificate")
+        for _occurrence in certificate.occurrences:
+            session.charge_workset("authorized-slice-certificate-occurrence")
+        for _domain in certificate.domains:
+            session.charge_workset("authorized-slice-certificate-domain")
+        for group in certificate.literal_slot_copy_groups:
+            for _reference in group:
+                session.charge_workset("authorized-slice-certificate-copy")
+
+    topology_certificate = freeze_structural_factor_certificate(
+        reference.occurrences,
+        literal_slot_copy_groups=reference.literal_slot_copy_groups,
+    )
+    children_index = _children_by_occurrence(topology_certificate)
+    memo: dict[
+        tuple[str, tuple[tuple[object, ...], ...], int],
+        tuple[_SliceNodeBinding, ...],
+    ] = {}
+    topology_candidates: dict[str, _TopologySliceCandidate] = {}
+    for eclass in typed_capsule.root_eclasses:
+        session.charge_workset("authorized-slice-eclass-candidate")
+        full_eclass = component.eclass_index.get(eclass.eclass_id)
+        if (
+            type(eclass) is not packed_v3.PackedEClass
+            or type(full_eclass) is not packed_v3.PackedEClass
+            or full_eclass.physical_outputs != eclass.physical_outputs
+            or not set(eclass.group_refs) <= set(full_eclass.group_refs)
+        ):
+            raise RuntimeError("authorized root e-class identity changed")
+        for group in eclass.group_refs:
+            session.charge_workset("authorized-slice-group-candidate")
+            if authenticated.group_index.get(group.group_id) is not group:
+                raise RuntimeError("authorized semantic group identity changed")
+            family = component.family_index.get(group.family_id)
+            if type(family) is not packed_v3.PackedFamily:
+                raise RuntimeError("authorized family topology changed")
+            matches = _match_node(
+                workset=workset,
+                authenticated=authenticated,
+                certificate=topology_certificate,
+                children_index=children_index,
+                domain_index={},
+                root_id=group.root_id,
+                schema=group.schema,
+                occurrence_index=0,
+                memo=memo,
+                match_limit=None,
+            )
+            for node in matches:
+                root_maps = _root_slot_maps(node)
+                if (
+                    _literal_copy_groups(
+                        topology_certificate,
+                        root_maps,
+                        children_index,
+                    )
+                    != topology_certificate.literal_slot_copy_groups
+                ):
+                    continue
+                topology_sha256 = _digest(
+                    "authorized-candidate-shared-topology",
+                    {
+                        "eclass_id": eclass.eclass_id,
+                        "group_sha256": group.sha256,
+                        "family_sha256": family.sha256,
+                        "node_sha256": node.topology_sha256,
+                    },
+                )
+                topology_candidates.setdefault(
+                    topology_sha256,
+                    _TopologySliceCandidate(
+                        eclass=eclass,
+                        group=group,
+                        family=family,
+                        node=node,
+                        root_slot_maps=root_maps,
+                        nodes_by_occurrence=_nodes_by_occurrence(node),
+                    ),
+                )
+
+    root_receipt = _digest(
+        "frontier-root-receipt",
+        {
+            "frontier_sha256": frontier.sha256,
+            "frozen_workset_sha256": frozen.sha256,
+            "root_eclass_ids": route.state.root_eclass_ids,
+        },
+    )
+    build_work = route.state.build_work_sha256
+    counts: list[int] = []
+    staged: list[_SliceCandidate | None] = []
+    first_stop: str | None = None
+    terminal_domain_cache: dict[
+        tuple[str, tuple[tuple[object, ...], ...]],
+        tuple[tuple[int, ...], ...],
+    ] = {}
+
+    def node_domains(node: _SliceNodeBinding) -> tuple[tuple[int, ...], ...]:
+        retained = authenticated.plans.get(node.root_id)
+        if retained is not None:
+            return retained.domains
+        cache_key = (
+            node.root_id,
+            tuple(slot.to_record() for slot in node.schema),
+        )
+        session.charge_workset("authorized-slice-domain-cache-lookup")
+        cached = terminal_domain_cache.get(cache_key)
+        if cached is not None:
+            session.charge_workset("authorized-slice-domain-cache-hit")
+            return cached
+        cached = _terminal_domains(
+            workset,
+            authenticated,
+            node.root_id,
+            node.schema,
+        )
+        terminal_domain_cache[cache_key] = cached
+        return cached
+
+    constrained_slots = tuple(
+        sorted(
+            {
+                (constraint.occurrence, constraint.slot)
+                for certificate in frozen_certificates
+                for constraint in certificate.domains
+            }
+        )
+    )
+    topology_by_domain_value: dict[tuple[int, int, int], set[str]] = {}
+    for topology_sha256, topology in topology_candidates.items():
+        for occurrence, slot in constrained_slots:
+            session.charge_workset("authorized-slice-domain-index-node")
+            constrained_node = topology.nodes_by_occurrence.get(occurrence)
+            if constrained_node is None:
+                raise RuntimeError("authorized topology lost a constrained occurrence")
+            for value in node_domains(constrained_node)[slot]:
+                session.charge_workset("authorized-slice-domain-index-value")
+                topology_by_domain_value.setdefault(
+                    (occurrence, slot, value),
+                    set(),
+                ).add(topology_sha256)
+
+    for certificate in frozen_certificates:
+        eligible: set[str] | None = None
+        for constraint in certificate.domains:
+            session.charge_workset("authorized-slice-domain-index-lookup")
+            matching: set[str] = set()
+            for value in constraint.allowed_values:
+                session.charge_workset("authorized-slice-domain-value-lookup")
+                matching.update(
+                    topology_by_domain_value.get(
+                        (constraint.occurrence, constraint.slot, value),
+                        (),
+                    )
+                )
+            eligible = matching if eligible is None else eligible & matching
+        if eligible is None:
+            eligible = set(topology_candidates)
+        candidates: dict[str, _SliceCandidate] = {}
+        for topology_key in eligible:
+            session.charge_workset("authorized-slice-domain-candidate")
+            topology = topology_candidates[topology_key]
+            root_domains = node_domains(topology.node)
+            constrained = _filter_root_domains(
+                certificate,
+                topology.root_slot_maps,
+                root_domains,
+            )
+            if constrained is None:
+                continue
+            topology_sha256 = _digest(
+                "authorized-candidate-topology",
+                {
+                    "eclass_id": topology.eclass.eclass_id,
+                    "group_sha256": topology.group.sha256,
+                    "family_sha256": topology.family.sha256,
+                    "node_sha256": topology.node.topology_sha256,
+                    "constrained_domains": constrained,
+                },
+            )
+            candidates.setdefault(
+                topology_sha256,
+                _SliceCandidate(
+                    eclass=topology.eclass,
+                    group=topology.group,
+                    family=topology.family,
+                    node=topology.node,
+                    constrained_domains=constrained,
+                    topology_sha256=topology_sha256,
+                ),
+            )
+            if len(candidates) >= 2:
+                break
+        count = min(len(candidates), 2)
+        counts.append(count)
+        if count == 1:
+            staged.append(next(iter(candidates.values())))
+        else:
+            staged.append(None)
+            if first_stop is None:
+                first_stop = (
+                    STOP_NO_AUTHORIZED_SLICE
+                    if count == 0
+                    else STOP_AMBIGUOUS_AUTHORIZED_SLICE
+                )
+
+    if first_stop is not None:
+        return (
+            first_stop,
+            tuple(counts),
+            (),
+            root_receipt,
+            build_work,
+            route.work.sha256,
+        )
+
+    receipts = tuple(
+        _issue_plan_slice_receipt(
+            frontier=frontier,
+            route=route,
+            frozen=frozen,
+            authenticated=authenticated,
+            component=component,
+            candidate=cast(_SliceCandidate, candidate),
+            certificate=certificate,
+            root_receipt_sha256=root_receipt,
+            build_work_receipt_sha256=build_work,
+        )
+        for certificate, candidate in zip(
+            frozen_certificates,
+            staged,
+            strict=True,
+        )
+    )
+    return (
+        FRONTIER_READY,
+        tuple(counts),
+        receipts,
+        root_receipt,
+        build_work,
+        route.work.sha256,
     )
 
 
