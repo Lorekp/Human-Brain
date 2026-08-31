@@ -120,11 +120,9 @@ class CompiledRestingGlifRace:
             + self._unit_voltage_threshold[:, None] * winning_current[None, :]
         )
         step_count = int(self._unit_voltage.size)
-        first_steps = np.full(currents.shape[0], step_count, dtype=np.intp)
-        for row in range(currents.shape[0]):
-            row_crossings = np.flatnonzero(crossing[:, row])
-            if row_crossings.size:
-                first_steps[row] = int(row_crossings[0])
+        crossed = np.any(crossing, axis=0)
+        first_steps = np.argmax(crossing, axis=0).astype(np.intp, copy=False)
+        first_steps = np.where(crossed, first_steps, step_count)
 
         safe_steps = np.minimum(first_steps, step_count - 1)
         fired = self._unit_voltage[safe_steps, None] * currents > (
