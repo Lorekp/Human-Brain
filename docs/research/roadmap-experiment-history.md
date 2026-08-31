@@ -681,6 +681,17 @@ Medians were 3,735,200→2,829,500 ns (1.320x; ≥1.15x and ≤4,313,022 ns),
 This is one focused CPU recurrent-handoff result; all excluded shapes retain
 the prior path, and no broad runtime or physical 100-billion-cell claim follows.
 
+The immediate lazy-fallback-seed successor deferred its Philox seed until 128
+ordinary target collisions. Exact parity, forced collision/failure, and counts
+passed (dense recurrent eager 8,192 versus lazy zero; forced lazy fallback one),
+but its only release run failed: recurrent 3,048,900→3,055,000 ns (0.998x;
+required ≥1.05x and ≤2,829,500), K=64 1,567,400→1,556,700 ns (0.993x; absolute
+≤1,046,480 failed), and idle 3,045,300→3,246,800 ns (1.066x; required ≤1.03x
+and ≤2,192,664). The tranche was fully reverted to `procedural.rs` SHA-256
+`E93CD287BD8DFCDA4C4C9B1DB45FCDB4746C4113DAEC9D7DA89F799A7CACFB99`.
+This is a narrow rejection of lazy seed initialization alone, not of broader
+generation changes.
+
 ## 11. Common G0 substrate begins
 
 Commit `4843236` adds a domain-neutral opaque-byte projection with 65,536 input

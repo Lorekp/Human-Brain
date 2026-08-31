@@ -553,6 +553,18 @@ This is focused CPU evidence for one exact recurrent handoff, not broad runtime
 or physical 100-billion-cell evidence; every excluded case retains the prior
 path.
 
+A follow-up tested lazy initialization of the Philox fallback seed, computing it
+only after all 128 ordinary target candidates collide. Exact state/poison parity,
+the forced-collision/failure cases, and initialization counts passed (dense
+recurrent eager 8,192 versus lazy zero; forced lazy fallback one), but the single
+release gate failed: recurrent medians were 3,048,900→3,055,000 ns (0.998x;
+required ≥1.05x and ≤2,829,500 ns), K=64 1,567,400→1,556,700 ns (0.993x; ratio
+passed but ≤1,046,480 ns failed), and idle 3,045,300→3,246,800 ns (1.066x;
+required ≤1.03x and ≤2,192,664 ns). The prototype was fully reverted; retained
+`procedural.rs` SHA-256 is
+`E93CD287BD8DFCDA4C4C9B1DB45FCDB4746C4113DAEC9D7DA89F799A7CACFB99`.
+This rejects lazy fallback-seed initialization as a standalone optimization.
+
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
 each produce one exact proof. Prototype, schema-cell, comparator, and deranged

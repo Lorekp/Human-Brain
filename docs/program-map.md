@@ -778,6 +778,16 @@ SHA-256 is `e93cd287bd8dfcda4c4c9b1db45fcdb4746c4113daec9d7da89f799a7cacfb99`.
 This maps one CPU-specific handoff optimization, not a general runtime or
 100-billion-cell throughput result.
 
+The next bounded prototype made only the Philox fallback seed lazy until 128
+ordinary target candidates collide. Exact parity, forced collision/failure, and
+initialization counts passed (dense recurrent 8,192→0; forced lazy fallback one),
+but the one release run failed: recurrent 3,048,900→3,055,000 ns (0.998x; missed
+≥1.05x and ≤2,829,500), K=64 1,567,400→1,556,700 ns (0.993x; missed the
+≤1,046,480 absolute gate), and idle 3,045,300→3,246,800 ns (1.066x; missed
+≤1.03x and ≤2,192,664). It was fully reverted to source SHA-256
+`E93CD287BD8DFCDA4C4C9B1DB45FCDB4746C4113DAEC9D7DA89F799A7CACFB99`;
+the lazy seed is not part of the runtime map.
+
 ## Claim and opening discipline
 
 - Public TRAIN mechanism work may be rerun only on a newly named unspent gate.
