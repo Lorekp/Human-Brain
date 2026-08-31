@@ -572,12 +572,11 @@ impl IntervalLedger {
 struct RuntimeScratch {
     submitted_events: Vec<ProceduralEventRecord>,
     event_work: Vec<ProceduralEventRecord>,
-    step_spikes: Vec<u64>,
     row_targets: Vec<u64>,
     row_used: HashSet<u64>,
     interval_ledger: IntervalLedger,
     /// Reused sequentially as the fresh-target run, stepped-population run,
-    /// and finally the current step's ascending dormant-retirement GIDs.
+    /// ascending dormant-retirement GIDs, and current-step spike GIDs.
     gid_run: Vec<u64>,
     /// Values parallel to the dormant-retirement phase of `gid_run`.
     dormant_values: Vec<f64>,
@@ -594,7 +593,6 @@ impl RuntimeScratch {
         Ok(Self {
             submitted_events: reserved_vec(config.event_capacity)?,
             event_work: reserved_vec(config.event_capacity)?,
-            step_spikes: reserved_vec(config.resident_capacity)?,
             row_targets: reserved_vec(fanout)?,
             row_used,
             interval_ledger: IntervalLedger::try_new(config.interval_distinct_capacity)?,
@@ -606,7 +604,6 @@ impl RuntimeScratch {
     fn payload_bytes(&self) -> usize {
         self.submitted_events.capacity() * size_of::<ProceduralEventRecord>()
             + self.event_work.capacity() * size_of::<ProceduralEventRecord>()
-            + self.step_spikes.capacity() * size_of::<u64>()
             + self.row_targets.capacity() * size_of::<u64>()
             + self.row_used.capacity() * size_of::<u64>()
             + self.interval_ledger.gids.capacity() * size_of::<u64>()
@@ -1380,6 +1377,7 @@ impl ProceduralRuntime {
         let mut delivered_events = 0u64;
 
         for _ in 0..step_count {
+            let step_spike_start = self.last_spikes.len();
             // Reuse the resident-capacity scratch first as this step's
             // ascending run of absent nonzero event targets. The same vector
             // is cleared below and rebuilt as the stepped-population run.
@@ -1427,12 +1425,12 @@ impl ProceduralRuntime {
             self.release_consumed_prefix();
             resident_peak = resident_peak.max(self.total_residents());
 
-            self.scratch.step_spikes.clear();
             self.scratch.dormant_values.clear();
             // The fused pass below integrates exactly these cells; dormant
             // cells are retired from the stepped set in event-proportional
             // mode, so this work count is where their cost disappears.
             let population = self.residents.len() + self.staged.len();
+            let mut merge_spiking_run = false;
             cell_steps = match cell_steps.checked_add(population as u64) {
                 Some(value) => value,
                 None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
@@ -1470,6 +1468,7 @@ impl ProceduralRuntime {
                     .interval_ledger
                     .can_fit_run(&self.scratch.gid_run, distinct_capacity);
                 if fast_path {
+                    merge_spiking_run = true;
                     // Materialize this step's insertions into the sorted
                     // resident array, then run the fused update+compact pass
                     // over the single ascending array in place. This replaces
@@ -1503,14 +1502,6 @@ impl ProceduralRuntime {
                         );
                         if crossed {
                             if let Err(code) = push_bounded(
-                                &mut self.scratch.step_spikes,
-                                state.gid,
-                                self.config.resident_capacity,
-                                PROCEDURAL_RESIDENT_CAPACITY,
-                            ) {
-                                return self.poison(code);
-                            }
-                            if let Err(code) = push_bounded(
                                 &mut self.last_spikes,
                                 ProceduralSpikeRecord {
                                     step: self.current_step,
@@ -1541,14 +1532,6 @@ impl ProceduralRuntime {
                     }
                     debug_assert!(write <= self.residents.len());
                     self.residents.truncate(write);
-                    if !self.scratch.step_spikes.is_empty() {
-                        // Spiking GIDs are a subset of the stepped run just
-                        // merged, so this never grows the ledger and can
-                        // never trip the distinct capacity.
-                        let run = &self.scratch.step_spikes;
-                        let ledger = &mut self.scratch.interval_ledger;
-                        ledger.merge_run_in_place(run, SEEN_SPIKING);
-                    }
                 } else {
                     // Exact fallback near the distinct capacity: materialize
                     // the staged insertions into the sorted array, then run
@@ -1586,14 +1569,6 @@ impl ProceduralRuntime {
                                     state.gid,
                                     SEEN_SPIKING,
                                     distinct_capacity,
-                                ) {
-                                    return self.poison(code);
-                                }
-                                if let Err(code) = push_bounded(
-                                    &mut self.scratch.step_spikes,
-                                    state.gid,
-                                    self.config.resident_capacity,
-                                    PROCEDURAL_RESIDENT_CAPACITY,
                                 ) {
                                     return self.poison(code);
                                 }
@@ -1668,9 +1643,33 @@ impl ProceduralRuntime {
                 }
             }
 
+            self.scratch.gid_run.clear();
+            self.scratch.gid_run.extend(
+                self.last_spikes[step_spike_start..]
+                    .iter()
+                    .map(|spike| spike.gid),
+            );
+            debug_assert!(self.scratch.gid_run.len() <= self.config.resident_capacity);
+            debug_assert!(self.last_spikes[step_spike_start..]
+                .iter()
+                .all(|spike| spike.step == self.current_step));
+            debug_assert!(self
+                .scratch
+                .gid_run
+                .windows(2)
+                .all(|window| window[0] < window[1]));
+            if merge_spiking_run && !self.scratch.gid_run.is_empty() {
+                // Spiking GIDs are a subset of the stepped run already
+                // merged above, so this never grows the ledger or changes
+                // distinct-capacity failure timing.
+                let run = &self.scratch.gid_run;
+                let ledger = &mut self.scratch.interval_ledger;
+                ledger.merge_run_in_place(run, SEEN_SPIKING);
+            }
+
             let generated_this_step = match self
                 .scratch
-                .step_spikes
+                .gid_run
                 .len()
                 .checked_mul(self.config.fanout as usize)
             {
@@ -1689,8 +1688,8 @@ impl ProceduralRuntime {
             // The result is byte-identical to sorting the whole live queue:
             // both produce the full queue in ascending canonical key order.
             let tail_start = self.pending.len();
-            for spike_index in 0..self.scratch.step_spikes.len() {
-                let source = self.scratch.step_spikes[spike_index];
+            for spike_index in 0..self.scratch.gid_run.len() {
+                let source = self.scratch.gid_run[spike_index];
                 let due_step = match self
                     .current_step
                     .checked_add(self.config.recurrent_delay_steps)
@@ -3106,6 +3105,241 @@ mod tests {
             runtime.payload_bytes(),
             reclaimed_bytes,
             1_000_000usize * 8 + std::mem::size_of::<Vec<u64>>()
+        );
+    }
+
+    #[test]
+    fn last_spike_suffix_reuses_gid_run_with_exact_parity_overflow_and_payload() {
+        fn dense_runtime(config: ProceduralConfig) -> super::DenseReference {
+            let cell_count = config.configured_cells as usize;
+            let fanout = config.fanout as usize;
+            let edge_count = cell_count * fanout;
+            let mut targets = Vec::with_capacity(edge_count);
+            let mut weights = Vec::with_capacity(edge_count);
+            let mut row_targets = Vec::with_capacity(fanout);
+            let mut row_used = HashSet::with_capacity(fanout + 1);
+            for source in 0..config.configured_cells {
+                fill_targets_with(
+                    &config,
+                    source,
+                    &mut row_targets,
+                    &mut row_used,
+                    |config, source, slot, attempt| {
+                        let word = super::counter_words(
+                            config,
+                            source,
+                            slot,
+                            super::GLOBAL_PURPOSE_ID,
+                            attempt,
+                        )
+                        .0;
+                        let candidate = super::bounded_index(word, config.configured_cells - 1);
+                        if candidate < source {
+                            candidate
+                        } else {
+                            candidate + 1
+                        }
+                    },
+                )
+                .unwrap();
+                targets.extend_from_slice(&row_targets);
+                for _ in 0..fanout {
+                    weights.push(super::source_weight(&config, source));
+                }
+            }
+            let decay = [0.5, 0.5];
+            super::DenseReference {
+                glif: ep_glif(),
+                config,
+                after_decay: decay,
+                after_cut_decay: decay,
+                after_amplitudes: [0.0; 2],
+                targets,
+                weights,
+                current_step: 0,
+                cells: (0..config.configured_cells)
+                    .map(CellState::canonical_rest)
+                    .collect(),
+                pending: Vec::with_capacity(config.event_capacity),
+                last_spikes: Vec::with_capacity(config.spike_capacity),
+                scratch: super::DenseScratch::try_new(&config).unwrap(),
+                poisoned: super::PROCEDURAL_OK,
+            }
+        }
+
+        let spike_words = |spikes: &[super::ProceduralSpikeRecord]| -> Vec<(u64, u64)> {
+            spikes.iter().map(|spike| (spike.step, spike.gid)).collect()
+        };
+        let event_words = |events: &[ProceduralEventRecord]| -> Vec<[u64; 5]> {
+            events
+                .iter()
+                .map(|event| {
+                    [
+                        event.due_step,
+                        event.target_gid,
+                        event.source_gid,
+                        event.edge_slot,
+                        event.current_pa.to_bits(),
+                    ]
+                })
+                .collect()
+        };
+        let state_images = |states: &[CellState]| -> Vec<Vec<u8>> {
+            states
+                .iter()
+                .map(|state| resident_raw_bytes(&state.record()).to_vec())
+                .collect()
+        };
+        let make_pair = |config: ProceduralConfig| {
+            let decay = [0.5, 0.5];
+            (
+                ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap(),
+                dense_runtime(config),
+            )
+        };
+
+        let mut config = ep_config(16, PROCEDURAL_STEPPING_FULL_TOUCH);
+        config.fanout = 2;
+        config.resident_capacity = 16;
+        config.event_capacity = 512;
+        config.spike_capacity = 64;
+        config.interval_distinct_capacity = 32;
+        let scheduled = vec![
+            drive(0, 0, 4.0),
+            drive(3, 0, 5.0),
+            drive(7, 0, 6.0),
+            drive(1, 1, 4.0),
+            drive(4, 1, 5.0),
+            drive(8, 1, 6.0),
+            drive(2, 2, 4.0),
+            drive(5, 2, 5.0),
+            drive(9, 2, 6.0),
+        ];
+        let (mut runtime, mut dense) = make_pair(config);
+        assert_eq!(runtime.advance(3, &scheduled), super::PROCEDURAL_OK);
+        assert_eq!(dense.advance(3, &scheduled), super::PROCEDURAL_OK);
+        assert_eq!(
+            spike_words(&runtime.last_spikes),
+            spike_words(&dense.last_spikes)
+        );
+        assert!(runtime
+            .last_spikes
+            .iter()
+            .any(|spike| spike.step < runtime.current_step - 1));
+        assert_eq!(runtime.scratch.gid_run, dense.scratch.step_spikes);
+        assert_eq!(
+            runtime.scratch.gid_run,
+            runtime
+                .last_spikes
+                .iter()
+                .filter(|spike| spike.step == runtime.current_step - 1)
+                .map(|spike| spike.gid)
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            event_words(runtime.pending_slice()),
+            event_words(&dense.pending)
+        );
+        assert!(runtime.staged.is_empty());
+        assert!(runtime.dormant.is_empty());
+        let dense_nonzero: Vec<_> = dense
+            .cells
+            .iter()
+            .copied()
+            .filter(|state| !state.is_canonical_rest())
+            .collect();
+        assert_eq!(
+            state_images(&runtime.residents),
+            state_images(&dense_nonzero)
+        );
+        let distinct_spikes: HashSet<_> =
+            runtime.last_spikes.iter().map(|spike| spike.gid).collect();
+        assert_eq!(runtime.counters.spiking_distinct, distinct_spikes.len());
+        assert_eq!(
+            runtime.counters.generated_edges,
+            runtime.last_spikes.len() as u64 * config.fanout
+        );
+        assert_eq!(
+            runtime.counters.delivered_events,
+            scheduled.len() as u64 + runtime.counters.generated_edges
+                - runtime.pending_logical_len() as u64
+        );
+        assert_eq!(
+            runtime.counters.spike_events,
+            runtime.last_spikes.len() as u64
+        );
+        assert_eq!(runtime.counters.current_step, runtime.current_step);
+
+        let mut tight = config;
+        tight.spike_capacity = 2;
+        let overflow_events: Vec<_> = (0..4).map(|gid| drive(gid, 0, 10.0)).collect();
+        let (mut overflow, mut dense_overflow) = make_pair(tight);
+        assert_eq!(
+            overflow.advance(1, &overflow_events),
+            super::PROCEDURAL_SPIKE_CAPACITY
+        );
+        assert_eq!(
+            dense_overflow.advance(1, &overflow_events),
+            super::PROCEDURAL_SPIKE_CAPACITY
+        );
+        assert_eq!(
+            spike_words(&overflow.last_spikes),
+            spike_words(&dense_overflow.last_spikes)
+        );
+        assert_eq!(spike_words(&overflow.last_spikes), vec![(0, 0), (0, 1)]);
+        assert_eq!(overflow.current_step, 0);
+        assert_eq!(overflow.poisoned, super::PROCEDURAL_SPIKE_CAPACITY);
+        assert_eq!(overflow.pending_logical_len(), 0);
+        assert!(overflow.staged.is_empty());
+        assert!(overflow.dormant.is_empty());
+        assert_eq!(
+            state_images(&overflow.residents[..2]),
+            state_images(&dense_overflow.cells[..2])
+        );
+        let mut unstepped = Vec::new();
+        for gid in 2..4 {
+            let mut state = CellState::canonical_rest(gid);
+            state.synaptic_current = 10.0;
+            unstepped.push(state);
+        }
+        assert_eq!(
+            state_images(&overflow.residents[2..]),
+            state_images(&unstepped)
+        );
+        let mut expected_counters = ProceduralCounters::default();
+        expected_counters.overflow_code = super::PROCEDURAL_SPIKE_CAPACITY;
+        assert_eq!(
+            counters_raw_bytes(&overflow.counters),
+            counters_raw_bytes(&expected_counters)
+        );
+
+        const CAPACITY: usize = 65_536;
+        const LEGACY_PAYLOAD_BYTES: usize = 6_895_464;
+        let mut payload_config = ep_config(
+            (CAPACITY + 1) as u64,
+            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
+        );
+        payload_config.resident_capacity = CAPACITY;
+        payload_config.event_capacity = 64;
+        payload_config.spike_capacity = 64;
+        payload_config.interval_distinct_capacity = CAPACITY;
+        let decay = [0.5, 0.5];
+        let payload_runtime =
+            ProceduralRuntime::new(ep_glif(), payload_config, decay, decay, [0.0; 2]).unwrap();
+        let reclaimed_bytes =
+            CAPACITY * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>();
+        assert_eq!(reclaimed_bytes, 524_312);
+        assert_eq!(
+            payload_runtime.payload_bytes() + reclaimed_bytes,
+            LEGACY_PAYLOAD_BYTES
+        );
+        eprintln!(
+            "last-spike-suffix current_payload_bytes={} reclaimed_bytes={} reclaimed_at_1m_bytes={} success_spikes={} final_step_spikes={}",
+            payload_runtime.payload_bytes(),
+            reclaimed_bytes,
+            1_000_000usize * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>(),
+            runtime.last_spikes.len(),
+            runtime.scratch.gid_run.len()
         );
     }
 
