@@ -9,6 +9,8 @@ import numpy as np
 
 from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
 
+_DENSE_FIRST_CROSSING_CELL_STEPS = 38_400
+
 
 @dataclass(frozen=True, slots=True)
 class RestingGlifRaceResult:
@@ -97,6 +99,45 @@ class CompiledRestingGlifRace:
         mask.setflags(write=False)
         return mask
 
+    def _first_crossing_steps(self, winning_current: np.ndarray) -> np.ndarray:
+        step_count = int(self._unit_voltage.size)
+        if winning_current.size * step_count < _DENSE_FIRST_CROSSING_CELL_STEPS:
+            crossing = self._unit_voltage[:, None] * winning_current[None, :] > (
+                self.parameters.threshold_inf_relative_mv
+                + self._unit_voltage_threshold[:, None] * winning_current[None, :]
+            )
+            crossed = np.any(crossing, axis=0)
+            first_steps = np.argmax(crossing, axis=0).astype(np.intp, copy=False)
+            return np.where(crossed, first_steps, step_count)
+
+        # Construction proves monotonic spike gain. Probe that monotonic response
+        # without materializing the full steps-by-rows crossing matrix, while
+        # retaining the original IEEE comparison at every queried step.
+        crossed = self._unit_voltage[-1] * winning_current > (
+            self.parameters.threshold_inf_relative_mv
+            + self._unit_voltage_threshold[-1] * winning_current
+        )
+        first_steps = np.full(winning_current.size, step_count, dtype=np.intp)
+        active_rows = np.flatnonzero(crossed)
+        if active_rows.size == 0:
+            return first_steps
+
+        active_currents = winning_current[active_rows]
+        lower = np.full(active_rows.size, -1, dtype=np.intp)
+        upper = np.full(active_rows.size, step_count - 1, dtype=np.intp)
+        searching = upper - lower > 1
+        while np.any(searching):
+            middle = np.where(searching, (lower + upper) // 2, upper)
+            crosses_middle = self._unit_voltage[middle] * active_currents > (
+                self.parameters.threshold_inf_relative_mv
+                + self._unit_voltage_threshold[middle] * active_currents
+            )
+            upper = np.where(searching & crosses_middle, middle, upper)
+            lower = np.where(searching & ~crosses_middle, middle, lower)
+            searching = upper - lower > 1
+        first_steps[active_rows] = upper
+        return first_steps
+
     def race_many(
         self,
         currents_pa: Sequence[Sequence[float]] | np.ndarray,
@@ -115,14 +156,8 @@ class CompiledRestingGlifRace:
         currents = np.ascontiguousarray(currents)
 
         winning_current = np.max(currents, axis=1)
-        crossing = self._unit_voltage[:, None] * winning_current[None, :] > (
-            self.parameters.threshold_inf_relative_mv
-            + self._unit_voltage_threshold[:, None] * winning_current[None, :]
-        )
         step_count = int(self._unit_voltage.size)
-        crossed = np.any(crossing, axis=0)
-        first_steps = np.argmax(crossing, axis=0).astype(np.intp, copy=False)
-        first_steps = np.where(crossed, first_steps, step_count)
+        first_steps = self._first_crossing_steps(winning_current)
 
         safe_steps = np.minimum(first_steps, step_count - 1)
         fired = self._unit_voltage[safe_steps, None] * currents > (
