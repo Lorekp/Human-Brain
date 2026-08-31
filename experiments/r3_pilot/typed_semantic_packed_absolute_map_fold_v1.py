@@ -28,6 +28,7 @@ from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import typed_semantic_packed_bindings_v1 as packed
 from experiments.r3_pilot import typed_semantic_packed_frontier_full_typed_v1 as full_typed
 from experiments.r3_pilot import typed_semantic_packed_frontier_v2 as packed_v2
+from experiments.r3_pilot import typed_semantic_packed_frontier_v4 as packed_v4
 from experiments.r3_pilot import typed_semantic_packed_generic_train_breadth_v3 as breadth_v3
 from experiments.r3_pilot import typed_semantic_packed_generic_train_breadth_v4 as breadth_v4
 from experiments.r3_pilot import typed_semantic_packed_prompt_authorized_plan_slice_v1 as plan_slice
@@ -52,7 +53,7 @@ CLAIM_BOUNDARY = (
 
 FIXED_MAX_COST = 8
 WITNESS_AST_COST = 6
-FIXED_DUMMY_LITERALS = (-2, 1, 2)
+FIXED_DUMMY_LITERALS = (0,)
 NEW_CELL_COUNT = 0
 NEW_PERSISTENT_STATE_BYTES = 0
 DESIRED_READS_DURING_BUILD = 0
@@ -164,7 +165,7 @@ def _materialization_payload(
 
 
 class _AbsoluteListIntBuilder(breadth_v4._ListIntBuilder):
-    """The unchanged factorized V4 builder plus one physical ABS family path."""
+    """Publish only the physical ABS-map-SUM topology authorized here."""
 
     def __init__(
         self,
@@ -233,6 +234,87 @@ class _AbsoluteListIntBuilder(breadth_v4._ListIntBuilder):
                 raise RuntimeError("absolute family arity changed")
             return tuple(self._predict_absolute(item) for item in children[0])
         return super()._predict_vector(production, children)
+
+    def build(
+        self,
+    ) -> tuple[full_typed.PackedFullTypedState, packed_v4._SemanticPartitionWorkset]:
+        """Construct and seal only the authenticated ABS-map-SUM path."""
+
+        try:
+            literal_relation = self._prepare_inputs()
+            collection, item, literal = self._seed_families(literal_relation)
+            # Retain the pre-existing raw-SUM source scaffold so ablating the
+            # ABS population reaches an authenticated no-slice STOP.
+            self._family(
+                "sum",
+                (collection,),
+                context_role="root",
+                environment_type_labels=("List[Int]",),
+                result_type_label="Int",
+                root_candidate=True,
+            )
+            self._extend_before_publish(collection, item, literal)
+
+            frozen = self.workset.publish()
+            families, enodes, eclasses = self._components(frozen)
+            typed_families, root_eclasses = self._typed_publication(
+                frozen,
+                families,
+                enodes,
+                eclasses,
+            )
+            component = self.authenticated_components
+            typed_capsule = self.typed_capsule
+            context = self.context_certificate
+            if component is None or typed_capsule is None or context is None:
+                raise RuntimeError("ABS-map-SUM cross-type publication is incomplete")
+            self._charge("frontier-seal")
+            work = self.work_audit()
+            payload = {
+                "status": full_typed.FRONTIER_READY,
+                "signature": self.signature.to_record(),
+                "case_arguments": self.case_arguments,
+                "literals": self.literals,
+                "requested_max_ast_cost": self.max_ast_cost,
+                "maximum_completed_ast_cost": self.maximum_completed_ast_cost,
+                "context_certificate_sha256": context.sha256,
+                "operator_checkpoint_sha256": self.operator.checkpoint_sha256,
+                "frozen_workset_sha256": frozen.sha256,
+                "component_capsule_sha256": component.sha256,
+                "typed_capsule_sha256": typed_capsule.sha256,
+                "root_eclass_ids": typed_capsule.root_eclass_ids,
+                "build_work_sha256": work.sha256,
+            }
+            state = full_typed.PackedFullTypedState(
+                status=full_typed.FRONTIER_READY,
+                signature=self.signature,
+                case_arguments=self.case_arguments,
+                literals=self.literals,
+                requested_max_ast_cost=self.max_ast_cost,
+                maximum_completed_ast_cost=self.maximum_completed_ast_cost,
+                context_certificate=context,
+                operator_checkpoint_sha256=self.operator.checkpoint_sha256,
+                frozen_workset=frozen,
+                families=families,
+                enodes=enodes,
+                eclasses=eclasses,
+                typed_families=typed_families,
+                root_eclasses=root_eclasses,
+                root_eclass_ids=typed_capsule.root_eclass_ids,
+                component_capsule_sha256=component.sha256,
+                typed_capsule_sha256=typed_capsule.sha256,
+                build_work_sha256=work.sha256,
+                sha256=full_typed._digest("frontier", payload),
+            )
+            return state, self.workset
+        except packed.PackedRelationWorkLimitExceeded as error:
+            self.bound_name = "recipe-relation-work"
+            self.bound_attempted = error.attempted
+            return self._stopped_state(), self.workset
+        except packed_v2._PhysicalWorkBoundExceeded as error:
+            self.bound_name = error.name
+            self.bound_attempted = error.attempted
+            return self._stopped_state(), self.workset
 
     def _extend_before_publish(
         self,
@@ -458,6 +540,7 @@ class PackedPhysicalAbsoluteMapFoldV1:
         if (
             state.sha256 != _digest(b"publication-state", _state_payload(state))
             or state.frontier_sha256 != self._frontier.sha256
+            or self._frontier.state.literals != FIXED_DUMMY_LITERALS
             or state.structural_certificate_sha256
             != self._structural_certificate.sha256
             or state.plan_slice_receipt_sha256

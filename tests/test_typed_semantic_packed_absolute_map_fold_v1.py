@@ -51,10 +51,10 @@ def test_physical_absolute_map_fold_publication_is_desired_free_and_causal() -> 
         "def aggregate(numbers):\n"
         "    return sum([abs(item_0) for item_0 in numbers])\n"
     )
-    assert result.relation_completed_units == 2_551
-    assert result.physical_predictions == 102
-    assert result.prediction_cache_hits == 435
-    assert result.physical_races == 213
+    assert result.relation_completed_units == 650
+    assert result.physical_predictions == 30
+    assert result.prediction_cache_hits == 12
+    assert result.physical_races == 69
 
     namespace: dict[str, object] = {}
     exec(witness.source, namespace)
