@@ -785,6 +785,7 @@ struct RuntimeScratch {
     /// ascending dormant-retirement GIDs, and current-step spike GIDs.
     gid_run: Vec<u64>,
     /// Values parallel to the dormant-retirement phase of `gid_run`.
+    /// Capacity is needed only by event-proportional stepping.
     dormant_values: Vec<f64>,
 }
 
@@ -803,7 +804,11 @@ impl RuntimeScratch {
             row_used,
             interval_ledger: IntervalLedger::try_new(config.interval_distinct_capacity)?,
             gid_run: reserved_vec(config.resident_capacity)?,
-            dormant_values: reserved_vec(config.resident_capacity)?,
+            dormant_values: if config.stepping_mode == PROCEDURAL_STEPPING_EVENT_PROPORTIONAL {
+                reserved_vec(config.resident_capacity)?
+            } else {
+                Vec::new()
+            },
         })
     }
 
@@ -3311,7 +3316,7 @@ mod tests {
     }
 
     #[test]
-    fn dormant_gid_run_reuse_preserves_dynamics_and_reclaims_capacity() {
+    fn dormant_scratch_reuse_preserves_dynamics_and_scopes_value_capacity() {
         const CELLS: u64 = 32;
         const STEPS: usize = 120;
         let mut batches = vec![Vec::<ProceduralEventRecord>::new(); STEPS];
@@ -3367,18 +3372,35 @@ mod tests {
         config.interval_distinct_capacity = CAPACITY;
         let decay = [0.5, 0.5];
         let runtime = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
+        let mut full_touch_config = config;
+        full_touch_config.stepping_mode = PROCEDURAL_STEPPING_FULL_TOUCH;
+        let full_touch_runtime =
+            ProceduralRuntime::new(ep_glif(), full_touch_config, decay, decay, [0.0; 2]).unwrap();
         assert_eq!(runtime.scratch.gid_run.capacity(), CAPACITY);
+        assert_eq!(runtime.scratch.dormant_values.capacity(), CAPACITY);
+        assert_eq!(full_touch_runtime.scratch.dormant_values.capacity(), 0);
         let reclaimed_bytes = runtime.scratch.gid_run.capacity() * std::mem::size_of::<u64>()
             + std::mem::size_of::<Vec<u64>>();
         assert_eq!(
             reclaimed_bytes,
             CAPACITY * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>()
         );
+        let mode_scoped_bytes = CAPACITY * std::mem::size_of::<f64>();
+        assert_eq!(mode_scoped_bytes, 524_288);
+        assert_eq!(runtime.payload_bytes(), 6_325_560);
+        assert_eq!(full_touch_runtime.payload_bytes(), 5_801_272);
+        assert_eq!(
+            runtime.payload_bytes() - full_touch_runtime.payload_bytes(),
+            mode_scoped_bytes
+        );
+        assert_eq!(96_384_528usize - 1_000_000usize * 8, 88_384_528);
         eprintln!(
-            "dormant-gid-run-reuse current_payload_bytes={} reclaimed_bytes={} reclaimed_at_1m_bytes={}",
+            "dormant-scratch-reuse event_proportional_payload_bytes={} full_touch_payload_bytes={} prior_reclaimed_bytes={} mode_scoped_bytes={} mode_scoped_at_1m_bytes={}",
             runtime.payload_bytes(),
+            full_touch_runtime.payload_bytes(),
             reclaimed_bytes,
-            1_000_000usize * 8 + std::mem::size_of::<Vec<u64>>()
+            mode_scoped_bytes,
+            1_000_000usize * 8
         );
     }
 
