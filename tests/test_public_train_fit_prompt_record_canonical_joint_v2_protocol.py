@@ -95,7 +95,9 @@ def test_fresh_v2_data_only_roster_geometry_and_exact_object_seam() -> None:
     )
 
     repository = Path(protocol.__file__).resolve().parents[2]
-    assert not (repository / protocol.FUTURE_RUNNER_PATH).exists()
+    # The separately banked execution successor now occupies the preregistered
+    # source path; the evidence-bearing result and spend paths remain unopened.
+    assert (repository / protocol.FUTURE_RUNNER_PATH).is_file()
     assert not (repository / protocol.FUTURE_RESULT_PATH).exists()
     assert not (repository / protocol.FUTURE_SPENT_PATH).exists()
     assert "_v2_runner" in protocol.FUTURE_RESULT_PATH
