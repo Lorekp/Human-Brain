@@ -221,6 +221,69 @@ impl CellState {
     }
 }
 
+/// Delivery-phase state for a cell that is not yet in the sorted resident
+/// array. Every field omitted here is canonical zero until absorption.
+///
+/// These records do not own a second allocation. They are encoded into the
+/// already-reserved `RuntimeScratch::event_work` slots after submitted-event
+/// merging has finished and decoded before that buffer is next used to merge
+/// generated events. `ProceduralEventRecord` is 40 bytes, so one event-work
+/// slot has room for this exact 24-byte state without changing its capacity.
+#[derive(Clone, Copy, Debug)]
+struct StagedCell {
+    gid: u64,
+    synaptic_current: f64,
+    eligibility: f64,
+}
+
+impl StagedCell {
+    #[inline]
+    fn from_state(state: CellState) -> Self {
+        debug_assert_eq!(state.voltage.to_bits(), 0);
+        debug_assert_eq!(state.after[0].to_bits(), 0);
+        debug_assert_eq!(state.after[1].to_bits(), 0);
+        debug_assert_eq!(state.threshold_spike.to_bits(), 0);
+        debug_assert_eq!(state.threshold_voltage.to_bits(), 0);
+        debug_assert_eq!(state.refractory, 0);
+        Self {
+            gid: state.gid,
+            synaptic_current: state.synaptic_current,
+            eligibility: state.eligibility,
+        }
+    }
+
+    #[inline]
+    fn into_state(self) -> CellState {
+        let mut state = CellState::canonical_rest(self.gid);
+        state.synaptic_current = self.synaptic_current;
+        state.eligibility = self.eligibility;
+        state
+    }
+
+    #[inline]
+    fn into_work_record(self) -> ProceduralEventRecord {
+        ProceduralEventRecord {
+            // The buffer is in its staging phase, so the two event-key fields
+            // below are private storage. All u64 bit patterns are valid and
+            // preserve eligibility exactly, including signed zero.
+            due_step: self.eligibility.to_bits(),
+            target_gid: self.gid,
+            source_gid: 0,
+            edge_slot: 0,
+            current_pa: self.synaptic_current,
+        }
+    }
+
+    #[inline]
+    fn from_work_record(record: ProceduralEventRecord) -> Self {
+        Self {
+            gid: record.target_gid,
+            synaptic_current: record.current_pa,
+            eligibility: f64::from_bits(record.due_step),
+        }
+    }
+}
+
 #[inline]
 fn canonical_zero(value: f64) -> f64 {
     if value == 0.0 {
@@ -711,6 +774,9 @@ impl IntervalLedger {
 
 struct RuntimeScratch {
     submitted_events: Vec<ProceduralEventRecord>,
+    /// Phase-aliased between queue merges and compact current-step staged
+    /// cells. Every transition clears the logical length; the allocation is
+    /// never needed for both roles at once.
     event_work: Vec<ProceduralEventRecord>,
     row_targets: Vec<u64>,
     row_used: HashSet<u64>,
@@ -922,15 +988,11 @@ pub struct ProceduralRuntime {
     current_step: u64,
     /// Long-lived resident cells in ascending GID order.
     residents: Vec<CellState>,
-    /// Cells materialized by the current step's deliveries. Production events
-    /// arrive in canonical target order, so this is already an ascending unique
-    /// run and insertion is O(1); it is merged back during the fused pass.
-    staged: Vec<CellState>,
     /// GID -> slot reference index retained for the in-module noncanonical
     /// scalar oracle and its payload/layout parity checks. The shipped advance
     /// path leaves it empty: canonical same-target events are consecutive and
-    /// resolve against `staged.last()` in O(1), while new targets append in
-    /// ascending order. Never iterated for semantics.
+    /// resolve against the last compact staged work slot in O(1), while new
+    /// targets append in ascending order. Never iterated for semantics.
     staged_index: BTreeMap<u64, u32>,
     /// Pending future events. Slots `[0..pending_head)` are consumed; the
     /// live queue is `[pending_head..)` in canonical ascending key order.
@@ -967,11 +1029,10 @@ impl ProceduralRuntime {
         }
         let residents = reserved_vec(config.resident_capacity)?;
         let staged_capacity = config.resident_capacity.min(config.event_capacity);
-        // Slot offsets into `staged` are stored as u32 in the delivery-phase
+        // Compact staged-slot offsets are stored as u32 in the delivery-phase
         // membership index; fail loudly at construction if a capacity could
-        // ever overflow that width.
+        // ever overflow that width. Storage comes from scratch.event_work.
         debug_assert!(staged_capacity <= u32::MAX as usize);
-        let staged = reserved_vec(staged_capacity)?;
         let pending = reserved_vec(config.event_capacity)?;
         let last_spikes = reserved_vec(config.spike_capacity)?;
         let scratch = RuntimeScratch::try_new(&config)?;
@@ -983,7 +1044,6 @@ impl ProceduralRuntime {
             after_amplitudes,
             current_step: 0,
             residents,
-            staged,
             staged_index: BTreeMap::new(),
             pending,
             pending_head: 0,
@@ -1019,7 +1079,6 @@ impl ProceduralRuntime {
     fn payload_bytes(&self) -> usize {
         size_of::<Self>()
             + self.residents.capacity() * size_of::<CellState>()
-            + self.staged.capacity() * size_of::<CellState>()
             + self.pending.capacity() * size_of::<ProceduralEventRecord>()
             + self.last_spikes.capacity() * size_of::<ProceduralSpikeRecord>()
             // Conservative B-tree node estimate (key + value plus order and
@@ -1056,7 +1115,71 @@ impl ProceduralRuntime {
     /// the dormant store is always empty and this reduces to the original sum.
     #[inline]
     fn total_residents(&self) -> usize {
-        self.residents.len() + self.staged.len() + self.dormant.len()
+        self.residents.len() + self.staged_len() + self.dormant.len()
+    }
+
+    #[inline]
+    fn staged_len(&self) -> usize {
+        self.scratch.event_work.len()
+    }
+
+    #[inline]
+    fn staged_is_empty(&self) -> bool {
+        self.scratch.event_work.is_empty()
+    }
+
+    #[inline]
+    fn staged_capacity(&self) -> usize {
+        self.config
+            .resident_capacity
+            .min(self.config.event_capacity)
+    }
+
+    #[inline]
+    fn staged_cell(&self, index: usize) -> StagedCell {
+        StagedCell::from_work_record(self.scratch.event_work[index])
+    }
+
+    #[inline]
+    fn staged_gid(&self, index: usize) -> u64 {
+        self.scratch.event_work[index].target_gid
+    }
+
+    #[inline]
+    fn set_staged_synaptic_current(&mut self, index: usize, value: f64) {
+        self.scratch.event_work[index].current_pa = value;
+    }
+
+    #[inline]
+    fn sort_staged(&mut self) {
+        self.scratch
+            .event_work
+            .sort_unstable_by_key(|record| record.target_gid);
+    }
+
+    #[inline]
+    fn clear_staged(&mut self) {
+        self.scratch.event_work.clear();
+    }
+
+    #[cfg(test)]
+    fn staged_states(&self) -> Vec<CellState> {
+        (0..self.staged_len())
+            .map(|index| self.staged_cell(index).into_state())
+            .collect()
+    }
+
+    #[cfg(test)]
+    fn push_staged_unindexed(&mut self, state: CellState) {
+        debug_assert!(self.staged_len() < self.staged_capacity());
+        self.scratch
+            .event_work
+            .push(StagedCell::from_state(state).into_work_record());
+    }
+
+    #[cfg(test)]
+    fn staged_position(&self, gid: u64) -> Option<usize> {
+        (0..self.staged_len()).find(|index| self.staged_gid(*index) == gid)
     }
 
     /// Fold the staged insertions back into the sorted resident array,
@@ -1073,19 +1196,20 @@ impl ProceduralRuntime {
     }
 
     fn absorb_staged_with_order<const CANONICAL_STAGED_RUN: bool>(&mut self) -> Result<(), u32> {
-        if self.staged.is_empty() {
+        if self.staged_is_empty() {
             debug_assert!(self.staged_index.is_empty());
             return Ok(());
         }
         if !CANONICAL_STAGED_RUN {
-            self.staged.sort_unstable_by_key(|state| state.gid);
+            self.sort_staged();
         }
         debug_assert!(self
-            .staged
+            .scratch
+            .event_work
             .windows(2)
-            .all(|window| window[0].gid < window[1].gid));
+            .all(|window| window[0].target_gid < window[1].target_gid));
         let main_len = self.residents.len();
-        let staged_len = self.staged.len();
+        let staged_len = self.staged_len();
         let merged_len = main_len + staged_len;
         if merged_len > self.residents.capacity() {
             return Err(PROCEDURAL_ALLOCATION);
@@ -1099,18 +1223,18 @@ impl ProceduralRuntime {
         let mut staged_index = staged_len;
         let mut write = merged_len;
         while staged_index > 0 {
-            if read > 0 && self.residents[read - 1].gid > self.staged[staged_index - 1].gid {
+            if read > 0 && self.residents[read - 1].gid > self.staged_gid(staged_index - 1) {
                 read -= 1;
                 write -= 1;
                 self.residents[write] = self.residents[read];
             } else {
                 staged_index -= 1;
                 write -= 1;
-                self.residents[write] = self.staged[staged_index];
+                self.residents[write] = self.staged_cell(staged_index).into_state();
             }
         }
         debug_assert_eq!(read, write);
-        self.staged.clear();
+        self.clear_staged();
         // Clear the reference-path index beside the Vec. Production keeps it
         // empty, so this preserves the old lifecycle and accounting at O(1).
         self.staged_index.clear();
@@ -1131,11 +1255,15 @@ impl ProceduralRuntime {
     /// happens after misses in all three structures); it exists so the read
     /// contract stays total without relying on an invariant an FFI caller
     /// cannot observe.
-    fn read_cell(&self, gid: u64) -> Option<&CellState> {
+    fn read_cell(&self, gid: u64) -> Option<CellState> {
         if let Ok(index) = self.resident_index(gid) {
-            return Some(&self.residents[index]);
+            return Some(self.residents[index]);
         }
-        match self.staged.binary_search_by_key(&gid, |state| state.gid) {
+        match self
+            .scratch
+            .event_work
+            .binary_search_by_key(&gid, |record| record.target_gid)
+        {
             Ok(index) => {
                 // `read_cells` runs only between top-level calls, where every
                 // non-poisoned exit of `advance` has left `staged` empty and
@@ -1144,10 +1272,11 @@ impl ProceduralRuntime {
                 // guard turns any future lifecycle mistake into a loud test
                 // failure instead of a silently misordered binary search.
                 debug_assert!(self
-                    .staged
+                    .scratch
+                    .event_work
                     .windows(2)
-                    .all(|window| window[0].gid <= window[1].gid));
-                Some(&self.staged[index])
+                    .all(|window| window[0].target_gid <= window[1].target_gid));
+                Some(self.staged_cell(index).into_state())
             }
             Err(_) => None,
         }
@@ -1184,16 +1313,19 @@ impl ProceduralRuntime {
     }
 
     fn push_staged<const CANONICAL_STAGED_RUN: bool>(&mut self, state: CellState) {
+        let staged = StagedCell::from_state(state);
         if CANONICAL_STAGED_RUN {
             debug_assert!(self
-                .staged
+                .scratch
+                .event_work
                 .last()
-                .is_none_or(|previous| previous.gid < state.gid));
+                .is_none_or(|previous| previous.target_gid < staged.gid));
         }
-        self.staged.push(state);
+        debug_assert!(self.staged_len() < self.staged_capacity());
+        self.scratch.event_work.push(staged.into_work_record());
         if !CANONICAL_STAGED_RUN {
             self.staged_index
-                .insert(state.gid, self.staged.len() as u32 - 1);
+                .insert(staged.gid, self.staged_len() as u32 - 1);
         }
     }
 
@@ -1245,18 +1377,19 @@ impl ProceduralRuntime {
                     }
                 }
                 let staged_slot = if CANONICAL_STAGED_RUN {
-                    self.staged
+                    self.scratch
+                        .event_work
                         .last()
-                        .filter(|state| state.gid == event.target_gid)
-                        .map(|_| self.staged.len() - 1)
+                        .filter(|record| record.target_gid == event.target_gid)
+                        .map(|_| self.staged_len() - 1)
                 } else {
                     self.staged_index
                         .get(&event.target_gid)
                         .map(|slot| *slot as usize)
                 };
                 if let Some(slot) = staged_slot {
-                    let value = self.staged[slot].synaptic_current + current;
-                    self.staged[slot].synaptic_current = canonical_zero(value);
+                    let value = self.staged_cell(slot).synaptic_current + current;
+                    self.set_staged_synaptic_current(slot, canonical_zero(value));
                     return Ok(());
                 }
                 if current.to_bits() == 0 {
@@ -1265,7 +1398,7 @@ impl ProceduralRuntime {
                 if self.total_residents() == self.config.resident_capacity {
                     return Err(PROCEDURAL_RESIDENT_CAPACITY);
                 }
-                if self.total_residents() == self.residents.capacity() + self.staged.capacity() {
+                if self.total_residents() == self.residents.capacity() + self.staged_capacity() {
                     return Err(PROCEDURAL_ALLOCATION);
                 }
                 if MERGE_FRESH_RUN {
@@ -1291,6 +1424,8 @@ impl ProceduralRuntime {
     }
 
     fn append_events(&mut self, events: &[ProceduralEventRecord]) -> Result<(), u32> {
+        debug_assert!(self.scratch.event_work.is_empty());
+        debug_assert!(self.staged_index.is_empty());
         if events.len() > self.config.event_capacity {
             return Err(PROCEDURAL_EVENT_CAPACITY);
         }
@@ -1385,6 +1520,8 @@ impl ProceduralRuntime {
     /// before reporting the duplicate so a poisoned snapshot shows the same
     /// byte content as the previous implementation.
     fn finish_step_queue_order(&mut self, tail_start: usize) -> Result<(), u32> {
+        debug_assert!(self.staged_is_empty());
+        debug_assert!(self.staged_index.is_empty());
         let head = self.pending_head;
         if tail_start == self.pending.len() {
             // Nothing was generated this step; the live queue is unchanged
@@ -1531,21 +1668,15 @@ impl ProceduralRuntime {
             {
                 return self.poison(PROCEDURAL_INVALID);
             }
-            self.scratch.event_work.clear();
+            // `event_work` finished its queue-merge phase in append_events and
+            // is empty here. Deliver directly from the pending array one Copy
+            // at a time so the same allocation can hold compact staged cells.
+            debug_assert!(self.staged_is_empty());
+            debug_assert!(self.staged_index.is_empty());
+            self.clear_staged();
             let consumption_base = self.pending_head;
-            let due = &self.pending[consumption_base..consumption_base + due_count];
-            for event in due {
-                if let Err(code) = push_bounded(
-                    &mut self.scratch.event_work,
-                    *event,
-                    self.config.event_capacity,
-                    PROCEDURAL_EVENT_CAPACITY,
-                ) {
-                    return self.poison(code);
-                }
-            }
-            for index in 0..self.scratch.event_work.len() {
-                let event = self.scratch.event_work[index];
+            for index in 0..due_count {
+                let event = self.pending[consumption_base + index];
                 delivered_events = match delivered_events.checked_add(1) {
                     Some(value) => value,
                     None => return self.poison(PROCEDURAL_STEP_OVERFLOW),
@@ -1569,7 +1700,7 @@ impl ProceduralRuntime {
             // The fused pass below integrates exactly these cells; dormant
             // cells are retired from the stepped set in event-proportional
             // mode, so this work count is where their cost disappears.
-            let population = self.residents.len() + self.staged.len();
+            let population = self.residents.len() + self.staged_len();
             let mut merge_spiking_run = false;
             cell_steps = match cell_steps.checked_add(population as u64) {
                 Some(value) => value,
@@ -1578,27 +1709,28 @@ impl ProceduralRuntime {
             if population > 0 {
                 // Ascending merged run of every GID stepped this step.
                 if !CANONICAL_STAGED_RUN {
-                    self.staged.sort_unstable_by_key(|state| state.gid);
+                    self.sort_staged();
                 }
                 debug_assert!(self
-                    .staged
+                    .scratch
+                    .event_work
                     .windows(2)
-                    .all(|window| window[0].gid < window[1].gid));
+                    .all(|window| window[0].target_gid < window[1].target_gid));
                 {
                     let run = &mut self.scratch.gid_run;
                     run.clear();
                     let mut staged_index = 0usize;
                     for state in &self.residents {
-                        while staged_index < self.staged.len()
-                            && self.staged[staged_index].gid < state.gid
+                        while staged_index < self.scratch.event_work.len()
+                            && self.scratch.event_work[staged_index].target_gid < state.gid
                         {
-                            run.push(self.staged[staged_index].gid);
+                            run.push(self.scratch.event_work[staged_index].target_gid);
                             staged_index += 1;
                         }
                         run.push(state.gid);
                     }
-                    while staged_index < self.staged.len() {
-                        run.push(self.staged[staged_index].gid);
+                    while staged_index < self.scratch.event_work.len() {
+                        run.push(self.scratch.event_work[staged_index].target_gid);
                         staged_index += 1;
                     }
                 }
@@ -2309,40 +2441,41 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
         return PROCEDURAL_SNAPSHOT_CAPACITY;
     }
     if !residents.is_null() {
-        // Residents are reported in ascending GID order; staged cells join
+        // Residents are reported in ascending GID order; compact staged cells join
         // the stream via merge so a mid-step snapshot matches the sorted
         // layout the previous single-array implementation produced.
         //
-        // Hardening (Seam B.6.5): the merge assumes `staged` is ascending.
+        // Hardening (Seam B.6.5): the merge assumes staged work is ascending.
         // Non-empty staged is reachable here only mid-delivery or on a
         // poisoned mid-abort; the assert documents that assumption so a
         // future lifecycle mistake fails loudly instead of silently
         // misordering output.
         debug_assert!(
-            runtime.staged.is_empty()
+            runtime.staged_is_empty()
                 || runtime
-                    .staged
+                    .scratch
+                    .event_work
                     .windows(2)
-                    .all(|window| window[0].gid <= window[1].gid),
+                    .all(|window| window[0].target_gid <= window[1].target_gid),
             "snapshot merge requires ascending staged"
         );
         let mut main_index = 0usize;
         let mut staged_index = 0usize;
         let mut out_index = 0usize;
-        while main_index < runtime.residents.len() || staged_index < runtime.staged.len() {
+        while main_index < runtime.residents.len() || staged_index < runtime.staged_len() {
             let take_staged = main_index == runtime.residents.len()
-                || (staged_index < runtime.staged.len()
-                    && runtime.staged[staged_index].gid < runtime.residents[main_index].gid);
-            let state = if take_staged {
-                let state = &runtime.staged[staged_index];
+                || (staged_index < runtime.staged_len()
+                    && runtime.staged_gid(staged_index) < runtime.residents[main_index].gid);
+            let record = if take_staged {
+                let record = runtime.staged_cell(staged_index).into_state().record();
                 staged_index += 1;
-                state
+                record
             } else {
-                let state = &runtime.residents[main_index];
+                let record = runtime.residents[main_index].record();
                 main_index += 1;
-                state
+                record
             };
-            *residents.add(out_index) = state.record();
+            *residents.add(out_index) = record;
             out_index += 1;
         }
     }
@@ -2372,7 +2505,7 @@ pub unsafe extern "C" fn humanbrain_procedural_runtime_snapshot(
 /// Targeted resident-state read (active residency only).
 ///
 /// For each `gids[i]`: binary-search `residents` (ascending-GID array) via
-/// `resident_index`, then linear-binary-search `staged`; staged wins if
+/// `resident_index`, then binary-search compact staged work; staged wins if
 /// present (unreachable under the disjointness invariant D1, kept defensive).
 /// Writes exactly `gid_count` [`ProceduralResidentRecord`] values to `out` in
 /// input request order and one presence flag per request to `found`. Absent
@@ -3381,7 +3514,7 @@ mod tests {
             event_words(runtime.pending_slice()),
             event_words(&dense.pending)
         );
-        assert!(runtime.staged.is_empty());
+        assert!(runtime.staged_is_empty());
         assert!(runtime.dormant.is_empty());
         let dense_nonzero: Vec<_> = dense
             .cells
@@ -3431,7 +3564,7 @@ mod tests {
         assert_eq!(overflow.current_step, 0);
         assert_eq!(overflow.poisoned, super::PROCEDURAL_SPIKE_CAPACITY);
         assert_eq!(overflow.pending_logical_len(), 0);
-        assert!(overflow.staged.is_empty());
+        assert!(overflow.staged_is_empty());
         assert!(overflow.dormant.is_empty());
         assert_eq!(
             state_images(&overflow.residents[..2]),
@@ -3581,17 +3714,17 @@ mod tests {
         // the sorted array by the step's fused pass.
         let batch: Vec<_> = (0..8).map(|gid| drive(gid, 0, 10.0)).collect();
         assert_eq!(runtime.advance(1, &batch), super::PROCEDURAL_OK);
-        assert_eq!(runtime.staged.len(), 0);
+        assert_eq!(runtime.staged_len(), 0);
         // Stage gids 20..24 without running a fused pass, leaving them in the
-        // staged Vec where the export's defensive staged branch must find
-        // them. Ascending pushes keep `staged` sorted as the binary search
+        // compact staged work where the export's defensive branch must find
+        // them. Ascending pushes keep it sorted as the binary search
         // requires.
         for gid in 20..24u64 {
             runtime
                 .apply_event(drive(gid, runtime.current_step, 10.0))
                 .unwrap();
         }
-        assert_eq!(runtime.staged.len(), 4);
+        assert_eq!(runtime.staged_len(), 4);
 
         // Request order mixes residents, staged, absent, out-of-range, and a
         // duplicate; results must come back positionally.
@@ -3809,11 +3942,8 @@ mod tests {
     /// D2 forward direction: after every delivery-phase mutation the index
     /// must map exactly `{staged[i].gid -> i}` -- nothing more, nothing less.
     fn assert_index_maps_exactly_the_staged_vec(runtime: &ProceduralRuntime) {
-        let expected: BTreeMap<u64, u32> = runtime
-            .staged
-            .iter()
-            .enumerate()
-            .map(|(slot, state)| (state.gid, slot as u32))
+        let expected: BTreeMap<u64, u32> = (0..runtime.staged_len())
+            .map(|slot| (runtime.staged_gid(slot), slot as u32))
             .collect();
         assert_eq!(
             runtime.staged_index, expected,
@@ -3823,7 +3953,8 @@ mod tests {
         // truncation and stale slots mechanically).
         for (gid, slot) in &runtime.staged_index {
             assert_eq!(
-                runtime.staged[*slot as usize].gid, *gid,
+                runtime.staged_gid(*slot as usize),
+                *gid,
                 "index entry ({gid} -> {slot}) points at a different cell"
             );
         }
@@ -3863,17 +3994,13 @@ mod tests {
                         let mut state = CellState::canonical_rest(event.target_gid);
                         state.eligibility = restored;
                         state.synaptic_current = current;
-                        runtime.staged.push(state);
+                        runtime.push_staged_unindexed(state);
                         return Ok(());
                     }
                 }
-                if let Some(slot) = runtime
-                    .staged
-                    .iter()
-                    .position(|state| state.gid == event.target_gid)
-                {
-                    let value = runtime.staged[slot].synaptic_current + current;
-                    runtime.staged[slot].synaptic_current = canonical_zero(value);
+                if let Some(slot) = runtime.staged_position(event.target_gid) {
+                    let value = runtime.staged_cell(slot).synaptic_current + current;
+                    runtime.set_staged_synaptic_current(slot, canonical_zero(value));
                     return Ok(());
                 }
                 if current.to_bits() == 0 {
@@ -3883,7 +4010,7 @@ mod tests {
                     return Err(super::PROCEDURAL_RESIDENT_CAPACITY);
                 }
                 if runtime.total_residents()
-                    == runtime.residents.capacity() + runtime.staged.capacity()
+                    == runtime.residents.capacity() + runtime.staged_capacity()
                 {
                     return Err(super::PROCEDURAL_ALLOCATION);
                 }
@@ -3894,7 +4021,7 @@ mod tests {
                 )?;
                 let mut state = CellState::canonical_rest(event.target_gid);
                 state.synaptic_current = current;
-                runtime.staged.push(state);
+                runtime.push_staged_unindexed(state);
             }
         }
         Ok(())
@@ -3908,7 +4035,7 @@ mod tests {
         // Absorbed residents first: an advance must leave both stores empty.
         let batch: Vec<_> = (0..8).map(|gid| drive(gid, 0, 10.0)).collect();
         assert_eq!(runtime.advance(1, &batch), super::PROCEDURAL_OK);
-        assert!(runtime.staged.is_empty());
+        assert!(runtime.staged_is_empty());
         assert!(runtime.staged_index.is_empty());
 
         // Delivery phase observable between top-level calls: fresh staging in
@@ -3929,7 +4056,7 @@ mod tests {
             .apply_event(drive(22, runtime.current_step, 0.25))
             .unwrap();
         assert_index_maps_exactly_the_staged_vec(&runtime);
-        assert_eq!(runtime.staged.len(), 3);
+        assert_eq!(runtime.staged_len(), 3);
 
         // Zero-current deliveries stage nothing and hit nothing new.
         runtime
@@ -3939,12 +4066,12 @@ mod tests {
             .apply_event(drive(20, runtime.current_step, 0.0))
             .unwrap();
         assert_index_maps_exactly_the_staged_vec(&runtime);
-        assert_eq!(runtime.staged.len(), 3);
+        assert_eq!(runtime.staged_len(), 3);
 
-        // The next advance's fused pass sorts `staged` (invalidating slots)
-        // and absorb clears Vec+index together: post-advance emptiness.
-        assert_eq!(runtime.advance(1, &[]), super::PROCEDURAL_OK);
-        assert!(runtime.staged.is_empty());
+        // Absorption sorts compact staged work (invalidating slots) and clears
+        // the shared buffer plus index together.
+        runtime.absorb_staged_with_order::<false>().unwrap();
+        assert!(runtime.staged_is_empty());
         assert!(runtime.staged_index.is_empty());
 
         // EP reactivation push site: spike gid 3, wait out recurrent noise
@@ -3960,11 +4087,12 @@ mod tests {
         }
         assert!(ep.dormant.contains_key(&3), "fixture must dormanize gid 3");
         ep.apply_event(drive(3, ep.current_step, 5.0)).unwrap();
-        assert_eq!(ep.staged.len(), 1);
+        assert_eq!(ep.staged_len(), 1);
         assert_index_maps_exactly_the_staged_vec(&ep);
         assert_eq!(ep.staged_index.get(&3), Some(&0));
-        // Reactivated cell absorbs cleanly on the next advance.
-        assert_eq!(ep.advance(1, &[]), super::PROCEDURAL_OK);
+        // Reactivated cell absorbs cleanly before the event-work allocation
+        // returns to its queue-merge phase.
+        ep.absorb_staged_with_order::<false>().unwrap();
         assert!(ep.staged_index.is_empty());
     }
 
@@ -4054,8 +4182,10 @@ mod tests {
                     indexed_dormant, oracle_dormant,
                     "dormant store must stay bit-identical"
                 );
-                assert_eq!(indexed.staged.len(), oracle.staged.len());
-                for (a, b) in indexed.staged.iter().zip(oracle.staged.iter()) {
+                let indexed_staged = indexed.staged_states();
+                let oracle_staged = oracle.staged_states();
+                assert_eq!(indexed_staged.len(), oracle_staged.len());
+                for (a, b) in indexed_staged.iter().zip(oracle_staged.iter()) {
                     assert_eq!(a.gid, b.gid);
                     assert_eq!(a.synaptic_current.to_bits(), b.synaptic_current.to_bits());
                     assert_eq!(a.eligibility.to_bits(), b.eligibility.to_bits());
@@ -4082,9 +4212,11 @@ mod tests {
                 linear_scan_apply_event(&mut oracle, *event).unwrap();
                 assert_index_maps_exactly_the_staged_vec(&indexed);
             }
-            assert!(!indexed.staged.is_empty());
-            assert_eq!(indexed.staged.len(), oracle.staged.len());
-            for (a, b) in indexed.staged.iter().zip(oracle.staged.iter()) {
+            assert!(!indexed.staged_is_empty());
+            let indexed_staged = indexed.staged_states();
+            let oracle_staged = oracle.staged_states();
+            assert_eq!(indexed_staged.len(), oracle_staged.len());
+            for (a, b) in indexed_staged.iter().zip(oracle_staged.iter()) {
                 assert_eq!(a.gid, b.gid);
                 assert_eq!(a.synaptic_current.to_bits(), b.synaptic_current.to_bits());
             }
@@ -4127,7 +4259,7 @@ mod tests {
     }
 
     #[test]
-    fn fresh_resident_run_matches_scalar_oracle_and_removes_interleaved_shifts() {
+    fn phase_aliased_staging_preserves_fresh_run_parity_overflow_and_payload() {
         let keyed = |target_gid: u64, source_gid: u64, current_pa: f64| ProceduralEventRecord {
             due_step: 1,
             target_gid,
@@ -4168,8 +4300,8 @@ mod tests {
         };
         let staged_images = |runtime: &ProceduralRuntime| -> Vec<Vec<u8>> {
             runtime
-                .staged
-                .iter()
+                .staged_states()
+                .into_iter()
                 .map(|state| resident_raw_bytes(&state.record()).to_vec())
                 .collect()
         };
@@ -4244,7 +4376,7 @@ mod tests {
             super::PROCEDURAL_OK
         );
         assert_raw_parity(&merged, &scalar);
-        assert!(merged.staged.is_empty());
+        assert!(merged.staged_is_empty());
         assert!(!merged.last_spikes.is_empty());
         assert!(!merged.pending_slice().is_empty());
         assert!(!merged.dormant.is_empty());
@@ -4277,10 +4409,8 @@ mod tests {
             super::PROCEDURAL_DISTINCT_CAPACITY
         );
         assert_raw_parity(&merged_overflow, &scalar_overflow);
-        let accepted: Vec<_> = merged_overflow
-            .staged
-            .iter()
-            .map(|state| state.gid)
+        let accepted: Vec<_> = (0..merged_overflow.staged_len())
+            .map(|index| merged_overflow.staged_gid(index))
             .collect();
         assert_eq!(accepted, vec![1, 3, 5]);
         assert!(!merged_overflow.staged_index.contains_key(&7));
@@ -4318,6 +4448,87 @@ mod tests {
         assert_eq!(scalar_offender, Some(7));
         assert_eq!(merged_offender, scalar_offender);
         assert_eq!(fresh_run, vec![1, 3, 5]);
+
+        // Resident-capacity failure remains on the exact first offending
+        // canonical event. The already accepted compact staged prefix stays
+        // snapshot-visible after poison, just as the former CellState Vec did.
+        let mut resident_tight = ep_config(16, PROCEDURAL_STEPPING_FULL_TOUCH);
+        resident_tight.resident_capacity = 3;
+        resident_tight.event_capacity = 8;
+        resident_tight.spike_capacity = 8;
+        resident_tight.interval_distinct_capacity = 8;
+        let decay = [0.5, 0.5];
+        let mut compact_overflow =
+            ProceduralRuntime::new(ep_glif(), resident_tight, decay, decay, [0.0; 2]).unwrap();
+        let mut scalar_overflow =
+            ProceduralRuntime::new(ep_glif(), resident_tight, decay, decay, [0.0; 2]).unwrap();
+        let resident_events: Vec<_> = (0..4).map(|gid| drive(gid, 0, 0.25)).collect();
+        assert_eq!(
+            compact_overflow.advance(1, &resident_events),
+            super::PROCEDURAL_RESIDENT_CAPACITY
+        );
+        assert_eq!(
+            scalar_overflow.advance_with_fresh_run::<false, false>(1, &resident_events),
+            super::PROCEDURAL_RESIDENT_CAPACITY
+        );
+        assert_raw_parity(&compact_overflow, &scalar_overflow);
+        assert_eq!(compact_overflow.staged_len(), 3);
+        assert_eq!(
+            (0..compact_overflow.staged_len())
+                .map(|index| compact_overflow.staged_gid(index))
+                .collect::<Vec<_>>(),
+            vec![0, 1, 2]
+        );
+        assert_eq!(
+            compact_overflow.pending_logical_len(),
+            resident_events.len()
+        );
+        assert_eq!(
+            compact_overflow.poisoned,
+            super::PROCEDURAL_RESIDENT_CAPACITY
+        );
+
+        // Exact x64 accounting: the event-work allocation was already charged;
+        // removing the separate 72-byte CellState run reclaims its T slots and
+        // one 24-byte Vec header, with no replacement payload.
+        const PAYLOAD_CAPACITY: usize = 65_536;
+        const PRE_ALIAS_PAYLOAD_BYTES: usize = 6_330_192;
+        const POST_ALIAS_PAYLOAD_BYTES: usize = 6_325_560;
+        let mut payload_config = ep_config(
+            (PAYLOAD_CAPACITY + 1) as u64,
+            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
+        );
+        payload_config.resident_capacity = PAYLOAD_CAPACITY;
+        payload_config.event_capacity = 64;
+        payload_config.spike_capacity = 64;
+        payload_config.interval_distinct_capacity = PAYLOAD_CAPACITY;
+        let payload_runtime =
+            ProceduralRuntime::new(ep_glif(), payload_config, decay, decay, [0.0; 2]).unwrap();
+        let staged_capacity = payload_config
+            .resident_capacity
+            .min(payload_config.event_capacity);
+        let reclaimed_bytes = staged_capacity * std::mem::size_of::<CellState>()
+            + std::mem::size_of::<Vec<CellState>>();
+        assert_eq!(std::mem::size_of::<CellState>(), 72);
+        assert_eq!(reclaimed_bytes, 72 * staged_capacity + 24);
+        assert_eq!(reclaimed_bytes, 4_632);
+        assert_eq!(payload_runtime.payload_bytes(), POST_ALIAS_PAYLOAD_BYTES);
+        assert_eq!(
+            payload_runtime.payload_bytes() + reclaimed_bytes,
+            PRE_ALIAS_PAYLOAD_BYTES
+        );
+        assert_eq!(96_389_160usize - reclaimed_bytes, 96_384_528);
+        assert_eq!(
+            72usize * 1_000_000 + std::mem::size_of::<Vec<CellState>>(),
+            72_000_024
+        );
+        eprintln!(
+            "phase-aliased-staging payload_bytes={} reclaimed_bytes={} sparse_1m_payload_bytes={} full_1m_reclaimed_bytes={}",
+            payload_runtime.payload_bytes(),
+            reclaimed_bytes,
+            96_384_528usize,
+            72_000_024usize
+        );
 
         // Lightweight median at a shift-heavy, interleaved shape. Construction
         // of the identical preloaded ledgers is outside the timed region; the
@@ -4839,7 +5050,7 @@ mod tests {
         );
         assert_eq!(canonical.poisoned, indexed.poisoned);
         assert_eq!(canonical.payload_bytes(), indexed.payload_bytes());
-        assert!(canonical.staged.is_empty());
+        assert!(canonical.staged_is_empty());
         assert!(canonical.staged_index.is_empty());
         assert!(!canonical.last_spikes.is_empty());
 
@@ -4873,7 +5084,7 @@ mod tests {
                 let ledger = &mut runtime.scratch.interval_ledger;
                 ledger.merge_run_in_place(run, super::SEEN_RESIDENT);
             }
-            runtime.staged.sort_unstable_by_key(|state| state.gid);
+            runtime.sort_staged();
             runtime.absorb_staged_with_order::<false>().unwrap();
             let elapsed = start.elapsed().as_nanos();
             assert_eq!(runtime.residents.len(), FRESH);
@@ -4957,7 +5168,7 @@ mod tests {
         let mut runtime = ep_runtime(32, PROCEDURAL_STEPPING_FULL_TOUCH);
         let batch: Vec<_> = (0..4).map(|gid| drive(gid, 0, 10.0)).collect();
         assert_eq!(runtime.advance(1, &batch), super::PROCEDURAL_OK);
-        assert!(runtime.staged.is_empty());
+        assert!(runtime.staged_is_empty());
         assert!(runtime.staged_index.is_empty());
 
         // Poison mid-delivery: capacity fail-stop aborts the delivery phase
@@ -4974,7 +5185,7 @@ mod tests {
             super::PROCEDURAL_RESIDENT_CAPACITY
         );
         assert_ne!(doomed.poisoned, super::PROCEDURAL_OK);
-        assert!(!doomed.staged.is_empty() || !doomed.staged_index.is_empty());
+        assert!(!doomed.staged_is_empty() || !doomed.staged_index.is_empty());
         assert_eq!(doomed.advance(1, &[]), super::PROCEDURAL_POISONED);
         assert_eq!(doomed.advance(1, &[]), super::PROCEDURAL_POISONED);
 
@@ -5018,7 +5229,7 @@ mod tests {
                 })
                 .unwrap();
         }
-        assert_eq!(runtime.staged.len(), 1);
+        assert_eq!(runtime.staged_len(), 1);
         // Oracle: fold left over the canonical pending order (events sorted
         // by (due_step, target, source, edge_slot); ascending source here),
         // starting from the canonical-rest zero, canonical_zero after each
@@ -5029,7 +5240,7 @@ mod tests {
         }
         assert_ne!(expected, 0.0, "magnitudes must be order-sensitive");
         assert_eq!(
-            runtime.staged[0].synaptic_current.to_bits(),
+            runtime.staged_cell(0).synaptic_current.to_bits(),
             expected.to_bits(),
             "accumulated synaptic_current must bit-equal the sequential-sum oracle"
         );
@@ -5051,8 +5262,8 @@ mod tests {
             .unwrap();
         }
         assert_eq!(
-            oracle.staged[0].synaptic_current.to_bits(),
-            runtime.staged[0].synaptic_current.to_bits()
+            oracle.staged_cell(0).synaptic_current.to_bits(),
+            runtime.staged_cell(0).synaptic_current.to_bits()
         );
 
         // Through a real advance: many duplicates inside one delivery batch
@@ -5125,7 +5336,7 @@ mod tests {
             for gid in 0..STAGED_BURST as u64 {
                 runtime.apply_event(drive(gid, 0, 1.0)).unwrap();
             }
-            assert_eq!(runtime.staged.len(), STAGED_BURST);
+            assert_eq!(runtime.staged_len(), STAGED_BURST);
 
             let start = std::time::Instant::now();
             for index in 0..MIXED_OPS {
