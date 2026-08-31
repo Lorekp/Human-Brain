@@ -31,13 +31,13 @@ from hashlib import sha256
 from typing import NamedTuple, cast
 
 import numpy as np
-
 from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import public_typed_semantic_vector_race as semantic_race
 from experiments.r3_pilot import typed_semantic_packed_bindings_v1 as packed
 from experiments.r3_pilot import typed_semantic_packed_frontier_full_typed_v1 as full_typed
 from experiments.r3_pilot import typed_semantic_packed_frontier_v2 as packed_v2
 from experiments.r3_pilot import typed_semantic_packed_frontier_v3 as packed_v3
+from experiments.r3_pilot import typed_semantic_packed_frontier_v4 as packed_v4
 from experiments.r3_pilot import typed_semantic_packed_generic_train_breadth_v3 as breadth_v3
 from experiments.r3_pilot import typed_semantic_packed_generic_train_breadth_v4 as breadth_v4
 from experiments.r3_pilot import typed_semantic_packed_prompt_authorized_plan_slice_v1 as plan_slice
@@ -594,6 +594,93 @@ class _PredicateGateListIntBuilder(breadth_v4._ListIntBuilder):
         self._action_cell_gate = action_cell_gate
         self._gate_race_roots: list[str] = []
         self._base_predicate: packed_v2.PackedPartitionHandle | None = None
+
+    def build(
+        self,
+    ) -> tuple[full_typed.PackedFullTypedState, packed_v4._SemanticPartitionWorkset]:
+        """Publish only the topology authorized by this mechanism's certificate."""
+
+        try:
+            literal_relation = self._prepare_inputs()
+            collection, item, literal = self._seed_families(literal_relation)
+            self._family(
+                "sum",
+                (collection,),
+                context_role="root",
+                environment_type_labels=("List[Int]",),
+                result_type_label="Int",
+                root_candidate=True,
+            )
+            self._family(
+                "less-than-item-literal",
+                (item, literal),
+                context_role="bound",
+                environment_type_labels=("Int", "List[Int]"),
+                result_type_label="Bool",
+                root_candidate=False,
+            )
+            self._extend_before_publish(collection, item, literal)
+
+            frozen = self.workset.publish()
+            families, enodes, eclasses = self._components(frozen)
+            typed_families, root_eclasses = self._typed_publication(
+                frozen,
+                families,
+                enodes,
+                eclasses,
+            )
+            component = self.authenticated_components
+            typed_capsule = self.typed_capsule
+            context = self.context_certificate
+            if component is None or typed_capsule is None or context is None:
+                raise RuntimeError("V3 cross-type publication is incomplete")
+            self._charge("frontier-seal")
+            work = self.work_audit()
+            payload = {
+                "status": full_typed.FRONTIER_READY,
+                "signature": self.signature.to_record(),
+                "case_arguments": self.case_arguments,
+                "literals": self.literals,
+                "requested_max_ast_cost": self.max_ast_cost,
+                "maximum_completed_ast_cost": self.maximum_completed_ast_cost,
+                "context_certificate_sha256": context.sha256,
+                "operator_checkpoint_sha256": self.operator.checkpoint_sha256,
+                "frozen_workset_sha256": frozen.sha256,
+                "component_capsule_sha256": component.sha256,
+                "typed_capsule_sha256": typed_capsule.sha256,
+                "root_eclass_ids": typed_capsule.root_eclass_ids,
+                "build_work_sha256": work.sha256,
+            }
+            state = full_typed.PackedFullTypedState(
+                status=full_typed.FRONTIER_READY,
+                signature=self.signature,
+                case_arguments=self.case_arguments,
+                literals=self.literals,
+                requested_max_ast_cost=self.max_ast_cost,
+                maximum_completed_ast_cost=self.maximum_completed_ast_cost,
+                context_certificate=context,
+                operator_checkpoint_sha256=self.operator.checkpoint_sha256,
+                frozen_workset=frozen,
+                families=families,
+                enodes=enodes,
+                eclasses=eclasses,
+                typed_families=typed_families,
+                root_eclasses=root_eclasses,
+                root_eclass_ids=typed_capsule.root_eclass_ids,
+                component_capsule_sha256=component.sha256,
+                typed_capsule_sha256=typed_capsule.sha256,
+                build_work_sha256=work.sha256,
+                sha256=full_typed._digest("frontier", payload),
+            )
+            return state, self.workset
+        except packed.PackedRelationWorkLimitExceeded as error:
+            self.bound_name = "recipe-relation-work"
+            self.bound_attempted = error.attempted
+            return self._stopped_state(), self.workset
+        except packed_v2._PhysicalWorkBoundExceeded as error:
+            self.bound_name = error.name
+            self.bound_attempted = error.attempted
+            return self._stopped_state(), self.workset
 
     def _family(
         self,
