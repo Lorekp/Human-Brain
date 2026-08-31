@@ -188,6 +188,16 @@ zero static queries, plan builds, desired reads, proofs, normal rows, retries,
 or sealed inputs. V2 is an early causal-control/receipt-contract STOP, not a
 semantic joint result; it must not be retried or reclassified.
 
+Commit `6848ad7` then froze the separately named V3 exclusive runner with an
+exact dynamic-`n` work contract and durable no-retry spend. Its sole execution,
+banked immutably at `b283053`, selected authentic source sets of 8 and 7 events,
+then both static-off and static-on returned `STOP_ZERO` on both rows. The run
+records 67,380 fitted GLIF steps and zero plan builds, desired reads, proofs,
+retries, or sealed inputs. V3 is permanently spent and must never be retried.
+This localizes a same-FIT static-event abstraction failure after successful
+source selection; it is not unseen transfer, a semantic result, or coding
+capability evidence.
+
 Commit `2f6637f` separately learns a reusable relative literal role from causal
 packed outcomes. Repeated `-14/-12` examples teach anonymous UNIQUE versus
 REPEATED roles; an entirely unseen `-13` value and shifted spans recall the
@@ -207,6 +217,25 @@ residual, shifted/permuted, and opaque `17/31` recalls all select the exact
 desired-free witness. The reducer, program topology, typed decoder, token clock,
 and destination hole remain explicit scaffolds, so the narrow claim is reusable
 causal variable binding rather than operator discovery or coding capability.
+
+Commit `aa91fa2` composes that stack with a prompt-visible append probe and
+learns from consequences whether output deltas follow predicate spikes or the
+appended payload. Count and raw-sum reducer authority transfer to fresh prompts,
+physical permutations, and a same-prompt output-law flip. It adds five cells
+(3,449 total); the composed causal-abstraction stack owns 24 trainable bytes.
+Predicate/addition execution, reducer scaffolds, typed decoding, and token
+timing remain explicit, so this is reducer-law transfer rather than arbitrary
+algorithm learning.
+
+Commit `61b345f` then composes that append-effect checkpoint with predictive
+segmentation and learns only the two-cell `NEW/CONTINUE -> OPEN/EXTEND` seam.
+The 69,208-cell, 308-byte composite passes four fresh self-posed transfers:
+count, raw sum, physical representation/event-order relabeling, and a
+same-prompt output-law flip. Cue-off abstains, router-cell-off stops zero, and
+append-effect-off stops at its dependency. Prompt/probe grouping, balanced byte
+framing, interval cues, predicate/addition/reducer implementations, typed
+decoding, and compilation remain scaffolds; this is a narrow anonymous
+`List[Int] -> Int` composition result, not public transfer or coding capability.
 
 Frozen-architecture G0 is now mandatory before public DEV or canonical M0. Its
 machine-frozen numerical preregistration uses regulatory and spatial non-coding
@@ -288,6 +317,21 @@ nine FIT certificate SHA-256s, payloads, views, events, and counters match the
 scalar producer. A 50-activation local selector fixture improved 3.65x, while
 full certificate construction improved 1.10x because static inference remains
 dominant. This is stage-local same-FIT parity/performance evidence only.
+
+Commit `2837f1d` banks both procedural admission optimizations: fresh target GIDs
+use one ascending step-local run plus ledger union merge, and canonical staged
+cells use O(1) last-entry repeats/append with no production B-tree or redundant
+sort. Focused synthetic medians improved 30.96x and 3.34x respectively while raw
+state, counters, overflow behavior, public APIs, and scientific accounting
+remained exact. Final source SHA-256 is
+`3016fd0a44d891c8f2b8b161f5c2a011713e70cfd0848f0585442f969927958e`.
+This is a local kernel result only: it changes no Path-2 outcome, neural work
+ledger, or capability claim.
+
+Across R3, R4, and R2, the next shared seam is a reusable content-addressed
+schema/static-event abstraction: learned content must select and reuse an event
+schema without cohort-specific static labels, host family identity, or desired
+outputs.
 
 ## Active-cell scaling and dynamics
 

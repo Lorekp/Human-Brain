@@ -300,7 +300,50 @@ Reference:
 
 - [`joint_prompt_factor_packed_full_typed_v1.py`](../../experiments/r3_pilot/joint_prompt_factor_packed_full_typed_v1.py)
 
-## 10. Common G0 substrate begins
+## 10. Consequence abstractions, terminal V3, and fresh-run merge
+
+The adjacent self-posed abstraction lane continued beyond relative literal role,
+ordered operand, and residual-singleton routing. Commit `aa91fa2` used append
+consequences to learn whether output deltas follow predicate spikes or appended
+payload, transferring anonymous count versus raw-sum reducer authority to fresh
+prompts, physical permutations, and a same-prompt law flip. It added five cells
+(3,449 total); the composed four-layer stack owns 24 trainable bytes. The
+predicate/addition/reducer implementations and compiler remain scaffolds.
+
+The canonical joint lane used commit `6848ad7` to freeze a separately named V3
+exclusive one-shot runner with dynamic-`n` accounting. Its immutable terminal
+execution at `b283053` selected authentic source sets of 8 and 7 events, but
+both static-off and static-on returned `STOP_ZERO` on both rows. It consumed
+67,380 fitted GLIF steps and opened zero plan builds, desired reads, proofs, or
+sealed inputs. The cohort is permanently spent and must never be retried. This
+is a same-FIT static-event failure localization, not a semantic or capability
+result.
+
+Commit `2837f1d` independently banked both procedural admission optimizations:
+an ascending step-local fresh-GID run plus ledger union merge, and canonical
+staged append/last-entry repeat without a production B-tree or redundant sort.
+Focused synthetic medians measured 30.96x and 3.34x respectively while raw
+state, counters, overflow behavior, API, and scientific accounting stayed
+exact. Final source SHA-256 is
+`3016fd0a44d891c8f2b8b161f5c2a011713e70cfd0848f0585442f969927958e`.
+It does not change Path-2 evidence, neural work, or capability.
+
+Commit `61b345f` then composed the append-effect stack with predictive
+segmentation through only a learned two-cell `NEW/CONTINUE -> OPEN/EXTEND`
+router. The 69,208-cell, 308-byte composite passed four fresh self-posed
+`List[Int] -> Int` transfers: count, raw sum, representation/event permutation,
+and a same-prompt output-law flip. Cue-off, router-cell-off, and append-effect-
+off controls stopped causally. Host prompt/probe grouping, fixed byte framing,
+interval cues, predicate/addition/reducer code, typed decoding, and compilation
+remain explicit, so the claim is narrow composition rather than parsing,
+arbitrary algorithms, public transfer, or coding capability.
+
+These results localize the next shared R3/R4/R2 seam to a reusable content-
+addressed schema/static-event abstraction: learned content should address and
+reuse an event schema without cohort labels, family identity, or desired
+outputs.
+
+## 11. Common G0 substrate begins
 
 Commit `4843236` adds a domain-neutral opaque-byte projection with 65,536 input
 cells, sparse value/position/binding assemblies, recurrent trace lanes, and one
@@ -317,7 +360,7 @@ References:
 - [`common_event_cells_v1.py`](../../experiments/g0/common_event_cells_v1.py)
 - [`common_event_associative_memory_v1.py`](../../experiments/g0/common_event_associative_memory_v1.py)
 
-## 11. Retired directions
+## 12. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:
 
@@ -332,7 +375,7 @@ Do not reopen these without a new falsifiable rationale and a newly named gate:
 - leaking hidden property/DEV outcomes back into selection or architecture
   design.
 
-## 12. Why this history is separate
+## 13. Why this history is separate
 
 The main roadmap should answer:
 

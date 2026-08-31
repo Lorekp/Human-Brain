@@ -1,9 +1,9 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-31 after the terminal V2 joint
-static-control localization, consequence-learned residual-literal routing,
-predictive event segmentation, and exact large-batch GLIF acceleration. Exact
-scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-08-31 after the terminal V3 joint
+static-event STOP, consequence-learned append/reducer composition, segmented
+anonymous aggregates, and procedural fresh-run acceleration. Exact scientific
+boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -15,10 +15,10 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  TRAIN-only prompt → semantic-factor bridge       [joint V2 static-control STOP; fresh successor needed]
-R3  Bottom-up typed semantic synthesis               [ordered operands + residual literal route banked]
-R2  Persistent knowledge and reading memory          [eventwise consolidation + predictive segmentation banked]
-R1  Fast, auditable simulated-cell substrate         [continuous; large compiled race 5.56x locally]
+R4  TRAIN-only prompt → semantic-factor bridge       [joint V3 static on/off STOP; cohort immutable]
+R3  Bottom-up typed semantic synthesis               [segmented anonymous aggregate composition banked]
+R2  Persistent knowledge and reading memory          [predictive segmentation banked; reusable schema next]
+R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + fresh-run merge banked]
 ```
 
 ## Actual frontier
@@ -171,6 +171,15 @@ inputs. V2 therefore supplies no semantic joint result and must not be retried;
 the static-control receipt assumption may change only in a separately named
 fresh successor.
 
+Commit `6848ad7` froze that separately named V3 exclusive runner with exact
+dynamic-`n` accounting and a durable no-retry marker. Its one execution is
+terminally banked at `b283053`: authentic source selection produced 8 and 7
+events, while both static-off and static-on returned `STOP_ZERO` for both rows.
+The immutable receipt records 67,380 fitted GLIF steps and zero plan builds,
+desired reads, proofs, retries, or sealed inputs. V3 must never be retried. It
+localizes the missing mechanism after source selection to reusable static-event
+abstraction; it supplies no unseen transfer, semantic-joint, or coding result.
+
 Commit `2f6637f` advances the adjacent abstraction lane: causal packed PASS/FAIL
 outcomes teach anonymous UNIQUE versus REPEATED literal roles on `-14/-12`, then
 recall an unseen `-13` under shifted spans, move the hole when repetition moves
@@ -186,6 +195,25 @@ It adds three cells and four persistent bytes, transfers unseen `-13/4`,
 witness. The count/comparison/addition topology, typed decoder, token clock,
 destination hole, and reducer remain explicit scaffolds; these are reusable
 causal variable-binding mechanisms, not general coding capability.
+
+Commit `aa91fa2` next learns from append-probe consequences whether output
+deltas follow predicate spikes or appended payload, anonymously selecting count
+versus raw-sum reducer authority. It transfers fresh prompts, shifted/permuted
+assemblies, and a same-prompt law flip, adds five cells (3,449 total), and closes
+the four-layer causal stack at 24 trainable bytes. Commit `61b345f` composes that
+checkpoint with the banked predictive segmenter and learns only a two-cell
+`NEW/CONTINUE -> OPEN/EXTEND` router. The resulting 69,208-cell, 308-byte
+composite passes fresh count, sum, representation/event permutation, and
+same-prompt law-flip transfers; cue-off, router-cell-off, and append-effect-off
+controls fail causally. Prompt/probe grouping, byte framing, interval cues,
+predicate/addition/reducer implementations, typed decoding, and compilation
+remain explicit. This is one self-posed anonymous `List[Int] -> Int`
+composition, not prompt parsing, public transfer, or coding capability.
+
+The common next R3/R4/R2 seam is therefore a reusable content-addressed
+schema/static-event abstraction: learned content should address, instantiate,
+and reuse an event schema without cohort labels, family identity, or desired
+outputs.
 
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
@@ -317,6 +345,12 @@ consumes the first missed post-completion observation at the segmentation layer
 and allocates the free provenance slot sequentially on the host, so learned
 boundary timing is banked while general stream routing remains open.
 
+Commit `61b345f` demonstrates that this segment state can already compose with
+the independent 24-byte append-effect abstraction stack through only the learned
+two-cell OPEN/EXTEND router. Its evidence remains the narrow self-posed aggregate
+stream above; content-addressed schema selection, learned provenance allocation,
+and broader continual transfer remain open R2 work.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
@@ -342,6 +376,15 @@ All nine FIT certificates, events, roots, and counters match the scalar path.
 The selector-only fixture improved 3.65x locally; complete certificate creation
 improved 1.10x because downstream inference dominates. This is exact same-FIT
 stage acceleration, not new prompt coverage or transfer.
+
+Commit `2837f1d` banks both procedural admission optimizations: a step-local
+ascending fresh-GID run plus ledger union merge, and canonical staged append/
+last-entry repeat with no production B-tree or redundant sort. Focused synthetic
+medians improved 30.96x and 3.34x respectively while preserving raw state,
+counters, exact overflow behavior, API, and scientific accounting. Final source
+SHA-256 is
+`3016fd0a44d891c8f2b8b161f5c2a011713e70cfd0848f0585442f969927958e`.
+This is not a Path-2 result, reduced neural work, or capability evidence.
 
 ## Claim and opening discipline
 
