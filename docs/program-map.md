@@ -330,6 +330,20 @@ prototype cells yields no recipes. This is learned typed-fragment reuse with
 host edit-site, execution, and compiler scaffolding—not autonomous parsing or
 broad program induction.
 
+Commit `d9e95d5` turns two such one-edit solutions into a recurrent relation
+policy. Two role-normalized precondition/postcondition cells and a learned five-
+feature/five-action effect policy occupy 12 cells and 4,150 array bytes. A
+generic singleton execution intervention resolves an otherwise unidentifiable
+pair of output-equivalent ABS placements by observing whether the learned donor
+callable is inhibited with the predicate; it supplies no path or operator label.
+On a fresh desired-free rollout, physical affordance, policy, and effect races
+apply and commit exactly two selected edits, then one final desired-bearing race
+materializes `sum(abs(item) for item if abs(item)<5)`. Ambiguity, no-match, cell,
+actuation, replay, and mismatch/revision paths stop without fallback. Typed role
+extraction, intervention framing, token splicing, execution, and compilation
+remain explicit scaffolds, so this is one self-posed two-edit mechanism rather
+than general program induction or SWE evidence.
+
 G0 remains a falsification guardrail while language/software work is primary.
 The common event projection, direct associative memory, factorized transition
 memory, and 569,715-cell integrated checkpoint with framed physical multi-byte
@@ -520,6 +534,21 @@ adds six discovery cells above the 69-cell parent for 75 composite cells and
 2,208 checkpoint-array bytes. Variable-length segmentation and arbitrary
 latent-factor discovery remain open.
 
+Commit `b08e373` removes the fixed internal frame for one deterministic raw-
+stream case. Authenticated whole-stream BEGIN/END enclose only continuous
+12-cell byte-value assemblies. Recurrent next-event evidence from independent
+streams drives an explicit two-hypothesis CONTINUE/CUT_REPLAY current race; a
+dedicated CUT inhibitory cell resolves simultaneous continuity, and recall
+requires that causal race to agree with learned four-feature/two-action E/H.
+Cut triggers are replayed into the new trace, traces require independent
+provenance before admission, and admitted unordered traces feed the existing
+factor router. Never-trained A+D cuts exactly and selects semantic `(0,4)`;
+unknown/tied inputs stop, duplicate evidence does not vote, contradictions
+collide then revise, and opaque remapping/refit preserves the result. The
+composite adds 125 cells and 25,064 checkpoint-array bytes. This remains fixed
+one-event-lookahead learning over deterministic opaque motifs of length 2–5,
+not noisy language or ambiguous-grammar segmentation.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
@@ -627,6 +656,14 @@ the predeclared gates and was also fully reverted. The active design boundary is
 now a materially larger source/connectivity or combined state-generation batch
 kernel—not another scalar lookup, layout-only, or standalone delivery/storage
 patch.
+
+A following fixed four-lane Philox generation batch preserved exact event,
+collision-retry, poison, state, queue, spike, counter, and payload behavior. It
+improved generation-only work 1.278x and left a K=64 no-spike case unchanged,
+but the four-step recurrent trace regressed to 0.907x; the code was fully
+reverted. Standalone source ILP is therefore also closed. The active speed
+hypothesis is a fused generate/canonicalize/deliver kernel that removes the
+downstream handoff cost rather than accelerating one phase in isolation.
 
 ## Claim and opening discipline
 

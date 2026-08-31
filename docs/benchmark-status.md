@@ -351,6 +351,18 @@ cells and 2,208 checkpoint-array bytes. This is repeated position-value-binding
 discovery under fixed framing, not arbitrary factor/boundary discovery,
 language, coding, corpus, protected-transfer, or benchmark evidence.
 
+Commit `b08e373` learns variable-length chunks from a continuous authenticated
+byte-assembly stream. Physical predictor comparators drive explicit CONTINUE and
+CUT_REPLAY action currents; prior continuity drives a dedicated inhibitory CUT
+cell, unique supratonic actions train E/H, cut triggers replay after reset, and
+recall requires causal-race/learned-race agreement. Independent provenance is
+required both for recurrence and chunk admission. A never-fitted A+D transition
+cuts at the correct offset and routes semantic `(0,4)`; offset changes, opaque
+remapping, causal ablations, duplicate nonvotes, tie STOP, and contradiction/
+revision all pass. The composite adds 125 cells and 25,064 checkpoint-array
+bytes. This is deterministic motif segmentation with fixed one-event lookahead,
+not natural-language, noisy, open-vocabulary, or ambiguous-grammar evidence.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for
@@ -456,6 +468,15 @@ predeclared 1.20x, 1.10x, and <=3% gates, so the prototype was fully reverted;
 `1651a4325bb271329e421501ccfb6a934b4a9f507ae8cf10ec3ebde160ec9906`.
 The result redirects runtime work to source/connectivity generation or a larger
 combined kernel rather than another standalone delivery/dormant variant.
+
+A fixed four-lane Philox source batch then preserved exact generated identities,
+weights, dense source-major order, collision retries, poison state, four-step
+state/queue/spike/counter results, and the unchanged 5,181,240-byte payload.
+Generation-only improved 1.278x and K=64 no-spike was 0.996x, but the required
+four-step recurrent generate-and-deliver trace regressed to 0.907x. The patch
+was fully reverted to the same source hash. Standalone source batching is thus
+falsified; the next candidate must fuse generation, canonicalization, and
+delivery so the phase handoff does not erase the local gain.
 
 Commit `17c891f` banks two content-addressed causal segment schemas. Exactly two
 prototypes assign A/B/A-prime/fresh-B-prime as `(0,1,0,1)` and four fresh builds
@@ -571,6 +592,20 @@ empty-input ambiguity, and prototype-cell ablation all STOP with zero proof.
 This is self-posed within-domain one-edit recombination under explicit typed
 edit metadata and host execution/compiler scaffolding, not parsing, arbitrary
 program induction, public transfer, or SWE evidence.
+
+Commit `d9e95d5` learns two ordered fragment relations from those solved edits
+and recurrently composes them. A semantic collision between direct gated ABS
+and outer ABS is resolved by a generic singleton activation intervention:
+physical output cells distinguish whether the learned donor callable becomes
+inactive when the predicate rejects an item, without a caller path/operator
+label. Two relation cells plus five feature/effect and five action cells occupy
+4,150 bytes. The fresh desired-free rollout performs exactly two selected
+actuations and commits, zero revisions and zero unselected splice executions;
+the one final semantic race materializes the exact ABS-map/ABS-threshold-5
+program. Focused execution was 1/1 in 69.3 seconds with causal STOP controls.
+This is a visible self-posed two-edit relation-policy result under typed parser,
+role, intervention, evaluator, and compiler scaffolding—not prompt parsing,
+public transfer, or software-engineering capability.
 
 ## Active-cell scaling and dynamics
 

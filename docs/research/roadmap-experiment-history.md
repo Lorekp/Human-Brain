@@ -456,6 +456,18 @@ exact rather than being pruned, and library ablation removes every recipe. The
 result is narrow within-domain compositional reuse under explicit typed edit
 metadata and host visible-case execution, not parsing or arbitrary induction.
 
+Commit `d9e95d5` learns and recurrently applies two relations above that library.
+The second lesson initially exposed an honest identifiability collision: direct
+gated ABS and outer ABS have identical ordinary outputs. A generic singleton
+execution intervention observes whether the already learned donor callable is
+inhibited by predicate rejection, then one physical semantic race selects the
+causal placement without an operator/path answer label. Two pre/post relation
+cells and a five-feature/five-action E/H policy add 12 cells and 4,150 bytes.
+Fresh construction applies exactly two selected edits, commits both after effect
+races, and only then uses desired output cells once to materialize the novel
+ABS-map/ABS-threshold-5 program. The result is one self-posed recurrent two-edit
+composition under explicit typed and execution scaffolds, not broad coding.
+
 In the memory lane, commit `78580cb` combined exact source episodes with a
 sixteen-choice lane-local semantic transform view, retaining contradictions
 while conflict and revision changed only the semantic route. It still refit the
@@ -496,6 +508,19 @@ nothing; two contrary A observations collide at `(2,2)`, a third revises to
 exact `(3,2)`, and duplicate replay adds no vote. The composite owns 75 added
 cells and 2,208 checkpoint-array bytes. The remaining boundary is learned
 variable-length chunking/segmentation rather than a larger fixed raw frame.
+
+Commit `b08e373` crosses that boundary narrowly for deterministic opaque motifs.
+Continuous physical byte-value assemblies carry no internal spans or position
+authority. Predictor match cells feed explicit CONTINUE/CUT_REPLAY currents;
+continuity also inhibits CUT, so simultaneous evidence resolves through physical
+current cancellation rather than host priority. Unique causal actions train
+four-feature/two-action E/H, cut triggers replay after reset, independently
+supported recurrent traces are admitted, and their unordered composition drives
+the existing revisable factor router. Never-fitted A+D cuts and selects semantic
+`(0,4)`; ties stop, duplicates do not vote, contradictions collide/revise, and
+opaque remapping/refit preserves the law. The composite adds 125 cells and
+25,064 bytes. Fixed one-event lookahead and deterministic length-2–5 motifs
+remain a much narrower claim than language segmentation.
 
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
@@ -541,6 +566,15 @@ regressed 10.1%. The entire prototype was reverted to source hash
 `1651a4325bb271329e421501ccfb6a934b4a9f507ae8cf10ec3ebde160ec9906`.
 This closes standalone target/dormant batching; source/connectivity generation
 or a combined state-generation kernel is the next speed hypothesis.
+
+A four-lane Philox source-generation successor preserved exact events, weights,
+retry/failure order, recurrent state, and payload while improving its isolated
+generation phase 1.278x. It nevertheless regressed the required four-step
+generate-and-deliver trace to 0.907x (K=64 no-spike was 0.996x), so it too was
+fully reverted to source hash
+`1651a4325bb271329e421501ccfb6a934b4a9f507ae8cf10ec3ebde160ec9906`.
+This closes standalone source ILP and motivates one fused
+generate/canonicalize/deliver experiment rather than another phase-local patch.
 
 ## 11. Common G0 substrate begins
 
