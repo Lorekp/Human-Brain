@@ -423,6 +423,16 @@ class _ListIntBuilder(full_typed._Builder):
             root_candidate=True,
         )
 
+    def _extend_before_publish(
+        self,
+        collection: packed_v2.PackedPartitionHandle,
+        item: packed_v2.PackedPartitionHandle,
+        literal: packed_v2.PackedPartitionHandle,
+    ) -> None:
+        """Allow a separately named self-posed roster to grow before sealing."""
+
+        del collection, item, literal
+
     def build(
         self,
     ) -> tuple[full_typed.PackedFullTypedState, packed_v4._SemanticPartitionWorkset]:
@@ -514,6 +524,8 @@ class _ListIntBuilder(full_typed._Builder):
                     result_type_label="Int",
                     root_candidate=True,
                 )
+
+            self._extend_before_publish(collection, item, literal)
 
             frozen = self.workset.publish()
             families, enodes, eclasses = self._components(frozen)
@@ -664,6 +676,8 @@ class _PackedListIntFrontier(full_typed.PackedFullTypedFrontier):
             production = binary.get(family.production)
             if production is not None:
                 return (production, *children[0], *children[1])
+            if family.production == "absolute":
+                return ("absolute", *children[0])
             if family.production in {"predicate-binder", "value-binder"}:
                 return ("bind", *children[0])
             if family.production == "map":
