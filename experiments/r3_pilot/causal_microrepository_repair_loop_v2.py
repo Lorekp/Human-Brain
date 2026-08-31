@@ -970,6 +970,17 @@ class StringRelationSelectionV2(NamedTuple):
     sha256: str
 
 
+class StringRelationCandidateRecordV2(NamedTuple):
+    """Authenticated source-free terminal record for a downstream cell race."""
+
+    frontier_sha256: str
+    program_sha256: str
+    physical_outputs: tuple[output_cells.TypedOutputEncoding, ...]
+    applied_relation_receipt_sha256s: tuple[str, ...]
+    receipt_cell_support: int
+    sha256: str
+
+
 class _StringTerminal(NamedTuple):
     key: str
     program: typed_program.Program
@@ -1172,6 +1183,71 @@ class StringRelationFrontierV2:
     def source_materialization_count(self) -> int:
         return self._materialization_count
 
+    def _candidate_record(
+        self,
+        terminal: _StringTerminal,
+    ) -> StringRelationCandidateRecordV2:
+        record_sha256 = _digest(
+            b"causal-string-relation-candidate-record-v2",
+            {
+                "frontier": self._state.sha256,
+                "program": terminal.program.sha256,
+                "outputs": _encoding_vector_sha256(terminal.physical_outputs),
+                "receipts": terminal.applied_receipts,
+                "support": len(terminal.applied_receipts),
+            },
+        )
+        return StringRelationCandidateRecordV2(
+            frontier_sha256=self._state.sha256,
+            program_sha256=terminal.program.sha256,
+            physical_outputs=terminal.physical_outputs,
+            applied_relation_receipt_sha256s=terminal.applied_receipts,
+            receipt_cell_support=len(terminal.applied_receipts),
+            sha256=record_sha256,
+        )
+
+    @property
+    def candidate_records(self) -> tuple[StringRelationCandidateRecordV2, ...]:
+        """Return source-free records; terminal programs remain frontier-owned."""
+        self._policy.authenticate()
+        return tuple(self._candidate_record(item) for item in self._terminals)
+
+    def materialize_selected(
+        self,
+        candidate: StringRelationCandidateRecordV2,
+    ) -> StringRelationWitnessV2:
+        """Compile exactly one candidate after authenticating its frozen record."""
+        self._policy.authenticate()
+        matches = tuple(
+            terminal
+            for terminal in self._terminals
+            if self._candidate_record(terminal) == candidate
+        )
+        if len(matches) != 1:
+            raise ValueError("selected String candidate record is not authentic")
+        terminal = matches[0]
+        compiled = typed_program.compile(terminal.program)
+        self._materialization_count += 1
+        witness_sha256 = _digest(
+            b"causal-string-relation-witness-v2",
+            {
+                "frontier": self._state.sha256,
+                "key": terminal.key,
+                "program": terminal.program.sha256,
+                "source": _bytes_sha256(compiled.source.encode("utf-8")),
+                "outputs": _encoding_vector_sha256(terminal.physical_outputs),
+                "receipts": terminal.applied_receipts,
+            },
+        )
+        return StringRelationWitnessV2(
+            key=terminal.key,
+            program=terminal.program,
+            source=compiled.source,
+            physical_outputs=terminal.physical_outputs,
+            applied_relation_receipt_sha256s=terminal.applied_receipts,
+            sha256=witness_sha256,
+        )
+
     @classmethod
     def build(
         cls,
@@ -1369,27 +1445,7 @@ class StringRelationFrontierV2:
         witness = None
         if race.status == semantic_race.SELECTED and race.winner_key is not None:
             terminal = next(item for item in self._terminals if item.key == race.winner_key)
-            compiled = typed_program.compile(terminal.program)
-            self._materialization_count += 1
-            witness_sha256 = _digest(
-                b"causal-string-relation-witness-v2",
-                {
-                    "frontier": self._state.sha256,
-                    "key": terminal.key,
-                    "program": terminal.program.sha256,
-                    "source": _bytes_sha256(compiled.source.encode("utf-8")),
-                    "outputs": _encoding_vector_sha256(terminal.physical_outputs),
-                    "receipts": terminal.applied_receipts,
-                },
-            )
-            witness = StringRelationWitnessV2(
-                key=terminal.key,
-                program=terminal.program,
-                source=compiled.source,
-                physical_outputs=terminal.physical_outputs,
-                applied_relation_receipt_sha256s=terminal.applied_receipts,
-                sha256=witness_sha256,
-            )
+            witness = self.materialize_selected(self._candidate_record(terminal))
         selection_sha256 = _digest(
             b"causal-string-relation-selection-v2",
             {
