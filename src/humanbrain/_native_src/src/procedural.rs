@@ -643,7 +643,10 @@ impl IntervalLedger {
     /// True when an ascending unique run certainly fits within `capacity`.
     /// The cheap size upper bound answers immediately in the common case;
     /// only a near-full ledger pays the exact new-GID walk.
-    fn can_fit_run(&self, run: &[u64], capacity: usize) -> bool {
+    fn can_fit_sorted_by<T, F>(&self, run: &[T], capacity: usize, gid_of: F) -> bool
+    where
+        F: Fn(&T) -> u64,
+    {
         let reserved_room = self.gids.capacity().saturating_sub(self.gids.len());
         let room = capacity
             .min(self.gids.capacity())
@@ -654,9 +657,10 @@ impl IntervalLedger {
         }
         let mut new_count = 0usize;
         let mut cursor = 0usize;
-        for gid in run {
-            cursor += self.gids[cursor..].partition_point(|existing| *existing < *gid);
-            if cursor == self.gids.len() || self.gids[cursor] != *gid {
+        for item in run {
+            let gid = gid_of(item);
+            cursor += self.gids[cursor..].partition_point(|existing| *existing < gid);
+            if cursor == self.gids.len() || self.gids[cursor] != gid {
                 new_count += 1;
                 if new_count > room {
                     return false;
@@ -666,11 +670,22 @@ impl IntervalLedger {
         true
     }
 
+    fn can_fit_run(&self, run: &[u64], capacity: usize) -> bool {
+        self.can_fit_sorted_by(run, capacity, |gid| *gid)
+    }
+
+    fn can_fit_cell_run(&self, run: &[CellState], capacity: usize) -> bool {
+        self.can_fit_sorted_by(run, capacity, |state| state.gid)
+    }
+
     /// Union-merge an ascending unique run into this ledger, OR-ing `flag`
     /// into every run member. Caller must have validated fit with
     /// [`can_fit_run`]. The merge walks backward so unread ledger entries are
     /// never overwritten and no second full-capacity ledger is required.
-    fn merge_run_in_place(&mut self, run: &[u64], flag: u8) {
+    fn merge_sorted_by<T, F>(&mut self, run: &[T], flag: u8, gid_of: F)
+    where
+        F: Fn(&T) -> u64,
+    {
         if run.is_empty() {
             return;
         }
@@ -680,14 +695,16 @@ impl IntervalLedger {
             Self::flag_word_count(self.gids.len())
         );
         debug_assert!(self.gids.windows(2).all(|pair| pair[0] < pair[1]));
-        debug_assert!(run.windows(2).all(|pair| pair[0] < pair[1]));
+        debug_assert!(run
+            .windows(2)
+            .all(|pair| gid_of(&pair[0]) < gid_of(&pair[1])));
 
         let old_len = self.gids.len();
         let mut i = 0usize;
         let mut j = 0usize;
         let mut overlap = 0usize;
         while i < old_len && j < run.len() {
-            match self.gids[i].cmp(&run[j]) {
+            match self.gids[i].cmp(&gid_of(&run[j])) {
                 Ordering::Less => i += 1,
                 Ordering::Greater => j += 1,
                 Ordering::Equal => {
@@ -710,7 +727,8 @@ impl IntervalLedger {
         while i > 0 && j > 0 {
             let old_gid = self.gids[i - 1];
             let old_flags = self.entry_flags(i - 1);
-            match old_gid.cmp(&run[j - 1]) {
+            let run_gid = gid_of(&run[j - 1]);
+            match old_gid.cmp(&run_gid) {
                 Ordering::Greater => {
                     i -= 1;
                     write -= 1;
@@ -720,7 +738,7 @@ impl IntervalLedger {
                 Ordering::Less => {
                     j -= 1;
                     write -= 1;
-                    self.gids[write] = run[j];
+                    self.gids[write] = run_gid;
                     self.set_entry_flags(write, flag);
                 }
                 Ordering::Equal => {
@@ -743,10 +761,22 @@ impl IntervalLedger {
         while j > 0 {
             j -= 1;
             write -= 1;
-            self.gids[write] = run[j];
+            self.gids[write] = gid_of(&run[j]);
             self.set_entry_flags(write, flag);
         }
         debug_assert_eq!(write, 0);
+    }
+
+    fn merge_run_in_place(&mut self, run: &[u64], flag: u8) {
+        self.merge_sorted_by(run, flag, |gid| *gid);
+    }
+
+    fn merge_cell_run_in_place(&mut self, run: &[CellState], flag: u8) {
+        self.merge_sorted_by(run, flag, |state| state.gid);
+    }
+
+    fn merge_spike_run_in_place(&mut self, run: &[ProceduralSpikeRecord], flag: u8) {
+        self.merge_sorted_by(run, flag, |spike| spike.gid);
     }
 
     fn count_flags(&self, mask: u8) -> usize {
@@ -781,8 +811,10 @@ struct RuntimeScratch {
     row_targets: Vec<u64>,
     row_used: HashSet<u64>,
     interval_ledger: IntervalLedger,
-    /// Reused sequentially as the fresh-target run, stepped-population run,
-    /// ascending dormant-retirement GIDs, and current-step spike GIDs.
+    /// Fresh-target run in both modes. Event-proportional stepping also reuses
+    /// the resident-sized allocation for the stepped population, ascending
+    /// dormant-retirement GIDs, and current-step spike GIDs. Full-touch reads
+    /// those latter runs directly from their authoritative sorted arrays.
     gid_run: Vec<u64>,
     /// Values parallel to the dormant-retirement phase of `gid_run`.
     /// Capacity is needed only by event-proportional stepping.
@@ -793,6 +825,11 @@ impl RuntimeScratch {
     fn try_new(config: &ProceduralConfig) -> Result<Self, u32> {
         let fanout = usize::try_from(config.fanout).map_err(|_| PROCEDURAL_ALLOCATION)?;
         let row_members = fanout.checked_add(1).ok_or(PROCEDURAL_ALLOCATION)?;
+        let gid_run_capacity = if config.stepping_mode == PROCEDURAL_STEPPING_FULL_TOUCH {
+            config.resident_capacity.min(config.event_capacity)
+        } else {
+            config.resident_capacity
+        };
         let mut row_used = HashSet::new();
         row_used
             .try_reserve(row_members)
@@ -803,7 +840,7 @@ impl RuntimeScratch {
             row_targets: reserved_vec(fanout)?,
             row_used,
             interval_ledger: IntervalLedger::try_new(config.interval_distinct_capacity)?,
-            gid_run: reserved_vec(config.resident_capacity)?,
+            gid_run: reserved_vec(gid_run_capacity)?,
             dormant_values: if config.stepping_mode == PROCEDURAL_STEPPING_EVENT_PROPORTIONAL {
                 reserved_vec(config.resident_capacity)?
             } else {
@@ -1624,20 +1661,44 @@ impl ProceduralRuntime {
         self.scratch.interval_ledger.clear();
         if !self.residents.is_empty() {
             // Entry residents are already ascending-unique: mark them as one
-            // sorted run instead of one hash operation per cell.
+            // sorted run instead of one hash operation per cell. Full-touch
+            // streams the authoritative resident array directly; the larger
+            // event-proportional scratch remains unchanged.
             let distinct_capacity = self.config.interval_distinct_capacity;
-            self.scratch.gid_run.clear();
-            self.scratch
-                .gid_run
-                .extend(self.residents.iter().map(|state| state.gid));
-            if self
+            if self.event_proportional() {
+                self.scratch.gid_run.clear();
+                self.scratch
+                    .gid_run
+                    .extend(self.residents.iter().map(|state| state.gid));
+                if self
+                    .scratch
+                    .interval_ledger
+                    .can_fit_run(&self.scratch.gid_run, distinct_capacity)
+                {
+                    let run = &self.scratch.gid_run;
+                    let ledger = &mut self.scratch.interval_ledger;
+                    ledger.merge_run_in_place(run, SEEN_RESIDENT);
+                } else {
+                    // Exact fallback near the distinct capacity: per-GID
+                    // marks keep the original fail-stop abort timing.
+                    for state in &self.residents {
+                        if let Err(code) = self.scratch.interval_ledger.mark_single(
+                            state.gid,
+                            SEEN_RESIDENT,
+                            distinct_capacity,
+                        ) {
+                            return self.poison(code);
+                        }
+                    }
+                }
+            } else if self
                 .scratch
                 .interval_ledger
-                .can_fit_run(&self.scratch.gid_run, distinct_capacity)
+                .can_fit_cell_run(&self.residents, distinct_capacity)
             {
-                let run = &self.scratch.gid_run;
+                let run = &self.residents;
                 let ledger = &mut self.scratch.interval_ledger;
-                ledger.merge_run_in_place(run, SEEN_RESIDENT);
+                ledger.merge_cell_run_in_place(run, SEEN_RESIDENT);
             } else {
                 // Exact fallback near the distinct capacity: per-GID marks
                 // keep the original fail-stop abort timing.
@@ -1660,9 +1721,10 @@ impl ProceduralRuntime {
 
         for _ in 0..step_count {
             let step_spike_start = self.last_spikes.len();
-            // Reuse the resident-capacity scratch first as this step's
-            // ascending run of absent nonzero event targets. The same vector
-            // is cleared below and rebuilt as the stepped-population run.
+            let event_proportional = self.event_proportional();
+            // Collect this step's ascending run of absent nonzero event
+            // targets. Full-touch reserves only the maximum possible fresh
+            // run; event-proportional retains its resident-sized workspace.
             self.scratch.gid_run.clear();
             let due_count = self
                 .pending_slice()
@@ -1697,6 +1759,12 @@ impl ProceduralRuntime {
                 let ledger = &mut self.scratch.interval_ledger;
                 ledger.merge_run_in_place(run, SEEN_RESIDENT);
             }
+            if !event_proportional {
+                // Every later full-touch run already exists in an
+                // authoritative sorted array; do not retain a duplicate GID
+                // materialization beyond the fresh-target phase.
+                self.scratch.gid_run.clear();
+            }
             self.pending_head += due_count;
             self.release_consumed_prefix();
             resident_peak = resident_peak.max(self.total_residents());
@@ -1721,7 +1789,8 @@ impl ProceduralRuntime {
                     .event_work
                     .windows(2)
                     .all(|window| window[0].target_gid < window[1].target_gid));
-                {
+                let distinct_capacity = self.config.interval_distinct_capacity;
+                let fast_path = if event_proportional {
                     let run = &mut self.scratch.gid_run;
                     run.clear();
                     let mut staged_index = 0usize;
@@ -1738,12 +1807,20 @@ impl ProceduralRuntime {
                         run.push(self.scratch.event_work[staged_index].target_gid);
                         staged_index += 1;
                     }
-                }
-                let distinct_capacity = self.config.interval_distinct_capacity;
-                let fast_path = self
-                    .scratch
-                    .interval_ledger
-                    .can_fit_run(&self.scratch.gid_run, distinct_capacity);
+                    self.scratch
+                        .interval_ledger
+                        .can_fit_run(&self.scratch.gid_run, distinct_capacity)
+                } else {
+                    // The staged suffix is materialized into the already
+                    // reserved resident array before the same fit decision;
+                    // this is integer/storage work and remains before GLIF.
+                    if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
+                        return self.poison(code);
+                    }
+                    self.scratch
+                        .interval_ledger
+                        .can_fit_cell_run(&self.residents, distinct_capacity)
+                };
                 if fast_path {
                     merge_spiking_run = true;
                     // Materialize this step's insertions into the sorted
@@ -1751,10 +1828,10 @@ impl ProceduralRuntime {
                     // over the single ascending array in place. This replaces
                     // the previous per-cell hash marks and the trailing
                     // retain() scan with one sequential sweep.
-                    if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
-                        return self.poison(code);
-                    }
-                    {
+                    if event_proportional {
+                        if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
+                            return self.poison(code);
+                        }
                         // Pre-verified to fit: account for the whole stepped
                         // population before reusing its run for dormant GIDs.
                         // This integer-only scratch mutation is unobservable
@@ -1763,8 +1840,14 @@ impl ProceduralRuntime {
                         let run = &self.scratch.gid_run;
                         let ledger = &mut self.scratch.interval_ledger;
                         ledger.merge_run_in_place(run, SEEN_UPDATED);
+                        self.scratch.gid_run.clear();
+                    } else {
+                        // Full-touch streams the same ascending population
+                        // directly from the authoritative resident array.
+                        let run = &self.residents;
+                        let ledger = &mut self.scratch.interval_ledger;
+                        ledger.merge_cell_run_in_place(run, SEEN_UPDATED);
                     }
-                    self.scratch.gid_run.clear();
                     let mut write = 0usize;
                     for read in 0..self.residents.len() {
                         let mut state = self.residents[read];
@@ -1814,8 +1897,10 @@ impl ProceduralRuntime {
                     // the staged insertions into the sorted array, then run
                     // the original per-cell loop whose abort timing matches
                     // the previous implementation bit for bit.
-                    if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
-                        return self.poison(code);
+                    if event_proportional {
+                        if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
+                            return self.poison(code);
+                        }
                     }
                     // The population run selected the exact fallback above;
                     // per-cell marking now owns accounting, so reuse it for
@@ -1920,39 +2005,45 @@ impl ProceduralRuntime {
                 }
             }
 
-            self.scratch.gid_run.clear();
-            self.scratch.gid_run.extend(
-                self.last_spikes[step_spike_start..]
-                    .iter()
-                    .map(|spike| spike.gid),
-            );
-            debug_assert!(self.scratch.gid_run.len() <= self.config.resident_capacity);
+            let step_spike_count = self.last_spikes.len() - step_spike_start;
+            if event_proportional {
+                self.scratch.gid_run.clear();
+                self.scratch.gid_run.extend(
+                    self.last_spikes[step_spike_start..]
+                        .iter()
+                        .map(|spike| spike.gid),
+                );
+                debug_assert_eq!(self.scratch.gid_run.len(), step_spike_count);
+            } else {
+                debug_assert!(self.scratch.gid_run.is_empty());
+            }
+            debug_assert!(step_spike_count <= self.config.resident_capacity);
             debug_assert!(self.last_spikes[step_spike_start..]
                 .iter()
                 .all(|spike| spike.step == self.current_step));
-            debug_assert!(self
-                .scratch
-                .gid_run
+            debug_assert!(self.last_spikes[step_spike_start..]
                 .windows(2)
-                .all(|window| window[0] < window[1]));
-            if merge_spiking_run && !self.scratch.gid_run.is_empty() {
+                .all(|window| window[0].gid < window[1].gid));
+            if merge_spiking_run && step_spike_count > 0 {
                 // Spiking GIDs are a subset of the stepped run already
                 // merged above, so this never grows the ledger or changes
                 // distinct-capacity failure timing.
-                let run = &self.scratch.gid_run;
-                let ledger = &mut self.scratch.interval_ledger;
-                ledger.merge_run_in_place(run, SEEN_SPIKING);
+                if event_proportional {
+                    let run = &self.scratch.gid_run;
+                    let ledger = &mut self.scratch.interval_ledger;
+                    ledger.merge_run_in_place(run, SEEN_SPIKING);
+                } else {
+                    let run = &self.last_spikes[step_spike_start..];
+                    let ledger = &mut self.scratch.interval_ledger;
+                    ledger.merge_spike_run_in_place(run, SEEN_SPIKING);
+                }
             }
 
-            let generated_this_step = match self
-                .scratch
-                .gid_run
-                .len()
-                .checked_mul(self.config.fanout as usize)
-            {
-                Some(value) => value,
-                None => return self.poison(PROCEDURAL_EVENT_CAPACITY),
-            };
+            let generated_this_step =
+                match step_spike_count.checked_mul(self.config.fanout as usize) {
+                    Some(value) => value,
+                    None => return self.poison(PROCEDURAL_EVENT_CAPACITY),
+                };
             if self
                 .pending_logical_len()
                 .saturating_add(generated_this_step)
@@ -1965,8 +2056,12 @@ impl ProceduralRuntime {
             // The result is byte-identical to sorting the whole live queue:
             // both produce the full queue in ascending canonical key order.
             let tail_start = self.pending.len();
-            for spike_index in 0..self.scratch.gid_run.len() {
-                let source = self.scratch.gid_run[spike_index];
+            for spike_index in 0..step_spike_count {
+                let source = if event_proportional {
+                    self.scratch.gid_run[spike_index]
+                } else {
+                    self.last_spikes[step_spike_start + spike_index].gid
+                };
                 let due_step = match self
                     .current_step
                     .checked_add(self.config.recurrent_delay_steps)
@@ -3378,6 +3473,7 @@ mod tests {
             ProceduralRuntime::new(ep_glif(), full_touch_config, decay, decay, [0.0; 2]).unwrap();
         assert_eq!(runtime.scratch.gid_run.capacity(), CAPACITY);
         assert_eq!(runtime.scratch.dormant_values.capacity(), CAPACITY);
+        assert_eq!(full_touch_runtime.scratch.gid_run.capacity(), 64);
         assert_eq!(full_touch_runtime.scratch.dormant_values.capacity(), 0);
         let reclaimed_bytes = runtime.scratch.gid_run.capacity() * std::mem::size_of::<u64>()
             + std::mem::size_of::<Vec<u64>>();
@@ -3386,26 +3482,32 @@ mod tests {
             CAPACITY * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>()
         );
         let mode_scoped_bytes = CAPACITY * std::mem::size_of::<f64>();
+        let full_touch_gid_scope = (CAPACITY - config.event_capacity) * std::mem::size_of::<u64>();
         assert_eq!(mode_scoped_bytes, 524_288);
         assert_eq!(runtime.payload_bytes(), 6_325_560);
-        assert_eq!(full_touch_runtime.payload_bytes(), 5_801_272);
+        assert_eq!(full_touch_gid_scope, 523_776);
+        assert_eq!(full_touch_runtime.payload_bytes(), 5_277_496);
         assert_eq!(
             runtime.payload_bytes() - full_touch_runtime.payload_bytes(),
-            mode_scoped_bytes
+            mode_scoped_bytes + full_touch_gid_scope
         );
-        assert_eq!(96_384_528usize - 1_000_000usize * 8, 88_384_528);
+        assert_eq!(
+            96_384_528usize - 1_000_000usize * 8 - (1_000_000usize - 64) * 8,
+            80_385_040
+        );
         eprintln!(
-            "dormant-scratch-reuse event_proportional_payload_bytes={} full_touch_payload_bytes={} prior_reclaimed_bytes={} mode_scoped_bytes={} mode_scoped_at_1m_bytes={}",
+            "dormant-scratch-reuse event_proportional_payload_bytes={} full_touch_payload_bytes={} prior_reclaimed_bytes={} mode_scoped_bytes={} full_touch_gid_scope_bytes={} full_touch_total_scope_at_1m_bytes={}",
             runtime.payload_bytes(),
             full_touch_runtime.payload_bytes(),
             reclaimed_bytes,
             mode_scoped_bytes,
-            1_000_000usize * 8
+            full_touch_gid_scope,
+            1_000_000usize * 8 + (1_000_000usize - 64) * 8
         );
     }
 
     #[test]
-    fn last_spike_suffix_reuses_gid_run_with_exact_parity_overflow_and_payload() {
+    fn full_touch_streams_authoritative_runs_with_exact_parity_overflow_and_payload() {
         fn dense_runtime(config: ProceduralConfig) -> super::DenseReference {
             let cell_count = config.configured_cells as usize;
             let fanout = config.fanout as usize;
@@ -3494,12 +3596,12 @@ mod tests {
             )
         };
 
-        let mut config = ep_config(16, PROCEDURAL_STEPPING_FULL_TOUCH);
+        let mut config = ep_config(128, PROCEDURAL_STEPPING_FULL_TOUCH);
         config.fanout = 2;
-        config.resident_capacity = 16;
-        config.event_capacity = 512;
+        config.resident_capacity = 128;
+        config.event_capacity = 64;
         config.spike_capacity = 64;
-        config.interval_distinct_capacity = 32;
+        config.interval_distinct_capacity = 128;
         let scheduled = vec![
             drive(0, 0, 4.0),
             drive(3, 0, 5.0),
@@ -3512,6 +3614,7 @@ mod tests {
             drive(9, 2, 6.0),
         ];
         let (mut runtime, mut dense) = make_pair(config);
+        assert_eq!(runtime.scratch.gid_run.capacity(), 64);
         assert_eq!(runtime.advance(3, &scheduled), super::PROCEDURAL_OK);
         assert_eq!(dense.advance(3, &scheduled), super::PROCEDURAL_OK);
         assert_eq!(
@@ -3522,9 +3625,9 @@ mod tests {
             .last_spikes
             .iter()
             .any(|spike| spike.step < runtime.current_step - 1));
-        assert_eq!(runtime.scratch.gid_run, dense.scratch.step_spikes);
+        assert!(runtime.scratch.gid_run.is_empty());
         assert_eq!(
-            runtime.scratch.gid_run,
+            dense.scratch.step_spikes,
             runtime
                 .last_spikes
                 .iter()
@@ -3610,7 +3713,7 @@ mod tests {
         );
 
         const CAPACITY: usize = 65_536;
-        const LEGACY_PAYLOAD_BYTES: usize = 6_854_504;
+        const PRE_SPIKE_SUFFIX_PAYLOAD_BYTES: usize = 6_849_872;
         let mut payload_config = ep_config(
             (CAPACITY + 1) as u64,
             PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
@@ -3625,15 +3728,28 @@ mod tests {
         let reclaimed_bytes =
             CAPACITY * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>();
         assert_eq!(reclaimed_bytes, 524_312);
+        assert_eq!(payload_runtime.payload_bytes(), 6_325_560);
         assert_eq!(
             payload_runtime.payload_bytes() + reclaimed_bytes,
-            LEGACY_PAYLOAD_BYTES
+            PRE_SPIKE_SUFFIX_PAYLOAD_BYTES
         );
+        let mut full_touch_payload_config = payload_config;
+        full_touch_payload_config.stepping_mode = PROCEDURAL_STEPPING_FULL_TOUCH;
+        let full_touch_payload =
+            ProceduralRuntime::new(ep_glif(), full_touch_payload_config, decay, decay, [0.0; 2])
+                .unwrap();
+        let scoped_bytes = (CAPACITY - payload_config.event_capacity) * std::mem::size_of::<u64>();
+        assert_eq!(full_touch_payload.scratch.gid_run.capacity(), 64);
+        assert_eq!(scoped_bytes, 523_776);
+        assert_eq!(full_touch_payload.payload_bytes(), 5_277_496);
+        assert_eq!(5_801_272 - full_touch_payload.payload_bytes(), scoped_bytes);
+        assert_eq!(88_384_528usize - (1_000_000usize - 64) * 8, 80_385_040);
         eprintln!(
-            "last-spike-suffix current_payload_bytes={} reclaimed_bytes={} reclaimed_at_1m_bytes={} success_spikes={} final_step_spikes={}",
+            "full-touch-authoritative-runs event_proportional_payload_bytes={} full_touch_payload_bytes={} scoped_bytes={} scoped_at_1m_bytes={} success_spikes={} final_step_spikes={}",
             payload_runtime.payload_bytes(),
-            reclaimed_bytes,
-            1_000_000usize * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>(),
+            full_touch_payload.payload_bytes(),
+            scoped_bytes,
+            (1_000_000usize - 64) * std::mem::size_of::<u64>(),
             runtime.last_spikes.len(),
             runtime.scratch.gid_run.len()
         );
