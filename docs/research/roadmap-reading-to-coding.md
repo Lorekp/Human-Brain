@@ -281,6 +281,31 @@ discovered experimentally.
 
 ---
 
+# Cross-cutting capability gates
+
+Do not create one gate or module per cognitive property. Use a small number of
+architecture-neutral gates to force the weaker capabilities to become real as
+the rest of the system matures.
+
+| Gate | Main properties | Required evidence |
+| --- | --- | --- |
+| **Continuity** | P1, P4, P8 | Across a long fresh workload, retain specific experiences, retrieve them from learned cues, consolidate reusable knowledge, revise contradictions, and continue learning without destructive forgetting. |
+| **Autonomous correction** | P3, P5, P6, P9, P10 | Given a novel goal and tools, choose relevant information, act over multiple steps, detect uncertainty or failure, seek/retrieve evidence, revise the plan, and recover without a hidden oracle. |
+| **Self-regulation** | P7, P11 | After substantial prior experience, represent useful facts about the system's own capabilities/state/resources and use internal regulation to measurably improve strategy, stability, or learning. |
+
+The gates are staged rather than simultaneous. **Continuity** should mature in
+parallel with R2 and knowledge ingestion. **Autonomous correction** becomes a
+prerequisite for strong autonomous-agent claims. **Self-regulation** is
+intentionally later: forcing a self-model or drives before meaningful memory and
+agency exist would mostly create hand-built theater.
+
+For each gate: freeze the relevant architecture, use fresh tasks, require causal
+ablations/controls, keep the spent cohort immutable, and treat failure as
+localization of a general mechanism. These gates should guide research without
+prematurely blocking current R3/R4 experimentation or the G0 falsification work.
+
+---
+
 # Generalization ladder
 
 Claims should distinguish several levels:
