@@ -576,11 +576,10 @@ struct RuntimeScratch {
     row_targets: Vec<u64>,
     row_used: HashSet<u64>,
     interval_ledger: IntervalLedger,
+    /// Reused sequentially as the fresh-target run, stepped-population run,
+    /// and finally the current step's ascending dormant-retirement GIDs.
     gid_run: Vec<u64>,
-    /// Per-step retirement runs (ascending GIDs by construction): cells whose
-    /// fused pass just left them fast-rest with an eligibility tail. Cleared
-    /// every step; committed into `ProceduralRuntime::dormant` after the pass.
-    dormant_gids: Vec<u64>,
+    /// Values parallel to the dormant-retirement phase of `gid_run`.
     dormant_values: Vec<f64>,
 }
 
@@ -600,7 +599,6 @@ impl RuntimeScratch {
             row_used,
             interval_ledger: IntervalLedger::try_new(config.interval_distinct_capacity)?,
             gid_run: reserved_vec(config.resident_capacity)?,
-            dormant_gids: reserved_vec(config.resident_capacity)?,
             dormant_values: reserved_vec(config.resident_capacity)?,
         })
     }
@@ -614,7 +612,6 @@ impl RuntimeScratch {
             + self.interval_ledger.gids.capacity() * size_of::<u64>()
             + self.interval_ledger.flags.capacity() * size_of::<u8>()
             + self.gid_run.capacity() * size_of::<u64>()
-            + self.dormant_gids.capacity() * size_of::<u64>()
             + self.dormant_values.capacity() * size_of::<f64>()
     }
 }
@@ -1431,7 +1428,6 @@ impl ProceduralRuntime {
             resident_peak = resident_peak.max(self.total_residents());
 
             self.scratch.step_spikes.clear();
-            self.scratch.dormant_gids.clear();
             self.scratch.dormant_values.clear();
             // The fused pass below integrates exactly these cells; dormant
             // cells are retired from the stepped set in event-proportional
@@ -1482,6 +1478,17 @@ impl ProceduralRuntime {
                     if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
                         return self.poison(code);
                     }
+                    {
+                        // Pre-verified to fit: account for the whole stepped
+                        // population before reusing its run for dormant GIDs.
+                        // This integer-only scratch mutation is unobservable
+                        // until successful counters are committed below and
+                        // does not change the following GLIF operation order.
+                        let run = &self.scratch.gid_run;
+                        let ledger = &mut self.scratch.interval_ledger;
+                        ledger.merge_run_in_place(run, SEEN_UPDATED);
+                    }
+                    self.scratch.gid_run.clear();
                     let mut write = 0usize;
                     for read in 0..self.residents.len() {
                         let mut state = self.residents[read];
@@ -1524,7 +1531,7 @@ impl ProceduralRuntime {
                                 // this very pass, so it is recorded as of the
                                 // current step and lazily replayed from there.
                                 debug_assert!(state.eligibility.to_bits() != 0);
-                                self.scratch.dormant_gids.push(state.gid);
+                                self.scratch.gid_run.push(state.gid);
                                 self.scratch.dormant_values.push(state.eligibility);
                             } else {
                                 self.residents[write] = state;
@@ -1534,12 +1541,6 @@ impl ProceduralRuntime {
                     }
                     debug_assert!(write <= self.residents.len());
                     self.residents.truncate(write);
-                    {
-                        // Pre-verified to fit: mark the whole stepped run.
-                        let run = &self.scratch.gid_run;
-                        let ledger = &mut self.scratch.interval_ledger;
-                        ledger.merge_run_in_place(run, SEEN_UPDATED);
-                    }
                     if !self.scratch.step_spikes.is_empty() {
                         // Spiking GIDs are a subset of the stepped run just
                         // merged, so this never grows the ledger and can
@@ -1556,6 +1557,10 @@ impl ProceduralRuntime {
                     if let Err(code) = self.absorb_staged_with_order::<CANONICAL_STAGED_RUN>() {
                         return self.poison(code);
                     }
+                    // The population run selected the exact fallback above;
+                    // per-cell marking now owns accounting, so reuse it for
+                    // the ascending dormant-retirement GIDs.
+                    self.scratch.gid_run.clear();
                     for index in 0..self.residents.len() {
                         let mut retired: Option<(u64, f64)> = None;
                         let event_proportional = self.event_proportional();
@@ -1613,11 +1618,11 @@ impl ProceduralRuntime {
                             }
                         }
                         if let Some((gid, eligibility)) = retired {
-                            self.scratch.dormant_gids.push(gid);
+                            self.scratch.gid_run.push(gid);
                             self.scratch.dormant_values.push(eligibility);
                         }
                     }
-                    if !self.scratch.dormant_gids.is_empty() {
+                    if !self.scratch.gid_run.is_empty() {
                         // Partition out cells retired to the dormant store;
                         // both arrays ascend by GID, so one merge sweep evicts
                         // exactly the recorded runs (canonical-rest cells are
@@ -1626,8 +1631,8 @@ impl ProceduralRuntime {
                         let mut dormant_index = 0usize;
                         for read in 0..self.residents.len() {
                             let state = self.residents[read];
-                            if dormant_index < self.scratch.dormant_gids.len()
-                                && self.scratch.dormant_gids[dormant_index] == state.gid
+                            if dormant_index < self.scratch.gid_run.len()
+                                && self.scratch.gid_run[dormant_index] == state.gid
                             {
                                 dormant_index += 1;
                                 continue;
@@ -1638,7 +1643,7 @@ impl ProceduralRuntime {
                             self.residents[write] = state;
                             write += 1;
                         }
-                        debug_assert_eq!(dormant_index, self.scratch.dormant_gids.len());
+                        debug_assert_eq!(dormant_index, self.scratch.gid_run.len());
                         self.residents.truncate(write);
                     } else {
                         self.residents.retain(|state| !state.is_canonical_rest());
@@ -1646,11 +1651,15 @@ impl ProceduralRuntime {
                 }
             }
 
-            if !self.scratch.dormant_gids.is_empty() {
+            debug_assert_eq!(
+                self.scratch.gid_run.len(),
+                self.scratch.dormant_values.len()
+            );
+            if !self.scratch.gid_run.is_empty() {
                 debug_assert!(self.event_proportional());
-                for index in 0..self.scratch.dormant_gids.len() {
+                for index in 0..self.scratch.gid_run.len() {
                     self.dormant.insert(
-                        self.scratch.dormant_gids[index],
+                        self.scratch.gid_run[index],
                         DormantEntry {
                             eligibility: self.scratch.dormant_values[index],
                             elig_step: self.current_step,
@@ -3026,6 +3035,78 @@ mod tests {
                 ),
             }
         }
+    }
+
+    #[test]
+    fn dormant_gid_run_reuse_preserves_dynamics_and_reclaims_capacity() {
+        const CELLS: u64 = 32;
+        const STEPS: usize = 120;
+        let mut batches = vec![Vec::<ProceduralEventRecord>::new(); STEPS];
+        for gid in 0..8u64 {
+            batches[0].push(drive(gid, 0, 10.0));
+        }
+        for gid in [1u64, 3, 20] {
+            batches[60].push(drive(gid, 60, 10.0));
+        }
+
+        let mut full_touch = ep_runtime(CELLS, PROCEDURAL_STEPPING_FULL_TOUCH);
+        let full_trace = run_steps(&mut full_touch, &batches);
+        let mut event_proportional = ep_runtime(CELLS, PROCEDURAL_STEPPING_EVENT_PROPORTIONAL);
+        let event_trace = run_steps(&mut event_proportional, &batches);
+        assert!(!event_proportional.dormant.is_empty());
+        assert_eq!(full_trace, event_trace);
+        assert_eq!(
+            full_touch.counters.delivered_events,
+            event_proportional.counters.delivered_events
+        );
+        assert_eq!(
+            full_touch.counters.generated_edges,
+            event_proportional.counters.generated_edges
+        );
+        assert_eq!(
+            full_touch.counters.spike_events,
+            event_proportional.counters.spike_events
+        );
+
+        let current_step = full_touch.current_step;
+        let full_bits: BTreeMap<_, _> = resident_bits(&full_touch).into_iter().collect();
+        for (gid, bits) in resident_bits(&event_proportional) {
+            assert_eq!(bits, full_bits[&gid]);
+        }
+        for (gid, entry) in &event_proportional.dormant {
+            let expected = replay_eligibility(entry.eligibility, entry.elig_step, current_step);
+            let actual = full_touch
+                .residents
+                .iter()
+                .find(|state| state.gid == *gid)
+                .map_or(0.0, |state| state.eligibility);
+            assert_eq!(expected.to_bits(), actual.to_bits(), "gid {gid}");
+        }
+
+        const CAPACITY: usize = 65_536;
+        let mut config = ep_config(
+            (CAPACITY + 1) as u64,
+            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
+        );
+        config.resident_capacity = CAPACITY;
+        config.event_capacity = 64;
+        config.spike_capacity = 64;
+        config.interval_distinct_capacity = CAPACITY;
+        let decay = [0.5, 0.5];
+        let runtime = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
+        assert_eq!(runtime.scratch.gid_run.capacity(), CAPACITY);
+        let reclaimed_bytes = runtime.scratch.gid_run.capacity() * std::mem::size_of::<u64>()
+            + std::mem::size_of::<Vec<u64>>();
+        assert_eq!(
+            reclaimed_bytes,
+            CAPACITY * std::mem::size_of::<u64>() + std::mem::size_of::<Vec<u64>>()
+        );
+        eprintln!(
+            "dormant-gid-run-reuse current_payload_bytes={} reclaimed_bytes={} reclaimed_at_1m_bytes={}",
+            runtime.payload_bytes(),
+            reclaimed_bytes,
+            1_000_000usize * 8 + std::mem::size_of::<Vec<u64>>()
+        );
     }
 
     #[test]
