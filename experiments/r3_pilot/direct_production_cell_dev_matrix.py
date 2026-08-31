@@ -190,6 +190,8 @@ def _root_currents(
         reservoir_cells=direct._ASSEMBLY_CELLS,
         fan_in=direct._READOUT_FAN_IN,
         reservoir_eligibility=eligibility,
+        source_block_size=direct._ASSEMBLY_CELLS,
+        source_block_decays=np.zeros(1, dtype=np.float64),
         output_heterogeneity_pa=decoder._output_heterogeneity_pa,
         pacemaker_synapses_pa=decoder._pacemaker_synapses_pa,
         arrays=direct._thaw_arrays(decoder._arrays),

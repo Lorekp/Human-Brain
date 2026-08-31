@@ -817,12 +817,17 @@ def test_r0b_t9_sparse_source_space_validity(family: str, windows_of_source) -> 
     expected_candidates = min(space, 4 * fan_in)
     assert readout.dimensions.candidate_count == expected_candidates
 
-    decays = circuit.source_trace_decays()
-    assert decays.shape == (space,)
+    decays = circuit.source_block_decays()
+    assert decays.shape == (space // circuit.config.reservoir_cells,)
     if not family.startswith("combo:"):
-        for source in range(total_sources):
+        for source in range(0, total_sources, circuit.config.reservoir_cells):
             width = windows_of_source(source)
-            np.testing.assert_allclose(decays[source], np.exp(-1.0 / width), rtol=0, atol=0)
+            np.testing.assert_allclose(
+                decays[source // circuit.config.reservoir_cells],
+                np.exp(-1.0 / width),
+                rtol=0,
+                atol=0,
+            )
     # W_0 substitution equals today's row-0 value.
     taus = np.asarray(ELIGIBILITY_TAUS_MS)
     np.testing.assert_allclose(

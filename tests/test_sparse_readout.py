@@ -9,12 +9,6 @@ from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.readout import SparseCellReadout, SparseReadoutDimensions
 
 
-def _uniform_decays(circuit, value: float):
-    """Uniform per-source apposition decay over the circuit's feature space."""
-    size = circuit.trace_count * circuit.config.reservoir_cells
-    return np.full(size, float(value))
-
-
 def _scalar_sparse_current(circuit: RecurrentCellCircuit) -> np.ndarray:
     readout = circuit._sparse_readout
     assert readout is not None
@@ -158,6 +152,8 @@ def _literal_sparse_readout(reservoir_cells: int, fan_in: int) -> SparseCellRead
             candidate_count=candidate_count,
         ),
         reservoir_eligibility=np.zeros(reservoir_cells, dtype=np.float64),
+        source_block_size=reservoir_cells,
+        source_block_decays=np.zeros(1, dtype=np.float64),
         output_heterogeneity_pa=np.zeros(output_cells, dtype=np.float64),
         pacemaker_synapses_pa=np.zeros(output_cells, dtype=np.float64),
         potential_sources=potential,
@@ -383,16 +379,17 @@ def test_sparse_ffi_rejects_nonfinite_or_out_of_range_plasticity_scalars() -> No
 
     with pytest.raises(ValueError, match="base current"):
         readout.current(float("nan"))
-    with pytest.raises(ValueError, match="trace decay"):
-        readout.teach(
-            target=1,
-            winner=0,
-            learning_rate_pa=10.0,
-            maximum_weight_pa=1_600.0,
-            trace_decays=np.full(readout.dimensions.reservoir_cells, float("nan")),
-            target_post_gate=1.0,
-            winner_post_gate=1.0,
-            activity_decay=0.99,
+    with pytest.raises(ValueError, match="source block decays"):
+        SparseCellReadout.create(
+            output_cells=3,
+            reservoir_cells=readout.dimensions.reservoir_cells,
+            fan_in=2,
+            rng=np.random.default_rng(1),
+            reservoir_eligibility=circuit.feature_state_vector(),
+            source_block_size=circuit.config.reservoir_cells,
+            source_block_decays=np.full(circuit.trace_count, float("nan")),
+            output_heterogeneity_pa=np.zeros(3, dtype=np.float64),
+            pacemaker_synapses_pa=np.zeros(3, dtype=np.float64),
         )
     with pytest.raises(ValueError, match="turnover probability"):
         readout.turnover(
@@ -609,7 +606,6 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
         winner=0,
         learning_rate_pa=10.0,
         maximum_weight_pa=1_600.0,
-        trace_decays=_uniform_decays(circuit, 1.0),
         target_post_gate=0.0,
         winner_post_gate=0.0,
         activity_decay=0.99,
@@ -623,7 +619,6 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
         winner=0,
         learning_rate_pa=10.0,
         maximum_weight_pa=1_600.0,
-        trace_decays=_uniform_decays(circuit, 1.0),
         target_post_gate=1.0,
         winner_post_gate=1.0,
         activity_decay=0.99,
@@ -636,18 +631,23 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
     unrelated_trace = np.arange(8.0)
     readout.apposition_eligibility[2] = unrelated_trace
     unrelated_weights = readout.contact_weights_pa[2].copy()
+    apposition_before = readout.apposition_eligibility.copy()
+    candidate_decays = np.repeat(
+        circuit.source_block_decays(), circuit.config.reservoir_cells
+    )[readout.potential_sources]
     readout.teach(
         target=1,
         winner=0,
         learning_rate_pa=10.0,
         maximum_weight_pa=1_600.0,
-        trace_decays=_uniform_decays(circuit, 0.0),
         target_post_gate=1.0,
         winner_post_gate=1.0,
         activity_decay=0.99,
     )
-    assert not readout.apposition_eligibility.any()
-    np.testing.assert_array_equal(readout.contact_weights_pa, weights_before)
+    np.testing.assert_array_equal(
+        readout.apposition_eligibility, apposition_before * candidate_decays
+    )
+    np.testing.assert_array_equal(readout.contact_weights_pa[2], unrelated_weights)
 
     readout.apposition_eligibility[2] = unrelated_trace
     circuit._feature_traces[:] = np.arange(1.0, 9.0)
@@ -656,12 +656,13 @@ def test_sparse_three_factor_temporal_and_output_locality_ablations() -> None:
         winner=0,
         learning_rate_pa=1.0,
         maximum_weight_pa=1_600.0,
-        trace_decays=_uniform_decays(circuit, 1.0),
         target_post_gate=1.0,
         winner_post_gate=1.0,
         activity_decay=0.99,
     )
-    np.testing.assert_array_equal(readout.apposition_eligibility[2], unrelated_trace)
+    np.testing.assert_array_equal(
+        readout.apposition_eligibility[2], unrelated_trace * candidate_decays[2]
+    )
     np.testing.assert_array_equal(readout.contact_weights_pa[2], unrelated_weights)
 
 
@@ -865,6 +866,8 @@ def test_over_100k_sparse_readout_has_reachable_100x_memory_gate() -> None:
         fan_in=fan_in,
         rng=np.random.default_rng(17),
         reservoir_eligibility=eligibility,
+        source_block_size=reservoir_cells,
+        source_block_decays=np.zeros(1, dtype=np.float64),
         output_heterogeneity_pa=np.zeros(output_cells, dtype=np.float64),
         pacemaker_synapses_pa=np.zeros(output_cells, dtype=np.float64),
     )

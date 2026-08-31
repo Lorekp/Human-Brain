@@ -164,6 +164,8 @@ class FrozenExactMagnitudeRewardActor:
             reservoir_cells=_FEATURE_CELLS,
             fan_in=banked._READOUT_FAN_IN,
             reservoir_eligibility=eligibility,
+            source_block_size=_FEATURE_CELLS,
+            source_block_decays=np.zeros(1, dtype=np.float64),
             output_heterogeneity_pa=np.array(self.output_heterogeneity_pa, copy=True),
             pacemaker_synapses_pa=np.array(self.pacemaker_synapses_pa, copy=True),
             arrays=banked._thaw_arrays(self.arrays),

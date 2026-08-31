@@ -775,7 +775,6 @@ def test_r0_t9_sparse_source_space_extends_to_feature_traces() -> None:
         winner=(target + 1) % circuit.token_cells,
         learning_rate_pa=1e-12,
         maximum_weight_pa=1_600.0,
-        trace_decays=circuit.source_trace_decays(),
         target_post_gate=0.0,
         winner_post_gate=0.0,
         activity_decay=circuit.config.readout_activity_decay,

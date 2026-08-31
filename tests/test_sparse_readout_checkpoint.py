@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from humanbrain.recurrent import RecurrentCircuitConfig
+from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.recurrent_language import RecurrentCellLanguageModel, RecurrentModelConfig
 
 
@@ -24,6 +24,83 @@ def _grow_sparse_model() -> RecurrentCellLanguageModel:
             ),
         ),
     )
+
+
+def test_three_block_candidate_decay_geometry_resumes_bit_exactly() -> None:
+    reservoir_cells = 8
+    circuit = RecurrentCellCircuit(
+        token_cells=3,
+        config=RecurrentCircuitConfig(
+            reservoir_cells=reservoir_cells,
+            input_fanout=2,
+            recurrent_fanout=1,
+            eligibility_taus_ms=(40.0, 160.0, 640.0),
+            readout_learning_rule="sparse_three_factor",
+            readout_fan_in=6,
+        ),
+    )
+    readout = circuit._sparse_readout
+    assert readout is not None
+    assert readout.dimensions.candidate_count == 3 * reservoir_cells
+
+    block_decays = circuit.source_block_decays()
+    dense_source_decays = np.repeat(block_decays, reservoir_cells)
+    assert block_decays.shape == (3,)
+    np.testing.assert_array_equal(
+        readout.potential_sources,
+        np.tile(np.arange(3 * reservoir_cells, dtype=np.int32), (3, 1)),
+    )
+
+    readout.apposition_eligibility[:] = (
+        np.arange(readout.apposition_eligibility.size, dtype=np.float64).reshape(
+            readout.apposition_eligibility.shape
+        )
+        + 1.0
+    )
+    readout.contact_weights_pa.fill(100.0)
+    # Satisfy the generic checkpoint precondition without exercising an
+    # unrelated recurrent growth episode in this geometry fixture.
+    circuit._growth_examples = 1
+    circuit.freeze_learning()
+    before_state = circuit.capture_cell_synapse_state()
+    before_sha = before_state.sha256
+    assert "readout_candidate_decays" not in before_state.arrays
+
+    resumed = RecurrentCellCircuit.restore_cell_synapse_state(before_state)
+    assert resumed.capture_cell_synapse_state().sha256 == before_sha
+    resumed_readout = resumed._sparse_readout
+    assert resumed_readout is not None
+    apposition_before = readout.apposition_eligibility.copy()
+
+    results = []
+    for active in (readout, resumed_readout):
+        results.append(
+            active.teach(
+                target=1,
+                winner=0,
+                learning_rate_pa=0.25,
+                maximum_weight_pa=1_600.0,
+                target_post_gate=0.0,
+                winner_post_gate=0.0,
+                activity_decay=0.9,
+            )
+        )
+    assert results == [True, True]
+    expected_apposition = apposition_before * dense_source_decays[
+        readout.potential_sources
+    ]
+    np.testing.assert_array_equal(readout.apposition_eligibility, expected_apposition)
+    np.testing.assert_array_equal(
+        resumed_readout.apposition_eligibility, expected_apposition
+    )
+
+    direct_state = circuit.capture_cell_synapse_state()
+    resumed_state = resumed.capture_cell_synapse_state()
+    assert direct_state.sha256 == resumed_state.sha256
+    assert direct_state.metadata == resumed_state.metadata
+    assert direct_state.arrays.keys() == resumed_state.arrays.keys()
+    for name, value in direct_state.arrays.items():
+        np.testing.assert_array_equal(value, resumed_state.arrays[name])
 
 
 def test_sparse_checkpoint_owns_no_dense_classifier_and_continues_exactly(
@@ -65,9 +142,6 @@ def test_sparse_checkpoint_owns_no_dense_classifier_and_continues_exactly(
             winner=98,
             learning_rate_pa=8.0,
             maximum_weight_pa=1_600.0,
-            # Production per-source decay table over the full K*R feature
-            # space (exp(-T / tau_k), k = s // R); identical for both circuits.
-            trace_decays=model._circuit.source_trace_decays(),
             target_post_gate=1.0,
             winner_post_gate=1.0,
             activity_decay=0.99,

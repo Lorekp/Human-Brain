@@ -986,7 +986,7 @@ def _load_library() -> ctypes.CDLL:
             ctypes.c_size_t,
             ctypes.c_double,
             ctypes.c_double,
-            _F64_POINTER,  # per-source apposition decay table (length cell_count)
+            _F64_POINTER,  # per-candidate apposition decays (output_count*candidates)
             ctypes.c_double,
             ctypes.c_double,
             _F64_POINTER,
@@ -1460,6 +1460,7 @@ class NativeSparseCellReadout:
         eligibility: np.ndarray,
         output_heterogeneity_pa: np.ndarray,
         potential_sources: np.ndarray,
+        candidate_decays: np.ndarray,
         apposition_eligibility: np.ndarray,
         contact_sources: np.ndarray,
         contact_weights_pa: np.ndarray,
@@ -1494,6 +1495,12 @@ class NativeSparseCellReadout:
             dtype=np.dtype(np.int32),
             shape=(output_cells, candidate_count),
             name="potential apposition sources",
+        )
+        _require_native_array(
+            candidate_decays,
+            dtype=np.dtype(np.float64),
+            shape=(output_cells, candidate_count),
+            name="candidate apposition decays",
         )
         _require_native_array(
             apposition_eligibility,
@@ -1538,6 +1545,7 @@ class NativeSparseCellReadout:
         self._eligibility = eligibility
         self._output_heterogeneity_pa = output_heterogeneity_pa
         self._potential_sources = potential_sources
+        self._candidate_decays = candidate_decays
         self._apposition_eligibility = apposition_eligibility
         self._contact_sources = contact_sources
         self._contact_weights_pa = contact_weights_pa
@@ -1573,7 +1581,6 @@ class NativeSparseCellReadout:
         winner: int,
         learning_rate_pa: float,
         maximum_weight_pa: float,
-        trace_decays: np.ndarray,
         target_post_gate: float,
         winner_post_gate: float,
         activity_decay: float,
@@ -1586,16 +1593,6 @@ class NativeSparseCellReadout:
             raise ValueError("winner outside output-cell population")
         learning_rate_pa = _positive_scalar("learning rate", learning_rate_pa)
         maximum_weight_pa = _positive_scalar("maximum weight", maximum_weight_pa)
-        decays = np.ascontiguousarray(trace_decays, dtype=np.float64)
-        if decays.shape != (self._reservoir_cells,):
-            raise ValueError(
-                "trace decays must be a contiguous float64 array with shape "
-                f"({self._reservoir_cells},)"
-            )
-        if not np.all(np.isfinite(decays)) or np.any(decays < 0.0) or np.any(
-            decays > 1.0
-        ):
-            raise ValueError("trace decays must be finite and in [0, 1]")
         target_post_gate = _unit_interval("target post gate", target_post_gate)
         winner_post_gate = _unit_interval("winner post gate", winner_post_gate)
         activity_decay = _unit_interval("activity decay", activity_decay, open_interval=True)
@@ -1609,7 +1606,7 @@ class NativeSparseCellReadout:
                 winner,
                 learning_rate_pa,
                 maximum_weight_pa,
-                _f64(decays),
+                _f64(self._candidate_decays),
                 target_post_gate,
                 winner_post_gate,
                 _f64(self._eligibility),

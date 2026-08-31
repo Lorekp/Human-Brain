@@ -1124,7 +1124,7 @@ pub unsafe extern "C" fn humanbrain_sparse_three_factor_update(
     winner: usize,
     learning_rate_pa: f64,
     maximum_weight_pa: f64,
-    trace_decays: *const f64,
+    candidate_decays: *const f64,
     target_post_gate: f64,
     winner_post_gate: f64,
     reservoir_eligibility: *const f64,
@@ -1154,7 +1154,7 @@ pub unsafe extern "C" fn humanbrain_sparse_three_factor_update(
         return output_count + 1;
     }
     let reservoir_trace = slice::from_raw_parts(reservoir_eligibility, cell_count);
-    let decays = slice::from_raw_parts(trace_decays, cell_count);
+    let decays = slice::from_raw_parts(candidate_decays, output_count * candidate_count);
     let potential = slice::from_raw_parts(potential_sources, output_count * candidate_count);
     let apposition =
         slice::from_raw_parts_mut(apposition_eligibility, output_count * candidate_count);
@@ -1175,13 +1175,12 @@ pub unsafe extern "C" fn humanbrain_sparse_three_factor_update(
         output_activity[winner] += (1.0 - activity_decay) * winner_post_gate;
     }
 
-    // Per-contact apposition decay: slot with source s decays by
-    // exp(-T / tau_(s // R)) supplied through `decays` (R0 §1.3).
+    // Per-contact apposition decay was compiled once from each source block
+    // into the fixed O×C potential-apposition geometry (R0 §1.3).
     for output in 0..output_count {
         let offset = output * candidate_count;
         for candidate in 0..candidate_count {
-            let source = potential[offset + candidate] as usize;
-            apposition[offset + candidate] *= decays[source];
+            apposition[offset + candidate] *= decays[offset + candidate];
         }
     }
     let add_post_event = |output: usize, gate: f64, apposition: &mut [f64]| {

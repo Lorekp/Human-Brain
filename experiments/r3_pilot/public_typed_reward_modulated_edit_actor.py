@@ -333,6 +333,8 @@ class RewardModulatedTypedEditActor:
             fan_in=_READOUT_FAN_IN,
             rng=rng,
             reservoir_eligibility=self._eligibility,
+            source_block_size=_FEATURE_CELLS,
+            source_block_decays=np.zeros(1, dtype=np.float64),
             output_heterogeneity_pa=self._output_heterogeneity_pa,
             pacemaker_synapses_pa=self._pacemaker_synapses_pa,
         )
@@ -377,14 +379,12 @@ class RewardModulatedTypedEditActor:
         # no signed weight update.  This avoids the zero-contact dead start
         # without seeding any task/action association from the host.
         recruited = False
-        trace_decays = np.zeros(_FEATURE_CELLS, dtype=np.float64)
         for seed_cell in (action_cell, _SINK_CELL):
             self._readout.teach(
                 target=seed_cell,
                 winner=seed_cell,
                 learning_rate_pa=_LEARNING_RATE_PA,
                 maximum_weight_pa=_MAXIMUM_WEIGHT_PA,
-                trace_decays=trace_decays,
                 target_post_gate=1.0,
                 winner_post_gate=1.0,
                 activity_decay=0.99,
@@ -416,7 +416,6 @@ class RewardModulatedTypedEditActor:
                 winner=opponent_cell,
                 learning_rate_pa=_LEARNING_RATE_PA,
                 maximum_weight_pa=_MAXIMUM_WEIGHT_PA,
-                trace_decays=trace_decays,
                 target_post_gate=gate,
                 winner_post_gate=gate,
                 activity_decay=0.99,
@@ -506,6 +505,8 @@ class FrozenRewardModulatedTypedEditActor:
             reservoir_cells=_FEATURE_CELLS,
             fan_in=_READOUT_FAN_IN,
             reservoir_eligibility=eligibility,
+            source_block_size=_FEATURE_CELLS,
+            source_block_decays=np.zeros(1, dtype=np.float64),
             output_heterogeneity_pa=np.array(self.output_heterogeneity_pa, copy=True),
             pacemaker_synapses_pa=np.array(self.pacemaker_synapses_pa, copy=True),
             arrays=_thaw_arrays(self.arrays),

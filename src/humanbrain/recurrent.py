@@ -506,6 +506,30 @@ class RecurrentCellCircuit:
         # RuntimeError instead of letting a driving sink recurse.
         self._sink_active = False
 
+        # One exact decay per contiguous feature block. SparseCellReadout binds
+        # this compact schedule to its fixed potential-apposition geometry once;
+        # no F-element per-source table is retained or rebuilt per event.
+        taus = np.asarray(self.config.eligibility_taus_ms, dtype=np.float64)
+        if self.feature_members == ("traces",):
+            source_block_decays = np.exp(
+                -(self.config.token_interval_ms / taus)
+            )
+        else:
+            widths_per_block: list[int] = []
+            for member in self.feature_members:
+                if member == "voltage_quantiles":
+                    widths_per_block.extend(
+                        width for width in self._feature_window_tokens for _ in range(3)
+                    )
+                else:
+                    widths_per_block.extend(self._feature_window_tokens)
+            source_block_decays = np.exp(
+                -1.0 / np.asarray(widths_per_block, dtype=np.float64)
+            )
+        self._source_block_decays = np.ascontiguousarray(
+            source_block_decays, dtype=np.float64
+        )
+
         rng = np.random.default_rng(self.config.random_seed)
         self._afferent_targets = np.empty(
             (self.token_cells, self.config.input_fanout), dtype=np.int32
@@ -551,6 +575,8 @@ class RecurrentCellCircuit:
                 # (frozen protocol §1.3); it stays a stable object whose
                 # contents advance in place.
                 reservoir_eligibility=self.feature_state_vector(),
+                source_block_size=self.config.reservoir_cells,
+                source_block_decays=self._source_block_decays,
                 output_heterogeneity_pa=self._output_heterogeneity_pa,
                 pacemaker_synapses_pa=self._pacemaker_synapses_pa,
             )
@@ -562,43 +588,15 @@ class RecurrentCellCircuit:
         )
         self._pulse_steps = max(1, round(self.config.input_pulse_ms / self.cell_parameters.dt_ms))
         self._recurrent_decay = np.exp(-self.cell_parameters.dt_ms / self.config.recurrent_tau_ms)
-        taus = np.asarray(self.config.eligibility_taus_ms, dtype=np.float64)
         self._eligibility_decays = np.ascontiguousarray(
             np.exp(-(self.cell_parameters.dt_ms / taus)), dtype=np.float64
-        )
-        # Per-token decay of the sparse apposition traces, indexed by absolute
-        # feature source id s (k = s // R): exp(-T / tau_k).
-        self._source_trace_decays = np.ascontiguousarray(
-            np.repeat(
-                np.exp(-(self.config.token_interval_ms / taus)),
-                self.config.reservoir_cells,
-            ),
-            dtype=np.float64,
         )
         self._compile_output_race()
         self._bind_native_kernel()
 
-    def source_trace_decays(self) -> np.ndarray:
-        """Per-contact apposition decay table over the F feature sources."""
-        if self.feature_members != ("traces",):
-            # R0-b §1.3 generalization, dt-free: block b's contacts decay per
-            # token by exp(-1 / W_(block)); B repeats each window three times
-            # (one block per pinned quantile). Bitwise exp(-1/W) per source.
-            widths_per_block: list[int] = []
-            for member in self.feature_members:
-                if member == "voltage_quantiles":
-                    widths_per_block.extend(
-                        width for width in self._feature_window_tokens for _ in range(3)
-                    )
-                else:
-                    widths_per_block.extend(self._feature_window_tokens)
-            return np.repeat(
-                np.exp(
-                    -1.0 / np.asarray(widths_per_block, dtype=np.float64)
-                ),
-                self.config.reservoir_cells,
-            )
-        return self._source_trace_decays
+    def source_block_decays(self) -> np.ndarray:
+        """Per-feature-block apposition decays in physical block order."""
+        return self._source_block_decays.copy()
 
     def feature_state_vector(self) -> np.ndarray:
         """The flat f64 readout feature space of the ACTIVE family (§1.2).
@@ -951,6 +949,8 @@ class RecurrentCellCircuit:
                 reservoir_cells=circuit.feature_cell_count,
                 fan_in=circuit.config.readout_fan_in,
                 reservoir_eligibility=circuit.feature_state_vector(),
+                source_block_size=circuit.config.reservoir_cells,
+                source_block_decays=circuit._source_block_decays,
                 output_heterogeneity_pa=circuit._output_heterogeneity_pa,
                 pacemaker_synapses_pa=circuit._pacemaker_synapses_pa,
                 arrays=state.arrays,
@@ -1333,9 +1333,6 @@ class RecurrentCellCircuit:
                 winner=race.winner,
                 learning_rate_pa=self.config.local_learning_rate_pa,
                 maximum_weight_pa=self.config.output_synapse_gain_pa,
-                # Per-contact apposition decay: exp(-T / tau_(source // R)),
-                # applied per slot inside the readout (frozen protocol §1.3).
-                trace_decays=self._source_trace_decays,
                 target_post_gate=1.0,
                 winner_post_gate=1.0,
                 activity_decay=self.config.readout_activity_decay,

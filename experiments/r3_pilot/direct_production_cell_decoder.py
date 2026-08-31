@@ -161,10 +161,11 @@ class DirectProductionCellDecoder:
             fan_in=_READOUT_FAN_IN,
             rng=rng,
             reservoir_eligibility=eligibility,
+            source_block_size=_ASSEMBLY_CELLS,
+            source_block_decays=np.zeros(1, dtype=np.float64),
             output_heterogeneity_pa=output_heterogeneity_pa,
             pacemaker_synapses_pa=pacemaker_synapses_pa,
         )
-        trace_decays = np.zeros(_ASSEMBLY_CELLS, dtype=np.float64)
         for _ in range(epochs):
             for example in materialized:
                 state = tp._TypedHoleState(example.signature)
@@ -194,7 +195,6 @@ class DirectProductionCellDecoder:
                         winner=winner,
                         learning_rate_pa=_LEARNING_RATE_PA,
                         maximum_weight_pa=_MAXIMUM_WEIGHT_PA,
-                        trace_decays=trace_decays,
                         target_post_gate=1.0,
                         winner_post_gate=1.0,
                         activity_decay=0.99,
@@ -241,6 +241,8 @@ class DirectProductionCellDecoder:
             reservoir_cells=_ASSEMBLY_CELLS,
             fan_in=_READOUT_FAN_IN,
             reservoir_eligibility=eligibility,
+            source_block_size=_ASSEMBLY_CELLS,
+            source_block_decays=np.zeros(1, dtype=np.float64),
             output_heterogeneity_pa=self._output_heterogeneity_pa,
             pacemaker_synapses_pa=self._pacemaker_synapses_pa,
             arrays=_thaw_arrays(self._arrays),

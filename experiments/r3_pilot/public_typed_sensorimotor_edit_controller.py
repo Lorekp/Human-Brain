@@ -475,6 +475,8 @@ class _FrozenInverseController:
             reservoir_cells=_FEATURE_CELLS,
             fan_in=_READOUT_FAN_IN,
             reservoir_eligibility=eligibility,
+            source_block_size=_FEATURE_CELLS,
+            source_block_decays=np.zeros(1, dtype=np.float64),
             output_heterogeneity_pa=np.array(
                 self.output_heterogeneity_pa, copy=True
             ),
@@ -524,6 +526,8 @@ def train_target_free_motor_inverse(
         fan_in=_READOUT_FAN_IN,
         rng=rng,
         reservoir_eligibility=eligibility,
+        source_block_size=_FEATURE_CELLS,
+        source_block_decays=np.zeros(1, dtype=np.float64),
         output_heterogeneity_pa=output_heterogeneity_pa,
         pacemaker_synapses_pa=pacemaker_synapses_pa,
     )
@@ -544,7 +548,6 @@ def train_target_free_motor_inverse(
     )
     encoder = _TransitionCellEncoder()
     identity = _identity_program()
-    trace_decays = np.zeros(_FEATURE_CELLS, dtype=np.float64)
     records: list[MotorEpisode] = []
 
     for episode in range(MOTOR_EPISODES):
@@ -570,7 +573,6 @@ def train_target_free_motor_inverse(
             winner=inverse_race.winner_cell,
             learning_rate_pa=_LEARNING_RATE_PA,
             maximum_weight_pa=_MAXIMUM_WEIGHT_PA,
-            trace_decays=trace_decays,
             target_post_gate=1.0,
             winner_post_gate=1.0,
             activity_decay=0.99,

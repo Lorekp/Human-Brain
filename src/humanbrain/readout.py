@@ -30,6 +30,8 @@ class SparseCellReadout:
         *,
         dimensions: SparseReadoutDimensions,
         reservoir_eligibility: np.ndarray,
+        source_block_size: int,
+        source_block_decays: np.ndarray,
         output_heterogeneity_pa: np.ndarray,
         pacemaker_synapses_pa: np.ndarray,
         potential_sources: np.ndarray,
@@ -55,10 +57,15 @@ class SparseCellReadout:
         self.structural_recruitments = int(structural_recruitments)
         self.structural_deletions = int(structural_deletions)
         self._validate_state()
+        self._candidate_decays = self._derive_candidate_decays(
+            source_block_size=source_block_size,
+            source_block_decays=source_block_decays,
+        )
         self._native = NativeSparseCellReadout(
             eligibility=reservoir_eligibility,
             output_heterogeneity_pa=output_heterogeneity_pa,
             potential_sources=self.potential_sources,
+            candidate_decays=self._candidate_decays,
             apposition_eligibility=self.apposition_eligibility,
             contact_sources=self.contact_sources,
             contact_weights_pa=self.contact_weights_pa,
@@ -76,6 +83,8 @@ class SparseCellReadout:
         fan_in: int,
         rng: np.random.Generator,
         reservoir_eligibility: np.ndarray,
+        source_block_size: int,
+        source_block_decays: np.ndarray,
         output_heterogeneity_pa: np.ndarray,
         pacemaker_synapses_pa: np.ndarray,
     ) -> SparseCellReadout:
@@ -96,6 +105,8 @@ class SparseCellReadout:
         return cls(
             dimensions=dimensions,
             reservoir_eligibility=reservoir_eligibility,
+            source_block_size=source_block_size,
+            source_block_decays=source_block_decays,
             output_heterogeneity_pa=output_heterogeneity_pa,
             pacemaker_synapses_pa=pacemaker_synapses_pa,
             potential_sources=potential_sources,
@@ -117,6 +128,8 @@ class SparseCellReadout:
         reservoir_cells: int,
         fan_in: int,
         reservoir_eligibility: np.ndarray,
+        source_block_size: int,
+        source_block_decays: np.ndarray,
         output_heterogeneity_pa: np.ndarray,
         pacemaker_synapses_pa: np.ndarray,
         arrays: Mapping[str, np.ndarray],
@@ -144,6 +157,8 @@ class SparseCellReadout:
                 candidate_count=candidate_count,
             ),
             reservoir_eligibility=reservoir_eligibility,
+            source_block_size=source_block_size,
+            source_block_decays=source_block_decays,
             output_heterogeneity_pa=output_heterogeneity_pa,
             pacemaker_synapses_pa=pacemaker_synapses_pa,
             potential_sources=copy_array("readout_potential_sources"),
@@ -269,6 +284,32 @@ class SparseCellReadout:
         ):
             raise ValueError("output activity must be finite and in [0, 1]")
 
+    def _derive_candidate_decays(
+        self,
+        *,
+        source_block_size: int,
+        source_block_decays: np.ndarray,
+    ) -> np.ndarray:
+        """Compile one decay per fixed potential apposition, once."""
+        if type(source_block_size) is not int or source_block_size < 1:
+            raise ValueError("source block size must be a positive exact integer")
+        source_cells = self.dimensions.reservoir_cells
+        if source_cells % source_block_size:
+            raise ValueError("source blocks must exactly partition the source space")
+        block_count = source_cells // source_block_size
+        block_decays = np.ascontiguousarray(source_block_decays, dtype=np.float64)
+        if block_decays.shape != (block_count,):
+            raise ValueError(
+                "source block decays must be a contiguous float64 array with shape "
+                f"({block_count},)"
+            )
+        if not np.all(np.isfinite(block_decays)) or np.any(
+            (block_decays < 0.0) | (block_decays > 1.0)
+        ):
+            raise ValueError("source block decays must be finite and in [0, 1]")
+        source_blocks = self.potential_sources // source_block_size
+        return np.ascontiguousarray(block_decays[source_blocks], dtype=np.float64)
+
     @property
     def active_synapse_count(self) -> int:
         return int(np.count_nonzero(self.contact_weights_pa))
@@ -296,7 +337,6 @@ class SparseCellReadout:
         winner: int,
         learning_rate_pa: float,
         maximum_weight_pa: float,
-        trace_decays: np.ndarray,
         target_post_gate: float,
         winner_post_gate: float,
         activity_decay: float,
@@ -306,9 +346,6 @@ class SparseCellReadout:
             winner=winner,
             learning_rate_pa=learning_rate_pa,
             maximum_weight_pa=maximum_weight_pa,
-            # Per-slot apposition decay over the source space: slot with
-            # source s decays by trace_decays[s] (= exp(-T / tau_(s // R))).
-            trace_decays=trace_decays,
             target_post_gate=target_post_gate,
             winner_post_gate=winner_post_gate,
             activity_decay=activity_decay,
