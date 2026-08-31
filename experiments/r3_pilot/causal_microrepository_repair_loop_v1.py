@@ -97,6 +97,15 @@ class RootSourceAttestationV1(NamedTuple):
     sha256: str
 
 
+class _MicroRepositoryAdapterSnapshotV1(NamedTuple):
+    repo_root: Path
+    source_path: Path
+    case_path: Path
+    expected_path: Path
+    original_source: bytes
+    attestation: RootSourceAttestationV1
+
+
 class PreparedMicroRepositoryRepairStateV1(NamedTuple):
     status: str
     policy_checkpoint_sha256: str
@@ -260,6 +269,33 @@ def _root_source_attestation(
         expected_source_sha256=expected_source_sha256,
         observed_source_sha256=observed_source_sha256,
         sha256=attestation_sha256,
+    )
+
+
+def _snapshot_microrepository_repair_v1(
+    policy: recurrent.FrozenCausalRecurrentFragmentRelationPolicyV2,
+    spec: MicroRepositoryRepairSpecV1,
+) -> _MicroRepositoryAdapterSnapshotV1:
+    """Resolve and attest one repository with exactly one source read."""
+
+    repo_root = spec.repo_root.resolve(strict=True)
+    if not repo_root.is_dir() or not spec.test_command:
+        raise ValueError("microrepository root and test command are required")
+    source_path = _child_path(repo_root, spec.source_relative_path)
+    case_path = _child_path(repo_root, spec.case_manifest_relative_path)
+    expected_path = _child_path(repo_root, spec.expected_manifest_relative_path)
+    try:
+        original_source = source_path.read_bytes()
+    except OSError:
+        original_source = b""
+    attestation = _root_source_attestation(policy, spec, original_source)
+    return _MicroRepositoryAdapterSnapshotV1(
+        repo_root=repo_root,
+        source_path=source_path,
+        case_path=case_path,
+        expected_path=expected_path,
+        original_source=original_source,
+        attestation=attestation,
     )
 
 
@@ -652,92 +688,59 @@ class PreparedMicroRepositoryRepairV1:
         )
 
 
-def prepare_microrepository_repair_v1(
+def _finalize_microrepository_repair_from_snapshot_v1(
     policy: recurrent.FrozenCausalRecurrentFragmentRelationPolicyV2,
-    signature: TypedSignature,
     spec: MicroRepositoryRepairSpecV1,
-    *,
-    relation_cell_gate: bool = True,
-    policy_cell_gate: bool = True,
-    actuation_gate: bool = True,
+    cases: tuple[tuple[object, ...], ...],
+    frontier: recurrent.RecurrentFragmentRelationFrontierV2 | None,
+    snapshot: _MicroRepositoryAdapterSnapshotV1,
+    source_reads: int = 1,
+    case_manifest_reads: int = 1,
 ) -> PreparedMicroRepositoryRepairV1:
-    """Authenticate and freeze a desired-free repair frontier."""
-    repo_root = spec.repo_root.resolve(strict=True)
-    if not repo_root.is_dir() or not spec.test_command:
-        raise ValueError("microrepository root and test command are required")
-    source_path = _child_path(repo_root, spec.source_relative_path)
-    case_path = _child_path(repo_root, spec.case_manifest_relative_path)
-    expected_path = _child_path(repo_root, spec.expected_manifest_relative_path)
-    try:
-        original_source = source_path.read_bytes()
-    except OSError:
-        original_source = b""
-    source_reads = 1
-    attestation = _root_source_attestation(
-        policy,
-        spec,
-        original_source,
-    )
+    """Finalize one attested adapter snapshot around a frozen frontier."""
+
+    if type(policy) is not recurrent.FrozenCausalRecurrentFragmentRelationPolicyV2:
+        raise TypeError("exact frozen recurrent relation policy required")
+    if type(cases) is not tuple or any(type(case) is not tuple for case in cases):
+        raise TypeError("visible typed cases must be one frozen tuple")
+    if source_reads != 1 or case_manifest_reads not in {0, 1}:
+        raise ValueError("frontier preparation read counts changed")
+    if frontier is not None and type(frontier) is not recurrent.RecurrentFragmentRelationFrontierV2:
+        raise TypeError("exact recurrent relation frontier required")
+    if type(snapshot) is not _MicroRepositoryAdapterSnapshotV1:
+        raise TypeError("exact microrepository adapter snapshot required")
+    policy.authenticate()
+    if snapshot.attestation.policy_checkpoint_sha256 != policy.checkpoint_sha256:
+        raise RuntimeError(STOP_POLICY_INVARIANT)
+    repo_root = snapshot.repo_root
+    source_path = snapshot.source_path
+    expected_path = snapshot.expected_path
+    original_source = snapshot.original_source
+    attestation = snapshot.attestation
+
+    prepared_frontier = frontier
     if attestation.status != PREPARED:
-        state = _prepared_state(
-            status=attestation.status,
-            policy_checkpoint_sha256=policy.checkpoint_sha256,
-            attestation=attestation,
-            case_count=0,
-            frontier=None,
-        )
-        return PreparedMicroRepositoryRepairV1(
-            policy,
-            spec,
-            repo_root,
-            source_path,
-            expected_path,
-            original_source,
-            attestation,
-            None,
-            state,
-            source_reads,
-            0,
-        )
-
-    try:
-        cases = _read_case_manifest(case_path)
-    except OSError, UnicodeError, json.JSONDecodeError, ValueError:
-        state = _prepared_state(
-            status=STOP_ADAPTER_INPUT,
-            policy_checkpoint_sha256=policy.checkpoint_sha256,
-            attestation=attestation,
-            case_count=0,
-            frontier=None,
-        )
-        return PreparedMicroRepositoryRepairV1(
-            policy,
-            spec,
-            repo_root,
-            source_path,
-            expected_path,
-            original_source,
-            attestation,
-            None,
-            state,
-            source_reads,
-            1,
-        )
-
-    frontier = policy.build(
-        signature,
-        cases,
-        relation_cell_gate=relation_cell_gate,
-        policy_cell_gate=policy_cell_gate,
-        actuation_gate=actuation_gate,
-    )
-    status = frontier.status
-    if status == recurrent.READY:
+        status = attestation.status
+        prepared_frontier = None
+        case_count = 0
+    elif not cases:
+        status = STOP_ADAPTER_INPUT
+        prepared_frontier = None
+        case_count = 0
+    elif frontier is None:
+        status = STOP_POLICY_INVARIANT
+        case_count = len(cases)
+    else:
+        frontier._authenticate()
         build_state = frontier.state
+        status = frontier.status
+        case_count = len(cases)
         learned_receipts = {item.receipt_sha256 for item in policy.relation_receipts}
         applied_receipts = set(build_state.applied_relation_receipt_sha256s)
-        if (
-            build_state.desired_reads_during_build != 0
+        if status == recurrent.READY and (
+            frontier._policy is not policy
+            or frontier._cases != cases
+            or build_state.desired_reads_during_build != 0
             or build_state.source_materializations_during_build != 0
             or build_state.terminal_program_count != 2
             or build_state.terminal_program_sha256s[0] != attestation.root_program_sha256
@@ -750,14 +753,15 @@ def prepare_microrepository_repair_v1(
             or applied_receipts != learned_receipts
         ):
             status = STOP_POLICY_INVARIANT
-        else:
+        elif status == recurrent.READY:
             status = PREPARED
+
     state = _prepared_state(
         status=status,
         policy_checkpoint_sha256=policy.checkpoint_sha256,
         attestation=attestation,
-        case_count=len(cases),
-        frontier=frontier,
+        case_count=case_count,
+        frontier=prepared_frontier,
     )
     return PreparedMicroRepositoryRepairV1(
         policy,
@@ -767,10 +771,63 @@ def prepare_microrepository_repair_v1(
         expected_path,
         original_source,
         attestation,
-        frontier,
+        prepared_frontier,
         state,
         source_reads,
-        1,
+        case_manifest_reads,
+    )
+
+
+def prepare_microrepository_repair_v1(
+    policy: recurrent.FrozenCausalRecurrentFragmentRelationPolicyV2,
+    signature: TypedSignature,
+    spec: MicroRepositoryRepairSpecV1,
+    *,
+    relation_cell_gate: bool = True,
+    policy_cell_gate: bool = True,
+    actuation_gate: bool = True,
+) -> PreparedMicroRepositoryRepairV1:
+    """Authenticate and freeze a desired-free repair frontier."""
+
+    snapshot = _snapshot_microrepository_repair_v1(policy, spec)
+    if snapshot.attestation.status != PREPARED:
+        return _finalize_microrepository_repair_from_snapshot_v1(
+            policy,
+            spec,
+            (),
+            frontier=None,
+            snapshot=snapshot,
+            source_reads=1,
+            case_manifest_reads=0,
+        )
+    try:
+        cases = _read_case_manifest(snapshot.case_path)
+    except OSError, UnicodeError, json.JSONDecodeError, ValueError:
+        return _finalize_microrepository_repair_from_snapshot_v1(
+            policy,
+            spec,
+            (),
+            frontier=None,
+            snapshot=snapshot,
+            source_reads=1,
+            case_manifest_reads=1,
+        )
+
+    frontier = policy.build(
+        signature,
+        cases,
+        relation_cell_gate=relation_cell_gate,
+        policy_cell_gate=policy_cell_gate,
+        actuation_gate=actuation_gate,
+    )
+    return _finalize_microrepository_repair_from_snapshot_v1(
+        policy,
+        spec,
+        cases,
+        frontier=frontier,
+        snapshot=snapshot,
+        source_reads=1,
+        case_manifest_reads=1,
     )
 
 
