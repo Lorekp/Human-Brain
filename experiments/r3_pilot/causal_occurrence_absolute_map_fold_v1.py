@@ -37,7 +37,11 @@ from experiments.r3_pilot import public_typed_output_cells as output_cells
 from experiments.r3_pilot import public_typed_semantic_vector_race as semantic_race
 from experiments.r3_pilot import typed_semantic_packed_absolute_map_fold_v1 as absolute
 from experiments.r3_pilot import typed_semantic_packed_bindings_v1 as packed
+from experiments.r3_pilot import typed_semantic_packed_frontier_full_typed_v1 as full_typed
+from experiments.r3_pilot import typed_semantic_packed_frontier_v2 as packed_v2
+from experiments.r3_pilot import typed_semantic_packed_frontier_v4 as packed_v4
 from experiments.r3_pilot import typed_semantic_packed_generic_train_breadth_v3 as breadth_v3
+from experiments.r3_pilot import typed_semantic_packed_generic_train_breadth_v4 as breadth_v4
 from experiments.r3_pilot import (
     typed_semantic_packed_prompt_authorized_plan_slice_v1 as plan_slice,
 )
@@ -109,6 +113,8 @@ SCHEMA_LABEL_INPUTS_DURING_BUILD = 0
 DIRECT_OCCURRENCE_ACTION_READS = 0
 DIRECT_APPEND_ACTION_READS = 0
 SERIALIZED_SCHEMA_ACTION_READS = 0
+RAW_SUM_DUMMY_LITERALS = (0,)
+RAW_SUM_MAX_COST = absolute.FIXED_MAX_COST
 
 PUBLIC_TRAIN_INPUT_COUNT = 0
 DEV_INPUT_COUNT = 0
@@ -373,30 +379,219 @@ def _metrics(value: object) -> _PackedMetrics:
     )
 
 
+class _RawSumListIntBuilder(breadth_v4._ListIntBuilder):
+    """Publish the raw-SUM authority without unrelated generic families."""
+
+    def __init__(
+        self,
+        signature: TypedSignature,
+        supplied_case_arguments: Iterable[tuple[object, ...]],
+    ) -> None:
+        operator = breadth_v4.operator_successor.train_public_typed_operator_successor()[0]
+        super().__init__(
+            signature,
+            supplied_case_arguments,
+            RAW_SUM_DUMMY_LITERALS,
+            RAW_SUM_MAX_COST,
+            operator,
+        )
+
+    def build(
+        self,
+    ) -> tuple[full_typed.PackedFullTypedState, packed_v4._SemanticPartitionWorkset]:
+        try:
+            literal_relation = self._prepare_inputs()
+            collection, _item, _literal = self._seed_families(literal_relation)
+            self._family(
+                "sum",
+                (collection,),
+                context_role="root",
+                environment_type_labels=("List[Int]",),
+                result_type_label="Int",
+                root_candidate=True,
+            )
+
+            frozen = self.workset.publish()
+            families, enodes, eclasses = self._components(frozen)
+            typed_families, root_eclasses = self._typed_publication(
+                frozen,
+                families,
+                enodes,
+                eclasses,
+            )
+            component = self.authenticated_components
+            typed_capsule = self.typed_capsule
+            context = self.context_certificate
+            if component is None or typed_capsule is None or context is None:
+                raise RuntimeError("raw SUM cross-type publication is incomplete")
+            self._charge("frontier-seal")
+            work = self.work_audit()
+            payload = {
+                "status": full_typed.FRONTIER_READY,
+                "signature": self.signature.to_record(),
+                "case_arguments": self.case_arguments,
+                "literals": self.literals,
+                "requested_max_ast_cost": self.max_ast_cost,
+                "maximum_completed_ast_cost": self.maximum_completed_ast_cost,
+                "context_certificate_sha256": context.sha256,
+                "operator_checkpoint_sha256": self.operator.checkpoint_sha256,
+                "frozen_workset_sha256": frozen.sha256,
+                "component_capsule_sha256": component.sha256,
+                "typed_capsule_sha256": typed_capsule.sha256,
+                "root_eclass_ids": typed_capsule.root_eclass_ids,
+                "build_work_sha256": work.sha256,
+            }
+            state = full_typed.PackedFullTypedState(
+                status=full_typed.FRONTIER_READY,
+                signature=self.signature,
+                case_arguments=self.case_arguments,
+                literals=self.literals,
+                requested_max_ast_cost=self.max_ast_cost,
+                maximum_completed_ast_cost=self.maximum_completed_ast_cost,
+                context_certificate=context,
+                operator_checkpoint_sha256=self.operator.checkpoint_sha256,
+                frozen_workset=frozen,
+                families=families,
+                enodes=enodes,
+                eclasses=eclasses,
+                typed_families=typed_families,
+                root_eclasses=root_eclasses,
+                root_eclass_ids=typed_capsule.root_eclass_ids,
+                component_capsule_sha256=component.sha256,
+                typed_capsule_sha256=typed_capsule.sha256,
+                build_work_sha256=work.sha256,
+                sha256=full_typed._digest("frontier", payload),
+            )
+            return state, self.workset
+        except packed.PackedRelationWorkLimitExceeded as error:
+            self.bound_name = "recipe-relation-work"
+            self.bound_attempted = error.attempted
+            return self._stopped_state(), self.workset
+        except packed_v2._PhysicalWorkBoundExceeded as error:
+            self.bound_name = error.name
+            self.bound_attempted = error.attempted
+            return self._stopped_state(), self.workset
+
+
+def _build_raw_sum_frontier(
+    signature: TypedSignature,
+    cases: tuple[tuple[object, ...], ...],
+) -> breadth_v4.PackedGenericTypedTrainBreadthV4:
+    expected = absolute.list_int_to_int_signature()
+    if not isinstance(signature, TypedSignature) or (
+        signature.result != expected.result
+        or len(signature.parameters) != 1
+        or signature.parameters[0].type != expected.parameters[0].type
+    ):
+        raise ValueError("raw SUM requires exactly List[Int] -> Int")
+    builder = _RawSumListIntBuilder(signature, cases)
+    operator = builder.operator
+    operator.clear_effect_memo()
+    before = operator.live_checkpoint_sha256
+    state, workset = builder.build()
+    if operator.live_checkpoint_sha256 != before:
+        raise RuntimeError("typed operator checkpoint changed during raw SUM build")
+    route = breadth_v4._PackedListIntFrontier(state, workset, operator, builder)
+    accepted_rows = cast(tuple[tuple[object, ...], ...], state.case_arguments)
+    partial = breadth_v3.PackedGenericTypedState(
+        status=breadth_v3._status_from_route(state.status),
+        signature=signature,
+        case_arguments=accepted_rows,
+        literals=state.literals,
+        requested_max_ast_cost=state.requested_max_ast_cost,
+        maximum_completed_ast_cost=state.maximum_completed_ast_cost,
+        operator_checkpoint_sha256=state.operator_checkpoint_sha256,
+        root_eclass_ids=state.root_eclass_ids,
+        route_frontier_sha256=route.sha256,
+        route_build_work_sha256=state.build_work_sha256,
+        sha256="",
+    )
+    outer_state = partial._replace(
+        sha256=breadth_v3._digest("typed-frontier", breadth_v3._state_payload(partial))
+    )
+    frontier = object.__new__(breadth_v4.PackedGenericTypedTrainBreadthV4)
+    frontier._route = route
+    frontier._state = outer_state
+    frontier._construction_receipt = breadth_v3._issue_construction_receipt(
+        route=route,
+        state=outer_state,
+        signature=signature,
+    )
+    return frontier
+
+
 def _raw_sum_binding(
     signature: TypedSignature,
     cases: tuple[tuple[object, ...], ...],
+    *,
+    source_cell_gate: bool = True,
+    scaffold_cell_gate: bool = True,
 ) -> tuple[
     plan_slice.PackedGenericTypedPromptPlanSliceV1,
     plan_slice._PlanSliceBinding,
 ]:
-    delegate = plan_slice.PackedGenericTypedPromptPlanSliceV1.build(
-        signature,
-        cases,
-        absolute.FIXED_DUMMY_LITERALS,
-        absolute.FIXED_MAX_COST,
-        append.freeze_raw_sum_scaffold(),
-    )
-    receipt = delegate.plan_slice_receipt
+    if type(source_cell_gate) is not bool or type(scaffold_cell_gate) is not bool:
+        raise TypeError("raw SUM gates must be exact booleans")
+    if not source_cell_gate:
+        raise OccurrenceAbsoluteMapFoldFitStop(
+            STOP_PLAN_SLICE, "raw SUM source-cell gate was ablated"
+        )
+    frontier = _build_raw_sum_frontier(signature, cases)
+    if frontier.status != breadth_v4.FRONTIER_READY:
+        raise OccurrenceAbsoluteMapFoldFitStop(
+            STOP_PLAN_SLICE, "raw SUM physical frontier did not reach READY"
+        )
+    if frontier.state.literals != RAW_SUM_DUMMY_LITERALS:
+        raise RuntimeError("raw SUM output-independent dummy literal changed")
+    certificate = append.freeze_raw_sum_scaffold()
+    plan_slice._authenticate_certificate(certificate)
+    if not scaffold_cell_gate:
+        raise OccurrenceAbsoluteMapFoldFitStop(
+            STOP_PLAN_SLICE, "raw SUM structural scaffold gate was ablated"
+        )
+    try:
+        status, authorized, receipt, root_receipt, build_work, authorization_work = (
+            plan_slice._bind_certificate(frontier, certificate)
+        )
+    except packed.PackedRelationWorkLimitExceeded as error:
+        raise OccurrenceAbsoluteMapFoldFitStop(
+            STOP_WORK_BOUND, "raw SUM plan authorization exceeded packed work"
+        ) from error
     if (
-        delegate.status != plan_slice.FRONTIER_READY
-        or delegate.state.authorized_slice_count != 1
+        status != plan_slice.FRONTIER_READY
+        or authorized != 1
         or receipt is None
     ):
         raise OccurrenceAbsoluteMapFoldFitStop(
             STOP_PLAN_SLICE, "raw SUM did not authorize one physical plan slice"
         )
+    partial = plan_slice.PackedPromptPlanSliceState(
+        status=status,
+        packed_frontier_sha256=frontier.sha256,
+        structural_certificate_sha256=certificate.sha256,
+        authorized_slice_count=authorized,
+        plan_slice_receipt_sha256=receipt.sha256,
+        frontier_root_receipt_sha256=root_receipt,
+        build_work_receipt_sha256=build_work,
+        authorization_work_receipt_sha256=authorization_work,
+        sha256="",
+    )
+    state = partial._replace(
+        sha256=plan_slice._digest(
+            "prompt-plan-slice-state", plan_slice._state_payload(partial)
+        )
+    )
+    delegate = object.__new__(plan_slice.PackedGenericTypedPromptPlanSliceV1)
+    delegate._frontier = frontier
+    delegate._plan_slice_receipt = receipt
+    delegate._state = state
+    delegate._authenticate_state()
     binding = plan_slice._authenticate_plan_slice_receipt(delegate._frontier, receipt)
+    if (
+        delegate.work.concrete_proof_witnesses != 0
+        or delegate.work.materialized_witnesses != 0
+    ):
+        raise RuntimeError("raw SUM publication materialized proof work during build")
     return delegate, binding
 
 
