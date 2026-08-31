@@ -26,10 +26,16 @@ from humanbrain import knowledge_cell_projection as knowledge_projection
 SCOPE = "COMMON_KNOWLEDGE_ACTION_MEMORY_V1"
 STATUS = "RAW_DOCUMENT_FACTORS_CAUSALLY_SELECT_ONE_CANDIDATE_ACTION"
 CLAIM_BOUNDARY = (
-    "self-posed-two-api-raw-document-factor-to-symbol-transfer-with-"
-    "authenticated-provenance-physical-cell-race-and-selected-only-"
-    "materialization-no-real-python-docs-score-broad-coding-transfer-"
-    "repository-transfer-leetcode-swe-bench-or-benchmark-evidence"
+    "self-posed-small-vocabulary-raw-document-factor-to-authenticated-"
+    "document-or-task-independent-declared-symbol-transfer-with-human-"
+    "curated-declared-symbols-as-adapter-scaffolding-not-learned-abstraction-"
+    "provenance-physical-cell-race-and-selected-only-materialization-no-"
+    "broad-coding-transfer-repository-transfer-leetcode-swe-bench-or-"
+    "benchmark-evidence"
+)
+SYMBOL_SOURCE_POLICY = (
+    "symmetric-sorted-deduplicated-union-of-authenticated-first-line-"
+    "document-symbols-and-task-independent-corpus-declared-symbols"
 )
 
 RECALLED = "RECALLED"
@@ -204,6 +210,7 @@ CONFIG_RECORD = {
         "one-binary-uint8-synaptic-row-per-exact-frozen-factor-cell-fingerprint"
     ),
     "hash_role": "trace-derived-address-accelerator-and-collision-metric-only",
+    "symbol_source_policy": SYMBOL_SOURCE_POLICY,
     "admission_chronology": (
         "explicit-acquire-groups-frozen-before-task-and-candidates"
     ),
@@ -876,7 +883,7 @@ def fit_common_knowledge_action_memory_v1(
     *,
     plasticity_gate: bool = True,
 ) -> FrozenCommonKnowledgeActionMemoryV1:
-    """Fit one immutable raw-factor to parsed-symbol synaptic memory."""
+    """Fit immutable raw factors to authenticated document/declaration symbols."""
 
     if type(projection) is not knowledge_projection.KnowledgeCellProjectionV1:
         raise TypeError("exact KnowledgeCellProjectionV1 required")
@@ -892,7 +899,14 @@ def fit_common_knowledge_action_memory_v1(
         sorted({factor for chunk in projection.chunks for factor in chunk.content_factors})
     )
     chunk_symbols = tuple(
-        tuple(_canonical_symbol(value) for value in chunk.document_symbols)
+        tuple(
+            sorted(
+                {
+                    _canonical_symbol(value)
+                    for value in chunk.document_symbols + chunk.declared_symbols
+                }
+            )
+        )
         for chunk in projection.chunks
     )
     symbol_names = tuple(sorted({value for values in chunk_symbols for value in values}))

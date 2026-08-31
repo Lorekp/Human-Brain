@@ -1,44 +1,81 @@
 from __future__ import annotations
 
-from experiments.r3_pilot import common_knowledge_action_memory_v1 as knowledge_action
-from experiments.r3_pilot import run_python_docs_heapq_causal_gate_v1 as gate
+from hashlib import sha256
+import json
+from pathlib import Path
 
 
-def test_preregistration_authenticates_without_spending_gate(monkeypatch) -> None:
-    def forbidden(*_args, **_kwargs):
-        raise AssertionError("construction authentication spent the causal gate")
+ROOT = Path(__file__).resolve().parents[1]
+MANIFEST_PATH = (
+    ROOT / "experiments" / "r3_pilot" / "python_docs_heapq_causal_gate_v1.manifest.json"
+)
+RESULT_PATH = (
+    ROOT / "experiments" / "r3_pilot" / "python_docs_heapq_causal_gate_v1.result.json"
+)
+MANIFEST_NAMESPACE = "humanbrain-python-docs-heapq-causal-gate-manifest-v1"
+EXPECTED_MANIFEST_SHA256 = (
+    "b3420802d1f773b49ecb9680a3019cdff8411a741cffecac4dce8e5073edc4cd"
+)
+EXPECTED_RESULT_RECEIPT_SHA256 = (
+    "019ac75d46f9dde4eaafa638aa4aa067350dc83ce04382476941451399bbe186"
+)
 
-    monkeypatch.setattr(
-        knowledge_action.FrozenCommonKnowledgeActionMemoryV1,
-        "recall",
-        forbidden,
+
+def _canonical_json(value: object) -> bytes:
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+
+
+def _canonical_file(value: object) -> bytes:
+    return (
+        json.dumps(value, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
+    ).encode("utf-8")
+
+
+def _root(namespace: str, value: object) -> str:
+    return sha256(namespace.encode("ascii") + b"\0" + _canonical_json(value)).hexdigest()
+
+
+def test_spent_heapq_evidence_authenticates_without_current_runtime() -> None:
+    manifest_bytes = MANIFEST_PATH.read_bytes()
+    result_bytes = RESULT_PATH.read_bytes()
+    manifest = json.loads(manifest_bytes)
+    result = json.loads(result_bytes)
+
+    assert manifest_bytes == _canonical_file(manifest)
+    assert result_bytes == _canonical_file(result)
+
+    manifest_payload = dict(manifest)
+    manifest_sha256 = manifest_payload.pop("manifest_sha256")
+    assert manifest_sha256 == EXPECTED_MANIFEST_SHA256
+    assert _root(MANIFEST_NAMESPACE, manifest_payload) == manifest_sha256
+
+    result_payload = dict(result)
+    result_receipt = result_payload.pop("receipt_sha256")
+    assert result_receipt == EXPECTED_RESULT_RECEIPT_SHA256
+    assert (
+        _root(manifest["execution"]["result_receipt_namespace"], result_payload)
+        == result_receipt
     )
-    monkeypatch.setattr(
-        knowledge_action.KnowledgePatchEnvironmentV1,
-        "materialize_selected",
-        forbidden,
-    )
-    monkeypatch.setattr(
-        knowledge_action.KnowledgePatchEnvironmentV1,
-        "execute_selected",
-        forbidden,
-    )
 
-    manifest = gate.load_manifest()
-    roots = gate.authenticate_preregistration(manifest)
-
-    assert roots == {
-        "candidate_projection_sha256": (
-            "a4f6c738492d0b8024ca7ed00ca81627745ed540fd8766208ea15cd8900c800e",
-            "dddcd52fdb117557f969dc8490b718b339debc6631a7f6bc10386fbb0e59204e",
-        ),
-        "candidate_set_sha256": (
-            "c8e9f2d2220d59f7e2698d06ee002a798bc0fe8f7fb84041fa2a83b012467d04"
-        ),
-        "manifest_sha256": (
-            "b3420802d1f773b49ecb9680a3019cdff8411a741cffecac4dce8e5073edc4cd"
-        ),
-        "task_sha256": (
-            "4b053735f618d049ede6eb067cf617cde86fc3317abe9d1c7fff0c8132ef0ab4"
-        ),
+    assert result["schema"] == "humanbrain.python-docs-heapq-causal-gate-result.v1"
+    assert result["scope"] == manifest["scope"]
+    assert result["manifest_sha256"] == manifest_sha256
+    assert result["passed"] is True
+    assert all(record["passed"] is True for record in result["controls"].values())
+    assert result["memory"]["config_sha256"] == (
+        "ca4ce6e32a4f8adc8ffb0243ab5a424da98ef619838dea2145ddc61dd9a3bdd2"
+    )
+    assert result["memory"]["checkpoint_sha256"] == (
+        "6056f16c928c08bd9701dd15e3fecf70ed74544179978664267d3f552488a981"
+    )
+    assert result["main_recall"]["candidate_set_sha256"] == manifest[
+        "candidate_set_sha256"
+    ]
+    assert result["counts"] == {
+        "candidate_execution_count": 1,
+        "candidate_materialization_count": 1,
+        "control_recall_count": 5,
+        "main_recall_count": 1,
     }

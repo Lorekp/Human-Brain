@@ -33,6 +33,19 @@ TASK_TEXT = (
     "Remove one complete leading sequence only when it matches; otherwise "
     "preserve the original string unchanged."
 )
+MESSAGE_PASSING = "rust.concurrent.message_passing"
+SHARED_STATE = "rust.concurrent.shared_state"
+MESSAGE_TEXT = (
+    "Transmit owned values between isolated workers through a channel while "
+    "preserving independent state."
+)
+SHARED_TEXT = (
+    "Coordinate worker access to shared synchronized state through mutex locking."
+)
+CONCURRENCY_TASK = (
+    "Transmit owned values between isolated workers through a channel while "
+    "keeping their state independent."
+)
 
 
 def _projection(
@@ -114,6 +127,74 @@ def _candidates() -> tuple[memory_v1.KnowledgePatchCandidateV1, ...]:
             "remove_whole_marker",
             "def drop_marker(value, marker):\n"
             "    return str.removeprefix(value, marker)\n",
+        ),
+    )
+
+
+def _declared_projection(
+    root: Path,
+    labels: tuple[str | None, str | None],
+):
+    root.mkdir(parents=True, exist_ok=True)
+    files = (
+        ("message.txt", MESSAGE_TEXT, labels[0]),
+        ("shared.txt", SHARED_TEXT, labels[1]),
+    )
+    for path, text, _symbol in files:
+        (root / path).write_text(text, encoding="utf-8", newline="\n")
+    manifest = KnowledgeCorpusManifest(
+        sources=(
+            KnowledgeSourceSpec(
+                source_id="synthetic-rust-concepts",
+                canonical_url="https://docs.example.org/rust-concepts",
+                upstream_revision="unit-fixture-v1",
+                license_spdx="MIT",
+                license_evidence_url="https://docs.example.org/license",
+                attribution="Synthetic neutral concurrency concept fixture",
+                provenance_confidence=1.0,
+                files=tuple(
+                    KnowledgeFileSpec(
+                        path=path,
+                        expected_raw_sha256=sha256(text.encode("utf-8")).hexdigest(),
+                        split="acquire",
+                        content_type="plain-text",
+                        chapter="Concurrency concepts",
+                        symbol=symbol,
+                    )
+                    for path, text, symbol in files
+                ),
+            ),
+        )
+    )
+    corpus = build_local_knowledge_corpus(
+        manifest,
+        {"synthetic-rust-concepts": root},
+        BenchmarkDenyManifest(),
+        KnowledgeCorpusCaps(
+            max_bytes_per_source=4096,
+            max_total_bytes=4096,
+            max_tokenish_per_source=512,
+            max_total_tokenish=512,
+        ),
+    )
+    projection = project_knowledge_corpus_to_cells_v1(
+        corpus,
+        admitted_chunk_groups=tuple((chunk.chunk_id,) for chunk in corpus.chunks),
+        split="acquire",
+    )
+    assert all(not chunk.document_symbols for chunk in projection.chunks)
+    return projection
+
+
+def _neutral_candidates() -> tuple[memory_v1.KnowledgePatchCandidateV1, ...]:
+    return (
+        memory_v1.KnowledgePatchCandidateV1.from_source(
+            "message_passing",
+            "def choose():\n    return rust.concurrent.message_passing()\n",
+        ),
+        memory_v1.KnowledgePatchCandidateV1.from_source(
+            "shared_state",
+            "def choose():\n    return rust.concurrent.shared_state()\n",
         ),
     )
 
@@ -261,3 +342,65 @@ def test_candidate_contract_rejects_hidden_second_call() -> None:
             "    eval('1 + 1')\n"
             "    return str.removeprefix(value, marker)\n",
         )
+
+
+def test_declared_symbols_learn_neutral_lanes_and_permute_causally(
+    tmp_path: Path,
+) -> None:
+    candidates = _neutral_candidates()
+    candidate_projections = tuple(value.projection for value in candidates)
+    task = memory_v1.project_knowledge_action_task_v1(CONCURRENCY_TASK)
+
+    projection = _declared_projection(
+        tmp_path / "declared",
+        (MESSAGE_PASSING, SHARED_STATE),
+    )
+    memory = memory_v1.fit_common_knowledge_action_memory_v1(projection)
+    recalled = memory.recall(task, candidate_projections)
+
+    assert memory.symbol_vocabulary == (MESSAGE_PASSING, SHARED_STATE)
+    assert recalled.status == memory_v1.RECALLED
+    assert recalled.selected_symbol == MESSAGE_PASSING
+    assert recalled.selected_candidate_id == "message_passing"
+
+    permuted_projection = _declared_projection(
+        tmp_path / "permuted",
+        (SHARED_STATE, MESSAGE_PASSING),
+    )
+    permuted_memory = memory_v1.fit_common_knowledge_action_memory_v1(
+        permuted_projection
+    )
+    permuted = permuted_memory.recall(task, candidate_projections)
+
+    assert permuted.status == memory_v1.RECALLED
+    assert permuted.selected_symbol == SHARED_STATE
+    assert permuted.selected_candidate_id == "shared_state"
+    assert permuted_memory.checkpoint_sha256 != memory.checkpoint_sha256
+
+
+def test_declared_symbol_ablation_and_splices_fail_closed(tmp_path: Path) -> None:
+    without_labels = _declared_projection(tmp_path / "without-labels", (None, None))
+    with pytest.raises(memory_v1.KnowledgeActionMemoryError, match="symbol vocabulary"):
+        memory_v1.fit_common_knowledge_action_memory_v1(without_labels)
+
+    projection = _declared_projection(
+        tmp_path / "projection",
+        (MESSAGE_PASSING, SHARED_STATE),
+    )
+    permuted_projection = _declared_projection(
+        tmp_path / "projection-splice",
+        (SHARED_STATE, MESSAGE_PASSING),
+    )
+    with pytest.raises(KnowledgeCellProjectionError):
+        memory_v1.fit_common_knowledge_action_memory_v1(
+            replace(
+                projection,
+                producer_receipt=permuted_projection.producer_receipt,
+            )
+        )
+
+    message, shared = _neutral_candidates()
+    with pytest.raises(memory_v1.KnowledgeActionMemoryError, match="patch candidate"):
+        replace(message, source=shared.source).authenticate()
+    with pytest.raises(memory_v1.KnowledgeActionMemoryError, match="candidate projection"):
+        replace(message.projection, symbol=shared.projection.symbol).authenticate()
