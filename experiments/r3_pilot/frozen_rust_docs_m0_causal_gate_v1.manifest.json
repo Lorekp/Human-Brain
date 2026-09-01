@@ -1,0 +1,280 @@
+{
+  "batch": {
+    "case_count": 4,
+    "cases": [
+      [
+        17,
+        -8,
+        17,
+        4,
+        -3,
+        0
+      ],
+      [
+        -21,
+        13
+      ],
+      [
+        6,
+        6,
+        -12,
+        5,
+        -1,
+        5
+      ],
+      [
+        144,
+        -89,
+        55,
+        -34,
+        21,
+        -13,
+        8
+      ]
+    ],
+    "file_sha256": "7ee9bbaba3e0d4bd95447cbeb1886eff2ad67ad9dd7e81e37703b2571fa2df54",
+    "path": "experiments/r3_pilot/frozen_rust_docs_m0_causal_gate_v1.batch.json",
+    "payload_sha256": "ba9b1ed5bc532a5e792ee4379e9eaa296f7f268a7dd2d70f595770111502f608"
+  },
+  "claim_boundary": "One fresh M0 test of lexical Rust-Book-documentation-conditioned dispatch between two pre-existing authenticated Rust 2021 actions, followed by exactly one selected compile and batch run. It is not source synthesis, semantic code understanding, debugging, within-family transfer, cross-domain transfer, or broad coding-intelligence evidence.",
+  "frozen_inputs": {
+    "candidate_source_set_sha256": "886ba72b0d36ce1937c3271d432349586c4f4db70de3e9979ef932c5895bad49",
+    "candidate_sources": [
+      {
+        "source_bytes": 393,
+        "source_sha256": "d22ca063abae96ae45d05e69f97ac087dd3089e37fa2312d3ae8003f6f3db579"
+      },
+      {
+        "source_bytes": 461,
+        "source_sha256": "3e78f8a6b7d2e8a57c49524ce064e07a0773f0c0536ee17b3565317b0ce3f91e"
+      }
+    ],
+    "control_roster": [
+      "primary",
+      "contrast",
+      "source_order_reversal",
+      "cell_off",
+      "plasticity_off",
+      "bound_memory_splice",
+      "shared_factor_thread",
+      "unknown_factor",
+      "single_factor_channel",
+      "single_factor_mutex"
+    ],
+    "control_roster_sha256": "95bbbcd4824ada7ef69460df2b1997ce4bbe35db065f3ec5adb5d0adfcd0cea4",
+    "task_records": [
+      {
+        "factors": [
+          "tok:a",
+          "tok:all",
+          "tok:ascending",
+          "tok:channel",
+          "tok:delivered",
+          "tok:duplicates",
+          "tok:each",
+          "tok:implement",
+          "tok:in",
+          "tok:input",
+          "tok:integer",
+          "tok:integers",
+          "tok:order",
+          "tok:preserving",
+          "tok:return",
+          "tok:sends",
+          "tok:so",
+          "tok:solve",
+          "tok:thread",
+          "tok:through",
+          "tok:worker"
+        ],
+        "name": "primary",
+        "projection_sha256": "06dfee4382c8e6b018b7a7ae4e8d80619a0792fe3e5f4e4cfff8cf2323c3045d",
+        "text": "Implement solve so a worker thread sends each input integer through a channel. Return all delivered integers in ascending order, preserving duplicates."
+      },
+      {
+        "factors": [
+          "tok:a",
+          "tok:as",
+          "tok:by",
+          "tok:element",
+          "tok:implement",
+          "tok:lock",
+          "tok:mutex",
+          "tok:one",
+          "tok:protected",
+          "tok:return",
+          "tok:shared",
+          "tok:so",
+          "tok:solve",
+          "tok:the",
+          "tok:thread",
+          "tok:total",
+          "tok:updates",
+          "tok:vector",
+          "tok:worker"
+        ],
+        "name": "contrast",
+        "projection_sha256": "b0fc673941d3082e860ae86754382a9e7cebac945538e7dc30da68b5736366f4",
+        "text": "Implement solve so a worker thread updates a shared total protected by a mutex lock. Return the total as a one-element vector."
+      },
+      {
+        "factors": [
+          "tok:thread"
+        ],
+        "name": "shared_factor_thread",
+        "projection_sha256": "27df1ca9272c2903751091a9b090df796e2ad1aab8ffce7b392220807a104435",
+        "text": "thread"
+      },
+      {
+        "factors": [
+          "tok:zzzxqvjmptk"
+        ],
+        "name": "unknown_factor",
+        "projection_sha256": "2115584e4aa2b04f70c09c19402c7555a4f83e4118ccaf2b4916cc32fe5a8090",
+        "text": "zzzxqvjmptk"
+      },
+      {
+        "factors": [
+          "tok:channel"
+        ],
+        "name": "single_factor_channel",
+        "projection_sha256": "ff9ec83d120d02a01da07242e9e1111a8a584a07f6060462afb1a130ace73774",
+        "text": "channel"
+      },
+      {
+        "factors": [
+          "tok:mutex"
+        ],
+        "name": "single_factor_mutex",
+        "projection_sha256": "2776a572028d12b603489e245fecb1dd2a51dc6f543a4fd5844ae110fe95c71f",
+        "text": "mutex"
+      }
+    ],
+    "task_set_sha256": "e5b535d40ee2ee68937d51da86d7f659923d2c90415c24cc651ab03dc57a0f63"
+  },
+  "implementation_commit": "2d3fb3af030e58b4d3c9a3f8bef4965ab7116add",
+  "implementation_files": [
+    {
+      "path": "data/knowledge/rust-book-nostarch-third-printing.lock.json",
+      "sha256": "22d5b481a5fa14eb4026d3bdc202cb2d1bcaaf00c0a41357918c5258b91fd840"
+    },
+    {
+      "path": "experiments/g0/common_event_cells_v1.py",
+      "sha256": "f425c07c44942ff7cd9672a506f616d9e6f9640c52340b481a81ad7b1603eaeb"
+    },
+    {
+      "path": "experiments/r3_pilot/common_knowledge_action_memory_v1.py",
+      "sha256": "53ac814c18b98e047d0be267d616099f16db518a38c4cd8067f6344f338f2682"
+    },
+    {
+      "path": "experiments/r3_pilot/common_rooted_structured_event_graph_v1.py",
+      "sha256": "0fa5ba5ec0f800878462b7501da09531ce5f3985f2a921749600702a1a44d3e6"
+    },
+    {
+      "path": "experiments/r3_pilot/frozen_rust_docs_m0_causal_gate_v1.batch.json",
+      "sha256": "7ee9bbaba3e0d4bd95447cbeb1886eff2ad67ad9dd7e81e37703b2571fa2df54"
+    },
+    {
+      "path": "experiments/r3_pilot/frozen_rust_docs_m0_causal_gate_v1_protocol.py",
+      "sha256": "97ae722a14d0117124ec7899141f844b24c7dc408fb3cbb65fea1ca976f25663"
+    },
+    {
+      "path": "experiments/r3_pilot/run_frozen_rust_docs_m0_causal_gate_v1.py",
+      "sha256": "460dfb6015e8ef5b52ccfb615855a318b485e9871b041ad70d56374feae37eaf"
+    },
+    {
+      "path": "src/humanbrain/consolidated_knowledge_cell_projection.py",
+      "sha256": "ae4bcc2d53599006b6c1776a2e8a838297de68039c571428815d48b1153679ea"
+    },
+    {
+      "path": "src/humanbrain/knowledge_consolidation.py",
+      "sha256": "675065d8e14ebff6270ca6a5927d213390895220c34158d237e5429cda227b05"
+    },
+    {
+      "path": "src/humanbrain/knowledge_corpus.py",
+      "sha256": "905f479dcdaade391fa294645c146cd2035d1a7c3aac789152af1aeff32d8667"
+    },
+    {
+      "path": "src/humanbrain/rust_action_registry.py",
+      "sha256": "32953dffcef557ec15144d5c37c113dcef462846aa60064570541508efa79966"
+    },
+    {
+      "path": "src/humanbrain/rust_selected_action_executor.py",
+      "sha256": "27debf74760b65c1166a70d18bc9c1719c20fae2b87b397544f789470f41bd97"
+    },
+    {
+      "path": "tools/build_rust_book_knowledge_corpus.py",
+      "sha256": "0e34cae402fad785040d33283fd5489213a2bb95fb7ab0551baa215d65584f23"
+    }
+  ],
+  "manifest_sha256": "072a94efd105d780ff708c0c482936aefef109c5ecc77bd5542553702dc95c0f",
+  "oracle_commitment": {
+    "batch_payload_sha256": "ba9b1ed5bc532a5e792ee4379e9eaa296f7f268a7dd2d70f595770111502f608",
+    "file_sha256": "46539d4e2e800f564b2c5207ca0aafe8f3c5d420692272b55c2686598f075be7",
+    "path": "experiments/r3_pilot/frozen_rust_docs_m0_causal_gate_v1.oracle.json",
+    "payload_sha256": "7abb4f962ff886a36bd45225070fbb2f092edbf4ae32c6ca9701e573d9d109b0",
+    "runtime_read_count_at_freeze": 0
+  },
+  "readiness": {
+    "batch_payload_sha256": "ba9b1ed5bc532a5e792ee4379e9eaa296f7f268a7dd2d70f595770111502f608",
+    "bound_memory_checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+    "bound_memory_receipt_sha256": "3b838865e7c9210b5ac6431f7acea2df38294c40e8b3e21e3a3ad0ca7dd2c9c7",
+    "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+    "candidate_source_set_sha256": "886ba72b0d36ce1937c3271d432349586c4f4db70de3e9979ef932c5895bad49",
+    "channel_action_handle": "ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+    "channel_structural_sha256": "cf4443a048652b3453ccba885778addb963d5c13130d75c99429ed5c035751a4",
+    "claim_boundary": "One fresh M0 test of lexical Rust-Book-documentation-conditioned dispatch between two pre-existing authenticated Rust 2021 actions, followed by exactly one selected compile and batch run. It is not source synthesis, semantic code understanding, debugging, within-family transfer, cross-domain transfer, or broad coding-intelligence evidence.",
+    "consolidation_corpus_sha256": "11b08f8e15ca9e7b5fad78023c839370dc821bca33e14ee5ff38aac4cb506b93",
+    "consolidation_producer_sha256": "303c0f45dfffea19bbe41e1d522a48e05c683c4656df001505b1300e53feb60f",
+    "control_roster_sha256": "95bbbcd4824ada7ef69460df2b1997ce4bbe35db065f3ec5adb5d0adfcd0cea4",
+    "executor_batch_protocol_sha256": "994826caaa46b6f59adb86061f3c7cbf76bef1745e4a25221752927f681676ba",
+    "executor_batch_sha256": "dc16a0e3ba8c9a590d5eb03037300630b4b8e0198db2def281d38fa7c486e660",
+    "executor_harness_sha256": "cabc021d0fc234bc6f54d8343be615e460005d3142bd28920bc32a7317274d22",
+    "executor_preparation_sha256": "875932737c698a5536a6e173cbb571e7deaf8d18afe34ae9749b463ec3ad364d",
+    "executor_stdin_sha256": "7fa736de744dc8f994d22edcc5bb7b4a347c608d1cb0bf4cb8563abfac920a54",
+    "input_records_sha256": "1cd14eb16b20ce23e86741e1610c57cd5def7b8fdd0665c1fe1bf6a575f361af",
+    "knowledge_projection_sha256": "0955da34378f1b9ebf7ecd9d49f70fd0e76d6c08dfa4dea93d19037ef829eb13",
+    "knowledge_provenance_sha256": "53c9bb2cd9c2463909265fe27286bfb47e486d6e1067a17bf3c4485b6feb8839",
+    "mutex_action_handle": "ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+    "no_plasticity_checkpoint_sha256": "5d6ada9850d46c84ee9d5b20d4bd8f6a3cdb518a157507874eedd270d2623bd8",
+    "no_plasticity_memory_receipt_sha256": "430226db4804426e5ae388c3af63752752fa310a242b60c1757b93e7de1b4bc9",
+    "oracle_payload_sha256": "7abb4f962ff886a36bd45225070fbb2f092edbf4ae32c6ca9701e573d9d109b0",
+    "registry_sha256": "0b814282f5555ba9b47f63bf6562c9d879ab1844d8554c8d3835984ba7e2edce",
+    "reversed_bound_memory_receipt_sha256": "3b838865e7c9210b5ac6431f7acea2df38294c40e8b3e21e3a3ad0ca7dd2c9c7",
+    "reversed_registry_sha256": "0b814282f5555ba9b47f63bf6562c9d879ab1844d8554c8d3835984ba7e2edce",
+    "rustc_identity_sha256": "aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84",
+    "schema": "humanbrain.rust-docs-m0-causal-gate-ready.v1",
+    "selector_view_sha256": "92267670dd9edde88cde0705b6510fe8641b13d3fc7b44f6f13c13b48f199dde",
+    "sha256": "13f52cb71a702e048df66a561e04ad23f7a3cdfe51faace10341626322d1383b",
+    "source_summary_sha256": "0d70973bab49f355493219d2a3b3b3dc9bbc03fe8dddad6e1bb6e540c46dec7b",
+    "status": "READY_UNSPENT",
+    "task_projection_sha256s": {
+      "contrast": "b0fc673941d3082e860ae86754382a9e7cebac945538e7dc30da68b5736366f4",
+      "primary": "06dfee4382c8e6b018b7a7ae4e8d80619a0792fe3e5f4e4cfff8cf2323c3045d",
+      "shared_factor_thread": "27df1ca9272c2903751091a9b090df796e2ad1aab8ffce7b392220807a104435",
+      "single_factor_channel": "ff9ec83d120d02a01da07242e9e1111a8a584a07f6060462afb1a130ace73774",
+      "single_factor_mutex": "2776a572028d12b603489e245fecb1dd2a51dc6f543a4fd5844ae110fe95c71f",
+      "unknown_factor": "2115584e4aa2b04f70c09c19402c7555a4f83e4118ccaf2b4916cc32fe5a8090"
+    },
+    "task_set_sha256": "e5b535d40ee2ee68937d51da86d7f659923d2c90415c24cc651ab03dc57a0f63",
+    "unknown_cue_absence_sha256": "4d1e342cf2c5b7ef7890a3398e651a1bdc36c10c64d1c56c1fab5a8c707d32ae",
+    "work": {
+      "authenticated_binary_run_receipt_count": 0,
+      "authenticated_rustc_compile_receipt_count": 0,
+      "oracle_read_count": 0,
+      "recall_count": 0,
+      "selected_executor_call_count": 0,
+      "selected_source_materialization_count": 0
+    }
+  },
+  "schema": "humanbrain.rust-docs-m0-causal-gate-ready.v1",
+  "status": "READY_UNSPENT",
+  "unknown_cue_absence": {
+    "association_projection_sha256": "94770e9ac44bed75320c311bbca566271719278588206a436951f0d469844ebd",
+    "bound_factor_occurrences": 0,
+    "factor": "tok:zzzxqvjmptk",
+    "selector_occurrences": 0,
+    "selector_view_sha256": "92267670dd9edde88cde0705b6510fe8641b13d3fc7b44f6f13c13b48f199dde",
+    "sha256": "4d1e342cf2c5b7ef7890a3398e651a1bdc36c10c64d1c56c1fab5a8c707d32ae"
+  }
+}
