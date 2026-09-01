@@ -443,6 +443,38 @@ Opus. The next useful boundary is multi-task continual documentation-assisted
 coding with newly learned/reusable actions, not another binary dispatch on this
 spent cohort.
 
+Commit `384aba4` adds the first replay-free multi-task mechanism for that next
+boundary. `common_continual_documentation_action_memory_v1.py` advances one
+immutable checkpoint from one newly sealed public-feedback lesson at a time;
+old lessons are not replayed and parent arrays are not mutated. Candidate
+addresses are append-only. A candidate is not recall-eligible until successful
+lessons cover two distinct task projections and two distinct task-source roots.
+The checkpoint reconstructs its excitatory/inhibitory matrices from rooted
+per-lesson provenance during authentication, owns its candidate vocabulary, and
+uses the common physical output population for both selection and STOP.
+
+The deterministic synthetic A1→B1→A2→B2 fixture interleaves candidate-provided
+`map` and `filter` actions, then recalls each action from a fresh lexical task
+projection without refitting. Its final checkpoint has four lessons, two
+factors, two promoted actions, eight trainable bytes, 104 checkpoint-array
+bytes, and 4,903 cumulative learning cell-steps. It stores zero raw task text
+and zero raw outputs. The checkpoint root is
+`1bb914c1d106483e75a59aebfac4f2394c6773fa3961eb7d239a0d47943baef3`.
+Both fresh recalls selected their corresponding owned candidate; neither action
+was materialized or executed.
+
+Four focused tests cover interleaved retention, the task/source promotion
+quorum, failed feedback, unknown/unpromoted/tied/cell-off/documentation-off
+physical STOPs, immutable parents, plasticity-off identity, candidate identity
+collisions, evidence/lesson tampering, and re-rooted recall-metadata forgery.
+Those tests and ten adjacent common-cell/knowledge-action tests pass 14/14.
+This is synthetic mechanism evidence for continual acquisition and reuse of
+candidate-provided opaque actions from exact lexical task/evidence overlap. It
+is not authenticated corpus ingestion, semantic learning, action synthesis,
+Rust execution, debugging, SWE evidence, or a result against Gemma or Opus. The
+next seam is an authenticated promoted-action vault and shared selected-source
+executor on a fresh, unspent Rust task cohort.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for

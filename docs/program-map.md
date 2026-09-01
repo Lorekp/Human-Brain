@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the frozen Rust Book
-documentation-conditioned action gate PASS. Exact scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-09-01 after the first replay-free
+continual documentation-action kernel. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -13,7 +13,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; lexical-dispatch sub-gate PASS; multi-task next]
+R4  Language/software continual coding               [OPEN; multi-task lexical memory banked; execution next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -837,6 +837,27 @@ outputs matched the sealed commitment. The supported claim is lexical Rust
 Book documentation-conditioned dispatch between two already implemented
 actions. Source synthesis, semantic understanding, transfer, continual coding,
 sandboxing, and broad coding intelligence remain open.
+
+Commit `384aba4` adds
+`experiments/r3_pilot/common_continual_documentation_action_memory_v1.py` as
+the next R4 layer. It is a small immutable event/effect learning kernel rather
+than another executor: each successor applies exactly one authenticated lesson,
+retains per-lesson outcome provenance, reconstructs its E/H matrices during
+authentication, preserves stable candidate addresses, and promotes an action
+only after successful coverage of two distinct task projections and two
+distinct task-source roots. Recall owns the candidate set and its self-
+authenticating receipt recomputes the bounded physical race, STOP condition,
+candidate-set root, and exact selected metadata.
+
+The synthetic interleaved A1→B1→A2→B2 fixture finishes with two factors, two
+promoted actions, eight trainable bytes, 104 checkpoint-array bytes, and root
+`1bb914c1d106483e75a59aebfac4f2394c6773fa3961eb7d239a0d47943baef3`;
+fresh `map` and `filter` lexical probes both recall correctly without parent
+replay. No candidate is materialized or executed. This banks the continual
+selection kernel only. The immediate integration seam is a promoted-action
+vault feeding the existing bounded Rust compile/run core through one shared
+selected-source authority; a fresh iterator cohort can then test actual
+continual documentation-assisted execution.
 
 ### Runtime and scale
 

@@ -808,6 +808,34 @@ comparison with Gemma/Opus. The next R4 question is whether documentation,
 execution feedback, and learned action abstractions can accumulate across
 multiple disjoint coding tasks without tuning on this spent cohort.
 
+Commit `384aba4` begins that question at a synthetic mechanism boundary. The
+new continual documentation-action memory consumes one newly sealed lesson per
+immutable successor; it neither replays prior lessons nor mutates a parent.
+Successful and failed public consequences add excitatory/inhibitory ticks only
+on exact lexical factors shared by the authenticated task projection and
+documentation-evidence projection. Per-lesson provenance is retained while raw
+task text and output tuples are discarded from the checkpoint. Authentication
+reconstructs the learned matrices from provenance, and two distinct successful
+task projections plus two distinct task-source roots are required before an
+action may enter the common-cell physical race.
+
+The deterministic A1→B1→A2→B2 fixture interleaves two candidate-provided opaque
+actions and then recalls each from a fresh task projection without refitting.
+The final state contains four lessons, two factors, two promoted actions, eight
+trainable bytes, 104 total checkpoint-array bytes, and 4,903 cumulative
+learning cell-steps at checkpoint
+`1bb914c1d106483e75a59aebfac4f2394c6773fa3961eb7d239a0d47943baef3`.
+Unknown, unpromoted, tied, cell-off, and documentation-off probes physically
+STOP; failed fresh evidence does not promote; a failed unseen action and
+candidate identity splice are rejected; and a re-rooted selected-candidate
+receipt cannot change the physical winner. Four new and ten adjacent tests pass.
+
+This is not an adjudicative gate and did not materialize or execute either
+candidate. It supports only replay-free continual lexical association and
+recall over synthetic adapter-provided evidence. Authenticated Rust-corpus
+evidence, selected-source custody, execution, semantic acquisition, synthesis,
+debugging, and SWE transfer remain for fresh experiments.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing
