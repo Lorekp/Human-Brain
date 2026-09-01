@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the first authenticated
-same-task consequence revision and the spent C2 executed-proposal PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-01 after the spent C2
+executed-proposal PASS and fresh C3b consequence-reuse PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C1+C2 execution banked; consequence update next]
+R4  Language/software continual coding               [OPEN; C3b consequence reuse banked; failure rerace next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -943,6 +943,21 @@ C1→C2 checkpoint-lineage continuation, learned semantics, diagnosis, generic
 repair, protected transfer, SWE, or intelligence.
 The authenticated terminal is authoritative; reservation-only or pending-only
 state would be indeterminate, never PASS, and never permission to rerun.
+
+Commit `d9a3018` adds a generic immutable action-outcome learner and a thin
+token-edit adapter. The first C3 spend stopped before compilation on sandboxed
+Rust discovery and remains terminal at `49a3365`; it was not rerun. Fresh
+preregistration `d731343` then passed at result root
+`6344b4c32810a65423908da89c392182f68c0610ab2a0dbba22844db0b9099a5`:
+one executed adaptation proposal advanced reusable outcome state once, after
+which one fresh evaluation query became READY only with that successor and
+passed where its baseline failed. Work was six selected executions, compiles,
+and runs, with zero evaluation updates. Evidence commit `cca1557` retains the
+result and reservation.
+
+This banks only consequence-conditioned reuse of one supplied schema under
+caller-attested public outcomes. The next layer is failure-conditioned neural
+reracing among competing edit schemas, not another execution wrapper.
 
 ### Runtime and scale
 

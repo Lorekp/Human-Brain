@@ -618,6 +618,45 @@ intelligence. The authenticated terminal exists and is authoritative. A
 reservation-only or pending-only interruption would instead be
 indeterminate—never PASS and never permission to rerun the spent cohort.
 
+Generic mechanism commit `d9a3018cebaadda28b524bd32c7d25c4c56970e6`
+adds immutable action-outcome memory with a thin token-edit consequence-policy
+adapter. The first frozen C3 cohort (`9a4bbd3`, spec
+`18294356e4d71553a42603d2fc8ab48f8d94f232b269b5ae55515ab7de32fd2e`)
+was spent once but aborted before any compile or run when sandboxed compiler
+discovery emitted a path-canonicalization warning. Its terminal is
+`ABORT_C3_TOKEN_EDIT_OUTCOME_REUSE_V1`; abort, document, and reservation roots
+are `68de5bdf11ab9792e10a5fc027dd8d7e70f9ffaaacae371196159fa66d0111ea`,
+`db301d77e2fac7693087de709980c98d5e6e633df36966b393206174d6f0789b`,
+and `a3ea4e49b21c18c4bbca4c839e4263236b1908ad787be866fc17a571f619cb5c`.
+Commit `49a3365` retains the abort and reservation; no retry occurred.
+
+Fresh C3b preregistration `d731343389e1d17b9749caae9fe207f074853247`
+then froze spec
+`0905ff1099e38db828edf86135ba64c94b2e21ad63ea991db7c937ad0e6e9576`
+with compiler discovery preflighted before reservation. Its sole spend passed at
+result root
+`6344b4c32810a65423908da89c392182f68c0610ab2a0dbba22844db0b9099a5`,
+document root
+`8f71ad16c1f80c8b6c8e333510881eceb6b3997d2d51e3c3d2b9e010896f5db3`,
+and reservation root
+`46fdf844adb216f8ff7dcf396fc4cf0ab89f4e38406cb8df21de690ac5d735bd`.
+Raw result/reservation file SHA-256 values are
+`8159cd0455ab101f305721f2ee799913a568cbadeaefcde6c202bdc85001fd83`
+and `718d743c6e17537fff84da411ea4f3d3cda33f7eaa36c1862d77e4b62570ba13`;
+evidence commit `cca1557` banks both files. The six consequence cells were exactly
+`(0, 1, 0, 1, 0, 1)`. Audited work is six issued selections, selected-source
+executions, compiles, and runs; two public-feedback openings; one schema advance;
+one consequence-policy advance; and zero evaluation advances.
+
+The single adaptation PASS added one excitatory outcome tick. That successor
+made one fresh evaluation proposal READY at score four where the parent and an
+outcome-gate-off control both stopped; the executed evaluation baseline failed
+and proposal passed. This is selected-only trusted-host Rust execution with
+caller-attested expected outputs inside a supplied lexical/schema bank—not
+semantics, diagnosis, generic repair, protected transfer, SWE, intelligence, or
+an external-model comparison. The next layer is failure-conditioned neural
+reracing among competing schemas.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for

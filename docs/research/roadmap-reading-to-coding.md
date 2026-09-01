@@ -501,11 +501,30 @@ learning because the transfer consequence did not update the checkpoint, nor
 does it establish C1→C2 checkpoint-lineage continuation, learned semantics,
 diagnosis, generic repair, protected transfer, SWE performance, or intelligence.
 
-The next mechanism question is whether consequences from executed proposals can
-change reusable state and improve later fresh behavior on a new unspent cohort.
-For the spent C2 cohort, the authenticated terminal is authoritative; a
-reservation-only or pending-only interruption state would be indeterminate,
-never PASS and never permission to rerun.
+The first preregistered C3 consequence-reuse spend (`9a4bbd3`, spec
+`18294356e4d71553a42603d2fc8ab48f8d94f232b269b5ae55515ab7de32fd2e`)
+terminated `ABORT_C3_TOKEN_EDIT_OUTCOME_REUSE_V1` before its first compile or
+run because sandboxed Rust discovery emitted a path-canonicalization warning.
+Commit `49a3365` retains the terminal abort; the cohort was not retried.
+
+A separately preregistered fresh C3b successor (`d731343`, spec
+`0905ff1099e38db828edf86135ba64c94b2e21ad63ea991db7c937ad0e6e9576`)
+terminated `PASS_C3B_TOKEN_EDIT_OUTCOME_REUSE_V1` at result root
+`6344b4c32810a65423908da89c392182f68c0610ab2a0dbba22844db0b9099a5`.
+One seed failed→successful pair gave supplied schema 3 one support tick. Normal
+adaptation stopped; explicit exploration issued the schema-3 proposal, its
+selected Rust execution passed, and one immutable consequence-policy advance
+followed. On one fresh evaluation source, both the parent and an outcome-gate-off
+successor stopped; the normal successor became READY at score four, and its
+proposal passed where the baseline failed. Evaluation did not update policy.
+
+This supports one narrow case of executed, caller-attested proposal consequence
+changing reusable state inside a fixed lexer/ontology/schema bank. It is not
+schema discovery, semantic diagnosis, generic repair, protected transfer, SWE
+performance, intelligence, or evidence against an external model. The next
+mechanism question is whether an executed failure can inhibit one edit schema,
+autonomously rerace a competing schema, and reuse that revision on a fresh
+source.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.

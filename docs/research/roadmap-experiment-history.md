@@ -991,6 +991,42 @@ The authenticated terminal is authoritative. If interruption had left only the
 reservation or a pending file, the outcome would be indeterminate—never PASS and
 never authorization to rerun the cohort.
 
+Commit `d9a3018` introduced common immutable action-outcome memory and a thin
+token-edit consequence adapter. Preregistered C3 commit `9a4bbd3` froze spec
+`18294356e4d71553a42603d2fc8ab48f8d94f232b269b5ae55515ab7de32fd2e`;
+its sole spend terminated `ABORT_C3_TOKEN_EDIT_OUTCOME_REUSE_V1` before the first
+compile or run because sandboxed compiler discovery emitted a
+path-canonicalization warning. Commit `49a3365` retains abort root
+`68de5bdf11ab9792e10a5fc027dd8d7e70f9ffaaacae371196159fa66d0111ea`,
+document root
+`db301d77e2fac7693087de709980c98d5e6e633df36966b393206174d6f0789b`,
+and reservation root
+`a3ea4e49b21c18c4bbca4c839e4263236b1908ad787be866fc17a571f619cb5c`.
+The cohort was not rerun.
+
+Fresh C3b commit `d731343` froze spec
+`0905ff1099e38db828edf86135ba64c94b2e21ad63ea991db7c937ad0e6e9576`
+after adding a pre-reservation compiler preflight. Its sole spend terminated
+`PASS_C3B_TOKEN_EDIT_OUTCOME_REUSE_V1` at result root
+`6344b4c32810a65423908da89c392182f68c0610ab2a0dbba22844db0b9099a5`,
+document root
+`8f71ad16c1f80c8b6c8e333510881eceb6b3997d2d51e3c3d2b9e010896f5db3`,
+and reservation root
+`46fdf844adb216f8ff7dcf396fc4cf0ab89f4e38406cb8df21de690ac5d735bd`.
+The exact consequence vector was `(0, 1, 0, 1, 0, 1)`. One seed pair supplied
+schema-3 support one; normal adaptation stopped, explicit exploration issued the
+proposal, and its PASS advanced outcome memory once. On a fresh evaluation
+query, the parent and outcome-gate-off successor stopped while the normal
+successor was READY at score four; its baseline failed and proposal passed
+without another update.
+
+Exact work was six selected executions, compiles, and runs, two feedback
+openings, one schema advance, one policy advance, and zero evaluation advances.
+This is one fixed-bank consequence-reuse result under selected-only trusted
+execution and caller-attested outputs—not learned tokenization, schema discovery,
+semantics, diagnosis, generic debugging, protected transfer, SWE, or
+intelligence.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing
