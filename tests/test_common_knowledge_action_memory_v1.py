@@ -227,6 +227,14 @@ def test_raw_document_cells_select_and_execute_one_exact_candidate(
         == result.recall.selected_symbol
     )
     assert memory.training_summary.admitted_chunk_count == 4
+    assert (
+        memory.training_summary.config_sha256
+        == "26f7386982c2e74daa4b581473c0b24ad8d4f7c84000a187e81eba5b40a53430"
+    )
+    assert (
+        memory.checkpoint_sha256
+        == "9aa03c4461cd115625ed4aa622dcd59d1bc0a5ec89b2837066a9a7ac07882ac1"
+    )
     assert memory.training_summary.factor_hash_collision_count == 0
     assert result.recall.query_bucket_collision_count == 0
     assert memory.training_summary.checkpoint_array_bytes <= 64 * 1024
@@ -286,6 +294,16 @@ def test_required_ablation_shuffle_conflict_splice_and_order_controls(
     ).recall(task, candidates)
     assert conflict.status == memory_v1.STOP_PHYSICAL_RACE
     assert conflict.selected_candidate_id is None
+    assert (
+        conflict.checkpoint_sha256
+        == "3c0aaf1097f47bc7de91a2bdd526d0a33bb49d97a6c4910ea87544bbc7e9f808"
+    )
+    assert conflict.candidate_scores == (
+        ("str.lstrip", 12),
+        ("str.removeprefix", 12),
+    )
+    assert conflict.physical_output_record["decision"] == "STOP"
+    assert conflict.physical_output_record["stop_reason"] == "COLLISION"
 
     spliced = replace(
         projection,
