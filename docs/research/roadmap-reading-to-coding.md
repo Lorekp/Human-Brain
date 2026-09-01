@@ -446,6 +446,18 @@ Important milestones include:
 - knowledge-assisted coding using previously learned documentation, codebases,
   algorithms, and general world knowledge.
 
+Current narrow evidence (`f586e990f9441dacb5d51437dd99d6d5e57adfa5`, result
+`494e3a4696f2464cc4ed7d4ba9defd4c614d2fc13a5afc921a7a77741d9ef37c`): in one
+frozen synthetic two-action iterator cohort, a single immutable continual lexical
+memory sequentially incorporated four host-supplied successful lessons without
+replaying or mutating prior checkpoints, promoted both candidate-provided actions
+under the two-task/two-source quorum, and on two fresh exact-factor-overlap
+paraphrases issued physical recalls whose prebound Rust sources each compiled once,
+ran once on a trusted Windows host, and matched an oracle first opened after both
+executions. This is lexical association/reuse plus authenticated source custody and
+execution—not live consequence learning, source synthesis, semantic understanding,
+debugging, transfer, SWE performance, or intelligence.
+
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.
 
