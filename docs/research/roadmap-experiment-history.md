@@ -1082,8 +1082,57 @@ failure-conditioned reracing and fresh reuse inside one supplied two-schema
 bank—not learned tokenization or schema discovery, failure diagnosis, inference
 that the rival is correct, search or source synthesis, generic debugging,
 protected transfer, SWE, or intelligence. The next mechanism question is
-whether structured execution feedback can support reusable error-class and
-region diagnosis/localization rather than only inhibit the failed action.
+whether structured execution feedback can support reusable factor components
+rather than only inhibit the failed action.
+
+Commits `9c8fe0b` and `fe6500e` then introduced a generic factorized-feedback
+hypothesis memory and a thin rustc JSON adapter. The adapter authenticates one
+compile and source custody, uses each selected primary-span midpoint to emit
+only error-code and relative source-half cues, and excludes messages, labels,
+rendered text, and suggestions from cognition. C5 preregistration
+`989c4b3ffac360bb8e4746166040926b1e4aa30e` froze spec
+`52b62afa4df5f1c0d1f9e35bbfcd3872afc6fc74939e3e3be91a3f985b4d6d2c`
+and 15 source roots fresh against 36 excluded prior roots.
+
+Its sole spend terminated
+`PASS_C5_RUSTC_DIAGNOSTIC_FACTOR_RECOMBINATION_V1` at result root
+`3b3571b17ef5c5763ba8eda9ee4972334589f00e4cc4316b33cd90e79b0df1bd`,
+document root
+`e7fecae8479faf467b9e13af960bbe3fbe1ca50c478ecb83907d8261b9613f1f`,
+and reservation root
+`5fa4018d0c08b3102db2c8ae463d2e3cb2963fa419d53d5e24559fb176068ff8`.
+Raw result and reservation SHA-256 values were
+`86673903cd3467ec80f2e2e1a08f779914d75afc947088f1c6cde5b55709e547`
+and `30312a9ee15281e67ff801dbbc3da665624d2be4a4250005d08699a386d2a63f`;
+evidence commit `378abf3f3a3a06353f227c3e444ee03e923cff0d` retains both. The trusted
+rustc identity was
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`.
+
+Normal adaptation stopped on the first `E0425`/first-half diagnostic. Explicit
+TRAIN exploration selected its diagonal hypothesis, whose bound Rust source
+compiled and passed, and one immutable memory advance followed. Normal routing
+again stopped on the second `E0308`/second-half diagnostic; explicit exploration
+selected the other diagonal hypothesis, it passed, and the second immutable
+advance followed. Both plasticity-off and consequence-off controls preserved
+their exact parent checkpoints.
+
+On the fresh `E0425`/second-half diagnostic, both the empty parent and the
+one-lesson checkpoint stopped. The two-lesson checkpoint scored the previously
+unselected prebound cross hypothesis four and physically selected it;
+outcome-gate-off and both single-axis
+controls stopped. Its bound source alone was released, compiled once, ran once,
+and returned the expected `((5, 15, 20),)` output. Evaluation performed no
+memory advance.
+
+Exact work was three diagnostic compiles, three selected candidate compiles and
+runs, three feedback openings, two memory advances, zero evaluation advances,
+and zero unselected releases. Each independent authority recorded exactly one
+issue, spend, source release, execution attempt, and successful execution. This
+banks one public TRAIN case of factor recombination under real compiler
+diagnostics—not learned cues or localization, diagnosis, repair discovery,
+source synthesis, generic debugging, protected transfer, SWE, or intelligence.
+The next experiment should remove a supplied abstraction by learning reusable
+diagnostic components or their hypothesis bindings from causal consequences.
 
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves

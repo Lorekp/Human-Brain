@@ -712,9 +712,49 @@ one supplied two-schema, caller-attested Rust consequence-revision result—not
 learned tokenization or schema discovery, failure diagnosis, inference that the
 rival is correct, search or source synthesis, generic debugging, protected
 transfer, SWE, intelligence, or an external-model comparison. The next layer is
-a generic feedback-conditioned diagnosis/localization seam with a supplied
-bounded event projection and `2x2` class-by-region ontology, not another
-repository wrapper or multi-step planner yet.
+a generic feedback-conditioned factor seam with a supplied bounded event
+projection and cue ontology, not another repository wrapper or multi-step
+planner yet.
+
+Commit `9c8fe0b` adds the generic four-hypothesis factorized-feedback memory, and
+commit `fe6500e` adds a thin rustc JSON adapter that exposes only caller-attested
+error-code and relative primary-span-half cues. Fresh C5 preregistration
+`989c4b3ffac360bb8e4746166040926b1e4aa30e` froze spec
+`52b62afa4df5f1c0d1f9e35bbfcd3872afc6fc74939e3e3be91a3f985b4d6d2c`.
+Its sole spend terminated
+`PASS_C5_RUSTC_DIAGNOSTIC_FACTOR_RECOMBINATION_V1` at result root
+`3b3571b17ef5c5763ba8eda9ee4972334589f00e4cc4316b33cd90e79b0df1bd`,
+document root
+`e7fecae8479faf467b9e13af960bbe3fbe1ca50c478ecb83907d8261b9613f1f`,
+and reservation root
+`5fa4018d0c08b3102db2c8ae463d2e3cb2963fa419d53d5e24559fb176068ff8`.
+Raw result/reservation file SHA-256 values are
+`86673903cd3467ec80f2e2e1a08f779914d75afc947088f1c6cde5b55709e547`
+and `30312a9ee15281e67ff801dbbc3da665624d2be4a4250005d08699a386d2a63f`;
+evidence commit `378abf3f3a3a06353f227c3e444ee03e923cff0d` retains both. The trusted
+compiler identity was
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`.
+
+Normal routing stopped before each TRAIN lesson. Explicit exploration then
+executed and passed the supplied `E0425`/first-half hypothesis followed by the
+supplied `E0308`/second-half hypothesis, advancing the immutable generic memory
+once per consequence. On the fresh `E0425`/second-half evaluation, the parent
+and one-lesson checkpoints stopped while the two-lesson checkpoint physically
+selected the previously unselected prebound cross hypothesis at score four.
+Outcome-gate-off and both single-axis controls stopped; the selected Rust source
+compiled once, ran once, and matched public output feedback without updating
+memory.
+
+Exact work was three diagnostic compiles, three selected candidate compiles and
+runs, three feedback openings, two memory advances, zero evaluation advances,
+and zero unselected source releases. This banks one fresh supplied-ontology case
+of factor-component recombination under real compiler diagnostics and selected-
+only execution. It is not learned diagnostic cues, learned localization,
+diagnosis, repair-schema discovery, source synthesis, generic debugging,
+protected transfer, SWE, intelligence, or an external-model comparison. The
+next useful layer is to learn reusable event components or their bindings from
+causal compiler consequences instead of supplying the error-class/source-region
+ontology and hypothesis-to-repair catalogue.
 
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about

@@ -546,10 +546,28 @@ This is one narrow case of an authenticated failure causing one physically
 reraced alternate selection and reusable revision inside a supplied schema
 bank. It is not learned tokenization or schema discovery, diagnosis, inference
 that the rival is correct, search or source synthesis, generic debugging,
-protected transfer, SWE performance, or intelligence. The next mechanism
-question is whether structured execution feedback can support a generic
-feedback-conditioned diagnosis/localization seam rather than only inhibit the
-failed action.
+protected transfer, SWE performance, or intelligence.
+
+A fresh C5 successor (`989c4b3`, spec
+`52b62afa4df5f1c0d1f9e35bbfcd3872afc6fc74939e3e3be91a3f985b4d6d2c`)
+terminated `PASS_C5_RUSTC_DIAGNOSTIC_FACTOR_RECOMBINATION_V1` at result root
+`3b3571b17ef5c5763ba8eda9ee4972334589f00e4cc4316b33cd90e79b0df1bd`.
+Two public TRAIN consequences taught the diagonal `E0425`/first-half and
+`E0308`/second-half associations inside one generic four-hypothesis factorized
+memory. On a fresh `E0425`/second-half diagnostic, the parent and one-lesson
+checkpoints stopped while the two-lesson checkpoint physically selected and
+successfully executed the previously unselected prebound cross hypothesis.
+Outcome-off and both single-axis controls stopped, and evaluation did not update
+memory.
+
+This is one narrow case of factor-component recombination under real rustc
+diagnostics, selected-only execution, and caller-attested output feedback. The
+error-code and relative source-half cues, their projection, the `2x2` ontology,
+and the hypothesis-to-repair catalogue were supplied. It is therefore not
+learned localization or diagnosis, repair-schema discovery, source synthesis,
+generic debugging, protected transfer, SWE performance, or intelligence. The
+next mechanism question is whether reusable event components or bindings can be
+learned from causal consequences instead of being declared by the host.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.

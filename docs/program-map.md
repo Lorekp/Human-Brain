@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the terminal C4 abort
-and fresh C4b failure-replan PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-01 after the fresh C5
+diagnostic-factor recombination PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C4b failure rerace banked; diagnosis/localization next]
+R4  Language/software continual coding               [OPEN; C5 supplied-factor recombination banked; learned cues/bindings next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -993,11 +993,36 @@ This banks only one context-bound failure-triggered alternate rerace and fresh
 reuse inside a supplied two-schema bank. It does not show learned tokenization,
 schema discovery, diagnosis, knowledge that B is correct, search, source
 synthesis, generic debugging, protected transfer, SWE, or intelligence. The
-next R4 capability layer is a generic feedback-conditioned
-diagnosis/localization module behind a thin real-repository adapter. The bounded
-event projection, `2x2` class-by-region ontology, candidate regions, and edit bank
-remain supplied; repository-only rewiring would repeat already banked loops,
-while multi-step plan revision should follow honest failure localization.
+next R4 layer was a generic factorized-feedback seam behind a thin compiler
+adapter, while keeping the bounded diagnostic projection and repair bank
+explicitly supplied.
+
+Commits `9c8fe0b` and `fe6500e` add that generic four-hypothesis memory and the
+thin rustc JSON adapter. Fresh C5 preregistration `989c4b3` froze spec
+`52b62afa4df5f1c0d1f9e35bbfcd3872afc6fc74939e3e3be91a3f985b4d6d2c`.
+Its single spend terminated
+`PASS_C5_RUSTC_DIAGNOSTIC_FACTOR_RECOMBINATION_V1` at result root
+`3b3571b17ef5c5763ba8eda9ee4972334589f00e4cc4316b33cd90e79b0df1bd`;
+evidence commit `378abf3` retains the result and reservation. Two public TRAIN
+episodes used explicit exploration to execute passing diagonal hypotheses for
+`E0425`/first-half and `E0308`/second-half, advancing the immutable generic
+memory twice. Normal routing stopped before both lessons.
+
+On a fresh `E0425`/second-half diagnostic, the parent and one-lesson checkpoints
+stopped while the final checkpoint selected the previously unselected prebound
+cross hypothesis at score four. Outcome-off and both single-axis controls
+stopped. The selected candidate alone was released, compiled, and run; it passed
+caller-attested output feedback, and evaluation advanced nothing. Exact work was three
+diagnostic compiles, three selected candidate compiles/runs, three feedback
+openings, two memory advances, and zero unselected releases.
+
+This banks only one real-compiler case of recombination inside supplied
+error-code/source-half cues and a supplied hypothesis-to-repair catalogue. It
+does not show learned cues, learned localization, diagnosis, repair discovery,
+source synthesis, generic debugging, protected transfer, SWE, or intelligence.
+The next mechanism boundary is learning reusable diagnostic components or their
+bindings from causal consequences instead of adding another hand-built ontology
+or repository wrapper.
 
 ### Runtime and scale
 
