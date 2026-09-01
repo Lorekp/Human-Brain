@@ -839,6 +839,49 @@ an external-model comparison. The next mechanism should remove the supplied
 cue-axis partition with an identifiable crossed/full-grid design; two diagonal
 lessons alone cannot distinguish the desired routing from a swapped one.
 
+Commit `2eae160c645b1e5fb0be996b7d1d4bac7c862508` adds the C8 generic
+unordered-cue factor memory, rustc environment adapter, and direct selected-only
+text-edit authority. The adapter flattens the supplied diagnostic-code and
+source-region cues into one canonical opaque set. Cognition projects every cue
+to both action axes, while the authority independently reprojects its retained
+diagnostic attempt and rejects any decision over a caller-invented observation.
+
+C8 preregistration `6f97d4d3b4c8643dab5c55502586bc9430924787` froze spec
+`a6372e986cec76b04e9e9efd412cc6e3ae5c1ba862566801acf2f8c02d3f9fda`,
+63 prior exclusions, six fresh original roots, six expected materialized roots,
+and the full H00→H11→H01→H10 TRAIN order. Its sole reserved spend terminated
+`PASS_C8_RUSTC_DIAGNOSTIC_UNORDERED_CUE_BINDING_V1` at result root
+`7aa8981b01609b1e74acc8878e26ba2ed210ccd8e6fa29bab86451323ad00c2a`,
+document root
+`38a80807cbb23349c69360da941ef826dab0ed0203e9c95f682ee46abd660009`,
+and reservation root
+`60382c21eee70c2c0999109ac536bd346159aad862ceb40f7c6d69319365b328`.
+Raw result/reservation file SHA-256 values are
+`90348ce1b2247a235ae61516a1af581c61afcf79f37fe055a046e913e91b4520`
+and `3de04bc24c95af6c4dda34f268b0487bfaaba4b3753cb00782194b69451c798e`;
+evidence commit `02a667c880b31946724df0bc5739f75f71a0cbf3` retains both. The trusted
+rustc identity was
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`.
+
+Both parent cross decisions stopped without evidence, and both two-diagonal
+decisions stopped in a physical collision. The three-lesson checkpoint selected
+H01 but still stopped on missing H10. After the fourth lesson, two fresh source
+evaluations normally selected H01 and H10 with exact scores `12/8/8/4` and
+`12/8/8/4` under their respective hypothesis orderings. Both selected sources
+materialized, compiled, and ran before one combined evaluation-oracle callback;
+both matched their frozen outputs. Outcome-off and both single-axis controls
+stopped for each evaluation, and the final checkpoint was unchanged.
+
+Exact work was six diagnostic compiles, six materializations/releases/selected
+compiles/runs, four TRAIN feedback openings, one evaluation-oracle opening, four
+TRAIN advances, zero evaluation advances, and zero alternative
+materializations. This is binding reuse from an unordered set of supplied cues
+under identifiable full-grid evidence. It is not held-out composition, cue
+discovery, action or target discovery, learned edit semantics, localization,
+diagnosis, synthesis, debugging, transfer, SWE, intelligence, or an
+external-model comparison. The next learning boundary is acquiring raw cue
+abstractions or target bindings from causal experience.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for

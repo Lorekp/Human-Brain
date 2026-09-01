@@ -1224,6 +1224,52 @@ diagonal episodes do not identify that routing; the successor must use crossed
 or full-grid evidence, or expand an axis if it also needs a held-out
 composition.
 
+Commit `2eae160c645b1e5fb0be996b7d1d4bac7c862508` froze the generic C8
+mechanism before cohort construction: one unordered opaque cue set is uniformly
+projected to both axes of the existing physical factor race, raw outcomes remain
+in an authenticated outer lineage, and a new direct authority recomputes its
+observation from the retained rustc diagnostic before selected-only
+materialization. No C6/C7 frozen mechanism was modified.
+
+Fresh C8 preregistration `6f97d4d3b4c8643dab5c55502586bc9430924787`
+froze spec
+`a6372e986cec76b04e9e9efd412cc6e3ae5c1ba862566801acf2f8c02d3f9fda`,
+63 prior exclusions, six fresh originals/materializations, and a complete
+H00→H11→H01→H10 grid. A sandboxed preflight first failed to resolve concrete
+rustc and created neither reservation nor result. Read-only trusted-host
+preflight then authenticated rustc 1.94.0 at identity
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`;
+the exact preregistered cohort was subsequently reserved and run once.
+
+That sole spend terminated
+`PASS_C8_RUSTC_DIAGNOSTIC_UNORDERED_CUE_BINDING_V1` at result root
+`7aa8981b01609b1e74acc8878e26ba2ed210ccd8e6fa29bab86451323ad00c2a`,
+document root
+`38a80807cbb23349c69360da941ef826dab0ed0203e9c95f682ee46abd660009`,
+and reservation root
+`60382c21eee70c2c0999109ac536bd346159aad862ceb40f7c6d69319365b328`.
+Raw result/reservation roots were
+`90348ce1b2247a235ae61516a1af581c61afcf79f37fe055a046e913e91b4520`
+and `3de04bc24c95af6c4dda34f268b0487bfaaba4b3753cb00782194b69451c798e`;
+evidence commit `02a667c880b31946724df0bc5739f75f71a0cbf3` retains both.
+
+The parent and diagonal checkpoints stopped on both crosses. After H01, the
+three-lesson checkpoint selected that learned cell while the missing H10 cross
+still stopped. The full checkpoint selected both fresh-source evaluations with
+the frozen `12/8/8/4` score pattern. Both selected sources executed before one
+combined oracle open and passed; all outcome-off/single-axis controls stopped.
+The authenticated work was six diagnostics, six selected materializations,
+releases, compiles, and runs, four TRAIN feedback opens, one evaluation oracle
+open, four memory advances, no evaluation advance, and no alternative.
+
+C8 removes the supplied cue-axis partition and establishes binding reuse from
+an unordered supplied cue set. Full-grid training makes the binding claim
+identifiable but deliberately forfeits a held-out-composition claim. The rustc
+cue abstractions, action/target ontology, exploration answers, edit semantics,
+markers, and outputs remain supplied. The next useful mechanism must learn at
+least one raw cue abstraction or target binding from causal data rather than
+wrap another host-labelled factor.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing

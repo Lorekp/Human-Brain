@@ -612,6 +612,27 @@ evidence: two diagonal lessons cannot distinguish the intended routing from a
 swapped one, so use a crossed/full grid for binding-only evidence or expand an
 axis to preserve a held-out composition.
 
+A fresh C8 successor (`6f97d4d`, spec
+`a6372e986cec76b04e9e9efd412cc6e3ae5c1ba862566801acf2f8c02d3f9fda`)
+terminated `PASS_C8_RUSTC_DIAGNOSTIC_UNORDERED_CUE_BINDING_V1` at result root
+`7aa8981b01609b1e74acc8878e26ba2ed210ccd8e6fa29bab86451323ad00c2a`.
+It flattened the supplied diagnostic-code and source-region cues into one
+unordered opaque set, uniformly projected every cue to both action axes, and
+used a complete four-lesson grid to learn identifiable cue×axis×component
+associations. Parent and diagonal checkpoints stopped on both crosses; after
+three lessons only the observed H01 cross was ready; the full checkpoint
+normally selected H01 and H10 on two fresh sources at exact `12/8/8/4` scores.
+Both selected edits executed before one shared oracle opening and passed, while
+outcome-off/single-axis controls stopped and evaluation made no memory update.
+
+This is one narrow case of consequence-conditioned binding reuse from an
+unordered set of supplied cues. It is not held-out composition because all four
+hypotheses were trained, and it is not cue extraction, action or target
+discovery, learned edit semantics, localization, diagnosis, synthesis,
+debugging, transfer, SWE performance, or intelligence. The next mechanism
+question is whether raw diagnostic/source structure can yield a reusable cue or
+target binding through causal experience instead of host extraction.
+
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.
 

@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the fresh C7
-diagnostic-to-concrete-action PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-01 after the fresh C8
+unordered-cue binding PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C7 binds supplied diagnostics to concrete actions; unordered cue/axis learning next]
+R4  Language/software continual coding               [OPEN; C8 learns bindings from unordered supplied cues; raw cue/target acquisition next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -1080,6 +1080,40 @@ oracle remain supplied. The next R4 mechanism is therefore an unordered-cue
 three-factor association that learns cue→axis/component routing from
 consequences. Its cohort must use crossed/full-grid evidence (or a larger axis):
 the old two diagonal lessons are observationally insufficient for that claim.
+
+Commit `2eae160` adds a generic immutable unordered-cue wrapper around the
+existing physical factor race. The environment supplies one canonical set of
+opaque cues; cognition deterministically projects every cue to both action axes,
+retains the raw outcome lineage, and learns which cue×axis×component
+associations receive excitation. A separate one-shot text-edit authority now
+recomputes that unordered observation from its retained rustc attempt and only
+materializes the exact selected outer decision.
+
+C8 preregistration `6f97d4d` froze spec
+`a6372e986cec76b04e9e9efd412cc6e3ae5c1ba862566801acf2f8c02d3f9fda`
+with 63 prior roots excluded and a complete H00→H11→H01→H10 TRAIN grid. Its
+single reserved spend terminated
+`PASS_C8_RUSTC_DIAGNOSTIC_UNORDERED_CUE_BINDING_V1` at result root
+`7aa8981b01609b1e74acc8878e26ba2ed210ccd8e6fa29bab86451323ad00c2a`;
+evidence commit `02a667c` retains the terminal result and reservation.
+
+The parent and diagonal checkpoints stopped on both crosses. After three
+lessons only H01 was ready; the missing H10 cross still stopped. The full memory
+then normally selected H01 and H10 on two fresh sources at exact composite
+scores `12/8/8/4`. Both selected edits executed before one shared oracle open,
+both passed, all outcome-off/single-axis controls stopped, and evaluation
+advanced no memory. Exact work was six diagnostic compiles, six selected
+materializations/releases/compiles/runs, four TRAIN feedback opens plus one
+evaluation oracle open, four TRAIN advances, zero evaluation advances, and zero
+alternatives.
+
+C8 establishes binding reuse from an unordered supplied cue set under
+identifiable full-grid evidence. It is not held-out composition because all four
+hypotheses were trained, and it does not learn cue extraction, actions, targets,
+edit semantics, localization, diagnosis, synthesis, debugging, transfer, SWE,
+or intelligence. The next R4 mechanism should acquire at least one currently
+supplied cue abstraction or target binding from raw diagnostic/source structure
+and causal consequences rather than add another host-labelled factor.
 
 ### Runtime and scale
 
