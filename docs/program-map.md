@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the fresh C5
-diagnostic-factor recombination PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-01 after the fresh C6
+post-selection factor-materialization PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C5 supplied-factor recombination banked; learned cues/bindings next]
+R4  Language/software continual coding               [OPEN; C6 removes prebuilt repaired sources; learned cues/bindings next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -1020,9 +1020,39 @@ This banks only one real-compiler case of recombination inside supplied
 error-code/source-half cues and a supplied hypothesis-to-repair catalogue. It
 does not show learned cues, learned localization, diagnosis, repair discovery,
 source synthesis, generic debugging, protected transfer, SWE, or intelligence.
-The next mechanism boundary is learning reusable diagnostic components or their
-bindings from causal consequences instead of adding another hand-built ontology
-or repository wrapper.
+
+Commit `a6db019` adds a generic one-shot text-edit materializer and lets the V2
+selected-source executor consume that exact authority. The authority freezes
+one original source and diagnostic, one expected factor-memory checkpoint, an
+explicit exploration policy, two supplied operations, and two supplied target
+markers. It authenticates those bindings before routing but does not compose an
+edit or repaired source until an enabled factorized decision from the exact
+checkpoint has selected one hypothesis.
+
+Fresh 51-root-excluded C6 preregistration `767f885` froze spec
+`b514ff417680b0a7238e705b9cfa110bf1b9c94c1b32f16a3ad084e64792d394`.
+Its single spend terminated
+`PASS_C6_RUSTC_DIAGNOSTIC_FACTOR_MATERIALIZATION_V1` at result root
+`47bc6cba38eca01b8b61ce0c5086fd712d5090a7c01f95f7a071d55c5a9f471f`;
+evidence commit `1ec0f17` retains the result and reservation. The two TRAIN
+episodes again used explicit exploration for the diagonal hypotheses. In all
+three episodes materialization/release counts stayed at `0/0` through routing
+and became `1/1` only inside selected execution. On the fresh evaluation, the
+empty and one-lesson checkpoints stopped; the final checkpoint selected the
+previously unselected cross hypothesis, and its authority both bound that final
+checkpoint and forbade exploration before composing and executing one source.
+
+Exact work was three diagnostic compiles, three post-selection
+materializations/releases, three selected compiles/runs, three feedback
+openings, two TRAIN advances, zero evaluation advances, and zero alternative
+materializations. C6 removes C5's prebuilt repaired-source catalogue from the
+execution path, but the error-code/source-half cues, `2x2` ontology, operations,
+target markers, and correct outputs remain supplied. It is not learned
+localization, diagnosis, edit discovery, source synthesis, generic debugging,
+protected transfer, SWE, or intelligence. The next mechanism boundary remains
+learning reusable diagnostic components or their bindings from causal
+consequences rather than adding another hand-built ontology or repository
+wrapper.
 
 ### Runtime and scale
 

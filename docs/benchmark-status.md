@@ -752,9 +752,50 @@ of factor-component recombination under real compiler diagnostics and selected-
 only execution. It is not learned diagnostic cues, learned localization,
 diagnosis, repair-schema discovery, source synthesis, generic debugging,
 protected transfer, SWE, intelligence, or an external-model comparison. The
-next useful layer is to learn reusable event components or their bindings from
-causal compiler consequences instead of supplying the error-class/source-region
+next useful layer remained learning reusable event components or their bindings
+from causal consequences instead of supplying the error-class/source-region
 ontology and hypothesis-to-repair catalogue.
+
+Commit `a6db0190d20fb9be8c5429691a3fefaab65b461b` adds the generic
+post-selection factorized text-edit materializer and its narrow V2 executor
+integration. C6 preregistration
+`767f885ad12be5a67ea58be629ce1ba7476c9520` froze spec
+`b514ff417680b0a7238e705b9cfa110bf1b9c94c1b32f16a3ad084e64792d394`
+after excluding 51 prior source roots. Its sole spend terminated
+`PASS_C6_RUSTC_DIAGNOSTIC_FACTOR_MATERIALIZATION_V1` at result root
+`47bc6cba38eca01b8b61ce0c5086fd712d5090a7c01f95f7a071d55c5a9f471f`,
+document root
+`70edacee612c80268ee9b63f592a730f9a2043f4959842588f8331ff54226c33`,
+and reservation root
+`1e0124da9c5f31e5e60ca3b4f178a45ba367757619027183d28ac0f3ff9fd2e3`.
+Raw result/reservation file SHA-256 values are
+`7aa2d8a8fe3232165ac5e7ad15e924b52464355b9656c01cf024a9a1492616c0`
+and `d251bf7863de75e533d70e827a92fac09ef270266956a04b95aac107e85ac2c4`;
+evidence commit `1ec0f17ef8cb14420c6884db55b504ec96003e6f` retains both. The trusted
+compiler identity remained
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`.
+
+The two TRAIN diagnostics selected H00 then H11 only through explicit
+exploration, executed one newly materialized source apiece, and wrote two
+caller-attested positive outcomes. On the fresh `E0425`/second-half diagnostic,
+the parent and one-lesson checkpoints stopped while the final checkpoint
+selected the previously unselected H01 cross hypothesis. Its authority was
+rooted to that final checkpoint with exploration forbidden. For every episode,
+materialization/release counts were `0/0` before routing and execution and `1/1`
+inside the selected executor; no repaired source or materialized-source hash was
+present in the frozen spec.
+
+Exact work was three diagnostic compiles, three post-selection
+materializations/releases, three selected compiles and runs, three feedback
+openings, two TRAIN memory advances, zero evaluation advances, and zero
+alternative materializations. This removes C5's prebuilt repaired-source bank
+from the selected execution path. The diagnostic cues and their projection,
+factor ontology, operator meanings, per-source target markers, and output oracle
+remain supplied. It is therefore not learned localization or diagnosis, edit
+discovery, general source synthesis, generic debugging, protected transfer,
+SWE, intelligence, or an external-model comparison. The open learning question
+is still how causal experience can acquire the reusable cues, operations, and
+bindings rather than receive them from the host.
 
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about

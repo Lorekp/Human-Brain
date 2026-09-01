@@ -566,8 +566,29 @@ error-code and relative source-half cues, their projection, the `2x2` ontology,
 and the hypothesis-to-repair catalogue were supplied. It is therefore not
 learned localization or diagnosis, repair-schema discovery, source synthesis,
 generic debugging, protected transfer, SWE performance, or intelligence. The
-next mechanism question is whether reusable event components or bindings can be
-learned from causal consequences instead of being declared by the host.
+next mechanism question remained whether reusable event components or bindings
+can be learned from causal consequences instead of being declared by the host.
+
+A fresh C6 successor (`767f885`, spec
+`b514ff417680b0a7238e705b9cfa110bf1b9c94c1b32f16a3ad084e64792d394`)
+terminated `PASS_C6_RUSTC_DIAGNOSTIC_FACTOR_MATERIALIZATION_V1` at result root
+`47bc6cba38eca01b8b61ce0c5086fd712d5090a7c01f95f7a071d55c5a9f471f`.
+It repeated the two diagonal TRAIN consequences on three new original sources,
+but removed C5's prebuilt repaired-source catalogue. Each authority retained
+zero materializations/releases through factor routing; only after H00, H11, or
+the fresh cross H01 was selected did one generic authority compose one supplied
+operation and target into an edit, release one source, and execute it. The
+evaluation authority was bound to the final learned checkpoint and forbade
+exploration; evaluation did not update memory.
+
+This is one narrow case of learned factor selection preceding authenticated
+source materialization. It is not evidence that the system learned the rustc
+cues, source-half projection, factor ontology, edit operations, target markers,
+localization, diagnosis, repair correctness, general source synthesis,
+debugging, transfer, SWE performance, or intelligence. C6 closes a custody and
+actuation gap, not the larger learning gap: reusable components and bindings
+still need to be acquired from causal experience instead of supplied by the
+host.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.

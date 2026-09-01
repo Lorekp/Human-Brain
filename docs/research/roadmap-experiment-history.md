@@ -1131,8 +1131,53 @@ issue, spend, source release, execution attempt, and successful execution. This
 banks one public TRAIN case of factor recombination under real compiler
 diagnostics—not learned cues or localization, diagnosis, repair discovery,
 source synthesis, generic debugging, protected transfer, SWE, or intelligence.
-The next experiment should remove a supplied abstraction by learning reusable
-diagnostic components or their hypothesis bindings from causal consequences.
+The next experiment still needed to remove a supplied abstraction by learning
+reusable diagnostic components or their hypothesis bindings from causal
+consequences.
+
+Commit `a6db0190d20fb9be8c5429691a3fefaab65b461b` then added a generic
+one-shot factorized text-edit materializer plus narrow selected-source executor
+integration. Preparation freezes an original source and diagnostic, exact
+factor-memory checkpoint, exploration policy, two supplied operator bindings,
+and two supplied target markers. It authenticates marker declarations but does
+not compose an edit or repaired source. Only an enabled decision from the exact
+checkpoint can map its selected opaque components to one operation/target pair,
+compose one LSP-shaped byte-range edit, seal one materialization/release, and
+issue one source.
+
+Fresh C6 preregistration `767f885ad12be5a67ea58be629ce1ba7476c9520`
+froze spec
+`b514ff417680b0a7238e705b9cfa110bf1b9c94c1b32f16a3ad084e64792d394`
+and three original source roots disjoint from 51 excluded prior roots. Its sole
+spend terminated `PASS_C6_RUSTC_DIAGNOSTIC_FACTOR_MATERIALIZATION_V1` at result
+root `47bc6cba38eca01b8b61ce0c5086fd712d5090a7c01f95f7a071d55c5a9f471f`,
+document root
+`70edacee612c80268ee9b63f592a730f9a2043f4959842588f8331ff54226c33`,
+and reservation root
+`1e0124da9c5f31e5e60ca3b4f178a45ba367757619027183d28ac0f3ff9fd2e3`.
+Raw result and reservation SHA-256 values were
+`7aa2d8a8fe3232165ac5e7ad15e924b52464355b9656c01cf024a9a1492616c0`
+and `d251bf7863de75e533d70e827a92fac09ef270266956a04b95aac107e85ac2c4`;
+evidence commit `1ec0f17ef8cb14420c6884db55b504ec96003e6f` retains both.
+
+Normal TRAIN routing stopped on the `E0425`/first-half and
+`E0308`/second-half episodes. Explicit exploration selected H00 then H11;
+their authorities were bound to the parent and first-successor checkpoints,
+respectively, and each composed/executed one passing source before one memory
+advance. On the fresh `E0425`/second-half evaluation, the parent and one-lesson
+checkpoints stopped. The final checkpoint selected previously unselected H01;
+its authority was bound to that checkpoint with exploration forbidden, then
+composed and executed exactly one passing source without an evaluation advance.
+
+Exact work was three diagnostic compiles, three post-selection
+materializations/releases, three selected compiles/runs, three feedback
+openings, two TRAIN advances, zero evaluation advances, and zero alternative
+materializations. This removes the prebuilt repaired-source catalogue from C5,
+but not the supplied cues/projection, factor ontology, operator semantics,
+target markers, or output oracle. It is not learned localization, diagnosis,
+edit discovery, generic source synthesis or debugging, protected transfer, SWE,
+or intelligence. The next research step remains learning reusable diagnostic
+components, operations, or bindings from causal consequences.
 
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
