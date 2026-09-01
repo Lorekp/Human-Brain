@@ -1,0 +1,37 @@
+{
+  "abi": "pub fn solve(values: &[i64]) -> Vec<i64>",
+  "cases": [
+    [
+      17,
+      -8,
+      17,
+      4,
+      -3,
+      0
+    ],
+    [
+      -21,
+      13
+    ],
+    [
+      6,
+      6,
+      -12,
+      5,
+      -1,
+      5
+    ],
+    [
+      144,
+      -89,
+      55,
+      -34,
+      21,
+      -13,
+      8
+    ]
+  ],
+  "edition": "2021",
+  "entry_point": "solve",
+  "schema": "humanbrain.rust-docs-m0-causal-gate-batch.v1"
+}
