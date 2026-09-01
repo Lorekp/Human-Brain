@@ -475,6 +475,67 @@ Rust execution, debugging, SWE evidence, or a result against Gemma or Opus. The
 next seam is an authenticated promoted-action vault and shared selected-source
 executor on a fresh, unspent Rust task cohort.
 
+Commit `0274178` closes that custody seam with
+`common_promoted_rust_action_vault_v1.py`. One prepared vault binds the full
+candidate catalogue, promoted subset, immutable memory checkpoint, promotion
+provenance, and exact candidate-provided Rust-source hashes under an explicit
+authority. Only an issued physical recall for a promoted candidate can release
+one selected source; stopped, forged, spliced, foreign, incomplete, duplicate,
+and concurrently reused selections fail before a second callback. This is
+authenticated source custody, not a learned consequence or coding claim.
+
+Protocol commit `f586e990f9441dacb5d51437dd99d6d5e57adfa5` then froze a fresh
+two-action iterator cohort. Result commit `ba7aaa9` preserves its sole PASS at
+root `494e3a4696f2464cc4ed7d4ba9defd4c614d2fc13a5afc921a7a77741d9ef37c`.
+One immutable memory incorporated four host-supplied successful lessons,
+promoted both prebound actions under the two-task/two-source quorum, and made
+five physical recalls. Two fresh exact-factor-overlap task instances each
+released one selected Rust source, compiled once, ran once, and matched an
+oracle callback first invoked after both executions. Three controls stopped;
+training used no compilation or execution. This is replay-free lexical
+association/reuse plus authenticated selected-source execution, not live
+consequence learning, synthesis, semantics, debugging, transfer, SWE, or
+intelligence.
+
+Commit `a364d0a` adds the first public-development live consequence-revision
+cohort. Five authenticated executions teach two candidate-provided Rust actions:
+A reverses an integer list and B sorts it ascending. Their task/evidence cues
+are the nonsense lexical factors `kavun`, `pelto`, and `zimra`; neither task text
+nor expected-output tuples enter the neutral intervention authority. On one later
+exact `kavun pelto` task and batch, the trained checkpoint recalled A at score
+3 versus B at 2, executed it, and received a real public FAIL. A plasticity-off
+control left the same checkpoint and A winner unchanged. The actual immutable
+successor added two inhibitory ticks to A, reraced B over A at 2 versus 1,
+executed B on the same task and batch, received PASS, and added B support. A
+fresh `kavun pelto` instance then selected B while a fresh `zimra` instance
+retained A, both without evaluation updates.
+
+The frozen trusted-host result is
+`PASS_CONTINUAL_RUST_FEEDBACK_REVISION_COHORT_V1` at root
+`692c8545408de2d71b803aaec39f9e392b909f35ccf3f0b524b23a97da9814a6`.
+Its trained, failed, and final checkpoint roots are respectively
+`9e1506a7715337a7d7750b0c99ae038aa33637e374fd7cc7f99c52e13c2629ee`,
+`8ba7d60db52b6b94652bf722735f89ccae650cfc945e14a45f4c352e4c13ec20`,
+and `8ea2f8c0f5077d79e438a97f8da564596699c95dc75336f05450251e7f7e27bd`.
+Both evaluation cells matched; the oracle observation root is
+`fdddd5665faf9bf08596be11a2deee39f532f40f855d75d01532b75f0dce8065`.
+Audited work is exactly nine source releases, compiles, and runs; seven new
+lessons; zero unselected executions, evaluation updates, parent mutations, or
+lesson replays; and one oracle callback after all nine executions.
+
+The retained external transcript authenticates the exact public spec, all nine
+task materials/batches/stdin commitments, intervention and promoted-vault
+catalogues/authorities/bindings/releases, execution receipts, lesson evidence,
+public consequences, lineage, and oracle ordering. Public expected outcomes are
+not secret, and evaluation is exact lexical-factor reuse rather than protected
+freshness or transfer. The supported claim is therefore only consequence-driven
+same-task binary policy correction and persistence between two prebound source
+actions. Source synthesis, semantic understanding, failure diagnosis, generic
+debugging, paraphrase generalization, transfer, SWE performance, and intelligence
+remain open. The next honest layer is C1: consolidate a generic parameterized
+token-edit schema from two independent failed-to-successful episodes before a
+fresh C2 transfer cohort.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for

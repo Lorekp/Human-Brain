@@ -836,6 +836,68 @@ recall over synthetic adapter-provided evidence. Authenticated Rust-corpus
 evidence, selected-source custody, execution, semantic acquisition, synthesis,
 debugging, and SWE transfer remain for fresh experiments.
 
+Commit `0274178` added the next environmental seam: a promoted Rust action vault
+rooted in one immutable continual checkpoint. The vault authenticates the full
+candidate catalogue, promoted subset, promotion provenance, candidate-provided
+Rust sources, explicit authority, selected release, and one-shot callback. It
+does not receive task outcomes or choose which action should win.
+
+Protocol commit `f586e990f9441dacb5d51437dd99d6d5e57adfa5` then froze a fresh
+two-action iterator cohort. Result commit `ba7aaa9` records its only run at PASS
+root `494e3a4696f2464cc4ed7d4ba9defd4c614d2fc13a5afc921a7a77741d9ef37c`.
+One continual memory consumed four new host-supplied successful lessons without
+replay or parent mutation, promoted both actions under the independent
+task/source quorum, and made five physical recalls. Three controls stopped.
+Two fresh exact-factor-overlap instances each released, compiled, and ran one
+selected source; both matched an oracle first invoked after both executions.
+This closed action custody and execution but deliberately did not test learning
+from the executions' consequences.
+
+Commit `a364d0a` froze the public-development C0 successor after primary-source
+research and three interface designs converged on a neutral intervention plus
+the existing memory/vault/executor stack. The intervention binds two
+candidate-provided Rust actions, reverse (A) and ascending sort (B), without
+receiving task objects/text, expected-output tuples, or memory state; it accepts
+only opaque rooted intervention identities. Five authenticated
+successful executions teach A on `kavun`, A on `kavun pelto`, B twice on
+`pelto`, and A on `zimra`, producing an A3/B2 score on `kavun pelto`.
+
+The adaptation reuses one exact task, instance, source, evidence projection,
+batch, and expected public consequence for both attempts. A first executes and
+fails. Advancing with plasticity disabled returns the identical parent and a
+second recall still selects A. The actual immutable successor records the fresh
+failure execution/feedback/lesson roots and adds two A-inhibitory ticks, so B
+reraces over A at 2 versus 1. B then executes on the same batch, passes under a
+fresh selection/execution/feedback/lesson chain, and its successor adds support.
+Frozen evaluation uses two new task instances: exact `kavun pelto` factors select
+B and `zimra` retains A; both compile/run before the public oracle callback and
+neither updates memory.
+
+The trusted result is
+`PASS_CONTINUAL_RUST_FEEDBACK_REVISION_COHORT_V1` at root
+`692c8545408de2d71b803aaec39f9e392b909f35ccf3f0b524b23a97da9814a6`.
+The trained→failed→final roots are
+`9e1506a7715337a7d7750b0c99ae038aa33637e374fd7cc7f99c52e13c2629ee` →
+`8ba7d60db52b6b94652bf722735f89ccae650cfc945e14a45f4c352e4c13ec20` →
+`8ea2f8c0f5077d79e438a97f8da564596699c95dc75336f05450251e7f7e27bd`.
+Both evaluation cells matched. Work is exactly nine selected releases, compiles,
+and runs; seven new lessons; zero unselected executions, evaluation updates,
+parent mutations, or lesson replays; and one oracle callback after all nine
+executions. The external transcript re-authenticates the full public spec,
+task/evidence/batch/stdin commitments, intervention/vault catalogue and
+authority chains, binding/release/source receipts, executions, feedback,
+lineage, and oracle ordering.
+
+This result establishes only public-development consequence-driven same-task
+binary policy correction and persistence for two prebound sources under exact
+lexical-factor reuse. The expected outcomes are public, and the action identity,
+source implementation, and lexical evidence are host-provided. It is not source
+synthesis, semantic understanding, diagnosis, generic debugging, paraphrase or
+family transfer, SWE capability, or intelligence. The next experiment is C1:
+learn and consolidate one generic parameterized token-edit relation from two
+independent failed→successful episodes, then freeze it for a fresh C2 transfer
+cohort.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing

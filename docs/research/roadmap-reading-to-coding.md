@@ -1,6 +1,6 @@
 # Roadmap: general intelligence through language, software, memory, and learning
 
-Status: living decision document. Updated 2026-08-31.
+Status: living decision document. Updated 2026-09-01.
 Owner: orchestrator.
 
 ## North star
@@ -446,7 +446,7 @@ Important milestones include:
 - knowledge-assisted coding using previously learned documentation, codebases,
   algorithms, and general world knowledge.
 
-Current narrow evidence (`f586e990f9441dacb5d51437dd99d6d5e57adfa5`, result
+Prior adjudicative narrow evidence (`f586e990f9441dacb5d51437dd99d6d5e57adfa5`, result
 `494e3a4696f2464cc4ed7d4ba9defd4c614d2fc13a5afc921a7a77741d9ef37c`): in one
 frozen synthetic two-action iterator cohort, a single immutable continual lexical
 memory sequentially incorporated four host-supplied successful lessons without
@@ -457,6 +457,22 @@ ran once on a trusted Windows host, and matched an oracle first opened after bot
 executions. This is lexical association/reuse plus authenticated source custody and
 execution—not live consequence learning, source synthesis, semantic understanding,
 debugging, transfer, SWE performance, or intelligence.
+
+Current public-development successor (`a364d0a`, result
+`692c8545408de2d71b803aaec39f9e392b909f35ccf3f0b524b23a97da9814a6`):
+on one exact rooted task and input batch, a promoted prebound Rust action was
+selected and executed, received an authenticated public failure, and was inhibited
+in an immutable successor; the revised physical race selected the other promoted
+action, whose execution passed and produced another immutable successor. A
+plasticity-off control preserved the original winner, an unrelated exact-factor
+probe retained its action, and two evaluation executions completed before one
+oracle callback. The retained external transcript authenticates input, authority,
+binding, release, execution, feedback, lesson, and checkpoint custody. This is
+same-task binary consequence correction and persistence under exact lexical-factor
+reuse—not source synthesis, semantics, diagnosis, generic debugging, transfer,
+SWE performance, or intelligence. The next mechanism question is whether two
+independent failed-to-successful episodes can consolidate a generic parameterized
+edit schema that transfers to a fresh family.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.

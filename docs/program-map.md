@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the first replay-free
-continual documentation-action kernel. Exact scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-09-01 after the first authenticated
+same-task consequence revision. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -13,7 +13,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; multi-task lexical memory banked; execution next]
+R4  Language/software continual coding               [OPEN; live exact-factor consequence revision banked; generic repair schema next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -858,6 +858,44 @@ selection kernel only. The immediate integration seam is a promoted-action
 vault feeding the existing bounded Rust compile/run core through one shared
 selected-source authority; a fresh iterator cohort can then test actual
 continual documentation-assisted execution.
+
+Commit `0274178` supplies that promoted-action vault. It binds the complete
+memory-owned candidate catalogue, promotion provenance, and candidate-provided
+Rust sources to one immutable checkpoint and explicit authority, then releases
+only the source named by one issued promoted recall. Protocol commit `f586e99`
+used the vault in a fresh two-action iterator cohort; result commit `ba7aaa9`
+banked PASS root
+`494e3a4696f2464cc4ed7d4ba9defd4c614d2fc13a5afc921a7a77741d9ef37c`.
+That run made five physical recalls, three STOP controls, and two selected-only
+Rust compile/runs before one oracle callback. It established lexical action
+reuse plus authenticated source execution, but all four training lessons were
+host-supplied successes, so consequence learning remained open.
+
+Commit `a364d0a` now adds the smallest live C0 loop without introducing another
+learner. A neutral TRAIN intervention owns two prebound sources (reverse and
+ascending sort); the existing continual memory remains the only selector and
+plastic state; the promoted vault and V2 executor remain custody/environment
+adapters. Five real successful executions form a promoted A3/B2 checkpoint over
+nonsense factors `kavun`, `pelto`, and `zimra`. On one later exact task and
+batch, A executes and fails; a plasticity-off control still selects A; the real
+failure successor inhibits A on both matched factors; the rerace selects B,
+which executes and passes; and the next immutable successor supports B. Frozen
+evaluation selects B for a fresh `kavun pelto` instance and retains A for a
+fresh `zimra` instance without updating memory.
+
+The trusted result is PASS root
+`692c8545408de2d71b803aaec39f9e392b909f35ccf3f0b524b23a97da9814a6`
+with final checkpoint
+`8ea2f8c0f5077d79e438a97f8da564596699c95dc75336f05450251e7f7e27bd`.
+Its external transcript closes spec/task/batch, authority, binding, release,
+execution, lesson, public-feedback, lineage, and oracle-order custody. Exact work
+is nine selected source releases/compiles/runs, seven updates, zero unselected
+executions or parent mutation/replay, and one callback after all executions.
+This banks only public-development same-task binary consequence correction over
+exact lexical factors and two candidate-provided actions. The next R4 mechanism
+is C1 generic parameterized token-edit-schema consolidation across two
+independent failed→successful episodes, followed by fresh C2 transfer—not more
+binary dispatch or another execution wrapper.
 
 ### Runtime and scale
 
