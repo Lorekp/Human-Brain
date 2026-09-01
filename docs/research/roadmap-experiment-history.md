@@ -744,11 +744,69 @@ binds the record; its exact file SHA-256 is
 The result supports only causal documentation-factor-to-API-action selection
 for this one human-curated two-candidate setting. It does not support broad
 coding, semantic reasoning, repository repair, LeetCode, SWE-bench, benchmark,
-or general-intelligence claims. The next acquisition direction is a bounded,
-licensed Rust Book slice. Declared-symbol extraction remains a
+or general-intelligence claims. The next acquisition direction at that point
+was a bounded, licensed Rust Book slice. Declared-symbol extraction remained a
 human-ontology/annotation-assisted seam, and an authenticated Rust
-candidate-handle adapter must exist before a selected symbol can license any
-Rust candidate execution claim.
+candidate-handle adapter had to exist before a selected symbol could license
+any Rust candidate execution claim.
+
+Commits `cddaf51`, `c9b77ea`, `4b5738e`, `1e27a3a`, and `eb61f30` then opened
+that Rust lane: a pinned Rust Book corpus is consolidated with provenance,
+projected across all concept cards, and fitted into authenticated
+knowledge-action associations. Commit `17321c6` binds two pre-existing Rust
+2021 sources—channel delivery with sorted duplicate-preserving output and a
+mutex-protected total—to opaque action handles. Commit `4d4ab22` adds the
+consume-once selected-action executor with bounded toolchain reads, dependency
+receipts, Windows Job Object wall/CPU/memory/process/output limits, exactly one
+compile, and exactly one binary run.
+
+Commit `2d3fb3a` freezes the fresh replacement Rust gate. Its public batch
+commitments are payload
+`ba9b1ed5bc532a5e792ee4379e9eaa296f7f268a7dd2d70f595770111502f608`
+and file
+`7ee9bbaba3e0d4bd95447cbeb1886eff2ad67ad9dd7e81e37703b2571fa2df54`;
+the sealed oracle commitments are payload
+`7abb4f962ff886a36bd45225070fbb2f092edbf4ae32c6ca9701e573d9d109b0`
+and file
+`46539d4e2e800f564b2c5207ca0aafe8f3c5d420692272b55c2686598f075be7`.
+Commit `bec231b` banks READY_UNSPENT manifest root
+`072a94efd105d780ff708c0c482936aefef109c5ecc77bd5542553702dc95c0f`;
+all six evaluation counters are zero.
+
+Commit `4c8ead7` preserves the only spent evaluation as PASS. The ten-item
+control roster contains nine physical recalls and a pre-physical
+bound-memory-splice rejection. Primary channel, mutex contrast, source-order
+reversal, cell-off, plasticity-off, shared-factor tie, unknown-factor,
+single-channel, and single-mutex outcomes all matched the frozen contract.
+Only the primary channel winner materialized. One authenticated executor call,
+one compile, one binary run over four cases, and one post-execution oracle read
+occurred; all four output rows matched. Terminal result root
+`2f7b49d6e227263641fd840ac573b4a0bb59246d09ef472e2a704f260ef0dcc3`
+and exact file SHA-256
+`0471a2ad3949449bc6453b8346bc7dc8abc93890936985b854f68d85897f538f`
+bind the record.
+
+Two chronology incidents are retained explicitly. During protocol development,
+a generic JSON-validity command opened an earlier uncommitted oracle before any
+learner or gate work; it printed only `json-ok`. That cohort never reached
+READY or spend. Those bytes and their public batch were retired, and the scored
+replacement oracle above was newly sealed without being reopened before
+authenticated execution. After READY was
+committed, the first shell launch used the runner file path and exited on
+`ModuleNotFoundError` while resolving the protocol import, before `main()`, lock
+acquisition, spend, live preparation, recall, materialization, compile/run,
+oracle access, or result publication. The committed manifest remained READY,
+while spend, result, and owner-lock checks confirmed no irreversible attempt
+artifact existed. The module entry point then performed the one actual attempt;
+this was a pre-spend launch correction, not a scored retry.
+
+The result supports only fresh lexical Rust-Book-documentation-conditioned
+dispatch between two existing actions followed by one trusted-host compile/run.
+It does not establish Rust synthesis, semantic code understanding, debugging,
+transfer, continual coding, hostile sandbox containment, broad intelligence, or
+comparison with Gemma/Opus. The next R4 question is whether documentation,
+execution feedback, and learned action abstractions can accumulate across
+multiple disjoint coding tasks without tuning on this spent cohort.
 
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves

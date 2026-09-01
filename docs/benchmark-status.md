@@ -1,6 +1,6 @@
 # Benchmark status
 
-Status date: 2026-08-31
+Status date: 2026-09-01
 
 ## What has passed
 
@@ -406,10 +406,42 @@ The licensed claim is one fresh self-posed, human-curated, two-API
 documentation-factor-to-action selection with 3/3 selected-candidate outputs.
 It is not broad coding, semantic reasoning, repository work, LeetCode,
 SWE-bench, benchmark, or general-intelligence evidence. The next acquisition
-direction is a bounded, licensed Rust Book slice. The declared-symbol seam is
-still human-ontology/annotation-assisted, and an authenticated Rust
-candidate-handle adapter is required before selected symbols can support any
-Rust execution claim.
+direction at that point was a bounded, licensed Rust Book slice. The
+declared-symbol seam was still human-ontology/annotation-assisted, and an
+authenticated Rust candidate-handle adapter was required before selected
+symbols could support any Rust execution claim.
+
+That bounded Rust slice is now banked. Commits `cddaf51`, `c9b77ea`, `4b5738e`,
+`1e27a3a`, and `eb61f30` pin the Rust Book corpus and carry its consolidated
+factor evidence into authenticated cell-backed knowledge-action memory. Commit
+`17321c6` binds two pre-existing Rust 2021 sources to opaque action handles;
+`4d4ab22` adds a consume-once, bounded trusted-host Windows executor. Commit
+`2d3fb3a` freezes the causal gate, and `bec231b` records READY_UNSPENT manifest
+root `072a94efd105d780ff708c0c482936aefef109c5ecc77bd5542553702dc95c0f`
+with every recall, materialization, executor, compile, run, and oracle-read
+counter at zero.
+
+Commit `4c8ead7` preserves the sole spent result as PASS. The fixed roster ran
+nine physical recalls plus one pre-physical bound-memory-splice rejection. The
+primary channel task selected the channel action; the mutex contrast selected
+the mutex action; source-order reversal reproduced the primary recall; cell-off,
+no-plasticity, the shared-factor tie, the unknown factor, and the splice stopped
+as specified; and the two single-factor probes selected their corresponding
+actions. Only the authenticated primary winner was then materialized. Exactly
+one executor call, one Rust compile, and one four-case binary run occurred before
+the first oracle read, and all four output rows matched. The terminal result
+root is `2f7b49d6e227263641fd840ac573b4a0bb59246d09ef472e2a704f260ef0dcc3`;
+the exact result-file SHA-256 is
+`0471a2ad3949449bc6453b8346bc7dc8abc93890936985b854f68d85897f538f`.
+
+This supports only one fresh lexical Rust-Book-documentation-conditioned
+dispatch between two pre-existing authenticated actions followed by one
+trusted-host compile/run. It is not Rust synthesis, semantic code
+understanding, debugging, sandbox evidence, within-family or cross-domain
+transfer, continual coding, broad intelligence, or evidence against Gemma or
+Opus. The next useful boundary is multi-task continual documentation-assisted
+coding with newly learned/reusable actions, not another binary dispatch on this
+spent cohort.
 
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about

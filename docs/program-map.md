@@ -1,9 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-08-31 after the terminal V3 joint
-static-event STOP, the occurrence-to-executable causal bridge, and packed
-procedural scratch/ledger reductions. Exact scientific
-boundaries live in
+Maintained by the orchestrator. Updated 2026-09-01 after the frozen Rust Book
+documentation-conditioned action gate PASS. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -15,9 +13,9 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  TRAIN-only prompt → semantic-factor bridge       [joint V3 static on/off STOP; cohort immutable]
+R4  Language/software continual coding               [OPEN; lexical-dispatch sub-gate PASS; multi-task next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
-R2  Persistent knowledge and reading memory          [predictive segmentation + reusable schemas banked]
+R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
 ```
 
@@ -807,10 +805,38 @@ the result-file SHA-256 is
 This is evidence only for causal documentation-factor-to-API-action selection
 in one two-candidate setting. It is not broad coding, semantic reasoning,
 repository work, LeetCode, SWE-bench, benchmark, or general-intelligence
-evidence. The next licensed acquisition direction is a bounded Rust Book slice.
-The declared-symbol seam remains human-ontology/annotation-assisted, and an
-authenticated Rust candidate-handle adapter must bind a selected symbol to one
-executable candidate before any Rust execution claim is licensed.
+evidence. The next licensed acquisition direction at that point was a bounded
+Rust Book slice. The declared-symbol seam remained
+human-ontology/annotation-assisted, and an authenticated Rust candidate-handle
+adapter had to bind a selected symbol to one executable candidate before any
+Rust execution claim was licensed.
+
+That Rust path now works end to end at one narrow frozen boundary. The main
+layers are:
+
+- `tools/build_rust_book_knowledge_corpus.py` for the pinned licensed corpus;
+- `knowledge_consolidation.py` and
+  `consolidated_knowledge_cell_projection.py` for provenance-bound
+  consolidation and all-card cell projection;
+- `rust_action_registry.py` for opaque source handles, factor associations,
+  bound-memory recall, and selected-only materialization;
+- `rust_selected_action_executor.py` for consume-once Rust 2021 execution under
+  bounded trusted-host Windows Job Objects; and
+- `frozen_rust_docs_m0_causal_gate_v1_protocol.py` plus its runner for committed
+  READY_UNSPENT, durable no-retry spend, causal controls, first-post-execution
+  oracle access, and immutable PASS/STOP authentication.
+
+Commits `2d3fb3a`, `bec231b`, and `4c8ead7` respectively freeze the inputs and
+protocol, bank zero-evaluation manifest root
+`072a94efd105d780ff708c0c482936aefef109c5ecc77bd5542553702dc95c0f`,
+and preserve the sole PASS at result root
+`2f7b49d6e227263641fd840ac573b4a0bb59246d09ef472e2a704f260ef0dcc3`.
+Nine physical recalls and one pre-physical splice control ran before one channel
+source materialization, one compile, and one four-case run; the authenticated
+outputs matched the sealed commitment. The supported claim is lexical Rust
+Book documentation-conditioned dispatch between two already implemented
+actions. Source synthesis, semantic understanding, transfer, continual coding,
+sandboxing, and broad coding intelligence remain open.
 
 ### Runtime and scale
 
