@@ -17,12 +17,14 @@ import shutil
 import stat
 import subprocess
 import tempfile
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from pathlib import Path
 from threading import Event, Lock, Thread
 from time import monotonic
+from typing import Protocol
 
 from experiments.r3_pilot import common_knowledge_action_memory_v1 as action_memory
 
@@ -125,6 +127,17 @@ BATCH_PROTOCOL_SHA256 = sha256(
 
 class RustSelectedActionExecutionError(ValueError):
     """Selected-source authentication, compilation, or execution failed."""
+
+
+class _RustSelectedSourceView(Protocol):
+    sha256: str
+    source_sha256: str
+    source: str
+
+
+class _RustOperationalPreparationView(Protocol):
+    compile_environment: tuple[tuple[str, str], ...]
+    run_environment: tuple[tuple[str, str], ...]
 
 
 def _canonical_json(value: object) -> bytes:
@@ -1405,85 +1418,166 @@ def _parse_dependency_paths(dep_info: bytes) -> tuple[str, str]:
     return expected
 
 
-def _make_dependency_receipt(
-    materialization: RustActionMaterializationV1,
-    dep_info: bytes,
-) -> RustDependencyReceiptV1:
-    paths = _parse_dependency_paths(dep_info)
-    payload = {
-        "schema": SCHEMA,
-        "materialization_sha256": materialization.sha256,
-        "harness_sha256": HARNESS_SHA256,
-        "selected_source_sha256": materialization.source_sha256,
-        "dep_info_sha256": sha256(dep_info).hexdigest(),
-        "dependency_paths": paths,
-        "dependency_content_sha256s": (
-            (HARNESS_FILENAME, HARNESS_SHA256),
-            (SELECTED_FILENAME, materialization.source_sha256),
-        ),
-    }
-    receipt = RustDependencyReceiptV1(
-        **payload,
-        sha256=_digest(_DEPENDENCY_NAMESPACE, payload),
+@dataclass(frozen=True, slots=True)
+class _RustOperationalObservationV1:
+    dep_info: bytes
+    binary_sha256: str
+    binary_size_bytes: int
+    compile_stdout: bytes
+    compile_stderr: bytes
+    run_stdout: bytes
+    run_stderr: bytes
+    run_returncode: int
+    outputs: tuple[tuple[int, ...], ...]
+
+
+def _execute_authenticated_source_observation_once(
+    selected: _RustSelectedSourceView,
+    *,
+    rustc: RustcIdentityV1,
+    preparation: _RustOperationalPreparationView,
+    cases: tuple[tuple[int, ...], ...],
+    stdin: bytes,
+    authenticate_current: Callable[[], None],
+) -> _RustOperationalObservationV1:
+    """Compile and run once, returning raw facts without an authority schema."""
+
+    authenticate_current()
+    try:
+        with tempfile.TemporaryDirectory(prefix="humanbrain-rust-selected-") as root:
+            temporary_root = Path(root)
+            harness_path = temporary_root / HARNESS_FILENAME
+            selected_path = temporary_root / SELECTED_FILENAME
+            dep_info_path = temporary_root / DEP_INFO_FILENAME
+            binary_path = temporary_root / _binary_filename()
+            try:
+                harness_path.write_bytes(_HARNESS_BYTES)
+                selected_path.write_bytes(selected.source.encode("ascii", errors="strict"))
+            except (OSError, UnicodeError) as exc:
+                raise RustSelectedActionExecutionError(
+                    "selected Rust sources could not be staged"
+                ) from exc
+            compile_observation = _run_capped_process(
+                (rustc.path, *_actual_compile_arguments(rustc)),
+                cwd=temporary_root,
+                environment=_materialize_environment(
+                    preparation.compile_environment,
+                    temporary_root,
+                ),
+                input_bytes=b"",
+                limits=COMPILE_LIMITS,
+            )
+            if compile_observation.timed_out:
+                raise RustSelectedActionExecutionError("rustc compile wall time exceeded")
+            if compile_observation.output_exceeded:
+                raise RustSelectedActionExecutionError("rustc compile output limit exceeded")
+            if compile_observation.returncode != 0:
+                detail = compile_observation.stderr.decode("utf-8", errors="replace").strip()
+                raise RustSelectedActionExecutionError(
+                    f"selected Rust source failed compilation: {detail[:2_048]}"
+                )
+            if compile_observation.stdout or compile_observation.stderr:
+                raise RustSelectedActionExecutionError(
+                    "successful rustc compile emitted unexpected output"
+                )
+            dep_info = _read_bounded_regular_file(
+                dep_info_path,
+                label="rustc dep-info",
+                maximum_bytes=MAX_DEP_INFO_BYTES,
+            )
+            _parse_dependency_paths(dep_info)
+            binary_sha256, binary_size_bytes = _stream_hash_regular_file(
+                binary_path,
+                label="selected Rust binary",
+                maximum_bytes=MAX_BINARY_BYTES,
+            )
+            authenticate_current()
+            expected_binary = (binary_sha256, binary_size_bytes)
+            prelaunch_binary = _stream_hash_regular_file(
+                binary_path,
+                label="selected Rust binary",
+                maximum_bytes=MAX_BINARY_BYTES,
+            )
+            if prelaunch_binary != expected_binary:
+                raise RustSelectedActionExecutionError("selected Rust binary changed before launch")
+            try:
+                run_observation = _run_capped_process(
+                    (str(binary_path),),
+                    cwd=temporary_root,
+                    environment=_materialize_environment(
+                        preparation.run_environment,
+                        temporary_root,
+                    ),
+                    input_bytes=stdin,
+                    limits=RUN_LIMITS,
+                )
+            finally:
+                postrun_binary = _stream_hash_regular_file(
+                    binary_path,
+                    label="selected Rust binary",
+                    maximum_bytes=MAX_BINARY_BYTES,
+                )
+                if postrun_binary != expected_binary:
+                    raise RustSelectedActionExecutionError(
+                        "selected Rust binary changed during execution"
+                    )
+    finally:
+        authenticate_current()
+    if run_observation.timed_out:
+        raise RustSelectedActionExecutionError("selected Rust process timed out")
+    if run_observation.output_exceeded:
+        raise RustSelectedActionExecutionError("selected Rust process output limit exceeded")
+    if run_observation.returncode != 0:
+        raise RustSelectedActionExecutionError("selected Rust process failed")
+    if run_observation.stderr:
+        raise RustSelectedActionExecutionError("selected Rust process emitted stderr")
+    outputs = _decode_batch(run_observation.stdout, expected_cases=len(cases))
+    return _RustOperationalObservationV1(
+        dep_info=dep_info,
+        binary_sha256=binary_sha256,
+        binary_size_bytes=binary_size_bytes,
+        compile_stdout=compile_observation.stdout,
+        compile_stderr=compile_observation.stderr,
+        run_stdout=run_observation.stdout,
+        run_stderr=run_observation.stderr,
+        run_returncode=run_observation.returncode,
+        outputs=outputs,
     )
-    receipt.authenticate_structure()
-    return receipt
 
 
-def _compile_selected_source(
-    materialization: RustActionMaterializationV1,
+def _make_v1_execution_receipts(
+    selected: RustActionMaterializationV1,
+    *,
     rustc: RustcIdentityV1,
     preparation: RustExecutorPreparationV1,
-    temporary_root: Path,
-) -> tuple[Path, RustDependencyReceiptV1, RustCompileReceiptV1]:
-    harness_path = temporary_root / HARNESS_FILENAME
-    selected_path = temporary_root / SELECTED_FILENAME
-    dep_info_path = temporary_root / DEP_INFO_FILENAME
-    binary_path = temporary_root / _binary_filename()
-    try:
-        harness_path.write_bytes(_HARNESS_BYTES)
-        selected_path.write_bytes(materialization.source.encode("ascii", errors="strict"))
-    except (OSError, UnicodeError) as exc:
-        raise RustSelectedActionExecutionError("selected Rust sources could not be staged") from exc
-    observation = _run_capped_process(
-        (rustc.path, *_actual_compile_arguments(rustc)),
-        cwd=temporary_root,
-        environment=_materialize_environment(
-            preparation.compile_environment,
-            temporary_root,
+    cases: tuple[tuple[int, ...], ...],
+    stdin: bytes,
+    observation: _RustOperationalObservationV1,
+) -> tuple[RustDependencyReceiptV1, RustCompileReceiptV1, RustRunReceiptV1]:
+    dependency_payload = {
+        "schema": SCHEMA,
+        "materialization_sha256": selected.sha256,
+        "harness_sha256": HARNESS_SHA256,
+        "selected_source_sha256": selected.source_sha256,
+        "dep_info_sha256": sha256(observation.dep_info).hexdigest(),
+        "dependency_paths": _parse_dependency_paths(observation.dep_info),
+        "dependency_content_sha256s": (
+            (HARNESS_FILENAME, HARNESS_SHA256),
+            (SELECTED_FILENAME, selected.source_sha256),
         ),
-        input_bytes=b"",
-        limits=COMPILE_LIMITS,
+    }
+    dependency_receipt = RustDependencyReceiptV1(
+        **dependency_payload,
+        sha256=_digest(_DEPENDENCY_NAMESPACE, dependency_payload),
     )
-    if observation.timed_out:
-        raise RustSelectedActionExecutionError("rustc compile wall time exceeded")
-    if observation.output_exceeded:
-        raise RustSelectedActionExecutionError("rustc compile output limit exceeded")
-    if observation.returncode != 0:
-        detail = observation.stderr.decode("utf-8", errors="replace").strip()
-        raise RustSelectedActionExecutionError(
-            f"selected Rust source failed compilation: {detail[:2_048]}"
-        )
-    if observation.stdout or observation.stderr:
-        raise RustSelectedActionExecutionError("successful rustc compile emitted unexpected output")
-    dep_info = _read_bounded_regular_file(
-        dep_info_path,
-        label="rustc dep-info",
-        maximum_bytes=MAX_DEP_INFO_BYTES,
-    )
-    binary_sha256, binary_size_bytes = _stream_hash_regular_file(
-        binary_path,
-        label="selected Rust binary",
-        maximum_bytes=MAX_BINARY_BYTES,
-    )
-    dependency_receipt = _make_dependency_receipt(materialization, dep_info)
-    payload = {
+    dependency_receipt.authenticate_structure()
+    compile_payload = {
         "schema": SCHEMA,
         "compiler_policy_sha256": COMPILER_POLICY_SHA256,
         "rustc_identity_sha256": rustc.sha256,
         "preparation_sha256": preparation.sha256,
-        "materialization_sha256": materialization.sha256,
-        "selected_source_sha256": materialization.source_sha256,
+        "materialization_sha256": selected.sha256,
+        "selected_source_sha256": selected.source_sha256,
         "harness_sha256": HARNESS_SHA256,
         "edition": RUST_EDITION,
         "arguments": _compile_arguments(),
@@ -1491,17 +1585,40 @@ def _compile_selected_source(
         "compile_environment_sha256": preparation.compile_environment_sha256,
         "compile_invocations": 1,
         "dependency_receipt_sha256": dependency_receipt.sha256,
-        "binary_sha256": binary_sha256,
-        "binary_size_bytes": binary_size_bytes,
-        "stdout_sha256": sha256(observation.stdout).hexdigest(),
-        "stderr_sha256": sha256(observation.stderr).hexdigest(),
+        "binary_sha256": observation.binary_sha256,
+        "binary_size_bytes": observation.binary_size_bytes,
+        "stdout_sha256": sha256(observation.compile_stdout).hexdigest(),
+        "stderr_sha256": sha256(observation.compile_stderr).hexdigest(),
     }
     compile_receipt = RustCompileReceiptV1(
-        **payload,
-        sha256=_digest(_COMPILE_NAMESPACE, payload),
+        **compile_payload,
+        sha256=_digest(_COMPILE_NAMESPACE, compile_payload),
     )
     compile_receipt.authenticate_structure()
-    return binary_path, dependency_receipt, compile_receipt
+    run_payload = {
+        "schema": SCHEMA,
+        "compiler_policy_sha256": COMPILER_POLICY_SHA256,
+        "preparation_sha256": preparation.sha256,
+        "compile_receipt_sha256": compile_receipt.sha256,
+        "materialization_sha256": selected.sha256,
+        "batch_protocol_sha256": BATCH_PROTOCOL_SHA256,
+        "batch_sha256": preparation.batch_sha256,
+        "stdin_sha256": sha256(stdin).hexdigest(),
+        "stdout_sha256": sha256(observation.run_stdout).hexdigest(),
+        "stderr_sha256": sha256(observation.run_stderr).hexdigest(),
+        "output_sha256": _digest(_BATCH_NAMESPACE, observation.outputs),
+        "run_limits_sha256": RUN_LIMITS.sha256,
+        "run_environment_sha256": preparation.run_environment_sha256,
+        "run_invocations": 1,
+        "case_count": len(cases),
+        "returncode": observation.run_returncode,
+    }
+    run_receipt = RustRunReceiptV1(
+        **run_payload,
+        sha256=_digest(_RUN_NAMESPACE, run_payload),
+    )
+    run_receipt.authenticate_structure()
+    return dependency_receipt, compile_receipt, run_receipt
 
 
 class PreparedRustSelectedActionExecutorV1:
@@ -1645,88 +1762,23 @@ class PreparedRustSelectedActionExecutorV1:
             raise RustSelectedActionExecutionError(
                 "materialization registry differs from executor preparation"
             )
-        cases = self._cases
-        stdin = self._stdin
-        self._authenticate_current()
-        try:
-            with tempfile.TemporaryDirectory(prefix="humanbrain-rust-selected-") as root:
-                temporary_root = Path(root)
-                binary, dependency_receipt, compile_receipt = _compile_selected_source(
-                    selected,
-                    self._rustc,
-                    self._preparation,
-                    temporary_root,
-                )
-                self._authenticate_current()
-                prelaunch_binary = _stream_hash_regular_file(
-                    binary,
-                    label="selected Rust binary",
-                    maximum_bytes=MAX_BINARY_BYTES,
-                )
-                expected_binary = (
-                    compile_receipt.binary_sha256,
-                    compile_receipt.binary_size_bytes,
-                )
-                if prelaunch_binary != expected_binary:
-                    raise RustSelectedActionExecutionError(
-                        "selected Rust binary changed before launch"
-                    )
-                try:
-                    observation = _run_capped_process(
-                        (str(binary),),
-                        cwd=temporary_root,
-                        environment=_materialize_environment(
-                            self._preparation.run_environment,
-                            temporary_root,
-                        ),
-                        input_bytes=stdin,
-                        limits=RUN_LIMITS,
-                    )
-                finally:
-                    postrun_binary = _stream_hash_regular_file(
-                        binary,
-                        label="selected Rust binary",
-                        maximum_bytes=MAX_BINARY_BYTES,
-                    )
-                    if postrun_binary != expected_binary:
-                        raise RustSelectedActionExecutionError(
-                            "selected Rust binary changed during execution"
-                        )
-        finally:
-            self._authenticate_current()
-        if observation.timed_out:
-            raise RustSelectedActionExecutionError("selected Rust process timed out")
-        if observation.output_exceeded:
-            raise RustSelectedActionExecutionError("selected Rust process output limit exceeded")
-        if observation.returncode != 0:
-            raise RustSelectedActionExecutionError("selected Rust process failed")
-        if observation.stderr:
-            raise RustSelectedActionExecutionError("selected Rust process emitted stderr")
-        outputs = _decode_batch(observation.stdout, expected_cases=len(cases))
-        output_sha256 = _digest(_BATCH_NAMESPACE, outputs)
-        run_payload = {
-            "schema": SCHEMA,
-            "compiler_policy_sha256": COMPILER_POLICY_SHA256,
-            "preparation_sha256": self._preparation.sha256,
-            "compile_receipt_sha256": compile_receipt.sha256,
-            "materialization_sha256": selected.sha256,
-            "batch_protocol_sha256": BATCH_PROTOCOL_SHA256,
-            "batch_sha256": self._preparation.batch_sha256,
-            "stdin_sha256": sha256(stdin).hexdigest(),
-            "stdout_sha256": sha256(observation.stdout).hexdigest(),
-            "stderr_sha256": sha256(observation.stderr).hexdigest(),
-            "output_sha256": output_sha256,
-            "run_limits_sha256": RUN_LIMITS.sha256,
-            "run_environment_sha256": self._preparation.run_environment_sha256,
-            "run_invocations": 1,
-            "case_count": len(cases),
-            "returncode": observation.returncode,
-        }
-        run_receipt = RustRunReceiptV1(
-            **run_payload,
-            sha256=_digest(_RUN_NAMESPACE, run_payload),
+        observation = _execute_authenticated_source_observation_once(
+            selected,
+            rustc=self._rustc,
+            preparation=self._preparation,
+            cases=self._cases,
+            stdin=self._stdin,
+            authenticate_current=self._authenticate_current,
         )
-        run_receipt.authenticate_structure()
+        dependency_receipt, compile_receipt, run_receipt = _make_v1_execution_receipts(
+            selected,
+            rustc=self._rustc,
+            preparation=self._preparation,
+            cases=self._cases,
+            stdin=self._stdin,
+            observation=observation,
+        )
+        outputs = observation.outputs
         execution_payload = {
             "materialization_sha256": selected.sha256,
             "rustc_identity_sha256": self._rustc.sha256,
