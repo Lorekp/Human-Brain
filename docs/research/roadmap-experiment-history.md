@@ -1027,6 +1027,64 @@ execution and caller-attested outputs—not learned tokenization, schema discove
 semantics, diagnosis, generic debugging, protected transfer, SWE, or
 intelligence.
 
+Commits `0dd2006` and `11e29b6` then introduced the generic
+failure-conditioned action-replan seam. One authenticated selected-action FAIL
+advances durable inhibitory outcome evidence exactly once. A deterministic
+ordinal-1 retry bound to that exact outcome and context may apply one transient
+`-2` refractory pulse to the failed full action tuple and physically rerace the
+otherwise unchanged candidates; the pulse does not alter durable credit.
+
+Preregistered C4 commit `6727a51a01e0ce4d933402492f2d76ab2f46b55f` froze spec
+`19e88590e6158f69e7c995b0af018aecc2973a14721394e5d74e762e819ffbc9`.
+Its one-shot spend terminated `ABORT_C4_TOKEN_EDIT_FAILURE_REPLAN_V1` before
+the first run. The first selected source compiled, but rustc emitted default
+`path_statements` warnings from bare `floor;` and `ceiling;` statements, which
+the warning-free executor correctly rejected. Commit `f2c524a` retains abort
+root `5132dfec0d80f8fe3bb64247e744002941940d26918eb4c879abaad36b50b1f8`,
+document root
+`79435e597d2ecf7423b94a1228d5f41fb7beea5ef1511d8eb06d1c8052619f03`,
+and reservation root
+`206497f56bba6a06be5e02fbe2a96758a775b7e651474243dc79ae0171b78ed1`.
+The cohort was not rerun.
+
+Fresh C4b preregistration `7413af75243e974f2d018b533265923ce20ff317`
+excluded all 30 previously spent source roots and froze spec
+`ab3954e583d95b4975c495a02e0e38509b1681c2025239381031bfaf3216bd08`.
+Its sole spend terminated `PASS_C4B_TOKEN_EDIT_FAILURE_REPLAN_V2` at result
+root `bcbbc882256917bacccb492c03841813b351f7a2ccc56b000d1cf0fff31f3434`,
+document root
+`db75bf06aa14e5a31e64830e9e28ffcb5109b31f695f68cfa945ce307861659f`,
+and reservation root
+`c930744b2fcc7507c2f8dae26b2042e0592776b667849654f7ade44028d611b9`.
+Raw result and reservation SHA-256 values were
+`c64f22e8d2b915fc4a007a2663670d30164a45afa9a5842ee83f4e4bf16233ff`
+and `acb96a244c4e10f6363a5078d8af6450cb4b6b8b833d65247fd711078aad1941`;
+evidence commit `98b4339` retains both. The trusted rustc identity was
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`.
+
+The executed consequence cells were `(0, 1, 0, 1)`. Selected adaptation schema
+A failed and wrote one durable H tick. The unchanged A/B tuple then scored 4/4
+and stopped without refractory activation; the context-bound pulse made the
+effective retry 2/4 and selected B. B passed and added one durable E tick,
+leaving final A/B scores of 4/6. Parent checkpoint
+`deb2bda9274ce1555a43f0886ec4121265b7160fb23022f4644ea0d77ddf255a`
+selected A on a fresh source, while final checkpoint
+`dc25c774e64b8320b7b8e660eba51f33bc5313f67b7e55dddf747c48fda5f690`
+selected B; evaluation A failed, evaluation B passed, and evaluation advanced
+nothing.
+
+Exact work was four selections, selected executions, compiles, and runs; two
+feedback openings at cumulative execution counts `[1, 4]`; two outcome
+advances; one rerace; one combined gate-off control; and zero evaluation
+advances. Both authorities independently recorded exact
+execution/selection/release/spend/success counters of `2/2/2/2/2`. This banks
+failure-conditioned reracing and fresh reuse inside one supplied two-schema
+bank—not learned tokenization or schema discovery, failure diagnosis, inference
+that the rival is correct, search or source synthesis, generic debugging,
+protected transfer, SWE, or intelligence. The next mechanism question is
+whether structured execution feedback can support reusable error-class and
+region diagnosis/localization rather than only inhibit the failed action.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing

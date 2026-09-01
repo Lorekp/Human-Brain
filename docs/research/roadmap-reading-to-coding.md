@@ -521,10 +521,35 @@ proposal passed where the baseline failed. Evaluation did not update policy.
 This supports one narrow case of executed, caller-attested proposal consequence
 changing reusable state inside a fixed lexer/ontology/schema bank. It is not
 schema discovery, semantic diagnosis, generic repair, protected transfer, SWE
-performance, intelligence, or evidence against an external model. The next
-mechanism question is whether an executed failure can inhibit one edit schema,
-autonomously rerace a competing schema, and reuse that revision on a fresh
-source.
+performance, intelligence, or evidence against an external model.
+
+The first preregistered C4 failure-replan spend (`6727a51`, spec
+`19e88590e6158f69e7c995b0af018aecc2973a14721394e5d74e762e819ffbc9`)
+terminated `ABORT_C4_TOKEN_EDIT_FAILURE_REPLAN_V1` before its first run because
+the successfully compiled selected Rust source emitted default
+`path_statements` warnings. Commit `f2c524a` retains the terminal abort; the
+cohort was not retried.
+
+A fresh 30-root-excluded C4b successor (`7413af7`, spec
+`ab3954e583d95b4975c495a02e0e38509b1681c2025239381031bfaf3216bd08`)
+terminated `PASS_C4B_TOKEN_EDIT_FAILURE_REPLAN_V2` at result root
+`bcbbc882256917bacccb492c03841813b351f7a2ccc56b000d1cf0fff31f3434`.
+In one supplied competing two-schema context, a real selected A failure wrote
+one durable inhibitory tick. The resulting A/B scores tied at 4/4 and stopped;
+one deterministic context-bound refractory pulse changed only the exact failed
+action's effective retry score to 2/4, so the unchanged tuple physically
+reraced to B. B passed and left durable A/B scores of 4/6. On a fresh source,
+the parent selected failing A while the final successor selected passing B,
+with no evaluation update.
+
+This is one narrow case of an authenticated failure causing one physically
+reraced alternate selection and reusable revision inside a supplied schema
+bank. It is not learned tokenization or schema discovery, diagnosis, inference
+that the rival is correct, search or source synthesis, generic debugging,
+protected transfer, SWE performance, or intelligence. The next mechanism
+question is whether structured execution feedback can support a generic
+feedback-conditioned diagnosis/localization seam rather than only inhibit the
+failed action.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.

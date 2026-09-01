@@ -657,6 +657,65 @@ semantics, diagnosis, generic repair, protected transfer, SWE, intelligence, or
 an external-model comparison. The next layer is failure-conditioned neural
 reracing among competing schemas.
 
+Commits `0dd2006` and `11e29b6` add generic failure-conditioned action
+replanning: one authenticated FAIL advances durable inhibitory evidence once,
+then one deterministic ordinal-1 retry context can apply a transient `-2`
+refractory pulse to the exact failed action before reracing the unchanged full
+candidate tuple. The first preregistered C4 cohort
+(`6727a51a01e0ce4d933402492f2d76ab2f46b55f`, spec
+`19e88590e6158f69e7c995b0af018aecc2973a14721394e5d74e762e819ffbc9`)
+terminated `ABORT_C4_TOKEN_EDIT_FAILURE_REPLAN_V1` before its first run. The
+first selected Rust source compiled successfully but emitted default
+`path_statements` warnings from bare `floor;` and `ceiling;` statements under
+the warning-free executor policy. Commit `f2c524a` retains abort root
+`5132dfec0d80f8fe3bb64247e744002941940d26918eb4c879abaad36b50b1f8`,
+document root
+`79435e597d2ecf7423b94a1228d5f41fb7beea5ef1511d8eb06d1c8052619f03`,
+and reservation root
+`206497f56bba6a06be5e02fbe2a96758a775b7e651474243dc79ae0171b78ed1`;
+the cohort was not rerun.
+
+Fresh warning-free C4b preregistration
+`7413af75243e974f2d018b533265923ce20ff317` froze spec
+`ab3954e583d95b4975c495a02e0e38509b1681c2025239381031bfaf3216bd08`
+after excluding all 30 previously spent source roots. Its sole spend terminated
+`PASS_C4B_TOKEN_EDIT_FAILURE_REPLAN_V2` at result root
+`bcbbc882256917bacccb492c03841813b351f7a2ccc56b000d1cf0fff31f3434`,
+document root
+`db75bf06aa14e5a31e64830e9e28ffcb5109b31f695f68cfa945ce307861659f`,
+and reservation root
+`c930744b2fcc7507c2f8dae26b2042e0592776b667849654f7ade44028d611b9`.
+Raw result/reservation file SHA-256 values are
+`c64f22e8d2b915fc4a007a2663670d30164a45afa9a5842ee83f4e4bf16233ff`
+and `acb96a244c4e10f6363a5078d8af6450cb4b6b8b833d65247fd711078aad1941`;
+evidence commit `98b4339` retains both. The trusted compiler identity was
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`.
+
+The exact executed consequence vector was `(0, 1, 0, 1)`. Adaptation schema A
+failed and wrote one durable inhibitory tick. The resulting durable A/B score
+tuple was 4/4 and stopped without a refractory pulse; the authenticated
+context-bound pulse changed only A's effective retry score, producing 2/4 and
+selecting B from the otherwise unchanged tuple. B's independent PASS added one
+durable excitatory tick, leaving A/B at 4/6. Parent checkpoint
+`deb2bda9274ce1555a43f0886ec4121265b7160fb23022f4644ea0d77ddf255a`
+therefore selected A on a fresh source, while final checkpoint
+`dc25c774e64b8320b7b8e660eba51f33bc5313f67b7e55dddf747c48fda5f690`
+selected B; evaluation A failed, evaluation B passed, and evaluation advanced
+nothing.
+
+Exact work was four issued selections, selected executions, compiles, and runs;
+two public-feedback openings at cumulative execution counts `[1, 4]`; two
+outcome advances; one rerace; one combined gate-off control; and zero evaluation
+advances. Each of the two authorities independently records exact
+execution/selection/release/spend/success counters of `2/2/2/2/2`. This banks
+one supplied two-schema, caller-attested Rust consequence-revision result—not
+learned tokenization or schema discovery, failure diagnosis, inference that the
+rival is correct, search or source synthesis, generic debugging, protected
+transfer, SWE, intelligence, or an external-model comparison. The next layer is
+a generic feedback-conditioned diagnosis/localization seam with a supplied
+bounded event projection and `2x2` class-by-region ontology, not another
+repository wrapper or multi-step planner yet.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for

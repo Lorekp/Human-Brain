@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the spent C2
-executed-proposal PASS and fresh C3b consequence-reuse PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-01 after the terminal C4 abort
+and fresh C4b failure-replan PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C3b consequence reuse banked; failure rerace next]
+R4  Language/software continual coding               [OPEN; C4b failure rerace banked; diagnosis/localization next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -958,6 +958,46 @@ result and reservation.
 This banks only consequence-conditioned reuse of one supplied schema under
 caller-attested public outcomes. The next layer is failure-conditioned neural
 reracing among competing edit schemas, not another execution wrapper.
+
+Commits `0dd2006` and `11e29b6` add
+`common_failure_conditioned_action_replan_v1.py` as the next deeper common
+seam. One authenticated failed selected-action outcome writes exactly one
+durable inhibitory tick through the existing outcome learner. A deterministic,
+context-bound ordinal-1 retry can then apply one transient `-2` refractory pulse
+to the exact failed full action tuple before physically reracing the otherwise
+unchanged candidate set. The pulse changes no durable credit and cannot be
+minted under a different retry context.
+
+Preregistered C4 commit `6727a51` froze spec
+`19e88590e6158f69e7c995b0af018aecc2973a14721394e5d74e762e819ffbc9`.
+Its only spend terminated `ABORT_C4_TOKEN_EDIT_FAILURE_REPLAN_V1` before the
+first run because the successfully compiled selected Rust source emitted
+default `path_statements` warnings from bare `floor;` and `ceiling;`
+statements. Commit `f2c524a` retains abort root
+`5132dfec0d80f8fe3bb64247e744002941940d26918eb4c879abaad36b50b1f8`;
+the cohort was not retried.
+
+Fresh 30-root-excluded C4b preregistration `7413af7` froze spec
+`ab3954e583d95b4975c495a02e0e38509b1681c2025239381031bfaf3216bd08`.
+Its sole spend terminated `PASS_C4B_TOKEN_EDIT_FAILURE_REPLAN_V2` at result
+root `bcbbc882256917bacccb492c03841813b351f7a2ccc56b000d1cf0fff31f3434`;
+evidence commit `98b4339` retains the result and reservation. Schema A's real
+selected failure wrote one H tick and left the durable A/B tuple at 4/4 STOP.
+The deterministic pulse made the retry tuple effectively 2/4, selected B, and
+B's independent PASS left durable A/B at 4/6. A fresh evaluation source was
+selected as failing A by the parent and passing B by the final successor, with
+no evaluation update. Exact work was four selections/executions/compiles/runs,
+two feedback openings, two outcome advances, and one rerace.
+
+This banks only one context-bound failure-triggered alternate rerace and fresh
+reuse inside a supplied two-schema bank. It does not show learned tokenization,
+schema discovery, diagnosis, knowledge that B is correct, search, source
+synthesis, generic debugging, protected transfer, SWE, or intelligence. The
+next R4 capability layer is a generic feedback-conditioned
+diagnosis/localization module behind a thin real-repository adapter. The bounded
+event projection, `2x2` class-by-region ontology, candidate regions, and edit bank
+remain supplied; repository-only rewiring would repeat already banked loops,
+while multi-step plan revision should follow honest failure localization.
 
 ### Runtime and scale
 
