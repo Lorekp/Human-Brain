@@ -23,7 +23,6 @@ import numpy as np
 from experiments.g0 import common_event_cells_v1 as common_events
 from experiments.r3_pilot.common_rooted_structured_event_graph_v1 import (
     MAX_CARRIERS,
-    MAX_EVENTS,
     MAX_INCIDENCES,
     TRACE_LANES as EVENT_TRACE_LANES,
     RootedStructuredEventGraphV1,
@@ -34,6 +33,9 @@ from humanbrain.resting_glif_race import CompiledRestingGlifRace
 
 SCHEMA = "COMMON_STRUCTURED_ROLE_PATH_PROJECTION_V1"
 
+# This V1 checkpoint capacity remains frozen even when the neutral source graph
+# admits more events for consumers that do not build role-path factors.
+MAX_EVENTS = 8
 MAX_ROLE_DEPTH = 3
 ROLE_PATH_BITS = sum(1 << depth for depth in range(1, MAX_ROLE_DEPTH + 1))
 ROLE_PATH_PAYLOAD_BYTES = 16
