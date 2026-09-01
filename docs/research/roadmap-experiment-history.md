@@ -1336,6 +1336,42 @@ authenticated primary span can replace the supplied FIRST/SECOND root and learn
 which still-supplied target marker they bind to under counterbalanced
 consequences. Learned source parsing and target-marker discovery remain later.
 
+Commits `54939b2`, `2c7d350`, and
+`4ba0cf5caedd48b02bf5afdcb1fe0962cb439270` next introduced a generic
+authenticated ASCII-word unigram primitive, a rustc adapter that projected
+parent-message and complete primary-span-containing-line tokens into one
+role-neutral unordered cue set, and a direct selected-edit authority. Fresh C10
+preregistration `55bee8bf7b0e5c3544fcf3910e9abf3e60659a8c` froze spec
+`6ebf21e45798066f2a0e6f57d12571cdf15b5b12cba859b7e4fd28c7febb2c97`
+for one root-distinct six-source cohort.
+
+Trusted-host preflight authenticated rustc identity
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`
+before the exclusive reservation. The sole spend then permanently terminated
+`ABORT_C10_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1`. Evidence commit
+`c091872` retains reservation logical root
+`772756e588e26d844a83c07cbde9deb635a8f23565982bc18d07bf834874c837`
+and raw reservation-file SHA-256
+`728abd55430ef4c641b0b48c4adb380a33b3fe7259c4ca3164f89b8c499fc1fc`,
+along with terminal-document logical root
+`2b1a8d39b7ae8d25f6c680a0d2c9e18ce7e3d9dc4140eea3a87734e1450d9f49`
+and raw result-file SHA-256
+`481a15d83ee9a5e03909a0c1125089f84c1b321f73c4a98aa025d8cc58d0dde2`.
+
+The runner compiled all six original diagnostic sources before authenticating
+the retained diagnostics. The real E0308 parent carried rustc's `function
+defined here` child note, but the cohort had preregistered the stronger
+`children == []` condition. Authentication therefore stopped before any cue
+envelope was admitted and before any learning update, materialization, selected
+execution, or oracle opening. The cohort is spent and was not retried.
+
+This terminal artifact localizes an overstrict diagnostic-record assumption; it
+does not test whether the role-neutral message-plus-line cues can learn target
+bindings. C10 supplies no cognitive observation, learned association, selected
+repair, consequence, transfer, SWE, or intelligence evidence. A successor must
+be a separately preregistered, root-distinct C10b whose parent-only adapter
+deliberately ignores child diagnostics. C10 itself remains immutable.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing

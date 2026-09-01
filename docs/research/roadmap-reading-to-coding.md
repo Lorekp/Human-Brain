@@ -662,6 +662,22 @@ authenticated primary span can replace the supplied FIRST/SECOND root and learn
 which still-supplied target marker they bind to under counterbalanced
 consequences. Learned source parsing and target-marker discovery remain later.
 
+The first preregistered C10 source-context spend (`55bee8b`, spec
+`6ebf21e45798066f2a0e6f57d12571cdf15b5b12cba859b7e4fd28c7febb2c97`)
+used mechanisms `54939b2`, `2c7d350`, and `4ba0cf5`, then permanently
+terminated `ABORT_C10_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1`.
+All six original diagnostics compiled, but authentication rejected the real
+E0308 parent because rustc supplied a `function defined here` child note while
+the cohort required `children == []`. Evidence commit `c091872` retains the
+terminal document and reservation; the cohort must never be rerun.
+
+No cue envelope, learning update, materialization, selected execution, or
+oracle opening occurred. This is an overstrict diagnostic-contract abort, not
+evidence for or against source-context cue learning and not repair, transfer,
+SWE, or intelligence evidence. The next admissible step is a separately
+preregistered, root-distinct C10b with a parent-only projection that
+deliberately ignores child diagnostics.
+
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.
 

@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the fresh C9
-lexical-cue learning PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-01 after the permanently spent
+C10 source-context cohort abort. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C9 binds stable message words; raw source-context target binding next]
+R4  Language/software continual coding               [OPEN; C10 aborted before cognition; fresh root-distinct C10b next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -1145,6 +1145,25 @@ source-context events around the authenticated primary span can replace the
 supplied FIRST/SECOND root and learn which still-supplied target marker they bind
 to under counterbalanced consequences. Learned source parsing and target-marker
 discovery remain later layers.
+
+Commits `54939b2`, `2c7d350`, and `4ba0cf5` added the generic ASCII-word
+primitive, rustc message-plus-containing-line projection, and direct text-edit
+authority. C10 preregistration `55bee8bf7b0e5c3544fcf3910e9abf3e60659a8c`
+froze spec
+`6ebf21e45798066f2a0e6f57d12571cdf15b5b12cba859b7e4fd28c7febb2c97`.
+Its sole spend under rustc identity `aa7c4003` permanently terminated
+`ABORT_C10_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1`; evidence commit
+`c091872` retains reservation root `772756e5` and terminal-document root
+`2b1a8d39`.
+
+The environment compiled all six original diagnostics before authentication
+rejected the real E0308 parent: rustc included a `function defined here` child
+note, but the cohort required an empty `children` list. No cue envelope,
+learning update, materialization, selected execution, or oracle opening
+occurred. C10 is immutable and must not be rerun. This is a cohort-contract
+abort, not evidence for or against source-context learning and not a coding or
+intelligence result. The next experiment must be a fresh root-distinct C10b
+with a parent-only projection that deliberately ignores child diagnostics.
 
 ### Runtime and scale
 
