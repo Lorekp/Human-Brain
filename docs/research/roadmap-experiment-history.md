@@ -1431,6 +1431,42 @@ or Rust semantics, localization, diagnosis, synthesis, debugging, transfer,
 SWE, intelligence, or external-model evidence. C11 should next learn target
 occurrence/localization rather than receive marker bindings.
 
+The first preregistered C11 occurrence-localization spend
+`30abfa336cd5451c2fba458b9b318b56c8cb6e3b`, exact spec
+`4070de660060756bdf20910e8e2dee2d857e9249c1fae0e3522ecfe5e64f02bb`,
+terminated before its first diagnostic subprocess because the production
+wrapper referenced nonexistent `rust_executor.COMPILE_TIMEOUT_SECONDS`.
+No diagnostic compile, cognition, materialization, selected execution,
+feedback, or oracle opening occurred. Evidence commit
+`876d2b87fb97a527557d4e740569c2a82acd284c` retains the terminal abort; the
+cohort remains spent and immutable.
+
+The separately preregistered, source-root-distinct C11b successor
+`51bafcefd0a6a81b5d5a49fd53b39a967b73b312`, exact spec
+`c2ab03e2d9e8824d490602219f22c6e5a01d4ef402f7d589bb89e144a9dc9636`,
+used a comprehensive 143-root exclusion: 111 inherited roots plus the stale
+C11 fake transcript's six originals and ten materializations, and committed
+C11's six originals and ten possible materializations. It terminated PASS at
+result root
+`de571775a22e39eeb7f89b73f4cec81e19b910fac24a1e2802ccb9fe1646cf11`;
+evidence commit `638407c110ba456083e1122e7bc91b2867cf5656` retains the result.
+
+Across four paired outcome-blind TRAIN lessons, both FAR/NEAR candidates came
+from the same pre-lesson checkpoint and executed before one paired feedback
+opening; exactly the passing outcome advanced memory, while the failing outcome
+was retained but never advanced. The learned checkpoint then selected two fresh
+occurrence-addressed edits, both of which executed before one shared evaluation
+oracle, with no evaluation update.
+
+C11b establishes one narrow case of consequence-conditioned selection of an
+authenticated relative preceding-`let` occurrence from parent-message and
+primary-line word cues inside a supplied 2x2 operation-relation bank. All four
+hypotheses were trained, so this is not held-out composition. Tokenization, the
+simple-`let` grammar, primary spans, FARTHER/NEARER ontology, exact-two policy,
+operation interventions, exploration, edit semantics, compiler/executor, and
+output oracle remained supplied. This is not learned Rust semantics, generic
+localization or diagnosis, synthesis, debugging, transfer, SWE, or intelligence.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing

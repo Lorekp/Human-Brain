@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after the fresh C10b
-source-context cue-learning PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-02 after the fresh C11b
+relative-occurrence selection PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C10b learns message+line target binding; localization next]
+R4  Language/software continual coding               [OPEN; C11b learns relative occurrence selection; roster/relation discovery next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -1185,8 +1185,59 @@ C10b is consequence-conditioned target binding from authenticated parent
 messages plus complete primary lines, not held-out composition, semantics,
 localization, diagnosis, synthesis, debugging, transfer, SWE, or intelligence.
 Markers, primary spans, tokenization, the operation bank, exploration answers,
-and outputs remained supplied. C11 should learn target occurrence/localization
-instead of receiving marker bindings.
+and outputs remained supplied.
+
+Commit `1ff07c2` adds the next two environment/actuation seams without changing
+the frozen learner. The generic preceding-declaration projector losslessly
+tokenizes one authenticated ASCII source and emits a complete exact-two roster
+of simple `let IDENTIFIER = ...;` declarations preceding the sole primary
+identifier span. Each occurrence retains exact source/token/span/line custody
+and one source-independent FARTHER or NEARER relation root. A thin occurrence
+text-edit authority rederives that full roster, internally binds the two
+relation roots to the source-derived identifiers, roots the roster-to-delegate
+chain, and delegates the selected operation×relation decision to the existing
+selected-only message-line authority. Callers cannot supply target markers,
+candidate lists, target spans, roles, correctness, or outputs through this
+factory.
+
+The first C11 cohort (`30abfa3`, spec `4070de66`) spent its reservation but
+terminated `ABORT_C11_RUSTC_DIAGNOSTIC_OCCURRENCE_LOCALIZATION_V1` before the
+first diagnostic compile because its production callback referenced the absent
+`rust_selected_action_executor.COMPILE_TIMEOUT_SECONDS` attribute. No roster,
+learning update, materialization, selected execution, feedback, or oracle was
+opened. Evidence commit `876d2b8` retains the terminal abort; C11 is immutable
+and must not be rerun.
+
+Fresh C11b preregistration
+`51bafcefd0a6a81b5d5a49fd53b39a967b73b312` froze spec
+`c2ab03e2d9e8824d490602219f22c6e5a01d4ef402f7d589bb89e144a9dc9636`
+over 143 prior-root exclusions, including both the stale fake-development and
+final committed C11 fixture roots. Its sole spend terminated
+`PASS_C11B_RUSTC_DIAGNOSTIC_OCCURRENCE_LOCALIZATION_V1` at result root
+`de571775a22e39eeb7f89b73f4cec81e19b910fac24a1e2802ccb9fe1646cf11`;
+evidence commit `638407c110ba456083e1122e7bc91b2867cf5656` retains the result and
+reservation.
+
+Each of four TRAIN lessons supplied only the correct operation. From the same
+pre-lesson checkpoint, the cohort executed both FARTHER and NEARER occurrence
+choices in a fixed counterbalanced order, opened feedback only after the pair,
+required exactly one pass, and advanced the main memory once with that passing
+consequence. The final memory then normally selected DECLARE×NEARER and
+REPLACE×FARTHER on two fresh diagnostics; both executions completed before one
+shared oracle and evaluation made no update. Exact work was six diagnostics,
+ten selected materializations/releases/compiles/runs, four paired TRAIN
+feedback openings, one evaluation oracle, four memory advances, and zero
+alternative materializations.
+
+C11b establishes consequence-conditioned selection of one authenticated
+relative preceding-`let` occurrence under paired same-checkpoint consequences.
+The source parser, simple-`let` grammar, exact-two roster policy, FARTHER/NEARER
+ontology, primary span, operation, edit semantics, and output
+oracle remained supplied. It is not semantic localization, diagnosis,
+synthesis, debugging, transfer, SWE, or intelligence. The next mechanism should
+remove another supplied abstraction by learning relation/roster structure or by
+supporting variable candidate counts with learned abstention, without encoding
+Rust semantics in the environment adapter.
 
 ### Runtime and scale
 

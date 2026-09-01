@@ -696,8 +696,43 @@ the supplied FIRST/SECOND cue. It is not held-out composition because all four
 hypotheses were trained. Target markers and occurrence bindings, primary spans,
 tokenization, operation bank, exploration choices, edits, and outputs remained
 supplied. It is not semantics, localization, diagnosis, synthesis, debugging,
-transfer, SWE performance, or intelligence. C11 should learn target
-occurrence/localization instead of receiving marker bindings.
+transfer, SWE performance, or intelligence. This left the supplied target
+occurrence binding as the next removable abstraction.
+
+The first preregistered C11 occurrence-localization spend permanently terminated
+`ABORT_C11_RUSTC_DIAGNOSTIC_OCCURRENCE_LOCALIZATION_V1` before its first
+diagnostic compile because the production callback referenced an executor
+timeout attribute that did not exist. No occurrence roster, learning update,
+materialization, selected execution, feedback, or oracle opening occurred.
+Evidence commit `876d2b87fb97a527557d4e740569c2a82acd284c` retains the terminal
+abort; C11 must never be rerun. This is an infrastructure-contract abort, not
+evidence for or against occurrence selection and not coding or intelligence
+evidence.
+
+A separately preregistered, root-distinct C11b successor
+(`51bafcefd0a6a81b5d5a49fd53b39a967b73b312`, spec
+`c2ab03e2d9e8824d490602219f22c6e5a01d4ef402f7d589bb89e144a9dc9636`)
+terminated `PASS_C11B_RUSTC_DIAGNOSTIC_OCCURRENCE_LOCALIZATION_V1` at result
+root `de571775a22e39eeb7f89b73f4cec81e19b910fac24a1e2802ccb9fe1646cf11`.
+Evidence commit `638407c110ba456083e1122e7bc91b2867cf5656` retains the result and
+reservation. In each of four TRAIN lessons, the correct operation was supplied
+but both FARTHER and NEARER preceding-declaration occurrences were selected and
+executed from the same pre-lesson checkpoint in counterbalanced order. Feedback
+opened only after the pair, exactly one consequence had to pass, and only that
+passing consequence advanced the main memory. The final memory then normally
+selected DECLARE×NEARER and REPLACE×FARTHER on two fresh diagnostics; both
+executions completed before one shared oracle and evaluation made no update.
+
+This is one narrow case of consequence-conditioned relative preceding-`let`
+occurrence selection under paired same-checkpoint consequences. The source
+parser and simple-`let` grammar, exact-two roster policy, FARTHER/NEARER
+ontology, primary span, operation, edit semantics, and outputs
+remained supplied. It is not learned semantic localization, diagnosis,
+synthesis, debugging, transfer, SWE performance, or intelligence. The next
+useful mechanism question is whether another supplied abstraction can be
+removed—by learning relation/roster structure or supporting variable candidate
+counts with learned abstention—without encoding Rust semantics in the
+environment adapter.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.

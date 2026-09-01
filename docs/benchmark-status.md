@@ -1027,6 +1027,42 @@ transfer, SWE, intelligence, or an external-model comparison. The next
 mechanism question is C11: learn target occurrence/localization instead of
 receiving marker bindings.
 
+C11 preregistration `30abfa336cd5451c2fba458b9b318b56c8cb6e3b` froze spec
+`4070de660060756bdf20910e8e2dee2d857e9249c1fae0e3522ecfe5e64f02bb`.
+Its sole spend terminated as an immutable pre-compile infrastructure ABORT,
+banked at evidence commit `876d2b87fb97a527557d4e740569c2a82acd284c`.
+C11 is spent and must not be retried or patched. Because the abort preceded
+compilation and cohort behavior, it is infrastructure evidence only and
+establishes no occurrence-selection or cognitive result.
+
+Fresh C11b preregistration `51bafcefd0a6a81b5d5a49fd53b39a967b73b312`
+froze spec
+`c2ab03e2d9e8824d490602219f22c6e5a01d4ef402f7d589bb89e144a9dc9636`.
+The sole spend terminated PASS at result root
+`de571775a22e39eeb7f89b73f4cec81e19b910fac24a1e2802ccb9fe1646cf11`;
+evidence commit `638407c110ba456083e1122e7bc91b2867cf5656` retains the
+immutable result.
+
+Four paired, outcome-blind TRAIN episodes each executed both FARTHER and NEARER
+candidates from the same pre-lesson checkpoint. Feedback opened only after both
+executions, exactly one candidate passed, and the main memory advanced exactly
+once from that passing consequence. On two fresh evaluations, the learned
+memory selected DECLARE×NEARER and REPLACE×FARTHER. Both selected edits executed
+before one shared oracle opening and passed; evaluation made no memory update.
+Exact work was six diagnostic compiles, six occurrence rosters containing 12
+occurrence certificates, ten selected materializations/compiles/runs, four
+TRAIN feedback openings, one evaluation-oracle opening, and zero evaluation
+updates.
+
+C11b therefore establishes one narrow case of consequence-conditioned selection
+of a relative preceding-`let` declaration occurrence. Source parsing and the
+simple-`let` grammar, exact-two roster policy, FARTHER/NEARER ontology, primary
+spans, operations, edit semantics, and expected outputs remained supplied.
+Because all four operation×relation hypotheses were trained, this is not
+held-out composition. It is not semantic localization, diagnosis, synthesis,
+generic debugging, protected transfer, SWE performance, intelligence, or an
+external-model comparison.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for
