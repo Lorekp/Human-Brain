@@ -57,32 +57,54 @@ def test_failed_winner_gets_one_authenticated_refractory_rerace() -> None:
         auxiliary_event_sha256s=(),
         passed_cell=0,
     )
-    next_activation = _activation(
-        "failure-replan-next-context",
-        ((action_a, 6), (action_b, 4)),
-    )
-
-    ordinary_successor = outcomes.advance_continual_action_outcome_memory_v1(
+    refractory_off = replans.advance_and_replan_after_failure_v1(
         parent,
         failed_outcome,
+        refractory_gate=False,
     )
-    ordinary_decision = ordinary_successor.decide(next_activation)
-    assert ordinary_decision.status == outcomes.STOP_PHYSICAL_RACE
-    assert ordinary_decision.selected_action_sha256 is None
-    assert _scores(ordinary_decision) == {action_a: 4, action_b: 4}
+    refractory_off.authenticate()
+    assert refractory_off.status == replans.REFRACTORY_OFF
+    assert refractory_off.retry_activation is not None
+    assert refractory_off.retry_activation.active_action_sha256s == (
+        initial_activation.active_action_sha256s
+    )
+    assert refractory_off.retry_activation.base_scores == initial_activation.base_scores
+    assert (
+        refractory_off.retry_activation.selection_context_sha256
+        != initial_activation.selection_context_sha256
+    )
+    assert refractory_off.pulsed_activation is None
+    assert refractory_off.decision is not None
+    assert refractory_off.decision.activation is refractory_off.retry_activation
+    assert refractory_off.decision.status == outcomes.STOP_PHYSICAL_RACE
+    assert refractory_off.decision.selected_action_sha256 is None
+    assert _scores(refractory_off.decision) == {action_a: 4, action_b: 4}
 
     result = replans.advance_and_replan_after_failure_v1(
         parent,
         failed_outcome,
-        next_activation,
     )
     result.authenticate()
-    assert result.status == replans.REPLANNED
+    repeated = replans.advance_and_replan_after_failure_v1(
+        parent,
+        failed_outcome,
+    )
+    repeated.authenticate()
+    assert result.sha256 == repeated.sha256
+    assert result.record() == repeated.record()
+    assert result.retry_activation == repeated.retry_activation
+    assert result.pulsed_activation == repeated.pulsed_activation
+    assert result.decision == repeated.decision
+
+    assert result.status == replans.REFRACTORY_RERACED
     assert result.failed_outcome is failed_outcome
-    assert result.original_activation is next_activation
-    assert result.successor.checkpoint_sha256 == ordinary_successor.checkpoint_sha256
+    assert result.retry_activation == refractory_off.retry_activation
+    assert result.successor.checkpoint_sha256 == refractory_off.successor.checkpoint_sha256
     assert result.pulsed_activation is not None
-    assert result.pulsed_activation.active_action_sha256s == (next_activation.active_action_sha256s)
+    assert result.retry_activation is not None
+    assert result.pulsed_activation.active_action_sha256s == (
+        result.retry_activation.active_action_sha256s
+    )
     assert dict(
         zip(
             result.pulsed_activation.active_action_sha256s,
@@ -96,31 +118,16 @@ def test_failed_winner_gets_one_authenticated_refractory_rerace() -> None:
     assert result.decision.selected_action_sha256 == action_b
     assert _scores(result.decision) == {action_a: 2, action_b: 4}
 
-    refractory_off = replans.advance_and_replan_after_failure_v1(
-        parent,
-        failed_outcome,
-        next_activation,
-        refractory_gate=False,
-    )
-    refractory_off.authenticate()
-    assert refractory_off.status == replans.REFRACTORY_OFF
-    assert refractory_off.successor.checkpoint_sha256 == result.successor.checkpoint_sha256
-    assert refractory_off.pulsed_activation is None
-    assert refractory_off.decision is not None
-    assert refractory_off.decision.activation is next_activation
-    assert refractory_off.decision.status == outcomes.STOP_PHYSICAL_RACE
-    assert _scores(refractory_off.decision) == {action_a: 4, action_b: 4}
-
     gate_off = replans.advance_and_replan_after_failure_v1(
         parent,
         failed_outcome,
-        next_activation,
         plasticity_gate=False,
         consequence_gate=False,
     )
     gate_off.authenticate()
     assert gate_off.status == replans.STOP_GATE_OFF
     assert gate_off.successor is parent
+    assert gate_off.retry_activation is None
     assert gate_off.pulsed_activation is None
     assert gate_off.decision is None
     assert parent.checkpoint_sha256 == parent_root
