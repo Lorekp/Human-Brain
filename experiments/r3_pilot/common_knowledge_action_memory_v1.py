@@ -51,6 +51,7 @@ MAX_SYMBOLS = 4
 MAX_CHUNKS = knowledge_projection.MAX_ADMITTED_CHUNKS
 MAX_PERSISTENT_ARRAY_BYTES = 64 * 1024
 MAX_TRAINING_CELL_STEPS = 1_000_000
+ASSOCIATION_MAX_TRAINING_CELL_STEPS = 1_800_000
 MAX_RECALL_CELL_STEPS = 200_000
 TRACE_LANES = common_events.TRACE_LANES
 OUTPUT_LANES = common_events.OUTPUT_DIGIT_LANES
@@ -78,6 +79,10 @@ _CANDIDATE_SET_NAMESPACE = b"common-knowledge-action-candidate-set-v1"
 _CHECKPOINT_NAMESPACE = b"common-knowledge-action-checkpoint-v1"
 _RECALL_NAMESPACE = b"common-knowledge-action-recall-v1"
 _CONFIG_NAMESPACE = b"common-knowledge-action-config-v1"
+_ASSOCIATION_CONFIG_NAMESPACE = b"common-knowledge-action-association-config-v1"
+_ASSOCIATION_PROJECTION_NAMESPACE = (
+    b"common-knowledge-action-association-projection-v1"
+)
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_-]{0,127}")
 
 
@@ -227,6 +232,34 @@ CONFIG_RECORD = {
 }
 CONFIG_SHA256 = _digest(_CONFIG_NAMESPACE, CONFIG_RECORD)
 
+ASSOCIATION_CONFIG_RECORD = {
+    "scope": "COMMON_KNOWLEDGE_ACTION_ASSOCIATIONS_V1",
+    "source": "one-exact-authenticated-association-projection",
+    "factor_policy": "sorted-unique-full-vocabulary",
+    "symbol_policy": "sorted-unique-opaque-qualified-symbols",
+    "association_policy": (
+        "sorted-unique-binary-factor-symbol-pairs-with-shared-factors-retained"
+    ),
+    "ambiguity_policy": "stop-on-exact-equal-maximum-support",
+    "hash_bucket_count": HASH_BUCKET_COUNT,
+    "max_symbols": MAX_SYMBOLS,
+    "max_persistent_array_bytes": MAX_PERSISTENT_ARRAY_BYTES,
+    "max_training_cell_steps": ASSOCIATION_MAX_TRAINING_CELL_STEPS,
+    "max_recall_cell_steps": MAX_RECALL_CELL_STEPS,
+    "trace_lanes": TRACE_LANES,
+    "output_lanes": OUTPUT_LANES,
+    "output_radix": OUTPUT_RADIX,
+    "final_authority": "CommonEventCells.race_output-with-explicit-equal-max-stop",
+}
+ASSOCIATION_CONFIG_SHA256 = _digest(
+    _ASSOCIATION_CONFIG_NAMESPACE, ASSOCIATION_CONFIG_RECORD
+)
+
+_TRAINING_POLICY_CAPS = {
+    CONFIG_SHA256: MAX_TRAINING_CELL_STEPS,
+    ASSOCIATION_CONFIG_SHA256: ASSOCIATION_MAX_TRAINING_CELL_STEPS,
+}
+
 PYTHON_DOCS_RECORDS_SHA256 = (
     "693f0f178a3ef4d746243a4545a0d2ac0a3b16a1dceac33e7aede48ac546bb8e"
 )
@@ -335,7 +368,7 @@ def project_knowledge_action_candidate_v1(
     return result
 
 
-def _candidate_set_sha256(
+def knowledge_action_candidate_set_sha256_v1(
     candidates: tuple[KnowledgeActionCandidateProjectionV1, ...],
 ) -> str:
     return _digest(
@@ -347,6 +380,134 @@ def _candidate_set_sha256(
             )
         ),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeActionAssociationProjectionV1:
+    """One canonical rooted factor-to-opaque-symbol association projection."""
+
+    source_sha256: str
+    graph_sha256: str
+    producer_receipt_sha256: str
+    cognition_sha256: str
+    authorization_roots: tuple[str, ...]
+    factor_vocabulary: tuple[str, ...]
+    symbol_vocabulary: tuple[str, ...]
+    associations: tuple[tuple[str, str], ...]
+    source_projection_cell_steps: int
+    provenance_roots: tuple[str, ...]
+    sha256: str
+
+    def _payload(self) -> dict[str, object]:
+        return {
+            "source_sha256": self.source_sha256,
+            "graph_sha256": self.graph_sha256,
+            "producer_receipt_sha256": self.producer_receipt_sha256,
+            "cognition_sha256": self.cognition_sha256,
+            "authorization_roots": self.authorization_roots,
+            "factor_vocabulary": self.factor_vocabulary,
+            "symbol_vocabulary": self.symbol_vocabulary,
+            "associations": self.associations,
+            "source_projection_cell_steps": self.source_projection_cell_steps,
+            "provenance_roots": self.provenance_roots,
+        }
+
+    def authenticate(self) -> None:
+        if (
+            type(self.authorization_roots) is not tuple
+            or type(self.factor_vocabulary) is not tuple
+            or type(self.symbol_vocabulary) is not tuple
+            or type(self.associations) is not tuple
+            or type(self.provenance_roots) is not tuple
+            or any(
+                type(value) is not tuple
+                or len(value) != 2
+                or type(value[0]) is not str
+                or type(value[1]) is not str
+                for value in self.associations
+            )
+        ):
+            raise KnowledgeActionMemoryError(
+                "knowledge-action association projection authentication failed"
+            )
+        upstream_roots = (
+            self.source_sha256,
+            self.graph_sha256,
+            self.producer_receipt_sha256,
+            self.cognition_sha256,
+            *self.authorization_roots,
+        )
+        pair_factors = tuple(value[0] for value in self.associations)
+        pair_symbols = tuple(value[1] for value in self.associations)
+        if (
+            not all(_valid_sha256(value) for value in upstream_roots)
+            or len(set(upstream_roots)) != len(upstream_roots)
+            or not self.authorization_roots
+            or self.authorization_roots != tuple(sorted(set(self.authorization_roots)))
+            or not self.factor_vocabulary
+            or self.factor_vocabulary != tuple(sorted(set(self.factor_vocabulary)))
+            or any(
+                type(value) is not str
+                or not value
+                or "\x00" in value
+                or len(value.encode("utf-8")) > 512
+                for value in self.factor_vocabulary
+            )
+            or not 1 <= len(self.symbol_vocabulary) <= MAX_SYMBOLS
+            or self.symbol_vocabulary != tuple(sorted(set(self.symbol_vocabulary)))
+            or any(
+                type(value) is not str or _canonical_symbol(value) != value
+                for value in self.symbol_vocabulary
+            )
+            or not self.associations
+            or self.associations != tuple(sorted(set(self.associations)))
+            or not set(pair_factors).issubset(self.factor_vocabulary)
+            or set(pair_symbols) != set(self.symbol_vocabulary)
+            or type(self.source_projection_cell_steps) is not int
+            or self.source_projection_cell_steps < 0
+            or self.provenance_roots != tuple(sorted(set(self.provenance_roots)))
+            or any(not _valid_sha256(value) for value in self.provenance_roots)
+            or not set(upstream_roots).issubset(self.provenance_roots)
+            or self.sha256 != _digest(_ASSOCIATION_PROJECTION_NAMESPACE, self._payload())
+        ):
+            raise KnowledgeActionMemoryError(
+                "knowledge-action association projection authentication failed"
+            )
+
+
+def make_knowledge_action_association_projection_v1(
+    *,
+    source_sha256: str,
+    graph_sha256: str,
+    producer_receipt_sha256: str,
+    cognition_sha256: str,
+    authorization_roots: tuple[str, ...],
+    factor_vocabulary: tuple[str, ...],
+    symbol_vocabulary: tuple[str, ...],
+    associations: tuple[tuple[str, str], ...],
+    source_projection_cell_steps: int,
+    provenance_roots: tuple[str, ...],
+) -> KnowledgeActionAssociationProjectionV1:
+    """Build one immutable association projection through its public seam."""
+
+    payload = {
+        "source_sha256": source_sha256,
+        "graph_sha256": graph_sha256,
+        "producer_receipt_sha256": producer_receipt_sha256,
+        "cognition_sha256": cognition_sha256,
+        "authorization_roots": authorization_roots,
+        "factor_vocabulary": factor_vocabulary,
+        "symbol_vocabulary": symbol_vocabulary,
+        "associations": associations,
+        "source_projection_cell_steps": source_projection_cell_steps,
+        "provenance_roots": provenance_roots,
+    }
+    result = KnowledgeActionAssociationProjectionV1(
+        **payload,
+        sha256=_digest(_ASSOCIATION_PROJECTION_NAMESPACE, payload),
+    )
+    result.authenticate()
+    return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -539,8 +700,10 @@ class FrozenCommonKnowledgeActionMemoryV1:
 
     __slots__ = (
         "_checkpoint_sha256",
+        "_config_sha256",
         "_factor_buckets",
         "_factor_cells",
+        "_max_training_cell_steps",
         "_provenance_roots",
         "_summary",
         "_symbol_cells",
@@ -558,6 +721,8 @@ class FrozenCommonKnowledgeActionMemoryV1:
         provenance_roots: np.ndarray,
         symbol_names: tuple[str, ...],
         summary: KnowledgeActionTrainingSummaryV1,
+        config_sha256: str,
+        max_training_cell_steps: int,
         construction_token: object,
     ) -> None:
         if construction_token is not _CONSTRUCTION_TOKEN:
@@ -569,6 +734,8 @@ class FrozenCommonKnowledgeActionMemoryV1:
         self._provenance_roots = _freeze_array(provenance_roots, ROOT_DTYPE)
         self._symbol_names = symbol_names
         self._summary = summary
+        self._config_sha256 = config_sha256
+        self._max_training_cell_steps = max_training_cell_steps
         self._checkpoint_sha256 = _checkpoint_sha256(
             summary=summary,
             symbol_names=symbol_names,
@@ -655,9 +822,12 @@ class FrozenCommonKnowledgeActionMemoryV1:
         trainable_bytes = self._weights.nbytes
         provenance_bytes = self._provenance_roots.nbytes
         summary = self._summary
+        expected_training_cap = _TRAINING_POLICY_CAPS.get(self._config_sha256)
         if (
             persistent_bytes > MAX_PERSISTENT_ARRAY_BYTES
-            or summary.config_sha256 != CONFIG_SHA256
+            or expected_training_cap is None
+            or self._max_training_cell_steps != expected_training_cap
+            or summary.config_sha256 != self._config_sha256
             or summary.distinct_source_factor_count != distinct_source_factors
             or summary.occupied_factor_bucket_count != occupied_buckets
             or summary.factor_hash_collision_count
@@ -667,7 +837,7 @@ class FrozenCommonKnowledgeActionMemoryV1:
             or summary.trainable_state_bytes != trainable_bytes
             or summary.provenance_state_bytes != provenance_bytes
             or summary.checkpoint_array_bytes != persistent_bytes
-            or summary.training_cell_steps > MAX_TRAINING_CELL_STEPS
+            or summary.training_cell_steps > self._max_training_cell_steps
             or _checkpoint_sha256(
                 summary=summary,
                 symbol_names=self._symbol_names,
@@ -711,7 +881,9 @@ class FrozenCommonKnowledgeActionMemoryV1:
             raise KnowledgeActionMemoryError(
                 "candidate projections must be non-empty and unique"
             )
-        candidate_set_sha256 = _candidate_set_sha256(canonical_candidates)
+        candidate_set_sha256 = knowledge_action_candidate_set_sha256_v1(
+            canonical_candidates
+        )
 
         matched_factor_rows: list[int] = []
         query_buckets: list[int] = []
@@ -789,6 +961,12 @@ class FrozenCommonKnowledgeActionMemoryV1:
             tuple(int(value) for value in row) for row in raw_scores
         )
         output = _CELLS.race_output(physical_raw_scores)
+        positive_support = tuple(int(value) for value in ticks if int(value) > 0)
+        equal_maximum_support = bool(
+            self._config_sha256 == ASSOCIATION_CONFIG_SHA256
+            and positive_support
+            and positive_support.count(max(positive_support)) > 1
+        )
 
         selected_symbol: str | None = None
         selected_candidate_id: str | None = None
@@ -801,9 +979,12 @@ class FrozenCommonKnowledgeActionMemoryV1:
             status = STOP_FACTOR_COLLISION
         elif not matched_factor_rows:
             status = STOP_NO_MATCHED_FACTOR
-        elif output.decision != "TOKEN" or output.token not in candidate_rows:
-            status = STOP_PHYSICAL_RACE
-        elif int(ticks[output.token]) <= 0:
+        elif (
+            equal_maximum_support
+            or output.decision != "TOKEN"
+            or output.token not in candidate_rows
+            or int(ticks[output.token]) <= 0
+        ):
             status = STOP_PHYSICAL_RACE
         else:
             status = RECALLED
@@ -1032,6 +1213,132 @@ def fit_common_knowledge_action_memory_v1(
         provenance_roots=provenance_roots,
         symbol_names=symbol_names,
         summary=summary,
+        config_sha256=CONFIG_SHA256,
+        max_training_cell_steps=MAX_TRAINING_CELL_STEPS,
+        construction_token=_CONSTRUCTION_TOKEN,
+    )
+
+
+def fit_common_knowledge_action_associations_v1(
+    projection: KnowledgeActionAssociationProjectionV1,
+    *,
+    plasticity_gate: bool = True,
+) -> FrozenCommonKnowledgeActionMemoryV1:
+    """Fit one exact rooted factor/symbol association projection."""
+
+    if type(projection) is not KnowledgeActionAssociationProjectionV1:
+        raise TypeError("exact KnowledgeActionAssociationProjectionV1 required")
+    if type(plasticity_gate) is not bool:
+        raise TypeError("plasticity_gate must be one exact boolean")
+    projection.authenticate()
+
+    factor_names = projection.factor_vocabulary
+    symbol_names = projection.symbol_vocabulary
+    factor_frames = tuple(
+        _CELLS.project(_event_bytes(_FACTOR_EVENT_NAMESPACE, value)) for value in factor_names
+    )
+    factor_cells = np.asarray(tuple(frame.trace_cells for frame in factor_frames), dtype=CELL_DTYPE)
+    factor_buckets = np.asarray(
+        tuple(_factor_bucket(frame.trace_cells) for frame in factor_frames),
+        dtype=FACTOR_BUCKET_DTYPE,
+    )
+    factor_index = {factor: index for index, factor in enumerate(factor_names)}
+    symbol_frames = tuple(
+        _CELLS.project(_event_bytes(_SYMBOL_EVENT_NAMESPACE, value)) for value in symbol_names
+    )
+    symbol_cells = np.asarray(tuple(frame.trace_cells for frame in symbol_frames), dtype=CELL_DTYPE)
+    if len({tuple(row) for row in symbol_cells.tolist()}) != len(symbol_names):
+        raise KnowledgeActionMemoryError("physical symbol projection collided")
+
+    symbol_index = {value: index for index, value in enumerate(symbol_names)}
+    weights = np.zeros((len(factor_names), len(symbol_names)), dtype=WEIGHT_DTYPE)
+    if plasticity_gate:
+        for factor, symbol in projection.associations:
+            weights[factor_index[factor], symbol_index[symbol]] = 1
+    association_updates = len(projection.associations) if plasticity_gate else 0
+    associated_factors = (
+        len({factor for factor, _symbol in projection.associations}) if plasticity_gate else 0
+    )
+
+    provenance_values = tuple(
+        sorted(
+            {
+                projection.source_sha256,
+                projection.sha256,
+                projection.graph_sha256,
+                projection.producer_receipt_sha256,
+                projection.cognition_sha256,
+                *projection.authorization_roots,
+                *projection.provenance_roots,
+            }
+        )
+    )
+    provenance_roots = (
+        np.frombuffer(
+            b"".join(bytes.fromhex(value) for value in provenance_values),
+            dtype=ROOT_DTYPE,
+        )
+        .reshape((-1, 32))
+        .copy()
+    )
+    projection_steps = (
+        projection.source_projection_cell_steps
+        + sum(frame.work.total for frame in factor_frames)
+        + sum(frame.work.total for frame in symbol_frames)
+        + len(factor_names) * TRACE_LANES
+    )
+    training_steps = projection_steps + association_updates
+    arrays = (
+        ("factor-buckets", factor_buckets),
+        ("factor-cells", factor_cells),
+        ("symbol-cells", symbol_cells),
+        ("factor-symbol-weights", weights),
+        ("provenance-roots", provenance_roots),
+    )
+    persistent_bytes = sum(value.nbytes for _, value in arrays)
+    if persistent_bytes > MAX_PERSISTENT_ARRAY_BYTES:
+        raise KnowledgeActionMemoryError("persistent array capacity exceeded")
+    if training_steps > ASSOCIATION_MAX_TRAINING_CELL_STEPS:
+        raise KnowledgeActionMemoryError("training cell-step capacity exceeded")
+
+    summary = KnowledgeActionTrainingSummaryV1(
+        config_sha256=ASSOCIATION_CONFIG_SHA256,
+        records_sha256=projection.source_sha256,
+        projection_sha256=projection.sha256,
+        graph_sha256=projection.graph_sha256,
+        producer_receipt_sha256=projection.producer_receipt_sha256,
+        distinct_source_factor_count=len(factor_names),
+        occupied_factor_bucket_count=len(set(int(value) for value in factor_buckets)),
+        factor_hash_collision_count=len(factor_names)
+        - len(set(int(value) for value in factor_buckets)),
+        hash_bucket_count=HASH_BUCKET_COUNT,
+        symbol_count=len(symbol_names),
+        admitted_chunk_count=0,
+        associated_chunk_count=associated_factors,
+        association_update_count=association_updates,
+        projection_cell_steps=projection_steps,
+        synaptic_learning_cell_steps=association_updates,
+        training_cell_steps=training_steps,
+        trainable_state_bytes=weights.nbytes,
+        provenance_state_bytes=provenance_roots.nbytes,
+        checkpoint_array_bytes=persistent_bytes,
+        plasticity_gate=plasticity_gate,
+        checkpoint_sha256="",
+    )
+    checkpoint = _checkpoint_sha256(summary=summary, symbol_names=symbol_names, arrays=arrays)
+    summary = KnowledgeActionTrainingSummaryV1(
+        **{**asdict(summary), "checkpoint_sha256": checkpoint}
+    )
+    return FrozenCommonKnowledgeActionMemoryV1(
+        factor_buckets=factor_buckets,
+        factor_cells=factor_cells,
+        symbol_cells=symbol_cells,
+        weights=weights,
+        provenance_roots=provenance_roots,
+        symbol_names=symbol_names,
+        summary=summary,
+        config_sha256=ASSOCIATION_CONFIG_SHA256,
+        max_training_cell_steps=ASSOCIATION_MAX_TRAINING_CELL_STEPS,
         construction_token=_CONSTRUCTION_TOKEN,
     )
 
@@ -1088,7 +1395,7 @@ class KnowledgePatchEnvironmentV1:
                 "patch candidates must map exactly to acquired symbols"
             )
         self._checkpoint_sha256 = memory.checkpoint_sha256
-        self._candidate_set_sha256 = _candidate_set_sha256(
+        self._candidate_set_sha256 = knowledge_action_candidate_set_sha256_v1(
             tuple(value.projection for value in values)
         )
         self._candidates = values
@@ -1293,9 +1600,12 @@ def _main() -> None:
 
 
 __all__ = [
+    "ASSOCIATION_CONFIG_SHA256",
+    "ASSOCIATION_MAX_TRAINING_CELL_STEPS",
     "CLAIM_BOUNDARY",
     "CONFIG_SHA256",
     "FrozenCommonKnowledgeActionMemoryV1",
+    "KnowledgeActionAssociationProjectionV1",
     "KnowledgeActionCandidateProjectionV1",
     "KnowledgeActionMemoryError",
     "KnowledgeActionPilotResultV1",
@@ -1311,7 +1621,10 @@ __all__ = [
     "STOP_FACTOR_COLLISION",
     "STOP_NO_MATCHED_FACTOR",
     "STOP_PHYSICAL_RACE",
+    "fit_common_knowledge_action_associations_v1",
     "fit_common_knowledge_action_memory_v1",
+    "knowledge_action_candidate_set_sha256_v1",
+    "make_knowledge_action_association_projection_v1",
     "project_knowledge_action_candidate_v1",
     "project_knowledge_action_task_v1",
     "run_knowledge_action_pilot_v1",
