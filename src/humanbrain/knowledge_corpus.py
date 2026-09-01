@@ -8,15 +8,14 @@ outside its claim.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from hashlib import sha256
 import json
-from pathlib import Path, PurePosixPath
 import re
 import unicodedata
-from typing import Mapping
+from collections.abc import Mapping
+from dataclasses import asdict, dataclass
+from hashlib import sha256
+from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
-
 
 MANIFEST_SCHEMA = "humanbrain.knowledge-corpus-manifest.v1"
 DENY_MANIFEST_SCHEMA = "humanbrain.benchmark-deny-manifest.v1"
@@ -204,6 +203,11 @@ class KnowledgeCorpus:
     receipt: KnowledgeCorpusReceipt
     chunks: tuple[KnowledgeChunkRecord, ...]
 
+    def authenticate(self) -> None:
+        """Recompute every receipt invariant recoverable from immutable output."""
+
+        _authenticate_knowledge_corpus(self)
+
     def canonical_manifest_bytes(self) -> bytes:
         return _canonical_json_bytes(
             {"record_type": "manifest", "receipt": asdict(self.receipt)}
@@ -259,6 +263,213 @@ def _normalize_text(text: str) -> str:
 def _tokenish(text: str) -> int:
     size = len(text.encode("utf-8"))
     return (size + 3) // 4
+
+
+def _is_sha256(value: object) -> bool:
+    return type(value) is str and _SHA256.fullmatch(value) is not None
+
+
+def _authenticate_knowledge_corpus(corpus: KnowledgeCorpus) -> None:
+    if type(corpus) is not KnowledgeCorpus:
+        raise TypeError("exact immutable KnowledgeCorpus required")
+    if type(corpus.receipt) is not KnowledgeCorpusReceipt:
+        raise TypeError("exact immutable KnowledgeCorpusReceipt required")
+    if type(corpus.chunks) is not tuple or any(
+        type(chunk) is not KnowledgeChunkRecord for chunk in corpus.chunks
+    ):
+        raise TypeError("knowledge corpus chunks must be exact immutable records")
+
+    receipt = corpus.receipt
+    adapter_root = _digest({"adapter_version": ADAPTER_VERSION})
+    receipt_roots = (
+        receipt.adapter_version_sha256,
+        receipt.input_manifest_sha256,
+        receipt.benchmark_deny_manifest_sha256,
+        receipt.records_sha256,
+    )
+    if (
+        receipt.schema != OUTPUT_SCHEMA
+        or receipt.adapter_version != ADAPTER_VERSION
+        or receipt.adapter_version_sha256 != adapter_root
+        or any(not _is_sha256(value) for value in receipt_roots)
+        or type(receipt.sources) is not tuple
+        or any(type(source) is not KnowledgeSourceReceipt for source in receipt.sources)
+        or any(
+            type(value) is not int or value < 0
+            for value in (
+                receipt.raw_bytes,
+                receipt.tokenish,
+                receipt.chunk_count,
+                receipt.exact_dedup_cluster_count,
+            )
+        )
+    ):
+        raise KnowledgeCorpusIntegrityError("knowledge corpus receipt header differs")
+    if (
+        receipt.chunk_count != len(corpus.chunks)
+        or receipt.records_sha256 != _digest([asdict(chunk) for chunk in corpus.chunks])
+        or len({chunk.chunk_id for chunk in corpus.chunks}) != len(corpus.chunks)
+    ):
+        raise KnowledgeCorpusIntegrityError("knowledge corpus records root differs")
+
+    clusters: dict[str, list[KnowledgeChunkRecord]] = {}
+    for chunk in corpus.chunks:
+        text_bytes = chunk.text.encode("utf-8")
+        root_fields = (
+            chunk.chunk_id,
+            chunk.raw_sha256,
+            chunk.normalized_sha256,
+            chunk.source_file_raw_sha256,
+            chunk.source_file_normalized_sha256,
+            chunk.attribution_sha256,
+            chunk.input_manifest_sha256,
+            chunk.adapter_version_sha256,
+            chunk.benchmark_deny_manifest_sha256,
+            chunk.exact_dedup_cluster_sha256,
+            chunk.exact_dedup_representative_chunk_id,
+        )
+        integer_fields = (
+            chunk.ordinal,
+            chunk.raw_bytes,
+            chunk.normalized_bytes,
+            chunk.tokenish,
+            chunk.exact_dedup_cluster_size,
+        )
+        expected_cluster = _digest(
+            {
+                "kind": chunk.kind,
+                "language": chunk.language,
+                "normalized_sha256": chunk.normalized_sha256,
+            }
+        )
+        expected_chunk_id = _digest(
+            {
+                "adapter_version_sha256": chunk.adapter_version_sha256,
+                "benchmark_deny_manifest_sha256": (
+                    chunk.benchmark_deny_manifest_sha256
+                ),
+                "input_manifest_sha256": chunk.input_manifest_sha256,
+                "source_id": chunk.source_id,
+                "path": chunk.path,
+                "ordinal": chunk.ordinal,
+                "kind": chunk.kind,
+                "language": chunk.language,
+                "raw_sha256": chunk.raw_sha256,
+                "normalized_sha256": chunk.normalized_sha256,
+            }
+        )
+        if (
+            chunk.schema != CHUNK_SCHEMA
+            or any(not _is_sha256(value) for value in root_fields)
+            or any(type(value) is not int or value < 0 for value in integer_fields)
+            or chunk.raw_bytes < 1
+            or chunk.normalized_bytes != len(text_bytes)
+            or chunk.tokenish != _tokenish(chunk.text)
+            or chunk.text != _normalize_text(chunk.text)
+            or chunk.normalized_sha256 != sha256(text_bytes).hexdigest()
+            or chunk.input_manifest_sha256 != receipt.input_manifest_sha256
+            or chunk.adapter_version_sha256 != receipt.adapter_version_sha256
+            or chunk.benchmark_deny_manifest_sha256
+            != receipt.benchmark_deny_manifest_sha256
+            or chunk.exact_dedup_cluster_sha256 != expected_cluster
+            or chunk.chunk_id != expected_chunk_id
+        ):
+            raise KnowledgeCorpusIntegrityError("knowledge chunk receipt differs")
+        clusters.setdefault(chunk.exact_dedup_cluster_sha256, []).append(chunk)
+
+    for members in clusters.values():
+        representative = members[0].chunk_id
+        if any(
+            member.exact_dedup_cluster_size != len(members)
+            or member.exact_dedup_representative_chunk_id != representative
+            for member in members
+        ):
+            raise KnowledgeCorpusIntegrityError("exact-dedup receipt differs")
+    if receipt.exact_dedup_cluster_count != len(clusters):
+        raise KnowledgeCorpusIntegrityError("exact-dedup cluster count differs")
+
+    source_ids: set[str] = set()
+    ordered_chunks: list[KnowledgeChunkRecord] = []
+    for source in receipt.sources:
+        if (
+            source.source_id in source_ids
+            or type(source.files) is not tuple
+            or not source.files
+            or any(type(file) is not KnowledgeFileReceipt for file in source.files)
+            or type(source.raw_bytes) is not int
+            or source.raw_bytes < 0
+            or type(source.tokenish) is not int
+            or source.tokenish < 0
+            or not _is_sha256(source.attribution_sha256)
+        ):
+            raise KnowledgeCorpusIntegrityError("knowledge source receipt differs")
+        source_ids.add(source.source_id)
+        source_chunks = tuple(
+            chunk for chunk in corpus.chunks if chunk.source_id == source.source_id
+        )
+        if not source_chunks or any(
+            chunk.canonical_url != source.canonical_url
+            or chunk.upstream_revision != source.upstream_revision
+            or chunk.license_spdx != source.license_spdx
+            or chunk.license_evidence_url != source.license_evidence_url
+            or chunk.attribution_sha256 != source.attribution_sha256
+            or chunk.provenance_confidence != source.provenance_confidence
+            for chunk in source_chunks
+        ):
+            raise KnowledgeCorpusIntegrityError("knowledge source metadata differs")
+
+        file_keys: set[tuple[str, str]] = set()
+        for file in source.files:
+            key = (file.source_id, file.path)
+            file_chunks = tuple(
+                chunk
+                for chunk in source_chunks
+                if chunk.source_id == file.source_id and chunk.path == file.path
+            )
+            if (
+                key in file_keys
+                or file.source_id != source.source_id
+                or not file_chunks
+                or type(file.raw_bytes) is not int
+                or file.raw_bytes < 0
+                or type(file.normalized_bytes) is not int
+                or file.normalized_bytes < 0
+                or type(file.tokenish) is not int
+                or file.tokenish < 0
+                or type(file.chunk_count) is not int
+                or file.chunk_count != len(file_chunks)
+                or not _is_sha256(file.raw_sha256)
+                or not _is_sha256(file.normalized_sha256)
+                or tuple(chunk.ordinal for chunk in file_chunks)
+                != tuple(range(len(file_chunks)))
+                or any(
+                    chunk.split != file.split
+                    or chunk.chapter != file.chapter
+                    or chunk.symbol != file.symbol
+                    or chunk.source_file_raw_sha256 != file.raw_sha256
+                    or chunk.source_file_normalized_sha256 != file.normalized_sha256
+                    for chunk in file_chunks
+                )
+                or file.raw_bytes < sum(chunk.raw_bytes for chunk in file_chunks)
+                or file.normalized_bytes
+                < sum(chunk.normalized_bytes for chunk in file_chunks)
+            ):
+                raise KnowledgeCorpusIntegrityError("knowledge file receipt differs")
+            file_keys.add(key)
+            ordered_chunks.extend(file_chunks)
+        if (
+            source.raw_bytes != sum(file.raw_bytes for file in source.files)
+            or source.tokenish != sum(file.tokenish for file in source.files)
+        ):
+            raise KnowledgeCorpusIntegrityError("knowledge source totals differ")
+
+    if (
+        tuple(ordered_chunks) != corpus.chunks
+        or source_ids != {chunk.source_id for chunk in corpus.chunks}
+        or receipt.raw_bytes != sum(source.raw_bytes for source in receipt.sources)
+        or receipt.tokenish != sum(source.tokenish for source in receipt.sources)
+    ):
+        raise KnowledgeCorpusIntegrityError("knowledge corpus coverage differs")
 
 
 def _validate_url(value: str, field: str) -> str:
@@ -321,7 +532,11 @@ def _validate_deny_manifest(deny: BenchmarkDenyManifest) -> tuple[set[str], set[
     hashes = set(deny.sha256)
     for value in hashes:
         _validate_sha256(value, "benchmark deny hash")
-    if len(paths) != len(deny.paths) or len(domains) != len(deny.domains) or len(hashes) != len(deny.sha256):
+    if (
+        len(paths) != len(deny.paths)
+        or len(domains) != len(deny.domains)
+        or len(hashes) != len(deny.sha256)
+    ):
         raise KnowledgeCorpusPolicyError("benchmark deny manifest contains duplicates")
     return paths, domains, hashes
 
@@ -752,6 +967,7 @@ def build_local_knowledge_corpus(
 
 __all__ = [
     "ADAPTER_VERSION",
+    "PERMISSIVE_LICENSE_SPDX",
     "BenchmarkDenyManifest",
     "KnowledgeChunkRecord",
     "KnowledgeCorpus",
@@ -763,6 +979,5 @@ __all__ = [
     "KnowledgeCorpusPolicyError",
     "KnowledgeFileSpec",
     "KnowledgeSourceSpec",
-    "PERMISSIVE_LICENSE_SPDX",
     "build_local_knowledge_corpus",
 ]

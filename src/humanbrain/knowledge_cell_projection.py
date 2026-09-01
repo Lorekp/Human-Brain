@@ -9,19 +9,19 @@ authenticated corpus-record digest.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from hashlib import sha256
 import json
 import re
+from dataclasses import asdict, dataclass
+from hashlib import sha256
 
 from experiments.r3_pilot import common_rooted_structured_event_graph_v1 as structured_graph
+
+from humanbrain.knowledge_consolidation import lexical_factors_from_text_v1
 from humanbrain.knowledge_corpus import (
-    CHUNK_SCHEMA,
     KnowledgeChunkRecord,
     KnowledgeCorpus,
-    KnowledgeCorpusReceipt,
+    KnowledgeCorpusError,
 )
-
 
 SCHEMA = "humanbrain.knowledge-cell-projection.v1"
 MAX_ADMITTED_GROUPS = 8
@@ -33,9 +33,6 @@ MAX_SYMBOLS_PER_CHUNK = 2
 MAX_ADMITTED_UTF8_BYTES = 16 * 1024
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
-_LEXICAL_TOKEN = re.compile(
-    r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*"
-)
 _SIGNATURE = re.compile(
     r"^\s*(?P<symbol>[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+)\s*\("
 )
@@ -75,21 +72,6 @@ def _valid_sha256(value: object) -> bool:
 
 def _payload16(namespace: bytes, value: object) -> bytes:
     return sha256(namespace + b"\0" + _canonical_json(value)).digest()[:16]
-
-
-def lexical_factors_from_text_v1(text: str) -> tuple[str, ...]:
-    """Return every distinct ASCII identifier factor in canonical order."""
-
-    if type(text) is not str:
-        raise TypeError("knowledge text must be one exact string")
-    factors: set[str] = set()
-    for match in _LEXICAL_TOKEN.finditer(text):
-        token = match.group(0).casefold()
-        factors.add(f"tok:{token}")
-        for part in re.split(r"[._]+", token):
-            if part:
-                factors.add(f"tok:{part}")
-    return tuple(sorted(factors))
 
 
 def document_symbols_from_text_v1(text: str) -> tuple[str, ...]:
@@ -311,9 +293,12 @@ def _build_graph(
             },
         ),
     )
-    incidences = ((0, 1, 0),) + tuple(
-        (1, len(carrier_payloads) + ordinal, ordinal)
-        for ordinal in range(len(chunks))
+    incidences = (
+        (0, 1, 0),
+        *(
+            (1, len(carrier_payloads) + ordinal, ordinal)
+            for ordinal in range(len(chunks))
+        ),
     )
     return structured_graph.project_rooted_structured_event_graph_v1(
         event_payloads,
@@ -466,26 +451,12 @@ class KnowledgeCellProjectionV1:
 
 
 def _authenticate_corpus(corpus: KnowledgeCorpus) -> None:
-    if type(corpus) is not KnowledgeCorpus:
-        raise TypeError("exact immutable KnowledgeCorpus required")
-    if type(corpus.receipt) is not KnowledgeCorpusReceipt:
-        raise TypeError("exact immutable KnowledgeCorpusReceipt required")
-    if type(corpus.chunks) is not tuple:
-        raise TypeError("knowledge corpus chunks must be one exact tuple")
-    if any(type(chunk) is not KnowledgeChunkRecord for chunk in corpus.chunks):
-        raise TypeError("exact immutable KnowledgeChunkRecord values required")
-    records_sha256 = sha256(
-        _canonical_json([asdict(chunk) for chunk in corpus.chunks], newline=True)
-    ).hexdigest()
-    if (
-        corpus.receipt.records_sha256 != records_sha256
-        or corpus.receipt.chunk_count != len(corpus.chunks)
-        or any(chunk.schema != CHUNK_SCHEMA for chunk in corpus.chunks)
-        or len({chunk.chunk_id for chunk in corpus.chunks}) != len(corpus.chunks)
-    ):
+    try:
+        corpus.authenticate()
+    except KnowledgeCorpusError as error:
         raise KnowledgeCellProjectionError(
-            "knowledge corpus records_sha256 authentication failed"
-        )
+            "knowledge corpus authentication failed"
+        ) from error
 
 
 def project_knowledge_corpus_to_cells_v1(
@@ -601,14 +572,14 @@ def project_knowledge_corpus_to_cells_v1(
 
 
 __all__ = [
-    "KnowledgeCellProjectionError",
-    "KnowledgeCellProjectionV1",
-    "MAX_ADMITTED_GROUPS",
     "MAX_ADMITTED_CHUNKS",
+    "MAX_ADMITTED_GROUPS",
     "MAX_QUERY_FACTORS",
     "MAX_SOURCE_FACTORS_PER_GROUP",
-    "ProjectedKnowledgeChunkV1",
     "SCHEMA",
+    "KnowledgeCellProjectionError",
+    "KnowledgeCellProjectionV1",
+    "ProjectedKnowledgeChunkV1",
     "document_symbols_from_text_v1",
     "lexical_factors_from_text_v1",
     "project_knowledge_corpus_to_cells_v1",
