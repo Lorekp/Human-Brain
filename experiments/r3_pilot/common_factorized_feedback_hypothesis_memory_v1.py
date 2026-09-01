@@ -323,7 +323,7 @@ class FactorizedHypothesisScoreV1:
             or type(self.axis_net_scores) is not tuple
             or len(self.axis_net_scores) != 2
             or self.axis_net_scores != expected_net
-            or self.total_score != min(MAX_OUTPUT_SCORE, sum(expected_net))
+            or self.total_score != sum(expected_net)
             or self.sha256 != _digest(_SCORE_NAMESPACE, self.record(include_sha256=False))
         ):
             raise FactorizedFeedbackHypothesisMemoryError(
@@ -353,7 +353,7 @@ def _seal_score(
         "axis_excitatory_ticks": excitatory,
         "axis_inhibitory_ticks": inhibitory,
         "axis_net_scores": net,
-        "total_score": min(MAX_OUTPUT_SCORE, sum(net)),
+        "total_score": sum(net),
     }
     result = FactorizedHypothesisScoreV1(
         **payload,
@@ -367,6 +367,16 @@ def _seal_score(
     )
     result.authenticate()
     return result
+
+
+def _physical_base_scores(
+    scores: tuple[FactorizedHypothesisScoreV1, ...],
+) -> tuple[int, ...]:
+    """Fit raw two-axis totals into one physical race without changing the maximum."""
+
+    raw = tuple(score.total_score for score in scores)
+    overflow = max(0, max(raw, default=0) - MAX_OUTPUT_SCORE)
+    return tuple(max(0, score - overflow) for score in raw)
 
 
 def _race_context_sha256(
@@ -470,7 +480,7 @@ class FactorizedFeedbackDecisionV1:
                 "factorized decision bank or gates changed"
             )
         if self.exploration_hypothesis_sha256 is None:
-            expected_base = tuple(value.total_score for value in self.hypothesis_scores)
+            expected_base = _physical_base_scores(self.hypothesis_scores)
         else:
             expected_base = tuple(
                 TONIC_SCORE if root == self.exploration_hypothesis_sha256 else 0
@@ -798,7 +808,7 @@ def _route_state(
         )
     score_rows = tuple(scores)
     if exploration_hypothesis_sha256 is None:
-        base_scores = tuple(value.total_score for value in score_rows)
+        base_scores = _physical_base_scores(score_rows)
     else:
         base_scores = tuple(
             TONIC_SCORE if root == exploration_hypothesis_sha256 else 0 for root in expected_active

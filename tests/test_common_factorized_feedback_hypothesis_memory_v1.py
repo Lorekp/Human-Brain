@@ -3,6 +3,7 @@ from __future__ import annotations
 from hashlib import sha256
 
 import pytest
+from experiments.r3_pilot import common_factorized_feedback_hypothesis_memory_v1 as memory_module
 from experiments.r3_pilot.common_continual_action_outcome_memory_v1 import (
     EXPLORATION_READY,
     READY,
@@ -80,6 +81,41 @@ def _outcome(
         feedback_sha256=feedback_sha256 or _root(f"feedback:{tag}"),
         passed_cell=passed_cell,
     )
+
+
+def test_two_axis_totals_are_normalized_for_one_physical_race_without_clipping() -> None:
+    bank = tuple(_bank().values())
+
+    def score(
+        hypothesis: FactorizedHypothesisV1,
+        axis_zero_ticks: int,
+        axis_one_ticks: int,
+    ):
+        excitatory = ((1,) * axis_zero_ticks, (1,) * axis_one_ticks)
+        return memory_module._seal_score(
+            hypothesis=hypothesis,
+            excitatory=excitatory,
+            inhibitory=(
+                (0,) * axis_zero_ticks,
+                (0,) * axis_one_ticks,
+            ),
+        )
+
+    scores = (
+        score(bank[0], 13, 8),
+        score(bank[1], 13, 6),
+        score(bank[2], 5, 4),
+        score(bank[3], 4, 3),
+    )
+
+    assert tuple(value.axis_net_scores for value in scores) == (
+        (26, 16),
+        (26, 12),
+        (10, 8),
+        (8, 6),
+    )
+    assert tuple(value.total_score for value in scores) == (42, 38, 18, 14)
+    assert memory_module._physical_base_scores(scores) == (36, 32, 12, 8)
 
 
 def _train_diagonal():
