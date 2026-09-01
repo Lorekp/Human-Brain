@@ -590,6 +590,28 @@ actuation gap, not the larger learning gap: reusable components and bindings
 still need to be acquired from causal experience instead of supplied by the
 host.
 
+A fresh C7 successor (`ec5280c`, spec
+`7f90c6c393cc0a7a3a731672b7b24737c58621dfa892f8dff3745538a992939d`)
+terminated `PASS_C7_RUSTC_DIAGNOSTIC_OPERATOR_ACTION_LEARNING_V1` at result root
+`71b58d208f9edc373983c44e54d7febbfda115c342895f1ae9aacf02feb2631b`.
+It replaced C6's cohort-local opaque operator components with authenticated
+concrete DECLARE/REPLACE action identities owned by a host actuator catalogue.
+Two public TRAIN consequences associated the supplied `E0425` and `E0308` cues
+with those action identities. On a fresh `E0425`/second-half diagnostic, the
+final memory normally selected the training-unexecuted DECLARE×second-target
+combination before one materialization, compile, run, and passing output check;
+evaluation did not update memory.
+
+This is one narrow case of consequence-conditioned selection of a concrete
+action identity plus compositional reuse with a supplied target component. It
+is not action or operation discovery, learned edit semantics, learned target
+markers, cue discovery, learned cue-to-axis routing, localization, diagnosis,
+synthesis, debugging, transfer, SWE performance, or intelligence. The next
+binding experiment must remove the supplied cue-axis partition with identifiable
+evidence: two diagonal lessons cannot distinguish the intended routing from a
+swapped one, so use a crossed/full grid for binding-only evidence or expand an
+axis to preserve a held-out composition.
+
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.
 

@@ -797,6 +797,48 @@ SWE, intelligence, or an external-model comparison. The open learning question
 is still how causal experience can acquire the reusable cues, operations, and
 bindings rather than receive them from the host.
 
+Commit `1f6afea1186cd0d43001db0560c4cde996534215` adds the C7 authenticated
+two-action text-edit catalogue. Its concrete DECLARE and REPLACE action roots
+are used directly as factor-axis components; callers can no longer insert a
+cohort-local opaque-component-to-operation translation through the preparation
+factory. The remaining action-root-to-operation map is an explicit host-owned
+actuator catalogue, not learned operation semantics.
+
+C7 preregistration `ec5280c7f878eeabc361a067d7ab7f146c93e3c5` froze spec
+`7f90c6c393cc0a7a3a731672b7b24737c58621dfa892f8dff3745538a992939d`
+after excluding all 51 earlier roots plus C6's three originals and three
+materialized sources. Its sole spend terminated
+`PASS_C7_RUSTC_DIAGNOSTIC_OPERATOR_ACTION_LEARNING_V1` at result root
+`71b58d208f9edc373983c44e54d7febbfda115c342895f1ae9aacf02feb2631b`,
+document root
+`ee8456ab4e51a53ef14b06b6c6cef82260629b1ecbe0713bfc9c222ba86fa092`,
+and reservation root
+`5a69ebf3b5f7663c205d82ae86593e3984543edcbddde0969bcab27b0ba193de`.
+Raw result/reservation file SHA-256 values are
+`46b69cb97fb33d54f268d79fc0d79080fae5736ba70c630ff60b05e17b0c92f6`
+and `2225849ccaeb04475a4dbaee3438cbb134b4b46f1f23b1ba9b00cbed280b44c8`;
+evidence commit `e1fead7d314580e79cbc88f362f2e0d0bb38191e` retains both.
+
+Explicit TRAIN exploration selected DECLARE×first-target and
+REPLACE×second-target, and both public consequences advanced the immutable
+factor memory. On the fresh `E0425`/second-half evaluation, the parent and
+one-lesson checkpoints stopped while the final memory normally selected the
+training-unexecuted DECLARE×second-target combination. The catalogue then
+materialized one fresh source, which compiled once, ran once, and passed; the
+outcome-off and both single-axis controls stopped, and evaluation did not
+advance memory. Exact work remained three diagnostics, three
+materializations/releases/selected compiles/runs/feedback openings, two TRAIN
+advances, zero evaluation advances, and zero alternatives.
+
+This is one narrow case of public consequences associating supplied diagnostic
+cues with concrete authenticated action identities before selected-only source
+materialization. It is not action discovery, operation-semantic learning,
+target-marker learning, cue discovery, learned cue-to-axis routing,
+localization, diagnosis, synthesis, debugging, transfer, SWE, intelligence, or
+an external-model comparison. The next mechanism should remove the supplied
+cue-axis partition with an identifiable crossed/full-grid design; two diagonal
+lessons alone cannot distinguish the desired routing from a swapped one.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for

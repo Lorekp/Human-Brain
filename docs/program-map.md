@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the fresh C6
-post-selection factor-materialization PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-01 after the fresh C7
+diagnostic-to-concrete-action PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C6 removes prebuilt repaired sources; learned cues/bindings next]
+R4  Language/software continual coding               [OPEN; C7 binds supplied diagnostics to concrete actions; unordered cue/axis learning next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -1053,6 +1053,33 @@ protected transfer, SWE, or intelligence. The next mechanism boundary remains
 learning reusable diagnostic components or their bindings from causal
 consequences rather than adding another hand-built ontology or repository
 wrapper.
+
+Commit `1f6afea` adds an authenticated DECLARE/REPLACE actuator catalogue whose
+concrete action roots are used directly as factor-axis components. C7
+preregistration `ec5280c` froze spec
+`7f90c6c393cc0a7a3a731672b7b24737c58621dfa892f8dff3745538a992939d`
+with 57 prior roots excluded. Its one spend terminated
+`PASS_C7_RUSTC_DIAGNOSTIC_OPERATOR_ACTION_LEARNING_V1` at result root
+`71b58d208f9edc373983c44e54d7febbfda115c342895f1ae9aacf02feb2631b`;
+evidence commit `e1fead7` retains the result and reservation.
+
+Two explicit positive TRAIN explorations associated `E0425` with the concrete
+DECLARE action identity and `E0308` with REPLACE while also teaching the two
+supplied target components. On a fresh `E0425`/second-half diagnostic, only the
+final memory normally selected the unexecuted DECLARE×second-target
+combination; the catalogue materialized and executed it once, it passed, all
+outcome/axis controls stopped, and evaluation advanced nothing. Exact work was
+three diagnostics, materializations, releases, selected compiles, runs, and
+feedback openings; two TRAIN advances; and zero alternatives or evaluation
+advances.
+
+C7 removes the cohort-local opaque operator-component→operation translation,
+not the host-owned actuator implementations. Diagnostic cues, their axis
+projection, correct exploration targets, target ontology/markers, and output
+oracle remain supplied. The next R4 mechanism is therefore an unordered-cue
+three-factor association that learns cue→axis/component routing from
+consequences. Its cohort must use crossed/full-grid evidence (or a larger axis):
+the old two diagonal lessons are observationally insufficient for that claim.
 
 ### Runtime and scale
 

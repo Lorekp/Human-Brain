@@ -1179,6 +1179,51 @@ edit discovery, generic source synthesis or debugging, protected transfer, SWE,
 or intelligence. The next research step remains learning reusable diagnostic
 components, operations, or bindings from causal consequences.
 
+Commit `1f6afea1186cd0d43001db0560c4cde996534215` then introduced an
+authenticated two-action text-edit catalogue. The factor memory's operator axis
+now contains the catalogue's concrete DECLARE and REPLACE action roots rather
+than opaque diagnostic-class components that a cohort-local table later maps to
+operations. The catalogue factory alone supplies the root→implementation map to
+the unchanged C6 materializer, preserving its exact selected-source executor
+authority and the already banked C6 hashes.
+
+Fresh C7 preregistration `ec5280c7f878eeabc361a067d7ab7f146c93e3c5`
+froze spec
+`7f90c6c393cc0a7a3a731672b7b24737c58621dfa892f8dff3745538a992939d`
+and three original roots disjoint from 57 exclusions: all 51 earlier roots plus
+C6's three originals and three materialized sources. Its sole spend terminated
+`PASS_C7_RUSTC_DIAGNOSTIC_OPERATOR_ACTION_LEARNING_V1` at result root
+`71b58d208f9edc373983c44e54d7febbfda115c342895f1ae9aacf02feb2631b`,
+document root
+`ee8456ab4e51a53ef14b06b6c6cef82260629b1ecbe0713bfc9c222ba86fa092`,
+and reservation root
+`5a69ebf3b5f7663c205d82ae86593e3984543edcbddde0969bcab27b0ba193de`.
+Raw result and reservation SHA-256 values were
+`46b69cb97fb33d54f268d79fc0d79080fae5736ba70c630ff60b05e17b0c92f6`
+and `2225849ccaeb04475a4dbaee3438cbb134b4b46f1f23b1ba9b00cbed280b44c8`;
+evidence commit `e1fead7d314580e79cbc88f362f2e0d0bb38191e` retains both.
+
+Normal routing stopped before each TRAIN lesson. Explicit exploration selected
+DECLARE×first-target and REPLACE×second-target, their selected sources each
+passed public output feedback, and two immutable memory advances followed. On
+the fresh `E0425`/second-half evaluation, the parent and one-lesson checkpoints
+stopped; the final checkpoint normally selected the previously unexecuted
+DECLARE×second-target combination. Its exploration-forbidden authority
+materialized one fresh source, compiled and ran it once, and passed without an
+evaluation advance. Outcome-off and both single-axis controls stopped.
+
+Exact work was three diagnostic compiles, three materializations/releases,
+three selected compiles/runs, three feedback openings, two TRAIN advances, zero
+evaluation advances, and zero alternatives. This banks consequence-conditioned
+selection of concrete authenticated action identities, not action discovery,
+operation-semantic learning, target learning, cue discovery, learned cue-axis
+routing, diagnosis, synthesis, debugging, transfer, SWE, or intelligence.
+Established contextual/factored-bandit and reward-modulated eligibility
+patterns point next to an unordered cue×action-axis×component association. Two
+diagonal episodes do not identify that routing; the successor must use crossed
+or full-grid evidence, or expand an axis if it also needs a held-out
+composition.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing
