@@ -42,6 +42,8 @@ def _lesson(
     passed: bool = True,
     task_instance_label: str | None = None,
     task_source_label: str | None = None,
+    execution_label: str | None = None,
+    public_feedback_label: str | None = None,
 ):
     task = knowledge_action.project_knowledge_action_task_v1(task_text)
     documentation_source = _root(f"documentation-source:{label}")
@@ -58,8 +60,8 @@ def _lesson(
         task_source_sha256=_root(task_source_label or f"task-source:{label}"),
         evidence=evidence,
         candidate=candidate,
-        execution_sha256=_root(f"execution:{label}"),
-        public_feedback_sha256=_root(f"feedback:{label}"),
+        execution_sha256=_root(f"execution:{execution_label or label}"),
+        public_feedback_sha256=_root(f"feedback:{public_feedback_label or label}"),
         observed_outputs=observed,
         expected_outputs=expected,
     )
@@ -222,6 +224,87 @@ def test_promotion_requires_fresh_task_projection_and_task_source() -> None:
         match="failed lesson cannot introduce",
     ):
         continual.advance_continual_documentation_action_memory_v1(promoted, failed_new_action)
+
+
+def test_same_task_fresh_attempts_authenticate_without_inflating_promotion() -> None:
+    map_action = _candidate("map_action", "map_values")
+    first = _lesson(
+        candidate=map_action,
+        task_text=MAP_A1,
+        label="same-task-first-attempt",
+        factors=("tok:map",),
+        task_instance_label="same-task-instance",
+        task_source_label="same-task-source",
+    )
+    parent = continual.start_continual_documentation_action_memory_v1(first)
+    parent_root = parent.checkpoint_sha256
+    parent_arrays = parent.checkpoint_array_sha256s
+
+    successor = continual.advance_continual_documentation_action_memory_v1(
+        parent,
+        _lesson(
+            candidate=map_action,
+            task_text=MAP_A1,
+            label="same-task-second-attempt",
+            factors=("tok:map",),
+            task_instance_label="same-task-instance",
+            task_source_label="same-task-source",
+        ),
+    )
+
+    parent.authenticate()
+    successor.authenticate()
+    assert parent.checkpoint_sha256 == parent_root
+    assert parent.checkpoint_array_sha256s == parent_arrays
+    first_row, second_row = successor.provenance
+    assert first_row.task_projection_sha256 == second_row.task_projection_sha256
+    assert first_row.task_instance_sha256 == second_row.task_instance_sha256
+    assert first_row.task_source_sha256 == second_row.task_source_sha256
+    assert first_row.execution_sha256 != second_row.execution_sha256
+    assert first_row.public_feedback_sha256 != second_row.public_feedback_sha256
+    assert first_row.lesson_sha256 != second_row.lesson_sha256
+    assert successor.promoted_candidate_sha256s == ()
+
+
+def test_execution_and_public_feedback_replay_are_rejected_independently() -> None:
+    map_action = _candidate("map_action", "map_values")
+    first = _lesson(
+        candidate=map_action,
+        task_text=MAP_A1,
+        label="receipt-first-attempt",
+        factors=("tok:map",),
+    )
+    memory = continual.start_continual_documentation_action_memory_v1(first)
+
+    with pytest.raises(
+        continual.ContinualDocumentationActionMemoryError,
+        match="execution replay",
+    ):
+        continual.advance_continual_documentation_action_memory_v1(
+            memory,
+            _lesson(
+                candidate=map_action,
+                task_text=MAP_A2,
+                label="duplicate-execution-attempt",
+                factors=("tok:map",),
+                execution_label="receipt-first-attempt",
+            ),
+        )
+
+    with pytest.raises(
+        continual.ContinualDocumentationActionMemoryError,
+        match="public feedback replay",
+    ):
+        continual.advance_continual_documentation_action_memory_v1(
+            memory,
+            _lesson(
+                candidate=map_action,
+                task_text=MAP_A2,
+                label="duplicate-feedback-attempt",
+                factors=("tok:map",),
+                public_feedback_label="receipt-first-attempt",
+            ),
+        )
 
 
 def test_unknown_unpromoted_tie_and_gates_stop_physically() -> None:

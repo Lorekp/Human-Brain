@@ -848,7 +848,9 @@ class FrozenContinualDocumentationActionMemoryV1:
             or type(self._provenance) is not tuple
             or not 1 <= len(self._provenance) <= MAX_PROVENANCE_ROWS
             or len({row.lesson_sha256 for row in self._provenance}) != len(self._provenance)
-            or len({row.task_instance_sha256 for row in self._provenance}) != len(self._provenance)
+            or len({row.execution_sha256 for row in self._provenance}) != len(self._provenance)
+            or len({row.public_feedback_sha256 for row in self._provenance})
+            != len(self._provenance)
         ):
             raise ContinualDocumentationActionMemoryError("checkpoint catalogue changed")
         for factor in self._factor_names:
@@ -1078,8 +1080,10 @@ def _apply_lesson(
         cumulative_steps = parent._summary.cumulative_learning_cell_steps
         if any(row.lesson_sha256 == lesson.sha256 for row in provenance):
             raise ContinualDocumentationActionMemoryError("lesson replay is forbidden")
-        if any(row.task_instance_sha256 == lesson.task_instance_sha256 for row in provenance):
-            raise ContinualDocumentationActionMemoryError("task instance replay is forbidden")
+        if any(row.execution_sha256 == lesson.execution_sha256 for row in provenance):
+            raise ContinualDocumentationActionMemoryError("execution replay is forbidden")
+        if any(row.public_feedback_sha256 == lesson.public_feedback_sha256 for row in provenance):
+            raise ContinualDocumentationActionMemoryError("public feedback replay is forbidden")
 
     action_index = next(
         (
