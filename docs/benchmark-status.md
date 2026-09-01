@@ -532,7 +532,7 @@ freshness or transfer. The supported claim is therefore only consequence-driven
 same-task binary policy correction and persistence between two prebound source
 actions. Source synthesis, semantic understanding, failure diagnosis, generic
 debugging, paraphrase generalization, transfer, SWE performance, and intelligence
-remain open. The next honest layer is C1: consolidate a generic parameterized
+remain open. The next honest layer was C1: consolidate a generic parameterized
 token-edit schema from two independent failed-to-successful episodes before a
 fresh C2 transfer cohort.
 
@@ -570,9 +570,53 @@ token kinds, anchor ontology, directions, and schema bank remain scaffolding;
 only schema selection/support and query-local binding are learned. This is C1
 structural token-edit proposal evidence, not proposal compilability/correctness,
 semantic understanding, diagnosis, general patch synthesis, C2 transfer, SWE
-performance, or intelligence. The next honest layer is a fresh C2 family that
-executes the frozen proposal and learns from its consequence without reusing C1
-receipts.
+performance, or intelligence. The then-next honest layer was a fresh C2 cohort
+that would execute the frozen proposal and retain its public consequence without
+reusing C1 receipts.
+
+Preregistration commit `3316fb0026e85023f68802aa014ffedd7221079e` froze that
+C2 experiment before its sole spend. The new cohort used spec
+`70bfdbc00bafb4e6a2d4d569dd74583d4dfafc104254ef2fb068f70fea09eafe`
+and exact module/test SHA-256 values
+`906f9786b461015c10a56d408e50d6907c084522d7a68c5c25c6f7ca3719875f`
+and `3d108f592a8309aa4fecda62f84154c575eeb3ebdb16be5dfcfafdda48ec7f52`.
+It terminated `PASS_C2_FROZEN_SCHEMA_EXECUTED_CONSEQUENCE_V1` at result root
+`afaee2199422b46de53abc78474203f0fbaee1d330cbceaddfc40bac1653d879`
+and document root
+`ee5f68119b6ec84a241222c5fe74f5b7069e22cf5f5dae3b13b6e380205d05e1`.
+The raw result-file SHA-256 is
+`9a8cd9f7725b017758f9443b3c41366e1dcb415ead4ee43efa06bd5ce1bc7e87`.
+Evidence commit `9e3a20d9dcd25868690136d6013da81acd0b0e65` banks that
+terminal together with its no-replay reservation.
+The pre-execution reservation root is
+`9a1e0d19712a8d400e19b5a5e49b60f91d5f443a7fc4af2a75557673d9830c26`;
+its raw file SHA-256 is
+`8614002947914fcf0aab8d8593f2773df97d04d2f4d0ce6e9b048b930977ae86`.
+The frozen writer retained this reservation before external work, but the
+reservation itself authenticates only the shared spec and exact destination; it
+does not independently commit the later result/document roots or prove temporal
+ordering.
+
+This was a new fresh cohort, not C1 checkpoint or receipt lineage. A fresh
+checkpoint consolidated schema 3 from two new content-root-distinct synthetic
+failed→successful Rust episodes. The unedited held-out source then compiled and
+returned baseline outputs `((1, 1, 1, 1), (1, 1, 1))`, which failed. The exact
+schema-3 proposal changed only token 76 from `signal` to the query-local donor
+`threshold` at token 78. Its source SHA-256 is
+`ca96a9774be460daed557117e0b56fc334d29d709d9fac0a6f53003e3fd9be34`;
+it compiled and returned `((0, 1, 1, 0), (1, 0, 1))`, which passed. Work was
+exactly four training and two transfer compiles/runs, zero retries, alternatives,
+or C1-source reuse, and one oracle opening after both transfer executions.
+
+The transfer consequences were authenticated but did not update the checkpoint,
+so this is not consequence learning. The licensed claim is only frozen lexical
+token-edit mechanism replication on two new content-root-distinct synthetic
+episodes plus one held-out executed public consequence under exact source
+custody. It does not establish C1→C2 checkpoint-lineage continuation, learned
+semantics, diagnosis, generic repair, protected transfer, SWE performance, or
+intelligence. The authenticated terminal exists and is authoritative. A
+reservation-only or pending-only interruption would instead be
+indeterminate—never PASS and never permission to rerun the spent cohort.
 
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about

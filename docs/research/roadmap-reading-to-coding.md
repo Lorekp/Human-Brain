@@ -470,11 +470,11 @@ oracle callback. The retained external transcript authenticates input, authority
 binding, release, execution, feedback, lesson, and checkpoint custody. This is
 same-task binary consequence correction and persistence under exact lexical-factor
 reuse—not source synthesis, semantics, diagnosis, generic debugging, transfer,
-SWE performance, or intelligence. The next mechanism question is whether two
+SWE performance, or intelligence. The next mechanism question was whether two
 independent failed-to-successful episodes can consolidate a generic parameterized
 edit schema that transfers to a fresh family.
 
-Current C1 public-development successor (`f2de425`, exact spec
+Banked C1 public-development successor (`f2de425`, exact spec
 `3dedb36b3ae4c7a916e1626a32b598f9ed1ee7c23cde2b9a1bc10dabea3d6609`): two
 independently rooted failed→successful Rust episodes selected and consolidated
 one member of a fixed lexical token-edit bank. One source alone physically
@@ -487,8 +487,25 @@ retain the result root/transcript, so the external attestation is explicitly
 weaker and records that limitation. This is selection and reuse inside a supplied
 lexer/ontology/schema bank—not learned semantics, diagnosis, proposal
 correctness, C2 transfer, SWE performance, or intelligence. The next mechanism
-question is whether the frozen schema's proposal survives execution and public
+question was whether the frozen schema's proposal survived execution and public
 consequence on a fresh family without C1 receipt reuse.
+
+Current C2 public-development successor: one spent preregistered cohort rebuilt
+the frozen lexical mechanism from two new content-root-distinct
+synthetic episodes rather than importing C1 checkpoint or receipt lineage. On a
+held-out source, the unedited baseline compiled and failed; the exact schema-3
+one-token proposal compiled and passed, with one oracle opening only after both
+executions and no retry or alternative execution. This establishes executable
+proposal behavior for that frozen mechanism and cohort. It is not consequence
+learning because the transfer consequence did not update the checkpoint, nor
+does it establish C1→C2 checkpoint-lineage continuation, learned semantics,
+diagnosis, generic repair, protected transfer, SWE performance, or intelligence.
+
+The next mechanism question is whether consequences from executed proposals can
+change reusable state and improve later fresh behavior on a new unspent cohort.
+For the spent C2 cohort, the authenticated terminal is authoritative; a
+reservation-only or pending-only interruption state would be indeterminate,
+never PASS and never permission to rerun.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.

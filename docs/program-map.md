@@ -1,7 +1,8 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-09-01 after the first authenticated
-same-task consequence revision. Exact scientific boundaries live in
+same-task consequence revision and the spent C2 executed-proposal PASS. Exact
+scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -13,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; live exact-factor consequence revision banked; generic repair schema next]
+R4  Language/software continual coding               [OPEN; C1+C2 execution banked; consequence update next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -893,7 +894,7 @@ is nine selected source releases/compiles/runs, seven updates, zero unselected
 executions or parent mutation/replay, and one callback after all executions.
 This banks only public-development same-task binary consequence correction over
 exact lexical factors and two candidate-provided actions. The next R4 mechanism
-is C1 generic parameterized token-edit-schema consolidation across two
+was C1 generic parameterized token-edit-schema consolidation across two
 independent failed→successful episodes, followed by fresh C2 transfer—not more
 binary dispatch or another execution wrapper.
 
@@ -916,9 +917,32 @@ in memory, but its root/transcript was not serialized; the retained attestation
 at root `58b5a17957f8df0a7613b010d8e7007337f5a21c1c54a749ead746659ef44983`
 is explicitly weaker and commits only the known spec/config/file hashes, work,
 PASS outcome, and retention failure. The lexer, ontology, and schema candidates
-remain supplied scaffolding. C2 must therefore use the frozen C1 mechanism on a
-fresh family, execute the proposed source, and feed back the public consequence
-before any transfer or debugging claim.
+remain supplied scaffolding. The remaining C2 question was whether a fresh
+cohort could rebuild that mechanism, execute its proposed source, and retain the
+public consequence without importing spent C1 lineage.
+
+Preregistered commit `3316fb0026e85023f68802aa014ffedd7221079e` has now been
+spent once on that C2 boundary. Spec
+`70bfdbc00bafb4e6a2d4d569dd74583d4dfafc104254ef2fb068f70fea09eafe`
+rebuilt schema 3 from two new content-root-distinct synthetic episodes in a new
+fresh cohort; it imported no C1 checkpoint or receipt lineage. The held-out
+baseline compiled and failed with `((1, 1, 1, 1), (1, 1, 1))`. The exact frozen
+proposal changed only token 76 from `signal` to query-local token 78
+`threshold`, then compiled and passed with `((0, 1, 1, 0), (1, 0, 1))`.
+
+The banked terminal is `PASS_C2_FROZEN_SCHEMA_EXECUTED_CONSEQUENCE_V1` at root
+`afaee2199422b46de53abc78474203f0fbaee1d330cbceaddfc40bac1653d879`.
+Evidence commit `9e3a20d9dcd25868690136d6013da81acd0b0e65` retains that
+terminal and its no-replay reservation.
+It records four training plus two transfer compiles/runs, zero retries,
+alternatives, or C1-source reuse, and one oracle opening after both transfer
+executions. No transfer consequence updated the checkpoint, so this is not
+consequence learning; consequence-driven reusable-state update is the next
+mechanism boundary. This is not
+C1→C2 checkpoint-lineage continuation, learned semantics, diagnosis, generic
+repair, protected transfer, SWE, or intelligence.
+The authenticated terminal is authoritative; reservation-only or pending-only
+state would be indeterminate, never PASS, and never permission to rerun.
 
 ### Runtime and scale
 

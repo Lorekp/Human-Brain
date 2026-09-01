@@ -893,7 +893,7 @@ binary policy correction and persistence for two prebound sources under exact
 lexical-factor reuse. The expected outcomes are public, and the action identity,
 source implementation, and lexical evidence are host-provided. It is not source
 synthesis, semantic understanding, diagnosis, generic debugging, paraphrase or
-family transfer, SWE capability, or intelligence. The next experiment is C1:
+family transfer, SWE capability, or intelligence. The next experiment was C1:
 learn and consolidate one generic parameterized token-edit relation from two
 independent failed→successful episodes, then freeze it for a fresh C2 transfer
 cohort.
@@ -938,8 +938,58 @@ records the exact known hashes, work, PASS outcome, and missing-root limitation.
 Thus C1 supports replay-free selection/consolidation of one supplied lexical edit
 schema and fresh query-local binding. It does not show learned tokenization or
 ontology, semantic diagnosis, proposal correctness, C2 family transfer, SWE
-capability, or intelligence. The immediate successor is a fresh C2 consequence
-cohort; it must not reuse or rerun the spent C1 evidence.
+capability, or intelligence. The immediate successor was a fresh C2 consequence
+cohort that would not reuse or rerun the spent C1 evidence.
+
+Preregistration commit `3316fb0026e85023f68802aa014ffedd7221079e` froze the C2
+successor before execution. Its spec root was
+`70bfdbc00bafb4e6a2d4d569dd74583d4dfafc104254ef2fb068f70fea09eafe`;
+the frozen module and test SHA-256 values were
+`906f9786b461015c10a56d408e50d6907c084522d7a68c5c25c6f7ca3719875f`
+and `3d108f592a8309aa4fecda62f84154c575eeb3ebdb16be5dfcfafdda48ec7f52`.
+The cohort was new and fresh rather than C1 checkpoint or receipt lineage. It
+reconstructed schema 3 from two new content-root-distinct synthetic
+failed→successful episodes, preserving one-source, cell-off, and schema-off
+controls before the held-out executions.
+
+The unedited held-out source compiled and produced baseline outputs
+`((1, 1, 1, 1), (1, 1, 1))`, a public failure. Before either transfer execution
+or oracle opening, the frozen checkpoint proposed exactly one edit: token 76
+changed from `signal` to the query-local donor `threshold` at token 78. The
+edited source root was
+`ca96a9774be460daed557117e0b56fc334d29d709d9fac0a6f53003e3fd9be34`.
+Those exact proposal bytes compiled and produced
+`((0, 1, 1, 0), (1, 0, 1))`, a public pass. The authenticated work is exactly
+four training and two transfer compiles/runs, zero retry, alternative, or
+C1-source-reuse work, and one oracle opening after both transfer executions.
+
+The sole reserved spend terminated
+`PASS_C2_FROZEN_SCHEMA_EXECUTED_CONSEQUENCE_V1`. Its result root is
+`afaee2199422b46de53abc78474203f0fbaee1d330cbceaddfc40bac1653d879`,
+document root is
+`ee5f68119b6ec84a241222c5fe74f5b7069e22cf5f5dae3b13b6e380205d05e1`,
+and raw result-file SHA-256 is
+`9a8cd9f7725b017758f9443b3c41366e1dcb415ead4ee43efa06bd5ce1bc7e87`.
+Evidence commit `9e3a20d9dcd25868690136d6013da81acd0b0e65` banks the
+terminal and its no-replay reservation.
+The preceding reservation has authenticated root
+`9a1e0d19712a8d400e19b5a5e49b60f91d5f443a7fc4af2a75557673d9830c26`
+and raw SHA-256
+`8614002947914fcf0aab8d8593f2773df97d04d2f4d0ce6e9b048b930977ae86`.
+The frozen writer retained the reservation before external work, but its own
+authenticated fields bind only the shared spec and exact destination; the
+reservation does not independently commit the later result/document roots or
+prove temporal ordering.
+
+The transfer consequences were retained but did not advance the checkpoint;
+therefore this is not consequence learning. It supports only replication of the
+frozen lexical token-edit mechanism on two new content-root-distinct synthetic
+episodes plus one held-out executed public consequence under exact V2 source
+custody. It does not establish C1→C2 checkpoint-lineage continuation, learned
+semantics, diagnosis, generic repair, protected transfer, SWE, or intelligence.
+The authenticated terminal is authoritative. If interruption had left only the
+reservation or a pending file, the outcome would be indeterminate—never PASS and
+never authorization to rerun the cohort.
 
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
