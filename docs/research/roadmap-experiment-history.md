@@ -1372,6 +1372,65 @@ repair, consequence, transfer, SWE, or intelligence evidence. A successor must
 be a separately preregistered, root-distinct C10b whose parent-only adapter
 deliberately ignores child diagnostics. C10 itself remains immutable.
 
+The separately preregistered C10b successor
+`40c0287596973b093b534966fb6343fa711c72bd` kept mechanism commits
+`54939b2`, `2c7d350`, and
+`4ba0cf5caedd48b02bf5afdcb1fe0962cb439270`, but used fresh root-distinct
+sources and a parent-only diagnostic contract. Cohort source and test SHA-256
+values were
+`767bbe12f9a7470ff44a291e078831b99bf695d26f259bb528350d83c3367ca0`
+and `b313e49c36d32f4c507c18ca54a393bd61faceaccd184efaec67faab98af395c`.
+Spec `2e74503179f8c237837cf030091a14b050b8e9c40061277f8c3f263e18a6f2ed`
+froze 99 excluded prior roots and new opaque contexts `tirvax` and `molqen`.
+
+The sole trusted-host spend authenticated rustc identity
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`
+and terminated `PASS_C10B_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1`.
+Evidence commit `b8f93d0ee5d159dc70366cfe2ae916708b050ed4` retains reservation
+logical root
+`8af55f22aaf825eba6a7d76ccfee126769c36b13243b5b009323d5a1f0e34c3c`
+and raw reservation-file SHA-256
+`1f0e89cbb3f39d6cafdfc0c6622b3a389b6587e9b3907f1d0596df09d79f7324`,
+result logical root
+`1148701f113011ac82d5c0362138032b359a2d21550a753c5a3921a9cf34034e`,
+document logical root
+`6f071866702ac4563acd1073f8a6caebf294cced1a5b2c187c23dfa4fe5cb8c5`,
+raw result-file SHA-256
+`6fa32880fdbf1406ac868f2881d32adb373adc1aecfd8be5efe572cda044eee4`,
+and work root
+`de3e1501929def717a288d22006a7b2b19ff1824f473e0d728c35233a38571d4`.
+
+Four explicit TRAIN consequences covered the complete H00/H11/H01/H10 grid.
+The 25 distinct TRAIN cues produced exactly 100 cue×axis×component binding
+rows, and all seven evaluation-only cues retained zero support. Exact supported
+evaluation intersections were `(cannot, find, in, map, molqen, scope, this,
+value)` for H01 and `(map, mismatched, tirvax, types)` for H10. The full
+checkpoint normally selected H01 and H10. Ordered as correct /
+same-operation-wrong-target / wrong-operation-same-target / both-wrong, their
+raw score maps were `50/46/26/22` and `26/22/18/14`; the shared-overflow
+physical race mapped H01 to `36/32/12/8` and left H10 unchanged. All six
+selected materialized sources compiled, ran, and matched their expected
+outputs.
+
+Outcome-off, message-only, and source-line-only controls stopped. Reordering
+the cue input produced the same canonical unordered observation, context
+ablation stopped on insufficient target evidence, and context derangement
+routed H01/H10 to H00/H11 without executing those wrong targets. Evaluation
+did not advance the checkpoint. Authenticated work was six diagnostic compiles,
+six selected materializations/releases/compiles/runs, four TRAIN advances, two
+evaluation executions completed before one shared oracle opening, zero
+evaluation updates, and zero alternative executions.
+
+C10b establishes consequence-conditioned binding reuse from authenticated
+parent-message and complete primary-span-containing-line generic word unigrams,
+removing C9's supplied relative-region cue. It is not held-out composition
+because every hypothesis was trained. Target markers and occurrence bindings,
+primary spans, tokenization, the concrete operation bank, exploration choices,
+edit semantics, and outputs remained host-supplied. The result is not language
+or Rust semantics, localization, diagnosis, synthesis, debugging, transfer,
+SWE, intelligence, or external-model evidence. C11 should next learn target
+occurrence/localization rather than receive marker bindings.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing

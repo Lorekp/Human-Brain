@@ -1,6 +1,6 @@
 # Roadmap: general intelligence through language, software, memory, and learning
 
-Status: living decision document. Updated 2026-09-01.
+Status: living decision document. Updated 2026-09-02.
 Owner: orchestrator.
 
 ## North star
@@ -677,6 +677,27 @@ evidence for or against source-context cue learning and not repair, transfer,
 SWE, or intelligence evidence. The next admissible step is a separately
 preregistered, root-distinct C10b with a parent-only projection that
 deliberately ignores child diagnostics.
+
+A fresh C10b successor (`40c0287`, spec
+`2e74503179f8c237837cf030091a14b050b8e9c40061277f8c3f263e18a6f2ed`)
+terminated `PASS_C10B_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1` at
+result root
+`1148701f113011ac82d5c0362138032b359a2d21550a753c5a3921a9cf34034e`.
+The complete four-lesson grid trained 25 message-plus-line cues into 100
+binding rows. All seven fresh evaluation-only cues retained `u=0`; the final
+memory selected H01 and H10 at raw `50/46/26/22` and `26/22/18/14`, with H01
+physically normalized to `36/32/12/8`. Both evaluation edits executed before
+one shared oracle, all six selected outputs passed, causal controls behaved as
+preregistered, and evaluation did not update memory.
+
+This is one narrow case of consequence-conditioned binding from authenticated
+rustc parent-message and complete primary-line generic word unigrams, replacing
+the supplied FIRST/SECOND cue. It is not held-out composition because all four
+hypotheses were trained. Target markers and occurrence bindings, primary spans,
+tokenization, operation bank, exploration choices, edits, and outputs remained
+supplied. It is not semantics, localization, diagnosis, synthesis, debugging,
+transfer, SWE performance, or intelligence. C11 should learn target
+occurrence/localization instead of receiving marker bindings.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.

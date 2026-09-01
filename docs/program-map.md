@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the permanently spent
-C10 source-context cohort abort. Exact
+Maintained by the orchestrator. Updated 2026-09-02 after the fresh C10b
+source-context cue-learning PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C10 aborted before cognition; fresh root-distinct C10b next]
+R4  Language/software continual coding               [OPEN; C10b learns message+line target binding; localization next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -1164,6 +1164,29 @@ occurred. C10 is immutable and must not be rerun. This is a cohort-contract
 abort, not evidence for or against source-context learning and not a coding or
 intelligence result. The next experiment must be a fresh root-distinct C10b
 with a parent-only projection that deliberately ignores child diagnostics.
+
+Fresh C10b preregistration `40c0287` froze spec `2e745031` over 99 prior-root
+exclusions and root-distinct `tirvax`/`molqen` contexts. Its sole spend
+terminated `PASS_C10B_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1` at
+result root `1148701f`; evidence commit `b8f93d0` retains the result and
+reservation. The full four-hypothesis grid trained 25 cues into 100 binding
+rows, while all seven evaluation-only cues retained `u=0`.
+
+The final memory normally selected H01 and H10 at raw score maps
+`50/46/26/22` and `26/22/18/14`; H01's physical race preserved the ordering at
+`36/32/12/8`. All six selected edits passed. Outcome-off, message-only,
+source-line-only, and context-ablation controls stopped; permutation remained
+canonical, context derangement selected the wrong same-operation targets
+without execution, and evaluation made no update. Exact work was six
+diagnostics, six selected materializations/releases/compiles/runs, four
+advances, both evaluation executions before one oracle, and zero alternatives.
+
+C10b is consequence-conditioned target binding from authenticated parent
+messages plus complete primary lines, not held-out composition, semantics,
+localization, diagnosis, synthesis, debugging, transfer, SWE, or intelligence.
+Markers, primary spans, tokenization, the operation bank, exploration answers,
+and outputs remained supplied. C11 should learn target occurrence/localization
+instead of receiving marker bindings.
 
 ### Runtime and scale
 

@@ -1,6 +1,6 @@
 # Benchmark status
 
-Status date: 2026-09-01
+Status date: 2026-09-02
 
 ## What has passed
 
@@ -969,6 +969,63 @@ selection, consequence learning, target binding, repair, transfer, SWE, or
 intelligence claim. The next admissible experiment is a fresh, root-distinct
 C10b whose parent-only projection deliberately ignores child diagnostics; it
 must not patch or retry C10.
+
+Fresh, root-distinct C10b preregistration
+`40c0287596973b093b534966fb6343fa711c72bd` reused mechanism commits
+`54939b2`, `2c7d350`, and
+`4ba0cf5caedd48b02bf5afdcb1fe0962cb439270`. Its cohort source and test
+SHA-256 values are
+`767bbe12f9a7470ff44a291e078831b99bf695d26f259bb528350d83c3367ca0`
+and `b313e49c36d32f4c507c18ca54a393bd61faceaccd184efaec67faab98af395c`;
+spec `2e74503179f8c237837cf030091a14b050b8e9c40061277f8c3f263e18a6f2ed`
+froze 99 prior-root exclusions and fresh target contexts `tirvax` and `molqen`.
+The sole spend under rustc identity
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`
+terminated `PASS_C10B_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1`.
+
+Evidence commit `b8f93d0ee5d159dc70366cfe2ae916708b050ed4` retains reservation
+logical root
+`8af55f22aaf825eba6a7d76ccfee126769c36b13243b5b009323d5a1f0e34c3c`
+and raw reservation-file SHA-256
+`1f0e89cbb3f39d6cafdfc0c6622b3a389b6587e9b3907f1d0596df09d79f7324`,
+result logical root
+`1148701f113011ac82d5c0362138032b359a2d21550a753c5a3921a9cf34034e`,
+document logical root
+`6f071866702ac4563acd1073f8a6caebf294cced1a5b2c187c23dfa4fe5cb8c5`,
+raw result-file SHA-256
+`6fa32880fdbf1406ac868f2881d32adb373adc1aecfd8be5efe572cda044eee4`,
+and work root
+`de3e1501929def717a288d22006a7b2b19ff1824f473e0d728c35233a38571d4`.
+
+The four-lesson H00/H11/H01/H10 grid trained 25 distinct cues, producing 100
+cue×axis×component binding rows. All seven evaluation-only cues retained
+`u=0`. Exact TRAIN∩EVAL support was `(cannot, find, in, map, molqen, scope,
+this, value)` for H01 and `(map, mismatched, tirvax, types)` for H10. The final
+normal decisions selected H01 and H10. Raw score maps, ordered as correct /
+same-operation-wrong-target / wrong-operation-same-target / both-wrong, were
+`50/46/26/22` and `26/22/18/14`; H01's bounded physical race normalized to
+`36/32/12/8`, while H10 was unchanged. All six selected materialized sources
+compiled, ran, and matched their supplied outputs.
+
+Outcome-off, message-only, and source-line-only controls stopped. Cue
+permutation preserved the canonical unordered observation; context ablation
+stopped, while context derangement routed to the wrong same-operation targets
+H00 and H11 without executing them. Evaluation did not update memory. Exact
+work was six diagnostic compiles, six selected
+materializations/releases/compiles/runs, four TRAIN advances, two evaluation
+executions completed before one shared oracle opening, zero evaluation updates,
+and zero alternatives.
+
+C10b therefore establishes one narrow case of consequence-conditioned binding
+from authenticated rustc parent-message plus complete primary-line generic word
+unigrams, replacing the supplied FIRST/SECOND cue. Because all four hypotheses
+were trained, this is not held-out composition. Target markers and their source
+occurrences, the primary span, tokenization, operation bank, exploration
+choices, edit semantics, and outputs remained supplied. This is not word or
+Rust semantics, localization, diagnosis, synthesis, debugging, protected
+transfer, SWE, intelligence, or an external-model comparison. The next
+mechanism question is C11: learn target occurrence/localization instead of
+receiving marker bindings.
 
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
