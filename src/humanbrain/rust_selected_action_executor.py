@@ -2509,15 +2509,24 @@ def _v2_authority_sha256(authority: object) -> str:
     if type(authority) is PreparedRustActionRegistryAuthorityV2:
         root = authority.authority_sha256
     else:
-        try:
-            from experiments.r3_pilot.common_promoted_rust_action_vault_v1 import (
-                PreparedPromotedRustActionVaultV1,
-            )
-        except ImportError as exc:
-            raise TypeError("one exact supported selected-source authority is required") from exc
-        if type(authority) is not PreparedPromotedRustActionVaultV1:
-            raise TypeError("one exact supported selected-source authority is required")
-        root = authority.authority_sha256
+        from experiments.r3_pilot.common_factorized_text_edit_materializer_v1 import (
+            PreparedFactorizedTextEditMaterializerV1,
+        )
+
+        if type(authority) is PreparedFactorizedTextEditMaterializerV1:
+            root = authority.authority_sha256
+        else:
+            try:
+                from experiments.r3_pilot.common_promoted_rust_action_vault_v1 import (
+                    PreparedPromotedRustActionVaultV1,
+                )
+            except ImportError as exc:
+                raise TypeError(
+                    "one exact supported selected-source authority is required"
+                ) from exc
+            if type(authority) is not PreparedPromotedRustActionVaultV1:
+                raise TypeError("one exact supported selected-source authority is required")
+            root = authority.authority_sha256
     if not _valid_sha256(root):
         raise RustSelectedActionExecutionError("selected-source authority root is invalid")
     return root
@@ -2530,6 +2539,12 @@ def _execute_v2_authority(
 ) -> _T:
     _v2_authority_sha256(authority)
     if type(authority) is PreparedRustActionRegistryAuthorityV2:
+        return authority.execute_selected(selection, execute)
+    from experiments.r3_pilot.common_factorized_text_edit_materializer_v1 import (
+        PreparedFactorizedTextEditMaterializerV1,
+    )
+
+    if type(authority) is PreparedFactorizedTextEditMaterializerV1:
         return authority.execute_selected(selection, execute)
     from experiments.r3_pilot.common_promoted_rust_action_vault_v1 import (
         PreparedPromotedRustActionVaultV1,
