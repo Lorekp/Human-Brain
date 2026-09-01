@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-01 after the fresh C8
-unordered-cue binding PASS. Exact
+Maintained by the orchestrator. Updated 2026-09-01 after the fresh C9
+lexical-cue learning PASS. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; C8 learns bindings from unordered supplied cues; raw cue/target acquisition next]
+R4  Language/software continual coding               [OPEN; C9 binds stable message words; raw source-context target binding next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -1111,9 +1111,40 @@ C8 establishes binding reuse from an unordered supplied cue set under
 identifiable full-grid evidence. It is not held-out composition because all four
 hypotheses were trained, and it does not learn cue extraction, actions, targets,
 edit semantics, localization, diagnosis, synthesis, debugging, transfer, SWE,
-or intelligence. The next R4 mechanism should acquire at least one currently
+or intelligence. The next R4 mechanism was to acquire at least one currently
 supplied cue abstraction or target binding from raw diagnostic/source structure
 and causal consequences rather than add another host-labelled factor.
+
+Commits `d8b40775`, `287d7b3`, and `e5c6017` add the C9 lexical-message
+projection, its direct authority, and the generic composite-score correction.
+The learner now receives roots for generic lowercase ASCII-alphanumeric
+word-unigrams from the authenticated parent rustc message plus one supplied
+source-region root; it receives no error code, rendered diagnostic, suggestion,
+or edit data. C9 preregistration `01cd7ce` froze spec `fe726852` and a complete
+four-hypothesis grid over 75 prior-root exclusions. Its single spend terminated
+`PASS_C9_RUSTC_DIAGNOSTIC_LEXICAL_CUE_LEARNING_V1` at result root
+`901b8d87ed69021d0d7bcf74074310351c0a860aa89453a0cc696018785796db`;
+evidence commit `8e44dbf` retains the result and reservation.
+
+Incomplete-grid checkpoints normally selected wrong same-class targets and
+were never executed. The final checkpoint selected fresh H01 and H10 edits at
+raw score maps `42/38/18/14` and `18/14/10/6`, ordered as correct /
+same-action-wrong-target / wrong-action-same-target / both-wrong. For E0425,
+TRAIN∩EVAL contained exactly the six stable template words; the fresh identifier
+contributed `u=0`. Both edits compiled, ran, and matched after executing before
+one shared oracle. Outcome-off, message-only, and region-only controls stopped,
+and evaluation advanced nothing. Exact work was six diagnostics and
+six selected materializations/releases/compiles/runs, four TRAIN feedback
+opens, one evaluation oracle, four advances, and zero alternatives.
+
+C9 establishes consequence-conditioned binding reuse from stable parent-message
+word unigrams, not held-out composition, tokenization, word semantics,
+action/target discovery, localization, diagnosis, synthesis, debugging,
+transfer, SWE, or intelligence. The next question is whether bounded generic
+source-context events around the authenticated primary span can replace the
+supplied FIRST/SECOND root and learn which still-supplied target marker they bind
+to under counterbalanced consequences. Learned source parsing and target-marker
+discovery remain later layers.
 
 ### Runtime and scale
 

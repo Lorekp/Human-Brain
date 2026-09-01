@@ -1266,9 +1266,75 @@ C8 removes the supplied cue-axis partition and establishes binding reuse from
 an unordered supplied cue set. Full-grid training makes the binding claim
 identifiable but deliberately forfeits a held-out-composition claim. The rustc
 cue abstractions, action/target ontology, exploration answers, edit semantics,
-markers, and outputs remain supplied. The next useful mechanism must learn at
+markers, and outputs remain supplied. The next useful mechanism was to learn at
 least one raw cue abstraction or target binding from causal data rather than
 wrap another host-labelled factor.
+
+Commit `d8b40775ae90fd289188464dddd008876452bcfc` next replaced the
+explicit diagnostic-code cue with a generic rustc parent-message adapter. It
+lowercases and splits ASCII-alphanumeric word unigrams, hashes the resulting
+tokens, appends the existing source-region root, and owns exact attempt/stderr
+custody. Code roots, children, rendered text, labels, suggestions, and edit data
+are excluded. Commit `287d7b322b46fd39a8953ef78442bbe0a9a22d5d` added a
+direct authority that reparses the raw stderr and independently rederives that
+observation before routing and selected-only materialization.
+
+The first complete fake transcript exposed a generic physical-routing defect:
+the E0425 composite score map `42/38/18/14` clipped its two leaders to `36/36`
+and stopped. Commit `e5c60177f0ae9eaa3765d25b50bf28ab34f60289`
+retains the sum of the two individually bounded axes as the raw 0–72 score and
+subtracts one shared overflow before the bounded race. Thus
+`42/38/18/14` becomes `36/32/12/8`, preserving the winner, top ties, and
+non-floored gaps; routes already at or below 36 remain unchanged.
+
+Fresh C9 preregistration `01cd7ce2432d0490098a31b603b08fc3a389437c`
+froze spec
+`fe726852dc632bba8b64aa6e85bf7ead8d4033bdc82d2b91de148b27f86c0bfc`,
+the exact ten-file mechanism closure, 75 prior exclusions, six no-terminal-LF
+original/materialized roots, exact rustc parent messages and token inventories,
+and the H00→H11→H01→H10 TRAIN grid. Trusted-host preflight authenticated rustc
+identity
+`aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84`
+before either evidence path existed. The exact cohort was then reserved and run
+once.
+
+That sole spend terminated
+`PASS_C9_RUSTC_DIAGNOSTIC_LEXICAL_CUE_LEARNING_V1` at result root
+`901b8d87ed69021d0d7bcf74074310351c0a860aa89453a0cc696018785796db`,
+document root
+`93d24d1dd270344d94ae5a719bed9663a1ce3f7e0757a445a477f611262d438b`,
+and reservation root
+`7b77717a38b30b0bf39e91b6903328caddf790dbeec2946f47fd54d934449820`.
+Raw result/reservation file roots were
+`9a254343979e1bd11472e16d4ff907c954b787a379552651a2fcbfebea520747`
+and `dcbe86641dfc1ddfdc0d5f0eecdb08a73a5a6a041e92619b2d8a8d74c669682b`;
+evidence commit `8e44dbfba72f44d68eaf809d40a7d8a6958ad337` retains both.
+
+The parent stopped. After two diagonal lessons, both fresh evaluations normally
+selected the wrong same-class target; after three lessons, H01 was correct while the
+missing H10 still selected H11. These incomplete-grid decisions were retained
+as negative telemetry and never executed. The final checkpoint normally chose
+H01 for a fresh E0425 identifier at raw `42/38/18/14` and H10 for fresh E0308
+at `18/14/10/6`, ordered as correct / same-action-wrong-target /
+wrong-action-same-target / both-wrong. For E0425, TRAIN∩EVAL contained exactly
+the six stable template words; the fresh identifier contributed `u=0`. Both
+selected sources executed before one combined oracle open and matched.
+Outcome-off, message-only, and region-only controls stopped; evaluation did not
+update the checkpoint. Authenticated work was six diagnostics, six selected
+materializations/releases/compiles/runs, four TRAIN feedback openings, one
+evaluation oracle opening, four memory advances, no evaluation advance, and no
+alternative.
+
+C9 removes the explicit rustc error-code cue and demonstrates
+consequence-conditioned binding reuse from stable parent-message word-unigram
+roots. Because all four H00/H11/H01/H10 consequences were trained, it is not
+held-out composition. It does not learn tokenization, word meaning, the
+source-region abstraction, operations, targets, edit semantics, localization,
+diagnosis, synthesis, debugging, transfer, SWE, or intelligence. The next
+staged question is whether bounded generic source-context events around the
+authenticated primary span can replace the supplied FIRST/SECOND root and learn
+which still-supplied target marker they bind to under counterbalanced
+consequences. Learned source parsing and target-marker discovery remain later.
 
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves

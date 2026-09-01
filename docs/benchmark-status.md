@@ -879,8 +879,63 @@ materializations. This is binding reuse from an unordered set of supplied cues
 under identifiable full-grid evidence. It is not held-out composition, cue
 discovery, action or target discovery, learned edit semantics, localization,
 diagnosis, synthesis, debugging, transfer, SWE, intelligence, or an
-external-model comparison. The next learning boundary is acquiring raw cue
+external-model comparison. The next learning boundary was acquiring raw cue
 abstractions or target bindings from causal experience.
+
+Commits `d8b40775ae90fd289188464dddd008876452bcfc` and
+`287d7b322b46fd39a8953ef78442bbe0a9a22d5d` add the C9 lexical rustc
+adapter and direct text-edit authority. The adapter derives lowercase ASCII
+alphanumeric word-unigram roots only from the exact parent diagnostic message,
+adds the already-audited relative source-region root, and excludes rustc codes,
+children, rendered text, labels, suggestions, and edit data from cognition. The
+authority reparses its retained raw stderr rather than accepting a caller-made
+observation. Commit `e5c60177f0ae9eaa3765d25b50bf28ab34f60289`
+keeps each axis bounded while retaining exact 0–72 composite scores and uses one
+shared-overflow normalization for the bounded physical race; this preserves the
+winner and top ties instead of clipping distinct totals to the same ceiling.
+
+C9 preregistration `01cd7ce2432d0490098a31b603b08fc3a389437c`
+froze spec
+`fe726852dc632bba8b64aa6e85bf7ead8d4033bdc82d2b91de148b27f86c0bfc`,
+75 prior exclusions, six fresh original/materialized roots, exact parent
+messages and token inventories, and the full H00→H11→H01→H10 TRAIN order. Its
+sole reserved spend terminated
+`PASS_C9_RUSTC_DIAGNOSTIC_LEXICAL_CUE_LEARNING_V1` at result root
+`901b8d87ed69021d0d7bcf74074310351c0a860aa89453a0cc696018785796db`,
+document root
+`93d24d1dd270344d94ae5a719bed9663a1ce3f7e0757a445a477f611262d438b`,
+and reservation root
+`7b77717a38b30b0bf39e91b6903328caddf790dbeec2946f47fd54d934449820`.
+Raw result/reservation file SHA-256 values are
+`9a254343979e1bd11472e16d4ff907c954b787a379552651a2fcbfebea520747`
+and `dcbe86641dfc1ddfdc0d5f0eecdb08a73a5a6a041e92619b2d8a8d74c669682b`;
+evidence commit `8e44dbfba72f44d68eaf809d40a7d8a6958ad337` retains both.
+
+The parent stopped on both fresh evaluations. The two-diagonal checkpoint
+normally selected the wrong same-class target on each evaluation, so those
+decisions were retained only as negative telemetry and never executed. After
+H01, that evaluation selected correctly while the missing H10 evaluation still
+selected H11; after the complete grid, the fresh E0425 evaluation selected H01
+at raw scores `42/38/18/14` (bounded physical scores `36/32/12/8`) and the
+fresh-source E0308 evaluation selected H10 at `18/14/10/6`. Score order is
+correct / same-action-wrong-target / wrong-action-same-target / both-wrong. For
+E0425, TRAIN∩EVAL contained exactly the six stable template words; the fresh
+identifier contributed `u=0`. Both selected edits executed before one shared
+oracle and matched; outcome-off, message-only, and region-only controls all
+stopped, and evaluation did not advance memory.
+
+Exact work was six diagnostic compiles, six selected
+materializations/releases/compiles/runs, four TRAIN feedback openings, one
+evaluation-oracle opening, four TRAIN advances, zero evaluation advances, and
+zero alternatives. Because all four H00/H11/H01/H10 consequences were trained,
+this is not held-out composition. It is consequence-conditioned binding reuse
+from stable parent-message word unigrams plus one supplied region cue. It is not
+learned tokenization, word meaning, operation or target discovery, learned
+localization, diagnosis, synthesis, generic debugging, protected transfer, SWE,
+intelligence, or an external-model comparison. The next staged question is
+whether bounded generic source-context events around the authenticated primary
+span can replace the supplied FIRST/SECOND root and learn which still-supplied
+target marker they bind to under counterbalanced consequences.
 
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about

@@ -630,8 +630,37 @@ unordered set of supplied cues. It is not held-out composition because all four
 hypotheses were trained, and it is not cue extraction, action or target
 discovery, learned edit semantics, localization, diagnosis, synthesis,
 debugging, transfer, SWE performance, or intelligence. The next mechanism
-question is whether raw diagnostic/source structure can yield a reusable cue or
-target binding through causal experience instead of host extraction.
+question was whether raw diagnostic/source structure could yield a reusable cue
+or target binding through causal experience instead of host extraction.
+
+A fresh C9 successor (`01cd7ce`, spec
+`fe726852dc632bba8b64aa6e85bf7ead8d4033bdc82d2b91de148b27f86c0bfc`)
+terminated `PASS_C9_RUSTC_DIAGNOSTIC_LEXICAL_CUE_LEARNING_V1` at result root
+`901b8d87ed69021d0d7bcf74074310351c0a860aa89453a0cc696018785796db`.
+It removed the explicit rustc error-code cue: the environment adapter supplied
+only hashed lowercase ASCII-alphanumeric word unigrams from the authenticated
+parent diagnostic message plus the existing relative source-region cue. A full
+four-lesson grid learned cue×axis×component associations. Incomplete-grid
+checkpoints selected wrong same-class targets and were retained as unexecuted
+negative telemetry. The final checkpoint selected fresh H01 and H10 edits at
+raw score maps `42/38/18/14` and `18/14/10/6`, ordered as correct /
+same-action-wrong-target / wrong-action-same-target / both-wrong. For E0425,
+TRAIN∩EVAL contained exactly the six stable template words; the fresh identifier
+contributed `u=0`. Both edits executed before one shared oracle and passed.
+Outcome-off, message-only, and region-only controls stopped, and evaluation made
+no memory update.
+
+This is one narrow case of consequence-conditioned binding reuse from stable
+parent-message word-unigram roots. Because all four H00/H11/H01/H10
+consequences were trained, it is not held-out composition. The tokenization
+rule, source-region cue, primary diagnostic span, operation/target bank, target
+markers, exploration answers, edit semantics, and outputs remained supplied. It
+is therefore not learned tokenization or word meaning, localization, diagnosis,
+synthesis, generic debugging, transfer, SWE performance, or intelligence. The
+next question is whether bounded generic source-context events around the
+authenticated primary span can replace the supplied FIRST/SECOND root and learn
+which still-supplied target marker they bind to under counterbalanced
+consequences. Learned source parsing and target-marker discovery remain later.
 
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.
