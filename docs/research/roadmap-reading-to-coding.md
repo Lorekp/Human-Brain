@@ -474,6 +474,22 @@ SWE performance, or intelligence. The next mechanism question is whether two
 independent failed-to-successful episodes can consolidate a generic parameterized
 edit schema that transfers to a fresh family.
 
+Current C1 public-development successor (`f2de425`, exact spec
+`3dedb36b3ae4c7a916e1626a32b598f9ed1ee7c23cde2b9a1bc10dabea3d6609`): two
+independently rooted failed→successful Rust episodes selected and consolidated
+one member of a fixed lexical token-edit bank. One source alone physically
+abstained; both sources produced a singleton promoted schema. On a structurally
+fresh `for`-loop source, that frozen schema bound a new query-local donor and
+proposed one identifier replacement without replaying either training source.
+Four training sources compiled and ran once each; the fresh proposal was not
+executed. The trusted test authenticated its full result in memory but did not
+retain the result root/transcript, so the external attestation is explicitly
+weaker and records that limitation. This is selection and reuse inside a supplied
+lexer/ontology/schema bank—not learned semantics, diagnosis, proposal
+correctness, C2 transfer, SWE performance, or intelligence. The next mechanism
+question is whether the frozen schema's proposal survives execution and public
+consequence on a fresh family without C1 receipt reuse.
+
 Current internal prompt/factor/occurrence representations are provisional.
 Replace them if a better learning formulation is found.
 

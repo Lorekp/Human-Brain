@@ -898,6 +898,49 @@ learn and consolidate one generic parameterized token-edit relation from two
 independent failed→successful episodes, then freeze it for a fresh C2 transfer
 cohort.
 
+Commit `f2de425` implemented and spent that public C1 cohort. The common learner
+projects bounded Rust-like source into lexical token frames and races a fixed
+24-member bank spanning six anchor kinds and two target/two donor directions.
+Each episode seals exact failed/successful frames and authenticated public
+consequences, while the immutable checkpoint retains only per-schema independent
+source support and compact provenance roots. A normal one-source state tied the
+tonic cell at score 2 and abstained; a separately labeled tonic-off control made
+the underdetermination visible. Adding a second, independently rooted repair
+made schema 3 the only member with support two and produced a normal `READY`.
+
+Episode A changed the right operand of `reading > reading` to the local donor
+`ceiling`; episode B used different names, literal, source text, material roots,
+and `match` control syntax to change `temperature < temperature` to `floor`.
+Their only shared fixed-bank explanation was comparison-anchor/right-target/
+right-donor. The frozen fresh source instead used a `for` loop with
+`measure >= measure`; the learned schema bound the new query-local donor
+`boundary`—absent from both training frames—and proposed the one-token edit
+`measure >= boundary`. Expected fresh edited source was used only in the audit;
+the proposal itself was neither compiled nor executed.
+
+An initial sandboxed discovery attempt stopped at `rustup which rustc` because
+the sandbox emitted a path-canonicalization warning; it executed zero cohort
+sources. The exact precommitted test was then run once on the trusted Windows
+host and passed after exactly four selected source releases, compiles, and runs,
+two FAIL and two PASS consequences, two advances, two parent-immutability checks,
+and zero proposed-source executions. The spec root is
+`3dedb36b3ae4c7a916e1626a32b598f9ed1ee7c23cde2b9a1bc10dabea3d6609`,
+the learner-config root is
+`84b60787deed505352885fad33abe58ba8b0d6c1d16cee688a7d19da0eb912a5`,
+and promoted schema root is
+`7cf44511bced68635e3c77a199542061b404b5861fe6a51c7c6ba88b01c2b014`.
+
+The trusted test authenticated the full result in memory but exited without
+serializing its result root or transcript. No second run was made to repair that
+evidence-handling error. Instead, a weaker attestation at
+`58b5a17957f8df0a7613b010d8e7007337f5a21c1c54a749ead746659ef44983`
+records the exact known hashes, work, PASS outcome, and missing-root limitation.
+Thus C1 supports replay-free selection/consolidation of one supplied lexical edit
+schema and fresh query-local binding. It does not show learned tokenization or
+ontology, semantic diagnosis, proposal correctness, C2 family transfer, SWE
+capability, or intelligence. The immediate successor is a fresh C2 consequence
+cohort; it must not reuse or rerun the spent C1 evidence.
+
 In the scale lane, commit `018b3a3` reduced full-touch GID scratch from `R` to
 `min(R,Q)` by streaming authoritative resident/spike arrays. It saves
 `8*(R-Q)` bytes (523,776 in the representative 65,536/64 case) without changing

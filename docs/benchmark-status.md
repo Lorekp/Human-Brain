@@ -536,6 +536,44 @@ remain open. The next honest layer is C1: consolidate a generic parameterized
 token-edit schema from two independent failed-to-successful episodes before a
 fresh C2 transfer cohort.
 
+Commit `f2de425` banks that C1 mechanism and one exact public cohort. A fixed
+24-member lexical schema bank receives two independent Rust failed→successful
+episodes whose identifiers, literals, source text, control form, and material
+roots are distinct. After the first episode, schema 3 has support one and score
+2, exactly ties the tonic score, and the normal physical path returns
+`STOP_INSUFFICIENT_INDEPENDENT_SOURCES`. Disabling tonic is labeled as a control,
+not an ordinary success. After the second episode, a new immutable checkpoint
+has schema 3 as the sole two-source-supported hypothesis and returns `READY`.
+That schema denotes a comparison anchor with the replacement target and donor
+both on its right; its retained state contains support and compact provenance,
+not either training source.
+
+The frozen fresh query uses a structurally different `for` loop and new names.
+The consolidated schema binds the query-local donor `boundary`, which appears in
+neither training frame, and proposes one identifier-token replacement. The
+proposal is authenticated by re-deriving its exact checkpoint, input context,
+anchor, target, donor, race, and edit, but is deliberately not compiled or run.
+The exact trusted-host pytest passed once after four selected training releases,
+compiles, and runs (two FAIL and two PASS consequences), two immutable advances,
+and zero proposed-source executions. Its precommitted spec is
+`3dedb36b3ae4c7a916e1626a32b598f9ed1ee7c23cde2b9a1bc10dabea3d6609`;
+the learner config is
+`84b60787deed505352885fad33abe58ba8b0d6c1d16cee688a7d19da0eb912a5`.
+
+The full result authenticated in memory during that run, but the test exited
+without serializing its result root or transcript. The weaker retained
+attestation is
+`58b5a17957f8df0a7613b010d8e7007337f5a21c1c54a749ead746659ef44983`;
+it records the known hashes, counters, PASS outcome, and missing-root limitation
+without reconstructing custody that was not retained. The supplied ASCII lexer,
+token kinds, anchor ontology, directions, and schema bank remain scaffolding;
+only schema selection/support and query-local binding are learned. This is C1
+structural token-edit proposal evidence, not proposal compilability/correctness,
+semantic understanding, diagnosis, general patch synthesis, C2 transfer, SWE
+performance, or intelligence. The next honest layer is a fresh C2 family that
+executes the frozen proposal and learns from its consequence without reusing C1
+receipts.
+
 Commit `a1cda05` first vectorized the shared compiled-GLIF crossing scan. Commit
 `4fb725b` now keeps the exact original IEEE crossing predicate while using about
 `ceil(log2(steps+1))` vector probes instead of a full steps-by-rows lattice for

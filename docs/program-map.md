@@ -897,6 +897,29 @@ is C1 generic parameterized token-edit-schema consolidation across two
 independent failed→successful episodes, followed by fresh C2 transfer—not more
 binary dispatch or another execution wrapper.
 
+Commit `f2de425` adds C1 as a deeper common learner seam plus a thin Rust cohort
+adapter. `common_continual_token_edit_schema_v1.py` owns a bounded lexical frame,
+a fixed 24-schema cell bank, physical race/tonic abstention, immutable
+failed→successful episode consolidation, compact provenance, query-local token
+binding, and full checkpoint/proposal authentication. It never stores either raw
+training source in the checkpoint. The Rust cohort module owns only public source
+materials, neutral intervention custody, real compiler/runner consequences, and
+the experiment-specific transcript/result checks.
+
+In the one spent C1 cohort, independent A and B repair episodes intersected at
+the sole two-source-supported schema 3 after A alone physically abstained. A
+fresh, structurally different `for`-loop query then used that frozen schema to
+bind a new donor token and propose exactly one identifier replacement; neither
+the fresh source nor proposed source entered the executor. Four training sources
+compiled and ran once each. The trusted test authenticated the complete result
+in memory, but its root/transcript was not serialized; the retained attestation
+at root `58b5a17957f8df0a7613b010d8e7007337f5a21c1c54a749ead746659ef44983`
+is explicitly weaker and commits only the known spec/config/file hashes, work,
+PASS outcome, and retention failure. The lexer, ontology, and schema candidates
+remain supplied scaffolding. C2 must therefore use the frozen C1 mechanism on a
+fresh family, execute the proposed source, and feed back the public consequence
+before any transfer or debugging claim.
+
 ### Runtime and scale
 
 Measured substrate boundaries remain CUDA at small dense scale, CPU/native at
