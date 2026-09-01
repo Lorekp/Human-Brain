@@ -1,0 +1,1126 @@
+{
+  "claim_boundary": "One fresh M0 test of lexical Rust-Book-documentation-conditioned dispatch between two pre-existing authenticated Rust 2021 actions, followed by exactly one selected compile and batch run. It is not source synthesis, semantic code understanding, debugging, within-family transfer, cross-domain transfer, or broad coding-intelligence evidence.",
+  "controls": {
+    "control_count": 10,
+    "items": [
+      {
+        "kind": "physical_recall",
+        "name": "primary",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              2
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              3
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+          "matched_factor_count": 11,
+          "physical_output_record": {
+            "active_cells": [
+              65536,
+              65540,
+              65544,
+              65549
+            ],
+            "decision": "TOKEN",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "lane_spike_steps": [
+              555,
+              555,
+              555,
+              553
+            ],
+            "physical_cell_steps": 12000,
+            "sha256": "d3f421f1d319745ffafe7113e94b8bc50bf3757d4bdeed510cac6373a002032a",
+            "stop_reason": null,
+            "token": 1
+          },
+          "physical_raw_scores": [
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              14,
+              15,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": "ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+          "selected_candidate_sha256": "8e79949d508e32a294823f32599c29e3685cd5ec87005eed180018bf5c11df81",
+          "selected_symbol": "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+          "sha256": "6b24f6fb75e44a3cf6add702e80e8b10fd73b8d1c174dd65ec6ae61a70e69570",
+          "status": "RECALLED",
+          "task_sha256": "06dfee4382c8e6b018b7a7ae4e8d80619a0792fe3e5f4e4cfff8cf2323c3045d",
+          "unknown_factor_count": 10,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 252,
+            "factor_trace_equality_cell_steps": 132,
+            "output_race_cell_steps": 12000,
+            "query_projection_cell_steps": 45780,
+            "synaptic_reads": 22,
+            "total_cell_steps": 69356
+          }
+        }
+      },
+      {
+        "kind": "physical_recall",
+        "name": "contrast",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              5
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              1
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+          "matched_factor_count": 15,
+          "physical_output_record": {
+            "active_cells": [
+              65536,
+              65540,
+              65544,
+              65548
+            ],
+            "decision": "TOKEN",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "lane_spike_steps": [
+              555,
+              555,
+              555,
+              551
+            ],
+            "physical_cell_steps": 12000,
+            "sha256": "bd298973f399215062e3f14fb10416554f3e3f59b6a757729db0f95075836811",
+            "stop_reason": null,
+            "token": 0
+          },
+          "physical_raw_scores": [
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              17,
+              13,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": "ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+          "selected_candidate_sha256": "b9327516788189003988e3cf27b2ee4abc8186d6226a0a4c3271009f5efc2791",
+          "selected_symbol": "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+          "sha256": "0e58f2a4bb4bfffd6382d16b3d265b03d7ce55e4b6435113c874859b9d063196",
+          "status": "RECALLED",
+          "task_sha256": "b0fc673941d3082e860ae86754382a9e7cebac945538e7dc30da68b5736366f4",
+          "unknown_factor_count": 4,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 228,
+            "factor_trace_equality_cell_steps": 180,
+            "output_race_cell_steps": 12000,
+            "query_projection_cell_steps": 40440,
+            "synaptic_reads": 30,
+            "total_cell_steps": 64048
+          }
+        }
+      },
+      {
+        "kind": "physical_recall",
+        "name": "source_order_reversal",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              2
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              3
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+          "matched_factor_count": 11,
+          "physical_output_record": {
+            "active_cells": [
+              65536,
+              65540,
+              65544,
+              65549
+            ],
+            "decision": "TOKEN",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "lane_spike_steps": [
+              555,
+              555,
+              555,
+              553
+            ],
+            "physical_cell_steps": 12000,
+            "sha256": "d3f421f1d319745ffafe7113e94b8bc50bf3757d4bdeed510cac6373a002032a",
+            "stop_reason": null,
+            "token": 1
+          },
+          "physical_raw_scores": [
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              14,
+              15,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": "ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+          "selected_candidate_sha256": "8e79949d508e32a294823f32599c29e3685cd5ec87005eed180018bf5c11df81",
+          "selected_symbol": "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+          "sha256": "6b24f6fb75e44a3cf6add702e80e8b10fd73b8d1c174dd65ec6ae61a70e69570",
+          "status": "RECALLED",
+          "task_sha256": "06dfee4382c8e6b018b7a7ae4e8d80619a0792fe3e5f4e4cfff8cf2323c3045d",
+          "unknown_factor_count": 10,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 252,
+            "factor_trace_equality_cell_steps": 132,
+            "output_race_cell_steps": 12000,
+            "query_projection_cell_steps": 45780,
+            "synaptic_reads": 22,
+            "total_cell_steps": 69356
+          }
+        }
+      },
+      {
+        "kind": "physical_recall",
+        "name": "cell_off",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              0
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              0
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+          "matched_factor_count": 11,
+          "physical_output_record": {
+            "active_cells": [
+              65552
+            ],
+            "decision": "STOP",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "lane_spike_steps": [
+              556,
+              556,
+              556,
+              556
+            ],
+            "physical_cell_steps": 12000,
+            "sha256": "ae9da02e3ffc001efb7f0bba03301550464961e6b328d09e33b6284e02536fbe",
+            "stop_reason": "TONIC_STOP",
+            "token": null
+          },
+          "physical_raw_scores": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": null,
+          "selected_candidate_sha256": null,
+          "selected_symbol": null,
+          "sha256": "f6c8c0840a964b8871b7fffcee029fb89e422d3633b00ca987879deb3921a4a3",
+          "status": "STOP_KNOWLEDGE_ACTION_CELL_OFF",
+          "task_sha256": "06dfee4382c8e6b018b7a7ae4e8d80619a0792fe3e5f4e4cfff8cf2323c3045d",
+          "unknown_factor_count": 10,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 252,
+            "factor_trace_equality_cell_steps": 132,
+            "output_race_cell_steps": 12000,
+            "query_projection_cell_steps": 45780,
+            "synaptic_reads": 0,
+            "total_cell_steps": 69334
+          }
+        }
+      },
+      {
+        "kind": "physical_recall",
+        "name": "plasticity_off",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              0
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              0
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "5d6ada9850d46c84ee9d5b20d4bd8f6a3cdb518a157507874eedd270d2623bd8",
+          "matched_factor_count": 11,
+          "physical_output_record": {
+            "active_cells": [
+              65552
+            ],
+            "decision": "STOP",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "lane_spike_steps": [
+              556,
+              556,
+              556,
+              556
+            ],
+            "physical_cell_steps": 12000,
+            "sha256": "ae9da02e3ffc001efb7f0bba03301550464961e6b328d09e33b6284e02536fbe",
+            "stop_reason": "TONIC_STOP",
+            "token": null
+          },
+          "physical_raw_scores": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": null,
+          "selected_candidate_sha256": null,
+          "selected_symbol": null,
+          "sha256": "8a2f5b459e681443bf07fe79a4cc63ae8a6e1c9d12d14348c0e30f68d0120293",
+          "status": "STOP_KNOWLEDGE_ACTION_PHYSICAL_RACE",
+          "task_sha256": "06dfee4382c8e6b018b7a7ae4e8d80619a0792fe3e5f4e4cfff8cf2323c3045d",
+          "unknown_factor_count": 10,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 252,
+            "factor_trace_equality_cell_steps": 132,
+            "output_race_cell_steps": 12000,
+            "query_projection_cell_steps": 45780,
+            "synaptic_reads": 22,
+            "total_cell_steps": 69356
+          }
+        }
+      },
+      {
+        "kind": "authority_control",
+        "name": "bound_memory_splice",
+        "physical_recall_count": 0,
+        "status": "STOP_BOUND_MEMORY_SPLICE"
+      },
+      {
+        "kind": "physical_recall",
+        "name": "shared_factor_thread",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              1
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              1
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+          "matched_factor_count": 1,
+          "physical_output_record": {
+            "active_cells": [
+              65552
+            ],
+            "decision": "STOP",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              2
+            ],
+            "lane_spike_steps": [
+              555,
+              555,
+              555,
+              555
+            ],
+            "physical_cell_steps": 12600,
+            "sha256": "e01c910a431111c28ccdf336e47527dc1e8225e818e4a4ad7a061776e2bc1a31",
+            "stop_reason": "COLLISION",
+            "token": null
+          },
+          "physical_raw_scores": [
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              13,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": null,
+          "selected_candidate_sha256": null,
+          "selected_symbol": null,
+          "sha256": "45c90b00f404ce333f06823d78ae9b61cdad364db92006238c9f2d248afd9f92",
+          "status": "STOP_KNOWLEDGE_ACTION_PHYSICAL_RACE",
+          "task_sha256": "27df1ca9272c2903751091a9b090df796e2ad1aab8ffce7b392220807a104435",
+          "unknown_factor_count": 0,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 12,
+            "factor_trace_equality_cell_steps": 12,
+            "output_race_cell_steps": 12600,
+            "query_projection_cell_steps": 2180,
+            "synaptic_reads": 2,
+            "total_cell_steps": 25976
+          }
+        }
+      },
+      {
+        "kind": "physical_recall",
+        "name": "unknown_factor",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              0
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              0
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+          "matched_factor_count": 0,
+          "physical_output_record": {
+            "active_cells": [
+              65552
+            ],
+            "decision": "STOP",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "lane_spike_steps": [
+              556,
+              556,
+              556,
+              556
+            ],
+            "physical_cell_steps": 12000,
+            "sha256": "ae9da02e3ffc001efb7f0bba03301550464961e6b328d09e33b6284e02536fbe",
+            "stop_reason": "TONIC_STOP",
+            "token": null
+          },
+          "physical_raw_scores": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": null,
+          "selected_candidate_sha256": null,
+          "selected_symbol": null,
+          "sha256": "956d8992026d312beedbf878014bbcbcf5ae1cf609a45156a3221497a8ecb19a",
+          "status": "STOP_KNOWLEDGE_ACTION_NO_MATCHED_FACTOR",
+          "task_sha256": "2115584e4aa2b04f70c09c19402c7555a4f83e4118ccaf2b4916cc32fe5a8090",
+          "unknown_factor_count": 1,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 12,
+            "factor_trace_equality_cell_steps": 0,
+            "output_race_cell_steps": 12000,
+            "query_projection_cell_steps": 2425,
+            "synaptic_reads": 0,
+            "total_cell_steps": 25607
+          }
+        }
+      },
+      {
+        "kind": "physical_recall",
+        "name": "single_factor_channel",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              0
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              1
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+          "matched_factor_count": 1,
+          "physical_output_record": {
+            "active_cells": [
+              65536,
+              65540,
+              65544,
+              65549
+            ],
+            "decision": "TOKEN",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "lane_spike_steps": [
+              555,
+              555,
+              555,
+              555
+            ],
+            "physical_cell_steps": 12000,
+            "sha256": "66f744b960c0f16412383693a7e3ef01b4dc6c92f1afa912185140d79ac1fcc0",
+            "stop_reason": null,
+            "token": 1
+          },
+          "physical_raw_scores": [
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              13,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": "ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+          "selected_candidate_sha256": "8e79949d508e32a294823f32599c29e3685cd5ec87005eed180018bf5c11df81",
+          "selected_symbol": "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+          "sha256": "88fb0594ea5a8b43adf33adec763dcbb6274f6c30e1d20ce87858a5696ca0387",
+          "status": "RECALLED",
+          "task_sha256": "ff9ec83d120d02a01da07242e9e1111a8a584a07f6060462afb1a130ace73774",
+          "unknown_factor_count": 0,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 12,
+            "factor_trace_equality_cell_steps": 12,
+            "output_race_cell_steps": 12000,
+            "query_projection_cell_steps": 2229,
+            "synaptic_reads": 2,
+            "total_cell_steps": 25425
+          }
+        }
+      },
+      {
+        "kind": "physical_recall",
+        "name": "single_factor_mutex",
+        "recall": {
+          "candidate_scores": [
+            [
+              "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+              1
+            ],
+            [
+              "rust_action.ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+              0
+            ]
+          ],
+          "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+          "checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+          "matched_factor_count": 1,
+          "physical_output_record": {
+            "active_cells": [
+              65536,
+              65540,
+              65544,
+              65548
+            ],
+            "decision": "TOKEN",
+            "lane_simultaneous_spike_candidates": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "lane_spike_steps": [
+              555,
+              555,
+              555,
+              555
+            ],
+            "physical_cell_steps": 12000,
+            "sha256": "4996166e276696311cf3567f6540a6d8e927cc362cc30a9a0989d90b79873c06",
+            "stop_reason": null,
+            "token": 0
+          },
+          "physical_raw_scores": [
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0,
+              0
+            ]
+          ],
+          "query_bucket_collision_count": 0,
+          "selected_candidate_id": "ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+          "selected_candidate_sha256": "b9327516788189003988e3cf27b2ee4abc8186d6226a0a4c3271009f5efc2791",
+          "selected_symbol": "rust_action.ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+          "sha256": "02efdd40766e652344a0df679e3ba5aa5eea9f7b4546311502f83d5f69332be3",
+          "status": "RECALLED",
+          "task_sha256": "2776a572028d12b603489e245fecb1dd2a51dc6f543a4fd5844ae110fe95c71f",
+          "unknown_factor_count": 0,
+          "work": {
+            "candidate_projection_cell_steps": 11122,
+            "candidate_trace_equality_cell_steps": 48,
+            "factor_address_cell_steps": 12,
+            "factor_trace_equality_cell_steps": 12,
+            "output_race_cell_steps": 12000,
+            "query_projection_cell_steps": 2131,
+            "synaptic_reads": 2,
+            "total_cell_steps": 25327
+          }
+        }
+      }
+    ],
+    "physical_recall_count": 9,
+    "ready_sha256": "13f52cb71a702e048df66a561e04ad23f7a3cdfe51faace10341626322d1383b",
+    "roster_sha256": "95bbbcd4824ada7ef69460df2b1997ce4bbe35db065f3ec5adb5d0adfcd0cea4",
+    "schema": "humanbrain.rust-docs-m0-causal-gate-controls.v1",
+    "sha256": "ed31e2c9af974d7760ff6038808e08e720cd52257170da4827c435d184bcfc36",
+    "work": {
+      "authenticated_binary_run_receipt_count": 0,
+      "authenticated_rustc_compile_receipt_count": 0,
+      "oracle_read_count": 0,
+      "recall_count": 9,
+      "selected_executor_call_count": 0,
+      "selected_source_materialization_count": 0
+    }
+  },
+  "created_at_utc": "2026-09-01T03:54:06.139353+00:00",
+  "execution": {
+    "control_bundle_sha256": "ed31e2c9af974d7760ff6038808e08e720cd52257170da4827c435d184bcfc36",
+    "execution": {
+      "compile_receipt": {
+        "arguments": [
+          "--edition",
+          "2021",
+          "--crate-name",
+          "humanbrain_selected_action",
+          "--crate-type",
+          "bin",
+          "--color",
+          "never",
+          "-C",
+          "debuginfo=0",
+          "-C",
+          "linker=<rooted-rust-lld>",
+          "--emit",
+          "link=humanbrain_selected_action.exe,dep-info=selected_action.d",
+          "harness.rs"
+        ],
+        "binary_sha256": "2bf7f83ed1836bc41a83b9a81744e08172a65289e59e646495d57b25230c41f4",
+        "binary_size_bytes": 305152,
+        "compile_environment_sha256": "3ed5c4ba145f3f633618b0fe616d45153e29312b67a45ae462ec2ece86fa8788",
+        "compile_invocations": 1,
+        "compile_limits_sha256": "1956404809361d229b2ce2a625b42005d8cd6ac78fc7ea9e957c0122b1d6a531",
+        "compiler_policy_sha256": "d194c54a759f10bae3a59e996345a931ff21c2882925aa2eabac4cee16034d68",
+        "dependency_receipt_sha256": "c28b5de7ecd2da0df133a60c6aa90c1cb6d5143683922fcfcae9860204ba2d0a",
+        "edition": "2021",
+        "harness_sha256": "cabc021d0fc234bc6f54d8343be615e460005d3142bd28920bc32a7317274d22",
+        "materialization_sha256": "e1d195c4a4bca887765ca7496f8dda183410476186eb26ffa70ed4d030dd2e9f",
+        "preparation_sha256": "875932737c698a5536a6e173cbb571e7deaf8d18afe34ae9749b463ec3ad364d",
+        "rustc_identity_sha256": "aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84",
+        "schema": "humanbrain.rust-selected-action-executor.v1",
+        "selected_source_sha256": "d22ca063abae96ae45d05e69f97ac087dd3089e37fa2312d3ae8003f6f3db579",
+        "sha256": "dc23444f521972e47003497425f6566e031dd4fd5ba68fd198c17b07019fd316",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "dependency_receipt": {
+        "dep_info_sha256": "e8f608be939f8ed9c9275205cdf66cfd8fb20cade21f96e6faca917a59e88593",
+        "dependency_content_sha256s": [
+          [
+            "harness.rs",
+            "cabc021d0fc234bc6f54d8343be615e460005d3142bd28920bc32a7317274d22"
+          ],
+          [
+            "selected.rs",
+            "d22ca063abae96ae45d05e69f97ac087dd3089e37fa2312d3ae8003f6f3db579"
+          ]
+        ],
+        "dependency_paths": [
+          "harness.rs",
+          "selected.rs"
+        ],
+        "harness_sha256": "cabc021d0fc234bc6f54d8343be615e460005d3142bd28920bc32a7317274d22",
+        "materialization_sha256": "e1d195c4a4bca887765ca7496f8dda183410476186eb26ffa70ed4d030dd2e9f",
+        "schema": "humanbrain.rust-selected-action-executor.v1",
+        "selected_source_sha256": "d22ca063abae96ae45d05e69f97ac087dd3089e37fa2312d3ae8003f6f3db579",
+        "sha256": "c28b5de7ecd2da0df133a60c6aa90c1cb6d5143683922fcfcae9860204ba2d0a"
+      },
+      "materialization": {
+        "action_handle": "ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+        "recall_sha256": "6b24f6fb75e44a3cf6add702e80e8b10fd73b8d1c174dd65ec6ae61a70e69570",
+        "registry_sha256": "0b814282f5555ba9b47f63bf6562c9d879ab1844d8554c8d3835984ba7e2edce",
+        "sha256": "e1d195c4a4bca887765ca7496f8dda183410476186eb26ffa70ed4d030dd2e9f",
+        "source": "use std::sync::mpsc;\nuse std::thread;\n\npub fn solve(values: &[i64]) -> Vec<i64> {\n    let (tx, rx) = mpsc::channel();\n    let owned = values.to_vec();\n    let worker = thread::spawn(move || {\n        for value in owned {\n            tx.send(value).unwrap();\n        }\n    });\n    let mut output: Vec<i64> = rx.into_iter().collect();\n    worker.join().unwrap();\n    output.sort();\n    output\n}\n",
+        "source_sha256": "d22ca063abae96ae45d05e69f97ac087dd3089e37fa2312d3ae8003f6f3db579",
+        "structural_sha256": "cf4443a048652b3453ccba885778addb963d5c13130d75c99429ed5c035751a4"
+      },
+      "outputs": [
+        [
+          -8,
+          -3,
+          0,
+          4,
+          17,
+          17
+        ],
+        [
+          -21,
+          13
+        ],
+        [
+          -12,
+          -1,
+          5,
+          5,
+          6,
+          6
+        ],
+        [
+          -89,
+          -34,
+          -13,
+          8,
+          21,
+          55,
+          144
+        ]
+      ],
+      "preparation": {
+        "batch_protocol_sha256": "994826caaa46b6f59adb86061f3c7cbf76bef1745e4a25221752927f681676ba",
+        "batch_sha256": "dc16a0e3ba8c9a590d5eb03037300630b4b8e0198db2def281d38fa7c486e660",
+        "case_count": 4,
+        "claim_boundary": "Trusted-host compilation and resource-bounded execution of exactly one authenticated selected Rust source with a fixed harness; not hostile-code sandboxing, filesystem or network isolation, semantic understanding, or coding-transfer evidence.",
+        "compile_environment": [
+          [
+            "LIB",
+            "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\ucrt\\x64"
+          ],
+          [
+            "RUST_BACKTRACE",
+            "0"
+          ],
+          [
+            "SYSTEMROOT",
+            "C:\\WINDOWS"
+          ],
+          [
+            "TEMP",
+            "<temporary-root>"
+          ],
+          [
+            "TMP",
+            "<temporary-root>"
+          ],
+          [
+            "WINDIR",
+            "C:\\WINDOWS"
+          ]
+        ],
+        "compile_environment_sha256": "3ed5c4ba145f3f633618b0fe616d45153e29312b67a45ae462ec2ece86fa8788",
+        "compile_limits_sha256": "1956404809361d229b2ce2a625b42005d8cd6ac78fc7ea9e957c0122b1d6a531",
+        "compiler_policy_sha256": "d194c54a759f10bae3a59e996345a931ff21c2882925aa2eabac4cee16034d68",
+        "expected_registry_sha256": "0b814282f5555ba9b47f63bf6562c9d879ab1844d8554c8d3835984ba7e2edce",
+        "harness_sha256": "cabc021d0fc234bc6f54d8343be615e460005d3142bd28920bc32a7317274d22",
+        "run_environment": [
+          [
+            "RUST_BACKTRACE",
+            "0"
+          ],
+          [
+            "SYSTEMROOT",
+            "C:\\WINDOWS"
+          ],
+          [
+            "TEMP",
+            "<temporary-root>"
+          ],
+          [
+            "TMP",
+            "<temporary-root>"
+          ],
+          [
+            "WINDIR",
+            "C:\\WINDOWS"
+          ]
+        ],
+        "run_environment_sha256": "a3497c26c784f5465e58fd11f6715197f3eda0bbf0b7925ac9837a0f04e331c7",
+        "run_limits_sha256": "771d77215b0fc9419a3aa69a488f70cafb1a560b70b134cf650bac4f8aa385d5",
+        "rustc_identity_sha256": "aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84",
+        "schema": "humanbrain.rust-selected-action-executor.v1",
+        "sha256": "875932737c698a5536a6e173cbb571e7deaf8d18afe34ae9749b463ec3ad364d",
+        "stdin_sha256": "7fa736de744dc8f994d22edcc5bb7b4a347c608d1cb0bf4cb8563abfac920a54"
+      },
+      "run_receipt": {
+        "batch_protocol_sha256": "994826caaa46b6f59adb86061f3c7cbf76bef1745e4a25221752927f681676ba",
+        "batch_sha256": "dc16a0e3ba8c9a590d5eb03037300630b4b8e0198db2def281d38fa7c486e660",
+        "case_count": 4,
+        "compile_receipt_sha256": "dc23444f521972e47003497425f6566e031dd4fd5ba68fd198c17b07019fd316",
+        "compiler_policy_sha256": "d194c54a759f10bae3a59e996345a931ff21c2882925aa2eabac4cee16034d68",
+        "materialization_sha256": "e1d195c4a4bca887765ca7496f8dda183410476186eb26ffa70ed4d030dd2e9f",
+        "output_sha256": "3a6ed123729196ed93d097bafe8806d9a6483ff0bacbed73b2c31b807f893162",
+        "preparation_sha256": "875932737c698a5536a6e173cbb571e7deaf8d18afe34ae9749b463ec3ad364d",
+        "returncode": 0,
+        "run_environment_sha256": "a3497c26c784f5465e58fd11f6715197f3eda0bbf0b7925ac9837a0f04e331c7",
+        "run_invocations": 1,
+        "run_limits_sha256": "771d77215b0fc9419a3aa69a488f70cafb1a560b70b134cf650bac4f8aa385d5",
+        "schema": "humanbrain.rust-selected-action-executor.v1",
+        "sha256": "0a7b24e643b3024a96ed1aa30cfc062876ed2021b2e7f7030cc3ebe2466170e4",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdin_sha256": "7fa736de744dc8f994d22edcc5bb7b4a347c608d1cb0bf4cb8563abfac920a54",
+        "stdout_sha256": "afdcd4a2a4037f96bb073ed0124afd0d9f247b1cdb01c1e1e3b2f9958fb86225"
+      },
+      "rustc_identity": {
+        "executable_sha256": "6a0699e427ee9c1492ef1c9ea967d035dc4660e92c7fe32f2c6a1038116700e5",
+        "host_triple": "x86_64-pc-windows-msvc",
+        "link_search_file_counts": [
+          145,
+          481,
+          8
+        ],
+        "link_search_manifest_sha256s": [
+          "454e29b7f3a2a9fdb51ed15af775100f14d6668314f52e7b0b73495107205d5c",
+          "970559c930a9cddfec6cf4a1ccc4e101b40eb846f1108e1122092f00dbe70875",
+          "9fdf5d99d04480dfcf575a598870fcaf024b7f09347c16f2a96d67a09adcd5f0"
+        ],
+        "link_search_paths": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64",
+          "C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x64",
+          "C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\ucrt\\x64"
+        ],
+        "link_search_total_bytes": [
+          533129063,
+          110173182,
+          90629762
+        ],
+        "linker_executable_sha256": "ccf2e153f8f86f17cab591e45635f7057104640502a7fa9981a2b1579e0efff6",
+        "linker_path": "C:\\Users\\laure\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\x86_64-pc-windows-msvc\\bin\\rust-lld.exe",
+        "path": "C:\\Users\\laure\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+        "sha256": "aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84",
+        "target_libdir_file_count": 45,
+        "target_libdir_manifest_sha256": "97b4b36163c91d6912314ba1f4d580a20811bc6a89fba0973c508d24e74045c3",
+        "target_libdir_path": "C:\\Users\\laure\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc\\lib\\rustlib\\x86_64-pc-windows-msvc\\lib",
+        "target_libdir_total_bytes": 114018427,
+        "version_verbose": "rustc 1.94.0 (4a4ef493e 2026-03-02)\nbinary: rustc\ncommit-hash: 4a4ef493e3a1488c6e321570238084b38948f6db\ncommit-date: 2026-03-02\nhost: x86_64-pc-windows-msvc\nrelease: 1.94.0\nLLVM version: 21.1.8"
+      },
+      "sha256": "3427082320acb4b96020052fd590a15026feac8b4dd51f25b31932779d22fe52"
+    },
+    "schema": "humanbrain.rust-docs-m0-causal-gate-execution.v1",
+    "sha256": "3e825a23976b9e7ce006f51f312fe5703a014f330079a95be050ef8686a40551",
+    "work": {
+      "authenticated_binary_run_receipt_count": 1,
+      "authenticated_rustc_compile_receipt_count": 1,
+      "oracle_read_count": 0,
+      "recall_count": 9,
+      "selected_executor_call_count": 1,
+      "selected_source_materialization_count": 1
+    }
+  },
+  "interrupted_prior_work_unknown": false,
+  "last_completed_stage": "oracle_adjudicated",
+  "manifest_sha256": "072a94efd105d780ff708c0c482936aefef109c5ecc77bd5542553702dc95c0f",
+  "no_retry": true,
+  "oracle": {
+    "batch_payload_sha256": "ba9b1ed5bc532a5e792ee4379e9eaa296f7f268a7dd2d70f595770111502f608",
+    "execution_sha256": "3e825a23976b9e7ce006f51f312fe5703a014f330079a95be050ef8686a40551",
+    "oracle_file_sha256": "46539d4e2e800f564b2c5207ca0aafe8f3c5d420692272b55c2686598f075be7",
+    "oracle_payload_sha256": "7abb4f962ff886a36bd45225070fbb2f092edbf4ae32c6ca9701e573d9d109b0",
+    "outputs_match": true,
+    "schema": "humanbrain.rust-docs-m0-causal-gate-adjudication.v1",
+    "sha256": "d54c092022dcb2611d34512f119890c7af4e09969b80eaf1f1dbe0496992d8b0",
+    "status": "TERMINAL_PASS",
+    "work": {
+      "authenticated_binary_run_receipt_count": 1,
+      "authenticated_rustc_compile_receipt_count": 1,
+      "oracle_read_count": 1,
+      "recall_count": 9,
+      "selected_executor_call_count": 1,
+      "selected_source_materialization_count": 1
+    }
+  },
+  "prepared": {
+    "batch_payload_sha256": "ba9b1ed5bc532a5e792ee4379e9eaa296f7f268a7dd2d70f595770111502f608",
+    "bound_memory_checkpoint_sha256": "eda6174a284d8ac3b3ba934aec1e867af0e5c83621c017e22fcb9f8a64ba5972",
+    "bound_memory_receipt_sha256": "3b838865e7c9210b5ac6431f7acea2df38294c40e8b3e21e3a3ad0ca7dd2c9c7",
+    "candidate_set_sha256": "8f05732ffd0703c6727565c752876dd75daed56ba557a4ff5636c611c3d6df7a",
+    "candidate_source_set_sha256": "886ba72b0d36ce1937c3271d432349586c4f4db70de3e9979ef932c5895bad49",
+    "channel_action_handle": "ra_75d8b5bbfaf95ad33300478dd044f31c90b72b9daef67deb330ac563c6f0a747",
+    "channel_structural_sha256": "cf4443a048652b3453ccba885778addb963d5c13130d75c99429ed5c035751a4",
+    "claim_boundary": "One fresh M0 test of lexical Rust-Book-documentation-conditioned dispatch between two pre-existing authenticated Rust 2021 actions, followed by exactly one selected compile and batch run. It is not source synthesis, semantic code understanding, debugging, within-family transfer, cross-domain transfer, or broad coding-intelligence evidence.",
+    "consolidation_corpus_sha256": "11b08f8e15ca9e7b5fad78023c839370dc821bca33e14ee5ff38aac4cb506b93",
+    "consolidation_producer_sha256": "303c0f45dfffea19bbe41e1d522a48e05c683c4656df001505b1300e53feb60f",
+    "control_roster_sha256": "95bbbcd4824ada7ef69460df2b1997ce4bbe35db065f3ec5adb5d0adfcd0cea4",
+    "executor_batch_protocol_sha256": "994826caaa46b6f59adb86061f3c7cbf76bef1745e4a25221752927f681676ba",
+    "executor_batch_sha256": "dc16a0e3ba8c9a590d5eb03037300630b4b8e0198db2def281d38fa7c486e660",
+    "executor_harness_sha256": "cabc021d0fc234bc6f54d8343be615e460005d3142bd28920bc32a7317274d22",
+    "executor_preparation_sha256": "875932737c698a5536a6e173cbb571e7deaf8d18afe34ae9749b463ec3ad364d",
+    "executor_stdin_sha256": "7fa736de744dc8f994d22edcc5bb7b4a347c608d1cb0bf4cb8563abfac920a54",
+    "input_records_sha256": "1cd14eb16b20ce23e86741e1610c57cd5def7b8fdd0665c1fe1bf6a575f361af",
+    "knowledge_projection_sha256": "0955da34378f1b9ebf7ecd9d49f70fd0e76d6c08dfa4dea93d19037ef829eb13",
+    "knowledge_provenance_sha256": "53c9bb2cd9c2463909265fe27286bfb47e486d6e1067a17bf3c4485b6feb8839",
+    "mutex_action_handle": "ra_148fcfdbaec318162c71e63f53094c4233544eccaba1abf7fd78f65970424c4d",
+    "no_plasticity_checkpoint_sha256": "5d6ada9850d46c84ee9d5b20d4bd8f6a3cdb518a157507874eedd270d2623bd8",
+    "no_plasticity_memory_receipt_sha256": "430226db4804426e5ae388c3af63752752fa310a242b60c1757b93e7de1b4bc9",
+    "oracle_payload_sha256": "7abb4f962ff886a36bd45225070fbb2f092edbf4ae32c6ca9701e573d9d109b0",
+    "registry_sha256": "0b814282f5555ba9b47f63bf6562c9d879ab1844d8554c8d3835984ba7e2edce",
+    "reversed_bound_memory_receipt_sha256": "3b838865e7c9210b5ac6431f7acea2df38294c40e8b3e21e3a3ad0ca7dd2c9c7",
+    "reversed_registry_sha256": "0b814282f5555ba9b47f63bf6562c9d879ab1844d8554c8d3835984ba7e2edce",
+    "rustc_identity_sha256": "aa7c4003101dc045a3689cf9f5c2c91bd0adedf19c9480f8282ce0c9b28efc84",
+    "schema": "humanbrain.rust-docs-m0-causal-gate-ready.v1",
+    "selector_view_sha256": "92267670dd9edde88cde0705b6510fe8641b13d3fc7b44f6f13c13b48f199dde",
+    "sha256": "13f52cb71a702e048df66a561e04ad23f7a3cdfe51faace10341626322d1383b",
+    "source_summary_sha256": "0d70973bab49f355493219d2a3b3b3dc9bbc03fe8dddad6e1bb6e540c46dec7b",
+    "status": "READY_UNSPENT",
+    "task_projection_sha256s": {
+      "contrast": "b0fc673941d3082e860ae86754382a9e7cebac945538e7dc30da68b5736366f4",
+      "primary": "06dfee4382c8e6b018b7a7ae4e8d80619a0792fe3e5f4e4cfff8cf2323c3045d",
+      "shared_factor_thread": "27df1ca9272c2903751091a9b090df796e2ad1aab8ffce7b392220807a104435",
+      "single_factor_channel": "ff9ec83d120d02a01da07242e9e1111a8a584a07f6060462afb1a130ace73774",
+      "single_factor_mutex": "2776a572028d12b603489e245fecb1dd2a51dc6f543a4fd5844ae110fe95c71f",
+      "unknown_factor": "2115584e4aa2b04f70c09c19402c7555a4f83e4118ccaf2b4916cc32fe5a8090"
+    },
+    "task_set_sha256": "e5b535d40ee2ee68937d51da86d7f659923d2c90415c24cc651ab03dc57a0f63",
+    "unknown_cue_absence_sha256": "4d1e342cf2c5b7ef7890a3398e651a1bdc36c10c64d1c56c1fab5a8c707d32ae",
+    "work": {
+      "authenticated_binary_run_receipt_count": 0,
+      "authenticated_rustc_compile_receipt_count": 0,
+      "oracle_read_count": 0,
+      "recall_count": 0,
+      "selected_executor_call_count": 0,
+      "selected_source_materialization_count": 0
+    }
+  },
+  "runner_calls": {
+    "control_phase_calls": 1,
+    "oracle_open_calls": 1,
+    "selected_execution_calls": 1
+  },
+  "schema": "humanbrain.rust-docs-m0-causal-gate-result.v1",
+  "sha256": "2f7b49d6e227263641fd840ac573b4a0bb59246d09ef472e2a704f260ef0dcc3",
+  "spend_marker_file_sha256": "b96836d94dff2cd9c956a4161976096496a1327334e8fc2a7b77c0225e0f8558",
+  "spend_marker_sha256": "5795a9c3f3ebc7bd3c952c833d0f6746144c09d36b0ea4283bad7e22a0e25053",
+  "state": "TERMINAL_PASS",
+  "stop_code": null,
+  "stop_reason": null,
+  "verdict": "PASS"
+}
