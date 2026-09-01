@@ -1,0 +1,21 @@
+{
+  "schema": "humanbrain.continual-rust-iterator-cohort.oracle.v1",
+  "rows": [
+    {
+      "name": "A_prime",
+      "expected_outputs": [
+        [-22, 10],
+        [12, 0, -12, 4],
+        [26, -8, 2]
+      ]
+    },
+    {
+      "name": "B_prime",
+      "expected_outputs": [
+        [2, 0, 2],
+        [8, 9],
+        [3]
+      ]
+    }
+  ]
+}

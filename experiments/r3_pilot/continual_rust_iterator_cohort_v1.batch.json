@@ -1,0 +1,23 @@
+{
+  "schema": "humanbrain.continual-rust-iterator-cohort.batch.v1",
+  "rows": [
+    {
+      "name": "A_prime",
+      "task": "Build the output with map: each input item becomes twice its original value, in the same order.",
+      "cases": [
+        [-11, 5],
+        [6, 0, -6, 2],
+        [13, -4, 1]
+      ]
+    },
+    {
+      "name": "B_prime",
+      "task": "Build the output with filter: retain only zero-or-positive items in their original order.",
+      "cases": [
+        [-10, 2, 0, -3, 2],
+        [8, -1, -1, 9],
+        [-6, -5, 3]
+      ]
+    }
+  ]
+}
