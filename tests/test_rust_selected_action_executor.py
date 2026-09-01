@@ -7,6 +7,7 @@ from dataclasses import asdict, replace
 from hashlib import sha256
 from inspect import signature
 from pathlib import Path
+from threading import Barrier
 
 import pytest
 from experiments.r3_pilot import common_knowledge_action_memory_v1 as action_memory
@@ -108,6 +109,8 @@ pub fn solve(values: &[i64]) -> Vec<i64> {
 def _build_registry_and_recall(
     root: Path,
     selected_source: str,
+    *,
+    cell_gate: bool = True,
 ) -> tuple[PreparedRustActionRegistryV1, action_memory.KnowledgeActionRecallV1]:
     source_root = root / "corpus"
     source_root.mkdir(parents=True)
@@ -172,8 +175,10 @@ def _build_registry_and_recall(
     recall = registry.recall(
         memory,
         action_memory.project_knowledge_action_task_v1("primary transform"),
+        cell_gate=cell_gate,
     )
-    assert recall.status == action_memory.RECALLED
+    expected_status = action_memory.RECALLED if cell_gate else action_memory.STOP_CELL_OFF
+    assert recall.status == expected_status
     return registry, recall
 
 
@@ -247,6 +252,264 @@ def test_registry_recall_compiles_only_selected_source_and_runs_frozen_batch(
         result.run_receipt.stdout_sha256
         == sha256(executor._encode_batch(result.outputs)).hexdigest()
     )
+
+
+def test_v2_registry_authority_runs_selected_source_with_v2_receipts(
+    tmp_path: Path,
+) -> None:
+    registry, recall = _build_registry_and_recall(tmp_path / "v2-success", _SUCCESS_SOURCE)
+    authority = executor.adapt_rust_action_registry_authority_v2(registry)
+    prepared = executor.prepare_rust_selected_action_executor_v2(authority, _BATCH)
+
+    result = prepared.execute_selected_once(recall)
+
+    result.authenticate_structure()
+    assert isinstance(result, executor.RustSelectedActionExecutionV2)
+    assert result.outputs == ((), (2, -4, 6), (18,))
+    assert result.selected_source.source == _SUCCESS_SOURCE
+    assert (
+        result.selected_source.source_sha256 == sha256(_SUCCESS_SOURCE.encode("ascii")).hexdigest()
+    )
+    assert result.selected_source.selection_sha256 == recall.sha256
+    assert result.selected_source.action_handle == recall.selected_candidate_id
+    assert (
+        result.selected_source.authority_sha256
+        == authority.authority_sha256
+        == result.preparation.expected_authority_sha256
+    )
+    assert result.preparation.schema == executor.V2_SCHEMA
+    assert result.dependency_receipt.schema == executor.V2_SCHEMA
+    assert result.compile_receipt.schema == executor.V2_SCHEMA
+    assert result.run_receipt.schema == executor.V2_SCHEMA
+    assert type(result.preparation) is executor.RustSelectedSourcePreparationV2
+    assert type(result.dependency_receipt) is executor.RustSelectedSourceDependencyReceiptV2
+    assert type(result.compile_receipt) is executor.RustSelectedSourceCompileReceiptV2
+    assert type(result.run_receipt) is executor.RustSelectedSourceRunReceiptV2
+    assert result.compile_receipt.compile_invocations == 1
+    assert result.run_receipt.run_invocations == 1
+
+
+def test_v2_selected_source_accepts_full_candidate_identifier_contract() -> None:
+    root = sha256(b"v2-handle-contract").hexdigest()
+    selected = executor.make_rust_selected_source_v2(
+        authority_sha256=root,
+        selection_sha256=root,
+        release_sha256=root,
+        action_handle="Map-Action",
+        source=_SUCCESS_SOURCE,
+    )
+
+    selected.authenticate_structure()
+    assert selected.action_handle == "Map-Action"
+
+
+def test_v2_equivalent_registries_have_distinct_authority_custody(
+    tmp_path: Path,
+) -> None:
+    first_registry, first_recall = _build_registry_and_recall(
+        tmp_path / "v2-instance-first",
+        _SUCCESS_SOURCE,
+    )
+    second_registry, second_recall = _build_registry_and_recall(
+        tmp_path / "v2-instance-second",
+        _SUCCESS_SOURCE,
+    )
+    first = executor.adapt_rust_action_registry_authority_v2(first_registry)
+    second = executor.adapt_rust_action_registry_authority_v2(second_registry)
+
+    first_source = first.execute_selected(first_recall, lambda value: value)
+    second_source = second.execute_selected(second_recall, lambda value: value)
+
+    assert first_registry.receipt == second_registry.receipt
+    assert first_recall == second_recall
+    assert first.receipt.registry_receipt_sha256 == first_registry.receipt.sha256
+    assert second.receipt.registry_receipt_sha256 == second_registry.receipt.sha256
+    assert first.authority_sha256 != second.authority_sha256
+    assert first_source.authority_sha256 == first.authority_sha256
+    assert second_source.authority_sha256 == second.authority_sha256
+    assert first_source.release_sha256 == second_source.release_sha256
+    assert first_source.sha256 != second_source.sha256
+
+
+def test_v2_registry_adapter_rejects_spliced_grant_translation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry, recall = _build_registry_and_recall(
+        tmp_path / "v2-spliced-grant",
+        _SUCCESS_SOURCE,
+    )
+    authority = executor.adapt_rust_action_registry_authority_v2(registry)
+    seal = executor.make_rust_selected_source_v2
+    callback_count = 0
+
+    def splice(**fields):
+        return seal(
+            authority_sha256=fields["authority_sha256"],
+            selection_sha256=fields["selection_sha256"],
+            release_sha256="f" * 64,
+            action_handle="Spliced-Handle",
+            source=fields["source"],
+        )
+
+    def callback(_selected):
+        nonlocal callback_count
+        callback_count += 1
+
+    monkeypatch.setattr(executor, "make_rust_selected_source_v2", splice)
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="registry selected-source authority changed",
+    ):
+        authority.execute_selected(recall, callback)
+
+    assert callback_count == 0
+
+
+@pytest.mark.parametrize("replacement", ("invalid", "inexact"))
+def test_v2_registry_adapter_authenticates_exact_grant_before_callback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    replacement: str,
+) -> None:
+    registry, recall = _build_registry_and_recall(
+        tmp_path / f"v2-{replacement}-grant",
+        _SUCCESS_SOURCE,
+    )
+    authority = executor.adapt_rust_action_registry_authority_v2(registry)
+    seal = executor.make_rust_selected_source_v2
+    callback_count = 0
+
+    def substitute(**fields):
+        grant = seal(**fields)
+        if replacement == "invalid":
+            return replace(grant, sha256="0" * 64)
+        return object()
+
+    def callback(_selected):
+        nonlocal callback_count
+        callback_count += 1
+
+    monkeypatch.setattr(executor, "make_rust_selected_source_v2", substitute)
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match=r"authentication failed|inexact grant",
+    ):
+        authority.execute_selected(recall, callback)
+
+    assert callback_count == 0
+
+
+def test_v2_registry_authority_releases_once_across_two_executors(
+    tmp_path: Path,
+) -> None:
+    registry, recall = _build_registry_and_recall(tmp_path / "v2-shared", _SUCCESS_SOURCE)
+    authority = executor.adapt_rust_action_registry_authority_v2(registry)
+    prepared = (
+        executor.prepare_rust_selected_action_executor_v2(authority, _BATCH),
+        executor.prepare_rust_selected_action_executor_v2(authority, _BATCH),
+    )
+    start = Barrier(2)
+
+    def invoke(index: int):
+        start.wait()
+        try:
+            return prepared[index].execute_selected_once(recall)
+        except BaseException as exc:
+            return exc
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = tuple(pool.map(invoke, range(2)))
+
+    results = [
+        value for value in outcomes if isinstance(value, executor.RustSelectedActionExecutionV2)
+    ]
+    errors = [value for value in outcomes if isinstance(value, BaseException)]
+    assert len(results) == 1
+    assert results[0].selected_source.selection_sha256 == recall.sha256
+    assert results[0].compile_receipt.compile_invocations == 1
+    assert results[0].run_receipt.run_invocations == 1
+    assert len(errors) == 1
+    assert "release failed" in str(errors[0])
+
+
+def test_v2_compile_failure_spends_executor_and_shared_registry_authority(
+    tmp_path: Path,
+) -> None:
+    registry, recall = _build_registry_and_recall(
+        tmp_path / "v2-compile-failure",
+        _COMPILE_FAILURE_SOURCE,
+    )
+    authority = executor.adapt_rust_action_registry_authority_v2(registry)
+    failed = executor.prepare_rust_selected_action_executor_v2(authority, _BATCH)
+    retry = executor.prepare_rust_selected_action_executor_v2(authority, _BATCH)
+
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="failed compilation",
+    ):
+        failed.execute_selected_once(recall)
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="prepared Rust executor was consumed",
+    ):
+        failed.execute_selected_once(recall)
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="registry selected-source release failed",
+    ):
+        retry.execute_selected_once(recall)
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="prepared Rust executor was consumed",
+    ):
+        retry.execute_selected_once(recall)
+
+
+def test_v2_malformed_and_stop_selections_fail_before_compilation(
+    tmp_path: Path,
+) -> None:
+    malformed_registry, _recall = _build_registry_and_recall(
+        tmp_path / "v2-malformed",
+        _COMPILE_FAILURE_SOURCE,
+    )
+    malformed_authority = executor.adapt_rust_action_registry_authority_v2(malformed_registry)
+    malformed = executor.prepare_rust_selected_action_executor_v2(
+        malformed_authority,
+        _BATCH,
+    )
+
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="selection root is invalid",
+    ) as malformed_error:
+        malformed.execute_selected_once(object())
+    assert "failed compilation" not in str(malformed_error.value)
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="prepared Rust executor was consumed",
+    ):
+        malformed.execute_selected_once(object())
+
+    stop_registry, stop_recall = _build_registry_and_recall(
+        tmp_path / "v2-stop",
+        _COMPILE_FAILURE_SOURCE,
+        cell_gate=False,
+    )
+    stop_authority = executor.adapt_rust_action_registry_authority_v2(stop_registry)
+    stopped = executor.prepare_rust_selected_action_executor_v2(stop_authority, _BATCH)
+
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="registry selected-source release failed",
+    ) as stop_error:
+        stopped.execute_selected_once(stop_recall)
+    assert "failed compilation" not in str(stop_error.value)
+    with pytest.raises(
+        executor.RustSelectedActionExecutionError,
+        match="prepared Rust executor was consumed",
+    ):
+        stopped.execute_selected_once(stop_recall)
 
 
 def test_public_authority_seam_is_factory_owned_and_consumes_before_registry(

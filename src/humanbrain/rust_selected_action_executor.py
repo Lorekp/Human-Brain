@@ -22,9 +22,10 @@ from contextlib import suppress
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from pathlib import Path
+from secrets import token_bytes
 from threading import Event, Lock, Thread
 from time import monotonic
-from typing import Protocol
+from typing import Protocol, TypeVar
 
 from experiments.r3_pilot import common_knowledge_action_memory_v1 as action_memory
 
@@ -40,6 +41,13 @@ CLAIM_BOUNDARY = (
     "authenticated selected Rust source with a fixed harness; not hostile-code "
     "sandboxing, filesystem or network isolation, semantic understanding, or "
     "coding-transfer evidence."
+)
+V2_SCHEMA = "humanbrain.rust-selected-source-executor.v2"
+V2_CLAIM_BOUNDARY = (
+    "Trusted-host compilation and resource-bounded execution of exactly one "
+    "source released by an authenticated selected-source authority; not source "
+    "selection, hostile-code sandboxing, semantic understanding, or coding-"
+    "transfer evidence."
 )
 
 RUST_EDITION = "2021"
@@ -78,6 +86,17 @@ _RUN_NAMESPACE = b"rust-selected-action-run-receipt-v1"
 _EXECUTION_NAMESPACE = b"rust-selected-action-execution-v1"
 _BATCH_NAMESPACE = b"rust-selected-action-batch-v1"
 _PROTOCOL_NAMESPACE = b"rust-selected-action-batch-protocol-v1"
+_V2_SELECTED_SOURCE_NAMESPACE = b"rust-selected-source-grant-v2"
+_V2_REGISTRY_AUTHORITY_NAMESPACE = b"rust-action-registry-authority-v2"
+_V2_POLICY_NAMESPACE = b"rust-selected-source-policy-v2"
+_V2_PREPARATION_NAMESPACE = b"rust-selected-source-preparation-v2"
+_V2_DEPENDENCY_NAMESPACE = b"rust-selected-source-dependency-receipt-v2"
+_V2_COMPILE_NAMESPACE = b"rust-selected-source-compile-receipt-v2"
+_V2_RUN_NAMESPACE = b"rust-selected-source-run-receipt-v2"
+_V2_EXECUTION_NAMESPACE = b"rust-selected-source-execution-v2"
+_V2_BATCH_NAMESPACE = b"rust-selected-source-batch-v2"
+_V2_PROTOCOL_NAMESPACE = b"rust-selected-source-batch-protocol-v2"
+_V2_ACTION_HANDLE = re.compile(r"[A-Za-z_][A-Za-z0-9_-]{0,127}")
 
 _HARNESS_BYTES = b"""#[path = \"selected.rs\"]
 mod selected;
@@ -123,6 +142,11 @@ BATCH_PROTOCOL_SHA256 = sha256(
     + b"\0"
     + b"ascii-lf;first-line=case-count;case-line=value-count values;i64-decimal"
 ).hexdigest()
+V2_BATCH_PROTOCOL_SHA256 = sha256(
+    _V2_PROTOCOL_NAMESPACE
+    + b"\0"
+    + b"ascii-lf;first-line=case-count;case-line=value-count values;i64-decimal"
+).hexdigest()
 
 
 class RustSelectedActionExecutionError(ValueError):
@@ -163,6 +187,7 @@ def _binary_filename() -> str:
 
 _TEMPORARY_ROOT_PLACEHOLDER = "<temporary-root>"
 _CONSTRUCTION_TOKEN = object()
+_T = TypeVar("_T")
 
 
 def _discovery_environment(temporary_root: Path) -> dict[str, str]:
@@ -391,6 +416,24 @@ COMPILER_POLICY_SHA256 = _digest(
         "compile_limits_sha256": COMPILE_LIMITS.sha256,
         "run_limits_sha256": RUN_LIMITS.sha256,
         "batch_protocol_sha256": BATCH_PROTOCOL_SHA256,
+    },
+)
+
+V2_COMPILER_POLICY_SHA256 = _digest(
+    _V2_POLICY_NAMESPACE,
+    {
+        "schema": V2_SCHEMA,
+        "claim_boundary": V2_CLAIM_BOUNDARY,
+        "edition": RUST_EDITION,
+        "harness_filename": HARNESS_FILENAME,
+        "harness_sha256": HARNESS_SHA256,
+        "selected_filename": SELECTED_FILENAME,
+        "dep_info_filename": DEP_INFO_FILENAME,
+        "binary_filename": _binary_filename(),
+        "compile_arguments": _compile_arguments(),
+        "compile_limits_sha256": COMPILE_LIMITS.sha256,
+        "run_limits_sha256": RUN_LIMITS.sha256,
+        "batch_protocol_sha256": V2_BATCH_PROTOCOL_SHA256,
     },
 )
 
@@ -689,6 +732,386 @@ class RustSelectedActionExecutionV1:
             or self.sha256 != _digest(_EXECUTION_NAMESPACE, payload)
         ):
             raise RustSelectedActionExecutionError("execution receipt authentication failed")
+
+
+@dataclass(frozen=True, slots=True)
+class RustSelectedSourceV2:
+    """Authority-neutral one-shot grant for exact Rust source bytes."""
+
+    authority_sha256: str
+    selection_sha256: str
+    release_sha256: str
+    action_handle: str
+    source_sha256: str
+    source: str
+    sha256: str
+
+    def authenticate_structure(self) -> None:
+        payload = asdict(self)
+        payload.pop("sha256")
+        try:
+            source_bytes = self.source.encode("ascii", errors="strict")
+        except (AttributeError, UnicodeEncodeError) as exc:
+            raise RustSelectedActionExecutionError(
+                "selected-source grant authentication failed"
+            ) from exc
+        if (
+            not _valid_sha256(self.authority_sha256)
+            or not _valid_sha256(self.selection_sha256)
+            or not _valid_sha256(self.release_sha256)
+            or type(self.action_handle) is not str
+            or _V2_ACTION_HANDLE.fullmatch(self.action_handle) is None
+            or not source_bytes
+            or len(source_bytes) > MAX_SOURCE_BYTES
+            or self.source_sha256 != sha256(source_bytes).hexdigest()
+            or self.sha256 != _digest(_V2_SELECTED_SOURCE_NAMESPACE, payload)
+        ):
+            raise RustSelectedActionExecutionError("selected-source grant authentication failed")
+
+
+def make_rust_selected_source_v2(
+    *,
+    authority_sha256: str,
+    selection_sha256: str,
+    release_sha256: str,
+    action_handle: str,
+    source: str,
+) -> RustSelectedSourceV2:
+    """Seal exact authority-released Rust bytes into a V2 source grant."""
+
+    try:
+        source_sha256 = sha256(source.encode("ascii", errors="strict")).hexdigest()
+    except (AttributeError, UnicodeEncodeError) as exc:
+        raise RustSelectedActionExecutionError("selected Rust source is not ASCII") from exc
+    payload = {
+        "authority_sha256": authority_sha256,
+        "selection_sha256": selection_sha256,
+        "release_sha256": release_sha256,
+        "action_handle": action_handle,
+        "source_sha256": source_sha256,
+        "source": source,
+    }
+    result = RustSelectedSourceV2(
+        **payload,
+        sha256=_digest(_V2_SELECTED_SOURCE_NAMESPACE, payload),
+    )
+    result.authenticate_structure()
+    return result
+
+
+@dataclass(frozen=True, slots=True)
+class RustSelectedSourcePreparationV2:
+    schema: str
+    claim_boundary: str
+    compiler_policy_sha256: str
+    rustc_identity_sha256: str
+    expected_authority_sha256: str
+    harness_sha256: str
+    batch_protocol_sha256: str
+    batch_sha256: str
+    stdin_sha256: str
+    compile_environment: tuple[tuple[str, str], ...]
+    compile_environment_sha256: str
+    run_environment: tuple[tuple[str, str], ...]
+    run_environment_sha256: str
+    case_count: int
+    compile_limits_sha256: str
+    run_limits_sha256: str
+    sha256: str
+
+    def authenticate_structure(self) -> None:
+        payload = asdict(self)
+        payload.pop("sha256")
+        environments = (self.compile_environment, self.run_environment)
+        if any(
+            type(environment) is not tuple
+            or any(
+                type(pair) is not tuple
+                or len(pair) != 2
+                or type(pair[0]) is not str
+                or type(pair[1]) is not str
+                for pair in environment
+            )
+            for environment in environments
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source preparation authentication failed"
+            )
+        if any(
+            len({name for name, _value in environment}) != len(environment)
+            for environment in environments
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source preparation authentication failed"
+            )
+        roots = (
+            self.rustc_identity_sha256,
+            self.expected_authority_sha256,
+            self.harness_sha256,
+            self.batch_protocol_sha256,
+            self.batch_sha256,
+            self.stdin_sha256,
+            self.compile_environment_sha256,
+            self.run_environment_sha256,
+            self.compile_limits_sha256,
+            self.run_limits_sha256,
+        )
+        required_environment = {
+            "RUST_BACKTRACE": "0",
+            "TEMP": _TEMPORARY_ROOT_PLACEHOLDER,
+            "TMP": _TEMPORARY_ROOT_PLACEHOLDER,
+        }
+        compile_values = dict(self.compile_environment)
+        run_values = dict(self.run_environment)
+        allowed_run_keys = {*required_environment, "SYSTEMROOT", "WINDIR"}
+        expected_compile_keys = set(run_values)
+        if os.name == "nt":
+            expected_compile_keys.add("LIB")
+        if (
+            self.schema != V2_SCHEMA
+            or self.claim_boundary != V2_CLAIM_BOUNDARY
+            or self.compiler_policy_sha256 != V2_COMPILER_POLICY_SHA256
+            or any(not _valid_sha256(value) for value in roots)
+            or self.harness_sha256 != HARNESS_SHA256
+            or self.batch_protocol_sha256 != V2_BATCH_PROTOCOL_SHA256
+            or self.compile_environment != tuple(sorted(set(self.compile_environment)))
+            or self.run_environment != tuple(sorted(set(self.run_environment)))
+            or not required_environment.items() <= run_values.items()
+            or not set(run_values) <= allowed_run_keys
+            or set(compile_values) != expected_compile_keys
+            or any(compile_values[name] != value for name, value in run_values.items())
+            or (os.name == "nt" and not compile_values.get("LIB"))
+            or self.compile_environment_sha256
+            != _environment_sha256("compile", self.compile_environment)
+            or self.run_environment_sha256 != _environment_sha256("run", self.run_environment)
+            or type(self.case_count) is not int
+            or not 1 <= self.case_count <= MAX_CASES
+            or self.compile_limits_sha256 != COMPILE_LIMITS.sha256
+            or self.run_limits_sha256 != RUN_LIMITS.sha256
+            or self.sha256 != _digest(_V2_PREPARATION_NAMESPACE, payload)
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source preparation authentication failed"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class RustSelectedSourceDependencyReceiptV2:
+    schema: str
+    selected_source_grant_sha256: str
+    harness_sha256: str
+    selected_source_sha256: str
+    dep_info_sha256: str
+    dependency_paths: tuple[str, str]
+    dependency_content_sha256s: tuple[tuple[str, str], tuple[str, str]]
+    sha256: str
+
+    def authenticate_structure(self) -> None:
+        payload = asdict(self)
+        payload.pop("sha256")
+        expected_paths = (HARNESS_FILENAME, SELECTED_FILENAME)
+        expected_content = (
+            (HARNESS_FILENAME, HARNESS_SHA256),
+            (SELECTED_FILENAME, self.selected_source_sha256),
+        )
+        if (
+            self.schema != V2_SCHEMA
+            or not _valid_sha256(self.selected_source_grant_sha256)
+            or self.harness_sha256 != HARNESS_SHA256
+            or not _valid_sha256(self.selected_source_sha256)
+            or not _valid_sha256(self.dep_info_sha256)
+            or self.dependency_paths != expected_paths
+            or self.dependency_content_sha256s != expected_content
+            or self.sha256 != _digest(_V2_DEPENDENCY_NAMESPACE, payload)
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source dependency receipt authentication failed"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class RustSelectedSourceCompileReceiptV2:
+    schema: str
+    compiler_policy_sha256: str
+    rustc_identity_sha256: str
+    preparation_sha256: str
+    selected_source_grant_sha256: str
+    selected_source_sha256: str
+    harness_sha256: str
+    edition: str
+    arguments: tuple[str, ...]
+    compile_limits_sha256: str
+    compile_environment_sha256: str
+    compile_invocations: int
+    dependency_receipt_sha256: str
+    binary_sha256: str
+    binary_size_bytes: int
+    stdout_sha256: str
+    stderr_sha256: str
+    sha256: str
+
+    def authenticate_structure(self) -> None:
+        payload = asdict(self)
+        payload.pop("sha256")
+        roots = (
+            self.rustc_identity_sha256,
+            self.preparation_sha256,
+            self.selected_source_grant_sha256,
+            self.selected_source_sha256,
+            self.harness_sha256,
+            self.compile_limits_sha256,
+            self.compile_environment_sha256,
+            self.dependency_receipt_sha256,
+            self.binary_sha256,
+            self.stdout_sha256,
+            self.stderr_sha256,
+        )
+        if (
+            self.schema != V2_SCHEMA
+            or self.compiler_policy_sha256 != V2_COMPILER_POLICY_SHA256
+            or any(not _valid_sha256(value) for value in roots)
+            or self.harness_sha256 != HARNESS_SHA256
+            or self.edition != RUST_EDITION
+            or self.arguments != _compile_arguments()
+            or self.compile_limits_sha256 != COMPILE_LIMITS.sha256
+            or type(self.compile_invocations) is not int
+            or self.compile_invocations != 1
+            or type(self.binary_size_bytes) is not int
+            or not 1 <= self.binary_size_bytes <= MAX_BINARY_BYTES
+            or self.stdout_sha256 != _EMPTY_SHA256
+            or self.stderr_sha256 != _EMPTY_SHA256
+            or self.sha256 != _digest(_V2_COMPILE_NAMESPACE, payload)
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source compile receipt authentication failed"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class RustSelectedSourceRunReceiptV2:
+    schema: str
+    compiler_policy_sha256: str
+    preparation_sha256: str
+    compile_receipt_sha256: str
+    selected_source_grant_sha256: str
+    batch_protocol_sha256: str
+    batch_sha256: str
+    stdin_sha256: str
+    stdout_sha256: str
+    stderr_sha256: str
+    output_sha256: str
+    run_limits_sha256: str
+    run_environment_sha256: str
+    run_invocations: int
+    case_count: int
+    returncode: int
+    sha256: str
+
+    def authenticate_structure(self) -> None:
+        payload = asdict(self)
+        payload.pop("sha256")
+        roots = (
+            self.compile_receipt_sha256,
+            self.preparation_sha256,
+            self.selected_source_grant_sha256,
+            self.batch_protocol_sha256,
+            self.batch_sha256,
+            self.stdin_sha256,
+            self.stdout_sha256,
+            self.stderr_sha256,
+            self.output_sha256,
+            self.run_limits_sha256,
+            self.run_environment_sha256,
+        )
+        if (
+            self.schema != V2_SCHEMA
+            or self.compiler_policy_sha256 != V2_COMPILER_POLICY_SHA256
+            or any(not _valid_sha256(value) for value in roots)
+            or self.batch_protocol_sha256 != V2_BATCH_PROTOCOL_SHA256
+            or self.run_limits_sha256 != RUN_LIMITS.sha256
+            or type(self.run_invocations) is not int
+            or self.run_invocations != 1
+            or type(self.case_count) is not int
+            or not 1 <= self.case_count <= MAX_CASES
+            or type(self.returncode) is not int
+            or self.returncode != 0
+            or self.stderr_sha256 != _EMPTY_SHA256
+            or self.sha256 != _digest(_V2_RUN_NAMESPACE, payload)
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source run receipt authentication failed"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class RustSelectedActionExecutionV2:
+    selected_source: RustSelectedSourceV2
+    rustc_identity: RustcIdentityV1
+    preparation: RustSelectedSourcePreparationV2
+    dependency_receipt: RustSelectedSourceDependencyReceiptV2
+    compile_receipt: RustSelectedSourceCompileReceiptV2
+    run_receipt: RustSelectedSourceRunReceiptV2
+    outputs: tuple[tuple[int, ...], ...]
+    sha256: str
+
+    def authenticate_structure(self) -> None:
+        if type(self.selected_source) is not RustSelectedSourceV2:
+            raise RustSelectedActionExecutionError("execution selected source changed")
+        if type(self.rustc_identity) is not RustcIdentityV1:
+            raise RustSelectedActionExecutionError("execution rustc identity changed")
+        if type(self.preparation) is not RustSelectedSourcePreparationV2:
+            raise RustSelectedActionExecutionError("execution preparation changed")
+        if type(self.dependency_receipt) is not RustSelectedSourceDependencyReceiptV2:
+            raise RustSelectedActionExecutionError("execution dependency receipt changed")
+        if type(self.compile_receipt) is not RustSelectedSourceCompileReceiptV2:
+            raise RustSelectedActionExecutionError("execution compile receipt changed")
+        if type(self.run_receipt) is not RustSelectedSourceRunReceiptV2:
+            raise RustSelectedActionExecutionError("execution run receipt changed")
+        self.selected_source.authenticate_structure()
+        self.rustc_identity.authenticate_structure()
+        self.preparation.authenticate_structure()
+        self.dependency_receipt.authenticate_structure()
+        self.compile_receipt.authenticate_structure()
+        self.run_receipt.authenticate_structure()
+        outputs = _validate_outputs(self.outputs, expected_cases=self.run_receipt.case_count)
+        output_sha256 = _digest(_V2_BATCH_NAMESPACE, outputs)
+        payload = {
+            "selected_source_grant_sha256": self.selected_source.sha256,
+            "rustc_identity_sha256": self.rustc_identity.sha256,
+            "preparation_sha256": self.preparation.sha256,
+            "dependency_receipt_sha256": self.dependency_receipt.sha256,
+            "compile_receipt_sha256": self.compile_receipt.sha256,
+            "run_receipt_sha256": self.run_receipt.sha256,
+            "outputs": outputs,
+        }
+        if (
+            self.dependency_receipt.selected_source_grant_sha256 != self.selected_source.sha256
+            or self.preparation.rustc_identity_sha256 != self.rustc_identity.sha256
+            or self.dependency_receipt.selected_source_sha256 != self.selected_source.source_sha256
+            or self.compile_receipt.rustc_identity_sha256 != self.rustc_identity.sha256
+            or self.compile_receipt.preparation_sha256 != self.preparation.sha256
+            or self.compile_receipt.compile_environment_sha256
+            != self.preparation.compile_environment_sha256
+            or self.compile_receipt.selected_source_grant_sha256 != self.selected_source.sha256
+            or self.compile_receipt.selected_source_sha256 != self.selected_source.source_sha256
+            or self.compile_receipt.dependency_receipt_sha256 != self.dependency_receipt.sha256
+            or self.run_receipt.compile_receipt_sha256 != self.compile_receipt.sha256
+            or self.run_receipt.preparation_sha256 != self.preparation.sha256
+            or self.run_receipt.run_environment_sha256 != self.preparation.run_environment_sha256
+            or self.run_receipt.selected_source_grant_sha256 != self.selected_source.sha256
+            or self.run_receipt.output_sha256 != output_sha256
+            or self.run_receipt.case_count != self.preparation.case_count
+            or len(outputs) != self.preparation.case_count
+            or self.run_receipt.stdout_sha256 != sha256(_encode_batch(outputs)).hexdigest()
+            or self.run_receipt.stderr_sha256 != _EMPTY_SHA256
+            or self.preparation.expected_authority_sha256 != self.selected_source.authority_sha256
+            or self.preparation.batch_sha256 != self.run_receipt.batch_sha256
+            or self.preparation.stdin_sha256 != self.run_receipt.stdin_sha256
+            or self.sha256 != _digest(_V2_EXECUTION_NAMESPACE, payload)
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source execution receipt authentication failed"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -1304,6 +1727,13 @@ def _validate_materialization(value: object) -> RustActionMaterializationV1:
     return value
 
 
+def _validate_selected_source_v2(value: object) -> RustSelectedSourceV2:
+    if type(value) is not RustSelectedSourceV2:
+        raise RustSelectedActionExecutionError("exactly one V2 selected-source grant is required")
+    value.authenticate_structure()
+    return value
+
+
 def _validate_batch(value: object) -> tuple[tuple[int, ...], ...]:
     if type(value) is not tuple or not 1 <= len(value) <= MAX_CASES:
         raise RustSelectedActionExecutionError("batch must be one bounded tuple of cases")
@@ -1621,6 +2051,129 @@ def _make_v1_execution_receipts(
     return dependency_receipt, compile_receipt, run_receipt
 
 
+def _make_v2_execution_receipts(
+    selected: RustSelectedSourceV2,
+    *,
+    rustc: RustcIdentityV1,
+    preparation: RustSelectedSourcePreparationV2,
+    cases: tuple[tuple[int, ...], ...],
+    stdin: bytes,
+    observation: _RustOperationalObservationV1,
+) -> tuple[
+    RustSelectedSourceDependencyReceiptV2,
+    RustSelectedSourceCompileReceiptV2,
+    RustSelectedSourceRunReceiptV2,
+]:
+    dependency_payload = {
+        "schema": V2_SCHEMA,
+        "selected_source_grant_sha256": selected.sha256,
+        "harness_sha256": HARNESS_SHA256,
+        "selected_source_sha256": selected.source_sha256,
+        "dep_info_sha256": sha256(observation.dep_info).hexdigest(),
+        "dependency_paths": _parse_dependency_paths(observation.dep_info),
+        "dependency_content_sha256s": (
+            (HARNESS_FILENAME, HARNESS_SHA256),
+            (SELECTED_FILENAME, selected.source_sha256),
+        ),
+    }
+    dependency_receipt = RustSelectedSourceDependencyReceiptV2(
+        **dependency_payload,
+        sha256=_digest(_V2_DEPENDENCY_NAMESPACE, dependency_payload),
+    )
+    dependency_receipt.authenticate_structure()
+    compile_payload = {
+        "schema": V2_SCHEMA,
+        "compiler_policy_sha256": V2_COMPILER_POLICY_SHA256,
+        "rustc_identity_sha256": rustc.sha256,
+        "preparation_sha256": preparation.sha256,
+        "selected_source_grant_sha256": selected.sha256,
+        "selected_source_sha256": selected.source_sha256,
+        "harness_sha256": HARNESS_SHA256,
+        "edition": RUST_EDITION,
+        "arguments": _compile_arguments(),
+        "compile_limits_sha256": COMPILE_LIMITS.sha256,
+        "compile_environment_sha256": preparation.compile_environment_sha256,
+        "compile_invocations": 1,
+        "dependency_receipt_sha256": dependency_receipt.sha256,
+        "binary_sha256": observation.binary_sha256,
+        "binary_size_bytes": observation.binary_size_bytes,
+        "stdout_sha256": sha256(observation.compile_stdout).hexdigest(),
+        "stderr_sha256": sha256(observation.compile_stderr).hexdigest(),
+    }
+    compile_receipt = RustSelectedSourceCompileReceiptV2(
+        **compile_payload,
+        sha256=_digest(_V2_COMPILE_NAMESPACE, compile_payload),
+    )
+    compile_receipt.authenticate_structure()
+    run_payload = {
+        "schema": V2_SCHEMA,
+        "compiler_policy_sha256": V2_COMPILER_POLICY_SHA256,
+        "preparation_sha256": preparation.sha256,
+        "compile_receipt_sha256": compile_receipt.sha256,
+        "selected_source_grant_sha256": selected.sha256,
+        "batch_protocol_sha256": V2_BATCH_PROTOCOL_SHA256,
+        "batch_sha256": preparation.batch_sha256,
+        "stdin_sha256": sha256(stdin).hexdigest(),
+        "stdout_sha256": sha256(observation.run_stdout).hexdigest(),
+        "stderr_sha256": sha256(observation.run_stderr).hexdigest(),
+        "output_sha256": _digest(_V2_BATCH_NAMESPACE, observation.outputs),
+        "run_limits_sha256": RUN_LIMITS.sha256,
+        "run_environment_sha256": preparation.run_environment_sha256,
+        "run_invocations": 1,
+        "case_count": len(cases),
+        "returncode": observation.run_returncode,
+    }
+    run_receipt = RustSelectedSourceRunReceiptV2(
+        **run_payload,
+        sha256=_digest(_V2_RUN_NAMESPACE, run_payload),
+    )
+    run_receipt.authenticate_structure()
+    return dependency_receipt, compile_receipt, run_receipt
+
+
+def _authenticate_rust_toolchain_current(rustc: RustcIdentityV1) -> None:
+    rustc.authenticate_structure()
+    try:
+        path = Path(rustc.path).resolve(strict=True)
+        current_sha256, _rustc_bytes = _stream_hash_regular_file(
+            path,
+            label="rustc executable",
+            maximum_bytes=MAX_TOOLCHAIN_FILE_BYTES,
+        )
+        linker_path = Path(rustc.linker_path).resolve(strict=True)
+        linker_sha256, _linker_bytes = _stream_hash_regular_file(
+            linker_path,
+            label="rust-lld executable",
+            maximum_bytes=MAX_TOOLCHAIN_FILE_BYTES,
+        )
+        link_search_paths = tuple(
+            str(Path(value).resolve(strict=True)) for value in rustc.link_search_paths
+        )
+        target_manifest = _directory_manifest(Path(rustc.target_libdir_path))
+        link_manifests = tuple(
+            _directory_manifest(Path(value)) for value in rustc.link_search_paths
+        )
+    except OSError as exc:
+        raise RustSelectedActionExecutionError("Rust toolchain executable changed") from exc
+    if (
+        str(path) != rustc.path
+        or current_sha256 != rustc.executable_sha256
+        or str(linker_path) != rustc.linker_path
+        or linker_sha256 != rustc.linker_executable_sha256
+        or link_search_paths != rustc.link_search_paths
+        or target_manifest
+        != (
+            rustc.target_libdir_manifest_sha256,
+            rustc.target_libdir_file_count,
+            rustc.target_libdir_total_bytes,
+        )
+        or tuple(value[0] for value in link_manifests) != rustc.link_search_manifest_sha256s
+        or tuple(value[1] for value in link_manifests) != rustc.link_search_file_counts
+        or tuple(value[2] for value in link_manifests) != rustc.link_search_total_bytes
+    ):
+        raise RustSelectedActionExecutionError("Rust toolchain executable changed")
+
+
 class PreparedRustSelectedActionExecutorV1:
     """One deep seam for authenticated selected-source compilation and execution."""
 
@@ -1688,50 +2241,13 @@ class PreparedRustSelectedActionExecutorV1:
         return self._preparation
 
     def _authenticate_current(self) -> None:
-        self._rustc.authenticate_structure()
+        _authenticate_rust_toolchain_current(self._rustc)
         self._preparation.authenticate_structure()
-        try:
-            path = Path(self._rustc.path).resolve(strict=True)
-            current_sha256, _rustc_bytes = _stream_hash_regular_file(
-                path,
-                label="rustc executable",
-                maximum_bytes=MAX_TOOLCHAIN_FILE_BYTES,
-            )
-            linker_path = Path(self._rustc.linker_path).resolve(strict=True)
-            linker_sha256, _linker_bytes = _stream_hash_regular_file(
-                linker_path,
-                label="rust-lld executable",
-                maximum_bytes=MAX_TOOLCHAIN_FILE_BYTES,
-            )
-            link_search_paths = tuple(
-                str(Path(value).resolve(strict=True)) for value in self._rustc.link_search_paths
-            )
-            target_manifest = _directory_manifest(Path(self._rustc.target_libdir_path))
-            link_manifests = tuple(
-                _directory_manifest(Path(value)) for value in self._rustc.link_search_paths
-            )
-        except OSError as exc:
-            raise RustSelectedActionExecutionError("Rust toolchain executable changed") from exc
         if (
-            str(path) != self._rustc.path
-            or current_sha256 != self._rustc.executable_sha256
-            or str(linker_path) != self._rustc.linker_path
-            or linker_sha256 != self._rustc.linker_executable_sha256
-            or link_search_paths != self._rustc.link_search_paths
-            or target_manifest
-            != (
-                self._rustc.target_libdir_manifest_sha256,
-                self._rustc.target_libdir_file_count,
-                self._rustc.target_libdir_total_bytes,
-            )
-            or tuple(value[0] for value in link_manifests)
-            != self._rustc.link_search_manifest_sha256s
-            or tuple(value[1] for value in link_manifests) != self._rustc.link_search_file_counts
-            or tuple(value[2] for value in link_manifests) != self._rustc.link_search_total_bytes
-            or self._preparation.rustc_identity_sha256 != self._rustc.sha256
+            self._preparation.rustc_identity_sha256 != self._rustc.sha256
             or self._registry.receipt.sha256 != self._preparation.expected_registry_sha256
         ):
-            raise RustSelectedActionExecutionError("Rust toolchain executable changed")
+            raise RustSelectedActionExecutionError("executor authority changed")
 
     def execute_selected_once(
         self,
@@ -1851,13 +2367,406 @@ def prepare_rust_selected_action_executor_v1(
     )
 
 
+@dataclass(frozen=True, slots=True)
+class RustActionRegistryAuthorityReceiptV2:
+    schema: str
+    registry_receipt_sha256: str
+    instance_nonce_sha256: str
+    sha256: str
+
+    def authenticate_structure(self) -> None:
+        payload = asdict(self)
+        payload.pop("sha256")
+        if (
+            self.schema != V2_SCHEMA
+            or not _valid_sha256(self.registry_receipt_sha256)
+            or not _valid_sha256(self.instance_nonce_sha256)
+            or self.sha256 != _digest(_V2_REGISTRY_AUTHORITY_NAMESPACE, payload)
+        ):
+            raise RustSelectedActionExecutionError(
+                "registry authority receipt authentication failed"
+            )
+
+
+def _make_registry_authority_receipt_v2(
+    registry: PreparedRustActionRegistryV1,
+) -> RustActionRegistryAuthorityReceiptV2:
+    registry_receipt = registry.receipt
+    registry_receipt.authenticate_structure()
+    payload = {
+        "schema": V2_SCHEMA,
+        "registry_receipt_sha256": registry_receipt.sha256,
+        "instance_nonce_sha256": sha256(token_bytes(32)).hexdigest(),
+    }
+    result = RustActionRegistryAuthorityReceiptV2(
+        **payload,
+        sha256=_digest(_V2_REGISTRY_AUTHORITY_NAMESPACE, payload),
+    )
+    result.authenticate_structure()
+    return result
+
+
+class PreparedRustActionRegistryAuthorityV2:
+    """Exact V2 authority adapter over the existing source-owning registry."""
+
+    __slots__ = ("_authority_receipt", "_registry")
+
+    def __init__(
+        self,
+        *,
+        registry: PreparedRustActionRegistryV1,
+        authority_receipt: RustActionRegistryAuthorityReceiptV2,
+        construction_token: object,
+    ) -> None:
+        if construction_token is not _CONSTRUCTION_TOKEN:
+            raise TypeError("selected-source authorities are factory-owned")
+        if type(registry) is not PreparedRustActionRegistryV1:
+            raise TypeError("one exact prepared Rust action registry is required")
+        if type(authority_receipt) is not RustActionRegistryAuthorityReceiptV2:
+            raise TypeError("registry authority receipt must be exact")
+        registry_receipt = registry.receipt
+        registry_receipt.authenticate_structure()
+        authority_receipt.authenticate_structure()
+        if authority_receipt.registry_receipt_sha256 != registry_receipt.sha256:
+            raise RustSelectedActionExecutionError("registry authority receipt changed")
+        self._registry = registry
+        self._authority_receipt = authority_receipt
+
+    @property
+    def receipt(self) -> RustActionRegistryAuthorityReceiptV2:
+        registry_receipt = self._registry.receipt
+        self._authority_receipt.authenticate_structure()
+        if self._authority_receipt.registry_receipt_sha256 != registry_receipt.sha256:
+            raise RustSelectedActionExecutionError("registry authority receipt changed")
+        return self._authority_receipt
+
+    @property
+    def authority_sha256(self) -> str:
+        return self.receipt.sha256
+
+    def execute_selected(
+        self,
+        selection: object,
+        execute: Callable[[RustSelectedSourceV2], _T],
+    ) -> _T:
+        if type(selection) is not action_memory.KnowledgeActionRecallV1:
+            raise RustSelectedActionExecutionError(
+                "registry authority requires one exact knowledge-action recall"
+            )
+        if not callable(execute):
+            raise TypeError("execute must be one callable selected-source adapter")
+
+        def release(materialization: RustActionMaterializationV1) -> _T:
+            selected = _validate_materialization(materialization)
+            grant = make_rust_selected_source_v2(
+                authority_sha256=self.authority_sha256,
+                selection_sha256=selected.recall_sha256,
+                release_sha256=selected.sha256,
+                action_handle=selected.action_handle,
+                source=selected.source,
+            )
+            if type(grant) is not RustSelectedSourceV2:
+                raise RustSelectedActionExecutionError(
+                    "registry selected-source factory returned an inexact grant"
+                )
+            grant.authenticate_structure()
+            if (
+                grant.source_sha256 != selected.source_sha256
+                or selected.registry_sha256 != self.receipt.registry_receipt_sha256
+                or grant.authority_sha256 != self.authority_sha256
+                or grant.selection_sha256 != selected.recall_sha256
+                or grant.release_sha256 != selected.sha256
+                or grant.action_handle != selected.action_handle
+                or grant.source != selected.source
+            ):
+                raise RustSelectedActionExecutionError("registry selected-source authority changed")
+            return execute(grant)
+
+        try:
+            return self._registry.execute_selected(selection, release)
+        except RustSelectedActionExecutionError:
+            raise
+        except (RustActionRegistryError, TypeError) as exc:
+            raise RustSelectedActionExecutionError(
+                "registry selected-source release failed"
+            ) from exc
+
+
+def adapt_rust_action_registry_authority_v2(
+    registry: PreparedRustActionRegistryV1,
+) -> PreparedRustActionRegistryAuthorityV2:
+    """Expose one exact prepared registry through the V2 authority contract."""
+
+    authority_receipt = _make_registry_authority_receipt_v2(registry)
+    return PreparedRustActionRegistryAuthorityV2(
+        registry=registry,
+        authority_receipt=authority_receipt,
+        construction_token=_CONSTRUCTION_TOKEN,
+    )
+
+
+def _v2_authority_sha256(authority: object) -> str:
+    if type(authority) is PreparedRustActionRegistryAuthorityV2:
+        root = authority.authority_sha256
+    else:
+        try:
+            from experiments.r3_pilot.common_promoted_rust_action_vault_v1 import (
+                PreparedPromotedRustActionVaultV1,
+            )
+        except ImportError as exc:
+            raise TypeError("one exact supported selected-source authority is required") from exc
+        if type(authority) is not PreparedPromotedRustActionVaultV1:
+            raise TypeError("one exact supported selected-source authority is required")
+        root = authority.authority_sha256
+    if not _valid_sha256(root):
+        raise RustSelectedActionExecutionError("selected-source authority root is invalid")
+    return root
+
+
+def _execute_v2_authority(
+    authority: object,
+    selection: object,
+    execute: Callable[[RustSelectedSourceV2], _T],
+) -> _T:
+    _v2_authority_sha256(authority)
+    if type(authority) is PreparedRustActionRegistryAuthorityV2:
+        return authority.execute_selected(selection, execute)
+    from experiments.r3_pilot.common_promoted_rust_action_vault_v1 import (
+        PreparedPromotedRustActionVaultV1,
+    )
+
+    if type(authority) is not PreparedPromotedRustActionVaultV1:
+        raise TypeError("one exact supported selected-source authority is required")
+    return authority.execute_selected(selection, execute)
+
+
+class PreparedRustSelectedActionExecutorV2:
+    """One-shot trusted-host execution for an exact selected-source authority."""
+
+    __slots__ = (
+        "_authority",
+        "_callback_invoked",
+        "_cases",
+        "_consumed",
+        "_expected_selection_sha256",
+        "_lock",
+        "_preparation",
+        "_rustc",
+        "_stdin",
+    )
+
+    def __init__(
+        self,
+        *,
+        rustc: RustcIdentityV1,
+        preparation: RustSelectedSourcePreparationV2,
+        authority: object,
+        cases: tuple[tuple[int, ...], ...],
+        stdin: bytes,
+        construction_token: object,
+    ) -> None:
+        if construction_token is not _CONSTRUCTION_TOKEN:
+            raise TypeError("prepared Rust executors are factory-owned")
+        if type(rustc) is not RustcIdentityV1:
+            raise TypeError("executor rustc identity must be exact")
+        if type(preparation) is not RustSelectedSourcePreparationV2:
+            raise TypeError("executor V2 preparation must be exact")
+        rustc.authenticate_structure()
+        preparation.authenticate_structure()
+        authority_sha256 = _v2_authority_sha256(authority)
+        checked_cases = _validate_batch(cases)
+        expected_stdin = _encode_batch(checked_cases)
+        if (
+            type(stdin) is not bytes
+            or stdin != expected_stdin
+            or preparation.rustc_identity_sha256 != rustc.sha256
+            or preparation.expected_authority_sha256 != authority_sha256
+            or preparation.batch_sha256 != _digest(_V2_BATCH_NAMESPACE, checked_cases)
+            or preparation.stdin_sha256 != sha256(stdin).hexdigest()
+            or preparation.case_count != len(checked_cases)
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source executor preparation derivation changed"
+            )
+        self._rustc = rustc
+        self._preparation = preparation
+        self._authority = authority
+        self._cases = checked_cases
+        self._stdin = stdin
+        self._lock = Lock()
+        self._consumed = False
+        self._callback_invoked = False
+        self._expected_selection_sha256: str | None = None
+        self._authenticate_current()
+
+    @property
+    def rustc_identity(self) -> RustcIdentityV1:
+        self._authenticate_current()
+        return self._rustc
+
+    @property
+    def preparation(self) -> RustSelectedSourcePreparationV2:
+        self._preparation.authenticate_structure()
+        return self._preparation
+
+    def _authenticate_current(self) -> None:
+        _authenticate_rust_toolchain_current(self._rustc)
+        self._preparation.authenticate_structure()
+        if (
+            self._preparation.rustc_identity_sha256 != self._rustc.sha256
+            or _v2_authority_sha256(self._authority) != self._preparation.expected_authority_sha256
+        ):
+            raise RustSelectedActionExecutionError("selected-source executor authority changed")
+
+    def execute_selected_once(self, selection: object) -> RustSelectedActionExecutionV2:
+        """Consume the executor before asking its exact authority to release source."""
+
+        with self._lock:
+            if self._consumed:
+                raise RustSelectedActionExecutionError("prepared Rust executor was consumed")
+            self._consumed = True
+        selection_sha256 = getattr(selection, "sha256", None)
+        if not _valid_sha256(selection_sha256):
+            raise RustSelectedActionExecutionError("selection root is invalid")
+        self._expected_selection_sha256 = selection_sha256
+        try:
+            return _execute_v2_authority(
+                self._authority,
+                selection,
+                self._execute_selected_source_once,
+            )
+        except RustSelectedActionExecutionError:
+            raise
+        except (TypeError, ValueError) as exc:
+            raise RustSelectedActionExecutionError(
+                "selected-source authority release failed"
+            ) from exc
+
+    def _execute_selected_source_once(
+        self,
+        selected_source: RustSelectedSourceV2,
+    ) -> RustSelectedActionExecutionV2:
+        with self._lock:
+            if self._callback_invoked:
+                raise RustSelectedActionExecutionError(
+                    "selected-source authority callback was already consumed"
+                )
+            self._callback_invoked = True
+        selected = _validate_selected_source_v2(selected_source)
+        if (
+            selected.authority_sha256 != self._preparation.expected_authority_sha256
+            or selected.selection_sha256 != self._expected_selection_sha256
+        ):
+            raise RustSelectedActionExecutionError(
+                "selected-source grant differs from executor preparation"
+            )
+        observation = _execute_authenticated_source_observation_once(
+            selected,
+            rustc=self._rustc,
+            preparation=self._preparation,
+            cases=self._cases,
+            stdin=self._stdin,
+            authenticate_current=self._authenticate_current,
+        )
+        dependency_receipt, compile_receipt, run_receipt = _make_v2_execution_receipts(
+            selected,
+            rustc=self._rustc,
+            preparation=self._preparation,
+            cases=self._cases,
+            stdin=self._stdin,
+            observation=observation,
+        )
+        outputs = observation.outputs
+        execution_payload = {
+            "selected_source_grant_sha256": selected.sha256,
+            "rustc_identity_sha256": self._rustc.sha256,
+            "preparation_sha256": self._preparation.sha256,
+            "dependency_receipt_sha256": dependency_receipt.sha256,
+            "compile_receipt_sha256": compile_receipt.sha256,
+            "run_receipt_sha256": run_receipt.sha256,
+            "outputs": outputs,
+        }
+        execution = RustSelectedActionExecutionV2(
+            selected_source=selected,
+            rustc_identity=self._rustc,
+            preparation=self._preparation,
+            dependency_receipt=dependency_receipt,
+            compile_receipt=compile_receipt,
+            run_receipt=run_receipt,
+            outputs=outputs,
+            sha256=_digest(_V2_EXECUTION_NAMESPACE, execution_payload),
+        )
+        execution.authenticate_structure()
+        return execution
+
+
+def prepare_rust_selected_action_executor_v2(
+    authority: object,
+    batch: tuple[tuple[int, ...], ...],
+) -> PreparedRustSelectedActionExecutorV2:
+    """Freeze one exact V2 authority, batch, policy, limits, and toolchain."""
+
+    if os.name != "nt":
+        raise RustSelectedActionExecutionError(
+            "Rust selected-source execution v2 requires Windows Job Objects"
+        )
+    authority_sha256 = _v2_authority_sha256(authority)
+    cases = _validate_batch(batch)
+    stdin = _encode_batch(cases)
+    identity = _discover_rustc()
+    compile_environment, run_environment = _frozen_environments(identity)
+    payload = {
+        "schema": V2_SCHEMA,
+        "claim_boundary": V2_CLAIM_BOUNDARY,
+        "compiler_policy_sha256": V2_COMPILER_POLICY_SHA256,
+        "rustc_identity_sha256": identity.sha256,
+        "expected_authority_sha256": authority_sha256,
+        "harness_sha256": HARNESS_SHA256,
+        "batch_protocol_sha256": V2_BATCH_PROTOCOL_SHA256,
+        "batch_sha256": _digest(_V2_BATCH_NAMESPACE, cases),
+        "stdin_sha256": sha256(stdin).hexdigest(),
+        "compile_environment": compile_environment,
+        "compile_environment_sha256": _environment_sha256("compile", compile_environment),
+        "run_environment": run_environment,
+        "run_environment_sha256": _environment_sha256("run", run_environment),
+        "case_count": len(cases),
+        "compile_limits_sha256": COMPILE_LIMITS.sha256,
+        "run_limits_sha256": RUN_LIMITS.sha256,
+    }
+    preparation = RustSelectedSourcePreparationV2(
+        **payload,
+        sha256=_digest(_V2_PREPARATION_NAMESPACE, payload),
+    )
+    preparation.authenticate_structure()
+    return PreparedRustSelectedActionExecutorV2(
+        rustc=identity,
+        preparation=preparation,
+        authority=authority,
+        cases=cases,
+        stdin=stdin,
+        construction_token=_CONSTRUCTION_TOKEN,
+    )
+
+
 __all__ = [
+    "PreparedRustActionRegistryAuthorityV2",
     "PreparedRustSelectedActionExecutorV1",
+    "PreparedRustSelectedActionExecutorV2",
+    "RustActionRegistryAuthorityReceiptV2",
     "RustCompileReceiptV1",
     "RustDependencyReceiptV1",
     "RustExecutorPreparationV1",
     "RustRunReceiptV1",
     "RustSelectedActionExecutionError",
     "RustSelectedActionExecutionV1",
+    "RustSelectedActionExecutionV2",
+    "RustSelectedSourceCompileReceiptV2",
+    "RustSelectedSourceDependencyReceiptV2",
+    "RustSelectedSourcePreparationV2",
+    "RustSelectedSourceRunReceiptV2",
+    "RustSelectedSourceV2",
+    "adapt_rust_action_registry_authority_v2",
+    "make_rust_selected_source_v2",
     "prepare_rust_selected_action_executor_v1",
+    "prepare_rust_selected_action_executor_v2",
 ]
