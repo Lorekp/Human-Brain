@@ -1,0 +1,40 @@
+{
+  "schema": "humanbrain.continual-rust-token-edit-schema-cohort.result-attestation.v1",
+  "recorded_on": "2026-09-01",
+  "status": "PASS_C1_STRUCTURAL_TOKEN_EDIT_PROPOSAL_V1",
+  "claim_boundary": "Two independent public failed-to-successful Rust episodes selected and consolidated one member of a fixed lexical token-edit schema bank; a structurally fresh source received an unexecuted proposal. The lexer, anchor kinds, directions, and hypothesis bank were supplied rather than learned. This is not evidence of semantic understanding, diagnosis, proposal compilability or correctness, C2 transfer, SWE performance, or intelligence.",
+  "spec_sha256": "3dedb36b3ae4c7a916e1626a32b598f9ed1ee7c23cde2b9a1bc10dabea3d6609",
+  "learner_config_sha256": "84b60787deed505352885fad33abe58ba8b0d6c1d16cee688a7d19da0eb912a5",
+  "promoted_schema_sha256": "7cf44511bced68635e3c77a199542061b404b5861fe6a51c7c6ba88b01c2b014",
+  "implementation_file_sha256s": {
+    "experiments/r3_pilot/common_continual_token_edit_schema_v1.py": "a0380e8ec30c55887a5e2b72c835d701d597a3ad90701d3e6c07cabed67ef443",
+    "tests/test_common_continual_token_edit_schema_v1.py": "67782a984d8eb935591c5d087f3f72deb3d90c57893aecf7272ee762063fd806",
+    "experiments/r3_pilot/continual_rust_token_edit_schema_cohort_v1.py": "026bfcb9e71f9aa9ae85bf7e95d27679151bae29b6bb00a5eb4168009edfdc64",
+    "tests/test_continual_rust_token_edit_schema_cohort_v1.py": "1e37ae0a45b5aa41e412e80b4d49bfcb62daefb5e4655fef5c0561283210dc09"
+  },
+  "trusted_test": {
+    "command": ".venv\\Scripts\\python.exe -m pytest -q tests/test_continual_rust_token_edit_schema_cohort_v1.py",
+    "environment": "trusted Windows host outside the filesystem sandbox",
+    "outcome": "1 passed",
+    "cohort_execution_count": 1,
+    "sandbox_discovery_attempt_executed_source_count": 0
+  },
+  "work": {
+    "source_release_count": 4,
+    "compile_count": 4,
+    "run_count": 4,
+    "failed_consequence_count": 2,
+    "successful_consequence_count": 2,
+    "schema_advance_count": 2,
+    "parent_immutability_check_count": 2,
+    "proposed_source_execution_count": 0
+  },
+  "one_source_status": "STOP_INSUFFICIENT_INDEPENDENT_SOURCES",
+  "promoted_schema_indices": [
+    3
+  ],
+  "fresh_proposal_status": "READY",
+  "fresh_proposal_executed": false,
+  "authenticated_result_sha256": null,
+  "authenticated_result_retention": "The exact trusted pytest authenticated the full result in memory, then exited without serializing its result root or transcript. This attestation does not reconstruct or substitute for that missing retained result."
+}
