@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; V7 executes; causal V1 STOPs on fresh composition]
+R4  Language/software continual coding               [OPEN; V8 localizes exact replay + action transport before execution]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -370,6 +370,34 @@ mesoscopic V8 stream. A later fresh causal successor should learn supported
 contrastive cue-region-to-segment relations, preserve stable byte/segment time,
 and admit singleton values only through those reusable relations. This remains
 pre-SWE mechanism localization; R5/R6 stay sealed.
+
+V8 then integrated `CausalSequencePointerModel` behind the generic
+`NeuronalToolModel` and `PersistentToolLearner` interface. Twelve fresh
+public-TRAIN repository tasks exercised acquisition, cross-source composition,
+feedback/revision, delayed transfer, and calibrated STOP. Treatment,
+no-update, and `CONTRAST_OFF` each scored 2/12, solely on the two STOP tasks.
+Across all attempts no action reached `submit_patch` or the sandbox: there were
+32 physical STOPs and 16 materialized outputs rejected as malformed canonical
+tool actions.
+
+The active proposals shared one pointer template across four different prompt
+inventories. Treatment's four exact local NoGo updates suppressed each repeat
+into STOP; no-update repeated it; `CONTRAST_OFF` never proposed it. The contrast
+path is therefore causally active but transfers an entire ordinal pointer
+template rather than a stable action grammar with relation-bound slots. Exact
+public-prior retention was also only 3/8 in every arm before online changes,
+showing that the token-wise semantic race is not a reliable episodic replay
+path for long heterogeneous outputs.
+
+The current construction seam is a sparse exact-state episode assembly plus a
+generic typed action transport. Learned exact state must excite an episode cell
+and physically replay its sequence; novel transfer must not inherit stored
+ordinal bindings. The transport codec may canonicalize interface structure but
+must leave act/STOP, action name, payload, retrieval, and consequence learning
+to neuronal races. Once this compact boundary is causal and frozen,
+development returns to a fresh V9 repository stream rather than extending a
+microgate series. The immutable V8 artifact SHA-256 is
+`adee84be37609f03eca023817571b53a434662aee4f5455a90d9ae3a18ccb9b3`.
 
 ### Coding
 

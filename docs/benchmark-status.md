@@ -231,6 +231,69 @@ stable byte time with learned chunk cells above it, and use segment-relative
 rather than absolute token state. Any causal retest requires a genuinely fresh
 cohort. R5 and R6 remain sealed.
 
+### Terminal V8 persistent neuronal tool-learning result
+
+The redesigned public-TRAIN V8 stream was frozen and spent exactly once. It
+contained twelve repository tasks: three acquisition, three cross-module
+composition, two feedback/revision, two delayed-transfer, and two genuinely
+insufficient-evidence STOP tasks. One persistent treatment learner, an
+independently grown no-update control, and a `CONTRAST_OFF` control shared the
+same eight-case public bootstrap root and one generic `submit_patch` JSON-Schema
+affordance. No target span, candidate patch, repaired source, task/family ID, or
+private evaluator result entered cognition.
+
+All three arms scored 2/12. Every success was a correct physical STOP on the two
+evidence-limited tasks; acquisition, composition, revision, and delayed
+retention all scored zero. Across 48 total attempts there were 32 physical
+STOPs, 16 materialized but malformed tool actions, zero admitted
+`submit_patch` actions, zero fixture receipts, and zero sandbox executions.
+Treatment made four negative updates: each changed the learned digest and
+converted one malformed proposal into STOP on its next attempt. No-update
+repeated the identical malformed proposal three times; `CONTRAST_OFF` always
+stopped. Plasticity therefore learned local avoidance, not correction or
+transferable competence.
+
+The malformed attempts occurred exactly on stream ordinals 0, 3, 6, and 9.
+All shared pointer-output SHA-256
+`54e41645aad6fcca453a1cdb543c94115a5c25fb33e9aae0db419f59d1354c97`
+but materialized into four prompt-dependent raw outputs. The `<tool>` wrapper
+matched and pointer materialization succeeded; canonical JSON/tool-shape
+validation failed before patch extraction. This causally demonstrates active
+contrast selection of one whole prior pointer template under four different
+live lexical inventories. It does not test unified-diff quality, program
+semantics, or evaluator behavior because none was reached.
+
+Public-bootstrap replay was only 3/8 in every arm, already at the unchanged
+initial checkpoint. Exact cases 0, 3, and 7 replayed; cases 1, 2, 4, 5, and 6
+physically stopped. V8 updates caused no further measured forgetting, but the
+baseline exact episodic route is not reliable for long heterogeneous actions.
+The immediate reusable correction is therefore twofold: exact learned
+observations need a dedicated neuronal episode-assembly race and physical
+sequence replay; structured tool envelopes need a stable generic transport
+codec so prompt-local lexical roles cannot corrupt interface keys. Act/STOP,
+tool choice, payload construction, retrieval, and learning must remain
+neuronal. Serialization alone may remain an environment adapter.
+
+The immutable artifact is
+[`r4_integrated_continual_coding_session_v8.json`](../benchmarks/r4_integrated_continual_coding_session_v8.json),
+206,307 bytes, SHA-256
+`adee84be37609f03eca023817571b53a434662aee4f5455a90d9ae3a18ccb9b3`;
+its embedded result digest is
+`3d8b50e6903bcfe679cc2a584bec8cc49fc16b9a0fa0c25feaae73feb5d105a2`.
+Fixture, manifest, runner, TRAIN-stream, stream-custody, tool-contract, and
+source-custody SHA-256 values are respectively
+`1ed195eb65abe58e632acc5732e0a7853de86625ae7d9c654105ea1d91dcea1d`,
+`413ccd5a7a0d46fa74ae7b487b4cdd2da9be4c65b4e4c21bc3f17097b524bdf2`,
+`7373adc7a6c86bf0f42296c48eb4fd90a9e2474b272f8db9b1ad3febd24d2629`,
+`3a7b1e574359fe57dfb574d492ea84c2cfddd36bf248afc7a7df84b468931120`,
+`c528e843607de7b9e7297ed82ab41a89328595e5c25af75b35fb2b1421e8e399`,
+`3e171db1868f4142d774c2d7874ae41015af354012c92ec0e6af4644b3da2b46`,
+and
+`44aa1db93e33fc415711576ed1680fcfa15f73ee4c014746d7704a40ede5141c`.
+This is a clean pre-execution failure localization, not continual improvement,
+repository competence, Simple-SWE, SWE-bench, Gemma, Opus, or intelligence.
+R5 and R6 remain sealed.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment

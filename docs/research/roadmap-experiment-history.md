@@ -2299,6 +2299,50 @@ failure distribution confirms this bottleneck should a fresh, model-blind
 three-factor corner cohort test the contrastive relation path. No protected,
 SWE, Gemma, Opus, or intelligence claim is licensed; R5/R6 remain sealed.
 
+### Terminal V8 integrated session and action-boundary localization
+
+V8 replaced the synthetic composition gate with a larger persistent
+public-TRAIN repository stream. Twelve fresh tasks covered acquisition,
+cross-source composition, consequence-driven revision, delayed transfer, and
+two insufficient-evidence controls. The one public action surface was a strict
+generic `submit_patch` JSON-Schema affordance; private evaluation stayed in an
+isolated worker. The treatment, no-update, and `CONTRAST_OFF` arms were grown
+independently from the same eight public successes, and all posthoc scoring was
+deferred until every arm had completed.
+
+The terminal scores were 2/12, 2/12, and 2/12. Only the two correct STOP tasks
+passed. Across 48 attempts, 32 selected physical STOP and 16 produced a
+materialized `<tool>` response that failed canonical JSON/tool-shape decoding.
+No action was admitted, no patch was extracted, no sandbox ran, and no semantic
+repository judgment occurred. Treatment applied four digest-changing negative
+updates and turned each malformed proposal into STOP on retry. The no-update
+arm repeated each proposal identically; `CONTRAST_OFF` always stopped. This is
+causal evidence for failure-conditioned local suppression, but not for
+correction.
+
+All malformed attempts shared pointer-output SHA-256
+`54e41645aad6fcca453a1cdb543c94115a5c25fb33e9aae0db419f59d1354c97`
+while producing four distinct prompt-conditioned raw hashes. Thus a whole
+contrast-selected prior pointer template crossed lexical inventories and
+corrupted the action shape. Separately, the unchanged bootstrap checkpoint
+replayed only cases 0, 3, and 7 of eight; all arms physically stopped on the
+same other five. The next work is licensed at the representation boundary,
+before semantic patch synthesis: exact observations need a dedicated neuronal
+episode assembly, and interface serialization needs a generic stable codec
+whose structure cannot be rebound as prompt-local vocabulary. Payload content
+and all cognitive choices remain neuronal.
+
+The spent artifact is
+[`r4_integrated_continual_coding_session_v8.json`](../../benchmarks/r4_integrated_continual_coding_session_v8.json),
+SHA-256
+`adee84be37609f03eca023817571b53a434662aee4f5455a90d9ae3a18ccb9b3`,
+with valid embedded result digest
+`3d8b50e6903bcfe679cc2a584bec8cc49fc16b9a0fa0c25feaae73feb5d105a2`.
+Its task, manifest, and runner sources remain frozen. V8 must not be rerun or
+tuned. This is pre-execution failure localization only; it is not software
+competence, continual improvement, protected transfer, SWE-bench, Gemma,
+Opus, or intelligence evidence. R5/R6 remain sealed.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:
