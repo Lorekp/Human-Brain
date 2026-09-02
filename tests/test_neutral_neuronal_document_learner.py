@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from humanbrain.neutral_neuronal_frame_induction import (
+from humanbrain.neutral_neuronal_document_learner import (
     NeutralFrameAblation,
     start,
 )
@@ -69,6 +69,48 @@ def test_neutral_frames_learn_swapped_transfer_and_preserve_ambiguity() -> None:
 
     reverse_route = brain.respond(b"tava pavo", _fresh(b"neri kenu tava"))
     assert reverse_route.emitted == b"neri"
+
+    fact_documents = (
+        _document("fact-a", b"tava pavo neri"),
+        _document("fact-b", b"tava pavo neri"),
+    )
+    parent_checkpoint = brain.checkpoint_sha256
+    remembered = brain.consolidate(fact_documents)
+    assert brain.checkpoint_sha256 == parent_checkpoint
+    assert brain.training_summary.consolidated_fact_count == 0
+    assert brain.respond(b"neri kenu").stopped
+    assert remembered.training_summary.consolidated_fact_count == 1
+    assert remembered.training_summary.fact_source_count == 2
+    assert remembered.training_summary.retained_lexical_byte_count > 0
+
+    delayed = remembered.respond(b"neri kenu")
+    assert delayed.status == "EMIT"
+    assert delayed.emitted == b"tava"
+    assert len(delayed.support_provenance_root_sha256s) == 2
+    assert remembered.respond(b"kenu tava").emitted == b"neri"
+
+    write_off = brain.consolidate(
+        fact_documents,
+        ablation=NeutralFrameAblation.FACT_CONSOLIDATION_OFF,
+    )
+    assert write_off.training_summary.consolidated_fact_count == 0
+    assert write_off.respond(b"neri kenu").stopped
+    retrieval_off = remembered.respond(
+        b"neri kenu",
+        ablation=NeutralFrameAblation.FACT_RETRIEVAL_OFF,
+    )
+    assert retrieval_off.stopped
+    assert retrieval_off.emitted is None
+
+    conflicted = remembered.consolidate(
+        (_document("fact-conflict", b"zora pavo neri"),)
+    )
+    assert conflicted.training_summary.consolidated_fact_count == 2
+    delayed_conflict = conflicted.respond(b"neri kenu")
+    assert delayed_conflict.stopped
+    assert delayed_conflict.emitted is None
+    assert delayed_conflict.cell_races[-1].stop_reason == "collision"
+    assert remembered.respond(b"neri kenu").emitted == b"tava"
 
     relabeled = start().consolidate(
         (

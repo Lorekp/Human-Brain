@@ -1,8 +1,9 @@
-"""Neutral neuronal induction of reusable two-slot language frames.
+"""Neutral neuronal document learning through reusable two-slot frames.
 
 The public seam accepts only opaque documents, a raw query, and causal
-ablations.  Complete sentences and lexical payloads are never retained.
-Consolidation keeps sparse frame and filler pointers plus opaque provenance
+ablations.  Complete documents and sentences are never retained; only exact
+fact endpoint lexemes needed for bidirectional emission survive consolidation.
+Consolidation also keeps sparse frame and filler pointers plus opaque provenance
 roots.  Repeated positional structure promotes through a physical
 support-versus-STOP race; independently shared filler pairs then drive a
 physical SAME-versus-SWAPPED orientation race.
@@ -46,7 +47,7 @@ from humanbrain.sparse_neuronal_role_filler import (
 
 __all__ = [
     "CLAIM_BOUNDARY",
-    "FrozenNeutralNeuronalFrameNetwork",
+    "FrozenNeutralNeuronalDocumentLearner",
     "NeutralFrameAblation",
     "NeutralFrameDecision",
     "NeutralFrameRaceTrace",
@@ -57,8 +58,9 @@ __all__ = [
 
 CLAIM_BOUNDARY = (
     "neutral two-slot structural recurrence and shared-binding SAME/SWAPPED "
-    "transfer from opaque documents; token boundaries, positional slot "
-    "enumeration, and exact lexeme emission remain scaffolding"
+    "transfer plus delayed provenance-bearing fact recall from opaque documents; "
+    "token boundaries, positional slot enumeration, and exact lexeme emission "
+    "remain scaffolding"
 )
 
 _RACE_STEPS = 600
@@ -75,6 +77,12 @@ _PAIR_NAMESPACE = b"humanbrain.neutral-frame.pair.v1\0"
 _PROVENANCE_NAMESPACE = b"humanbrain.neutral-frame.provenance.v1\0"
 _DOCUMENT_NAMESPACE = b"humanbrain.neutral-frame.document.v1\0"
 _ROUTE_NAMESPACE = b"humanbrain.neutral-frame.route.v1\0"
+_FACT_KEY_NAMESPACE = b"humanbrain.neutral-document.fact-key.v1\0"
+_FACT_NAMESPACE = b"humanbrain.neutral-document.fact.v1\0"
+_FACT_SOURCE_NAMESPACE = b"humanbrain.neutral-document.fact-source.v1\0"
+_FACT_OCCURRENCE_PAIR_NAMESPACE = (
+    b"humanbrain.neutral-document.fact-occurrence-pair.v1\0"
+)
 _RACE_NAMESPACE = b"humanbrain.neutral-frame.race.v1\0"
 
 _FRAME_EVENT = b"\x00neutral-frame/structure/v1\0"
@@ -143,6 +151,8 @@ class NeutralFrameAblation(StrEnum):
     FRAME_PROMOTION_OFF = "frame_promotion_off"
     ASSOCIATION_LEARNING_OFF = "association_learning_off"
     FRAME_MATCH_OFF = "frame_match_off"
+    FACT_CONSOLIDATION_OFF = "fact_consolidation_off"
+    FACT_RETRIEVAL_OFF = "fact_retrieval_off"
     READOUT_OFF = "readout_off"
     ALIGNMENT_OFF = "alignment_off"
     MOTOR_OFF = "motor_off"
@@ -374,11 +384,82 @@ def _route_record(route: _FrameRoute, *, include_sha256: bool) -> dict[str, obje
 
 
 @dataclass(frozen=True, slots=True)
+class _FactSource:
+    provenance_root_sha256: str
+    document_root_sha256: str
+    occurrence_pair_root_sha256: str
+    write_trace_sha256: str
+    sha256: str
+
+
+def _fact_source_record(
+    source: _FactSource,
+    *,
+    include_sha256: bool,
+) -> dict[str, object]:
+    record: dict[str, object] = {
+        "document_root_sha256": source.document_root_sha256,
+        "occurrence_pair_root_sha256": source.occurrence_pair_root_sha256,
+        "provenance_root_sha256": source.provenance_root_sha256,
+        "write_trace_sha256": source.write_trace_sha256,
+    }
+    if include_sha256:
+        record["sha256"] = source.sha256
+    return record
+
+
+def _retained_lexeme_record(lexeme: _Lexeme) -> dict[str, object]:
+    if lexeme.value is None:
+        raise RuntimeError("retained fact lexeme lost its exact bytes")
+    return {
+        "pointer": _pointer_record(lexeme.pointer),
+        "value_hex": lexeme.value.hex(),
+        "value_sha256": lexeme.value_sha256,
+    }
+
+
+@dataclass(frozen=True, slots=True)
+class _FactPair:
+    key_sha256: str
+    frame_key_sha256: str
+    frame_pointer: SparseBlockPointer
+    filler0: _Lexeme
+    filler1: _Lexeme
+    forward_pair_pointer: SparseBlockPointer
+    reverse_pair_pointer: SparseBlockPointer
+    sources: tuple[_FactSource, ...]
+    binding_trace_sha256s: tuple[str, str]
+    sha256: str
+
+
+def _fact_record(fact: _FactPair, *, include_sha256: bool) -> dict[str, object]:
+    record: dict[str, object] = {
+        "binding_trace_sha256s": fact.binding_trace_sha256s,
+        "filler0": _retained_lexeme_record(fact.filler0),
+        "filler1": _retained_lexeme_record(fact.filler1),
+        "forward_pair_pointer": _pointer_record(fact.forward_pair_pointer),
+        "frame_key_sha256": fact.frame_key_sha256,
+        "frame_pointer": _pointer_record(fact.frame_pointer),
+        "key_sha256": fact.key_sha256,
+        "reverse_pair_pointer": _pointer_record(fact.reverse_pair_pointer),
+        "sources": tuple(
+            _fact_source_record(source, include_sha256=True)
+            for source in fact.sources
+        ),
+    }
+    if include_sha256:
+        record["sha256"] = fact.sha256
+    return record
+
+
+@dataclass(frozen=True, slots=True)
 class NeutralFrameTrainingSummary:
     consolidation_episode_count: int
     retained_evidence_count: int
     promoted_frame_count: int
     directional_route_count: int
+    consolidated_fact_count: int
+    fact_source_count: int
     retained_raw_document_count: int
     retained_full_sentence_count: int
     retained_lexical_byte_count: int
@@ -395,6 +476,7 @@ class NeutralFrameDecision:
     stop_reason: str | None
     producer_checkpoint_sha256: str
     support_path_count: int
+    support_provenance_root_sha256s: tuple[str, ...]
     cell_races: tuple[NeutralFrameRaceTrace, ...]
     cleanup_races: tuple[SparseCleanupRaceTrace, ...]
     transform_races: tuple[SparseTransformRaceTrace, ...]
@@ -407,14 +489,18 @@ def _state_record(
     *,
     frames: tuple[_Frame, ...],
     routes: tuple[_FrameRoute, ...],
+    facts: tuple[_FactPair, ...],
     summary: NeutralFrameTrainingSummary,
 ) -> dict[str, object]:
     return {
+        "facts": tuple(_fact_record(fact, include_sha256=True) for fact in facts),
         "frames": tuple(_frame_record(frame) for frame in frames),
         "routes": tuple(_route_record(route, include_sha256=True) for route in routes),
         "summary": {
             "consolidation_episode_count": summary.consolidation_episode_count,
+            "consolidated_fact_count": summary.consolidated_fact_count,
             "directional_route_count": summary.directional_route_count,
+            "fact_source_count": summary.fact_source_count,
             "learning_active_synapses": summary.learning_active_synapses,
             "learning_physical_cell_steps": summary.learning_physical_cell_steps,
             "promoted_frame_count": summary.promoted_frame_count,
@@ -427,11 +513,12 @@ def _state_record(
 
 
 @dataclass(frozen=True, slots=True, init=False)
-class FrozenNeutralNeuronalFrameNetwork:
+class FrozenNeutralNeuronalDocumentLearner:
     """Immutable neutral frame checkpoint with read-only neuronal inference."""
 
     _frames: tuple[_Frame, ...]
     _routes: tuple[_FrameRoute, ...]
+    _facts: tuple[_FactPair, ...]
     checkpoint_sha256: str
     training_summary: NeutralFrameTrainingSummary
 
@@ -441,6 +528,7 @@ class FrozenNeutralNeuronalFrameNetwork:
         *,
         frames: tuple[_Frame, ...],
         routes: tuple[_FrameRoute, ...],
+        facts: tuple[_FactPair, ...],
         checkpoint_sha256: str,
         training_summary: NeutralFrameTrainingSummary,
     ) -> None:
@@ -448,6 +536,7 @@ class FrozenNeutralNeuronalFrameNetwork:
             raise TypeError("use start() and consolidate()")
         object.__setattr__(self, "_frames", frames)
         object.__setattr__(self, "_routes", routes)
+        object.__setattr__(self, "_facts", facts)
         object.__setattr__(self, "checkpoint_sha256", checkpoint_sha256)
         object.__setattr__(self, "training_summary", training_summary)
 
@@ -457,6 +546,7 @@ class FrozenNeutralNeuronalFrameNetwork:
             _state_record(
                 frames=self._frames,
                 routes=self._routes,
+                facts=self._facts,
                 summary=self.training_summary,
             ),
         )
@@ -471,7 +561,7 @@ class FrozenNeutralNeuronalFrameNetwork:
     ) -> Self:
         """Return a new checkpoint after one neutral document episode."""
 
-        if type(self) is not FrozenNeutralNeuronalFrameNetwork:
+        if type(self) is not FrozenNeutralNeuronalDocumentLearner:
             raise TypeError("network must be one exact frozen checkpoint")
         if type(documents) is not tuple or not documents:
             raise ValueError("documents must be a non-empty tuple")
@@ -481,7 +571,8 @@ class FrozenNeutralNeuronalFrameNetwork:
             raise TypeError("ablation must be NeutralFrameAblation")
         self.authenticate()
 
-        observed, binding_races = _observe_evidence(documents)
+        tape = OpaqueDocumentEventTape.observe(b"_", documents)
+        observed, binding_races = _observe_evidence(tape, documents)
         by_root = {
             evidence.sha256: evidence
             for frame in self._frames
@@ -498,22 +589,49 @@ class FrozenNeutralNeuronalFrameNetwork:
             frames,
             ablation=ablation,
         )
-        all_cell_races = (*promotion_races, *orientation_races)
-        all_binding_races = (*binding_races, *route_binding_races)
+        parent_promoted_keys = {
+            frame.key_sha256 for frame in self._frames if frame.promoted
+        }
+        fact_frames = tuple(
+            frame
+            for frame in frames
+            if frame.promoted and frame.key_sha256 in parent_promoted_keys
+        )
+        fact_matches, fact_match_races = _full_matches(
+            tape,
+            documents,
+            fact_frames,
+            disabled=False,
+        )
+        facts, fact_write_races, fact_binding_races = _consolidate_facts(
+            self._facts,
+            fact_matches,
+            ablation=ablation,
+        )
+        all_cell_races = (*promotion_races, *orientation_races, *fact_write_races)
+        all_cleanup_races = fact_match_races
+        all_binding_races = (
+            *binding_races,
+            *route_binding_races,
+            *fact_binding_races,
+        )
         return _freeze(
             frames=frames,
             routes=routes,
+            facts=facts,
             consolidation_episode_count=(
                 self.training_summary.consolidation_episode_count + 1
             ),
             learning_physical_cell_steps=(
                 self.training_summary.learning_physical_cell_steps
                 + sum(race.physical_cell_steps for race in all_cell_races)
+                + sum(race.physical_cell_steps for race in all_cleanup_races)
                 + sum(race.physical_cell_steps for race in all_binding_races)
             ),
             learning_active_synapses=(
                 self.training_summary.learning_active_synapses
                 + sum(race.active_synapses for race in all_cell_races)
+                + sum(race.active_synapses for race in all_cleanup_races)
                 + sum(race.active_synapses for race in all_binding_races)
             ),
         )
@@ -521,7 +639,7 @@ class FrozenNeutralNeuronalFrameNetwork:
     def respond(
         self,
         query: bytes,
-        documents: tuple[OpaqueDocument, ...],
+        documents: tuple[OpaqueDocument, ...] = (),
         *,
         ablation: NeutralFrameAblation = NeutralFrameAblation.NONE,
     ) -> NeutralFrameDecision:
@@ -539,14 +657,69 @@ class FrozenNeutralNeuronalFrameNetwork:
         return _respond(self, query, documents, ablation=ablation)
 
 
+def _validated_retained_lexemes(
+    frames: tuple[_Frame, ...],
+    facts: tuple[_FactPair, ...],
+) -> dict[str, bytes]:
+    frame_pointers: dict[str, set[SparseBlockPointer]] = {}
+    for frame in frames:
+        frame_pointers.setdefault(frame.key_sha256, set()).add(frame.pointer)
+    if len({fact.key_sha256 for fact in facts}) != len(facts):
+        raise RuntimeError("fact keys must be unique")
+
+    retained: dict[str, bytes] = {}
+    for fact in facts:
+        if fact.frame_pointer not in frame_pointers.get(fact.frame_key_sha256, set()):
+            raise RuntimeError("retained fact lost its learned frame")
+        expected_key = _digest(
+            _FACT_KEY_NAMESPACE,
+            {
+                "filler0_sha256": fact.filler0.value_sha256,
+                "filler1_sha256": fact.filler1.value_sha256,
+                "frame_key_sha256": fact.frame_key_sha256,
+            },
+        )
+        if fact.key_sha256 != expected_key:
+            raise RuntimeError("retained fact key changed")
+        for lexeme in (fact.filler0, fact.filler1):
+            if lexeme.value is None or lexeme != _lexeme(
+                lexeme.value,
+                retain_value=True,
+            ):
+                raise RuntimeError("retained fact lexeme custody changed")
+            previous = retained.get(lexeme.value_sha256)
+            if previous is not None and previous != lexeme.value:
+                raise RuntimeError("one lexical root mapped to different bytes")
+            retained[lexeme.value_sha256] = lexeme.value
+        if len({source.provenance_root_sha256 for source in fact.sources}) != len(
+            fact.sources
+        ):
+            raise RuntimeError("fact provenance roots must be unique")
+        for source in fact.sources:
+            expected_source = _digest(
+                _FACT_SOURCE_NAMESPACE,
+                _fact_source_record(source, include_sha256=False),
+            )
+            if source.sha256 != expected_source:
+                raise RuntimeError("retained fact provenance custody changed")
+        expected_fact = _digest(
+            _FACT_NAMESPACE,
+            _fact_record(fact, include_sha256=False),
+        )
+        if fact.sha256 != expected_fact:
+            raise RuntimeError("retained fact custody changed")
+    return retained
+
+
 def _freeze(
     *,
     frames: tuple[_Frame, ...],
     routes: tuple[_FrameRoute, ...],
+    facts: tuple[_FactPair, ...],
     consolidation_episode_count: int,
     learning_physical_cell_steps: int,
     learning_active_synapses: int,
-) -> FrozenNeutralNeuronalFrameNetwork:
+) -> FrozenNeutralNeuronalDocumentLearner:
     ordered_frames = tuple(sorted(frames, key=lambda frame: frame.key_sha256))
     ordered_routes = tuple(
         sorted(
@@ -557,36 +730,49 @@ def _freeze(
             ),
         )
     )
+    ordered_facts = tuple(sorted(facts, key=lambda fact: fact.key_sha256))
+    retained_lexemes = _validated_retained_lexemes(ordered_frames, ordered_facts)
     summary = NeutralFrameTrainingSummary(
         consolidation_episode_count=consolidation_episode_count,
         retained_evidence_count=sum(len(frame.evidence) for frame in ordered_frames),
         promoted_frame_count=sum(frame.promoted for frame in ordered_frames),
         directional_route_count=len(ordered_routes),
+        consolidated_fact_count=len(ordered_facts),
+        fact_source_count=sum(len(fact.sources) for fact in ordered_facts),
         retained_raw_document_count=0,
         retained_full_sentence_count=0,
-        retained_lexical_byte_count=0,
+        retained_lexical_byte_count=sum(
+            len(value) for value in retained_lexemes.values()
+        ),
         learning_physical_cell_steps=learning_physical_cell_steps,
         learning_active_synapses=learning_active_synapses,
     )
     checkpoint = _digest(
         _CHECKPOINT_NAMESPACE,
-        _state_record(frames=ordered_frames, routes=ordered_routes, summary=summary),
+        _state_record(
+            frames=ordered_frames,
+            routes=ordered_routes,
+            facts=ordered_facts,
+            summary=summary,
+        ),
     )
-    return FrozenNeutralNeuronalFrameNetwork(
+    return FrozenNeutralNeuronalDocumentLearner(
         _CONSTRUCTION_TOKEN,
         frames=ordered_frames,
         routes=ordered_routes,
+        facts=ordered_facts,
         checkpoint_sha256=checkpoint,
         training_summary=summary,
     )
 
 
-def start() -> FrozenNeutralNeuronalFrameNetwork:
-    """Return the authenticated empty neutral frame network."""
+def start() -> FrozenNeutralNeuronalDocumentLearner:
+    """Return the authenticated empty neutral document learner."""
 
     return _freeze(
         frames=(),
         routes=(),
+        facts=(),
         consolidation_episode_count=0,
         learning_physical_cell_steps=0,
         learning_active_synapses=0,
@@ -621,6 +807,22 @@ def _frame_descriptor(
     )
 
 
+def _document_roots(document: OpaqueDocument) -> tuple[str, str]:
+    provenance_root = _bytes_root(_PROVENANCE_NAMESPACE, document.provenance_id)
+    document_root = _digest(
+        _DOCUMENT_NAMESPACE,
+        {
+            "content_sha256": _bytes_root(_DOCUMENT_NAMESPACE, document.content),
+            "document_id_sha256": _bytes_root(
+                _DOCUMENT_NAMESPACE,
+                document.document_id,
+            ),
+            "provenance_root_sha256": provenance_root,
+        },
+    )
+    return provenance_root, document_root
+
+
 def _make_evidence(
     *,
     tokens: tuple[bytes, ...],
@@ -637,18 +839,9 @@ def _make_evidence(
     reverse = _SUBSTRATE.bind(filler1.pointer, filler0.pointer)
     if forward.pointer is None or reverse.pointer is None:
         raise RuntimeError("unablated pair binding selected tonic STOP")
-    provenance_root = _bytes_root(_PROVENANCE_NAMESPACE, provenance_id)
-    document_root = _digest(
-        _DOCUMENT_NAMESPACE,
-        {
-            "content_sha256": _bytes_root(_DOCUMENT_NAMESPACE, document.content),
-            "document_id_sha256": _bytes_root(
-                _DOCUMENT_NAMESPACE,
-                document.document_id,
-            ),
-            "provenance_root_sha256": provenance_root,
-        },
-    )
+    provenance_root, document_root = _document_roots(document)
+    if provenance_root != _bytes_root(_PROVENANCE_NAMESPACE, provenance_id):
+        raise RuntimeError("sentence provenance diverged from its document")
     provisional = _FrameEvidence(
         frame_key_sha256=frame_key,
         frame_pointer=frame_pointer,
@@ -674,9 +867,9 @@ def _make_evidence(
 
 
 def _observe_evidence(
+    tape: OpaqueDocumentEventTape,
     documents: tuple[OpaqueDocument, ...],
 ) -> tuple[tuple[_FrameEvidence, ...], tuple[SparseTransformRaceTrace, ...]]:
-    tape = OpaqueDocumentEventTape.observe(b"_", documents)
     evidence: list[_FrameEvidence] = []
     races: list[SparseTransformRaceTrace] = []
     for document_sentences in tape.document_sentences:
@@ -958,6 +1151,9 @@ class _FullMatch:
     frame: _Frame
     filler0: _Lexeme
     filler1: _Lexeme
+    provenance_root_sha256: str
+    document_root_sha256: str
+    occurrence_pair_root_sha256: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -999,31 +1195,256 @@ def _full_matches(
 ) -> tuple[tuple[_FullMatch, ...], tuple[SparseCleanupRaceTrace, ...]]:
     matches: list[_FullMatch] = []
     races: list[SparseCleanupRaceTrace] = []
+    frames_by_key: dict[str, list[_Frame]] = {}
+    for frame in frames:
+        frames_by_key.setdefault(frame.key_sha256, []).append(frame)
     for sentence_stream in tape.document_sentences:
         for sentence in sentence_stream:
-            if sentence.document_index is None:
+            if sentence.document_index is None or sentence.provenance_id is None:
                 continue
+            document = documents[sentence.document_index]
             tokens = _sentence_lexemes(
                 sentence,
-                documents[sentence.document_index].content,
+                document.content,
             )
             if len(tokens) < 3:
                 continue
+            provenance_root, document_root = _document_roots(document)
+            if provenance_root != _bytes_root(
+                _PROVENANCE_NAMESPACE,
+                sentence.provenance_id,
+            ):
+                raise RuntimeError("matched sentence lost its document provenance")
             for slots in combinations(range(len(tokens)), 2):
                 descriptor = _frame_descriptor(tokens, slots)
                 projected = _SUBSTRATE.project(_FRAME_EVENT + descriptor)
-                frame, race = _cleanup_match(projected, frames, disabled=disabled)
+                frame_key = _digest(
+                    _FRAME_NAMESPACE,
+                    {"descriptor_hex": descriptor.hex()},
+                )
+                candidates = tuple(frames_by_key.get(frame_key, ()))
+                frame, race = _cleanup_match(
+                    projected,
+                    candidates,
+                    disabled=disabled,
+                )
                 if race is not None:
                     races.append(race)
                 if frame is None:
                     continue
+                first_occurrence = sentence.token_occurrences[slots[0]]
+                second_occurrence = sentence.token_occurrences[slots[1]]
+                occurrence_pair_root = _digest(
+                    _FACT_OCCURRENCE_PAIR_NAMESPACE,
+                    {
+                        "document_root_sha256": document_root,
+                        "first_occurrence": {
+                            "byte_end": first_occurrence.byte_end,
+                            "byte_start": first_occurrence.byte_start,
+                            "identity_sha256": _bytes_root(
+                                _FACT_OCCURRENCE_PAIR_NAMESPACE,
+                                first_occurrence.identity_event,
+                            ),
+                            "sentence_token_index": (
+                                first_occurrence.sentence_token_index
+                            ),
+                            "token_index": first_occurrence.token_index,
+                        },
+                        "second_occurrence": {
+                            "byte_end": second_occurrence.byte_end,
+                            "byte_start": second_occurrence.byte_start,
+                            "identity_sha256": _bytes_root(
+                                _FACT_OCCURRENCE_PAIR_NAMESPACE,
+                                second_occurrence.identity_event,
+                            ),
+                            "sentence_token_index": (
+                                second_occurrence.sentence_token_index
+                            ),
+                            "token_index": second_occurrence.token_index,
+                        },
+                        "sentence_index": sentence.sentence_index,
+                        "slot_indices": slots,
+                    },
+                )
                 matches.append(
                     _FullMatch(
                         frame=frame,
                         filler0=_lexeme(tokens[slots[0]], retain_value=True),
                         filler1=_lexeme(tokens[slots[1]], retain_value=True),
+                        provenance_root_sha256=provenance_root,
+                        document_root_sha256=document_root,
+                        occurrence_pair_root_sha256=occurrence_pair_root,
                     )
                 )
+    return tuple(matches), tuple(races)
+
+
+def _make_fact(
+    match: _FullMatch,
+    *,
+    write_trace: NeutralFrameRaceTrace,
+) -> tuple[_FactPair, tuple[SparseTransformRaceTrace, SparseTransformRaceTrace]]:
+    if match.filler0.value is None or match.filler1.value is None:
+        raise RuntimeError("fact consolidation requires exact live fillers")
+    forward = _SUBSTRATE.bind(match.filler0.pointer, match.filler1.pointer)
+    reverse = _SUBSTRATE.bind(match.filler1.pointer, match.filler0.pointer)
+    if forward.pointer is None or reverse.pointer is None:
+        raise RuntimeError("unablated fact binding selected tonic STOP")
+    provisional_source = _FactSource(
+        provenance_root_sha256=match.provenance_root_sha256,
+        document_root_sha256=match.document_root_sha256,
+        occurrence_pair_root_sha256=match.occurrence_pair_root_sha256,
+        write_trace_sha256=write_trace.sha256,
+        sha256="",
+    )
+    source = replace(
+        provisional_source,
+        sha256=_digest(
+            _FACT_SOURCE_NAMESPACE,
+            _fact_source_record(provisional_source, include_sha256=False),
+        ),
+    )
+    key = _digest(
+        _FACT_KEY_NAMESPACE,
+        {
+            "filler0_sha256": match.filler0.value_sha256,
+            "filler1_sha256": match.filler1.value_sha256,
+            "frame_key_sha256": match.frame.key_sha256,
+        },
+    )
+    provisional = _FactPair(
+        key_sha256=key,
+        frame_key_sha256=match.frame.key_sha256,
+        frame_pointer=match.frame.pointer,
+        filler0=match.filler0,
+        filler1=match.filler1,
+        forward_pair_pointer=forward.pointer,
+        reverse_pair_pointer=reverse.pointer,
+        sources=(source,),
+        binding_trace_sha256s=(forward.trace.sha256, reverse.trace.sha256),
+        sha256="",
+    )
+    fact = replace(
+        provisional,
+        sha256=_digest(
+            _FACT_NAMESPACE,
+            _fact_record(provisional, include_sha256=False),
+        ),
+    )
+    return fact, (forward.trace, reverse.trace)
+
+
+def _merge_fact(existing: _FactPair, addition: _FactPair) -> _FactPair:
+    if (
+        existing.key_sha256 != addition.key_sha256
+        or existing.frame_key_sha256 != addition.frame_key_sha256
+        or existing.frame_pointer != addition.frame_pointer
+        or existing.filler0 != addition.filler0
+        or existing.filler1 != addition.filler1
+        or existing.forward_pair_pointer != addition.forward_pair_pointer
+        or existing.reverse_pair_pointer != addition.reverse_pair_pointer
+    ):
+        raise RuntimeError("one fact key mapped to different retained structure")
+    by_provenance = {
+        source.provenance_root_sha256: source for source in existing.sources
+    }
+    for source in addition.sources:
+        retained_source = by_provenance.get(source.provenance_root_sha256)
+        if retained_source is None or source.sha256 < retained_source.sha256:
+            by_provenance[source.provenance_root_sha256] = source
+    sources = tuple(
+        by_provenance[root]
+        for root in sorted(by_provenance)
+    )
+    provisional = replace(existing, sources=sources, sha256="")
+    return replace(
+        provisional,
+        sha256=_digest(
+            _FACT_NAMESPACE,
+            _fact_record(provisional, include_sha256=False),
+        ),
+    )
+
+
+def _consolidate_facts(
+    retained: tuple[_FactPair, ...],
+    matches: tuple[_FullMatch, ...],
+    *,
+    ablation: NeutralFrameAblation,
+) -> tuple[
+    tuple[_FactPair, ...],
+    tuple[NeutralFrameRaceTrace, ...],
+    tuple[SparseTransformRaceTrace, ...],
+]:
+    additions: list[_FactPair] = []
+    write_races: list[NeutralFrameRaceTrace] = []
+    binding_races: list[SparseTransformRaceTrace] = []
+    enabled = ablation is not NeutralFrameAblation.FACT_CONSOLIDATION_OFF
+    for match in matches:
+        choice = _physical_choice(
+            population=(
+                f"learning/fact/{match.frame.key_sha256}/"
+                f"{match.occurrence_pair_root_sha256}/write"
+            ),
+            scores=(_DRIVE_SCORE if enabled else 0,),
+        )
+        write_races.append(choice.trace)
+        if choice.column is None:
+            continue
+        fact, traces = _make_fact(match, write_trace=choice.trace)
+        additions.append(fact)
+        binding_races.extend(traces)
+
+    by_key = {fact.key_sha256: fact for fact in retained}
+    for addition in sorted(
+        additions,
+        key=lambda fact: (
+            fact.key_sha256,
+            fact.sources[0].provenance_root_sha256,
+            fact.sources[0].sha256,
+        ),
+    ):
+        existing = by_key.get(addition.key_sha256)
+        by_key[addition.key_sha256] = (
+            addition if existing is None else _merge_fact(existing, addition)
+        )
+    facts = tuple(by_key[key] for key in sorted(by_key))
+    return facts, tuple(write_races), tuple(binding_races)
+
+
+def _retained_fact_matches(
+    facts: tuple[_FactPair, ...],
+    frames: tuple[_Frame, ...],
+    *,
+    disabled: bool,
+) -> tuple[tuple[_FullMatch, ...], tuple[SparseCleanupRaceTrace, ...]]:
+    frames_by_key: dict[str, list[_Frame]] = {}
+    for frame in frames:
+        frames_by_key.setdefault(frame.key_sha256, []).append(frame)
+    matches: list[_FullMatch] = []
+    races: list[SparseCleanupRaceTrace] = []
+    for fact in facts:
+        candidates = tuple(frames_by_key.get(fact.frame_key_sha256, ()))
+        frame, race = _cleanup_match(
+            fact.frame_pointer,
+            candidates,
+            disabled=disabled,
+        )
+        if race is not None:
+            races.append(race)
+        if frame is None or frame.key_sha256 != fact.frame_key_sha256:
+            continue
+        for source in fact.sources:
+            matches.append(
+                _FullMatch(
+                    frame=frame,
+                    filler0=fact.filler0,
+                    filler1=fact.filler1,
+                    provenance_root_sha256=source.provenance_root_sha256,
+                    document_root_sha256=source.document_root_sha256,
+                    occurrence_pair_root_sha256=source.occurrence_pair_root_sha256,
+                )
+            )
     return tuple(matches), tuple(races)
 
 
@@ -1036,6 +1457,9 @@ def _partial_matches(
 ) -> tuple[tuple[_PartialMatch, ...], tuple[SparseCleanupRaceTrace, ...]]:
     matches: list[_PartialMatch] = []
     races: list[SparseCleanupRaceTrace] = []
+    frames_by_key: dict[str, list[_Frame]] = {}
+    for frame in frames:
+        frames_by_key.setdefault(frame.key_sha256, []).append(frame)
     for sentence in tape.query_sentences:
         observed = _sentence_lexemes(sentence, query)
         full_count = len(observed) + 1
@@ -1062,7 +1486,16 @@ def _partial_matches(
                 descriptor_tokens = tuple(expanded)
                 descriptor = _frame_descriptor(descriptor_tokens, slots)
                 projected = _SUBSTRATE.project(_FRAME_EVENT + descriptor)
-                frame, race = _cleanup_match(projected, frames, disabled=disabled)
+                frame_key = _digest(
+                    _FRAME_NAMESPACE,
+                    {"descriptor_hex": descriptor.hex()},
+                )
+                candidates = tuple(frames_by_key.get(frame_key, ()))
+                frame, race = _cleanup_match(
+                    projected,
+                    candidates,
+                    disabled=disabled,
+                )
                 if race is not None:
                     races.append(race)
                 if frame is None:
@@ -1078,9 +1511,10 @@ def _partial_matches(
 
 def _decision(
     *,
-    network: FrozenNeutralNeuronalFrameNetwork,
+    network: FrozenNeutralNeuronalDocumentLearner,
     emitted: bytes | None,
     support_path_count: int,
+    support_provenance_root_sha256s: tuple[str, ...],
     cell_races: tuple[NeutralFrameRaceTrace, ...],
     cleanup_races: tuple[SparseCleanupRaceTrace, ...],
     transform_races: tuple[SparseTransformRaceTrace, ...],
@@ -1095,6 +1529,7 @@ def _decision(
         "status": "STOP" if stopped else "EMIT",
         "stop_reason": None if not stopped else f"motor:{motor.stop_reason}",
         "support_path_count": support_path_count,
+        "support_provenance_root_sha256s": support_provenance_root_sha256s,
         "transform_race_sha256s": tuple(race.sha256 for race in transform_races),
     }
     return NeutralFrameDecision(
@@ -1105,6 +1540,7 @@ def _decision(
         stop_reason=record["stop_reason"],
         producer_checkpoint_sha256=network.checkpoint_sha256,
         support_path_count=support_path_count,
+        support_provenance_root_sha256s=support_provenance_root_sha256s,
         cell_races=cell_races,
         cleanup_races=cleanup_races,
         transform_races=transform_races,
@@ -1123,7 +1559,7 @@ def _decision(
 
 
 def _respond(
-    network: FrozenNeutralNeuronalFrameNetwork,
+    network: FrozenNeutralNeuronalDocumentLearner,
     query: bytes,
     documents: tuple[OpaqueDocument, ...],
     *,
@@ -1135,11 +1571,19 @@ def _respond(
     transform_races: list[SparseTransformRaceTrace] = []
     cell_races: list[NeutralFrameRaceTrace] = []
     frame_disabled = ablation is NeutralFrameAblation.FRAME_MATCH_OFF
-    full, full_races = _full_matches(
+    live_full, full_races = _full_matches(
         tape,
         documents,
         frames,
         disabled=frame_disabled,
+    )
+    retained_full, fact_races = _retained_fact_matches(
+        network._facts,
+        frames,
+        disabled=(
+            frame_disabled
+            or ablation is NeutralFrameAblation.FACT_RETRIEVAL_OFF
+        ),
     )
     partial, partial_races = _partial_matches(
         tape,
@@ -1148,7 +1592,9 @@ def _respond(
         disabled=frame_disabled,
     )
     cleanup_races.extend(full_races)
+    cleanup_races.extend(fact_races)
     cleanup_races.extend(partial_races)
+    full = (*live_full, *retained_full)
 
     frame_by_key = {frame.key_sha256: frame for frame in frames}
     route_by_pair: dict[tuple[str, str], list[_FrameRoute]] = {}
@@ -1161,7 +1607,7 @@ def _respond(
             [],
         ).append(route)
 
-    support_paths: list[_Lexeme] = []
+    support_paths: list[tuple[_Lexeme, str]] = []
     for source in full:
         for target in partial:
             routes = route_by_pair.get(
@@ -1259,10 +1705,15 @@ def _respond(
                     lexeme.value_sha256: lexeme for lexeme in emitted_lexemes
                 }
                 if len(unique_lexemes) == 1:
-                    support_paths.append(next(iter(unique_lexemes.values())))
+                    support_paths.append(
+                        (
+                            next(iter(unique_lexemes.values())),
+                            source.provenance_root_sha256,
+                        )
+                    )
 
     unique_outputs: dict[str, _Lexeme] = {}
-    for lexeme in support_paths:
+    for lexeme, _provenance_root in support_paths:
         existing = unique_outputs.get(lexeme.value_sha256)
         if existing is not None and existing.value != lexeme.value:
             raise RuntimeError("one lexical root mapped to different bytes")
@@ -1281,6 +1732,9 @@ def _respond(
         network=network,
         emitted=emitted,
         support_path_count=len(support_paths),
+        support_provenance_root_sha256s=tuple(
+            sorted({root for _lexeme, root in support_paths})
+        ),
         cell_races=tuple(cell_races),
         cleanup_races=tuple(cleanup_races),
         transform_races=tuple(transform_races),
