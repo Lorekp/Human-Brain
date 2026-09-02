@@ -709,6 +709,22 @@ provenance-bound fact assemblies, counted deduplicated answer lexemes, delayed
 absent-source recall, duplicate-source merging, and conflict STOP. Neutral frame
 induction, revision, and recurrence remain open.
 
+`b5ccc73` adds the first direct retained-fact-to-workspace bridge. Its frozen
+public inference surface is only a complete unified opaque observation and an
+ablation. An internal constructor-gated broadcast carries the persistent
+memory winner's fact/surface/key pointers and provenance custody; physical
+unbinding and cleanup recover an exact request/workspace anchor and a retained
+lexeme. A variability-aware binder selects the occurrence-relative target, a
+fixed neuronal `SUBSTITUTE -> END` program runs, and one fixed EDIT/STOP race
+uses the same candidate and tonic cells on every path. Two authenticated full
+transitions teach the occurrence walk while the checkpoint retains only their
+roots. The focused fixture passes fresh file/value counterfactual transfer,
+decoys, payload-absent recall, collision/missing STOP, and eight causal
+ablations. Training-only workspace differencing, exact lexical anchors, host
+sensory projection/materialization, and the fixed action program remain
+scaffolding; this is neither a completed balanced session nor broad coding or
+language evidence.
+
 The next forcing workload is
 `docs/research/balanced-evidence-to-action-session-v1.md`: fifteen
 language/knowledge episodes and nine coding episodes, with every code action

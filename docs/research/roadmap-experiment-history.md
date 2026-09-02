@@ -2831,6 +2831,26 @@ collision STOP. Three focused fixtures pass, including consolidation/retrieval
 ablations, immutable parents, zero raw document/row retention, and exact repeated-
 source binding-work accounting.
 
+Commit `b5ccc73` adds a focused knowledge-to-action integration seam. Two
+independent evaluator-authenticated before/after workspace transitions train
+one factor-zero-to-occurrence relation, but the frozen checkpoint retains only
+their evidence roots and learned neuronal structure. At inference the only
+public input is a unified opaque request/document/workspace/tool tape plus an
+ablation. The bridge invokes the persistent reader internally, seals its
+physical retained-fact winner into a private pointer broadcast, unbinds and
+cleans the anchor and lexeme factors, grounds the anchor against live workspace
+occurrences through the variability-aware binder, runs fixed neuronal
+`SUBSTITUTE -> END`, and resolves EDIT or STOP through one invariant physical
+population. A single compact fixture passes fresh matched file/value transfer
+with the emitted value absent from live sensory input, decoys, duplicate and
+missing anchors, conflicting memory, and eight causal controls.
+
+This is not a new integrated benchmark result. Full-workspace differencing is
+training scaffolding, the motor program is fixed rather than learned, host code
+still tokenizes and materializes the selected byte substitution, and the
+upstream frames remain answer-supervised exact ASCII surfaces. The result closes
+only the first retained-fact-to-occurrence seam.
+
 This is answer-supervised ASCII-tokenized exact-surface one-hop learning plus
 one-shot co-binding association and later target-neutral fact acquisition, not
 broad understanding or general paraphrase induction. Host path compilation,

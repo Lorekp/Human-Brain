@@ -825,10 +825,29 @@ the memory motor physically recover two fresh facts. Duplicate facts merge
 sources; conflicting answers collision-STOP. `CONSOLIDATION_OFF` and
 `RETRIEVAL_OFF` preserve the causal boundary. The focused suite passes 3/3.
 
+Commit `b5ccc73` connects that retained knowledge to one narrow workspace
+action without exposing a target path or replacement value at inference. Two
+evaluator-authenticated complete transitions train an opaque
+factor-zero-to-occurrence walk. Frozen inference accepts only one
+`UnifiedOpaqueObservationTape` plus an ablation, obtains the persistent
+learner's physical memory winner internally, unbinds and cleans up both fact
+factors, grounds the first factor in a live workspace neighborhood, and sources
+the inserted bytes from the retained second-factor lexeme. A fixed neuronal
+`SUBSTITUTE -> END` microprogram feeds one invariant EDIT-versus-tonic-STOP
+population on success, early STOP, conflict, and ablated paths. The focused
+fixture passes 1/1 across fresh file/value counterfactual transfer, absence of
+the inserted payload from live sensory input, decoys, duplicate-anchor,
+missing-fact and conflicting-fact STOP, plus eight causal controls. The frozen
+bridge retains two evidence roots and learned structure, not training
+workspaces, paths, or payloads.
+
 The claim remains deliberately one-hop and exact-surface. Co-binding association
 is not general or similarity-based paraphrase induction. Training frames still
 come from an observed answer and host path compiler; host code enumerates opaque
-candidates and projects sensory events. There is no neutral surface induction,
+candidates, performs training-only full-workspace differencing, projects sensory
+events, and materializes the winning byte edit. The action microprogram is fixed,
+not learned, and `b5ccc73` is a focused implementation fixture rather than a
+spent integrated benchmark. There is no neutral surface induction,
 provenance-aware revision, recurrent multi-hop retrieval, or broad language
 understanding yet. The next integrated forcing workload is specified in
 `docs/research/balanced-evidence-to-action-session-v1.md`; it gives language and

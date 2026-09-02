@@ -90,6 +90,31 @@ consolidation, provenance/revision, shared recurrence, then the knowledge-action
 bridge. Each addition should return to this integrated session rather than grow
 an indefinite microgate series.
 
+## Implementation progress and corrected prerequisites
+
+Commit `b5ccc73` implements the first narrow knowledge-action bridge beneath
+episodes 07/09/13: a retained exact fact can determine both a fresh
+occurrence-relative file edit and inserted lexeme without either being supplied
+to inference. It is not a session result and does not make later episodes
+eligible yet. The action program is fixed, and the upstream frame was still
+learned through an observed-answer compiler.
+
+The next language-first successor must remove that compiler. Neutral documents
+should induce anonymous two-slot frames from repeated structure, store both
+readout directions, and associate exact surfaces only after two independent
+shared filler bindings physically establish a SAME or SWAPPED alignment. A
+prequential third binding, a matched shuffled-binding control, relabeling, and
+collision STOP are the minimum evidence; lexical recurrence alone is not broad
+language understanding.
+
+Episodes 16--20 also require a learned provenance asymmetry before scoring.
+Contradictory facts plus opaque source identities are symmetric: append order,
+document order, or checkpoint age cannot define truth. Earlier public-TRAIN
+examples must teach a transferable raw supersession surface from independently
+supported consequences. Its interneuron may inhibit only the superseded source
+vote before one unified fact race. Without such learned evidence, equal conflict
+must STOP; episode 16 cannot be treated as a first-example last-write-wins task.
+
 ## Scoring
 
 Curriculum episodes record first attempts; teacher-provided corrections never
