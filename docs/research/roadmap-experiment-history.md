@@ -2814,13 +2814,31 @@ signals, OR-collapses paths per live edge, and retains unique-answer/live-motor
 arbitration. The focused suite passes 2/2, including same-subject, same-answer,
 reversed-binding, same-surface, distractor, ambiguity, and causal controls.
 
+Commit `a2521bb` separately composes the existing request/document and workspace
+event tapes with ordered raw tool events behind one modality-complete sensory
+surface. Exact bytes, provenance, presentation order, repeated occurrences, and
+round trips are preserved; no task or answer ontology is added. This is a
+lossless adapter, not intelligence.
+
+Commit `3448797` adds neutral document acquisition after a frame has been
+learned. Consolidation visits every sentence-local ordered edge and commits all
+physical learned-frame winners, rather than a host-selected target. It retains
+sparse surface/subject keys, key/answer fact assemblies, source provenance and
+occurrence digests, plus one deduplicated counted destination lexeme. With the
+source documents absent, fitted-cell relation/key/fact/lexeme/motor stages recall
+two fresh facts; duplicate facts merge sources and a conflicting answer reaches
+collision STOP. Three focused fixtures pass, including consolidation/retrieval
+ablations, immutable parents, zero raw document/row retention, and exact repeated-
+source binding-work accounting.
+
 This is answer-supervised ASCII-tokenized exact-surface one-hop learning plus
-one-shot co-binding association, not broad understanding or general paraphrase
-induction. Host path compilation, candidate enumeration, and sensory projection
-remain scaffolding; neutral consolidation, belief revision, and recurrent
-multi-hop retrieval remain unsolved. The planned balanced evidence-to-action
-session makes those capabilities prerequisites for both language and code
-outcomes rather than allowing coding throughput to stand in for understanding.
+one-shot co-binding association and later target-neutral fact acquisition, not
+broad understanding or general paraphrase induction. Host path compilation,
+candidate enumeration, and sensory projection remain scaffolding; neutral
+surface induction, belief revision, and recurrent multi-hop retrieval remain
+unsolved. The planned balanced evidence-to-action session makes those
+capabilities prerequisites for both language and code outcomes rather than
+allowing coding throughput to stand in for understanding.
 
 These are public TRAIN-side development lanes; R5/R6 remain sealed.
 

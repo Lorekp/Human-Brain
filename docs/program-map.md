@@ -692,7 +692,9 @@ so this is narrow neuronal execution rather than broad language understanding.
 `fde2ecb` adds 64-of-4,096 sparse neuronal addresses, reversible ordered
 role/filler binding, compact noisy-prototype superposition, and fitted-GLIF
 cleanup/STOP without a language or code ontology. It is a reusable mechanism,
-not yet learned paraphrase semantics or multi-item memory. `f92dd3d` adds one-
+not yet learned paraphrase semantics or multi-item memory. `a2521bb` adds one
+lossless request/document/workspace/tool observation tape with fixed modality
+and order envelopes; it is sensory transport only. `f92dd3d` adds one-
 episode replay-free growth, two-independent-context promotion, immutable
 provenance/filler chunks, authenticated storage/work accounting, and physical
 one-hop inference/STOP. It retains exact anonymous surface literals but no raw
@@ -702,7 +704,10 @@ only when full subject-to-answer co-binding wins a neuronal cleanup race, then
 uses physical surface binding/cleanup and per-edge path OR during inference.
 This transfers between two exact ASCII-token surfaces without promoting their
 same-surface paths. It is not similarity-based or general paraphrase learning;
-neutral ingestion, revision, and recurrence remain open.
+`3448797` adds target-neutral all-match consolidation on learned document frames,
+provenance-bound fact assemblies, counted deduplicated answer lexemes, delayed
+absent-source recall, duplicate-source merging, and conflict STOP. Neutral frame
+induction, revision, and recurrence remain open.
 
 The next forcing workload is
 `docs/research/balanced-evidence-to-action-session-v1.md`: fifteen

@@ -785,6 +785,13 @@ cleanup winners. This is representational mechanism evidence, not semantics:
 it has not yet learned surface-to-latent relations or become a multi-item
 episodic knowledge store.
 
+Commit `a2521bb` adds the common lossless sensory adapter for the balanced lane.
+One immutable tape composes raw request, document, workspace, and tool-event
+bytes using the established event views plus fixed modality/order envelopes.
+It preserves repeated occurrences, provenance, presentation order, and exact
+round trips while exposing no task, relation, answer, target, or candidate-action
+field. The focused fixture passes 1/1. This is transport, not cognition.
+
 Commit `f92dd3d` composes these pieces into the first replay-free persistent
 document learner. It consumes one answer-supervised success at a time, retains
 immutable provenance/filler pointer chunks rather than raw rows or documents,
@@ -807,13 +814,23 @@ focused fixtures pass; same-subject-only, same-answer-only, reversed-binding,
 unlinked same-surface, distractor, ambiguity, relation-binding-off, relation-
 cleanup-off, and answer-selection-off cases do not emit.
 
-The claim remains deliberately one-hop and exact-surface. This is learned
-association from one shared complete binding, not general or similarity-based
-paraphrase induction. Training still uses an observed answer and host path
-compilation; host code enumerates candidate edges and projects sensory events.
-There is no neutral document consolidation, provenance revision, recurrent
-multi-hop retrieval, or broad language understanding yet. The next integrated
-forcing workload is specified in
+Commit `3448797` then adds neutral fact consolidation on those already learned
+document surfaces. Every sentence-local ordered edge whose document-frame cells
+fire is stored; the host supplies neither a query nor a selected fact. Sparse
+surface/subject keys and key/answer assemblies retain provenance custody, while
+a deduplicated and explicitly counted lexical plane holds only the destination
+bytes required for later emission. After the source documents disappear, query
+surface binding, key cleanup, fact competition, unbinding, lexeme cleanup, and
+the memory motor physically recover two fresh facts. Duplicate facts merge
+sources; conflicting answers collision-STOP. `CONSOLIDATION_OFF` and
+`RETRIEVAL_OFF` preserve the causal boundary. The focused suite passes 3/3.
+
+The claim remains deliberately one-hop and exact-surface. Co-binding association
+is not general or similarity-based paraphrase induction. Training frames still
+come from an observed answer and host path compiler; host code enumerates opaque
+candidates and projects sensory events. There is no neutral surface induction,
+provenance-aware revision, recurrent multi-hop retrieval, or broad language
+understanding yet. The next integrated forcing workload is specified in
 `docs/research/balanced-evidence-to-action-session-v1.md`; it gives language and
 knowledge greater episode count than coding and makes every code transfer depend
 on acquired prose relations.
