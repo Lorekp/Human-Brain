@@ -70,6 +70,19 @@ def test_neutral_frames_learn_swapped_transfer_and_preserve_ambiguity() -> None:
     reverse_route = brain.respond(b"tava pavo", _fresh(b"neri kenu tava"))
     assert reverse_route.emitted == b"neri"
 
+    relabeled = start().consolidate(
+        (
+            _document("relabeled-zupi-1", b"fira zupi lome"),
+            _document("relabeled-qari-1", b"lome qari fira"),
+            _document("relabeled-zupi-2", b"dexa zupi weno"),
+            _document("relabeled-qari-2", b"weno qari dexa"),
+        )
+    )
+    assert relabeled.respond(
+        b"ravo qari",
+        _fresh(b"noku zupi ravo"),
+    ).emitted == b"noku"
+
     reversed_order = (
         start()
         .consolidate(tuple(reversed(first_batch)))
