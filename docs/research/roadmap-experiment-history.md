@@ -2435,6 +2435,60 @@ This is runtime-continuity evidence, not semantic coding evidence. It freezes th
 architecture boundary before fresh V10 task authoring and does not authorize a
 V9 rerun.
 
+### Terminal V10 complete integrated spend and relational-action boundary
+
+After commit `f3dbaa8` froze failure normalization, an independent author built
+a fresh V10 public-TRAIN cohort without reopening V9. Its twelve tasks were
+ordered across four direct repository relations, four delayed
+history-required transfers, two consequence-guided revisions, and two
+genuinely ambiguous STOP cases. Treatment, independently grown no-update, and
+`CONTRAST_OFF` began from the same learned digest
+`f1d46408f0a7333eb8d6c14675917cf46e57dd8a3c0ce2fb680cfc3b05a429cc`.
+The exactly-once session reached terminal infrastructure status `COMPLETE`: all
+36 task records, all 39 attempt resolutions, post-retention probes, and posthoc
+scores exist.
+
+All three arms scored 2/12, driven only by correct physical STOP on the two
+genuinely ambiguous tasks. Direct repository relation was 0/4,
+history-required transfer was 0/4, and consequence-guided revision was 0/2 in
+each arm. No sandbox evaluator was reached and semantic pass was zero. All four
+non-STOP attempts occurred only on stream ordinal 8,
+`train-v10-lab-protocols-92`; each carried the identical 301-byte action and
+pointer-output SHA-256
+`d82acab72169c718948acd1aa9f5b4320c3414545f0e5b02d0b0f350ea2675d3`,
+which exactly matches retained public-prior probe index 4. Treatment used 13
+attempts: that valid canonical transported action reached the patch validator
+once, was rejected before a fixture receipt/evaluator, received one
+authenticated negative update, and was followed by STOP. Its final learned
+digest changed to
+`337d57517d6b3d66ab696f526936398ac84a091cfd303645568beb4ba6f94846`,
+but that plasticity produced no semantic pass. No-update used 14 attempts and
+repeated the same valid transported action three times; all three were rejected
+by the patch validator before evaluator execution. `CONTRAST_OFF` used twelve
+attempts and selected STOP on all twelve tasks.
+
+Every arm retained all eight public priors both before and after the task
+stream. The terminal evidence therefore preserves exact episodic replay and
+stable action transport, and identifies the only active proposal as exact prior
+pointer-template replay without task-local structural binding. Local failure
+credit is shown only to suppress that rejected proposal; it neither corrects
+the action nor constructs a valid source-relative alternative. The broadly
+reusable bottleneck is now **source-relative relational action transduction**:
+experience must recruit relations among a current goal, current source
+observations, and action segments, then bind those segments to the live source
+without target spans, an AST/task ontology, or stored patch templates.
+
+The spent artifact is
+[`r4_integrated_continual_coding_session_v10.json`](../../benchmarks/r4_integrated_continual_coding_session_v10.json),
+254,127 bytes, SHA-256
+`08a3b8a121509977a9ffb990bb7b9a6a4eb3979128d7d0ff3a55bff148045852`,
+with embedded result digest
+`62dd215e991bf7621c53861b0bdb4322c2b99565abfd811442d95ba882f5a099`.
+Artifact commit `a7002f3` preserves the terminal record. `COMPLETE` is an
+infrastructure/custody result, not a passed integrated capability gate. V10 is
+immutable and must not be rerun or tuned; it licenses no protected, Simple-SWE,
+SWE-bench, Gemma, Opus, or intelligence claim. R5/R6 remain sealed.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

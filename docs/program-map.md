@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after the terminal causal
-sequence V1 gate localized sparse fast-binding failure. Exact
+Maintained by the orchestrator. Updated 2026-09-02 after terminal V10 localized
+source-relative relational action transduction. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; V8 localizes exact replay + action transport before execution]
+R4  Language/software continual coding               [OPEN; V10 localizes source-relative relational action transduction]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -460,7 +460,38 @@ and resolve the pending neuronal choice negatively without invoking an external
 tool. The change is one production line and passes the 20-case focused suite.
 Current neuronal-tool source SHA-256 is
 `25aedcdf2a1868f7e7b0950b29956a1b89c0e6f9d533795eb26e08503d0c010b`.
-V10 is authored only after this freeze; V9 remains immutable.
+V10 was authored only after this freeze; V9 remains immutable.
+
+The V10 integrated lane is now terminally spent. The runner at
+`experiments/r4_integrated/continual_coding_session_v10.py` completed all 36
+task records for treatment, no-update, and `CONTRAST_OFF` before scoring the
+twelve-task stream. Every arm passed 2/12, solely through the two genuine STOP
+tasks; all four direct repository relations, four history-required transfers,
+and two consequence-guided revisions failed in every arm. No action reached the
+sandbox and semantic pass was 0 throughout.
+
+`src/humanbrain/neuronal_tool_model.py` and
+`src/humanbrain/causal_sequence_pointer.py` did preserve their narrower banked
+capabilities. Prior replay stayed 8/8 before and after the stream in all arms.
+Treatment emitted one valid canonical tool action, received validator-level
+negative consequence, changed its learned digest, and then stopped; no-update
+repeated the identical valid transported action three times, with every attempt
+rejected before evaluator execution. All four non-STOP attempts occurred only
+on stream ordinal 8 and shared one 301-byte action plus pointer SHA-256
+`d82acab72169c718948acd1aa9f5b4320c3414545f0e5b02d0b0f350ea2675d3`,
+which matches retained public-prior probe 4. `CONTRAST_OFF` physically stopped
+12/12. The active architecture gap is therefore no longer basic exact replay or
+tool serialization. It is source-relative relational action transduction:
+recruiting learned issue/source/action relations and binding them to the current
+repository without a host target span, AST ontology, or patch template.
+
+The immutable artifact is
+`benchmarks/r4_integrated_continual_coding_session_v10.json`, SHA-256
+`08a3b8a121509977a9ffb990bb7b9a6a4eb3979128d7d0ff3a55bff148045852`,
+with embedded result digest
+`62dd215e991bf7621c53861b0bdb4322c2b99565abfd811442d95ba882f5a099`;
+commit `a7002f3` preserves it. Its status `COMPLETE` authenticates a complete
+infrastructure/evidence run, not software competence. R5/R6 remain sealed.
 
 ### Coding
 

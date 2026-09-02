@@ -388,6 +388,56 @@ and
 This repairs runtime continuity only, not software semantics. It licenses fresh
 V10 authoring and never a V9 rerun.
 
+### Terminal fresh V10 relational-action result
+
+The fresh V10 session is terminally spent with infrastructure status
+`COMPLETE`: all 36 task records across treatment, no-update, and
+`CONTRAST_OFF` completed before posthoc scoring. Its twelve public-TRAIN tasks
+comprised four direct repository relations, four history-required transfers,
+two consequence-guided revisions, and two genuinely ambiguous STOP cases. Each
+arm scored 2/12, entirely from the two correct STOP cases; direct relations,
+history-required transfer, and revision were each 0 in every arm. The causal
+pass-rate deltas were therefore zero.
+
+Treatment used 13 attempts. All four non-STOP attempts in the complete artifact
+were confined to stream ordinal 8, `train-v10-lab-protocols-92`, and carried the
+same 301-byte action and pointer-output SHA-256
+`d82acab72169c718948acd1aa9f5b4320c3414545f0e5b02d0b0f350ea2675d3`.
+That pointer hash exactly matches retained public-prior probe index 4. Treatment
+emitted it once as a valid canonical transported action, which reached the
+patch validator but was rejected before a fixture receipt or sandbox
+evaluation. The authenticated negative resolution changed its learned
+digest from
+`f1d46408f0a7333eb8d6c14675917cf46e57dd8a3c0ce2fb680cfc3b05a429cc`
+to
+`337d57517d6b3d66ab696f526936398ac84a091cfd303645568beb4ba6f94846`,
+then the retry selected STOP. No-update used 14 attempts and repeated the same
+valid transported action three times; all three reached the validator and were
+rejected before the evaluator. `CONTRAST_OFF` selected physical STOP on all
+twelve tasks. No arm reached the sandbox or recorded a semantic pass.
+
+Public-prior retention remained 8/8 both before and after the stream in every
+arm. V10 therefore preserves the exact-memory and stable-transport gains: the
+only active proposal was authenticated exact prior pointer-template replay. It
+shows one local failure-conditioned state change, but no task-local structural
+binding, corrective action, or semantic coding improvement. The general
+construction bottleneck is now **source-relative relational action
+transduction**: learned relations must turn current issue/repository evidence
+into an action positioned against the current source, rather than replaying a
+complete transported action or learning only to suppress it.
+
+The immutable artifact is
+[`r4_integrated_continual_coding_session_v10.json`](../benchmarks/r4_integrated_continual_coding_session_v10.json),
+254,127 bytes, SHA-256
+`08a3b8a121509977a9ffb990bb7b9a6a4eb3979128d7d0ff3a55bff148045852`,
+with embedded result digest
+`62dd215e991bf7621c53861b0bdb4322c2b99565abfd811442d95ba882f5a099`;
+artifact commit `a7002f3` preserves it. `COMPLETE` describes the session and
+evidence pipeline, not capability success. V10 must not be rerun or tuned. This
+is fresh public-TRAIN failure localization, not repository competence,
+continual improvement, protected transfer, Simple-SWE, SWE-bench, Gemma, Opus,
+or intelligence evidence. R5 and R6 remain sealed.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment
