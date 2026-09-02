@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after the cue-free raw-source
-pilot banked a narrow source-relative action path. Exact
+Maintained by the orchestrator. Updated 2026-09-02 after the first multiscale
+multi-source integration localized a boundary-position failure. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; raw-source rewriting banked, replay-free growth next]
+R4  Language/software continual coding               [OPEN; boundary binder banked, fresh integrated successor next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -530,6 +530,30 @@ not wired into the editor yet: integration requires one lossless multiscale
 observation whose issue and source identifiers share exact opaque events while
 preserving the coarse line/path occurrences used by the existing motor tape.
 
+Commit `2f6ee05` supplies that lossless `MultiscaleOpaqueEventTape`: shared
+byte-identical identifier events support cross-stream equality while complete
+query/workspace recovery and live path/physical-line motor occurrences remain
+available. Commit `5ed2df1` composes the tape, one cross-stream binder per learned
+motor cue, and the source-relative action tape into one multi-file controller.
+Commit `8358b67` then freezes the first integrated cohort unchanged at 1/2 fresh
+action successes. Ambiguity correctly STOPs, while `EQUALITY_OFF` and
+`PROPAGATION_OFF` each STOP 3/3 tasks.
+
+The failed fresh target occupies the first workspace segment, whereas both
+demonstrations placed their target in a middle segment. The binder's learned
+fixed-radius containment envelope therefore depends on predecessor-segment
+context that does not exist at the first position, and it physically STOPs
+before actuation. This is a localized position-invariance defect, not a passed
+multi-source gate.
+
+Commit `7a747f5` adds the isolated `BoundaryAwareSegmentBinder`. It learns
+nearest recurring opaque left/right delimiter relations from complete streams,
+then BINDs fresh renamed first-, middle-, and last-position targets. Ambiguity,
+a missing nearest boundary, and equality, propagation, or boundary ablation all
+physically STOP. The five focused tests establish the causal mechanism only;
+the new integrated controller successor and fresh cohort remain to be built and
+spent.
+
 Scale work is attached to the same path. Commit `a99473b` adds exact batched
 independent first-spike races (26.2x on the reproduced 4,096-row microcase),
 commit `73929cf` indexes occurrence neighborhoods, and commit `2693901`
@@ -552,8 +576,9 @@ STOP. Capacity and support values are explicitly estimates, and learned event
 bytes remain even though raw training sequences do not. This is a narrow
 continual-learning slice, not context abstraction or broad repository learning.
 
-The immediate integrated seam is now convergence: the multiscale observation,
-cross-stream source grounding, and replay-free growth must operate in one
+The immediate integrated seam is to replace V1's fixed-radius containment with
+the banked boundary-aware binder in a newly named controller and genuinely fresh
+cohort, then converge that successor with replay-free append-only growth in one
 persistent multi-file learner. Failures there should drive generic abstraction
 and routing improvements rather than another supplied target or task family.
 

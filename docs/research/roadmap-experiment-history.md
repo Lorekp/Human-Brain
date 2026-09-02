@@ -2577,6 +2577,40 @@ current workspace transport still lacks a shared fine-grained identifier event
 space and no multi-file motor action has yet been emitted or executed through
 the new binder.
 
+### Multiscale multi-source integration and boundary-position failure
+
+Commit `2f6ee05` adds a lossless multiscale event tape. It preserves complete
+query and workspace bytes, exposes byte-identical identifier atoms in one opaque
+equality domain, and embeds live path/physical-line occurrences for the existing
+motor stack. Commit `5ed2df1` composes that tape with cross-stream binders and
+the source-relative action tape behind one complete-issue/complete-workspace
+controller query.
+
+Commit `8358b67` immutably spends the resulting V1 public-TRAIN cohort. Treatment
+executes the exact intended repair on 1/2 fresh action tasks. The other action
+physically STOPs in the first role binder, while the genuinely ambiguous issue
+correctly STOPs without editing. `EQUALITY_OFF` STOPs 3/3 tasks, and
+`PROPAGATION_OFF` STOPs 3/3 tasks. This is an honest integrated failure; the gate
+did not pass.
+
+Both demonstrations place their intended file in a middle workspace position.
+The fixed-radius containment envelope therefore learns predecessor-segment
+context. A fresh target in the first segment lacks that predecessor context and
+cannot satisfy containment, so inference STOPs before actuation. V1 remains
+unchanged and must not be rerun or tuned. The next causal seam is a
+boundary-invariant opaque segment envelope, followed by its integration with
+the persistent append-only learner.
+
+Commit `7a747f5` subsequently banks the causal micro-gate.
+`BoundaryAwareSegmentBinder` learns nearest recurring opaque left and right
+delimiter relations from complete streams without delimiter or location routing
+inputs. Fresh renamed targets at first, middle, and last segment positions all
+BIND. Cross-segment ambiguity and a missing nearest boundary physically STOP;
+`EQUALITY_OFF`, `PROPAGATION_OFF`, and `BOUNDARY_OFF` each physically STOP as
+well. Five focused tests passed. This is mechanism evidence only and does not
+revise the immutable V1 score. Its new integrated successor and genuinely fresh
+cohort are still pending.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

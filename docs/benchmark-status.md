@@ -534,6 +534,38 @@ physical-line workspace tape does not yet expose byte-identical issue/source
 identifier events, and the binder has not yet selected a file or driven the raw
 motor controller on a real multi-file task.
 
+Commit `2f6ee05` adds the missing lossless multiscale observation. Query and
+workspace bytes remain recoverable while byte-identical identifier atoms share
+one opaque equality domain, and the path/physical-line motor events remain live
+occurrences rather than reconstructed targets. Commit `5ed2df1` composes that
+tape, cross-stream binders, and the existing source-relative action tape behind
+one complete-issue/complete-workspace controller query.
+
+Commit `8358b67` immutably spends the first integrated public-TRAIN cohort. The
+treatment executes the exact intended repair on 1/2 fresh action tasks; the
+other fresh action physically STOPs in its first role binder. The genuinely
+ambiguous issue correctly STOPs without editing. `EQUALITY_OFF` STOPs 3/3 tasks,
+and `PROPAGATION_OFF` STOPs 3/3 tasks. The gate did **not** pass.
+
+The failure is narrow and architectural: both demonstrations place the intended
+file in a middle workspace position, so the learned fixed-radius containment
+envelope includes predecessor-segment context. The failing fresh target is the
+first segment and cannot satisfy that learned context, producing a containment
+STOP before actuation. V1 remains unchanged and spent. The next reusable seam is
+a boundary-invariant opaque segment envelope, followed by integration with the
+persistent append-only learner rather than another supplied target hint.
+
+Commit `7a747f5` banks that causal seam as an isolated mechanism.
+`BoundaryAwareSegmentBinder` learns the nearest recurring opaque left and right
+delimiter relations from complete streams rather than receiving delimiters or
+locations through its public interface. Fresh renamed targets at first, middle,
+and last segment positions all BIND. Genuine cross-segment ambiguity and a
+missing nearest boundary physically STOP, and `EQUALITY_OFF`, `PROPAGATION_OFF`,
+and `BOUNDARY_OFF` each physically STOP. Five focused tests passed. This is
+mechanism evidence only: it neither changes the immutable 1/2 V1 result nor
+proves integrated editing. A newly named integrated successor and genuinely
+fresh cohort are still pending.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment
