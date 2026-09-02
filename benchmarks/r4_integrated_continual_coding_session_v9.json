@@ -1,0 +1,71 @@
+{
+  "artifact_path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\benchmarks\\r4_integrated_continual_coding_session_v9.json",
+  "bootstrap_root_sha256": "59e8fbf6ce998b5be4e9fb4a0b3cc671fee42578508c58957399cf68d243dace",
+  "error": {
+    "message": "neuronal action transport is malformed",
+    "type": "NeuronalToolModelError"
+  },
+  "initial_models": {
+    "contrast_off": "f1d46408f0a7333eb8d6c14675917cf46e57dd8a3c0ce2fb680cfc3b05a429cc",
+    "no_update": "f1d46408f0a7333eb8d6c14675917cf46e57dd8a3c0ce2fb680cfc3b05a429cc",
+    "treatment": "f1d46408f0a7333eb8d6c14675917cf46e57dd8a3c0ce2fb680cfc3b05a429cc"
+  },
+  "model_configs": {
+    "contrast_off": {
+      "ablation": "contrast-off",
+      "max_contrast_candidate_episodes": 256,
+      "max_contrast_output_bytes": 8192,
+      "max_observation_features": 4096,
+      "max_observation_order": 2,
+      "max_prefix_order": 3,
+      "max_role_cursors": 32,
+      "max_roles": 4096,
+      "min_reuse_contexts": 2,
+      "plasticity": true,
+      "random_seed": 29,
+      "tokenizer": {
+        "max_phrases": 512,
+        "min_frequency": 2
+      }
+    },
+    "no_update": {
+      "ablation": "none",
+      "max_contrast_candidate_episodes": 256,
+      "max_contrast_output_bytes": 8192,
+      "max_observation_features": 4096,
+      "max_observation_order": 2,
+      "max_prefix_order": 3,
+      "max_role_cursors": 32,
+      "max_roles": 4096,
+      "min_reuse_contexts": 2,
+      "plasticity": false,
+      "random_seed": 29,
+      "tokenizer": {
+        "max_phrases": 512,
+        "min_frequency": 2
+      }
+    },
+    "treatment": {
+      "ablation": "none",
+      "max_contrast_candidate_episodes": 256,
+      "max_contrast_output_bytes": 8192,
+      "max_observation_features": 4096,
+      "max_observation_order": 2,
+      "max_prefix_order": 3,
+      "max_role_cursors": 32,
+      "max_roles": 4096,
+      "min_reuse_contexts": 2,
+      "plasticity": true,
+      "random_seed": 29,
+      "tokenizer": {
+        "max_phrases": 512,
+        "min_frequency": 2
+      }
+    }
+  },
+  "preflight_sha256": "e03dccacb2b4962b908b113149dead1d5da457760d5a1d25000e6e995cf270b2",
+  "reservation_policy": "absent-only-exclusive-create-before-first-episode",
+  "schema": "continual-coding-session-v9-reservation",
+  "sha256": "65e0e95856636140e07ff8077901c54b318c582e595d1ed28fa0827126d324f1",
+  "status": "FAILED"
+}
