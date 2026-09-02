@@ -1,0 +1,25 @@
+{
+  "architecture_commit": "fd38ef6981f3b0c00d5c76557527b3aed69b9d1b",
+  "artifact_origin": "Failure record captured from the first and only invocation; the frozen runner raised before it could create its own result object.",
+  "cohort_sha256": "8a7048abff67f1ae3a2c45072fa0a5887977cd3de2eb41d127a488cddbadcaff",
+  "command": ".\\.venv\\Scripts\\python.exe -m experiments.r4_integrated.persistent_variability_multiscale_python_learning_v2 --write-artifact",
+  "dependency_custody_sha256": "649422f13ca04da23d42f005fcb576b44403c455714538559df35501098f6c89",
+  "evaluated_task_count": 0,
+  "exception": {
+    "message": "each training stream must have one query/source coincidence",
+    "phase": "_new_seed_stack -> VariabilityMultiscaleSourceMotorController.grow -> VariabilityAwareSegmentBinder.grow",
+    "type": "ValueError"
+  },
+  "executed_at_utc": "2026-09-02T21:15:43.1202181Z",
+  "exit_code": 1,
+  "experiment": "persistent-variability-multiscale-python-learning-v2",
+  "experiment_source_custody_sha256": "d40296a971fedffcea6d2310403f826dc1eaebed751b7e173ade2e3d1dec06f2",
+  "experiment_source_sha256": "b48c705d6877c6e031963ed2fddcceae32620bf51e984ee64430561a79b4a4ec",
+  "freeze_commit": "24ba8b98f0a58f92051604dacc5f4c66fc8afe04",
+  "interpretation": "The frozen seed experiences did not satisfy the existing controller's single query/source-coincidence contract, so this cohort provides no capability outcome. It localizes an experiment-interface mismatch, not a neuronal learning result.",
+  "masked_result_available": false,
+  "rerun_allowed": false,
+  "schema_version": 1,
+  "spent": true,
+  "status": "execution_error_before_evaluation"
+}
