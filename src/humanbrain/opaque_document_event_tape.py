@@ -404,8 +404,8 @@ class OpaqueDocumentEventTape:
 
         if not isinstance(query, bytes) or not query:
             raise OpaqueDocumentEventTapeError("query must be non-empty bytes")
-        if type(documents) is not tuple or not documents:
-            raise OpaqueDocumentEventTapeError("documents must be a non-empty tuple")
+        if type(documents) is not tuple:
+            raise OpaqueDocumentEventTapeError("documents must be a tuple")
         if any(not isinstance(document, OpaqueDocument) for document in documents):
             raise TypeError("documents must contain OpaqueDocument values")
         if len({document.document_id for document in documents}) != len(documents):
