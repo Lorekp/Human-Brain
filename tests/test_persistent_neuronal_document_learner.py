@@ -74,6 +74,8 @@ def test_replay_free_exact_surface_growth_and_physical_one_hop_read() -> None:
     assert empty.training_summary.retained_canonical_state_byte_count > 0
     assert empty.training_summary.retained_pointer_count == 0
     assert empty.training_summary.retained_active_cell_count == 0
+    assert empty.training_summary.association_count == 0
+    assert empty.training_summary.retained_association_pointer_count == 0
     assert empty.training_summary.cumulative_binding_update_count == 0
 
     forward_one = _lesson(
@@ -200,7 +202,13 @@ def test_replay_free_exact_surface_growth_and_physical_one_hop_read() -> None:
     assert learned.completed_hops == 1
     assert learned.stop_reason is None
     assert learned.schema_sha256 in promoted.promoted_schema_sha256s
-    assert learned.physical_cell_steps == sum(race.physical_cell_steps for race in learned.races)
+    assert learned.physical_cell_steps == (
+        sum(race.physical_cell_steps for race in learned.races)
+        + sum(race.physical_cell_steps for race in learned.relation_binding_races)
+        + sum(race.physical_cell_steps for race in learned.relation_cleanup_races)
+    )
+    assert learned.relation_binding_races
+    assert learned.relation_cleanup_races
     tape = OpaqueDocumentEventTape.observe(
         fresh_forward_query,
         fresh_forward_documents,
@@ -278,7 +286,8 @@ def test_replay_free_exact_surface_growth_and_physical_one_hop_read() -> None:
     assert complete.training_summary.retained_raw_training_row_count == 0
     assert complete.training_summary.retained_raw_document_count == 0
     assert complete.training_summary.retained_canonical_state_byte_count > 0
-    assert complete.training_summary.retained_pointer_count == 10
+    assert complete.training_summary.retained_pointer_count == 12
+    assert complete.training_summary.retained_association_pointer_count == 2
     assert complete.training_summary.retained_active_cell_count > 0
     assert complete.training_summary.cumulative_binding_update_count == 8
     assert complete.training_summary.cumulative_learning_cell_steps > 0
@@ -339,6 +348,8 @@ def test_replay_free_exact_surface_growth_and_physical_one_hop_read() -> None:
         PersistentDocumentAblation.QUERY_FRAME_OFF: "query_frame",
         PersistentDocumentAblation.DOCUMENT_FRAME_OFF: "answer_selection",
         PersistentDocumentAblation.SUBJECT_JOIN_OFF: "answer_selection",
+        PersistentDocumentAblation.RELATION_BINDING_OFF: "answer_selection",
+        PersistentDocumentAblation.RELATION_CLEANUP_OFF: "answer_selection",
         PersistentDocumentAblation.ANSWER_SELECTION_OFF: "answer_selection",
         PersistentDocumentAblation.MOTOR_OFF: "motor",
     }
@@ -353,3 +364,137 @@ def test_replay_free_exact_surface_growth_and_physical_one_hop_read() -> None:
         assert ablated.stop_stage == expected_stage
         assert ablated.physical_cell_steps > 0
         assert any(race.stopped for race in ablated.races)
+
+
+def test_full_cobinding_learns_only_the_two_ordered_cross_surface_links() -> None:
+    def lesson(run: str, query: bytes, fact: bytes, answer: bytes):
+        return RelationalReadingSuccess(
+            query=query,
+            documents=(
+                OpaqueDocument(
+                    document_id=f"bridge-document/{run}/0".encode(),
+                    provenance_id=f"bridge-document-provenance/{run}/0".encode(),
+                    content=fact,
+                ),
+                _document(f"bridge-{run}", 1, "qira."),
+            ),
+            observed_answer=answer,
+            provenance_id=f"bridge-lesson-provenance/{run}".encode(),
+        )
+
+    surface_a = lesson(
+        "surface-a",
+        b"Route axor through lumet.",
+        b"axor pavo iona.",
+        b"iona",
+    )
+    first = advance(start(), surface_a)
+    before_bridge = first.successor
+    assert first.status == "PENDING"
+
+    prebridge_query = b"Route moru through lumet."
+    prebridge_documents = (
+        _document("prebridge", 0, "qira."),
+        _document("prebridge", 1, "orli sulex moru."),
+    )
+    assert before_bridge.respond(prebridge_query, prebridge_documents).decision == "STOP"
+
+    for decoy in (
+        lesson(
+            "same-subject-only",
+            b"Chart axor beside naver.",
+            b"axor tivo zelu.",
+            b"zelu",
+        ),
+        lesson(
+            "same-answer-only",
+            b"Mark qem beneath sorin.",
+            b"qem vatu iona.",
+            b"iona",
+        ),
+        lesson(
+            "reversed-binding",
+            b"Follow iona around pira.",
+            b"iona daxu axor.",
+            b"axor",
+        ),
+    ):
+        transition = advance(before_bridge, decoy)
+        assert transition.status == "PENDING"
+        assert not transition.association_updated
+        before_bridge = transition.successor
+
+    assert before_bridge.training_summary.association_count == 0
+    surface_b = lesson(
+        "surface-b",
+        b"Trace kori for axor.",
+        b"iona sulex axor.",
+        b"iona",
+    )
+    bridge = advance(before_bridge, surface_b)
+    associated = bridge.successor
+    assert bridge.status == "ASSOCIATED"
+    assert bridge.association_updated
+    assert bridge.association_link_count == 2
+    assert len(bridge.association_binding_races) == 2
+    assert all(not race.stopped for race in bridge.association_binding_races)
+    assert len(bridge.association_cleanup_races) == 1
+    assert not bridge.association_cleanup_races[0].stopped
+    assert associated.training_summary.association_count == 2
+    assert associated.training_summary.learned_equivalence_count == 1
+    assert associated.training_summary.associated_surface_count == 2
+    assert associated.training_summary.promoted_schema_count == 0
+    assert associated.training_summary.retained_association_pointer_count == 2
+    assert associated.training_summary.retained_raw_training_row_count == 0
+    assert associated.training_summary.retained_raw_document_count == 0
+
+    cross_documents = (
+        _document("cross-a-to-b", 0, "moru tivo vexa."),
+        _document("cross-a-to-b", 1, "nori. orli sulex moru."),
+    )
+    cross = associated.respond(prebridge_query, cross_documents)
+    assert cross.decision == "EMIT"
+    assert cross.answer == b"orli"
+    assert cross.relation_binding_races
+    assert cross.relation_cleanup_races
+    assert any(not race.stopped for race in cross.relation_cleanup_races)
+    assert any("associated_path_or" in race.population for race in cross.races)
+
+    reverse_query = b"Trace kori for prax."
+    reverse_documents = (
+        _document("cross-b-to-a", 0, "prax pavo ravi."),
+        _document("cross-b-to-a", 1, "prax tivo noxa."),
+    )
+    assert associated.respond(reverse_query, reverse_documents).answer == b"ravi"
+    same_surface_documents = (_document("same-a", 0, "moru pavo orli."),)
+    assert associated.respond(prebridge_query, same_surface_documents).decision == "STOP"
+    assert before_bridge.respond(prebridge_query, cross_documents).decision == "STOP"
+
+    ambiguous_documents = (
+        _document("bridge-ambiguous", 0, "tuli sulex moru."),
+        _document("bridge-ambiguous", 1, "vexa sulex moru."),
+    )
+    ambiguous = associated.respond(prebridge_query, ambiguous_documents)
+    assert ambiguous.decision == "STOP"
+    assert ambiguous.stop_reason == "answer_selection:collision"
+
+    for ablation in (
+        PersistentDocumentAblation.RELATION_BINDING_OFF,
+        PersistentDocumentAblation.RELATION_CLEANUP_OFF,
+        PersistentDocumentAblation.ANSWER_SELECTION_OFF,
+    ):
+        stopped = associated.respond(prebridge_query, cross_documents, ablation)
+        assert stopped.decision == "STOP"
+        assert stopped.stop_stage == "answer_selection"
+    binding_off = associated.respond(
+        prebridge_query,
+        cross_documents,
+        PersistentDocumentAblation.RELATION_BINDING_OFF,
+    )
+    assert any(race.stopped for race in binding_off.relation_binding_races)
+    cleanup_off = associated.respond(
+        prebridge_query,
+        cross_documents,
+        PersistentDocumentAblation.RELATION_CLEANUP_OFF,
+    )
+    assert any(race.stopped for race in cleanup_off.relation_cleanup_races)
