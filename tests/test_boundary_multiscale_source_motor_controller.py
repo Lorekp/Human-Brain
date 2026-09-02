@@ -148,6 +148,42 @@ def test_boundary_controls_and_ambiguous_query_physically_stop() -> None:
     assert ambiguous.bindings[-1].races[-1].simultaneous_spike_cells == 2
 
 
+def test_prepared_observation_preserves_frozen_decision_bytes() -> None:
+    controller = _controller()
+    query, before, _ = _transition(
+        "onyx_entry",
+        ("birch_slot.blob", "onyx_entry.blob", "willow_slot.blob"),
+    )
+    observation = MultiscaleOpaqueEventTape.observe(query, before)
+
+    prepared = controller._respond_observation(observation)
+
+    assert controller.checkpoint_sha256 == (
+        "f61790e41aa05e948de4982aab25b7f9cbb09117fd0c9105e9d34abb8d57224e"
+    )
+    assert prepared.query_sha256 == (
+        "53d4b6aac9a3f0835d7c4255bf779ee650f100591dd99b4f8d66662e1ad2616a"
+    )
+    assert prepared.bindings[0].sha256 == (
+        "b70e0f0bb7e5eccb4f7c6108fc26f3acea9f85c856285fe0bcbce135c8c6cfa7"
+    )
+    assert prepared.action is not None
+    assert prepared.action.sha256 == (
+        "dcb1216462c1bb32f54b68d09ca827505aadaea242a712326ce512064f69bd8d"
+    )
+    assert prepared.action.eligibility is not None
+    assert prepared.action.eligibility.sha256 == (
+        "e1f3c2d264cc09e9b2fcdcabb51afba21cd5a4f6b963d8133f8309836a3f6cf0"
+    )
+    assert prepared.physical_cell_steps == 151_200
+    assert prepared.sha256 == ("90c4cfca018483ddf549cda75ad0f83483727d9cb1a16310c27b167dfec50e2a")
+    controller.resolve(TapeValence.NEUTRAL)
+
+    public = controller.respond(query, before)
+    assert public == prepared
+    controller.resolve(TapeValence.NEUTRAL)
+
+
 def test_public_boundary_contains_no_target_or_delimiter_route() -> None:
     assert tuple(
         field.name for field in fields(SuccessfulBoundaryMultiscaleSourceMotorExperience)

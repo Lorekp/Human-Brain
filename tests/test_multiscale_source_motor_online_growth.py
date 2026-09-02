@@ -390,3 +390,79 @@ def test_no_update_duplicate_conflict_and_tamper_commit_no_state() -> None:
         "files",
         "ablation",
     )
+
+
+def test_stack_broadcasts_one_observation_without_changing_frozen_bytes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent = AppendOnlyMultiscaleSourceMotorStack.seed(_base_controller())
+    transition = parent.extend_success(_evidence(parent.checkpoint_sha256))
+    successor = transition.successor
+    fresh = _fresh_first_file_experience()
+    original_observe = MultiscaleOpaqueEventTape.observe
+    original_respond_observation = BoundaryMultiscaleSourceMotorController._respond_observation
+    observe_calls = 0
+    observation_ids: list[int] = []
+
+    def counted_observe(
+        cls: type[MultiscaleOpaqueEventTape],
+        query: bytes,
+        files: tuple[OpaqueWorkspaceFile, ...],
+    ) -> MultiscaleOpaqueEventTape:
+        del cls
+        nonlocal observe_calls
+        observe_calls += 1
+        return original_observe(query, files)
+
+    def record_observation_identity(
+        controller: BoundaryMultiscaleSourceMotorController,
+        observation: MultiscaleOpaqueEventTape,
+        *,
+        ablation: BoundaryMultiscaleSourceMotorAblation = (
+            BoundaryMultiscaleSourceMotorAblation.NONE
+        ),
+    ):
+        observation_ids.append(id(observation))
+        return original_respond_observation(
+            controller,
+            observation,
+            ablation=ablation,
+        )
+
+    monkeypatch.setattr(
+        MultiscaleOpaqueEventTape,
+        "observe",
+        classmethod(counted_observe),
+    )
+    monkeypatch.setattr(
+        BoundaryMultiscaleSourceMotorController,
+        "_respond_observation",
+        record_observation_identity,
+    )
+
+    decision = successor.respond(fresh.query, fresh.before_files)
+
+    assert observe_calls == 1
+    assert len(observation_ids) == successor.training_summary.segment_count
+    assert len(set(observation_ids)) == 1
+    assert transition.receipt.sha256 == (
+        "9b5b0ae2828e2d111ec84387d694091acfb33aa28684ceb3f3eb12425bef3d6b"
+    )
+    assert successor.checkpoint_sha256 == (
+        "ea0da002a85640aa3bdba83014e3d384ea28d535afe819fe4e48217e3cccc3b4"
+    )
+    assert decision.query_sha256 == (
+        "f1f1a5c9166fa543c72e44bf88bff73b700e6e0e03e72dfcfa29e21fc2735285"
+    )
+    assert decision.component_decision_sha256s == (
+        "7d1efcc0fc056ee09b4c250402eb15a7420e55068b60cb70b8ee99c3cdfc18e6",
+        "7d1c6599d3bcd8a35adf39bd2a05d700d642dac99d473397a72e2a50ac312daf",
+    )
+    assert decision.component_receipt_sha256 == (
+        "a4847db4653929382b768b54ac6acc4e9fbd54a1101d183fbee16d702b907236"
+    )
+    assert decision.race.sha256 == (
+        "e908b54e28e88492fe8e06719d1c6b14147cb8a22a481dae30fb3020f8e9f00a"
+    )
+    assert decision.physical_cell_steps == 705_000
+    assert decision.sha256 == ("0c6b63e8309e4732b7fe89a97217a3a71b5b15e2b6e5bfdd4ee21f6a7d666b05")

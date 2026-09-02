@@ -483,10 +483,9 @@ class _FrozenController(Protocol):
     @property
     def checkpoint_sha256(self) -> str: ...
 
-    def respond(
+    def respond_observation(
         self,
-        query: bytes,
-        files: tuple[OpaqueWorkspaceFile, ...],
+        observation: MultiscaleOpaqueEventTape,
         *,
         ablation: BoundaryMultiscaleSourceMotorAblation,
     ) -> _ComponentEmission: ...
@@ -527,16 +526,15 @@ class _ControllerAdapter:
             raise RuntimeError("frozen multiscale controller checkpoint changed")
         return self.expected_checkpoint_sha256
 
-    def respond(
+    def respond_observation(
         self,
-        query: bytes,
-        files: tuple[OpaqueWorkspaceFile, ...],
+        observation: MultiscaleOpaqueEventTape,
         *,
         ablation: BoundaryMultiscaleSourceMotorAblation,
     ) -> _ComponentEmission:
         _ = self.checkpoint_sha256
         ephemeral = _copy_controller(self.controller)
-        decision = ephemeral.respond(query, files, ablation=ablation)
+        decision = ephemeral._respond_observation(observation, ablation=ablation)
         receipt_sha256: str | None = None
         if decision.decision == "EMIT":
             if decision.action is None or decision.action.eligibility is None:
@@ -819,7 +817,9 @@ class AppendOnlyMultiscaleSourceMotorStack:
 
         if not isinstance(ablation, BoundaryMultiscaleSourceMotorAblation):
             raise TypeError("ablation must be a BoundaryMultiscaleSourceMotorAblation")
-        canonical_query, canonical_files = _canonical_observation(query, files)
+        observation = MultiscaleOpaqueEventTape.observe(query, files)
+        canonical_query = observation.reconstruct_query()
+        canonical_files = observation.reconstruct_workspace()
         query_sha256 = _digest(
             _QUERY_NAMESPACE,
             {
@@ -830,9 +830,8 @@ class AppendOnlyMultiscaleSourceMotorStack:
             },
         )
         component_decisions = tuple(
-            segment.adapter.respond(
-                canonical_query,
-                canonical_files,
+            segment.adapter.respond_observation(
+                observation,
                 ablation=ablation,
             )
             for segment in self._segments
@@ -987,9 +986,12 @@ class AppendOnlyMultiscaleSourceMotorStack:
                 stop_reason="parent_observation_collision",
             )
 
-        candidate_probe = candidate_adapter.respond(
+        candidate_observation = MultiscaleOpaqueEventTape.observe(
             evidence.query,
             evidence.before_files,
+        )
+        candidate_probe = candidate_adapter.respond_observation(
+            candidate_observation,
             ablation=BoundaryMultiscaleSourceMotorAblation.NONE,
         )
         if not candidate_probe.emitted or candidate_probe.emissions != expected:

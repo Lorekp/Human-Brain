@@ -252,6 +252,22 @@ class BoundaryMultiscaleSourceMotorController:
         if not isinstance(ablation, BoundaryMultiscaleSourceMotorAblation):
             raise TypeError("ablation must be a BoundaryMultiscaleSourceMotorAblation")
         observation = MultiscaleOpaqueEventTape.observe(query, files)
+        return self._respond_observation(observation, ablation=ablation)
+
+    def _respond_observation(
+        self,
+        observation: MultiscaleOpaqueEventTape,
+        *,
+        ablation: BoundaryMultiscaleSourceMotorAblation = (
+            BoundaryMultiscaleSourceMotorAblation.NONE
+        ),
+    ) -> BoundaryMultiscaleSourceMotorDecision:
+        """Run inference over one already-built immutable observation."""
+
+        if not isinstance(observation, MultiscaleOpaqueEventTape):
+            raise TypeError("observation must be a MultiscaleOpaqueEventTape")
+        if not isinstance(ablation, BoundaryMultiscaleSourceMotorAblation):
+            raise TypeError("ablation must be a BoundaryMultiscaleSourceMotorAblation")
         query_sha256 = _digest(
             _QUERY_NAMESPACE,
             {
