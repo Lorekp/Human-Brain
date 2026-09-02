@@ -1,10 +1,12 @@
 """Learned two-hop reading over complete opaque document observations.
 
 The public learner sees only successful raw queries, raw documents, observed
-answer bytes, and provenance.  It discovers one recurring query frame and the
-document sentence frames that repeatedly carried each hop.  Endpoint values
-are deliberately discarded: only literal surface synapses, argument
-orientation, and support remain in the checkpoint.
+answer bytes, and provenance.  An answer-supervised host compiler discovers one
+recurring query frame and the document sentence frames that repeatedly carried
+each hop.  This compiler remains scaffolding; the scientific claim starts at
+the frozen inference circuit.  Endpoint values are deliberately discarded:
+only literal surface synapses, argument orientation, and support remain in the
+checkpoint.
 
 Inference enumerates every ordered pair of live lexical occurrences in every
 sentence.  Fitted simulated-cell races detect learned frames, join the query
@@ -49,8 +51,10 @@ __all__ = [
 
 _RACE_STEPS = 600
 _ZERO_SCORE_SPIKE_STEP = 568
-_DRIVE_SCORE = 2
-_TONIC_SCORE = 1
+_SENSORY_TICK = 2
+_ACTIVE_SCORE = 4
+_TONIC_SCORE = 3
+_MAX_NEURAL_SCORE = 8
 _MIN_SUCCESSES = 4
 _MAX_SUCCESSES = 64
 _MIN_DOCUMENTS = 2
@@ -58,11 +62,11 @@ _MAX_DOCUMENTS = 4
 _MAX_TOKENS = 512
 _MAX_VALUE_BYTES = 4096
 
-_CHECKPOINT_NAMESPACE = b"humanbrain.neuronal-relational-reader.checkpoint-v1\0"
-_QUERY_NAMESPACE = b"humanbrain.neuronal-relational-reader.query-v1\0"
-_RACE_NAMESPACE = b"humanbrain.neuronal-relational-reader.race-v1\0"
-_DECISION_NAMESPACE = b"humanbrain.neuronal-relational-reader.decision-v1\0"
-_PROVENANCE_NAMESPACE = b"humanbrain.neuronal-relational-reader.provenance-v1\0"
+_CHECKPOINT_NAMESPACE = b"humanbrain.neuronal-relational-reader.checkpoint-v2\0"
+_QUERY_NAMESPACE = b"humanbrain.neuronal-relational-reader.query-v2\0"
+_RACE_NAMESPACE = b"humanbrain.neuronal-relational-reader.race-v2\0"
+_DECISION_NAMESPACE = b"humanbrain.neuronal-relational-reader.decision-v2\0"
+_PROVENANCE_NAMESPACE = b"humanbrain.neuronal-relational-reader.provenance-v2\0"
 _CONSTRUCTION_TOKEN = object()
 
 
@@ -103,7 +107,7 @@ def _build_score_currents() -> tuple[np.ndarray, CompiledRestingGlifRace]:
     voltage, threshold = population.compile_resting_response(_RACE_STEPS)
     crossing_current = population.parameters.threshold_inf_relative_mv / (voltage - threshold)
     currents: list[float] = []
-    for score in range(_DRIVE_SCORE + 1):
+    for score in range(_MAX_NEURAL_SCORE + 1):
         first_step = _ZERO_SCORE_SPIKE_STEP - score
         lower = float(crossing_current[first_step])
         upper = float(crossing_current[first_step - 1])
@@ -201,14 +205,6 @@ class _QueryFrame:
     literal_events: tuple[bytes | None, ...]
     support_ticks: int
 
-    def matches(self, tokens: tuple[OpaqueTokenOccurrence, ...]) -> bool:
-        if len(tokens) != len(self.literal_events):
-            return False
-        return all(
-            expected is None or occurrence.identity_event == expected
-            for occurrence, expected in zip(tokens, self.literal_events, strict=True)
-        )
-
 
 @dataclass(frozen=True, slots=True)
 class _SurfaceFrame:
@@ -218,22 +214,6 @@ class _SurfaceFrame:
     destination_token_index: int
     literal_events: tuple[bytes | None, ...]
     support_ticks: int
-
-    def matches(self, edge: _EdgeCandidate) -> bool:
-        if (
-            len(edge.sentence_tokens) != self.token_count
-            or edge.source_token_index != self.source_token_index
-            or edge.destination_token_index != self.destination_token_index
-        ):
-            return False
-        return all(
-            expected is None or occurrence.identity_event == expected
-            for occurrence, expected in zip(
-                edge.sentence_tokens,
-                self.literal_events,
-                strict=True,
-            )
-        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -265,6 +245,13 @@ class _RaceDecision:
     trace: RelationalRaceTrace
 
 
+@dataclass(frozen=True, slots=True)
+class _CellSignal:
+    """A canonical two-cell output: feature cell then tonic cell."""
+
+    output_spikes: tuple[int, int]
+
+
 def _trace(
     *,
     population: str,
@@ -289,9 +276,247 @@ def _trace(
     return RelationalRaceTrace(**record, sha256=_digest(_RACE_NAMESPACE, record))
 
 
-def _physical_choice(*, population: str, scores: tuple[int, ...]) -> _RaceDecision:
-    if not scores or any(score not in (0, _DRIVE_SCORE) for score in scores):
-        raise ValueError("choice scores must be a non-empty binary drive vector")
+def _run_unique_race(
+    *,
+    population: str,
+    scores: tuple[int, ...],
+    races: list[RelationalRaceTrace],
+) -> int:
+    """Execute one fitted-cell layer and return its unique spiking cell."""
+
+    if not scores or any(not 0 <= score <= _MAX_NEURAL_SCORE for score in scores):
+        raise ValueError("cell scores exceed the fitted neural range")
+    currents = _SCORE_CURRENTS[np.asarray(scores, dtype=np.intp)]
+    result = _CELL_RACE.race_many(currents[None, :], require_unique=False)[0]
+    if result.simultaneous_spike_candidates != 1:
+        raise RuntimeError(f"{population} ceased to produce one physical output")
+    races.append(
+        _trace(
+            population=population,
+            scores=scores,
+            spike_step=result.spike_step,
+            simultaneous_spike_cells=result.simultaneous_spike_candidates,
+            stopped=False,
+            stop_reason=None,
+            physical_cell_steps=len(scores) * _RACE_STEPS,
+        )
+    )
+    return result.winner_cell
+
+
+def _binary_signal(
+    *,
+    population: str,
+    feature_score: int,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    winner = _run_unique_race(
+        population=population,
+        scores=(feature_score, _TONIC_SCORE),
+        races=races,
+    )
+    spikes = [0, 0]
+    spikes[winner] = 1
+    return _CellSignal((spikes[0], spikes[1]))
+
+
+def _control_signal(
+    *,
+    population: str,
+    enabled: bool,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    """Project an intervention bit into an ordinary feature/tonic pair."""
+
+    sensory_spike = int(enabled)
+    return _binary_signal(
+        population=population,
+        feature_score=_ACTIVE_SCORE * sensory_spike,
+        races=races,
+    )
+
+
+def _symbol_equality_signal(
+    left: int,
+    right: int,
+    *,
+    width: int,
+    population: str,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    """Coincide two one-hot sensory projections in fitted cells."""
+
+    if not 0 <= left < width or not 0 <= right < width:
+        raise ValueError("sensory symbol lies outside its projection sheet")
+    left_spikes = np.zeros(width, dtype=np.int8)
+    right_spikes = np.zeros(width, dtype=np.int8)
+    left_spikes[left] = 1
+    right_spikes[right] = 1
+    coincidence_scores = _SENSORY_TICK * (left_spikes + right_spikes)
+    scores = (*(int(score) for score in coincidence_scores), _TONIC_SCORE)
+    winner = _run_unique_race(
+        population=f"{population}/coincidence_cells",
+        scores=scores,
+        races=races,
+    )
+
+    winner_spikes = np.zeros(width + 1, dtype=np.int8)
+    winner_spikes[winner] = 1
+    excitatory_projection = np.ones(width + 1, dtype=np.int8)
+    excitatory_projection[-1] = 0
+    relay_score = _ACTIVE_SCORE * int(winner_spikes @ excitatory_projection)
+    return _binary_signal(
+        population=f"{population}/equality_relay",
+        feature_score=relay_score,
+        races=races,
+    )
+
+
+def _scalar_equality_signal(
+    left: int,
+    right: int,
+    *,
+    population: str,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    if left < 0 or right < 0:
+        raise ValueError("scalar sensory values must be non-negative")
+    return _symbol_equality_signal(
+        left,
+        right,
+        width=max(left, right) + 1,
+        population=population,
+        races=races,
+    )
+
+
+def _and_signal(
+    left: _CellSignal,
+    right: _CellSignal,
+    *,
+    population: str,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    feature_score = _SENSORY_TICK * (left.output_spikes[0] + right.output_spikes[0])
+    return _binary_signal(
+        population=population,
+        feature_score=feature_score,
+        races=races,
+    )
+
+
+def _or_signal(
+    left: _CellSignal,
+    right: _CellSignal,
+    *,
+    population: str,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    feature_score = _ACTIVE_SCORE * (left.output_spikes[0] + right.output_spikes[0])
+    return _binary_signal(
+        population=population,
+        feature_score=feature_score,
+        races=races,
+    )
+
+
+def _not_signal(
+    signal: _CellSignal,
+    *,
+    population: str,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    inhibitory_projection = _ACTIVE_SCORE * signal.output_spikes[0]
+    return _binary_signal(
+        population=population,
+        feature_score=_ACTIVE_SCORE - inhibitory_projection,
+        races=races,
+    )
+
+
+def _conjunction_signal(
+    signals: Sequence[_CellSignal],
+    *,
+    population: str,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    if not signals:
+        raise ValueError("a neural conjunction needs at least one input")
+    active = signals[0]
+    for ordinal, signal in enumerate(signals[1:], start=1):
+        active = _and_signal(
+            active,
+            signal,
+            population=f"{population}/feature_conjunction_{ordinal}",
+            races=races,
+        )
+    return active
+
+
+def _disjunction_signal(
+    signals: Sequence[_CellSignal],
+    *,
+    population: str,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    active = _control_signal(
+        population=f"{population}/inactive_seed",
+        enabled=False,
+        races=races,
+    )
+    for ordinal, signal in enumerate(signals):
+        active = _or_signal(
+            active,
+            signal,
+            population=f"{population}/frame_or_{ordinal}",
+            races=races,
+        )
+    return active
+
+
+def _event_equality_signal(
+    left: bytes,
+    right: bytes,
+    *,
+    population: str,
+    races: list[RelationalRaceTrace],
+) -> _CellSignal:
+    """Compare complete byte events through length, byte, and AND cells."""
+
+    features = [
+        _scalar_equality_signal(
+            len(left),
+            len(right),
+            population=f"{population}/length_equality",
+            races=races,
+        )
+    ]
+    features.extend(
+        _symbol_equality_signal(
+            left_byte,
+            right_byte,
+            width=256,
+            population=f"{population}/byte_equality_{ordinal}",
+            races=races,
+        )
+        for ordinal, (left_byte, right_byte) in enumerate(zip(left, right, strict=False))
+    )
+    return _conjunction_signal(
+        features,
+        population=f"{population}/event_equality",
+        races=races,
+    )
+
+
+def _physical_competition(
+    *,
+    population: str,
+    signals: Sequence[_CellSignal],
+    races: list[RelationalRaceTrace],
+) -> _RaceDecision:
+    if not signals:
+        raise ValueError("competition needs at least one candidate signal")
+    scores = tuple(_ACTIVE_SCORE * signal.output_spikes[0] for signal in signals)
     all_scores = (*scores, _TONIC_SCORE)
     currents = _SCORE_CURRENTS[np.asarray(all_scores, dtype=np.intp)]
     result = _CELL_RACE.race_many(currents[None, :], require_unique=False)[0]
@@ -308,40 +533,22 @@ def _physical_choice(*, population: str, scores: tuple[int, ...]) -> _RaceDecisi
         physical_cell_steps += _RACE_STEPS
         stopped = True
         stop_reason = "collision"
-    elif result.winner_cell == len(scores):
+    elif result.winner_cell == len(signals):
         stopped = True
         stop_reason = "tonic_stop"
     else:
         selected = result.winner_cell
-    return _RaceDecision(
-        column=selected,
-        trace=_trace(
-            population=population,
-            scores=all_scores,
-            spike_step=result.spike_step,
-            simultaneous_spike_cells=result.simultaneous_spike_candidates,
-            stopped=stopped,
-            stop_reason=stop_reason,
-            physical_cell_steps=physical_cell_steps,
-        ),
-    )
-
-
-def _physical_detector(*, population: str, matched: bool) -> tuple[bool, RelationalRaceTrace]:
-    scores = (_DRIVE_SCORE if matched else 0, _TONIC_SCORE)
-    currents = _SCORE_CURRENTS[np.asarray(scores, dtype=np.intp)]
-    result = _CELL_RACE.race_many(currents[None, :], require_unique=False)[0]
-    if result.simultaneous_spike_candidates != 1:
-        raise RuntimeError("relational-reader detector race ceased to be unique")
-    return result.winner_cell == 0, _trace(
+    trace = _trace(
         population=population,
-        scores=scores,
+        scores=all_scores,
         spike_step=result.spike_step,
         simultaneous_spike_cells=result.simultaneous_spike_candidates,
-        stopped=False,
-        stop_reason=None,
-        physical_cell_steps=len(scores) * _RACE_STEPS,
+        stopped=stopped,
+        stop_reason=stop_reason,
+        physical_cell_steps=physical_cell_steps,
     )
+    races.append(trace)
+    return _RaceDecision(column=selected, trace=trace)
 
 
 def _query_tokens(tape: OpaqueDocumentEventTape) -> tuple[OpaqueTokenOccurrence, ...]:
@@ -460,7 +667,7 @@ class NeuronalRelationalReader:
 
     @classmethod
     def grow(cls, successes: Iterable[RelationalReadingSuccess]) -> NeuronalRelationalReader:
-        """Consolidate recurring query and sentence frames without raw replay."""
+        """Compile recurring query and sentence frames without retaining rows."""
 
         rows = tuple(successes)
         if not _MIN_SUCCESSES <= len(rows) <= _MAX_SUCCESSES:
@@ -576,6 +783,20 @@ class NeuronalRelationalReader:
             query_frame=query_frame,
             hop_frames=(hop_frames[0], hop_frames[1]),
         )
+        retained_surface_events = {
+            event for event in query_frame.literal_events if event is not None
+        }
+        retained_surface_events.update(
+            event
+            for frames in schema.hop_frames
+            for frame in frames
+            for event in frame.literal_events
+            if event is not None
+        )
+        accepted_endpoints = {*subjects, *intermediates, *answers}
+        retained_endpoints = retained_surface_events & accepted_endpoints
+        if retained_endpoints:
+            raise ValueError("a learned literal aliases a concrete training endpoint")
         provenance_root = _digest(
             _PROVENANCE_NAMESPACE,
             {"provenance_sha256s": tuple(sha256(value).hexdigest() for value in provenance_ids)},
@@ -603,7 +824,7 @@ class NeuronalRelationalReader:
             forward_surface_count=forward_count,
             reverse_surface_count=reverse_count,
             minimum_surface_support=min(frame.support_ticks for frame in all_frames),
-            retained_concrete_endpoint_count=0,
+            retained_concrete_endpoint_count=len(retained_endpoints),
             provenance_root_sha256=provenance_root,
             checkpoint_sha256=checkpoint_sha256,
         )
@@ -659,17 +880,38 @@ class NeuronalRelationalReader:
             },
         )
         races: list[RelationalRaceTrace] = []
+        frame_control = _control_signal(
+            population="frame_binding_control",
+            enabled=ablation is not RelationalReaderAblation.FRAME_BINDING_OFF,
+            races=races,
+        )
+        equality_control = _control_signal(
+            population="equality_control",
+            enabled=ablation is not RelationalReaderAblation.EQUALITY_OFF,
+            races=races,
+        )
+        recurrence_control = _control_signal(
+            population="recurrence_control",
+            enabled=ablation is not RelationalReaderAblation.RECURRENCE_OFF,
+            races=races,
+        )
+        motor_control = _control_signal(
+            population="motor_control",
+            enabled=ablation is not RelationalReaderAblation.MOTOR_OFF,
+            races=races,
+        )
 
-        query_matched = (
-            _query_sentence_lengths(tape) == self._schema.query_frame.sentence_lengths
-            and self._schema.query_frame.matches(query_tokens)
-            and ablation is not RelationalReaderAblation.FRAME_BINDING_OFF
+        query_frame_signal = self._query_frame_signal(
+            tape,
+            query_tokens,
+            frame_control=frame_control,
+            races=races,
         )
-        query_choice = _physical_choice(
+        query_choice = _physical_competition(
             population="query_frame_binding",
-            scores=(_DRIVE_SCORE if query_matched else 0,),
+            signals=(query_frame_signal,),
+            races=races,
         )
-        races.append(query_choice.trace)
         if query_choice.column is None:
             return self._stop(
                 query_sha256=query_sha256,
@@ -678,6 +920,8 @@ class NeuronalRelationalReader:
                 reason=query_choice.trace.stop_reason,
                 completed_hops=0,
             )
+        if self._schema.query_frame.subject_flat_index >= len(query_tokens):
+            raise RuntimeError("physical query-frame winner lacks its learned filler cell")
         subject = query_tokens[self._schema.query_frame.subject_flat_index]
         edges = _all_edges(tape)
         if not edges:
@@ -692,23 +936,30 @@ class NeuronalRelationalReader:
             edges,
             frames=self._schema.hop_frames[0],
             hop=1,
-            ablation=ablation,
+            frame_control=frame_control,
+            query_frame_signal=query_frame_signal,
             races=races,
         )
-        first_join = _physical_choice(
-            population="query_to_document_equality_join",
-            scores=tuple(
-                _DRIVE_SCORE
-                if (
-                    matched
-                    and ablation is not RelationalReaderAblation.EQUALITY_OFF
-                    and edge.source.identity_event == subject.identity_event
+        first_join_signals: list[_CellSignal] = []
+        for index, (edge, frame_signal) in enumerate(zip(edges, first_matches, strict=True)):
+            equality = _event_equality_signal(
+                subject.identity_event,
+                edge.source.identity_event,
+                population=f"first_join_candidate_{index}/source_equality",
+                races=races,
+            )
+            first_join_signals.append(
+                _conjunction_signal(
+                    (frame_signal, equality, equality_control),
+                    population=f"first_join_candidate_{index}/join_conjunction",
+                    races=races,
                 )
-                else 0
-                for edge, matched in zip(edges, first_matches, strict=True)
-            ),
+            )
+        first_join = _physical_competition(
+            population="query_to_document_equality_join",
+            signals=first_join_signals,
+            races=races,
         )
-        races.append(first_join.trace)
         if first_join.column is None:
             return self._stop(
                 query_sha256=query_sha256,
@@ -723,25 +974,47 @@ class NeuronalRelationalReader:
             edges,
             frames=self._schema.hop_frames[1],
             hop=2,
-            ablation=ablation,
+            frame_control=frame_control,
+            query_frame_signal=query_frame_signal,
             races=races,
         )
-        second_join = _physical_choice(
-            population="recurrent_document_equality_join",
-            scores=tuple(
-                _DRIVE_SCORE
-                if (
-                    matched
-                    and ablation is not RelationalReaderAblation.EQUALITY_OFF
-                    and ablation is not RelationalReaderAblation.RECURRENCE_OFF
-                    and edge.source.identity_event == first_edge.destination.identity_event
-                    and edge.document_index != first_edge.document_index
+        second_join_signals: list[_CellSignal] = []
+        for index, (edge, frame_signal) in enumerate(zip(edges, second_matches, strict=True)):
+            equality = _event_equality_signal(
+                first_edge.destination.identity_event,
+                edge.source.identity_event,
+                population=f"recurrent_join_candidate_{index}/source_equality",
+                races=races,
+            )
+            same_document = _scalar_equality_signal(
+                first_edge.document_index,
+                edge.document_index,
+                population=f"recurrent_join_candidate_{index}/document_equality",
+                races=races,
+            )
+            different_document = _not_signal(
+                same_document,
+                population=f"recurrent_join_candidate_{index}/document_inhibition",
+                races=races,
+            )
+            second_join_signals.append(
+                _conjunction_signal(
+                    (
+                        frame_signal,
+                        equality,
+                        equality_control,
+                        recurrence_control,
+                        different_document,
+                    ),
+                    population=f"recurrent_join_candidate_{index}/join_conjunction",
+                    races=races,
                 )
-                else 0
-                for edge, matched in zip(edges, second_matches, strict=True)
-            ),
+            )
+        second_join = _physical_competition(
+            population="recurrent_document_equality_join",
+            signals=second_join_signals,
+            races=races,
         )
-        races.append(second_join.trace)
         if second_join.column is None:
             return self._stop(
                 query_sha256=query_sha256,
@@ -753,19 +1026,26 @@ class NeuronalRelationalReader:
         second_edge = edges[second_join.column]
 
         live_tokens = tuple(tape.token_occurrences)
-        motor = _physical_choice(
-            population="live_answer_motor",
-            scores=tuple(
-                _DRIVE_SCORE
-                if (
-                    ablation is not RelationalReaderAblation.MOTOR_OFF
-                    and occurrence.identity_event == second_edge.destination.identity_event
+        motor_signals: list[_CellSignal] = []
+        for index, occurrence in enumerate(live_tokens):
+            equality = _event_equality_signal(
+                second_edge.destination.identity_event,
+                occurrence.identity_event,
+                population=f"motor_candidate_{index}/live_byte_equality",
+                races=races,
+            )
+            motor_signals.append(
+                _conjunction_signal(
+                    (equality, motor_control),
+                    population=f"motor_candidate_{index}/motor_conjunction",
+                    races=races,
                 )
-                else 0
-                for occurrence in live_tokens
-            ),
+            )
+        motor = _physical_competition(
+            population="live_answer_motor",
+            signals=motor_signals,
+            races=races,
         )
-        races.append(motor.trace)
         if motor.column is None:
             return self._stop(
                 query_sha256=query_sha256,
@@ -786,24 +1066,148 @@ class NeuronalRelationalReader:
             query_sha256=query_sha256,
         )
 
+    def _query_frame_signal(
+        self,
+        tape: OpaqueDocumentEventTape,
+        tokens: tuple[OpaqueTokenOccurrence, ...],
+        *,
+        frame_control: _CellSignal,
+        races: list[RelationalRaceTrace],
+    ) -> _CellSignal:
+        frame = self._schema.query_frame
+        observed_sentence_lengths = _query_sentence_lengths(tape)
+        features: list[_CellSignal] = [frame_control]
+        features.append(
+            _scalar_equality_signal(
+                len(observed_sentence_lengths),
+                len(frame.sentence_lengths),
+                population="query_frame/sentence_count_equality",
+                races=races,
+            )
+        )
+        for index, expected_length in enumerate(frame.sentence_lengths):
+            observed_length = (
+                observed_sentence_lengths[index] if index < len(observed_sentence_lengths) else 0
+            )
+            features.append(
+                _scalar_equality_signal(
+                    observed_length,
+                    expected_length,
+                    population=f"query_frame/sentence_{index}_length_equality",
+                    races=races,
+                )
+            )
+        features.append(
+            _scalar_equality_signal(
+                len(tokens),
+                len(frame.literal_events),
+                population="query_frame/token_count_equality",
+                races=races,
+            )
+        )
+        for index, expected in enumerate(frame.literal_events):
+            if expected is None:
+                continue
+            observed = tokens[index].identity_event if index < len(tokens) else b""
+            features.append(
+                _event_equality_signal(
+                    observed,
+                    expected,
+                    population=f"query_frame/literal_{index}",
+                    races=races,
+                )
+            )
+        return _conjunction_signal(
+            features,
+            population="query_frame",
+            races=races,
+        )
+
+    @staticmethod
+    def _surface_frame_signal(
+        frame: _SurfaceFrame,
+        edge: _EdgeCandidate,
+        *,
+        population: str,
+        frame_control: _CellSignal,
+        query_frame_signal: _CellSignal,
+        races: list[RelationalRaceTrace],
+    ) -> _CellSignal:
+        features: list[_CellSignal] = [frame_control, query_frame_signal]
+        features.extend(
+            (
+                _scalar_equality_signal(
+                    len(edge.sentence_tokens),
+                    frame.token_count,
+                    population=f"{population}/token_count_equality",
+                    races=races,
+                ),
+                _scalar_equality_signal(
+                    edge.source_token_index,
+                    frame.source_token_index,
+                    population=f"{population}/source_orientation_equality",
+                    races=races,
+                ),
+                _scalar_equality_signal(
+                    edge.destination_token_index,
+                    frame.destination_token_index,
+                    population=f"{population}/destination_orientation_equality",
+                    races=races,
+                ),
+            )
+        )
+        for index, expected in enumerate(frame.literal_events):
+            if expected is None:
+                continue
+            observed = (
+                edge.sentence_tokens[index].identity_event
+                if index < len(edge.sentence_tokens)
+                else b""
+            )
+            features.append(
+                _event_equality_signal(
+                    observed,
+                    expected,
+                    population=f"{population}/literal_{index}",
+                    races=races,
+                )
+            )
+        return _conjunction_signal(
+            features,
+            population=population,
+            races=races,
+        )
+
     def _detect_frames(
         self,
         edges: Sequence[_EdgeCandidate],
         *,
         frames: tuple[_SurfaceFrame, ...],
         hop: int,
-        ablation: RelationalReaderAblation,
+        frame_control: _CellSignal,
+        query_frame_signal: _CellSignal,
         races: list[RelationalRaceTrace],
-    ) -> tuple[bool, ...]:
-        matched_edges: list[bool] = []
-        enabled = ablation is not RelationalReaderAblation.FRAME_BINDING_OFF
+    ) -> tuple[_CellSignal, ...]:
+        matched_edges: list[_CellSignal] = []
         for index, edge in enumerate(edges):
-            matched, trace = _physical_detector(
-                population=f"hop_{hop}_shared_frame_{index}",
-                matched=enabled and any(frame.matches(edge) for frame in frames),
+            frame_signals = tuple(
+                self._surface_frame_signal(
+                    frame,
+                    edge,
+                    population=f"hop_{hop}_edge_{index}/frame_{frame_index}",
+                    frame_control=frame_control,
+                    query_frame_signal=query_frame_signal,
+                    races=races,
+                )
+                for frame_index, frame in enumerate(frames)
             )
-            matched_edges.append(matched)
-            races.append(trace)
+            matched_edges.append(
+                _disjunction_signal(
+                    frame_signals,
+                    population=f"hop_{hop}_edge_{index}/learned_frames",
+                    races=races,
+                )
+            )
         return tuple(matched_edges)
 
     def _tonic_stop(
@@ -814,8 +1218,16 @@ class NeuronalRelationalReader:
         stage: str,
         completed_hops: int,
     ) -> RelationalReadingDecision:
-        stop = _physical_choice(population=f"{stage}_empty", scores=(0,))
-        races.append(stop.trace)
+        inactive = _control_signal(
+            population=f"{stage}_empty/inactive_input",
+            enabled=False,
+            races=races,
+        )
+        stop = _physical_competition(
+            population=f"{stage}_empty",
+            signals=(inactive,),
+            races=races,
+        )
         return self._stop(
             query_sha256=query_sha256,
             races=races,

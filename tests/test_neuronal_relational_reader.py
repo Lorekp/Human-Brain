@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 from dataclasses import fields
 
+import pytest
 from humanbrain.neuronal_relational_reader import (
     NeuronalRelationalReader,
     RelationalReaderAblation,
@@ -135,11 +136,30 @@ def test_learns_generic_surfaces_and_runs_a_physical_two_hop_read() -> None:
     assert any(race.population == "query_to_document_equality_join" for race in decision.races)
     assert any(race.population == "recurrent_document_equality_join" for race in decision.races)
     assert decision.races[-1].population == "live_answer_motor"
+    populations = tuple(race.population for race in decision.races)
+    assert any(
+        "/byte_equality_" in population and population.endswith("/coincidence_cells")
+        for population in populations
+    )
+    assert any("/feature_conjunction_" in population for population in populations)
+    assert any("/frame_or_" in population for population in populations)
+    assert any(
+        population.startswith("motor_candidate_") and "/live_byte_equality/" in population
+        for population in populations
+    )
     live = OpaqueDocumentEventTape.observe(query, documents)
     assert any(
         occurrence.identity_event == decision.answer
         and occurrence.occurrence_event == decision.answer_occurrence_event
         for occurrence in live.token_occurrences
+    )
+
+    changed_query = reader.respond(b"Route moru through lumeu then kori.", documents)
+    assert changed_query.decision == "STOP"
+    assert changed_query.stop_stage == "query_frame"
+    assert any(
+        race.population.startswith("query_frame/literal_3/byte_equality_4/")
+        for race in changed_query.races
     )
 
     # A second fresh read recombines the other pair of learned orientations and
@@ -178,6 +198,11 @@ def test_learns_generic_surfaces_and_runs_a_physical_two_hop_read() -> None:
     assert missing.decision == "STOP"
     assert missing.stop_stage == "recurrent_join"
     assert missing.answer is None
+    assert any(
+        race.population.startswith("hop_2_edge_") and "/literal_1/byte_equality_" in race.population
+        for race in missing.races
+    )
+    assert any("/frame_or_" in race.population for race in missing.races)
 
     expected_stages = {
         RelationalReaderAblation.EQUALITY_OFF: "first_join",
@@ -191,3 +216,23 @@ def test_learns_generic_surfaces_and_runs_a_physical_two_hop_read() -> None:
         assert stopped.stop_stage == stage
         assert stopped.answer is None
         assert stopped.races[-1].stopped
+
+    normal_equality_control = next(
+        race for race in decision.races if race.population == "equality_control"
+    )
+    equality_off = reader.respond(query, documents, RelationalReaderAblation.EQUALITY_OFF)
+    disabled_equality_control = next(
+        race for race in equality_off.races if race.population == "equality_control"
+    )
+    assert (
+        normal_equality_control.cell_scores_sha256 != disabled_equality_control.cell_scores_sha256
+    )
+
+    aliasing_training = (
+        _success("alias-a", "Route", "enza", "iona", reversed_arguments=False),
+        training[1],
+        training[2],
+        training[3],
+    )
+    with pytest.raises(ValueError, match="aliases a concrete training endpoint"):
+        NeuronalRelationalReader.grow(aliasing_training)
