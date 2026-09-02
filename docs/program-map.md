@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after the boundary-aware
-multiscale successor was composed; its fresh Python V2 cohort remains pending.
+Maintained by the orchestrator. Updated 2026-09-02 after boundary-aware Python
+V2 passed and replay-free multiscale growth was retargeted to that controller.
 Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; boundary successor banked, fresh Python V2 pending]
+R4  Language/software continual coding               [OPEN; V2 position transfer passed, persistent two-update session next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -561,8 +561,18 @@ with `files` holding the complete workspace; `BOUNDARY_OFF` joins the equality
 and propagation controls.
 Three focused composition tests pass fresh synthetic first/middle/last target
 positions, genuine ambiguity, and physical STOP under all three controls. This
-is integration-mechanism evidence; the dispatched genuinely fresh real-Python
-V2 cohort is still pending.
+is integration-mechanism evidence.
+
+Commit `3aff79f` immutably spends the fresh real-Python V2 cohort with result
+SHA-256
+`7eac8918de381657149e9cfa0aee9ddac3d8ab677023a0cc6b1ede8cecefa07b`.
+Treatment repairs 3/3 tasks whose intended file appears first, middle, and last;
+the ambiguity task equality-collision STOPs. Each of `EQUALITY_OFF`,
+`PROPAGATION_OFF`, and `BOUNDARY_OFF` emits 0/4 and STOPs 4/4. All workspaces are
+lossless, emissions are live, tasks make one complete-observation query, and
+neutral checkpoints are retained. This closes V1's position defect only; the
+motor operation, lexical relation, training trajectories, and repository shape
+remain narrow and static.
 
 Scale work is attached to the same path. Commit `a99473b` adds exact batched
 independent first-spike races (26.2x on the reproduced 4,096-row microcase),
@@ -586,11 +596,21 @@ STOP. Capacity and support values are explicitly estimates, and learned event
 bytes remain even though raw training sequences do not. This is a narrow
 continual-learning slice, not context abstraction or broad repository learning.
 
-The immediate integrated seam is to spend the dispatched genuinely fresh Python
-V2 cohort against the frozen boundary-aware successor, then converge it with
-replay-free append-only growth in one persistent multi-file learner. Failures
-there should drive generic abstraction and routing improvements rather than
-another supplied target or task family.
+Commit `f596fe1` generalizes that immutable-shard discipline to the multiscale
+controller surface. Commit `41f6b8a` removes its obsolete legacy-controller
+path and accepts only `BoundaryMultiscaleSourceMotorController`. The focused
+suite passes 2/2. One current authenticated success is encoded in two phases
+without parent replay or retained raw full training sequences. Estimated
+base/append/successor accounting is respectively 4,381/+4,382/8,763 cells,
+33/+35/68 synapses, 145/+194/339 learned-event bytes, and 64/+68/132 excitatory
+support ticks; the append's 68 ticks split evenly into 34 coactivation and 34
+positive-success ticks.
+
+The immediate integrated seam is the dispatched genuinely fresh persistent
+public-TRAIN session: one boundary-aware append-only learner, two sequential
+authenticated updates without reset/full replay, and retention afterward.
+Failures there should drive generic abstraction and routing improvements rather
+than another supplied target or task family. R5/R6 remain sealed.
 
 ### Coding
 

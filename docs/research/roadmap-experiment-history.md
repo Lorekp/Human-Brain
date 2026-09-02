@@ -2619,9 +2619,42 @@ occurrence-preserving action tape while retaining
 Three focused composition tests passed fresh
 synthetic first-, middle-, and last-position targets, genuine ambiguity, and
 physical STOP under equality, propagation, and boundary ablation. This remains
-mechanism/integration evidence, not a real-Python successor result. A genuinely
-fresh Python V2 cohort was dispatched only after the controller freeze and is
-still pending.
+mechanism/integration evidence, not a real-Python successor result.
+
+Commit `f596fe1` next introduces authenticated replay-free multiscale growth as
+immutable frozen controller shards. Its first version still named the legacy
+fixed-containment controller and therefore was not yet the boundary-aware
+successor required by V1's failure.
+
+Commit `3aff79f` immutably spends the fresh boundary-aware V2 cohort exactly
+once. Treatment performs the correct real-Python edit on 3/3 fresh repositories
+with intended targets at sorted positions first, middle, and last. All three
+fail before and produce exact expected output after; only the intended path
+changes, decoys remain byte-identical, and emissions come from the current live
+tape. The fourth, genuinely ambiguous issue physically STOPs at equality
+collision. Equality-, propagation-, and boundary-off arms each emit 0/4 and
+STOP 4/4. All inference is single-query, workspace transport is lossless, and
+neutral checkpoints remain unchanged. The single-shot result record SHA-256 is
+`7eac8918de381657149e9cfa0aee9ddac3d8ab677023a0cc6b1ede8cecefa07b`.
+
+V2 closes the fixed-radius position dependence exposed by immutable V1, but no
+more. It retains two teacher-visible successful trajectories, a fixed motor
+program, exact lexical issue/path equality, and small matched-layout Python
+repositories. It is not continual learning, operation induction, language
+understanding, recovery, protected transfer, or broad coding capability.
+
+Commit `41f6b8a` then deletes the obsolete online-growth coupling and retargets
+the stack exclusively to the boundary-aware controller. Two focused tests pass.
+One authenticated current experience contributes two training phases with no
+parent replay and no retained raw full training sequences. The estimated
+base/append/successor accounting is 4,381/+4,382/8,763 cells, 33/+35/68
+synapses, 145/+194/339 learned-event bytes, and 64/+68/132 excitatory support
+ticks; the appended 68 ticks are 34 coactivation plus 34 positive-success.
+
+This is a replay-free one-update mechanism, not a passed persistent integrated
+gate. The next dispatched experiment is a genuinely fresh public-TRAIN session
+requiring two sequential authenticated updates in one learner and retention
+without reset or full replay. R5/R6 remain sealed.
 
 ## 13. Retired directions
 

@@ -575,9 +575,51 @@ The controller also exposes `BOUNDARY_OFF`
 alongside the equality and propagation controls. Three focused composition tests
 passed across fresh synthetic first-, middle-, and last-position targets,
 genuine ambiguity, and all three causal controls, which physically STOP. This is
-mechanism/integration evidence only. The genuinely fresh real-Python V2 cohort
-has been dispatched and remains pending, so no successor capability result is
-claimed yet.
+mechanism/integration evidence only.
+
+Commit `f596fe1` separately introduced authenticated replay-free multiscale
+growth as immutable frozen controller shards, initially against the now-obsolete
+legacy multiscale controller. Commit `3aff79f` then immutably spent the
+boundary-aware real-Python V2 cohort once. Treatment repaired 3/3 fresh tasks
+with the intended file respectively first, middle, and last in the sorted
+four-file workspace. Real Python failed before each action and produced the
+exact expected output afterward; only the intended path changed, decoys stayed
+byte-identical, and every emission was a live occurrence from the current tape.
+The genuinely ambiguous fourth task physically STOPped in `role_binder_0` with
+`equality:collision` and made no change.
+
+`EQUALITY_OFF`, `PROPAGATION_OFF`, and `BOUNDARY_OFF` each emitted 0/4 and
+physically STOPped 4/4. Every task used one complete query/workspace controller
+call, every workspace round-tripped losslessly, and neutral inference retained
+the checkpoint. The exact single-shot result record SHA-256 is
+`7eac8918de381657149e9cfa0aee9ddac3d8ab677023a0cc6b1ede8cecefa07b`.
+
+This closes only V1's absolute workspace-position defect. V2 still uses two
+teacher-visible successful trajectories, one fixed source-relative motor
+program, exact lexical issue/path coincidence, and small matched-layout Python
+repositories. It does not demonstrate continual learning, language semantics,
+operation induction, execution-feedback recovery, broad repository competence,
+SWE-bench performance, or comparison with Gemma or Opus.
+
+Commit `41f6b8a` then removes the online stack's obsolete legacy-controller
+coupling and retargets it exclusively to the frozen boundary-aware controller.
+The focused suite passes 2/2. One authenticated current success contributes two
+learning phases—34 coactivation and 34 positive-success ticks—without reading
+any parent experience. Parent replay is 0 and retained raw full training
+sequences are 0; learned event bytes are reported explicitly as estimated
+synaptic content. The exact accounting estimates are:
+
+- base: 4,381 cells, 33 synapses, 145 learned-event bytes, and 64 excitatory
+  support ticks;
+- append: +4,382 cells, +35 synapses, +194 learned-event bytes, and +68 support
+  ticks;
+- successor: 8,763 cells, 68 synapses, 339 learned-event bytes, and 132 support
+  ticks across two frozen shards.
+
+This remains replay-free growth mechanism evidence, not a two-update continual
+session. The next dispatched seam is a genuinely fresh persistent integrated
+public-TRAIN session with two sequential authenticated updates and retention.
+R5 and R6 remain sealed.
 
 ### Frozen recurrent-inventory continual V5 result
 
