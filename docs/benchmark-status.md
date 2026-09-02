@@ -470,6 +470,39 @@ SWE-bench competence, or comparison with Gemma or Opus. R5 and R6 remain sealed.
 The next integrated requirement is replay-free acquisition from authenticated
 execution success in one persistent learner.
 
+### Replay-free raw-source motor growth
+
+Commit `88049e3` adds an immutable append-only wrapper around the cue-free raw
+source motor controller. A caller-pinned execution authority must invoke its
+evaluator and receive a literal PASS before it can privately issue a receipt
+binding the exact learner checkpoint, observation, action, evaluator root, and
+outcome. One accepted experience is compiled once into a frozen neuronal shard;
+older training sequences are neither read nor replayed. Stored controller/tape
+state is isolated at seed time and every response runs on an ephemeral copy, so
+parents and siblings remain pending-free and checkpoint-identical. A fitted-GLIF
+ensemble race selects one emitting shard or physically STOPs on absence or a
+collision.
+
+Commit `d10e09c` exercises that mechanism through real Python. Treatment and a
+persistent `NO_UPDATE` arm start from identical roots and initially STOP on the
+new context. One teacher correction fails before, is materialized solely from
+live workspace-tape occurrences, passes the exact-output evaluator, and enters
+both arms as the same authenticated evidence. Treatment appends one shard and
+then emits executable repairs on 2/2 fresh renamed, path-shifted repositories;
+`NO_UPDATE` commits zero state and physically STOPs 2/2. The original base
+behavior is unchanged and a mixed-context query collision-STOPs. The appended
+shard reserves an estimated 4,387 cells and 61 synapses with 110 support ticks
+(61 coactivation plus 49 positive-success); it reports one source experience,
+zero parent-experience replay, and zero retained raw training sequences while
+explicitly retaining learned event bytes as synaptic content.
+
+This is the first narrow continual improvement on the raw-source lane, not a
+passed roadmap continuity gate. Exact context, same-layout recurrence, a
+teacher-visible successful trajectory, and the training compiler remain
+scaffolding. It does not show language understanding, context abstraction,
+program induction, multi-file issue grounding, autonomous recovery, SWE-bench
+competence, or comparison with Gemma or Opus. R5 and R6 remain sealed.
+
 ### Multi-source issue-to-file grounding localization
 
 Commit `ee5b8df` freezes a harder public-TRAIN probe before adding a corrective

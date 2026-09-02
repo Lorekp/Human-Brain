@@ -540,10 +540,22 @@ Commit `d64bbd9` then vectorizes bounds preparation above the measured
 128-candidate crossover; the isolated 4,096-candidate binder race improved from
 604 microseconds to 471 microseconds (1.28x) with exact scalar parity.
 
-The other immediate construction seam is persistent online structural growth:
-authenticate a successful execution, append only the newly required neuronal
-structure without reset or prior-example replay, preserve earlier behavior, and
-show a later fresh task improving over a persistent no-update control.
+Commit `88049e3` implements persistent online structural growth as immutable
+frozen neuronal shards behind one fitted-GLIF arbitration race. Execution
+receipts bind the exact parent/observation/action/evaluator after the evaluator
+actually passes; stored controllers are isolated and queried copy-on-read.
+Commit `d10e09c` then demonstrates one exact-context update without reset or
+old-example replay: treatment passes 2/2 fresh renamed/path-shifted real-Python
+repositories, an identical-evidence `NO_UPDATE` arm physically STOPs 2/2 and
+commits zero state, prior behavior is retained, and mixed contexts collision-
+STOP. Capacity and support values are explicitly estimates, and learned event
+bytes remain even though raw training sequences do not. This is a narrow
+continual-learning slice, not context abstraction or broad repository learning.
+
+The immediate integrated seam is now convergence: the multiscale observation,
+cross-stream source grounding, and replay-free growth must operate in one
+persistent multi-file learner. Failures there should drive generic abstraction
+and routing improvements rather than another supplied target or task family.
 
 ### Coding
 

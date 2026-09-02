@@ -2528,6 +2528,27 @@ an immutable replay-free successor learned from an authenticated execution
 success, followed by a later fresh task that treatment solves while a persistent
 no-update control STOPs. R5/R6 remain sealed.
 
+Commit `88049e3` implements that replay-free successor as frozen neuronal shards
+behind one fitted-GLIF ensemble race. PASS receipts can be constructed only by
+an authority path that invokes a caller-pinned evaluator, and each receipt binds
+the exact parent checkpoint, observation, action, evaluator root, and outcome.
+Seed and response paths isolate mutable pending state. One accepted experience
+is compiled once; no prior experience is read or replayed, raw training
+sequences are discarded, and retained event bytes are acknowledged as learned
+synaptic content. Public structural quantities are capacity/support estimates,
+not an asserted physical ledger.
+
+The real-Python session in commit `d10e09c` starts treatment and `NO_UPDATE`
+from identical roots. Both initially STOP on the new exact context. The same
+executed correction receipt enters both arms: treatment appends a shard and
+passes 2/2 later renamed/path-shifted repositories, while `NO_UPDATE` commits
+zero state and physically STOPs 2/2. Base behavior is retained and mixed
+contexts collision-STOP. The new shard reports estimated reservations of 4,387
+cells and 61 synapses plus 110 support ticks. This is same-layout exact-context
+continual motor recurrence with an external successful teaching trajectory, not
+language learning, context abstraction, autonomous correction, or broad coding
+competence.
+
 Commit `ee5b8df` then froze the harder multi-source applicability probe before
 any corrective mechanism was added. Two public issues each repeated one fresh
 symbol from one of three matched-layout Python files; a third issue repeated two
