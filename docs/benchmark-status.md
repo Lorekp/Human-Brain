@@ -721,8 +721,25 @@ This closes the fresh one-directory variability/boundary composition gate, not
 the continual-learning gate. Exact identifier equality still supplies the seed,
 the motor still reuses one learned prefix-truncation action, and the frozen
 learner does not update on fresh tasks. V1's persistent 2/5 result therefore
-remains failed; its successor must append generalized shards from independent
-successes without parent replay. The V3 cohort and artifact are immutable.
+remains the last spent integrated result. The V3 cohort and artifact are
+immutable.
+
+Commit `fd38ef6` implements the next continual mechanism without changing that
+spent result. One immutable stack starts from an already generalized controller
+and atomically appends a new generalized shard only from 2–64 independent,
+evaluator-authenticated successes bound to the exact current parent checkpoint.
+Candidate learning uses only that current cohort; parent experiences are not
+replayed and raw current rows are not retained. `NO_UPDATE` compiles and probes
+the same candidate but preserves the identical parent. During frozen inference,
+all shards run and one fitted-GLIF race selects the sole emitter, tonic STOP, or
+collision STOP; shard order never breaks a tie. The focused suite passes 3/3,
+including deeper fresh transfer, prior retention, and causal STOP controls.
+
+This is mechanism evidence, not a new integrated benchmark result or autonomous
+failure recovery. A teacher/evaluator still supplies successful transitions,
+each shard remains one exact learned structural family, and each controller
+currently rebuilds its observation internally. A separately named fresh public-
+TRAIN persistent cohort is the next coding-side check.
 
 ### Language and knowledge lane
 

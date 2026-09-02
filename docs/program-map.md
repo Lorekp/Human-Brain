@@ -662,8 +662,19 @@ One frozen learner passed 3/3 fresh real Python repairs across first/middle/last
 file positions; ambiguity STOPped, and equality/propagation/boundary controls
 each physically STOPped 3/3. There were no retries or treatment failures. This
 banks fresh variable-intermediate boundary composition, not continual learning;
-the persistent V1 2/5 boundary remains authoritative until generalized shards
-can be appended without parent replay.
+the persistent V1 2/5 boundary remains authoritative until the new append
+mechanism is spent on a fresh integrated cohort.
+
+Commit `fd38ef6` now supplies that append mechanism. The immutable variability-
+aware stack accepts one atomic cohort of 2–64 independent evaluator-authenticated
+current successes, compiles one generalized shard from those rows only, retains
+no raw sequences, replays zero parent experiences, and preserves the parent
+checkpoint. A fitted-GLIF outer race selects exactly one emitter or physical
+tonic/collision STOP; `NO_UPDATE` fully compiles/probes while committing nothing.
+Three focused tests pass. This has not yet revised the spent V1 score: the fresh
+persistent public-TRAIN cohort is being authored, and teacher-supplied successes,
+exact structural shards, and repeated per-shard observation construction remain
+explicit limitations.
 
 Language/knowledge work is co-equal. `442fb83` provides a lossless opaque
 multi-document event tape with provenance and occurrence-preserving raw-token

@@ -2726,8 +2726,23 @@ checkpoints remained fixed, and reported cell-step accounting was exact.
 V3 closes the fresh variability/boundary composition seam only. Exact opaque
 identifier equality and one prefix-truncation motor remain, fresh tasks do not
 update the learner, and the persistent V1 gate stays failed at 2/5. The V3
-runner, test, cohort, and artifact are immutable. The coding successor is
-replay-free appending of generalized shards from independent current successes.
+runner, test, cohort, and artifact are immutable. That result localized the
+coding successor to replay-free appending of generalized shards from independent
+current successes.
+
+Commit `fd38ef6` implements that successor mechanism. One immutable stack seeds
+an already-generalized variability-aware controller and appends one new shard
+only from an atomic 2–64-row cohort of distinct current observations, provenance
+roots, and evaluator-issued PASS receipts bound to the exact parent checkpoint.
+It compiles from the current cohort, stores custody hashes and learned state but
+no raw rows, reports zero parent replay, and leaves both parent and checkpoint
+unchanged on `NO_UPDATE`, duplicate, or conflict. At inference, all shards run
+and a fitted-GLIF selector produces exactly one EMIT, tonic STOP, or a separate
+collision-STOP relay. The focused 3/3 suite demonstrates deeper fresh transfer,
+prior retention, parent immutability, and equality/propagation/boundary controls.
+This does not revise V1 before a fresh integrated spend; evaluator-supplied
+success, exact structural shards, and per-shard observation reconstruction are
+still limitations.
 
 In the co-equal language lane, `442fb83` adds a lossless opaque multi-document
 event tape with provenance, sentence structure, and distinct repeated token
