@@ -451,6 +451,17 @@ with embedded failure digest
 artifact commit `2e0e655` preserves it. It is not semantic coding evidence, and
 R5/R6 remain sealed.
 
+The generic failure-normalization seam is corrected in commit `f3dbaa8`.
+`NeuronalToolModel.infer` still lets the strict transport decoder identify a
+recognized malformed wire and seals `invalid_action_transport` custody, but it
+now returns the already-sealed provisional non-STOP emission rather than
+throwing across the learner boundary. The ordinary learner parser can reject it
+and resolve the pending neuronal choice negatively without invoking an external
+tool. The change is one production line and passes the 20-case focused suite.
+Current neuronal-tool source SHA-256 is
+`25aedcdf2a1868f7e7b0950b29956a1b89c0e6f9d533795eb26e08503d0c010b`.
+V10 is authored only after this freeze; V9 remains immutable.
+
 ### Coding
 
 `PASS_PUBLIC_TYPED_SEMANTIC_SIMPLE_SWE_TRAIN_BRIDGE_V1` is the current

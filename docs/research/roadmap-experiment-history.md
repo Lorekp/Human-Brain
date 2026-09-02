@@ -2417,6 +2417,24 @@ without a host adapter selecting an alternative action, tool, or payload. The
 corrected source receives a fresh V10 cohort and exactly-once spend. V9 licenses
 no protected, SWE, Gemma, Opus, or intelligence claim; R5/R6 remain sealed.
 
+The successor used a fast synthetic reproduction rather than reopening V9. A
+fresh model learned the incomplete recognized wire `[[84,79,79,76,1]]`; real
+`infer` reproduced the same typed exception twice. Four hypotheses were ranked,
+and the first was confirmed: decoding already occurred after provisional
+emission, pending-query, and trace custody were sealed, but its typed failure
+branch re-raised instead of returning that fail-closed state. Commit `f3dbaa8`
+changes only that `raise` to `return provisional`. Decoder strictness is
+unchanged, the emission remains a neuron-selected non-STOP generation,
+`invalid_action_transport` remains causal trace evidence, and the pending choice
+can receive normal negative consequence credit. The minimized regression and
+20 focused neuronal-tool tests pass. Source and test SHA-256 values are
+`25aedcdf2a1868f7e7b0950b29956a1b89c0e6f9d533795eb26e08503d0c010b`
+and
+`0771a77e822962d33cf3c9315daf7d1065fc6eff9ed35a4ec4daa66a4ddd5f39`.
+This is runtime-continuity evidence, not semantic coding evidence. It freezes the
+architecture boundary before fresh V10 task authoring and does not authorize a
+V9 rerun.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

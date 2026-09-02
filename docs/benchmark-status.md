@@ -372,6 +372,22 @@ as an ordinary generation failure, allowing consequence handling without a host
 semantic choice. That correction receives a fresh V10 stream and spend. R5 and
 R6 remain sealed.
 
+Commit `f3dbaa8` freezes that correction. A minimized synthetic inference case
+learns one recognized but incomplete numeric wire, `[[84,79,79,76,1]]`.
+Before the fix it deterministically reproduced V9's escaped exception. The
+confirmed cause was the typed decoder error being re-raised after the model had
+already sealed its provisional emission, pending query, and
+`invalid_action_transport` trace. The production change is one line: return the
+provisional non-STOP neuronal emission instead. Strict transport recognition and
+decoding are unchanged; ordinary parsing now rejects the malformed generation
+and negative consequence resolution remains available. The focused neuronal-tool
+suite passes 20 tests; current model and test SHA-256 values are
+`25aedcdf2a1868f7e7b0950b29956a1b89c0e6f9d533795eb26e08503d0c010b`
+and
+`0771a77e822962d33cf3c9315daf7d1065fc6eff9ed35a4ec4daa66a4ddd5f39`.
+This repairs runtime continuity only, not software semantics. It licenses fresh
+V10 authoring and never a V9 rerun.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment
