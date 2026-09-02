@@ -6,14 +6,14 @@ from hashlib import sha256
 from inspect import signature
 
 import pytest
+from humanbrain.boundary_multiscale_source_motor_controller import (
+    BoundaryMultiscaleSourceMotorAblation,
+    BoundaryMultiscaleSourceMotorController,
+    SuccessfulBoundaryMultiscaleSourceMotorExperience,
+)
 from humanbrain.multiscale_opaque_event_tape import (
     MultiscaleOpaqueEventTape,
     OpaqueWorkspaceFile,
-)
-from humanbrain.multiscale_source_motor_controller import (
-    MultiscaleSourceMotorAblation,
-    MultiscaleSourceMotorController,
-    SuccessfulMultiscaleSourceMotorExperience,
 )
 from humanbrain.multiscale_source_motor_online_growth import (
     AppendOnlyMultiscaleSourceMotorStack,
@@ -57,7 +57,7 @@ def _experience(
     rows: tuple[tuple[str, str], ...],
     provenance_id: str,
     short: bool = False,
-) -> SuccessfulMultiscaleSourceMotorExperience:
+) -> SuccessfulBoundaryMultiscaleSourceMotorExperience:
     before = _workspace(rows)
     function_by_path = dict(rows)
     replacement = _short_source if short else _correct_source
@@ -72,18 +72,19 @@ def _experience(
         )
         for item in before
     )
-    return SuccessfulMultiscaleSourceMotorExperience(
-        query=f"repair {target_path.removesuffix('.py')} using existing bytes".encode(),
+    query_identity = target_path.rsplit("/", 1)[-1].removesuffix(".py")
+    return SuccessfulBoundaryMultiscaleSourceMotorExperience(
+        query=f"repair {query_identity} using existing bytes".encode(),
         before_files=before,
         after_files=after,
         provenance_id=provenance_id,
     )
 
 
-def _base_controller() -> MultiscaleSourceMotorController:
-    # The frozen V1 binder's known position-specific boundary is useful here:
-    # the base learns middle-file support while the appended shard learns first-file
-    # support, so the append is a genuine new support region rather than a duplicate.
+def _base_controller() -> BoundaryMultiscaleSourceMotorController:
+    # The base learns a query-stem -> flat-path role. The appended shard learns
+    # the same reusable relation through one stable nested-path envelope, a new
+    # support region rather than an absolute workspace-position patch.
     first = _experience(
         target_path="mira_worker.py",
         rows=(
@@ -102,16 +103,19 @@ def _base_controller() -> MultiscaleSourceMotorController:
         ),
         provenance_id="base-tango",
     )
-    return MultiscaleSourceMotorController.grow((first, second))
+    return BoundaryMultiscaleSourceMotorController.grow((first, second))
 
 
-def _online_experience(*, short: bool = False) -> SuccessfulMultiscaleSourceMotorExperience:
+def _online_experience(
+    *,
+    short: bool = False,
+) -> SuccessfulBoundaryMultiscaleSourceMotorExperience:
     return _experience(
-        target_path="cinder_worker.py",
+        target_path="pkg/cinder_worker.py",
         rows=(
-            ("cinder_worker.py", "cinder_cycle"),
-            ("opal_worker.py", "opal_cycle"),
-            ("sierra_worker.py", "sierra_cycle"),
+            ("pkg/cinder_worker.py", "cinder_cycle"),
+            ("pkg/opal_worker.py", "opal_cycle"),
+            ("pkg/sierra_worker.py", "sierra_cycle"),
         ),
         provenance_id="online-cinder-short" if short else "online-cinder",
         short=short,
@@ -121,7 +125,7 @@ def _online_experience(*, short: bool = False) -> SuccessfulMultiscaleSourceMoto
 def _evidence(
     learner_checkpoint_sha256: str,
     *,
-    experience: SuccessfulMultiscaleSourceMotorExperience | None = None,
+    experience: SuccessfulBoundaryMultiscaleSourceMotorExperience | None = None,
 ) -> MultiscaleSourceMotorSuccessEvidence:
     row = _online_experience() if experience is None else experience
     evaluator_calls: list[tuple[bytes, int, int]] = []
@@ -156,19 +160,19 @@ def _evidence(
     )
 
 
-def _fresh_first_file_experience() -> SuccessfulMultiscaleSourceMotorExperience:
+def _fresh_first_file_experience() -> SuccessfulBoundaryMultiscaleSourceMotorExperience:
     return _experience(
-        target_path="lumen_worker.py",
+        target_path="pkg/lumen_worker.py",
         rows=(
-            ("lumen_worker.py", "lumen_cycle"),
-            ("quartz_worker.py", "quartz_cycle"),
-            ("vireo_worker.py", "vireo_cycle"),
+            ("pkg/lumen_worker.py", "lumen_cycle"),
+            ("pkg/quartz_worker.py", "quartz_cycle"),
+            ("pkg/vireo_worker.py", "vireo_cycle"),
         ),
         provenance_id="fresh-lumen",
     )
 
 
-def _fresh_middle_file_experience() -> SuccessfulMultiscaleSourceMotorExperience:
+def _fresh_middle_file_experience() -> SuccessfulBoundaryMultiscaleSourceMotorExperience:
     return _experience(
         target_path="nova_worker.py",
         rows=(
@@ -182,7 +186,7 @@ def _fresh_middle_file_experience() -> SuccessfulMultiscaleSourceMotorExperience
 
 def _materialized(
     decision_emissions: tuple[bytes, ...],
-    row: SuccessfulMultiscaleSourceMotorExperience,
+    row: SuccessfulBoundaryMultiscaleSourceMotorExperience,
 ) -> tuple[OpaqueWorkspaceFile, ...]:
     observation = MultiscaleOpaqueEventTape.observe(row.query, row.before_files)
     return observation.materialize_motor_emission(decision_emissions)
@@ -275,8 +279,9 @@ def test_append_retains_base_and_adds_replay_free_full_workspace_support() -> No
     assert ambiguous.stop_reason == "tonic_stop"
 
     for ablation in (
-        MultiscaleSourceMotorAblation.EQUALITY_OFF,
-        MultiscaleSourceMotorAblation.PROPAGATION_OFF,
+        BoundaryMultiscaleSourceMotorAblation.EQUALITY_OFF,
+        BoundaryMultiscaleSourceMotorAblation.PROPAGATION_OFF,
+        BoundaryMultiscaleSourceMotorAblation.BOUNDARY_OFF,
     ):
         stopped = successor.respond(
             online_fresh.query,

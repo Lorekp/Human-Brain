@@ -1,11 +1,11 @@
 """Replay-free append-only growth for complete query/workspace motor learning.
 
 Each accepted evaluator-approved transition grows one new neuronal
-``MultiscaleSourceMotorController`` shard from only the current complete query
-and lossless multi-file workspace.  Older raw experiences are never replayed.
-Stored controllers are frozen and copied for every inference, then an outer
-fitted-GLIF race either selects one emitting shard or physically selects STOP
-when support is absent or collides.
+``BoundaryMultiscaleSourceMotorController`` shard from only the current
+complete query and lossless multi-file workspace.  Older raw experiences are
+never replayed.  Stored controllers are frozen and copied for every inference,
+then an outer fitted-GLIF race either selects one emitting shard or physically
+selects STOP when support is absent or collides.
 
 The implementation deliberately preserves the claim boundary of the wrapped
 controller: it grows exact learned neuronal structure, not language semantics
@@ -26,15 +26,15 @@ from typing import Protocol
 
 import numpy as np
 
+from humanbrain.boundary_multiscale_source_motor_controller import (
+    BoundaryMultiscaleSourceMotorAblation,
+    BoundaryMultiscaleSourceMotorController,
+    SuccessfulBoundaryMultiscaleSourceMotorExperience,
+)
 from humanbrain.cells import AdaptiveGlifPopulation
 from humanbrain.multiscale_opaque_event_tape import (
     MultiscaleOpaqueEventTape,
     OpaqueWorkspaceFile,
-)
-from humanbrain.multiscale_source_motor_controller import (
-    MultiscaleSourceMotorAblation,
-    MultiscaleSourceMotorController,
-    SuccessfulMultiscaleSourceMotorExperience,
 )
 from humanbrain.resting_glif_race import CompiledRestingGlifRace
 from humanbrain.source_relative_action_tape import (
@@ -44,6 +44,7 @@ from humanbrain.source_relative_action_tape import (
 
 __all__ = [
     "AppendOnlyMultiscaleSourceMotorStack",
+    "BoundaryMultiscaleSourceMotorAblation",
     "MultiscaleSourceMotorExecutionAuthority",
     "MultiscaleSourceMotorExecutionReceipt",
     "MultiscaleSourceMotorSuccessEvidence",
@@ -62,18 +63,18 @@ _SCORE_CAP = 2
 _TONIC_STOP_SCORE = 1
 _EMIT_SCORE = 2
 
-_OBSERVATION_NAMESPACE = b"humanbrain.multiscale-online.observation-v1\0"
-_ACTION_NAMESPACE = b"humanbrain.multiscale-online.action-v1\0"
-_EXECUTION_RECEIPT_NAMESPACE = b"humanbrain.multiscale-online.execution-receipt-v1\0"
-_EVIDENCE_NAMESPACE = b"humanbrain.multiscale-online.evidence-v1\0"
-_TRAJECTORY_NAMESPACE = b"humanbrain.multiscale-online.trajectory-v1\0"
-_SEGMENT_NAMESPACE = b"humanbrain.multiscale-online.segment-v1\0"
-_PROVENANCE_NAMESPACE = b"humanbrain.multiscale-online.provenance-v1\0"
-_CHECKPOINT_NAMESPACE = b"humanbrain.multiscale-online.checkpoint-v1\0"
-_QUERY_NAMESPACE = b"humanbrain.multiscale-online.query-v1\0"
-_RACE_NAMESPACE = b"humanbrain.multiscale-online.race-v1\0"
-_DECISION_NAMESPACE = b"humanbrain.multiscale-online.decision-v1\0"
-_GROWTH_NAMESPACE = b"humanbrain.multiscale-online.growth-v1\0"
+_OBSERVATION_NAMESPACE = b"humanbrain.boundary-multiscale-online.observation-v1\0"
+_ACTION_NAMESPACE = b"humanbrain.boundary-multiscale-online.action-v1\0"
+_EXECUTION_RECEIPT_NAMESPACE = b"humanbrain.boundary-multiscale-online.execution-receipt-v1\0"
+_EVIDENCE_NAMESPACE = b"humanbrain.boundary-multiscale-online.evidence-v1\0"
+_TRAJECTORY_NAMESPACE = b"humanbrain.boundary-multiscale-online.trajectory-v1\0"
+_SEGMENT_NAMESPACE = b"humanbrain.boundary-multiscale-online.segment-v1\0"
+_PROVENANCE_NAMESPACE = b"humanbrain.boundary-multiscale-online.provenance-v1\0"
+_CHECKPOINT_NAMESPACE = b"humanbrain.boundary-multiscale-online.checkpoint-v1\0"
+_QUERY_NAMESPACE = b"humanbrain.boundary-multiscale-online.query-v1\0"
+_RACE_NAMESPACE = b"humanbrain.boundary-multiscale-online.race-v1\0"
+_DECISION_NAMESPACE = b"humanbrain.boundary-multiscale-online.decision-v1\0"
+_GROWTH_NAMESPACE = b"humanbrain.boundary-multiscale-online.growth-v1\0"
 _EXECUTION_RECEIPT_CONSTRUCTION_TOKEN = object()
 
 
@@ -487,7 +488,7 @@ class _FrozenController(Protocol):
         query: bytes,
         files: tuple[OpaqueWorkspaceFile, ...],
         *,
-        ablation: MultiscaleSourceMotorAblation,
+        ablation: BoundaryMultiscaleSourceMotorAblation,
     ) -> _ComponentEmission: ...
 
 
@@ -503,8 +504,8 @@ def _copy_action_tape(
 
 
 def _copy_controller(
-    controller: MultiscaleSourceMotorController,
-) -> MultiscaleSourceMotorController:
+    controller: BoundaryMultiscaleSourceMotorController,
+) -> BoundaryMultiscaleSourceMotorController:
     if controller._action_tape._pending is not None:
         raise RuntimeError("cannot freeze a multiscale controller with a pending decision")
     cloned = copy(controller)
@@ -515,7 +516,7 @@ def _copy_controller(
 
 @dataclass(frozen=True, slots=True)
 class _ControllerAdapter:
-    controller: MultiscaleSourceMotorController
+    controller: BoundaryMultiscaleSourceMotorController
     expected_checkpoint_sha256: str
 
     @property
@@ -531,7 +532,7 @@ class _ControllerAdapter:
         query: bytes,
         files: tuple[OpaqueWorkspaceFile, ...],
         *,
-        ablation: MultiscaleSourceMotorAblation,
+        ablation: BoundaryMultiscaleSourceMotorAblation,
     ) -> _ComponentEmission:
         _ = self.checkpoint_sha256
         ephemeral = _copy_controller(self.controller)
@@ -569,7 +570,7 @@ class _ControllerEstimates:
 
 
 def _controller_estimates(
-    controller: MultiscaleSourceMotorController,
+    controller: BoundaryMultiscaleSourceMotorController,
 ) -> _ControllerEstimates:
     action_summary = controller._action_tape.training_summary
     binder_cells = 0
@@ -578,15 +579,16 @@ def _controller_estimates(
     learned_event_bytes = sum(len(event) for event in controller._action_tape._contexts)
     for binder in controller._binders:
         summary = binder.training_summary
-        learned_synapses = summary.propagation_hop_count + summary.containment_synapse_count
-        binder_cells += 2 + learned_synapses
+        learned_synapses = summary.propagation_hop_count + summary.boundary_synapse_count
+        boundary_walk_cells = summary.left_boundary_hop_bound + summary.right_boundary_hop_bound
+        binder_cells += 2 + summary.propagation_hop_count + boundary_walk_cells
         binder_synapses += learned_synapses
         binder_ticks += learned_synapses * summary.demonstration_count
         learned_event_bytes += sum(
             0 if synapse.expected_event is None else len(synapse.expected_event)
             for synapse in binder._schema.propagation
         )
-        learned_event_bytes += sum(len(synapse.event) for synapse in binder._schema.containment)
+        learned_event_bytes += sum(len(synapse.event) for synapse in binder._schema.boundaries)
     return _ControllerEstimates(
         # One outer selector plus the wrapped neuronal populations.
         reserved_cell_capacity=1 + binder_cells + action_summary.total_cells,
@@ -690,7 +692,7 @@ def _physical_race(
 
 def _trajectory_sha256(
     *,
-    controller: MultiscaleSourceMotorController,
+    controller: BoundaryMultiscaleSourceMotorController,
     observation_sha256: str,
     action_sha256: str,
     expected_emissions: tuple[bytes, ...],
@@ -766,10 +768,10 @@ class AppendOnlyMultiscaleSourceMotorStack:
     @classmethod
     def seed(
         cls,
-        controller: MultiscaleSourceMotorController,
+        controller: BoundaryMultiscaleSourceMotorController,
     ) -> AppendOnlyMultiscaleSourceMotorStack:
-        if not isinstance(controller, MultiscaleSourceMotorController):
-            raise TypeError("controller must be a MultiscaleSourceMotorController")
+        if not isinstance(controller, BoundaryMultiscaleSourceMotorController):
+            raise TypeError("controller must be a BoundaryMultiscaleSourceMotorController")
         frozen = _copy_controller(controller)
         estimates = _controller_estimates(frozen)
         adapter = _ControllerAdapter(frozen, frozen.checkpoint_sha256)
@@ -809,12 +811,14 @@ class AppendOnlyMultiscaleSourceMotorStack:
         query: bytes,
         files: tuple[OpaqueWorkspaceFile, ...],
         *,
-        ablation: MultiscaleSourceMotorAblation = MultiscaleSourceMotorAblation.NONE,
+        ablation: BoundaryMultiscaleSourceMotorAblation = (
+            BoundaryMultiscaleSourceMotorAblation.NONE
+        ),
     ) -> OnlineMultiscaleSourceMotorDecision:
         """Run all frozen neuronal shards and physically arbitrate once."""
 
-        if not isinstance(ablation, MultiscaleSourceMotorAblation):
-            raise TypeError("ablation must be a MultiscaleSourceMotorAblation")
+        if not isinstance(ablation, BoundaryMultiscaleSourceMotorAblation):
+            raise TypeError("ablation must be a BoundaryMultiscaleSourceMotorAblation")
         canonical_query, canonical_files = _canonical_observation(query, files)
         query_sha256 = _digest(
             _QUERY_NAMESPACE,
@@ -914,7 +918,7 @@ class AppendOnlyMultiscaleSourceMotorStack:
             evidence.before_files,
             evidence.after_files,
         )
-        experience = SuccessfulMultiscaleSourceMotorExperience(
+        experience = SuccessfulBoundaryMultiscaleSourceMotorExperience(
             query=evidence.query,
             before_files=evidence.before_files,
             after_files=evidence.after_files,
@@ -923,7 +927,7 @@ class AppendOnlyMultiscaleSourceMotorStack:
         # Two identical rows encode two learning phases from this one current
         # approved experience: structural coactivation and positive success.
         # They do not replay any parent experience, and neither row is retained.
-        candidate = MultiscaleSourceMotorController.grow((experience, experience))
+        candidate = BoundaryMultiscaleSourceMotorController.grow((experience, experience))
         frozen_candidate = _copy_controller(candidate)
         candidate_adapter = _ControllerAdapter(
             frozen_candidate,
@@ -986,7 +990,7 @@ class AppendOnlyMultiscaleSourceMotorStack:
         candidate_probe = candidate_adapter.respond(
             evidence.query,
             evidence.before_files,
-            ablation=MultiscaleSourceMotorAblation.NONE,
+            ablation=BoundaryMultiscaleSourceMotorAblation.NONE,
         )
         if not candidate_probe.emitted or candidate_probe.emissions != expected:
             raise ValueError("current successful experience did not recruit an exact motor shard")
