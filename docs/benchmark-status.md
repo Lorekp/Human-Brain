@@ -738,8 +738,18 @@ including deeper fresh transfer, prior retention, and causal STOP controls.
 This is mechanism evidence, not a new integrated benchmark result or autonomous
 failure recovery. A teacher/evaluator still supplies successful transitions,
 each shard remains one exact learned structural family, and each controller
-currently rebuilds its observation internally. A separately named fresh public-
-TRAIN persistent cohort is the next coding-side check.
+currently rebuilds its observation internally.
+
+The separately named persistent V2 cohort was frozen at `24ba8b9` and invoked
+exactly once. It failed before evaluating any task because its seed experiences
+violated the existing binder contract that every training stream contain exactly
+one query/source coincidence. Commit `05bc9af` seals the failure record at
+`benchmarks/r4_integrated_persistent_variability_multiscale_python_learning_v2.json`
+(artifact SHA-256
+`23e954fa88c0ef61d205be31c6ae5fa4c31b0c9d67af68f706b5218896e98955`).
+This is an experiment-interface failure with zero capability evidence; the cohort
+will not be patched or rerun. Any correction belongs to a fresh integrated
+cohort, with its learner/experience contract checked before freeze.
 
 ### Language and knowledge lane
 

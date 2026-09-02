@@ -2744,6 +2744,15 @@ This does not revise V1 before a fresh integrated spend; evaluator-supplied
 success, exact structural shards, and per-shard observation reconstruction are
 still limitations.
 
+The first successor cohort was frozen at `24ba8b9` and spent once. It reached
+zero tasks: seed-stack construction raised `ValueError` because the authored
+training streams did not meet the existing requirement of exactly one
+query/source coincidence. Commit `05bc9af` seals the failure artifact (SHA-256
+`23e954fa88c0ef61d205be31c6ae5fa4c31b0c9d67af68f706b5218896e98955`).
+This is neither a positive nor negative learning result; it localizes a public-
+experience/controller interface mismatch. V2 remains immutable, and a fix must
+use a fresh cohort after validating that contract without opening its outcomes.
+
 In the co-equal language lane, `442fb83` adds a lossless opaque multi-document
 event tape with provenance, sentence structure, and distinct repeated token
 occurrences but no semantic or coding ontology. Its focused suite passes 5/5;

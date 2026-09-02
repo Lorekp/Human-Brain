@@ -671,10 +671,14 @@ current successes, compiles one generalized shard from those rows only, retains
 no raw sequences, replays zero parent experiences, and preserves the parent
 checkpoint. A fitted-GLIF outer race selects exactly one emitter or physical
 tonic/collision STOP; `NO_UPDATE` fully compiles/probes while committing nothing.
-Three focused tests pass. This has not yet revised the spent V1 score: the fresh
-persistent public-TRAIN cohort is being authored, and teacher-supplied successes,
-exact structural shards, and repeated per-shard observation construction remain
-explicit limitations.
+Three focused tests pass. This has not revised the spent V1 score. The fresh
+persistent V2 runner was frozen at `24ba8b9` and invoked once, but its seed
+experiences violated the binders' one-query/source-coincidence contract before
+any task was evaluated. `05bc9af` seals that zero-evidence interface failure;
+V2 is immutable and will not be rerun. Teacher-supplied successes, exact
+structural shards, and repeated per-shard observation construction remain
+explicit limitations. The correction belongs to a newly named integrated
+cohort rather than another coding-only microgate.
 
 Language/knowledge work is co-equal. `442fb83` provides a lossless opaque
 multi-document event tape with provenance and occurrence-preserving raw-token
