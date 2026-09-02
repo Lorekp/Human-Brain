@@ -520,6 +520,16 @@ ambiguity correctly STOPs. The missing seam is generic cross-stream event
 equality plus learned propagation to the enclosing source segment/path, not
 another file suffix, target span, or task class.
 
+Commit `8b54a4f` implements that seam as the isolated
+`CrossStreamSegmentBinder`. It learns an opaque recurrent role offset and a
+stable containment envelope from complete query/source demonstrations, then
+uses fitted-GLIF equality, propagation, containment, and identity-uniqueness
+races. Fresh renamed identities transfer; missing/duplicate evidence, a broken
+envelope, and equality/propagation ablations physically STOP. It is deliberately
+not wired into the editor yet: integration requires one lossless multiscale
+observation whose issue and source identifiers share exact opaque events while
+preserving the coarse line/path occurrences used by the existing motor tape.
+
 Scale work is attached to the same path. Commit `a99473b` adds exact batched
 independent first-spike races (26.2x on the reproduced 4,096-row microcase),
 commit `73929cf` indexes occurrence neighborhoods, and commit `2693901`
@@ -530,7 +540,7 @@ Commit `d64bbd9` then vectorizes bounds preparation above the measured
 128-candidate crossover; the isolated 4,096-candidate binder race improved from
 604 microseconds to 471 microseconds (1.28x) with exact scalar parity.
 
-The immediate construction seam is now persistent online structural growth:
+The other immediate construction seam is persistent online structural growth:
 authenticate a successful execution, append only the newly required neuronal
 structure without reset or prior-example replay, preserve earlier behavior, and
 show a later fresh task improving over a persistent no-update control.

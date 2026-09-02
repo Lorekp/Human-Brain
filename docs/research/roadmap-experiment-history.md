@@ -2545,6 +2545,17 @@ validation and reuses the score-index array. Exact scalar parity holds at 127,
 471 microseconds (1.28x). This changes speed, not the negative multi-source
 result or its scientific boundary.
 
+Commit `8b54a4f` then banks the smallest generic computation proposed by that
+failure. `CrossStreamSegmentBinder` learns, from complete opaque streams, a
+unique query/source equality seed, a recurrent offset to the demonstrated role,
+and a stable bounded containment envelope. It transfers to a fresh renamed
+three-segment stream and physically STOPs on absent or duplicated equality,
+broken containment, and equality/propagation ablations. This is micro-gate
+evidence only. It does not reverse the frozen `ee5b8df` result, because the
+current workspace transport still lacks a shared fine-grained identifier event
+space and no multi-file motor action has yet been emitted or executed through
+the new binder.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

@@ -489,6 +489,18 @@ binding from a novel issue event to its matching workspace occurrence, followed
 by propagation from that occurrence to its enclosing file/path role. No target
 hint or Python-specific rescue is licensed.
 
+Commit `8b54a4f` banks the corresponding architecture-neutral micro-mechanism.
+Across three complete opaque training stream pairs it learns one recurrent
+offset from the unique query/source coincidence to the demonstrated role plus
+a stable local containment envelope. A fresh renamed three-segment stream binds
+the correct live role; no match, a duplicate match, a broken envelope,
+`EQUALITY_OFF`, and `PROPAGATION_OFF` all physically STOP. The public inference
+surface remains only the complete query and source event streams. This closes a
+localized causal question, not the integrated failure above: the existing
+physical-line workspace tape does not yet expose byte-identical issue/source
+identifier events, and the binder has not yet selected a file or driven the raw
+motor controller on a real multi-file task.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment
