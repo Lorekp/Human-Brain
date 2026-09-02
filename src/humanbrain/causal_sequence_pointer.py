@@ -1,7 +1,8 @@
 """Causal neuronal sequence composition over pointer-normalized text.
 
 The model stores transition synapses, not candidate programs.  Successful
-episodes leave exact contextual traces.  Repeated structure and sensory
+episodes leave exact contextual assemblies that physically replay their learned
+atoms.  Repeated structure and sensory
 differences isolated by matched successful episodes can both drive a novel
 context.  Generation is one strictly forward traversal.  Every emitted chunk,
 learned segment, EOS, STOP, live role binding, and role-loop boundary is
@@ -42,7 +43,7 @@ __all__ = [
 ]
 
 
-_MODEL_SCHEMA = "humanbrain-causal-sequence-pointer-v2"
+_MODEL_SCHEMA = "humanbrain-causal-sequence-pointer-v3"
 _STOP_OUTPUT = "<stop>insufficient causal sequence evidence</stop>"
 _POINTER_EVENT = re.compile(r"<@(\d+)>")
 _CURRENT_SCALE_PA = 900.0
@@ -65,10 +66,11 @@ class CausalSequencePointerError(ValueError):
 
 
 class CausalSequenceAblation(Enum):
-    """Focused controls over the two causal mechanisms under study."""
+    """Focused causal controls over learned sequence mechanisms."""
 
     NONE = "none"
     CONTRAST_OFF = "contrast-off"
+    EXACT_ASSEMBLY_OFF = "exact-assembly-off"
     RECURRENCE_OFF = "recurrence-off"
     NOGO_OFF = "nogo-off"
 
@@ -452,6 +454,8 @@ class CausalSequencePointerModel:
         self._contrast_segment_cells: dict[tuple[str, int, int, bytes], int] = {}
         self._contrast_template_episodes: dict[int, str] = {}
         self._contrast_cell_operations: dict[int, str] = {}
+        self._exact_episode_postings: dict[str, dict[str, float]] = defaultdict(dict)
+        self._exact_episode_atoms: dict[str, tuple[int, ...]] = {}
         self._nogo: Counter[_NoGoKey] = Counter()
         self._consequences: dict[str, tuple[int, ...]] = {}
         self._pending: _PendingCompletion | None = None
@@ -546,6 +550,8 @@ class CausalSequencePointerModel:
                 model._contrast_cue_features(row.pointer_cue),
                 row.pointer_output,
                 row.provenance_id,
+                atoms=model._tokenizer.encode(row.pointer_output),
+                strength=1.0,
             )
         model._training_digest = model._compute_training_digest()
         return model
@@ -607,22 +613,24 @@ class CausalSequencePointerModel:
         selected_stop = False
         selected_eos = False
 
-        contrast = (
-            None
-            if state in self._episodic_states
-            else self._contrast_complete(
+        completion = self._exact_complete(
+            state,
+            steps,
+            max_new_tokens=max_new_tokens,
+        )
+        if completion is None and state not in self._episodic_states:
+            completion = self._contrast_complete(
                 state,
                 contrast_features,
                 steps,
                 max_new_tokens=max_new_tokens,
             )
-        )
-        if contrast is not None:
-            raw_output = contrast.raw_output
-            semantic_tokens = list(contrast.emitted_tokens)
-            selected_stop = contrast.selected_stop
-            selected_eos = contrast.selected_eos
-            eligible = list(contrast.eligible_nogo)
+        if completion is not None:
+            raw_output = completion.raw_output
+            semantic_tokens = list(completion.emitted_tokens)
+            selected_stop = completion.selected_stop
+            selected_eos = completion.selected_eos
+            eligible = list(completion.eligible_nogo)
             if not selected_stop:
                 self._pending = _PendingCompletion(
                     query_sha256=query_sha,
@@ -873,6 +881,8 @@ class CausalSequencePointerModel:
                 self._contrast_cue_features(pointerize(cue_text, inventory)),
                 pointer_output,
                 provenance,
+                atoms=self._tokenizer.encode(pointer_output),
+                strength=float(strength),
             )
             self._consequences[pending.observation_state] = tuple(self._tokenizer.encode(output))
             changed.extend(
@@ -1029,6 +1039,9 @@ class CausalSequencePointerModel:
         features: tuple[_Feature, ...],
         pointer_output: str,
         provenance_id: str,
+        *,
+        atoms: Sequence[int],
+        strength: float,
     ) -> None:
         del provenance_id
         ordered_features = tuple(sorted(set(features)))
@@ -1044,7 +1057,9 @@ class CausalSequencePointerModel:
                 "pointer_output_hex": output_bytes.hex(),
             },
         )
-        if episode_id in self._contrast_episodes:
+        existing = self._contrast_episodes.get(episode_id)
+        if existing is not None:
+            self._register_exact_episode(state, existing, atoms, strength)
             return
 
         candidates = self._bounded_contrast_candidates(ordered_features)
@@ -1075,6 +1090,7 @@ class CausalSequencePointerModel:
         )
         self._contrast_episodes[episode_id] = episode
         self._contrast_template_episodes[template_cell] = episode_id
+        self._register_exact_episode(state, episode, atoms, strength)
 
         if matched:
             best_distance = min(row[0] for row in matched)
@@ -1093,6 +1109,20 @@ class CausalSequencePointerModel:
             while len(posting) > self._config.max_contrast_candidate_episodes:
                 del posting[next(iter(posting))]
         self._resize_cortex()
+
+    def _register_exact_episode(
+        self,
+        state: str,
+        episode: _ContrastEpisode,
+        atoms: Sequence[int],
+        strength: float,
+    ) -> None:
+        encoded = tuple(int(atom) for atom in atoms)
+        known = self._exact_episode_atoms.setdefault(episode.episode_id, encoded)
+        if known != encoded:
+            raise RuntimeError("one learned episode cannot own two encoded sequences")
+        posting = self._exact_episode_postings[state]
+        posting[episode.episode_id] = posting.get(episode.episode_id, 0.0) + strength
 
     def _bounded_contrast_candidates(
         self,
@@ -1213,6 +1243,96 @@ class CausalSequencePointerModel:
                 continue
             activity[certificate_id] = 1.0
         return activity
+
+    def _exact_complete(
+        self,
+        state: str,
+        steps: list[CausalSequenceRaceStep],
+        *,
+        max_new_tokens: int,
+    ) -> _ContrastCompletion | None:
+        postings = self._exact_episode_postings.get(state)
+        if not postings:
+            return None
+
+        if self._config.ablation is CausalSequenceAblation.EXACT_ASSEMBLY_OFF:
+            self._contrast_race(
+                {},
+                steps,
+                depends_on=(),
+                phase="exact-episode",
+            )
+            return self._contrast_stop()
+
+        scores: dict[int, float] = {}
+        keys: dict[int, _NoGoKey] = {}
+        for episode_id, strength in postings.items():
+            episode = self._contrast_episodes[episode_id]
+            key = _NoGoKey(
+                observation_state=state,
+                step=-1,
+                predecessor=(),
+                selected_token=episode.template_cell,
+            )
+            keys[episode.template_cell] = key
+            if (
+                self._config.ablation is CausalSequenceAblation.NOGO_OFF
+                or self._nogo.get(key, 0) == 0
+            ):
+                scores[episode.template_cell] = strength
+
+        winner = self._contrast_race(
+            scores,
+            steps,
+            depends_on=(),
+            phase="exact-episode",
+        )
+        if winner == self._stop_cell:
+            return self._contrast_stop()
+        episode_id = self._contrast_template_episodes.get(winner)
+        if episode_id is None:
+            raise RuntimeError("exact episode race selected an unknown cell")
+
+        atoms = self._exact_episode_atoms[episode_id]
+        emitted: list[int] = []
+        pieces: list[bytes] = []
+        dependency = len(steps) - 1
+        for atom in atoms:
+            if len(emitted) >= max_new_tokens:
+                raise CausalSequencePointerError("neuronal output exceeds caller max_new_tokens")
+            selected = self._contrast_race(
+                {atom: 1.0},
+                steps,
+                depends_on=(dependency,),
+                phase="exact-atom",
+            )
+            dependency = len(steps) - 1
+            if selected == self._stop_cell:
+                return self._contrast_stop()
+            emitted.append(selected)
+            pieces.append(self._tokenizer.token_bytes(selected))
+
+        winner_eos = self._contrast_race(
+            {self._eos_cell: 1.0},
+            steps,
+            depends_on=(dependency,),
+            phase="exact-eos",
+        )
+        if winner_eos != self._eos_cell:
+            return self._contrast_stop()
+        try:
+            raw_output = b"".join(pieces).decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise CausalSequencePointerError("neuronal output is not lossless UTF-8") from error
+        if not raw_output:
+            raise RuntimeError("exact EOS won before any neuronal output was emitted")
+        return _ContrastCompletion(
+            raw_output=raw_output,
+            emitted_tokens=tuple(emitted),
+            selected_stop=False,
+            selected_eos=True,
+            eligible_nogo=(keys[winner],),
+        )
 
     def _contrast_complete(
         self,
@@ -1821,7 +1941,7 @@ class CausalSequencePointerModel:
 
     def _compute_training_digest(self) -> str:
         return _digest(
-            b"humanbrain-causal-sequence-state-v2",
+            b"humanbrain-causal-sequence-state-v3",
             {
                 "schema": _MODEL_SCHEMA,
                 "config": {
@@ -1884,6 +2004,20 @@ class CausalSequencePointerModel:
                         self._contrast_episodes.values(),
                         key=lambda value: value.episode_id,
                     )
+                ],
+                "exact_episode_postings": [
+                    [
+                        state,
+                        [
+                            [episode_id, strength]
+                            for episode_id, strength in sorted(posting.items())
+                        ],
+                    ]
+                    for state, posting in sorted(self._exact_episode_postings.items())
+                ],
+                "exact_episode_atoms": [
+                    [episode_id, list(atoms)]
+                    for episode_id, atoms in sorted(self._exact_episode_atoms.items())
                 ],
                 "contrast_episode_postings": [
                     [feature, list(posting)]

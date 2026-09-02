@@ -136,6 +136,77 @@ def _contrast_query() -> tuple[str, str, SymbolInventory]:
     )
 
 
+def test_exact_episode_assembly_physically_replays_long_literal_atoms() -> None:
+    inventory = SymbolInventory(("slot",))
+    output = "!" * 257
+    row = _row(
+        "retain one long particular",
+        "exact long memory witness",
+        output,
+        inventory,
+        "long-exact",
+    )
+    model = CausalSequencePointerModel.grow((row,), _config())
+
+    assert model.raw_complete(
+        row.prompt,
+        inventory,
+        cue_text=row.cue_text,
+        max_new_tokens=257,
+    ) == pointerize(output, inventory)
+
+    trace = model.last_trace
+    assert trace is not None and trace.selected_eos and not trace.selected_stop
+    assert trace.steps[0].phase == "exact-episode"
+    atom_steps = [step for step in trace.steps if step.phase == "exact-atom"]
+    assert len(atom_steps) == 257
+    assert len(trace.emitted_token_ids) == 257
+    assert trace.steps[-1].phase == "exact-eos"
+    assert all(len(step.candidate_currents_pa) == 2 for step in trace.steps)
+    assert all(
+        dependency < step.index for step in trace.steps for dependency in step.depends_on_steps
+    )
+    model.resolve_pending_neutral(row.prompt, inventory, row.cue_text)
+
+
+def test_exact_assembly_ablation_physically_stops_with_identical_learning() -> None:
+    inventory = SymbolInventory(("slot",))
+    row = _row(
+        "retain this particular",
+        "exact ablation witness",
+        "remembered-output",
+        inventory,
+        "exact-ablation",
+    )
+    treatment = CausalSequencePointerModel.grow((row,), _config())
+    control = CausalSequencePointerModel.grow(
+        (row,),
+        _config(CausalSequenceAblation.EXACT_ASSEMBLY_OFF),
+    )
+
+    assert treatment.training_digest == control.training_digest
+    assert treatment.raw_complete(
+        row.prompt,
+        inventory,
+        cue_text=row.cue_text,
+        max_new_tokens=64,
+    ) == pointerize(row.output, inventory)
+    treatment.resolve_pending_neutral(row.prompt, inventory, row.cue_text)
+
+    assert control.raw_complete(
+        row.prompt,
+        inventory,
+        cue_text=row.cue_text,
+        max_new_tokens=64,
+    ).startswith("<stop>")
+    trace = control.last_trace
+    assert trace is not None and trace.selected_stop and not trace.selected_eos
+    assert len(trace.steps) == 1
+    assert trace.steps[0].phase == "exact-episode"
+    assert trace.steps[0].winner_operation == "STOP"
+    assert len(trace.steps[0].candidate_currents_pa) == 1
+
+
 def test_contrast_certificates_compose_safe_singletons_with_variable_lengths() -> None:
     rows = _contrast_rows()
     model = CausalSequencePointerModel.grow(rows, _contrast_config())
@@ -575,7 +646,7 @@ def test_balanced_ambiguity_recruits_tonic_stop() -> None:
     assert trace.steps[-1].winner_operation == "STOP"
 
 
-def test_negative_receipt_revises_only_its_local_branch_and_is_exact_once() -> None:
+def test_negative_receipt_suppresses_only_its_local_exact_episode_once() -> None:
     rows = _revision_rows()
     model = CausalSequencePointerModel.grow(rows, _config())
     inventory = rows[0].inventory
@@ -600,8 +671,12 @@ def test_negative_receipt_revises_only_its_local_branch_and_is_exact_once() -> N
             feedback_text="duplicate receipt",
         )
 
-    assert model.raw_complete(prompt, inventory, cue_text=cue) == "B"
-    model.resolve_pending_neutral(prompt, inventory, cue)
+    assert model.raw_complete(prompt, inventory, cue_text=cue).startswith("<stop>")
+    trace = model.last_trace
+    assert trace is not None and trace.selected_stop
+    assert trace.steps[-1].phase == "exact-episode"
+    assert trace.steps[-1].winner_operation == "STOP"
+    assert len(trace.steps[-1].candidate_currents_pa) == 1
 
     unrelated = rows[1]
     assert (
