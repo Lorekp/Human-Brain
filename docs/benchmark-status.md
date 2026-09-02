@@ -692,11 +692,60 @@ observation construction from the per-shard path. That directly improves the
 feasibility of larger persistent learners while leaving their simulated neural
 work auditable.
 
-The immediate program now gives integrated language/knowledge work equal
-priority with integrated coding work. Alongside integrating the variability-
-aware binder into a newly frozen persistent successor and fresh coding cohort,
-the next workload should include non-code integrated language/knowledge
-generality. These are TRAIN-side development lanes; R5 and R6 remain sealed.
+### Fresh variability-aware Python V3 result
+
+Commit `101edfb` composes the variability-aware binder with the live neuronal
+motor. The controller learns one action shape plus stable and wildcard
+propagation from two independent complete transitions. Role-inventory and live-
+occurrence uniqueness are also decided by fitted-GLIF races; collisions reach a
+physical STOP rather than a host-selected outcome. The focused suite passes
+4/4.
+
+The architecture was frozen before the V3 cohort was authored at `d52f6b6`.
+The cohort was then spent exactly once and sealed at `3d9df99` in
+`benchmarks/r4_integrated_variability_multiscale_multi_source_python_edit_v3.json`
+(artifact SHA-256
+`8d86fb1a25523f19cc4c0a7d7f2814c5e0978e36f4a9f8086b5d2d55243cafda`,
+result SHA-256
+`fbec194680c82c088b5e23101d61da9f0ebe2ecf21b3d03dce42331901fe1243`).
+One frozen learner repaired 3/3 fresh real Python workspaces at first, middle,
+and last sorted file positions. Each emitted only live tape events, changed the
+single intended file, preserved every decoy, changed a failing execution into
+the exact passing execution, and used one query with no retry. The ambiguous
+fourth task physically STOPped. Equality-, propagation-, and boundary-off arms
+each physically STOPped 3/3. Treatment used 1,555,200 reported physical cell
+steps and all checkpoint, live-emission, lossless-observation, single-shot, and
+cell-step accounting checks passed.
+
+This closes the fresh one-directory variability/boundary composition gate, not
+the continual-learning gate. Exact identifier equality still supplies the seed,
+the motor still reuses one learned prefix-truncation action, and the frozen
+learner does not update on fresh tasks. V1's persistent 2/5 result therefore
+remains failed; its successor must append generalized shards from independent
+successes without parent replay. The V3 cohort and artifact are immutable.
+
+### Language and knowledge lane
+
+Commit `442fb83` adds a domain-neutral, lossless opaque document event tape. It
+preserves raw query/document bytes, order, provenance, sentence boundaries, and
+distinct repeated token occurrences without answer, target, predicate,
+relation, file, path, or edit fields. Its focused suite passes 5/5. Lexical
+identity views are currently ASCII; all other bytes remain lossless literals.
+
+Commit `c999ea2` is an initial two-hop relational-reading scaffold. From raw
+successful examples it retains exact query/sentence surface templates but no
+training endpoint fillers, recombines forward and reversed learned surfaces on
+fresh names and reordered documents, and uses GLIF races for arbitration and
+STOP. The focused suite passes 1/1. This is **not neuronal language-
+understanding evidence**: host code still finds the supervised two-hop training
+path and computes frame/equality matches before the races. The defensible claim
+is answer-supervised exact-surface induction plus fresh-name structural
+recombination. A successor replacing those Boolean shortcuts with simulated
+byte-equality, conjunction, frame, recurrent-join, and motor circuits is
+underway, alongside sparse role-filler pointers for learned paraphrase structure.
+
+Integrated language/knowledge work remains co-equal with integrated coding.
+Both are public TRAIN-side development lanes; R5 and R6 remain sealed.
 
 ### Frozen recurrent-inventory continual V5 result
 

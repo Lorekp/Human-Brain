@@ -2706,11 +2706,45 @@ while the conceptual neural work remains 8,352,600 cell steps. No spent benchmar
 was rerun. The result changes runtime cost, not the scientific capability claim,
 and makes larger persistent stacks more practical.
 
-The next development wave keeps integrated language/knowledge work co-equal with
-integrated coding: integrate the variability-aware mechanism in a newly frozen
-persistent successor and fresh coding cohort, while also starting non-code
-integrated language/knowledge generality work. Both are TRAIN-side development;
-R5/R6 remain sealed.
+Commit `101edfb` then composes the variability-aware binder with the neuronal
+source motor. Two independent full transitions train one shared action plus
+stable/wildcard propagation. Physical fitted-GLIF races now also enforce role-
+inventory and live-occurrence uniqueness; the focused suite passes 4/4.
+
+The controller was frozen before V3 was authored at `d52f6b6`. The fresh cohort
+was spent once and sealed at `3d9df99`; artifact SHA-256 is
+`8d86fb1a25523f19cc4c0a7d7f2814c5e0978e36f4a9f8086b5d2d55243cafda`
+and embedded result SHA-256 is
+`fbec194680c82c088b5e23101d61da9f0ebe2ecf21b3d03dce42331901fe1243`.
+Treatment passed all three fresh real-Python repairs at first/middle/last sorted
+file positions plus the ambiguity STOP. Every live materialization changed only
+the intended file, preserved decoys, and changed the exact failing execution to
+the exact passing execution. Equality, propagation, and boundary ablations each
+physically STOPped 3/3. All observations were lossless and single-shot, all
+checkpoints remained fixed, and reported cell-step accounting was exact.
+
+V3 closes the fresh variability/boundary composition seam only. Exact opaque
+identifier equality and one prefix-truncation motor remain, fresh tasks do not
+update the learner, and the persistent V1 gate stays failed at 2/5. The V3
+runner, test, cohort, and artifact are immutable. The coding successor is
+replay-free appending of generalized shards from independent current successes.
+
+In the co-equal language lane, `442fb83` adds a lossless opaque multi-document
+event tape with provenance, sentence structure, and distinct repeated token
+occurrences but no semantic or coding ontology. Its focused suite passes 5/5;
+ASCII lexical identities are the current bounded transport surface. Commit
+`c999ea2` adds an answer-supervised exact-surface two-hop reader scaffold. It
+recombines learned forward/reverse sentence frames on fresh names, document
+orders, positions, and distractors, with physical arbitration and STOP.
+
+An independent audit prevents overclaim: host code still discovers the unique
+two-hop training proof and computes frame/equality Boolean matches before GLIF
+arbitration. Therefore `c999ea2` is structural-recombination evidence, not fully
+neuronal predicate learning or language understanding. The active successor
+replaces those shortcuts with simulated equality/conjunction/frame/join/motor
+circuits; a sparse neuronal role-filler pointer substrate is also underway to
+support paraphrase abstraction without whole-template proliferation. These are
+public TRAIN-side development lanes; R5/R6 remain sealed.
 
 ## 13. Retired directions
 

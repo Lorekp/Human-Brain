@@ -1,8 +1,9 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after the variability-aware
-propagation micro-gate and single-observation multiscale broadcast optimization.
-Persistent integration remains open. Exact scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-09-02 after the fresh variability-
+aware Python V3 pass and the first opaque multi-document language scaffold.
+Persistent integration and fully neuronal language inference remain open. Exact
+scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -14,7 +15,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; wildcard integration + fresh cohort next]
+R4  Language/software continual coding               [OPEN; V3 3/3; continual + neuronal language next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -652,10 +653,28 @@ pass. On the same synthetic 16-shard miss, median latency improves from
 cell steps. No spent benchmark was rerun. This is a scale-enabling implementation
 improvement for larger persistent learners, not new task capability.
 
-Integrated language/knowledge work is now co-equal with integrated coding work.
-Next work includes both the newly frozen variability-aware persistent successor
-on a genuinely fresh coding cohort and non-code integrated language/knowledge
-generality. These remain TRAIN-side development lanes; R5/R6 stay sealed.
+Commit `101edfb` composes variability-aware grounding with the live neuronal
+motor and adds physical role-inventory/live-occurrence collision races. The
+focused controller suite passes 4/4. After that architecture freeze, `d52f6b6`
+authored V3 and `3d9df99` sealed its one-shot artifact (SHA-256
+`8d86fb1a25523f19cc4c0a7d7f2814c5e0978e36f4a9f8086b5d2d55243cafda`).
+One frozen learner passed 3/3 fresh real Python repairs across first/middle/last
+file positions; ambiguity STOPped, and equality/propagation/boundary controls
+each physically STOPped 3/3. There were no retries or treatment failures. This
+banks fresh variable-intermediate boundary composition, not continual learning;
+the persistent V1 2/5 boundary remains authoritative until generalized shards
+can be appended without parent replay.
+
+Language/knowledge work is co-equal. `442fb83` provides a lossless opaque
+multi-document event tape with provenance and occurrence-preserving raw-token
+views. `c999ea2` adds a first fixed two-hop surface-template reader that
+recombines learned forward/reverse forms on fresh entities, but host code still
+computes its frame/equality matches. It is a symbolic-scaffold microgate, not
+neuronal language understanding. The active successor moves byte equality,
+feature conjunction, frame binding, recurrent joins, ambiguity, and emission
+into simulated-cell circuits, while a sparse role-filler pointer substrate
+targets learned paraphrase structure. Both lanes are public TRAIN development;
+R5/R6 stay sealed.
 
 ### Coding
 
