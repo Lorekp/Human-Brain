@@ -2805,13 +2805,22 @@ motor, ambiguity, and all STOPs execute through fitted-cell races. The focused
 same-document rejection, missing and ambiguous evidence, parent immutability,
 and five causal ablations.
 
-This is answer-supervised ASCII-tokenized exact-surface one-hop learning, not
-broad understanding. Host path compilation, candidate enumeration, and sensory
-projection remain scaffolding; paraphrase induction, neutral consolidation,
-belief revision, and recurrent multi-hop retrieval remain unsolved. The planned
-balanced evidence-to-action session now makes those capabilities prerequisites
-for both language and code outcomes rather than allowing coding throughput to
-stand in for understanding.
+Commit `7e988a9` adds a second persistent step: one exact surface can become
+associated with another only when its complete ordered subject-to-answer filler
+pointer physically wins cleanup against a prior episode. The learner stores two
+ordered surface-link pointers. Frozen inference physically binds query/document
+surface pointers, cleanup-selects learned links, conjoins frame and subject
+signals, OR-collapses paths per live edge, and retains unique-answer/live-motor
+arbitration. The focused suite passes 2/2, including same-subject, same-answer,
+reversed-binding, same-surface, distractor, ambiguity, and causal controls.
+
+This is answer-supervised ASCII-tokenized exact-surface one-hop learning plus
+one-shot co-binding association, not broad understanding or general paraphrase
+induction. Host path compilation, candidate enumeration, and sensory projection
+remain scaffolding; neutral consolidation, belief revision, and recurrent
+multi-hop retrieval remain unsolved. The planned balanced evidence-to-action
+session makes those capabilities prerequisites for both language and code
+outcomes rather than allowing coding throughput to stand in for understanding.
 
 These are public TRAIN-side development lanes; R5/R6 remain sealed.
 

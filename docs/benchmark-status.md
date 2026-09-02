@@ -797,14 +797,26 @@ pending behavior, sequential promotion, fresh fillers, interleaved retention,
 same-document rejection, ambiguity, missing evidence, parent immutability, and
 five causal ablations.
 
-The claim is deliberately one-hop and exact-surface. Training still uses an
-observed answer and host path compilation; host code enumerates candidate edges
-and projects sensory events. There is no paraphrase induction, neutral document
-consolidation, provenance revision, recurrent multi-hop retrieval, or broad
-language understanding yet. The next integrated forcing workload is specified
-in `docs/research/balanced-evidence-to-action-session-v1.md`; it gives language
-and knowledge greater episode count than coding and makes every code transfer
-depend on acquired prose relations.
+Commit `7e988a9` adds one-shot co-binding-induced association between two exact
+surfaces. A full ordered subject-to-answer filler pointer must physically win
+cleanup against prior distilled episodes before the learner creates the two
+ordered cross-surface link pointers. Inference physically binds each live
+query/document surface pair, cleanup-selects learned links, and OR-collapses
+multiple learned paths per live edge before unique-answer arbitration. The two
+focused fixtures pass; same-subject-only, same-answer-only, reversed-binding,
+unlinked same-surface, distractor, ambiguity, relation-binding-off, relation-
+cleanup-off, and answer-selection-off cases do not emit.
+
+The claim remains deliberately one-hop and exact-surface. This is learned
+association from one shared complete binding, not general or similarity-based
+paraphrase induction. Training still uses an observed answer and host path
+compilation; host code enumerates candidate edges and projects sensory events.
+There is no neutral document consolidation, provenance revision, recurrent
+multi-hop retrieval, or broad language understanding yet. The next integrated
+forcing workload is specified in
+`docs/research/balanced-evidence-to-action-session-v1.md`; it gives language and
+knowledge greater episode count than coding and makes every code transfer depend
+on acquired prose relations.
 
 Integrated language/knowledge work remains co-equal with integrated coding.
 Both are public TRAIN-side development lanes; R5 and R6 remain sealed.

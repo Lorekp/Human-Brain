@@ -697,8 +697,12 @@ episode replay-free growth, two-independent-context promotion, immutable
 provenance/filler chunks, authenticated storage/work accounting, and physical
 one-hop inference/STOP. It retains exact anonymous surface literals but no raw
 training row or document. Answer-supervised host compilation and candidate
-enumeration remain scaffolding; paraphrase, neutral ingestion, revision, and
-recurrence remain open.
+enumeration remain scaffolding. `7e988a9` learns two ordered cross-surface links
+only when full subject-to-answer co-binding wins a neuronal cleanup race, then
+uses physical surface binding/cleanup and per-edge path OR during inference.
+This transfers between two exact ASCII-token surfaces without promoting their
+same-surface paths. It is not similarity-based or general paraphrase learning;
+neutral ingestion, revision, and recurrence remain open.
 
 The next forcing workload is
 `docs/research/balanced-evidence-to-action-session-v1.md`: fifteen
