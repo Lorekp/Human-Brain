@@ -158,30 +158,39 @@ def test_malformed_tool_transport_fails_closed(
         neuronal_tool_module._decode_action_transport(malformed_wire)
 
 
-def test_malformed_tool_transport_failure_is_traced_and_resolvable() -> None:
+def test_malformed_tool_transport_returns_fail_closed_emission() -> None:
+    malformed_wire = "[[84,79,79,76,1]]"
     model = NeuronalToolModel.grow(
         (
             _row(
-                "emit broken wire",
-                "[[84,79,79,76,1],[256],[]]",
+                "emit",
+                malformed_wire,
                 "broken-wire",
             ),
         ),
         _config(max_roles=16),
     )
 
-    with pytest.raises(NeuronalToolModelError, match="transport is malformed"):
-        model.infer(
-            "emit broken wire",
+    try:
+        emission = model.infer(
+            "emit",
             max_new_tokens=32,
             stop_text=_STOP_TEXT,
         )
+    except NeuronalToolModelError as error:
+        pytest.fail(
+            "infer leaked malformed action-transport failure instead of returning "
+            f"a fail-closed emission: {error}"
+        )
 
+    assert emission.raw_output == malformed_wire
+    assert not emission.selected_stop
     trace = model.last_trace
     assert trace is not None
     assert trace.materialized_output_sha256 is None
     assert trace.materialization_error == "invalid_action_transport"
-    model.resolve_failure(trace.query_sha256, "malformed transport rejected")
+    update = model.resolve_failure(trace.query_sha256, "malformed transport rejected")
+    assert update.polarity == "failure"
 
 
 def test_success_uses_inner_wire_while_public_trace_stays_canonical(

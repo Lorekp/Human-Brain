@@ -392,7 +392,7 @@ class NeuronalToolModel:
                 "invalid_action_transport",
                 underlying_trace,
             )
-            raise
+            return provisional
         emission = ModelEmission.seal(
             prompt,
             prior_digest,
