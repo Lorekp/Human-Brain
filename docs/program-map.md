@@ -692,10 +692,19 @@ so this is narrow neuronal execution rather than broad language understanding.
 `fde2ecb` adds 64-of-4,096 sparse neuronal addresses, reversible ordered
 role/filler binding, compact noisy-prototype superposition, and fitted-GLIF
 cleanup/STOP without a language or code ontology. It is a reusable mechanism,
-not yet learned paraphrase semantics or multi-item memory. The next language
-successor must combine learned latent relations with continual episodic
-provenance, revision, and fresh 1–3-hop reads. Both lanes are public TRAIN
-development; R5/R6 stay sealed.
+not yet learned paraphrase semantics or multi-item memory. `f92dd3d` adds one-
+episode replay-free growth, two-independent-context promotion, immutable
+provenance/filler chunks, authenticated storage/work accounting, and physical
+one-hop inference/STOP. It retains exact anonymous surface literals but no raw
+training row or document. Answer-supervised host compilation and candidate
+enumeration remain scaffolding; paraphrase, neutral ingestion, revision, and
+recurrence remain open.
+
+The next forcing workload is
+`docs/research/balanced-evidence-to-action-session-v1.md`: fifteen
+language/knowledge episodes and nine coding episodes, with every code action
+dependent on acquired prose facts and a minimum-of-domain balanced score. Both
+lanes are public TRAIN development; R5/R6 stay sealed.
 
 ### Coding
 

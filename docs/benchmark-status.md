@@ -785,6 +785,27 @@ cleanup winners. This is representational mechanism evidence, not semantics:
 it has not yet learned surface-to-latent relations or become a multi-item
 episodic knowledge store.
 
+Commit `f92dd3d` composes these pieces into the first replay-free persistent
+document learner. It consumes one answer-supervised success at a time, retains
+immutable provenance/filler pointer chunks rather than raw rows or documents,
+requires two independent subjects, answers, success provenances, document IDs,
+document provenances, and bound contexts before promoting a surface, and never
+replays parent episodes. Frozen inference performs query/document-frame matches,
+subject joins, unique-answer arbitration, live-occurrence emission, and every
+STOP through fitted simulated-cell races. The focused suite passes 1/1 across
+pending behavior, sequential promotion, fresh fillers, interleaved retention,
+same-document rejection, ambiguity, missing evidence, parent immutability, and
+five causal ablations.
+
+The claim is deliberately one-hop and exact-surface. Training still uses an
+observed answer and host path compilation; host code enumerates candidate edges
+and projects sensory events. There is no paraphrase induction, neutral document
+consolidation, provenance revision, recurrent multi-hop retrieval, or broad
+language understanding yet. The next integrated forcing workload is specified
+in `docs/research/balanced-evidence-to-action-session-v1.md`; it gives language
+and knowledge greater episode count than coding and makes every code transfer
+depend on acquired prose relations.
+
 Integrated language/knowledge work remains co-equal with integrated coding.
 Both are public TRAIN-side development lanes; R5 and R6 remain sealed.
 

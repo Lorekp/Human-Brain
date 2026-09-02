@@ -2785,6 +2785,25 @@ code, relation, or answer ontology. It is mechanism evidence only: learned
 surface-to-latent mappings, multi-item episodic retrieval, provenance-aware
 revision, and persistent 1–3-hop language use remain the next integration.
 
+Commit `f92dd3d` adds the first persistent successor. One raw
+`RelationalReadingSuccess` advances an immutable checkpoint without replaying
+parent episodes or retaining raw rows/documents. An exact surface promotes only
+after two independent filler pairs, success provenances, document identities,
+document provenances, and cell-bound context pointers. Query/document surface
+matches, the one-hop subject join, unique-answer selection, live occurrence
+motor, ambiguity, and all STOPs execute through fitted-cell races. The focused
+1/1 fixture covers two interleaved surfaces, delayed fresh-filler transfer,
+same-document rejection, missing and ambiguous evidence, parent immutability,
+and five causal ablations.
+
+This is answer-supervised ASCII-tokenized exact-surface one-hop learning, not
+broad understanding. Host path compilation, candidate enumeration, and sensory
+projection remain scaffolding; paraphrase induction, neutral consolidation,
+belief revision, and recurrent multi-hop retrieval remain unsolved. The planned
+balanced evidence-to-action session now makes those capabilities prerequisites
+for both language and code outcomes rather than allowing coding throughput to
+stand in for understanding.
+
 These are public TRAIN-side development lanes; R5/R6 remain sealed.
 
 ## 13. Retired directions
