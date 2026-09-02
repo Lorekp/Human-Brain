@@ -546,7 +546,7 @@ class PersistentToolLearner:
             raise TypeError("episode requires an ObservationFrame")
         ObservationFrame(frame.blocks, frame.affordances, frame.sha256)
         prior_digest = self._model.training_digest
-        prompt = _prompt(frame)
+        prompt = prompt_for_frame(frame)
         expected_query = _query_sha256(
             prompt,
             prior_digest,
@@ -652,7 +652,12 @@ class PersistentToolLearner:
         )
 
 
-def _prompt(frame: ObservationFrame) -> str:
+def prompt_for_frame(frame: ObservationFrame) -> str:
+    """Render the canonical sensory prompt shared by growth and inference."""
+
+    if not isinstance(frame, ObservationFrame):
+        raise TypeError("prompt_for_frame requires an ObservationFrame")
+    ObservationFrame(frame.blocks, frame.affordances, frame.sha256)
     envelope = {
         "affordances": [
             {"input_schema": json.loads(item.input_schema_json), "name": item.name}

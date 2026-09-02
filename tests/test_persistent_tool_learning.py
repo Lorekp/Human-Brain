@@ -15,6 +15,7 @@ from humanbrain.persistent_tool_learning import (
     StopDecision,
     ToolAction,
     ToolAffordance,
+    prompt_for_frame,
 )
 
 
@@ -292,6 +293,15 @@ def test_learner_binds_an_explicit_generation_budget_into_inference() -> None:
 
     assert result.resolution == "neutral"
     assert model.max_new_tokens == 4096
+
+
+def test_training_can_use_the_same_public_prompt_renderer_as_inference() -> None:
+    sealed_frame = frame()
+    model = FakeModel("<stop>done</stop>")
+
+    PersistentToolLearner(model, FakeExecution()).episode(sealed_frame)
+
+    assert prompt_for_frame(sealed_frame) == model.prompt
 
 
 def test_authentication_rejects_nested_and_trace_tampering() -> None:
