@@ -193,45 +193,19 @@ or a hybrid. Research should determine that.
 
 The capabilities that matter are:
 
-### Acquisition
-
-Learn useful information from text, code, interaction, tools, and future data
-sources without requiring full retraining.
-
-### Episodic retention
-
-Preserve particular experiences and source-specific details when abstraction
-would lose important information.
-
-### Semantic consolidation / compression
-
-Turn many related observations into shorter reusable models, concepts, rules,
-relations, or predictive structures.
-
-A strong learner should not need one independent memory for every superficially
-different example when a common explanation exists.
-
-### Retrieval
-
-Current cognitive state should make relevant prior knowledge available. Retrieval
-must ultimately be learned and context-sensitive rather than a fixed keyword
-lookup.
-
-### Provenance and confidence
-
-Knowledge should retain enough information to distinguish observation, inference,
-source, uncertainty, and conflict. Internet-scale knowledge contains errors and
-contradictions; superhuman knowledge requires revision, not blind accumulation.
-
-### Revision
-
-New evidence must be able to update or supersede old knowledge without requiring
-an architectural reset.
-
-### Transfer
-
-Knowledge and abstractions learned in one context should improve learning and
-reasoning elsewhere when the underlying structure is shared.
+- **Acquisition** — learn useful information from text, code, interaction, tools,
+  and future data sources without requiring full retraining.
+- **Episodic retention** — preserve particular experiences and source-specific
+  details when abstraction would lose important information.
+- **Semantic consolidation / compression** — turn many related observations into
+  shorter reusable models, concepts, rules, relations, or predictive structures.
+- **Retrieval** — make relevant prior knowledge available from current cognitive
+  state through learned, context-sensitive retrieval.
+- **Provenance and confidence** — distinguish observation, inference, source,
+  uncertainty, and conflict.
+- **Revision** — update or supersede old knowledge when new evidence arrives.
+- **Transfer** — reuse knowledge and abstractions when underlying structure is
+  shared across contexts.
 
 A useful conceptual target is:
 
@@ -251,9 +225,6 @@ raw experience
                   v
          confirmation or revision
 ```
-
-The current reading/persistent-memory work and the broader learning experiments
-should be judged partly by whether they move toward this capability.
 
 ---
 
@@ -301,8 +272,55 @@ agency exist would mostly create hand-built theater.
 
 For each gate: freeze the relevant architecture, use fresh tasks, require causal
 ablations/controls, keep the spent cohort immutable, and treat failure as
-localization of a general mechanism. These gates should guide research without
-prematurely blocking current R3/R4 experimentation or the G0 falsification work.
+localization of a general mechanism.
+
+---
+
+# Integrated capability forcing gate
+
+Micro-gates validate localized mechanisms; they should **not** become the main
+generator of the roadmap. R3/R4 should now be driven primarily by a persistent
+learner facing larger public TRAIN-only integrated workloads.
+
+Default research loop:
+
+```text
+integrated task fails
+  -> localize the missing general computation
+  -> test the smallest reusable mechanism with a causal micro-gate
+  -> integrate it
+  -> return to the larger workload
+```
+
+As a working allocation, bias roughly **3:1 toward integrated capability work
+versus isolated mechanism gates**. Adjust when a failure genuinely needs tighter
+localization.
+
+The integrated workload should require combinations of task/language
+understanding, repository/source inspection, memory and knowledge retrieval,
+tool use, editing, real execution/test feedback, multi-step correction, and
+learning across tasks. It should be difficult enough that failure modes remain
+visible.
+
+Do not quietly supply target spans, answer-bearing diagnostic classes, candidate
+patches, prebuilt repaired sources, or task-specific ontologies unless that
+scaffold is itself the explicit object of study.
+
+**Gate before opening protected R5/R6:** on fresh public TRAIN-only mesoscopic
+tasks, one persistent learner should:
+
+1. solve materially harder end-to-end problems than current microfixtures;
+2. improve later behavior using prior task experience without reset or full replay;
+3. recover from at least some failures over multiple steps;
+4. preserve STOP/uncertainty behavior and causal-ablation discipline.
+
+Track the **failure distribution and capability curve**, not only pass rate. The
+larger workload should identify bottlenecks; micro-gates should test proposed
+general mechanisms. Avoid endless sequences that merely add one more candidate,
+position, relation, or ontology unless the integrated workload demonstrates that
+it is the bottleneck.
+
+This gate does not authorize opening protected DEV/M0 evidence early.
 
 ---
 
@@ -439,268 +457,23 @@ feedback into increasingly autonomous software capability.
 Important milestones include:
 
 - robust TRAIN generalization without family-specific patches;
-- family-disjoint coding transfer;
-- prompt-only coding performance;
-- debugging and revision loops;
+- mesoscopic integrated repository/task competence;
 - persistent learning across tasks;
+- debugging and multi-step revision loops;
 - knowledge-assisted coding using previously learned documentation, codebases,
-  algorithms, and general world knowledge.
+  algorithms, and general world knowledge;
+- family-disjoint coding transfer;
+- prompt-only coding performance.
 
-Prior adjudicative narrow evidence (`f586e990f9441dacb5d51437dd99d6d5e57adfa5`, result
-`494e3a4696f2464cc4ed7d4ba9defd4c614d2fc13a5afc921a7a77741d9ef37c`): in one
-frozen synthetic two-action iterator cohort, a single immutable continual lexical
-memory sequentially incorporated four host-supplied successful lessons without
-replaying or mutating prior checkpoints, promoted both candidate-provided actions
-under the two-task/two-source quorum, and on two fresh exact-factor-overlap
-paraphrases issued physical recalls whose prebound Rust sources each compiled once,
-ran once on a trusted Windows host, and matched an oracle first opened after both
-executions. This is lexical association/reuse plus authenticated source custody and
-execution—not live consequence learning, source synthesis, semantic understanding,
-debugging, transfer, SWE performance, or intelligence.
+Narrow mechanism evidence already banks useful pieces of consequence learning,
+replanning, memory, factor/cue binding, source-context learning, edit
+materialization, and bounded occurrence localization. These are **components**,
+not proof of end-to-end software intelligence. Exact evidence and current
+frontiers live in `benchmark-status.md`, `program-map.md`, and experiment history.
 
-Current public-development successor (`a364d0a`, result
-`692c8545408de2d71b803aaec39f9e392b909f35ccf3f0b524b23a97da9814a6`):
-on one exact rooted task and input batch, a promoted prebound Rust action was
-selected and executed, received an authenticated public failure, and was inhibited
-in an immutable successor; the revised physical race selected the other promoted
-action, whose execution passed and produced another immutable successor. A
-plasticity-off control preserved the original winner, an unrelated exact-factor
-probe retained its action, and two evaluation executions completed before one
-oracle callback. The retained external transcript authenticates input, authority,
-binding, release, execution, feedback, lesson, and checkpoint custody. This is
-same-task binary consequence correction and persistence under exact lexical-factor
-reuse—not source synthesis, semantics, diagnosis, generic debugging, transfer,
-SWE performance, or intelligence. The next mechanism question was whether two
-independent failed-to-successful episodes can consolidate a generic parameterized
-edit schema that transfers to a fresh family.
-
-Banked C1 public-development successor (`f2de425`, exact spec
-`3dedb36b3ae4c7a916e1626a32b598f9ed1ee7c23cde2b9a1bc10dabea3d6609`): two
-independently rooted failed→successful Rust episodes selected and consolidated
-one member of a fixed lexical token-edit bank. One source alone physically
-abstained; both sources produced a singleton promoted schema. On a structurally
-fresh `for`-loop source, that frozen schema bound a new query-local donor and
-proposed one identifier replacement without replaying either training source.
-Four training sources compiled and ran once each; the fresh proposal was not
-executed. The trusted test authenticated its full result in memory but did not
-retain the result root/transcript, so the external attestation is explicitly
-weaker and records that limitation. This is selection and reuse inside a supplied
-lexer/ontology/schema bank—not learned semantics, diagnosis, proposal
-correctness, C2 transfer, SWE performance, or intelligence. The next mechanism
-question was whether the frozen schema's proposal survived execution and public
-consequence on a fresh family without C1 receipt reuse.
-
-Current C2 public-development successor: one spent preregistered cohort rebuilt
-the frozen lexical mechanism from two new content-root-distinct
-synthetic episodes rather than importing C1 checkpoint or receipt lineage. On a
-held-out source, the unedited baseline compiled and failed; the exact schema-3
-one-token proposal compiled and passed, with one oracle opening only after both
-executions and no retry or alternative execution. This establishes executable
-proposal behavior for that frozen mechanism and cohort. It is not consequence
-learning because the transfer consequence did not update the checkpoint, nor
-does it establish C1→C2 checkpoint-lineage continuation, learned semantics,
-diagnosis, generic repair, protected transfer, SWE performance, or intelligence.
-
-The first preregistered C3 consequence-reuse spend (`9a4bbd3`, spec
-`18294356e4d71553a42603d2fc8ab48f8d94f232b269b5ae55515ab7de32fd2e`)
-terminated `ABORT_C3_TOKEN_EDIT_OUTCOME_REUSE_V1` before its first compile or
-run because sandboxed Rust discovery emitted a path-canonicalization warning.
-Commit `49a3365` retains the terminal abort; the cohort was not retried.
-
-A separately preregistered fresh C3b successor (`d731343`, spec
-`0905ff1099e38db828edf86135ba64c94b2e21ad63ea991db7c937ad0e6e9576`)
-terminated `PASS_C3B_TOKEN_EDIT_OUTCOME_REUSE_V1` at result root
-`6344b4c32810a65423908da89c392182f68c0610ab2a0dbba22844db0b9099a5`.
-One seed failed→successful pair gave supplied schema 3 one support tick. Normal
-adaptation stopped; explicit exploration issued the schema-3 proposal, its
-selected Rust execution passed, and one immutable consequence-policy advance
-followed. On one fresh evaluation source, both the parent and an outcome-gate-off
-successor stopped; the normal successor became READY at score four, and its
-proposal passed where the baseline failed. Evaluation did not update policy.
-
-This supports one narrow case of executed, caller-attested proposal consequence
-changing reusable state inside a fixed lexer/ontology/schema bank. It is not
-schema discovery, semantic diagnosis, generic repair, protected transfer, SWE
-performance, intelligence, or evidence against an external model.
-
-The first preregistered C4 failure-replan spend (`6727a51`, spec
-`19e88590e6158f69e7c995b0af018aecc2973a14721394e5d74e762e819ffbc9`)
-terminated `ABORT_C4_TOKEN_EDIT_FAILURE_REPLAN_V1` before its first run because
-the successfully compiled selected Rust source emitted default
-`path_statements` warnings. Commit `f2c524a` retains the terminal abort; the
-cohort was not retried.
-
-A fresh 30-root-excluded C4b successor (`7413af7`, spec
-`ab3954e583d95b4975c495a02e0e38509b1681c2025239381031bfaf3216bd08`)
-terminated `PASS_C4B_TOKEN_EDIT_FAILURE_REPLAN_V2` at result root
-`bcbbc882256917bacccb492c03841813b351f7a2ccc56b000d1cf0fff31f3434`.
-In one supplied competing two-schema context, a real selected A failure wrote
-one durable inhibitory tick. The resulting A/B scores tied at 4/4 and stopped;
-one deterministic context-bound refractory pulse changed only the exact failed
-action's effective retry score to 2/4, so the unchanged tuple physically
-reraced to B. B passed and left durable A/B scores of 4/6. On a fresh source,
-the parent selected failing A while the final successor selected passing B,
-with no evaluation update.
-
-This is one narrow case of an authenticated failure causing one physically
-reraced alternate selection and reusable revision inside a supplied schema
-bank. It is not learned tokenization or schema discovery, diagnosis, inference
-that the rival is correct, search or source synthesis, generic debugging,
-protected transfer, SWE performance, or intelligence.
-
-A fresh C5 successor (`989c4b3`, spec
-`52b62afa4df5f1c0d1f9e35bbfcd3872afc6fc74939e3e3be91a3f985b4d6d2c`)
-terminated `PASS_C5_RUSTC_DIAGNOSTIC_FACTOR_RECOMBINATION_V1` at result root
-`3b3571b17ef5c5763ba8eda9ee4972334589f00e4cc4316b33cd90e79b0df1bd`.
-Two public TRAIN consequences taught the diagonal `E0425`/first-half and
-`E0308`/second-half associations inside one generic four-hypothesis factorized
-memory. On a fresh `E0425`/second-half diagnostic, the parent and one-lesson
-checkpoints stopped while the two-lesson checkpoint physically selected and
-successfully executed the previously unselected prebound cross hypothesis.
-Outcome-off and both single-axis controls stopped, and evaluation did not update
-memory.
-
-This is one narrow case of factor-component recombination under real rustc
-diagnostics, selected-only execution, and caller-attested output feedback. The
-error-code and relative source-half cues, their projection, the `2x2` ontology,
-and the hypothesis-to-repair catalogue were supplied. It is therefore not
-learned localization or diagnosis, repair-schema discovery, source synthesis,
-generic debugging, protected transfer, SWE performance, or intelligence. The
-next mechanism question remained whether reusable event components or bindings
-can be learned from causal consequences instead of being declared by the host.
-
-A fresh C6 successor (`767f885`, spec
-`b514ff417680b0a7238e705b9cfa110bf1b9c94c1b32f16a3ad084e64792d394`)
-terminated `PASS_C6_RUSTC_DIAGNOSTIC_FACTOR_MATERIALIZATION_V1` at result root
-`47bc6cba38eca01b8b61ce0c5086fd712d5090a7c01f95f7a071d55c5a9f471f`.
-It repeated the two diagonal TRAIN consequences on three new original sources,
-but removed C5's prebuilt repaired-source catalogue. Each authority retained
-zero materializations/releases through factor routing; only after H00, H11, or
-the fresh cross H01 was selected did one generic authority compose one supplied
-operation and target into an edit, release one source, and execute it. The
-evaluation authority was bound to the final learned checkpoint and forbade
-exploration; evaluation did not update memory.
-
-This is one narrow case of learned factor selection preceding authenticated
-source materialization. It is not evidence that the system learned the rustc
-cues, source-half projection, factor ontology, edit operations, target markers,
-localization, diagnosis, repair correctness, general source synthesis,
-debugging, transfer, SWE performance, or intelligence. C6 closes a custody and
-actuation gap, not the larger learning gap: reusable components and bindings
-still need to be acquired from causal experience instead of supplied by the
-host.
-
-A fresh C7 successor (`ec5280c`, spec
-`7f90c6c393cc0a7a3a731672b7b24737c58621dfa892f8dff3745538a992939d`)
-terminated `PASS_C7_RUSTC_DIAGNOSTIC_OPERATOR_ACTION_LEARNING_V1` at result root
-`71b58d208f9edc373983c44e54d7febbfda115c342895f1ae9aacf02feb2631b`.
-It replaced C6's cohort-local opaque operator components with authenticated
-concrete DECLARE/REPLACE action identities owned by a host actuator catalogue.
-Two public TRAIN consequences associated the supplied `E0425` and `E0308` cues
-with those action identities. On a fresh `E0425`/second-half diagnostic, the
-final memory normally selected the training-unexecuted DECLARE×second-target
-combination before one materialization, compile, run, and passing output check;
-evaluation did not update memory.
-
-This is one narrow case of consequence-conditioned selection of a concrete
-action identity plus compositional reuse with a supplied target component. It
-is not action or operation discovery, learned edit semantics, learned target
-markers, cue discovery, learned cue-to-axis routing, localization, diagnosis,
-synthesis, debugging, transfer, SWE performance, or intelligence. The next
-binding experiment must remove the supplied cue-axis partition with identifiable
-evidence: two diagonal lessons cannot distinguish the intended routing from a
-swapped one, so use a crossed/full grid for binding-only evidence or expand an
-axis to preserve a held-out composition.
-
-A fresh C8 successor (`6f97d4d`, spec
-`a6372e986cec76b04e9e9efd412cc6e3ae5c1ba862566801acf2f8c02d3f9fda`)
-terminated `PASS_C8_RUSTC_DIAGNOSTIC_UNORDERED_CUE_BINDING_V1` at result root
-`7aa8981b01609b1e74acc8878e26ba2ed210ccd8e6fa29bab86451323ad00c2a`.
-It flattened the supplied diagnostic-code and source-region cues into one
-unordered opaque set, uniformly projected every cue to both action axes, and
-used a complete four-lesson grid to learn identifiable cue×axis×component
-associations. Parent and diagonal checkpoints stopped on both crosses; after
-three lessons only the observed H01 cross was ready; the full checkpoint
-normally selected H01 and H10 on two fresh sources at exact `12/8/8/4` scores.
-Both selected edits executed before one shared oracle opening and passed, while
-outcome-off/single-axis controls stopped and evaluation made no memory update.
-
-This is one narrow case of consequence-conditioned binding reuse from an
-unordered set of supplied cues. It is not held-out composition because all four
-hypotheses were trained, and it is not cue extraction, action or target
-discovery, learned edit semantics, localization, diagnosis, synthesis,
-debugging, transfer, SWE performance, or intelligence. The next mechanism
-question was whether raw diagnostic/source structure could yield a reusable cue
-or target binding through causal experience instead of host extraction.
-
-A fresh C9 successor (`01cd7ce`, spec
-`fe726852dc632bba8b64aa6e85bf7ead8d4033bdc82d2b91de148b27f86c0bfc`)
-terminated `PASS_C9_RUSTC_DIAGNOSTIC_LEXICAL_CUE_LEARNING_V1` at result root
-`901b8d87ed69021d0d7bcf74074310351c0a860aa89453a0cc696018785796db`.
-It removed the explicit rustc error-code cue: the environment adapter supplied
-only hashed lowercase ASCII-alphanumeric word unigrams from the authenticated
-parent diagnostic message plus the existing relative source-region cue. A full
-four-lesson grid learned cue×axis×component associations. Incomplete-grid
-checkpoints selected wrong same-class targets and were retained as unexecuted
-negative telemetry. The final checkpoint selected fresh H01 and H10 edits at
-raw score maps `42/38/18/14` and `18/14/10/6`, ordered as correct /
-same-action-wrong-target / wrong-action-same-target / both-wrong. For E0425,
-TRAIN∩EVAL contained exactly the six stable template words; the fresh identifier
-contributed `u=0`. Both edits executed before one shared oracle and passed.
-Outcome-off, message-only, and region-only controls stopped, and evaluation made
-no memory update.
-
-This is one narrow case of consequence-conditioned binding reuse from stable
-parent-message word-unigram roots. Because all four H00/H11/H01/H10
-consequences were trained, it is not held-out composition. The tokenization
-rule, source-region cue, primary diagnostic span, operation/target bank, target
-markers, exploration answers, edit semantics, and outputs remained supplied. It
-is therefore not learned tokenization or word meaning, localization, diagnosis,
-synthesis, generic debugging, transfer, SWE performance, or intelligence. The
-next question is whether bounded generic source-context events around the
-authenticated primary span can replace the supplied FIRST/SECOND root and learn
-which still-supplied target marker they bind to under counterbalanced
-consequences. Learned source parsing and target-marker discovery remain later.
-
-The first preregistered C10 source-context spend (`55bee8b`, spec
-`6ebf21e45798066f2a0e6f57d12571cdf15b5b12cba859b7e4fd28c7febb2c97`)
-used mechanisms `54939b2`, `2c7d350`, and `4ba0cf5`, then permanently
-terminated `ABORT_C10_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1`.
-All six original diagnostics compiled, but authentication rejected the real
-E0308 parent because rustc supplied a `function defined here` child note while
-the cohort required `children == []`. Evidence commit `c091872` retains the
-terminal document and reservation; the cohort must never be rerun.
-
-No cue envelope, learning update, materialization, selected execution, or
-oracle opening occurred. This is an overstrict diagnostic-contract abort, not
-evidence for or against source-context cue learning and not repair, transfer,
-SWE, or intelligence evidence. The next admissible step is a separately
-preregistered, root-distinct C10b with a parent-only projection that
-deliberately ignores child diagnostics.
-
-A fresh C10b successor (`40c0287`, spec
-`2e74503179f8c237837cf030091a14b050b8e9c40061277f8c3f263e18a6f2ed`)
-terminated `PASS_C10B_RUSTC_DIAGNOSTIC_SOURCE_CONTEXT_CUE_LEARNING_V1` at
-result root
-`1148701f113011ac82d5c0362138032b359a2d21550a753c5a3921a9cf34034e`.
-The complete four-lesson grid trained 25 message-plus-line cues into 100
-binding rows. All seven fresh evaluation-only cues retained `u=0`; the final
-memory selected H01 and H10 at raw `50/46/26/22` and `26/22/18/14`, with H01
-physically normalized to `36/32/12/8`. Both evaluation edits executed before
-one shared oracle, all six selected outputs passed, causal controls behaved as
-preregistered, and evaluation did not update memory.
-
-This is one narrow case of consequence-conditioned binding from authenticated
-rustc parent-message and complete primary-line generic word unigrams, replacing
-the supplied FIRST/SECOND cue. It is not held-out composition because all four
-hypotheses were trained. Target markers and occurrence bindings, primary spans,
-tokenization, operation bank, exploration choices, edits, and outputs remained
-supplied. It is not semantics, localization, diagnosis, synthesis, debugging,
-transfer, SWE performance, or intelligence. C11 should learn target
-occurrence/localization instead of receiving marker bindings.
-
-Current internal prompt/factor/occurrence representations are provisional.
-Replace them if a better learning formulation is found.
+R4 development should now use the **Integrated capability forcing gate** as the
+primary source of architectural pressure rather than extending a micro-gate
+sequence indefinitely.
 
 ## G0 — Cross-domain falsification gate — REQUIRED FOR STRONG GENERALITY CLAIMS
 
@@ -723,7 +496,8 @@ G0 is a claim/evidence gate, not a requirement to prioritize vision or robotics.
 Use the protected coding split to test whether the developed software/language
 system transfers beyond the TRAIN families.
 
-No tuning on the protected result.
+Do not open it until the integrated capability forcing gate is satisfied and the
+architecture to be evaluated is frozen. No tuning on the protected result.
 
 ## R6 — Prompt-only coding ladder — SEALED
 
@@ -790,15 +564,17 @@ current architecture.
 
 Near-term work should optimize for progress on these questions:
 
-1. **Can the current language/coding system learn the remaining missing
-   relationships from causal data rather than host annotations?**
-2. **Can learned representations become reusable abstractions instead of growing
+1. **Can one persistent learner improve across larger integrated TRAIN tasks, with
+   failures in those tasks driving the next architectural questions?**
+2. **Can the language/coding system learn missing relationships and useful
+   abstractions from causal data rather than host annotations/ontologies?**
+3. **Can learned representations become reusable abstractions instead of growing
    one new mechanism per coding pattern?**
-3. **Can persistent memory evolve from exact retention toward useful knowledge
+4. **Can persistent memory evolve from exact retention toward useful knowledge
    consolidation, retrieval, provenance, and revision?**
-4. **Can coding competence become continual—learning from repositories,
+5. **Can coding competence become continual—learning from repositories,
    documentation, executions, and prior tasks without full retraining?**
-5. **Do proposed improvements look useful for arbitrary structured experience,
+6. **Do proposed improvements look useful for arbitrary structured experience,
    even while coding remains the primary testbed?**
 
 When deciding between two implementation directions, prefer the one that teaches
