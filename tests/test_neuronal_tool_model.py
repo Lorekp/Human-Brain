@@ -6,7 +6,10 @@ from dataclasses import fields, replace
 
 import humanbrain.neuronal_tool_model as neuronal_tool_module
 import pytest
-from humanbrain.causal_sequence_pointer import CausalSequenceConfig
+from humanbrain.causal_sequence_pointer import (
+    CausalSequenceConfig,
+    CausalSequencePointerModel,
+)
 from humanbrain.neuronal_tool_model import (
     NeuronalToolModel,
     NeuronalToolModelError,
@@ -22,6 +25,7 @@ from humanbrain.persistent_tool_learning import (
     ToolAction,
     ToolAffordance,
 )
+from humanbrain.pointer_binding import SymbolInventory, materialize, pointerize
 from humanbrain.tokenizer import TokenizerConfig
 
 _STOP_TEXT = ("</tool>", "</stop>")
@@ -106,6 +110,137 @@ class _Execution:
             succeeded=self.succeeded,
             observations=(ObservationBlock.seal("environment", "measured"),),
         )
+
+
+def test_tool_transport_keeps_envelope_stable_across_permuted_inventories() -> None:
+    public_output = _tool_output("alpha")
+    wire = neuronal_tool_module._encode_action_transport(public_output)
+
+    assert wire == (
+        '[[84,79,79,76,1],[109,101,97,115,117,114,101],[[[112,114,111,98,101],"alpha"]]]'
+    )
+    assert all(
+        identifier not in wire for identifier in ("tool", "arguments", "name", "measure", "probe")
+    )
+
+    learned_inventory = SymbolInventory(("arguments", "name", "measure", "probe", "alpha"))
+    permuted_inventory = SymbolInventory(("probe", "measure", "name", "arguments", "omega"))
+    pointer_wire = pointerize(wire, learned_inventory)
+    assert "<@4>" in pointer_wire
+
+    live_wire = materialize(pointer_wire, permuted_inventory)
+    assert neuronal_tool_module._decode_action_transport(live_wire) == _tool_output("omega")
+    for raw_output in (
+        "plain raw output",
+        "<stop>wait</stop>",
+        "[1,2]",
+        f" {_tool_output('alpha')} ",
+    ):
+        assert neuronal_tool_module._encode_action_transport(raw_output) == raw_output
+        assert neuronal_tool_module._decode_action_transport(raw_output) == raw_output
+
+
+@pytest.mark.parametrize(
+    "malformed_wire",
+    (
+        "[[84,79,79,76,1],[256],[]]",
+        "[[84,79,79,76,1],[195],[]]",
+        "[[84.0,79,79,76,1],[109],[]]",
+        "[[84,79,79,76,true],[109],[]]",
+        "[[84,79,79,76,1],[109],[[[97],1],[[97],2]]]",
+        "[[84,79,79,76,1],[109],[]] ",
+    ),
+)
+def test_malformed_tool_transport_fails_closed(
+    malformed_wire: str,
+) -> None:
+    with pytest.raises(NeuronalToolModelError, match="transport is malformed"):
+        neuronal_tool_module._decode_action_transport(malformed_wire)
+
+
+def test_malformed_tool_transport_failure_is_traced_and_resolvable() -> None:
+    model = NeuronalToolModel.grow(
+        (
+            _row(
+                "emit broken wire",
+                "[[84,79,79,76,1],[256],[]]",
+                "broken-wire",
+            ),
+        ),
+        _config(max_roles=16),
+    )
+
+    with pytest.raises(NeuronalToolModelError, match="transport is malformed"):
+        model.infer(
+            "emit broken wire",
+            max_new_tokens=32,
+            stop_text=_STOP_TEXT,
+        )
+
+    trace = model.last_trace
+    assert trace is not None
+    assert trace.materialized_output_sha256 is None
+    assert trace.materialization_error == "invalid_action_transport"
+    model.resolve_failure(trace.query_sha256, "malformed transport rejected")
+
+
+def test_success_uses_inner_wire_while_public_trace_stays_canonical(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    frame = _frame()
+    prompt = _tool_prompt(frame)
+    public_output = _tool_output("crystal")
+    expected_wire = neuronal_tool_module._encode_action_transport(public_output)
+    model = NeuronalToolModel.grow(
+        (_row(prompt, public_output, "wire-custody"),),
+        _config(),
+    )
+    learned_outputs: list[str] = []
+    original_learn = CausalSequencePointerModel.learn
+
+    def record_learn(
+        inner: CausalSequencePointerModel,
+        inner_prompt: str,
+        inner_output: str,
+        inventory: SymbolInventory,
+        *,
+        cue_text: str,
+        strength: float = 1.0,
+    ) -> object:
+        learned_outputs.append(inner_output)
+        return original_learn(
+            inner,
+            inner_prompt,
+            inner_output,
+            inventory,
+            cue_text=cue_text,
+            strength=strength,
+        )
+
+    monkeypatch.setattr(CausalSequencePointerModel, "learn", record_learn)
+    result = PersistentToolLearner(model, _Execution()).episode(frame)
+
+    assert result.generation_trace.raw_output == public_output
+    assert isinstance(result.decision, ToolAction)
+    assert learned_outputs == [expected_wire]
+    assert model.last_trace is not None
+    assert model.last_trace.query_sha256 == result.generation_trace.model_query_sha256
+    assert model.last_trace.materialized_output_sha256 == neuronal_tool_module._digest(
+        "humanbrain-neuronal-materialized-output-v1",
+        public_output,
+    )
+    assert model.last_trace.underlying_trace.raw_output != public_output
+
+    prior_digest = model.training_digest
+    trace = model.last_trace
+    monkeypatch.setattr(
+        neuronal_tool_module,
+        "_ACTION_TRANSPORT_POLICY",
+        "synthetic-tampered-policy",
+    )
+    assert model.training_digest != prior_digest
+    with pytest.raises(ValueError, match="trace is not authentic"):
+        replace(trace)
 
 
 def test_fresh_names_and_variable_cardinality_copy_through_neuronal_races() -> None:

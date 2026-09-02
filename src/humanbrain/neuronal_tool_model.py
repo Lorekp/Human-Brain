@@ -29,10 +29,13 @@ __all__ = [
 ]
 
 
-_MODEL_SCHEMA = "humanbrain-neuronal-tool-model-v1"
+_MODEL_SCHEMA = "humanbrain-neuronal-tool-model-v2"
 _LEXICAL_POLICY = "first-occurrence-ascii-identifier-v1"
 _CHANNEL_POLICY = "raw-utf8-decimal-state-v1+lexical-pointer-copy-v1"
+_ACTION_TRANSPORT_POLICY = "canonical-tool-action-utf8-byte-list-v1"
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+_TOOL_ACTION = re.compile(r"<tool>(\{.*\})</tool>", re.DOTALL)
+_ACTION_TRANSPORT_TAG = (84, 79, 79, 76, 1)
 _RESERVED_POINTER = "<@"
 _PHYSICAL_STOP_NOT_MATERIALIZED = "physical_stop_not_materialized"
 
@@ -92,6 +95,7 @@ class NeuronalToolTrace:
             )
         )
         payload = {
+            "action_transport_policy": _ACTION_TRANSPORT_POLICY,
             "inventory_cardinality": len(inventory.symbols),
             "inventory_sha256": inventory.sha256,
             "materialization_error": materialization_error,
@@ -110,11 +114,12 @@ class NeuronalToolTrace:
             materialized_output_sha256=materialized_output_sha256,
             materialization_error=materialization_error,
             underlying_trace=underlying_trace,
-            sha256=_digest("humanbrain-neuronal-tool-trace-v1", payload),
+            sha256=_digest("humanbrain-neuronal-tool-trace-v2", payload),
         )
 
     def __post_init__(self) -> None:
         payload = {
+            "action_transport_policy": _ACTION_TRANSPORT_POLICY,
             "inventory_cardinality": self.inventory_cardinality,
             "inventory_sha256": self.inventory_sha256,
             "materialization_error": self.materialization_error,
@@ -144,7 +149,7 @@ class NeuronalToolTrace:
             )
             or not stop_status_valid
             or not emitted_status_valid
-            or self.sha256 != _digest("humanbrain-neuronal-tool-trace-v1", payload)
+            or self.sha256 != _digest("humanbrain-neuronal-tool-trace-v2", payload)
         ):
             raise ValueError("neuronal tool trace is not authentic")
 
@@ -177,6 +182,7 @@ class NeuronalToolLearningUpdate:
             else _digest("humanbrain-tool-consequence-v1", consequence_text)
         )
         payload = {
+            "action_transport_policy": _ACTION_TRANSPORT_POLICY,
             "consequence_sha256": consequence_sha256,
             "polarity": polarity,
             "prior_training_digest": prior_training_digest,
@@ -192,13 +198,14 @@ class NeuronalToolLearningUpdate:
             training_digest=training_digest,
             underlying_update=underlying_update,
             provenance_sha256=_digest(
-                "humanbrain-neuronal-tool-update-v1",
+                "humanbrain-neuronal-tool-update-v2",
                 payload,
             ),
         )
 
     def __post_init__(self) -> None:
         payload = {
+            "action_transport_policy": _ACTION_TRANSPORT_POLICY,
             "consequence_sha256": self.consequence_sha256,
             "polarity": self.polarity,
             "prior_training_digest": self.prior_training_digest,
@@ -212,7 +219,7 @@ class NeuronalToolLearningUpdate:
             or not self.prior_training_digest
             or not self.training_digest
             or (self.polarity == "neutral") != (self.consequence_sha256 is None)
-            or self.provenance_sha256 != _digest("humanbrain-neuronal-tool-update-v1", payload)
+            or self.provenance_sha256 != _digest("humanbrain-neuronal-tool-update-v2", payload)
         ):
             raise ValueError("neuronal tool learning update is not authentic")
 
@@ -224,7 +231,8 @@ class _PendingEmission:
     inner_cue: str
     inventory: SymbolInventory
     pointer_output: str
-    raw_output: str | None
+    inner_output: str | None
+    public_output: str | None
     selected_stop: bool
 
 
@@ -263,7 +271,7 @@ class NeuronalToolModel:
         prepared = tuple(
             CausalSequenceTrainingExample(
                 prompt=_copy_channel(row.prompt),
-                output=row.output,
+                output=_encode_action_transport(row.output),
                 inventory=_lexical_inventory(row.prompt, cfg.max_roles),
                 cue_text=_semantic_channel(row.prompt),
                 provenance_id=row.provenance_id,
@@ -278,6 +286,7 @@ class NeuronalToolModel:
             _MODEL_SCHEMA,
             {
                 "inner_training_digest": self._inner.training_digest,
+                "action_transport_policy": _ACTION_TRANSPORT_POLICY,
                 "channel_policy": _CHANNEL_POLICY,
                 "lexical_policy": _LEXICAL_POLICY,
                 "max_roles": self._config.max_roles,
@@ -343,7 +352,8 @@ class NeuronalToolModel:
             inner_cue=inner_cue,
             inventory=inventory,
             pointer_output=pointer_output,
-            raw_output=pointer_output if underlying_trace.selected_stop else None,
+            inner_output=pointer_output if underlying_trace.selected_stop else None,
+            public_output=pointer_output if underlying_trace.selected_stop else None,
             selected_stop=underlying_trace.selected_stop,
         )
         if underlying_trace.selected_stop:
@@ -358,7 +368,7 @@ class NeuronalToolModel:
             return provisional
 
         try:
-            raw_output = materialize(pointer_output, inventory)
+            inner_output = materialize(pointer_output, inventory)
         except (TypeError, ValueError) as error:
             self._last_trace = NeuronalToolTrace._seal(
                 provisional.query_sha256,
@@ -371,10 +381,22 @@ class NeuronalToolModel:
             raise NeuronalToolModelError(
                 "neuronal output could not be materialized against its prompt inventory"
             ) from error
+        try:
+            public_output = _decode_action_transport(inner_output)
+        except NeuronalToolModelError:
+            self._last_trace = NeuronalToolTrace._seal(
+                provisional.query_sha256,
+                inventory,
+                pointer_output,
+                None,
+                "invalid_action_transport",
+                underlying_trace,
+            )
+            raise
         emission = ModelEmission.seal(
             prompt,
             prior_digest,
-            raw_output,
+            public_output,
             selected_stop=False,
             max_new_tokens=max_new_tokens,
             stop_text=stop_text,
@@ -385,7 +407,7 @@ class NeuronalToolModel:
             emission.query_sha256,
             inventory,
             pointer_output,
-            raw_output,
+            public_output,
             None,
             underlying_trace,
         )
@@ -395,7 +417,8 @@ class NeuronalToolModel:
             inner_cue=inner_cue,
             inventory=inventory,
             pointer_output=pointer_output,
-            raw_output=raw_output,
+            inner_output=inner_output,
+            public_output=public_output,
             selected_stop=False,
         )
         return emission
@@ -418,18 +441,20 @@ class NeuronalToolModel:
         if pending.selected_stop:
             raise NeuronalToolModelError("physical STOP cannot be resolved as success")
         if (
-            pending.raw_output is None
+            pending.inner_output is None
+            or pending.public_output is None
             or pointerize(
-                pending.raw_output,
+                pending.inner_output,
                 pending.inventory,
             )
             != pending.pointer_output
+            or _decode_action_transport(pending.inner_output) != pending.public_output
         ):
             raise RuntimeError("cached neuronal emission lost pointer custody")
         prior_digest = self.training_digest
         inner_update = self._inner.learn(
             pending.inner_prompt,
-            pending.raw_output,
+            pending.inner_output,
             pending.inventory,
             cue_text=pending.inner_cue,
             strength=float(strength),
@@ -512,6 +537,99 @@ class NeuronalToolModel:
                 "resolution does not match the pending neuronal tool query"
             )
         return pending
+
+
+def _encode_action_transport(output: str) -> str:
+    """Replace one canonical public tool envelope with its stable inner wire."""
+
+    match = _TOOL_ACTION.fullmatch(output)
+    if match is None:
+        return output
+    try:
+        command = json.loads(match.group(1))
+        valid = (
+            isinstance(command, dict)
+            and set(command) == {"arguments", "name"}
+            and isinstance(command["name"], str)
+            and isinstance(command["arguments"], dict)
+            and _canonical_json(command) == match.group(1)
+        )
+    except (json.JSONDecodeError, OverflowError, TypeError, ValueError):
+        return output
+    if not valid:
+        return output
+
+    argument_rows = [
+        [_utf8_bytes(key), value] for key, value in sorted(command["arguments"].items())
+    ]
+    return _canonical_json([_ACTION_TRANSPORT_TAG, _utf8_bytes(command["name"]), argument_rows])
+
+
+def _decode_action_transport(output: str) -> str:
+    """Decode one authentic inner wire and reject malformed wire candidates."""
+
+    transport_tag = list(_ACTION_TRANSPORT_TAG)
+    looks_like_wire = output.lstrip().startswith(f"[{_canonical_json(transport_tag)},")
+    try:
+        wire = json.loads(output)
+    except (json.JSONDecodeError, OverflowError, TypeError, ValueError):
+        if looks_like_wire:
+            raise NeuronalToolModelError("neuronal action transport is malformed") from None
+        return output
+    tag_matches = (
+        isinstance(wire, list)
+        and bool(wire)
+        and isinstance(wire[0], list)
+        and len(wire[0]) == len(transport_tag)
+        and wire[0] == transport_tag
+    )
+    if tag_matches and any(type(byte) is not int for byte in wire[0]):
+        raise NeuronalToolModelError("neuronal action transport is malformed")
+    if not tag_matches:
+        return output
+    try:
+        canonical_wire = _canonical_json(wire)
+    except (OverflowError, TypeError, ValueError):
+        raise NeuronalToolModelError("neuronal action transport is malformed") from None
+    if canonical_wire != output or len(wire) != 3 or not isinstance(wire[2], list):
+        raise NeuronalToolModelError("neuronal action transport is malformed")
+    try:
+        name = _text_from_utf8_bytes(wire[1])
+        arguments: dict[str, object] = {}
+        keys: list[str] = []
+        for row in wire[2]:
+            if not isinstance(row, list) or len(row) != 2:
+                raise ValueError("transport argument row is malformed")
+            key = _text_from_utf8_bytes(row[0])
+            keys.append(key)
+            arguments[key] = row[1]
+    except (TypeError, UnicodeDecodeError, ValueError):
+        raise NeuronalToolModelError("neuronal action transport is malformed") from None
+    if keys != sorted(keys) or len(keys) != len(arguments):
+        raise NeuronalToolModelError("neuronal action transport is malformed")
+    return f"<tool>{_canonical_json({'arguments': arguments, 'name': name})}</tool>"
+
+
+def _utf8_bytes(text: str) -> list[int]:
+    return list(text.encode("utf-8"))
+
+
+def _text_from_utf8_bytes(value: object) -> str:
+    if not isinstance(value, list) or any(
+        type(byte) is not int or not 0 <= byte <= 255 for byte in value
+    ):
+        raise ValueError("transport text must be one UTF-8 byte list")
+    return bytes(value).decode("utf-8")
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
 
 
 def _lexical_inventory(prompt: str, max_roles: int) -> SymbolInventory:
