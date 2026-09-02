@@ -411,6 +411,13 @@ Development now returns to a fresh V9 repository stream rather than extending
 a microgate series. The immutable V8 artifact SHA-256 is
 `adee84be37609f03eca023817571b53a434662aee4f5455a90d9ae3a18ccb9b3`.
 
+The exact-chain scale profile reaches 283.7 ms median for 4,096 atoms; a direct
+loop over the same first-spike primitive consumes 230.2 ms. The highest-value
+post-V9 optimization is therefore a batched native sequential-race API, not a
+change to the learned representation. It must return every neuronal winner and
+spike time so the existing STOP/EOS causality and trace dependencies remain
+identical.
+
 ### Coding
 
 `PASS_PUBLIC_TYPED_SEMANTIC_SIMPLE_SWE_TRAIN_BRIDGE_V1` is the current

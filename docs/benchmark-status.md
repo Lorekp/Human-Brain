@@ -324,6 +324,17 @@ for the causal sequence model and
 `15c6cb6e96f0b18f589cd2f38d1b23332d82b9ae4254d37bacfa8d5fa5699049`
 for the neuronal tool bridge.
 
+A read-only punctuation-chain profile localized the next scale cost without
+changing those sources: 256, 1,024, and 4,096 learned atoms replayed in median
+62.1, 93.4, and 283.7 ms, with 258, 1,026, and 4,098 physical trace steps.
+Growth took 0.414, 1.789, and 6.777 seconds. At 4,096 atoms, the matched direct
+first-spike loop consumed 230.2 ms, about 81% of end-to-end inference, while
+peak traced Python allocation was 2.339 MiB. The performance frontier is thus
+the per-atom NumPy/native call boundary, not trace storage. After fresh V9
+evidence, the narrow optimization candidate is a compiled sequential exact-chain
+race that preserves each winner, spike time, tonic-STOP competition, EOS, and
+trace dependency.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment

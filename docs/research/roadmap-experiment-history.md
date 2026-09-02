@@ -2363,6 +2363,17 @@ and interface-transport boundaries exposed by V8 but says nothing yet about
 novel patch semantics. The next evidence comes from a separately authored,
 fresh V9 integrated TRAIN stream.
 
+A subsequent read-only scale characterization used punctuation-only exact
+chains so tokenizer atom counts were unambiguous. Median replay was 62.1 ms for
+256 atoms, 93.4 ms for 1,024, and 283.7 ms for 4,096; growth took 0.414, 1.789,
+and 6.777 seconds respectively. At 4,096 atoms, repeated direct first-spike
+calls accounted for 230.2 ms, about 81% of total replay, and traced peak Python
+allocation was only 2.339 MiB. This localizes a performance rather than a
+cognitive failure: a future compiled sequential exact-chain race can amortize
+the call boundary if it preserves winner, spike-time, tonic-STOP, EOS, and
+dependency parity. It should follow rather than perturb the frozen V9 source
+evaluation.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:
