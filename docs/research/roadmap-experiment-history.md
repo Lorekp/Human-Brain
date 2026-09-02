@@ -2489,6 +2489,45 @@ infrastructure/custody result, not a passed integrated capability gate. V10 is
 immutable and must not be rerun or tuned; it licenses no protected, Simple-SWE,
 SWE-bench, Gemma, Opus, or intelligence claim. R5/R6 remain sealed.
 
+### Raw-source motor stack and cue-free Python pilot
+
+V10's source-relative relational-action failure was followed by a new,
+unprotected construction lane rather than any V10 edit or rerun. Commit
+`c267958` learned source-relative recurrent motor programs; `6a18ac2` compiled
+successful token transformations into generic motor steps; `eab9e8d` learned
+raw-tape role binding; and `18e0b7d` exposed a composed controller whose public
+inference inputs are only context events and a complete source tape. The
+training compiler still observes a successful before/after trajectory, so this
+sequence banks a mechanism rather than autonomous program induction.
+
+Commit `0c4740b` then ran a public-TRAIN whole-workspace pilot. Commit `8d0a698`
+subsequently hardened its evaluator to reject path-only/empty-source actions and
+to require exact observable program output rather than exit status alone. Each
+task made one controller query over all issue tokens and every sorted repository
+file.
+Three fresh same-layout tasks with renamed identifiers, different paths, shifted
+positions, and non-source distractors failed real Python before the edit.
+Treatment emitted one live path plus a complete replacement composed only of
+token occurrences in the current workspace tape; all three passed real Python
+afterward. A fresh two-Python-file ambiguity collision-STOPped without editing.
+`BINDER_OFF`
+emitted nothing and binder-STOPped all four tasks. `TAPE_OFF` emitted nothing,
+tape-STOPped the three action tasks, and preserved the ambiguity binder STOP.
+
+The source-tape hot path was optimized without altering its scientific
+semantics. Commit `a99473b` measured a 26.2x batched first-spike improvement on
+4,096 independent rows. Commit `73929cf` added exact inverted occurrence-
+neighborhood scoring, and `2693901` integrated it into the binder, reducing an
+actual 4,096-token two-role query from 12.002 ms to 7.663 ms (1.57x).
+
+These results close only the narrow renamed same-layout exact-lexical
+source-grounding question. They do not show learned issue-to-file applicability,
+continual learning, semantic issue understanding, arbitrary editing, recovery,
+protected transfer, or model-level coding competence. The next causal target is
+an immutable replay-free successor learned from an authenticated execution
+success, followed by a later fresh task that treatment solves while a persistent
+no-update control STOPs. R5/R6 remain sealed.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

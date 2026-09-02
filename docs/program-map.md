@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after terminal V10 localized
-source-relative relational action transduction. Exact
+Maintained by the orchestrator. Updated 2026-09-02 after the cue-free raw-source
+pilot banked a narrow source-relative action path. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; V10 localizes source-relative relational action transduction]
+R4  Language/software continual coding               [OPEN; raw-source rewriting banked, replay-free growth next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -492,6 +492,37 @@ with embedded result digest
 `62dd215e991bf7621c53861b0bdb4322c2b99565abfd811442d95ba882f5a099`;
 commit `a7002f3` preserves it. Its status `COMPLETE` authenticates a complete
 infrastructure/evidence run, not software competence. R5/R6 remain sealed.
+
+The post-V10 raw-source stack now has four explicit layers. Commit `c267958`
+learns recurrent `REBIND/COPY/ADVANCE/EMIT/END` motor programs over live source
+occurrences. Commit `6a18ac2` compiles successful token-tape transformations
+into those generic motor traces at training time. Commit `eab9e8d` learns
+center-free role-neighborhood synapses and binds roles from raw source without
+caller-supplied cues. Commit `18e0b7d` composes them behind a public inference
+surface of only context events plus the complete source tape; only a neuronal
+`EMIT` opens exact consequence custody.
+
+Commit `0c4740b` integrates that stack with one lossless whole-workspace tape and
+real Python execution; `8d0a698` requires nonempty source and exact observable
+output so deletion cannot pass. Three renamed, same-layout single-Python-file
+repositories fail before, receive one live-path-plus-complete-source neuronal
+action whose emitted occurrences all come from the current tape, and pass
+afterward. A two-Python-file collision physically STOPs. Binder-off and tape-off
+controls emit nothing. This remains one fixed exact-context motor program with
+successful-trajectory supervision, not learned issue-to-file applicability,
+continual learning, or broad repository intelligence.
+
+Scale work is attached to the same path. Commit `a99473b` adds exact batched
+independent first-spike races (26.2x on the reproduced 4,096-row microcase),
+commit `73929cf` indexes occurrence neighborhoods, and commit `2693901`
+integrates that index into the raw role binder. The actual 4,096-token,
+two-role binder query fell from 12.002 ms to 7.663 ms (1.57x; about 36% lower
+latency) without changing checkpoint, race, output, or STOP semantics.
+
+The immediate construction seam is now persistent online structural growth:
+authenticate a successful execution, append only the newly required neuronal
+structure without reset or prior-example replay, preserve earlier behavior, and
+show a later fresh task improving over a persistent no-update control.
 
 ### Coding
 

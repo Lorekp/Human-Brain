@@ -438,6 +438,38 @@ is fresh public-TRAIN failure localization, not repository competence,
 continual improvement, protected transfer, Simple-SWE, SWE-bench, Gemma, Opus,
 or intelligence evidence. R5 and R6 remain sealed.
 
+### Cue-free whole-workspace source rewriting pilot
+
+Commit `0c4740b` banks the first executable response to V10's localized
+source-relative action gap; commit `8d0a698` closes the pilot's deletion/blank
+false-pass path by requiring nonempty emitted source and exact observable
+program output. Two successful public repositories train the raw source motor
+stack; each fresh task then supplies only lossless issue tokens and one canonical
+tape containing every sorted workspace file. There is one controller query per
+task and no caller-supplied target file, span, candidate patch, repaired fresh
+source, or task-family label.
+
+On three fresh renamed/path-shifted same-layout tasks, real Python fails before
+the edit, the controller emits a live path plus a complete replacement assembled
+entirely from occurrences in the current workspace tape, and real Python exits
+successfully with the exact expected output after the edit. A fourth task with
+two equally supported Python occurrences
+produces a physical binder collision-STOP and no workspace change. `BINDER_OFF`
+emits 0/4 and binder-STOPs 4/4; `TAPE_OFF` emits 0/4, with three tape STOPs and
+the same ambiguity binder STOP. The controller checkpoint remains unchanged
+during the neutral inference stream.
+
+This is a public-TRAIN mechanism/integration pilot, not a protected benchmark
+or a passed continual-learning gate. Exact lexical context, one fixed learned
+motor program, two teacher-visible successful before/after trajectories, line
+tokenization, and the training-only trajectory compiler remain scaffolding. It
+demonstrates renamed same-layout exact-lexical whole-workspace rewriting and
+causal neuronal custody, not learned issue-to-file applicability, language
+semantics, operation induction, multi-step correction, repository generality,
+SWE-bench competence, or comparison with Gemma or Opus. R5 and R6 remain sealed.
+The next integrated requirement is replay-free acquisition from authenticated
+execution success in one persistent learner.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment
