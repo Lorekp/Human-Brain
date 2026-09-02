@@ -2652,9 +2652,40 @@ synapses, 145/+194/339 learned-event bytes, and 64/+68/132 excitatory support
 ticks; the appended 68 ticks are 34 coactivation plus 34 positive-success.
 
 This is a replay-free one-update mechanism, not a passed persistent integrated
-gate. The next dispatched experiment is a genuinely fresh public-TRAIN session
-requiring two sequential authenticated updates in one learner and retention
-without reset or full replay. R5/R6 remain sealed.
+gate.
+
+Commit `34a7f52` then immutably spends the first persistent two-update
+multiscale Python session. Its single-run result SHA-256 is
+`5b2b561b7d4675bb04dd153e220ac9a42899aa706c2161262bb33f6e3883d267`.
+The authoritative result is `gate_passed=false` and 2/5 scored transfers, with
+two exact acquisition retries explicitly excluded. Although the runner carries
+an aspirational prose claim, it does not supersede the gate or score.
+
+Both new path-depth tasks initially physically STOP. Their independently
+authenticated successful transitions each APPEND a shard, and each exact retry
+then passes. A fresh flat-path transfer passes before either update and a
+distinct flat-path retention transfer passes after both. The fresh renamed
+one-directory transfer fails after update one, a second fresh one-directory
+transfer fails after update two, and the fresh two-directory transfer fails as
+well. Genuine equality-collision ambiguity, the no-update branch, and equality,
+propagation, and boundary controls physically STOP. Both append receipts report
+zero parent experience replay and zero retained raw full training sequences.
+
+Accounting begins at 4,381 cells, 33 synapses, 145 learned-event bytes, and 64
+support ticks. Append one adds 4,382/35/198/68, split 34+34 across coactivation
+and positive success. Append two adds 4,384/37/251/72, split 36+36. The final
+three-segment learner (three frozen shards) reports 13,147 cells, 105 synapses,
+594 learned-event bytes, and 204 excitatory support ticks. These remain explicit
+estimates.
+
+This failure localizes the difference between exact replay and transferable
+schema growth. Each append duplicates one success to express two learning phases;
+without independent variability, the binder treats a literal directory-prefix
+propagation event as invariant and stores it. Fresh renamed paths at the same
+depth then propagation-STOP. Variability-induced wildcard propagation learned
+from genuinely independent examples is the next causal seam and is already
+underway. V1 stays immutable; its correction requires a new successor and fresh
+cohort. R5/R6 remain sealed.
 
 ## 13. Retired directions
 

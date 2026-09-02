@@ -617,9 +617,50 @@ synaptic content. The exact accounting estimates are:
   ticks across two frozen shards.
 
 This remains replay-free growth mechanism evidence, not a two-update continual
-session. The next dispatched seam is a genuinely fresh persistent integrated
-public-TRAIN session with two sequential authenticated updates and retention.
-R5 and R6 remain sealed.
+session.
+
+### Persistent boundary-aware two-update V1
+
+Commit `34a7f52` immutably banks the single run of the first persistent
+multiscale Python session. Its exact result SHA-256 is
+`5b2b561b7d4675bb04dd153e220ac9a42899aa706c2161262bb33f6e3883d267`.
+The authoritative result is `gate_passed=false` with 2/5 scored transfers; two
+exact acquisition retries are sanity checks and are excluded from that score.
+The runner's aspirational human-readable claim string does not override those
+fields.
+
+Both new path-depth acquisition tasks initially physically STOP. Each
+evaluator-authenticated success then APPENDs one immutable shard, and both exact
+acquisition retries emit the correct edit. A fresh flat-path base transfer passes
+before growth and a distinct fresh flat-path retention task still passes after
+both updates. However, the fresh renamed one-directory transfer physically STOPs
+after update one, another fresh one-directory retention transfer STOPs after
+update two, and the fresh two-directory transfer also STOPs. Thus the result
+banks replay-free sequential acquisition and flat-skill retention, but no renamed
+path-depth transfer.
+
+Genuine equality-collision ambiguity, the `NO_UPDATE` initial/retry pair, and
+final `EQUALITY_OFF`, `PROPAGATION_OFF`, and `BOUNDARY_OFF` probes all physically
+STOP with no emitted edit. Both APPENDED receipts report one current source
+experience encoded in two phases, zero parent-experience replay, and zero
+retained raw full training sequences. The exact accounting estimates are:
+
+- seed: 4,381 cells, 33 synapses, 145 learned-event bytes, and 64 excitatory
+  support ticks;
+- append one: +4,382 cells, +35 synapses, +198 learned-event bytes, and +68
+  support ticks, split 34 coactivation plus 34 positive-success;
+- append two: +4,384 cells, +37 synapses, +251 learned-event bytes, and +72
+  support ticks, split 36 coactivation plus 36 positive-success;
+- final: 3 segments (frozen shards), 13,147 cells, 105 synapses, 594
+  learned-event bytes, and 204 excitatory support ticks.
+
+The localized failure is not boundary position or append-only custody. Duplicating
+one successful experience to obtain the two learning phases makes its literal
+directory-prefix propagation event appear invariant, so the shard memorizes it
+instead of learning a renamed same-depth schema. The next causal seam—already
+underway—is variability-induced wildcard propagation learned from genuinely
+independent examples. A correction must receive a new successor and fresh
+cohort. R5 and R6 remain sealed.
 
 ### Frozen recurrent-inventory continual V5 result
 

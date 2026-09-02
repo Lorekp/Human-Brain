@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after boundary-aware Python
-V2 passed and replay-free multiscale growth was retargeted to that controller.
-Exact scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-09-02 after persistent multiscale
+V1 appended two shards but failed renamed path-depth transfer. Exact scientific
+boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; V2 position transfer passed, persistent two-update session next]
+R4  Language/software continual coding               [OPEN; persistent transfer 2/5, wildcard propagation next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -606,11 +606,33 @@ base/append/successor accounting is respectively 4,381/+4,382/8,763 cells,
 support ticks; the append's 68 ticks split evenly into 34 coactivation and 34
 positive-success ticks.
 
-The immediate integrated seam is the dispatched genuinely fresh persistent
-public-TRAIN session: one boundary-aware append-only learner, two sequential
-authenticated updates without reset/full replay, and retention afterward.
-Failures there should drive generic abstraction and routing improvements rather
-than another supplied target or task family. R5/R6 remain sealed.
+Commit `34a7f52` then spends the first persistent two-update Python session once,
+with result SHA-256
+`5b2b561b7d4675bb04dd153e220ac9a42899aa706c2161262bb33f6e3883d267`.
+Both new path-depth tasks initially physically STOP; both authenticated updates
+APPEND without parent replay or retained raw full sequences, and both exact
+retries pass. Fresh flat-path transfer before growth and distinct flat-path
+retention after both updates pass. Scored transfer is nevertheless only 2/5:
+one fresh renamed one-directory transfer STOPs after update one, a second STOPs
+after update two, and the fresh two-directory task also STOPs. Equality-collision
+ambiguity, `NO_UPDATE`, `EQUALITY_OFF`, `PROPAGATION_OFF`, and `BOUNDARY_OFF`
+physically STOP. The result's aspirational claim string is not
+authoritative; `gate_passed=false` and 2/5 are.
+
+Estimated seed, append-one, append-two, and final state are respectively:
+4,381/+4,382/+4,384/13,147 cells; 33/+35/+37/105 synapses;
+145/+198/+251/594 learned-event bytes; and 64/+68/+72/204 excitatory support
+ticks. The appends divide their support evenly into 34+34 and 36+36
+coactivation/positive-success phases, and the final learner contains three
+segments (frozen shards).
+
+The immediate causal seam is variability-induced wildcard propagation from
+genuinely independent examples. V1's duplicated one-success two-phase training
+mistakes a literal directory-prefix propagation event for an invariant and
+therefore memorizes the acquisition path rather than a renamed same-depth
+schema. The replacement mechanism is underway; it must be integrated behind a
+newly frozen successor and evaluated on a genuinely fresh cohort. R5/R6 remain
+sealed.
 
 ### Coding
 
