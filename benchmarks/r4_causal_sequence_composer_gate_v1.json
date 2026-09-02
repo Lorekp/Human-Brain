@@ -1,0 +1,50 @@
+{
+  "claim_boundary": "fresh public opaque two-factor sequence-composition microfixture only; no language understanding, Python semantics, repository coding, persistent session, SWE, protected evaluation, biological fidelity, or broad capability",
+  "error": "pending consequence was not enforced exactly once",
+  "error_type": "RuntimeError",
+  "fixture_custody_sha256": "c98abb519bbd6a4cc81b291cb1c45d39f21b991752353cdd2f980f4a5af40439",
+  "fixture_payload_sha256": "28a0801a7e9b50e6235c6a793c9481c186e056ba0e8b48a3c332e31539c18e56",
+  "reservation_sha256": "771c64d95f7aa2974498c277301532f41e27158fd6c0152bc95bdc2fc8e40fbd",
+  "result_sha256": "440719267479926bde906fd550a44d51d080b19e43ae4cae6d8f25dfb7a6ada6",
+  "schema": "r4-causal-sequence-composer-gate-v1",
+  "source_custody": {
+    "cell_identity_source": {
+      "path": "src/humanbrain/human_cell_identity.py",
+      "sha256": "0050670ce4976c6163bc652eb33846d7118d6e2ca047eeeda1cf334efb8cc6f9"
+    },
+    "cells_source": {
+      "path": "src/humanbrain/cells.py",
+      "sha256": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6"
+    },
+    "cortex_source": {
+      "path": "src/humanbrain/cortex.py",
+      "sha256": "12438277d72b80c9a5ccab3a056ea2b967392a3b027ef770704213fa42294411"
+    },
+    "fixture_source": {
+      "path": "experiments/r4_integrated/causal_sequence_composer_fixture_v1.py",
+      "sha256": "135e522aa08bd568237a3414da3993ddc637b397c0e7c654fb8251faa15cabe8"
+    },
+    "gate_runner": {
+      "path": "experiments/r4_integrated/causal_sequence_composer_gate_v1.py",
+      "sha256": "f1f17b79db185d984c65c40d44eb94dcc447a4bff5aa94f76c3d44f47443c042"
+    },
+    "model_source": {
+      "path": "src/humanbrain/causal_sequence_pointer.py",
+      "sha256": "0c7eb90d253943b13f8670696224ef9747859c0fc44daf374e2685a8cd6a5116"
+    },
+    "pointer_inventory_source": {
+      "path": "src/humanbrain/pointer_binding.py",
+      "sha256": "0cf13bd13be981c27d1eb00c1feb3fa08039c543654b17b02fa1b0e07e38171d"
+    },
+    "race_bias_source": {
+      "path": "src/humanbrain/race_bias.py",
+      "sha256": "8d9dff4b65a28447840429d688d551d6b2bb8f963b97dcd95e0420c8c33a0100"
+    },
+    "tokenizer_source": {
+      "path": "src/humanbrain/tokenizer.py",
+      "sha256": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce"
+    }
+  },
+  "source_custody_sha256": "1f7e669c867d164a93761cec1ffc4044e73bdb04e64fef9133b761ed94074d3e",
+  "status": "FAIL_R4_CAUSAL_SEQUENCE_COMPOSER_GATE_V1"
+}

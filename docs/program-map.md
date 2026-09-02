@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after the terminal V7
-integrated result localized semantic proposal formation. Exact
+Maintained by the orchestrator. Updated 2026-09-02 after the terminal causal
+sequence V1 gate localized sparse fast-binding failure. Exact
 scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; V7 reaches execution; semantic recruitment next]
+R4  Language/software continual coding               [OPEN; V7 executes; causal V1 STOPs on fresh composition]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -339,6 +339,37 @@ All 79 decisions resolved exactly once; 45 authenticated resolution receipts
 were recorded and only the three treatment negatives changed learned state.
 This is fresh public-TRAIN failure localization, not continual improvement or
 SWE evidence. R5/R6 remain sealed.
+
+`CausalSequencePointerModel` is the first direct successor to that V7
+localization. It replaces finite whole-body owners with sparse learned
+next-chunk postings, one forward causal traversal, learned active-only role
+cursor races, online success growth, physical STOP, and contextual local NoGo.
+A selective `RECURRENCE_OFF` removes only recurrent postings. The source was
+audited and frozen at commit `5f0f89e`; six model tests plus three frozen
+fixture tests passed as developmental evidence.
+
+Its first independent causal gate did not pass. The exactly-once public opaque
+V1 spend selected physical STOP for the fresh held-out combination before any
+action became pending, then terminally failed the runner's pending-action
+assertion. The immutable artifact is
+`benchmarks/r4_causal_sequence_composer_gate_v1.json`, SHA-256
+`6f5042e1ffaa22b6cac563c565f677330ac84ce0ee3ce66379b9f10d2497c116`;
+runner/model hashes are
+`f1f17b79db185d984c65c40d44eb94dcc447a4bff5aa94f76c3d44f47443c042`
+and
+`0c7eb90d253943b13f8670696224ef9747859c0fc44daf374e2685a8cd6a5116`.
+The failure artifact authenticates its exception and full local behavior-source
+custody but did not retain the first trace, so no narrower failed-step claim is
+licensed.
+
+Static forensics make the leading hypothesis concrete: frequency-dependent
+chunk tokenization and absolute token steps prevented singleton held-out values
+from using the cross-context path guarded by `min_reuse_contexts=2`. V1 must not
+be rerun or tuned. The integrated lane now gets priority through a replacement
+mesoscopic V8 stream. A later fresh causal successor should learn supported
+contrastive cue-region-to-segment relations, preserve stable byte/segment time,
+and admit singleton values only through those reusable relations. This remains
+pre-SWE mechanism localization; R5/R6 stay sealed.
 
 ### Coding
 

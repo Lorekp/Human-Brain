@@ -176,6 +176,61 @@ structure. This remains fresh public-TRAIN failure localization only—not
 continual improvement, a completed mesoscopic gate, protected transfer,
 Simple-SWE, SWE-bench, Gemma, Opus, or intelligence. R5 and R6 remain sealed.
 
+### Terminal causal-sequence composition microgate V1
+
+The V7 successor was implemented as `CausalSequencePointerModel`: a sparse
+next-chunk learner with exact episodic traces, cross-context sensory,
+positional, and recurrent postings, learned role-cursor transitions, tonic
+physical STOP, one forward traversal, online success growth, and
+state/step/predecessor/token-local NoGo. `RECURRENCE_OFF` removes only recurrent
+postings; semantic and role races recruit active learned cells rather than the
+full vocabulary or role capacity. Six focused model tests and three frozen
+fixture tests passed. Those are developmental checks, not fresh evidence.
+
+The independently authored public opaque gate was then spent exactly once from
+source freeze commit `5f0f89e` and terminally failed at
+`FAIL_R4_CAUSAL_SEQUENCE_COMPOSER_GATE_V1`. The first treatment completion
+selected physical STOP on the fresh held-out combination, so it created no
+pending action. A second completion therefore did not raise the runner's
+expected pending-action error, and the gate terminated before its exactness,
+ablation, ambiguity, local-revision, and retention predicates. The immutable
+failure record has valid result custody but stores only the terminal exception,
+not the first completion trace; it therefore does not identify the failed
+output step or winning candidate beyond the physical-STOP fact.
+
+The artifact is
+[`r4_causal_sequence_composer_gate_v1.json`](../benchmarks/r4_causal_sequence_composer_gate_v1.json),
+2,531 bytes, SHA-256
+`6f5042e1ffaa22b6cac563c565f677330ac84ce0ee3ce66379b9f10d2497c116`.
+Its result digest is valid. Runner, model, fixture-source, fixture-payload, and
+fixture-custody SHA-256 values are respectively
+`f1f17b79db185d984c65c40d44eb94dcc447a4bff5aa94f76c3d44f47443c042`,
+`0c7eb90d253943b13f8670696224ef9747859c0fc44daf374e2685a8cd6a5116`,
+`135e522aa08bd568237a3414da3993ddc637b397c0e7c654fb8251faa15cabe8`,
+`28a0801a7e9b50e6235c6a793c9481c186e056ba0e8b48a3c332e31539c18e56`,
+and
+`c98abb519bbd6a4cc81b291cb1c45d39f21b991752353cdd2f980f4a5af40439`.
+The expanded behavior-source custody root is
+`1f7e669c867d164a93761cec1ffc4044e73bdb04e64fef9133b761ed94074d3e`.
+
+Static source forensics identify a likely representation interaction rather
+than a runner cause: frequency-grown phrase tokens gave repeated chunks one
+cell while singleton held-out chunks remained multi-byte sequences;
+`min_reuse_contexts=2` suppressed those singleton mappings, and absolute token
+steps misaligned unequal-length chunks. The missing trace makes the exact stop
+site unclaimable. This fresh result nevertheless falsifies transfer from the
+synthetic developmental composition cases to the opaque three-demonstration
+grid. It is not a coding, continual, mesoscopic, SWE, or intelligence result.
+The cohort must not be rerun or tuned.
+
+Per the roadmap's integrated-work bias, development returns to the redesigned
+V8 workload before another microgate. If that pressure confirms this bottleneck,
+the smallest live hypothesis is learned contrastive cue-region-to-segment
+relations: permit a singleton value only through a supported relation, keep
+stable byte time with learned chunk cells above it, and use segment-relative
+rather than absolute token state. Any causal retest requires a genuinely fresh
+cohort. R5 and R6 remain sealed.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment

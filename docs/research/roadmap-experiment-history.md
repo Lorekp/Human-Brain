@@ -2238,6 +2238,67 @@ falsification/localization only—not continual improvement, mesoscopic gate
 completion, protected transfer, Simple-SWE, SWE-bench, Gemma, Opus, or
 intelligence. R5/R6 remain sealed.
 
+### Sparse causal-sequence successor and terminal V1 microgate
+
+The next-chunk hypothesis became `CausalSequencePointerModel`. Successful
+episodes grow exact episodic traces plus sparse sensory, position, and recurrent
+postings. Only active learned cells join each semantic race alongside tonic
+STOP. Repeated pointer runs grow role-start, generic successor-offset, and
+live-successor-conditioned `CONTINUE`/`EXIT` distributions, so role binding is
+also a learned physical race. Successful emitted trajectories can grow online;
+one pending failed trajectory applies state/step/predecessor/token-local NoGo.
+`RECURRENCE_OFF` removes recurrent postings without bypassing the normal race.
+
+An independent audit found and closed pre-spend ceremonial-role, broad-ablation,
+dense-candidate, host-STOP, answer-bearing-feedback, runner/API, and dependency-
+custody defects. Six focused model checks plus three frozen-fixture checks then
+passed. The exact source was committed at `5f0f89e`; model and runner SHA-256
+values were
+`0c7eb90d253943b13f8670696224ef9747859c0fc44daf374e2685a8cd6a5116`
+and
+`f1f17b79db185d984c65c40d44eb94dcc447a4bff5aa94f76c3d44f47443c042`.
+
+The independently authored three-demonstration opaque composition cohort was
+then spent exactly once. It terminally wrote
+`FAIL_R4_CAUSAL_SEQUENCE_COMPOSER_GATE_V1`. The first treatment completion
+physically selected STOP on the fresh held-out cue combination and therefore
+left no pending action. The next call did not produce the expected pending-
+action exception, so the runner terminated before scoring the later ablation,
+ambiguity, negative-revision, and retention predicates. The failure artifact's
+result digest is valid, but its terminal exception record omitted the first
+trace. That observability defect prevents localization to a precise step or
+candidate; it did not cause the physical abstention.
+
+The immutable artifact is
+[`r4_causal_sequence_composer_gate_v1.json`](../../benchmarks/r4_causal_sequence_composer_gate_v1.json),
+2,531 bytes, SHA-256
+`6f5042e1ffaa22b6cac563c565f677330ac84ce0ee3ce66379b9f10d2497c116`.
+Fixture source, payload, and custody roots are
+`135e522aa08bd568237a3414da3993ddc637b397c0e7c654fb8251faa15cabe8`,
+`28a0801a7e9b50e6235c6a793c9481c186e056ba0e8b48a3c332e31539c18e56`,
+and
+`c98abb519bbd6a4cc81b291cb1c45d39f21b991752353cdd2f980f4a5af40439`;
+the expanded behavior-source custody root is
+`1f7e669c867d164a93761cec1ffc4044e73bdb04e64fef9133b761ed94074d3e`.
+
+Static source forensics localized the leading interaction. Repeated chunks
+became single phrase tokens while singleton desired chunks stayed multi-byte;
+the per-target two-context gate suppressed the singleton mappings, and
+absolute token steps misaligned unequal-length segments. The synthetic tests
+duplicated observations and used fixed-width atoms, hiding both constraints.
+Lowering the support threshold to one would merely admit accidental singleton
+correlations. The broader successor is dual-path promotion: retain repeated-
+context evidence, and add contrast-certified cue-region-to-output-residual
+relations learned from matched episodes whose shared background cancels.
+Stable byte time plus learned segment cells should replace frequency-dependent
+absolute token positions.
+
+V1 is immutable and must not be rerun or tuned. Per the roadmap's integrated
+bias, the redesigned V8 workload comes before another microgate. Only if its
+failure distribution confirms this bottleneck should a fresh, model-blind
+three-factor corner cohort test the contrastive relation path. No protected,
+SWE, Gemma, Opus, or intelligence claim is licensed; R5/R6 remain sealed.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:
