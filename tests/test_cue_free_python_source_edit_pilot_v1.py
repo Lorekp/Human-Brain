@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import fields
 
+import pytest
 from experiments.r4_integrated import cue_free_python_source_edit_pilot_v1 as pilot
 
 
@@ -60,3 +61,18 @@ def test_public_frames_are_lossless_and_contain_no_target_or_gold_field() -> Non
         )
         expected_python_files = 2 if task.task_id == "fresh-ambiguous-stop" else 1
         assert sum(item.path.endswith(".py") for item in task.files) == expected_python_files
+
+
+def test_path_only_is_rejected_and_blank_replacement_fails_behavior(tmp_path) -> None:
+    task = pilot.public_train_tasks()[0]
+    python_file = next(item for item in task.files if item.path.endswith(".py"))
+    path_tokens = pilot._path_tokens(python_file.path)
+
+    with pytest.raises(ValueError, match="at least one source token"):
+        pilot.apply_emitted_source_action(task.files, path_tokens)
+
+    blank_files = pilot.apply_emitted_source_action(
+        task.files,
+        (*path_tokens, *pilot._source_tokens(b"\n")),
+    )
+    assert not pilot._run_python_behavior(blank_files, tmp_path / "blank-workspace")

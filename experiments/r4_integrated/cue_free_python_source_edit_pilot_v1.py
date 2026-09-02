@@ -10,8 +10,9 @@ neuronal output before real Python execution.
 The pilot intentionally targets one source file among non-source repository
 evidence.  Exact lexical context, teacher-visible successful before/after
 experiences, and compiler-produced motor trajectories remain scaffolding.  A
-pass demonstrates grounded source rewriting, not operation induction,
-continual learning, or broad repository intelligence.
+pass demonstrates renamed same-layout motor-program transfer grounded in source
+rewriting, not operation induction, continual learning, or broad repository
+intelligence.
 """
 
 from __future__ import annotations
@@ -49,6 +50,7 @@ STATUS_PASS = "PASS_CUE_FREE_PYTHON_SOURCE_EDIT_PILOT_V1"
 STATUS_STOP = "STOP_CUE_FREE_PYTHON_SOURCE_EDIT_PILOT_V1"
 
 _CONTEXT_EVENT = b"prerequisite"
+_EXPECTED_PYTHON_STDOUT = b"ready"
 _ISSUE_TOKEN = re.compile(rb"[A-Za-z0-9_]+|[^A-Za-z0-9_]+")
 
 _WORKSPACE_START = b"\x00workspace:start"
@@ -224,12 +226,16 @@ def apply_emitted_source_action(
 ) -> tuple[WorkspaceFile, ...]:
     """Apply one neuronal ``(live path, complete source tape...)`` action."""
 
-    if type(emissions) is not tuple or len(emissions) < 2:
-        raise ValueError("emissions must contain a complete live path")
+    if type(emissions) is not tuple or len(emissions) < 3:
+        raise ValueError(
+            "emissions must contain a complete live path and at least one source token"
+        )
     path = _decode_path_tokens(emissions[0], emissions[1])
     if any(not token.startswith(_SOURCE_PREFIX) for token in emissions[2:]):
         raise ValueError("emitted replacement contains a non-source token")
     replacement = b"".join(token[1:] for token in emissions[2:])
+    if not replacement:
+        raise ValueError("emitted replacement must contain non-empty source")
 
     matches = sum(item.path == path for item in files)
     if matches != 1:
@@ -247,13 +253,17 @@ def apply_emitted_source_action(
 
 def _buggy_source(name: str) -> bytes:
     return (
-        f'{name}()\n\n\ndef {name}():\n    return "ready"\n'.encode("ascii")
+        f'print({name}(), end="")\n\n\ndef {name}():\n    return "ready"\n'.encode(
+            "ascii"
+        )
     )
 
 
 def _correct_source(name: str) -> bytes:
     return (
-        f'def {name}():\n    return "ready"\n{name}()\n\n\n'.encode("ascii")
+        f'def {name}():\n    return "ready"\nprint({name}(), end="")\n\n\n'.encode(
+            "ascii"
+        )
     )
 
 
@@ -376,17 +386,17 @@ def _run_python_behavior(files: tuple[WorkspaceFile, ...], root: Path) -> bool:
     )
     if not python_paths:
         return False
-    return all(
-        subprocess.run(
+    for path in python_paths:
+        execution = subprocess.run(
             [sys.executable, str(root.joinpath(*PurePosixPath(path).parts))],
             cwd=root,
             capture_output=True,
             check=False,
             timeout=10,
-        ).returncode
-        == 0
-        for path in python_paths
-    )
+        )
+        if execution.returncode != 0 or execution.stdout != _EXPECTED_PYTHON_STDOUT:
+            return False
+    return True
 
 
 def _run_arm(
@@ -559,8 +569,9 @@ def run_pilot(root: Path) -> dict[str, object]:
         "arms": arms,
         "checks": checks,
         "claim_boundary": (
-            "grounded whole-workspace lexical source rewriting with exact context and "
-            "successful-trajectory scaffolding; no continual learning or operation induction"
+            "renamed same-layout motor-program transfer through grounded whole-workspace "
+            "lexical source rewriting with exact context and successful-trajectory "
+            "scaffolding; no continual learning or operation induction"
         ),
         "fresh_task_count": len(tasks),
         "status": STATUS_PASS if all(checks.values()) else STATUS_STOP,
