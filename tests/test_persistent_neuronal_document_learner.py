@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hashlib import sha256
+
 from humanbrain.neuronal_relational_reader import RelationalReadingSuccess
 from humanbrain.opaque_document_event_tape import (
     OpaqueDocument,
@@ -8,6 +10,7 @@ from humanbrain.opaque_document_event_tape import (
 from humanbrain.persistent_neuronal_document_learner import (
     PersistentDocumentAblation,
     advance,
+    consolidate,
     start,
 )
 
@@ -498,3 +501,167 @@ def test_full_cobinding_learns_only_the_two_ordered_cross_surface_links() -> Non
         PersistentDocumentAblation.RELATION_CLEANUP_OFF,
     )
     assert any(race.stopped for race in cleanup_off.relation_cleanup_races)
+
+
+def test_neutral_document_consolidation_and_delayed_neuronal_recall() -> None:
+    first = advance(
+        start(),
+        _lesson("memory-frame-one", "forward", "axor", "iona", late=False),
+    )
+    trained = advance(
+        first.successor,
+        _lesson("memory-frame-two", "forward", "beviklong", "julo", late=True),
+    ).successor
+    assert trained.training_summary.promoted_schema_count == 1
+    assert trained.training_summary.consolidated_fact_count == 0
+
+    source_one = OpaqueDocument(
+        document_id=b"neutral/document/one",
+        provenance_id=b"neutral/provenance/one",
+        content=(
+            b"moru pavo orli. prax pavo ravi. "
+            b"moru tivo vexa. qem tivo orli."
+        ),
+    )
+    source_two = OpaqueDocument(
+        document_id=b"neutral/document/two",
+        provenance_id=b"neutral/provenance/two",
+        content=b"moru pavo orli.",
+    )
+    neutral_documents = (source_one, source_two)
+    trained_root = trained.checkpoint_sha256
+
+    consolidation_off = consolidate(
+        trained,
+        neutral_documents,
+        PersistentDocumentAblation.CONSOLIDATION_OFF,
+    )
+    assert consolidation_off.status == "STOP"
+    assert not consolidation_off.updated
+    assert consolidation_off.successor is trained
+    assert consolidation_off.successor_checkpoint_sha256 == trained_root
+    assert consolidation_off.stop_stage == "consolidation"
+    assert consolidation_off.stop_reason == "consolidation:tonic_stop"
+    assert consolidation_off.consolidation_cell_steps > 0
+    assert not consolidation_off.binding_races
+    assert any(
+        race.population == "persistent/consolidation/write_control"
+        for race in consolidation_off.races
+    )
+
+    stored_transition = consolidate(trained, neutral_documents)
+    stored = stored_transition.successor
+    assert stored_transition.status == "STORED"
+    assert stored_transition.updated
+    assert stored_transition.facts_added == 2
+    assert len(stored_transition.fact_sha256s) == 2
+    assert set(stored_transition.fact_sha256s) == set(stored.consolidated_fact_sha256s)
+    assert stored_transition.parent_episode_replay_count == 0
+    assert stored_transition.parent_mutation_count == 0
+    assert stored_transition.retained_raw_document_count == 0
+    assert stored_transition.consolidation_cell_steps > 0
+    assert stored_transition.consolidation_active_synapses > 0
+    assert stored_transition.binding_races
+    assert trained.checkpoint_sha256 == trained_root
+    assert trained.training_summary.consolidated_fact_count == 0
+    assert stored.training_summary.consolidated_fact_count == 2
+    assert stored.training_summary.neutral_episode_count == 1
+    assert stored.training_summary.retained_fact_lexical_byte_count == 8
+    assert stored.training_summary.retained_fact_provenance_digest_byte_count == 192
+    assert stored.training_summary.retained_raw_training_row_count == 0
+    assert stored.training_summary.retained_raw_document_count == 0
+    assert stored.training_summary.cumulative_consolidation_cell_steps > 0
+    two_source_fact = next(fact for fact in stored._facts if len(fact.sources) == 2)
+    assert len(two_source_fact.binding_trace_sha256s) == 4
+    assert all(len(source.binding_trace_sha256s) == 2 for source in two_source_fact.sources)
+    assert (
+        stored.training_summary.cumulative_binding_update_count
+        - trained.training_summary.cumulative_binding_update_count
+        == 12
+    )
+    assert {lexeme.identity_event for lexeme in stored._lexemes} == {b"orli", b"ravi"}
+    assert all(
+        not hasattr(fact, field)
+        for fact in stored._facts
+        for field in ("subject", "answer", "query", "documents", "content")
+    )
+    expected_provenance = {
+        sha256(source_one.provenance_id).hexdigest(),
+        sha256(source_two.provenance_id).hexdigest(),
+    }
+    assert set(stored.consolidated_provenance_sha256s) == expected_provenance
+
+    recall_documents = (_document("memory-recall", 0, "qira."),)
+    assert trained.respond(
+        b"Route moru through lumet.",
+        recall_documents,
+    ).decision == "STOP"
+    stored_root = stored.checkpoint_sha256
+    moru = stored.respond(b"Route moru through lumet.", recall_documents)
+    assert moru.decision == "EMIT"
+    assert moru.answer == b"orli"
+    assert moru.answer_source == "memory"
+    assert moru.answer_occurrence_event is None
+    assert moru.answer_document_id is None
+    assert moru.answer_provenance_id is None
+    assert moru.memory_fact_sha256 in stored.consolidated_fact_sha256s
+    assert set(moru.answer_provenance_sha256s) == expected_provenance
+    assert moru.physical_cell_steps > 0
+    populations = {race.population for race in moru.races}
+    assert "persistent/retrieval/unique_fact_selection" in populations
+    assert any("key_equality/event_equality" in population for population in populations)
+    assert "persistent/retrieval/lexical_motor" in populations
+    assert moru.relation_binding_races
+    assert moru.relation_cleanup_races
+    assert stored.checkpoint_sha256 == stored_root
+
+    prax = stored.respond(b"Route prax through lumet.", recall_documents)
+    assert prax.decision == "EMIT"
+    assert prax.answer == b"ravi"
+    qem = stored.respond(b"Route qem through lumet.", recall_documents)
+    assert qem.decision == "STOP"
+    assert qem.stop_stage == "retrieval"
+
+    retrieval_off = stored.respond(
+        b"Route moru through lumet.",
+        recall_documents,
+        PersistentDocumentAblation.RETRIEVAL_OFF,
+    )
+    assert retrieval_off.decision == "STOP"
+    assert retrieval_off.stop_stage == "retrieval"
+    assert retrieval_off.physical_cell_steps > 0
+    assert any(race.stopped for race in retrieval_off.relation_cleanup_races)
+    motor_off = stored.respond(
+        b"Route moru through lumet.",
+        recall_documents,
+        PersistentDocumentAblation.MOTOR_OFF,
+    )
+    assert motor_off.decision == "STOP"
+    assert motor_off.stop_stage == "motor"
+
+    duplicate = consolidate(stored, neutral_documents)
+    assert duplicate.status == "NO_UPDATE"
+    assert not duplicate.updated
+    assert duplicate.successor is stored
+    assert duplicate.facts_added == 0
+
+    conflict_source = OpaqueDocument(
+        document_id=b"neutral/document/conflict",
+        provenance_id=b"neutral/provenance/conflict",
+        content=b"moru pavo ulon.",
+    )
+    conflict_transition = consolidate(stored, (conflict_source,))
+    conflicted = conflict_transition.successor
+    assert conflict_transition.status == "STORED"
+    assert conflict_transition.facts_added == 1
+    conflict = conflicted.respond(b"Route moru through lumet.", recall_documents)
+    assert conflict.decision == "STOP"
+    assert conflict.stop_stage == "retrieval"
+    assert conflict.stop_reason == "retrieval:collision"
+    assert any(
+        race.population == "persistent/retrieval/unique_fact_selection"
+        and race.stopped
+        and race.stop_reason == "collision"
+        for race in conflict.races
+    )
+    assert stored.respond(b"Route moru through lumet.", recall_documents).answer == b"orli"

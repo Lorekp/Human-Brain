@@ -15,9 +15,16 @@ belong to the same learned association.  Every frame match, subject join,
 candidate competition, and motor verification remains a simulated-cell
 decision; missing or ambiguous evidence loses to a tonic STOP cell.
 
-This is narrow answer-supervised, one-shot co-binding-induced exact-surface
-association.  It is not free-form paraphrase understanding, document-only
-learning, revision, or multi-hop reasoning.
+Once a surface is learned, a separate neutral-document step may consolidate
+facts expressed on that surface without an answer label.  It retains only
+counted endpoint lexemes, provenance, occurrence digests, and a sparse neuronal
+fact assembly.  Later inference can retrieve that assembly when the source
+document is absent and emits the retained answer lexeme only after neuronal
+relation, subject, unique-fact, and motor decisions.
+
+This is narrow answer-supervised exact-surface acquisition followed by neutral
+fact consolidation and one-hop delayed recall.  It is not free-form paraphrase
+understanding, neutral-only surface induction, revision, or multi-hop reasoning.
 """
 
 from __future__ import annotations
@@ -49,6 +56,7 @@ from humanbrain.sparse_neuronal_role_filler import (
 __all__ = [
     "CLAIM_BOUNDARY",
     "FrozenPersistentNeuronalDocumentLearner",
+    "PersistentConsolidationTransition",
     "PersistentDocumentAblation",
     "PersistentDocumentDecision",
     "PersistentEvidenceChunk",
@@ -56,19 +64,22 @@ __all__ = [
     "PersistentLearningTransition",
     "PersistentNeuronalDocumentLearnerError",
     "advance",
+    "consolidate",
     "start",
 ]
 
 
 CLAIM_BOUNDARY = (
     "answer-supervised exact-surface one-hop continual learning plus one-shot "
-    "co-binding-induced exact-surface association; host training path compilation, "
-    "candidate enumeration, and sensory projection are scaffolding"
+    "co-binding-induced exact-surface association, neutral facts on learned surfaces, "
+    "and exact one-hop delayed recall; host training path compilation, candidate "
+    "enumeration, and sensory projection are scaffolding"
 )
 
 _MIN_PROMOTION_SUPPORT = 2
 _MAX_SCHEMAS = 64
 _MAX_EVIDENCE_CHUNKS = 256
+_MAX_CONSOLIDATED_FACTS = 1024
 _CONSTRUCTION_TOKEN = object()
 _SUBSTRATE = SparseNeuronalRoleFiller()
 
@@ -82,6 +93,12 @@ _QUERY_NAMESPACE = b"humanbrain.persistent-document.query.v1\0"
 _DECISION_NAMESPACE = b"humanbrain.persistent-document.decision.v1\0"
 _FILLER_CONTEXT_NAMESPACE = b"humanbrain.persistent-document.filler-context.v1\0"
 _SOURCE_CONTEXT_NAMESPACE = b"humanbrain.persistent-document.source-context.v1\0"
+_FACT_NAMESPACE = b"humanbrain.persistent-document.fact.v1\0"
+_FACT_SOURCE_NAMESPACE = b"humanbrain.persistent-document.fact-source.v1\0"
+_LEXEME_NAMESPACE = b"humanbrain.persistent-document.lexeme.v1\0"
+_FACT_FILLER_NAMESPACE = b"humanbrain.persistent-document.fact-filler.v1\0"
+_FACT_PROVENANCE_NAMESPACE = b"humanbrain.persistent-document.fact-provenance.v1\0"
+_NEUTRAL_EPISODE_NAMESPACE = b"humanbrain.persistent-document.neutral-episode.v1\0"
 
 
 class PersistentNeuronalDocumentLearnerError(ValueError):
@@ -97,6 +114,8 @@ class PersistentDocumentAblation(StrEnum):
     RELATION_CLEANUP_OFF = "relation_cleanup_off"
     ANSWER_SELECTION_OFF = "answer_selection_off"
     MOTOR_OFF = "motor_off"
+    CONSOLIDATION_OFF = "consolidation_off"
+    RETRIEVAL_OFF = "retrieval_off"
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,9 +160,14 @@ class PersistentLearningSummary:
     retained_pointer_count: int
     retained_active_cell_count: int
     retained_association_pointer_count: int
+    consolidated_fact_count: int
+    neutral_episode_count: int
+    retained_fact_lexical_byte_count: int
+    retained_fact_provenance_digest_byte_count: int
     cumulative_binding_update_count: int
     cumulative_learning_cell_steps: int
     cumulative_association_cell_steps: int
+    cumulative_consolidation_cell_steps: int
     cumulative_learning_active_synapses: int
     checkpoint_sha256: str
 
@@ -155,6 +179,10 @@ class PersistentDocumentDecision:
     answer_occurrence_event: bytes | None
     answer_document_id: bytes | None
     answer_provenance_id: bytes | None
+    answer_source: str | None
+    memory_fact_sha256: str | None
+    answer_document_sha256s: tuple[str, ...]
+    answer_provenance_sha256s: tuple[str, ...]
     schema_sha256: str | None
     completed_hops: int
     stop_stage: str | None
@@ -189,6 +217,28 @@ class PersistentLearningTransition:
     learning_active_synapses: int
     association_binding_races: tuple[SparseTransformRaceTrace, ...]
     association_cleanup_races: tuple[SparseCleanupRaceTrace, ...]
+    successor: FrozenPersistentNeuronalDocumentLearner
+
+
+@dataclass(frozen=True, slots=True)
+class PersistentConsolidationTransition:
+    status: str
+    updated: bool
+    parent_checkpoint_sha256: str
+    successor_checkpoint_sha256: str
+    fact_sha256s: tuple[str, ...]
+    facts_added: int
+    current_episode_count: int
+    parent_episode_replay_count: int
+    parent_mutation_count: int
+    retained_raw_document_count: int
+    retained_fact_lexical_byte_count: int
+    consolidation_cell_steps: int
+    consolidation_active_synapses: int
+    stop_stage: str | None
+    stop_reason: str | None
+    races: tuple[RelationalRaceTrace, ...]
+    binding_races: tuple[SparseTransformRaceTrace, ...]
     successor: FrozenPersistentNeuronalDocumentLearner
 
 
@@ -245,6 +295,45 @@ class _SurfaceAssociation:
     @property
     def learned_equivalence(self) -> bool:
         return self.query_schema_key_sha256 != self.document_schema_key_sha256
+
+
+@dataclass(frozen=True, slots=True)
+class _FactSource:
+    neutral_episode_sha256: str
+    document_id_sha256: str
+    provenance_id_sha256: str
+    subject_occurrence_sha256: str
+    answer_occurrence_sha256: str
+    custody_pointer: SparseBlockPointer
+    binding_trace_sha256s: tuple[str, str]
+    binding_cell_steps: int
+    binding_active_synapses: int
+    sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class _RetainedLexeme:
+    identity_event: bytes
+    pointer: SparseBlockPointer
+    sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class _ConsolidatedFact:
+    created_parent_checkpoint_sha256: str
+    document_schema_key_sha256: str
+    subject_sha256: str
+    answer_sha256: str
+    answer_lexeme_sha256: str
+    key_pointer: SparseBlockPointer
+    fact_pointer: SparseBlockPointer
+    sources: tuple[_FactSource, ...]
+    binding_trace_sha256s: tuple[str, ...]
+    consolidation_trace_sha256s: tuple[str, ...]
+    binding_cell_steps: int
+    consolidation_cell_steps: int
+    binding_active_synapses: int
+    sha256: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -382,6 +471,215 @@ def _association_record(
     if include_sha256:
         record["sha256"] = association.sha256
     return record
+
+
+def _fact_source_record(source: _FactSource, *, include_sha256: bool) -> dict[str, object]:
+    record: dict[str, object] = {
+        "answer_occurrence_sha256": source.answer_occurrence_sha256,
+        "binding_active_synapses": source.binding_active_synapses,
+        "binding_cell_steps": source.binding_cell_steps,
+        "binding_trace_sha256s": source.binding_trace_sha256s,
+        "custody_pointer": _pointer_record(source.custody_pointer),
+        "document_id_sha256": source.document_id_sha256,
+        "neutral_episode_sha256": source.neutral_episode_sha256,
+        "provenance_id_sha256": source.provenance_id_sha256,
+        "subject_occurrence_sha256": source.subject_occurrence_sha256,
+    }
+    if include_sha256:
+        record["sha256"] = source.sha256
+    return record
+
+
+def _lexeme_record(lexeme: _RetainedLexeme, *, include_sha256: bool) -> dict[str, object]:
+    record: dict[str, object] = {
+        "identity_event_hex": lexeme.identity_event.hex(),
+        "pointer": _pointer_record(lexeme.pointer),
+    }
+    if include_sha256:
+        record["sha256"] = lexeme.sha256
+    return record
+
+
+def _fact_record(fact: _ConsolidatedFact, *, include_sha256: bool) -> dict[str, object]:
+    record: dict[str, object] = {
+        "answer_lexeme_sha256": fact.answer_lexeme_sha256,
+        "answer_sha256": fact.answer_sha256,
+        "binding_active_synapses": fact.binding_active_synapses,
+        "binding_cell_steps": fact.binding_cell_steps,
+        "binding_trace_sha256s": fact.binding_trace_sha256s,
+        "consolidation_cell_steps": fact.consolidation_cell_steps,
+        "consolidation_trace_sha256s": fact.consolidation_trace_sha256s,
+        "created_parent_checkpoint_sha256": fact.created_parent_checkpoint_sha256,
+        "document_schema_key_sha256": fact.document_schema_key_sha256,
+        "fact_pointer": _pointer_record(fact.fact_pointer),
+        "key_pointer": _pointer_record(fact.key_pointer),
+        "sources": tuple(
+            _fact_source_record(source, include_sha256=True) for source in fact.sources
+        ),
+        "subject_sha256": fact.subject_sha256,
+    }
+    if include_sha256:
+        record["sha256"] = fact.sha256
+    return record
+
+
+def _make_lexeme(identity_event: bytes, pointer: SparseBlockPointer) -> _RetainedLexeme:
+    provisional = _RetainedLexeme(identity_event=identity_event, pointer=pointer, sha256="")
+    return replace(
+        provisional,
+        sha256=_digest(_LEXEME_NAMESPACE, _lexeme_record(provisional, include_sha256=False)),
+    )
+
+
+def _make_fact_source(
+    *,
+    neutral_episode_sha256: str,
+    edge: _reader._EdgeCandidate,
+    fact_pointer: SparseBlockPointer,
+) -> tuple[_FactSource, tuple[SparseTransformRaceTrace, SparseTransformRaceTrace]]:
+    if edge.source.document_id is None or edge.source.provenance_id is None:
+        raise RuntimeError("neutral fact edge lost its source provenance")
+    document_pointer = _project_digest(
+        _FACT_PROVENANCE_NAMESPACE + b"document\0",
+        edge.source.document_id,
+    )
+    provenance_pointer = _project_digest(
+        _FACT_PROVENANCE_NAMESPACE + b"provenance\0",
+        edge.source.provenance_id,
+    )
+    source_binding = _SUBSTRATE.bind(document_pointer, provenance_pointer)
+    if source_binding.pointer is None:
+        raise RuntimeError("unablated neutral source binding selected tonic STOP")
+    custody_binding = _SUBSTRATE.bind(fact_pointer, source_binding.pointer)
+    if custody_binding.pointer is None:
+        raise RuntimeError("unablated neutral custody binding selected tonic STOP")
+    races = (source_binding.trace, custody_binding.trace)
+    provisional = _FactSource(
+        neutral_episode_sha256=neutral_episode_sha256,
+        document_id_sha256=_bytes_sha256(edge.source.document_id),
+        provenance_id_sha256=_bytes_sha256(edge.source.provenance_id),
+        subject_occurrence_sha256=_bytes_sha256(edge.source.occurrence_event),
+        answer_occurrence_sha256=_bytes_sha256(edge.destination.occurrence_event),
+        custody_pointer=custody_binding.pointer,
+        binding_trace_sha256s=(source_binding.trace.sha256, custody_binding.trace.sha256),
+        binding_cell_steps=sum(race.physical_cell_steps for race in races),
+        binding_active_synapses=sum(race.active_synapses for race in races),
+        sha256="",
+    )
+    return (
+        replace(
+            provisional,
+            sha256=_digest(
+                _FACT_SOURCE_NAMESPACE,
+                _fact_source_record(provisional, include_sha256=False),
+            ),
+        ),
+        races,
+    )
+
+
+def _make_consolidated_fact(
+    *,
+    parent_checkpoint_sha256: str,
+    neutral_episode_sha256: str,
+    document_schema: _SurfaceSchema,
+    edge: _reader._EdgeCandidate,
+    consolidation_races: tuple[RelationalRaceTrace, ...],
+) -> tuple[
+    _ConsolidatedFact,
+    _RetainedLexeme,
+    tuple[SparseTransformRaceTrace, ...],
+]:
+    subject_pointer = _project_digest(
+        _FACT_FILLER_NAMESPACE + b"subject\0",
+        edge.source.identity_event,
+    )
+    answer_pointer = _project_digest(
+        _FACT_FILLER_NAMESPACE + b"answer\0",
+        edge.destination.identity_event,
+    )
+    key_binding = _SUBSTRATE.bind(document_schema.surface_pointer, subject_pointer)
+    if key_binding.pointer is None:
+        raise RuntimeError("unablated neutral fact key binding selected tonic STOP")
+    fact_binding = _SUBSTRATE.bind(key_binding.pointer, answer_pointer)
+    if fact_binding.pointer is None:
+        raise RuntimeError("unablated neutral fact binding selected tonic STOP")
+    source, source_races = _make_fact_source(
+        neutral_episode_sha256=neutral_episode_sha256,
+        edge=edge,
+        fact_pointer=fact_binding.pointer,
+    )
+    binding_races = (key_binding.trace, fact_binding.trace, *source_races)
+    lexeme = _make_lexeme(edge.destination.identity_event, answer_pointer)
+    provisional = _ConsolidatedFact(
+        created_parent_checkpoint_sha256=parent_checkpoint_sha256,
+        document_schema_key_sha256=document_schema.key_sha256,
+        subject_sha256=_bytes_sha256(edge.source.identity_event),
+        answer_sha256=_bytes_sha256(edge.destination.identity_event),
+        answer_lexeme_sha256=lexeme.sha256,
+        key_pointer=key_binding.pointer,
+        fact_pointer=fact_binding.pointer,
+        sources=(source,),
+        binding_trace_sha256s=(key_binding.trace.sha256, fact_binding.trace.sha256),
+        consolidation_trace_sha256s=tuple(race.sha256 for race in consolidation_races),
+        binding_cell_steps=sum(race.physical_cell_steps for race in binding_races),
+        consolidation_cell_steps=(
+            sum(race.physical_cell_steps for race in consolidation_races)
+            + sum(race.physical_cell_steps for race in binding_races)
+        ),
+        binding_active_synapses=sum(race.active_synapses for race in binding_races),
+        sha256="",
+    )
+    return (
+        replace(
+            provisional,
+            sha256=_digest(_FACT_NAMESPACE, _fact_record(provisional, include_sha256=False)),
+        ),
+        lexeme,
+        binding_races,
+    )
+
+
+def _merge_fact_source(
+    old: _ConsolidatedFact,
+    candidate: _ConsolidatedFact,
+) -> tuple[_ConsolidatedFact, bool]:
+    if (
+        old.key_pointer.sha256 != candidate.key_pointer.sha256
+        or old.fact_pointer.sha256 != candidate.fact_pointer.sha256
+        or len(candidate.sources) != 1
+    ):
+        raise ValueError("only an identical fact assembly can merge provenance")
+    source = candidate.sources[0]
+    if any(existing.sha256 == source.sha256 for existing in old.sources):
+        return old, False
+    provisional = replace(
+        old,
+        sources=(*old.sources, source),
+        binding_trace_sha256s=(
+            *old.binding_trace_sha256s,
+            *candidate.binding_trace_sha256s,
+        ),
+        consolidation_trace_sha256s=(
+            *old.consolidation_trace_sha256s,
+            *candidate.consolidation_trace_sha256s,
+        ),
+        binding_cell_steps=old.binding_cell_steps + candidate.binding_cell_steps,
+        consolidation_cell_steps=(
+            old.consolidation_cell_steps + candidate.consolidation_cell_steps
+        ),
+        binding_active_synapses=(
+            old.binding_active_synapses + candidate.binding_active_synapses
+        ),
+        sha256="",
+    )
+    return (
+        replace(
+            provisional,
+            sha256=_digest(_FACT_NAMESPACE, _fact_record(provisional, include_sha256=False)),
+        ),
+        True,
+    )
 
 
 def _make_schema(
@@ -695,12 +993,16 @@ def _persistent_state_record(
     schemas: tuple[_SurfaceSchema, ...],
     associations: tuple[_SurfaceAssociation, ...],
     chunks: tuple[PersistentEvidenceChunk, ...],
+    facts: tuple[_ConsolidatedFact, ...],
+    lexemes: tuple[_RetainedLexeme, ...],
 ) -> dict[str, object]:
     return {
         "associations": tuple(
             _association_record(association, include_sha256=True) for association in associations
         ),
         "chunks": tuple(_chunk_record(chunk, include_sha256=True) for chunk in chunks),
+        "facts": tuple(_fact_record(fact, include_sha256=True) for fact in facts),
+        "lexemes": tuple(_lexeme_record(lexeme, include_sha256=True) for lexeme in lexemes),
         "schemas": tuple(_schema_record(schema, include_sha256=True) for schema in schemas),
     }
 
@@ -709,6 +1011,8 @@ def _retained_raw_artifact_counts(
     schemas: tuple[_SurfaceSchema, ...],
     associations: tuple[_SurfaceAssociation, ...],
     chunks: tuple[PersistentEvidenceChunk, ...],
+    facts: tuple[_ConsolidatedFact, ...],
+    lexemes: tuple[_RetainedLexeme, ...],
 ) -> tuple[int, int]:
     def visit(value: object) -> tuple[int, int]:
         rows = int(type(value) is RelationalReadingSuccess)
@@ -725,19 +1029,25 @@ def _retained_raw_artifact_counts(
                 documents += child_documents
         return rows, documents
 
-    return visit((schemas, associations, chunks))
+    return visit((schemas, associations, chunks, facts, lexemes))
 
 
 def _retained_pointers(
     schemas: tuple[_SurfaceSchema, ...],
     associations: tuple[_SurfaceAssociation, ...],
     chunks: tuple[PersistentEvidenceChunk, ...],
+    facts: tuple[_ConsolidatedFact, ...],
+    lexemes: tuple[_RetainedLexeme, ...],
 ) -> tuple[SparseBlockPointer, ...]:
     return (
         *(schema.surface_pointer for schema in schemas),
         *(association.link_pointer for association in associations),
         *(chunk.filler_context_pointer for chunk in chunks),
         *(chunk.source_context_pointer for chunk in chunks),
+        *(fact.key_pointer for fact in facts),
+        *(fact.fact_pointer for fact in facts),
+        *(source.custody_pointer for fact in facts for source in fact.sources),
+        *(lexeme.pointer for lexeme in lexemes),
     )
 
 
@@ -745,25 +1055,35 @@ def _retained_canonical_state_bytes(
     schemas: tuple[_SurfaceSchema, ...],
     associations: tuple[_SurfaceAssociation, ...],
     chunks: tuple[PersistentEvidenceChunk, ...],
+    facts: tuple[_ConsolidatedFact, ...],
+    lexemes: tuple[_RetainedLexeme, ...],
 ) -> int:
-    return len(_canonical_json(_persistent_state_record(schemas, associations, chunks)))
+    return len(
+        _canonical_json(_persistent_state_record(schemas, associations, chunks, facts, lexemes))
+    )
 
 
 def _checkpoint_record(
     schemas: tuple[_SurfaceSchema, ...],
     associations: tuple[_SurfaceAssociation, ...],
     chunks: tuple[PersistentEvidenceChunk, ...],
+    facts: tuple[_ConsolidatedFact, ...],
+    lexemes: tuple[_RetainedLexeme, ...],
 ) -> dict[str, object]:
-    state_record = _persistent_state_record(schemas, associations, chunks)
+    state_record = _persistent_state_record(schemas, associations, chunks, facts, lexemes)
     raw_rows, raw_documents = _retained_raw_artifact_counts(
         schemas,
         associations,
         chunks,
+        facts,
+        lexemes,
     )
     return {
         "association_sha256s": tuple(association.sha256 for association in associations),
         "claim_boundary": CLAIM_BOUNDARY,
         "chunk_sha256s": tuple(chunk.sha256 for chunk in chunks),
+        "fact_sha256s": tuple(fact.sha256 for fact in facts),
+        "lexeme_sha256s": tuple(lexeme.sha256 for lexeme in lexemes),
         "promotion_support": _MIN_PROMOTION_SUPPORT,
         "retained_canonical_state_byte_count": len(_canonical_json(state_record)),
         "retained_raw_document_count": raw_documents,
@@ -785,21 +1105,38 @@ def _retained_surface_literal_bytes(schemas: tuple[_SurfaceSchema, ...]) -> int:
     )
 
 
+def _retained_fact_lexical_bytes(lexemes: tuple[_RetainedLexeme, ...]) -> int:
+    return sum(len(lexeme.identity_event) for lexeme in lexemes)
+
+
+def _retained_fact_provenance_digest_bytes(facts: tuple[_ConsolidatedFact, ...]) -> int:
+    return sum(
+        len(bytes.fromhex(source.document_id_sha256))
+        + len(bytes.fromhex(source.provenance_id_sha256))
+        for fact in facts
+        for source in fact.sources
+    )
+
+
 def _freeze(
     *,
     schemas: tuple[_SurfaceSchema, ...],
     associations: tuple[_SurfaceAssociation, ...],
     chunks: tuple[PersistentEvidenceChunk, ...],
+    facts: tuple[_ConsolidatedFact, ...],
+    lexemes: tuple[_RetainedLexeme, ...],
 ) -> FrozenPersistentNeuronalDocumentLearner:
     raw_rows, raw_documents = _retained_raw_artifact_counts(
         schemas,
         associations,
         chunks,
+        facts,
+        lexemes,
     )
-    pointers = _retained_pointers(schemas, associations, chunks)
+    pointers = _retained_pointers(schemas, associations, chunks, facts, lexemes)
     checkpoint_sha256 = _digest(
         _CHECKPOINT_NAMESPACE,
-        _checkpoint_record(schemas, associations, chunks),
+        _checkpoint_record(schemas, associations, chunks, facts, lexemes),
     )
     promoted = sum(schema.promoted for schema in schemas)
     summary = PersistentLearningSummary(
@@ -842,21 +1179,41 @@ def _freeze(
             schemas,
             associations,
             chunks,
+            facts,
+            lexemes,
         ),
         retained_pointer_count=len(pointers),
         retained_active_cell_count=sum(pointer.active_cell_count for pointer in pointers),
         retained_association_pointer_count=len(associations),
-        cumulative_binding_update_count=sum(len(chunk.binding_trace_sha256s) for chunk in chunks),
+        consolidated_fact_count=len(facts),
+        neutral_episode_count=len(
+            {source.neutral_episode_sha256 for fact in facts for source in fact.sources}
+        ),
+        retained_fact_lexical_byte_count=_retained_fact_lexical_bytes(lexemes),
+        retained_fact_provenance_digest_byte_count=(
+            _retained_fact_provenance_digest_bytes(facts)
+        ),
+        cumulative_binding_update_count=sum(len(chunk.binding_trace_sha256s) for chunk in chunks)
+        + sum(
+            len(fact.binding_trace_sha256s)
+            + sum(len(source.binding_trace_sha256s) for source in fact.sources)
+            for fact in facts
+        ),
         cumulative_learning_cell_steps=sum(
             chunk.learning_cell_steps + chunk.association_probe_cell_steps for chunk in chunks
         )
-        + sum(association.binding_cell_steps for association in associations),
+        + sum(association.binding_cell_steps for association in associations)
+        + sum(fact.consolidation_cell_steps for fact in facts),
         cumulative_association_cell_steps=sum(
             chunk.association_probe_cell_steps for chunk in chunks
         )
         + sum(association.binding_cell_steps for association in associations),
+        cumulative_consolidation_cell_steps=sum(
+            fact.consolidation_cell_steps for fact in facts
+        ),
         cumulative_learning_active_synapses=sum(chunk.learning_active_synapses for chunk in chunks)
-        + sum(association.binding_active_synapses for association in associations),
+        + sum(association.binding_active_synapses for association in associations)
+        + sum(fact.binding_active_synapses for fact in facts),
         checkpoint_sha256=checkpoint_sha256,
     )
     return FrozenPersistentNeuronalDocumentLearner(
@@ -864,6 +1221,8 @@ def _freeze(
         schemas=schemas,
         associations=associations,
         chunks=chunks,
+        facts=facts,
+        lexemes=lexemes,
         summary=summary,
         checkpoint_sha256=checkpoint_sha256,
     )
@@ -876,6 +1235,8 @@ class FrozenPersistentNeuronalDocumentLearner:
         "_associations",
         "_checkpoint_sha256",
         "_chunks",
+        "_facts",
+        "_lexemes",
         "_schemas",
         "_summary",
     )
@@ -887,6 +1248,8 @@ class FrozenPersistentNeuronalDocumentLearner:
         schemas: tuple[_SurfaceSchema, ...],
         associations: tuple[_SurfaceAssociation, ...],
         chunks: tuple[PersistentEvidenceChunk, ...],
+        facts: tuple[_ConsolidatedFact, ...],
+        lexemes: tuple[_RetainedLexeme, ...],
         summary: PersistentLearningSummary,
         checkpoint_sha256: str,
     ) -> None:
@@ -895,6 +1258,8 @@ class FrozenPersistentNeuronalDocumentLearner:
         self._schemas = schemas
         self._associations = associations
         self._chunks = chunks
+        self._facts = facts
+        self._lexemes = lexemes
         self._summary = summary
         self._checkpoint_sha256 = checkpoint_sha256
         self.authenticate()
@@ -923,6 +1288,18 @@ class FrozenPersistentNeuronalDocumentLearner:
     def schema_support_ticks(self) -> tuple[int, ...]:
         self.authenticate()
         return tuple(schema.support_ticks for schema in self._schemas)
+
+    @property
+    def consolidated_fact_sha256s(self) -> tuple[str, ...]:
+        self.authenticate()
+        return tuple(fact.sha256 for fact in self._facts)
+
+    @property
+    def consolidated_provenance_sha256s(self) -> tuple[str, ...]:
+        self.authenticate()
+        return tuple(
+            source.provenance_id_sha256 for fact in self._facts for source in fact.sources
+        )
 
     def authenticate(self) -> None:
         for chunk in self._chunks:
@@ -1024,9 +1401,105 @@ class FrozenPersistentNeuronalDocumentLearner:
                 _association_record(association, include_sha256=False),
             ):
                 raise RuntimeError("persistent association identity changed")
+        lexemes_by_sha256: dict[str, _RetainedLexeme] = {}
+        lexeme_pointer_sha256s: set[str] = set()
+        for lexeme in self._lexemes:
+            _require_sha256(lexeme.sha256, "lexeme sha256")
+            if not lexeme.identity_event:
+                raise RuntimeError("persistent lexeme lost its exact bytes")
+            SparseBlockPointer(lexeme.pointer.block_cells, lexeme.pointer.sha256)
+            if (
+                lexeme.sha256 in lexemes_by_sha256
+                or lexeme.pointer.sha256 in lexeme_pointer_sha256s
+            ):
+                raise RuntimeError("persistent lexemes must be deduplicated")
+            if lexeme.sha256 != _digest(
+                _LEXEME_NAMESPACE,
+                _lexeme_record(lexeme, include_sha256=False),
+            ):
+                raise RuntimeError("persistent lexeme identity changed")
+            lexemes_by_sha256[lexeme.sha256] = lexeme
+            lexeme_pointer_sha256s.add(lexeme.pointer.sha256)
+        document_schema_keys = {
+            association.document_schema_key_sha256 for association in self._associations
+        }
+        fact_assemblies: set[tuple[str, str]] = set()
+        for fact in self._facts:
+            for digest, name in (
+                (fact.sha256, "fact sha256"),
+                (fact.created_parent_checkpoint_sha256, "fact parent checkpoint sha256"),
+                (fact.document_schema_key_sha256, "fact document schema sha256"),
+                (fact.subject_sha256, "fact subject sha256"),
+                (fact.answer_sha256, "fact answer sha256"),
+                (fact.answer_lexeme_sha256, "fact answer lexeme sha256"),
+            ):
+                _require_sha256(digest, name)
+            if fact.document_schema_key_sha256 not in document_schema_keys:
+                raise RuntimeError("persistent fact lost its learned document surface")
+            lexeme = lexemes_by_sha256.get(fact.answer_lexeme_sha256)
+            if (
+                lexeme is None
+                or fact.answer_sha256 != _bytes_sha256(lexeme.identity_event)
+                or fact.fact_pointer.sha256 == fact.key_pointer.sha256
+            ):
+                raise RuntimeError("persistent fact lost its answer lexeme assembly")
+            SparseBlockPointer(fact.key_pointer.block_cells, fact.key_pointer.sha256)
+            SparseBlockPointer(fact.fact_pointer.block_cells, fact.fact_pointer.sha256)
+            assembly = (fact.key_pointer.sha256, fact.fact_pointer.sha256)
+            if assembly in fact_assemblies:
+                raise RuntimeError("identical persistent facts must merge provenance")
+            fact_assemblies.add(assembly)
+            if (
+                not fact.sources
+                or len(fact.binding_trace_sha256s) != 2 * len(fact.sources)
+                or not fact.consolidation_trace_sha256s
+                or fact.binding_cell_steps <= 0
+                or fact.consolidation_cell_steps <= 0
+                or fact.binding_active_synapses <= 0
+            ):
+                raise RuntimeError("persistent fact lost physical consolidation accounting")
+            source_sha256s: set[str] = set()
+            for source in fact.sources:
+                for digest, name in (
+                    (source.sha256, "fact source sha256"),
+                    (source.neutral_episode_sha256, "neutral episode sha256"),
+                    (source.document_id_sha256, "fact document id sha256"),
+                    (source.provenance_id_sha256, "fact provenance sha256"),
+                    (source.subject_occurrence_sha256, "fact subject occurrence sha256"),
+                    (source.answer_occurrence_sha256, "fact answer occurrence sha256"),
+                ):
+                    _require_sha256(digest, name)
+                SparseBlockPointer(
+                    source.custody_pointer.block_cells,
+                    source.custody_pointer.sha256,
+                )
+                if (
+                    source.sha256 in source_sha256s
+                    or len(source.binding_trace_sha256s) != 2
+                    or source.binding_cell_steps <= 0
+                    or source.binding_active_synapses <= 0
+                    or source.sha256
+                    != _digest(
+                        _FACT_SOURCE_NAMESPACE,
+                        _fact_source_record(source, include_sha256=False),
+                    )
+                ):
+                    raise RuntimeError("persistent fact source identity changed")
+                source_sha256s.add(source.sha256)
+            if fact.sha256 != _digest(
+                _FACT_NAMESPACE,
+                _fact_record(fact, include_sha256=False),
+            ):
+                raise RuntimeError("persistent fact identity changed")
         expected_root = _digest(
             _CHECKPOINT_NAMESPACE,
-            _checkpoint_record(self._schemas, self._associations, self._chunks),
+            _checkpoint_record(
+                self._schemas,
+                self._associations,
+                self._chunks,
+                self._facts,
+                self._lexemes,
+            ),
         )
         if expected_root != self._checkpoint_sha256:
             raise RuntimeError("persistent learner checkpoint authentication failed")
@@ -1034,6 +1507,8 @@ class FrozenPersistentNeuronalDocumentLearner:
             self._schemas,
             self._associations,
             self._chunks,
+            self._facts,
+            self._lexemes,
         )
         if raw_rows or raw_documents:
             raise RuntimeError("persistent learner retained a raw training artifact")
@@ -1041,6 +1516,8 @@ class FrozenPersistentNeuronalDocumentLearner:
             self._schemas,
             self._associations,
             self._chunks,
+            self._facts,
+            self._lexemes,
         )
         promoted = sum(schema.promoted for schema in self._schemas)
         expected_summary = PersistentLearningSummary(
@@ -1083,26 +1560,50 @@ class FrozenPersistentNeuronalDocumentLearner:
                 self._schemas,
                 self._associations,
                 self._chunks,
+                self._facts,
+                self._lexemes,
             ),
             retained_pointer_count=len(pointers),
             retained_active_cell_count=sum(pointer.active_cell_count for pointer in pointers),
             retained_association_pointer_count=len(self._associations),
+            consolidated_fact_count=len(self._facts),
+            neutral_episode_count=len(
+                {
+                    source.neutral_episode_sha256
+                    for fact in self._facts
+                    for source in fact.sources
+                }
+            ),
+            retained_fact_lexical_byte_count=_retained_fact_lexical_bytes(self._lexemes),
+            retained_fact_provenance_digest_byte_count=(
+                _retained_fact_provenance_digest_bytes(self._facts)
+            ),
             cumulative_binding_update_count=sum(
                 len(chunk.binding_trace_sha256s) for chunk in self._chunks
+            )
+            + sum(
+                len(fact.binding_trace_sha256s)
+                + sum(len(source.binding_trace_sha256s) for source in fact.sources)
+                for fact in self._facts
             ),
             cumulative_learning_cell_steps=sum(
                 chunk.learning_cell_steps + chunk.association_probe_cell_steps
                 for chunk in self._chunks
             )
-            + sum(association.binding_cell_steps for association in self._associations),
+            + sum(association.binding_cell_steps for association in self._associations)
+            + sum(fact.consolidation_cell_steps for fact in self._facts),
             cumulative_association_cell_steps=sum(
                 chunk.association_probe_cell_steps for chunk in self._chunks
             )
             + sum(association.binding_cell_steps for association in self._associations),
+            cumulative_consolidation_cell_steps=sum(
+                fact.consolidation_cell_steps for fact in self._facts
+            ),
             cumulative_learning_active_synapses=sum(
                 chunk.learning_active_synapses for chunk in self._chunks
             )
-            + sum(association.binding_active_synapses for association in self._associations),
+            + sum(association.binding_active_synapses for association in self._associations)
+            + sum(fact.binding_active_synapses for fact in self._facts),
             checkpoint_sha256=expected_root,
         )
         if self._summary != expected_summary:
@@ -1217,12 +1718,26 @@ class FrozenPersistentNeuronalDocumentLearner:
 
         edges = _reader._all_edges(tape)
         if not edges:
-            return self._empty_stop(
+            if not self._facts:
+                return self._empty_stop(
+                    query_sha256=query_sha256,
+                    races=races,
+                    relation_binding_races=relation_binding_races,
+                    relation_cleanup_races=relation_cleanup_races,
+                    stage="answer_selection",
+                )
+            return self._retrieve(
+                query_tokens=query_tokens,
+                schemas=schemas,
+                query_signals=query_signals,
+                subject_control=subject_control,
+                answer_control=answer_control,
+                motor_control=motor_control,
+                ablation=ablation,
                 query_sha256=query_sha256,
                 races=races,
                 relation_binding_races=relation_binding_races,
                 relation_cleanup_races=relation_cleanup_races,
-                stage="answer_selection",
             )
         edge_paths: list[list[_reader._CellSignal]] = [[] for _ in edges]
         learned_link_pointers = tuple(
@@ -1318,6 +1833,20 @@ class FrozenPersistentNeuronalDocumentLearner:
             races=races,
         )
         if answer_choice.column is None:
+            if answer_choice.trace.stop_reason == "tonic_stop" and self._facts:
+                return self._retrieve(
+                    query_tokens=query_tokens,
+                    schemas=schemas,
+                    query_signals=query_signals,
+                    subject_control=subject_control,
+                    answer_control=answer_control,
+                    motor_control=motor_control,
+                    ablation=ablation,
+                    query_sha256=query_sha256,
+                    races=races,
+                    relation_binding_races=relation_binding_races,
+                    relation_cleanup_races=relation_cleanup_races,
+                )
             return self._stop(
                 query_sha256=query_sha256,
                 races=races,
@@ -1396,7 +1925,274 @@ class FrozenPersistentNeuronalDocumentLearner:
         return self._decision(
             decision="EMIT",
             answer_occurrence=answer_occurrence,
+            memory_fact=None,
+            memory_lexeme=None,
+            answer_source="live",
             schema_sha256=selected_schema_sha256,
+            completed_hops=1,
+            stop_stage=None,
+            stop_reason=None,
+            races=races,
+            relation_binding_races=relation_binding_races,
+            relation_cleanup_races=relation_cleanup_races,
+            query_sha256=query_sha256,
+        )
+
+    def _retrieve(
+        self,
+        *,
+        query_tokens: tuple[OpaqueTokenOccurrence, ...],
+        schemas: tuple[_SurfaceSchema, ...],
+        query_signals: tuple[_reader._CellSignal, ...],
+        subject_control: _reader._CellSignal,
+        answer_control: _reader._CellSignal,
+        motor_control: _reader._CellSignal,
+        ablation: PersistentDocumentAblation,
+        query_sha256: str,
+        races: list[RelationalRaceTrace],
+        relation_binding_races: list[SparseTransformRaceTrace],
+        relation_cleanup_races: list[SparseCleanupRaceTrace],
+    ) -> PersistentDocumentDecision:
+        retrieval_control = _reader._control_signal(
+            population="persistent/retrieval_control",
+            enabled=ablation is not PersistentDocumentAblation.RETRIEVAL_OFF,
+            races=races,
+        )
+        if not self._facts or not self._lexemes:
+            return self._empty_stop(
+                query_sha256=query_sha256,
+                races=races,
+                relation_binding_races=relation_binding_races,
+                relation_cleanup_races=relation_cleanup_races,
+                stage="retrieval",
+            )
+
+        learned_link_pointers = tuple(
+            association.link_pointer for association in self._associations
+        )
+        unique_key_pointers: list[SparseBlockPointer] = []
+        seen_key_sha256s: set[str] = set()
+        for fact in self._facts:
+            if fact.key_pointer.sha256 not in seen_key_sha256s:
+                seen_key_sha256s.add(fact.key_pointer.sha256)
+                unique_key_pointers.append(fact.key_pointer)
+
+        fact_paths: list[list[_reader._CellSignal]] = [[] for _ in self._facts]
+        for query_schema_index, (query_schema, query_signal) in enumerate(
+            zip(schemas, query_signals, strict=True)
+        ):
+            subject = (
+                query_tokens[query_schema.query_frame.subject_flat_index].identity_event
+                if query_schema.query_frame.subject_flat_index < len(query_tokens)
+                else b""
+            )
+            subject_pointer = _project_digest(
+                _FACT_FILLER_NAMESPACE + b"subject\0",
+                subject,
+            )
+            for document_schema_index, document_schema in enumerate(schemas):
+                relation_binding = _SUBSTRATE.bind(
+                    query_schema.surface_pointer,
+                    document_schema.surface_pointer,
+                    ablation=(
+                        SparseRoleFillerAblation.BINDING_OFF
+                        if ablation is PersistentDocumentAblation.RELATION_BINDING_OFF
+                        else SparseRoleFillerAblation.NONE
+                    ),
+                )
+                relation_binding_races.append(relation_binding.trace)
+                if relation_binding.pointer is None:
+                    continue
+                relation_cleanup = _SUBSTRATE.cleanup(
+                    SparsePointerSuperposition.empty().accumulate(relation_binding.pointer),
+                    learned_link_pointers,
+                    ablation=(
+                        SparseRoleFillerAblation.CLEANUP_OFF
+                        if ablation is PersistentDocumentAblation.RELATION_CLEANUP_OFF
+                        else SparseRoleFillerAblation.NONE
+                    ),
+                )
+                relation_cleanup_races.append(relation_cleanup.trace)
+                if relation_cleanup.pointer is None:
+                    continue
+                relation_signal = _reader._control_signal(
+                    population=(
+                        f"persistent/retrieval/query_schema_{query_schema_index}/"
+                        f"document_schema_{document_schema_index}/relation_cleanup"
+                    ),
+                    enabled=True,
+                    races=races,
+                )
+                key_binding = _SUBSTRATE.bind(
+                    document_schema.surface_pointer,
+                    subject_pointer,
+                )
+                relation_binding_races.append(key_binding.trace)
+                if key_binding.pointer is None:
+                    continue
+                key_cleanup = _SUBSTRATE.cleanup(
+                    SparsePointerSuperposition.empty().accumulate(key_binding.pointer),
+                    tuple(unique_key_pointers),
+                    ablation=(
+                        SparseRoleFillerAblation.CLEANUP_OFF
+                        if ablation is PersistentDocumentAblation.RETRIEVAL_OFF
+                        else SparseRoleFillerAblation.NONE
+                    ),
+                )
+                relation_cleanup_races.append(key_cleanup.trace)
+                recovered_key = key_cleanup.pointer
+                cleanup_signal = _reader._control_signal(
+                    population=(
+                        f"persistent/retrieval/query_schema_{query_schema_index}/"
+                        f"document_schema_{document_schema_index}/key_cleanup"
+                    ),
+                    enabled=recovered_key is not None,
+                    races=races,
+                )
+                recovered_key_event = (
+                    b"" if recovered_key is None else bytes(recovered_key.block_cells)
+                )
+                for fact_index, fact in enumerate(self._facts):
+                    key_equality = _reader._event_equality_signal(
+                        recovered_key_event,
+                        bytes(fact.key_pointer.block_cells),
+                        population=(
+                            f"persistent/retrieval/query_schema_{query_schema_index}/"
+                            f"document_schema_{document_schema_index}/fact_{fact_index}/"
+                            "key_equality"
+                        ),
+                        races=races,
+                    )
+                    fact_paths[fact_index].append(
+                        _reader._conjunction_signal(
+                            (
+                                query_signal,
+                                relation_signal,
+                                cleanup_signal,
+                                key_equality,
+                                subject_control,
+                                retrieval_control,
+                                answer_control,
+                            ),
+                            population=(
+                                f"persistent/retrieval/query_schema_{query_schema_index}/"
+                                f"document_schema_{document_schema_index}/fact_{fact_index}/"
+                                "associated_fact_join"
+                            ),
+                            races=races,
+                        )
+                    )
+
+        fact_signals = tuple(
+            _reader._disjunction_signal(
+                paths,
+                population=f"persistent/retrieval/fact_{fact_index}/path_or",
+                races=races,
+            )
+            for fact_index, paths in enumerate(fact_paths)
+        )
+        fact_choice = _reader._physical_competition(
+            population="persistent/retrieval/unique_fact_selection",
+            signals=fact_signals,
+            races=races,
+        )
+        if fact_choice.column is None:
+            return self._stop(
+                query_sha256=query_sha256,
+                races=races,
+                relation_binding_races=relation_binding_races,
+                relation_cleanup_races=relation_cleanup_races,
+                stage="retrieval",
+                reason=fact_choice.trace.stop_reason,
+            )
+        selected_fact = self._facts[fact_choice.column]
+        unbinding = _SUBSTRATE.unbind(
+            selected_fact.key_pointer,
+            selected_fact.fact_pointer,
+            ablation=(
+                SparseRoleFillerAblation.BINDING_OFF
+                if ablation is PersistentDocumentAblation.RETRIEVAL_OFF
+                else SparseRoleFillerAblation.NONE
+            ),
+        )
+        relation_binding_races.append(unbinding.trace)
+        if unbinding.pointer is None:
+            return self._empty_stop(
+                query_sha256=query_sha256,
+                races=races,
+                relation_binding_races=relation_binding_races,
+                relation_cleanup_races=relation_cleanup_races,
+                stage="retrieval",
+            )
+        lexeme_cleanup = _SUBSTRATE.cleanup(
+            SparsePointerSuperposition.empty().accumulate(unbinding.pointer),
+            tuple(lexeme.pointer for lexeme in self._lexemes),
+            ablation=(
+                SparseRoleFillerAblation.CLEANUP_OFF
+                if ablation is PersistentDocumentAblation.RETRIEVAL_OFF
+                else SparseRoleFillerAblation.NONE
+            ),
+        )
+        relation_cleanup_races.append(lexeme_cleanup.trace)
+        if lexeme_cleanup.pointer is None:
+            return self._stop(
+                query_sha256=query_sha256,
+                races=races,
+                relation_binding_races=relation_binding_races,
+                relation_cleanup_races=relation_cleanup_races,
+                stage="retrieval",
+                reason=lexeme_cleanup.trace.stop_reason,
+            )
+
+        selected_pointer_event = bytes(lexeme_cleanup.pointer.block_cells)
+        motor_signals: list[_reader._CellSignal] = []
+        for lexeme_index, lexeme in enumerate(self._lexemes):
+            pointer_equality = _reader._event_equality_signal(
+                selected_pointer_event,
+                bytes(lexeme.pointer.block_cells),
+                population=f"persistent/retrieval/motor_{lexeme_index}/pointer_equality",
+                races=races,
+            )
+            fact_link_equality = _reader._event_equality_signal(
+                bytes.fromhex(selected_fact.answer_lexeme_sha256),
+                bytes.fromhex(lexeme.sha256),
+                population=f"persistent/retrieval/motor_{lexeme_index}/fact_link_equality",
+                races=races,
+            )
+            motor_signals.append(
+                _reader._conjunction_signal(
+                    (pointer_equality, fact_link_equality, motor_control),
+                    population=f"persistent/retrieval/motor_{lexeme_index}/verification",
+                    races=races,
+                )
+            )
+        motor = _reader._physical_competition(
+            population="persistent/retrieval/lexical_motor",
+            signals=motor_signals,
+            races=races,
+        )
+        if motor.column is None:
+            return self._stop(
+                query_sha256=query_sha256,
+                races=races,
+                relation_binding_races=relation_binding_races,
+                relation_cleanup_races=relation_cleanup_races,
+                stage="motor",
+                reason=motor.trace.stop_reason,
+            )
+        selected_lexeme = self._lexemes[motor.column]
+        document_schema = next(
+            schema
+            for schema in schemas
+            if schema.key_sha256 == selected_fact.document_schema_key_sha256
+        )
+        return self._decision(
+            decision="EMIT",
+            answer_occurrence=None,
+            memory_fact=selected_fact,
+            memory_lexeme=selected_lexeme,
+            answer_source="memory",
+            schema_sha256=document_schema.sha256,
             completed_hops=1,
             stop_stage=None,
             stop_reason=None,
@@ -1566,6 +2362,9 @@ class FrozenPersistentNeuronalDocumentLearner:
         return self._decision(
             decision="STOP",
             answer_occurrence=None,
+            memory_fact=None,
+            memory_lexeme=None,
+            answer_source=None,
             schema_sha256=None,
             completed_hops=0,
             stop_stage=stage,
@@ -1581,6 +2380,9 @@ class FrozenPersistentNeuronalDocumentLearner:
         *,
         decision: str,
         answer_occurrence: OpaqueTokenOccurrence | None,
+        memory_fact: _ConsolidatedFact | None,
+        memory_lexeme: _RetainedLexeme | None,
+        answer_source: str | None,
         schema_sha256: str | None,
         completed_hops: int,
         stop_stage: str | None,
@@ -1598,10 +2400,37 @@ class FrozenPersistentNeuronalDocumentLearner:
             + sum(race.physical_cell_steps for race in binding_race_tuple)
             + sum(race.physical_cell_steps for race in cleanup_race_tuple)
         )
-        answer = None if answer_occurrence is None else answer_occurrence.identity_event
+        if (answer_occurrence is None) == (memory_fact is None) and decision == "EMIT":
+            raise RuntimeError("EMIT must select exactly one live or memory answer")
+        if (memory_fact is None) != (memory_lexeme is None):
+            raise RuntimeError("memory fact and lexeme must be selected together")
+        if memory_fact is not None and memory_lexeme is not None:
+            if memory_fact.answer_lexeme_sha256 != memory_lexeme.sha256:
+                raise RuntimeError("memory motor selected an unlinked lexeme")
+            answer = memory_lexeme.identity_event
+        else:
+            answer = None if answer_occurrence is None else answer_occurrence.identity_event
         occurrence_event = None if answer_occurrence is None else answer_occurrence.occurrence_event
         document_id = None if answer_occurrence is None else answer_occurrence.document_id
         provenance_id = None if answer_occurrence is None else answer_occurrence.provenance_id
+        if memory_fact is not None:
+            document_sha256s = tuple(
+                source.document_id_sha256 for source in memory_fact.sources
+            )
+            provenance_sha256s = tuple(
+                source.provenance_id_sha256 for source in memory_fact.sources
+            )
+        elif answer_occurrence is not None:
+            document_sha256s = (
+                () if document_id is None else (_bytes_sha256(document_id),)
+            )
+            provenance_sha256s = (
+                () if provenance_id is None else (_bytes_sha256(provenance_id),)
+            )
+        else:
+            document_sha256s = ()
+            provenance_sha256s = ()
+        memory_fact_sha256 = None if memory_fact is None else memory_fact.sha256
         record = {
             "answer_document_id_hex": None if document_id is None else document_id.hex(),
             "answer_hex": None if answer is None else answer.hex(),
@@ -1609,10 +2438,14 @@ class FrozenPersistentNeuronalDocumentLearner:
                 None if occurrence_event is None else occurrence_event.hex()
             ),
             "answer_provenance_id_hex": (None if provenance_id is None else provenance_id.hex()),
+            "answer_document_sha256s": document_sha256s,
+            "answer_provenance_sha256s": provenance_sha256s,
+            "answer_source": answer_source,
             "checkpoint_sha256": self._checkpoint_sha256,
             "completed_hops": completed_hops,
             "decision": decision,
             "physical_cell_steps": physical_cell_steps,
+            "memory_fact_sha256": memory_fact_sha256,
             "query_sha256": query_sha256,
             "race_sha256s": tuple(race.sha256 for race in race_tuple),
             "relation_binding_race_sha256s": tuple(race.sha256 for race in binding_race_tuple),
@@ -1627,6 +2460,10 @@ class FrozenPersistentNeuronalDocumentLearner:
             answer_occurrence_event=occurrence_event,
             answer_document_id=document_id,
             answer_provenance_id=provenance_id,
+            answer_source=answer_source,
+            memory_fact_sha256=memory_fact_sha256,
+            answer_document_sha256s=document_sha256s,
+            answer_provenance_sha256s=provenance_sha256s,
             schema_sha256=schema_sha256,
             completed_hops=completed_hops,
             stop_stage=stop_stage,
@@ -1655,6 +2492,8 @@ def _measure_parent_mutation(
                 parent._schemas,
                 parent._associations,
                 parent._chunks,
+                parent._facts,
+                parent._lexemes,
             )
         )
         != state_before
@@ -1664,7 +2503,7 @@ def _measure_parent_mutation(
 def start() -> FrozenPersistentNeuronalDocumentLearner:
     """Return the authenticated empty learner."""
 
-    return _freeze(schemas=(), associations=(), chunks=())
+    return _freeze(schemas=(), associations=(), chunks=(), facts=(), lexemes=())
 
 
 def advance(
@@ -1684,6 +2523,8 @@ def advance(
             parent._schemas,
             parent._associations,
             parent._chunks,
+            parent._facts,
+            parent._lexemes,
         )
     )
     provenance_sha256 = _bytes_sha256(success.provenance_id)
@@ -1835,6 +2676,8 @@ def advance(
         schemas=schemas,
         associations=associations,
         chunks=chunks,
+        facts=parent._facts,
+        lexemes=parent._lexemes,
     )
     parent_mutation_count = _measure_parent_mutation(
         parent,
@@ -1882,5 +2725,213 @@ def advance(
         ),
         association_binding_races=tuple(association_binding_races),
         association_cleanup_races=association_cleanup_races,
+        successor=successor,
+    )
+
+
+def consolidate(
+    parent: FrozenPersistentNeuronalDocumentLearner,
+    documents: tuple[OpaqueDocument, ...],
+    ablation: PersistentDocumentAblation = PersistentDocumentAblation.NONE,
+) -> PersistentConsolidationTransition:
+    """Consolidate every physical learned-surface match in one neutral episode."""
+
+    if type(parent) is not FrozenPersistentNeuronalDocumentLearner:
+        raise TypeError("parent must be one exact frozen persistent learner")
+    if type(documents) is not tuple or not 1 <= len(documents) <= 4:
+        raise ValueError("documents must contain one to four values")
+    if any(not isinstance(document, OpaqueDocument) for document in documents):
+        raise TypeError("documents must contain OpaqueDocument values")
+    if not isinstance(ablation, PersistentDocumentAblation):
+        raise TypeError("ablation must be PersistentDocumentAblation")
+    parent.authenticate()
+    parent_root = parent.checkpoint_sha256
+    parent_state_before = _canonical_json(
+        _persistent_state_record(
+            parent._schemas,
+            parent._associations,
+            parent._chunks,
+            parent._facts,
+            parent._lexemes,
+        )
+    )
+    neutral_episode_sha256 = _digest(
+        _NEUTRAL_EPISODE_NAMESPACE,
+        {
+            "documents": tuple(
+                {
+                    "content_sha256": _bytes_sha256(document.content),
+                    "document_id_sha256": _bytes_sha256(document.document_id),
+                    "provenance_id_sha256": _bytes_sha256(document.provenance_id),
+                }
+                for document in documents
+            )
+        },
+    )
+    tape = OpaqueDocumentEventTape.observe(b"_", documents)
+    edges = _reader._all_edges(tape)
+    races: list[RelationalRaceTrace] = []
+    binding_races: list[SparseTransformRaceTrace] = []
+    frame_control = _reader._control_signal(
+        population="persistent/consolidation/document_frame_control",
+        enabled=True,
+        races=races,
+    )
+    write_control = _reader._control_signal(
+        population="persistent/consolidation/write_control",
+        enabled=ablation is not PersistentDocumentAblation.CONSOLIDATION_OFF,
+        races=races,
+    )
+    document_schema_keys = {
+        association.document_schema_key_sha256 for association in parent._associations
+    }
+    document_schemas = tuple(
+        schema for schema in parent._schemas if schema.key_sha256 in document_schema_keys
+    )
+    candidates: list[tuple[_ConsolidatedFact, _RetainedLexeme]] = []
+    for schema_index, schema in enumerate(document_schemas):
+        for edge_index, edge in enumerate(edges):
+            trace_start = len(races)
+            frame_signal = parent._document_frame_signal(
+                schema,
+                edge,
+                schema_index=schema_index,
+                edge_index=edge_index,
+                control=frame_control,
+                races=races,
+            )
+            write_signal = _reader._conjunction_signal(
+                (frame_signal, write_control),
+                population=(
+                    f"persistent/consolidation/schema_{schema_index}/edge_{edge_index}/"
+                    "write_gate"
+                ),
+                races=races,
+            )
+            write_choice = _reader._physical_competition(
+                population=(
+                    f"persistent/consolidation/schema_{schema_index}/edge_{edge_index}/"
+                    "fact_write"
+                ),
+                signals=(write_signal,),
+                races=races,
+            )
+            if write_choice.column is None:
+                continue
+            fact, lexeme, fact_binding_races = _make_consolidated_fact(
+                parent_checkpoint_sha256=parent_root,
+                neutral_episode_sha256=neutral_episode_sha256,
+                document_schema=schema,
+                edge=edge,
+                consolidation_races=tuple(races[trace_start:]),
+            )
+            candidates.append((fact, lexeme))
+            binding_races.extend(fact_binding_races)
+
+    facts = list(parent._facts)
+    lexemes = list(parent._lexemes)
+    changed_fact_indices: set[int] = set()
+    for candidate, lexeme in candidates:
+        lexeme_index = next(
+            (
+                index
+                for index, retained in enumerate(lexemes)
+                if retained.pointer.sha256 == lexeme.pointer.sha256
+            ),
+            None,
+        )
+        if lexeme_index is None:
+            lexemes.append(lexeme)
+        elif lexemes[lexeme_index] != lexeme:
+            raise RuntimeError("one lexical pointer mapped to different retained bytes")
+        fact_index = next(
+            (
+                index
+                for index, retained in enumerate(facts)
+                if retained.key_pointer.sha256 == candidate.key_pointer.sha256
+                and retained.fact_pointer.sha256 == candidate.fact_pointer.sha256
+            ),
+            None,
+        )
+        if fact_index is None:
+            if len(facts) == _MAX_CONSOLIDATED_FACTS:
+                raise PersistentNeuronalDocumentLearnerError(
+                    "consolidated fact capacity exhausted"
+                )
+            facts.append(candidate)
+            changed_fact_indices.add(len(facts) - 1)
+            continue
+        merged, changed = _merge_fact_source(facts[fact_index], candidate)
+        if changed:
+            facts[fact_index] = merged
+            changed_fact_indices.add(fact_index)
+
+    updated = bool(changed_fact_indices)
+    if updated:
+        successor = _freeze(
+            schemas=parent._schemas,
+            associations=parent._associations,
+            chunks=parent._chunks,
+            facts=tuple(facts),
+            lexemes=tuple(lexemes),
+        )
+        status = "STORED"
+        stop_stage = None
+        stop_reason = None
+    else:
+        successor = parent
+        if candidates:
+            status = "NO_UPDATE"
+            stop_stage = None
+            stop_reason = None
+        else:
+            inactive = _reader._control_signal(
+                population="persistent/consolidation/no_fact_input",
+                enabled=False,
+                races=races,
+            )
+            stopped = _reader._physical_competition(
+                population="persistent/consolidation/tonic_stop",
+                signals=(inactive,),
+                races=races,
+            )
+            status = "STOP"
+            stop_stage = "consolidation"
+            stop_reason = f"consolidation:{stopped.trace.stop_reason}"
+    parent_mutation_count = _measure_parent_mutation(
+        parent,
+        checkpoint_before=parent_root,
+        state_before=parent_state_before,
+    )
+    if parent_mutation_count:
+        raise RuntimeError("persistent consolidation mutated its parent")
+    return PersistentConsolidationTransition(
+        status=status,
+        updated=updated,
+        parent_checkpoint_sha256=parent_root,
+        successor_checkpoint_sha256=successor.checkpoint_sha256,
+        fact_sha256s=tuple(facts[index].sha256 for index in sorted(changed_fact_indices)),
+        facts_added=(
+            successor.training_summary.consolidated_fact_count
+            - parent.training_summary.consolidated_fact_count
+        ),
+        current_episode_count=1,
+        parent_episode_replay_count=0,
+        parent_mutation_count=parent_mutation_count,
+        retained_raw_document_count=successor.training_summary.retained_raw_document_count,
+        retained_fact_lexical_byte_count=(
+            successor.training_summary.retained_fact_lexical_byte_count
+        ),
+        consolidation_cell_steps=(
+            sum(race.physical_cell_steps for race in races)
+            + sum(race.physical_cell_steps for race in binding_races)
+        ),
+        consolidation_active_synapses=sum(
+            race.active_synapses for race in binding_races
+        ),
+        stop_stage=stop_stage,
+        stop_reason=stop_reason,
+        races=tuple(races),
+        binding_races=tuple(binding_races),
         successor=successor,
     )
