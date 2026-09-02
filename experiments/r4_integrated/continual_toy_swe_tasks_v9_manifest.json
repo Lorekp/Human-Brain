@@ -1,0 +1,14 @@
+{
+  "partition": "train",
+  "python_executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+  "raw_source_sha256": "2ff864ec3819e79dca5ef11dbd7ebe2a0b1dee2fe50bc47c65d424d3c8b5ef5d",
+  "repository_worker_sha256": "0a130dd6123704fa7905bd79b6f5d94d4cea8d3f1263d2a565c99c8319a5ac9f",
+  "schema": "continual-repository-swe-custody-manifest-v9",
+  "simple_swe_sandbox_sha256": "37cbf4667d51f43d343406735d0252d8672da2ab773ea0c914c14ba216ab370b",
+  "source_prior_case_count": 8,
+  "source_prior_corpus_sha256": "81a60454b9af6b8592ea8b422c25bdd98115c101e5580c8cd571555fdf0abfb1",
+  "task_count": 12,
+  "tool_contract_sha256": "230fabe8627956b8ea4fbe63ba2580ae7943d9d72f30c8ec4b8a79efbda29594",
+  "train_stream_custody_sha256": "a060dbb63fae53ebb0d295c520ed81ef7a24d81ac6c396cb4151f7a5914b71de",
+  "train_stream_sha256": "72d246ec3d35abdbb3519bead1b2c1329d5cd36bfe838ba00cd170f4a707a124"
+}
